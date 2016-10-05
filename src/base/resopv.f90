@@ -1135,7 +1135,7 @@ if (arak.gt.0.d0) then
    cvara_pr          ,                                                         &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                                   &
    viscf  , viscb  ,                                                           &
-   viscap , viscap , viscap ,                                                  &
+   viscap ,                                                                    &
    imasfl , bmasfl )
 
     ! Projection du terme source pour oter la partie hydrostat de la pression
@@ -1535,7 +1535,7 @@ if (iswdyp.ge.1) then
    coefa_dp  , coefb_dp  ,                                                     &
    coefaf_dp , coefbf_dp ,                                                     &
    viscf  , viscb  ,                                                           &
-   viscap , viscap , viscap ,                                                  &
+   viscap ,                                                                    &
    rhs0   )
 
   else if (vcopt_p%idften.eq.6) then
@@ -1626,7 +1626,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
      coefa_dp  , coefb_dp  ,                                   &
      coefaf_dp , coefbf_dp ,                                   &
      viscf  , viscb  ,                                         &
-     viscap , viscap , viscap ,                                &
+     viscap ,                                                  &
      adxk   )
 
     else if (vcopt_p%idften.eq.6) then
@@ -1757,7 +1757,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
    coefa_dp  , coefb_dp  ,                                                     &
    coefaf_dp , coefbf_dp ,                                                     &
    viscf  , viscb  ,                                                           &
-   viscap , viscap , viscap ,                                                  &
+   viscap ,                                                                    &
    rhs    )
 
   else if (vcopt_p%idften.eq.6) then
@@ -1873,7 +1873,7 @@ if (vcopt_p%idften.eq.1) then
    coefa_dp  , coefb_dp  ,                                                     &
    coefaf_dp , coefbf_dp ,                                                     &
    viscf  , viscb  ,                                                           &
-   viscap , viscap , viscap ,                                                  &
+   viscap ,                                                                    &
    imasfl , bmasfl )
 
   ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -1891,7 +1891,7 @@ if (vcopt_p%idften.eq.1) then
    coefa_dp  , coefb_dp  ,                                                     &
    coefaf_dp , coefbf_dp ,                                                     &
    viscf  , viscb  ,                                                           &
-   viscap , viscap , viscap ,                                                  &
+   viscap ,                                                                    &
    imasfl , bmasfl )
 
 else if (vcopt_p%idften.eq.6) then
@@ -2227,7 +2227,7 @@ if (idilat.eq.5) then
    dpvar  ,                                                                    &
    coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,                       &
    viscf  , viscb  ,                                                           &
-   dt     , dt     , dt     ,                                                  &
+   dt     ,                                                                    &
    imasfl , bmasfl )
 
     ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -2244,7 +2244,7 @@ if (idilat.eq.5) then
    ddpvar ,                                                                    &
    coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,                       &
    viscf  , viscb  ,                                                           &
-   dt     , dt     , dt     ,                                                  &
+   dt     ,                                                                    &
    imasfl , bmasfl )
 
   else if (vcopt_p%idften.eq.6) then

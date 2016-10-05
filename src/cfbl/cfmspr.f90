@@ -401,7 +401,7 @@ call itrmas                                                                    &
   wbfa   , wbfb   ,                                                            &
   coefaf_p        , coefbf_p        ,                                          &
   viscf  , viscb  ,                                                            &
-  dt     , dt     , dt     ,                                                   &
+  dt     ,                                                                     &
   imasfl, bmasfl)
 
 ! Incrementation of the flux with [rho (u + dt f)].n = wflmas

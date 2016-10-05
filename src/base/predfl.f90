@@ -358,7 +358,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
      clapot , clbpot ,                                                         &
      cfapot , cfbpot ,                                                         &
      viscf  , viscb  ,                                                         &
-     dt     , dt     , dt     ,                                                &
+     dt     ,                                                                  &
      rhs   )
 
     do iel = 1, ncel
@@ -408,7 +408,7 @@ call itrmas &
    clapot , clbpot ,                                                           &
    cfapot , cfbpot ,                                                           &
    viscf  , viscb  ,                                                           &
-   dt     , dt     , dt     ,                                                  &
+   dt     ,                                                                    &
    imasfl , bmasfl )
 
 ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -427,7 +427,7 @@ call itrmas &
    clapot , clbpot ,                                                           &
    cfapot , cfbpot ,                                                           &
    viscf  , viscb  ,                                                           &
-   dt     , dt     , dt     ,                                                  &
+   dt     ,                                                                    &
    imasfl , bmasfl )
 
 !===============================================================================

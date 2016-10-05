@@ -716,9 +716,7 @@ void CS_PROCF (itrmas, ITRMAS)
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- cs_real_t                viselx[],
- const cs_real_t          visely[],
- const cs_real_t          viselz[],
+ cs_real_t                visel[],
  cs_real_t                i_massflux[],
  cs_real_t                b_massflux[]
 )
@@ -749,9 +747,7 @@ void CS_PROCF (itrmas, ITRMAS)
                               cofbfp,
                               i_visc,
                               b_visc,
-                              viselx,
-                              visely,
-                              viselz,
+                              visel,
                               i_massflux,
                               b_massflux);
 }
@@ -851,9 +847,7 @@ void CS_PROCF (itrgrp, ITRGRP)
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- const cs_real_t          viselx[],
- const cs_real_t          visely[],
- const cs_real_t          viselz[],
+ const cs_real_t          visel[],
  cs_real_t                diverg[]
 )
 {
@@ -882,9 +876,7 @@ void CS_PROCF (itrgrp, ITRGRP)
                          cofbfp,
                          i_visc,
                          b_visc,
-                         viselx,
-                         visely,
-                         viselz,
+                         visel,
                          diverg);
 }
 
@@ -7723,9 +7715,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     viselx        viscosity by cell, dir x
- * \param[in]     visely        viscosity by cell, dir y
- * \param[in]     viselz        viscosity by cell, dir z
+ * \param[in]     visel         viscosity by cell
  * \param[in,out] i_massflux    mass flux at interior faces
  * \param[in,out] b_massflux    mass flux at boundary faces
  */
@@ -7755,9 +7745,7 @@ cs_face_diffusion_potential(const int                 f_id,
                             const cs_real_t           cofbfp[],
                             const cs_real_t           i_visc[],
                             const cs_real_t           b_visc[],
-                            cs_real_t       *restrict viselx,
-                            const cs_real_t           visely[],
-                            const cs_real_t           viselz[],
+                            cs_real_t       *restrict visel,
                             cs_real_t       *restrict i_massflux,
                             cs_real_t       *restrict b_massflux)
 {
@@ -7792,25 +7780,17 @@ cs_face_diffusion_potential(const int                 f_id,
   bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_3_t *grad;
-  cs_real_3_t *visel;
   cs_field_t *f;
 
   cs_real_t *gweight = NULL;
 
   /*==========================================================================*/
 
-  /* i_visc and visel carry similar information */
+  /* i_visc and carry similar information */
 
   /*============================================================================
     1. Initialization
     ==========================================================================*/
-
-  BFT_MALLOC(visel, n_cells_ext, cs_real_3_t);
-  for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
-    visel[ii][0] = viselx[ii];
-    visel[ii][1] = visely[ii];
-    visel[ii][2] = viselz[ii];
-  }
 
   if (init >= 1) {
 #   pragma omp parallel for
@@ -7951,11 +7931,8 @@ cs_face_diffusion_potential(const int                 f_id,
 
     /* Handle parallelism and periodicity */
 
-    if (halo != NULL) {
-      cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)visel, 3);
-      if (m->n_init_perio > 0)
-        cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)visel, 3);
-    }
+    if (halo != NULL)
+      cs_halo_sync_var(halo, halo_type, visel);
 
     /* Mass flow through interior faces */
 
@@ -7969,12 +7946,12 @@ cs_face_diffusion_potential(const int                 f_id,
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
 
-          double dpxf = 0.5*(  visel[ii][0]*grad[ii][0]
-                             + visel[jj][0]*grad[jj][0]);
-          double dpyf = 0.5*(  visel[ii][1]*grad[ii][1]
-                             + visel[jj][1]*grad[jj][1]);
-          double dpzf = 0.5*(  visel[ii][2]*grad[ii][2]
-                             + visel[jj][2]*grad[jj][2]);
+          double dpxf = 0.5*(  visel[ii]*grad[ii][0]
+                             + visel[jj]*grad[jj][0]);
+          double dpyf = 0.5*(  visel[ii]*grad[ii][1]
+                             + visel[jj]*grad[jj][1]);
+          double dpzf = 0.5*(  visel[ii]*grad[ii][2]
+                             + visel[jj]*grad[jj][2]);
 
           double dijpfx = dijpf[face_id][0];
           double dijpfy = dijpf[face_id][1];
@@ -8023,7 +8000,6 @@ cs_face_diffusion_potential(const int                 f_id,
     /* Free memory */
     BFT_FREE(grad);
   }
-  BFT_FREE(visel);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8555,9 +8531,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     viselx        viscosity by cell, dir x
- * \param[in]     visely        viscosity by cell, dir y
- * \param[in]     viselz        viscosity by cell, dir z
+ * \param[in]     visel         viscosity by cell
  * \param[in,out] diverg        mass flux divergence
  */
 /*----------------------------------------------------------------------------*/
@@ -8585,9 +8559,7 @@ cs_diffusion_potential(const int                 f_id,
                        const cs_real_t           cofbfp[],
                        const cs_real_t           i_visc[],
                        const cs_real_t           b_visc[],
-                       const cs_real_t           viselx[],
-                       const cs_real_t           visely[],
-                       const cs_real_t           viselz[],
+                       const cs_real_t           visel[],
                        cs_real_t       *restrict diverg)
 {
   const cs_halo_t  *halo = m->halo;
@@ -8627,7 +8599,6 @@ cs_diffusion_potential(const int                 f_id,
   bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_3_t *grad;
-  cs_real_3_t *visel;
   cs_field_t *f;
 
   cs_real_t *gweight = NULL;
@@ -8637,15 +8608,6 @@ cs_diffusion_potential(const int                 f_id,
   /*==========================================================================
     1. Initialization
     ==========================================================================*/
-
-  BFT_MALLOC(visel, n_cells_ext, cs_real_3_t);
-
-# pragma omp parallel for
-  for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
-    visel[ii][0] = viselx[ii];
-    visel[ii][1] = visely[ii];
-    visel[ii][2] = viselz[ii];
-  }
 
   if (init >= 1) {
 #   pragma omp parallel for
@@ -8786,11 +8748,8 @@ cs_diffusion_potential(const int                 f_id,
 
     /* Handle parallelism and periodicity */
 
-    if (halo != NULL) {
-      cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)visel, 3);
-      if (m->n_init_perio > 0)
-        cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)visel, 3);
-    }
+    if (halo != NULL)
+      cs_halo_sync_var(halo, halo_type, visel);
 
     /* Mass flow through interior faces */
 
@@ -8816,12 +8775,12 @@ cs_diffusion_potential(const int                 f_id,
             double dijy = (cell_cen[jj][1]-cell_cen[ii][1])-dijpfy;
             double dijz = (cell_cen[jj][2]-cell_cen[ii][2])-dijpfz;
 
-            double dpxf = 0.5*(  visel[ii][0]*grad[ii][0]
-                               + visel[jj][0]*grad[jj][0]);
-            double dpyf = 0.5*(  visel[ii][1]*grad[ii][1]
-                               + visel[jj][1]*grad[jj][1]);
-            double dpzf = 0.5*(  visel[ii][2]*grad[ii][2]
-                               + visel[jj][2]*grad[jj][2]);
+            double dpxf = 0.5*(  visel[ii]*grad[ii][0]
+                               + visel[jj]*grad[jj][0]);
+            double dpyf = 0.5*(  visel[ii]*grad[ii][1]
+                               + visel[jj]*grad[jj][1]);
+            double dpzf = 0.5*(  visel[ii]*grad[ii][2]
+                               + visel[jj]*grad[jj][2]);
 
             i_massflux += (dpxf*dijx + dpyf*dijy + dpzf*dijz)
                           *i_f_face_surf[face_id]/i_dist[face_id];
@@ -8894,7 +8853,6 @@ cs_diffusion_potential(const int                 f_id,
     /* Free memory */
     BFT_FREE(grad);
   }
-  BFT_FREE(visel);
 }
 
 /*----------------------------------------------------------------------------*/

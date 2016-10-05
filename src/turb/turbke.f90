@@ -505,7 +505,7 @@ if (iturb.eq.51) then
   cvara_k         ,                                                            &
   coefap , coefbp , cofafp , cofbfp ,                                          &
   viscf  , viscb  ,                                                            &
-  w3     , w3     , w3     ,                                                   &
+  w3     ,                                                                     &
   w10    )
 
   do iel = 1, ncel

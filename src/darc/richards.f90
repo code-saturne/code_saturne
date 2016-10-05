@@ -362,7 +362,7 @@ if (darcy_anisotropic_permeability.eq.0) then
   coefa_p  , coefb_p  ,                                                       &
   coefaf_p , coefbf_p ,                                                       &
   viscf  , viscb  ,                                                           &
-  cpro_permeability, cpro_permeability, cpro_permeability,                    &
+  cpro_permeability,                                                          &
   rhs   )
 
 else if (darcy_anisotropic_permeability.eq.1) then
@@ -482,7 +482,7 @@ do while ( (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) &
     coefa_p  , coefb_p  ,                                                    &
     coefaf_p , coefbf_p ,                                                    &
     viscf  , viscb  ,                                                        &
-    cpro_permeability, cpro_permeability, cpro_permeability,                 &
+    cpro_permeability,                                                       &
     rhs   )
 
   else if (darcy_anisotropic_permeability.eq.1) then
@@ -576,7 +576,7 @@ if (darcy_anisotropic_permeability.eq.0) then
    presa  ,                                                       &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
    viscf  , viscb  ,                                              &
-   cpro_permeability, cpro_permeability, cpro_permeability,       &
+   cpro_permeability,                                             &
    imasfl , bmasfl )
 
   ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -594,7 +594,7 @@ if (darcy_anisotropic_permeability.eq.0) then
    dpvar  ,                                                                    &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                                   &
    viscf  , viscb  ,                                                           &
-   cpro_permeability, cpro_permeability, cpro_permeability,                    &
+   cpro_permeability,                                                          &
    imasfl , bmasfl )
 
 else if (darcy_anisotropic_permeability.eq.1) then

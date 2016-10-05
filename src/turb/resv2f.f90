@@ -383,7 +383,7 @@ call itrgrp &
    cvara_phi       ,                                                 &
    coefap , coefbp , cofafp , cofbfp ,                               &
    viscf  , viscb  ,                                                 &
-   w3     , w3     , w3     ,                                        &
+   w3     ,                                                          &
    w2     )
 
 !      We store T in W3 et L^2 in W4

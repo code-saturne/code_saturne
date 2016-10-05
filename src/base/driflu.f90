@@ -425,7 +425,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
      coefap , coefbp ,                                                       &
      cofafp , cofbfp ,                                                       &
      viscf  , viscb  ,                                                       &
-     w1     , w1     , w1     ,                                              &
+     w1     ,                                                                &
      flumas , flumab )
 
   ! TODO add extradiagonal part

@@ -358,7 +358,7 @@ do isweep = 1, nswmpr
    coefap , coefbp ,                                                           &
    cofafp , cofbfp ,                                                           &
    viscf  , viscb  ,                                                           &
-   w10         , w10         , w10         ,                                   &
+   w10         ,                                                               &
    smbr   )
 
   endif

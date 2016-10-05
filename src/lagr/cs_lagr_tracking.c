@@ -851,6 +851,8 @@ _init_track_builder(cs_lnum_t  n_particles_max,
   /* Define an interface set on interior faces for keeping up-to-date
      the last_face_num value across ranks. Not used in serial mode */
 
+  builder->face_ifs = NULL;
+
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     builder->face_ifs = cs_interface_set_create(mesh->n_i_faces,
@@ -864,9 +866,6 @@ _init_track_builder(cs_lnum_t  n_particles_max,
 
     cs_interface_set_add_match_ids(builder->face_ifs);
   }
-
-  else
-    builder->face_ifs = NULL;
 #endif
 
   return builder;

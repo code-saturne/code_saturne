@@ -4687,9 +4687,7 @@ void CS_PROCF (itrmas, ITRMAS)
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- cs_real_t                viselx[],
- const cs_real_t          visely[],
- const cs_real_t          viselz[],
+ cs_real_t                visel[],
  cs_real_t                i_massflux[],
  cs_real_t                b_massflux[]
 );
@@ -4755,9 +4753,7 @@ void CS_PROCF (itrgrp, ITRGRP)
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- const cs_real_t          viselx[],
- const cs_real_t          visely[],
- const cs_real_t          viselz[],
+ const cs_real_t          visel[],
  cs_real_t                diverg[]
 );
 
@@ -5467,9 +5463,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     viselx        viscosity by cell, dir x
- * \param[in]     visely        viscosity by cell, dir y
- * \param[in]     viselz        viscosity by cell, dir z
+ * \param[in]     visel         viscosity by cell
  * \param[in,out] i_massflux    mass flux at interior faces
  * \param[in,out] b_massflux    mass flux at boundary faces
  */
@@ -5499,9 +5493,7 @@ cs_face_diffusion_potential(const int                 f_id,
                             const cs_real_t           cofbfp[],
                             const cs_real_t           i_visc[],
                             const cs_real_t           b_visc[],
-                            cs_real_t       *restrict viselx,
-                            const cs_real_t           visely[],
-                            const cs_real_t           viselz[],
+                            cs_real_t       *restrict visel,
                             cs_real_t       *restrict i_massflux,
                             cs_real_t       *restrict b_massflux);
 
@@ -5662,9 +5654,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     viselx        viscosity by cell, dir x
- * \param[in]     visely        viscosity by cell, dir y
- * \param[in]     viselz        viscosity by cell, dir z
+ * \param[in]     visel         viscosity by cell
  * \param[in,out] diverg        mass flux divergence
  */
 /*----------------------------------------------------------------------------*/
@@ -5692,9 +5682,7 @@ cs_diffusion_potential(const int                 f_id,
                        const cs_real_t           cofbfp[],
                        const cs_real_t           i_visc[],
                        const cs_real_t           b_visc[],
-                       const cs_real_t           viselx[],
-                       const cs_real_t           visely[],
-                       const cs_real_t           viselz[],
+                       const cs_real_t           visel[],
                        cs_real_t       *restrict diverg);
 
 /*----------------------------------------------------------------------------*/
