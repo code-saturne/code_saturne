@@ -438,6 +438,8 @@ _destroy_attr_map(cs_lagr_attribute_map_t  **p_am)
   if (*p_am != NULL) {
     cs_lagr_attribute_map_t  *_p_am = *p_am;
 
+    BFT_FREE(_p_am->source_term_displ);
+
     BFT_FREE(_p_am->displ);
     BFT_FREE(_p_am->count);
 

@@ -313,17 +313,6 @@ module lagran
       integer(c_int) :: n
     end function lagr_restart_write_particle_data
 
-    !---------------------------------------------------------------------------
-
-    !> \brief Deallocate bound_stat array
-
-    subroutine cs_lagr_finalize_c_arrays()   &
-      bind(C, name='cs_lagr_finalize_c_arrays')
-      use, intrinsic ::  iso_c_binding
-
-      implicit none
-    end subroutine cs_lagr_finalize_c_arrays
-
   !=============================================================================
 
   end interface
@@ -423,14 +412,6 @@ contains
     return
 
   end subroutine init_lagr_arrays
-
-  !=============================================================================
-
-  subroutine finalize_lagr_arrays
-
-    call cs_lagr_finalize_c_arrays
-
-  end subroutine finalize_lagr_arrays
 
   !=============================================================================
 

@@ -561,7 +561,7 @@ cs_lagr_log_iteration(void)
 
       cs_log_printf(CS_LOG_DEFAULT,
                     "  %3d          %12.5E         %s\n",
-                    nb + 1,
+                    nb,
                     debloc[1]/cs_glob_lagr_time_step->dtp,
                     chcond);
 

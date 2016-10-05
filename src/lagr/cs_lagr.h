@@ -1487,7 +1487,7 @@ cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
  * This function is intended for use by Fortran wrappers.
  *----------------------------------------------------------------------------*/
 void
-cs_lagr_finalize_c_arrays(void);
+cs_lagr_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 
