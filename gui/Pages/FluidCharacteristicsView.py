@@ -166,8 +166,8 @@ rho1 = 1.25051;
 rho2 = 1.7832;
 A = (Y1 / rho1) + (Y2 /rho2);
 density = 1.0 / A;
-
 """
+
     density_h = """# Density
 density = enthalpy / 1040. * 1.29;
 
@@ -180,9 +180,11 @@ rho1 = 1.25051;
 rho2 = 1.7832;
 A = (Y1 / rho1) + (Y2 /rho2);
 density = 1.0 / A;
-
 """
 
+    density_wo = """density = 1.25051;
+
+"""
     molecular_viscosity="""# Sutherland's Formula
 # Gas             Cst    T0      mu0
 # air             120    291.15  18.27e-6
@@ -204,10 +206,9 @@ molecular_viscosity = mu_ref * ((T0+CST) / (temperature+CST)) * (temperature/T0)
 } else {
 molecular_viscosity = -999.0;
 }
-
 """
-    molecular_viscosity_h="""
-CST = 120;
+
+    molecular_viscosity_h="""CST = 120;
 T0 = 291.15;
 mu_ref = 18.27e-6;
 temperature = enthalpy / 1040.;
@@ -217,8 +218,14 @@ molecular_viscosity = mu_ref * (T0+CST / temperature+CST) * (temperature/T0)^(3.
 } else {
 molecular_viscosity = -999.0;
 }
-
 """
+
+    molecular_viscosity_wo="""CST = 120;
+T0 = 291.15;
+mu_ref = 18.27e-6;
+molecular_viscosity = mu_ref * (T0+CST);
+"""
+
     specific_heat="""# specific heat for mixtures of gases
 #
 # Y1 -> mass fraction of component 1
@@ -228,8 +235,10 @@ Cp1 = 520.3;
 Cp2 = 1040.0;
 specific_heat = Y1 * Cp1 + Y2 *Cp2;
 """
+
     volume_viscosity="""# volume_viscosity
 """
+
     thermal_conductivity="""# oxygen
 thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
@@ -238,10 +247,9 @@ thermal_conductivity = 6.784141e-5 * temperature + 5.564317e-3;
 
 # hydrogen
 thermal_conductivity = 4.431e-4 * temperature + 5.334e-2;
-
 """
-    thermal_conductivity_h="""
-temperature = enthalpy / 1040.;
+
+    thermal_conductivity_h="""temperature = enthalpy / 1040.;
 thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 """
 
@@ -946,7 +954,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
         mdl = self.m_th.getThermalScalarModel()
-        if mdl == "temperature_celsius":
+        if mdl == "off":
+            exa = FluidCharacteristicsView.density_wo
+        elif mdl == "temperature_celsius":
             TempInContext = "("+s+" + 273.15)"
             exa = FluidCharacteristicsView.density.replace("temperature", TempInContext)
         elif mdl == "enthalpy":
@@ -986,7 +996,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
         mdl = self.m_th.getThermalScalarModel()
-        if mdl == "temperature_celsius":
+        if mdl == "off":
+            exa = FluidCharacteristicsView.molecular_viscosity_wo
+        elif mdl == "temperature_celsius":
             TempInContext = "("+s+" + 273.15)"
             exa = FluidCharacteristicsView.molecular_viscosity.replace("temperature", TempInContext)
         elif mdl == "enthalpy":
