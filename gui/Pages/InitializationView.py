@@ -277,7 +277,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
         req = [('velocity[0]', "velocity"),
                ('velocity[1]', "velocity"),
                ('velocity[2]', "velocity")]
-        sym = [('x', 'cell center coordinate'),
+        sym = [('uref', 'reference velocity'),
+               ('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
         dialog = QMeiEditorView(self,

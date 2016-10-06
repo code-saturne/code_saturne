@@ -3841,6 +3841,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           mei_tree_insert(ev_formula_uvw, "x", 0.);
           mei_tree_insert(ev_formula_uvw, "y", 0.);
           mei_tree_insert(ev_formula_uvw, "z", 0.);
+          mei_tree_insert(ev_formula_uvw, "uref", cs_glob_turb_ref_values->uref);
           /* try to build the interpreter */
           if (mei_tree_builder(ev_formula_uvw))
             bft_error(__FILE__, __LINE__, 0,
@@ -3858,6 +3859,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             mei_tree_insert(ev_formula_uvw, "x", cell_cen[iel][0]);
             mei_tree_insert(ev_formula_uvw, "y", cell_cen[iel][1]);
             mei_tree_insert(ev_formula_uvw, "z", cell_cen[iel][2]);
+            mei_tree_insert(ev_formula_uvw, "uref", cs_glob_turb_ref_values->uref);
             mei_evaluate(ev_formula_uvw);
             c_vel->val[3 * iel    ] = mei_tree_lookup(ev_formula_uvw, "velocity[0]");
             c_vel->val[3 * iel + 1] = mei_tree_lookup(ev_formula_uvw, "velocity[1]");
