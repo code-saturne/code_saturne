@@ -1590,6 +1590,8 @@ cs_pressure_drop_by_zone(const char *selection_crit)
     out_rhogx     : contribution from outlets
     in_debit      : debit from inlets
     out_debit     : debit from outlets
+    in_m_debit    : mass flow from inlets
+    out_m_debit   : mass flow from outlets
      */
 
   double in_pressure= 0.;
@@ -1600,6 +1602,8 @@ cs_pressure_drop_by_zone(const char *selection_crit)
   double out_rhogx = 0.;
   double in_debit = 0.;
   double out_debit = 0.;
+  double in_m_debit = 0.;
+  double out_m_debit = 0.;
 
   /* Boundary condition coefficient for p */
   const cs_real_t *a_p = f_pres->bc_coeffs->a;
@@ -1780,9 +1784,11 @@ cs_pressure_drop_by_zone(const char *selection_crit)
 
     if (b_mass_flux[f_id_sel] > 0) {
       out_debit += b_mass_flux[f_id_sel]/rho[c_id];
+      out_m_debit += b_mass_flux[f_id_sel];
       out_pressure += term_balance;
     } else {
       in_debit += b_mass_flux[f_id_sel]/rho[c_id];
+      in_m_debit += b_mass_flux[f_id_sel];
       in_pressure += term_balance;
     }
 
@@ -1920,9 +1926,11 @@ cs_pressure_drop_by_zone(const char *selection_crit)
         if (i_mass_flux[f_id_sel] > 0) {
           out_pressure += bi_bterms[0];
           out_debit += i_mass_flux[f_id_sel] / rho[c_id1];
+          out_m_debit += i_mass_flux[f_id_sel];
         } else {
           in_pressure += bi_bterms[0];
           in_debit += i_mass_flux[f_id_sel] / rho[c_id1];
+          in_m_debit += i_mass_flux[f_id_sel];
         }
       }
     }
@@ -1932,9 +1940,11 @@ cs_pressure_drop_by_zone(const char *selection_crit)
         if (i_mass_flux[f_id_sel] > 0) {
           in_pressure -= bi_bterms[1];
           in_debit -= i_mass_flux[f_id_sel] / rho[c_id2];
+          in_m_debit -= i_mass_flux[f_id_sel];
         } else {
           out_pressure -= bi_bterms[1];
           out_debit -= i_mass_flux[f_id_sel] / rho[c_id2];
+          out_m_debit -= i_mass_flux[f_id_sel];
         }
       }
     }
@@ -2076,6 +2086,8 @@ cs_pressure_drop_by_zone(const char *selection_crit)
   cs_parall_sum(1, CS_DOUBLE, &in_u2);
   cs_parall_sum(1, CS_DOUBLE, &out_debit);
   cs_parall_sum(1, CS_DOUBLE, &in_debit);
+  cs_parall_sum(1, CS_DOUBLE, &out_m_debit);
+  cs_parall_sum(1, CS_DOUBLE, &in_m_debit);
 
   /* 3. Write the balance at time step n
     ==================================== */
@@ -2112,12 +2124,20 @@ cs_pressure_drop_by_zone(const char *selection_crit)
                "  |                 |\n"
                "  | inlet           | outlet\n"
                "  %12.4e      %12.4e\n"
+               "------------------------------------------------------------\n"
+               "  |                 |\n"
+               "  | rho u . dS      | rho u . dS\n"
+               "  |     -    -      |     -    -\n"
+               "  |                 |\n"
+               "  | inlet           | outlet\n"
+               "  %12.4e      %12.4e\n"
                "------------------------------------------------------------\n\n"),
              nt_cur, selection_crit,
              in_pressure, out_pressure,
              in_u2, out_u2,
              in_rhogx, out_rhogx,
-             in_debit, out_debit);
+             in_debit, out_debit,
+             in_m_debit, out_m_debit);
 }
 /*----------------------------------------------------------------------------*/
 
