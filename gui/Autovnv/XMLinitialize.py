@@ -113,9 +113,11 @@ class XMLinit(Variables):
         for nn in self.case.xmlGetNodeList('study'):
             idx = 0
             dico = {}
+            idlst = []
 
             for node in nn.xmlGetNodeList("subplot"):
                 dico[node['id']] = idx
+                idlst.append(node['id'])
                 node['id'] = idx
                 idx = idx + 1
 
@@ -126,10 +128,11 @@ class XMLinit(Variables):
                 if lst:
                     for idl in lst.split(" "):
                         if idl != " ":
-                            if new_lst != "":
-                                new_lst = new_lst + " " + str(dico[idl])
-                            else:
-                                new_lst = str(dico[idl])
+                            if idl in idlst:
+                                if new_lst != "":
+                                    new_lst = new_lst + " " + str(dico[idl])
+                                else:
+                                    new_lst = str(dico[idl])
                     node['idlist'] = new_lst
                     if not node['id']:
                         node['id'] = idxx
