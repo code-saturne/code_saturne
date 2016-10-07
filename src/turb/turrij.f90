@@ -531,6 +531,7 @@ else if (igrari.eq.1) then
   extrap = vcopt%extrag
 
   f_id0 = -1
+  iccocg = 1
 
   ! If we extrapolate the source terms and rho, we use cpdt rho^n
   if(isto2t.gt.0.and.iroext.gt.0) then
