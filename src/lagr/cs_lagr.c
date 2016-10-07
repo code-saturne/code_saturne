@@ -802,12 +802,11 @@ _cs_lagr_free_zone_class_data(cs_lagr_zone_class_data_t *zone_class_data)
 static void
 _cs_lagr_free_all_zone_class_data(void)
 {
-  assert(_lagr_zone_class_data != NULL);
-
-  for (int  i = 0; i < cs_glob_lagr_nzone_max * cs_glob_lagr_nclass_max ; i++)
-    _cs_lagr_free_zone_class_data(&(_lagr_zone_class_data[i]));
-
-  BFT_FREE(_lagr_zone_class_data);
+  if (_lagr_zone_class_data != NULL) {
+    for (int  i = 0; i < cs_glob_lagr_nzone_max * cs_glob_lagr_nclass_max ; i++)
+      _cs_lagr_free_zone_class_data(&(_lagr_zone_class_data[i]));
+    BFT_FREE(_lagr_zone_class_data);
+  }
 }
 
 /*----------------------------------------------------------------------------
