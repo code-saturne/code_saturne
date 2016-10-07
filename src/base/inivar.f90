@@ -211,8 +211,6 @@ else
 
   call ppiniv(nvar, nscal, dt)
 
-  call cs_user_f_initialization(nvar, nscal, dt)
-
   if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
                                .or.isuite.eq.1.and.ileaux.eq.0)) then
 

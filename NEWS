@@ -5,6 +5,9 @@ Release 4.3.1 (October 5 2016)
 Bug fixes:
 ----------
 
+- Minor fix for compressible module (remove one unneeded and redundant call to
+  user variables init. subroutine).
+
 - Fix for second order time stepping.
 
 - GUI: minor fix for Dirichlet formula usage and turbulence properties update.
