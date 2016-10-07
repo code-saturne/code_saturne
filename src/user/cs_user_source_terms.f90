@@ -393,7 +393,7 @@ end subroutine ustssc
 !> an implicit part (crvimp) that must be provided here.
 !> The resulting equation solved by the code for a vector f is:
 !>
-!>   \f[ \rho*volume*\frac{d\vect{f]}{dt} + .... = \tens{crvimp}*\vect{f} +
+!>   \f[ \rho*volume*\frac{d\vect{f}}{dt} + .... = \tens{crvimp}*\vect{f} +
 !>                                                 \vect{crvexp} \f]
 !>
 !>

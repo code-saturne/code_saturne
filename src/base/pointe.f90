@@ -149,7 +149,8 @@ module pointe
   !> \{
 
   !> number of boundary faces which are coupled
-  !> with a wall 1D thermal module. See the user subroutine \ref uspt1d
+  !> with a wall 1D thermal module. See the user subroutine
+  !> \ref cs_user_1d_wall_thermal
   integer(c_int), pointer, save :: nfpt1d
 
   !> global number of boundary faces which are coupled with
