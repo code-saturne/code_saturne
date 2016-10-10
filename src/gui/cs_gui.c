@@ -96,6 +96,7 @@
 #include "cs_physical_constants.h"
 #include "cs_stokes_model.h"
 #include "cs_balance_by_zone.h"
+#include "cs_fan.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -2182,7 +2183,7 @@ _fan_dimension(int          fan_id,
   cs_xpath_add_element_num(&path, "fan", fan_id + 1);
   cs_xpath_add_element(&path, name);
   cs_xpath_add_function_text(&path);
-  cs_gui_get_int(path, &value);
+  cs_gui_get_double(path, &value);
   BFT_FREE(path);
 
   return value;

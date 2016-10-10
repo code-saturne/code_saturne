@@ -1027,6 +1027,37 @@ _boundary_darcy(const char *nature,
   BFT_FREE(choice);
 }
 
+/*-----------------------------------------------------------------------------
+ * Get pressure value for imposed pressure boundary
+ *
+ * parameters:
+ *   izone       -->  number of the current zone
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_imposed_pressure(const char *nature,
+                           const char *label,
+                                 int   izone)
+{
+  double value;
+  char  *path = NULL;
+  char *choice = NULL;
+
+  choice = _boundary_choice(nature, label, "pressure", "choice");
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
+  cs_xpath_add_test_attribute(&path, "label", boundaries->label[izone]);
+  cs_xpath_add_element(&path, "dirichlet");
+  cs_xpath_add_test_attribute(&path, "name", "pressure");
+  cs_xpath_add_function_text(&path);
+  if (cs_gui_get_double(path, &value))
+    boundaries->preout[izone] = value;
+
+  BFT_FREE(path);
+  BFT_FREE(choice);
+}
+
 /*----------------------------------------------------------------------------
  * Boundary conditions treatment: global structure initialization
  *
@@ -1093,11 +1124,13 @@ _init_boundaries(const cs_lnum_t  *nfabor,
   BFT_MALLOC(boundaries->dirx,      zones,      double       );
   BFT_MALLOC(boundaries->diry,      zones,      double       );
   BFT_MALLOC(boundaries->dirz,      zones,      double       );
+  BFT_MALLOC(boundaries->locator,   zones,      ple_locator_t*);
 
   BFT_MALLOC(boundaries->velocity,  zones,      mei_tree_t*  );
   BFT_MALLOC(boundaries->direction, zones,      mei_tree_t*  );
   BFT_MALLOC(boundaries->headLoss,  zones,      mei_tree_t*  );
   BFT_MALLOC(boundaries->scalar,    n_fields,   mei_tree_t** );
+  BFT_MALLOC(boundaries->preout,    zones,      double);
 
   if (cs_gui_strcmp(vars->model, "solid_fuels"))
   {
@@ -1134,10 +1167,8 @@ _init_boundaries(const cs_lnum_t  *nfabor,
     BFT_MALLOC(boundaries->rhoin,   zones, double);
     BFT_MALLOC(boundaries->tempin,  zones, double);
     BFT_MALLOC(boundaries->entin,   zones, double);
-    BFT_MALLOC(boundaries->preout,  zones, double);
   }
   else if (cs_gui_strcmp(vars->model, "groundwater_model")) {
-    BFT_MALLOC(boundaries->preout,  zones, double);
     BFT_MALLOC(boundaries->groundwat, zones,      mei_tree_t*  );
   }
   else {
@@ -1184,6 +1215,7 @@ _init_boundaries(const cs_lnum_t  *nfabor,
     boundaries->velocity[izone]  = NULL;
     boundaries->direction[izone] = NULL;
     boundaries->headLoss[izone]  = NULL;
+    boundaries->preout[izone]    = 0;
 
     if (cs_gui_strcmp(vars->model, "solid_fuels"))
     {
@@ -1216,11 +1248,9 @@ _init_boundaries(const cs_lnum_t  *nfabor,
       boundaries->prein[izone]     = 0;
       boundaries->rhoin[izone]     = 0;
       boundaries->tempin[izone]    = 0;
-      boundaries->preout[izone]    = 0;
       boundaries->entin[izone]     = 0;
     }
    if (cs_gui_strcmp(vars->model, "groundwater_model")) {
-      boundaries->preout[izone]    = 0;
       boundaries->groundwat[izone] = NULL;
     }
 
@@ -1306,7 +1336,7 @@ _init_boundaries(const cs_lnum_t  *nfabor,
           boundaries->iqimp[izone] = 2;
         }
 
-        if (cs_gui_strcmp(choice_d, "coordinates"))
+        if (cs_gui_strcmp(choice_d, "coordinates") || cs_gui_strcmp(choice_d, "translation"))
         {
           _inlet_data(label, "direction_x", &boundaries->dirx[izone]);
           _inlet_data(label, "direction_y", &boundaries->diry[izone]);
@@ -1394,6 +1424,9 @@ _init_boundaries(const cs_lnum_t  *nfabor,
         bft_printf("Warning : free inlet outlet boundary conditions\n");
         bft_printf("          without external head loss definition\n");
       }
+    }
+    else if (cs_gui_strcmp(nature, "imposed_p_outlet")) {
+      _boundary_imposed_pressure(nature, label, izone);
     }
     else if (cs_gui_strcmp(nature, "groundwater")) {
       _boundary_darcy(nature, label, izone);
@@ -2137,7 +2170,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           }
         }
       }
-      else if (cs_gui_strcmp(choice_d, "normal")) {
+      else if (cs_gui_strcmp(choice_d, "normal") || cs_gui_strcmp(choice_d, "translation")) {
         if (cs_gui_strcmp(choice_v, "norm")) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac];
@@ -2200,6 +2233,41 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
               for (i = 0; i < 3; i++)
                 rcodcl[(ivarv + i) * (*nfabor) + ifbr] = -surfbo[3 * ifbr + i];
             }
+          }
+        }
+        if (cs_gui_strcmp(choice_d, "translation")) {
+          if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1) {
+            int coord_stride = 0;
+            double tolerance = 0.1;
+            cs_lnum_t  ncel  = cs_glob_mesh->n_cells;
+
+            cs_lnum_t *_location_elts = NULL;
+            BFT_MALLOC(_location_elts, ncel, cs_lnum_t);
+            for (cs_lnum_t iii = 0; iii < ncel; iii++)
+              _location_elts[iii] = iii;
+
+            cs_real_3_t coord_shift;
+            coord_shift[0] = boundaries->dirx[izone];
+            coord_shift[1] = boundaries->diry[izone];
+            coord_shift[2] = boundaries->dirz[izone];
+
+            boundaries->locator[izone] = cs_boundary_conditions_map(CS_MESH_LOCATION_CELLS,
+                                                                    ncel, faces,
+                                                                    _location_elts, faces_list,
+                                                                   &coord_shift, coord_stride,
+                                                                    tolerance);
+            BFT_FREE(_location_elts);
+          }
+
+          if (cs_glob_time_step->nt_cur > 1)
+          {
+            int interpolate = 0;
+            int normalize   = 1;
+            cs_boundary_conditions_mapped_set(fv, boundaries->locator[izone],
+                                              CS_MESH_LOCATION_CELLS,
+                                              normalize, interpolate,
+                                              faces, faces_list,
+                                              NULL, *nvarcl, rcodcl);
           }
         }
       }
@@ -2619,6 +2687,24 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           itypfb[ifbr] = *isolib;
       }
 
+      {
+        // imposed outlet pressure
+        const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
+        const int var_key_id = cs_field_key_id("variable_id");
+        int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
+        char *_choice_d = _boundary_choice(boundaries->nature[izone],
+                                           boundaries->label[izone],
+                                           "pressure", "choice");
+
+        if (cs_gui_strcmp(_choice_d, "dirichlet")) {
+          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
+            ifbr = faces_list[ifac] -1;
+            icodcl[ivar1 * (*nfabor) + ifbr] = 1;
+            rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
+          }
+        }
+      }
+
       if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
         iprofm[zone_nbr-1] = boundaries->meteo[izone].read_data;
         if (boundaries->meteo[izone].automatic) {
@@ -2842,13 +2928,14 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           || cs_gui_strcmp(choice_v, "flow2_formula"))
         bft_printf("-----velocity: %s => %s \n",
             choice_v, boundaries->velocity[izone]->string);
-      if (cs_gui_strcmp(choice_d, "coordinates"))
+      if (cs_gui_strcmp(choice_d, "coordinates") || cs_gui_strcmp(choice_d, "translation"))
         bft_printf("-----direction: %s => %12.5e %12.5e %12.5e \n",
             choice_v, boundaries->dirx[izone],
             boundaries->diry[izone], boundaries->dirz[izone]);
-      if (cs_gui_strcmp(choice_d, "formula"))
+      else if (cs_gui_strcmp(choice_d, "formula"))
         bft_printf("-----direction: %s => %s \n", choice_d,
             boundaries->direction[izone]->string);
+
       BFT_FREE(choice_v);
       BFT_FREE(choice_d);
 
@@ -3342,10 +3429,8 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
       BFT_FREE(boundaries->rhoin);
       BFT_FREE(boundaries->tempin);
       BFT_FREE(boundaries->entin);
-      BFT_FREE(boundaries->preout);
     }
     if (cs_gui_strcmp(vars->model, "groundwater_model")) {
-      BFT_FREE(boundaries->preout);
       for (izone=0 ; izone < zones ; izone++)
         if (boundaries->groundwat[izone] != NULL)
           mei_tree_destroy(boundaries->groundwat[izone]);
@@ -3353,6 +3438,10 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
     }
     if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
       BFT_FREE(boundaries->meteo);
+
+    for (izone=0 ; izone < zones ; izone++)
+      if (boundaries->locator[izone] != NULL)
+        boundaries->locator[izone] = ple_locator_destroy(boundaries->locator[izone]);
 
     BFT_FREE(boundaries->label);
     BFT_FREE(boundaries->nature);
@@ -3372,6 +3461,8 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
     BFT_FREE(boundaries->direction);
     BFT_FREE(boundaries->headLoss);
     BFT_FREE(boundaries->scalar);
+    BFT_FREE(boundaries->preout);
+    BFT_FREE(boundaries->locator);
     BFT_FREE(boundaries);
   }
 }

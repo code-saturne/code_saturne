@@ -41,11 +41,13 @@ BoundaryConditionsExternalHeadLossesView.py \
 BoundaryConditionsMeteoView.py \
 BoundaryConditionsMobileMeshView.py \
 BoundaryConditionsHydraulicHeadView.py \
+BoundaryConditionsPressureView.py \
 BoundaryConditionsRoughWallView.py \
 BoundaryConditionsScalarsView.py \
 BoundaryConditionsSlidingWallView.py \
 BoundaryConditionsTurbulenceInletView.py \
 BoundaryConditionsVelocityInletView.py \
+BoundaryConditionsVelocityMappedInletView.py \
 BoundaryConditionsWallRadiativeTransferView.py \
 BoundaryConditionsView.py \
 Boundary.py \
@@ -157,11 +159,13 @@ BoundaryConditionsExternalHeadLossesForm.ui \
 BoundaryConditionsMeteoForm.ui \
 BoundaryConditionsMobileMeshForm.ui \
 BoundaryConditionsHydraulicHeadForm.ui \
+BoundaryConditionsPressureForm.ui \
 BoundaryConditionsRoughWallForm.ui \
 BoundaryConditionsScalarsForm.ui \
 BoundaryConditionsSlidingWallForm.ui \
 BoundaryConditionsTurbulenceInletForm.ui \
 BoundaryConditionsVelocityInletForm.ui \
+BoundaryConditionsVelocityMappedInletForm.ui \
 BoundaryConditionsWallRadiativeTransferForm.ui \
 CoalCombustionForm.ui \
 CompressibleForm.ui \

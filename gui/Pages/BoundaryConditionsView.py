@@ -144,11 +144,11 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
 
         if MobileMeshModel(self.__case).getMethod() == "off":
             if GroundwaterModel(self.__case).getGroundwaterModel() == "off":
-                lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet')
+                lst = ('wall', 'inlet', 'outlet', 'free_inlet_outlet', 'imposed_p_outlet', 'mapped_inlet')
             else:
                 lst = ('groundwater')
         else:
-            lst = ('wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet')
+            lst = ('wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', 'imposed_p_outlet', 'mapped_inlet')
 
         d = LocalizationModel('BoundaryZone', self.__case)
         for zone in d.getZones():
@@ -165,6 +165,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.roughWidget.setup(self.__case)
         self.slidingWidget.setup(self.__case)
         self.velocityWidget.setup(self.__case)
+        self.velocityMappedWidget.setup(self.__case)
         self.turbulenceWidget.setup(self.__case)
         self.compressibleOutletWidget.setup(self.__case)
         self.coalWidget.setup(self.__case)
@@ -174,6 +175,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.radiativeWidget.setup(self.__case)
         self.electricalWidget.setup(self.__case)
         self.hydraulicheadWidget.setup(self.__case)
+        self.pressureWidget.setup(self.__case)
         self.externalHeadLossesWidget.setup(self.__case)
 
         self.__hideAllWidgets()
@@ -202,6 +204,10 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             self.__selectSymmetryBoundary(boundary)
         elif nature == 'free_inlet_outlet':
             self.__selectInletOutletBoundary(boundary)
+        elif nature == 'mapped_inlet':
+            self.__selectMappedInletBoundary(boundary)
+        elif nature == 'imposed_p_outlet':
+            self.__selectImposedPressureOutletBoundary(boundary)
         elif nature == 'groundwater':
             self.__selectGroundwaterBoundary(boundary)
 
@@ -228,6 +234,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.mobileMeshWidget.showWidget(boundary)
         self.electricalWidget.showWidget(boundary)
         self.externalHeadLossesWidget.hideWidget()
+        self.pressureWidget.hideWidget()
+        self.velocityMappedWidget.hideWidget()
 
 
     def __selectWallBoundary(self, boundary):
@@ -242,6 +250,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.electricalWidget.showWidget(boundary)
         self.externalHeadLossesWidget.hideWidget()
         self.hydraulicheadWidget.hideWidget()
+        self.pressureWidget.hideWidget()
+        self.velocityMappedWidget.hideWidget()
 
 
     def __selectOutletBoundary(self, boundary):
@@ -261,6 +271,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             self.hydraulicheadWidget.hideWidget()
         else:
             self.hydraulicheadWidget.showWidget(boundary)
+        self.pressureWidget.hideWidget()
+        self.velocityMappedWidget.hideWidget()
 
 
     def __selectInletOutletBoundary(self, boundary):
@@ -276,6 +288,47 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.electricalWidget.hideWidget()
         self.externalHeadLossesWidget.showWidget(boundary)
         self.hydraulicheadWidget.hideWidget()
+        self.pressureWidget.hideWidget()
+        self.velocityMappedWidget.hideWidget()
+
+
+    def __selectMappedInletBoundary(self, boundary):
+        """
+        Shows widgets for mapped inlet.
+        """
+        self.hydraulicheadWidget.hideWidget()
+        self.velocityWidget.hideWidget()
+        if self.coalWidget.getCoalNumber() == 0:
+            self.velocityMappedWidget.showWidget(boundary)
+            self.coalWidget.hideWidget()
+        else:
+            self.velocityMappedWidget.hideWidget()
+            self.coalWidget.showWidget(boundary)
+
+        self.turbulenceWidget.showWidget(boundary)
+        self.meteoWidget.showWidget(boundary)
+        self.scalarsWidget.showWidget(boundary)
+        self.mobileMeshWidget.showWidget(boundary)
+        self.electricalWidget.showWidget(boundary)
+        self.externalHeadLossesWidget.hideWidget()
+        self.pressureWidget.hideWidget()
+
+
+    def __selectImposedPressureOutletBoundary(self, boundary):
+        """
+        Shows widgets for imposed pressure outlet.
+        """
+        self.coalWidget.hideWidget()
+        self.velocityWidget.hideWidget()
+        self.turbulenceWidget.hideWidget()
+        self.meteoWidget.hideWidget()
+        self.scalarsWidget.hideWidget()
+        self.mobileMeshWidget.hideWidget()
+        self.electricalWidget.hideWidget()
+        self.externalHeadLossesWidget.hideWidget()
+        self.hydraulicheadWidget.hideWidget()
+        self.pressureWidget.showWidget(boundary)
+        self.velocityMappedWidget.hideWidget()
 
 
     def __selectGroundwaterBoundary(self, boundary):
@@ -291,6 +344,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.electricalWidget.hideWidget()
         self.externalHeadLossesWidget.hideWidget()
         self.hydraulicheadWidget.showWidget(boundary)
+        self.pressureWidget.hideWidget()
+        self.velocityMappedWidget.hideWidget()
 
 
     def __selectSymmetryBoundary(self, boundary):
@@ -317,6 +372,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.electricalWidget.hideWidget()
         self.externalHeadLossesWidget.hideWidget()
         self.hydraulicheadWidget.hideWidget()
+        self.pressureWidget.hideWidget()
+        self.velocityMappedWidget.hideWidget()
 
 
     def tr(self, text):

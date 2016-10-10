@@ -78,6 +78,8 @@ class Boundary(object) :
             from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
             Model().isNotInList(ThermalRadiationModel(case).getRadiativeModel(), ("off",))
             return RadiativeWallBoundary.__new__(RadiativeWallBoundary, label, case)
+        elif nature == 'mapped_inlet':
+            return MappedInletBoundary.__new__(MappedInletBoundary, label, case)
         elif nature == 'mobile_boundary':
             return MobilWallBoundary.__new__(MobilWallBoundary, label, case)
         elif nature == 'coupling_mobile_boundary':
@@ -88,6 +90,8 @@ class Boundary(object) :
             return JouleBoundary.__new__(JouleBoundary, label, case)
         elif nature == 'free_inlet_outlet':
             return InletOutletBoundary.__new__(InletOutletBoundary, label, case)
+        elif nature == 'imposed_p_outlet':
+            return ImposedPressureOutletBoundary.__new__(ImposedPressureOutletBoundary, label, case)
         elif nature == 'free_surface':
             return FreeSurfaceBoundary.__new__(FreeSurfaceBoundary, label, case)
         elif nature == 'groundwater':
@@ -1118,6 +1122,73 @@ omega = 0.;"""
 
 
 #-------------------------------------------------------------------------------
+# mapped inlet boundary
+#-------------------------------------------------------------------------------
+
+class MappedInletBoundary(InletBoundary) :
+    """
+    """
+    def __new__(cls, label, case) :
+        """
+        Constructor
+        """
+        return object.__new__(cls)
+
+
+    def _initBoundary(self):
+        """
+        Initialize the boundary, add nodes in the boundary node
+        """
+        InletBoundary._initBoundary(self)
+        self.__directionTags     = ['direction_x',
+                                    'direction_y',
+                                    'direction_z']
+
+
+    def __defaultValues(self):
+        """
+        Default values
+        """
+        dico = {}
+        dico['direction_x']         = 0.0
+        dico['direction_y']         = 0.0
+        dico['direction_z']         = 0.0
+        dico['directionChoice']     = 'translation'
+
+        return dico
+
+
+    @Variables.noUndo
+    def getTranslation(self, component):
+        """
+        Get the component velocity
+        """
+        Model().isInList(component, self.__directionTags)
+
+        XMLVelocityNode = self.boundNode.xmlGetNode('velocity_pressure')
+        Model().isInList(component, ('direction_x', 'direction_y', 'direction_z'))
+        value = XMLVelocityNode.xmlGetChildDouble(component)
+
+        if value == None :
+            value = self.__defaultValues()[component]
+            self.setTranslation(component, value)
+        return value
+
+
+    @Variables.undoLocal
+    def setTranslation(self, component, value):
+        """
+        Set the component velocity for fieldLabel
+        """
+        Model().isInList(component, self.__directionTags)
+        Model().isFloat(value)
+
+        XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
+        XMLVelocityNode['direction'] = 'translation'
+        XMLVelocityNode.xmlSetData(component, value)
+
+
+#-------------------------------------------------------------------------------
 # Atmospheric flow inlet/outlet boundary.
 #-------------------------------------------------------------------------------
 
@@ -1430,6 +1501,59 @@ class InletOutletBoundary(Boundary) :
             raise ValueError(msg)
         n = XMLHeadLossNode.xmlInitChildNode('formula')
         n.xmlSetTextNode(formula)
+
+#-------------------------------------------------------------------------------
+# imposed pressure outlet boundary
+#-------------------------------------------------------------------------------
+
+class ImposedPressureOutletBoundary(Boundary) :
+    """
+    """
+    def __new__(cls, label, case) :
+        """
+        Constructor
+        """
+        return object.__new__(cls)
+
+
+    def _initBoundary(self):
+        """
+        Initialize the boundary, add nodes in the boundary node
+        """
+        pass
+
+
+    def __defaultValues(self):
+        """
+        Default values
+        """
+        dico = {}
+        dico['pressure']    = 101300.
+
+        return dico
+
+
+    @Variables.noUndo
+    def getPressureValue(self):
+        """
+        Return value of the pressure
+        """
+        pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
+        if pressure == None:
+            pressure = self.__defaultValues()['pressure']
+            self.setPressureValue(pressure)
+
+        return pressure
+
+
+    @Variables.undoLocal
+    def setPressureValue(self, value):
+        """
+        Set value of the pressure
+        """
+        Model().isFloat(value)
+        node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
+        self.boundNode.xmlSetData('dirichlet', value, name='pressure')
 
 
 #-------------------------------------------------------------------------------

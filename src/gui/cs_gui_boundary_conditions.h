@@ -37,6 +37,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include <ple_locator.h>
+
 #include "cs_base.h"
 
 /*----------------------------------------------------------------------------*/
@@ -63,46 +65,47 @@ typedef struct {
 } cs_meteo_t;
 
 typedef struct {
-  char      **label;       /* label for each boundary zone                    */
-  char      **nature;      /* nature for each boundary zone                   */
-  int        *iqimp;       /* 1 if a flow rate is applied                     */
-  int        *ientfu;      /* 1  for a fuel flow inlet (gas combustion - D3P) */
-  int        *ientox;      /* 1 for an air flow inlet (gas combustion - D3P)  */
-  int        *ientgb;      /* 1 for burned gas inlet (gas combustion)         */
-  int        *ientgf;      /* 1 for unburned gas inlet (gas combustion)       */
-  int        *ientat;      /* 1 if inlet for oxydant (coal combustion)        */
-  int        *ientcp;      /* 1 if inlet for oxydant+coal (coal combustion)   */
-  int        *icalke;      /* automatic boundaries for turbulent variables    */
-  double     *qimp;        /* oxydant flow rate (coal combustion)             */
-  int        *inmoxy;      /* oxydant number (coal combustion)                */
-  double     *timpat;      /* inlet temperature of oxydant (coal combustion)  */
-  double     *tkent;       /* inlet temperature (gas combustion)              */
-  double    **qimpcp;      /* inlet coal flow rate (coal combustion)          */
-  double    **timpcp;      /* inlet coal temperature (coal combustion)        */
-  double     *fment;       /* Mean Mixture Fraction at Inlet (gas combustion) */
-  int        *itype;       /* type of inlet/outlet (compressible model)       */
-  double     *prein;       /* inlet pressure (compressible model)             */
-  double     *rhoin;       /* inlet density  (compressible model)             */
-  double     *tempin;      /* inlet temperature (compressible model)          */
-  double     *entin;       /* inlet total energy (compressible model)         */
-  double     *preout;      /* outlet pressure for subsonic(compressible model)*/
-  double     *dh;          /* inlet hydraulic diameter                        */
-  double     *xintur;      /* inlet turbulent intensity                       */
-  int       **type_code;   /* type of boundary for each variables             */
-  cs_val_t  **values;      /* fortran array RCODCL mapping                    */
-  double   ***distch;      /* ratio for each coal                             */
-  double     *rough;       /* roughness size                                  */
-  double     *norm;        /* norm of velocity vector                         */
-  double     *dirx;        /* directions x inlet velocity                     */
-  double     *diry;        /* directions y inlet velocity                     */
-  double     *dirz;        /* directions z inlet velocity                     */
-  mei_tree_t **velocity;   /* formula for norm or mass flow rate of velocity  */
-  mei_tree_t **direction;  /* formula for direction of velocity               */
-  cs_meteo_t  *meteo;      /* inlet or outlet info for atmospheric flow       */
-  mei_tree_t ***scalar;    /* formula for scalar (neumann, dirichlet or
-                              exchange coefficient)*/
-  mei_tree_t **headLoss;   /* formula for head loss (free inlet/outlet)       */
-  mei_tree_t **groundwat;  /* formula for hydraulic head (groundwater)        */
+  char         **label;       /* label for each boundary zone                    */
+  char         **nature;      /* nature for each boundary zone                   */
+  int           *iqimp;       /* 1 if a flow rate is applied                     */
+  int           *ientfu;      /* 1  for a fuel flow inlet (gas combustion - D3P) */
+  int           *ientox;      /* 1 for an air flow inlet (gas combustion - D3P)  */
+  int           *ientgb;      /* 1 for burned gas inlet (gas combustion)         */
+  int           *ientgf;      /* 1 for unburned gas inlet (gas combustion)       */
+  int           *ientat;      /* 1 if inlet for oxydant (coal combustion)        */
+  int           *ientcp;      /* 1 if inlet for oxydant+coal (coal combustion)   */
+  int           *icalke;      /* automatic boundaries for turbulent variables    */
+  double        *qimp;        /* oxydant flow rate (coal combustion)             */
+  int           *inmoxy;      /* oxydant number (coal combustion)                */
+  double        *timpat;      /* inlet temperature of oxydant (coal combustion)  */
+  double        *tkent;       /* inlet temperature (gas combustion)              */
+  double       **qimpcp;      /* inlet coal flow rate (coal combustion)          */
+  double       **timpcp;      /* inlet coal temperature (coal combustion)        */
+  double        *fment;       /* Mean Mixture Fraction at Inlet (gas combustion) */
+  int           *itype;       /* type of inlet/outlet (compressible model)       */
+  double        *prein;       /* inlet pressure (compressible model)             */
+  double        *rhoin;       /* inlet density  (compressible model)             */
+  double        *tempin;      /* inlet temperature (compressible model)          */
+  double        *entin;       /* inlet total energy (compressible model)         */
+  double        *preout;      /* outlet pressure for subsonic(compressible model)*/
+  double        *dh;          /* inlet hydraulic diameter                        */
+  double        *xintur;      /* inlet turbulent intensity                       */
+  int          **type_code;   /* type of boundary for each variables             */
+  cs_val_t     **values;      /* fortran array RCODCL mapping                    */
+  double      ***distch;      /* ratio for each coal                             */
+  double        *rough;       /* roughness size                                  */
+  double        *norm;        /* norm of velocity vector                         */
+  double        *dirx;        /* directions x inlet velocity                     */
+  double        *diry;        /* directions y inlet velocity                     */
+  double        *dirz;        /* directions z inlet velocity                     */
+  mei_tree_t    **velocity;   /* formula for norm or mass flow rate of velocity  */
+  mei_tree_t    **direction;  /* formula for direction of velocity               */
+  cs_meteo_t     *meteo;      /* inlet or outlet info for atmospheric flow       */
+  mei_tree_t    ***scalar;    /* formula for scalar (neumann, dirichlet or
+                                 exchange coefficient)*/
+  mei_tree_t    **headLoss;   /* formula for head loss (free inlet/outlet)       */
+  mei_tree_t    **groundwat;  /* formula for hydraulic head (groundwater)        */
+  ple_locator_t **locator;    /* locator for inlet mapped                        */
 } cs_boundary_t;
 
 /*============================================================================

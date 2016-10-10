@@ -178,12 +178,16 @@ class BoundaryZone(Zone):
 
         if case != None:
             if self.case['package'].name == 'code_saturne':
-                self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet']
+                self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', \
+                                    'imposed_p_outlet', 'mapped_inlet']
                 self._natureDict['free_inlet_outlet'] = self.tr("Free inlet/outlet")
+                self._natureDict['imposed_p_outlet'] = self.tr("Imposed P Outlet")
+                self._natureDict['mapped_inlet'] = self.tr("Mapped inlet")
                 from code_saturne.Pages.MobileMeshModel import MobileMeshModel
                 if MobileMeshModel(self.case).getMethod() != "off":
                     self._natureDict['free_surface'] = self.tr("Free surface")
-                    self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', 'free_surface']
+                    self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', \
+                                        'free_surface', 'imposed_p_outlet', 'mapped_inlet']
                 del MobileMeshModel
                 from code_saturne.Pages.GroundwaterModel import GroundwaterModel
                 if GroundwaterModel(self.case).getGroundwaterModel() != "off":
@@ -194,8 +198,11 @@ class BoundaryZone(Zone):
             else:
                 self._natureList = ['wall', 'inlet', 'outlet', 'symmetry']
         else:
-            self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet']
+            self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', \
+                                'imposed_p_outlet', 'mapped_inlet']
             self._natureDict['free_inlet_outlet'] = self.tr("Free inlet/outlet")
+            self._natureDict['imposed_p_outlet'] = self.tr("Imposed P Outlet")
+            self._natureDict['mapped_inlet'] = self.tr("Mapped inlet")
 
 
     def defaultValues(self):
