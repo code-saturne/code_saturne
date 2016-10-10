@@ -2075,7 +2075,7 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh,
       CS_F_(h)->val[iel] = hinit;
     }
 
-    /* volumic fraction */
+    /* mass fraction of first gas */
     if (cs_glob_elec_properties->ngaz > 1) {
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         CS_FI_(ycoel, 0)->val[iel] = 1.;
