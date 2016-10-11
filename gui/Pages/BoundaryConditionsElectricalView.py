@@ -332,8 +332,13 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         exa = """#example: """
 
         if not exp:
-            exp = self.potVect + " = 0;"
-        req = [(self.potVect, 'vector potential')]
+            exp = self.potVect + "[0] = 0;\n" + \
+                  self.potVect + "[1] = 0;\n" + \
+                  self.potVect + "[2] = 0;\n"
+
+        req = [(self.potVect + "[0]", 'vector potential X'),
+               (self.potVect + "[1]", 'vector potential Y'),
+               (self.potVect + "[2]", 'vector potential Z')]
 
         sym = [('x', "X cell's gravity center"),
                ('y', "Y cell's gravity center"),

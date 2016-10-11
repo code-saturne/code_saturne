@@ -159,17 +159,20 @@ class ElectricalModel(Variables, Model):
             self.__removeVariablesAndProperties([], [])
         else:
             listV = ['elec_pot_r']
+            listV3 = []
             gasN = self.getGasNumber()
             if gasN > 1:
                 for gas in range(0, gasN - 1):
                     name = '%s%2.2i' % ('esl_fraction_', gas + 1)
                     listV.append(name)
 
-            listP = ['temperature', 'joule_power', 'elec_sigma', 'current_re']
+            listP = ['temperature', 'joule_power', 'elec_sigma']
+            listP3 = ['current_re', 'electric_field']
 
             if model == 'arc':
-                listV.append('vec_potential')
-                listP.append('laplace_force')
+                listV3.append('vec_potential')
+                listP3.append('laplace_force')
+                listP3.append('magnetic_field')
                 if self.getRadiativeModel() == 'Coef_Abso':
                     listP.append('absorption_coeff')
                 elif self.getRadiativeModel() == 'TS_radia':
@@ -180,12 +183,18 @@ class ElectricalModel(Variables, Model):
                 if model == 'PotComplexe' or model == 'PotComplexe+CDLTransfo':
                     listV.append('elec_pot_i')
                 if model == 'PotComplexe+CDLTransfo':
-                    listP.append('current_im')
+                    listP3.append('current_im')
 
             for v in listV:
                 self.setNewVariable(self.node_joule, v, tpe="model", label=v)
             for v in listP:
                 self.setNewProperty(self.node_joule, v)
+            for v in listV3:
+                self.setNewVariable(self.node_joule, v, dim = '3', tpe="model", label=v)
+                listV.append(v)
+            for v in listP3:
+                self.setNewProperty(self.node_joule, v, dim = '3')
+                listP.append(v)
             self.__removeVariablesAndProperties(listV, listP)
 
 

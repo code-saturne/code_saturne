@@ -518,28 +518,6 @@ if (numtyp.eq.-1) then
 
     allocate(grad(3,ncelet))
 
-    if (.true.) then
-
-      ! Gradient of the real potential
-
-      call field_get_id('elec_pot_r', f_id)
-
-      inc = 1
-      iprev = 0
-      iccocg = 1
-
-      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
-                                 iccocg,                                     &
-                                 grad)
-      idimt  = 3
-      ientla = .true.
-      ivarpr = .true.
-
-      call post_write_var(nummai, 'Pot_Gradient_R', idimt, ientla, ivarpr,   &
-                          ntcabs, ttcabs, grad, rbid, rbid)
-
-    endif
-
     ! For Joule Heating by direct conduction:
     !   gradient of the imaginary component of the potential
 
@@ -601,40 +579,6 @@ if (numtyp.eq.-1) then
 
       call post_write_var(nummai, 'Current_Im', idimt, ientla, ivarpr,       &
                           ntcabs, ttcabs, grad, rbid, rbid)
-
-    endif
-
-    ! For electric arcs: electromagnetic field calculation
-
-    if (.true. .and. ippmod(ielarc).ge.2) then
-
-      call field_get_id('vec_potential', f_id)
-
-      inc = 1
-      iprev = 0
-
-      allocate(gradv(3,3,ncelet))
-
-      call field_gradient_vector(f_id, iprev, imrgra, inc, gradv)
-
-      idimt  = 3
-
-      ! B = rot A ( B = curl A)
-
-      do iloc = 1, ncelps
-        iel = lstcel(iloc)
-        tracel(1 + (iloc-1)*idimt) = -gradv(3,2,iel)+gradv(2,3,iel)
-        tracel(2 + (iloc-1)*idimt) =  gradv(3,1,iel)-gradv(1,3,iel)
-        tracel(3 + (iloc-1)*idimt) = -gradv(2,1,iel)+gradv(1,2,iel)
-      enddo
-
-      deallocate(gradv)
-
-      ientla = .true.
-      ivarpr = .false.
-
-      call post_write_var(nummai, 'Magnetic_field', idimt, ientla, ivarpr,  &
-                          ntcabs, ttcabs, tracel, rbid, rbid)
 
     endif
 

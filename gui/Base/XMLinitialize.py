@@ -1223,6 +1223,39 @@ class XMLinit(Variables):
                     if node['name'] == 'pressure':
                         node['name'] = 'hydraulic_head'
 
+        node = self.case.xmlGetNode('variable', name='vec_potential')
+        if node:
+            node['dim'] = '3'
+
+        for var in ['current_re', 'laplace_force', 'current_im']:
+            node = self.case.xmlGetNode('property', name=var)
+            if node:
+                node['dim'] = '3'
+
+        node = self.case.xmlGetNode('variable', name='vec_potential_01')
+        if node:
+            node.xmlRemoveNode()
+        node = self.case.xmlGetNode('variable', name='vec_potential_02')
+        if node:
+            node.xmlRemoveNode()
+        node = self.case.xmlGetNode('variable', name='vec_potential_03')
+        if node:
+            node.xmlRemoveNode()
+        node = self.case.xmlGetNode('property', name='current_re_1')
+        if node:
+            node.xmlRemoveNode()
+            nModels         = self.case.xmlGetNode('thermophysical_models')
+            self.node_joule = nModels.xmlInitNode('joule_effect',      'model')
+            self.setNewProperty(self.node_joule, 'current_re', dim = '3')
+            self.setNewProperty(self.node_joule, 'laplace_force', dim = '3')
+            self.setNewProperty(self.node_joule, 'electric_field', dim = '3')
+        node = self.case.xmlGetNode('property', name='current_re_2')
+        if node:
+            node.xmlRemoveNode()
+        node = self.case.xmlGetNode('property', name='current_re_3')
+        if node:
+            node.xmlRemoveNode()
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

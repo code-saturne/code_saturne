@@ -428,6 +428,8 @@ _field_pointer_properties_map_electric_arcs(void)
                        cs_field_by_name_try("laplace_force"));
   cs_field_pointer_map(CS_ENUMF_(magfl),
                        cs_field_by_name_try("magnetic_field"));
+  cs_field_pointer_map(CS_ENUMF_(elefl),
+                       cs_field_by_name_try("electric_field"));
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -724,18 +726,6 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
 
-  /* TODO when vector field
-  if (cs_glob_elec_option->ielarc > 1) {
-    for (int i = 0; i < 3; i++) {
-      f = CS_FI_(potva, i);
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      var_cal_opt.blencv = 1.;
-      var_cal_opt.ischcv = 1;
-      var_cal_opt.isstpc = 0;
-      var_cal_opt.ircflu = 0;
-    }
-  }
-  */
   if (cs_glob_elec_option->ielarc > 1) {
     cs_field_t  *fp = cs_field_by_name_try("vec_potential");
     cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
@@ -1392,6 +1382,7 @@ cs_compute_electric_field(const cs_mesh_t  *mesh,
     /* compute grad(potR) */
 
     /* Get the calculation option from the field */
+    cs_real_3_t *cpro_elefl = (cs_real_3_t *)(CS_F_(elefl)->val);
     cs_field_get_key_struct(CS_F_(potr), key_cal_opt_id, &var_cal_opt);
 
     cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
@@ -1407,6 +1398,11 @@ cs_compute_electric_field(const cs_mesh_t  *mesh,
                              grad);
 
     /* compute electric field E = - grad (potR) */
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      cpro_elefl[iel][0] = grad[iel][0];
+      cpro_elefl[iel][1] = grad[iel][1];
+      cpro_elefl[iel][2] = grad[iel][2];
+    }
 
     /* compute current density j = sig E */
     int diff_id = cs_field_get_key_int(CS_F_(potr), keysca);
@@ -1928,6 +1924,17 @@ cs_elec_add_property_fields(const int  *ielarc,
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Current_Real");
+  }
+
+  {
+    f = cs_field_create("electric_field",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        3,    /* dim */
+                        has_previous);
+    cs_field_set_key_int(f, keyvis, post_flag);
+    cs_field_set_key_int(f, keylog, 1);
+    cs_field_set_key_str(f, klbl, "Elec_Field");
   }
 
   /* specific for joule effect */

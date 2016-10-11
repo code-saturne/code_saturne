@@ -312,13 +312,16 @@ class Variables:
             self.updateLabel(v1)
 
 
-    def setNewProperty(self, node, tag):
+    def setNewProperty(self, node, tag, dim=None):
         """
         Input a new <property name="my_property" label="ma_propriete">
         in the xmldoc.
         """
         if not node.xmlGetNode('property', name=tag):
-            p1 = node.xmlInitNode('property', name=tag)
+            if dim != None:
+                p1 = node.xmlInitNode('property', name=tag, dimension=dim)
+            else:
+                p1 = node.xmlInitNode('property', name=tag)
             try :
                 self.updateLabel(p1)
             except:

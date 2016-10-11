@@ -160,6 +160,7 @@ typedef enum {
   CS_ENUMF_(curim),        /*!< current imaginary */
   CS_ENUMF_(laplf),        /*!< laplace forces */
   CS_ENUMF_(magfl),        /*!< magnetic field */
+  CS_ENUMF_(elefl),        /*!< electric field */
 
   CS_ENUMF_(rad_lumin),    /*!< Radiative luminance */
   CS_ENUMF_(rad_q),        /*!< Radiative flux */
