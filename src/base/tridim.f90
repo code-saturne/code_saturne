@@ -907,14 +907,14 @@ do while (iterns.le.nterup)
   !    -> sera modifie lors de la restructuration des zones de bord
 
     call uiclim &
-  ( ntcabs, nfabor, ippmod(idarcy),                                &
+  ( nfabor, ippmod(idarcy),                                        &
     nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
     isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
     itypfb, izfppp, icodcl,                                        &
-    dtref,  ttcabs, surfbo, cdgfbo,                                &
+    surfbo, cdgfbo,                                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
     timpat, timpcp, tkent ,  fment, distch, nvarcl, rcodcl)
 

@@ -389,13 +389,13 @@ _inlet_turbulence(const char  *choice,
 static mei_tree_t *
 _boundary_scalar_init_mei_tree(const char   *formula,
                                const char   *symbols[],
-                               const double  dtref,
-                               const double  ttcabs,
-                               const int     ntcabs,
                                int           symbol_size)
 
 {
   int i = 0;
+  double ttcabs = cs_glob_time_step->t_cur;
+  int    ntcabs = cs_glob_time_step->nt_cur;
+  double dtref  = cs_glob_time_step_options->dtref;
 
   /* return an empty interpreter */
   mei_tree_t *tree = mei_tree_new(formula);
@@ -433,9 +433,6 @@ _boundary_scalar_init_mei_tree(const char   *formula,
 
 static void
 _boundary_scalar(const char   *nature,
-                 const double  dtref,
-                 const double  ttcabs,
-                 const int     ntcabs,
                  int           izone,
                  int           f_id)
 {
@@ -501,9 +498,6 @@ _boundary_scalar(const char   *nature,
           boundaries->scalar[f_id][izone * dim + i] =
             _boundary_scalar_init_mei_tree(t_value,
                                            sym,
-                                           dtref,
-                                           ttcabs,
-                                           ntcabs,
                                            1);
           BFT_FREE(t_value);
         }
@@ -517,9 +511,6 @@ _boundary_scalar(const char   *nature,
           boundaries->scalar[f_id][izone * dim + i] =
             _boundary_scalar_init_mei_tree(t_value,
                                            sym,
-                                           dtref,
-                                           ttcabs,
-                                           ntcabs,
                                            1);
           BFT_FREE(t_value);
         }
@@ -533,9 +524,6 @@ _boundary_scalar(const char   *nature,
           boundaries->scalar[f_id][izone * dim + i] =
             _boundary_scalar_init_mei_tree(t_value,
                                            sym,
-                                           dtref,
-                                           ttcabs,
-                                           ntcabs,
                                            2);
           BFT_FREE(t_value);
         }
@@ -1086,10 +1074,7 @@ _init_boundaries(const cs_lnum_t  *nfabor,
                  const int        *isspcf,
                  const int        *iephcf,
                  const int        *isopcf,
-                 const int        *idarcy,
-                 const double      dtref,
-                 const double      ttcabs,
-                 const int         ntcabs)
+                 const int        *idarcy)
 {
   cs_lnum_t faces = 0;
   cs_lnum_t zones = 0;
@@ -1459,16 +1444,10 @@ _init_boundaries(const cs_lnum_t  *nfabor,
       if (f != NULL) {
         if (boundaries->meteo == NULL)
           _boundary_scalar(nature,
-                           dtref,
-                           ttcabs,
-                           ntcabs,
                            izone,
                            f->id);
         else if (boundaries->meteo[izone].read_data == 0)
           _boundary_scalar(nature,
-                           dtref,
-                           ttcabs,
-                           ntcabs,
                            izone,
                            f->id);
       }
@@ -1501,9 +1480,6 @@ _init_boundaries(const cs_lnum_t  *nfabor,
             BFT_FREE(path_meteo);
 
             _boundary_scalar(nature,
-                             dtref,
-                             ttcabs,
-                             ntcabs,
                              izone,
                              c->id);
           }
@@ -1534,9 +1510,6 @@ _init_boundaries(const cs_lnum_t  *nfabor,
 
           BFT_FREE(path_elec);
           _boundary_scalar(nature,
-                           dtref,
-                           ttcabs,
-                           ntcabs,
                            izone,
                            c->id);
         }
@@ -1549,9 +1522,6 @@ _init_boundaries(const cs_lnum_t  *nfabor,
         if (   (fu->type & CS_FIELD_VARIABLE)
             && (fu->type & CS_FIELD_USER))
           _boundary_scalar(nature,
-                           dtref,
-                           ttcabs,
-                           ntcabs,
                            izone,
                            fu->id);
       }
@@ -1641,7 +1611,6 @@ _init_boundaries(const cs_lnum_t  *nfabor,
  * subroutine uiclim
  * *****************
  *
- * integer          ntcabs           <-- current iteration number
  * integer          nfabor           <-- number of boundary faces
  * integer          idarcy           <-- darcy module activate or not
  * integer          nozppm           <-- max number of boundary conditions zone
@@ -1675,8 +1644,6 @@ _init_boundaries(const cs_lnum_t  *nfabor,
  * integer          itypfb           <-- type of boundary for each face
  * integer          izfppp           <-- zone number for each boundary face
  * integer          icodcl           <-- boundary conditions array type
- * double precision dtref            <-- time step
- * double precision ttcabs           <-- current time
  * double precision surfbo           <-- boundary faces surface
  * double precision cgdfbo           <-- boundary faces center of gravity
  * double precision qimp             <-- inlet flow rate
@@ -1693,8 +1660,7 @@ _init_boundaries(const cs_lnum_t  *nfabor,
  * double precision rcodcl           <-- boundary conditions array value
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
-                               const int  *nfabor,
+void CS_PROCF (uiclim, UICLIM)(const int  *nfabor,
                                const int  *idarcy,
                                const int  *nozppm,
                                const int  *ncharm,
@@ -1725,8 +1691,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                int        *itypfb,
                                int        *izfppp,
                                int        *icodcl,
-                               double     *dtref,
-                               double     *ttcabs,
                                double     *surfbo,
                                double     *cdgfbo,
                                double     *qimp,
@@ -1761,8 +1725,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
 
   if (boundaries == NULL)
     _init_boundaries(nfabor, nozppm, ncharb, nclpch,
-                     izfppp, iesicf, isspcf, iephcf, isopcf, idarcy,
-                     *ttcabs, *dtref, *ntcabs);
+                     izfppp, iesicf, isspcf, iephcf, isopcf, idarcy);
 
   /* At each time-step, loop on boundary faces:
      One sets itypfb, rcodcl and icodcl thanks to the arrays
@@ -1842,9 +1805,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
               ifbr = faces_list[ifac];
               for (i = 0; i < f->dim; i++) {
                 mei_tree_t *ev_formula = boundaries->scalar[f->id][izone * f->dim + i];
-                mei_tree_insert(ev_formula, "t", *ttcabs);
-                mei_tree_insert(ev_formula, "dt", *dtref);
-                mei_tree_insert(ev_formula, "iter", *ntcabs);
+                mei_tree_insert(ev_formula, "t", cs_glob_time_step->t_cur);
+                mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
+                mei_tree_insert(ev_formula, "iter", cs_glob_time_step->nt_cur);
                 mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
                 mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
                 mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
@@ -1872,9 +1835,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
               for (i = 0; i < f->dim; i++) {
                 icodcl[(ivar + i) *(*nfabor) + ifbr] = 3;
                 mei_tree_t *ev_formula = boundaries->scalar[f->id][izone * f->dim + i];
-                mei_tree_insert(ev_formula, "t", *ttcabs);
-                mei_tree_insert(ev_formula, "dt", *dtref);
-                mei_tree_insert(ev_formula, "iter", *ntcabs);
+                mei_tree_insert(ev_formula, "t", cs_glob_time_step->t_cur);
+                mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
+                mei_tree_insert(ev_formula, "iter", cs_glob_time_step->nt_cur);
                 mei_evaluate(ev_formula);
                 rcodcl[2 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
                   = mei_tree_lookup(ev_formula, "flux");
@@ -1888,9 +1851,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
               for (i = 0; i < f->dim; i++) {
                 icodcl[(ivar + i) *(*nfabor) + ifbr] = 5;
                 mei_tree_t *ev_formula = boundaries->scalar[f->id][izone * f->dim + i];
-                mei_tree_insert(ev_formula, "t", *ttcabs);
-                mei_tree_insert(ev_formula, "dt", *dtref);
-                mei_tree_insert(ev_formula, "iter", *ntcabs);
+                mei_tree_insert(ev_formula, "t", cs_glob_time_step->t_cur);
+                mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
+                mei_tree_insert(ev_formula, "iter", cs_glob_time_step->nt_cur);
                 mei_evaluate(ev_formula);
                 if (f->dim > 1)
                 {
@@ -2012,9 +1975,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
 
         if (   cs_gui_strcmp(choice_v, "flow1_formula")
             || cs_gui_strcmp(choice_v, "flow2_formula")) {
-          mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
-          mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
-          mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
+          mei_tree_insert(boundaries->velocity[izone], "t", cs_glob_time_step->t_cur);
+          mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(boundaries->velocity[izone], "iter", cs_glob_time_step->nt_cur);
           mei_evaluate(boundaries->velocity[izone]);
 
           if (cs_gui_strcmp(choice_v, "flow1_formula"))
@@ -2058,9 +2021,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       else {
         if (   cs_gui_strcmp(choice_v, "flow1_formula")
             || cs_gui_strcmp(choice_v, "flow2_formula")) {
-          mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
-          mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
-          mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
+          mei_tree_insert(boundaries->velocity[izone], "t", cs_glob_time_step->t_cur);
+          mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(boundaries->velocity[izone], "iter", cs_glob_time_step->nt_cur);
           mei_evaluate(boundaries->velocity[izone]);
 
           if (cs_gui_strcmp(choice_v, "flow1_formula"))
@@ -2134,9 +2097,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
           t0 = cs_timer_wtime();
 
-          mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
-          mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
-          mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
+          mei_tree_insert(boundaries->velocity[izone], "t", cs_glob_time_step->t_cur);
+          mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(boundaries->velocity[izone], "iter", cs_glob_time_step->nt_cur);
 
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac];
@@ -2202,9 +2165,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
           t0 = cs_timer_wtime();
 
-          mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
-          mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
-          mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
+          mei_tree_insert(boundaries->velocity[izone], "t", cs_glob_time_step->t_cur);
+          mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(boundaries->velocity[izone], "iter", cs_glob_time_step->nt_cur);
 
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac];
@@ -2276,9 +2239,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       else if (cs_gui_strcmp(choice_d, "formula")) {
         t0 = cs_timer_wtime();
 
-        mei_tree_insert(boundaries->direction[izone], "t", *ttcabs);
-        mei_tree_insert(boundaries->direction[izone], "dt", *dtref);
-        mei_tree_insert(boundaries->direction[izone], "iter", *ntcabs);
+        mei_tree_insert(boundaries->direction[izone], "t", cs_glob_time_step->t_cur);
+        mei_tree_insert(boundaries->direction[izone], "dt", cs_glob_time_step_options->dtref);
+        mei_tree_insert(boundaries->direction[izone], "iter", cs_glob_time_step->nt_cur);
 
         if (cs_gui_strcmp(choice_v, "norm")) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
@@ -2323,9 +2286,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           }
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-          mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
-          mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
-          mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
+          mei_tree_insert(boundaries->velocity[izone], "t", cs_glob_time_step->t_cur);
+          mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(boundaries->velocity[izone], "iter", cs_glob_time_step->nt_cur);
 
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac];
@@ -2373,7 +2336,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             }
           }
         }
-
         cs_gui_add_mei_time(cs_timer_wtime() - t0);
 
       }
@@ -2419,16 +2381,15 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             icodcl[ivar1 * (*nfabor) + ifbr] = 1;
 
             mei_tree_t *ev_formula = boundaries->groundwat[izone];
-            mei_tree_insert(ev_formula, "t", *ttcabs);
-            mei_tree_insert(ev_formula, "dt", *dtref);
-            mei_tree_insert(ev_formula, "iter", *ntcabs);
+            mei_tree_insert(ev_formula, "t", cs_glob_time_step->t_cur);
+            mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
+            mei_tree_insert(ev_formula, "iter", cs_glob_time_step->nt_cur);
             mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
             mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
             mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
             mei_evaluate(ev_formula);
             rcodcl[ivar1 * (*nfabor) + ifbr]
               = mei_tree_lookup(ev_formula, "H");
-
           }
         }
         BFT_FREE(_choice_d);
@@ -2449,9 +2410,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           mei_tree_insert(ev_formula,"x",0.0);
           mei_tree_insert(ev_formula,"y",0.0);
           mei_tree_insert(ev_formula,"z",0.0);
-          mei_tree_insert(ev_formula, "t", *ttcabs);
-          mei_tree_insert(ev_formula, "dt", *dtref);
-          mei_tree_insert(ev_formula, "iter", *ntcabs);
+          mei_tree_insert(ev_formula, "t", cs_glob_time_step->t_cur);
+          mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(ev_formula, "iter", cs_glob_time_step->nt_cur);
           /* try to build the interpreter */
 
           if (mei_tree_builder(ev_formula))
@@ -2756,9 +2717,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             icodcl[ivar1 * (*nfabor) + ifbr] = 1;
 
             mei_tree_t *ev_formula = boundaries->groundwat[izone];
-            mei_tree_insert(ev_formula, "t", *ttcabs);
-            mei_tree_insert(ev_formula, "dt", *dtref);
-            mei_tree_insert(ev_formula, "iter", *ntcabs);
+            mei_tree_insert(ev_formula, "t", cs_glob_time_step->t_cur);
+            mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
+            mei_tree_insert(ev_formula, "iter", cs_glob_time_step->nt_cur);
             mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
             mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
             mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
@@ -2792,9 +2753,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         const int var_key_id = cs_field_key_id("variable_id");
         int ivarp = cs_field_get_key_int(fp, var_key_id) -1;
 
-        mei_tree_insert(boundaries->headLoss[izone], "t", *ttcabs);
-        mei_tree_insert(boundaries->headLoss[izone], "dt", *dtref);
-        mei_tree_insert(boundaries->headLoss[izone], "iter", *ntcabs);
+        mei_tree_insert(boundaries->headLoss[izone], "t", cs_glob_time_step->t_cur);
+        mei_tree_insert(boundaries->headLoss[izone], "dt", cs_glob_time_step_options->dtref);
+        mei_tree_insert(boundaries->headLoss[izone], "iter", cs_glob_time_step->nt_cur);
 
         for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac];
@@ -2864,9 +2825,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           icodcl[ivar1 * (*nfabor) + ifbr] = 1;
 
           mei_tree_t *ev_formula = boundaries->groundwat[izone];
-          mei_tree_insert(ev_formula, "t", *ttcabs);
-          mei_tree_insert(ev_formula, "dt", *dtref);
-          mei_tree_insert(ev_formula, "iter", *ntcabs);
+          mei_tree_insert(ev_formula, "t", cs_glob_time_step->t_cur);
+          mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(ev_formula, "iter", cs_glob_time_step->nt_cur);
           mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
           mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
           mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
@@ -2891,6 +2852,29 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           _("boundary nature %s is unknown \n"),
           boundaries->nature[izone]);
     }
+
+    /* treatment of mapped inlet */
+    /* for each field */
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      const cs_field_t  *f = cs_field_by_id(f_id);
+      const int var_key_id = cs_field_key_id("variable_id");
+      ivar = cs_field_get_key_int(f, var_key_id) -1;
+
+      if (f->type & CS_FIELD_VARIABLE) {
+        /* velocity already treated */
+          if (cs_glob_time_step->nt_cur > 1 && !cs_gui_strcmp(f->name, "velocity"))
+          {
+            int interpolate = 0;
+            int normalize   = 0;
+            cs_boundary_conditions_mapped_set(f, boundaries->locator[izone],
+                                              CS_MESH_LOCATION_CELLS,
+                                              normalize, interpolate,
+                                              faces, faces_list,
+                                              NULL, *nvarcl, rcodcl);
+          }
+      }
+    }
+
     BFT_FREE(faces_list);
   } /*  for (izone=0 ; izone < zones ; izone++) */
 

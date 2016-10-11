@@ -130,8 +130,7 @@ extern cs_boundary_t *boundaries;
  * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
-                               const int  *nfabor,
+void CS_PROCF (uiclim, UICLIM)(const int  *nfabor,
                                const int  *idarcy,
                                const int  *nozppm,
                                const int  *ncharm,
@@ -162,8 +161,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                int        *itypfb,
                                int        *izfppp,
                                int        *icodcl,
-                               double     *dtref,
-                               double     *ttcabs,
                                double     *surfbo,
                                double     *cdgfbo,
                                double     *qimp,
