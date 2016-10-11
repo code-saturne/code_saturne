@@ -1216,6 +1216,7 @@ _init_boundaries(const cs_lnum_t  *nfabor,
     boundaries->direction[izone] = NULL;
     boundaries->headLoss[izone]  = NULL;
     boundaries->preout[izone]    = 0;
+    boundaries->locator[izone]   = NULL;
 
     if (cs_gui_strcmp(vars->model, "solid_fuels"))
     {
@@ -2251,11 +2252,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             coord_shift[1] = boundaries->diry[izone];
             coord_shift[2] = boundaries->dirz[izone];
 
-            boundaries->locator[izone] = cs_boundary_conditions_map(CS_MESH_LOCATION_CELLS,
-                                                                    ncel, faces,
-                                                                    _location_elts, faces_list,
-                                                                   &coord_shift, coord_stride,
-                                                                    tolerance);
+            boundaries->locator[izone]
+	      = cs_boundary_conditions_map(CS_MESH_LOCATION_CELLS,
+					   ncel, faces,
+					   _location_elts, faces_list,
+					   &coord_shift, coord_stride,
+					   tolerance);
             BFT_FREE(_location_elts);
           }
 
@@ -3439,9 +3441,11 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
     if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
       BFT_FREE(boundaries->meteo);
 
-    for (izone=0 ; izone < zones ; izone++)
+    for (izone=0 ; izone < zones ; izone++) {
       if (boundaries->locator[izone] != NULL)
-        boundaries->locator[izone] = ple_locator_destroy(boundaries->locator[izone]);
+        boundaries->locator[izone]
+	  = ple_locator_destroy(boundaries->locator[izone]);
+    }
 
     BFT_FREE(boundaries->label);
     BFT_FREE(boundaries->nature);
