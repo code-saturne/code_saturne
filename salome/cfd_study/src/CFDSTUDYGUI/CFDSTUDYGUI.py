@@ -40,8 +40,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtGui import QDialog, QMessageBox, QDockWidget, QCursor, QApplication, QTabWidget
-from PyQt4.QtCore import Qt, QObject, SIGNAL
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Salome modules
@@ -191,7 +192,6 @@ def activate():
     """
     log.debug("activate")
     global d_activation, studyId
-
     dsk = sgPyQt.getDesktop()
     studyId = sgPyQt.getStudyId()
     dsk.setTabPosition(Qt.RightDockWidgetArea,QTabWidget.South)
@@ -243,11 +243,7 @@ def activate():
             else:
                 ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, False)
 
-        ActionHandler.slotStudyLocation()
-
-    ActionHandler.connect(ActionHandler._SalomeSelection,
-                          SIGNAL('currentSelectionChanged()'),
-                          ActionHandler.updateActions)
+    ActionHandler._SalomeSelection.currentSelectionChanged.connect(ActionHandler.updateActions)
 
     ActionHandler.connectSolverGUI()
     ActionHandler.updateObjBrowser()
@@ -281,7 +277,9 @@ def deactivate():
     log.debug("deactivate")
     dsk = sgPyQt.getDesktop()
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
-    ActionHandler.disconnect(ActionHandler._SalomeSelection, SIGNAL('currentSelectionChanged()'), ActionHandler.updateActions)
+
+    ActionHandler._SalomeSelection.currentSelectionChanged.disconnect(ActionHandler.updateActions)
+
     ActionHandler.disconnectSolverGUI()
 
 

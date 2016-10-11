@@ -72,7 +72,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import QObject
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtWidgets import *
+
 from omniORB import CORBA
 
 #-------------------------------------------------------------------------------
@@ -98,12 +100,6 @@ import CFDSTUDYGUI_SolverGUI
 from CFDSTUDYGUI_CommandMgr import runCommand
 
 from cs_exec_environment import separate_args
-#-------------------------------------------------------------------------------
-# For Error Message Box
-#-------------------------------------------------------------------------------
-
-#import CFDSTUDYGUI_DesktopMgr
-from PyQt4.QtGui import QMessageBox
 
 #-------------------------------------------------------------------------------
 # log config
@@ -418,7 +414,7 @@ def _SetStudyLocation(theStudyPath, theCaseNames,
         attr = builder.FindOrCreateAttribute(studyObject, "AttributeLocalID")
         attr.SetValue(dict_object["Study"])
         attr = builder.FindOrCreateAttribute(studyObject, "AttributePixMap")
-        attr.SetPixMap(str(ObjectTR.tr("CFDSTUDY_STUDY_OBJ_ICON").toLatin1()))
+        attr.SetPixMap(str(ObjectTR.tr("CFDSTUDY_STUDY_OBJ_ICON")))
         attr = builder.FindOrCreateAttribute(studyObject, "AttributeName")
         attr.SetValue(aStudyName)
         attr = builder.FindOrCreateAttribute(studyObject, "AttributeComment")
@@ -816,7 +812,7 @@ def _FillObject(theObject, theParent, theBuilder):
                         if l2.startswith('''<Code_Saturne_GUI''') or l2.startswith('''<NEPTUNE_CFD_GUI'''):
                             objectId = dict_object["DATAfileXML"]
                         else :
-                            mess = ObjectTR.tr("XML_DATA_FILE").arg(path)
+                            mess = str(ObjectTR.tr("XML_DATA_FILE"))%(path)
                             QMessageBox.warning(None, "File Error: ",mess)
                     f.close()
 
@@ -1071,7 +1067,7 @@ def _SetIcon(theObject, theBuilder):
     if icon_collection[id] == "":
         return
     attr = theBuilder.FindOrCreateAttribute(theObject, "AttributePixMap")
-    attr.SetPixMap(str(ObjectTR.tr(icon_collection[id]).toLatin1()))
+    attr.SetPixMap(str(ObjectTR.tr(icon_collection[id])))
     #check path for link and create new attribute
     if id != dict_object["Case"]:
         path = _GetPath(theObject)
@@ -1683,9 +1679,9 @@ def setCaseInProcess(theCasePath, isInProcess):
 
     attr = builder.FindOrCreateAttribute(aCaseObj, "AttributePixMap")
     if isInProcess:
-        attr.SetPixMap(str(ObjectTR.tr(icon_collection[dict_object["CaseInProcess"]]).toLatin1()))
+        attr.SetPixMap(str(ObjectTR.tr(icon_collection[dict_object["CaseInProcess"]])))
     else:
-        attr.SetPixMap(str(ObjectTR.tr(icon_collection[dict_object["Case"]]).toLatin1()))
+        attr.SetPixMap(str(ObjectTR.tr(icon_collection[dict_object["Case"]])))
 
 
 def checkPathUnderObject(theObject, thePath):

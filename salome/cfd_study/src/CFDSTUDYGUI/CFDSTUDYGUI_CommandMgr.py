@@ -37,9 +37,9 @@ import os, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtGui import QApplication, QCursor, QDialog, QCloseEvent
-from PyQt4.QtCore import Qt, SIGNAL, QEvent, QProcess, QString
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Salome modules
@@ -89,11 +89,10 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
             self.objBr = obj_directory
 
         self.proc = QProcess()
-        #env = QProcessEnvironment().systemEnvironment()
-        #self.proc.setProcessEnvironment(env)
 
-        self.connect(self.proc, SIGNAL('readyReadStandardOutput()'), self.__readFromStdout)
-        self.connect(self.proc, SIGNAL('readyReadStandardError()'),  self.__readFromStderr)
+        self.proc.readyReadStandardOutput.connect(self.__readFromStdout)
+        self.proc.readyReadStandardError.connect(self.__readFromStderr)
+
         self.procErrorFlag = False
 
         self.cmd_list = cmd_list
@@ -106,15 +105,12 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
     def __process(self):
         if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
             self.proc.start(self.cmd)
+            print "self.cmd_list = ",self.cmd_list
             if self.cmd_list:
                 self.cmd = self.cmd_list.pop(0)
-                self.connect(self.proc,
-                             SIGNAL('finished(int, QProcess::ExitStatus)'),
-                             self.__process)
+                self.proc.finished['int', 'QProcess::ExitStatus'].connect(self.__process)
             else:
-                self.connect(self.proc,
-                             SIGNAL('finished(int, QProcess::ExitStatus)'),
-                             self.__finished)
+                self.proc.finished['int', 'QProcess::ExitStatus'].connect(self.__finished)
 
 
     def __readFromStdout(self):
@@ -128,8 +124,7 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()
             if ba.isNull(): return
-            str = QString()
-            s = QString(str.fromUtf8(ba.data()))[:-1]
+            s = (ba.data()).decode("utf-8")[:-1]
             self.logText.append(s)
 
 
@@ -144,9 +139,8 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
         while self.proc and self.proc.canReadLine():
             ba = self.proc.readLine()
             if ba.isNull(): return
-            str = QString()
-            s = QString(str.fromUtf8(ba.data()))[:-1]
-            self.logText.append(s.prepend('<font color="red">').append('</font>'))
+            s = (ba.data()).decode("utf-8")[:-1]
+            self.logText.append('<font color="red">' + s + '</font>')
             self.procErrorFlag = True
 
 

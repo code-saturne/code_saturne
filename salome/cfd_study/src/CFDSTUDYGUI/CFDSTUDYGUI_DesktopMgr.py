@@ -39,7 +39,7 @@ components: Object Browser, Python console, 3D/2D viewers, etc.
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtCore import QObject, SIGNAL
+from code_saturne.Base.QtCore    import *
 
 #-------------------------------------------------------------------------------
 # Salome modules
@@ -94,7 +94,7 @@ class CFDSTUDYGUI_DesktopMgr(QObject):
             ah = CFDSTUDYGUI_ActionsHandler()
             ah.createActions()
             self._ActionHandlerMap[dsk] = ah
-            self.connect(dsk, SIGNAL("destroyed(QObject*)"), self.slotDeleteDsk)
+            dsk.destroyed.connect(self.slotDeleteDsk)
 
         return self._ActionHandlerMap[dsk]
 

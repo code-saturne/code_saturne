@@ -40,6 +40,8 @@ CloseGui.png \
 Copy.png \
 edit-undo.png \
 edit-redo.png \
+prepro-mode.png \
+calc-mode.png \
 Delete.png \
 Document.png \
 EditableDocument.png \

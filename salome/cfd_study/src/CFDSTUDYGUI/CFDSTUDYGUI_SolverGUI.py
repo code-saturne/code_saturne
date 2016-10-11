@@ -41,8 +41,9 @@ import os, sys, string, logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtGui import QDockWidget, QTreeView, QMessageBox
-from PyQt4.QtCore import Qt, QObject, SIGNAL
+from code_saturne.Base.QtCore    import *
+from code_saturne.Base.QtGui     import *
+from code_saturne.Base.QtWidgets import *
 
 #-------------------------------------------------------------------------------
 # Salome modules
@@ -159,10 +160,9 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             aTitle = "unnamed"
             if aCase != None:
                 if findDockWindow(aTitle, aCase.GetName(), aCase.GetFather().GetName()):
-                    mess = "A case not finished to be set is already opened"
+                    mess = "A new case is already opened"
                     QMessageBox.warning(None, "Warning: ",mess)
                     return
-
         if aCase != None:
             aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aCase, "^DATA$")
             if not len(aChildList)== 1:
@@ -174,7 +174,6 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             aStartPath = CFDSTUDYGUI_DataModel._GetPath(aChildList[0])
             if aStartPath != None and aStartPath != '':
                 os.chdir(aStartPath)
-
         mw = self.lauchGUI(WorkSpace, aCase, sobjXML, Args)
         if mw != None:
             self._CurrentWindow = mw
@@ -258,6 +257,13 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         if self._CurrentWindow != None:
             self._CurrentWindow.slotRedo()
 
+    def onPreproMode(self):
+        if self._CurrentWindow != None:
+            self._CurrentWindow.slotPreproMode()
+
+    def onCalculationMode(self):
+        if self._CurrentWindow != None:
+            self._CurrentWindow.slotCalculationMode()
 
     def onOpenShell(self):
         if self._CurrentWindow != None:
@@ -348,7 +354,6 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         log.debug("lauchGUI")
         from cs_gui import process_cmd_line
-
         if CFD_Code() == CFD_Saturne:
             from cs_package import package
             from code_saturne.Base.MainView import MainView
@@ -365,7 +370,6 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         pkg = package()
         case, splash = process_cmd_line(Args)
         mw = MainView(pkg, case, aCase)
-
         # Put the standard panel of the MainView inside a QDockWidget
         # in the SALOME Desktop
         aTitle = self.setWindowTitle_CFD(mw, aCase, Title)
@@ -375,7 +379,6 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         dock.setWidget(mw.frame)
         dock.setMinimumWidth(520)
         dsk.addDockWidget(Qt.RightDockWidgetArea, dock)
-
         dock.setVisible(True)
         dock.show()
 
@@ -396,13 +399,10 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         aCaseCFD  = aCase
         xmlFileName = str(Title)
         _c_CFDGUI.set_d_CfdCases(studyId, dock, mw.dockWidgetBrowser, mw, aStudyCFD, aCaseCFD, xmlFileName, sobjXML)
-
-        self.connect(dock, SIGNAL("visibilityChanged(bool)"), self.setdockWindowBrowserActivated)
-        self.connect(mw.dockWidgetBrowser, SIGNAL("visibilityChanged(bool)"),self.setdockWindowActivated)
-
-        self.connect(dock.toggleViewAction(), SIGNAL("toggled(bool)"), self.setdockWB)
-        self.connect(mw.dockWidgetBrowser.toggleViewAction(), SIGNAL("toggled(bool)"), self.setdock)
-
+        dock.visibilityChanged["bool"].connect(self.setdockWindowBrowserActivated)
+        mw.dockWidgetBrowser.visibilityChanged["bool"].connect(self.setdockWindowActivated)
+        dock.toggleViewAction().toggled["bool"].connect(self.setdockWB)
+        mw.dockWidgetBrowser.toggleViewAction().toggled["bool"].connect(self.setdock)
         _c_CFDGUI.tabifyDockWindows(dsk, studyId)
         self.showDockWindows(studyId, xmlFileName, aCaseCFD.GetName(), aStudyCFD.GetName())
         updateObjectBrowser()
@@ -411,6 +411,10 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
 
     def setdockWB(self, istoggled):
+        """
+        istoggled referred to CFD Window dock widget
+        """
+        log.debug("setdockWB")
         studyId = sgPyQt.getStudyId()
         dock = self.sender().parent()
         log.debug("setdockWB -> %s" % (dock,))
@@ -418,7 +422,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         if _c_CFDGUI != None:
             dockWB = _c_CFDGUI.getdockWB(studyId, dock)
             if dockWB != None:
-                dockWB.setVisible(dock.isVisible())
+                dockWB.setVisible(istoggled) #dock.isVisible())
                 if istoggled:
                     dock.show()
                     dock.raise_()
@@ -433,6 +437,10 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
 
     def setdock(self, istoggled):
+        """
+        istoggled referred to Window browser dock widget
+        """
+        log.debug("setdock")
         studyId = sgPyQt.getStudyId()
         dockWB = self.sender().parent()
         log.debug("setdock -> %s" % (dockWB,))
@@ -440,7 +448,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         if _c_CFDGUI != None:
             dock = _c_CFDGUI.getdock(studyId, dockWB)
             if dock != None:
-                dock.setVisible(dockWB.isVisible())
+                dock.setVisible(istoggled) #dockWB.isVisible())
                 if istoggled:
                     dock.show()
                     dock.raise_()
@@ -459,6 +467,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         mw is the Main CFD window allocated by MainView code
         When we click on a cfd study window tab, the cfd study window appears and the associated CFD window browser raises too
         """
+
         studyId = sgPyQt.getStudyId()
         dock = self.sender()
         log.debug("setdockWindowBrowserActivated -> %s" % (dock,))

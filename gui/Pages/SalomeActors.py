@@ -32,8 +32,9 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.QtCore import *
-from code_saturne.Base.QtGui  import *
+from code_saturne.Base.QtCore     import *
+from code_saturne.Base.QtGui      import *
+from code_saturne.Base.QtWidgets  import *
 
 import vtk
 

@@ -201,7 +201,7 @@ Fusion of the two pipes
     :align: center
     :width: 11cm
 
-- Use the menus **"Measures > Check shape"** and **"Measures > What is"** to verify the object *Pipe*. It must be constituted of a single solid.
+- Use the menus **"Inspection > Check shape"** and **"Inspection > What is"** to verify the object *Pipe*. It must be constituted of a single solid.
 
   .. image:: images/T_PIPE/t-pipe-geom-pipe_check.png
     :align: center
@@ -326,9 +326,13 @@ Activate the module **CFDSTUDY**.
 By convention, CFD calculations with *Code_Saturne* are organized in studies and cases. Several calculations that share the same meshes and data sets,
 define a study for *Code_Saturne*. Each data set defined in a case.
 
+.. image:: images/T_PIPE/t-pipe-study_location.png
+  :align: center
+  :width: 10cm
+
 Click on **"Add new case(s)"**. Then, use **"Browse"** button to select the directory which will contain the study directory.
 
-.. image:: images/T_PIPE/t-pipe-study_location.png
+.. image:: images/T_PIPE/t-pipe-study_location_add_new_case.png
   :align: center
   :width: 10cm
 

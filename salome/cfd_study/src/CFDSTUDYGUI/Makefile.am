@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 # Turn off the Automake warning about the makefile portability as we need
-# GNUmake rules in order to account for the PyQt4 user interface files target.
+# GNUmake rules in order to account for the PyQt user interface files target.
 
 AUTOMAKE_OPTIONS = -Wno-portability
 
@@ -42,6 +42,7 @@ CFDSTUDYGUI_DataModel.py \
 CFDSTUDYGUI_DesktopMgr.py \
 CFDSTUDYGUI_DialogCollector.py \
 CFDSTUDYGUI_SolverGUI.py \
+CFDSTUDYGUI_Message.py \
 CFDSTUDYGUI_Management.py
 
 #resources
@@ -60,7 +61,6 @@ CopyDialog.ui \
 ECSConversionDialog.ui \
 GUIActivationDialog.ui \
 InfoDialog.ui \
-RunCaseDialog.ui \
 SetTreeLocationDialog.ui
 
 PYUI_FILES = \
@@ -69,7 +69,6 @@ ui_CopyDialog.py \
 ui_ECSConversionDialog.py \
 ui_GUIActivationDialog.py \
 ui_InfoDialog.py \
-ui_RunCaseDialog.py \
 ui_SetTreeLocationDialog.py
 
 # Distribute icons directory, resources files and user interface files

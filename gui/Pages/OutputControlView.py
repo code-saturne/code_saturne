@@ -542,7 +542,6 @@ class StandardItemModelMesh(QStandardItemModel):
             new_location = str(from_qvariant(value, to_text_string))
             self.dataMesh[row]['location'] = new_location
             self.mdl.setMeshLocation(self.dataMesh[row]['id'], new_location)
-
         self.dataChanged.emit(index, index)
         return True
 
@@ -1370,7 +1369,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         # Connections
 
         self.tabWidget.currentChanged[int].connect(self.slotchanged)
-        self.modelWriter.dataChanged.connect(self.dataChanged)
+        self.modelWriter.dataChanged.connect(self.slotDataChanged)
         self.tableViewMesh.clicked.connect(self.slotSelectMesh)
         self.tableViewLagrangianMesh.clicked.connect(self.slotSelectLagrangianMesh)
         self.tableViewWriter.clicked.connect(self.slotSelectWriter)
@@ -1640,7 +1639,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                             self.mdl.getWriterFormat(writer_id),
                             self.mdl.getWriterDirectory(writer_id))
 
-
     @pyqtSlot()
     def slotDeleteWriter(self):
         """
@@ -1684,9 +1682,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.groupBoxLagrangianVariable.hide()
         self.groupBoxAssociatedLagrangianWriter.hide()
 
-
-    @pyqtSlot("QModelIndex, QModelIndex")
-    def dataChanged(self, topLeft, bottomRight):
+    @pyqtSlot(QModelIndex,QModelIndex)
+    def slotDataChanged(self, topLeft, bottomRight):
         for row in range(topLeft.row(), bottomRight.row()+1):
             self.tableViewWriter.resizeRowToContents(row)
         for col in range(topLeft.column(), bottomRight.column()+1):
@@ -1814,7 +1811,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.modelTimeDependency.setItem(str_model=time_dependency)
             options = self.mdl.getWriterOptions(writer_id)
             self.__updateOptionsFormat(options, row)
-
 
     @pyqtSlot(str)
     def slotWriterFrequencyChoice(self, text):

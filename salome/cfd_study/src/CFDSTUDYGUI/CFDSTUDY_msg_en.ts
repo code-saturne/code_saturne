@@ -7,7 +7,7 @@
         </message>
         <message>
             <source>CFDSTUDY_INVALID_SOLVER_NAME</source>
-            <translation>%1 is an invalid name of solver ! It must be %2 or %3 !</translation>
+            <translation>%s is an invalid name of solver ! It must be %s or %s !</translation>
         </message>
         <message>
             <source>CFDSTUDY_MENU</source>
@@ -143,7 +143,7 @@
         </message>
         <message>
             <source>XML_DATA_FILE</source>
-            <translation>Error into the XML Data File %1</translation>
+            <translation>Error into the XML Data File %s</translation>
         </message>
         <message>
             <source>SOLVER_TOOLS_MENU_TEXT</source>
@@ -187,7 +187,7 @@
         </message>
         <message>
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
-            <translation>Do You want to remove of %1 from this study?</translation>
+            <translation>Do You want to remove of %s from this study?</translation>
         </message>
         <message>
             <source>CLOSE_CFD_GUI_ACTION_TIP</source>
@@ -391,16 +391,20 @@
             <translation>Check compilation</translation>
         </message>
         <message>
+            <source>STMSG_COMPILATION</source>
+            <translation>Compilation</translation>
+        </message>
+        <message>
             <source>ENV_DLG_INVALID_DIRECTORY</source>
-            <translation>Directory %1 does not exists!!! </translation>
+            <translation>Directory %s does not exists!!! </translation>
         </message>
         <message>
             <source>ENV_DLG_INVALID_FILE</source>
-            <translation>%1 : File %2  does not exists!!! </translation>
+            <translation>%s : File %s does not exists!!! </translation>
         </message>
         <message>
             <source>INFO_DLG_INVALID_ENV</source>
-            <translation>Invalid environment for %1 ! </translation>
+            <translation>Invalid environment for %s ! </translation>
         </message>
         <message>
             <source>STMSG_UPDATE_STUDY_INCOMING</source>
@@ -408,7 +412,7 @@
         </message>
         <message>
             <source>INFO_DLG_CASE</source>
-            <translation> Study Case %1 already exists ! </translation>
+            <translation> Study Case %s already exists ! </translation>
         </message>
 
     </context>
@@ -428,11 +432,11 @@
         </message>
         <message>
             <source>INFO_DLG_ENV_REQUIRED</source>
-            <translation>%1 (required)</translation>
+            <translation>%s (required)</translation>
         </message>
         <message>
             <source>INFO_DLG_ENV_OPTIONAL</source>
-            <translation>%1(optional)</translation>
+            <translation>%s(optional)</translation>
         </message>
         <message>
             <source>INFO_DLG_CHECKBOX_TEXT</source>
@@ -479,58 +483,19 @@
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_OPEN_MESS</source>
-            <translation>The Directory %1 is already opened! Please, choose another directory.</translation>
+            <translation>The Directory %s is already opened! Please, choose another directory.</translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS</source>
-            <translation>The Directory %1 already exists. Do You want to use that study?</translation>
+            <translation>The Directory %s already exists. Do You want to use that study?</translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS1</source>
-            <translation>The Directory %1 already exists. Do You want to create a new study?</translation>
+            <translation>The Directory %s already exists. Do You want to create a new study?</translation>
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_MESS</source>
-            <translation>The Directory %1 does not exist or Study Name is empty! Please, choose another directory.</translation>
-        </message>
-    </context>
-    <context>
-        <name>RunCaseDialogHandler</name>
-        <message>
-            <source>RUNCASE_DLG_RUN_BUTTON_TEXT</source>
-            <translation>Run Case</translation>
-        </message>
-        <message>
-            <source>DLG_CANCEL_BUTTON_TEXT</source>
-            <translation>Cancel</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_MODE_TITLE</source>
-            <translation>Mode</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_RUN_MODE_BTN_TEXT</source>
-            <translation>Run</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_MAIN_GROUP_TITLE</source>
-            <translation>Location of run script</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_STUDY_LABEL_TEXT</source>
-            <translation>Study</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_CASE_LABEL_TEXT</source>
-            <translation>Case</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_CAPTION</source>
-            <translation>Run Case</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_COMPILE_MODE_BTN_TEXT</source>
-            <translation>Compile only</translation>
+            <translation>The Directory %s does not exist or Study Name is empty! Please, choose another directory.</translation>
         </message>
     </context>
     <context>

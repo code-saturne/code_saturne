@@ -7,7 +7,7 @@
         </message>
         <message>
             <source>CFDSTUDY_INVALID_SOLVER_NAME</source>
-            <translation>%1 n'est pas un nom de solveur valide ! La liste valide est %2 ou %3 !</translation>
+            <translation>%s n'est pas un nom de solveur valide ! La liste valide est %s ou %s !</translation>
         </message>
         <message>
             <source>CFDSTUDY_MENU</source>
@@ -143,7 +143,7 @@
         </message>
         <message>
             <source>XML_DATA_FILE</source>
-            <translation>Erreur dans le fichier XML %1</translation>
+            <translation>Erreur dans le fichier XML %s</translation>
         </message>
         <message>
             <source>SOLVER_TOOLS_MENU_TEXT</source>
@@ -187,7 +187,7 @@
         </message>
         <message>
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
-            <translation>Voulez-vous supprimer %1 de cette etude?</translation>
+            <translation>Voulez-vous supprimer %s de cette etude?</translation>
         </message>
         <message>
             <source>CLOSE_CFD_GUI_ACTION_TIP</source>
@@ -391,16 +391,20 @@
             <translation>Controler la compilation</translation>
         </message>
         <message>
+            <source>STMSG_COMPILATION</source>
+            <translation>Compilation</translation>
+        </message>
+        <message>
             <source>ENV_DLG_INVALID_DIRECTORY</source>
-            <translation>Le repertoire %1 n'existe pas!!! </translation>
+            <translation>Le repertoire %s n'existe pas!!! </translation>
         </message>
         <message>
             <source>ENV_DLG_INVALID_FILE</source>
-            <translation>%1 : le fichier %2  n'existe pas!!! </translation>
+            <translation>%s : le fichier %s  n'existe pas!!! </translation>
         </message>
         <message>
             <source>INFO_DLG_INVALID_ENV</source>
-            <translation>Environnement invalide pour %1 ! </translation>
+            <translation>Environnement invalide pour %s ! </translation>
         </message>
         <message>
             <source>STMSG_UPDATE_STUDY_INCOMING</source>
@@ -408,7 +412,7 @@
         </message>
         <message>
             <source>INFO_DLG_CASE</source>
-            <translation> Le cas d'etdue %1 existe deja ! </translation>
+            <translation> Le cas d'etdue %s existe deja ! </translation>
         </message>
 
     </context>
@@ -428,11 +432,11 @@
         </message>
         <message>
             <source>INFO_DLG_ENV_REQUIRED</source>
-            <translation>%1 (requis)</translation>
+            <translation>%s (requis)</translation>
         </message>
         <message>
             <source>INFO_DLG_ENV_OPTIONAL</source>
-            <translation>%1(option)</translation>
+            <translation>%s(option)</translation>
         </message>
         <message>
             <source>INFO_DLG_CHECKBOX_TEXT</source>
@@ -479,58 +483,19 @@
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_OPEN_MESS</source>
-            <translation>Le repertoire %1 est deja ouvert! Choisissez-en un autre.</translation>
+            <translation>Le repertoire %s est deja ouvert! Choisissez-en un autre.</translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS</source>
-            <translation>Le repertoire %1 existe deja. Voulez-vous utiliser cette etude?</translation>
+            <translation>Le repertoire %s existe deja. Voulez-vous utiliser cette etude?</translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS1</source>
-            <translation>Le repertoire %1 existe deja. Voulez-vous creer une autre etude?</translation>
+            <translation>Le repertoire %s existe deja. Voulez-vous creer une autre etude?</translation>
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_MESS</source>
-            <translation>Le repertoire %1 n'existe pas ou le nom de l'tude est vide! Choisissez une autre repertoire.</translation>
-        </message>
-    </context>
-    <context>
-        <name>RunCaseDialogHandler</name>
-        <message>
-            <source>RUNCASE_DLG_RUN_BUTTON_TEXT</source>
-            <translation>Executer le cas</translation>
-        </message>
-        <message>
-            <source>DLG_CANCEL_BUTTON_TEXT</source>
-            <translation>Annuler</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_MODE_TITLE</source>
-            <translation>Mode</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_RUN_MODE_BTN_TEXT</source>
-            <translation>Executer</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_MAIN_GROUP_TITLE</source>
-            <translation>Emplacement du script run</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_STUDY_LABEL_TEXT</source>
-            <translation>Etude</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_CASE_LABEL_TEXT</source>
-            <translation>Cas</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_CAPTION</source>
-            <translation>Executer le cas</translation>
-        </message>
-        <message>
-            <source>RUNCASE_DLG_COMPILE_MODE_BTN_TEXT</source>
-            <translation>Compilation uniquement</translation>
+            <translation>Le repertoire %s n'existe pas ou le nom de l'tude est vide! Choisissez une autre repertoire.</translation>
         </message>
     </context>
     <context>
