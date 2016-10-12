@@ -2855,23 +2855,25 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nfabor,
 
     /* treatment of mapped inlet */
     /* for each field */
-    for (int f_id = 0; f_id < n_fields; f_id++) {
-      const cs_field_t  *f = cs_field_by_id(f_id);
-      const int var_key_id = cs_field_key_id("variable_id");
-      ivar = cs_field_get_key_int(f, var_key_id) -1;
+    if (boundaries->locator[izone] != NULL) {
+      for (int f_id = 0; f_id < n_fields; f_id++) {
+        const cs_field_t  *f = cs_field_by_id(f_id);
+        const int var_key_id = cs_field_key_id("variable_id");
+        ivar = cs_field_get_key_int(f, var_key_id) -1;
 
-      if (f->type & CS_FIELD_VARIABLE) {
-        /* velocity already treated */
-          if (cs_glob_time_step->nt_cur > 1 && !cs_gui_strcmp(f->name, "velocity"))
-          {
-            int interpolate = 0;
-            int normalize   = 0;
-            cs_boundary_conditions_mapped_set(f, boundaries->locator[izone],
-                                              CS_MESH_LOCATION_CELLS,
-                                              normalize, interpolate,
-                                              faces, faces_list,
-                                              NULL, *nvarcl, rcodcl);
-          }
+        if (f->type & CS_FIELD_VARIABLE) {
+          /* velocity already treated */
+            if (cs_glob_time_step->nt_cur > 1 && !cs_gui_strcmp(f->name, "velocity"))
+            {
+              int interpolate = 0;
+              int normalize   = 0;
+              cs_boundary_conditions_mapped_set(f, boundaries->locator[izone],
+                                                CS_MESH_LOCATION_CELLS,
+                                                normalize, interpolate,
+                                                faces, faces_list,
+                                                NULL, *nvarcl, rcodcl);
+            }
+        }
       }
     }
 
