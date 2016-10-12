@@ -174,7 +174,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             aStartPath = CFDSTUDYGUI_DataModel._GetPath(aChildList[0])
             if aStartPath != None and aStartPath != '':
                 os.chdir(aStartPath)
-        mw = self.lauchGUI(WorkSpace, aCase, sobjXML, Args)
+        mw = self.launchGUI(WorkSpace, aCase, sobjXML, Args)
         if mw != None:
             self._CurrentWindow = mw
 
@@ -227,6 +227,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
             if old_xml_file == "":
                 old_xml_file = None
+            if xml_file == "":
+                xml_file = None
 
         return old_xml_file, xml_file
 
@@ -348,11 +350,11 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         return aTitle
 
 
-    def lauchGUI(self, WorkSpace, aCase, sobjXML, Args):
+    def launchGUI(self, WorkSpace, aCase, sobjXML, Args):
         """
         mw.dockWidgetBrowser is the Browser of the CFD MainView
         """
-        log.debug("lauchGUI")
+        log.debug("launchGUI")
         from cs_gui import process_cmd_line
         if CFD_Code() == CFD_Saturne:
             from cs_package import package

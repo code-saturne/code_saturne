@@ -245,12 +245,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_TIP"),\
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_SB"),\
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_ICON"))
-        # popup launch GUI on CFD CASE with slotRunGUI
+        # popup launch GUI on CFD CASE with slotLaunchGUI
         sgPyQt.createTool(action, tool_id)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[LaunchGUIAction] = action_id
-        action.triggered.connect(self.slotRunGUI)
+        action.triggered.connect(self.slotLaunchGUI)
 
         action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("Open GUI"),\
@@ -752,7 +752,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 self.commonAction(OpenGUIAction).setEnabled(CFDSTUDYGUI_DataModel.checkCaseLaunchGUI(aCase))
             else:
                 self.commonAction(LaunchGUIAction).setEnabled(False)
-
+        else:
+            self.commonAction(AddCaseAction).setEnabled(False)
         #enable / disable solver actions
         isActivatedView = self._SolverGUI.isActive() # Main GUI Window is active
 
@@ -1525,12 +1526,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
     def slotCalculationMode(self):
         self._SolverGUI.onCalculationMode()
 
-    def slotRunGUI(self, study=None):
+    def slotLaunchGUI(self, study=None):
         """
         Build the command line for the GUI of Code_Saturne/NEPTUNE_CFD.
         Launch a new CFD IHM with popup menu on case object into SALOME Object browser
         """
-        log.debug("slotRunGUI")
+        log.debug("slotLaunchGUI")
         #get current selection
         aCase = self._singleSelectedObject()
 
