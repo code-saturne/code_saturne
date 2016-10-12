@@ -107,19 +107,40 @@ BEGIN_C_DECLS
         the file \ref cs_cf_thermo.h, which is not a user source, to add new
         equations of state.
   \var  cs_fluid_properties_t::icp
-        property index of the isobaric specific heat
-        - -1: uniform isobaric specific heat (no property field defined)
+        indicates if the isobaric specific heat \f$C_p\f$ is variable
+        - -1: uniform, no property field is declared
+        -  0: variable, \f$C_p\f$ is declared as a property field\n
+        When gas or coal combustion is activated, \ref icp is automatically
+        set to 0 (constant \f$C_p\f$). With the electric module, it is
+        automatically set to 1. The user is not allowed to modify these
+        default choices.\n When \ref icp = 1 is specified, the code
+        automatically modifies this value to make \ref icp designate the
+        effective index-number of the property "specific heat". For each cell
+        iel, the value of \f$C_p\f$ is then specified by the user in the
+        appropriate subroutine (\ref cs_user_physical_properties for the
+        standard physics).\n Useful if there is
+        1\f$\leqslant\f$N\f$\leqslant\f$\ref dimens::nscal "nscal" so that
+        iscsth(n)=1 (there is a scalar temperature) or with the compressible
+        module for non perfect gases.
   \var  cs_fluid_properties_t::icv
         property index of the isochoric specific heat
         - -1: uniform isochoric specific heat (no property field defined)
   \var  cs_fluid_properties_t::irovar
         variable density field \f$ \rho \f$:
-        - 0: false
-        - 1: true
+        - 1: true, its variation law be given either
+        in the GUI, or in the user subroutine
+        \ref cs_user_physical_properties .\n
+        See \subpage physical_properties for more informations.
+        - 0: false, its value is the reference density
+        \ref ro0.
   \var  cs_fluid_properties_t::ivivar
-        variable viscosity field \f$ \rho \f$:
-        - 0: false
-        - 1: true
+        variable viscosity field \f$ \mu \f$:
+           - 1: true, its variation law be given either
+        in the GUI, or in the user subroutine
+        \ref cs_user_physical_properties .\n
+        See \subpage physical_properties for more informations.
+           - 0: false, its value is the reference molecular
+        dynamic viscosity \ref viscl0
   \var  cs_fluid_properties_t::ivsuth
         Sutherland law for laminar viscosity and thermal conductivity
         Only useful in gas mix (igmix) specific physics
@@ -241,7 +262,7 @@ BEGIN_C_DECLS
         stiffened gas (\ref cs_fluid_properties_t::ieos "ieos"=2) limit pressure
         (zero in perfect gas)
   \var  cs_fluid_properties_t::gammasg
-        stiffened gas (\ref ppincl::ieos "ieos"=2) polytropic coefficient
+        stiffened gas (\ref cs_fluid_properties_t::ieos "ieos"=2) polytropic coefficient
         (dimensionless)
   \var  cs_fluid_properties_t::ipthrm
         uniform variable thermodynamic pressure:

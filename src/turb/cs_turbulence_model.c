@@ -118,32 +118,66 @@ BEGIN_C_DECLS
   \var  cs_turb_rans_model_t::itycor
         type of rotation/curvature correction for an eddy viscosity turbulence
         models
-        - 1: Cazalbou correction (default when irccor=1 and itytur=2 or 5)
-        - 2: Spalart-Shur correction (default when irccor=1 and iturb=60 or 70)
+        - 1: Cazalbou correction (default when \ref irccor = 1 and
+        \ref cs_turb_model_t::itytur "itytur" = 2 or 5)
+        - 2: Spalart-Shur correction (default when \ref irccor = 1 and
+        \ref iturb = 60 or 70)
   \var  cs_turb_rans_model_t::idirsm
         turbulent diffusion model for second moment closure
         - 0: scalar diffusivity (Shir model)
         - 1: tensorial diffusivity (Daly and Harlow model, default model)
   \var  cs_turb_rans_model_t::iclkep
-        clipping of k and epsilon
-        - 0: absolute value clipping
-        - 1: coupled clipping based on physical relationships
+        Indicates the clipping method used for \f$k\f$ and
+        \f$\varepsilon\f$, for the \f$k-\epsilon\f$ and v2f models\n
+        - 0: clipping in absolute value
+        - 1: coupled clipping based on physical relationships\n
+        Useful if and only if \ref iturb = 20, 21 or 50 (\f$k-\epsilon\f$ and
+        v2f models). The results obtained with the method corresponding to
+        \ref iclkep =1 showed in some cases a substantial sensitivity to the
+        values of the length scale \ref almax.\n
+        The option \ref iclkep = 1 is therefore not recommended, and,
+        if chosen, must be used cautiously.
   \var  cs_turb_rans_model_t::igrhok
-        take \f$ 2/3 \rho \grad k \f$ in the momentum equation
+        Indicates if the term \f$\frac{2}{3}\grad \rho k\f$
+        is taken into account in the velocity equation.
         - 1: true
-        - 0: false (default)
+        - 0: false in the velocity
+        Useful if and only if \ref iturb = 20, 21, 50 or 60.\n
+        This term may generate non-physical velocities at the wall.
+        When it is not explicitly taken into account, it is
+        implicitly included into the pressure.
   \var  cs_turb_rans_model_t::igrake
-        buoyant term in \f$ k- \varepsilon \f$
+        Indicates if the terms related to gravity are taken
+        into account in the equations of \f$k-\epsilon\f$.\n
         - 1: true (default if \f$ \rho \f$ is variable)
         - 0: false
+        Useful if and only if \ref iturb = 20, 21, 50 or 60 and
+        (\ref cs_physical_constants_t::gx "gx", \ref cs_physical_constants_t::gy "gy",
+        \ref cs_physical_constants_t::gz "gz) \f$\ne\f$ (0,0,0) and the
+        density is not uniform.
   \var  cs_turb_rans_model_t::igrari
-        buoyant term in \f$ R_{ij}- \varepsilon \f$
+        Indicates if the terms related to gravity are taken
+        into account in the equations of \f$R_{ij}-\epsilon\f$.\n
         - 1: true (default if \f$ \rho \f$ is variable)
         - 0: false
+        Useful if and only if \ref iturb = 30 or 31 and
+        (\ref cs_physical_constants_t::gx "gx", \ref cs_physical_constants_t::gy "gy",
+        \ref cs_physical_constants_t::gz "gz) \f$\ne\f$
+        (0,0,0) (\f$R_{ij}-\epsilon\f$ model with gravity) and the
+        density is not uniform.
   \var  cs_turb_rans_model_t::ikecou
-        partially coupled version of \f$ k-\varepsilon \f$ (only for iturb=20)
-        - 1: true (default)
-        - 0: false
+        Indicates if the coupling of the source terms of
+        \f$k\f$ and \f$\epsilon\f$ or \f$k\f$ and \f$\omega\f$
+        is taken into account or not.
+        - 1: true,
+        - 0: false\n
+        If \ref ikecou = 0 in \f$k-\epsilon\f$ model, the term
+        in \f$\epsilon\f$ in the equation of \f$k\f$ is made implicit.\n
+        \ref ikecou is initialised to 0 if \ref iturb = 21 or 60, and
+        to 1 if \ref iturb = 20.\n
+        \ref ikecou = 1 is forbidden when using the v2f model (\ref iturb = 50).\n
+        Useful if and only if \ref iturb = 20, 21 or 60 (\f$k-\epsilon\f$ and
+        \f$k-\omega\f$ models)
   \var  cs_turb_rans_model_t::reinit_turb
         Advanced re-init for EBRSM and k-omega models
         - 1: true
@@ -157,14 +191,32 @@ BEGIN_C_DECLS
         implicit \f$ \divv \left( \rho \tens{R} \right) \f$
         - 1: true
         - 0: false (default)
+        The goal is to improve the stability of the calculation.
+        The usefulness of \ref irijnu = 1 has however not been
+        clearly demonstrated.\n Since the system is solved in
+        incremental form, this extra turbulent viscosity does
+        not change the final solution for steady flows. However,
+        for unsteady flows, the parameter \ref cs_var_cal_opt_t::nswrsm "nswrsm"
+        should be increased.\n Useful if and only if \ref iturb = 30
+        or 31 (\f$R_{ij}-\epsilon\f$ model).
   \var  cs_turb_rans_model_t::irijrb
         accurate treatment of \f$ \tens{R} \f$ at the boundary (see \ref condli)
         - 1: true
         - 0: false (default)
   \var  cs_turb_rans_model_t::irijec
-        wall echo term of \f$ \tens{R} \f$
-        - 1: true
-        - 0: false (default)
+        Indicates if the wall echo terms in
+        \f$R_{ij}-\epsilon\f$ LRR model are taken into account:
+        - 1: true,
+        - 0: false (default)\n
+        Useful if and only if \ref iturb = 30 (\f$R_{ij}-\epsilon\f$
+        LRR).\n It is not recommended to take these terms into account:
+        they have an influence only near the walls, their expression is hardly
+        justifiable according to some authors and, in the configurations
+        studied with Code_Saturne, they did not bring any improvement in the results.\n
+        In addition, their use induces an increase in the calculation time.\n
+        The wall echo terms imply the calculation of the distance to the wall
+        for every cell in the domain. See \ref optcal::icdpar "icdpar" for potential
+        restrictions due to this.
   \var  cs_turb_rans_model_t::idifre
         whole treatment of the diagonal part of the diffusion tensor of \f$
         \tens{R} \f$ and \f$ \varepsilon \f$
@@ -181,7 +233,7 @@ BEGIN_C_DECLS
   \var  cs_turb_ref_values_t::almax
         characteristic macroscopic length of the domain, used for the
         initialization of the turbulence and the potential clipping (with
-        \ref iclkep=1)
+        \ref cs_turb_rans_model_t::iclkep "iclkep"= 1)
         - Negative value: not initialized (the code then uses the cubic root of
           the domain volume).
 
@@ -210,13 +262,29 @@ BEGIN_C_DECLS
   syntax, as it is expected to be used in many places.
 
   \var  cs_turb_les_model_t::idries
-        Van Driest smoothing at the wall (only for itytur=4)
-        - 1: true
-        - 0: false
+        Activates or the van Driest wall-damping for the
+        Smagorinsky constant (the Smagorinsky constant
+        is multiplied by the damping function
+        \f$1-e^{-y^+/cdries}\f$, where \f$y^+\f$
+        designates the non-dimensional distance to the
+        nearest wall).
+           - 1: true
+           - 0: false
+        The default value is 1 for the Smagorinsky model
+        and 0 for the dynamic model.\n The van Driest
+        wall-damping requires the knowledge of the
+        distance to the nearest wall for each cell
+        in the domain. Refer to keyword \ref optcal::icdpar "icdpar"
+        for potential limitations.\n
+        Useful if and only if \ref iturb = 40 or 41
   \var  cs_turb_les_model_t::ivrtex
-        vortex method (in LES)
+        Activates or not the generation of synthetic turbulence at the
+        different inlet boundaries with the LES model (generation of
+        unsteady synthetic eddies).\n
         - 1: true
         - 0: false (default)
+        Useful if \ref iturb =40, 41 or 42\n
+        This keyword requires the completion of the routine  \ref usvort
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -701,7 +769,11 @@ const double cs_turb_ccazd = 0.682;
 
 /*!
  * Constant used in the definition of LES filtering diameter:
- * \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}} \f$.
+ * \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}}\f$
+ * \ref cs_turb_xlesfl is a constant used to define, for
+ * each cell $\Omega_i$, the width of the (implicit) filter:
+ * \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$\n
+ * Useful if and only if \ref iturb = 40 or 41
  */
 const double cs_turb_xlesfl = 2.0;
 

@@ -135,7 +135,7 @@ module numvar
   integer, save :: iscapp(nscamx)
 
   !> \anchor nscaus
-  !> number of user scalars
+  !> number of user scalars solutions of an advection equation
   integer, save :: nscaus
 
   !> \anchor nscapp

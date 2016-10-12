@@ -672,6 +672,7 @@ module ppincl
   !> enthalpy, if transported
   integer, save :: ihm
 
+  !> \anchor srrom
   !> with gas combustion, pulverised coal or the electric module, \ref srrom
   !> is the sub-relaxation coefficient for the density, following the formula:
   !> \f$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}\f$

@@ -55,48 +55,156 @@ module optcal
   integer, save ::          ischtp
 
   !> time order of the mass flux scheme
-  !>    - 2: theta scheme with theta > 0 (theta=0.5 means 2nd order)
-  !>    - 0: theta scheme with theta = 0 (explicit)
-  !>    - 1: implicit scheme (default)
+  !> The chosen value for \ref istmpf will automatically
+  !> determine the value given to the variable \ref thetfl.
+  !> - 2: theta scheme with theta > 0 (theta=0.5 means 2nd order)
+  !> the mass flow used in the momentum equations is extrapolated at
+  !> n+ \ref thetfl (= n+1/2) from the values at the two former time
+  !> steps (Adams Bashforth); the mass flow used in the equations for
+  !> turbulence and scalars is interpolated at time n+ \ref thetfl
+  !> (= n+1/2) from the values at the former time step and at the
+  !> newly calculated \f$n+1\f$ time step.
+  !> - 0: theta scheme with theta = 0 (explicit): the mass flow
+  !> calculated at the previous time step is used in the convective
+  !> terms of all the equations (momentum, turbulence and scalars)
+  !> - 1: implicit scheme (default) : the mass flow calculated
+  !> at the previous time step is used in the convective terms of the
+  !> momentum equation, and the updated mass flow is used in the
+  !> equations of turbulence and scalars. By default, \ref istmpf=2
+  !> is used in the case of a second-order time scheme (if \ref ischtp=2)
+  !> and \ref istmpf = 1 otherwise.
   integer, save ::          istmpf
 
   !> number of interations on the pressure-velocity coupling on Navier-Stokes
   !> (for the PISO algorithm)
   integer(c_int), pointer, save ::          nterup
 
-  !> extrapolation of source terms in the Navier-Stokes equations
-  !>    - 1: true
-  !>    - 0: false (default)
+  !> \ref isno2t specifies the time scheme activated for the source
+  !> terms of the momentum equation, apart from convection and
+  !> diffusion (for instance: head loss, transposed gradient, ...).
+  !> - 0: "standard" first-order: the terms which are linear
+  !> functions of the solved variable are implicit and the others
+  !> are explicit
+  !> - 1: second-order: the terms of the form \f$S_i\phi\f$ which are
+  !> linear functions of the solved variable \f$\phi\f$ are expressed
+  !> as second-order terms by interpolation (according to the formula
+  !> \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
+  !> \f$\theta\f$ being given by the value of \ref thetav associated
+  !> with the variable \f$\phi\f$); the other terms \f$S_e\f$ are
+  !> expressed as second-order terms by extrapolation (according to the
+  !> formula \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$,
+  !> \f$\theta\f$ being given by the value of \ref thetsn = 0.5).\n
+  !> - 2: the linear terms \f$S_i\phi\f$ are treated in the same
+  !> way as when \ref isno2t = 1; the other terms \f$S_e\f$ are
+  !> extrapolated according to the same formula as when \ref isno2t = 1,
+  !> but with \f$\theta\f$= \ref thetsn = 1. By default, \ref isno2t
+  !> is initialised to 1 (second-order) when the selected time scheme
+  !> is second-order (\ref ischtp = 2), otherwise to 0.
   integer, save ::          isno2t
 
-  !> extrapolation of turbulent quantities
-  !>    - 1: true
-  !>    - 0: false (default)
+
+  !> \ref isto2t specifies the time scheme activated for
+  !> the source terms of the turbulence equations i.e. related
+  !> to \f$k\f$, \f$R_{ij}\f$, \f$\varepsilon\f$, \f$\omega\f$, \f$\varphi\f$,
+  !> \f$\overline{f}\f$), apart from convection and diffusion.
+  !> - 0: standard first-order: the terms which are linear
+  !> functions of the solved variable are implicit and the others are explicit
+  !> - 1: second-order: the terms of the form \f$S_i\phi\f$ which are linear functions
+  !> of the solved variable \f$\phi\f$ are expressed as second-order terms
+  !> by interpolation (according to the formula
+  !> \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
+  !> \f$\theta\f$ being given by the value of \ref thetav associated with the
+  !> variable \f$\phi\f$); the other terms \f$S_e\f$ are expressed as second-order
+  !> terms by extrapolation (according to the formula
+  !> \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$, \f$\theta\f$ being
+  !> given by the value of \ref thetst = 0.5)
+  !> - 2: the linear terms \f$S_i\phi\f$ are treated in the same
+  !> way as when \ref isto2t = 1; the other terms \f$S_e\f$ are
+  !> extrapolated according to the same formula as when \ref isto2t = 1,
+  !> but with \f$\theta\f$= \ref thetst = 1.\n
+  !> Due to certain specific couplings between the turbulence equations,
+  !> \ref isto2t is allowed the value 1 or 2 only for the \f$R_{ij}\f$ models
+  !> (\ref iturb = 30 or 31); hence, it is always initialised to 0.
   integer, save ::          isto2t
 
-  !> extrapolation of source terms in the transport equation of scalars
-  !>    - 1: true
-  !>    - 0: false (default)
+  !> for each scalar, \ref isso2t specifies the time scheme activated
+  !> for the source terms of the equation for the scalar, apart from convection and
+  !> diffusion (for instance: variance production, user-specified terms, ...).
+  !> - 0: "standard" first-order: the terms which are linear
+  !> functions of the solved variable are implicit and the others are explicit
+  !> - 1: second-order: the terms of the form \f$S_i\phi\f$ which are
+  !> linear functions of the solved variable \f$\phi\f$ are expressed
+  !> as second-order terms by interpolation (according to the formula
+  !> \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$, \f$\theta\f$
+  !> being given by the value of \ref thetav associated with the variable \f$\phi\f$);
+  !> the other terms \f$S_e\f$ are expressed as second-order terms by
+  !> extrapolation (according to the formula
+  !> \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$, \f$\theta\f$ being
+  !> given by the value of \ref thetss (iscal) = 0.5)
+  !> - 2: the linear terms \f$S_i\phi\f$ are treated in the same way as
+  !> when \ref isso2t = 1; the other terms \f$S_e\f$ are extrapolated
+  !> according to the same formula as when \ref isso2t = 1, but with
+  !> \f$\theta\f$ = \ref thetss (iscal) = 1.\n
+  !> By default, \ref isso2t (iscal) is initialised to 1 (second-order)
+  !> when the selected time scheme is second-order (\ref ischtp = 2),
+  !> otherwise to 0.
   integer, save ::          isso2t(nscamx)
 
-  !> extrapolation of the density field
-  !>    - 1: true
-  !>    - 0: false (default)
+  !> \ref iroext specifies the time scheme activated
+  !> for the physical property \f$\phi\f$ density.
+  !> - 0: "standard" first-order: the value calculated at
+  !> the beginning of the current time step (from the
+  !> variables known at the end of the previous time step) is used
+  !> - 1: second-order: the physical property \f$\phi\f$ is
+  !> extrapolated according to the formula
+  !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$ being
+  !> given by the value of \ref thetro = 0.5
+  !> - 2: first-order: the physical property \f$\phi\f$ is
+  !> extrapolated at $n+1$ according to the same formula
+  !> as when \ref iroext = 1 but with \f$\theta\f$ = \ref thetro = 1
   integer, save ::          iroext
 
-  !> extrapolation of the total viscosity field
-  !>    - 1: true
-  !>    - 0: false (default)
+  !> \ref iviext specifies the time scheme activated
+  !> for the physical property \f$\phi\f$ "total viscosity"
+  !> (molecular+turbulent or sub-grid viscosities).
+  !> - 0: "standard" first-order: the value calculated at
+  !> the beginning of the current time step (from the
+  !> variables known at the end of the previous time step) is used
+  !> - 1: second-order: the physical property \f$\phi\f$ is
+  !> extrapolated according to the formula
+  !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$
+  !> being given by the value of \ref thetvi = 0.5
+  !> - 2: first-order: the physical property \f$\phi\f$ is
+  !> extrapolated at \f$n+1\f$ according to the
+  !> same formula as when \ref iviext = 1, but with \f$\theta\f$= \ref thetvi = 1
   integer, save ::          iviext
 
-  !> extrapolation of the specific heat field \f$ C_p \f$
-  !>    - 1: true
-  !>    - 0: false (default)
+  !> \ref icpext specifies the time scheme activated
+  !> for the physical property \f$\phi\f$ "specific heat".
+  !> - 0: "standard" first-order: the value calculated at
+  !> the beginning of the current time step (from the
+  !> variables known at the end of the previous time step) is used
+  !> - 1: second-order: the physical property \f$\phi\f$ is
+  !> extrapolated according to the formula
+  !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$
+  !> being given by the value of \ref thetcp = 0.5
+  !> - 2: first-order: the physical property \f$\phi\f$ is
+  !> extrapolated at \f$n+1\f$ according to the
+  !> same formula as when \ref icpext = 1, but with \f$\theta\f$ = \ref thetcp = 1
   integer, save ::          icpext
 
-  !> extrapolation of the scalar diffusivity
-  !>    - 1: true
-  !>    - 0: false (default)
+  !> for each scalar iscal, \ref ivsext (iscal) specifies the time scheme
+  !> activated for the physical property \f$\phi\f$ "diffusivity".
+  !> - 0: "standard" first-order: the value calculated at
+  !> the beginning of the current time step (from the variables known
+  !> at the end of the previous time step) is used
+  !> - 1: second-order: the physical property \f$\phi\f$ is
+  !> extrapolated according to the formula
+  !> \f$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]\f$, \f$\theta\f$
+  !> being given by the value of \ref thetvs (iscal) = 0.5
+  !> - 2: first-order: the physical property \f$\phi\f$ is
+  !> extrapolated at $n+1$ according to the same formula as
+  !> when \ref ivsext = 1, but with \f$\theta\f$ = \ref thetvs (iscal) = 1
   integer, save ::          ivsext(nscamx)
 
   !> initvi : =1 if total viscosity read from checkpoint file
@@ -111,49 +219,89 @@ module optcal
   !> initvs : =1 if scalar diffusivity read from checkpoint file
   integer, save ::          initvs(nscamx)
 
-  !> \f$ \theta_S \f$-scheme for the source terms in the Navier-Stokes equations
+  !> \f$ \theta_S \f$-scheme for the source terms \f$S_e\f$ in the
+  !> Navier-Stokes equations when the source term extrapolation has
+  !> been activated (see \ref isno2t), following the formula
+  !> \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n The value
+  !> of \f$theta\f$ = \ref thetsn is deduced from the value chosen for
+  !> \ref isno2t. Generally only the value 0.5 is used.
   !>    -  0 : second viscosity explicit
   !>    - 1/2: second viscosity extrapolated in n+1/2
   !>    -  1 : second viscosity extrapolated in n+1
   double precision, save :: thetsn
 
-  !> \f$ \theta \f$-scheme for the source terms of turbulent equations
+  !> \f$ \theta \f$-scheme for the extrapolation of the nonlinear
+  !> explicit source terms $S_e$ of the turbulence equations when the
+  !> source term extrapolation has been activated (see \ref isto2t),
+  !> following the formula \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n
+  !> The value of \f$theta\f$ is deduced from the value chosen for
+  !> \ref isto2t. Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
   double precision, save :: thetst
 
-  !> \f$ \theta \f$-scheme for the source terms of transport equations of scalars
+  !> \f$ \theta \f$-scheme for the extrapolation of the nonlinear
+  !> explicit source term \f$S_e\f$ of the scalar transport equation
+  !> when the source term extrapolation has been activated (see
+  !> \ref isso2t), following the formula
+  !> \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n
+  !> The value of \f$\theta\f$ = \ref thetss is deduced from the value
+  !> chosen for \ref isso2t. Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
   double precision, save :: thetss(nscamx)
 
-  !> \f$ \theta \f$-scheme for the mass flux
-  !>    -  0 : explicit
-  !>    - 1/2: extrapolated in n+1/2
-  !>    -  1 : extrapolated in n+1
+  !> \f$ \theta \f$-scheme for the mass flux when a second-order
+  !> time scheme has been activated for the mass flow (see \ref istmpf).
+  !>    -  0 : explicit first-order (corresponds to \ref istmpf = 0 or 1)
+  !>    - 1/2: extrapolated in n+1/2 (corresponds to \ref istmpf = 2). The mass
+  !> flux will be interpolated according to the formula
+  !> \f$Q^{n+\theta}=\frac{1}{2-\theta}Q^{n+1}+\frac{1-\theta}{2-\theta}Q^{n+1-\theta}\f$)
+  !>    -  1 : extrapolated in n+1\n
+  !> Generally, only the value 0.5 is used.
   double precision, save :: thetfl
 
-  !> \f$ \theta \f$-scheme for the total viscosity
+  !> \f$ \theta \f$-scheme for the extrapolation of the physical
+  !> property \f$\phi\f$ "total viscosity" when the extrapolation
+  !> has been activated (see \ref iviext), according to the formula
+  !> \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
+  !> The value of \f$\theta\f$ = \ref thetvi is deduced from the value
+  !> chosen for \ref iviext. Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
   double precision, save :: thetvi
 
-  !> \f$ \theta \f$-scheme for the density field
+  !> \f$ \theta \f$-scheme for the extrapolation of the physical
+  !> property \f$\phi\f$ "density" when the extrapolation has been
+  !> activated (see \ref iroext), according to the formula
+  !> \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
+  !> The value of \f$\theta\f$ = \ref thetro is deduced from the value chosen
+  !> for \ref iroext. Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
   double precision, save :: thetro
 
-  !> \f$ \theta \f$-scheme for the scpecific heat field
+  !> \f$ \theta \f$-scheme for the extrapolation of the physical
+  !> property \f$\phi\f$ "specific heat" when the extrapolation
+  !> has been activated (see \ref icpext), according to the
+  !> formula \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
+  !> The value of \f$\theta\f$ = \ref thetcp is deduced from the value chosen for
+  !> \ref icpext. Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
   double precision, save :: thetcp
 
-  !> \f$ \theta \f$-scheme for the diffusivity
+  !> \f$ \theta \f$-scheme for the extrapolation of the physical
+  !> property \f$\phi\f$ "diffusivity" when the extrapolation has
+  !> been activated (see \ref ivsext), according to the formula
+  !> \f$\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}\f$.\n
+  !> The value of\f$\theta\f$ = \ref thetvs is deduced from the value
+  !> chosen for \ref ivsext. Generally, only the value 0.5 is used.
   !>    -  0 : explicit
   !>    - 1/2: extrapolated in n+1/2
   !>    -  1 : extrapolated in n+1
@@ -185,6 +333,7 @@ module optcal
   !> \addtogroup conv_scheme
   !> \{
 
+  !> \anchor iflxmw
   !> method to compute interior mass flux due to ALE mesh velocity
   !>    - 1: based on cell center mesh velocity
   !>    - 0: based on nodes displacement
@@ -204,9 +353,9 @@ module optcal
   !>    - 4: iterative precess initialized by the least squares method
   integer(c_int), pointer, save :: imrgra
 
-  !> anomax : angle de non orthogonalite des faces en radian au dela duquel
-  !> on retient dans le support etendu des cellules voisines
-  !> de la face les cellules dont un noeud est sur la face
+  !> non orthogonality angle of the faces, in radians.
+  !> For larger angle values, cells with one node on the wall
+  !> are kept in the extended support of the neighboring cells.
   real(c_double), pointer, save :: anomax
 
   !> \}
@@ -226,9 +375,18 @@ module optcal
   !> \addtogroup linear_solver
   !> \{
 
-  !> strengthening of the diagonal part of the matrix if no Dirichlet is set
+  !> \anchor idircl
+  !> indicates whether the diagonal of the matrix should be slightly
+  !> shifted or not if there is no Dirichlet boundary condition and
+  !> if \ref cs_var_cal_opt_t::istat "istat" = 0.
   !>    - 0: false
   !>    - 1: true
+  !> Indeed, in such a case, the matrix for the general
+  !> advection/diffusion equation is singular. A slight shift in the
+  !> diagonal will make it invertible again.\n By default, \ref idircl
+  !> is set to 1 for all the unknowns, except \f$\overline{f}\f$ in v2f
+  !> modelling, since its equation contains another diagonal term
+  !> that ensures the regularity of the matrix.
   !> \remark
   !> the code computes automatically for each variable the number of Dirichlet
   !> BCs
@@ -241,20 +399,47 @@ module optcal
 
   !> \}
 
-  !TODO doxygen it
-  ! Gestion du calcul
-  !   isuite : suite de calcul
-  !     = 0 pour sfs
-  !     = 1 pour suite de calcul
-  !   iecaux : ecriture du suite auxiliaire
-  !   ileaux : lecture  du suite auxiliaire
-  !   isuit1 : suite du module thermique 1D en paroi
-  !   isuict : suite du module aerorefrigerant
-  !   isuivo : suite de la methode des vortex
-  !   isuisy : suite des methodes d entree LES
+  !> Indicator of a calculation restart (=1) or not (=0).
+  !> This value is set automatically by the code; depending on
+  !> whether a restart directory is present, and should not be modified by
+  !> the user
+  integer, save :: isuite
 
-  integer, save :: isuite , ileaux, iecaux,                        &
-                   isuit1 , isuict, isuivo, isuisy
+  !> Indicates the reading (=1) or not (=0) of the auxiliary
+  !> calculation restart file\n
+  !> Useful only in the case of a calculation restart
+  integer, save :: ileaux
+
+  !> Indicates the writing (=1) or not (=0) of the auxiliary calculation
+  !> restart file.
+  integer, save :: iecaux
+
+  !> \anchor isuit1
+  !> For the 1D wall thermal module, activation (1) or not(0)
+  !> of the reading of the mesh and of the wall temperature
+  !> from the restart file
+  !> Useful if nfpt1d > 0
+  integer, save :: isuit1
+
+  !> For the cooling tower module, activate or not the
+  !> the reading of the restart file.
+  integer, save :: isuict
+
+  !> For the vortex method, indicates whether the synthetic
+  !> vortices at the inlet should be initialised or read
+  !> from the restart file.
+  !> Useful if \ref iturb = 40, 41, 42 and \ref ivrtex = 1
+  !> - 0: initialized
+  !> - 1: read
+  integer, save :: isuivo
+
+  !> Reading of the LES inflow module restart file.
+  !> -0: not activated
+  !> -1: activated\n
+  !> If \ref isuisy = 1, synthetic fluctuations are
+  !> not re-initialized in case of restart calculation.
+  !> Useful if \ref iturb = 40, 41 or 42
+  integer, save :: isuisy
 
   !----------------------------------------------------------------------------
   ! Time stepping options
@@ -266,6 +451,12 @@ module optcal
   !> \{
 
   !> Absolute time step number for previous calculation.
+  !>
+  !> In the case of a restart calculation, \ref ntpabs
+  !> is read from the restart file. Otherwise, it is
+  !> initialised to 0 \ref ntpabs is initialised
+  !> automatically by the code, its value is not to be
+  !> modified by the user.
   integer(c_int), pointer, save :: ntpabs
 
   !> Current absolute time step number.
@@ -273,16 +464,35 @@ module optcal
   integer(c_int), pointer, save :: ntcabs
 
   !> Maximum absolute time step number.
+  !>
+  !> For the restart calculations, \ref ntmabs takes into
+  !> account the number of time steps of the previous calculations.
+  !> For instance, after a first calculation of 3 time steps, a
+  !> restart file of 2 time steps is realised by setting
+  !> \ref ntmabs = 3+2 = 5
   integer(c_int), pointer, save :: ntmabs
 
   !> Number of time steps for initalization.
   integer(c_int), pointer, save :: ntinit
 
   !> Absolute time value for previous calculation.
+  !>
+  !> In the case of a restart calculation, \ref ttpabs is read from
+  !> the restart file. Otherwise it is initialised to 0.\n
+  !> \ref ttpabs is initialised automatically by the code,
+  !> its value is not to be modified by the user.
   real(c_double), pointer, save :: ttpabs
 
   !> Current absolute time.
-  !> In case of restart, this is equal to ttpabs + additional computed time.
+  !>
+  !> For the restart calculations, \ref ttcabs takes
+  !> into account the physical time of the previous calculations.\n
+  !> If the time step is uniform (\ref idtvar = 0 or 1), \ref ttcabs
+  !> increases of \ref dt (value of the time step) at each iteration.
+  !> If the time step is non-uniform (\ref idtvar=2), \ref ttcabs
+  !> increases of \ref dtref at each time step.\n
+  !> \ref ttcabs} is initialised and updated automatically by the code,
+  !> its value is not to be modified by the user.
   real(c_double), pointer, save :: ttcabs
 
   !> Maximum absolute time.
@@ -300,8 +510,21 @@ module optcal
   integer(c_int), pointer, save :: inpdt0
 
   !> Clip the time step with respect to the buoyant effects
-  !>    - 0: false
-  !>    - 1: true
+  !>
+  !> When density gradients and gravity are present, a local thermal time
+  !> step can be calculated, based on the Brunt-Vaisala frequency. In
+  !> numerical simulations, it is usually wise for the time step to be
+  !> lower than this limit, otherwise numerical instabilities may appear.\n
+  !> \ref iptlro indicates whether the time step should be limited to the
+  !> local thermal time step (=1) or not (=0).\n
+  !> When \ref iptlro=1, the listing shows the number of cells where the
+  !> time step has been clipped due to the thermal criterion, as well as
+  !> the maximum ratio between the time step and the maximum thermal time
+  !> step. If \ref idtvar=0, since the time step is fixed and cannot be
+  !> clipped, this ratio can be greater than 1. When \ref idtvar > 0, this
+  !> ratio will be less than 1, except if the constraint \ref dtmin has
+  !> prevented the code from reaching a sufficiently low value for \ref dt.
+  !> Useful when density gradients and gravity are present.
   integer(c_int), pointer, save :: iptlro
 
   !> option for a variable time step
@@ -309,38 +532,62 @@ module optcal
   !>    -  0: constant time step
   !>    -  1: time step constant in space but variable in time
   !>    -  2: variable time step in space and in time
+  !> If the numerical scheme is a second-order in time, only the
+  !> option 0 is allowed.
   integer(c_int), pointer, save :: idtvar
 
-  !> reference time step
+  !> Reference time step
+  !>
+  !> This is the time step value used in the case of a calculation run with a
+  !> uniform and constant time step, i.e. \ref idtvar =0 (restart calculation
+  !> or not). It is the value used to initialize the time step in the case of
+  !> an initial calculation run with a non-constant time step(\ref idtvar=1 or
+  !> 2). It is also the value used to initialise the time step in the case of
+  !> a restart calculation in which the type of time step has been changed
+  !> (for instance, \ref idtvar=1 in the new calculation and \ref idtvar = 0 or
+  !> 2 in the previous calculation).\n
+  !> See \subpage user_initialization_time_step for examples.
   real(c_double), pointer, save :: dtref
 
-  !> maximum Courant number (when idtvar is different from 0)
+  !> maximum Courant number (when \ref idtvar is different from 0)
   real(c_double), pointer, save :: coumax
 
   !> maximum Courant number for the continuity equation in compressible model
   real(c_double), pointer, save :: cflmmx
 
-  !> maximum Fourier number (when idtvar is different from 0)
+  !> maximum Fourier number (when \ref idtvar is different from 0)
   real(c_double), pointer, save :: foumax
 
-  !> relative allowed variation of dt (when idtvar is different from 0)
+  !> maximum allowed relative increase in the calculated time step value
+  !> between two successive time steps (to ensure stability, any decrease
+  !> in the time step is immediate and without limit).\n
+  !> Useful when \ref idtvar is different from 0.
   real(c_double), pointer, save :: varrdt
 
-  !> minimum value of dt (when idtvar is different from 0).
-  !> Take dtmin = min (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
+  !> lower limit for the calculated time step when idtvar is different from 0.\n
+  !> Take \ref dtmin = min (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
   real(c_double), pointer, save :: dtmin
 
-  !> maximum value of dt (when idtvar is different from 0).
-  !> Take dtmax = max (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
+  !> upper limit for the calculated time step when idtvar is different from 0.\n
+  !> Take \ref dtmax = max (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
   real(c_double), pointer, save :: dtmax
 
   !> multiplicator coefficient for the time step of each variable
   !>    - useless for u,v,w,p
   !>    - for k,e     the same value is taken (value of k)
-  !>    - for Rij, e  the same value is taken (value of r11)
+  !>    - for Rij, e  the same value is taken (value of r11)\n
+  !> Hence, the time step used when solving the evolution equation for
+  !> the variable is the time step used for the dynamic equations (velocity/pressure)
+  !> multiplied by \ref cdtvar.
+  !> The size of the array \ref cdtvar is \ref dimens::nvar "nvar". For instance, the
+  !> multiplicative coefficient applied to the scalar 2 is cdtvar(isca(2))). Yet, the
+  !> value of cdtvar for the velocity components and the pressure is not used. Also,
+  !> although it is possible to change the value of \ref cdtvar for the turbulent
+  !> variables, it is highly not recommended.
   double precision, save :: cdtvar(nvarmx)
 
   !> relaxation coefficient for the steady algorithm
+  !> \ref relxst = 1 : no relaxation.
   real(c_double), pointer, save :: relxst
 
   !> \}
@@ -358,17 +605,43 @@ module optcal
   !>    - 0: no thermal model
   !>    - 1: temperature
   !>    - 2: enthalpy
-  !>    - 3: total energy (only for compressible module)
+  !>    - 3: total energy (only for compressible module)\n
+  !> When a particular physics module is activated (gas combustion,
+  !> pulverised coal, electricity or compressible), the user must not
+  !> modify \ref itherm (the choice is made automatically: the solved
+  !> variable is either the enthalpy or the total energy). The user is
+  !> also reminded that, in the case of a coupling with SYRTHES, the
+  !> solved thermal variable should be the temperature (\ref itherm = 1).
+  !> More precisely, everything is designed in the code to allow for the
+  !> running of a calculation coupled with SYRTHES with the enthalpy as
+  !> thermal variable (the correspondence and conversion is then specified
+  !> by the user in the subroutine \ref usthht). However this case has never
+  !> been used in practice and has therefore not been tested. With the
+  !> compressible model, it is possible to carry out calculations coupled with
+  !> SYRTHES, although the thermal scalar represents the total energy and not
+  !> the temperature.
   integer(c_int), pointer, save :: itherm
 
-  !> temperature scale
-  !>    - 0: none
-  !>    - 1: Kelvin
-  !>    - 2: Celsius
+  !> Temperature scale
+  !> - 0: none
+  !> - 1: Kelvin
+  !> - 2: Celsius
+  !> The distinction between \ref itpscl = 1 or 2 is useful only in case of
+  !> radiation modelling. For calculations without radiation modelling,
+  !> use \ref itpscl = 1 for the temperature.\n
+  !> Useful if and only if \ref dimens::nscal "nscal" \f$\geqslant\f$ 1.
   integer(c_int), pointer, save :: itpscl
 
-  !> index of the thermal scalar (temperature, energy of enthalpy),
-  !> the index of the corresponding variable is isca(iscalt)
+  !> Index of the thermal scalar (temperature, energy or enthalpy)
+  !>
+  !> The index of the corresponding variable is isca(iscalt)
+  !> If \ref iscalt = -1, neither the temperature nor the enthalpy is
+  !> represented by a scalar. When a specific physics module is activated
+  !> (gas combustion, pulverised coal, electricity or compressible), the user
+  !> must not modify \ref iscalt (the choice is made automatically). In the
+  !> case of the compressible module, \ref iscalt does not correspond to
+  !> the temperature nor enthalpy but to the total energy}.\n Useful if
+  !> and only if \ref dimens::nscal "nscal" \f$\geqslant\f$ 1.
   integer(c_int), pointer, save :: iscalt
 
   !> \}
@@ -419,13 +692,32 @@ module optcal
   integer(c_int), pointer, save :: idirsm
 
   !>  Wall functions
-  !>    - 0: no wall functions
-  !>    - 1: one scale of friction velocities (power law)
-  !>    - 2: one scale of friction velocities (log law)
-  !>    - 3: two scales of friction velocities (log law)
-  !>    - 4: two scales of friction velocities (log law) - scalable wall functions
-  !>    - 5: two scales of friction velocities (mixing
-  !>          length based on V. Driest analysis)
+  !>  Indicates the type of wall function is used for the velocity
+  !>  boundary conditions on a frictional wall.
+  !>  - 0: no wall functions
+  !>  - 1: one scale of friction velocities (power law)
+  !>  - 2: one scale of friction velocities (log law)
+  !>  - 3: two scales of friction velocities (log law)
+  !>  - 4: two scales of friction velocities (log law) (scalable wall functions)
+  !>  - 5: two scales of friction velocities (mixing length based on V. Driest analysis)\n
+  !>  \ref iwallf is initialised to 2 for \ref iturb = 10, 40, 41 or 70
+  !>  (mixing length, LES and Spalart Allmaras).\n
+  !>  \ref iwallf is initialised to 0 for \ref iturb = 0, 32, 50 or 51\n
+  !>  \ref iwallf is initialised to 3 for \ref iturb = 20, 21, 30, 31 or 60
+  !>  (\f$k-\epsilon\f$, \f$R_{ij}-\epsilon\f$ LRR, \f$R_{ij}-\epsilon\f$ SSG and
+  !> \f$ k-\omega\f$ SST models).\n
+  !>  The v2f model (\ref iturb=50) is not designed to use wall functions
+  !>  (the mesh must be low Reynolds).\n
+  !>  The value \ref iwallf = 3 is not compatible with \ref iturb=0, 10, 40
+  !>  or 41 (laminar, mixing length and LES).\n
+  !>  Concerning the \f$k-\epsilon\f$ and \f$R_{ij}-\epsilon\f$ models, the
+  !>  two-scales model is usually at least as satisfactory as the one-scale
+  !>  model.\n
+  !>  The scalable wall function allows to virtually shift the wall when
+  !>  necessary in order to be always in a logarithmic layer. It is used to make up for
+  !>  the problems related to the use of High-Reynolds models on very refined
+  !>  meshes.\n
+  !>  Useful if \ref iturb is different from 50.
   integer(c_int), pointer, save :: iwallf
 
   !>  Wall functions for scalar
@@ -438,29 +730,59 @@ module optcal
   !>    - 1: exchange coefficient computed with a correlation
   integer(c_int), pointer, save :: iwallt
 
-  !> clipping of k and epsilon
-  !>    - 0 absolute value clipping
-  !>    - 1 coupled clipping based on physical relationships
+  !> Indicates the clipping method used for \f$k\f$ and
+  !> \f$\varepsilon\f$, for the \f$k-\epsilon\f$ and v2f models
+  !> - 0: clipping in absolute value
+  !> - 1: coupled clipping based on physical relationships\n
+  !> Useful if and only if \ref iturb = 20, 21 or 50 (\f$k-\epsilon\f$ and
+  !> v2f models). The results obtained with the method corresponding to
+  !> \ref iclkep =1 showed in some cases a substantial sensitivity to the
+  !> values of the length scale \ref cs_turb_ref_values_t::almax "almax".\n
+  !> The option \ref iclkep = 1 is therefore not recommended, and,
+  !> if chosen, must be used cautiously.
   integer(c_int), pointer, save :: iclkep
 
-  !> take \f$ 2/3 \rho \grad k \f$ in the momentum equation
-  !>    - 1: true
-  !>    - 0: false (default)
+  !> Indicates if the term \f$\frac{2}{3}\grad \rho k\f$
+  !> is taken into account in the velocity equation.
+  !> - 1: true
+  !> - 0: false in the velocity\n
+  !> Useful if and only if \ref iturb = 20, 21, 50 or 60.\n
+  !> This term may generate non-physical velocities at the wall.
+  !> When it is not explicitly taken into account, it is
+  !> implicitly included into the pressure.
   integer(c_int), pointer, save :: igrhok
 
-  !> buoyant term in \f$ k- \varepsilon \f$
-  !>    - 1: true (default if \f$ \rho \f$ is variable)
-  !>    - 0: false
+  !> Indicates if the terms related to gravity are taken
+  !> into account in the equations of \f$k-\epsilon\f$.
+  !> - 1: true (default if \f$ \rho \f$ is variable)
+  !> - 0: false
+  !> Useful if and only if \ref iturb = 20, 21, 50 or 60 and
+  !> (\ref cstphy::gx "gx", \ref cstphy::gy "gy", \ref cstphy::gz "gz"})
+  !> \f$\ne\f$ (0,0,0) and the density is not uniform.
   integer(c_int), pointer, save :: igrake
 
-  !> buoyant term in \f$ R_{ij}- \varepsilon \f$
-  !>    - 1: true (default if \f$ \rho \f$ is variable)
-  !>    - 0: false
+  !> Indicates if the terms related to gravity are taken
+  !> into account in the equations of \f$R_{ij}-\varepsilon\f$.
+  !> - 1: true (default if \f$ \rho \f$ is variable)
+  !> - 0: false
+  !> Useful if and only if \ref iturb = 30 or 31 and (\ref cstphy::gx "gx",
+  !> \ref cstphy::gy "gy", \ref cstphy::gz "gz"}) \f$\ne\f$
+  !> (0,0,0) (\f$R_{ij}-\epsilon\f$ model with gravity) and the
+  !> density is not uniform.
   integer(c_int), pointer, save :: igrari
 
-  !> partially coupled version of \f$ k-\varepsilon \f$ (only for iturb=20)
-  !>    - 1: true (default)
-  !>    - 0: false
+  !> Indicates if the coupling of the source terms of
+  !> \f$k\f$ and \f$\epsilon\f$ or \f$k\f$ and \f$\omega\f$
+  !> is taken into account or not.
+  !> - 1: true,
+  !> - 0: false\n
+  !> If \ref ikecou = 0 in \f$k-\epsilon\f$ model, the term
+  !> in \f$\epsilon\f$ in the equation of \f$k\f$ is made implicit.\n
+  !> \ref ikecou is initialised to 0 if \ref iturb = 21 or 60, and
+  !> to 1 if \ref iturb = 20.\n
+  !> \ref ikecou = 1 is forbidden when using the v2f model (\ref iturb = 50).\n
+  !> Useful if and only if \ref iturb = 20, 21 or 60 (\f$k-\epsilon\f$ and
+  !> \f$k-\omega\f$ models)
   integer(c_int), pointer, save :: ikecou
 
   !> Advanced re-init for EBRSM and k-omega models
@@ -479,6 +801,14 @@ module optcal
   !> implicit \f$ \divv \left( \rho \tens{R} \right) \f$
   !>    - 1: true
   !>    - 0: false (default)
+  !> The goal is to improve the stability of the calculation.
+  !> The usefulness of \ref irijnu = 1 has however not been
+  !> clearly demonstrated.\n Since the system is solved in
+  !> incremental form, this extra turbulent viscosity does
+  !> not change the final solution for steady flows. However,
+  !> for unsteady flows, the parameter \ref nswrsm should be
+  !> increased.\n Useful if and only if \ref iturb = 30 or 31
+  !> (\f$R_{ij}-\epsilon\f$ model).
   integer(c_int), pointer, save :: irijnu
 
   !> accurate treatment of \f$ \tens{R} \f$ at the boundary (see \ref condli)
@@ -486,9 +816,19 @@ module optcal
   !>    - 0: false (default)
   integer(c_int), pointer, save :: irijrb
 
-  !> wall echo term of \f$ \tens{R} \f$
-  !>    - 1: true
-  !>    - 0: false (default)
+  !> Indicates if the wall echo terms in
+  !> \f$R_{ij}-\epsilon\f$ LRR model are taken into account:
+  !> - 1: true,
+  !> - 0: false (default)\n
+  !> Useful if and only if \ref iturb = 30 (\f$R_{ij}-\epsilon\f$
+  !> LRR).\n It is not recommended to take these terms into account:
+  !> they have an influence only near the walls, their expression is hardly
+  !> justifiable according to some authors and, in the configurations
+  !> studied with Code_Saturne, they did not bring any improvement in the results.\n
+  !> In addition, their use induces an increase in the calculation time.\n
+  !> The wall echo terms imply the calculation of the distance to the wall
+  !> for every cell in the domain. See \ref icdpar for potential restrictions
+  !> due to this.
   integer(c_int), pointer, save :: irijec
 
   !> whole treatment of the diagonal part of the dissusion tensor of
@@ -507,14 +847,30 @@ module optcal
   !>    - 0: false (default)
   integer(c_int), pointer, save :: iclptr
 
-  !> Van Driest smoothing at the wall (only for itytur=4)
+  !> Activates or the van Driest wall-damping for the
+  !> Smagorinsky constant (the Smagorinsky constant
+  !> is multiplied by the damping function
+  !> \f$1-e^{-y^+/ cdries}\f$, where \f$y^+\f$
+  !> designates the non-dimensional distance to the
+  !> nearest wall).
   !>    - 1: true
   !>    - 0: false
+  !> The default value is 1 for the Smagorinsky model
+  !> and 0 for the dynamic model.\n The van Driest
+  !> wall-damping requires the knowledge of the
+  !> distance to the nearest wall for each cell
+  !> in the domain. Refer to keyword \ref icdpar
+  !> for potential limitations.\n
+  !> Useful if and only if \ref iturb = 40 or 41
   integer(c_int), pointer, save :: idries
 
-  !> vortex method (in LES)
-  !>    - 1: true
-  !>    - 0: false (default)
+  !> Activates or not the generation of synthetic turbulence at the
+  !> different inlet boundaries with the LES model (generation of
+  !> unsteady synthetic eddies).\n
+  !> - 1: true
+  !> - 0: false (default)
+  !> Useful if \ref iturb =40, 41 or 42\n
+  !> This keyword requires the completion of the routine  \ref usvort
   integer(c_int), pointer, save :: ivrtex
 
   !> turbulent flux model for \f$ \overline{\varia^\prime \vect{u}^\prime} \f$
@@ -523,6 +879,7 @@ module optcal
   !>    - 10: GGDH
   !>    - 20: AFM
   !>    - 30: DFM (Transport equation modelized)
+  !> GGDH, AFM and DFM are only available when a second order closure is used.
   integer, save :: iturt(nscamx)
   !    - 11: EB-GGDH
   !    - 21: EB-AFM
@@ -549,10 +906,15 @@ module optcal
   !> \addtogroup stokes
   !> \{
 
-  !> take \f$ \divs \left( \mu \transpose{\gradt \, \vect{u}} - 2/3 \mu \trace{\gradt \, \vect{u}} \right) \f$
-  !> into account in the momentum equation
-  !>    - 1: true (default)
-  !>    - 0: false
+  !> Indicates whether the source terms in transposed gradient
+  !> and velocity divergence should be taken into account in the
+  !> momentum equation. In the compressible module, these terms
+  !> also account for the volume viscosity (cf. \ref ppincl::viscv0 "viscv0"
+  !> and \ref ppincl::iviscv "iviscv")
+  !> \f$\partial_i \left[(\kappa -2/3\,(\mu+\mu_t))\partial_k U_k  \right]
+  !> +     \partial_j \left[ (\mu+\mu_t)\partial_i U_j \right]\f$:
+  !> - 0: not taken into account,
+  !> - 1: taken into account.
   integer(c_int), pointer, save :: ivisse
 
   !> Reconstruction of the velocity field with the updated pressure option
@@ -575,15 +937,29 @@ module optcal
   !> Arakawa multiplicator for the Rhie and Chow filter (1 by default)
   real(c_double), pointer, save :: arak
 
-  !> Pseudo coupled pressure-velocity solver
-  !>    - 1: true
-  !>    - 0: false (default)
+  !> indicates the algorithm for velocity/pressure coupling:
+  !> - 0: standard algorithm,
+  !> - 1: reinforced coupling in case calculation with long time steps\n
+  !> Always useful (it is seldom advised, but it can prove very useful,
+  !> for instance, in case of flows with weak convection effects and
+  !> highly variable viscosity).
   integer(c_int), pointer, save :: ipucou
 
   !> \anchor iccvfg
-  !> calculation with a fixed velocity field
+  !> indicates whether the dynamic field should be frozen or not:
   !>    - 1: true
-  !>    - 0: false (default)
+  !>    - 0: false (default)\n
+  !> In such a case, the values of velocity, pressure and the
+  !> variables related to the potential turbulence model
+  !> (\f$k\f$, \f$R_{ij}\f$, \f$\varepsilon\f$, \f$\varphi\f$,
+  !> \f$\bar{f}\f$, \f$\omega\f$, turbulent viscosity) are kept
+  !> constant over time and only the equations for the scalars
+  !> are solved.\n Also, if \ref iccvfg = 1, the physical properties
+  !> modified in \ref cs_user_physical_properties will keep being
+  !> updated. Beware of non-consistencies if these properties would
+  !> normally affect the dynamic field (modification of density for
+  !> instance).\n Useful if and only if \ref dimens::nscal "nscal"
+  !> \f$>\f$ 0 and the calculation is a restart.
   integer(c_int), pointer, save :: iccvfg
 
   !> Algorithm to take into account the density variation in time
@@ -682,9 +1058,22 @@ module optcal
   integer, save :: itagms
 
 
-  !> compute error estimators
-  !>    - 1: true
-  !>    - 0: false (default)
+  !> \ref iescal indicates the calculation mode for the error estimator
+  !> \ref paramx::iespre "iespre", \ref paramx::iesder "iesder",
+  !> \ref paramx::iescor "iescor" or \ref paramx::iestot "iestot"
+  !> for the Navier-Stokes equation:
+  !> - 0: estimator not calculated,
+  !> - 1: the estimator  \f$ \eta^{*}_{i,1}\f$ is calculated,
+  !> without contribution of the volume,
+  !> - 2: the estimator \f$ \eta^{*}_{i,2}\f$ is calculated,
+  !> with contribution of the volume (norm \f$L^2\f$),
+  !> except for \ref paramx::iescor "iescor", for which
+  !> \f$|\Omega_i|\ \eta^{corr}_{i,1}\ \f$
+  !> is calculated. The names of the estimators appearing
+  !> in the listing and the post-processing are made up of
+  !> the default name (given before), followed by the value of
+  !> \ref iescal}. For instance, EsPre2 is the estimator
+  !> \ref paramx::iespre "iespre" calculated with \ref iescal = 2.
   integer, save :: iescal(nestmx)
 
   !> \}
@@ -727,6 +1116,7 @@ module optcal
   !> of nfbpcd) cells associated to the face with condensation phenomenon
   integer, save :: nftcdt
 
+  !> \anchor iporos
   !> take the porosity fomulation into account
   !>    - 1: Taking porosity into account
   !>    - 0: Standard algorithm (Without porosity)
@@ -751,74 +1141,128 @@ module optcal
   !> \addtogroup num_wall_distance
   !> \{
 
-  !> ineedy : = 1 distance a la paroi est necessaire pour le calcul
-  !>          = 0 distance a la paroi n'est pas necessaire
+  !> - 1, the wall distance must be computed,
+  !> - 0, the wall distance computation is not necessary.
   integer, save :: ineedy
 
-  !> imajdy : = 1 distance a la paroi a ete mise a jour
-  !>          = 0 distance a la paroi n'a pas ete mise a jour
+  !> - 1, the wall distance is up to date,
+  !> - 0, the wall distance has not been updated.
   integer, save :: imajdy
 
-  !> icdpar : = 1 calcul standard (et relecture en suite de calcul)
-  !>          = 2 calcul ancien   (et relecture en suite de calcul)
-  !>          =-1 forcer le recalcul en suite (par calcul standard)
-  !>          =-2 forcer le recalcul en suite (par calcul ancien)
+  !> Specifies the method used to calculate the distance to the wall y
+  !> and the non-dimensional distance \f$ y+ \f$ for all the cells of
+  !> the calculation domain (when necessary):
+  !> - 1: standard algorithm (based on a Poisson equation for y and
+  !> convection equation for \f$ y+ \f$), with reading of the distance
+  !> to the wall from the restart file if possible
+  !> - -1: standard algorithm (based on a Poisson equation for y and
+  !> convection equation for \f$ y+ \f$ ), with systematic recalculation
+  !> of the distance to the wall in case of calculation restart
+  !> - 2: former algorithm (based on geometrical considerations), with
+  !> reading of the distance to the wall from the restart file if possible\n
+  !> - -2: former algorithm (based on geometrical considerations) with systematic
+  !> recalculation of the distance to the wall in case of calculation restart.\n\n
+  !> In case of restart calculation, if the position of the walls haven’t changed,
+  !> reading the distance to the wall from the restart file can save a fair amount
+  !> of CPU time.\n Useful in \f$ R_{ij}-\epsilon \f$ model with wall echo
+  !> (\ref iturb=30 and \ref irijec=1), in LES with van Driest damping
+  !> (\ref iturb=40 and \ref idries=1) and in \f$ k-\omega\f$ SST (\ref iturb=60).
+  !> By default, \ref icdpar is initialised to -1, in case there has been a change
+  !> in the definition of the boundary conditions between two computations (change
+  !> in the number or the positions of the walls). Yet, with the \f$k-\omega\f$ SST model,
+  !> the distance to the wall is needed to calculate the turbulent viscosity, which is
+  !> done before the calculation of the distance to the wall. Hence, when this model
+  !> is used (and only in that case), \ref icdpar is set to 1 by default, to ensure
+  !> total continuity of the calculation at restart. As a consequence, with the
+  !> \f$k-\omega\f$ SST model, if the number and positions of the walls are changed
+  !> at a calculation restart, it is mandatory for the user to set \ref icdpar
+  !> explicitly to -1, otherwise the distance to the wall used will not correspond
+  !> to the actual position of the walls.\n The former algorithm is not compatible
+  !> with parallelism nor periodicity. Also, whatever the value chosen for \ref icdpar,
+  !> the calculation of the distance to the wall is made at the most once for all at the
+  !> beginning of the calculation; it is therefore not compatible with moving walls.
+  !> Please contact the development team if you need to override this limitation.
   integer, save :: icdpar
 
-  !> nitmay : nombre max d'iterations pour les resolutions iteratives
+  !> maximum number of iterations for the solution of the linear systems \n
+  !> useful when \ref icdpar \f$\neq\f$ 0
   integer, save :: nitmay
 
-  !> nswrsy : nombre de sweep pour reconstruction des s.m.
+  !> number of iterations for the reconstruction of the right-hand sides:
+  !> corresponds to \ref nswrsm \n
+  !> useful when \ref icdpar \f$\neq\f$ 0
   integer, save :: nswrsy
 
-  !> nswrgy : nombre de sweep pour reconstruction des gradients
+  !> number of iterations for the gradient reconstruction:
+  !> corresponds to \ref nswrgr \n
+  !> useful when \ref icdpar \f$\neq\f$ 0
   integer, save :: nswrgy
 
-  !> imligy : methode de limitation du gradient
+  !> type of gradient limitation: corresponds to \ref imligr
+  !> useful when \ref icdpar \f$\neq\f$ 0
   integer, save :: imligy
 
-  !> ircfly : indicateur pour reconstruction des flux
+  !> indicates the reconstruction of the convective and diffusive fluxes at
+  !> the faces: corresponds to \ref ircflu \n
+  !> useful when \ref icdpar \f$\neq\f$ 0
   integer, save :: ircfly
 
-  !> ischcy : indicateur du schema en espace
+  !> indicates type of second-order convective scheme: corresponds to \ref ischcv\n
+  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
   integer, save :: ischcy
 
-  !> isstpy : indicateur pour test de pente
+  !> indicates if a ``slope test'' should be used for a second-order convective
+  !> scheme: corresponds to \ref isstpc \n
+  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
   integer, save :: isstpy
 
-  !> iwarny : niveau d'impression
+  !> specifies the level of the output writing concerning the calculation of the distance to
+  !> the wall with \ref icdpar = 0. The higher the value, the more detailed the outputs.\n
+  !> useful when \ref icdpar \f$\neq\f$ 0
   integer, save :: iwarny
 
-  !> ntcmxy : nombre max d'iteration pour la convection de y
+  !> number of pseudo-time iterations for the calculation of the non-dimensional distance
+  !> to the wall \f$ y+ \f$.\n
+  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
   integer, save :: ntcmxy
 
-  ! blency : 1 - proportion d'upwind
+  !> proportion of second-order convective scheme: corresponds to \ref blencv \n
+  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
   double precision, save :: blency
 
-  ! epsily : precision pour resolution iterative
+  !> relative precision for the solution of the linear systems: corresponds to \ref epsilo \n
+  !> useful when \ref icdpar \f$\neq\f$ 0
   double precision, save :: epsily
 
-  ! epsrsy : precision pour la reconstruction du second membre
+  !> relative precision for the right-hand side reconstruction: corresponds to \ref epsrsm \n
+  !> useful when \ref icdpar \f$\neq\f$ 0
   double precision, save :: epsrsy
 
-  ! epsrgy : precision pour la reconstruction des gradients
+  !> relative precision for the iterative gradient reconstruction: corresponds to \ref epsrgr \n
+  !> useful when \ref icdpar \f$\neq\f$ 0
   double precision, save :: epsrgy
 
-  ! climgy : coef gradient*distance/ecart
+  !> limitation factor of the gradients: corresponds to \ref climgr \n
+  !> useful when \ref icdpar \f$\neq\f$ 0
   double precision, save :: climgy
 
-  ! extray : coef d'extrapolation des gradients
+  !> extrapolation coefficient of the gradients at the boundaries: corresponds to \ref extrag \n
+  !> useful when \ref icdpar \f$\neq\f$ 0
   double precision, save :: extray
 
-  ! coumxy : valeur max   du courant pour equation convection
+  !> Target Courant number for the calculation of the non-dimensional distance
+  !> to the wall\n
+  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
   double precision, save :: coumxy
 
-  ! epscvy : precision pour convergence equation convection stationnaire
+  !> relative precision for the convergence of the pseudo-transient regime
+  !> for the calculation of the non-dimensional distance to the wall \n
+  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
   double precision, save :: epscvy
 
-  ! yplmxy : valeur max   de yplus au dessus de laquelle l'amortissement de
-  !          Van Driest est sans effet et donc pour laquelle un calcul de
-  !          yplus moins precis est suffisant
+  !> value of the non-dimensional distance to the wall above which the
+  !> calculation of the distance is not necessary (for the damping)
+  !> useful when \ref icdpar \f$\neq\f$ 0 for the calculation of \f$ y+ \f$.
   double precision, save :: yplmxy
 
   !> \}
@@ -832,6 +1276,7 @@ module optcal
   !> \addtogroup scalar_params
   !> \{
 
+  !> \anchor iscacp
   !> iscacp : 0 : scalar does not behave like a temperature
   !>          1 : scalar behaves like a temperature (use Cp for wall law)
   !>        > 1 : not yet allowed, could be used for multiple Cp definitions
@@ -840,18 +1285,59 @@ module optcal
   !> iclvfl : 0 : clip variances to zero
   !>          1 : clip variances to zero and to f(1-f)
   !>          2 : clip variances to  max(zero,scamin) and scamax
+  !> for every scalar iscal representing the average of the square of the
+  !> fluctuations of another scalar ii= \ref iscavr (iscal) (noted \$f\$),
+  !> indicator of the clipping method:
+  !> - -1: no clipping because the scalar does not represent
+  !> the average of the square of the fluctuations of another scalar
+  !> - 0: clipping to 0 for the lower range of values
+  !> - 1: clipping to 0 for the lower range of values and to
+  !> \f$(f-f_{min})(f_{max}-f)\f$ for higher values, where \f$f\f$ is
+  !> the associated scalar, \f$f_{min}\f$ and \f$f_{max}\f$ its minimum and maximum
+  !> values specified by the user (i.e. scamin (ii) and scamax (ii))
+  !> - 2: clipping to max(0,scamin(iscal)) for lower values and to
+  !>  scamax(iscal) for higher values.scamin and scamax are limits
+  !> specified by the user.\n Useful for the scalars iscal for
+  !> which \ref iscavr (iscal) \f$>\f$0.
   integer, save ::          iclvfl(nscamx)
 
   !> iscasp(ii) : index of the ii^th species (0 if not a species)
   integer, save ::          iscasp(nscamx)
 
-  !> visls0 : viscosity of scalars if constant
+  !> reference molecular diffusivity related to the scalar J (\f$kg.m^{-1}.s^{-1}\f$).\n
+  !>
+  !> Negative value: not initialised\n
+  !> Useful if 1\f$\leqslant\f$J\f$\leqslant\f$ \ref dimens::nscal "nscal",
+  !> unless the user specifies the molecular diffusivity in the appropriate
+  !> user subroutine (\ref cs_user_physical_properties for the standard
+  !> physics) (field_get_key_id (ivarfl(isca(iscal)),kivisl,...)
+  !> \f$>\f$ -1)\n Warning: \ref visls0 corresponds to the diffusivity.
+  !> For the temperature, it is therefore defined as \f$\lambda/C_p\f$
+  !> where \f$\lambda\f$ and \f$C_p\f$ are the conductivity and specific
+  !> heat. When using the Graphical Interface, \f$\lambda\f$ and \f$C_p\f$
+  !> are specified separately, and \ref visls0 is calculated automatically.\n
+  !> With the compressible module, \ref visls0 (given in \ref uscfx2) is
+  !> directly the thermal conductivity \f$W.m^{-1}.K^{-1}\f$.\n With gas or
+  !> coal combustion, the molecular diffusivity of the enthalpy
+  !> (\f$kg.m^{-1}.s^{-1}\f$) must be specified by the user in the variable
+  !> \ref ppthch::diftl0 "diftl0"(\ref cs_user_combustion).\n
+  !> With the electric module, for the Joule effect, the diffusivity is
+  !> specified by the user in \ref cs_user_physical_properties.c (even if
+  !> it is constant). For the electric arcs, it is calculated from the
+  !> thermochemical data file.
   double precision, save :: visls0(nscamx)
 
-  !> sigmas : prandtl of scalars
+  !> sigmas : turbulent Prandtl (or Schmidt) number for scalars.\n
+  !> Useful if and only if  1\f$\leqslant\f$ iscal \f$\leqslant\f$\ref nscaus
   double precision, save :: sigmas(nscamx)
 
-  !> rvarfl : coeff de dissipation des variances
+  !> When iscavr(iscal)>0, \ref rvarfl is the coefficient \f$R_f\f$ in
+  !> the dissipation term \f$\-\frac{\rho}{R_f}\frac{\varepsilon}{k}\f$
+  !> of the equation concerning the scalar,
+  !> which represents the root mean square of the fluctuations
+  !> of the scalar.\n
+  !> Useful if and only if there is 1\f$\leqslant\f$ iscal \f$\leqslant\f$
+  !> \ref dimens::nscal "nscal" such as iscavr(iscal)>0
   double precision, save :: rvarfl(nscamx)
 
   !> ctheta : coefficient des modeles de flux turbulents GGDH et AFM

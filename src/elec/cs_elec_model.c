@@ -92,47 +92,82 @@ BEGIN_C_DECLS
   \brief option for electric model
 
   \var  cs_elec_option_t::ieljou
-        joule model
+        Joule model
         - -1: module not activated
         -  1: use of a real potential
         -  2: use of a complex potential
         -  3: use of real potential and specific boundary conditions
         -  4: use of complex potential and specific boundary conditions
   \var  cs_elec_option_t::ielarc
-        electric arc model
+        Electric arc model
         - -1: module not activated
         -  1: determination of the magnetic field by means of the Ampere’ theorem
         -  2: determination of the magnetic field by means of the vector potential
   \var  cs_elec_option_t::ixkabe
-        model for radiative properties
+        Model for radiative properties
         - 0: last column read but not use
         - 1: last column : absorption coefficient
         - 2: last column : radiative ST
   \var  cs_elec_option_t::ntdcla
-        first iteration to take into account restrike model
+        First iteration to take into account restrike model
   \var  cs_elec_option_t::irestrike
-        indicate if restrike or not
+        Indicate if restrike or not
   \var  cs_elec_option_t::restrike_point
-        coordinates for restrike point
+        Coordinates for restrike point
   \var  cs_elec_option_t::crit_reca
-        define plane for scaling
+        Defines plane coordinates component used to calculate
+        current in a plane.\n
+        Useful if \ref modrec = 2.
   \var  cs_elec_option_t::ielcor
-        indicate if scaling or not
+        Indicate if scaling or not.\n
+        When \ref ielcor = 1, the boundary conditions for the potential
+        will be tuned at each time step in order to reach a user-specified
+        target dissipated power \ref puisim (Joule effect) or a user-specified
+        target current intensity \ref couimp (electric arcs).\n The boundary
+        condition tuning is controlled by subroutines \ref elreca or
+        \ref cs_user_electric_scaling.
   \var  cs_elec_option_t::modrec
-        model for scaling
-        - 1: volumic power
-        - 2: by plane
-        - 3: user function
+        Model for scaling
+        - 1: volumic power for boundary conditions tuning,
+        - 2: by plane for boundary conditions tuning,
+        - 3: user function for boundary conditions tuning.
+        In this case, we need to define the plane and the
+        current density component used.
   \var  cs_elec_option_t::idreca
-        direction for current for scaling
+        Defines the current density component used to calculate
+        current in a plane.\n
+        Useful if \ref modrec = 2.
   \var  cs_elec_option_t::izreca
-        indicator for faces for scaling
+        Indicator for faces for scaling
   \var  cs_elec_option_t::couimp
-        imposed current
+        Imposed current.\n
+        With the electric arcs module, \ref couimp is the target current
+        intensity (\f$A\f$) for the calculations with boundary condition
+        tuning for the potential.\n The target intensity will be reached
+        if the boundary conditions are expressed using the variable
+        \ref pot_diff or if the initial boundary conditions are multiplied by
+        the variable \ref coejou.\n
+        Useful with the electric arcs module if \ref ielcor = 1.
   \var  cs_elec_option_t::pot_diff
-        potential difference
+        Potential difference.\n
+        \ref pot_diff is the potential difference (\f$V\f$) which generates
+        the current (and the Joule effect) for the calculations with boundary
+        conditions tuning for the potential. This value is initialised set by
+        the user (\ref cs_user_parameters). It is then automatically tuned
+        depending on the value of dissipated power (Joule effect module) or the
+        intensity of current (electric arcs module). In order for the correct
+        power or intensity to be reached, the boundary conditions for the
+        potential must be expressed with \ref pot_diff . The tuning can be
+        controlled in \ref cs_user_electric_scaling.\n
+        Useful if \ref ielcor = 1.
   \var  cs_elec_option_t::puisim
-        imposed power
+        Imposed power.\n
+        With the Joule effect module, \ref puisim is the target dissipated power ($W$)
+        for the calculations with boundary condition tuning for the potential.\n
+        The target power will be reached if the boundary conditions are expressed
+        using the variable \ref pot_diff or if the initial boundary conditions are
+        multiplied by the variable \ref coejou .
+        Useful with the Joule effect module if \ref ielcor = 1.
   \var  cs_elec_option_t::coejou
         coefficient for scaling
   \var  cs_elec_option_t::elcou

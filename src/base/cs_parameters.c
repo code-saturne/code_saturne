@@ -101,6 +101,7 @@ BEGIN_C_DECLS
   allow for concise syntax, as they are expected to be used in many places.
 
   \var  cs_space_disc_t::imvisf
+        <a name="imvisf"></a>
         face viscosity field interpolation
         - 1: harmonic
         - 0: arithmetic (default)
@@ -112,14 +113,232 @@ BEGIN_C_DECLS
         - 3: least square method with reduced extended neighborhood
         - 4: iterative process initialized by the least square method
   \var  cs_space_disc_t::anomax
+        <a name="anomax"></a>
         non orthogonality angle of the faces, in radians.
-
         For larger angle values, cells with one node on the wall are kept in the
         extended support of the neighboring cells.
   \var  cs_space_disc_t::iflxmw
         method to compute interior mass flux due to ALE mesh velocity
         - 1: based on cell center mesh velocity
         - 0: based on nodes displacement
+
+  \struct cs_var_cal_opt_t
+
+  \brief Keys structure containing the variable calculation options.
+
+  \var  cs_var_cal_opt_t::iwarni
+        \ref iwarni characterises the level of detail of the outputs for a
+        variable. The quantity of information increases with its value.
+        Impose the value 0 or 1 for a reasonable listing size. Impose the
+        value 2 to get a maximum quantity of information, in case of problem
+        during the execution.
+
+ \var  cs_var_cal_opt_t::iconv
+        For each unknown variable to calculate, indicates if the convection is taken
+        into account (1) or not (0). By default, \ref cs_var_cal_opt_t::iconv "iconv" is set
+        to 0 for the pressure (variable \ref ipr) or f in v2f modelling (variable \ref ifb)
+        and set to 1 for the other unknowns.
+
+  \var  cs_var_cal_opt_t::istat
+        For each unknown variable to calculate, indicates whether unsteady terms
+        are present (1) or not (0) in the matrices. By default, \ref cs_var_cal_opt_t::istat "istat"
+        is set to 0 for the pressure (variable \ref ipr) or f in v2f modelling
+        (variable \ref ifb) and set to 1 for the other unknowns.
+
+  \var  cs_var_cal_opt_t::idiff
+        For each unknown variable to calculate, indicates whether the diffusion
+        is taken into account (1) or not (0).
+
+  \var  cs_var_cal_opt_t::idifft
+        For each unknown variable to calculate, when diffusion is taken into
+        account (\ref idiff = 1), \ref idifft indicates if the turbulent diffusion
+        is taken into account (\ref idifft = 1) or not (0).
+
+  \var  cs_var_cal_opt_t::idften
+        Type of diffusivity:
+        - 1: scalar diffusivity
+        - 3: orthotropic diffusivity
+        - 6: symmetric tensor diffusivity
+
+  \var  cs_var_cal_opt_t::iswdyn
+        Dynamic relaxation type:
+        - 0 no dynamic relaxation
+        - 1 dynamic relaxation depending on \f$ \delta \varia^k \f$
+        - 2 dynamic relaxation depending on \f$ \delta \varia^k \f$ and
+        \f$ \delta \varia^{k-1} \f$.
+
+  \var  cs_var_cal_opt_t::ischcv
+        For each unknown variable to calculate, \ref ischcv indicates the type of
+        second-order convective scheme
+        - 0: Second Order Linear Upwind
+        - 1: Centered \n
+        Useful for all the unknowns variables which are convected (\ref iconv = 1)
+        and for which a second-order scheme is used (\ref blencv > 0).
+
+  \var  cs_var_cal_opt_t::ibdtso
+        Backward differential scheme in time order.
+
+  \var  cs_var_cal_opt_t::isstpc
+        For each unknown variable to calculate, isstpc indicates whether a slope
+        test should be used to switch from a second-order to an upwind convective
+        scheme under certain conditions, to ensure stability.
+        - 0: slope test activated for the considered unknown
+        - 1: slope test deactivated for the considered unknown \n
+        Useful for all the unknowns variable which are convected (\ref iconv = 1)
+        and for which a second-order scheme is used (\ref blencv > 0).
+        The use of the slope test stabilises the calculation but may bring
+        the order in space to decrease quickly.
+
+  \var  cs_var_cal_opt_t::nswrgr
+        For each unknown variable, \ref nswrgr <= 1 indicates that the gradients
+        are not reconstructed
+         - if \ref imrgra = 0 or 4, \ref nswrgr is the number of iterations for
+         the gradient reconstruction
+         - if \ref imrgra = 1, 2 or 3, \ref nswrgr > 1 indicates that the gradients
+         are reconstructed (but the method is not iterative, so any value larger
+         than 1 for \ref nswrgr yields the same result).\n
+
+  \var  cs_var_cal_opt_t::nswrsm
+        For each unknown variable, nswrsm indicates the number of iterations for the
+        reconstruction of the right-hand sides of the equations with a first-order
+        scheme in time (standard case), the default values are 2 for pressure
+        and 1 for the other variables. With a second-order scheme in time
+        (\ref optcal::ischtp "ischtp" = 2) or LES, the default values are 5 for
+        pressure and 10 for the other variables.
+
+  \var  cs_var_cal_opt_t::imrgra
+        Indicates the type of gradient reconstruction (one method for all the
+        variables)
+           - 0: iterative reconstruction of the non-orthogonalities
+           - 1: least squares method based on the first neighbour cells (cells
+        which share a face with the treated cell)
+           - 2: least squares method based on the extended neighbourhood (cells
+        which share a node with the treated cell)
+           - 3: least squares method based on a partial extended neighbourhood
+        (all first neighbours plus the extended neighbourhood cells that are
+        connected to a face where the non-orthogonality angle is larger than
+        parameter anomax)
+           - 4: iterative reconstruction with initialisation using the least
+        squares method (first neighbours)
+           - 5: iterative reconstruction with initialisation using the least
+        squares method based on an extended neighbourhood
+           - 6: iterative reconstruction with initialisation using the least
+        squares method based on a partial extended neighbourhood
+        if \ref imrgra fails due to probable mesh quality problems, it is usually
+        effective to use \ref imrgra = 3. Moreover, \ref imrgra = 3 is usually
+        faster than \ref imrgra = 0 (but with less feedback on its use).
+        It should be noted that \ref imrgra = 1, 2 or 3 automatically triggers
+        a gradient limitation procedure. See \ref imligr.\n
+        Useful if and only if there is \ref nswrgr > 1 for at least one variable.
+        Also, pressure gradients (or other gradients deriving from a potential)
+        always use an iterative reconstruction. To force a non-iterative
+        reconstruction for those gradients, a negative value of this keyword
+        may be used, in which case the method matching the absolute value
+        of the keyword will be used.
+
+  \var  cs_var_cal_opt_t::imligr
+        For each unknown variable, indicates the type of gradient limitation
+           - -1: no limitation
+           - 0: based on the neighbours
+           - 1: superior order\n
+        For all the unknowns, \ref imligr is initialized to -1 if \ref imrgra
+        = 0 or 4 and to 1 if \ref imrgra = 1, 2 or 3.
+
+  \var  cs_var_cal_opt_t::ircflu
+        For each unknown variable, \ref ircflu indicates whether the convective
+        and diffusive fluxes at the faces should be reconstructed:
+           - 0: no reconstruction
+           - 1: reconstruction \n
+        Deactivating the reconstruction of the fluxes can have a stabilising
+        effect on the calculation. It is sometimes useful with the
+        \f$ k-\epsilon \f$ model, if the mesh is strongly non-orthogonal
+        in the near-wall region, where the gradients of k and \f$ \epsilon \f$
+        are strong. In such a case, setting \ref ircflu = 0 will probably help
+        (switching to a first order convective scheme, \ref blencv = 0, for k
+        and \f$ \epsilon \f$ might also help in that case).
+
+  \var  cs_var_cal_opt_t::iwgrec
+        Gradient calculation
+          - 0: standard
+          - 1: weighted
+
+  \var  cs_var_cal_opt_t::thetav
+        For each variable variable, thetav is the value of \f$ \theta \f$ used to
+        express at the second-order the terms of convection, diffusion and the
+        source terms which are linear functions of the solved variable (according
+        to the formula \f$ \phi^{n+\theta} = (1-\theta) \phi^n + \theta \phi^{n+1}\f$.
+        Generally, only the values 1 and 0.5 are used. The user is not allowed to
+        modify this variable.
+           - 1: first-order
+           - 0.5: second-order \n
+        Concerning the pressure, the value of \ref thetav is always 1. Concerning
+        the other variables, the value \ref thetav = 0.5 is used when the second-order
+        time scheme is activated by \ref ischtp = 2 (standard value for LES calculations),
+        otherwise \ref thetav is set to 1.
+
+  \var  cs_var_cal_opt_t::blencv
+        For each unknown variable to calculate, blencv indicates the proportion of
+        second-order convective scheme (0 corresponds to an upwind first-order scheme);
+        in case of LES calculation, a second-order scheme is recommended and activated
+        by default (\ref blencv = 1).\n
+        Useful for all the unknowns variable for which \ref iconv = 1.
+
+  \var  cs_var_cal_opt_t::epsilo
+        <a name="epsilo"></a>
+        For each unknown variable, relative precision for the solution of the linear
+        system. The default value is \ref epsilo = \f$ 10^-8 \f$ . This value is set
+        low on purpose. When there are enough iterations on the reconstruction of the
+        right-hand side of the equation, the value may be increased (by default, in case
+        of second-order in time, with \ref nswrsm = 5 or 10, \ref epsilo is increased
+        to \f$ 10^-5 \f$.
+
+  \var  cs_var_cal_opt_t::epsrsm
+        For each unknown variable, relative precision on the reconstruction of the right
+        hand-side. The default value is \ref epsrsm = \f$ 10^-8 \f$. This value is set
+        low on purpose. When there are not enough iterations on the reconstruction of the
+        right-hand side of the equation, the value may be increased (by default, in case
+        of second-order in time, with \ref nswrsm = 5 or 10, \ref epsrsm is increased to
+        \f$ 10^-5 \f$ ).
+
+  \var  cs_var_cal_opt_t::epsrgr
+        For each unknown variable, relative precision for the iterative gradient
+        reconstruction.\n Useful for all the unknowns when \ref imrgra = 0 or 4.
+
+  \var  cs_var_cal_opt_t::climgr
+        For each unknown variable, factor of gradient limitation (high value means
+        little limitation). \n
+        Useful for all the unknowns variables for which \ref imligr = -1.
+
+  \var  cs_var_cal_opt_t::extrag
+        For the variable pressure \ref ipr, extrapolation coefficient of the
+        gradients at the boundaries. It affects only the Neumann conditions.
+        The only possible values of \ref extrag are:
+             - 0: homogeneous Neumann calculated at first-order
+             - 0.5: improved homogeneous Neumann, calculated at second-order in the
+        case of an orthogonal mesh and at first-order otherwise
+             - 1: gradient extrapolation (gradient at the boundary face equal to
+        the gradient in the neighbour cell), calculated at second-order in the case
+        of an orthogonal mesh and at first-order otherwise extrag often allows to
+        correct the non-physical velocities that appear on horizontal walls when
+        density is variable and there is gravity. It is strongly advised to keep
+        \ref extrag = 0 for the variables apart from pressure. See also
+        \ref cs_stokes_model_t::iphydr "iphydr". In practice, only the values 0
+        and 1 are allowed. The value 0.5 is not allowed by default (but the lock
+        can be overridden if necessary, contact the development team).
+
+  \var  cs_var_cal_opt_t::relaxv
+        For each variable ivar, relaxation coefficient of the variable. This relaxation
+        parameter is only useful for the pressure with the unsteady algorithm (so as to
+        improve the convergence in case of meshes of insufficient quality or and for some
+        of the turbulent models (\ref iturb = 20, 21, 50 or 60 and \ref optcal::ikecou "ikecou" = 0;
+        if \ref optcal::ikecou "ikecou" = 1, \ref relaxv is not used, whatever its value may be).
+        Default values are 0.7 for turbulent variables and 1. for pressure.\ref relaxv also
+        stores the value of the relaxation coefficient when using the steady algorithm, deduced
+        from the value of \ref optcal::relxst "relxst" (defaulting to \ref relaxv = 1.
+        - \ref optcal::relxst "relxst"). Useful only for the pressure and for turbulent
+        variables if and only if (\f$ k-\epsilon \f$, v2f or \f$ k-\omega \f$ models without
+        coupling) with the unsteady algorithm. Always useful with the steady algorithm.
+
 */
 
 /*----------------------------------------------------------------------------*/

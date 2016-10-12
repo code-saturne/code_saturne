@@ -76,19 +76,46 @@ BEGIN_C_DECLS
   syntax, as it is expected to be used in many places.
 
   \var  cs_thermal_model_t::itherm
-        thermal model
-        - 0: no thermal model
-        - 1: temperature
-        - 2: enthalpy
-        - 3: total energy (only for compressible module)
+        Thermal model
+           - 0: no thermal model
+           - 1: temperature
+           - 2: enthalpy
+           - 3: total energy (only for compressible module)\n
+        When a particular physics module is activated (gas combustion,
+        pulverised coal, electricity or compressible), the user must not
+        modify \ref itherm (the choice is made automatically: the solved
+        variable is either the enthalpy or the total energy). The user is
+        also reminded that, in the case of a coupling with SYRTHES, the
+        solved thermal variable should be the temperature (\ref itherm = 1).
+        More precisely, everything is designed in the code to allow for the
+        running of a calculation coupled with SYRTHES with the enthalpy as
+        thermal variable (the correspondence and conversion is then specified
+        by the user in the subroutine \ref usthht). However this case has
+        never been used in practice and has therefore not been tested. With the
+        compressible model, it is possible to carry out calculations coupled
+        with SYRTHES, although the thermal scalar represents the total energy
+        and not the temperature.
   \var  cs_thermal_model_t::itpscl
-        temperature scale
+        Temperature scale
         - 0: none
         - 1: Kelvin
         - 2: Celsius
+        The distinction between \ref itpscl = 1 or 2 is useful only in case of
+        radiation modelling. For calculations without radiation modelling,
+        use \ref itpscl = 1 for the temperature.\n
+        Useful if and only if \ref dimens::nscal "nscal" \f$\geqslant\f$ 1.
   \var  cs_thermal_model_t::iscalt
-        index of the thermal scalar (temperature, energy or enthalpy), the index
-        of the corresponding variable is isca(iscalt)
+        Index of the thermal scalar (temperature, energy or enthalpy).\n
+
+        The index of the corresponding variable is isca(iscalt)
+        If \ref iscalt = -1, neither the temperature nor the enthalpy is
+        represented by a scalar. When a specific physics module is activated
+        (gas combustion, pulverised coal, electricity or compressible), the user
+        must not modify \ref iscalt (the choice is made automatically). In the
+        case of the compressible module, \ref iscalt does not correspond to
+        the temperature nor enthalpy but to the total energy}.\n Useful if
+        and only if \ref dimens::nscal "nscal" \f$\geqslant\f$ 1.
+
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

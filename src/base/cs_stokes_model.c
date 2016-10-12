@@ -76,12 +76,19 @@ BEGIN_C_DECLS
   allow for concise syntax, as it is expected to be used in many places.
 
   \var  cs_stokes_model_t::ivisse
-        take \f$ \divs \left( \mu \transpose{\gradt \, \vect{u}} - 2/3 \mu
-        \trace{\gradt \, \vect{u}} \right) \f$
-        into account in the momentum equation
+        <a name="ivisse"></a>
+        Indicates whether the source terms in transposed gradient
+        and velocity divergence should be taken into account in the
+        momentum equation. In the compressible module, these terms
+        also account for the volume viscosity (cf. \ref ppincl::viscv0 "viscv0" and
+        \ref ppincl::iviscv "iviscv")
+        \f$\partial_i \left[(\kappa -2/3\,(\mu+\mu_t))\partial_k U_k  \right]
+        +     \partial_j \left[ (\mu+\mu_t)\partial_i U_j \right]\f$:
+        - 0: not taken into account,
+        - 1: taken into account.
   \var  cs_stokes_model_t::irevmc
         reconstruction of the velocity field with the updated pressure option
-        - 0: default
+        - 0: standard gradient of pressure increment (default)
   \var  cs_stokes_model_t::iprco
         compute the pressure step thanks to the continuity equation
         - 1: true (default)
@@ -95,13 +102,27 @@ BEGIN_C_DECLS
   \var  cs_stokes_model_t::arak
         Arakawa multiplicator for the Rhie and Chow filter (1 by default)
   \var  cs_stokes_model_t::ipucou
-        pseudo coupled pressure-velocity solver
-        - 1: true (default)
-        - 0: false
+        indicates the algorithm for velocity/pressure coupling:
+        - 0: standard algorithm,
+        - 1: reinforced coupling in case calculation with long time steps\n
+        Always useful (it is seldom advised, but it can prove very useful,
+        for instance, in case of flows with weak convection effects and
+        highly variable viscosity).
   \var  cs_stokes_model_t::iccvfg
-        calculation with a fixed velocity field
-        - 1: true
-        - 0: false (default)
+        indicates whether the dynamic field should be frozen or not:
+           - 1: true
+           - 0: false (default)\n
+        In such a case, the values of velocity, pressure and the
+        variables related to the potential turbulence model
+        (\f$k\f$, \f$R_{ij}\f$, \f$\varepsilon\f$, \f$\varphi\f$,
+        \f$\bar{f}\f$, \f$\omega\f$, turbulent viscosity) are kept
+        constant over time and only the equations for the scalars
+        are solved.\n Also, if \ref iccvfg = 1, the physical properties
+        modified in \ref cs_user_physical_properties will keep being
+        updated. Beware of non-consistencies if these properties would
+        normally affect the dynamic field (modification of density for
+        instance).\n Useful if and only if \ref dimens::nscal "nscal"
+        \f$>\f$ 0 and the calculation is a restart.
   \var  cs_stokes_model_t::idilat
         algorithm to take into account the density variation in time
         - 1: dilatable steady algorithm (default)
@@ -125,7 +146,25 @@ BEGIN_C_DECLS
         - 0: no treatment (default)
         - 2: hydrostatic pressure computation with a apriori momentum equation
              to obtain a hydrostatic pressure taking into account the imbalance
-             between the pressure gradient and the gravity source term
+             between the pressure gradient and the gravity source term.\n
+        When the density effects are important, the choice of \ref iphydr = 1
+        allows to improve the interpolation of the pressure and correct the
+        non-physical velocities which may appear in highly stratified areas
+        or near horizontal walls (thus avoiding the use of \ref cs_var_cal_opt_t::extrag
+        if the non-physical velocities are due only to gravity effects).\n
+        The improved algorithm also allows eradicating the velocity oscillations
+        which tend to appear at the frontiers of areas with high head losses.\n
+        In the case of a stratified flow, the calculation cost is higher when the
+        improved algorithm is used (about 30\% depending on the case) because
+        the hydrostatic pressure must be recalculated at the outlet boundary
+        conditions: see \ref icalhy.\n
+        On meshes of insufficient quality, in order to
+        improve the convergence, it may be useful to increase the number of
+        iterations for the reconstruction of the pressure right-hand side,
+        i.e. \ref cs_var_cal_opt_t::nswrsm.\n If head losses are present
+        just along an outlet boundary, it is necessary to specify \ref icalhy = 0
+        in order to deactivate the recalculation of the hydrostatic pressure at
+        the boundary, which may otherwise cause instabilities.
   \var  cs_stokes_model_t::igprij
         improve static pressure algorithm
         - 1: take -div(rho R) in the static pressure
@@ -144,8 +183,16 @@ BEGIN_C_DECLS
   \var  cs_stokes_model_t::icalhy
         compute the hydrostatic pressure in order to compute the Dirichlet
         conditions on the pressure at outlets
-        - 1: true
-        - 0: false (default)
+        - 1: calculation of the hydrostatic pressure at the outlet boundary
+        - 0: no calculation of the hydrostatic pressure at the outlet boundary (default)
+        This option is automatically specified depending on the choice of
+        \ref iphydr and the value of gravity (\ref icalhy = 1 if  \ref iphydr = 1
+        and gravity is different from 0; otherwise \ref icalhy = 0). The
+        activation of this option generates an additional calculation cost
+        (about 30\% depending on the case).\n If head losses are present
+        just along an outlet boundary, it is necessary to specify \ref icalhy = 0
+        in order to deactivate the recalculation of the hydrostatic pressure
+        at the boundary, which may otherwise cause instabilities
   \var  cs_stokes_model_t::irecmf
         use interpolated face diffusion coefficient instead of cell diffusion coefficient
         for the mass flux reconstruction for the non-orthogonalities

@@ -88,15 +88,32 @@ BEGIN_C_DECLS
   for concise syntax, as it is expected to be used in many places.
 
   \var  cs_wall_functions_t::iwallf
-        wall functions for velocity
+        Indicates the type of wall function is used for the velocity
+        boundary conditions on a frictional wall.\n
         - 0: no wall functions
-        - 1: one scale of friction velocity (power law)
-        - 2: one scale of friction velocity (log law)
-        - 3: two scales of friction velocity (log law)
-        - 4: two scales of friction velocity (log law)
-             scalable wall functions
-        - 5: two scales of friction velocity (using V. Driest mixing
-             length)
+        - 1: one scale of friction velocities (power law)
+        - 2: one scale of friction velocities (log law)
+        - 3: two scales of friction velocities (log law)
+        - 4: two scales of friction velocities (log law) (scalable wall functions)
+        - 5: two scales of friction velocities (mixing length based on V. Driest analysis)
+        \ref iwallf is initialised to 2 for \ref iturb = 10, 40, 41 or 70
+        (mixing length, LES and Spalart Allmaras).\n
+        \ref iwallf is initialised to 0 for \ref iturb = 0, 32, 50 or 51\n
+        \ref iwallf is initialised to 3 for \ref iturb = 20, 21, 30, 31 or 60
+        (\f$k-\epsilon\f$, \f$R_{ij}-\epsilon\f$ LRR, \f$R_{ij}-\epsilon\f$ SSG and
+        \f$k-\omega\f$ SST models).\n
+        The v2f model (\ref iturb=50) is not designed to use wall functions
+        (the mesh must be low Reynolds).\n
+        The value \ref iwallf = 3 is not compatible with \ref iturb=0, 10, 40
+        or 41 (laminar, mixing length and LES).\n
+        Concerning the \f$k-\epsilon\f$ and \f$R_{ij}-\epsilon\f$ models, the
+        two-scales model is usually at least as satisfactory as the one-scale
+        model.\n
+        The scalable wall function allows to virtually shift the wall when
+        necessary in order to be always in a logarithmic layer. It is used to make up for
+        the problems related to the use of High-Reynolds models on very refined
+        meshes.\n
+        Useful if \ref iturb is different from 50.
   \var  cs_wall_functions_t::iwalfs
         wall functions for scalar
         - 0: three layers (Arpaci and Larsen) or two layers (Prandtl-Taylor) for

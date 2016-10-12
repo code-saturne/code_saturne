@@ -112,78 +112,19 @@ corresponds to $10^{12}$.
 \subsubsection{''Calculation'' files}
 %==================================
 
-
 \minititre{General}
 
 %\minititre{1D wall thermal module}
 \minititre{Vortex method for LES}
 
-\motcle{impmvo}{i}{strictly positive integer}{\tt impmvo}{O}{L3}
-{unit of the upstream restart file for the vortex method\\
-useful if and only if {\tt isuivo = 1} and {\tt ivrtex=1}}
-
-\motcle{impvvo}{i}{strictly positive integer}{\tt impvvo}{O}{L3}
-{unit of the downstream restart file for the vortex method\\
-useful if and only if {\tt ivrtex=1}}
-
-\motcle{impdvo}{i}{strictly positive integer}{\tt impdvo}{O}{L3}
-{unit of the {\tt ficvor} data files for the vortex method. These
-files are text files. Their number and names are specified by the user in
-the \texttt{usvort} subroutine.\\
-(Although it corresponds to an ``upstream'' data file, {\tt impdvo} is
-initialized to 20 because, in case of multiple vortex entries,
-it is opened at the same time as the {\tt ficmvo} upstream restart file,
-which already uses unit 11)\\
-useful if and only if {\tt ivrtex=1}}
-
+For calculation files related to the vortex method for LES,
+please refer to the dedicated \doxygenfile{group__entsor.html}{\texttt{Doxygen} documentation}.
 
 %\minititre{Radiation}
 \minititre{Thermochemistry}
 
-\motcle{impfpp}{i}{strictly positive integer}{25}{O}{L3}
-{unit of the thermochemical data file\\
-useful in case of gas or pulverised coal combustion or electric arcs}
-
-\motcle{ficfpp}{c}{string of 32 characters}{\tt dp\_tch}{O}{L3}
-{name of the thermochemical data file. The launch script is designed to copy the
-user specified thermochemical data file in the temporary execution directory
-under the name \texttt{dp\_tch}, for \CS to open it properly. Should the value
-of {\tt ficfpp} be changed, the launch script would have to be adapted.\\
-useful in case of gas or pulverised coal combustion}
-
-\motcle{impjnf}{i}{strictly positive integer}{\tt impfpp}{O}{L3}
-{unit of the JANAF data file\\
-useful in case of gas or pulverised coal combustion}
-
-\motcle{ficjnf}{c}{string of 5 characters}{\tt JANAF}{O}{L3}
-{name of the JANAF data file. The launch script is designed to copy the
-user specified JANAF data file in the temporary execution directory
-under the name \texttt{JANAF}, for \CS to open it properly. Should the value
-of {\tt ficjnf} be changed, the launch script would have to be adapted.\\
-useful in case of gas or pulverised coal combustion}
-
-\minititre{Lagrangian}
-
-\motcle{impla1}{i}{strictly positive integer}{50}{O}{L3}
-{unit of a file specific to Lagrangian modelling\\
-useful in case of Lagrangian modelling}
-
-\motcle{impla2}{i}{strictly positive integer}{51}{O}{L3}
-{unit of a file specific to Lagrangian modelling\\
-useful in case of Lagrangian modelling}
-
-\motcle{impla3}{i}{strictly positive integer}{52}{O}{L3}
-{unit of a file specific to Lagrangian modelling\\
-useful in case of Lagrangian modelling}
-
-\motcle{impla4}{i}{strictly positive integer}{53}{O}{L3}
-{unit of a file specific to Lagrangian modelling\\
-useful in case of Lagrangian mode ling}
-
-\motcle{impla5}{ia}{strictly positive integer}{54 to 68}{O}{L3}
-{units of files specific Lagrangian modelling, 15-dimension array\\
-useful in case of Lagrangian modelling}
-
+For the calculation file related to the thermochemistry, please refer
+to the dedicated \doxygenfile{group__userfile.html}{\texttt{Doxygen} documentation}.
 
 %==================================
 \subsubsection{Post-processing for {\em EnSight} or other tools}
@@ -200,21 +141,8 @@ $\bullet\quad$For each quantity (problem unknown, preselected numerical
 variable or preselected physical parameter), the user specifies if a
 post-processing output is wanted. The output frequency can be set.\\
 
-\motcleb{keyvis}{ifk}{field key, 0, 1, 2, or 3}{0}{O}{L1}
-{for each quantity defined at the cell centres (physical or numerical
-variable), indicator of whether it should be post-processed or not \\
-\hspace*{1.3cm}= -999: not initialised. By default, the post-processed
-quantities are the unknowns (pressure, velocity, $k$, $\varepsilon$,
-$R_{ij}$, $\omega$, $\varphi$, $\overline{f}$, scalars), density,
-turbulent viscosity and the time step if is not uniform\\
-\hspace*{1.3cm}= 0: not post-processed\\
-\hspace*{1.3cm}= 1: post-processed on main location\\
-\hspace*{1.3cm}= 2: non-reconstructed values postprocessed on boundary if main location is cells\\
-\hspace*{1.3cm}= 3: both 1 and 2\\
-useful if and only if the variable is defined at the cell centers or boundary faces:
-calculation variable, physical property (time step, density,
-viscosity, specific heat) or turbulent viscosity if {\tt iturb}
-$\geqslant$ 10}
+See the dedicated \doxygenanchor{group__entsor.html\#keyvis}{\texttt{Doxygen}
+documentation about \texttt{keyvis}}.
 
 %==================================
 \subsubsection{Chronological records of the variables on specific points}
@@ -230,75 +158,7 @@ coordinates. For each quantity, the number of probes and their
 index-numbers must be specified (it is not mandatory to generate all
 the variables at all the probes).
 
-
-\motcleb{ncapt}{i}{positive or null integer}{0}{O}{L1}
-{total number of probes (limited to {\tt ncaptm}=200)\\
-always useful }
-
-\motcleb{xyzcap}{ra}{real numbers}{0.0}{O}{L1}
-{3D-coordinates of the probes\\
-the coordinates are written: {\tt xyzcap(i,j)}, with $i$ = 1, 2 or 3 and $j$
-$\leqslant$ {\tt ncapt}\\
-useful if and only if {\tt ncapt} $>$ 0}
-
-\motcle{emphis}{c}{string of less than 80 characters}{\tt ./}{O}{L3}
-{directory in which potential chronological record files generated by
-the Kernel will be written (path related to the execution directory)\\
-it is recommended to keep the default value and, if necessary, to modify the
-launch script to copy the files in the alternate destination directory\\
-useful if and only if chronological record files are generated}
-
-\motcleb{nthist}{i}{-1 or strictly positive integer}{1 or -1}{O}{L1}
-{output period of the chronological record files\\
-\hspace*{1.3cm}= -1: no output\\
-\hspace*{1.3cm}$>$ 0: period  (every {\tt nthist} time step)\\
-The default value is -1 when there is no chronological record file to
-generate and 1 otherwise\\
-If chronological records are generated, it is usually best to keep the default
-value {\tt nthist}=1, in order to avoid missing any high frequency evolution (unless
-the total number of time steps is too large to do so)\\
-useful if and only if chronological record files are generated}
-
-\motcle{nthsav}{i}{-1 or positive or null integer}{0}{O}{L3}
-{saving period the chronological record files (they are first stored in a
-temporary file and then saved every {\tt nthsav} time step)\\
-\hspace*{1.3cm}= 0: by default (4 times during a calculation)\\
-\hspace*{1.3cm}= -1: saving at the end of the calculation\\
-\hspace*{1.3cm}$>$ 0: period (every {\tt nthsav} time step)\\
-During the calculation, the user can read the chronological record files
-in the execution directory when they have been saved, {\em i.e.} at the first
-time step, at the tenth time step and when the time step number is a multiple of
-{\tt nthsav} (multiple of {\tt (ntmabs-ntpabs)/4} if {\tt nthsav}=0)\\
-{\em Note: using the \texttt{control\_file} file enables to update the value of
-{\tt ntmabs}. Hence, if the calculation is at the time step n, a save of the
-chronological record files can be forced by changing {\tt ntmabs} to
-{\tt ntpabs}+4(n+1)
-using \texttt{control\_file}; after the files have been saved, {\tt ntmabs} can be
-reset to its original value, still using \texttt{control\_file}.}\\
-useful if and only if chronological record files are generated}
-
-\minititre{Non-standard use through \texttt{ushist}}
-(see p.~\pageref{sec:prg_ushist})
-
-\motcle{impush}{ia}{strictly positive integer}{33 to 32+\texttt{nushmx}=49}{O}{L3}
-{units of the user chronological record files\\
-useful if and only if the subroutine \texttt{ushist} is used}
-
-\motcle{ficush}{ca}{strings of 13 characters}{\texttt{ush*} or
-\texttt{ush*.n\_*}}{O}{L2}
-{names of the user chronological record files.
-In the case of a non-parallel calculation, the suffix applied the file
-name is a three digit number: \texttt{ush001}, \texttt{ush002},
-\texttt{ush003}...
-In the case of a parallel-running calculation, the processor
-index-number is added to the suffix. For instance, for a calculation
-running on two processors:  \texttt{ush001.n\_0001},
-\texttt{ush002.n\_0001}, \texttt{ush003.n\_0001}... and
-\texttt{ush001.n\_0002},
-\texttt{ush002.n\_0002}, \texttt{ush003.n\_0002}...
-The opening, closing, format and location of these files must be managed
-by the user.\\
-useful if and only if the subroutine \texttt{ushist} is used}
+Please refer to the dedicated \doxygenfile{group__history.html}{\texttt{Doxygen} documentation}.
 
 %==================================
 \subsubsection{Time averages}
@@ -309,66 +169,9 @@ See \doxygenfile{parameters.html}{the dedicated \texttt{Doxygen} documentation}.
 \subsubsection{Others}
 %==================================
 
-\motcle{impusr}{ia}{strictly positive integer}{{\tt 70} to {\tt 69+nusrmx}=79}{O}{L3}
-{unit numbers for potential user specified files\\
-useful if and only if the user needs files (therefore always useful, by security)}
-
-\motcleb{ficusr}{ca}{string of 13 characters}{\tt usrf* or usrf*.n\_*}{O}{L1}
-{name of the potential user specified files. In the case of a non-parallel
-calculation, the suffix applied the file name is a two digit number:
-from \texttt{usrf01} to \texttt{usrf10}. In the case of a
-parallel-running calculation, the four digit processor index-number is
-added to the suffix. For instance, for a calculation running on two
-processors: from \texttt{usrf01.n\_0001} to \texttt{usrf10.n\_0001} and
-from \texttt{usrf01.n\_0002} to \texttt{usrf10.n\_0002}. The opening,
-closing, format and location of these files must be managed by the user.\\
-useful if and only if the user needs files (therefore always useful, by security)}
-
-\motcleb{keylog}{ifk}{1 or 0}{-1}{O}{L1}
-{for every quantity (variable, physical or numerical property ...),
-indicator concerning the writing in the execution report file \\
-\hspace*{1.3cm}= 1: writing in the execution listing.\\
-\hspace*{1.3cm}= 0: no writing.\\
-always useful}
-
-\motcleb{iwarni}{ia}{integer}{0}{O}{L1}
-{{\tt iwarni(ivar)} characterises the level of detail of the outputs for the
-variable {\tt ivar} (from 1 to {\tt nvar}). The quantity of information
-increases with its value.\\
-Impose the value 0 or 1 for a reasonable listing size. Impose the value 2
-to get a maximum quantity of information, in case of problem during the
-execution.\\
-always useful}
-
-\motcleb{nomvar}{ca}{string of less than 80 characters}{``''}{O}{L1}
-{name of the variables (unknowns, physical properties ...): used in the
-execution listing, in the post-processing files, etc.\\
-{``''}: not initialised (the code chooses the manes by default)\\
-It is recommended not to define variable names of more than 16
-characters, to get a clear execution listing (some advanced writing
-levels take into account only the first 16 characters).\\
-always useful}
-
-\motcleb{ntlist}{i}{-1 or strictly positive integer}{1}{O}{L1}
-{writing period in the execution report file\\
-\hspace*{1.3cm}= -1: no writing\\
-\hspace*{1.3cm}$>$ 0: period (every {\tt ntlist} time step)\\
-The value of {\tt ntlist} must be adapted according to the number of iterations
-carried out in the calculation. Keeping {\tt ntlist} to 1 will indeed provide
-a maximum volume of information, but if the number of time steps is too large,
-the execution report file might become too big and unusable
-(problems with disk space, memory problems while opening the file with a text
-editor, problems finding the desired information in the file, ...).\\
-always useful}
-
-\motcle{ntsuit}{i}{-1, 0 or positive or null integer}{0}{O}{L3}
-{saving period of the restart files\\
-\hspace*{1.3cm}= -2: no restart at all\\
-\hspace*{1.3cm}= -1: only at the end of the calculation\\
-\hspace*{1.3cm}= 0: by default (four times during the calculation)\\
-\hspace*{1.3cm}$>$ 0: period\\
-always useful}
-
+For user calculation file, see the following \doxygenfile{group_userfile.html}{\texttt{Doxygen}
+documentation}. For other printing options, please refer to the
+\doxygenfile{group_entsor.html}{\texttt{Doxygen} documentation} dealing with input/output options.
 
 %==================================
 \subsection{Numerical options}
@@ -376,246 +179,39 @@ always useful}
 \subsubsection{Calculation management}
 %==================================
 
-\motcle{iecaux}{i}{0 or 1}{1}{O}{L2}
-{indicates the writing (=1) or not (=0) of the auxiliary calculation
-restart file\\
-always useful}
-
-\motcle{ileaux}{i}{0 or 1}{1}{O}{L2}
-{indicates the reading (=1) or not (=0) of the auxiliary
-calculation restart file\\
-useful only in the case of a calculation restart}
-
-\motcleb{inpdt0}{i}{0 or 1}{0}{O}{L1}
-{indicates the calculation mode: 1 for a zero time step control
-calculation, {\em i.e.} without solving the transport equations,
-and 0 for a standard calculation.\\
-In case of a calculation using the control mode ({\tt inpdt0}=1), when the
-calculation is not a restart, the equations are not solved, but the
-physical properties and the boundary conditions are calculated. When
-the calculation is a restart, the physical properties and the boundary
-conditions are those read from the restart file (note: in the case of a
-second-order time scheme, the mass flow is modified as if a normal
-time step was realised: the mass flow generated in an potential
-post-processing is therefore not the mass flow read from the restart file).\\
-In the control mode ({\tt inpdt0}=1), the variable {\tt ntmabs} is not used.\\
-In the standard mode ({\tt inpdt0}=0), the code solves the equations at least
-once, even if {\tt ntmabs}=0.\\
-always useful}
-
-\motcleb{isuite}{i}{0 or 1}{0}{C}{L1}
-{indicator of a calculation restart (=1) or not (=0)\\
-always useful. This value is set automatically by the code; depending on
-whether a restart directory is present, and should not be modified by
-the user}
-
-\motcle{ntcabs}{i}{integer}{\tt ntpabs}{O}{L3}
-{current time step number\\
-always useful\\
-{\tt ntcabs} is initialised and updated automatically by the code,
-its value is not to be modified by the user}
-
-\motcleb{ntmabs}{i}{integer $>$ {\tt ntpabs}}{10}{C}{L1}
-{number of the last time step after which the calculation stops. It is
-an absolute number: for the restart calculations, {\tt ntmabs} takes into
-account the number of time steps of the previous calculations. For
-instance, after a first calculation of 3 time steps, a restart file of 2
-time steps is realised by setting {\tt ntmabs}=3+2=5\\
-always useful}
-
-\motcle{ntpabs}{i}{integer}{0, read}{O}{L3}
-{number of the last time step in the previous calculation. In the case of
-a restart calculation, {\tt ntpabs} is read from the restart file. Otherwise
-it is initialised to 0\\
-always useful\\
-{\tt ntpabs} is initialised automatically by the code, its value is not to
-be modified by the user}
-
-\motcle{tmarus}{r}{-1 or strictly positive real}{-1}{O}{L3}
-{margin in seconds on the remaining CPU time which is necessary to allow
-the calculation to stop automatically and write all the required results
-(for the machines having a queue manager)\\
-\hspace*{1.3cm}= -1: calculated automatically\\
-\hspace*{1.3cm}$>$ 0: margin defined by the user\\
-always useful, but the default value should not be changed
-unless absolutely necessary.}
-
-
-\motcle{ttcabs}{r}{positive or null real number}{\tt ttpabs}{O}{L3}
-{physical simulation time at the current time step. For the restart
-calculations, \mbox{ttcabs} takes into account the physical time of the
-previous calculations.\\
-If the time step is uniform ({\tt idtvar}=0 or 1), {\tt ttcabs} increases
-of {\tt dt} (value of the time step) at each iteration. If the time step is
-non-uniform ({\tt idtvar}=2),
-{\tt ttcabs} increases of {\tt dtref} at each time step.\\
-always useful\\
-{\tt ttcabs} is initialised and updated automatically by the code,
-its value is not to be modified by the user}
-
-\motcle{ttpabs}{r}{positive or null real number}{0, read}{O}{L3}
-{simulation physical time at the last time step of the previous
-calculation. In the case of a restart calculation, {\tt ttpabs} is read from
-the restart file. Otherwise it is initialised to 0.\\
-always useful\\
-{\tt ttcabs} is initialised automatically by the code, its value is not to
-be modified by the user}
+The following \doxygenfile{group__time__step__options.html}{\texttt{Doxygen} documentation}
+provides information about the various calculation management options available
+in \CS such as \texttt{ntmabs}, \texttt{ntcabs}, etc.
 
 %==================================
 \subsubsection{Scalar unknowns}
 %==================================
 
-\motcleb{nscaus}{i}{0$\leqslant$ integer $\leqslant$ {\tt nscmax}}{0}{O}{L1}
-{number of user scalars solutions of an advection equation\\
-always useful}
-
-\motcleb{itherm}{ia}{0, 1, 2 or 3}{0}{O}{L1}
-{\hspace*{1.3cm}= 0: no thermal model\\
-\hspace*{1.3cm}= 1: temperature\\
-\hspace*{1.3cm}= 2: enthalpy\\
-\hspace*{1.3cm}= 3: total energy (only for compressible module).\\
-When a particular physics module is activated (gas combustion, pulverised coal,
-electricity or compressible), the user must not modify {\tt itherm} (the choice
-is made automatically: the solved variable is either the enthalpy or the total
-energy). The user is also reminded that, in the case of a coupling with
-\syrthes, the solved thermal variable should be the temperature
-({\tt itherm}=1).
-More precisely, everything is designed in the code to allow for the
-running of a calculation coupled with \syrthes with the enthalpy as thermal
-variable (the correspondence and conversion is then specified by the user in
-the subroutine \texttt{usthht}).
-However this case has never been used in practice and has therefore not been
-tested. With the compressible model, it is possible to carry out calculations
-coupled with \syrthes, although the thermal scalar represents the total
-energy and not the temperature.}
-
-\motcleb{iscalt}{ia}{-1 or integer $>$ 0}{-1}{O}{L1}
-{{\tt iscalt} is the index-number of the scalar
-representing the temperature or the enthalpy. If {\tt iscalt}=-1, neither
-the temperature nor the enthalpy is represented by a scalar. When a specific
-physics module is activated (gas combustion, pulverised coal,
-electricity or compressible),
-the user must not modify {\tt iscalt} (the choice is made
-automatically)\footnote{In the case of the compressible module, {\tt iscalt}
-does not correspond to the temperature nor enthalpy but to the total energy}.\\
-useful if and only if {\tt nscal} $\geqslant$ 1.}
-
-\motcleb{iscacp}{ia}{0 or 1}{0}{O}{L2}
-{\hspace*{1.3cm}= 0: scalar does not behave like a temperature\\
-\hspace*{1.3cm}= 1: scalar behaves like a temperature
-(use $C_p$ for wall law).\\
-useful if and only if {\tt nscal} $\geqslant$ 1.}
-
-\motcleb{itpscl}{ia}{0, 1 or 2}{0}{O}{L1}
-{\hspace*{1.3cm}= 0: none\\
-\hspace*{1.3cm}= 1: Kelvin\\
-\hspace*{1.3cm}= 2: Celsius\\
-The distinction between {\tt itpscl} = 1 or 2 is useful only in case of
-radiation modelling. For calculations without radiation modelling,
-use {\tt itpscl}=1 for the temperature.\\
-useful if and only if {\tt nscal} $\geqslant$ 1.}
-
-\motcle{iclvfl}{ia}{-1, 0, 1 or 2}{-1}{O}{L3}
-{for every scalar {\tt iscal} representing the average of the square of the
-fluctuations of another scalar {\tt ii=iscavr(iscal)} (noted $f$),
-indicator of the clipping method\\
-\hspace*{1.3cm}= -1: no clipping because the scalar does not represent
-the average of the square of the fluctuations of another scalar\\
-\hspace*{1.3cm}= 0: clipping to 0 for the lower range of values\\
-\hspace*{1.3cm}= 1: clipping to 0 for the lower range of values and to
-\mbox{$(f-f_{min})(f_{max}-f)$} for higher values, where $f$ is
-the associated scalar, $f_{min}$ and $f_{max}$ its minimum and maximum
-values specified by the user ({\em i.e.} {\tt scamin(ii)} and {\tt scamax(ii)}) \\
-\hspace*{1.3cm}= 2: clipping to {\tt max(0,scamin(iscal))} for lower
-values and to {\tt scamax(iscal)} for higher values. {\tt scamin} and {\tt scamax}
-are limits specified by the user\\
-useful for the scalars {\tt iscal} for which {\tt iscavr(iscal)}$>$0.}
-
-\motcle{itbrrb}{i}{0 or 1}{0}{O}{L3}
-{Reconstruction (=1) or not (=0) of the temperature, enthalpy or total energy
-value in the boundary cells. Useful in the case of coupling with \syrthes
-and with radiation.}
-
-\motcle {icpsyr}{ia}{-999,0,1}{-999}{O}{L3}
-{For each scalar {\tt iscal}, {\tt icpsyr(iscal)} indicates whether it is
-coupled with \syrthes (=1) or not (=0).
-There can be only one coupled scalar per calculation.\\
-\hspace*{1.3cm}=-999: by default\\
-\hspace*{2.cm} $\bullet$ {\tt icpsyr(iscal)}=1 for the thermal scalar
-{\tt iscal=(iscalt)} when a coupling with \syrthes has been specified\\
-\hspace*{2.cm} $\bullet$ {\tt icpsyr(iscal)}=0 otherwise\\
-\hspace*{1.3cm}= 0: the scalar {\tt iscal} is not coupled with \syrthes\\
-\hspace*{1.3cm}= 1: the scalar {\tt iscal} is coupled with \syrthes\\
-useful in case of coupling with \syrthes}
-
+Several keywords refering to the scalar unknowns are
+detailed in the following
+\doxygenfile{structcs__thermal__model__t.html}{\texttt{Doxygen}
+documentation}. The \doxygenfile{structcs__stokes__model__t.html}{\texttt{Doxygen} page}
+of the Stokes model structure also contains some keywords such as \texttt{icpsyr},
+\texttt{iclvfl} or \texttt{itbrrb}.
+For other keywords, please refer to the following \texttt{Doxygen} pages refering to
+\doxygenanchor{group__main__variables.html\#nscaus}{\texttt{nscaus}} and
+\doxygenanchor{group__scalar__params.html\#iscacp}{\texttt{iscacp}}.
 
 %==================================
 \subsubsection{Definition of the equations}
 %==================================
 
-\motcle{istat}{ia}{0 or 1}{1 or 0}{O}{L2}
-{for each unknown {\tt ivar} to calculate, indicates whether
-unsteady terms are present ({\tt istat(ivar)}=1) or not (0) in the matrices.\\
-By default, {\tt istat} is set to 0 for the pressure (variable {\tt ivar=ipr})
-or $\overline{f}$ in v2f modelling (variable {\tt ivar=ifb}) and set to
-1 for the other unknowns.\\
-useful for all the unknowns}
+For informations about \texttt{istat}, \texttt{iconv}, \texttt{idiff}
+or \texttt{idifft}, please refer to the following
+\doxygenfile{structcs__var__cal__opt__t.html}{\texttt{Doxygen} documentation}.
 
-\motcle{iconv}{ia}{0 or 1}{1 or 0}{O}{L2}
-{for each unknown {\tt ivar} to calculate, indicates if the
-convection is taken into account ({\tt iconv(ivar)}=1) or not (0).\\
-By default, {\tt iconv} is set to 0 for the pressure (variable {\tt ivar=ipr})
-or $\overline{f}$ in v2f modelling (variable {\tt ivar=ifb}) and set to
-1 for the other unknowns.\\
-useful for all the unknowns}
-
-\motcle{idiff}{ia}{0 or 1}{1}{O}{L2}
-{for each unknown {\tt ivar} to calculate, indicates whether the
-diffusion is taken into account ({\tt idiff(ivar)}=1) or not (0)\\
-useful for all the unknowns}
-
-\motcle{idifft}{ia}{0 or 1}{1}{O}{L3}
-{for each unknown {\tt ivar} to calculate, when diffusion is taken
-into account ({\tt idiff(ivar)}=1), {\tt idifft(ivar)} indicates if the turbulent
-diffusion is taken into account ({\tt idifft(ivar)}=1) or not (0)\\
-useful for all the unknowns }
-
-\motcle{idircl}{ia}{0 or 1}{1 or 0}{O}{L3}
-{for each unknown {\tt ivar} to calculate, indicates whether the diagonal
-of the matrix should be slightly shifted ({\tt idircl(ivar)}=1) or not (0) if there
-is no Dirichlet boundary condition and if {\tt istat}=0. Indeed, in such a case,
-the matrix for the general advection/diffusion equation is singular. A slight
-shift in the diagonal will make it invertible again.\\
-By default, {\tt idircl} is set to 1 for all the unknowns, except $\overline{f}$ in
-v2f modelling, since its equation contains another diagonal term that ensures
-the regularity of the matrix.\\
-useful for all the unknowns}
-
-\motcle{ivisse}{ia}{0 or 1}{1}{O}{L3}
-{indicates whether the source terms in transposed gradient
-and velocity divergence should be taken into account in the momentum
-equation. In the compressible module, these terms also account for the volume
-viscosity (cf. {\tt viscv0} and {\tt iviscv}):\\
-$\partial_i \left[(\kappa -2/3\,(\mu+\mu_t))\partial_k U_k  \right]
- +     \partial_j \left[ (\mu+\mu_t)\partial_i U_j \right]$ \\
-\hspace*{1.3cm}= 0: not taken into account\\
-\hspace*{1.3cm}= 1: taken into account\\
-always useful}
-
+Moreover, one can find details about the \texttt{idircl} keyword
+\doxygenanchor{group__linear__solver.html\#idircl}{here} and about the
+\texttt{ivisse} keyword \doxygenanchor{structcs__stokes__model__t.html\#ivisse}{there}.
 
 %==================================
 \subsubsection{Definition of the time advancement}
 %==================================
-
-\motcleb{idtvar}{i}{-1, 0, 1, 2}{0}{O}{L1}
-{type of time step\\
-\hspace*{1.3cm}= 0: constant in time and spatially uniform\\
-\hspace*{1.3cm}= 1: variable in time and spatially uniform\\
-\hspace*{1.3cm}= 2: variable in time and in space\\
-\hspace*{1.3cm}= -1: steady-state algorithm\\
-If the numerical scheme is a second-order in time, only the option 0 is
-allowed.\\
-always useful}
 
 \motcleb{idilat}{i}{1, 2, 3, 4}{1}{O}{L1}
 {Algorithm to take into account the density variation in time\\
@@ -624,23 +220,6 @@ always useful}
 \hspace*{1.3cm}= 3: low-Mach number algorithm\\
 \hspace*{1.3cm}= 4: non conservative algorithm for fire simulation\\
 always useful}
-
-\motcle{iptlro}{i}{0 or 1}{0}{O}{L2}
-{when density gradients and gravity are present, a local thermal time
-step can be calculated, based on the Brunt-Vaisala frequency. In numerical
-simulations, it is usually wise for the time step to be lower than this limit,
-otherwise numerical instabilities may appear\\
-{\tt iptlro} indicates whether the time step should be limited to the local thermal
-time step (=1) or not (=0)\\
-when {\tt iptlro}=1, the listing shows the number of cells where the time step has
-been clipped due to the thermal criterion, as well as the maximum ratio between
-the time step and the maximum thermal time step. If {\tt idtvar}=0, since the time
-step is fixed and cannot be clipped, this ratio can be greater than
-1\footnote{It is then the user's
-choice to decide whether he should diminish DTREF or not}. When {\tt idtvar}$>$0, this
-ratio will be less than 1, except if the constraint {\tt dtmin} has prevented the
-code from reaching a sufficiently low value for {\tt dt}\\
-useful when density gradients and gravity are present}
 
 \motcleb{cdtvar}{ra}{strictly positive real number}{1}{O}{L1}
 {multiplicative factor applied to the time step for each scalar\\
@@ -654,66 +233,18 @@ although it is possible to change the value of {\tt cdtvar} for the turbulent
 variables, it is highly not recommended\\
 useful if and only if {\tt nscal} $\geqslant$ 1}
 
-
-\motcle{coumax}{r}{strictly positive real number}{1}{O}{L1}
-{target Courant number (local or maximum) in case of non-constant time step\\
-useful if {\tt idtvar} $\ne$ 0}
-
-\motcle{foumax}{r}{strictly positive real number}{10}{O}{L1}
-{target Fourrier nmber (local or maximum) in case of non-constant time step\\
-useful if {\tt idtvar} $\ne$ 0}
-
-\motcleb{dtref}{r}{strictly positive real number}{\tt -grand*10}{C}{L1}
-{reference time step value\\
-always useful.\\
-This is the time step value used in the case of a calculation run with a
-uniform and constant time step, {\em i.e.} {\tt idtvar}=0 (restart calculation
-or not). It is the value used to initialise the time step in the case of
-an initial calculation run with a non-constant time step
-({\tt idtvar}=1 or 2). It is also the value used to initialise the time step
-in the case of a restart calculation in which the type of
-time step has been changed (for instance, {\tt idtvar}=1 in the new
-calculation and {\tt idtvar}=0 or 2 in the previous calculation): see
-\texttt{cs\_user\_initialization}}
-
-\motcle{dtmin}{r}{positive or null real number}{\tt 0.1*dtref}{O}{L2}
-{lower limit for the calculated time step when non-constant time step is activated\\
-useful if {\tt idtvar} $\ne$ 0}
-
-\motcle{dtmax}{r}{strictly positive real number}{\tt 1000*dtref}{O}{L2}
-{upper limit for the calculated time step when non-constant time step is activated\\
-useful if {\tt idtvar} $\ne$ 0}
-
 \motcle{varrdt}{r}{strictly positive real number}{0.1}{O}{L3}
 {maximum allowed relative increase in the calculated time step value
 between two successive time steps (to ensure stability, any decrease in the time step
 is immediate and without limit)\\
 useful if {\tt idtvar} $\ne$ 0}
 
-\motcle{relxst}{r}{0 $<$ real $\leqslant$ 1}{0.9}{O}{L2}
-{relaxation coefficient for the steady algorithm
- ({\tt relaxp}=1: no relaxation)\\
-useful if {\tt idtvar}=-1}
-
-\motcle{relaxv}{ra}{0 $\leqslant$ real $\leqslant$ 1}{0.7 or 1.}{O}{L3}
-{for each variable {\tt ivar}, relaxation coefficient of the variable.
-This relaxation parameter is only useful for the pressure with the unsteady
-algorithm (so as to improve the convergence in case of meshes of insufficient
-quality or and for some of the turbulent models ({\tt iturb} = 20, 21,
-50, 51, 60 or 70 and {\tt ikecou}=0; if {\tt ikecou}=1, {\tt relaxv(ivar)}
-is not used, whatever its value may be). Default values are 1. for turbulent
-variables and 1. for pressure.\\
-{\tt relaxv} also stores the value of the relaxation coefficient when using the steady
-algorithm, deduced from the value of {\tt relxst} (defaulting to
- {\tt relaxv(ivar} $eq$  {1. - \tt relxst})\\
-useful only for the pressure and for turbulent variables
-if and only if ($k-\varepsilon$, v2f or $k-\omega$ models without coupling)
- with the unsteady algorithm\\
-always useful with the steady algorithm}
-
+For details about time stepping options, please refer to the
+dedicated \doxygenfile{group__time__step__options.html}{\texttt{Doxygen}
+documentation}.
 
 \minititre{Non-constant time step}
-The calculation of the time step uses a reference time step DTREF (at
+The calculation of the time step uses a reference time step {\tt dtref} (at
 the calculation beginning). Later, every time step, the time step value
 is calculated by taking into account the different existing limits, in
 the following order: \\
@@ -729,31 +260,6 @@ the maximum, then to the minimum limit.\\
 %==================================
 \subsubsection{Turbulence}
 %==================================
-
-\motcleb{iturb}{i}{
-\begin{tabular}{l}
-0, 10, 20, 21, 30, 31, 32, \\
-40, 41, 42, 50, 51, 60, 70
-\end{tabular}
-}{-999}{O}{L1}
-{indicator of the turbulence model {\tt iturb}\\
-\hspace*{1.3cm}= -999: not initialised. This value is not allowed and
-must be modified by the user\\
-\hspace*{1.3cm}= 0: laminar\\
-\hspace*{1.3cm}= 10: mixing length (not valided)\\
-\hspace*{1.3cm}= 20: $k-\varepsilon$\\
-\hspace*{1.3cm}= 21: $k-\varepsilon$ with linear production (Laurence \& Guimet)\\
-\hspace*{1.3cm}= 30: $R_{ij}-\varepsilon$ ``standard'' LRR (Launder, Reece \& Rodi)\\
-\hspace*{1.3cm}= 31: $R_{ij}-\varepsilon$ SSG (Speziale, Sarkar \& Gatski)\\
-\hspace*{1.3cm}= 32: $R_{ij}-\varepsilon$ EBRSM (elliptic blending)\\
-\hspace*{1.3cm}= 40: LES (Smagorinsky model) \\
-\hspace*{1.3cm}= 41: LES (dynamic model) \\
-\hspace*{1.3cm}= 42: LES (WALE model) \\
-\hspace*{1.3cm}= 50: v2-f, $\varphi$-model version\\
-\hspace*{1.3cm}= 51: v2-f, BL-v2/k version\\
-\hspace*{1.3cm}= 60: $k-\omega$, SST version \\
-\hspace*{1.3cm}= 70: Spalart-Allmaras \\
-always useful}
 
 The $k-\varepsilon$ (standard and linearized production) and $R_{ij}-\varepsilon$
 (LRR and SSG) turbulence
@@ -791,260 +297,9 @@ does not implement his own way of averaging the dynamic constant in
 \texttt{ussmag} (\textit{i.e.} if the user keeps the local average based
 on the extended neighbourhood).\\
 
-\motcleb{iturt}{ia}{0, 10, 20 or 30}{0}{O}{L2}
-{indicator of the turbulent flux model $ \overline{\varia^\prime \vect{u}^\prime}$
-for any scalar $\varia$\\
-\hspace*{1.3cm}= 0: Simple Gradient Diffusion Hypothesis (SGDH) (default value)\\
-\hspace*{1.3cm}= 10: Generalized Gradient Diffusion Hypothesis (GGDH)\\
-\hspace*{1.3cm}= 20: Algebraic Flux Model (AFM)\\
-\hspace*{1.3cm}= 30: Differential Flux Model (DFM: transport equations of the turbulent flux)\\
-GGDH, AFM and DFM are only available when a second order closure is used ({\em i.e.} {\tt iturb}=30, 31, 32).
-}
-
-\motcle{iwallf}{i}{0, 1, 2, 3, 4 or 5}{3}{O}{L2}
-{indicates the type of wall function is used for
- the velocity boundary conditions on a frictional wall.\\
-\hspace*{1.3cm}= 0: no wall functions\\
-\hspace*{1.3cm}= 1: one scale of friction velocities (power law)\\
-\hspace*{1.3cm}= 2: one scale of friction velocities (log law)\\
-\hspace*{1.3cm}= 3: two scales of friction velocities (log law)\\
-\hspace*{1.3cm}= 4: two scales of friction velocities (log law) - scalable wall functions\\
-\hspace*{1.3cm}= 5: two scales of friction velocities (mixing length based on V. Driest analysis)\\
-{\tt iwallf} is initialised to 2 for {\tt iturb}=10, 40, 41 or 70
-(mixing length, LES and Spalart Allmaras).\\
-{\tt iwallf} is initialised to 0 for {\tt iturb}=0, 32, 50 or 51\\
-{\tt iwallf} is initialised to 3 for {\tt iturb}=20, 21, 30, 31 or 60
-($k-\varepsilon$, $R_{ij}-\varepsilon$ LRR, $R_{ij}-\varepsilon$ SSG and
-$k-\omega$ SST models).\\
-The v2f model ({\tt iturb}=50) is not designed to use wall functions
-(the mesh must be ``low Reynolds'').\\
-The value {\tt iwallf}=3 is not compatible with {\tt iturb}=0, 10, 40
-or 41 (laminar, mixing length and LES).\\
-Concerning the $k-\varepsilon$ and $R_{ij}-\varepsilon$ models, the
-two-scales model is usually at least as satisfactory as the one-scale
-model.\\
-The scalable wall function allows to virtually ``shift'' the wall when
-necessary in order to be always in a logarithmic layer.
-It is used to make up for
-the problems related to the use of High-Reynolds models on very refined
-meshes.\\
-useful if {\tt iturb} is different from 50}
-
-\motcle{ilogpo}{i}{0 or 1}{1}{O}{L3}
-{type of wall function used for the velocity: power law
-({\tt ilogpo}=0, deprecated) or logarithmic law ({\tt ilogpo}=1)\\
-always useful}
-
-\motcle{ypluli}{r}{real number $>$ 0}{\tt 1/xkappa, 10.88}{O}{L3}
-{limit value of $y^+$ for the viscous sub-layer\\
-{\tt ypluli} depends on the chosen wall function: it is
-initialised to 10.88 for the scalable wall function ({\tt iwallf}=2),
-otherwise it is initialised to $1/\kappa\approx 2,38$\\
-In LES, {\tt ypluli} is taken by default to be 10.88\\
-always useful}
-
-\minititre{ $k-\varepsilon$, $k-\varepsilon$ with linear production,
-v2-f and $k-\omega$ SST}
-
-\motcle{igrake}{i}{0 or 1}{1}{O}{L1}
-{indicates if the terms related to gravity in the
-equations of $k$ and $\varepsilon$ or $\omega$ are taken into account
-({\tt igrake}=1) or not (0)\\
-useful if and only if {\tt iturb} = 20, 21, 50 or 60, ({\tt gx, gy, gz})
-$\ne$ (0,0,0) and the density is not uniform}
-
-\motcle{igrhok}{i}{0 or 1}{0}{O}{L2}
-{indicates if the term $\frac{2}{3}\grad \rho k$
-is taken into account\\ ({\tt igrhok}=1) or not (0) in the velocity
-equation\\
-useful if and only if {\tt iturb} = 20, 21, 50 or 60.\\
-This term may generate
-non-physical velocities at the wall. When it is not explicitly taken into
-account, it is implicitly included into the pressure.}
-
-\motcle{ikecou}{i}{0 or 1}{0 or 1}{O}{L3}
-{indicates if the coupling of the source terms of
-$k$ and $\varepsilon$ or $k$ and $\omega$ is taken into account
-({\tt ikecou}=1) or not (0)\\
-if {\tt ikecou}=0 in $k-\varepsilon$ model, the term in $\varepsilon$ in the
-equation of $k$ in made implicit\\
-{\tt ikecou} is initialised to 0 if {\tt iturb} = 21 or 60,
-and to 1 if {\tt iturb}= 20\\
-{\tt ikecou}=1 is forbidden when using the v2f model
-({\tt iturb}=50)\\
-useful if and only if {\tt iturb} = 20, 21 or 60 ($k-\varepsilon$ and
-$k-\omega$ models)}
-
-\motcle{iclkep}{i}{0 or 1}{0}{O}{L3}
-{indicates the clipping method used for $k$ and
-$\varepsilon$, for the $k-\varepsilon$ and v2f models\\
-\hspace*{1.3cm}= 0: clipping in absolute value\\
-\hspace*{1.3cm}= 1: clipping from physical relations\\
-useful if and only if {\tt iturb} = 20, 21 or 50 ($k-\varepsilon$ and
-v2f models). The results obtained with the method corresponding to
-{\tt iclkep}=1 showed in some cases a substantial sensitivity to the
-values of the length scale {\tt almax}.\\
-The option {\tt iclkep}=1 is therefore not recommended, and,
-if chosen, must be used cautiously.}
-
-\motcle{irccor}{i}{0 or 1}{0}{O}{L2}
-{Activation of rotation/curvature correction for eddy viscosity turbulence models.\\
-\hspace*{1.3cm}= 0: activated\\
-\hspace*{1.3cm}= 1: not activated\\
-useful if and only if {\tt iturb} = 20, 21, 50, 51, 60, 70 (eddy viscosity models)
-}
-
-\motcle{itycor}{i}{1 or 2}{1 or 2}{O}{L2}
-{Type of rotation/curvature correction for eddy viscosity turbulence models:\\
-\hspace*{1.3cm}= 1: Cazalbou correction (default when {\tt irccor}=1 and {\tt iturb}=20, 21 or 50, 51)\\
-\hspace*{1.3cm}= 2: Spalart-Shur correction (default when {\tt irccor}=1 and {\tt iturb}=60 or 70)
-}
-
-\minititre{ $R_{ij}-\varepsilon$ (LRR and SSG)}
-
-\motcle{iclptr}{i}{0 or 1}{0}{O}{L3}
-{indicates if $R_{ij}$ is made partially implicit
-({\tt iclptr}=1) or not (0) in the wall boundary conditions.\\
-useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
-
-\motcle{iclsyr}{i}{0 or 1}{0}{O}{L3}
-{indicates if $R_{ij}$ is made partially implicit
-({\tt iclsyr}=1) or not (0) in the symmetry boundary conditions.\\
-useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
-
-\motcle{idifre}{i}{0 or 1}{1}{O}{L3}
-{complete ({\tt idifre=1}) or simplified (0)
-taking into account of the diagonals of the diffusion tensors of $R_{ij}$
-and $\varepsilon$, for the LLR model.\\
-useful if and only if {\tt iturb} = 30 (LLR $R_{ij}-\varepsilon$ model)}
-
-\motcle{igrari}{i}{0 or 1}{1}{O}{L1}
-{indicates if the terms related to gravity are
-taken into account ({\tt igrari}=1) or not (0) in the equations of
-$R_{ij}-\varepsilon$. \\
-useful if and only if {\tt iturb} = 30 or 31 and ({\tt gx, gy, gz}) $\ne$
-(0,0,0) ($R_{ij}-\varepsilon$ model with gravity) and the density is not uniform}
-
-\motcle{idirsm}{i}{0 or 1}{1}{O}{L3}
-{model for the turbulent diffusion of $R_{ij}$ and $\varepsilon$ in second moment closure. Shir model (isotropic diffusion) if 0, Daly and Harlow model if 1, default value.}
-
-\motcle{irijec}{i}{0 or 1}{0}{O}{L2}
-{indicates if the wall echo terms in
-$R_{ij}-\varepsilon$ LRR model are
-taken into account ({\tt irijec}=1) or not (0).\\
-useful if and only if {\tt iturb} = 30 ($R_{ij}-\varepsilon$ LRR).\\
-It is not recommended to take these terms into account:
-they have an influence only near the walls, their expression is hardly
-justifiable according to some authors and, in the configurations
-studied with \CS, they did not bring any improvement in the results.\\
-In addition, their use induces an increase in the calculation
-time.\\
-The wall echo terms imply the calculation of the distance to the wall
-for every cell in the domain. See {\tt icdpar} for potential restrictions
-due to this.}
-
-\motcle{irijnu}{i}{0 or 1}{0}{O}{L3}
-{addition ({\tt irijnu}=1) or not (0) of a
-turbulent viscosity in the matrix of the incremental system solved
-for the velocity in $R_{ij}-\varepsilon$ models. The goal is to improve
-the stability of the calculation. The usefulness of {\tt irijnu}=1 has
-however not been clearly demonstrated.\\
-Since the system is solved in incremental form, this extra turbulent
-viscosity does not change the final solution for steady flows. However,
-for unsteady flows, the parameter {\tt nswrsm} should be increased.\\
-useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model).}
-
-\motcle{irijrb}{i}{0 or 1}{0}{O}{L3}
-{reconstruction ({\tt irijrb}=1)
-or not (0) of the boundary conditions at the walls for $R_{ij}$ and  $\varepsilon$.\\
-useful if and only if {\tt iturb} = 30 or 31 ($R_{ij}-\varepsilon$ model)}
-
-
-\minititre{$LES$}
-
-\motcle{ivrtex}{i}{0 or 1}{0}{O}{L1}
-{activates (=1) or not (=0) the generation of synthetic turbulence at the
-different inlet boundaries with the LES model (generation of unsteady synthetic
-eddies)\\
-useful if {\tt iturb}=40, 41 or 42\\
-this keyword requires the completion of the routine
-\texttt{usvort}}
-
-\motcle{isuivo}{i}{0 or 1}{isuite}{O}{L1}
-{for the vortex method, indicates whether the synthetic vortices at the inlet
-should be initialised (=0) or read from the restart file.\\
-useful if {\tt iturb}=40, 41, 42 and {\tt ivrtex}=1}
-
-\motcle{isuisy}{i}{0 or 1}{isuite}{O}{L1}
-{Reading of the LES inflow module restart file.\\
-\hspace*{1.3cm}= 0: not activated \\
-\hspace*{1.3cm}= 1: activated\\
-If {\tt isuisy}=1, synthetic fluctuations are not re-initialized in case of restart calculation.
-useful if {\tt iturb}=40, 41 or 42
-}
-
-\motcle{idries}{i}{0 or 1}{0,1}{O}{L2}
-{{\tt idries} activates (1) or not (0) the van
-Driest wall-damping for the Smagorinsky constant (the Smagorinsky
-constant is multiplied by the damping function
-$1-e^{-y^+/{\tt cdries}}$, where $y^+$ designates the non-dimensional
-distance to the nearest wall). The default value is 1 for the
-Smagorinsky model and 0 for the dynamic model.\\
-the van Driest wall-damping requires the knowledge of the distance to the
-nearest wall for each cell in the domain. Refer to keyword {\tt icdpar}
-for potential limitations\\
-useful if and only if {\tt iturb} = 40 or 41}
-
-\motcle{cdries}{r}{real number $>$ 0}{26}{O}{L3}
-{{\tt cdries} is the constant appearing in the
-van Driest damping function applied to the Smagorinsky constant:
- $1-e^{-y^+/{\tt cdries}}$\\
-useful if and only if {\tt iturb} = 40 or 41}
-
-\motcle{csmago}{r}{real number $>$ 0}{0.065}{O}{L2}
-{{\tt csmago} is the Smagorinsky constant used in
-the Smagorinsky model for LES\\
-the sub-grid scale viscosity is calculated by
- $\displaystyle\mu_{sg}=\rho C_{smago}^2\bar{\Delta}^2\sqrt{2\bar{S}_{ij}\bar{S}_{ij}}$
-where $\bar{\Delta}$ is the width of the filter and $\bar{S}_{ij}$ the filtered
-strain rate\\
-useful if and only if {\tt iturb} = 40}
-
-\motcle{smagmx}{r}{real number $>$ 0}{10*csmago}{O}{L3}
-{${\tt smagmx}^2$ is
-the maximum allowed value for the variable $C$ appearing in the LES dynamic
-model (the ``square'' comes from the fact that the
-variable of the dynamic model corresponds to the square of the
-constant of the Smagorinsky model). Any larger value yielded by the calculation
-procedure of the dynamic model will be clipped to ${\tt smagmx}^2$\\
-useful if and only if {\tt iturb} = 41}
-
-\motcle{xlesfl}{r}{real number $>$ 0}{2}{O}{L3}
-{{\tt xlesfl} is a constant used to define, for
-each cell $\Omega_i$, the width of the (implicit) filter:\\
-$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}$\\
-useful if and only if {\tt iturb} = 40 or 41}
-
-\motcle{ales}{r}{real number $>$ 0}{1}{O}{L3}
-{{\tt ales} is a constant used to define, for
-each cell $\Omega_i$, the width of the (implicit) filter:\\
-$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}$\\
-useful if and only if {\tt iturb} = 40 or 41}
-
-\motcle{bles}{r}{real number $>$ 0}{1/3}{O}{L3}
-{{\tt bles} is a constant used to define, for
-each cell $\Omega_i$, the width of the (implicit) filter:\\
-$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}$\\
-useful if and only if {\tt iturb} = 40 or 41}
-
-\motcle{xlesfd}{r}{real number $>$ 0}{1.5}{O}{L3}
-{{\tt xlesfd} is the constant used to define, for
-each cell $\Omega_i$, the width of the explicit filter used in the framework of
-the LES dynamic model:\\
-$\widetilde{\overline{\Delta}}=xlesfd\overline{\Delta}$\\
-useful if and only if {\tt iturb} = 41}
-
-
+For further details, please refer to the following \texttt{Doxygen} documentation
+dealing with \doxygenfile{group__turbulence.html}{turbulence options} and
+\doxygenfile{group__csttur.html}{turbulence constants}.
 
 %==================================
 \subsubsection{Time scheme}
@@ -1067,404 +322,22 @@ It is recommended to keep the default values of the variables listed
 below. Hence, in standard cases, the user does not need to specify these
 options.
 
-
-\motcle{ischtp}{i}{1 or 2}{1 or 2}{O}{L2}
-{{\tt ischtp} indicates the order of the
-activated time scheme (this indicator allows the code to automatically complete
-the other indicators related to the time scheme)\\
-\hspace*{1.3cm}= 1: first-order \\
-\hspace*{1.3cm}= 2: second-order \\
-when {\tt ischtp}=2, the physical properties are by default not
-second-order. It it possible to modify this by means of the
-following indicators.\\
-due to specific coupling between certain variables, the source terms in the
-turbulence equations (except convection and diffusion) cannot be second order,
-except with the $R_{ij}$ models (cf. keyword {\tt isto2t})\\
-by default, {\tt ischtp} is initialised to 2 with the LES model and 1
-otherwise\\
-always useful}
-
-\motcle{istmpf}{i}{0, 1 or 2}{0 or 1}{O}{L3}
-{{\tt istmpf} specifies the time scheme activated
-for the mass flow. The chosen value for {\tt istmpf} will automatically
-determine the value given to the variable {\tt thetfl}\\
-\hspace*{1.3cm}= 0: ``explicit'' first-order: the mass flow calculated
-at the previous time step (``n'') is used in the convective terms of all
-the equations (momentum, turbulence and scalars\\
-\hspace*{1.3cm}= 1: ``standard'' first-order: the mass flow calculated
-at the previous time step (``n'') is used in the convective terms of the
-momentum equation, and the updated mass flow (time ``n+1'') is used in the
-equations of turbulence and scalars\\
-\hspace*{1.3cm}= 2: second-order: the mass flow used in the momentum equations
-is extrapolated at ``n+{\tt thetfl}'' (=n+1/2) from the values at the two former time
-steps (Adams Bashforth); the mass flow used in the equations for turbulence and
-scalars is interpolated at time ``n+{\tt thetfl}'' (=n+1/2) from the values at the
-former time step and at the newly calculated ``n+1'' time step.\\
-by default, {\tt istmpf}=2 is used in the case of a second-order time
-scheme (if {\tt ischtp}=2) and {\tt istmpf}=1 otherwise\\
-always useful}
-
-\motcle{isno2t}{i}{0, 1 or 2}{0 or 1}{O}{L3}
-{{\tt isno2t} specifies the time scheme activated
-for the source terms of the momentum equation, apart from convection and
-diffusion (for instance: head loss, transposed gradient, ...).\\
-\hspace*{1.3cm}= 0: ``standard'' first-order: the terms which are linear
-functions of the solved variable are implicit and the others are explicit\\
-\hspace*{1.3cm}= 1: second-order: the terms of the form $S_i\phi$ which are
-linear functions of the solved variable
-$\phi$ are expressed as second-order terms by interpolation (according
-to the formula
-$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]$, $\theta$
-being given by the value of {\tt thetav} associated with the variable $\phi$)
-; the other terms $S_e$ are expressed as second-order terms by
-extrapolation (according to the formula
-$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]$, $\theta$ being
-given by the value of {\tt thetsn}=0.5)\\
-\hspace*{1.3cm}= 2: the linear terms $S_i\phi$ are treated in the same
-way as when {\tt isno2t}=1;
-the other terms $S_e$ are extrapolated according to the same formula
-as when {\tt isno2t}=1, but with $\theta$={\tt thetsn}=1\\
-by default, {\tt isno2t} is initialised to 1 (second-order) when
-the selected time scheme is second-order ({\tt ischtp}=2), otherwise to 0.\\
-always useful}
-
-\motcle{isto2t}{i}{0, 1 or 2}{0}{O}{L3}
-{{\tt isto2t} specifies the time scheme
-activated for the source terms of the turbulence equations ({\em i.e.} related to $k$,
-$R_{ij}$, $\varepsilon$, $\omega$, $\varphi$, $\overline{f}$), apart
-from convection and diffusion.\\
-\hspace*{1.3cm}= 0: ``standard'' first-order: the terms which are linear
-functions of the solved variable are implicit and the others are explicit\\
-\hspace*{1.3cm}= 1: second-order: the terms of the form $S_i\phi$ which are
-linear functions of the solved variable
-$\phi$ are expressed as second-order terms by interpolation (according
-to the formula
-$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]$, $\theta$
-being given by the value of {\tt thetav} associated with the variable $\phi$);
-the other terms $S_e$ are expressed as second-order terms by
-extrapolation (according to the formula
-$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]$, $\theta$ being
-given by the value of {\tt thetst}=0.5)\\
-\hspace*{1.3cm}= 2: the linear terms $S_i\phi$ are treated in the same
-way as when {\tt isto2t}=1;
-the other terms $S_e$ are extrapolated according to the same formula
-as when {\tt isto2t}=1, but with $\theta$={\tt thetst}=1\\
-due to certain specific couplings between the turbulence equations,
-{\tt isto2t} is allowed the value 1 or 2 only for the $R_{ij}$ models
-({\tt iturb}=30 or 31); hence, it is always initialised to 0.\\
-always useful}
-
-
-\motcle{isso2t}{ia}{0, 1 or 2}{0 or 1}{O}{L3}
-{for each scalar {\tt iscal}, {\tt isso2t(iscal)} specifies the time scheme activated
-for the source terms of the equation for the scalar, apart from convection and
-diffusion (for instance: variance production, user-specified terms, ...).\\
-\hspace*{1.3cm}= 0: ``standard'' first-order: the terms which are linear
-functions of the solved variable are implicit and the others are explicit\\
-\hspace*{1.3cm}= 1: second-order: the terms of the form $S_i\phi$ which are
-linear functions of the solved variable
-$\phi$ are expressed as second-order terms by interpolation (according
-to the formula
-$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]$, $\theta$
-being given by the value of {\tt thetav} associated with the variable $\phi$);
-the other terms $S_e$ are expressed as second-order terms by
-extrapolation (according to the formula
-$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]$, $\theta$ being
-given by the value of {\tt thetss(iscal)}=0.5)\\
-\hspace*{1.3cm}= 2: the linear terms $S_i\phi$ are treated in the same
-way as when {\tt isso2t}=1;
-the other terms $S_e$ are extrapolated according to the same formula
-as when {\tt isso2t}=1, but with $\theta$={\tt thetss(iscal)}=1\\
-by default, {\tt isso2t(iscal)} is initialised to 1 (second-order) when the selected
-time scheme is second-order ({\tt ischtp}=2), otherwise to 0.\\
-always useful}
-
-
-\motcle{iroext}{i}{0, 1 or 2}{0}{O}{L3}
-{{\tt iroext} specifies the time scheme activated
-for the physical property $\phi$ ``density''.\\
-\hspace*{1.3cm}= 0: ``standard'' first-order: the value calculated at
-the beginning of the current time step (from the
-variables known at the end of the previous time step) is used \\
-\hspace*{1.3cm}= 1: second-order: the physical property $\phi$ is
-extrapolated according to the formula
-$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]$, $\theta$ being
-given by the value of {\tt thetro}=0.5 \\
-\hspace*{1.3cm}= 2: first-order: the physical property $\phi$ is
-extrapolated at $n+1$ according to the
-same formula as when {\tt iroext}=1 but with $\theta$={\tt thetro}=1\\
-always useful}
-
-\motcle{iviext}{i}{0, 1 or 2}{0}{O}{L3}
-{{\tt iviext} specifies the time scheme activated
-for the physical property $\phi$ ``total viscosity''
-(molecular+turbulent or sub-grid viscosities).\\
-\hspace*{1.3cm}= 0: ``standard'' first-order: the value calculated at
-the beginning of the current time step (from the
-variables known at the end of the previous time step) is used \\
-\hspace*{1.3cm}= 1: second-order: the physical property $\phi$ is
-extrapolated according to the formula
-$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]$, $\theta$ being
-given by the value of {\tt thetvi}=0.5 \\
-\hspace*{1.3cm}= 2: first-order: the physical property $\phi$ is
-extrapolated at $n+1$ according to the
-same formula as when {\tt iviext}=1, but with $\theta$={\tt thetvi}=1\\
-always useful}
-
-\motcle{icpext}{i}{0, 1 or 2}{0}{O}{L3}
-{{\tt icpext} specifies the time scheme activated
-for the physical property $\phi$ ``specific heat''.\\
-\hspace*{1.3cm}= 0: ``standard'' first-order: the value calculated at
-the beginning of the current time step (from the
-variables known at the end of the previous time step) is used \\
-\hspace*{1.3cm}= 1: second-order: the physical property $\phi$ is
-extrapolated according to the formula
-$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]$, $\theta$ being
-given by the value of {\tt thetcp}=0.5 \\
-\hspace*{1.3cm}= 2: first-order: the physical property $\phi$ is
-extrapolated at $n+1$ according to the
-same formula as when {\tt icpext}=1, but with $\theta$={\tt thetcp}=1\\
-always useful}
-
-\motcle{ivsext}{ia}{0, 1 or 2}{0}{O}{L3}
-{for each scalar {\tt iscal}, {\tt ivsext(iscal)} specifies the time scheme
-activated for the physical property $\phi$ ``diffusivity''.\\
-\hspace*{1.3cm}= 0: ``standard'' first-order: the value calculated at
-the beginning of the current time step (from the
-variables known at the end of the previous time step) is used \\
-\hspace*{1.3cm}= 1: second-order: the physical property $\phi$ is
-extrapolated according to the formula
-$\phi^{n+\theta}=[(1+\theta)\phi^n-\theta \phi^{n-1}]$, $\theta$ being
-given by the value of {\tt thetvs(iscal)}=0.5 \\
-\hspace*{1.3cm}= 2: first-order: the physical property $\phi$ is
-extrapolated at $n+1$ according to the
-same formula as when {\tt ivsext}=1, but with $\theta$={\tt thetvs(iscal)}=1\\
-always useful}
-
-\motcle{thetav}{ra}{0 $\leqslant$ real $\leqslant$1}{1 or 0.5}{O}{L3}
-{for each variable {\tt ivar}, {\tt thetav(ivar)} is the value of $\theta$ used to
-express at the second-order the terms of convection, diffusion and the
-source terms which are linear functions of the solved variable
-(according to the formula
-$\phi^{n+\theta}=(1-\theta)\phi^n+\theta\phi^{n+1}$). Generally,
-only the values 1 and 0.5 are used. The user is not allowed to modify
-this variable.\\
-\hspace*{1.3cm}= 1: first-order \\
-\hspace*{1.3cm}= 0.5: second-order \\
-Concerning the pressure, the value of {\tt thetav} is always 1. Concerning
-the other variables, the value {\tt thetav}=0.5 is used when the
-second-order time scheme is activated by {\tt ischtp}=2 (standard value for
-LES calculations), otherwise {\tt thetav} is set to 1.\\
-always useful}
-
-\motcle{thetfl}{r}{0 $\leqslant$ real $\leqslant$1}{0 or 0.5}{O}{L3}
-{{\tt thetfl} is the value of $\theta$ used to
-interpolate the convective fluxes of the variables when a second-order time
-scheme has been activated for the mass flow (see {\tt istmpf})\\
-generally, only the value 0.5 is used. The user is not allowed to
-modify this variable.\\
-\hspace*{1.3cm}= 0.0: ``explicit'' first-order (corresponds to
-{\tt istmpf}=0 or 1)\\
-\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt istmpf}=2). The mass
-flux will be interpolated according to the formula
-$Q^{n+\theta}=\frac{1}{2-\theta}Q^{n+1}+\frac{1-\theta}{2-\theta}Q^{n+1-\theta}$).\\
-always useful}
-
-\motcle{thetsn}{r}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{{\tt thetsn} is the value of $\theta$ used to
-extrapolate the nonlinear explicit source terms $S_e$ of the momentum equation,
-when the source term extrapolation has been activated (see {\tt isno2t}),
-following the formula\\
-$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}$\\
-the value
-of $\theta$={\tt thetsn} is deduced from the value chosen for
-{\tt isno2t}. Generally, only the value 0.5 is used. The user is not
-allowed to modify this variable.\\
-\hspace*{1.3cm}= 0: first-order (unused, corresponds to {\tt isno2t}=0) \\
-\hspace*{1.3cm}= 0.5: second-order (used when {\tt isno2t}=1) \\
-\hspace*{1.3cm}= 1: first-order (used when {\tt isno2t}=2) \\
-always useful}
-
-\motcle{thetst}{r}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{{\tt thetst} is the value of $\theta$ used to
-extrapolate the nonlinear explicit source terms $S_e$ of the turbulence equations,
-when the source term extrapolation has been activated (see {\tt isto2t}),
-following the formula\\
-$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}$\\
-the value
-of $\theta$={\tt thetsn} is deduced from the value chosen for
-{\tt isto2t}. Generally, only the value 0.5 is used. The user is not
-allowed to modify this variable.\\
-\hspace*{1.3cm}= 0: first-order (unused, corresponds to {\tt isto2t}=0) \\
-\hspace*{1.3cm}= 0.5: second-order (used when {\tt isto2t}=1) \\
-\hspace*{1.3cm}= 1: first-order (used when {\tt isto2t}=2) \\
-always useful}
-
-\motcle{thetss}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{for each scalar {\tt iscal}, {\tt thetss(iscal)} is the value of $\theta$ used to
-extrapolate the nonlinear explicit source terms $S_e$ of the scalar equation,
-when the source term extrapolation has been activated (see {\tt isso2t}),
-following the formula\\
-$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}$\\
-the value
-of $\theta$={\tt thetss(iscal)} is deduced from the value chosen for
-{\tt isso2t(iscal)}. Generally, only the value 0.5 is used. The user is not
-allowed to modify this variable.\\
-\hspace*{1.3cm}= 0: first-order (unused, corresponds to {\tt isso2t(iscal)}=0) \\
-\hspace*{1.3cm}= 0.5: second-order (used when {\tt isso2t(iscal)}=1) \\
-\hspace*{1.3cm}= 1: first-order (used when {\tt isso2t(iscal)}=2) \\
-useful if {\tt nscal}$>$1}
-
-
-\motcle{thetro}{r}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{{\tt thetro} is the value of $\theta$ used to
-extrapolate the physical property $\phi$ ``density'' when the extrapolation has
-been activated (see {\tt iroext}),according to the
-formula $\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}$\\
-the value of $\theta$={\tt thetro} is deduced from the value chosen for
-{\tt iroext}. Generally, only the value 0.5 is used. The user is not
-allowed to modify this variable.\\
-\hspace*{1.3cm}= 0: first-order (unused, corresponds to
-{\tt iroext}=0)\\
-\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt iroext}=1) \\
-\hspace*{1.3cm}= 1: first-order (corresponds to {\tt iroext}=2) \\
-always useful}
-
-\motcle{thetvi}{r}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{{\tt thetvi} is the value of $\theta$ used to
-extrapolate the physical property $\phi$ ``total viscosity'' when the extrapolation has
-been activated (see {\tt iviext}),according to the
-formula $\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}$\\
-the value of $\theta$={\tt thetvi} is deduced from the value chosen for
-{\tt iviext}. Generally, only the value 0.5 is used. The user is not
-allowed to modify this variable.\\
-\hspace*{1.3cm}= 0: first-order (unused, corresponds to
-{\tt iviext}=0)\\
-\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt iviext}=1) \\
-\hspace*{1.3cm}= 1: first-order (corresponds to {\tt iviext}=2) \\
-always useful}
-
-\motcle{thetcp}{r}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{{\tt thetcp} is the value of $\theta$ used to
-extrapolate the physical property $\phi$ ``specific heat'' when the extrapolation has
-been activated (see {\tt icpext}),according to the
-formula $\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}$\\
-the value of $\theta$={\tt thetcp} is deduced from the value chosen for
-{\tt icpext}. Generally, only the value 0.5 is used. The user is not
-allowed to modify this variable.\\
-\hspace*{1.3cm}= 0: first-order (unused, corresponds to
-{\tt icpext}=0)\\
-\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt icpext}=1) \\
-\hspace*{1.3cm}= 1: first-order (corresponds to {\tt icpext}=2) \\
-always useful}
-
-\motcle{thetvs}{ra}{0 $\leqslant$ real $\leqslant$1}{0, 0.5 or 1}{O}{L3}
-{for each scalar {\tt iscal}, {\tt thetvs(iscal)} is the value of $\theta$ used to
-extrapolate the physical property $\phi$ ``diffusivity'' when the extrapolation has
-been activated (see {\tt ivsext}), according to the
-formula $\phi^{n+\theta}=(1+\theta)\phi^n-\theta \phi^{n-1}$\\
-the value of $\theta$={\tt thetvs(iscal)} is deduced from the value chosen for
-{\tt ivsext(iscal)}. Generally, only the value 0.5 is used. The user is not
-allowed to modify this variable.\\
-\hspace*{1.3cm}= 0: first-order (unused, corresponds to
-{\tt ivsext(iscal)}=0)\\
-\hspace*{1.3cm}= 0.5: second-order (corresponds to {\tt ivsext(iscal)}=1) \\
-\hspace*{1.3cm}= 1: first-order (corresponds to {\tt ivsext(iscal)}=2) \\
-useful if {\tt nscal}$>$1}
-
+Please refer to the dedicated
+\doxygenfile{group__time__stepping.html}{\texttt{Doxygen} documentation}
+for detailed informations about the time stepping parameters.
 
 %==================================
 \subsubsection{Gradient reconstruction}
 %==================================
 
-\motcle{imrgra}{i}{0, 1, 2, 3, 4, 5, or 6}{0}{O}{L2}
-{indicates the type of gradient reconstruction (one method for all the
-variables)\\
-\hspace*{1.3cm}= 0: iterative reconstruction of the non-orthogonalities\\
-\hspace*{1.3cm}= 1: least squares method based on the first neighbour cells
-(cells which share a face with the treated cell)\\
-\hspace*{1.3cm}= 2: least squares method based on the extended neighbourhood
-(cells which share a node with the treated cell)\\
-\hspace*{1.3cm}= 3: least squares method based on a partial extended
-neighbourhood (all first neighbours plus the extended neighbourhood cells that
-are connected to a face where the non-orthogonality angle is larger than
-parameter {\tt anomax})\\
-\hspace*{1.3cm}= 4: iterative reconstruction with initialisation using the least
-squares method (first neighbours)\\
-\hspace*{1.3cm}= 5: iterative reconstruction with initialisation using the least
-squares method based on an extended neighbourhood\\
-\hspace*{1.3cm}= 6: iterative reconstruction with initialisation using the least
-squares method based on a partial extended neighbourhood\\
-if {\tt imrgra} fails due to probable mesh quality problems, it is usually effective
-to use {\tt imrgra}=3. Moreover, {\tt imrgra}=3 is usually faster than
-{\tt imrgra}=0 (but with less feedback on its use).\\
-It should be noted that {\tt imrgra}=1, 2 or 3 automatically triggers a gradient
-limitation procedure. See {\tt imligr}.\\
-useful if and only if there is {\tt n} so that {\tt nswrgr(n)} $>$ 1.
-Also, pressure gradients (or other gradients deriving from a potential)
-always use an iterative reconstruction. To force a non-iterative
-reconstruction for those gradients, a negative value of this keyword may be
-used, in which case the method matching the absolute value of the keyword will
-be used.}
+The gradient reconstruction keywords such as \texttt{imrgra}, \texttt{nswrgr},
+\texttt{epsrgr}, \texttt{imligr}, \texttt{climgr} or \texttt{extrag} are members
+of the \texttt{cs\_var\_cal\_opt\_t} structure for which informations can be
+found in the following \doxygenfile{structcs__var__cal__opt__t.html}{\texttt{Doxygen}
+documentation}.
 
-\motcle{nswrgr}{ia}{positive integer}{100}{O}{L3}
-{for each unknown {\tt ivar}, {\tt nswrgr(ivar)} $\leqslant$ 1 indicates that the
-gradients are not reconstructed\\
-\hspace*{1.3cm}if {\tt imrgra} = 0 or 4, {\tt nswrgr(ivar)} is the number of
-iterations for the gradient reconstruction\\
-\hspace*{1.3cm}if {\tt imrgra} = 1, 2 or 3, {\tt nswrgr(ivar)} $>$ 1 indicates that
-the gradients are reconstructed (but the method is not iterative, so any value
-larger than 1 for {\tt nswrgr} yields the same result)\\
-useful for all the unknowns}
-
-\motcle{epsrgr}{ra}{real number $>$ 0}{$10^{-5}$}{O}{L3}
-{for each unknown {\tt ivar}, relative precision for the iterative gradient
-reconstruction: {\tt epsrgr(ivar)}\\
-useful for all the unknowns when {\tt imrgra} = 0 or 4}
-
-\motcle{imligr}{ia}{-1, 0 or 1}{-1 or 1}{O}{L3}
-{for each unknown {\tt ivar}, indicates the type of gradient limitation:
-{\tt imligr(ivar)}\\
-\hspace*{1.3cm}=-1: no limitation\\
-\hspace*{1.3cm}= 0: based on the neighbours\\
-\hspace*{1.3cm}= 1: superior order\\
-for all the unknowns, {\tt imligr} is initialised to -1 if {\tt imrgra}=0 or 4
- and to 1 if \mbox{{\tt imrgra} = 1, 2 or 3}\\
-useful for all the unknowns}
-
-\motcle{climgr}{ra}{real number $>$ 0}{1.5}{O}{L3}
-{for each unknown {\tt ivar}, factor of gradient limitation: {\tt climgr(ivar)}
-(high value means little limitation)\\
-useful for all the unknowns {\tt ivar} for which {\tt imligr(ivar)} $\ne$ -1}
-
-\motcle{extrag}{ra}{0, 0.5 or 1}{0}{O}{L3}
-{for the variable ``pressure'' {\tt ivar=ipr}, extrapolation coefficient
-of the gradients at the boundaries. It affects only the Neumann conditions.
-The only possible values of {\tt extrag(ipr)} are:\\
-\hspace*{1.3cm}= 0: homogeneous Neumann calculated at first-order\\
-\hspace*{1.3cm}= 0.5: improved homogeneous Neumann, calculated at
-second-order in the case of an orthogonal mesh and at first-order otherwise\\
-\hspace*{1.3cm}= 1: gradient extrapolation (gradient at the boundary face
-equal to the gradient in the neighbour cell), calculated at
-second-order in the case of an orthogonal mesh and at first-order otherwise\\
-{\tt extrag} often allows to correct the non-physical velocities that
-appear on horizontal walls when density is variable and there is gravity.
-It is strongly advised to keep {\tt extrag}=0 for the variables apart from
-pressure. See also {\tt iphydr}.\\
-In practice, only the values 0 and 1 are allowed. The
-value 0.5 is not allowed by default (but the lock can be overridden if
-necessary, contact the development team).\\
-always useful}
-
-\motcle{anomax}{r}{0 $\leqslant$ real $\leqslant\pi/2$}{$\pi/4$}{O}{L3}
-{limit non-orthogonality angle used to restrict the extended neighbourhood for
-the gradient calculation with {\tt imrgra}=3.\\
-{\tt anomax}=0 will yield the same result as {\tt imrgra}=2 (full extended
-neighbourhood). {\tt anomax}=$\pi/2$ will yield the same result as
-{\tt imrgra}=1
-(first neighbours only)\footnote{Except for pathological cases where the
-non-orthogonality angle of a face would be larger than $\pi/2$}\\
-useful if and only if {\tt imrgra}=3}
+Details on the \texttt{anomax} keyword can be found
+\doxygenanchor{structcs__space__disc__t.html\#anomax}{here} as well.
 
 %==================================
 \subsubsection{Solution of the linear systems}
@@ -1473,121 +346,29 @@ useful if and only if {\tt imrgra}=3}
 See \doxygenfile{parameters.html}{the dedicated \texttt{Doxygen} documentation}
 for most settings related to linear solver options.
 
-\motcle{epsilo}{ra}{real number $>$ 0}{$10^{-8}$,$10^{-5}$}{O}{L3}
-{for each unknown {\tt ivar}, relative precision for the solution of the linear
-system. The default value is {\tt epsilo(ivar)=$10^{-8}$}. This value is set low
-on purpose. When there are enough iterations on the reconstruction of the
-right-hand side of the equation,
-the value may be increased (by default, in case of second-order in time,
-with {\tt nswrsm} = 5 or 10, {\tt epsilo} is increased to $10^{-5}$).\\
-always useful}
+More informations on these settings can also be found
+\doxygenanchor{structcs__var__cal__opt__t.html\#epsilo}{here}.
 
 %==================================
 \subsubsection{Convective scheme}
 %==================================
 
-\motcleb{blencv}{ra}{0 $\leqslant$ real $\leqslant$ 1}{0 or 1}{O}{L1}
-{for each unknown {\tt ivar} to calculate, {\tt blencv(ivar)} indicates the
- proportion of second-order convective scheme (0 corresponds to an
-``upwind'' first-order scheme); in case of LES calculation, a
-second-order scheme is recommended and activated by default ({\tt blencv=1})\\
-useful for all the unknowns {\tt ivar} for which {\tt iconv(ivar)} = 1}
-
-\motcle{ischcv}{ia}{0 or 1}{1}{O}{L2}
-{for each unknown {\tt ivar} to calculate, {\tt ischcv(ivar)} indicates the type of second-order
-convective scheme\\
-\hspace*{1.3cm}= 0: Second Order Linear Upwind\\
-\hspace*{1.3cm}= 1: Centered\\
-useful for all the unknowns {\tt ivar} which are convected
-({\tt iconv(ivar)}=1) and
-for which a second-order scheme is used ({\tt blencv(ivar)} $>$ 0)}
-
-\motcle{isstpc}{ia}{0 or 1}{0}{O}{L2}
-{for each unknown {\tt ivar} to calculate, {\tt isstpc(ivar)}
-indicates whether a ``slope test'' should
-be used to switch from a second-order to an ``upwind'' convective
-scheme under certain conditions, to ensure stability.\\
-\hspace*{1.3cm}= 0: ``slope test'' activated for the considered unknown\\
-\hspace*{1.3cm}= 1: ``slope test'' deactivated for the considered unknown\\
-useful for all the unknowns {\tt ivar}  which are convected
-({\tt iconv(ivar)}=1) and
-for which a second-order scheme is used ({\tt blencv(ivar)} $>$ 0).\\
-the use of the ``slope test'' stabilises the calculation but may bring
-the order in space to decrease quickly.}
+For informations on the keywords related to the convective scheme
+(i.e. \texttt{blencv}, \texttt{ischcv}, \texttt{isstpc}) please
+refer to the following \doxygenfile{structcs__var__cal__opt__t.html}{\texttt{Doxygen}
+documentation}.
 
 %==================================
 \subsubsection{Pressure-continuity step}
 %==================================
 
-\motcle{iprco}{i}{0 or 1}{1}{O}{L3}
-{indicates if the pressure-continuity step is taken into account (1) or
-not (0)\\
-always useful}
-
-\motcle{arak}{ra}{0 $<$ real $\leqslant$ 1}{1}{O}{L3}
-{{\tt arak} is the Arakawa coefficient before the
-Rhie\& Chow filter\\
-always useful}
-
-\motcle{irevmc}{i}{0}{0}{O}{L3}
-{method used to update the velocity after the pressure
-correction:\\
-\hspace*{0,5cm}- standard gradient of pressure increment
-({\tt irevmc}=0)\\
-always useful}
-
-\motcle{iphydr}{i}{0 or 1 or 2}{0}{O}{L2}
-{method for taking into account the balance between the pressure gradient and
-the source terms (gravity and head losses): by extension it will be
-referenced as ``taking into account of the hydrostatic pressure''\\
-\hspace*{1.3cm}= 0: standard algorithm\\
-\hspace*{1.3cm}= 1: improved algorithm\\
-always useful\\
-When the density effects are important, the choice of
-{\tt iphydr}=1 allows to improve the interpolation of the pressure and correct the
-non-physical velocities which may appear in highly
-stratified areas or near horizontal walls (thus
-avoiding the use of {\tt extrag} if the non-physical velocities are due only to
-gravity effects).\\
-The improved algorithm also allows eradicating the velocity oscillations
-which tend to appear at the frontiers of areas with high head losses.\\
-In the case of a stratified flow, the calculation cost is higher when the
-improved algorithm is used (about 30\% depending on the case) because
-the hydrostatic pressure must be recalculated at the outlet boundary
-conditions: see {\tt icalhy}.\\
-On meshes of insufficient quality, in order to
-improve the convergence, it may be useful to increase the number of
-iterations for the reconstruction of the pressure right-hand side,
-{\em i.e.} \mbox{\tt nswrsm(ipr)}.\\
-If head losses are present just along an outlet boundary, it is necessary to
-specify {\tt icalhy}=0 in order to deactivate the recalculation of the hydrostatic
-pressure at the boundary, which may otherwise cause instabilities.}
-
-\motcle{icalhy}{i}{0 or 1}{0 or 1}{O}{L3}
-{activates the calculation of hydrostatic pressure boundary conditions at outlet
-boundaries\\
-\hspace*{1.3cm}= 0: no calculation of the hydrostatic pressure at the outlet boundary\\
-\hspace*{1.3cm}= 1: calculation of the hydrostatic pressure at the outlet boundary\\
-always useful\\
-This option is automatically specified depending on the
-choice of {\tt iphydr} and the value of gravity
-({\tt icalhy}=1 if {\tt iphydr}=1 and gravity is different from 0; otherwise
-{\tt icalhy}=0). The activation of this option generates an additional
-calculation cost (about 30\% depending on the case).\\
-If head losses are present just along an outlet boundary, it is necessary to
-specify {\tt icalhy}=0 in order to deactivate the recalculation of the hydrostatic
-pressure at the boundary, which may otherwise cause instabilities}
-
-\motcle{epsdp}{r}{real number $>$ 0}{$10^{-12}$}{O}{L3}
-{Parameter of diagonal pressure strengthening
-}
-
-\motcle{iporos}{i}{0 or 1}{0}{O}{L2}
-{indicates if the porosity formulation is taken into account\\
-\hspace*{1.3cm}= 0: standard algorithm (without porosity)\\
-\hspace*{1.3cm}= 1: porosity taken into account\\
-useful when head losses are taken into account
-}
+Several options related to the pressure-continuity step
+are available and can be modified by the user. These options
+can be found in the following
+\doxygenfile{structcs__stokes__model__t.html}{\texttt{Doxygen} documentation}.
+For details about the porosity keyword \texttt{iporos}, please refer to
+the dedicated \doxygenanchor{group__additional__source__terms.html\#iporos}{\texttt{Doxygen}
+documentation}.
 
 %==================================
 \subsubsection{Error estimators for Navier-Stokes}
@@ -1597,9 +378,10 @@ There are currently {\tt nestmx\index{nestmx}}=4 types of local estimators
 provided at every time step, with two possible definitions for
 each\footnote{Choice made by the user}. These scalars indicate the areas
 (cells) in which some error types may be important. They are
-stored as fields containing the properties at the cells (see
-{\tt iestim\index{iestim}}). For each estimator, the code writes the minimum and
-maximum values in the listing and generates post-processing outputs along with
+stored using the \texttt{cs\_field} API (see
+\texttt{field\_get\_val\_s(iestim(iestim), c\_estim)}).
+For each estimator, the code writes the minimum and maximum values
+in the listing and generates post-processing outputs along with
 the other variables.
 
 The additional memory cost is about one real number per cell and per
@@ -1722,259 +504,34 @@ appears in its calculation and induces a weighting effect.
 
 The estimators are evaluated depending on the values of {\tt iescal}.
 
-
-\motcleb{iescal}{ia}{0, 1 or 2}{0}{O}{L1}
-{{\tt iescal(iest)} indicates the calculation mode
-for the error estimator {\tt iest} ({\tt iespre}, {\tt iesder}, {\tt iescor} or
-{\tt iestot}), for
-the Navier-Stokes equation:\\
- {\tt iescal} = 0: estimator not calculated, \\
- {\tt iescal} = 1: the estimator $ \eta^{*}_{i,1}$ is calculated,
-                   without contribution of the volume, \\
- {\tt iescal} = 2: the estimator $ \eta^{*}_{i,2}$ is calculated,
-                   with contribution of the volume ("norm $L^2$"),
-                   except for {\tt iescor}, for which
-                   $|\Omega_i|\ \eta^{corr}_{i,1}\ $
-                   is calculated.
-
-The names of the estimators appearing in the listing and the post-processing are
-made up of the default name (given before), followed by the value of
-{\tt iescal}. For
-instance, EsPre2 is the estimator {\tt iespre} calculated with {\tt iescal}=2.\\
-always useful}
-
-
 %==================================
 \subsubsection{Calculation of the distance to the wall}
 %==================================
 
-\motcle{icdpar}{i}{-1, 1, -2 or 2}{-1}{O}{L2}
-{specifies the method used to calculate the distance to the wall $y$ and the
-non-dimensional distance $y^+$ for all the
-cells of the calculation domain (when necessary):\\
-\hspace*{1.3cm}= 1: standard algorithm (based on a Poisson equation for $y$ and
-convection equation for $y^+$),
-with reading of the distance to the wall from the restart file
-if possible\\
-\hspace*{1.3cm}=-1: standard algorithm (based on a Poisson equation for $y$ and
-convection equation for $y^+$),
-with systematic recalculation of the distance to the wall in case of
-calculation restart\\
-\hspace*{1.3cm}= 2: former algorithm (based on geometrical
-considerations),
-with reading of the distance to the wall from the restart file
-if possible\\
-\hspace*{1.3cm}=-2: former algorithm (based on geometrical
-considerations) with systematic recalculation of the distance to the
-wall in case of calculation restart\\
-In case of restart calculation, if the position of the walls haven't changed,
-reading the distance to the wall from the restart file can save a fair amount of
-CPU time.\\
-Useful in $R_{ij}-\varepsilon$ model with wall echo ({\tt iturb}=30 and
-{\tt irijec}=1), in LES with van Driest damping ({\tt iturb}=40 and
-{\tt idries}=1) and in $k-\omega$ SST ({\tt iturb}=60). \\
-By default, {\tt icdpar} is initialised to -1, in case there has been a change in the
-definition of the boundary conditions between two computations (change in the
-number or the positions of the walls). Yet, with the $k-\omega$ SST model, the
-distance to the wall is needed to calculate the turbulent viscosity, which is
-done before the calculation of the distance to the wall. Hence, when this model
-is used (and only in that case), {\tt icdpar} is set to 1 by default, to ensure total
-continuity of the calculation at restart.\\
-{\bf As a consequence, with the \boldmath$k-\omega$\unboldmath\ SST model, if
-the number and positions of the walls are changed at a calculation restart, it
-is mandatory for the user to set {\tt icdpar} explicitly to -1}, otherwise the
-distance to the wall used will not correspond to the actual position of the
-walls.\\
-The former algorithm is not compatible with parallelism nor periodicity. Also,
-whatever the value chosen for {\tt icdpar}, the calculation of the distance to the
-wall is made at the most once for all a the beginning of the calculation; it is
-therefore not compatible with moving walls. Please contact the development team
-if you need to override this limitation.}
-
-The following options are related to {\tt icdpar} $\neq$\ 0. The options of
-level 2 are described first. Some options are used only in the case of
-the calculation of the non-dimensional distance to the wall $y^+$ (LES model with
-van Driest damping). Most of the following keywords are simple copies of the
+The options related to the calculation of the distance to the wall are described in
+the following \doxygenfile{group__num__wall__distance.html}{\texttt{Doxygen} documentation}.
+Some options are used only in the case of the calculation of the non-dimensional distance
+to the wall $y^+$ (LES model with van Driest damping). Most of the keywords are simple copies of the
 keywords for the numerical options of the general equations, with a potentially
 specific value in the case of the calculation of the distance to the wall.\\
-
-\motcle{iwarny}{i}{integer}{0}{O}{L2}
-{specifies the level of the output writing concerning the calculation of the
-distance to the wall with {\tt icdpar} $\neq$\ 0. The higher the value, the more
-detailed the outputs\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{ntcmxy}{i}{positive integer}{1000}{O}{L2}
-{number of pseudo-time iterations for the calculation of the non-dimensional
-distance to the wall $y^+$\\
-useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
-
-\motcle{nitmay}{i}{integer  $>$ 0}{10000}{O}{L3}
-{maximum number of iterations for the solution of the linear systems\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{nswrsy}{i}{positive integer}{1}{O}{L3}
-{number of iterations for the reconstruction of the right-hand sides:
-corresponds to {\tt nswrsm}\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{nswrgy}{i}{positive integer}{100}{O}{L3}
-{number of iterations for the gradient reconstruction: corresponds to {\tt nswrgr}\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{imligy}{i}{-1, 0 or 1}{-1 or 1}{O}{L3}
-{type of gradient limitation: corresponds to {\tt imligr}\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{ircfly}{i}{0 or 1}{1}{O}{L3}
-{indicates the reconstruction of the convective and diffusive fluxes at
-the faces: corresponds to {\tt ircflu}\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{ischcy}{i}{0 or 1}{1}{O}{L3}
-{indicates type of second-order convective scheme: corresponds to {\tt ischcv}\\
-useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
-
-\motcle{isstpy}{i}{0 or 1}{0}{O}{L3}
-{indicates if a ``slope test'' should be used for a second-order convective
-scheme: corresponds to {\tt isstpc}\\
-useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
-
-\motcle{imgrpy}{i}{0 or 1}{0}{O}{L3}
-{indicates whether the algebraic
-multi-grid method should be used ({\tt imgr(ivar)}=1) or not (0): corresponds
-to {\tt imgr}\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{blency}{r}{0 $\leqslant$ real $\leqslant$ 1}{0}{O}{L3}
-{proportion of second-order convective scheme: corresponds to {\tt blencv}\\
-useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
-
-\motcle{epsily}{r}{real number $>$ 0}{$10^{-8}$}{O}{L3}
-{relative precision for the solution of the linear systems:
-corresponds to {\tt epsilo}\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{epsrgy}{r}{real number $>$ 0}{$10^{-5}$}{O}{L3}
-{relative precision for the iterative gradient reconstruction:
-corresponds to {\tt epsrgr}\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{epsrsy}{r}{real number $>$ 0}{$10^{-5}$}{O}{L3}
-{relative precision for the right-hand side reconstruction:
-corresponds to {\tt epsrsm}\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{climgy}{r}{real number $>$ 0}{1.5}{O}{L3}
-{limitation factor of the gradients: corresponds to {\tt climgr}\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{extray}{r}{0, 0.5 or 1}{0}{O}{L3}
-{extrapolation coefficient of the gradients at the boundaries:
-corresponds to {\tt extrag}\\
-useful when {\tt icdpar} $\neq$\ 0}
-
-\motcle{coumxy}{r}{strictly positive real number}{5000}{O}{L3}
-{Target Courant number for the calculation of the non-dimensional distance
-to the wall\\
-useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
-
-\motcle{epscvy}{r}{strictly positive real number}{$10^{-8}$}{O}{L3}
-{relative precision for the convergence of the pseudo-transient regime
-for the calculation of the non-dimensional distance to the wall\\
-useful when {\tt icdpar} $\neq$\ 0  for the calculation of $y^+$}
-
-\motcle{yplmxy}{r}{real number}{200}{O}{L3}
-{value of the non-dimensional distance to the wall above which the
-calculation of the distance is not necessary (for the damping)\\
-useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
-
 
 %==================================
 \subsubsection{Others}
 %==================================
 
-\motcleb{iccvfg}{i}{0 or 1}{0}{O}{L1}
-{indicates whether the dynamic field should be frozen (1) or not (0)\\
-in such a case, the values of velocity,
-pressure and the variables related to the potential turbulence model
-($k$, $R_{ij}$, $\varepsilon$, $\varphi$, $\bar{f}$, $\omega$, turbulent viscosity) are kept
-constant over time and only the equations for the scalars are solved\\
-also, if {\tt iccvfg}=1, the physical properties modified in \texttt{usphyv} will keep
-being updated. Beware of non-consistencies if these properties would normally
-affect the dynamic field (modification of density for instance)\\
-useful if and only if {\tt nscal} $>$ 0 and the calculation is a restart}
+Informations concerning the remaining keywords can be reached
+through the following \texttt{Doxygen} pages:
 
-\motcleb{ivelco}{i}{0 or 1}{1}{O}{L1}
-{indicates the algorithm for the velocity components coupling\\
-\hspace*{1.3cm}= 0: segregated (deprecated)\\
-\hspace*{1.3cm}= 1: coupled (default)\\
-always useful
-}
-
-\motcleb{ipucou}{i}{0 or 1}{0}{O}{L1}
-{indicates the algorithm for velocity/pressure coupling\\
-\hspace*{1.3cm}= 0: standard algorithm\\
-\hspace*{1.3cm}= 1: reinforced coupling in case calculation with long
-time steps\\
-always useful (it is seldom advised, but it can prove very useful, for instance,
-in case of flows with weak convection effects and highly variable viscosity)}
-
-\motcleb{nterup}{i}{real number $>$ 0}{1}{O}{L2}
-{number of iterations on the pressure-velocity coupling in the Navier-Stokes equations (for the PISO algorithm).
-useful for unsteady algorithm
-}
-
-\motcleb{epsup}{r}{real number $>$ 0}{$10^{-5}$}{O}{L2}
-{relative precision for the convergence test of the iterative process on
-pressure-velocity coupling (PISO).
-useful for unsteady algorithm
-}
-
-\motcleb{isuit1}{i}{0 or 1}{0}{O}{L1}
-{for the  1D wall thermal module, activation (1) or not(0) of the reading
-of the mesh and of the wall temperature from the {\tt ficmt1} restart file\\
-useful if {\tt nfpt1d}$>$0.}
-
-\motcle{imvisf}{i}{0 or 1}{0}{O}{L3}
-{indicates the interpolation method used to project variables from the cell
-centers to the faces\\
-\hspace*{1.3cm}= 0: linear\\
-\hspace*{1.3cm}= 1: harmonic\\
-always useful}
-
-\motcle{ircflu}{ia}{0 or 1}{1}{O}{L2}
-{for each unknown {\tt ivar}, {\tt ircflu(ivar)} indicates whether the convective
-and diffusive fluxes at the faces should be reconstructed: \\
-\hspace*{1.3cm}= 0: no reconstruction\\
-\hspace*{1.3cm}= 1: reconstruction\\
-deactivating the reconstruction of the fluxes can have a stabilising effect on
-the calculation. It is sometimes useful with the $k-\varepsilon$ model, if the
-mesh is strongly non-orthogonal in the near-wall region, where the gradients of
-$k$ and $\varepsilon$ are strong. In such a case, setting {\tt ircflu(ik)}=0
-and {\tt ircflu(iep)}=0 will probably help (switching to a first order
-convective scheme, {\tt blencv=0}, for $k$ and $\varepsilon$ might also help in
-that case)\\
-always useful}
-
-\motcle{nswrsm}{ia}{positive integer}{1, 2, 5 or 10}{O}{L3}
-{for each unknown {\tt ivar}, {\tt nswrsm(ivar)} indicates the number of iterations for the
-reconstruction of the right-hand sides of the equations\\
-with a first-order scheme in time
-(standard case), the default values are 2 for pressure and 1 for the
-other variables. With a second-order scheme in time ({\tt ischtp}=2) or LES, the
-default values are 5 for pressure and 10 for the other variables.\\
-useful for all the unknowns}
-
-\motcle{epsrsm}{ra}{real number $>$ 0}{$10^{-8}$,$10^{-5}$}{O}{L3}
-{for each unknown {\tt ivar}, relative precision on the reconstruction of the
-right hand-side. The default value is {\tt epsrsm(ivar)}=$10^{-8}$. This value is set low
-on purpose. When there are not enough iterations on the reconstruction of the
-right-hand side of the equation,
-the value may be increased (by default, in case of second-order in time,
-with {\tt nswrsm} = 5 or 10, {\tt epsrsm} is increased to $10^{-5}$).\\
-always useful}
-
+\begin{itemize}
+\item \doxygenfile{structcs__stokes__model__t.html}{\texttt{iccvfg}
+and \texttt{ipucou}}
+\item \doxygenfile{structcs__piso__t.html}{\texttt{nterup}
+and \texttt{epsup}}
+\item \doxygenanchor{structcs__space__disc__t.html\#imvisf}{\texttt{imvisf}}
+\item \doxygenfile{structcs__var__cal__opt__t.html}{\texttt{irclu},
+\texttt{nswrsm} and \texttt{epsrsm}}
+\item \doxygenanchor{group__optcal.html\#isuit1}{\texttt{isuit1}}
+\end{itemize}
 
 %====================================================================================
 \subsection{Numerical, physical and modelling parameters}
@@ -1985,703 +542,68 @@ always useful}
 These parameters correspond to numeric reference values in the code.
 They can be used but shall not be modified (they are defined as \texttt{parameter}).
 
-\motcle{zero}{r}{0}{0}{O}{L3}
-{Parameter containing the value 0}
+For a list of these physical parameters, please refer to the following
+\doxygenfile{group__cstnum.html}{\texttt{Doxygen} documentation}.
 
-\motcle{epzero}{r}{$10^{-12}$}{$10^{-12}$}{O}{L3}
-{``Small'' real parameter, used for the comparisons of real numbers (absolute
-value of the difference lower than {\tt epzero})}
-
-\motcle{pi}{r}{3.141592653589793}{3.141592653589793}{O}{L3}
-{Parameter containing an approximate value of $\pi$}
-
-\motcle{grand}{r}{$10^{12}$}{$10^{12}$}{O}{L3}
-{``Large'' real parameter, generally used by default as a non physical value for
-the initialisations of variables which have to be modified by the user}
-
-\motcle{rinfin}{r}{$10^{30}$}{$10^{30}$}{O}{L3}
-{Real parameter used to represent ``infinity''}
 
 %==================================
 \subsubsection{Physical parameters}
 %==================================
-These parameters correspond to physical reference values in the code.
-They can be used but shall not be modified (they are defined as {\tt parameter}).
 
-\motcle{tkelvi}{r}{273.15}{273.15}{O}{L3}
-{Temperature in Kelvin corresponding to 0 degrees Celsius.}
+These parameters correspond to physical reference values in the code. They
+can be used but shall not be modified (they are defined as {\tt parameter}).
 
-\motcle{tkelvn}{r}{-273.15}{-273.15}{O}{L3}
-{Temperature in degrees Celsius corresponding to 0 Kelvin.}
-
-\motcle{\footnotesize cs\_physical\_constants\_r}{~~~~~~~~~~~~r}{~~~~~~8.31446}{8.31446}{O}{L3}
-{Perfect gas constant in $J/mol/K$}
-
-\motcle{trefth}{r}{25 + tkelvi}{25 + tkelvi}{O}{L3}
-{Reference temperature for the specific physics, in $K$}
-
-\motcle{prefth}{r}{101325}{101325}{O}{L3}
-{Reference pressure for the specific physics, in $Pa$}
-
-\motcle{volmol}{r}{$22.41.10^{-3}$}{$22.41.10^{-3}$}{O}{L3}
-{Molar volume under normal pressure and temperature conditions (1 atmosphere,
-0\degresC) in $m^{-3}$}
-
-\motcle{stephn}{r}{$5.6703.10^{-8}$}{$5.6703.10^{-8}$}{O}{L3}
-{Stephan's constant for the radiative module $\sigma$ in $W.m^{-2}.K^{-4}$}
-
-\motcle{permvi}{r}{$1.2566.10^{-6}$}{$1.2566.10^{-6}$}{O}{L3}
-{Vacuum magnetic permeability $\mu_0$ (=$4\pi.10^{-7}$) in $kg.m.A^{-2}.s^{-2}$}
-
-\motcle{epszer}{r}{$8.854.10^{-12}$}{$8.854.10^{-12}$}{O}{L3}
-{Vacuum permittivity $\varepsilon_0$ in $F.m^{-1}$}
-
+For a list of these physical parameters, please refer to the following
+\doxygenfile{group__cstphy.html}{\texttt{Doxygen} documentation}.
 
 %==================================
 \subsubsection{Physical variables}
 %==================================
 
-\motcleb{gx,gy,gz}{r}{3 real numbers}{0,0,0}{O}{L1}
-{gravity components\\
-always useful }
+Most physical variables are listed in the following
+\doxygenfile{group__cstphy.html}{\texttt{Doxygen} documentation}.
 
-\motcleb{irovar}{ia}{0 or 1}{\tt -1}{C}{L1}
-{{\tt irovar}=0 indicates that the density is
-constant. Its value is the reference density {\tt ro0}.\\
-{\tt irovar}=1 indicates that the density is variable: its variation
-law must be given in the user subroutine \texttt{usphyv}\\
-negative value: not initialised\\
-always useful}
-
-\motcleb{ivivar}{ia}{0 or 1}{\tt -1}{C}{L1}
-{{\tt ivivar}=0 indicates that the molecular
-dynamic viscosity is constant. Its value is the reference molecular
-dynamic viscosity {\tt viscl0}.\\
-{\tt ivivar}=1 indicates that the molecular dynamic viscosity is
-variable: its variation law must be given in the user subroutine
-\texttt{usphyv}\\
-negative value: not initialised\\
-always useful}
-
-\motcleb{ro0}{ra}{real number $\geqslant$ 0}{\tt -grand*10}{C}{L1}
-{{\tt ro0} is the reference density\\
-negative value: not initialised\\
-its value is not used in gas or coal combustion modelling (it
-will be calculated following the perfect gas law, with $P0$ and $T0$). With the
-compressible module, it is also not used by the code, but it may be (and often
-is) referenced by the user in user subroutines; it is therefore better to
-specify its value.\\
-always useful otherwise, even if a law defining the density is given by
-the user subroutine \texttt{usphyv} or \texttt{cs\_user\_physical\_properties.c}\\
-indeed, except with the
-compressible module, \CS does not
-use the total pressure $P$ when solving the Navier-Stokes equation, but a
-reduced pressure \\
-$P^*=P-\rho_0\vect{g}.(\vect{x}-\vect{x}_0)+P^*_0-P_0$\\
-where
-$\vect{x_0}$ is a reference point (see {\tt xyzp0}) and $P^*_0$ and $P_0$ are
-reference values (see {\tt pred0} and {\tt p0}). Hence, the term
-$-\grad{P}+\rho\vect{g}$ in the equation is treated as
-$-\grad{P^*}+(\rho-\rho_0)\vect{g}$. The closer {\tt ro0} is to the value of $\rho$,
-the more $P^*$ will tend to represent only the dynamic part of the pressure and
-the faster and more precise its solution will be. Whatever the value of {\tt ro0},
-both $P$ and $P^*$ appear in the listing and the post-processing outputs.\\
-with the compressible module, the calculation is made directly on the total
-pressure}
-
-\motcleb{viscl0}{ra}{real number $>$ 0}{\tt -grand*10}{C}{L1}
-{ {\tt viscl0} is the reference molecular dynamic
-viscosity\\
-negative value: not initialised\\
-always useful, it is the used value unless the user specifies the
-viscosity in the \texttt{usphyv}} subroutine
-
-\motcleb{srrom}{r}{$0 \leqslant \text{real number} < 1$}{\tt -grand or 0}{c or O}{L1}
-{With gas combustion, pulverised coal or the electric module, {\tt srrom}
- is the sub-relaxation coefficient for the density, following the formula:\\
-$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}$\\
-hence, with a zero value, there is no sub-relaxation.
-With combustion and pulverised coal, {\tt srrom} is initialised to {\tt -grand}
-and the user must specify a proper value through the Interface or the
-initialisation subroutines (\texttt{cs\_user\_combustion}). With the electric module, {\tt srrom} is initialised in to 0
-and may be modified by the user in \texttt{cs\_user\_parameters}.\\
-With gas combustion, pulverised coal or electric arcs, {\tt srrom} is
-automatically used after the second time-step.}\\
-always useful with gas combustion, pulverized coal or the electric module.
-
-\motcleb{p0}{ra}{real number}{$1.013e-5$}{O}{L1}
-{{\tt p0} is the reference pressure for the total
-pressure\\
-except with the compressible module, the total pressure $P$ is evaluated
-from the reduced pressure $P^*$ so that $P$
-is equal to {\tt p0} at the reference position $\vect{x}_0$ (given by {\tt xyzp0})\\
-with the compressible module, the total pressure is solved directly\\
-always useful}
-
-\motcle{pred0}{ra}{real number}{0}{O}{L3}
-{{\tt pred0} is the reference value for the reduced
-pressure $P^*$ (see {\tt ro0})\\
-it is especially used to initialise the reduced pressure and as a reference
-value for the outlet boundary conditions\\
-for an optimised precision in the resolution of $P^*$, it is better to keep {\tt pred0}
-to 0\\
-with the compressible module, the ``pressure'' variable appearing in the
-equations directly represents the total pressure. It is therefore initialised
-to {\tt p0} and not {\tt pred0} (see {\tt ro0})\\
-always useful, except with the compressible module}
-
-\motcleb{xyzp0}{ra}{3 real numbers}{0,0,0}{O}{L1}
-{{\tt xyzp0(ii)} is the {\tt ii} coordinate
-(1$\leqslant$II$\leqslant$3) of the reference point $\vect{x}_0$ for the
-total pressure\\
-when there are no Dirichlet conditions for the pressure (closed domain), {\tt xyzp0}
-does not need to be specified (unless the total pressure has a clear physical
-meaning in the configuration treated)\\
-when Dirichlet conditions on the pressure are specified but only through standard
-outlet conditions (as it is in most configurations),
-{\tt xyzp0} does not need to be specified by the user, since it will be set to the
-coordinates of the reference outlet face ({\em i.e.} the code will automatically
-select a
-reference outlet boundary face and set {\tt xyzp0} so that $P$ equals {\tt p0} at this
-face). Nonetheless, if {\tt xyzp0} is specified by the user, the calculation will remain
-correct\\
-when direct Dirichlet conditions are specified by the user (specific value set
-on specific boundary faces), it is better to specify the corresponding reference
-point ({\em i.e.} specify where the total pressure is {\tt p0}). This way, the
-boundary conditions for the reduced pressure will be close to {\tt pred0}, ensuring an
-optimal precision in the resolution. If {\tt xyzp0} is not specified, the reduced
-pressure will be shifted, but the calculations will remain correct.\\
-with the compressible module, the ``pressure'' variable appearing in the
-equations directly represents the total pressure. {\tt xyzp0} is therefore not used.\\
-always useful, except with the compressible module}
-
-\motcleb{t0}{ra}{real number}{0}{O}{L1}
-{{\tt t0} is the reference temperature \\
-useful for the specific physics gas or coal combustion (initialisation
-of the density), for the electricity modules to initialise the domain
-temperature and for the compressible module (initialisations). It must be given
-in Kelvin.}
-
-\motcleb{cp0}{ra}{real number $>$ 0}{\tt -grand*10}{O}{L1}
-{{\tt cp0} is the reference specific heat\\
-useful if there is 1$\leqslant$n$\leqslant$nscaus\footnote{None of the scalars
-from the specific physics is a temperature} so that {\tt iscsth(n)}=1
-(there is a scalar ``temperature''); unless the user specifies the
-specific heat in the user subroutine \texttt{usphyv}\footnote{When using the
-Graphical Interface, {\tt cp0} is also used to calculate the diffusivity of the
-thermal scalars, based on their conductivity; it is therefore needed, unless the
-diffusivity is also specified in \texttt{usphyv}} ({\tt icp} $>$ 0)\\
-with the compressible module or coal combustion, {\tt cp0} is also needed even when
-there is no user scalar}
-
-\motcleb{icp}{ia}{0 or 1}{0}{O}{L1}
-{indicates if the specific heat $C_p$ is variable
-({\tt icp}=1) or not (-1)\\
-When gas or coal combustion is activated, {\tt icp} is automatically set to 0
-(constant $C_p$). With the electric module, it is automatically set to 1.
-The user is not allowed to modify these default choices.\\
-When {\tt icp}=1 is specified, the code automatically modifies this value to
-make {\tt icp} designate the field id of the property
-``specific heat''. For each cell {\tt iel}, the value of
-$C_p$ is then specified by the user in the appropriate subroutine
-(\texttt{usphyv} for the standard physics)\\
-({\em see p.~\pageref{sec:prg_propvar} for specific conditions of use})
-useful if there is 1$\leqslant$N$\leqslant${\tt nscal} so that {\tt iscsth(n)}=1
-(there is a scalar ``temperature'') or with the compressible module for non
-perfect gases}
-
-\motcleb{visls0}{ra}{real number $>$ 0}{\tt -grand*10}{C}{L1}
-{{\tt visls0(j)}: reference molecular diffusivity related to the scalar J
-($kg.m^{-1}.s^{-1}$)\\
-negative value: not initialised\\
-useful if 1$\leqslant$J$\leqslant$ {\tt nscal}, unless the user specifies the
-molecular diffusivity in the appropriate user subroutine (\texttt{usphyv} for
-the standard physics) ({\tt field\_get\_key\_id(ivarfl(isca(iscal)),kivisl,...)} $>$ -1)\\
-{\em Warning: {\tt visls0} corresponds to the diffusivity. For the temperature, it is
-therefore defined as $\lambda/C_p$ where $\lambda$ and $C_p$ are the
-conductivity and specific heat. When using the Graphical Interface, $\lambda$ and
-$C_p$ are specified separately, and {\tt visls0} is calculated automatically\\
-With the compressible module, {\tt visls0} (given in \texttt{uscfx2}) is directly the
-thermal conductivity $W.m^{-1}.K^{-1}$\\
-With gas or coal combustion, the molecular diffusivity of the enthalpy
-($kg.m^{-1}.s^{-1}$) must be specified by the user in the variable {\tt diftl0}
-(\texttt{cs\_user\_combustion})\\
-With the electric module, for the Joule effect, the diffusivity is specified by
-the user in \texttt{cs\_user\_physical\_properties.c} (even if it is constant). For the electric arcs, it
-is calculated from the thermochemical data file}}
-
-\motcleb{diftl0}{r}{real number $>$ 0}{\tt -grand}{C}{L1}
-{molecular diffusivity for the enthalpy ($kg.m^{-1}.s^{-1}$) for gas or coal
-combustion (the code then automatically sets {\tt visls0} to {\tt diftl0} for the scalar
-representing the enthalpy)\\
-always useful for gas or coal combustion}
-
-\motcleb{min\_scalar\_clipping}{ra}{real number}{\tt grand}{O}{L1}
-{field key work (get the index of the key using
-\code{call field\_get\_key\_id("min\_scalar\_clipping", kscmin)})
-which is the lower limit value for the scalar {\tt iscal}. At each time step,
-in every cell where the calculated value for the field \code{ivarfl(isca(iscal))}
-is less than the set \code{min\_value}
-(\code{call field\_set\_key\_double(ivarfl(isca(iscal)), kscmin, min\_value)})
-the field will be reset to
-\mbox{\code{min\_value}}\\
-there is no limitation if \code{min\_value}$>$\code{max\_value}\\
-\code{min\_value} shall not be specified for non-user scalars (specific physics) or for
-scalar variances
-}
-
-\motcleb{max\_scalar\_clipping}{ra}{real number}{\tt grand}{O}{L1}
-{field key work (get the index of the key using
-\code{call field\_get\_key\_id("max\_scalar\_clipping", kscmax)})
-which is the upper limit value for the scalar {\tt iscal}. At each time step,
-in every cell where the calculated value for the field \code{ivarfl(isca(iscal))}
-is greater than the set \code{max\_value}
-(\code{call field\_set\_key\_double(ivarfl(isca(iscal)), kscmax, max\_value)})
-the field will be reset to
-\mbox{\code{max\_value}}\\
-there is no limitation if \code{max\_value}$>$\code{min\_value}\\
-\code{max\_value} shall not be specified for non-user scalars (specific physics) or for
-scalar variances
-}
-
-\motcle{sigmas}{ra}{real number $>$ 0}{1}{O}{L2}
-{{\tt sigmas(iscal)}: turbulent Prandtl (or Schmidt) number for the scalar
- {\tt iscal}\\
-useful if and only if  1$\leqslant${\tt iscal}$\leqslant$ {\tt nscaus}}
-
-\motcle{rvarfl}{ra}{real number $>$ 0}{0.8}{O}{L2}
-{when {\tt iscavr(iscal)}$>$0, {\tt rvarfl(iscal)} is the coefficient $R_f$ in
-the dissipation term $\displaystyle -\frac{\rho}{R_f}\frac{\varepsilon}{k}$
-of the equation concerning the scalar {\tt iscal},
-which represents the root mean square of the
-fluctuations of the scalar {\tt iscavr(iscal)}\\
-useful if and only if there is 1$\leqslant${\tt iscal}$\leqslant$ {\tt nscal} such as
- {\tt iscavr(iscal)}$>$0}
-
+Other physical variables such as \texttt{diftl0}, \texttt{srrom},
+\texttt{visls0}, \texttt{sigmas} or \texttt{rvarfl} are described in the following
+\texttt{Doxygen} pages :
+\begin{itemize}
+\item \doxygenanchor{group__thermophysical.html\#diftl0}{\texttt{diftl0}},
+\item \doxygenanchor{group__enthalpy.html\#srrom}{\texttt{srrom}},
+\item \doxygenfile{group__scalar__params.html}{\texttt{visls0}, \texttt{sigmas},
+\texttt{rvarfl}}.
+\end{itemize}
 
 %==================================
 \subsubsection{Modelling parameters}
 %==================================
 
-\motcleb{xlomlg}{ra}{real number $>$ 0}{\tt -grand*10}{O}{L1}
-{{\tt xlomlg} is the mixing length\\
-useful if and only if {\tt iturb}= 10 (mixing length)}
-
-\motcle{almax}{ra}{\texttt{-grand}, real number $>$ 0}{\tt -grand*10}{O}{L2}
-{{\tt almax} is a characteristic macroscopic
-length of the domain, used for the initialisation of the turbulence and
-the potential clipping (with {\tt iclkep}=1)\\
-negative value: not initialised (the code then uses the cubic root of
-the domain volume)\\
-useful if and only if {\tt turb}= 20, 21, 30, 31, 50 or 60 (RANS models)}
-
-\motcleb{uref}{ra}{real number $>$ 0}{\tt -grand*10}{C}{L1}
-{{\tt uref} is the characteristic flow velocity,
-used for the initialisation of the turbulence\\
-negative value: not initialised\\
-useful if and only if {\tt iturb}= 20, 21, 30, 31, 50 or 60 (RANS model)
-and the turbulence is not initialised somewhere
-else (restart file or subroutine \texttt{cs\_user\_initialization})}
-
-
-\minititre{Basic constants of the $k-\varepsilon$ and the other RANS models}
-
-\motcle{xkappa}{r}{real number $>$ 0}{0.42}{O}{L3}
-{K\'arm\'an constant\\
-useful if and only if {\tt iturb}$\geqslant$10
-(mixing length, $k-\varepsilon$, $R_{ij}-\varepsilon$, LES, v2f or $k-\omega$)}
-
-\motcle{cstlog}{r}{real number $>$ 0}{5.2}{O}{L3}
-{constant of the logarithmic wall function\\
-useful if and only if {\tt iturb}$\geqslant$10
-(mixing length, $k-\varepsilon$, $R_{ij}-\varepsilon$, LES, v2f or $k-\omega$)}
-
-\motcle{cmu}{r}{real number $>$ 0}{0.09}{O}{L3}
-{constant $C_\mu$ for all the RANS turbulence models except for the v2f model
-(see {\tt cv2fmu\index{cv2fmu}} for the value of $C_\mu$ in case of v2f modelling)\\
-useful if and only if {\tt iturb}= 20,
-21, 30, 31 or 60 ($k-\varepsilon$, $R_{ij}-\varepsilon$ or $k-\omega$)}
-
-\motcle{ce1}{r}{real number $>$ 0}{1.44}{O}{L3}
-{constant $C_{\varepsilon 1}$ for all the RANS turbulence models except
-for the v2f and the $k-\omega$ models\\
-useful if and only if {\tt iturb}= 20,
-21, 30 or 31 ($k-\varepsilon$ or $R_{ij}-\varepsilon$)}
-
-\motcle{ce2}{r}{real number $>$ 0}{1.92}{O}{L3}
-{constant $C_{\varepsilon 2}$ for the $k-\varepsilon$ and
-$R_{ij}-\varepsilon$ LRR models\\
-useful if and only if {\tt iturb}= 20, 21 or 30
-($k-\varepsilon$ or $R_{ij}-\varepsilon$ LRR)}
-
-%\motcle{ce3}{r}{real number $>$ 0}{1}{O}{L3}
-%{constante $C_{\varepsilon 3}$\\
-%ne sert pas dans la version consid\'er\'ee}
-
-\motcle{ce4}{r}{real number $>$ 0}{1.2}{O}{L3}
-{constant $C_{\varepsilon 4}$ for the interfacial term (Lagrangian module) in
-case of two-way coupling\\
-useful in case of Lagrangian modelling, in $k-\varepsilon$ and $R_{ij}-\varepsilon$
-with two-way coupling}
-
-\motcle{sigmak}{r}{real number $>$ 0}{1.0}{O}{L3}
-{Prandtl number for $k$ with $k-\varepsilon$ and v2f models\\
-useful if and only if {\tt iturb}=20, 21 or 50
-($k-\varepsilon$ or v2f)}
-
-\motcle{sigmae}{r}{real number $>$ 0}{1.3}{O}{L3}
-{Prandtl number for $\varepsilon$\\
-useful if and only if {\tt iturb}= 20,
-21, 30, 31 or 50 ($k-\varepsilon$, $R_{ij}-\varepsilon$ or v2f)}
-
-\minititre{Constants specific to the $R_{ij}-\varepsilon$ LRR model ({\tt iturb}=30)}
-
-\motcle{crij1}{r}{real number $>$ 0}{1.8}{O}{L3}
-{constant $C_1$ for the $R_{ij}-\varepsilon$ LRR model\\
-useful if and only if {\tt iturb}=30
-($R_{ij}-\varepsilon$ LRR)}
-
-\motcle{crij2}{r}{real number $>$ 0}{0.6}{O}{L3}
-{constant $C_2$ for the $R_{ij}-\varepsilon$ LRR model\\
-useful if and only if {\tt iturb}=30
-($R_{ij}-\varepsilon$ LRR)}
-
-\motcle{crij3}{r}{real number $>$ 0}{0.55}{O}{L3}
-{constant $C_3$ for the $R_{ij}-\varepsilon$ LRR model\\
-useful if and only if {\tt iturb}=30
-($R_{ij}-\varepsilon$ LRR)}
-
-\motcle{csrij}{r}{real number $>$ 0}{0.22}{O}{L3}
-{constant $C_s$ for the $R_{ij}-\varepsilon$ LRR model\\
-useful if and only if {\tt iturb}=30
-($R_{ij}-\varepsilon$ LRR)}
-
-\motcle{crijp1}{r}{real number $>$ 0}{0.5}{O}{L3}
-{constant $C_1^\prime$ for the $R_{ij}-\varepsilon$ LRR model, corresponding to
-the wall echo terms\\
-useful if and only if {\tt iturb}=30
-and {\tt irijec}=1
-($R_{ij}-\varepsilon$ LRR)}
-
-\motcle{crijp2}{r}{real number $>$ 0}{0.3}{O}{L3}
-{constant $C_2^\prime$ for the $R_{ij}-\varepsilon$ LRR model, corresponding to
-the wall echo terms\\
-useful if and only if {\tt iturb}=30 and {\tt irijec}=1
-($R_{ij}-\varepsilon$ LRR)}
-
-\minititre{Constants specific to the $R_{ij}-\varepsilon$ SSG model}
-
-\motcle{cssgs1}{r}{real number $>$ 0}{1.7}{O}{L3}
-{constant $C_{s1}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if {\tt iturb}=31
-($R_{ij}-\varepsilon$ SSG)}
-
-\motcle{cssgs2}{r}{real number $>$ 0}{-1.05}{O}{L3}
-{constant $C_{s2}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if {\tt iturb}=31
-($R_{ij}-\varepsilon$ SSG)}
-
-\motcle{cssgr1}{r}{real number $>$ 0}{0.9}{O}{L3}
-{constant $C_{r1}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if {\tt iturb}=31
-($R_{ij}-\varepsilon$ SSG)}
-
-\motcle{cssgr2}{r}{real number $>$ 0}{0.8}{O}{L3}
-{constant $C_{r2}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if {\tt iturb}=31
-($R_{ij}-\varepsilon$ SSG)}
-
-\motcle{cssgr3}{r}{real number $>$ 0}{0.65}{O}{L3}
-{constant $C_{r3}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if {\tt iturb}=31
-($R_{ij}-\varepsilon$ SSG)}
-
-\motcle{cssgr4}{r}{real number $>$ 0}{0.625}{O}{L3}
-{constant $C_{r4}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if {\tt iturb}=31
-($R_{ij}-\varepsilon$ SSG)}
-
-\motcle{cssgr5}{r}{real number $>$ 0}{0.2}{O}{L3}
-{constant $C_{r1}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if {\tt iturb}=31
-($R_{ij}-\varepsilon$ SSG)}
-
-\motcle{cssge2}{r}{real number $>$ 0}{1.83}{O}{L3}
-{constant $C_{\varepsilon 2}$ for the $R_{ij}-\varepsilon$ SSG model\\
-useful if and only if {\tt iturb}=31
-($R_{ij}-\varepsilon$ SSG)}
-
-\minititre{Constants specific to the v2f $\varphi$-model}
-
-\motcle{cv2fa1}{r}{real number $>$ 0}{0.05}{O}{L3}
-{constant $a_1$ for the v2f $\varphi$-model\\
-useful if and only if {\tt iturb}=50
-(v2f $\varphi$-model)}
-
-\motcle{cv2fe2}{r}{real number $>$ 0}{1.85}{O}{L3}
-{constant $C_{\varepsilon 2}$ for the v2f $\varphi$-model\\
-useful if and only if {\tt iturb}=50
-(v2f $\varphi$-model)}
-
-\motcle{cv2fmu}{r}{real number $>$ 0}{0.22}{O}{L3}
-{constant $C_\mu$ for the v2f $\varphi$-model\\
-useful if and only if {\tt iturb}=50
-(v2f $\varphi$-model)}
-
-\motcle{cv2fc1}{r}{real number $>$ 0}{1.4}{O}{L3}
-{constant $C_1$ for the v2f $\varphi$-model\\
-useful if and only if {\tt iturb}=50
-(v2f $\varphi$-model)}
-
-\motcle{cv2fc2}{r}{real number $>$ 0}{0.3}{O}{L3}
-{constant $C_2$ for the v2f $\varphi$-model\\
-useful if and only if {\tt iturb}=50
-(v2f $\varphi$-model)}
-
-\motcle{cv2fct}{r}{real number $>$ 0}{6}{O}{L3}
-{constant $C_T$ for the v2f $\varphi$-model\\
-useful if and only if {\tt iturb}=50
-(v2f $\varphi$-model)}
-
-\motcle{cv2fcl}{r}{real number $>$ 0}{0.25}{O}{L3}
-{constant $C_L$ for the v2f $\varphi$-model\\
-useful if and only if {\tt iturb}=50
-(v2f $\varphi$-model)}
-
-\motcle{cv2fet}{r}{real number $>$ 0}{110}{O}{L3}
-{constant $C_\eta$ for the v2f $\varphi$-model\\
-useful if and only if {\tt iturb}=50
-(v2f $\varphi$-model)}
-
-\minititre{Constants specific to the $k-\omega$ SST model}
-
-\motcle{ckwsk1}{r}{real number $>$ 0}{1/0.85}{O}{L3}
-{constant $\sigma_{k1}$ for the $k-\omega$ SST model\\
-useful if and only if {\tt iturb}=60
-($k-\omega$ SST)}
-
-\motcle{ckwsk2}{r}{real number $>$ 0}{2}{O}{L3}
-{constant $\sigma_{k2}$ for the $k-\omega$ SST model\\
-useful if and only if {\tt iturb}=60
-($k-\omega$ SST)}
-
-\motcle{ckwsw1}{r}{real number $>$ 0}{2}{O}{L3}
-{constant $\sigma_{\omega 1}$ for the $k-\omega$ SST model\\
-useful if and only if {\tt iturb}=60
-($k-\omega$ SST)}
-
-\motcle{ckwsw2}{r}{real number $>$ 0}{1/0.856}{O}{L3}
-{constant $\sigma_{\omega 2}$ for the $k-\omega$ SST model\\
-useful if and only if {\tt iturb}=60
-($k-\omega$ SST)}
-
-\motcle{ckwbt1}{r}{real number $>$ 0}{0.075}{O}{L3}
-{constant $\beta_1$ for the $k-\omega$ SST model\\
-useful if and only if {\tt iturb}=60
-($k-\omega$ SST)}
-
-\motcle{ckwbt2}{r}{real number $>$ 0}{0.0828}{O}{L3}
-{constant $\beta_2$ for the $k-\omega$ SST model\\
-useful if and only if {\tt iturb}=60
-($k-\omega$ SST)}
-
-\motcle{ckwgm1}{r}{real number $>$ 0}
-{$\frac{\beta_1}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 1}}$}{O}{L3}
-{constant $\gamma_1$ for the $k-\omega$ SST model\\
-useful if and only if {\tt iturb}=60
-($k-\omega$ SST)\\
-{\em Warning: $\gamma_1$ is calculated before the call to
-\texttt{usipsu}. Hence, if $\beta_1$, $C_\mu$, $\kappa$ or $\sigma_{\omega 1}$
-is modified in \texttt{usipsu}, \texttt{ckwgm1} must also be modified in accordance}}
-
-\motcle{ckwgm2}{r}{real number $>$ 0}
-{$\frac{\beta_2}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 2}}$}{O}{L3}
-{constant $\gamma_2$ for the $k-\omega$ SST model\\
-useful if and only if {\tt iturb}=60
-($k-\omega$ SST)\\
-{\em Warning: $\gamma_2$ is calculated before the call to
-\texttt{usipsu}. Hence, if $\beta_2$, $C_\mu$, $\kappa$ or $\sigma_{\omega 2}$
-is modified in \texttt{usipsu}, \texttt{ckwgm2} must also be modified in
-accordance}}
-
-\motcle{ckwa1}{r}{real number $>$ 0}{0.31}{O}{L3}
-{constant $a_1$ for the $k-\omega$ SST model\\
-useful if and only if {\tt iturb}=60
-($k-\omega$ SST)}
-
-\motcle{ckwc1}{r}{real number $>$ 0}{10}{O}{L3}
-{constant $c_1$ for the $k-\omega$ SST model\\
-useful if and only if {\tt iturb}=60
-($k-\omega$ SST)}
-
+Please refer to the following
+\doxygenfile{group__csttur.html}{\texttt{Doxygen} documentation} for
+more informations about modelling parameters such as \texttt{xlomlg},
+\texttt{almax} or \texttt{uref}.
 
 %==================================
 \subsection{ALE}
 %==================================
-\motcleb{iale}{i}{0 or 1}{C}{O}{L1}
-{activates (=1) or not (=0)  the ALE module}
 
-\motcleb{nalinf}{i}{0 or positive integer}{0}{C}{L2}
-{The number of sub-iterations of initialization of the fluid}
+For further details about the ALE calculation options,
+please refer to the dedicated \texttt{Doxygen} pages
+\doxygenfile{group__albase.html}{here} and
+\doxygenfile{group__alstru.html}{there}. The following
+\doxygenanchor{group__conv__scheme.html\#iflxmw}{\texttt{Doxygen}
+documentation} might be useful as well.
 
-\motcleb{nbstru}{i}{0 or positive integer}{0}{C}{L1}
-{number of structures, automatically computed}
-
-\motcleb{alpnmk}{r}{real}{0}{C}{L3}
-{$alpha$ Newmark's method}
-
-\motcleb{betnmk}{r}{real}{\texttt{-grand}}{C}{L3}
-{$beta$ Newmark's method}
-
-\motcleb{gamnmk}{r}{real}{\texttt{-grand}}{C}{L3}
-{$gamma$ Newmark's method}
-
-\motcleb{nalimx}{i}{positive integer}{15}{C}{L2}
-{maximum number of implicitation iterations for the structure displacement}
-
-\motcleb{epalim}{r}{positive real}{$1.10^{-5}$}{C}{L2}
-{Relative precision of implicitation of the structure displacement }
-
-\motcleb{iflxmw}{i}{0 or 1}{1}{O}{L2}
-{method to compute interior mass flux due to ALE mesh velocity\\
-\hspace*{1.3cm} = 1: based on cell center mesh velocity\\
-\hspace*{1.3cm} = 0: based on nodes displacement
-}
 %==================================
 \subsection{Thermal radiative transfers: global settings}
 %==================================
 
-All the following keywords may be modified in the user subroutines
-\texttt{usray*} (or, for some of them, through the thermochemical data files).
-It is however not recommended to modify those which do not belong to
-level L1.
+Most of radiative module keywords may be modified in the user subroutines
+\texttt{cs\_user\_radiative\_*} (or, for some of them, through the
+thermochemical data files).
 
-\motcleb{iirayo}{ia}{0, 1, 2}{0}{O}{L1}
-{{\tt iirayo} activates ($>0$) or deactivates
-(=0) the radiation module\\
-The different values correspond to the following modelling methodes:\\
-\hspace*{1.3cm} = 1: discrete ordinates method
-(DOM standard option for radiation in semi-transparent media)\\
-\hspace*{1.3cm} = 2: ``P-1'' methode\\
-{\em Warning: the P-1 methode allows faster computations, but it
-may only be applied to media with uniform large optical thickness, such as
-some cases of pulverised coal combustion}}
-
-\motcle{imodak}{i}{0 or 1}{0}{O}{L3}
-{when gas or coal combustion is activated, {\tt imodak} indicates whether the
-absorption coefficient shall be calculated ``automatically'' (=1) or read from
-the data file (=0)\\
-useful if the radiation module is activated}
-
-\motcleb{isuird}{i}{0 or 1}{isuite}{C}{L1}
-{indicates whether the radiation variables should be initialised (=0) or read
-from a restart file (=1)\\
-useful if and only if the radiation module is activated (in this case, a
-restart file {\em rayamo} must be available)}
-
-\motcleb{nfreqr}{i}{strictly positive integer}{1}{O}{L1}
-{period of the radiation module\\
-the radiation module is called every {\tt nfreqr} time steps (more precisely,
-every time {\tt ntcabs} is a multiple of {\tt nfreqr}). Also, in order to
-have proper initialisation of the variables, whatever the value of {\tt nfreqr},
-the radiation module is called at the first time step of a calculation
-(restart or not)\\
-useful if and only if the radiation module is activated}
-
-\motcleb{ndirec}{i}{32 or 128}{32}{O}{L1}
-{number of directions for the angular discretisation of the radiation
-propagation with the DOM model ({\tt iirayo}=1)\\
-no other possible value, because of the way the directions are calculated\\
-the calculation with 32 directions may break the symmetry of
-physically axi-symmetric cases (but the cost in CPU time is much lower
- than with 128 directions)\\
-useful if and only if the radiation module is activated with the DOM method}
-
-\motcle{xnp1mx}{r}{real number}{10}{O}{L3}
-{with the P-1 model ({\tt iirayo}=2), {\tt xnp1mx} is the percentage of cells of
-the calculation domain for which it is acceptable that the optical
-thickness is lower than unity\footnote{more precisely, where $KL$ is lower than
-1, where $K$ is the absorption coefficient of the medium and $L$ is a
-characteristic length of the domain}, although it is not to be desired\\
-useful if and only if the radiation module is activated with the P-1 method}
-
-\motcleb{idiver}{i}{0, 1 or 2}{2}{C}{L1}
-{indicates the method used to calculate the radiative source term:\\
-\hspace*{1.3cm}= 0: semi-analytic calculation (compulsory with transparent
-media)\\
-\hspace*{1.3cm}= 1: conservative calculation\\
-\hspace*{1.3cm}= 2: semi-analytic calculation corrected in order to be
-globally conservative\\
-useful if and only if the radiation module is activated\\
-{\em Note: if the medium is transparent, the choice has no effect on the calculation}}
-
-\motcleb{iimpar}{i}{0, 1 or 2}{1}{O}{L1}
-{Verbosity level in the listing concerning the calculation of
-the wall temperatures:\\
-\hspace*{1.3cm}= 0: no display\\
-\hspace*{1.3cm}= 1: standard\\
-\hspace*{1.3cm}= 2: complete\\
-useful if and only if the radiation module is activated}
-
-\motcleb{iimlum}{i}{0, 1 or 2}{1}{O}{L1}
-{Verbosity level in the listing concerning the solution of
-the radiative transfer equation:\\
-\hspace*{1.3cm}= 0: no display\\
-\hspace*{1.3cm}= 1: standard\\
-\hspace*{1.3cm}= 2: complete\\
-useful if and only if the radiation module is activated}
-
-\motcleb{nbrvaf}{ca}{string of less than 80 characters}{name}{O}{L1}
-{name associated for the post-processing to each of the following variables,
-defined at the boundary faces ({\it see}
-\cite{Douce02} for more details concerning their definitions):\\
-\hspace*{1.3cm} {\tt nbrvaf(itparp)}: wall temperature at the boundary
-faces ($K$)\\
-\hspace*{1.3cm} {\tt nbrvaf(iqincp)}: radiative incident flux density
-($W/m^2$)\\
-\hspace*{1.3cm} {\tt nbrvaf(ixlamp)}: thermal conductivity of the
-boundary faces ($W/m/K$)\\
-\hspace*{1.3cm} {\tt nbrvaf(iepap)}: wall thickness ($m$)\\
-\hspace*{1.3cm} {\tt nbrvaf(iepsp)}: wall emissivity \\
-\hspace*{1.3cm} {\tt nbrvaf(ifnetp)}: net radiative flux density ($W/m^2$)\\
-\hspace*{1.3cm} {\tt nbrvaf(ifconp)}: convective flux density ($W/m^2$)\\
-\hspace*{1.3cm} {\tt nbrvaf(ihconp)}: convective exchange coefficient
-($W/m^2/K$)\\
-The default values are: \\
-\hspace*{1.3cm} {\tt nbrvaf(itparp)} = Wall\_temp \\
-\hspace*{1.3cm} {\tt nbrvaf(iqincp)} = Incident\_flux \\
-\hspace*{1.3cm} {\tt nbrvaf(ixlamp)} = Th\_conductivity \\
-\hspace*{1.3cm} {\tt nbrvaf(iepap)} = Thickness \\
-\hspace*{1.3cm} {\tt nbrvaf(iepsp)} = Emissivity \\
-\hspace*{1.3cm} {\tt nbrvaf(ifnetp)} = Net\_flux \\
-\hspace*{1.3cm} {\tt nbrvaf(ifconp)} = Convective\_flux \\
-\hspace*{1.3cm} {\tt nbrvaf(ihconp)} = Convective\_exch\_coef \\
-useful if and only if the radiation module is activated}
-
-\motcleb{irayvf}{ia}{-1 or 1}{-1}{O}{L1}
-{activates (=1) or deactivates (=-1) the post-processing for each of the
-following variables defined at the boundary faces:\\
-\hspace*{1.3cm} {\tt irayvf(itparp)}: wall temperature at the boundary
-faces ($K$)\\
-\hspace*{1.3cm} {\tt irayvf(iqincp)}: incident radiative flux density
-($W/m^2$)\\
-\hspace*{1.3cm} {\tt irayvf(ixlamp)}: thermal conductivity of the
-boundary faces ($W/m/K$)\\
-\hspace*{1.3cm} {\tt irayvf(iepap)}: wall thickness ($m$)\\
-\hspace*{1.3cm} {\tt irayvf(iepsp)}: wall emissivity \\
-\hspace*{1.3cm} {\tt irayvf(ifnetp)}: net radiative flux density ($W/m^2$)\\
-\hspace*{1.3cm} {\tt irayvf(ifconp)}: convective flux density ($W/m^2$)\\
-\hspace*{1.3cm} {\tt irayvf(ihconp)}: convective exchange coefficient
-($W/m^2/K$)\\
-useful if and only if the radiation module is activated}
-
-\motcle{tmin}{r}{positive real number}{0}{O}{L3}
-{minimum allowed value for the wall temperatures in Kelvin\\
-useful if and only if the radiation module is activated}
-
-\motcle{tmax}{r}{positive real number}{{\tt grand} + 273.15}{O}{L3}
-{maximum allowed value for the wall temperatures in Kelvin\\
-useful if and only if the radiation module is activated}
+For a detailed list of these keywords, please refer to the following
+\doxygenfile{structcs__rad__transfer__params__t.html}{\texttt{Doxygen}
+documentation}.
 
 %==================================
 \subsection{Electric module (Joule effect and electric arcs): specificities}
@@ -2701,58 +623,9 @@ The electric arcs module is designed to take into account the Joule effect
 (only with real potential) in the enthalpy equation. The Laplace forces
 are taken into account in the impulse momentum equation.
 
-The keywords used in the global settings are quite few. They are
-found in the subroutine \texttt{cs\_user\_parameters}.
-
-\motcleb{ielcor}{i}{0, 1}{0}{O}{L1}
-{when \texttt{ielcor}=1, the boundary conditions for the potential will be
-tuned at each time step in order to reach a user-specified target dissipated
-power \texttt{puisim} (Joule effect) or a user-specified target current
-intensity \texttt{couimp} (electric arcs)\\
-the boundary condition tuning is controlled by subroutines \texttt{elreca} or
-\texttt{cs\_user\_electric\_scaling}\\
-always useful}
-
-\motcleb{couimp}{r}{real number $\geqslant 0$}{0}{O}{L1}
-{with the electric arcs module, \texttt{couimp} is the target current intensity ($A$)
-for the calculations with boundary condition tuning for the potential\\
-the target intensity will be reached if the boundary conditions are expressed
-using the variable \texttt{dpot} or if the initial boundary conditions are multiplied by
-the variable \texttt{coejou}\\
-useful with the electric arcs module if \texttt{ielcor}=1}
-
-\motcleb{puisim}{r}{real number $\geqslant 0$}{0}{O}{L1}
-{with the Joule effect module, \texttt{puisim} is the target dissipated power ($W$)
-for the calculations with boundary condition tuning for the potential\\
-the target power will be reached if the boundary conditions are expressed
-using the variable \texttt{dpot} or if the initial boundary conditions are multiplied by
-the variable \texttt{coejou}\\
-useful with the Joule effect module if \texttt{ielcor}=1}
-
-\motcleb{dpot}{r}{real number $\geqslant 0$}{0}{O}{L1}
-{\texttt{dpot} is the potential difference ($V$) which generates the current (and the Joule effect) for the
-calculations with boundary conditions tuning for the potential. This value is
-initialised set by the user (\texttt{cs\_user\_parameters}). It is then automatically tuned
-depending on the value of dissipated power (Joule effect module) or the
-intensity of current (electric arcs module).
-In order for the correct power or intensity to be reached, the boundary
-conditions for the potential must be expressed with \texttt{dpot}
-. The tuning can be controlled in \texttt{cs\_user\_electric\_scaling}\\
-useful if \texttt{ielcor}=1}
-
-\motcleb{modrec}{i}{0, 1, 2}{1}{O}{L1}
-{when \texttt{ielcor}=0, we use user function \texttt{cs\_user\_electric\_scaling} for boundary condition tuning\\
-when \texttt{ielcor}=1, we use standard model for boundary condition tuning\\
-when \texttt{ielcor}=2, we use plane scaling model for boundary condition tuning. In this case, we need
-define plane and current density component used to}
-
-\motcleb{idreca}{i}{1, 2, 3}{3}{O}{L1}
-{defines current density component used to calculate current in plane\\
-useful if \texttt{modrec}=2}
-
-\motcleb{crit\_reca}{r}{real number $\geqslant 0$}{0}{O}{L1}
-{defines plane coordinates component used to calculate current in plane\\
-useful if \texttt{modrec}=2}
+The different keywords used in the electric module are detailed in
+the following \doxygenfile{structcs__elec__option__t.html}{\texttt{Doxygen}
+documentation}.
 
 %=================================================
 \subsection{Compressible module: specificities}
@@ -2763,83 +636,13 @@ found in the subroutines \texttt{uscfx1} and \texttt{uscfx2}, in
 the \texttt{cs\_user\_parameters.f90} file (see the
 description of these user subroutines, \S\ref{prg_uscfx12}).
 
-\motcleb{ieos}{i}{1}{1}{C}{L1}
-{\texttt{ieos} indicates the equation of state. Only perfect gas with a constant adiabatic coefficient,
-\texttt{ieos=1} is available, but the user can complete the subroutine
-\texttt{cfther}, which is not a user subroutine, to add new equations of state.\\
-always useful
-}
+Detailed informations can be found
+\doxygenfile{group__common.html}{here} for the keywords
+\texttt{igrdpp}, \texttt{viscv0} and \texttt{icfgrp}.
 
-\motcleb{xmasmr}{r}{1}{1}{C}{L1}
-{\texttt{xmasmr} is the molar mass of the perfect gas in kg/mol (\texttt{ieos=1})\\
-always useful
-}
-
-\motcleb{icfgrp}{ia}{0 or 1}{1}{C}{L1}
-{\texttt{icfgrp} indicates if the boundary
-conditions should take into account (=1) or not (=0) the hydrostatic balance.\\
-always useful.\\
-In the cases where gravity is predominant, taking into account the hydrostatic
-pressure allows to get rid of the disturbances which may appear near the
-horizontal walls when the flow is little convective.\\
-%
-Otherwise, when \texttt{icfgrp}=0, the pressure condition is calculated
-from the solution of the one-dimensional Euler equations for a perfect
-gas near a wall, for the variables ``normal velocity'', ``density'' and
-``pressure'':
-\vspace{0.2cm}
-\begin{list}{}{}
-\item Case of an expansion ($M \leqslant 0$):\\
-$$
-\begin{array}{l}
-\left\{\begin{array}{lll}
-P_p=0 & \text{if} & 1 + \displaystyle\frac{\gamma-1}{2}M<0\\
-P_p = P_i \left(1 + \displaystyle\frac{\gamma-1}{2}M\right)
-^{\frac{2\gamma}{\gamma-1}} & \text{otherwise}\\
-\end{array}\right.\\
-\end{array}
-$$
-
-\item Case of a shock ($M > 0$):\\
-$$
-\begin{array}{l}
-P_p = P_i \left(1 + \displaystyle\frac{\gamma(\gamma+1)}{4}M^2
-+\gamma M \displaystyle\sqrt{1+\displaystyle\frac{(\gamma+1)^2}{16}M^2}\right)
-\end{array}
-$$
-
-with $M = \displaystyle\frac{\vect{u}_i \cdot \vect{n}}{c_i}$, internal
-      Mach number calculated with the variables taken in the cell
-      adjacent to the wall.\\
-
-\end{list}
-}
-
-\motcleb{iviscv}{i}{0 or 1}{\texttt{0}}{C}{L1}
-{\texttt{iviscv=0} indicates that
-the volume viscosity is constant and equal to the reference volume viscosity
-\texttt{viscv0}.\\
-\texttt{iviscv}=1 indicates that the volume viscosity is variable: its
-variation law must be specified in the user subroutine \texttt{usphyv}.\\
-always useful\\
-The volume viscosity $\kappa$ is defined by the formula expressing the stress:
-\begin{equation}
-   \tens{\sigma} = -P\,\tens{Id} + \mu (\grad\,\vect{u} +  \ ^{t}\ggrad\,\vect{u})
-           +(\kappa-\frac{2}{3}\mu)\,\dive(\vect{u})\,\tens{Id}
-\end{equation}
-}
-
-\motcleb{viscv0}{r}{real number $\ge$ 0}{0}{O}{L1}
-{\texttt{viscv0} is the reference volume
-viscosity (noted $\kappa$ in the equation expressing $\tens{\sigma}$ in the
-paragraph dedicated to \texttt{iviscv})\\
-always useful, it is the used value, unless the user specifies the volume
-viscosity in the user subroutine \texttt{usphyv}}
-
-\motcle{igrdpp}{i}{0 or 1}{1}{O}{L3}
-{indicates whether the pressure should be updated (=1) or not (=0) after the
-solution of the acoustic equation\\
-always useful}
+For \texttt{iviscv}, \texttt{ieos} and \texttt{xmasmr},
+please refer to the dedicated
+\doxygenfile{structcs__fluid__properties__t.html}{\texttt{Doxygen} documentation}.
 
 %==================================================
 \subsection{Lagrangian multiphase flows}

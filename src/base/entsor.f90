@@ -42,21 +42,23 @@ module entsor
   integer, save :: nfecra
 
   !> unit of the upstream restart file for the vortex method.
-  !> Useful if and only if isuivo=1 and  ivrtex=1.
+  !> Useful if and only if \ref optcal::isuivo "isuivo"=1 and
+  !> \ref optcal::ivrtex "ivrtex"=1.
   integer, save :: impmvo
 
   !> unit of the downstream restart file for the vortex method.
-  !> Useful if and only if ivrtex=1.
+  !> Useful if and only if \ref optcal::ivrtex "ivrtex"=1.
   integer, save :: impvvo
 
   !> unit of the \ref vorinc::ficvor "ficvor" data files for the vortex method.
+  !>
   !> These files are text files. Their number and names are specified by the user
   !> in the \ref usvort subroutine.
   !> (Although it corresponds to an 'upstream' data file, \ref impdvo is
   !> initialized to 20 because, in case of multiple vortex entries,
   !> it is opened at the same time as the upstream restart file,
   !> which already uses unit 11)
-  !> useful if and only if \ref optcal::ivrtex "ivrtex"=1
+  !> useful if and only if \ref optcal::ivrtex "ivrtex"=1.
   integer, save :: impdvo
 
   !> name of file, see usvort module.
@@ -72,8 +74,30 @@ module entsor
   !> field key for output label
   integer, save :: keylbl = -1
 
-  !> field keys for logging and postprocessing output
+  !> field key for logging \n
+  !> For every quantity (variable, physical or numerical property ...),
+  !> indicator concerning the writing in the execution report file
+  !>    - 1: writing in the execution listing.
+  !>    - 0: no writing.
+  !> always useful
   integer, save :: keylog = -1
+
+  !> <a name="keyvis"></a>
+  !> field key for postprocessing output.
+  !>
+  !> Each quantity defined at the cell centres (physical or
+  !> numerical variable), indicator of whether it should be
+  !> post-processed or not
+  !>   - -999: not initialised. By default, the post-processed quantities are the
+  !> unknowns (pressure, velocity, \f$ k, \epsilon, Rij, \omega, \phi, f \f$k, scalars),
+  !> density, turbulent viscosity and the time step if is not uniform
+  !>   - 0: not post-processed
+  !>   - 1: post-processed on main location
+  !>   - 2: non-reconstructed values postprocessed on boundary if main location is cells
+  !>   - 3: both 1 and 2
+  !> useful if and only if the variable is defined at the cell centers or boundary faces:
+  !> calculation variable, physical property (time step, density, viscosity, specific heat) or
+  !> turbulent viscosity if \ref iturb = 10
   integer, save :: keyvis = -1
 
   !> \}
@@ -83,7 +107,9 @@ module entsor
   !> \addtogroup userfile
   !> \{
 
-  !> name of the thermochemical data file. The launch script is designed
+  !> name of the thermochemical data file.
+  !>
+  !> The launch script is designed
   !> to copy the user specified thermochemical data file in the temporary
   !> execution directory under the name \em dp_thch, for \e Code_Saturne to open
   !> it properly.  Should the value of \ref ficfpp be changed, the launch script
@@ -131,6 +157,7 @@ module entsor
   integer, save :: impush(nushmx)
 
   !> names of the user chronological record files.
+  !>
   !> In the case of a non-parallel
   !> calculation, the suffix applied the file name is a three digit number:
   !> \f$ \texttt{ush001}\f$, \f$\texttt{ush002}\f$, \f$\texttt{ush003}\f$...
@@ -182,7 +209,7 @@ module entsor
   !> row of process containing nodcap (in parallel processing)
   integer, save :: ndrcap(ncaptm)
 
-  !> xyzcap : required position for a probe
+  !> required position for a probe
   !> 3D-coordinates of the probes.
   !> the coordinates are written: \ref xyzcap "xyzcap"(i,j), with i = 1,2 or 3
   !> and j <= \ref ncapt.
@@ -205,7 +232,9 @@ module entsor
   !> (therefore always useful, by security)
   integer, save ::      impusr(nusrmx)
 
-  !> name of the potential user specified files. In the case of a non-parallel
+  !> name of the potential user specified files.
+  !>
+  !> In the case of a non-parallel
   !> calculation, the suffix applied the file name is a two digit number:
   !> from \f$ \texttt{usrf01} \f$ to \f$ \texttt{usrf10} \f$ .
   !> In the case of a parallel-running calculation, the four digit processor index-number is

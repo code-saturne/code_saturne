@@ -102,6 +102,30 @@ the document for easier reference.
 %==================================
 \section{Quick start}
 %==================================
+
+%=================================================
+\subsection{How to use the Doxygen documentation?}
+%=================================================
+
+In addition to the present user guide, a complete
+\texttt{Doxygen} documentation automatically generated from the code is available with \CS. It can provide various informations about the implementation such as details on variables used throughout the code kernel and the user subroutines. It also provides an easily explorable set of user subroutine examples and Fortran-C naming references for quantities linked to the mesh or the physical fields. 
+
+One can access the \texttt{Doxygen} main page through \doxygenfile{index.html}{this link} or from a terminal by typing the following command:
+\texttt{code\_saturne info --guide theory}.
+
+On the front page, several tabs are available :
+\begin{list}{$\bullet$}{}
+\item \textbf{Modules}: list of all the \CS modules,
+\item \textbf{Data structures}: list of all the \CS structures,
+\item \textbf{Files}: list of all the source files with a brief description of their purpose,
+\item \textbf{User examples}: provides various examples of how to use user subroutines,
+\item \textbf{Variables and structures references}: helps users implementing user C functions,
+Fortran subroutines or developing inside the code kernel.
+\end{list}
+
+In any case, the \textbf{search bar} can be used to look for a specific keyword which can
+be a function, a variable, a structure, a type, etc.
+
 %==================================
 \subsection{Running a calculation}
 %==================================
@@ -1835,232 +1859,30 @@ document (see \S~\ref{sec:prg_motscles}).
 The type of each variable is given: integer [i], real number [r],
 integer array [ia], real array [ra].
 
+For a further detailed list of variables, one can refer to the dedicated
+\texttt{Doxygen} documentation.
+
 %==================================
 \subsubsubsection{Array sizes}
 %==================================
 \label{sec:prg_dimensions}
 
-\variabsize{ndim}{Space dimension (ndim=3)}
-
-\bigskip
-
-\variabsize{ncel}{Number of real cells in the mesh}
-
-\variabsize{ncelet}{Number of cells in the mesh, including the
-ghost cells of the ``halos'' (see note 1)}
-
-\variabsize{nfac}{Number of internal faces (see note 2)}
-
-\variabsize{nfabor}{Number of boundary faces (see note 2)}
-
-\bigskip
-
-\variabsize{lndfac}{Size of the array \texttt{nodfac}\index{nodfac} of
-internal faces - nodes connectivity (see note 3)}
-
-\variabsize{lndfbr}{Size of the array \texttt{nodfbr}\index{nodfbr} of
-boundary faces - nodes connectivity (see note 3)}
-
-\variabsize{nnod}{Number of vertices in the mesh}
-
-\bigskip
-
-\variabsize{nfml}{Number of referenced families of entities (boundary
-faces, elements, ...)}
-
-\variabsize{nprfml}{Number of properties per referenced entity family}
-
-\bigskip
-
-\variabsize{nvar}{Number of solved variables (must be lower than
-\texttt{nvrmax})}
-
-\variabsize{nscamx}{Maximum number of scalars solutions of an
-advection equation, apart from the variables of the turbulence model ($k$,
-$\varepsilon$, $R_{ij}$, $\omega$, $\varphi$, $\overline{f}$, $\alpha$, $\nu_t$), that is
-to say the temperature and other scalars (passive or not, user-defined or not)}
-
-\variabsize{nscal}{Effective number of scalars solutions of an
-advection equation, apart from the variables of the turbulence model ($k$,
-$\varepsilon$, $R_{ij}$, $\omega$, $\varphi$, $\overline{f}$, $\alpha$, $\nu_t$), that is
-to say the temperature and other scalars (passive or not, user-defined or
-not). These scalars can be divided into two distinct groups: \texttt{nscaus}
-user-defined scalars and \texttt{nscapp} scalars related to a ``specific
-physics''. \texttt{nscal=nscaus+nscapp}, and \texttt{nscal}
-must be less than or equal to \texttt{nscamx}}
-
-\variabsize{nscapp}{Effective number of scalars related to a
-``specific physics''. These scalars are solutions of an advection
-equation and distinct from the scalars of the turbulence model ($k$,
-$\varepsilon$, $R_{ij}$, $\omega$, $\varphi$, $\overline{f}$, $\alpha$, $\nu_t$). They are
-automatically defined by the choice of the selected specific physics
-model (gas combustion with Eddy Break-Up model, pulverised coal
-combustion, ...). For example: mass fractions, enthalpy, ...}
-
-\variabsize{nscaus}{Effective number of user-defined scalars. These
-scalars are solutions of an advection equation and distinct from the
-scalars of the turbulence model ($k$, $\varepsilon$, $R_{ij}$, $\omega$,
-$\varphi$, $\overline{f}$, $\alpha$, $\nu_t$) and from the \texttt{nscapp} scalars related to the
-``specific physics''. For example: passive tracers, temperature (when no
-specific physics model is selected), ...}
-
-\variabsize{nestmx}{Maximum number of error estimators for
-Navier-Stokes}
-
-\bigskip
-
-\variabsize{nushmx}{Maximum number of user chronological files
-(in the case where \texttt{ushist} is used)}
-
-\bigskip
-
-\variabsize{nclacp}{Number of coal classes for the pulverised
-coal combustion module. It is the total number of classes, {\it i.e.}
-the sum of the number of classes for every represented coal. \texttt{nclacp} must
-be less than or equal to \texttt{nclcpm}}
-
-\variabsize{nclcpm}{Maximum number of coal classes for the
-pulverised coal combustion module}
-
-
-\minititre{Note 1: ghost cells - ``halos''}
-A cell (real cell) is an elementary mesh element of the spatial
-discretisation of the calculation domain. The mesh is made of \texttt{ncel} cells.\\
-When using periodicity and parallelism, extra ``ghost'' cells
-(called ``halo'' cells) are defined for temporary storage of some information
-(on a given processor).
-The total number of real and ghost cells is \texttt{ncelet}. \\
-\hspace*{1cm} Indeed, when periodicity is enabled, the cells with
-periodic faces do not have any real neighbouring cell across these
-particular faces. Their neighbouring cell is elsewhere in the calculation
-domain (its position is determined by the periodicity). In order to
-temporarily store the information coming from this ``distant''
-neighbouring cell, a ghost cell (``halo'') is created. \\
-\hspace*{1cm} The same kind of problem exists in the case of a
-calculation on parallel machines: due to the decomposition of the
-calculation domain, some cells no longer have access to all
-their neighbouring cells, some of them being treated by another processor. The
-creation of ghost cells allows to temporarily store the information
-coming from real neighbouring cells treated by other processors.\\
-The variables are generally arrays of size \texttt{ncelet} (number of real and
-fictitious cells). The calculations (loops) are made on \texttt{ncel} cells (only
-the real cells, the fictitious cells are only used to store information).
-
-\minititre{Note 2: internal faces}
-An internal face is an interface shared by two cells (real or ghost
-ones) of the mesh. A boundary face is a face which has only one real
-neighbouring cell. In the case of periodic calculations, a periodic face
-is an internal face. In the case of parallel running calculations, the
-faces situated at the boundary of a partition may be internal faces or
-boundary faces (of the whole mesh);
-
-\minititre{Note 3: face-node connectivity}\label{sec:prg_nodfac}
-The faces - nodes connectivity is stored by
-means of four integer arrays: \texttt{ipnfac} and \texttt{nodfac} for the
-internal faces, \texttt{ipnfbr} and \texttt{nodfbr} for the boundary faces.
-\texttt{nodfac} (size \texttt{lndfac})
-contains the list of all the nodes of all the internal faces; first the nodes of
-the first face, then the nodes of the second face, and so on.
-\texttt{ipnfac} (size: \texttt{nfac+1}) gives the position \texttt{ipnfac(ifac)}
-in \texttt{nodfac} of the first node of each internal face \texttt{ifac}.
-Therefore, the reference numbers of all
-the nodes of the internal face \texttt{ifac} are: \texttt{nodfac(ipnfac(ifac))},
-\texttt{nodfac(ipnfac(ifac)+1)}, ..., \texttt{nodfac(ipnfac(ifac+1)-1)}.
-In order for this last formula to be valid even for \texttt{ifac=nfac},
-\texttt{ipnfac} is of size \texttt{nfac+1} and \texttt{ipnfac(nfac+1)}
-is equal to \texttt{lndfac+1}.\\
-The composition of the arrays \texttt{nodfbr} and \texttt{ipnfbr} is similar.
-
-\minititre{Note 4: modules}
-{\bf The user must not modify the existing modules.} This would require the
-recompilation of the complete version, operation which is not allowed in
-standard use.
+For array sizes, please refer to the following \texttt{Doxygen} documentation:
+\begin{itemize}
+\item \doxygenfile{mesh.html}{Mesh dimensions},
+\item \doxygenfile{group__dimens.html}{General variable array dimensions},
+\item \doxygenfile{group__paramx.html}{Specific variable array dimensions}.
+\end{itemize}
 
 %==================================
 \subsubsubsection{Geometric variables}
 %==================================
 
 The main geometric variables are available in most of the
-subroutines and directly accessible through the following arrays,
-defined in the \texttt{mesh} module (i.e. \texttt{use mesh}).
-
-\variab{cdgfac}{cdgfac(ndim,nfac)}{ra}{Coordinates of the
-centres of the internal faces}
-
-\variab{cdgfbo}{cdgfbo(ndim,nfabor)}{ra}{Coordinates of the centres of the
-boundary face}
-
-\variab{ifacel}{ifacel(2,nfac)}{ia}{Index-numbers of the (only) two neighbouring
-cells for each internal face}
-
-\variab{ifabor}{ifabor(nfabor)}{ia}{Index-number of the (unique) neighbouring
-cell for each boundary face}
-
-\variab{ipnfac}{ipnfac(nfac+1)}{ia}{Position of the first node of the each internal
-face in the array \texttt{nodfac} (see note 3 in paragraph \ref{sec:prg_dimensions})}
-
-\variab{ipnfbr}{ipnfbr(nfabor+1)}{ia}{Position of the first node of the each boundary
-face in the array \texttt{nodfbr} (see note 3 in paragraph \ref{sec:prg_dimensions})}
-
-\variab{nodfac}{nodfac(lndfac)}{ia} {Index-numbers of the nodes of each
-internal face (see note 3 in paragraph \ref{sec:prg_dimensions})}
-
-\variab{nodfbr}{nodfbr(lndfbr)}{ia}{Index-numbers of the nodes of each
-boundary face (see note 3 in paragraph \ref{sec:prg_dimensions})}
-
-\variab{surfac}{surfac(ndim,nfac)}{ra}{Surface vector of the internal
-faces. Its norm is the surface of the face and it is oriented from \texttt{ifacel(1,.)}
-to \texttt{ifacel(2,.)}}
-
-\variab{surfbo}{surfbo(ndim,nfabor)}{ra}{Surface vector of the boundary
-faces. Its norm is the surface of the face and it is oriented outwards}
-
-\variab{volume}{volume(ncelet)}{ra}{Volume of each cell}
-
-\variab{xyzcen}{xyzcen(ndim,ncelet)}{ra}{Coordinates of the cell centres}
-
-\variab{xyznod}{xyznod(ndim,nnod)}{ra}{Coordinates of the mesh vertices}
-
-In addition, other geometric variables are useful for gradients
-reconstruction.
-The main variables of this type are the following:
-
-\variab{dijpf}{dijpf(ndim,nfac)}{ra}{For every internal face,
-the three components of the vector  $\vect{I'J'}$, where I' and J' are
-respectively the orthogonal projections of the neighbouring cell centres I and J
-on a straight line orthogonal to the face and passing through its center}
-
-\variab{diipb}{diipb(ndim,nfabor)}{ra}{For every boundary
-face, the three components of the vector $\vect{II'}$. I' is the
-orthogonal projection of I, center of the neighbouring cell, on the
-straight line perpendicular to the face and passing through its center}
-
-\variab{idist}{dist(nfac)}{ra}{For every internal face,
-dot product of the vectors $\vect{IJ}$ and $\vect{n}$.
-I and J are respectively the centres
-of the first and the second neighbouring cell. The vector $\vect{n}$ is
-the unit vector normal to the face and oriented from the first to the
-second cell}
-
-\variab{distb}{distb(nfabor)}{ra}{For every boundary face,
-dot product between the vectors $\vect{IF}$ and $\vect{n}$.
-I is the center of the neighbouring cell. F is the face center.
-The vector $\vect{n}$ is the unit vector normal to the face and
-oriented to the exterior of the domain}
-
-\variab{dofij}{dofij(ndim,nfac)}{ra}{For every internal
-face, the three components of the vector $\vect{OF}$. O is the intersection
-point between the face and the straight line joining the centres
-of the two neighbouring cells. F is the face center}
-
-\variab{pond}{pond(nfac)}{ra}{For every internal face,
-$\displaystyle\frac{\vect{FJ}.\vect{n}}{\vect{IJ}.\vect{n}}$.
-Regarding the quality of mesh, its ideal value is 0.5}
-
-\variab{surfan}{surfan(nfac)}{ra}{Norm of the surface vector of
-the internal faces}
-
-\variab{surfbn}{surfbn(nfabor)}{ra}{Norm of the surface vector of the boundary faces}
+subroutines and directly accessible through arrays defined
+in the \texttt{mesh} module (i.e. \texttt{use mesh}). For
+further details, please refer to the following
+\doxygenfile{mesh.html}{\texttt{Doxygen} documentation}.
 
 %====================================
 \subsubsubsection{Physical variables}
@@ -2070,19 +1892,16 @@ Almost all physical variables\footnote{except some of the properties defined at
 the cell centers} can be accessed via the \texttt{cs\_field} API and are
 available in all the subroutines as fields (either through their name or their
 id). The previous system, which used multidimensional arrays, has been
-progressively replaced by the \texttt{cs\_field} API and this process is now
-still on-going only for the properties defined at cell centers. These
-properties are therefore the last ones to be additionally accessible through a
-deprecated multidimensional array:
+progressively replaced by the \texttt{cs\_field} API.
 
 For a thorough description of the user management of all physical
 variables as well as the corresponding syntaxes between the \texttt{cs\_field}
 API (both in C and Fortran) and the previous system, please refer to
-\doxygenfile{field.html}{the dedicated \texttt{doxygen} documentation}.
+\doxygenfile{field.html}{the dedicated \texttt{Doxygen} documentation}.
 
 Note that local arrays of values of physical variables, retrieved via the
 \texttt{cs\_field} API, follow a naming convention, fully described at
-\doxygenfile{local.html}{this page} of the \texttt{doxygen} documentation. It
+\doxygenfile{local.html}{this page} of the \texttt{Doxygen} documentation. It
 is highly recommended to follow this convention to ease the comprehension.
 
 \underline{About the solved variables}
@@ -2093,45 +1912,15 @@ The indexes allowing marking out the different solved variables (from 1 to
 
 For example, \texttt{ipr} refers to the variable ``pressure''.
 
-The list of integers referring to solved variables is given below. These
-variable index-numbers can be used to retrieve the corresponding field indices
+The list of integers referring to solved variables can be accessed through
+the following \doxygenfile{group__main__variables.html}{\texttt{Doxygen} documentation}.
+These variable index-numbers can be used to retrieve the corresponding field indices
 (for instance, \texttt{ivarfl(ipr)} is the field index for the pressure),
 but also for some arrays of variable associated options (for instance,
-\texttt{blencv(ik)} is the percentage of second-order convective scheme for the
-turbulent energy when a corresponding turbulent model is used).
+\texttt{visls0(itempk)} is the viscosity of the temperature).
 
-\begin{list}{$\bullet$}{}
-\item \texttt{ipr}\index{\texttt{ipr}}: pressure
-\footnote{\texttt{ipr} corresponds to a
-reduced pressure, from which the standard hydrostatic pressure has been
-deducted. The total solved pressure is a field of type property.}.
-\item \texttt{iu}\index{\texttt{iu}}: velocity along the X axis.
-\item \texttt{iv}\index{\texttt{iv}}: velocity along the Y axis.
-\item \texttt{iw}\index{\texttt{iw}}: velocity along the Z axis.
-\item \texttt{ik}\index{\texttt{ik}}: turbulent energy, in $k-\varepsilon$,
-$k-\omega$ modelling or v2f ($\varphi$-model and BL-v2/k model) modelling.
-\item \texttt{ir11}\index{\texttt{ir11}}: Reynolds stress R11, in
-      $R_{ij}-\varepsilon$ or SSG modelling.
-\item \texttt{ir22}\index{\texttt{ir22}}: Reynolds stress R22, in
-      $R_{ij}-\varepsilon$ or SSG modelling.
-\item \texttt{ir33}\index{\texttt{ir33}}: Reynolds stress R33, in
-      $R_{ij}-\varepsilon$ modelling.
-\item \texttt{ir12}\index{\texttt{ir12}}: Reynolds stress R12, in
-      $R_{ij}-\varepsilon$ modelling.
-\item \texttt{ir13}\index{\texttt{ir13}}: Reynolds stress R13, in
-      $R_{ij}-\varepsilon$ modelling.
-\item \texttt{ir23}\index{\texttt{ir23}}: Reynolds stress R23, in
-      $R_{ij}-\varepsilon$ modelling.
-\item \texttt{iep}\index{\texttt{iep}}: turbulent dissipation in $k-\varepsilon$,
-$R_{ij}-\varepsilon$ or v2f ($\varphi$-model and BL-v2/k model) modelling.
-\item \texttt{iomg}\index{\texttt{iomg}}: Specific dissipation rate $\omega$, in
-$k-\omega$ SST modelling.
-\item \texttt{iphi}\index{\texttt{iphi}}: variable $\varphi=\overline{v^2}/k$ in v2f ($\varphi$-model and BL-v2/k model).
-\item \texttt{ifb}\index{\texttt{ifb}}: variable $\overline{f}$ in v2f ($\varphi$-model).
-\item \texttt{ial}\index{\texttt{ifb}}: variable $\alpha$ in elliptic blending models (BL-v2/k and EBRSM).
-\item \texttt{inusa}\index{\texttt{ifb}}: variable $\\tilde{nu}_t$ in Spalart-Allmaras model.
-\item \texttt{isca(j)}\index{\texttt{isca}}: scalar j(1$\leqslant$j$\leqslant$nscal).
-\end{list}
+To access the main solved variables, please refer to the following
+\doxygenfile{field.html}{\texttt{Doxygen} documentation}.
 
 \bigskip
 
@@ -2182,64 +1971,10 @@ $\overline{f}$, $\alpha$, $\nu_t$), the following is very important:
 \bigskip
 
 \underline{About the physical properties at the cell centers}\\
-In \CS, the physical properties and some auxiliary numerical value arrays
-are stored as fields. The most commonly used field ids are saved as
-global variables.
-
-The list of the most commonly used property field ids is given below (this does
-not include the properties linked to the specific physics modules):
-
-\variab{irom}{irom}{ia}{Property number
-corresponding to the density ({\em i.e.} $\rho$ in $kg.m^{-3}$).\\
-Stored at the cells and the boundary faces}
-
-\variab{iviscl}{iviscl}{ia}{Property number
-corresponding to the fluid molecular dynamic viscosity ({\em i.e.} $\mu$ in
-$kg.m^{-1}.s^{-1}$).\\
-Stored at the cells}
-
-\variab{ivisct}{ivisct}{ia}{Property number
-corresponding to the fluid turbulent dynamic viscosity ({\em i.e.}
-$\mu_t$ in $kg.m^{-1}.s^{-1}$).\\
-Stored at the cells}
-
-\variab{icp}{icp}{ia}{Property number
-corresponding to the specific heat, when it is variable
-({\em i.e.} $C_p$ in $m^2.s^{-2}.K^{-1}$). See note below.\\
-Stored at the cells}
-
-\variab{iestim}{iestim(nestmx)}{ia}{Property
-number for the \texttt{nestmx} error estimators for Navier-Stokes. The estimators
-currently available are \texttt{iestim(iespre\index{iespre})},\\
-\texttt{iestim(iesder\index{iesder})},
-\texttt{iestim(iescor\index{iescor})},
-\texttt{iestim(iestot\index{iestot})}
-stored at the cells}
-
-\variab{ismago}{ismago}{i}{Property number
-corresponding to the variable $C$ of the dynamic model, {\em i.e}
-so that $\mu_t=\rho C\overline{\Delta}^2\sqrt{2S_{ij}S_{ij}}$ (with the
-notations of \cite{benhamadouche01}). $C$ corresponds to $C_s^2$ in the
-classical model of Smagorinsky.\\
-Stored at the cells}
-
-\variab{icour}{icour}{i}{CFL number in each cell at the
-present time step.\\
-Stored at the cells}
-
-\variab{ifour}{ifour}{i}{Fourier number in each cell at
-the present time step.\\
-Stored at the cells}
-
-\variab{iprtot}{iprtot}{i}{Total pressure in each cell.\\
-Stored at the cells}
-
-\variab{ivisma}{ivisma(1 or 3)}{ia}{When the ALE method for deformable meshes is
-activated, \texttt{ivisma} corresponds to the ``mesh viscosity'', allowing to limit
-the deformation in certain areas. This mesh viscosity can be isotropic or be
-taken as a diagonal tensor (depending on the value of the parameter
-\texttt{iortvm}\index{\texttt{iortvm}}.\\
-Stored at the cells}
+To access the physical properties, please refer to the following
+\doxygenfile{field.html}{\texttt{Doxygen} documentation}. Some
+index numbers are also described in the physical properties
+numbering \doxygenfile{group__physical__prop.html}{\texttt{Doxygen} documentation}.
 
 \minititre{Note: Variable physical properties}\label{provar}
 Some physical properties such as specific heat or diffusivity are often
@@ -2260,8 +1995,9 @@ array of reals.
       modify this value to make \texttt{icp} refer to the effective
       property field id corresponding to the specific heat,
       in a way which is transparent for the user. For each cell
-      \texttt{iel}, the value of $C_p$ is then defined in \texttt{usphyv} and
-      stored in the field with idarray \texttt{icp}.
+      \texttt{iel}, the value of $C_p$ can then be defined in \texttt{usphyv}
+      in an array which pointer can be retrieved by calling
+      \texttt{field\_get\_val\_s(iprpfl(icp), cpro\_cp)}.
 \end{list}
 \item This is the same for the diffusivity $K$ of each scalar \texttt{iscal}.
 \begin{list}{-}{}
@@ -2309,106 +2045,71 @@ although they concern only the wall boundary faces.
 \subsubsubsection{Variables related to the numerical methods}
 %==================================
 
-The main numerical variables and ``pointers'' are displayed below.
+The main numerical variables and ``pointers'' are described in the
+\texttt{Doxygen} documentation below.
 
 \minititre{Boundary conditions}
 
-\variab{ifmfbr}{ifmfbr(nfabor)}{ia}{Family number of the boundary
-faces. See note 1}
+\begin{itemize}
+\item \doxygenanchor{group__mesh.html\#ifmfbr}{\texttt{ifmfbr}} and
+\doxygenanchor{group__mesh.html\#isympa}{\texttt{isympa}} arrays.
 
-\variab{iprfml}{iprfml(nfml,nprfml)}{ia}{Properties of the
-families of referenced entities. See note 1}
-
-\variab{isympa}{isympa(nfabor)}{i}{Integer to mark out the %FIXME``wall'' (\texttt{itypfb=iparoi} or \texttt{iparug}) or
-``symmetry'' (\texttt{itypfb=isymet}) boundary faces where the
-mass flow has to be canceled when the ALE module is switched off (these faces are impermeable). For instance,
-if the face \texttt{ifac} is %FIXME a wall or
-symmetry face,
-\texttt{isympa(ifac)=0}, otherwise \texttt{isympa(ifac)=1}}
-
-\variab{itrifb}{itrifb(nfabor)}{ia}{Indirection array allowing to
-sort the boundary faces according to their boundary condition type \texttt{itypfb}}
-
-\variab{itypfb}{itypfb(nfabor)}{ia}{Boundary condition type at the
-boundary face \texttt{ifac} (see user subroutine \texttt{cs\_user\_boundary\_conditions})}
-
-\variab{uetbor}{uetbor(nfabor)}{ra}{Friction velocity at the wall,
-in the case of a LES calculation with van Driest-wall damping}
+\item \doxygenanchor{group__coupled__case.html\#itrifb}{\texttt{itrifb}},
+\doxygenanchor{group__coupled__case.html\#itypfb}{\texttt{itypfb}} and
+\doxygenanchor{group__coupled__case.html\#uetbor}{\texttt{uetbor}} arrays.
+\end{itemize}
 
 \minititre{Distance to the wall}
 
-\variab{dispar}{dispar(ncelet)}{ra}{Distance between the center of
-a given volume and the closest wall, when it is necessary
-($R_{ij}-\varepsilon$ with wall echo,
-LES with van Driest-wall damping, or $k-\omega$ (SST) turbulence model)
-and when \texttt{icdpar=1}. The distance between the center of the cell
-\texttt{iel} and the closest wall is \texttt{dispar(iel)}}
-
-\variab{yplpar}{yplpar}{ra}{Non-dimensional distance $y^+$ between a given
-volume and the closest wall, when it is necessary (LES with van
-Driest-wall damping) and when \texttt{icdpar=1}. The dimensionless wall distance $y^+$
-between the center of the cell \texttt{iel} and the closest wall is therefore
-\texttt{yplpar(iel1)}}
+\begin{itemize}
+\item \doxygenanchor{group__auxiliary.html\#dispar}{\texttt{dispar}} and
+\doxygenanchor{group__auxiliary.html\#yplpar}{\texttt{yplpar}} arrays.
+\end{itemize}
 
 \minititre{Pressure drops and porosity}
 
-\variab{icepdc}{icepdc(ncepdc)}{ia}{Number of the \texttt{ncepdc}
-cells in which a pressure drop is imposed. See \texttt{iicepd} and the user
-subroutine \texttt{cs\_user\_head\_losses.f90}}
-
-\variab{ckupdc}{ckupdc(ncepdc,6)}{ra}{Value of the
-coefficients of the pressure drop tensor of the
-\texttt{ncepdc} cells in which a pressure drop is imposed. Note the 6 values are
-sorted as follows: (k11, k22, k33, k12, k23, k33).
-See \texttt{ickpdc} and the user subroutine \texttt{cs\_user\_head\_losses.f90}}
-
-\variab{ncepdc}{ncepdc}{ia}{Number of cells in
-which a pressure drop is imposed. See the user subroutine \texttt{cs\_user\_head\_losses.f90}}
-
-\variab{porosi}{porosi(ncelet)}{ra}{Value of the porosity}
+\begin{itemize}
+\item \doxygenanchor{group__auxiliary.html\#icepdc}{\texttt{icepdc}},
+\doxygenanchor{group__auxiliary.html\#ckupdc}{\texttt{ckupdc}} and
+\doxygenanchor{group__auxiliary.html\#porosi}{\texttt{porosi}} arrays as well as
+\doxygenanchor{group__auxiliary.html\#ncepdc}{\texttt{ncepdc}}\texttt{ncepdc}.
+\end{itemize}
 
 \minititre{Mass sources}
 
-\variab{icetsm}{icetsm(ncetsm)}{ia}{Number of the \texttt{ncetsm}
-cells in which a mass source term is imposed. See \texttt{iicesm} and the user
-subroutine \texttt{cs\_user\_mass\_source\_terms}}
-
-\variab{itypsm}{itypsm(ncetsm,nvar)}{ia}{Type of mass source term
-for each variable (0 for an injection at ambient value, 1 for an
-injection at imposed value). See the user subroutine \texttt{cs\_user\_mass\_source\_terms}}
-
-\variab{ncetsm}{ncetsm}{i}{Number of cells with
-mass sources. See the user subroutine \texttt{cs\_user\_mass\_source\_terms}}
-
-\variab{smacel}{smacel(ncetsm,nvar)}{ra}{Value of the mass source
-term for pressure. For the other variables, eventual imposed injection
-value. See the user subroutine \texttt{cs\_user\_mass\_source\_terms}}
+\begin{itemize}
+\item \doxygenanchor{group__auxiliary.html\#icetsm}{\texttt{icetsm}},
+\doxygenanchor{group__auxiliary.html\#itypsm}{\texttt{itypsm}} and
+\doxygenanchor{group__auxiliary.html\#smacel}{\texttt{smacel}} arrays as well as
+\doxygenanchor{group__auxiliary.html\#ncetsm}{\texttt{ncetsm}}.
+\end{itemize}
 
 \minititre{Wall 1D thermal module}
 
 \variab{nfpt1d}{nfpt1d}{i}{Number of boundary faces which are coupled
-with a wall 1D thermal module. See the user subroutine \texttt{uspt1d}}
+with a wall 1D thermal module. See the user subroutine
+\texttt{cs\_user\_1d\_wall\_thermal.c}}
 
 \variab{ifpt1d}{ifpt1d}{ia} {Array allowing marking out the numbers of
 the \texttt{nfpt1d} boundary faces which are coupled with a wall 1D
 thermal module. The numbers of these boundary faces are
 given by \texttt{ifpt1d(ii)}, with
 1$\leqslant$\texttt{ii}$\leqslant$\texttt{nfpt1d}.
-See the user subroutine \texttt{uspt1d}}
+See the user subroutine \texttt{cs\_user\_1d\_wall\_thermal.c}}
 
 \variab{nppt1d}{nppt1d}{ia}{Number of discretisation cells in the 1D wall for the
 \texttt{nfpt1d} boundary faces which are coupled with a 1D wall thermal module. The
 number of cells for these boundary faces is given by
 \texttt{nppt1d(ii)}, with
 1$\leqslant$\texttt{ii}$\leqslant$\texttt{nfpt1d}. See
-the user subroutine \texttt{uspt1d}}
+the user subroutine \texttt{cs\_user\_1d\_wall\_thermal.c}}
 
 \variab{eppt1d}{eppt1d}{ia}{Thickness of the 1D wall for the
 \texttt{nfpt1d} boundary faces which are coupled with a 1D wall thermal
 module. The wall thickness for these boundary faces is therefore given
 by \texttt{eppt1d(ii)}, with
 1$\leqslant$\texttt{ii}$\leqslant$\texttt{nfpt1d}. See the user subroutine
-\texttt{uspt1d}}
+\texttt{cs\_user\_1d\_wall\_thermal.c}}
 
 \minititre{Others}
 
@@ -2680,221 +2381,6 @@ Some particular points should be reminded:
 \end{list}
 
 %==================================
-\subsubsubsection{Geometry and particle arrays
-      related to Lagrangian modelling}
-%==================================
-
-In this section is given a non-exhaustive list of the main variables
-which may be seen by the user in the Lagrangian module. Most of them
-should not be modified by the user. They are calculated automatically
-from the data. However it may be useful to know their meaning.
-
-\noindent
-These variables are listed in the alphabetical index in the end of this
-document.
-
-\noindent
-The type of each variable is given: integer [i], real number [r],
-integer array [ia], real array [ra].
-
-\minititre{Size of the Lagrangian arrays}
-
-\variab{lndnod}{lndnod}{i}{Size of the array \texttt{icocel} concerning the
-cells $\rightarrow$ faces connectivity (the faces $\rightarrow$ nodes connectivity
-must be given to allow the construction of this connectivity. See note 3
-of section \ref{sec:prg_dimensions})}
-
-\variab{nbpmax}{nbpmax}{i}{Maximum number of particles
-simultaneously allowed in the calculation domain}
-
-\variab{nvp}{nvp}{i}{Number of variables describing the particles for
-which a stochastic differential equation (SDE) is solved}
-
-\variab{nvls}{nvls}{i}{Number of variables describing the supplementary
-user particles for which a SDE is solved}
-
-\variab{nvep}{nvep}{i}{Number of real state variables describing the particles}
-
-\variab{nivep}{nivep}{i}{Number of integer state variables describing the particles}
-
-\variab{ntersl}{ntersl}{i}{Number of source terms representing the backward
-coupling of the dispersed phase on the continuous phase}
-
-\variab{nvlsta}{nvlsta}{i}{Number of volumetric statistical variables }
-
-\variab{nvlsts}{nvlsts}{i}{Number of supplementary user volumetric
-statistical variables}
-
-\variab{nvisbr}{nvisbr}{i}{Number of boundary statistical variables}
-
-\variab{nusbor}{nusbor}{i}{Number of supplementary user boundary statistical
-variables}
-
-\variab{nvgaus}{nvgaus}{i}{Number of Gaussian random variables}
-
-\minititre{Lagrangian arrays}
-
-\variab{icocel}{icocel(lndnod)}{ia}{Cells $rightarrow$ internal/boundary faces
-connectivity. The numbers of the boundary faces are marked out in \texttt{icocel}
-with a negative sign}
-
-\variab{itycel}{itycel(ncelet+1)}{ia}{Array containing the position of
-the first face surrounding every cell in the array \texttt{icocel} (see subroutine
-\texttt{lagdeb} for more details)}
-
-\variablist{eptp}{eptp(nvp,*)}{ra}
-{Variables forming the state vector related to the particles: either at
-the current stage if the Lagrangian scheme is a second-order, or at the
-current time step if the scheme is a first-order. These variables are
-marked out by ``pointers'' whose value can vary between 1 and \texttt{nvp}:
-\begin{list}{$\rightarrow$}{}
-\item \texttt{jmp}: particle mass
-\item \texttt{jdp}: particle diameter
-\item \texttt{jxp}, \texttt{jyp}, \texttt{jzp}: particle coordinates
-\item \texttt{jup}, \texttt{jvp}, \texttt{jwp}: particle velocity components
-\item \texttt{juf}, \texttt{jvf}, \texttt{jwf}: locally undisturbed fluid flow
-      velocity components
-\item \texttt{jtp}, \texttt{jtf}: particle and locally undisturbed fluid flow
-      temperature (\degresC)
-\item \texttt{jcp}: particle specific heat
-\item \texttt{jhp}: coal particle temperature (\degresC)
-\item \texttt{jmch}: mass of reactive coal of the coal particle
-\item \texttt{jmck}: mass of coke of the coal particle
-\item \texttt{jvls(ii): ii\textit{th}} supplementary user variable
-\end{list}
-}
-
-\variab{eptpa}{eptpa(nvp,nbpmax)}{ra}{Variables forming the state vector
-related to the particles: either at the previous stage if the Lagrangian
-scheme is a second-order, or at the previous time step if the Lagrangian
-scheme is a first-order}
-
-\variablist{ipepa}{ipepa(nivep,nbpmax)}{ia}{Integer variables
-related to the particles. They are marked out by the following ``pointers'':
-\begin{list}{$\rightarrow$}{}
-\item \texttt{jisor}: Number of the current cell containing the particle; this
-      number is re-actualised during the trajectography step
-\item \texttt{jinch}: Number of the coal particle
-\end{list}
-}
-
-\variablist{pepa}{pepa(nvep,nbpmax)}{ra}{Real variables
-related to the particles. They are marked out by the following ``pointers'':
-\begin{list}{$\rightarrow$}{}
-\item \texttt{jrtsp}: particle residence time
-\item \texttt{jrpoi}: particle statistic weight
-\item \texttt{jrdck}: coal particle shrinking core diameter
-\item \texttt{jrd0p}: coal particle initial diameter
-\item \texttt{jrr0p}: coal particle initial density
-\end{list}
-}
-
-\variab{indep}{indep(nbpmax)}{ia}{Storage of the cell number of every
-particle at the beginning of a Lagrangian iteration; this data is not
-modified during the iteration}
-
-\variab{vitpar}{vitpar(nbpmax,3)}{ra}{At the beginning of the
-trajectography, \texttt{vitpar} contains the particle velocity vector components;
-the modifications of the particle velocity following every
-particle/boundary interaction are saved in this array; after the
-trajectography and backward coupling steps, \texttt{eptp} is updated with
-\texttt{vitpar}}
-
-\variab{vitflu}{vitflu(nbpmax,3)}{ra}{At the beginning of the
-trajectography, \texttt{vitflu} contains the locally undisturbed fluid flow
-velocity vector components;
-the modifications of the locally undisturbed fluid flow velocity
-following every
-particle/boundary interaction are saved in this array; after the
-trajectography and backward coupling steps, \texttt{eptp} is updated with
-\texttt{vitflu}}
-
-\variab{gradpr}{gradpr(ncelet,3)}{ra}{Pressure gradient of the
-continuous phase}
-
-\variab{gradvf}{gradvf(ncelet,9)}{ra}{Gradient of the continuous phase
-fluid velocity (useful if the complete model is activated: see \texttt{modcpl})}
-
-\variab{cpgd1}{cpgd1(nbpmax)}{ra}{First de-volatilisation term (light
-volatile matters) of the coal particles (useful in the case of backward
-coupling on the continuous phase)}
-
-\variab{cpgd2}{cpgd2(nbpmax)}{ra}{Second devolatilisation term (heavy
-volatile matters) of the coal particles (useful in the case of backward
-coupling on the continuous phase)}
-
-\variab{cpght}{cpght(nbpmax)}{ra}{Heterogeneous combustion term of the
-coal particles (useful in the case of backward coupling on the
-continuous phase)}
-
-\variablist{statis}{statis(ncelet,nvlsta)}{ra}{Averages of the volumetric
-variables related to the dispersed phase They can be accessed by the following ``pointers'':
-\begin{list}{$\rightarrow$}{}
-\item \texttt{ilvx,ilvy,ilvz}: mean dispersed phase velocity
-\item \texttt{ilfv}: dispersed phase volumetric concentration
-\item \texttt{ilpd}: sum of the statistical weights
-\item \texttt{iltp}: dispersed phase temperature (\degresC)
-\item \texttt{ildp}: dispersed phase mean diameter
-\item \texttt{ilmp}: dispersed phase mean mass
-\item \texttt{ilhp}: temperature of the coal particle cloud (\degresC)
-\item \texttt{ilmch}: mass of reactive coal of the coal particle cloud
-\item \texttt{ilmck}: mass of coke of the coal particle cloud
-\item \texttt{ilmdk}: shrinking core diameter of the coal particle cloud
-\item \texttt{ilvu(ii): ii\textit{th}} supplementary user volumetric statistics
-\end{list}
-}
-
-\variablist{statis}{stativ(ncelet,nvlsta)}{ra}{Variances of the volumetric variables
-related to the dispersed phase. they can be accessed by using the same ``pointers'' as
-the ones used for the \texttt{stativ} array.}
-
-\variablist{parbor}{parbor(nfabor,nvisbr)}{ra}{Boundary statistics
-related the dispersed phase; after every particle/boundary
-interaction it is possible to save some data and to calculate averages;
-the boundary statistics are marked out by the following ``pointers'':
-\begin{list}{$\rightarrow$}{}
-\item \texttt{inbr}: number of particle/boundary interactions
-\item \texttt{iflm}: particle mass flow at the boundary faces
-\item \texttt{iang}: mean interaction angle with the boundary faces
-\item \texttt{ivit}: mean interaction velocity with the boundary faces
-\item \texttt{ienc}: mass of coal deposit at the walls
-\item \texttt{iusb(ii): ii\textit{th}} supplementary user boundary statistics
-\end{list}}
-
-\variablist{cs\_glob\_lagr\_source\_terms}{cs\_glob\_lagr\_source\_terms(ncelet,ntersl)}{ra}{Source terms
-corresponding to the backward coupling of the dispersed phase on the
-continuous phase. These source terms are marked out by the following
-``pointers'':
-\begin{list}{$\rightarrow$}{}
-\item \texttt{itsvx}, \texttt{itsvy}, \texttt{itsvz}:
-      explicit source terms for the continuous phase velocity
-\item \texttt{itsli}: implicit source term for the continuous phase velocity and
-      for the turbulent energy if the $k-\varepsilon$ model is used
-\item \texttt{itske}: explicit source term for the turbulent dissipation and the
-      turbulent energy if the $k-\varepsilon$ turbulence model is used for the
-      continuous phase
-\item \texttt{itsr11}, ... \texttt{itsr33}: source terms for the Reynolds stress
-      and the turbulent dissipation if the $R_{ij}-\varepsilon$ turbulence model
-      is used for the continuous phase
-\item \texttt{itsmas}: mass source term
-\item \texttt{itste}, \texttt{itsti}: explicit and implicit thermal source terms
-      for the thermal scalar of the continuous phase
-\item \texttt{itsmv1(icha)}, \texttt{itsmv2(icha)}: source terms respectively
-      for the light and heavy volatile matters
-\item \texttt{itsco}: source term for the carbon released during
-      heterogeneous combustion
-\end{list}}
-
-\variab{croule}{croule(ncelet)}{ra}{Importance function for the
-technique of variance reduction (cloning/fusion of particles)}
-
-\variab{vagaus}{vagaus(nbpmax,nvgaus)}{ra}{Vectors of Gaussian random
-variables}
-
-\variab{auxl}{auxl(nbpmax,3)}{ra}{Auxiliary work array}
-
-
-%==================================
 \subsubsubsection{Variables saved to allow calculation restarts}
 %==================================
 
@@ -3076,6 +2562,8 @@ number 2 and which have the coordinate $X <= 0.01$
 (so that \verb+call getfbr('2 and x <= 0.01', nlelt,lstelt)+);
 we can do a loop (\verb+do ilelt = 1, nlelt+) and
 obtain \verb+ifac = lstelt(ilelt)+.
+
+More examples are available in the \doxygenfile{base_examples.html}{\texttt{doxygen} documentation}.
 
 \minititre{Note: legacy method using explicit families and properties}
 
@@ -3645,6 +3133,8 @@ The following are advanced parameters used in the search algorithm for face inte
 \item \texttt{tmb}: the tree maximum boxes is the maximum number of bounding boxes (BB) which can be linked to a leaf of the tree (not necessary true for the deepest level),
 \item \texttt{tmr}: the tree maximum ratio. The building of the tree structure stops when the number of bounding boxes is superior to the product of \texttt{tmr} with the number of faces to locate. This is an efficient parameter to reduce memory consumption.
 \end{list}
+
+Examples of mesh modification are given in the following \doxygenfile{cs_user_mesh.html}{\texttt{doxygen} documentation}.
 
 %==================================
 \subsubsection{Parameters for periodicity}
@@ -5034,8 +4524,10 @@ may produce negative density values).
       specified in the interface or in \texttt{cs\_user\_parameters.f90}.\\
 To assign a variable value to $C_p$, the user \textbf{must} specify it in the
       interface (with a user law) or assign the value 1 to \texttt{icp} in \texttt{cs\_user\_parameters.f90},
-      and define cell values for field \texttt{icp}
-      in \texttt{cs\_user\_physical\_properties}.
+      and fill for each cell \texttt{iel} the array \texttt{cpro\_cp} which can be retrieved by calling
+      \texttt{field\_get\_val\_s(iprpfl(icp), cpro\_cp)} in \texttt{cs\_user\_physical\_properties}.
+      NB: completing the array \texttt{cpro\_cp} while \texttt{icp=0} induces array
+      overwriting problems and produces wrong results.
 
 \item In the same way, to have variable diffusivities for the scalars
       \texttt{iscal}, the user \textbf{must} specify it in the interface (with a user law) or calling \texttt{field\_set\_key\_int(ivarfl(isca(iscal)), kivisl, 0)}
@@ -5062,8 +4554,8 @@ To assign a variable value to $C_p$, the user \textbf{must} specify it in the
 The subroutine \texttt{usvist} is used to modify the calculation of the turbulent
 viscosity, {\em i.e.} $\mu_t$ in $kg.m^{-1}.s^{-1}$
 (this piece of information, at the mesh cell centres, is conveyed by the
-variable \texttt{propce(iel,ipcvst)}, with
-\texttt{ipcvst =  ipproc(ivisct)}). The
+variable \texttt{cpro\_visct}  which can be retrieved by calling
+\texttt{field\_get\_val\_s(iprpfl(ivisct), cpro\_cp)}). The
 subroutine is called at the beginning of every time step, after the
 calculation of the physical parameters of the flow and of the
 ``conventional'' value of $\mu_t$ corresponding to the chosen turbulence
@@ -6523,8 +6015,9 @@ They allow to:
       The variables which can be activated by the user for each specific
       physics are listed below. The solved variables (of variable indices
       \texttt{ivar}) and the properties of indices \texttt{iprop} (defined at
-      the cell \texttt{iel} by \texttt{propce(iel,ipproc(iprop))}) are listed
-      below:
+      the cell \texttt{iel} by \texttt{cpro\_prop(iel)} which is obtained
+      by calling \texttt{field\_get\_val\_s(iprpfl(iprop), cpro\_prop)})
+      are listed below:
       \begin{list}{$\rightarrow$}{}
        \item EBU pre-mixed flame modelling:
        \begin{list}{-}{}
@@ -6534,7 +6027,7 @@ They allow to:
                \item \texttt{isca(ifm\index{ifm})} mixing rate
                \item \texttt{isca(ihm\index{ihm})} enthalpy, if transported
               \end{list}
-        \item Properties \texttt{propce(iel,ipproc(iprop))}
+        \item Properties \texttt{cpro\_prop(iel)}
               \begin{list}{\texttt{iprop} = }{}
                \item \texttt{itemp\index{itemp}} temperature
                \item \texttt{iym(1)\index{iym(1)}} fuel mass fraction
@@ -6582,7 +6075,7 @@ They allow to:
                             of the coal of class \texttt{icla}, if we are in
                             permeatic conditions
                      \end{list}
-               \item Properties \texttt{propce(iel,ipproc(iprop))}
+               \item Properties \texttt{cpro\_prop(iel)}
                      \begin{list}{\texttt{iprop} = }{}
                       \item \texttt{immel\index{immel}}: molar mass of the gas
                             mixture
@@ -6625,7 +6118,7 @@ They allow to:
                       \item \texttt{isca(if3p2m\index{if3p2m})}: variance of the
                             tracer 3
                      \end{list}
-               \item Properties \texttt{propce(iel,ipproc(iprop))}
+               \item Properties \texttt{cpro\_prop(iel)}
                      \begin{list}{\texttt{iprop} = }{}
                       \item \texttt{itemp1\index{itemp1}}: temperature of the
                             gas mixture
@@ -6675,7 +6168,9 @@ $\rho^{n+1}=\texttt{srrom}*\rho^{n}+(1-\texttt{srrom})\rho^{n+1}$\\
 To initialise or modify (in case of a continuation) values of transported
 variables and of the time step, the standard subroutine \texttt{cs\_user\_initialization} is used.
 
-Physical properties are stored in \texttt{propce} (cell center). For instance, \texttt{propce(iel, ipproc(irom  ))} is \texttt{rom(iel)}, the mean density (in $kg.m^{-3}$).\\
+Physical properties are stored using the \texttt{cs\_field} API (cell center). For instance, to obtain \texttt{rom(iel)},
+the mean density (in $kg.m^{-3}$), one must declare a \texttt{ncelet} array \texttt{cpro\_rom} and then call
+\texttt{call field\_get\_val\_s(iprpfl(irom), cpro\_rom)}.\\
 Physical properties (\texttt{rom, viscl, cp, ...}) are computed in \texttt{ppphyv} and are not to be modified here.
 
 The \texttt{cs\_user\_initialization-fuel.f90} example illustrates how the user
@@ -6970,71 +6465,6 @@ defined as (\texttt{iscalt}$>0$).
  and the wall in order to convert the enthalpy to temperature and vice-versa.
  This function has not been tested and is firmly discouraged. If the thermal
  variable is the total (compressible) energy, the thermal module will not work.}
-
-\bigskip
-
-This procedure  is called twice, at initialisation and again at each time step.
-
-\begin{list}{$\bullet$}{}
-\item In the first call (initialisation) all of the boundary faces that will be treated
- as a coupled wall are marked out. This figure is written noted as
- \texttt{nfkpt1d}. It applies dimension to the arrays in the thermal module.
- \texttt{nfkpt1d} will be at 0 if there are no coupled faces (it is in fact the
- default value, the remainder of the subroutine is not used in this case).
- The parameter \texttt{isuit1} also must be defined, this indicates if the
- temperature of the wall must be initialised or written in the file (stored in
- the variable \texttt{filmt1}).
-\item The 2nd call (initialisation) again concern the wall faces, it completes
- the \texttt{ifpt1d} array of dimension \texttt{nfpt1d}.
- \mbox{\texttt{ifpt1d(ifbt1d)}} is the number
- \texttt{ifbt1d}\raisebox{1ex}{\small th} boundary faces coupled with the thermal module
- of a 1D wall. The directional parameters are then completed for a pseudo
- wall associated to each face
-\begin{list}{-}{}
-\item \texttt{nppt1d(nfpt1d)\index{nppt1d}}: number of cells in the 1D mesh associated
- to the pseudo wall.
-\item \texttt{eppt1d(nfpt1d)\index{eppt1d}}: thickness of the pseudo wall.
-\item \texttt{rgpt1d(nfpt1d)\index{rgpt1d}}: geometry of the pseudo wall mesh (refined
- as a fluid if \texttt{rgt1d} is less than 1)
-\item \texttt{tppt1d(nfpt1d)\index{tppt1d}}: initialisation temperature of the wall
-(uniform in thickness). In the course of the calculation, the array stores the
- temperature of the solid at the fluid/solid interface.
-\end{list}
-
-Other than for re-reading a file (\texttt{ficmt1}), \texttt{tppt1d} is not used.
-\texttt{nppt1d}, \texttt{ifpt1d}, \texttt{rgpt1d} and \texttt{eppt1d} are
-compared to data from the follow-up file and they must be identical.
-
-{\em WARNING: The test in \texttt{ifpt1d} implicitly assumes that the array is completed
- in ascending order (i.e \texttt{ifpt1d(ii)}$>$\texttt{ifpt1d(jj)} if ii$>$jj.
- This will be the case if the coupled faces are defined starting from the unique loop on the
-boundary faces (as in the example). If this is not the case, contact the development
- team to short circuit the test.}
-
-\item The third call (at each time step) is to confirm that all the arrays
- involving physical parameter and external boundary conditions have been completed.
-\begin{list}{-}{}
-\item \texttt{iclt1d(nfpt1d)\index{iclt1d}}:Typical boundary condition at the external
- (pseudo) wall: Dirichlet condition (\texttt{iclt1d}=1) or flux condition (\texttt{iclt1d}=3)
-\item \texttt{tept1d(nfpt1d)\index{tept1d}}: External temperature of the pseudo wall in the
- Dirichlet case.
-\item \texttt{hept1d(nfpt1d)\index{hept1d}}: External coefficient of transfer in the pseudo
- wall under Dirichlet conditions (in $W.m^{-2}.K^.$).
-\item \texttt{fept1d(nfpt1d)\index{nfpt1d}}: External heat flux in the pseudo wall under
-flux conditions(in $W.m^{-2}$, negative value for energy entering the wall).
-\item \texttt{xlmt1d(nfpt1d)\index{xlmt1d}}: Conductivity$\lambda$ of the wall uniform
-in thickness (in $W.m^{-1}.K^{-1}$).
-\item \texttt{rcpt1d(nfpt1d)\index{rcpt1d}}: Volumetric heat capacity $\rho C_p$ of the
-wall uniform in thickness (in $J.m^{-3}.K^{-1}$).
-\item \texttt{dtpt1d(nfpt1d)\index{dtpt1d}}: Physical time step associated with the solved
- 1D equation of the pseudo wall(which can be different from the time step in the
- calculation).
-\end{list}
-
-\end{list}
-
-The $3^{rd}$ call, done at each time step, allows to impose boundary conditions
- and physical values in time.
 
 %==================================
 \subsubsection{Fluid-Thermal coupling with \syrthes}
@@ -7735,7 +7165,7 @@ variables. Particular care should be taken with non-linear laws (for example, a
  $3^{rd}$ degree polynomial law giving negative values of density)
 
 {\em WARNING: In the electric module, all of the physical properties are considered as variables
- and are therefore stored in the \texttt{propce} array. \texttt{cp0}, \texttt{viscls0} and \texttt{viscl0}
+ and are therefore stored using the \texttt{cs\_field} API. \texttt{cp0}, \texttt{viscls0} and \texttt{viscl0}
  are not used}
 
 For the Joule effect, the user is required to supply the physical properties in the
@@ -7854,8 +7284,7 @@ and \texttt{crit\_reca} the plane used for resetting of electromagnetic variable
 {Post-processing output}
 %==================================
 
-The algebraic variables related to the electric module are provided by default as long as
-that they are not explicitly contained in the \texttt{propce} array:
+The algebraic variables related to the electric module are provided by default:
 \begin{list}{-}{}
 \item gradient of real potential in $V m^{-1}$ ($\grad Pot_R = -\vect{E}$)
 \item density of real current in $A m^{-2}$  ($\vect{j}=\sigma \vect{E}$)
@@ -8444,12 +7873,20 @@ atmospheric application:
 \begin{itemize}
 \item \texttt{cs\_user\_source\_terms.f90}: to add a source term in the
 prognostic equations for forest canopy modelling, wind turbine wake modelling...
+See the associated \doxygenfile{cs_user_source_terms.html}{\texttt{doxygen} documentation
+for examples of use of \texttt{cs\_user\_source\_terms.f90}}.
 \item \texttt{cs\_user\_parameters.f90}: to activate the Cressman interpolation.
-For example, it is used to impose inhomogeneous boundary conditions.
+For example, it is used to impose inhomogeneous boundary conditions. See the associated
+\doxygenfile{f_parameters.html}{\texttt{doxygen} documentation for examples of use of
+\texttt{cs\_user\_parameters.f90}}.
 \item \texttt{cs\_user\_extra\_operations-extract.f90}: to generate vertical
-profiles for post processing.
+profiles for post processing. See the associated
+\doxygenfile{cs_user_extra_operations_examples.html}{\texttt{doxygen} documentation
+for examples of use of \texttt{cs\_user\_extra\_operations.f90}}.
 \item \texttt{cs\_user\_boundary\_conditions-atmospheric.f90}: show how to set
 up the boundary conditions and to put a heterogeneous roughness length...
+See the associated \doxygenfile{cs_user_boundary_conditions_examples.html}{\texttt{doxygen}
+documentation for examples of use of \texttt{cs\_user\_boundary\_conditions.f90}}.
 \end{itemize}
 %
 \paragraph{Remark:}
@@ -8458,7 +7895,10 @@ following have to be used:
 \begin{itemize}
 \item \texttt{cs\_user\_initialization-atmospheric.f90}: allows to initialize
 or modify (in case of a restarted calculation) the calculation variables and
-the values of the time step.
+the values of the time step. See the associated
+\doxygenfile{user_initialization.html}{\texttt{doxygen} documentation for
+examples of use of \texttt{cs\_user\_initialization.f90}}.
+
 \item \texttt{cs\_user\_boundary\_conditions-atmospheric.f90}: allows to define
 all the boundary conditions. For each type of boundary condition, faces should
 be grouped as physical zones characterized by an arbitrary number \texttt{izone}

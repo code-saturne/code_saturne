@@ -81,20 +81,40 @@ module cstphy
   !> source, to add new equations of state.
   integer(c_int), pointer, save :: ieos
 
-  !> isobaric specific heat \f$ C_p \f$
+  !> indicates if the isobaric specific heat \f$C_p\f$ is variable:
+  !>  - 0: constant, no property field is declared
+  !>  - 1: variable, \f$C_p\f$ is declared as a property field\n
+  !> When gas or coal combustion is activated, \ref icp is automatically set to 0
+  !> (constant \f$C_p\f$). With the electric module, it is automatically set to 1.
+  !> The user is not allowed to modify these default choices.\n
+  !> When \ref icp = 1 is specified, the code automatically modifies this value to
+  !> make \ref icp designate the effective index-number of the property "specific heat".
+  !> For each cell iel, the value of \f$C_p\f$ is then specified by the user in the
+  !> appropriate subroutine (\ref cs_user_physical_properties for the standard physics).\n
+  !> Useful if there is 1\f$\leqslant\f$N\f$\leqslant\f$\ref dimens::nscal "nscal" so that
+  !> iscsth(n)=1 (there is a scalar temperature) or with the compressible module
+  !> for non perfect gases.
   integer(c_int), pointer, save :: icp
 
   !> isochoric specific heat \f$ C_v \f$
   integer(c_int), pointer, save :: icv
 
   !> variable density field \f$ \rho \f$:
-  !>    - 1: true
-  !>    - 0: false
+  !>    - 1: true, its variation law be given either
+  !> in the GUI, or in the user subroutine
+  !> \ref cs_user_physical_properties .\n
+  !> See \subpage physical_properties for more informations.
+  !>    - 0: false, its value is the reference density
+  !> \ref ro0.
   integer(c_int), pointer, save :: irovar
 
   !> variable viscosity field \f$ \mu \f$:
-  !>    - 1: true
-  !>    - 0: false
+  !>    - 1: true, its variation law be given either
+  !> in the GUI, or in the user subroutine
+  !> \ref cs_user_physical_properties .\n
+  !> See \subpage physical_properties for more informations.
+  !>    - 0: false, its value is the reference molecular
+  !> dynamic viscosity \ref viscl0
   integer(c_int), pointer, save :: ivivar
 
   !> Sutherland law for laminar viscosity and thermal conductivity
@@ -103,7 +123,8 @@ module cstphy
   !> - 0: low temperature law (linear except for helium)
   integer(c_int), pointer, save :: ivsuth
 
-  !> reference density.
+  !> reference density.\n
+  !>
   !> Negative value: not initialized.
   !> Its value is not used in gas or coal combustion modelling (it will be
   !> calculated following the perfect gas law, with \f$P0\f$ and \f$T0\f$).
@@ -130,14 +151,15 @@ module cstphy
   !> pressure
   real(c_double), pointer, save :: ro0
 
-  !> reference molecular dynamic viscosity.
-  !> Negative value: not initialized.
+  !> reference molecular dynamic viscosity.\n
   !>
+  !> Negative value: not initialized.
   !> Always useful, it is the used value unless the user specifies the
   !> viscosity in the subroutine \ref usphyv
   real(c_double), pointer, save :: viscl0
 
-  !> reference pressure for the total pressure.
+  !> reference pressure for the total pressure.\n
+  !>
   !> except with the compressible module, the total pressure \f$P\f$ is evaluated
   !> from the reduced pressure \f$P^*\f$ so that \f$P\f$
   !> is equal to \ref p0 at the reference position \f$\vect{x}_0\f$
@@ -146,7 +168,8 @@ module cstphy
   !> always Useful
   real(c_double), pointer, save :: p0
 
-  !> reference value for the reduced pressure \f$P^*\f$ (see \ref ro0).
+  !> reference value for the reduced pressure \f$P^*\f$ (see \ref ro0).\n
+  !>
   !> It is especially used to initialise the reduced pressure and as a reference
   !> value for the outlet boundary conditions.
   !> For an optimised precision in the resolution of \f$P^*\f$,
@@ -584,7 +607,11 @@ module cstphy
   real(c_double), pointer, save :: xlomlg
 
   !> constant used in the definition of LES filtering diameter:
-  !> \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}} \f$
+  !> \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}}\f$
+  !> \ref xlesfl is a constant used to define, for
+  !> each cell $\Omega_i$, the width of the (implicit) filter:
+  !> \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$\n
+  !> Useful if and only if \ref iturb = 40 or 41
   double precision, save :: xlesfl
 
   !> constant used to define, for each cell \f$Omega_i\f$,

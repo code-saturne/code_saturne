@@ -165,11 +165,12 @@ module pointe
   !> \addtogroup auxiliary
   !> \{
 
-
+  !> \anchor ncepdc
   !> number of cells in which a pressure drop is imposed.
   !> See the user subroutine \ref cs_user_head_losses
   integer, save :: ncepdc
 
+  !> \anchor icepdc
   !> number of the \c ncepdc cells in which a pressure drop is imposed.
   !> See \c {iicepd} and the user subroutine \ref cs_user_head_losses
   integer, allocatable, dimension(:) :: icepdc
@@ -177,6 +178,7 @@ module pointe
   !> zone with head losses
   integer, allocatable, dimension(:) :: izcpdc
 
+  !> \anchor ckupdc
   !> value of the coefficients of the pressure drop tensor of the
   !> \c ncepdc cells in which a pressure drop is imposed.
   !> Note the 6 values are sorted as follows: (k11, k22, k33, k12, k23, k33).
@@ -190,10 +192,12 @@ module pointe
   !> \c rcodcl(ifac, \ref ipr, 2).
   double precision, allocatable, dimension(:) :: b_head_loss
 
+  !> \anchor ncetsm
   !> number of the \c ncetsm cells in which a mass source term is imposed.
   !> See \c iicesm and the user subroutine \ref cs_user_mass_source_terms
   integer, save :: ncetsm
 
+  !> \anchor icetsm
   !> number of the \c ncetsm cells in which a mass source term is imposed.
   !> See \c iicesm and the user subroutine \ref cs_user_mass_source_terms}}
   integer, allocatable, dimension(:) :: icetsm
@@ -201,12 +205,14 @@ module pointe
   !> zone where a mass source term is imposed.
   integer, allocatable, dimension(:) :: izctsm
 
+  !> \anchor itypsm
   !> type of mass source term for each variable
   !> - 0 for an injection at ambient value,
   !> - 1 for an injection at imposed value.
   !> See the user subroutine \ref cs_user_mass_source_terms
   integer, allocatable, dimension(:,:) :: itypsm
 
+  !> \anchor smacel
   !> value of the mass source term for pressure.
   !> For the other variables, eventual imposed injection value.
   !> See the user subroutine \ref cs_user_mass_source_terms

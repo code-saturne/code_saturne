@@ -81,17 +81,41 @@ BEGIN_C_DECLS
         0 if time step is uniform in space, 0 if is is local
         (in which case the time value is only a reference)
   \var  cs_time_step_t::nt_prev
-        absolute time step number reached by previous computation
+        Absolute time step number for previous calculation.
+        In the case of a restart calculation, \ref nt_prev
+        is read from the restart file. Otherwise, it is
+        initialised to 0 \ref nt_prev is initialised
+        automatically by the code, its value is not to be
+        modified by the user.
   \var  cs_time_step_t::nt_cur
         current absolute time step number
+        In case of restart, this is equal to \ref nt_prev + number
+        of new iterations.
   \var  cs_time_step_t::nt_max
         maximum absolute time step number
+        For the restart calculations, \ref nt_max takes into
+        account the number of time steps of the previous calculations.
+        For instance, after a first calculation of 3 time steps, a
+        restart file of 2 time steps is realised by setting
+        \ref nt_max = 3+2 = 5
   \var  cs_time_step_t::nt_ini
         number of time step for initialization
   \var  cs_time_step_t::t_prev
-        physical time reached by previous computation
+        Absolute time value for previous calculation.
+        In the case of a restart calculation, \ref t_prev is read from
+        the restart file. Otherwise it is initialised to 0.\n
+        \ref t_prev is initialised automatically by the code,
+        its value is not to be modified by the user.
   \var  cs_time_step_t::t_cur
-        current absolute time
+        Current absolute time.
+        For the restart calculations, \ref t_cur takes
+        into account the physical time of the previous calculations.\n
+        If the time step is uniform (\ref cs_time_step_options_t::idtvar "idtvar"
+        = 0 or 1), \ref t_cur increases of \ref dt (value of the time step) at each iteration.
+        If the time step is non-uniform (\ref cs_time_step_options_t::idtvar "idtvar"=2),
+        \ref t_cur increases of \ref cs_time_step_options_t::dtref "dtref" at each time step.\n
+        \ref t_cur is initialised and updated automatically by the code,
+        its value is not to be modified by the user.
   \var  cs_time_step_t::t_max
         maximum absolute time
 
@@ -113,9 +137,22 @@ BEGIN_C_DECLS
           (values are read from checkpoint file).
 
   \var  cs_time_step_options_t::iptlro
-        Clip the time step with respect to the buoyant effects
-        - 0: false
-        - 1: true.
+        Clip the time step with respect to the buoyant effects\n
+
+        When density gradients and gravity are present, a local thermal time
+        step can be calculated, based on the Brunt-Vaisala frequency. In
+        numerical simulations, it is usually wise for the time step to be
+        lower than this limit, otherwise numerical instabilities may appear.\n
+        \ref iptlro indicates whether the time step should be limited to the
+        local thermal time step (=1) or not (=0).\n
+        When \ref iptlro=1, the listing shows the number of cells where the
+        time step has been clipped due to the thermal criterion, as well as
+        the maximum ratio between the time step and the maximum thermal time
+        step. If \ref idtvar=0, since the time step is fixed and cannot be
+        clipped, this ratio can be greater than 1. When \ref idtvar > 0, this
+        ratio will be less than 1, except if the constraint \ref dtmin has
+        prevented the code from reaching a sufficiently low value for \ref dt.
+        Useful when density gradients and gravity are present.
 
   \var  cs_time_step_options_t::idtvar
         Option for a variable time step
@@ -123,32 +160,48 @@ BEGIN_C_DECLS
         -  0: constant time step
         -  1: time step constant in space but variable in time
         -  2: variable time step in space and in time.
+        If the numerical scheme is a second-order in time, only the
+        option 0 is allowed.
 
   \var  cs_time_step_options_t::dtref
-        Reference time step.
+        Reference time step.\n
+
+        This is the time step value used in the case of a calculation run with a
+        uniform and constant time step, i.e. \ref idtvar =0 (restart calculation
+        or not). It is the value used to initialize the time step in the case of
+        an initial calculation run with a non-constant time step(\ref idtvar=1 or
+        2). It is also the value used to initialise the time step in the case of
+        a restart calculation in which the type of time step has been changed
+        (for instance, \ref idtvar=1 in the new calculation and \ref idtvar = 0 or
+        2 in the previous calculation).\n
+        See \ref user_initialization_time_step for examples.
 
   \var  cs_time_step_options_t::coumax
-        Maximum Courant number (when idtvar is different from 0).
+        Maximum Courant number (when \ref idtvar is different from 0).
 
   \var  cs_time_step_options_t::cflmmx
         Max. Courant number for the continuity equation in compressible model.
 
   \var  cs_time_step_options_t::foumax
-        Maximum Fourier number (when idtvar is different from 0).
+        Maximum Fourier number (when \ref idtvar is different from 0).
 
   \var  cs_time_step_options_t::varrdt
-        Allowed relative variation of dt (when idtvar different from 0).
+        Maximum allowed relative increase in the calculated time step value
+        between two successive time steps (to ensure stability, any decrease
+        in the time step is immediate and without limit).\n
+        Useful when idtvar is different from 0.
 
   \var  cs_time_step_options_t::dtmin
-        Minimum value of dt (when idtvar is different from 0).
-        Take dtmin = min (ld/ud, sqrt(lt/(gdelta rho/rho)), ...).
+        Lower limit for the calculated time step when idtvar is different from 0.
+        Take \ref dtmin = min (ld/ud, sqrt(lt/(gdelta rho/rho)), ...).
 
   \var  cs_time_step_options_t::dtmax
-        Maximum value of dt (when idtvar is different from 0).
-        Take dtmax = max (ld/ud, sqrt(lt/(gdelta rho/rho)), ...).
+        Upper limit for the calculated time step when idtvar is different from 0.
+        Take \ref dtmax = max (ld/ud, sqrt(lt/(gdelta rho/rho)), ...).
 
   \var  cs_time_step_options_t::relxst
         Relaxation coefficient for the steady algorithm.
+        \ref relxst = 1 : no relaxation.
 
 */
 
