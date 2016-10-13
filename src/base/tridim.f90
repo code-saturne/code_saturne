@@ -1471,7 +1471,7 @@ if (ippmod(idarcy).eq.1) then
   !    -> sera modifie lors de la restructuration des zones de bord
 
     call uiclim &
-  ( ntcabs, nfabor, ippmod(idarcy),                                &
+  ( nfabor, ippmod(idarcy),                                &
     nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
     isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
