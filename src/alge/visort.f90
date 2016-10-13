@@ -53,14 +53,12 @@
 ! \param[in]     imvisf         Face viscosity computation method
 !                               = 0 arithmetic
 !                               = 1 harmonic
-! \param[in]     w1,2,3(ncelet) Viscosity values
-! \param[out]    viscf(nfac)    visc*surface/dist at internal faces
-! \param[out]    viscb(nfabor   visc*surface/dist at boundary faces
+! \param[in]     w1,2,3         Viscosity values
+! \param[out]    viscf          visc*surface/dist at internal faces
+! \param[out]    viscb          visc*surface/dist at boundary faces
 !______________________________________________________________________________!
 
 subroutine visort &
-!================
-
  ( imvisf ,                                                       &
    w1     , w2     , w3     ,                                     &
    viscf  , viscb  )
