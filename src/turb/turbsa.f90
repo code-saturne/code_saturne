@@ -27,7 +27,9 @@
 !> \file turbsa.f90
 !> \brief Solving op the equation of \f$ \tilde{\nu} \f$, which is the scalar
 !>        quantity defined by the Spalart-Allmaras model for 1 time-step.
-
+!>
+!> Please refer to the <a href="../../theory.pdf#70"><b>Spalart-Allmaras model</b></a>
+!> section of the theory guide for more theoretical informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

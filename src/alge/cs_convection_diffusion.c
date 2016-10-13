@@ -85,9 +85,13 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*! \file  cs_convection_diffusion.c
-
-*/
-
+ *
+ * \brief Convection-diffusion operators.
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#32"><b>convection-diffusion</b></a> section of the
+ * theory guide for more theoretical informations.
+ */
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -1636,6 +1640,8 @@ cs_max_limiter_building(int              f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * <a name="cs_convection_diffusion_scalar"></a>
+ *
  * \brief Add the explicit part of the convection/diffusion terms of a
  * standard transport equation of a scalar field \f$ \varia \f$.
  *
@@ -1650,6 +1656,10 @@ cs_max_limiter_building(int              f_id,
  * Warning:
  * - \f$ Rhs \f$ has already been initialized before calling bilsc2!
  * - mind the sign minus
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#127"><b>bilsc2</b></a> section of the
+ * theory guide for more theoretical informations.
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
@@ -7664,10 +7674,16 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  * \brief Update the face mass flux with the face pressure (or pressure
  * increment, or pressure double increment) gradient.
  *
+ * <a name="itrmas"></a>
+ *
  * \f[
  * \dot{m}_\ij = \dot{m}_\ij
  *             - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
  * \f]
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#225"><b>itrmas/itrgrp</b></a> section of the
+ * theory guide for more theoretical informations.
  *
  * \param[in]     f_id          field id (or -1)
  * \param[in]     m             pointer to mesh

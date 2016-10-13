@@ -27,6 +27,8 @@ operations done by \CS.
 
 \section*{Geometric Quantities\label{sec:geo_quant}}
 
+See the \doxygenfile{cs__mesh__quantities_8c.html}{programmers reference of the dedicated subroutine} for further details.
+
 \subsection*{Normals and Face Centers%
              \label{sec:geo_quant.normal}}
 
@@ -706,6 +708,10 @@ principle is to mitigate the local defects by averaging
 the mesh quality. It moves vertices using an iterative
 process which is expected to converge to a mesh with better averaged
 warping criteria.
+
+See the \doxygenanchor{cs__mesh__smoother_8c.html\#unwarp}{programmers
+reference of the dedicated subroutine} for further details.
+
 \section*{Warping criterion in \CS\label{sec:warping_criterion}}
 The warp face quality criterion in \CS represents the non coplanarity
 in space of $N$ points $P_{i=1:N}$ $(N > 3)$.
@@ -839,7 +845,7 @@ The algorithm stops after $N_{max}$ iterations ($51$ by default in \CS).
 \subsection*{Specific treatment for boundary faces
 \label{sec:unwarping_boundary}}
 The unwarping algorithm may modify the mesh geometry. The function
-\texttt{fit\_by\_feature} allows to fix boundary faces according to a feature angle.
+\texttt{fix\_by\_feature} allows to fix boundary faces according to a feature angle.
 The feature angle between a vertex and one of its adjacent faces is defined
 by the angle between the vertex normal and the face normal.
 
@@ -854,3 +860,6 @@ if $\theta = 90^{\circ}$ all boundary vertices will be free.
 
 Fixing all boundary vertices ensures the geometry is preserved, but reduces
 the smoothing algorithm's effectiveness.
+
+See the \doxygenanchor{cs__mesh__smoother_8c.html\#fix_by_feature}{programmers
+reference of the dedicated subroutine} for further details.

@@ -79,6 +79,8 @@ $0.09$ & $1.44$ & $1.92$ & $1.0$ & $1.3$
 $C_{\varepsilon_3}=0$ if $\mathcal{G}\geqslant0$ (unstable stratification)
 and $C_{\varepsilon_3}=1$ if $\mathcal{G}\leqslant0$ (stable stratification).
 
+See the \doxygenfile{turbke_8f90.html}{programmers reference of the dedicated subroutine} for further details.
+
 %-------------------------------------------------------------------------------
 %\subsection{$k-\varepsilon$ with Linear Production (\emph{LP}) model}
 
@@ -468,7 +470,7 @@ with $A^g_\fib=0$ and
 the profile of $\tilde{\nu}$ is imposed, the value is deduced from the profiles imposed on $k$ and $\varepsilon$ for a $k-\varepsilon$ turbulence
 model assuming $\tilde{\nu } \simeq \nu_T$.
 
-
+See the \doxygenfile{turbsa_8f90.html}{programmers reference of the dedicated subroutine} for further details.
 
 %-------------------------------------------------------------------------------
 \section{Differential Reynolds Stress Models (\emph{DRSM})}
@@ -553,7 +555,7 @@ $\tens{\Phi}$ is the term representing pressure-velocity correlations:
 \end{equation}
 
 The term $\tens{\phi}_{w}$ is called \emph{wall echo term} (by default, it is not
-accounted for: see \doxygenfile{turrij_8f90}{html programmer's documentation of the subroutine} and the appendix \ref{ap:turrij}).
+accounted for: see \doxygenfile{turrij_8f90.html}{html programmer's documentation of the subroutine} and the appendix \ref{ap:turrij}).
 
 The dissipation term, $\tens{\varepsilon}$ , is considered isotropic:
 \nomenclature[gepsilont2]{$\tens{\varepsilon}$}{turbulent kinetic energy dissipation tensor \nomunit{$m^{2}.s^{-3}$}}
@@ -627,6 +629,8 @@ $\overline{\Delta }$ is the filter width associated with the finite volume
 formulation (implicit filtering which corresponds to the integration over a
 cell). The value recommended for hexahedral cells is: $\overline{\Delta }
 =2 \norm{\vol{\celli}}^{\frac{1}{3}}$where $\norm{\vol{\celli}}$ is the volume of the cell $\celli$.
+
+See the \doxygenfile{vissma_8f90.html}{programmers reference of the dedicated subroutine} for further details.
 
 %-------------------------------------------------------------------------------
 \subsection{Dynamic Smagorinsky model}
@@ -733,6 +737,7 @@ one vertex with the cell considered). More precisely, the average value
 C = \frac{\widetilde{ \tens{M} : \tens{L}}} {\widetilde{ \tens{M} : \tens{M}}}
 \end{equation}
 
+See the \doxygenfile{visdyn_8f90.html}{programmers reference of the dedicated subroutine} for further details.
 
 %-------------------------------------------------------------------------------
 %\subsection{WALE model}

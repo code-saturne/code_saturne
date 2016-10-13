@@ -22,6 +22,10 @@
 
 !> \file cavitation.f90
 !> Module for cavitation modeling
+!>
+!> Please refer to the
+!> <a href="../../theory.pdf#120"><b>cavitation model</b></a> section of the
+!> theory guide for more theoretical informations.
 
 module cavitation
 

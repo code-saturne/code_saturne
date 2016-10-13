@@ -61,6 +61,16 @@
 
 BEGIN_C_DECLS
 
+/*----------------------------------------------------------------------------*/
+/*! \file cs_mesh_bad_cells.c
+ *
+ * \brief Detect bad cells within meshes.
+ *
+ * Please refer to the <a href="../../theory.pdf#396"><b>flagging of bad cells</b></a>
+ * section of the theory guide for more theoretical informations.
+ */
+/*----------------------------------------------------------------------------*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================

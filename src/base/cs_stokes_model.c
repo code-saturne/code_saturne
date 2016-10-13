@@ -100,7 +100,11 @@ BEGIN_C_DECLS
   \var  cs_stokes_model_t::rnormp
         normed residual for the pressure step
   \var  cs_stokes_model_t::arak
-        Arakawa multiplicator for the Rhie and Chow filter (1 by default)
+        <a name="arak"></a>
+        Arakawa multiplicator for the Rhie and Chow filter (1 by default).\n\n
+        Please refer to the
+        <a href="../../theory.pdf#44"><b>Rhie and Chow filter</b></a> section
+        of the theory guide for more theoretical informations.
   \var  cs_stokes_model_t::ipucou
         indicates the algorithm for velocity/pressure coupling:
         - 0: standard algorithm,
@@ -138,15 +142,16 @@ BEGIN_C_DECLS
         - 0: false (default)
         (see \ref condli, useful in case of coupling with syrthes)
   \var  cs_stokes_model_t::iphydr
+        <a name="iphydr"></a>
         improve static pressure algorithm
         Take into account the balance or imbalance between the pressure
         gradient and source terms (as gravity and head losses)
-        - 1: impose the equilibrium of the hydrostaic part of the pressure with
+        - 1: impose the equilibrium of the hydrostatic part of the pressure with
           any external force, even head losses
         - 0: no treatment (default)
         - 2: hydrostatic pressure computation with a apriori momentum equation
              to obtain a hydrostatic pressure taking into account the imbalance
-             between the pressure gradient and the gravity source term.\n
+             between the pressure gradient and the gravity source term.\n\n
         When the density effects are important, the choice of \ref iphydr = 1
         allows to improve the interpolation of the pressure and correct the
         non-physical velocities which may appear in highly stratified areas
@@ -165,6 +170,9 @@ BEGIN_C_DECLS
         just along an outlet boundary, it is necessary to specify \ref icalhy = 0
         in order to deactivate the recalculation of the hydrostatic pressure at
         the boundary, which may otherwise cause instabilities.
+        Please refer to the
+        <a href="../../theory.pdf#44"><b>handling of the hydrostatic pressure</b></a>
+        section of the theory guide for more theoretical informations.
   \var  cs_stokes_model_t::igprij
         improve static pressure algorithm
         - 1: take -div(rho R) in the static pressure

@@ -20,33 +20,34 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function :
+! ----------
+
+!> \file schtmp.f90
+!>
+!> \brief Management of the mass flux, the viscosity, the density, the specific
+!> heat  and the tsnsa array in case of a theta-scheme.
+!>
+!> Please refer to the <a href="../../theory.pdf#24"><b>mass flux</b></a> section
+!> of the theory guide for more theoretical informations.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments                                                                    !
+!______________________________________________________________________________!
+!  mode           name               role                                      !
+!______________________________________________________________________________!
+!> \param[in]     nscal              total number of scalars
+!> \param[in]     iappel             call number (before of after phyvar                                         !
+!> \param[in]     propce(ncelet, *)  physical properties at cell centers
+!______________________________________________________________________________
+
 subroutine schtmp &
 !================
 
- ( nscal  , iappel )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! TRAITEMENT DU FLUX DE MASSE, DE LA VISCOSITE, DE LA MASSE
-! VOLUMIQUE, DE LA CHALEUR SPECIFIQUE ET DU TABLEAU TSNSA
-! DANS LE CAS D'UN THETA SCHEMA
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! iappel           ! e  ! <-- ! numero de l'appel (avant ou apres              !
-!                  !    !     ! phyvar                                         !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+ ( nscal  , iappel ,                                              &
+   propce )
 
 !===============================================================================
 ! Module files

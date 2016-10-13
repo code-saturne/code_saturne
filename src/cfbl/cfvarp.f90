@@ -19,7 +19,6 @@
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
-
 !> \file cfvarp.f90
 !> \brief Variables definition initialization for the compressible module,
 !> according to calculation type selected by the user.

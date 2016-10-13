@@ -34,6 +34,7 @@ The wall boundary conditions refer to all the boundary conditions for the veloci
 
 We present the calculation of the pair of coefficients $A_b$ and $B_b$ which are used during the computation of certain discretized terms of the equations to solve, and which allow in particular to determine a value associated with the boundary faces $f_{b,int}$ (at a point located at the "centre" of the boundary face, the barycentre of its vertices) using the formulae   $f_{b,int} = A_b+B_b\,f_{I'}$ ($f_{I'}$ is the value of the variable at point $I'$, the projection of the centre of the boundary cell onto the line normal to the boundary face and passing through its centre~: see figure~\ref{Base_Clptur_fig_flux_clptur}).
 
+See the \doxygenfile{clptur_8f90.html}{programmers reference of the dedicated subroutine} for further details.
 
 \begin{figure}[h]
 \centerline{\includegraphics[height=7cm]{fluxbord}}

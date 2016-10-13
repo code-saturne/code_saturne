@@ -28,6 +28,10 @@
 !>
 !> \brief Solving the \f$ k - \epsilon \f$ for incompressible flows or slightly
 !> compressible flows for one time step.
+!>
+!> Please refer to the <a href="../../theory.pdf#66"><b>\f$k - \epsilon \f$ model</b></a>
+!> section of the theory guide for more theoretical informations, as well as the
+!> <a href="../../theory.pdf#265"><b>turbke</b></a> section.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

@@ -81,8 +81,12 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_elec_model.c
-        Base electrical model data.
+ * \file cs_elec_model.c
+ *
+ * \brief Base electrical model data.
+ *
+ * Please refer to the <a href="../../theory.pdf#357"><b>electric arcs</b></a>
+ * section of the theory guide for more theoretical informations.
 */
 
 /*----------------------------------------------------------------------------*/

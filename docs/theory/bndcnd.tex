@@ -56,7 +56,7 @@ or Dirichlet type (when the value of the field variable is prescribed), or mixed
 called Robin type (when a combination linking the field variable to its derivative flux
 is imposed).
 
-The code (see the \href{../../../doxygen/src/html/condli_8f90.html}{programmers reference of the dedicated subroutine})
+The code (see the \doxygenfile{condli_8f90.html}{programmers reference of the dedicated subroutine})
  transforms the boundary conditions provided by the user
  into two internal formats of representation of the boundary
  conditions.
@@ -190,6 +190,8 @@ to impose a zero Dirichlet on the component normal to the boundary, and a homoge
 on the tangential components. Thus, this condition couples the  vector components if the symmetry faces are not
 aligned with the reference frame. The boundary condition for tensors, such as the Reynolds stresses, will be detailed in the following sections.
 \end{description}
+
+See the \doxygenfile{cs__user__boundary__conditions_8f90.html}{programmers reference of the dedicated subroutine} for further details.
 
 %-------------------------------------------------------------------------------
 \section{Internal coding of the boundary conditions -- Discretization}
@@ -419,7 +421,7 @@ $\varia$   & scalar               & unit of ($\varia$)       &$K \,\grad \varia 
 This section is dedicated to wall boundary conditions
  for the velocity, and any transported scalar (such as the temperature, the enthalpy, \emph{etc}.)
 when a wall boundary value is prescribed and a wall function is set by the user. The dedicated boundary conditions of the turbulent variables ($k$, $\varepsilon$, $R_{ij}$) are detailed in \chaptername~ \ref{chapter:turbul}.
- Here is a link to the \doxygenfile{clptur_8f90}{programmers reference of the dedicated subroutine}.
+ Here is a link to the \doxygenfile{clptur_8f90.html}{programmers reference of the dedicated subroutine}.
 
 Simplified balance analysis proves that the fluid velocity profile or the Temperature profile are
 highly non-linear  for turbulent flows in the vicinity of walls.

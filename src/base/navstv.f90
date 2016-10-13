@@ -30,6 +30,8 @@
 !> flows for one time step. Both convection-diffusion and continuity steps are
 !> performed.  The velocity components are solved together in once.
 !>
+!> Please refer to the <a href="../../theory.pdf#233"><b>navstv</b></a> section
+!> of the theory guide for more theoretical informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

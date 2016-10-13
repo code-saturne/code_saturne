@@ -104,6 +104,8 @@ BEGIN_C_DECLS
 /*! \brief This function solves an advection diffusion equation with source
  * terms for one time step for the variable \f$ a \f$.
  *
+ * <a name="codits"></a>
+ *
  * The equation reads:
  *
  * \f[
@@ -136,6 +138,10 @@ BEGIN_C_DECLS
  * - \divs \left( a^k\rho\vect{u}-\mu\grad a^k \right)\f$
  *
  * Be careful, it is forbidden to modify \f$ f_s^{imp} \f$ here!
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#171"><b>codits</b></a> section of the
+ * theory guide for more theoretical informations.
  *
  * \param[in]     idtvar        indicateur du schema temporel
  * \param[in]     f_id          field id (or -1)

@@ -138,6 +138,9 @@ equations for turbulence and scalars:
 \end{equation}
 \end{itemize}
 
+See the \doxygenfile{schtmp_8f90.html}{programmers reference of the dedicated subroutine} for further details
+on the computation of the mass flux.
+
 \subsection{Source terms}
 
 As for the physical properties, the \textbf{explicit} source terms are:
@@ -252,6 +255,9 @@ The mass equation is taken into account during the second step
 (corrector step): a pressure Poisson equation is solved and the mass fluxes
 at the cell faces are updated.
 
+See the \doxygenfile{navstv_8f90.html}{programmers reference of the dedicated subroutine} for further details
+on the SIMPLEC solver.
+
 \subsubsection{Prediction step}
 In this section, a predicted velocity field $ \widetilde{\vect{u}} $ is obtained by solving
 the momentum equation of \eqref{eq:timstp:navier_stokes}
@@ -297,7 +303,8 @@ the momentum equation of \eqref{eq:timstp:navier_stokes}
 \end{array}
 \end{equation}
 
-For more details, see \S~ \ref{ap:navstv} and \ref{ap:predvv}.
+For more details, see \S~ \ref{ap:navstv} and \ref{ap:predvv}. The \doxygenfile{predvv_8f90.html}{programmers reference
+of the dedicated subroutine} can also be helpful.
 
 \subsubsection{Correction step}
 The predicted velocity has \emph{a priori} non-zero divergence. The second step
@@ -328,7 +335,8 @@ modified at the start of the next time step, after the scalars
 \end{remark}
 
 
-For more details, see \S~ \ref{ap:navstv} and \ref{ap:resopv}.
+For more details, see \S~ \ref{ap:navstv} and \ref{ap:resopv}. The \doxygenfile{resopv_8f90.html}{programmers reference
+ of the dedicated subroutine} can also be helpful.
 
 %-------------------------------------------------------------------------------
 \subsection{Variable density conservative solvers}

@@ -83,10 +83,12 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_gradient.c
-        Gradient reconstruction.
-*/
-
+ * \file cs_gradient.c
+ * \brief Gradient reconstruction.
+ *
+ * Please refer to the <a href="../../theory.pdf#35"><b>gradient reconstrcution</b></a>
+ * section of the theory guide for more theoretical informations.
+ */
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================

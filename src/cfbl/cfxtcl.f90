@@ -24,6 +24,8 @@
 !> \brief Handle boundary condition type code (\ref itypfb) when the
 !> compressible model is enabled.
 !>
+!> Please refer to the <a href="../../theory.pdf#337"><b>cfxtcl</b></a> section
+!> of the theory guide for more theoretical informations.
 !-------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------

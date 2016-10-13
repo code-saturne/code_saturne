@@ -40,6 +40,9 @@
 !> \trace\left(\overline{\tens{S}}\right)\tens{1}+\dfrac{2}{3}k\tens{1}\f$
 !> so that no term
 !> \f$\mu_t \dive \left(\overline{\vect{u}}\right)\f$ is needed.
+!>
+!> Please refer to the <a href="../../theory.pdf#291"><b>visecv</b></a> section
+!> of the theory guide for more theoretical informations.
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------

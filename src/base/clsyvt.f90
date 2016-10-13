@@ -29,6 +29,10 @@
 !> \brief Symmetry boundary conditions for vectors and tensors.
 !>
 !> Correspond to the code icodcl(ivar) = 4.
+!>
+!> Please refer to the
+!> <a href="../../theory.pdf#163"><b>clsyvt</b></a> section of the
+!> theory guide for more theoretical informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

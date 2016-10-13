@@ -346,6 +346,9 @@
 !>     using \c field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
 !> - For other values: take as an approximation the value in the adjacent cell
 !>                     i.e. as above with \c iel = ifabor(ifac).
+!>
+!> Please refer to the <a href="../../theory.pdf#48"><b>boundary conditions</b></a>
+!> section of the theory guide for more theoretical informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

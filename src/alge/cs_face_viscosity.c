@@ -81,7 +81,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*! \file  cs_face_viscosity.c
-
+ *
+ *  \brief Face viscosity.
+ *
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -180,10 +182,16 @@ void CS_PROCF (vitens, VITENS)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the diffusion velocity at faces.
+ *
  * i_visc,b_visc = viscosity*surface/distance, homogeneous to a rate of flow
  * in kg/s.
  *
- * Remark: a priori, no need of reconstruction techniques
+ * <a name="viscfa"></a>
+ *
+ * Please refer to the <a href="../../theory.pdf#285"><b>viscfa</b></a> section
+ * of the theory guide for more theoretical informations.
+ *
+ * \remark: a priori, no need of reconstruction techniques
  * (to improve if necessary).
  *
  * \param[in]     m              pointer to mesh

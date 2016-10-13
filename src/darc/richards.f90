@@ -62,6 +62,8 @@
 !>
 !> This routine is essentially inspired from navstv, resopv and codits.
 !>
+!> Please refer to the <a href="../../theory.pdf#108"><b>groundwater flows</b></a>
+!> section of the theory guide for more theoretical informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

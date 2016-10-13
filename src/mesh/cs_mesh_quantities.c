@@ -62,6 +62,16 @@
 
 BEGIN_C_DECLS
 
+/*----------------------------------------------------------------------------*/
+/*! \file cs_mesh_quantities.c
+ *
+ * \brief Management of mesh quantities.
+ *
+ * Please refer to the <a href="../../theory.pdf#379"><b>geometric quantities</b></a>
+ * section of the theory guide for more theoretical informations.
+ */
+/*----------------------------------------------------------------------------*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================

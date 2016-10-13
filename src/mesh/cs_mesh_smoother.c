@@ -813,14 +813,21 @@ _compute_vtx_normals(cs_mesh_t           *mesh,
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Set fixed vertices flag based on feature angle criterion.
+/*----------------------------------------------------------------------------*/
+/*! \brief Set fixed vertices flag based on feature angle criterion.
+ *
+ * <a name="fix_by_feature"></a>
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#394"><b>specific treatment for boundary faces</b></a>
+ * section of the theory guide for more theoretical informations.
  *
  * parameters:
- *   mesh           <--  pointer to a cs_mesh_t structure
- *   feature_angle  <--  feature angle (bounded between 0 and 90 degrees)
- *   vtx_is_fixed   -->  array to define vertices mobility (1: fixed, 0: free)
- *----------------------------------------------------------------------------*/
+ *  \param[in]  mesh           pointer to a cs_mesh_t structure
+ *  \param[in]  feature_angle  feature angle (bounded between 0 and 90 degrees)
+ *  \param[out] vtx_is_fixed   array to define vertices mobility (1: fixed, 0: free)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
@@ -896,13 +903,19 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
   BFT_FREE(_vtx_is_fixed);
 }
 
-/*----------------------------------------------------------------------------
- * Unwarping smoother.
+/*----------------------------------------------------------------------------*/
+/*! \brief Unwarping smoother.
+ *
+ * <a name="unwarp"></a>
+ *
+ * Please refer to the <a href="../../theory.pdf#391"><b>unwarping algorithm</b></a>
+ * section of the theory guide for more theoretical informations.
  *
  * parameters:
- *   mesh         <-- pointer to a cs_mesh_t structure
- *   vtx_is_fixed --> array to define vertices mobility (1 : fixed, 0 : free)
- *----------------------------------------------------------------------------*/
+ *   \param[in]  mesh          pointer to a cs_mesh_t structure
+ *   \param[out] vtx_is_fixed  array to define vertices mobility (1 : fixed, 0 : free)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,

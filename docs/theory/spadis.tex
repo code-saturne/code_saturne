@@ -258,6 +258,8 @@ and are supposed to be positive if the mesh is \emph{star-shaped}. Note also tha
 \label{fig:sketch_internal_external_faces}
 \end{figure}
 
+See the \doxygenfile{cs__convection__diffusion_8c.html}{programmers reference of the dedicated subroutine}
+for more informations on the convective and diffusive terms in \CS.
 
 %-------------------------------------------------------------------------------
 \section{Convective term}\label{sec:spadis:convection}
@@ -431,6 +433,9 @@ computational effort. The second one, the least square method, minimizes a
 function. It is quick, but less accurate.
 
 For both methods, the adaptation to gradients of vectorial fields is also presented.
+
+Please refer to the \doxygenfile{cs__gradient_8c.html}{programmers reference of the
+dedicated subroutine} for further details.
 
 %-------------------------------------------------------------------------------
 \subsection{Standard method: iterative process}\label{sec:spadis:iteratif_gradient}
@@ -1200,11 +1205,20 @@ Note that the $3\times3$ $\tens{C}_\celli$ tensor is  slightly different from \e
 %-------------------------------------------------------------------------------
 \subsection{Rhie \& Chow filter}
 
+Please refer to the \doxygenanchor{structcs__stokes__model__t.html\#arak}{programmers
+reference of the dedicated keyword \texttt{arak}}.
 
 %-------------------------------------------------------------------------------
 \subsection{Handling of the hydrostatic pressure}
 
+Please refer to the \doxygenanchor{structcs__stokes__model__t.html\#iphydr}{programmers
+reference of the dedicated keyword \texttt{iphydr}}.
+
 %-------------------------------------------------------------------------------
 \subsection{Pressure extrapolation at the boundaries}
+
+Please refer to the \doxygenanchor{structcs__var__cal__opt__t.html\#extrag}{programmers
+reference of the dedicated keyword \texttt{extrag}}.
+
 
 

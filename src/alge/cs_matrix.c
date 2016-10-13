@@ -102,6 +102,17 @@
 
 BEGIN_C_DECLS
 
+/*----------------------------------------------------------------------------*/
+/*! \file cs_matrix.c
+ *
+ * \brief Sparse Matrix Representation and Operations.
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#227"><b>matrix</b></a> section of the
+ * theory guide for more theoretical informations.
+ */
+/*----------------------------------------------------------------------------*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================

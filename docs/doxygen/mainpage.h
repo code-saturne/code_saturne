@@ -59,6 +59,17 @@
     - \ref cs_user_initialization "Physical fields user initialization",
     - and so on ...
 
+  \section additional_doc Additional documentation
+
+  In addition to the Doxygen documentation, Code_Saturne is provided with six
+  pdf documents:
+    - a <a href="../../user.pdf"><b>user guide</b></a>,
+    - a <a href="../../theory.pdf"><b>theory guide</b></a>,
+    - a <a href="../../developer.pdf"><b>developer guide</b></a>,
+    - an <a href="../../autovnv.pdf"><b>autovnv guide</b></a>,
+    - an <a href="../../install.pdf"><b>installation guide</b></a>,
+    - a <a href="../../refcard.pdf"><b>refcard</b></a>.
+
   \page bft_page BFT
 
   \section bft BFT: Base Functions and Types

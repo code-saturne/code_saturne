@@ -20,47 +20,50 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function :
+! --------
+
+!> \file visort.f90
+!>
+!> \brief Orthotropic diffusion velocity computation.
+!>
+!> Orthotropic diffusion velocity computation
+!> viscf,b = viscosity*surface/distance, in kg/s
+!>
+!> \f[ viscf,b = (nx^2*visc11\_moy\_face
+!>             +  ny^2*visc22\_moy\_face
+!>             +  nz^2*visc33\_moy\_face)*surface/distance
+!> \f]
+!>
+!> The viscosity is given by w1, w2, w3
+!>
+!> \remark There's no need for a reconstruction technique. (To improve if necessary)
+!>
+!> Please refer to the
+!> <a href="../../theory.pdf#287"><b><b>visort</b></a> section of the
+!> theory guide for more theoretical informations.
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments                                                                    !
+!______________________________________________________________________________!
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+! \param[in]     imvisf         Face viscosity computation method
+!                               = 0 arithmetic
+!                               = 1 harmonic
+! \param[in]     w1,2,3(ncelet) Viscosity values
+! \param[out]    viscf(nfac)    visc*surface/dist at internal faces
+! \param[out]    viscb(nfabor   visc*surface/dist at boundary faces
+!______________________________________________________________________________!
+
 subroutine visort &
 !================
 
  ( imvisf ,                                                       &
    w1     , w2     , w3     ,                                     &
    viscf  , viscb  )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CALCUL DE LA VITESSE DE DIFFUSION "ORTHOTROPE"
-! VISCF,B = VISCOSITE*SURFACE/DISTANCE, HOMOGENE A UN DEBIT EN KG/S
-
-!         =
-! (NX**2*VISC11_MOY_FACE
-! +NY**2*VISC22_MOY_FACE+NZ**2*VISC33_MOY_FACE)*SURFACE/DISTANCE
-
-! LA VISCOSITE EST DONNE PAR W1, W2, W3
-
-! RQE : A PRIORI, PAS BESOIN DE TECHNIQUE DE RECONSTRUCTION
-!  ( A AMELIORER SI NECESSAIRE )
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! imvisf           ! e  ! <-- ! methode de calcul de la visc face              !
-!                  !    !     !  = 0 arithmetique                              !
-!                  !    !     !  = 1 harmonique                                !
-! w1,2,3(ncelet    ! tr ! <-- ! valeurs de la viscosite                        !
-! viscf(nfac)      ! tr ! --> ! visc*surface/dist aux faces internes           !
-! viscb(nfabor     ! tr ! --> ! visc*surface/dist aux faces de bord            !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
