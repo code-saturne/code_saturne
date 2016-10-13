@@ -310,6 +310,9 @@ if (iihmpr.eq.1) then
   ! Init fan
   call uifans()
 
+  ! Init error estimator
+  call uieres(iescal, iespre, iesder, iescor, iestot)
+
 endif
 
 !   - Sous-programme utilisateur

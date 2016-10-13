@@ -102,6 +102,7 @@ class NumericalParamEquationModel(Model):
         """ Private method: return default values """
         self.default = {}
         self.default['time_step_factor'] = 1.0
+        self.default['verbosity'] = 0
         self.default['solver_precision'] = 1e-8
         self.default['solver_precision_pressure'] = 1e-8
         if NumericalParamGlobalModel(self.case).getTimeSchemeOrder() == 2:
@@ -680,6 +681,27 @@ class NumericalParamEquationModel(Model):
                 node.xmlRemoveChild('time_step_factor')
         else:
             raise ValueError("This method runs only with scalar name")
+
+
+    @Variables.noUndo
+    def getVerbosity(self, name):
+        """ Return value of verbosity for variable labelled name """
+        node = self._getSolverNameNode(name)
+        value = node.xmlGetInt('verbosity')
+        if value == None:
+            value = self._defaultValues()['verbosity']
+        return value
+
+
+    @Variables.undoLocal
+    def setVerbosity(self, name, value):
+        """ Put value of verbosity for variable labelled name """
+        self.isInt(value)
+        node = self._getSolverNameNode(name)
+        if value != self._defaultValues()['verbosity']:
+            node.xmlSetData('verbosity', value)
+        else:
+            node.xmlRemoveChild('verbosity')
 
 
     @Variables.noUndo

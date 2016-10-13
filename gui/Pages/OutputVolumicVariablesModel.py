@@ -46,7 +46,7 @@ from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
 # Model class
 #-------------------------------------------------------------------------------
 
-class OutputVolumicVariablesModel(Model):
+class OutputVolumicVariablesModel(Variables, Model):
 
     def __init__(self, case):
         """
@@ -61,6 +61,7 @@ class OutputVolumicVariablesModel(Model):
         self.node_output    = self.analysis_ctrl.xmlInitNode('output')
         self.node_probe     = self.node_output.xmlGetNodeList('probe','name')
         self.node_means     = self.analysis_ctrl.xmlInitNode('time_averages')
+        self.node_error     = self.analysis_ctrl.xmlInitNode('error_estimator')
 
         model = XMLmodel(self.case)
 
@@ -78,7 +79,8 @@ class OutputVolumicVariablesModel(Model):
                               self._getWeightMatrixProperty(),
                               self.getListOfTimeAverage(),
                               self._getListOfAleMethod(),
-                              self._getThermalRadiativeProperties())
+                              self._getThermalRadiativeProperties(),
+                              self._getListOfEstimator())
 
         self.listNode = []
         for part in self._getListOfVelocityPressureVariables():
@@ -109,6 +111,8 @@ class OutputVolumicVariablesModel(Model):
             self.listNode.append([part, 'other'])
         for part in self._getListOfAleMethod():
             self.listNode.append([part, 'other'])
+        for part in self._getListOfEstimator():
+            self.listNode.append([part, 'estimator'])
 
         self.dicoLabelName = {}
         self.list_name = []
@@ -123,8 +127,68 @@ class OutputVolumicVariablesModel(Model):
         """
         default = {}
         default['status']    = "on"
+        default['estimator'] = "0"
 
         return default
+
+
+    def updateList(self):
+        """
+        """
+        model = XMLmodel(self.case)
+
+        self.listNodeVolum = (self._getListOfVelocityPressureVariables(),
+                              model.getTurbNodeList(),
+                              self.getThermalScalar(),
+                              self.getAdditionalScalar(),
+                              self.getAdditionalScalarProperty(),
+                              self.getFluidProperty(),
+                              self.getTimeProperty(),
+                              self.getMeteoScalProper(),
+                              self.getElecScalProper(),
+                              self.getPuCoalScalProper(),
+                              self.getGasCombScalProper(),
+                              self._getWeightMatrixProperty(),
+                              self.getListOfTimeAverage(),
+                              self._getListOfAleMethod(),
+                              self._getThermalRadiativeProperties(),
+                              self._getListOfEstimator())
+
+        self.listNode = []
+        for part in self._getListOfVelocityPressureVariables():
+            self.listNode.append([part, 'base'])
+        for part in model.getTurbNodeList():
+            self.listNode.append([part, 'turbulence'])
+        for part in self.getThermalScalar():
+            self.listNode.append([part, 'thermal'])
+        for part in self._getThermalRadiativeProperties():
+            self.listNode.append([part, 'thermal'])
+        for part in self.getPuCoalScalProper():
+            self.listNode.append([part, 'coal'])
+        for part in self.getGasCombScalProper():
+            self.listNode.append([part, 'gas'])
+        for part in self.getMeteoScalProper():
+            self.listNode.append([part, 'atmospheric'])
+        for part in self.getElecScalProper():
+            self.listNode.append([part, 'electric'])
+        for part in self.getAdditionalScalar():
+            self.listNode.append([part, 'other'])
+        for part in self.getAdditionalScalarProperty():
+            self.listNode.append([part, 'other'])
+        for part in self.getFluidProperty():
+            self.listNode.append([part, 'physical_properties'])
+        for part in self.getTimeProperty():
+            self.listNode.append([part, 'other'])
+        for part in self.getListOfTimeAverage():
+            self.listNode.append([part, 'other'])
+        for part in self._getListOfAleMethod():
+            self.listNode.append([part, 'other'])
+        for part in self._getListOfEstimator():
+            self.listNode.append([part, 'estimator'])
+
+        self.dicoLabelName = {}
+        self.list_name = []
+        self._updateDictLabelName()
 
 
     def _updateDictLabelName(self):
@@ -154,6 +218,17 @@ class OutputVolumicVariablesModel(Model):
             for node in self.node_model_vp.xmlGetNodeList(tag):
                 if not node['support']:
                     nodeList.append(node)
+        return nodeList
+
+
+    def _getListOfEstimator(self):
+        """
+        Private method: return node of properties of weight matrix
+        """
+        nodeList = []
+        for node in self.node_error.xmlGetNodeList('property'):
+            if not node['support']:
+                nodeList.append(node)
         return nodeList
 
 
@@ -552,6 +627,53 @@ class OutputVolumicVariablesModel(Model):
                     else:
                         if node.xmlGetChildNode('probes_recording'):
                             node.xmlRemoveChild('probes_recording')
+
+
+    @Variables.noUndo
+    def getEstimatorModel(self, name):
+        """
+        Return model for an error estimator
+        """
+        self.isInList(name, ["Correction", "Drift", "Prediction", "Total"])
+        status = self._defaultValues()['estimator']
+
+        nn = self.node_error.xmlGetChildNode(name, 'model')
+        if nn:
+            status = nn['model']
+
+        return status
+
+
+    @Variables.undoLocal
+    def setEstimatorModel(self, name, model):
+        """
+        Put model for an error estimator
+        """
+        self.isInList(model, ['0', '1', '2'])
+        self.isInList(name, ["Correction", "Drift", "Prediction", "Total"])
+        status = self._defaultValues()['estimator']
+
+        if model != status:
+            if self.node_error.xmlGetChildNode(name):
+                self.node_error.xmlRemoveChild(name)
+            self.node_error.xmlInitChildNode(name)['model'] = model
+        else:
+            if self.node_error.xmlGetChildNode(name):
+                self.node_error.xmlRemoveChild(name)
+
+        # add and remove field associated
+        if model != status:
+            nn = self.node_error.xmlGetNode(name)
+            if name == "Correction":
+                self.setNewProperty(nn, "est_error_cor_" + model)
+            elif name == "Drift":
+                self.setNewProperty(nn, "est_error_der_" + model)
+            elif name == "Prediction":
+                self.setNewProperty(nn, "est_error_pre_" + model)
+            elif name == "Total":
+                self.setNewProperty(nn, "est_error_tot_" + model)
+
+        self.updateList()
 
 
 #-------------------------------------------------------------------------------

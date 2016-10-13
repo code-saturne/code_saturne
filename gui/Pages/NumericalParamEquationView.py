@@ -168,11 +168,11 @@ class PreconditioningChoiceDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
 
+        editor.addItem("Automatic")
         editor.addItem("None")
         editor.addItem("Multigrid")
         editor.addItem("Jacobi")
         editor.addItem("Polynomial")
-        editor.addItem("Automatic")
 
         solver = index.model().dataSolver[index.row()]['iresol']
         if solver == 'multigrid':
@@ -489,7 +489,7 @@ class StandardItemModelSolver(QStandardItemModel):
         QStandardItemModel.__init__(self)
         self.NPE = NPE
         self.SM = SM
-        self.setColumnCount(5)
+        self.setColumnCount(6)
         self.dataSolver = []
         # list of items to be disabled in the view
         self.disabledItem = []
@@ -530,11 +530,12 @@ class StandardItemModelSolver(QStandardItemModel):
             dico['iresol']  = self.NPE.getSolverChoice(name)
             dico['precond'] = self.NPE.getPreconditioningChoice(name)
             dico['epsilo']  = self.NPE.getSolverPrecision(name)
+            dico['verbo']   = self.NPE.getVerbosity(name)
             if self.NPE.isScalar(name):
                 dico['cdtvar'] = self.NPE.getScalarTimeStepFactor(name)
             else:
                 dico['cdtvar'] = ""
-                self.disabledItem.append((row,4))
+                self.disabledItem.append((row,5))
 
             self.dataSolver.append(dico)
             log.debug("populateModel-> dataSolver = %s" % dico)
@@ -549,6 +550,8 @@ class StandardItemModelSolver(QStandardItemModel):
             if index.column() == 3:
                 return to_qvariant(self.tr("Code_Saturne keyword: EPSILO"))
             elif index.column() == 4:
+                return to_qvariant(self.tr("Code_Saturne keyword: IWARNI"))
+            elif index.column() == 5:
                 return to_qvariant(self.tr("Code_Saturne keyword: CDTVAR"))
 
         elif role == Qt.DisplayRole:
@@ -564,6 +567,8 @@ class StandardItemModelSolver(QStandardItemModel):
             elif index.column() == 3:
                 return to_qvariant(dico['epsilo'])
             elif index.column() == 4:
+                return to_qvariant(dico['verbo'])
+            elif index.column() == 5:
                 return to_qvariant(dico['cdtvar'])
             else:
                 return to_qvariant()
@@ -599,6 +604,8 @@ class StandardItemModelSolver(QStandardItemModel):
             elif section == 3:
                 return to_qvariant(self.tr("Solver\nPrecision"))
             elif section == 4:
+                return to_qvariant(self.tr("Verbosity"))
+            elif section == 5:
                 return to_qvariant(self.tr("Time Step\nFactor"))
             else:
                 return to_qvariant()
@@ -622,6 +629,10 @@ class StandardItemModelSolver(QStandardItemModel):
             self.NPE.setSolverPrecision(name, self.dataSolver[row]['epsilo'])
 
         elif index.column() == 4:
+            self.dataSolver[row]['verbo'] = from_qvariant(value, int)
+            self.NPE.setVerbosity(name, self.dataSolver[row]['verbo'])
+
+        elif index.column() == 5:
             self.dataSolver[row]['cdtvar'] = from_qvariant(value, float)
             self.NPE.setScalarTimeStepFactor(name, self.dataSolver[row]['cdtvar'])
 
@@ -661,6 +672,39 @@ class MinimumDelegate(QItemDelegate):
                     name = model.getData(idx)['name']
                     if model.checkMinMax(name, value, maxi):
                         model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+# Line edit delegate for verbosity
+#-------------------------------------------------------------------------------
+
+class VerbosityDelegate(QItemDelegate):
+    def __init__(self, parent=None, xml_model=None):
+        super(VerbosityDelegate, self).__init__(parent)
+        self.parent = parent
+        self.turb = xml_model
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        validator = IntValidator(editor, min=0)
+        validator.setExclusiveMin(False)
+        editor.setValidator(validator)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        editor.setText(value)
+
+
+    def setModelData(self, editor, model, index):
+        if editor.validator().state == QValidator.Acceptable:
+            value = from_qvariant(editor.text(), int)
+            selectionModel = self.parent.selectionModel()
+            for idx in selectionModel.selectedIndexes():
+                if idx.column() == index.column():
+                    model.setData(idx, to_qvariant(value))
 
 
 #-------------------------------------------------------------------------------
@@ -880,7 +924,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
             self.tableViewSolver.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         if self.SM.getSteadyFlowManagement() == 'on':
-            self.tableViewSolver.setColumnHidden(4, True)
+            self.tableViewSolver.setColumnHidden(5, True)
 
         delegate = SolverDelegate(self.tableViewSolver)
         self.tableViewSolver.setItemDelegate(delegate)
@@ -890,6 +934,9 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
 
         delegatePrecondChoice = PreconditioningChoiceDelegate(self.tableViewSolver)
         self.tableViewSolver.setItemDelegateForColumn(2, delegatePrecondChoice)
+
+        delegateVerbosity = VerbosityDelegate(self.tableViewSolver)
+        self.tableViewSolver.setItemDelegateForColumn(4, delegateVerbosity)
 
         # Clipping
         self.modelClipping = StandardItemModelClipping(self, self.NPE)

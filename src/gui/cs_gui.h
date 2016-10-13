@@ -451,6 +451,22 @@ void CS_PROCF (memui1, MEMUI1) (const int *ncharb);
 
 void CS_PROCF (uifans, UIFANS) (void);
 
+/*----------------------------------------------------------------------------
+ * Define error estimators
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIERES
+ * *****************
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uieres, UIERES) (int *iescal,
+                                int *iespre,
+                                int *iesder,
+                                int *iescor,
+                                int *iestot);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -586,6 +602,17 @@ cs_gui_pressure_drop_by_zone(void);
 
 void
 cs_gui_define_fans(void);
+
+/*----------------------------------------------------------------------------
+ * Define error estimator through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_error_estimator(int *iescal,
+                       int *iespre,
+                       int *iesder,
+                       int *iescor,
+                       int *iestot);
 
 /*----------------------------------------------------------------------------*/
 

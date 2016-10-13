@@ -48,6 +48,7 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.Base.Common import LABEL_LENGTH_MAX
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import RegExpValidator, to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import ComboModel
 from code_saturne.Base.QtPage import PYQT_API_1
 from code_saturne.Pages.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
 from code_saturne.Pages.OutputControlModel import OutputControlModel
@@ -489,6 +490,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.setupUi(self)
 
         self.case = case
+        self.parent = parent
         self.case.undoStopGlobal()
         self.info_turb_name = []
         self.mdl = OutputVolumicVariablesModel(self.case)
@@ -508,7 +510,100 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.treeViewOutput.resizeColumnToContents(0)
         self.treeViewOutput.resizeColumnToContents(1)
 
+        self.correctionEstimator = ComboModel(self.comboBoxIescor, 3, 1)
+        self.correctionEstimator.addItem(self.tr("off"),                         '0')
+        self.correctionEstimator.addItem(self.tr("without volume contribution"), '1')
+        self.correctionEstimator.addItem(self.tr("with volume contribution"), '2')
+
+        self.driftEstimator = ComboModel(self.comboBoxIesder, 3, 1)
+        self.driftEstimator.addItem(self.tr("off"),                         '0')
+        self.driftEstimator.addItem(self.tr("without volume contribution"), '1')
+        self.driftEstimator.addItem(self.tr("with volume contribution"), '2')
+
+        self.predictionEstimator = ComboModel(self.comboBoxIespre, 3, 1)
+        self.predictionEstimator.addItem(self.tr("off"),                         '0')
+        self.predictionEstimator.addItem(self.tr("without volume contribution"), '1')
+        self.predictionEstimator.addItem(self.tr("with volume contribution"), '2')
+
+        self.totalEstimator = ComboModel(self.comboBoxIestot, 3, 1)
+        self.totalEstimator.addItem(self.tr("off"),                         '0')
+        self.totalEstimator.addItem(self.tr("without volume contribution"), '1')
+        self.totalEstimator.addItem(self.tr("with volume contribution"), '2')
+
+        self.comboBoxIescor.activated[str].connect(self.slotCorrectionEstimator)
+        self.comboBoxIesder.activated[str].connect(self.slotDriftEstimator)
+        self.comboBoxIespre.activated[str].connect(self.slotPredictionEstimator)
+        self.comboBoxIestot.activated[str].connect(self.slotTotalEstimator)
+
+        modelIescor = self.mdl.getEstimatorModel("Correction")
+        self.correctionEstimator.setItem(str_model=modelIescor)
+
+        modelIesder = self.mdl.getEstimatorModel("Drift")
+        self.driftEstimator.setItem(str_model=modelIesder)
+
+        modelIespre = self.mdl.getEstimatorModel("Prediction")
+        self.predictionEstimator.setItem(str_model=modelIespre)
+
+        modelIestot = self.mdl.getEstimatorModel("Total")
+        self.totalEstimator.setItem(str_model=modelIestot)
+
         self.case.undoStartGlobal()
+
+
+    def initializeView(self):
+        """
+        """
+        self.modelOutput = VolumicOutputStandardItemModel(self.parent, self.case, self.mdl)
+        self.treeViewOutput.setModel(self.modelOutput)
+        self.treeViewOutput.expandAll()
+
+
+    @pyqtSlot(str)
+    def slotCorrectionEstimator(self, text):
+        """
+        Private slot.
+        Input ITURB.
+        """
+        model = self.correctionEstimator.dicoV2M[str(text)]
+        self.mdl.setEstimatorModel("Correction", model)
+
+        self.initializeView()
+
+
+    @pyqtSlot(str)
+    def slotDriftEstimator(self, text):
+        """
+        Private slot.
+        Input ITURB.
+        """
+        model = self.driftEstimator.dicoV2M[str(text)]
+        self.mdl.setEstimatorModel("Drift", model)
+
+        self.initializeView()
+
+
+    @pyqtSlot(str)
+    def slotPredictionEstimator(self, text):
+        """
+        Private slot.
+        Input ITURB.
+        """
+        model = self.predictionEstimator.dicoV2M[str(text)]
+        self.mdl.setEstimatorModel("Prediction", model)
+
+        self.initializeView()
+
+
+    @pyqtSlot(str)
+    def slotTotalEstimator(self, text):
+        """
+        Private slot.
+        Input ITURB.
+        """
+        model = self.totalEstimator.dicoV2M[str(text)]
+        self.mdl.setEstimatorModel("Total", model)
+
+        self.initializeView()
 
 
     def tr(self, text):

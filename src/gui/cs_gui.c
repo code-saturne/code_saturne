@@ -2733,6 +2733,10 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
   _variable_value(c_pres->name, "rhs_reconstruction", &tmp);
   var_cal_opt.nswrsm = (int) tmp;
 
+  tmp = (double) var_cal_opt.iwarni;
+  _variable_value(c_pres->name, "verbosity", &tmp);
+  var_cal_opt.iwarni = (int) tmp;
+
   /* Set Field calculation options in the field structure */
   cs_field_set_key_struct(c_pres, key_cal_opt_id, &var_cal_opt);
 
@@ -2758,6 +2762,10 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
       tmp = (double) var_cal_opt.nswrsm;
       _variable_value(f->name, "rhs_reconstruction", &tmp);
       var_cal_opt.nswrsm = (int) tmp;
+
+      tmp = (double) var_cal_opt.iwarni;
+      _variable_value(f->name, "verbosity", &tmp);
+      var_cal_opt.iwarni = (int) tmp;
 
       // Set Field calculation options in the field structure
       // TODO add nitmax, imgr, iresol, cdtvar
@@ -5617,6 +5625,25 @@ void CS_PROCF (uifans, UIFANS) (void)
   cs_gui_define_fans();
 }
 
+/*----------------------------------------------------------------------------
+ * Define error estimators
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UIERES
+ * *****************
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uieres, UIERES) (int *iescal,
+                                int *iespre,
+                                int *iesder,
+                                int *iescor,
+                                int *iestot)
+{
+  cs_gui_error_estimator(iescal, iespre, iesder, iescor, iestot);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -6617,7 +6644,89 @@ cs_gui_define_fans(void)
                   pressure_curve_coeffs,
                   axial_torque);
   }
+}
 
+/*----------------------------------------------------------------------------
+ * Define error estimator through the GUI.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_error_estimator(int *iescal,
+                       int *iespre,
+                       int *iesder,
+                       int *iescor,
+                       int *iestot)
+{
+  char *path = NULL;
+  char *result = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "error_estimator");
+  cs_xpath_add_element(&path, "Correction");
+  cs_xpath_add_attribute(&path, "model");
+
+  result = cs_gui_get_attribute_value(path);
+
+  if (cs_gui_strcmp(result, "1"))
+    iescal[*iescor -1] = 1;
+  else if (cs_gui_strcmp(result, "2"))
+    iescal[*iescor -1] = 2;
+  else
+    iescal[*iescor -1] = 0;
+
+  BFT_FREE(path);
+  BFT_FREE(result);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "error_estimator");
+  cs_xpath_add_element(&path, "Drift");
+  cs_xpath_add_attribute(&path, "model");
+
+  result = cs_gui_get_attribute_value(path);
+
+  if (cs_gui_strcmp(result, "1"))
+    iescal[*iesder -1] = 1;
+  else if (cs_gui_strcmp(result, "2"))
+    iescal[*iesder -1] = 2;
+  else
+    iescal[*iesder -1] = 0;
+
+  BFT_FREE(path);
+  BFT_FREE(result);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "error_estimator");
+  cs_xpath_add_element(&path, "Prediction");
+  cs_xpath_add_attribute(&path, "model");
+
+  result = cs_gui_get_attribute_value(path);
+
+  if (cs_gui_strcmp(result, "1"))
+    iescal[*iespre -1] = 1;
+  else if (cs_gui_strcmp(result, "2"))
+    iescal[*iespre -1] = 2;
+  else
+    iescal[*iespre -1] = 0;
+
+  BFT_FREE(path);
+  BFT_FREE(result);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "analysis_control", "error_estimator");
+  cs_xpath_add_element(&path, "Total");
+  cs_xpath_add_attribute(&path, "model");
+
+  result = cs_gui_get_attribute_value(path);
+
+  if (cs_gui_strcmp(result, "1"))
+    iescal[*iestot -1] = 1;
+  else if (cs_gui_strcmp(result, "2"))
+    iescal[*iestot -1] = 2;
+  else
+    iescal[*iestot -1] = 0;
+
+  BFT_FREE(path);
+  BFT_FREE(result);
 }
 
 /*----------------------------------------------------------------------------*/
