@@ -39,15 +39,11 @@
 !  mode           name               role                                      !
 !______________________________________________________________________________!
 !> \param[in]     nscal              total number of scalars
-!> \param[in]     iappel             call number (before of after phyvar                                         !
-!> \param[in]     propce(ncelet, *)  physical properties at cell centers
+!> \param[in]     iappel             call number (before of after phyvar
 !______________________________________________________________________________
 
 subroutine schtmp &
-!================
-
- ( nscal  , iappel ,                                              &
-   propce )
+ ( nscal  , iappel )
 
 !===============================================================================
 ! Module files
