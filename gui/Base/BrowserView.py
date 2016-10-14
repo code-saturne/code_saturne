@@ -407,6 +407,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
     Identity and paths
 Calculation environment
     Meshes selection
+    Notebook
 Thermophysical models
     Calculation features
     Deformable mesh
@@ -677,6 +678,7 @@ Calculation management
         self.setRowClose(self.tr('Groundwater laws'))
 
         if case['prepro'] == True:
+            self.setRowClose(self.tr('Notebook'))
             self.setRowClose(self.tr('Thermophysical models'))
             self.setRowClose(self.tr('Physical properties'))
             self.setRowClose(self.tr('Volume conditions'))
@@ -693,6 +695,7 @@ Calculation management
             self.setRowClose(self.tr('Fans'))
             return
         else:
+            self.setRowOpen(self.tr('Notebook'))
             self.setRowOpen(self.tr('Thermophysical models'))
             self.setRowOpen(self.tr('Physical properties'))
             self.setRowOpen(self.tr('Volume conditions'))

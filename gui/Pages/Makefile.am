@@ -93,6 +93,8 @@ LocalizationModel.py \
 LocalizationView.py \
 MobileMeshModel.py \
 MobileMeshView.py \
+NotebookModel.py \
+NotebookView.py \
 NumericalParamEquationModel.py \
 NumericalParamEquationView.py \
 NumericalParamGlobalModel.py \
@@ -192,6 +194,7 @@ LagrangianStatisticsForm.ui \
 LocalizationForm.ui \
 MeshQualityCriteriaLogDialogForm.ui \
 MobileMeshForm.ui \
+NotebookForm.ui \
 NumericalParamEquationForm.ui \
 NumericalParamGlobalForm.ui \
 OutputControlForm.ui \

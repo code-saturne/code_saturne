@@ -135,6 +135,7 @@ from code_saturne.Pages.CompressibleModel import CompressibleModel
 from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 from code_saturne.Pages.GasCombustionModel import GasCombustionModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -267,6 +268,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.case.undoStopGlobal()
 
         self.mdl = FluidCharacteristicsModel(self.case)
+        self.notebook = NotebookModel(self.case)
 
         if EOS == 1:
             self.ava = eosAva.EosAvailable()
@@ -972,6 +974,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         symbols_rho.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
         symbols_rho.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_rho.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -1021,6 +1026,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             ref_temperature = ReferenceValuesModel(self.case).getTemperature()
             symbols_mu.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
 
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_mu.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -1051,6 +1059,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         ref_pressure = ReferenceValuesModel(self.case).getPressure()
         symbols_cp.append(('cp0', 'Specific heat (reference value) = ' + str(cp0_value)))
         symbols_cp.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_cp.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -1084,6 +1095,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         symbols_viscv0.append(('p0', 'Reference pressure = '+str(ref_pressure)+' Pa'))
         symbols_viscv0.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
         symbols_viscv0.append(('T', 'Temperature'))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_viscv0.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -1124,6 +1139,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         symbols_al.append(('lambda0', 'Thermal conductivity (reference value) = ' + str(lambda0_value)))
         symbols_al.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
 
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols_al.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -1153,6 +1171,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         sym.append((str(self.scalar),str(self.scalar)))
         diff0_value = self.m_sca.getScalarDiffusivityInitialValue(self.scalar)
         sym.append((str(name)+'_ref', str(self.scalar)+' diffusion coefficient (reference value) = '+str(diff0_value)+' m^2/s'))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,

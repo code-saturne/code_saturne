@@ -85,6 +85,10 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.SolutionDomainView as Page
         thisPage = Page.SolutionDomainView(root, case, stbar)
 
+    elif page_name == tr("Notebook"):
+        import code_saturne.Pages.NotebookView as Page
+        thisPage = Page.NotebookView(root, case)
+
     elif page_name == tr("Volume regions definition"):
         import code_saturne.Pages.LocalizationView as Page
         thisPage = Page.VolumeLocalizationView(root, case, tree)
@@ -327,7 +331,15 @@ def dicoLabel(name):
                             ('fourier_number',                "NbFourier",  "FourierNb"),
                             ('weight_matrix_X',               "VPsolve1",   "VPsolve1"),
                             ('weight_matrix_Y',               "VPsolve2",   "VPsolve2"),
-                            ('weight_matrix_Z',               "VPsolve3",   "VPsolve3")]:
+                            ('weight_matrix_Z',               "VPsolve3",   "VPsolve3"),
+                            ('est_error_cor_1',               "EsCor1",     "EsCor1"),
+                            ('est_error_der_1',               "EsDer1",     "EsDer1"),
+                            ('est_error_pre_1',               "EsPre1",     "EsPre1"),
+                            ('est_error_tot_1',               "EsTot1",     "EsTot1"),
+                            ('est_error_cor_2',               "EsCor2",     "EsCor2"),
+                            ('est_error_der_2',               "EsDer2",     "EsDer2"),
+                            ('est_error_pre_2',               "EsPre2",     "EsPre2"),
+                            ('est_error_tot_2',               "EsTot2",     "EsTot2")]:
 
         if n == name:
             if GuiParam.lang == 'fr':

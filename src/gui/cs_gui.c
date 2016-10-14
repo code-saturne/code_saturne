@@ -271,6 +271,43 @@ _thermal_table_needed(const char *name)
 }
 
 /*-----------------------------------------------------------------------------
+ * add notebook variable to formula
+ *----------------------------------------------------------------------------*/
+
+static void
+_add_notebook_variables(mei_tree_t *ev_law)
+{
+  char *path = NULL;
+
+  /* number of variable */
+  int nbvar = cs_gui_get_tag_count("/physical_properties/notebook/var\n", 1);
+
+  if (nbvar == 0)
+    return;
+
+  for (int ivar = 0; ivar < nbvar; ivar++) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "physical_properties", "notebook");
+    cs_xpath_add_element_num(&path, "var", ivar +1);
+    cs_xpath_add_attribute(&path, "name");
+    char *name = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "physical_properties", "notebook");
+    cs_xpath_add_element_num(&path, "var", ivar +1);
+    cs_xpath_add_attribute(&path, "value");
+    char *value = cs_gui_get_attribute_value(path);
+    double val = atof(value);
+    BFT_FREE(path);
+
+    mei_tree_insert(ev_law, name, val);
+    BFT_FREE(name);
+    BFT_FREE(value);
+  }
+}
+
+/*-----------------------------------------------------------------------------
  * use MEI for physical property
  *----------------------------------------------------------------------------*/
 
@@ -352,6 +389,9 @@ _physical_property(const char       *param,
         else
           mei_tree_insert(ev_law, "lambda0", visls0[iscalt-1]);
       }
+
+      /* add variable from notebook */
+      _add_notebook_variables(ev_law);
 
       for (int f_id2 = 0; f_id2 < cs_field_n_fields(); f_id2++) {
         const cs_field_t  *f2 = cs_field_by_id(f_id2);
