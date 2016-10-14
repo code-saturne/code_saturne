@@ -35,7 +35,7 @@
 !> (except at the first time step, when the itypfb and itrifb
 !> have not been filled).
 !>
-!> Please refer to the <a href="../../theory.pdf#73"><b>standard Smagorinsky model</b></a>
+!> Please refer to the <a href="../../theory.pdf#smago"><b>standard Smagorinsky model</b></a>
 !> section of the theory guide for more theoretical informations.
 !-------------------------------------------------------------------------------
 

@@ -819,7 +819,7 @@ _compute_vtx_normals(cs_mesh_t           *mesh,
  * <a name="fix_by_feature"></a>
  *
  * Please refer to the
- * <a href="../../theory.pdf#394"><b>specific treatment for boundary faces</b></a>
+ * <a href="../../theory.pdf#fixbyfeature"><b>specific treatment for boundary faces</b></a>
  * section of the theory guide for more theoretical informations.
  *
  * parameters:
@@ -908,7 +908,7 @@ cs_mesh_smoother_fix_by_feature(cs_mesh_t   *mesh,
  *
  * <a name="unwarp"></a>
  *
- * Please refer to the <a href="../../theory.pdf#391"><b>unwarping algorithm</b></a>
+ * Please refer to the <a href="../../theory.pdf#unwarp"><b>unwarping algorithm</b></a>
  * section of the theory guide for more theoretical informations.
  *
  * parameters:

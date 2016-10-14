@@ -37,7 +37,7 @@
 !>   (except at first time step, when tables itypfb and itrifb
 !>   have not been filled).
 !>
-!> Please refer to the <a href="../../theory.pdf#74"><b>dynamic Smagorinsky model</b></a>
+!> Please refer to the <a href="../../theory.pdf#dynsmago"><b>dynamic Smagorinsky model</b></a>
 !> section of the theory guide for more theoretical informations.
 !-------------------------------------------------------------------------------
 

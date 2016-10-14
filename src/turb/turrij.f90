@@ -29,9 +29,9 @@
 !> \brief Solving the \f$ R_{ij} - \epsilon \f$ for incompressible flows or
 !>  slightly compressible flows for one time step.
 !>
-!> Please refer to the <a href="../../theory.pdf#72"><b>\f$ R_{ij} - \epsilon \f$ model</b></a>
+!> Please refer to the <a href="../../theory.pdf#rijeps"><b>\f$ R_{ij} - \epsilon \f$ model</b></a>
 !> section of the theory guide for more theoretical informations, as well as the
-!> <a href="../../theory.pdf#271"><b>turrij</b></a> section..
+!> <a href="../../theory.pdf#turrij"><b>turrij</b></a> section..
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

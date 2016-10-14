@@ -2216,11 +2216,11 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nfabor,
             coord_shift[2] = boundaries->dirz[izone];
 
             boundaries->locator[izone]
-	      = cs_boundary_conditions_map(CS_MESH_LOCATION_CELLS,
-					   ncel, faces,
-					   _location_elts, faces_list,
-					   &coord_shift, coord_stride,
-					   tolerance);
+              = cs_boundary_conditions_map(CS_MESH_LOCATION_CELLS,
+                                           ncel, faces,
+                                           _location_elts, faces_list,
+                                           &coord_shift, coord_stride,
+                                           tolerance);
             BFT_FREE(_location_elts);
           }
 
@@ -3430,7 +3430,7 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
     for (izone=0 ; izone < zones ; izone++) {
       if (boundaries->locator[izone] != NULL)
         boundaries->locator[izone]
-	  = ple_locator_destroy(boundaries->locator[izone]);
+          = ple_locator_destroy(boundaries->locator[izone]);
     }
 
     BFT_FREE(boundaries->label);

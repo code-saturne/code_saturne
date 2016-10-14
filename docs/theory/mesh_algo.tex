@@ -27,6 +27,8 @@ operations done by \CS.
 
 \section*{Geometric Quantities\label{sec:geo_quant}}
 
+\hypertarget{meshquantities}{}
+
 See the \doxygenfile{cs__mesh__quantities_8c.html}{programmers reference of the dedicated subroutine} for further details.
 
 \subsection*{Normals and Face Centers%
@@ -703,6 +705,8 @@ triangulate both faces independently.
 \section*{Unwarping algorithm\label{sec:unwarping}}
 %-------------------------------------------------------------------------------
 
+\hypertarget{unwarp}{}
+
 The unwarping algorithm is a smoother, its
 principle is to mitigate the local defects by averaging
 the mesh quality. It moves vertices using an iterative
@@ -844,6 +848,9 @@ The algorithm stops after $N_{max}$ iterations ($51$ by default in \CS).
 
 \subsection*{Specific treatment for boundary faces
 \label{sec:unwarping_boundary}}
+
+\hypertarget{fixbyfeature}{}
+
 The unwarping algorithm may modify the mesh geometry. The function
 \texttt{fix\_by\_feature} allows to fix boundary faces according to a feature angle.
 The feature angle between a vertex and one of its adjacent faces is defined

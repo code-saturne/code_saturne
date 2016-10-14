@@ -140,7 +140,7 @@ BEGIN_C_DECLS
  * Be careful, it is forbidden to modify \f$ f_s^{imp} \f$ here!
  *
  * Please refer to the
- * <a href="../../theory.pdf#171"><b>codits</b></a> section of the
+ * <a href="../../theory.pdf#codits"><b>codits</b></a> section of the
  * theory guide for more theoretical informations.
  *
  * \param[in]     idtvar        indicateur du schema temporel

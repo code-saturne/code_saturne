@@ -108,7 +108,7 @@ BEGIN_C_DECLS
  * \brief Sparse Matrix Representation and Operations.
  *
  * Please refer to the
- * <a href="../../theory.pdf#227"><b>matrix</b></a> section of the
+ * <a href="../../theory.pdf#matrix"><b>matrix</b></a> section of the
  * theory guide for more theoretical informations.
  */
 /*----------------------------------------------------------------------------*/

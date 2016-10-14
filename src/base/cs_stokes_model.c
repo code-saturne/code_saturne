@@ -103,7 +103,7 @@ BEGIN_C_DECLS
         <a name="arak"></a>
         Arakawa multiplicator for the Rhie and Chow filter (1 by default).\n\n
         Please refer to the
-        <a href="../../theory.pdf#44"><b>Rhie and Chow filter</b></a> section
+        <a href="../../theory.pdf#arak"><b>Rhie and Chow filter</b></a> section
         of the theory guide for more theoretical informations.
   \var  cs_stokes_model_t::ipucou
         indicates the algorithm for velocity/pressure coupling:
@@ -155,7 +155,7 @@ BEGIN_C_DECLS
         When the density effects are important, the choice of \ref iphydr = 1
         allows to improve the interpolation of the pressure and correct the
         non-physical velocities which may appear in highly stratified areas
-        or near horizontal walls (thus avoiding the use of \ref cs_var_cal_opt_t::extrag
+        or near horizontal walls (thus avoiding the use of \ref cs_var_cal_opt_t::extrag "extrag"
         if the non-physical velocities are due only to gravity effects).\n
         The improved algorithm also allows eradicating the velocity oscillations
         which tend to appear at the frontiers of areas with high head losses.\n
@@ -166,12 +166,12 @@ BEGIN_C_DECLS
         On meshes of insufficient quality, in order to
         improve the convergence, it may be useful to increase the number of
         iterations for the reconstruction of the pressure right-hand side,
-        i.e. \ref cs_var_cal_opt_t::nswrsm.\n If head losses are present
+        i.e. \ref cs_var_cal_opt_t::nswrsm "nswrsm".\n If head losses are present
         just along an outlet boundary, it is necessary to specify \ref icalhy = 0
         in order to deactivate the recalculation of the hydrostatic pressure at
         the boundary, which may otherwise cause instabilities.
         Please refer to the
-        <a href="../../theory.pdf#44"><b>handling of the hydrostatic pressure</b></a>
+        <a href="../../theory.pdf#iphydr"><b>handling of the hydrostatic pressure</b></a>
         section of the theory guide for more theoretical informations.
   \var  cs_stokes_model_t::igprij
         improve static pressure algorithm

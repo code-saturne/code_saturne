@@ -89,7 +89,7 @@ BEGIN_C_DECLS
  * \brief Convection-diffusion operators.
  *
  * Please refer to the
- * <a href="../../theory.pdf#32"><b>convection-diffusion</b></a> section of the
+ * <a href="../../theory.pdf#conv-diff"><b>convection-diffusion</b></a> section of the
  * theory guide for more theoretical informations.
  */
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -1658,7 +1658,7 @@ cs_max_limiter_building(int              f_id,
  * - mind the sign minus
  *
  * Please refer to the
- * <a href="../../theory.pdf#127"><b>bilsc2</b></a> section of the
+ * <a href="../../theory.pdf#bilsc2"><b>bilsc2</b></a> section of the
  * theory guide for more theoretical informations.
  *
  * \param[in]     idtvar        indicator of the temporal scheme
@@ -7682,7 +7682,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  * \f]
  *
  * Please refer to the
- * <a href="../../theory.pdf#225"><b>itrmas/itrgrp</b></a> section of the
+ * <a href="../../theory.pdf#itrmas"><b>itrmas/itrgrp</b></a> section of the
  * theory guide for more theoretical informations.
  *
  * \param[in]     f_id          field id (or -1)

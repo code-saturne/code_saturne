@@ -24,7 +24,7 @@
 !> Module for cavitation modeling
 !>
 !> Please refer to the
-!> <a href="../../theory.pdf#120"><b>cavitation model</b></a> section of the
+!> <a href="../../theory.pdf#cavitation"><b>cavitation model</b></a> section of the
 !> theory guide for more theoretical informations.
 
 module cavitation

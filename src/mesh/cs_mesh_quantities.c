@@ -67,7 +67,7 @@ BEGIN_C_DECLS
  *
  * \brief Management of mesh quantities.
  *
- * Please refer to the <a href="../../theory.pdf#379"><b>geometric quantities</b></a>
+ * Please refer to the <a href="../../theory.pdf#meshquantities"><b>geometric quantities</b></a>
  * section of the theory guide for more theoretical informations.
  */
 /*----------------------------------------------------------------------------*/

@@ -188,7 +188,7 @@ void CS_PROCF (vitens, VITENS)
  *
  * <a name="viscfa"></a>
  *
- * Please refer to the <a href="../../theory.pdf#285"><b>viscfa</b></a> section
+ * Please refer to the <a href="../../theory.pdf#viscfa"><b>viscfa</b></a> section
  * of the theory guide for more theoretical informations.
  *
  * \remark: a priori, no need of reconstruction techniques

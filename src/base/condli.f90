@@ -67,9 +67,9 @@
 !>   which coupled veclocity components next to a boundary.
 !>
 !> Please refer to the
-!> <a href="../../theory.pdf#45"><b>boundary conditions</b></a> section of the
+!> <a href="../../theory.pdf#boundary"><b>boundary conditions</b></a> section of the
 !> theory guide for more theoretical informations, as well as the
-!> <a href="../../theory.pdf#177"><b>condli</b></a> section.
+!> <a href="../../theory.pdf#condli"><b>condli</b></a> section.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

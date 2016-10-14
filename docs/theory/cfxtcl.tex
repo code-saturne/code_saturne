@@ -21,7 +21,9 @@
 %-------------------------------------------------------------------------------
 
 \programme{cfxtcl}
-%
+
+\hypertarget{cfxtcl}{}
+
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -210,7 +212,7 @@ On obtient, par r\'esolution d'un probl\`eme de Riemann au bord, compl\'et\'e pa
 des relations de thermodynamique (\fort{uscfth}), des valeurs de bord pour toutes
 les variables (on suppose qu'en entr\'ee, toutes les composantes de la vitesse
 sont fournies~; elles sont suppos\'ees nulles par d\'efaut, hormis pour les
-entrées à $(\rho,\vect{u})$ imposés, \var{IERUCF}, pour lesquelles il faut
+entr\'ees \'a $(\rho,\vect{u})$ impos\'es, \var{IERUCF}, pour lesquelles il faut
 fournir la vitesse explicitement).
 
 Ces valeurs de bord sont utilis\'ees de deux fa\c cons~:
@@ -234,7 +236,7 @@ de l'algorithme si l'on conserve une condition de Dirichlet sur la pression), ma
 a \'et\'e fait en supposant qu'une condition de Neumann homog\`ene serait {\it a
 priori} moins d\'estabilisante, dans la mesure o\`u, pour ce type de fronti\`ere,
 l'utilisateur peut imposer une valeur de pression tr\`es diff\'erente de
-celle r\'egnant \`a l'int\'erieur du domaine (la valeur imposée est utilisée
+celle r\'egnant \`a l'int\'erieur du domaine (la valeur impos\'ee est utilis\'ee
 pour le flux convectif).
 \item pour les grandeurs turbulentes et les scalaires utilisateur, si
 le flux de masse est entrant et que l'on a fourni
@@ -1440,7 +1442,7 @@ on imposera la valeur 1 dans \fort{cfrusb} pour les faces auxquelles on applique
 de Rusanov)
 \item \var{IA(IIFBET)} (rep\'erage des faces de paroi \`a temp\'erature ou
 \`a flux thermique impos\'e~: initialis\'e \`a 0, on imposera la valeur 1
-dans \fort{cfxtcl} lorsque la température ou le flux est imposé),
+dans \fort{cfxtcl} lorsque la temp\'erature ou le flux est impos\'e),
 \item \var{RCODCL(*,*,1)} (initialis\'e \`a \var{-RINFIN} en pr\'evision
 du traitement des sorties r\'eentrantes pour lesquelles l'utilisateur
 aurait fourni une valeur \`a imposer en Dirichlet),
@@ -1641,7 +1643,7 @@ dont l'une est utilis\'ee pour le calcul du flux diffusif sp\'ecifiquement.
 \`a temp\'erature impos\'ee}
 %---------------------------------
 
-Les  faces de paroi  \var{IFAC} \`a température impos\'ee sont identif\'ees par
+Les  faces de paroi  \var{IFAC} \`a temp\'erature impos\'ee sont identif\'ees par
 l'utilisateur dans \fort{uscfcl} au moyen de  l'indicateur
 \var{ICODCL(IFAC,ISCA(ITEMPK))=5} (noter que
 ce tableau est associ\'e \`a la temp\'erature).

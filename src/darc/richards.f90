@@ -34,7 +34,8 @@
 !> for transport.
 !> In order to ensure the exact conservation of mass, the mass fluxes are
 !> computed following the procedure of the standard subroutine resopv
-!> (see theory guide).
+!> (See the <a href="../../theory.pdf#resopv"><b>resopv</b></a>
+!> section of the theory guide for more theoretical informations).
 !>
 !> The hydraulic head is contained in the pressure array, while the velocities
 !> are contained in the velocity arrays.
@@ -62,7 +63,7 @@
 !>
 !> This routine is essentially inspired from navstv, resopv and codits.
 !>
-!> Please refer to the <a href="../../theory.pdf#108"><b>groundwater flows</b></a>
+!> Please refer to the <a href="../../theory.pdf#groundwater"><b>groundwater flows</b></a>
 !> section of the theory guide for more theoretical informations.
 !-------------------------------------------------------------------------------
 

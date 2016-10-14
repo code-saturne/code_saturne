@@ -261,6 +261,8 @@ and are supposed to be positive if the mesh is \emph{star-shaped}. Note also tha
 See the \doxygenfile{cs__convection__diffusion_8c.html}{programmers reference of the dedicated subroutine}
 for more informations on the convective and diffusive terms in \CS.
 
+\hypertarget{conv-diff}{}
+
 %-------------------------------------------------------------------------------
 \section{Convective term}\label{sec:spadis:convection}
 Using the notations adopted in \S~\ref{sec:spadis:notations},
@@ -425,6 +427,8 @@ The factor $ \frac{1}{2}$ is used for numerical stability reasons.
 
 %-------------------------------------------------------------------------------
 \section{Gradient calculation}
+
+\hypertarget{gradreco}{}
 
 The aim of the present section is to describe the algorithms available in \CS
 to compute cell gradient for scalar or vector fields. The first one uses an
@@ -1205,11 +1209,15 @@ Note that the $3\times3$ $\tens{C}_\celli$ tensor is  slightly different from \e
 %-------------------------------------------------------------------------------
 \subsection{Rhie \& Chow filter}
 
+\hypertarget{arak}{}
+
 Please refer to the \doxygenanchor{structcs__stokes__model__t.html\#arak}{programmers
 reference of the dedicated keyword \texttt{arak}}.
 
 %-------------------------------------------------------------------------------
 \subsection{Handling of the hydrostatic pressure}
+
+\hypertarget{iphydr}{}
 
 Please refer to the \doxygenanchor{structcs__stokes__model__t.html\#iphydr}{programmers
 reference of the dedicated keyword \texttt{iphydr}}.

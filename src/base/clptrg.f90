@@ -45,7 +45,7 @@
 !>
 !> Warning:
 !>
-!> - for a vector field such as the veclocity \f$ \vect{u} \f$ the boundary
+!> - for a vector field such as the velocity \f$ \vect{u} \f$ the boundary
 !>   conditions may read:
 !>   \f[
 !>   \vect{u}_\centf = \vect{A}_u^g + \tens{B}_u^g \vect{u}_\centi
@@ -57,7 +57,7 @@
 !>   where \f$ \tens{B}_u^g \f$ and \f$ \tens{B}_u^f \f$ are 3x3 tensor matrix
 !>   which coupled veclocity components next to a boundary.
 !>
-!> Please refer to the <a href="../../theory.pdf#153"><b>clptrg</b></a> section
+!> Please refer to the <a href="../../theory.pdf#cpltrg"><b>clptrg</b></a> section
 !> of the theory guide for more theoretical informations.
 !-------------------------------------------------------------------------------
 
@@ -845,7 +845,7 @@ do ifac = 1, nfabor
       ! Clipping :
       ! On borne U_f,grad entre 0 et Utau (il y a surement mieux...)
       ! - 0    : on interdit le retournement en face de bord, qui est en
-      !          contradiction avec l'hypothèse de loi log.
+      !          contradiction avec l'hypoth\E8se de loi log.
       ! - Utau : la production turbulente ne peut etre nulle
       ! On empeche U_f,flux d'etre negatif
 

@@ -41,7 +41,7 @@
 !> so that no term
 !> \f$\mu_t \dive \left(\overline{\vect{u}}\right)\f$ is needed.
 !>
-!> Please refer to the <a href="../../theory.pdf#291"><b>visecv</b></a> section
+!> Please refer to the <a href="../../theory.pdf#visecv"><b>visecv</b></a> section
 !> of the theory guide for more theoretical informations.
 !------------------------------------------------------------------------------
 

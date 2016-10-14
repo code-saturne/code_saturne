@@ -31,7 +31,7 @@
 !> over a time step.
 !>
 !> Please refer to the
-!> <a href="../../theory.pdf#187"><b>covofi</b></a> section of the
+!> <a href="../../theory.pdf#covofi"><b>covofi</b></a> section of the
 !> theory guide for more theoretical informations.
 !-------------------------------------------------------------------------------
 

@@ -21,7 +21,9 @@
 %-------------------------------------------------------------------------------
 
 \programme{resopv}\label{ap:resopv}
-%
+
+\hypertarget{resopv}{}
+
 \vspace{1cm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -181,7 +183,7 @@ $$
 The continuity constraint has yet to be enforced:
 $$\tens{D}\ \vect{W}^{\,n+1} = \vect{\Gamma} $$
 
-By combining the equations of continuity and motion and postulating that $ \delta \vect{P} = \vect{P}^{\,n+1} - \vect{P}^{\,n}$, the following Poisson-type equation is derived:   
+By combining the equations of continuity and motion and postulating that $ \delta \vect{P} = \vect{P}^{\,n+1} - \vect{P}^{\,n}$, the following Poisson-type equation is derived:
 
 \begin{equation}
  \tens{D}\ \tens{B}^{-1}\,\tens{G}\ \,\delta \vect{P} =\ \tens{D}\ \vect{\widetilde{W}} -\ \vect{\Gamma}
@@ -418,7 +420,7 @@ $$m_{\,ij} = \left[\rho \widetilde{\vect{u}}+ \displaystyle \alpha_{\,Arak}\ \te
 \end{itemize}
 
 \etape{Loop over the non orthogonalities}
-Assuming that the mesh is orthogonal, a single inversion would enable resolving the problem. The loop over the non-orthogonal elements is described below: 
+Assuming that the mesh is orthogonal, a single inversion would enable resolving the problem. The loop over the non-orthogonal elements is described below:
 
 \begin{itemize}
 
@@ -487,7 +489,7 @@ There are a number of outstanding issues that still need to be resolved:
 \item We could verify the normalized residual calculation (see \fort{predvv}).
 
 \item When computing the mass flux of $\displaystyle \widetilde{u}+
-\frac{\alpha}{\rho}\ \tens{T}\ \grad{p^n}$ in \fort{inimas}, we use the boundary conditions of the velocity at the time level $n$. The validity of this approach remains to be clarified, particularly for the  
+\frac{\alpha}{\rho}\ \tens{T}\ \grad{p^n}$ in \fort{inimas}, we use the boundary conditions of the velocity at the time level $n$. The validity of this approach remains to be clarified, particularly for the
 boundary conditions at the outlet. More generally, further analysis of the boundary conditions of the variables in
 \fort{navstv} is required. This issue is linked to the problem highlighted at the end of \fort{visecv}.
 

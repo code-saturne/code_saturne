@@ -10,6 +10,8 @@ is aligned with the rate of strain $\tens{S}$:
 %-------------------------------------------------------------------------------
 \subsection{Equations for the variables $k$ and $\varepsilon$ (standard $k-\varepsilon$ model)}
 
+\hypertarget{keps}{}
+
 \begin{equation}
 \left\{
 \begin{array}{r c l}
@@ -316,6 +318,9 @@ is halved compared to what is used in the $\varphi-\overline{f}$ model (\texttt{
 
 %-------------------------------------------------------------------------------
 \subsection{Spalart-Allmaras model}
+
+\hypertarget{spalart}{}
+
 The Spalart-Allmaras turbulence model \cite{Spalart:1992} is an \emph{EVM} \emph{RANS} model developed in the $90$'s in aeronautics, and is therefore well suited
 for studying a flow around an air-plane wing for instance.
 
@@ -479,6 +484,8 @@ on the Reynolds' stresses tensor.
 %-------------------------------------------------------------------------------
 \subsection{Equations for the Reynolds stress tensor components $R_{ij}$
 and $\varepsilon$ (\emph{LRR} model)}
+
+\hypertarget{rijeps}{}
 %
 \nomenclature[rrt2]{$\tens{R}$}{Reynolds stress tensor \nomunit{$m^{2}.s^{-2}$}}
 \nomenclature[rrij]{$R_{ij}$}{componant $ij$ of the Reynolds stress tensor \nomunit{$m^{2}.s^{-2}$}}
@@ -596,6 +603,8 @@ $0.09$ & $0.18$ & $1.44$ & $1.92$ & $1.8$ & $0.6$ & $0.55$ & $0.22$ & $0.5$
 %-------------------------------------------------------------------------------
 \subsection{Standard Smagorinsky model}
 
+\hypertarget{smago}{}
+
 \begin{equation}
 \mu_{t}=\rho \, \left( C_{s}\,\overline{\Delta } \right)^{2}
 \sqrt{2\overline{\tens{S}} \,: \, \overline{\tens{S}}},
@@ -634,6 +643,9 @@ See the \doxygenfile{vissma_8f90.html}{programmers reference of the dedicated su
 
 %-------------------------------------------------------------------------------
 \subsection{Dynamic Smagorinsky model}
+
+\hypertarget{dynsmago}{}
+
 A second filter is introduced: it is an explicit filter with a
 characteristic width $\widetilde{\Delta }$ superior to that of the implicit
 filter ($\overline{\Delta }$). If $\varia$ is a discrete variable defined over
