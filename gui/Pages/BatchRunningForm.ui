@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>537</width>
-    <height>745</height>
+    <width>562</width>
+    <height>790</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -657,13 +657,27 @@
            </widget>
           </item>
           <item row="4" column="0">
+           <widget class="QLabel" name="labelBuildType">
+            <property name="text">
+             <string>Build type</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2">
+           <widget class="QComboBox" name="comboBoxBuildType">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Type of compute build to use for this run.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
            <widget class="QLabel" name="labelAdvanced">
             <property name="text">
              <string>Advanced options</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="2">
+          <item row="5" column="2">
            <widget class="QToolButton" name="toolButtonAdvanced">
             <property name="text">
              <string>...</string>
@@ -704,8 +718,8 @@
     <widget class="QGroupBox" name="groupBox">
      <property name="sizeHint" stdset="0">
       <size>
-       <width>194</width>
-       <height>74</height>
+       <width>198</width>
+       <height>67</height>
       </size>
      </property>
      <property name="title">

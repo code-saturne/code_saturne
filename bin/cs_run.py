@@ -64,7 +64,7 @@ def process_cmd_line(argv, pkg):
     parser = OptionParser(usage=usage)
 
     parser.add_option("--compute-build", dest="compute_build", type="string",
-                      metavar="<case>",
+                      metavar="<build>",
                       help="base name or full path to the compute build")
 
     parser.add_option("-n", "--nprocs", dest="nprocs", type="int",

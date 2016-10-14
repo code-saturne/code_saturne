@@ -197,6 +197,9 @@ class package:
         Return alternate version package object
         """
 
+        if not version:
+            return self
+
         pkg = None
 
         # Determine path (by absolute or local name)

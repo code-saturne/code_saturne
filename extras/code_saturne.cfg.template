@@ -13,7 +13,8 @@
 ### Define installation prefixes of alternate builds for compute tasks.
 ### Either the absolute name or the base name of the installation prefix may
 ### be used (using the more concise base name assumes a consistent naming
-### scheme, with builds installed side-by-side).
+### scheme, with builds installed side-by-side). Multiple builds are
+### separated by colons (:).
 # compute_versions =
 ###
 ### Set the location to the SYRTHES installation directory

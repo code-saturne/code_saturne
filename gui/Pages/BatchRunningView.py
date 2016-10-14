@@ -460,6 +460,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                     self.case['runcase'] = cs_runcase.runcase(runcase_path,
                                                               package=self.case['package'])
 
+        self.jmdl = BatchRunningModel(parent, self.case)
+
         # Get MPI and OpenMP features
 
         self.have_mpi = False
@@ -469,17 +471,27 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         config = configparser.ConfigParser()
         config.read(self.case['package'].get_configfiles())
 
+        compute_build_id = -1
+        self.compute_versions = None
         if config.has_option('install', 'compute_versions'):
-            compute_versions = config.get('install', 'compute_versions').split(':')
-            if compute_versions[0]:
-                pkg_compute = self.case['package'].get_alternate_version(compute_versions[0])
-                config_features = pkg_compute.config.features
+            self.compute_versions = config.get('install', 'compute_versions').split(':')
+            compute_build_id = 0
+            if len(self.compute_versions) > 1:
+                run_build = self.jmdl.dictValues['run_build']
+                if self.compute_versions.count(run_build) > 0:
+                    compute_build_id = self.compute_versions.index(run_build)
+                elif run_build:
+                    compute_build_id = -1
+                    self.jmdl.dictValues['run_build'] = None
+                    self.jmdl.updateBatchFile('run_build')
+
+        if compute_build_id >= 0:
+            pkg_compute = self.case['package'].get_alternate_version(self.compute_versions[compute_build_id])
+            config_features = pkg_compute.config.features
         if config_features['mpi'] == 'yes':
             self.have_mpi = True
         if config_features['openmp'] == 'yes':
             self.have_openmp = True
-
-        self.jmdl = BatchRunningModel(parent, self.case)
 
         # Batch info
 
@@ -490,6 +502,19 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.labelNThreads.hide()
         self.spinBoxNThreads.hide()
+
+        if compute_build_id < 0:
+            self.labelBuildType.hide()
+            self.comboBoxBuildType.hide()
+        else:
+            self.comboBoxBuildType.currentIndexChanged[int].connect(self.slotBuildType)
+            for b in self.compute_versions:
+                build_type_label = b
+                if not build_type_label:
+                    build_type_label = "[default]"
+                self.comboBoxBuildType.addItem(self.tr(build_type_label),
+                                               to_qvariant(build_type_label))
+            self.comboBoxBuildType.setCurrentIndex(compute_build_id)
 
         self.class_list = None
 
@@ -711,6 +736,33 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         else:
             self.jmdl.dictValues['run_nthreads'] = None
         self.jmdl.updateBatchFile('run_nthreads')
+
+
+    @pyqtSlot(str)
+    def slotBuildType(self, v):
+
+        self.jmdl.dictValues['run_build'] = str(self.compute_versions[self.comboBoxBuildType.currentIndex()])
+        self.jmdl.updateBatchFile('run_build')
+        compute_build_id = self.compute_versions.index(self.jmdl.dictValues['run_build'])
+        pkg_compute = self.case['package'].get_alternate_version(self.compute_versions[compute_build_id])
+        config_features = pkg_compute.config.features
+        if config_features['mpi'] == 'yes':
+            self.have_mpi = True
+        else:
+            self.have_mpi = False
+            self.spinBoxNProcs.setValue(1)
+            self.jmdl.dictValues['run_nprocs'] = None
+            self.jmdl.updateBatchFile('run_nprocs')
+
+        if config_features['openmp'] == 'yes':
+            self.have_openmp = True
+        else:
+            self.have_openmp = False
+            self.spinBoxNThreads.setValue(1)
+            self.jmdl.dictValues['run_nthreads'] = None
+            self.jmdl.updateBatchFile('run_nthreads')
+
+        self.displayScriptInfo()
 
 
     @pyqtSlot(str)
@@ -1006,9 +1058,15 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             if self.have_mpi:
                 self.labelNProcs.show()
                 self.spinBoxNProcs.show()
+            else:
+                self.labelNProcs.hide()
+                self.spinBoxNProcs.hide()
             if self.have_openmp:
                 self.labelNThreads.show()
                 self.spinBoxNThreads.show()
+            else:
+                self.labelNThreads.hide()
+                self.spinBoxNThreads.hide()
         else:
             self.labelNProcs.hide()
             self.spinBoxNProcs.hide()

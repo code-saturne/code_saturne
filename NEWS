@@ -23,6 +23,11 @@ Physical modelling
     To revert to the previous behavior, the CS_LAGR_RESIDENCE_TIME value
     must be set to 0 for newly injected particles.
 
+GUI changes
+-----------
+
+- Add handling of multiple compute builds through the GUI.
+
 Architectural changes
 ---------------------
 
