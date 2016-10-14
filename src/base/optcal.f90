@@ -992,10 +992,34 @@ module optcal
   !> only one scalar can be coupled with syrthes
   integer, save :: icpsyr(nscamx)
 
-  !> improve hydrostatic pressure algorithm
-  !>    - 1: impose the equilibrium of the hydrostaic part of the pressure with any external force, even head losses
-  !>    - 2: compute an hydrostatic pressure due to buoyancy forces before the prediction step
+  !> improve static pressure algorithm
+  !>    - 1: impose the equilibrium of the static part of the pressure
+  !>         with any external force, even head losses
+  !>    - 2: compute an hydrostatic pressure due to buoyancy forces before
+  !>         the prediction step
   !>    - 0: no treatment (default)
+  !>        When the density effects are important, the choice of \ref iphydr = 1
+  !>        allows to improve the interpolation of the pressure and correct the
+  !>        non-physical velocities which may appear in highly stratified areas
+  !>        or near horizontal walls (thus avoiding the use of
+  !>        \ref cs_var_cal_opt_t::extrag "extrag"
+  !>        if the non-physical velocities are due only to gravity effects).\n
+  !>        The improved algorithm also allows eradicating the velocity oscillations
+  !>        which tend to appear at the frontiers of areas with high head losses.\n
+  !>        In the case of a stratified flow, the calculation cost is higher when
+  !>        the improved algorithm is used (about 30\% depending on the case)
+  !>        because the hydrostatic pressure must be recalculated at the outlet
+  !>        boundary conditions: see \ref icalhy.\n
+  !>        On meshes of insufficient quality, in order to
+  !>        improve the convergence, it may be useful to increase the number of
+  !>        iterations for the reconstruction of the pressure right-hand side,
+  !>        i.e. \ref cs_var_cal_opt_t::nswrsm "nswrsm".\n If head losses are
+  !>        present just along an outlet boundary, it is necessary to specify
+  !>        \ref icalhy = 0 in order to deactivate the recalculation of the
+  !>        hydrostatic pressure at the boundary, which may otherwise cause
+  !>        instabilities. Please refer to the
+  !>    <a href="../../theory.pdf#iphydr"><b>handling of the hydrostatic pressure</b></a>
+  !>      section of the theory guide for more theoretical informations.
   integer(c_int), pointer, save :: iphydr
 
   !> improve static pressure algorithm
