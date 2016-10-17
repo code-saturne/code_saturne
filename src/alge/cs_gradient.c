@@ -2128,6 +2128,7 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   halo_type      <-- halo type (extended or not)
+ *   cpl            <-> structure associated with internal coupling, or NULL
  *   recompute_cocg <-- flag to recompute cocg
  *   nswrgp         <-- number of sweeps for gradient reconstruction
  *   idimtr         <-- 0 if ivar does not match a vector or tensor
@@ -2219,9 +2220,8 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   cs_real_3_t  dc, dddij, dsij;
   cs_real_4_t  fctb;
 
-  bool* coupled_faces = (cpl == NULL) ?
-    NULL :
-    (bool*) cpl->coupled_faces;
+  bool  *coupled_faces = (cpl == NULL) ?
+    NULL : (bool *)cpl->coupled_faces;
 
   /* Remark:
 
@@ -2475,11 +2475,10 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from coupled faces */
 
-    if (cpl != NULL) {
+    if (cpl != NULL)
       cs_internal_coupling_lsq_rhs(cpl,
                                    c_weight,
                                    rhsv);
-    }
 
     /* Contribution from boundary faces */
 
@@ -4573,7 +4572,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
  * parameters:
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
- *   cpl
+ *   cpl            <-> structure associated with internal coupling, or NULL
  *   idimtr         <-- 0 if ivar does not match a vector or tensor
  *                        or there is no periodicity of rotation
  *                      1 for velocity, 2 for Reynolds stress
@@ -4635,9 +4634,8 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
   cs_lnum_t  ii, jj;
   int        g_id, t_id;
 
-  bool* coupled_faces = (cpl == NULL) ?
-    NULL :
-    (bool*) cpl->coupled_faces;
+  bool  *coupled_faces = (cpl == NULL) ?
+    NULL : (bool *)cpl->coupled_faces;
 
   /* Initialize gradient */
   /*---------------------*/
@@ -4865,7 +4863,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
  * parameters:
  *   m               <-- pointer to associated mesh structure
  *   fvq             <-- pointer to associated finite volume quantities
- *   cpl <-- pointer to associated coupling entity
+ *   cpl             <-> structure associated with internal coupling, or NULL
  *   var_name        <-- variable name
  *   nswrgp          <-- number of sweeps for gradient reconstruction
  *   idimtr          <-- 0 if ivar does not match a vector or tensor
@@ -4937,8 +4935,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *restrict)fvq->dofij;
 
   cs_real_33_t *restrict cocg = (cpl == NULL) ?
-    fvq->cocg_it :
-    cpl->cocg_s_it;
+    fvq->cocg_it : cpl->cocg_s_it;
 
   cs_lnum_t  face_id;
   int        g_id, t_id;
@@ -4951,9 +4948,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
   if (nswrgp < 1) return;
 
-  bool* coupled_faces = (cpl == NULL) ?
-    NULL :
-    (bool*) cpl->coupled_faces;
+  bool  *coupled_faces = (cpl == NULL) ?
+    NULL : (bool *)cpl->coupled_faces;
 
   /* Reconstruct gradients for non-orthogonal meshes */
   /*-------------------------------------------------*/
@@ -5547,8 +5543,7 @@ cs_gradient_finalize(void)
  * \param[in, out]  var             gradient's base variable
  * \param[in, out]  c_weight        weighted gradient coefficient variable,
  *                                  or NULL
- * \param[in, out]  cpl structure associated with internal coupling,
-                                    or NULL
+ * \param[in, out]  cpl structure associated with internal coupling, or NULL
  * \param[out]      grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -5612,6 +5607,7 @@ cs_gradient_scalar(const char                *var_name,
     gradient_info = _find_or_add_system(var_name, gradient_type);
 
   /* Check internal coupling parameters */
+
   if (cpl != NULL) {
     /* This case already handled in fldini */
     if (halo_type == CS_HALO_EXTENDED)
@@ -5629,7 +5625,6 @@ cs_gradient_scalar(const char                *var_name,
                 "Only ITER / LSQ gradient approximation is implemented \
                  with internal coupling.");
   }
-
 
   /* Synchronize variable */
 
