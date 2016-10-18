@@ -1606,16 +1606,15 @@ cs_lagr_injection(int        time_id,
       cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
 
       /* si de nouvelles particules sont entrees, */
-      if (ts->nt_cur % local_userdata->injection_frequency == 0
-          && userdata->flow_rate > 0.0) {
+      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
 
         for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
 
           unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
           bdy_cond->particle_flow_rate[izone]
-            += (cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT)
-               * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS));
+            += (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT)
+                * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS));
           p_set->weight_new += cs_lagr_particle_get_real(particle, p_am,
                                                          CS_LAGR_STAT_WEIGHT);
 

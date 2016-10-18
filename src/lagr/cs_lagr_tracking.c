@@ -1489,7 +1489,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                     void                      *particle,
                     cs_lnum_t                  face_num,
                     double                     t_intersect,
-                    cs_lnum_t                  boundary_zone,
+                    int                        boundary_zone,
                     cs_lnum_t                 *p_move_particle)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -2261,6 +2261,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   /* Return pointer */
 
   *p_move_particle = move_particle;
+
+  if (particle_state == CS_LAGR_PART_OUT) {
+    bdy_conditions->particle_flow_rate[boundary_zone]
+      -= (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT)
+          * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS));
+  }
 
   /* FIXME: Post-treatment not yet implemented... */
 

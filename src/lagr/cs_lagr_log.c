@@ -503,11 +503,9 @@ cs_lagr_log_iteration(void)
   cs_lagr_internal_condition_t *internal_cond = cs_lagr_get_internal_conditions();
 #endif
 
-  for (cs_lnum_t ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-
-    if (bdy_cond->b_zone_id[ii] >= nbfr-1)
-      nbfr = bdy_cond->b_zone_id[ii] + 1;
-
+  for (int i = 0; i < bdy_cond->n_b_zones; i++) {
+    if (bdy_cond->b_zone_id[i] > nbfr)
+      nbfr = bdy_cond->b_zone_id[i] + 1;
   }
 
   if (cs_glob_rank_id >= 0)
@@ -532,32 +530,32 @@ cs_lagr_log_iteration(void)
 
     if (debloc[0] > 0.5) {
 
-      char const *chcond;
+      const char *chcond;
 
       if (bdy_cond->b_zone_natures[nb] == CS_LAGR_INLET)
-        chcond = "INLET";
+        chcond = _("inlet");
 
       else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_REBOUND)
-        chcond = "REBOUND";
+        chcond = _("rebound");
 
       else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_OUTLET)
-        chcond = "OUTLET";
+        chcond = _("outlet");
 
       else if (   bdy_cond->b_zone_natures[nb] == CS_LAGR_DEPO1
                || bdy_cond->b_zone_natures[nb] == CS_LAGR_DEPO2)
-        chcond = "DEPOSITION";
+        chcond = _("deposition");
 
       else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_FOULING)
-        chcond = "FOULING";
+        chcond = _("fouling");
 
       else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_DEPO_DLVO)
-        chcond = "DLVO CONDITIONS";
+        chcond = _("dlvo conditions");
 
       else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_SYM)
-        chcond = "SYMMETRY";
+        chcond = _("symmetry");
 
       else
-        chcond = "USER";
+        chcond = _("user");
 
       cs_log_printf(CS_LOG_DEFAULT,
                     "  %3d          %12.5E         %s\n",
