@@ -912,7 +912,21 @@ _manage_error(cs_lnum_t                       failsafe_mode,
               const cs_lagr_attribute_map_t  *attr_map,
               cs_lagr_tracking_error_t        error_type)
 {
-  cs_lagr_particle_set_lnum(particle, attr_map, CS_LAGR_CELL_NUM, 0);
+  cs_real_t *prev_part_coord
+    = cs_lagr_particle_attr_n(particle, attr_map, 1, CS_LAGR_COORDS);
+  cs_real_t *part_coord
+    = cs_lagr_particle_attr(particle, attr_map, CS_LAGR_COORDS);
+
+  const cs_real_t  *prev_location
+    = ((const cs_lagr_tracking_info_t *)particle)->start_coords;
+
+  cs_real_t d0 = cs_math_3_length(part_coord, prev_part_coord);
+  cs_real_t d1 = cs_math_3_length(part_coord, prev_location);
+
+  cs_lagr_particle_set_real(particle, attr_map, CS_LAGR_TR_TRUNCATE, d1/d0);
+
+  if (error_type == CS_LAGR_TRACKING_ERR_LOST_PIC)
+    cs_lagr_particle_set_lnum(particle, attr_map, CS_LAGR_TR_TRUNCATE, 2.0);
 
   if (failsafe_mode == 1) {
     switch (error_type) {
@@ -928,34 +942,6 @@ _manage_error(cs_lnum_t                       failsafe_mode,
       break;
     }
   }
-}
-
-/*----------------------------------------------------------------------------
- * Test if all displacements are finished for all ranks.
- *
- * returns:
- *   true if there is a need to move particles or false, otherwise
- *----------------------------------------------------------------------------*/
-
-static bool
-_continue_displacement(void)
-{
-  int test = 0;
-
-  const cs_lagr_particle_set_t  *set = cs_glob_lagr_particle_set;
-  const cs_lnum_t  n_particles = set->n_particles;
-
-  for (cs_lnum_t i = 0; i < n_particles && test == 0; i++) {
-    if (_get_tracking_info(set, i)->state == CS_LAGR_PART_TO_SYNC)
-      test = 1;
-  }
-
-  cs_parall_max(1, CS_INT_TYPE, &test);
-
-  if (test == 1)
-    return true;
-  else
-    return false;
 }
 
 /*----------------------------------------------------------------------------
@@ -1367,7 +1353,8 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
 
   cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
-  cs_lagr_internal_condition_t *internal_conditions = cs_glob_lagr_internal_conditions;
+  cs_lagr_internal_condition_t *internal_conditions
+    = cs_glob_lagr_internal_conditions;
 
   cs_lagr_tracking_info_t *p_info = (cs_lagr_tracking_info_t *)particle;
 
@@ -1386,11 +1373,7 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
   assert(internal_conditions != NULL);
 
   for (k = 0; k < 3; k++)
-    disp[k] = particle_coord[k] - p_info->start_coords[k];
-
-  for (k = 0; k < 3; k++) {
     face_normal[k] = fvq->i_face_normal[3*face_id+k];
-  }
 
   cs_real_t face_area  = fvq->i_face_surf[face_id];
 
@@ -2414,7 +2397,7 @@ _local_propagation(void                           *particle,
                     CS_LAGR_TRACKING_ERR_MAX_LOOPS);
 
       move_particle  = CS_LAGR_PART_MOVE_OFF;
-      particle_state = CS_LAGR_PART_ERR;
+      particle_state = CS_LAGR_PART_TREATED;
       return particle_state;
 
     }
@@ -2496,9 +2479,6 @@ _local_propagation(void                           *particle,
 
     double t_intersect = -1;
 
-    cs_real_t  *particle_jrval;
-    particle_jrval = cs_lagr_particle_attr(particle, p_am, CS_LAGR_RANDOM_VALUE);
-
     bool restart = false;
     /* Outward normal: always well oriented for external faces, depend on the
      * connectivity for internal faces */
@@ -2571,10 +2551,10 @@ _local_propagation(void                           *particle,
     }
 
     /* We test here if the particle is truly within the current cell
-    * (meaning n_in = n_out > 0 )
-    * If there is a problem (pb with particle stricly // and on the face?),
-    * the particle initial position is replaced at the cell center
-    * and we continue the trajectory analysis. */
+     * (meaning n_in = n_out > 0 )
+     * If there is a problem (pb with particle strictly // and on the face ?),
+     * the particle initial position is replaced at the cell center
+     * and we continue the trajectory analysis. */
 
     bool test_in = (n_in == 0 && n_out == 0);
 
@@ -2583,27 +2563,20 @@ _local_propagation(void                           *particle,
       for (k = 0; k < 3; k++)
         prev_location[k] = cell_cen[k];
 
-      if (!(restart)) {
-        bft_printf("Warning in local_propagation: the particle is not in the cell:"
-                   "n_in=%d, n_out=%d, jrval %e \n",
-                   n_in, n_out, *particle_jrval);
-        bft_printf("the particle is replaced at the cell center and the"
-                   "trajectory analysis continues from this new position\n");
-        restart = true;
-      }
-      else {
-        bft_printf("Problem in local_propagation: the particle is not in the cell:"
-                   "n_in=%d, n_out=%d, jrval %e \n",
-                   n_in, n_out, *particle_jrval);
-        bft_printf("the particle has been removed from the simulation\n");
+      cs_lnum_t n_rep
+        = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_TR_REPOSITION);
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_TR_REPOSITION, n_rep+1);
 
+      if (!(restart))
+        restart = true;
+      else {
         _manage_error(failsafe_mode,
             particle,
             p_am,
             CS_LAGR_TRACKING_ERR_LOST_PIC);
 
         move_particle  = CS_LAGR_PART_MOVE_OFF;
-        particle_state = CS_LAGR_PART_ERR;
+        particle_state = CS_LAGR_PART_TREATED;
         return particle_state;
       }
       goto reloop_cen;
@@ -3121,9 +3094,12 @@ _lagr_halo_count(const cs_mesh_t               *mesh,
  *
  * parameters:
  *   particles <-> set of particles to update
+ *
+ * returns:
+ *   1 if displacement needs to continue, 0 if finished
  *----------------------------------------------------------------------------*/
 
-static void
+static int
 _sync_particle_set(cs_lagr_particle_set_t  *particles)
 {
   cs_lnum_t  i, k, tr_id, rank, shift, ghost_id;
@@ -3150,6 +3126,8 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
   const fvm_periodicity_t *periodicity = mesh->periodicity;
   const cs_interface_set_t  *face_ifs = builder->face_ifs;
 
+  int continue_displacement = 0;
+
   if (halo != NULL) {
 
     _lagr_halo_count(mesh, lag_halo, particles);
@@ -3174,6 +3152,8 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
     /* Particle changes domain */
 
     if (cur_part_state == CS_LAGR_PART_TO_SYNC) {
+
+      continue_displacement = 1;
 
       ghost_id =   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM)
                  - halo->n_local_elts - 1;
@@ -3355,6 +3335,10 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 
   if (halo != NULL)
     _exchange_particles(halo, lag_halo, particles);
+
+  cs_parall_max(1, CS_INT_TYPE, &continue_displacement);
+
+  return continue_displacement;
 }
 
 /*----------------------------------------------------------------------------
@@ -3385,10 +3369,13 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
 
     cs_lnum_t cur_part_cell_num
       = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM);
+    cs_real_t r_truncate
+      = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_TR_TRUNCATE);
+
     if (cur_part_cell_num < 0)
       _tracking_info(particles, i)->state = CS_LAGR_PART_STUCK;
-    else if (cur_part_cell_num == 0)
-      _tracking_info(particles, i)->state = CS_LAGR_PART_TO_DELETE;
+    else if (r_truncate > 1.9) /* from previous displacement */
+      _tracking_info(particles, i)->state = CS_LAGR_PART_ERR;
     else {
       _tracking_info(particles, i)->state = CS_LAGR_PART_TO_SYNC;
       if (am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
@@ -3414,16 +3401,20 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
 
     cs_real_t res_time = cs_lagr_particles_get_real(particles, i,
                                                    CS_LAGR_RESIDENCE_TIME);
+
     if (res_time < 0) {
-      cs_real_t *part_coord
-        = cs_lagr_particles_attr(particles, i, CS_LAGR_COORDS);
       cs_real_t fraction =   (cs_glob_lagr_time_step->dtp + res_time)
                            / cs_glob_lagr_time_step->dtp;
+      cs_real_t *part_coord
+        = cs_lagr_particles_attr(particles, i, CS_LAGR_COORDS);
       for (cs_lnum_t j = 0; j < 3; j++) {
         cs_real_t d = part_coord[j] - prv_part_coord[j];
         part_coord[j] = prv_part_coord[j] + fraction*d;
       }
     }
+
+    cs_lagr_particles_set_real(particles, i, CS_LAGR_TR_TRUNCATE, 0);
+    cs_lagr_particles_set_lnum(particles, i, CS_LAGR_TR_REPOSITION, 0);
 
     /* Data needed if the deposition model is activated */
     if (   lagr_model->deposition <= 0
@@ -3617,7 +3608,8 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
-  int        n_displacement_steps = 0;
+  int  n_displacement_steps = 0;
+  int  continue_displacement = 1;
 
   cs_lagr_particle_set_t  *particles = cs_glob_lagr_particle_set;
 
@@ -3662,7 +3654,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
   /* Main loop on  particles: global propagation */
 
-  while (_continue_displacement()) {
+  while (continue_displacement) {
 
     /* Local propagation */
 
@@ -3696,7 +3688,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
     /* Update of the particle set structure. Delete exited particles,
        update for particles which change domain. */
 
-    _sync_particle_set(particles);
+    continue_displacement = _sync_particle_set(particles);
 
 #if 0
     bft_printf("\n Particle set after sync\n");

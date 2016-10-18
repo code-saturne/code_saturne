@@ -66,6 +66,11 @@ typedef enum {
   CS_LAGR_VELOCITY,
   CS_LAGR_VELOCITY_SEEN,
 
+  CS_LAGR_TR_TRUNCATE,         /*!< portion of trajectory truncated */
+  CS_LAGR_TR_REPOSITION,       /*!< number of times the particle is repositioned
+                                    at the cell center, or -1 when lost (to be
+                                    discarded at the next displacement step) */
+
   /* Arrays for 2nd order scheme */
 
   CS_LAGR_TURB_STATE_1,        /* turbulence characteristics of first pass */

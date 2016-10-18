@@ -22,6 +22,10 @@ Physical modelling
   * injection is now pseudo-continuous when injecting at every time step.
     To revert to the previous behavior, the CS_LAGR_RESIDENCE_TIME value
     must be set to 0 for newly injected particles.
+  * 2 new attributes, CS_LAGR_TR_TRUNCATE and CS_LAGR_TR_REPOSITION, may
+    be used to visualize particles with trajectory errors, rather than
+    remove them. Particles are now only removed when "completely lost",
+    which should never happen.
 
 GUI changes
 -----------

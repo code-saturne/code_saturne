@@ -167,6 +167,8 @@ const char *cs_lagr_attribute_name[] = {
   "coords",
   "velocity",
   "velocity_seen",
+  "tr_truncate",
+  "tr_reposition",
   "turb_state_1",
   "pred_velocity",
   "pred_velocity_seen",
@@ -705,6 +707,12 @@ cs_lagr_particle_attr_initialize(void)
 
   attr_keys[CS_LAGR_VELOCITY_SEEN][1] = ++loc_count;
   attr_keys[CS_LAGR_VELOCITY_SEEN][2] = 3;
+
+  attr_keys[CS_LAGR_TR_TRUNCATE][0] = CS_LAGR_P_RPRP;
+  attr_keys[CS_LAGR_TR_TRUNCATE][1] = ++loc_count;
+
+  attr_keys[CS_LAGR_TR_REPOSITION][0] = CS_LAGR_P_IPRP;
+  attr_keys[CS_LAGR_TR_REPOSITION][1] = ++loc_count;
 
   if (lagr_time_scheme->t_order > 1) {
     attr_keys[CS_LAGR_TAUP_AUX][0] = CS_LAGR_P_RPRP;
