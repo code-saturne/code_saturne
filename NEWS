@@ -1,4 +1,13 @@
 
+Release 4.3.2 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- Lagragian model:
+  * Fix some parallel resizing issues.
+
 Release 4.3.1 (October 7 2016)
 ==============================
 
