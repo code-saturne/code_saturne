@@ -111,7 +111,7 @@ _cs_internal_coupling_create_locator(cs_internal_coupling_t  *cpl)
   const cs_lnum_t n_local = cpl->n_0;
   const cs_lnum_t n_distant = cpl->n_0;
   const int *tag = cpl->tag_0;
-  const cs_lnum_t *faces_local = cpl->faces_0;
+  cs_lnum_t *faces_local = NULL;
   const cs_lnum_t *faces_distant = cpl->faces_0;
 
   fvm_nodal_t* nm = NULL;
@@ -134,6 +134,10 @@ _cs_internal_coupling_create_locator(cs_internal_coupling_t  *cpl)
 
   /* Create fvm_nodal_t structure */
 
+  BFT_MALLOC(faces_local, n_local, cs_lnum_t);
+  memcpy(faces_local,
+         cpl->faces_0,
+         n_local*sizeof(cs_lnum_t));
   nm = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                       mesh_name,
                                       false,
@@ -156,14 +160,17 @@ _cs_internal_coupling_create_locator(cs_internal_coupling_t  *cpl)
     /* Default tag is 0 */
     tag_nm[ii] = 0;
     for (cs_lnum_t jj = 0; jj < n_local; jj++) {
-      if (faces_in_nm[ii] == faces_local[jj])
+      if (faces_in_nm[ii] == faces_local[jj]){
         tag_nm[ii] = tag[jj];
+        break;
+      }
     }
   }
   fvm_nodal_set_tag(nm, tag_nm, 2);
   /* Free memory */
   BFT_FREE(faces_in_nm);
   BFT_FREE(tag_nm);
+  BFT_FREE(faces_local);
 
   /* Creation of distant group cell centers */
 
@@ -222,24 +229,6 @@ _cs_internal_coupling_destroy_entity(cs_internal_coupling_t  *cpl)
   BFT_FREE(cpl->criteria_cells_2);
   BFT_FREE(cpl->namesca);
   ple_locator_destroy(cpl->locator_0);
-}
-
-/*----------------------------------------------------------------------------
- * Compare local numbers (qsort function).
- *
- * parameters:
- *   a <-- pointer to first value
- *   b <-- pointer to second value
- *
- * returns:
- *   a-b
- *----------------------------------------------------------------------------*/
-
-static int
-_compare_int(const void* a,
-             const void* b)
-{
-  return (*(const int*)a - *(const int*)b);
 }
 
 /*----------------------------------------------------------------------------
@@ -1574,7 +1563,7 @@ cs_matrix_preconditionning_add_coupling_contribution(void       *input,
     int ii;
     cs_lnum_t face_id, cell_id;
 
-    const n_0 = cpl->n_0;
+    const cs_lnum_t n_0 = cpl->n_0;
     const cs_lnum_t *faces_0 = cpl->faces_0;
 
     const cs_lnum_t *restrict b_face_cells
