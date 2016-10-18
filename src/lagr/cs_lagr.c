@@ -1759,9 +1759,10 @@ cs_lagr_finalize_bdy_cond(void)
 void cs_lagr_finalize_internal_cond(void)
 {
   cs_lagr_internal_condition_t  *internal_cond = cs_glob_lagr_internal_conditions;
-  if (internal_cond != NULL)
+  if (internal_cond != NULL) {
     BFT_FREE(internal_cond->i_face_zone_id);
-
+    BFT_FREE(internal_cond);
+  }
 }
 
 /*----------------------------------------------------------------------------
