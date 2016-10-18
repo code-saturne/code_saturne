@@ -2895,8 +2895,6 @@ _exchange_particles(const cs_halo_t         *halo,
                     cs_lagr_halo_t          *lag_halo,
                     cs_lagr_particle_set_t  *particles)
 {
-  void  *recv_buf = NULL, *send_buf = NULL;
-
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
   const size_t tot_extents = lag_halo->extents;
@@ -2918,23 +2916,23 @@ _exchange_particles(const cs_halo_t         *halo,
       cs_lnum_t shift =   particles->n_particles
                         + lag_halo->recv_shift[rank];
 
-      if (lag_halo->recv_count[rank] == 0)
-        recv_buf = NULL;
-      else
-        recv_buf = particles->p_buffer + tot_extents*shift;
+      if (lag_halo->recv_count[rank] > 0) {
 
-      if (halo->c_domain_rank[rank] != local_rank) {
-        n_recv_particles += lag_halo->recv_count[rank];
-        MPI_Irecv(recv_buf,
-                  lag_halo->recv_count[rank],
-                  _cs_mpi_particle_type,
-                  halo->c_domain_rank[rank],
-                  halo->c_domain_rank[rank],
-                  cs_glob_mpi_comm,
-                  &(lag_halo->request[request_count++]));
+        if (halo->c_domain_rank[rank] != local_rank) {
+          void  *recv_buf = particles->p_buffer + tot_extents*shift;
+          n_recv_particles += lag_halo->recv_count[rank];
+          MPI_Irecv(recv_buf,
+                    lag_halo->recv_count[rank],
+                    _cs_mpi_particle_type,
+                    halo->c_domain_rank[rank],
+                    halo->c_domain_rank[rank],
+                    cs_glob_mpi_comm,
+                    &(lag_halo->request[request_count++]));
+        }
+        else
+          local_rank_id = rank;
+
       }
-      else
-        local_rank_id = rank;
 
     }
 
@@ -2951,14 +2949,10 @@ _exchange_particles(const cs_halo_t         *halo,
 
       /* If this is not the local rank */
 
-      if (halo->c_domain_rank[rank] != local_rank) {
-
+      if (   halo->c_domain_rank[rank] != local_rank
+          && lag_halo->send_count[rank] > 0) {
         cs_lnum_t shift = lag_halo->send_shift[rank];
-        if (lag_halo->send_count[rank] == 0)
-          send_buf = NULL;
-        else
-          send_buf = lag_halo->send_buf + tot_extents*shift;
-
+        void  *send_buf = lag_halo->send_buf + tot_extents*shift;
         MPI_Isend(send_buf,
                   lag_halo->send_count[rank],
                   _cs_mpi_particle_type,
@@ -3084,8 +3078,9 @@ _lagr_halo_count(const cs_mesh_t               *mesh,
 
   }
 
-  /* Resize halo only if needed */
+  /* Resize particle set and/or halo only if needed */
 
+  cs_lagr_particle_set_resize(particles->n_particles + n_recv_particles);
   _resize_lagr_halo(lag_halo, n_send_particles);
 }
 
