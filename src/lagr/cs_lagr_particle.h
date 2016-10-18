@@ -53,7 +53,7 @@ typedef enum {
   CS_LAGR_CELL_NUM,            /*!< local cell number (1 to n) */
   CS_LAGR_RANK_ID,             /*!< local parallel rank id */
 
-  CS_LAGR_SWITCH_ORDER_1,
+  CS_LAGR_REBOUND_ID,          /*!< number of time steps since rebound, or -1 */
 
   CS_LAGR_RANDOM_VALUE,        /*!< associated random value (for sampling) */
 
@@ -951,19 +951,22 @@ cs_lagr_particle_get_cell_id(const void                     *particle,
 /*!
  * \brief Set cell id of a given particle in a set
  *
- * \param[in]  particle_set  pointer to particle set
- * \param[in]  particle_id   particle number
- * \param[in]  cell_id       containing cell (0-based)
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  cell_id   containing cell (0-based)
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_lagr_particle_set_cell_id(cs_lagr_particle_set_t  *particle_set,
-                             cs_lnum_t                particle_id,
-                             cs_lnum_t                cell_id)
+cs_lagr_particle_set_cell_id(void                           *particle,
+                             const cs_lagr_attribute_map_t  *attr_map,
+                             cs_lnum_t                       cell_id)
 {
-  cs_lagr_particles_set_lnum(particle_set, particle_id, CS_LAGR_CELL_NUM,
-                             cell_id + 1);
+  assert(attr_map->count[0][CS_LAGR_CELL_NUM] > 0);
+
+  *((cs_lnum_t *)(  (unsigned char *)particle
+                  + attr_map->displ[0][CS_LAGR_CELL_NUM]))
+    = cell_id + 1;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -360,7 +360,7 @@ precdi (cs_real_t   *vela,
 
             /* Removing of particles due to dissolution */
 
-            cs_lagr_particle_set_cell_id(p_set, npt, -1);
+            cs_lagr_particle_set_cell_id(particle, p_am, -1);
             cs_real_t d3 = pow (cs_lagr_particle_get_real(particle, p_am,
                                                           CS_LAGR_DIAMETER), 3);
             mp[iclas] += cs_lagr_particle_get_real(particle, p_am,
@@ -417,7 +417,9 @@ precdi (cs_real_t   *vela,
       for (cs_lnum_t i = 0; i <  3; i++)
         part_coord[i] = fvq->cell_cen[cell[ip - npt] * 3 + i];
 
-      cs_lagr_particle_set_cell_id(p_set, npt, cell[ip - npt]);
+      cs_lagr_particle_set_cell_id(particle, p_am, cell[ip - npt]);
+
+      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, -1);
 
       cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
                                                        CS_LAGR_VELOCITY_SEEN);

@@ -997,7 +997,7 @@ _lagitf(cs_lagr_attribute_t  *iattr)
       cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
 
       if (   cell_id  >= 0
-          && cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_SWITCH_ORDER_1) == 0 ) {
+          && cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_REBOUND_ID) != 0 ) {
 
         cs_real_t aux1   =  -cs_glob_lagr_time_step->dtp / auxl1[npt];
         cs_real_t aux2   = exp(aux1);

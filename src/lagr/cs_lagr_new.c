@@ -516,6 +516,8 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
     for (cs_lnum_t i = 0; i < 3; i++)
       particle_velocity_seen[i] = vel[iel][i] + vagaus[i][npt - p_id_l] * tu;
 
+    cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, -1);
+
   }
 
   for (int i = 0; i < 3; i++)

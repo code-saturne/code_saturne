@@ -603,7 +603,7 @@ _lages2(cs_real_t           dtp,
       cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
 
       if (    cell_id >= 0
-           && cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_SWITCH_ORDER_1) == 0) {
+           && cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_REBOUND_ID) != 0) {
 
         cs_real_t *part_vel
           = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
@@ -2686,7 +2686,7 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
       if (   cs_lagr_particle_get_cell_id(particle, p_am) >= 0
-          && cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_SWITCH_ORDER_1) == 0) {
+          && cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_REBOUND_ID) != 0) {
 
         if (tcarac [ip] <= 0.0)
           bft_error

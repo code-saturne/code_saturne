@@ -171,9 +171,6 @@ _legacy_section_names(cs_lagr_attribute_t  attr,
   sec_name_2[0] = '\0';
 
   switch(attr) {
-  case CS_LAGR_SWITCH_ORDER_1:
-    strcpy(sec_name_0, "order_1");
-    break;
   case CS_LAGR_RANDOM_VALUE:
     strcpy(sec_name_0, "random_value");
     break;
@@ -657,7 +654,6 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
 
     case CS_LAGR_COORDS:
     case CS_LAGR_RANK_ID:
-    case CS_LAGR_SWITCH_ORDER_1:
       break;
 
     case CS_LAGR_NEIGHBOR_FACE_ID:
@@ -865,7 +861,6 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
 
     case CS_LAGR_COORDS:
     case CS_LAGR_RANK_ID:
-    case CS_LAGR_SWITCH_ORDER_1:
       break;
 
     case CS_LAGR_NEIGHBOR_FACE_ID:

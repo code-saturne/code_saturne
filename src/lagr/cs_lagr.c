@@ -2079,17 +2079,14 @@ cs_lagr_solve_time_step(const int         itypfb[],
   /* 3.  GESTION DU TEMPS QUI PASSE...   */
   /* ====================================================================   */
 
-  /* ->Gestion du pas de temps Lagrangien     */
   cs_glob_lagr_time_step->dtp = dt[0];
-
-  /* ->Incrementation du TEMPS COURANT LAGRANGIEN  */
   cs_glob_lagr_time_step->ttclag += cs_glob_lagr_time_step->dtp;
 
   part_c = cs_lagr_update_particle_counter();
 
   if (part_c->n_g_total > 0) {
 
-  /* Record particle's starting cell and rank, and reset order 1 switch     */
+  /* Record particle's starting cell and rank, and update rebound time id */
 
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
@@ -2099,7 +2096,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       cs_lagr_particles_set_lnum_n(p_set, ip, 1, CS_LAGR_RANK_ID,
                                    cs_glob_rank_id);
-      cs_lagr_particles_set_lnum(p_set, ip, CS_LAGR_SWITCH_ORDER_1, 0);
+
+      cs_lnum_t rebound_id
+        = cs_lagr_particles_get_lnum(p_set, ip, CS_LAGR_REBOUND_ID);
+      if (rebound_id >= 0)
+        cs_lagr_particles_set_lnum(p_set, ip, CS_LAGR_REBOUND_ID,
+                                   rebound_id + 1);
 
     }
 

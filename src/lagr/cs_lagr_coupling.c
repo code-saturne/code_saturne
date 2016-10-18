@@ -192,7 +192,7 @@ cs_lagr_coupling(cs_real_t taup[],
     cs_real_t p_mass = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_MASS);
 
     if (   cs_glob_lagr_time_scheme->t_order == 1
-        || cs_lagr_particles_get_lnum_n(p_set, npt, 1, CS_LAGR_SWITCH_ORDER_1) > 0)
+        || cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_REBOUND_ID) == 0)
       tsfext[npt] = (1.0 - exp(-aux1)) * p_mass * taup[npt];
 
     else

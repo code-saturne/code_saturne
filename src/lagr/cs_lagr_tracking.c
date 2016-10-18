@@ -119,13 +119,6 @@ enum {
   CS_LAGR_PART_MOVE_ON  = 1
 };
 
-/* According to the scheme order is degenerated to order 1 */
-
-enum {
-  CS_LAGR_SWITCH_OFF = 0,
-  CS_LAGR_SWITCH_ON = 1
-};
-
 /* Tracking error types */
 
 typedef enum {
@@ -2821,8 +2814,7 @@ _local_propagation(void                           *particle,
                               &move_particle);
 
       if (cs_glob_lagr_time_scheme->t_order == 2)
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_SWITCH_ORDER_1,
-                                  CS_LAGR_SWITCH_ON);
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, 0);
 
       assert(   move_particle == CS_LAGR_PART_MOVE_ON
              || move_particle == CS_LAGR_PART_MOVE_OFF);
@@ -3408,9 +3400,6 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
 
     _tracking_info(particles, i)->last_face_num = 0;
 
-    assert(   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_SWITCH_ORDER_1)
-           != 999);
-
     /* Coordinates of the particle */
 
     cs_real_t *prv_part_coord
@@ -3599,14 +3588,8 @@ cs_lagr_tracking_initialize(void)
 
   /* Initialization */
 
-  for (cs_lnum_t i = 0; i < p_set->n_particles_max; i++) {
-
-    cs_lagr_particles_set_lnum(p_set, i, CS_LAGR_SWITCH_ORDER_1,
-                               CS_LAGR_SWITCH_OFF);
-
+  for (cs_lnum_t i = 0; i < p_set->n_particles_max; i++)
     _tracking_info(p_set, i)->state = CS_LAGR_PART_TO_SYNC;
-
-  }
 
   /* Create all useful MPI_Datatypes */
 

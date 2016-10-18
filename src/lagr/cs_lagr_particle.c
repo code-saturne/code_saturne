@@ -157,7 +157,7 @@ union cs_lagr_value_t {
 const char *cs_lagr_attribute_name[] = {
   "cell_num",
   "rank_id",
-  "switch_order_1",
+  "rebound_id",
   "random_value",
   "stat_weight",
   "residence_time",
@@ -676,8 +676,8 @@ cs_lagr_particle_attr_initialize(void)
 
   /* Other attributes */
 
-  attr_keys[CS_LAGR_SWITCH_ORDER_1][0] = CS_LAGR_P_IPRP;
-  attr_keys[CS_LAGR_SWITCH_ORDER_1][1] = ++loc_count;
+  attr_keys[CS_LAGR_REBOUND_ID][0] = CS_LAGR_P_IPRP;
+  attr_keys[CS_LAGR_REBOUND_ID][1] = ++loc_count;
 
   attr_keys[CS_LAGR_RANDOM_VALUE][0] = CS_LAGR_P_RPRP;
   attr_keys[CS_LAGR_RANDOM_VALUE][1] = ++loc_count;
