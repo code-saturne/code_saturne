@@ -509,7 +509,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         else:
             self.comboBoxBuildType.currentIndexChanged[int].connect(self.slotBuildType)
             for b in self.compute_versions:
-                build_type_label = b
+                build_type_label = os.path.basename(b)
                 if not build_type_label:
                     build_type_label = "[default]"
                 self.comboBoxBuildType.addItem(self.tr(build_type_label),
@@ -738,12 +738,16 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.jmdl.updateBatchFile('run_nthreads')
 
 
-    @pyqtSlot(str)
+    @pyqtSlot(int)
     def slotBuildType(self, v):
 
-        self.jmdl.dictValues['run_build'] = str(self.compute_versions[self.comboBoxBuildType.currentIndex()])
+        if v == 0:
+            self.jmdl.dictValues['run_build'] = None
+        else:
+            self.jmdl.dictValues['run_build'] = str(self.compute_versions[v])
         self.jmdl.updateBatchFile('run_build')
-        compute_build_id = self.compute_versions.index(self.jmdl.dictValues['run_build'])
+        compute_build_id = v
+
         pkg_compute = self.case['package'].get_alternate_version(self.compute_versions[compute_build_id])
         config_features = pkg_compute.config.features
         if config_features['mpi'] == 'yes':
