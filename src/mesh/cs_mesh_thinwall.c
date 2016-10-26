@@ -357,14 +357,14 @@ _add_b_faces(cs_mesh_t        *mesh,
              const cs_lnum_t  *list,
              cs_lnum_t         list_size)
  {
-  int ii, jj;
-  cs_lnum_t   n_face_vertices;
-  cs_lnum_t   inc = 0;
-  cs_lnum_t  *i_face_vtx_idx = mesh->i_face_vtx_idx;
-  cs_lnum_t  *i_face_vtx_lst = mesh->i_face_vtx_lst;
-  cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
+  cs_lnum_t ii, jj;
+  cs_lnum_t n_face_vertices;
+  cs_lnum_t inc = 0;
+  cs_lnum_t *i_face_vtx_idx = mesh->i_face_vtx_idx;
+  cs_lnum_t *i_face_vtx_lst = mesh->i_face_vtx_lst;
+  cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   int        *i_face_family = mesh->i_face_family;
-  cs_lnum_t   n_b_faces = mesh->n_b_faces;
+  cs_lnum_t n_b_faces = mesh->n_b_faces;
 
   for (ii = 0; ii < list_size; ii++) {
 
@@ -502,7 +502,7 @@ cs_create_thinwall(cs_mesh_t  *mesh,
   cs_lnum_t i_face_vtx_cleaned;
   cs_lnum_t count[2];
 
-  cs_lnum_t n_i_faces =  mesh->n_i_faces;
+  cs_lnum_t n_i_faces = mesh->n_i_faces;
   cs_lnum_t n_b_faces = mesh->n_b_faces;
   cs_lnum_t new_n_i_faces = n_i_faces - face_list_size;
 
@@ -541,6 +541,7 @@ cs_create_thinwall(cs_mesh_t  *mesh,
                                       mesh->global_i_face_num,
                                       face_list_size,
                                       0);
+
     global_order_b_faces = fvm_io_num_get_global_num(global_number_b_faces);
 
     BFT_REALLOC(mesh->global_i_face_num, new_n_i_faces, cs_gnum_t);
