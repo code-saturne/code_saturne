@@ -1780,7 +1780,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@     PARAMETRES DU SCHEMA NUMERIQUE POUR LA VARIABLE', a16,   /,&
+'@     PARAMETRES DU SCHEMA NUMERIQUE POUR LA VARIABLE ', a16,  /,&
 '@',                                                            /,&
 '@ Parametre               ISTAT     ICONV',                    /,&
 '@ Valeurs acceptees     0 ou  1   0 ou  1',                    /,&
@@ -4244,7 +4244,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@     PARAMETERS OF NUMERICAL SCHEME FOR VARIABLE',     a16,   /,&
+'@     PARAMETERS OF NUMERICAL SCHEME FOR VARIABLE ',    a16,   /,&
 '@',                                                            /,&
 '@ Parameter               ISTAT     ICONV',                    /,&
 '@ Values   accepted     0 or  1   0 or  1',                    /,&
