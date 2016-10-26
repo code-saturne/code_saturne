@@ -1238,8 +1238,10 @@ enddo
 
 ! For thermal scalar
 if (ippmod(icompf).ge.0) then
+  ifcvsl = -1
   call field_set_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
 else if (iscalt.gt.0) then
+  ifcvsl = -1
   call field_set_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
 endif
 
@@ -1247,6 +1249,31 @@ do iscal = 1, nscaus
   if (iscavr(iscal).le.0) then
     ifcvsl = -1
     call field_set_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
+  endif
+enddo
+
+
+! --- Variable density field id (ifcvsl>=0) or bulk
+!     density (ifcvsl=-1) for USER scalars.
+
+!     With ifcvsl = 0, the field will be added automatically, and later calls to
+!       field_get_key_int(ivarfl(isca(iscal)), kromsl, ifcvsl)
+!       will return its id.
+!     With ifcvsl > 0, the id of an existing, predifined field is given. This
+!       may allow sharing a density between multiple scalars.
+
+!     For user scalars iscal which represent the variance of another user
+!       scalar, the density of the variance of a scalar is assumed to
+!       have the same behavior as the density of this scalar,
+!       so values set here will be ignored.
+
+!     Caution:   complete usphyv with the law defining the density
+!     ========   if and only if ifcvsl = 0 has been set here.
+
+do iscal = 1, nscaus
+  if (iscavr(iscal).le.0) then
+    ifcvsl = -1
+    call field_set_key_int(ivarfl(isca(iscal)), kromsl, ifcvsl)
   endif
 enddo
 

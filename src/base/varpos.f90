@@ -504,7 +504,15 @@ if (nscal.ge.1) then
     if (vcopt%isstpc.eq.2) then
       call add_source_term_field(ivarfl(isca(ii)))
     endif
+    ! Diffusivity
     call field_get_key_int (ivarfl(isca(ii)), kivisl, ifcvsl)
+    if (ifcvsl.ge.0.and.iscavr(ii).le.0) then
+      if (ivsext(ii).gt.0) then
+        call field_set_n_previous(ifcvsl, 1)
+      endif
+    endif
+    ! Density
+    call field_get_key_int (ivarfl(isca(ii)), kromsl, ifcvsl)
     if (ifcvsl.ge.0.and.iscavr(ii).le.0) then
       if (ivsext(ii).gt.0) then
         call field_set_n_previous(ifcvsl, 1)

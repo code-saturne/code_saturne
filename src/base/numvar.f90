@@ -195,6 +195,9 @@ module numvar
   !> variable diffusivity field id key for scalars
   integer, save :: kivisl
 
+  !> variable density field id key for scalars
+  integer, save :: kromsl
+
   !> source terms at previous time step for 2nd order
   integer, save :: kstprv
 

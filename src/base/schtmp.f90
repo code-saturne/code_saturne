@@ -77,9 +77,11 @@ double precision flux   , theta  , aa, bb, viscos, xmasvo, varcp
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 double precision, dimension(:), pointer :: i_mass_flux_prev, b_mass_flux_prev
 double precision, dimension(:), pointer :: brom, crom, broma, croma
-double precision, dimension(:), pointer :: viscl, visct
-double precision, dimension(:), pointer :: cpro_cp, cpro_visls, cproa_visls
-double precision, dimension(:), pointer :: cpro_cpa, cpro_visla, cpro_vista
+double precision, dimension(:), pointer :: cpro_viscl, cpro_visct
+double precision, dimension(:), pointer :: cpro_cp, cpro_visls
+double precision, dimension(:), pointer :: cproa_cp, cproa_visls, cproa_visct
+double precision, dimension(:), pointer :: cpro_romls
+double precision, dimension(:), pointer :: cproa_romls
 
 !===============================================================================
 
@@ -141,30 +143,31 @@ if (iappel.eq.1) then
     call field_current_to_previous(ibrom)
   endif
   if (iviext.gt.0) then
-    call field_get_val_s(iviscl, viscl)
-    call field_get_val_s(ivisct, visct)
-    call field_get_val_prev_s(iviscl, cpro_visla)
-    call field_get_val_prev_s(ivisct, cpro_vista)
+    call field_get_val_s(iviscl, cpro_viscl)
+    call field_get_val_s(ivisct, cpro_visct)
+    call field_get_val_prev_s(iviscl, cproa_visls)
+    call field_get_val_prev_s(ivisct, cproa_visct)
     do iel = 1, ncel
-      cpro_visla(iel) = viscl(iel)
-      cpro_vista(iel) = visct(iel)
+      cproa_visls(iel) = cpro_viscl(iel)
+      cproa_visct(iel) = cpro_visct(iel)
     enddo
   endif
   if (icpext.gt.0) then
     if (icp.ge.0) then
       call field_get_val_s(icp, cpro_cp)
-      call field_get_val_prev_s(icp, cpro_cpa)
+      call field_get_val_prev_s(icp, cproa_cp)
       do iel = 1, ncel
-        cpro_cpa(iel) = cpro_cp(iel)
+        cproa_cp(iel) = cpro_cp(iel)
       enddo
     endif
   endif
 
-!     Remarque : si on faisait cette operation pour tous les
-!       scalaires, on la ferait plusieurs fois pour les scalaires
-!       ayant une variance
+  ! Remarque : si on faisait cette operation pour tous les
+  ! scalaires, on la ferait plusieurs fois pour les scalaires
+  ! ayant une variance
   if (nscal.ge.1) then
     do iscal = 1, nscal
+      ! Diffusivity
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
       if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
@@ -172,6 +175,17 @@ if (iappel.eq.1) then
           call field_get_val_prev_s(ifcvsl, cproa_visls)
           do iel = 1, ncel
             cproa_visls(iel) = cpro_visls(iel)
+          enddo
+        endif
+      endif
+      ! Densisty
+      call field_get_key_int (ivarfl(isca(iscal)), kromsl, ifcvsl)
+      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
+        if (iroext.gt.0) then
+          call field_get_val_s(ifcvsl, cpro_romls)
+          call field_get_val_prev_s(ifcvsl, cproa_romls)
+          do iel = 1, ncel
+            cproa_romls(iel) = cpro_romls(iel)
           enddo
         endif
       endif
@@ -207,13 +221,13 @@ elseif (iappel.eq.2) then
   if (initvi.ne.1) then
     initvi = 1
     if (iviext.gt.0) then
-      call field_get_val_s(iviscl, viscl)
-      call field_get_val_s(ivisct, visct)
-      call field_get_val_prev_s(iviscl, cpro_visla)
-      call field_get_val_prev_s(ivisct, cpro_vista)
+      call field_get_val_s(iviscl, cpro_viscl)
+      call field_get_val_s(ivisct, cpro_visct)
+      call field_get_val_prev_s(iviscl, cproa_visls)
+      call field_get_val_prev_s(ivisct, cproa_visct)
       do iel = 1, ncel
-        cpro_visla(iel) = viscl(iel)
-        cpro_vista(iel) = visct(iel)
+        cproa_visls(iel) = cpro_viscl(iel)
+        cproa_visct(iel) = cpro_visct(iel)
       enddo
     endif
   endif
@@ -222,19 +236,20 @@ elseif (iappel.eq.2) then
     if (icpext.gt.0) then
       if (icp   .gt.0) then
         call field_get_val_s(icp, cpro_cp)
-        call field_get_val_prev_s(icp, cpro_cpa)
+        call field_get_val_prev_s(icp, cproa_cp)
         do iel = 1, ncel
-          cpro_cpa(iel) = cpro_cp(iel)
+          cproa_cp(iel) = cpro_cp(iel)
         enddo
       endif
     endif
   endif
 
-!     Remarque : si on faisant cette operation pour tous les
-!       scalaires, on la ferait plusieurs fois pour les scalaires
-!       ayant une variance
+  ! Remarque : si on faisant cette operation pour tous les
+  ! scalaires, on la ferait plusieurs fois pour les scalaires
+  ! ayant une variance
   if (nscal.ge.1) then
     do iscal = 1, nscal
+      ! Diffusivity
       if (initvs(iscal).ne.1) then
         initvs(iscal) = 1
         call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
@@ -281,41 +296,42 @@ elseif (iappel.eq.2) then
     enddo
   endif
   if (iviext.gt.0) then
-    call field_get_val_s(iviscl, viscl)
-    call field_get_val_s(ivisct, visct)
-    call field_get_val_prev_s(iviscl, cpro_visla)
-    call field_get_val_prev_s(ivisct, cpro_vista)
+    call field_get_val_s(iviscl, cpro_viscl)
+    call field_get_val_s(ivisct, cpro_visct)
+    call field_get_val_prev_s(iviscl, cproa_visls)
+    call field_get_val_prev_s(ivisct, cproa_visct)
     theta  = thetvi
     do iel = 1, ncel
-      viscos = viscl(iel)
-      viscl(iel) = (1.d0+theta) * viscl(iel)    &
-           -       theta  * cpro_visla(iel)
-      cpro_visla(iel) = viscos
-      viscos = visct(iel)
-      visct(iel) = (1.d0+theta) * visct(iel)    &
-           -       theta  * cpro_vista(iel)
-      cpro_vista(iel) = viscos
+      viscos = cpro_viscl(iel)
+      cpro_viscl(iel) = (1.d0+theta) * cpro_viscl(iel)    &
+           -       theta  * cproa_visls(iel)
+      cproa_visls(iel) = viscos
+      viscos = cpro_visct(iel)
+      cpro_visct(iel) = (1.d0+theta) * cpro_visct(iel)    &
+           -       theta  * cproa_visct(iel)
+      cproa_visct(iel) = viscos
     enddo
   endif
   if (icpext.gt.0) then
     if (icp.ge.0) then
       call field_get_val_s(icp, cpro_cp)
-      call field_get_val_prev_s(icp, cpro_cpa)
+      call field_get_val_prev_s(icp, cproa_cp)
       theta  = thetcp
       do iel = 1, ncel
         varcp  = cpro_cp(iel)
         cpro_cp(iel) = (1.d0+theta) * cpro_cp(iel)      &
-                      -      theta  * cpro_cpa(iel)
-        cpro_cpa(iel) = varcp
+                      -      theta  * cproa_cp(iel)
+        cproa_cp(iel) = varcp
       enddo
     endif
   endif
 
-!     Remarque : si on faisant cette operation pour tous les
-!       scalaires, on la ferait plusieurs fois pour les scalaires
-!       ayant une variance ET CE SERAIT FAUX
+  !     Remarque : si on faisant cette operation pour tous les
+  !       scalaires, on la ferait plusieurs fois pour les scalaires
+  !       ayant une variance ET CE SERAIT FAUX
   if (nscal.ge.1) then
     do iscal = 1, nscal
+      ! Diffusivity
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
       if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
@@ -330,6 +346,22 @@ elseif (iappel.eq.2) then
           enddo
         endif
       endif
+      ! Density
+      call field_get_key_int (ivarfl(isca(iscal)), kromsl, ifcvsl)
+      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
+        if (iroext.gt.0) then
+          theta = thetvs(iscal)
+          call field_get_val_s(ifcvsl, cpro_romls)
+          call field_get_val_prev_s(ifcvsl, cproa_romls)
+          do iel = 1, ncel
+            viscos = cpro_romls(iel)
+            cpro_romls(iel) = (1.d0+theta)*cpro_romls(iel) &
+                                    -theta *cproa_romls(iel)
+            cproa_romls(iel) = viscos
+          enddo
+        endif
+      endif
+
     enddo
   endif
 
@@ -486,30 +518,31 @@ elseif (iappel.eq.5) then
     enddo
   endif
   if (iviext.gt.0) then
-    call field_get_val_s(iviscl, viscl)
-    call field_get_val_s(ivisct, visct)
-    call field_get_val_prev_s(iviscl, cpro_visla)
-    call field_get_val_prev_s(ivisct, cpro_vista)
+    call field_get_val_s(iviscl, cpro_viscl)
+    call field_get_val_s(ivisct, cpro_visct)
+    call field_get_val_prev_s(iviscl, cproa_visls)
+    call field_get_val_prev_s(ivisct, cproa_visct)
     do iel = 1, ncel
-      viscl(iel) = cpro_visla(iel)
-      visct(iel) = cpro_vista(iel)
+      cpro_viscl(iel) = cproa_visls(iel)
+      cpro_visct(iel) = cproa_visct(iel)
     enddo
   endif
   if (icpext.gt.0) then
     if (icp.ge.0) then
       call field_get_val_s(icp, cpro_cp)
-      call field_get_val_prev_s(icp, cpro_cpa)
+      call field_get_val_prev_s(icp, cproa_cp)
       do iel = 1, ncel
-        cpro_cp(iel) = cpro_cpa(iel)
+        cpro_cp(iel) = cproa_cp(iel)
       enddo
     endif
   endif
 
-!     Remarque : si on faisant cette operation pour tous les
-!       scalaires, on la ferait plusieurs fois pour les scalaires
-!       ayant une variance
+  ! Remarque : si on faisant cette operation pour tous les
+  ! scalaires, on la ferait plusieurs fois pour les scalaires
+  ! ayant une variance
   if (nscal.ge.1) then
     do iscal = 1, nscal
+      ! Diffusivity
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
       if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
@@ -517,6 +550,17 @@ elseif (iappel.eq.5) then
           call field_get_val_prev_s(ifcvsl, cproa_visls)
           do iel = 1, ncel
             cpro_visls(iel) = cproa_visls(iel)
+          enddo
+        endif
+      endif
+      ! Density
+      call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
+        if (ivsext(iscal).gt.0) then!FIXME
+          call field_get_val_s(ifcvsl, cpro_romls)
+          call field_get_val_prev_s(ifcvsl, cproa_romls)
+          do iel = 1, ncel
+            cpro_romls(iel) = cproa_romls(iel)
           enddo
         endif
       endif

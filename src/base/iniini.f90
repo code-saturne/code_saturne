@@ -117,6 +117,8 @@ call field_get_key_id("boundary_mass_flux_id", kbmasf)
 call field_get_key_id("scalar_diffusivity_id", kivisl)
 call field_get_key_id("scalar_diffusivity_ref", kvisl0)
 
+call field_get_key_id("scalar_density_id", kromsl)
+
 call field_get_key_id("gradient_weighting_id", kwgrec)
 
 call field_get_key_id("source_term_prev_id", kstprv)

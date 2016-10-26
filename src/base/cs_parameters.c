@@ -771,6 +771,8 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_double("scalar_diffusivity_ref",
                              -1.e12*10., CS_FIELD_VARIABLE); /* visls0(iscal) */
 
+  cs_field_define_key_int("scalar_density_id", -1, CS_FIELD_VARIABLE);
+
   cs_field_define_key_int("turbulent_flux_model", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("turbulent_flux_id", -1, CS_FIELD_VARIABLE);
 

@@ -157,6 +157,7 @@ integer          imucpp, idftnp, iswdyp
 integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
 integer          delay_id, icla
+integer          icrom_scal
 
 integer          ivoid(1)
 
@@ -273,10 +274,16 @@ else
 endif
 
 ! --- Numero des grandeurs physiques
-call field_get_val_s(icrom, crom)
-call field_have_previous(icrom, lprev)
+call field_get_key_int (ivarfl(isca(iscal)), kromsl, icrom_scal)
+
+if (icrom_scal.eq.-1) then
+  icrom_scal = icrom
+endif
+
+call field_get_val_s(icrom_scal, crom)
+call field_have_previous(icrom_scal, lprev)
 if (lprev) then
-  call field_get_val_prev_s(icrom, croma)
+  call field_get_val_prev_s(icrom_scal, croma)
 endif
 call field_get_val_s(ivisct, visct)
 
@@ -891,11 +898,11 @@ endif
 
 ! Low Mach compressible algos (conservative in time). Same algo for cavitation.
 if (idilat.gt.1 .or. icavit.ge.0) then
-  call field_get_val_prev_s(icrom, pcrom)
+  call field_get_val_prev_s(icrom_scal, pcrom)
 
 ! Standard algo
 else
-  call field_get_val_s(icrom, pcrom)
+  call field_get_val_s(icrom_scal, pcrom)
 endif
 
 ! "VITESSE" DE DIFFUSION FACETTE

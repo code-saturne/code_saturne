@@ -183,6 +183,48 @@ do ii = 1, nscal
   endif
 enddo
 
+! Add a scalar density when defined as variable and different from the bulk.
+! WARNING: it must be consitent with continuity equation, this is used
+! for fluid solid computation with apssive scalars with different density in the solid.
+! The kromsl key should be equal to -1 for constant diffusivity,
+! and f_id for a variable diffusivity defined by field f_id
+! Assuming the first field created is not a diffusivity property
+! (we define variables first), f_id > 0, so we use 0 to indicate
+! the density is variable but its field has not been created yet.
+
+do ii = 1, nscal
+  f_id = ivarfl(isca(ii))
+  call field_get_key_int(f_id, kromsl, ifcvsl)
+  if (ifcvsl.eq.0 .and. iscavr(ii).le.0) then
+    ! Build name and label, using a general rule, with a
+    ! fixed name for temperature or enthalpy
+    call field_get_name(f_id, s_name)
+    call field_get_label(f_id, s_label)
+    f_name  = trim(s_name) // '_density'
+    f_label = trim(s_label) // ' Rho'
+
+    ! Now create matching property
+    call add_property_field(f_name, f_label, 1, .false., ifcvsl)
+    call field_set_key_int(ivarfl(isca(ii)), kromsl, ifcvsl)
+  endif
+enddo
+
+! For variances, the diffusivity is that of the associated scalar,
+! and must not be initialized first.
+
+do ii = 1, nscal
+  if (iscavr(ii).gt.0) then
+    f_id = ivarfl(isca(ii))
+    call field_get_key_int(ivarfl(isca(iscavr(ii))), kromsl, ifcvsl)
+    call field_is_key_set(f_id, kromsl, is_set)
+    if (is_set.eqv..true.) then
+      write(nfecra,7040) f_id, ivarfl(isca(iscavr(ii))), ifcvsl
+    else
+      call field_set_key_int(f_id, kromsl, ifcvsl)
+    endif
+  endif
+enddo
+
 ! Boundary roughness
 if (iwallf.ge.5) then
   call add_boundary_property_field_owner('boundary_roughness', 'Boundary Roughness', &
