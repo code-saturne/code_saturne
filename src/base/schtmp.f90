@@ -556,7 +556,7 @@ elseif (iappel.eq.5) then
       ! Density
       call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
       if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
-        if (ivsext(iscal).gt.0) then!FIXME
+        if (iroext.gt.0) then
           call field_get_val_s(ifcvsl, cpro_romls)
           call field_get_val_prev_s(ifcvsl, cproa_romls)
           do iel = 1, ncel
