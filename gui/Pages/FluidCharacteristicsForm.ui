@@ -1307,7 +1307,7 @@
           <item>
            <widget class="QLabel" name="labelDiff">
             <property name="text">
-             <string>reference</string>
+             <string>Reference value</string>
             </property>
            </widget>
           </item>
