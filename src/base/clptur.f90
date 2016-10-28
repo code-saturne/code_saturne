@@ -185,12 +185,12 @@ double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
 double precision roughness
-double precision hbord2(nfabor)
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, uetbor
 double precision, dimension(:), pointer :: bfpro_roughness
 double precision, dimension(:), allocatable :: byplus, bdplus, buk
+double precision, dimension(:), allocatable :: hbord2
 double precision, dimension(:), pointer :: cvar_k, cvar_ep
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
@@ -1518,6 +1518,9 @@ do iscal = 1, nscal
     call field_get_dim(f_id, f_dim)
 
     if (f_dim.eq.1) then
+
+      allocate(hbord2(nfabor))
+
       call clptur_scalar &
       !=================
    ( iscal  , isvhb  , icodcl ,                                     &
@@ -1531,6 +1534,7 @@ do iscal = 1, nscal
       if (vcopt%icoupl.gt.0) then
         call cs_ic_set_exchcoeff( f_id, hbord2 )
       endif
+      deallocate(hbord2)
     else
       call clptur_vector &
       !=================
