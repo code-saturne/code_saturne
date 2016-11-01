@@ -297,6 +297,13 @@ cs_f_field_var_ptr_by_id(int          id,
                          cs_real_t  **p);
 
 void
+cs_f_field_var_ptr_by_id_try(int          id,
+                             int          pointer_type,
+                             int          pointer_rank,
+                             int          dim[2],
+                             cs_real_t  **p);
+
+void
 cs_f_field_bc_coeffs_ptr_by_id(int          id,
                                int          pointer_type,
                                int          pointer_rank,
@@ -938,6 +945,69 @@ cs_f_field_set_n_previous(int  id,
   cs_field_t *f = cs_field_by_id(id);
 
   cs_field_set_n_time_vals(f, n_previous + 1);
+}
+
+/*----------------------------------------------------------------------------
+ * Return a pointer to a field's variable values (current var if previous does
+ * not exists)
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   id           <-- field id
+ *   pointer_type <-- 1: var; 2: var_p or var if var_p does not exists;
+ *   pointer_rank <-- expected rank (1 for scalar, 2 for vector)
+ *   dim          --> dimensions (indexes in Fortran order,
+ *                    dim[i] = 0 if i unused)
+ *   p            --> returned pointer
+ *
+ * returns:
+ *   pointer to the field structure, or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_var_ptr_by_id_try(int          id,
+                             int          pointer_type,
+                             int          pointer_rank,
+                             int          dim[2],
+                             cs_real_t  **p)
+{
+  cs_field_t *f = cs_field_by_id(id);
+  int cur_p_rank = 1;
+
+  dim[0] = 0;
+  dim[1] = 0;
+  *p = NULL;
+
+  if (pointer_type == 1 || pointer_type == 2) {
+
+    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+    cs_lnum_t _n_elts = n_elts[2];
+
+    if (pointer_type == 1 || f->val_pre == NULL)
+      *p = f->val;
+    else
+      *p = f->val_pre;
+
+    if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
+      _n_elts = 0;
+
+    if (f->dim == 1)
+      dim[0] = _n_elts;
+    else {
+      dim[0] = f->dim;
+      dim[1] = _n_elts;
+      cur_p_rank = 2;
+    }
+
+  }
+
+  if (cur_p_rank != pointer_rank)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Fortran pointer of rank %d requested for values of field \"%s\",\n"
+         "which have rank %d."),
+       pointer_rank, f->name, cur_p_rank);
 }
 
 /*----------------------------------------------------------------------------
