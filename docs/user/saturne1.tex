@@ -1997,7 +1997,7 @@ array of reals.
       in a way which is transparent for the user. For each cell
       \texttt{iel}, the value of $C_p$ can then be defined in \texttt{usphyv}
       in an array which pointer can be retrieved by calling
-      \texttt{field\_get\_val\_s(iprpfl(icp), cpro\_cp)}.
+      \texttt{field\_get\_val\_s(icp, cpro\_cp)}.
 \end{list}
 \item This is the same for the diffusivity $K$ of each scalar \texttt{iscal}.
 \begin{list}{-}{}
@@ -4525,7 +4525,7 @@ may produce negative density values).
 To assign a variable value to $C_p$, the user \textbf{must} specify it in the
       interface (with a user law) or assign the value 1 to \texttt{icp} in \texttt{cs\_user\_parameters.f90},
       and fill for each cell \texttt{iel} the array \texttt{cpro\_cp} which can be retrieved by calling
-      \texttt{field\_get\_val\_s(iprpfl(icp), cpro\_cp)} in \texttt{cs\_user\_physical\_properties}.
+      \texttt{field\_get\_val\_s(icp, cpro\_cp)} in \texttt{cs\_user\_physical\_properties}.
       NB: completing the array \texttt{cpro\_cp} while \texttt{icp=0} induces array
       overwriting problems and produces wrong results.
 
@@ -4555,7 +4555,7 @@ The subroutine \texttt{usvist} is used to modify the calculation of the turbulen
 viscosity, {\em i.e.} $\mu_t$ in $kg.m^{-1}.s^{-1}$
 (this piece of information, at the mesh cell centres, is conveyed by the
 variable \texttt{cpro\_visct}  which can be retrieved by calling
-\texttt{field\_get\_val\_s(iprpfl(ivisct), cpro\_cp)}). The
+\texttt{field\_get\_val\_s(ivisct, cpro\_cp)}). The
 subroutine is called at the beginning of every time step, after the
 calculation of the physical parameters of the flow and of the
 ``conventional'' value of $\mu_t$ corresponding to the chosen turbulence
@@ -6016,7 +6016,7 @@ They allow to:
       physics are listed below. The solved variables (of variable indices
       \texttt{ivar}) and the properties of indices \texttt{iprop} (defined at
       the cell \texttt{iel} by \texttt{cpro\_prop(iel)} which is obtained
-      by calling \texttt{field\_get\_val\_s(iprpfl(iprop), cpro\_prop)})
+      by calling \texttt{field\_get\_val\_s(iprop, cpro\_prop)})
       are listed below:
       \begin{list}{$\rightarrow$}{}
        \item EBU pre-mixed flame modelling:
@@ -6170,7 +6170,7 @@ variables and of the time step, the standard subroutine \texttt{cs\_user\_initia
 
 Physical properties are stored using the \texttt{cs\_field} API (cell center). For instance, to obtain \texttt{rom(iel)},
 the mean density (in $kg.m^{-3}$), one must declare a \texttt{ncelet} array \texttt{cpro\_rom} and then call
-\texttt{call field\_get\_val\_s(iprpfl(irom), cpro\_rom)}.\\
+\texttt{call field\_get\_val\_s(icrom, cpro\_rom)}.\\
 Physical properties (\texttt{rom, viscl, cp, ...}) are computed in \texttt{ppphyv} and are not to be modified here.
 
 The \texttt{cs\_user\_initialization-fuel.f90} example illustrates how the user

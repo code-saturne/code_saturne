@@ -207,8 +207,8 @@ call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt_k)
 
 thets  = thetst
 
-call field_get_val_s(iprpfl(is2kw), cpro_s2kw)
-call field_get_val_s(iprpfl(idivukw), cpro_divukw)
+call field_get_val_s(is2kw, cpro_s2kw)
+call field_get_val_s(idivukw, cpro_divukw)
 
 call field_get_key_int(ivarfl(ik), kstprv, istprv)
 if (istprv.ge.0) then
