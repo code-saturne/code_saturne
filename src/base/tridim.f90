@@ -1265,8 +1265,12 @@ do while (iterns.le.nterup)
   if (     (itytur.eq.4 .and. idries.eq.1)                 &
       .or. (iilagr.ge.1 .and. idepst.gt.0)) then
 
-    if (abs(infpar).gt.0) then
+    if (infpar.gt.0) then
       call distyp(itypfb, dispar, yplpar)
+    else
+      do iel = 1, ncelet
+        yplpar(iel) = grand
+      enddo
     endif
 
   endif
