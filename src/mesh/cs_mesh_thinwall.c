@@ -50,6 +50,8 @@
 
 #include "fvm_io_num.h"
 
+#include "cs_mesh_builder.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -104,6 +106,48 @@ _compare_nums(const void *x,
   else if (v_diff < 0)
     retval = -1;
   return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Build a renumbering for interior faces
+ *
+ * parameters:
+ *   n_i_faces <-- number of interior faces
+ *   list_size <-- size of selected (to be removed) list
+ *   list      <-- ordered ids of of faces to remove  (0 to n-1)
+ *
+ * returns:
+ *   interior face renumbering array (to by freed by caller)
+ *----------------------------------------------------------------------------*/
+
+static cs_lnum_t *
+_i_list_renum(cs_lnum_t         n_i_faces,
+              cs_lnum_t         list_size,
+              const cs_lnum_t  *list)
+{
+  cs_lnum_t  *renum;
+  BFT_MALLOC(renum, n_i_faces, cs_lnum_t);
+
+  cs_lnum_t i_empty = 0;
+  cs_lnum_t cur_id = 0;
+
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+
+    if (i_empty < list_size) {
+
+      if (face_id != list[i_empty])
+        renum[face_id] = cur_id++;
+      else {
+        renum[face_id] = -1;
+        i_empty++;
+      }
+
+    }
+    else
+      renum[face_id] = cur_id++;
+  }
+
+  return renum;
 }
 
 /*----------------------------------------------------------------------------
@@ -509,18 +553,83 @@ cs_create_thinwall(cs_mesh_t  *mesh,
   cs_lnum_t i_face_vtx_connect_size = mesh->i_face_vtx_connect_size;
   cs_lnum_t b_face_vtx_connect_size = mesh->b_face_vtx_connect_size;
 
-  fvm_io_num_t *global_number_i_faces = NULL;
-  fvm_io_num_t *global_number_b_faces = NULL;
-  const cs_gnum_t *global_order_i_faces = NULL;
-  const cs_gnum_t *global_order_b_faces = NULL;
+  const cs_gnum_t *b_face_gnum = NULL;
+
+  cs_mesh_builder_t *mb = cs_glob_mesh_builder;
+
+  cs_interface_set_t *face_ifs = NULL;
 
   cs_lnum_t *face_list_c = NULL;
 
   qsort(face_list, face_list_size, sizeof(cs_lnum_t), &_compare_nums);
 
+  assert(mb != NULL);
+
+  /* In case of periodicity, we also need to renumber periodic couples in the
+     builder; in parallel,we transform info into an interface, which will be
+     used at the end of the mesh update; in serial, the update is immediate */
+
+  if (mb->n_perio > 0) {
+
+    cs_lnum_t *renum = _i_list_renum(mesh->n_i_faces,
+                                     face_list_size,
+                                     face_list);
+
 #if defined(HAVE_MPI)
 
-  if (cs_glob_n_ranks > 1) {
+    if (cs_glob_n_ranks > 1) {
+
+      int *periodicity_num;
+      BFT_MALLOC(periodicity_num, mb->n_perio, int);
+
+      for (int i = 0; i < mb->n_perio; i++)
+        periodicity_num[i] = i+1;
+
+      face_ifs
+        = cs_interface_set_create(mesh->n_i_faces,
+                                  NULL,
+                                  mesh->global_i_face_num,
+                                  mesh->periodicity,
+                                  mb->n_perio,
+                                  periodicity_num,
+                                  mb->n_per_face_couples,
+                                  (const cs_gnum_t *const *)mb->per_face_couples);
+
+      BFT_FREE(periodicity_num);
+
+      cs_interface_set_renumber(face_ifs, renum);
+
+    }
+
+#endif /* HAVE_MPI */
+
+    if (cs_glob_n_ranks == 1) {
+
+      for (int i = 0; i < mb->n_perio; i++) {
+        cs_lnum_t  n_c_ini = mb->n_per_face_couples[i];
+        cs_lnum_t  n_c_new = 0;
+        cs_gnum_t *f_c = mb->per_face_couples[i];
+        for (cs_lnum_t j = 0; j < n_c_ini; j++) {
+          cs_lnum_t f0 = renum[f_c[j*2] - 1];
+          cs_lnum_t f1 = renum[f_c[j*2 + 1] - 1];
+          if (f0 > -1 && f1 > -1) {
+            f_c[n_c_new*2]   = f0+1;
+            f_c[n_c_new*2+1] = f1+1;
+            n_c_new++;
+          }
+        }
+        if (n_c_new != n_c_ini) {
+          BFT_REALLOC(mb->per_face_couples[i], n_c_new*2, cs_gnum_t);
+          mb->n_per_face_couples[i] = n_c_new;
+          mb->n_g_per_face_couples[i] = n_c_new;
+        }
+      }
+    }
+
+    BFT_FREE(renum);
+  }
+
+  if (mesh->global_i_face_num != NULL || cs_glob_n_ranks > 1) {
 
     BFT_MALLOC(face_list_c, (n_i_faces - face_list_size), cs_lnum_t);
     _get_list_c(face_list_c,
@@ -528,33 +637,30 @@ cs_create_thinwall(cs_mesh_t  *mesh,
                 face_list,
                 face_list_size);
 
-    global_number_i_faces
+    fvm_io_num_t *global_number_i_faces
       = fvm_io_num_create_from_select(face_list_c,
                                       mesh->global_i_face_num,
                                       new_n_i_faces,
                                       0);
 
-    global_order_i_faces = fvm_io_num_get_global_num(global_number_i_faces);
-
-    global_number_b_faces
+    fvm_io_num_t *global_number_b_faces
       = fvm_io_num_create_from_select(face_list,
                                       mesh->global_i_face_num,
                                       face_list_size,
                                       0);
 
-    global_order_b_faces = fvm_io_num_get_global_num(global_number_b_faces);
+    b_face_gnum
+      = fvm_io_num_transfer_global_num(global_number_b_faces);
 
-    BFT_REALLOC(mesh->global_i_face_num, new_n_i_faces, cs_gnum_t);
+    BFT_FREE(mesh->global_i_face_num);
+    mesh->global_i_face_num
+      = fvm_io_num_transfer_global_num(global_number_i_faces);
 
-    memcpy(mesh->global_i_face_num,
-           global_order_i_faces,
-           new_n_i_faces*sizeof(cs_gnum_t));
-
+    global_number_i_faces = fvm_io_num_destroy(global_number_i_faces);
+    global_number_b_faces = fvm_io_num_destroy(global_number_b_faces);
   }
 
-#endif /* HAVE_MPI */
-
-  _count_b_faces_to_add(mesh->i_face_cells,
+  _count_b_faces_to_add((const cs_lnum_2_t  *)mesh->i_face_cells,
                         mesh->i_face_vtx_idx,
                         face_list,
                         face_list_size,
@@ -591,13 +697,15 @@ cs_create_thinwall(cs_mesh_t  *mesh,
 
     BFT_REALLOC(mesh->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
 
-    _refresh_b_glob_num(mesh->i_face_cells,
+    _refresh_b_glob_num((const cs_lnum_2_t *)mesh->i_face_cells,
                         mesh->n_g_b_faces,
                         n_b_faces,
                         face_list,
                         face_list_size,
-                        global_order_b_faces,
+                        b_face_gnum,
                         mesh->global_b_face_num);
+
+    BFT_FREE(b_face_gnum);
 
   }
 
@@ -644,12 +752,23 @@ cs_create_thinwall(cs_mesh_t  *mesh,
   mesh->n_g_b_faces = _n_g_b_faces;
   mesh->n_g_i_faces = _n_g_i_faces;
 
-  _print_mesh_info(mesh, " After addition of user-defined thin walls");
-
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     BFT_FREE(face_list_c);
+
+  /* Update periodicity info in builder in parallel mode */
+
+  if (face_ifs != NULL) {
+    cs_mesh_builder_extract_periodic_faces_g(mesh->n_init_perio,
+                                             mb,
+                                             mesh->periodicity,
+                                             mesh->global_i_face_num,
+                                             face_ifs);
+    cs_interface_set_destroy(&face_ifs);
+  }
 #endif
+
+  _print_mesh_info(mesh, " After addition of user-defined thin walls");
 }
 
 /*---------------------------------------------------------------------------*/

@@ -37,6 +37,7 @@
 
 #include "cs_base.h"
 #include "cs_block_dist.h"
+#include "cs_interface.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -150,6 +151,30 @@ cs_mesh_builder_define_block_dist(cs_mesh_builder_t  *mb,
                                   cs_gnum_t           n_g_cells,
                                   cs_gnum_t           n_g_faces,
                                   cs_gnum_t           n_g_vertices);
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Extract periodic face connectivity information from faces interface
+ * for mesh builder whn running in parallel mode.
+ *
+ * parameters:
+ *   n_init_perio <-- number of initial periodicities
+ *   mesh         <-- pointer to mesh structure
+ *   mb           <-> pointer to mesh builder structure
+ *   periodicity  <--  periodicity information
+ *   face_gnum    <--  global face numbers, or NULL
+ *   face_ifs     <-- parallel and periodic faces interfaces set
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_builder_extract_periodic_faces_g(int                        n_init_perio,
+                                         cs_mesh_builder_t         *mb,
+                                         fvm_periodicity_t         *periodicity,
+                                         const cs_gnum_t           *face_gnum,
+                                         const cs_interface_set_t  *face_ifs);
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 
