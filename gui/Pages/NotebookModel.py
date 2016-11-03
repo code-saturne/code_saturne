@@ -115,15 +115,16 @@ class NotebookModel(Model):
         """
         Return list of case
         """
-        node = self.node_note.xmlGetNode("var", id = idx)
-        node.xmlRemoveNode()
+        n = self.node_note.xmlGetNode("var", id = idx)
+        if n:
+            n.xmlRemoveNode()
 
-        for node in self.node_note.xmlGetNodeList('var'):
-            try:
-                if int(node['id']) > idx:
-                    node['id'] = str(int(node['id']) - 1)
-            except:
-                pass
+            for node in self.node_note.xmlGetNodeList('var'):
+                try:
+                    if int(node['id']) > idx:
+                        node['id'] = str(int(node['id']) - 1)
+                except:
+                    pass
 
 
     @Variables.undoGlobal

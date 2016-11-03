@@ -415,7 +415,7 @@ class NotebookView(QWidget, Ui_NotebookForm):
         Just delete the current selected entries from the Hlist and
         of course from the XML file.
         """
-        current = self.treeViewCases.currentIndex()
+        current = self.treeViewNotebook.currentIndex()
         idx = current.row()
         self.mdl.deleteVariable(idx)
         self.modelVar = VariableStandardItemModel(self.parent, self.case, self.mdl)
