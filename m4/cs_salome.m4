@@ -51,6 +51,10 @@ AC_ARG_WITH(salome,
 
 if test "x$with_salome" != "xno" ; then
 
+  if test ! -d "$with_salome" ; then
+    AC_MSG_FAILURE([directory specified by --with-salome=$with_salome does not exist!])
+  fi
+
   # Recommended environment file for salome-platform.org installer builds
   if test "x$SALOMEENVCMD" = "x"; then
     salome_env=$(find $with_salome -maxdepth 2 -name salome.sh | tail -1 2>/dev/null)
@@ -464,30 +468,34 @@ AC_ARG_WITH(medcoupling,
             [AS_HELP_STRING([--with-medcoupling=PATH],
                             [specify directory for MEDCoupling and ParaMEDMEM])],
             [if test "x$withval" = "x"; then
-               if test -z "$MEDCOUPLING_ROOT_DIR"; then
-                 with_medcoupling=yes
-               else
-                 with_medcoupling=$MEDCOUPLING_ROOT_DIR
-               fi
+               with_medcoupling=yes
              fi],
-            [if test -z "$MEDCOUPLING_ROOT_DIR"; then
-               with_medcoupling=check
-             else
-               with_medcoupling=$MEDCOUPLING_ROOT_DIR
-             fi])
+            [with_medcoupling=check])
 
-if test "x$with_medcoupling" != "xno" -a "x$enable_shared" = "xno" ; then
-  AC_MSG_WARN([MEDCoupling support plugin disabled as build is static only.])
-  with_medcoupling=no
+if test "$with_medcoupling" != no ; then
+
+  if test "$with_medcoupling" = yes -o "$with_medcoupling" = check ; then
+    if test -z "$MEDCOUPLING_ROOT_DIR"; then
+      MEDCOUPLING=$MEDCOUPLING_ROOT_DIR
+    else
+      MEDCOUPLING="/usr"
+    fi
+  else
+    if test -d "$with_medcoupling" ; then
+      MEDCOUPLING="$with_medcoupling"
+    else
+      AC_MSG_FAILURE([directory specified by --with-medcoupling=$with_medcoupling does not exist!])
+    fi
+  fi
+
+  if test "x$enable_shared" = "xno" ; then
+    AC_MSG_WARN([MEDCoupling support plugin disabled as build is static only.])
+    with_medcoupling=no
+  fi
+
 fi
 
 if test "x$with_medcoupling" != "xno" ; then
-
-  if test x"$with_medcoupling" != xyes -a x"$with_medcoupling" != xcheck ; then
-    MEDCOUPLING="$with_medcoupling"
-  else
-    MEDCOUPLING="/usr"
-  fi
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
