@@ -5026,6 +5026,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   const int ischcp = var_cal_opt.ischcv;
   const int isstpp = var_cal_opt.isstpc;
   const int iwarnp = var_cal_opt.iwarni;
+  const int icoupl = var_cal_opt.icoupl;
   int limiter_choice = -1;
   const double blencp = var_cal_opt.blencv;
   const double epsrgp = var_cal_opt.epsrgr;
@@ -5090,6 +5091,17 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   cs_real_t  *v_slope_test = _get_v_slope_test(f_id,  var_cal_opt);
 
+  /* Internal coupling variables */
+  cs_real_t *pvar_local = NULL;
+  cs_real_t *pvar_distant = NULL;
+  cs_real_t hint, hext, heq;
+  cs_lnum_t *faces_local = NULL;
+  cs_int_t n_local;
+  cs_lnum_t n_distant;
+  cs_lnum_t *faces_distant = NULL;
+  int coupling_id;
+  cs_internal_coupling_t *cpl = NULL;
+
   /*==========================================================================*/
 
   /* 1. Initialization */
@@ -5141,6 +5153,18 @@ cs_convection_diffusion_thermal(int                       idtvar,
   }
 
   iupwin = (blencp > 0.) ? 0 : 1;
+
+  if (icoupl > 0) {
+    assert(f_id != -1);
+    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    coupling_id = cs_field_get_key_int(f, coupling_key_id);
+    cpl = cs_internal_coupling_by_id(coupling_id);
+    cs_internal_coupling_coupled_faces(cpl,
+                                       &n_local,
+                                       &faces_local,
+                                       &n_distant,
+                                       &faces_distant);
+  }
 
   /* 2. Compute the balance with reconstruction technics */
 
@@ -5989,6 +6013,65 @@ cs_convection_diffusion_thermal(int                       idtvar,
         }
       }
     }
+
+    /* The thermal is internal_coupled and an implicit contribution
+     * is required */
+    if (icoupl > 0) {
+      /* Prepare data for sending */
+      BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
+
+      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+        cs_lnum_t face_id = faces_distant[ii];
+        cs_lnum_t jj = b_face_cells[face_id];
+        cs_real_t pip;
+        cs_b_cd_unsteady(ircflp,
+                         diipb[face_id],
+                         grad[jj],
+                         pvar[jj],
+                         &pip);
+        pvar_distant[ii] = pip;
+      }
+
+      /* Receive data */
+      BFT_MALLOC(pvar_local, n_local, cs_real_t);
+      cs_internal_coupling_exchange_var(cpl,
+                                        1, /* Dimension */
+                                        pvar_distant,
+                                        pvar_local);
+
+      /* Flux contribution */
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        cs_lnum_t face_id = faces_local[ii];
+        cs_lnum_t jj = b_face_cells[face_id];
+        cs_real_t pip, pjp;
+        cs_real_t fluxi = 0.;
+
+        cs_b_cd_unsteady(ircflp,
+                         diipb[face_id],
+                         grad[jj],
+                         pvar[jj],
+                         &pip);
+
+        pjp = pvar_local[ii];
+
+        hint = cpl->h_int[ii];
+        hext = cpl->h_ext[ii];
+        heq = hint * hext / (hint + hext);
+
+        cs_b_diff_flux_coupling(idiffp,
+                                pip,
+                                pjp,
+                                heq,
+                                &fluxi);
+
+        rhs[jj] -= thetap * fluxi;
+      }
+
+        BFT_FREE(pvar_local);
+        /* Sending structures are no longer needed */
+        BFT_FREE(pvar_distant);
+      }
+
 
   }
 
