@@ -70,8 +70,8 @@ def make_clean_dir(path):
     if not os.path.isdir(path):
         os.mkdir(path)
     else:
-        list = os.listdir(path)
-        for f in list:
+        l = os.listdir(path)
+        for f in l:
             os.remove(os.path.join(path, f))
 
 #-------------------------------------------------------------------------------
@@ -239,8 +239,8 @@ class base_domain:
 
             if not os.path.isdir(dest):
                 os.mkdir(dest)
-            list = os.listdir(src)
-            for f in list:
+            l = os.listdir(src)
+            for f in l:
                 f_src = os.path.join(src, f)
                 f_dest = os.path.join(dest, f)
                 if os.path.isfile(f_src):

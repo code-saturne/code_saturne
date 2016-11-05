@@ -87,10 +87,10 @@ def getDataFromNode(node, tag):
     Return data matching a tag.
     """
     data = None
-    list = node.getElementsByTagName(tag)
+    l = node.getElementsByTagName(tag)
 
-    if (list.length == 1):
-        current = list.item(0)
+    if (l.length == 1):
+        current = l.item(0)
         if current.firstChild:
             data = current.firstChild.data
 
