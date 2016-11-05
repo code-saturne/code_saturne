@@ -1282,11 +1282,13 @@ salome    %(salome)s
 #
 #   For Linux workstations, HDF5, CGNS, and even MED
 # packages may be available through the package manager.
-# HDF5 is also often available on large systems such as
-# IBM Blue Gene or Cray XT/XE/XC/XK.
+# HDF5 is also often available on large systems.
+# When building with SALOME, the platform distribution's
+# packages may be used, by setting 'salome' in the
+# matching entry under the "Use" column.
 #
 # Scotch and Pt-Scotch are available in some Linux
-# distributtions, but may be built with options
+# distributions, but may be built with options
 # incompatible with non-threaded Code_Saturne runs.
 #
 #   To install CGNS or ParMetis, the CMake

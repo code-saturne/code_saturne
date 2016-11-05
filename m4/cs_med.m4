@@ -41,6 +41,12 @@ AC_ARG_WITH(med,
                             [specify prefix directory for MED])],
             [if test "x$withval" = "x"; then
                with_med=yes
+             elif test "x$withval" = "xsalome"; then
+               if test -z "$MED3HOME"; then
+                 AC_MSG_FAILURE([no SALOME path information for MED (needed by --with-med=salome)!])
+               else
+                 with_med=$MED3HOME
+               fi
              fi],
             [with_med=check])
 

@@ -36,6 +36,12 @@ AC_ARG_WITH(hdf5,
                             [specify prefix directory for HDF5])],
             [if test "x$withval" = "x"; then
                with_hdf5=yes
+             elif test "x$withval" = "xsalome"; then
+               if test -z "$HDF5HOME"; then
+                 AC_MSG_FAILURE([no SALOME path information for HDF5 (needed by --with-hdf5=salome)!])
+               else
+                 with_hdf5=$HDF5HOME
+               fi
              fi],
             [with_hdf5=check])
 
@@ -69,6 +75,8 @@ AC_ARG_WITH(hdf5-lib,
 
 
 if test "x$with_hdf5" != "xno" ; then
+
+  # Now run tests
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"

@@ -342,8 +342,6 @@ def run_minimal_debug(path, args=None,
     command lines do not allow passing GDB options or command files.
     """
 
-    print("ici", debugger_ui)
-
     # Start building debugger command options
 
     cmd = [debugger]

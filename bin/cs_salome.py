@@ -83,8 +83,8 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH
         sys.stderr.write("SALOME is not available in this installation.\n")
         sys.exit(1)
 
-    # Skipped modules (version 6.3.0): YACS,JOBMANAGER,HOMARD,OPENTURNS
-    default_modules = "GEOM,SMESH,MED,CFDSTUDY,PARAVIS,VISU"
+    # Skipped modules: YACS,JOBMANAGER,HOMARD,OPENTURNS
+    default_modules = "GEOM,SMESH,MED,CFDSTUDY,PARAVIS"
 
     run_cmd = pkg.config.salome_run
     if not run_cmd:
