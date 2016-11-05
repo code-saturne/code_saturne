@@ -38,6 +38,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_mesh.h"
 #include "cs_parameters.h"
 
 /*----------------------------------------------------------------------------*/
@@ -57,49 +58,45 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  /* Space dimension */
-  int dim;
-
   /* Locator + tag for exchanging variables */
-  ple_locator_t   *locator_0;
-  int             *tag_0;
+  ple_locator_t   *locator;
+  int             *c_tag;
 
   /* Selection criterias for coupled domains */
-  char  *criteria_cells_1;
-  char  *criteria_cells_2;
+  char  *cells_criteria;
 
-  cs_lnum_t   n_0; /* Number of faces */
-  cs_lnum_t  *faces_0; /* Coupling boundary faces, numbered 1..n   */
+  cs_lnum_t  n_local; /* Number of faces */
+  cs_lnum_t *faces_local; /* Coupling boundary faces, numbered 0..n-1 */
 
-  cs_lnum_t   n_dist_0; /* Number of faces in dist_loc_0 */
-  cs_lnum_t  *dist_loc_0; /* Distant boundary faces associated with locator */
+  cs_lnum_t  n_distant; /* Number of faces in faces_distant */
+  cs_lnum_t *faces_distant; /* Distant boundary faces associated with locator */
 
   /* face i is coupled in this entity if coupled_faces[i] = true */
-  bool  *coupled_faces;
+  bool *coupled_faces;
 
-  cs_real_t  *hint_0; /* hint coefficient */
-  cs_real_t  *hext_0; /* hext coefficient */
+  cs_real_t *h_int; /* hint coefficient */
+  cs_real_t *h_ext; /* hext coefficient */
 
   /* Geometrical weights around coupling interface */
-  cs_real_t  *gweight_0;
+  cs_real_t *g_weight;
 
   /* IJ vectors */
-  cs_real_3_t  *ij_0;
+  cs_real_3_t *ci_cj_vect;
 
   /* OF vectors  */
-  cs_real_3_t  *ofij_0;
+  cs_real_3_t *offset_vect;
 
   /* Calculation parameters */
   cs_real_t thetav;
   int       idiff;
 
   /* Gradient reconstruction */
-  cs_real_33_t  *cocgb_s_lsq;
-  cs_real_33_t  *cocgb_s_it;
-  cs_real_33_t  *cocg_s_it;
+  cs_real_33_t *cocgb_s_lsq;
+  cs_real_33_t *cocgb_s_it;
+  cs_real_33_t *cocg_s_it;
 
   /* User information */
-  char  *namesca;
+  char *namesca;
 
 } cs_internal_coupling_t;
 
@@ -111,26 +108,16 @@ typedef struct {
  * Initialize coupling criteria from strings.
  *
  * parameters:
- *   criteria_cells_1  <-- string criteria for the first group of cells
- *   cpl               --> pointer to coupling structure to initialize
+ *   cells_criteria  <-- string criteria for the first group of cells
+ *   cpl              --> pointer to coupling structure to initialize
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_criteria_initialize(const char   criteria_cells_1[],
+cs_internal_coupling_criteria_initialize(const char   cells_criteria[],
                                          cs_internal_coupling_t  *cpl);
 
 ple_locator_t *
 cs_internal_coupling_create_locator(cs_internal_coupling_t  *cpl);
-
-/*----------------------------------------------------------------------------
- * Initialize locators using selection criteria.
- *
- * parameters:
- *   cpl <-> pointer to coupling structure to modify
- *----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_locators_initialize(cs_internal_coupling_t  *cpl);
 
 /*----------------------------------------------------------------------------
  * Destruction of all internal coupling related structures.
@@ -155,8 +142,8 @@ cs_internal_coupling_by_id(int coupling_id);
  * parameters:
  *   cpl     <-- pointer to coupling entity
  *   stride  <-- Stride (e.g. 1 for double, 3 for interleaved coordinates)
- *   distant <-- Distant values, size coupling->n_dist_0
- *   local   --> Local values, size coupling->n_0
+ *   distant <-- Distant values, size coupling->n_distant
+ *   local   --> Local values, size coupling->n_local
  *----------------------------------------------------------------------------*/
 
 void
@@ -230,16 +217,6 @@ void
 cs_internal_coupling_initialize(void);
 
 /*----------------------------------------------------------------------------
- * Compute and exchange ij vectors
- *
- * parameters:
- *   cpl <-- pointer to coupling entity
- *----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_exchange_ij(const cs_internal_coupling_t  *cpl);
-
-/*----------------------------------------------------------------------------
  * Add internal coupling rhs contribution for LSQ gradient calculation
  *
  * parameters:
@@ -307,18 +284,18 @@ cs_matrix_preconditionning_add_coupling_contribution(void       *input,
  *
  * parameters:
  *   cpl             <-- pointer to coupling entity
- *   n_0             --> NULL or pointer to component n_0
- *   fac_0[]         --> NULL or pointer to component faces_0[]
- *   n_dist_0        --> NULL or pointer to component n_dist_0
- *   dist_loc_0[]    --> NULL or pointer to component dist_loc_0[]
+ *   n_local         --> NULL or pointer to component n_local
+ *   faces_local     --> NULL or pointer to component faces_local
+ *   n_distant       --> NULL or pointer to component n_distant
+ *   faces_distant   --> NULL or pointer to component faces_distant
  *----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
-                                   cs_lnum_t                     *n_0,
-                                   cs_lnum_t                     *faces_0[],
-                                   cs_lnum_t                     *n_dist_0,
-                                   cs_lnum_t                     *dist_loc_0[]);
+                                   cs_lnum_t                     *n_local,
+                                   cs_lnum_t                     *faces_local[],
+                                   cs_lnum_t                     *n_distant,
+                                   cs_lnum_t                     *faces_distant[]);
 
 /*----------------------------------------------------------------------------
  * Print informations about the given coupling entity
@@ -354,16 +331,27 @@ cs_ic_set_exchcoeff(const int         field_id,
                     const cs_real_t  *hbord);
 
 /*----------------------------------------------------------------------------
+ * Define coupling volume using given criterias. Then, this volume will be
+ * seperated from the rest of the domain with thin walls.
+ *
+ * parameters:
+ *   mesh           <->  pointer to mesh structure to modify
+ *   criteria_cells <-- string criteria for the first group of cells
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add_volume(cs_mesh_t  *mesh,
+                                const char criteria_cells[]);
+
+/*----------------------------------------------------------------------------
  * Define coupling entity using given criterias
  *
  * parameters:
- *   field_id   <-- id of the field
- *   volume_1[] <-- string criteria for the first group of cells
+ *   f_id       <-- id of the field
  *----------------------------------------------------------------------------*/
 
-int
-cs_internal_coupling_add_entity(int        field_id,
-                                const char volume_1[]);
+void
+cs_internal_coupling_add_entity(int        f_id);
 
 /*----------------------------------------------------------------------------
  * Add contribution from coupled faces (internal coupling) to initialisation

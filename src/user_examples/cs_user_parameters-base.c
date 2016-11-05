@@ -212,10 +212,35 @@ cs_user_parameters(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define volumes as internal coupling zones.
+ *
+ * These zones will be separated from the rest of the domain using automatically
+ * defined thin walls.
+ *
+ * \param[in, out]  mesh  pointer to a cs_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_internal_coupling_add_volumes(cs_mesh_t *mesh)
+{
+  /* Example: Internal coupling */
+  /*--------------------------- */
+
+  /*! [param_internal_coupling] */
+
+  cs_internal_coupling_add_volume(mesh,
+                                  "x<.5"); /* Fluid volume zone */
+
+  /*! [param_internal_coupling] */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define internal coupling options.
  *
  * Options are usually defined using cs_internal_coupling_add_entity.
- * IMPORTANT: call "cs_thinwall_is_coupled(criteria)" in cs_user_mesh_thinwall
  */
 /*----------------------------------------------------------------------------*/
 
@@ -227,11 +252,10 @@ cs_user_internal_coupling(void)
 
   /*! [param_internal_coupling] */
 
-
   int f_id = cs_field_id_by_name("scalar1");
 
-  cs_internal_coupling_add_entity(f_id,   /* Field to be coupled */
-                                  "x<.5"); /* Fluid volume zone */
+  cs_internal_coupling_add_entity(f_id);  /* Field to be coupled */
+
 
   /*! [param_internal_coupling] */
 

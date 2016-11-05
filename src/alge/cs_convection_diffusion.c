@@ -1795,15 +1795,15 @@ cs_convection_diffusion_scalar(int                       idtvar,
   cs_real_t  *v_slope_test = _get_v_slope_test(f_id,  var_cal_opt);
 
   /* Internal coupling variables */
-  cs_real_t *pvar_1 = NULL;
-  cs_real_t *pvar_distant_1 = NULL;
+  cs_real_t *pvar_local = NULL;
+  cs_real_t *pvar_distant = NULL;
   cs_real_t hint, hext, heq;
-  cs_lnum_t *faces_1 = NULL;
-  cs_int_t n_1;
-  cs_lnum_t n_dist_1;
-  cs_lnum_t *dist_loc_1 = NULL;
+  cs_lnum_t *faces_local = NULL;
+  cs_int_t n_local;
+  cs_lnum_t n_distant;
+  cs_lnum_t *faces_distant = NULL;
   int coupling_id;
-  cs_internal_coupling_t  *cpl = NULL;
+  cs_internal_coupling_t *cpl = NULL;
 
   /* 1. Initialization */
 
@@ -1861,10 +1861,10 @@ cs_convection_diffusion_scalar(int                       idtvar,
     coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
     cs_internal_coupling_coupled_faces(cpl,
-                                       &n_1,
-                                       &faces_1,
-                                       &n_dist_1,
-                                       &dist_loc_1);
+                                       &n_local,
+                                       &faces_local,
+                                       &n_distant,
+                                       &faces_distant);
   }
 
   /* 2. Compute the balance with reconstruction */
@@ -2723,10 +2723,10 @@ cs_convection_diffusion_scalar(int                       idtvar,
        * is required */
       if (icoupl > 0) {
         /* Prepare data for sending */
-        BFT_MALLOC(pvar_distant_1, n_dist_1, cs_real_t);
+        BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
 
-        for (cs_lnum_t ii = 0; ii < n_dist_1; ii++) {
-          cs_lnum_t face_id = dist_loc_1[ii] - 1;
+        for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+          cs_lnum_t face_id = faces_distant[ii];
           cs_lnum_t jj = b_face_cells[face_id];
           cs_real_t pip;
           cs_b_cd_unsteady(ircflp,
@@ -2734,22 +2734,19 @@ cs_convection_diffusion_scalar(int                       idtvar,
                            grad[jj],
                            pvar[jj],
                            &pip);
-          pvar_distant_1[ii] = pip;
+          pvar_distant[ii] = pip;
         }
 
         /* Receive data */
-        BFT_MALLOC(pvar_1, n_1, cs_real_t);
+        BFT_MALLOC(pvar_local, n_local, cs_real_t);
         cs_internal_coupling_exchange_var(cpl,
-                                          1,
-                                          pvar_distant_1,
-                                          pvar_1);
-
-        /* Sending structures are no longer needed */
-        BFT_FREE(pvar_distant_1);
+                                          1, /* Dimension */
+                                          pvar_distant,
+                                          pvar_local);
 
         /* Flux contribution */
-        for (cs_lnum_t ii = 0; ii < n_1; ii++) {
-          cs_lnum_t face_id = faces_1[ii] - 1;
+        for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+          cs_lnum_t face_id = faces_local[ii];
           cs_lnum_t jj = b_face_cells[face_id];
           cs_real_t pip, pjp;
           cs_real_t fluxi = 0.;
@@ -2760,10 +2757,10 @@ cs_convection_diffusion_scalar(int                       idtvar,
                            pvar[jj],
                            &pip);
 
-          pjp = pvar_1[ii];
+          pjp = pvar_local[ii];
 
-          hint = cpl->hint_0[ii];
-          hext = cpl->hext_0[ii];
+          hint = cpl->h_int[ii];
+          hext = cpl->h_ext[ii];
           heq = hint * hext / (hint + hext);
 
           cs_b_diff_flux_coupling(idiffp,
@@ -2775,7 +2772,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
           rhs[jj] -= thetap * fluxi;
         }
 
-        BFT_FREE(pvar_1);
+        BFT_FREE(pvar_local);
+        /* Sending structures are no longer needed */
+        BFT_FREE(pvar_distant);
       }
     }
 

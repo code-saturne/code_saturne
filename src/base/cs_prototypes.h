@@ -324,6 +324,18 @@ void
 cs_user_initialization(void);
 
 /*----------------------------------------------------------------------------
+ * Define volumes as internal coupling zones.
+ *
+ * These zones will be separated from the rest of the domain using automatically
+ * defined thin walls.
+ * parameters
+ *   mesh <-> pointer to a cs_mesh_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
  * This function is called each time step to define physical properties.
  *----------------------------------------------------------------------------*/
 

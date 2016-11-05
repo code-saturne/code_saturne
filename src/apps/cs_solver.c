@@ -282,6 +282,8 @@ cs_run(void)
 
   cs_internal_coupling_initialize();
 
+  cs_internal_coupling_dump();
+
   /* Initialize meshes for the main post-processing */
 
   check_mask = ((opts.preprocess | opts.verif) == true) ? 2 + 1 : 0;
