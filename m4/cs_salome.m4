@@ -104,19 +104,6 @@ if test "x$with_salome" != "xno" ; then
     fi
   fi
 
-  # Environment file for EDF builds for Salome 6.3
-  if test "x$SALOMEENVCMD" = "x"; then
-    salome_env=$(find $with_salome -maxdepth 1 -name envSalome*.sh 2>/dev/null)
-    if test "x$salome_env" != "x"; then
-      salome_pre=$(find $with_salome -maxdepth 1 -name prerequis*.sh 2>/dev/null)
-      if test "x$salome_pre" != "x"; then
-        SALOMEENVCMD=". $salome_pre;. $salome_env"
-        SALOMEPRE="$salome_pre"
-      fi
-    fi
-
-  fi
-
   if test "x$SALOMERUN" = "x"; then
     if test -f "$ROOT_SALOME/runSalome"; then
       SALOMERUN="$ROOT_SALOME/runSalome"
