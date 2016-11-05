@@ -64,6 +64,7 @@ typedef struct {
 
   /* Selection criterias for coupled domains */
   char  *cells_criteria;
+  char  *faces_criteria;
 
   cs_lnum_t  n_local; /* Number of faces */
   cs_lnum_t *faces_local; /* Coupling boundary faces, numbered 0..n-1 */
@@ -103,18 +104,6 @@ typedef struct {
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Initialize coupling criteria from strings.
- *
- * parameters:
- *   cells_criteria  <-- string criteria for the first group of cells
- *   cpl              --> pointer to coupling structure to initialize
- *----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_criteria_initialize(const char   cells_criteria[],
-                                         cs_internal_coupling_t  *cpl);
 
 ple_locator_t *
 cs_internal_coupling_create_locator(cs_internal_coupling_t  *cpl);
@@ -369,16 +358,6 @@ cs_internal_coupling_initial_contribution(const cs_internal_coupling_t  *cpl,
                                           const cs_real_t                c_weight[],
                                           const cs_real_t                pvar[],
                                           cs_real_3_t          *restrict grad);
-
-/*----------------------------------------------------------------------------
- * Add juncture criterion from thinwall definition
- *
- * parameters:
- *   criterion <-- string criteria for the juncture surface
- *----------------------------------------------------------------------------*/
-
-void
-cs_thinwall_is_coupled(const char criterion[]);
 
 /*----------------------------------------------------------------------------*/
 

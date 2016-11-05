@@ -230,12 +230,37 @@ cs_user_internal_coupling_add_volumes(cs_mesh_t *mesh)
   /*! [param_internal_coupling] */
 
   cs_internal_coupling_add_volume(mesh,
-                                  "x<.5"); /* Fluid volume zone */
+                                  "x<.5"); /* Solid volume zone */
 
   /*! [param_internal_coupling] */
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define volumesi from separated meshes as internal coupling zones.
+ *
+ * These zones must be disjoint and the face selection criteria must be specified.
+ *
+ * \param[in, out]  mesh  pointer to a cs_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t *mesh)
+{
+  /* Example: Internal coupling */
+  /*--------------------------- */
+
+  /*! [param_internal_coupling] */
+
+  cs_internal_coupling_add(mesh,
+                           "solid_volume_criteria",
+                           "interface_criteria");
+
+  /*! [param_internal_coupling] */
+
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define internal coupling options.

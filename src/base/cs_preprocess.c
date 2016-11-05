@@ -324,6 +324,9 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
 
+  /* Second way of defining internal coupling */
+  cs_user_internal_coupling_from_disjoint_meshes(cs_glob_mesh);
+
   /* Compute geometric quantities related to the mesh */
 
   bft_printf_flush();

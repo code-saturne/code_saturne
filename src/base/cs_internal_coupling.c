@@ -475,7 +475,38 @@ _initialize_coupled_faces(cs_internal_coupling_t *cpl)
 }
 
 /*----------------------------------------------------------------------------
- * Initialize internal coupling locators using selection criteria.
+ * Initialize coupling criteria from strings.
+ *
+ * parameters:
+ *   criteria_cells    <-- string criteria for the first group of cells
+ *   criteria_faces    <-- string criteria for faces
+ *   cpl               --> pointer to coupling structure to initialize
+ *----------------------------------------------------------------------------*/
+
+void
+_criteria_initialize(const char   criteria_cells[],
+                     const char   criteria_faces[],
+                     cs_internal_coupling_t  *cpl)
+{
+  BFT_MALLOC(cpl->cells_criteria,
+             strlen(criteria_cells)+1,
+             char);
+
+  strcpy(cpl->cells_criteria, criteria_cells);
+
+  if (criteria_faces == NULL)
+    return;
+
+  BFT_MALLOC(cpl->faces_criteria,
+             strlen(criteria_faces)+1,
+             char);
+
+  strcpy(cpl->faces_criteria, criteria_faces);
+
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize internal coupling locators using cell selection criteria ONLY.
  *
  * parameters:
  *   m   <->  pointer to mesh structure to modify
@@ -579,7 +610,78 @@ _volume_initialize(cs_mesh_t               *m,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize locators using selection criteria.
+ * Initialize internal coupling locators using cell and face selection criteria.
+ *
+ * parameters:
+ *   m   <->  pointer to mesh structure to modify
+ *   cpl <-> pointer to coupling structure to modify
+ *----------------------------------------------------------------------------*/
+
+static void
+_volume_face_initialize(cs_mesh_t               *m,
+                        cs_internal_coupling_t  *cpl)
+{
+  cs_lnum_t  n_selected_cells;
+  cs_lnum_t *selected_faces = NULL;
+  cs_lnum_t *selected_cells = NULL;
+
+  cs_lnum_t *cell_tag = NULL;
+
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  /* Selection of Volme zone using volumic selection criteria*/
+
+  BFT_MALLOC(selected_cells, n_cells_ext, cs_lnum_t);
+  cs_selector_get_cell_list(cpl->cells_criteria,
+                            &n_selected_cells,
+                            selected_cells);
+
+  /* Initialization */
+  BFT_MALLOC(cell_tag, n_cells_ext, cs_lnum_t);
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    cell_tag[cell_id] = 2;
+  }
+
+  /* Tag cells */
+  for (cs_lnum_t ii = 0; ii < n_selected_cells; ii++) {
+    cs_lnum_t cell_id = selected_cells[ii];
+    cell_tag[cell_id] = 1;
+  }
+  if (cs_glob_mesh->halo != NULL)
+    cs_halo_sync_num(cs_glob_mesh->halo, CS_HALO_STANDARD, cell_tag);
+
+  /* Free memory */
+  BFT_FREE(selected_cells);
+
+  /* Selection of the juncture */
+  cs_lnum_t  n_selected_faces = 0;
+
+  BFT_MALLOC(selected_faces, m->n_b_faces, cs_lnum_t);
+  cs_selector_get_b_face_list(cpl->faces_criteria,
+                              &n_selected_faces,
+                              selected_faces);
+
+  /* Prepare locator */
+
+  cpl->n_local = n_selected_faces; /* WARNING: only valid for conformal meshes */
+
+  BFT_MALLOC(cpl->faces_local, cpl->n_local, cs_lnum_t);
+  BFT_MALLOC(cpl->c_tag, cpl->n_local, int);
+
+  for (cs_lnum_t ii = 0; ii < cpl->n_local; ii++) {
+    cs_lnum_t face_id = selected_faces[ii];
+    cpl->faces_local[ii] = face_id;
+    cs_lnum_t cell_id = m->b_face_cells[face_id];
+    cpl->c_tag[ii] = cell_tag[cell_id];
+  }
+
+  /* Free memory */
+  BFT_FREE(selected_faces);
+  BFT_FREE(cell_tag);
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize locators
  *
  * parameters:
  *   m              <->  pointer to mesh structure to modify
@@ -1022,25 +1124,6 @@ cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize coupling criteria from strings.
- *
- * parameters:
- *   criteria_cells    <-- string criteria for the first group of cells
- *   cpl               --> pointer to coupling structure to initialize
- *----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_criteria_initialize(const char   criteria_cells[],
-                                         cs_internal_coupling_t  *cpl)
-{
-  BFT_MALLOC(cpl->cells_criteria,
-             strlen(criteria_cells)+1,
-             char);
-
-  strcpy(cpl->cells_criteria, criteria_cells);
-}
-
-/*----------------------------------------------------------------------------
  * Destruction of all internal coupling related structures.
  *----------------------------------------------------------------------------*/
 
@@ -1072,7 +1155,6 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
                                          const cs_real_t                tab[],
                                          cs_real_t                      local[])
 {
-  int ii, jj;
   cs_lnum_t face_id;
 
   const cs_lnum_t n_distant = cpl->n_distant;
@@ -1387,16 +1469,31 @@ cs_internal_coupling_log(const cs_internal_coupling_t  *cpl)
 
   const cs_lnum_t n_local = cpl->n_local;
 
-  bft_printf("  Coupled scalar: %s\n"
-             "  Group selection criterion: %s\n"
-             "  Locator: - n dist points = %d\n"
-             "           - n interior = %d\n"
-             "           - n exterior = %d\n",
-             cpl->namesca,
-             cpl->cells_criteria,
-             ple_locator_get_n_dist_points(cpl->locator),
-             ple_locator_get_n_interior(cpl->locator),
-             ple_locator_get_n_exterior(cpl->locator));
+  if (cpl->faces_criteria == NULL)
+    bft_printf("  Coupled scalar: %s\n"
+               "  Cell group selection criterion: %s\n"
+               "  Locator: - n dist points = %d\n"
+               "           - n interior = %d\n"
+               "           - n exterior = %d\n",
+               cpl->namesca,
+               cpl->cells_criteria,
+               ple_locator_get_n_dist_points(cpl->locator),
+               ple_locator_get_n_interior(cpl->locator),
+               ple_locator_get_n_exterior(cpl->locator));
+  else
+    bft_printf("  Coupled scalar: %s\n"
+               "  Cell group selection criterion: %s\n"
+               "  Face group selection criterion: %s\n"
+               "  Locator: - n dist points = %d\n"
+               "           - n interior = %d\n"
+               "           - n exterior = %d\n",
+               cpl->namesca,
+               cpl->cells_criteria,
+               cpl->faces_criteria,
+               ple_locator_get_n_dist_points(cpl->locator),
+               ple_locator_get_n_interior(cpl->locator),
+               ple_locator_get_n_exterior(cpl->locator));
+
 }
 
 /*----------------------------------------------------------------------------
@@ -1445,6 +1542,7 @@ cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
   cpl->locator = NULL;
   cpl->c_tag = NULL;
   cpl->cells_criteria = NULL;
+  cpl->faces_criteria = NULL; /* optional here */
 
   cpl->n_local = 0;
   cpl->faces_local = NULL; /* Coupling boundary faces, numbered 0..n-1 */
@@ -1470,13 +1568,72 @@ cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
 
   cpl->namesca = NULL;
 
-  cs_internal_coupling_criteria_initialize(criteria_cells, cpl);
+  _criteria_initialize(criteria_cells, NULL, cpl);
 
   /* Initialization of locators */
   _volume_initialize(mesh, cpl);
 
   _n_internal_couplings++;
 }
+
+/*----------------------------------------------------------------------------
+ * Define coupling volume using given criterias. Then, this volume has tobe
+ * seperated from the rest of the domain with a wall.
+ *
+ * parameters:
+ *   mesh           <-> pointer to mesh structure to modify
+ *   criteria_cells <-- selection criteria for the first group of cells
+ *   criteria_faces <-- selection criteria for faces to be joint
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add(cs_mesh_t   *mesh,
+                         const char   criteria_cells[],
+                         const char   criteria_faces[])
+{
+  BFT_REALLOC(_internal_coupling,
+              _n_internal_couplings + 1,
+              cs_internal_coupling_t);
+
+  cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
+
+  cpl->locator = NULL;
+  cpl->c_tag = NULL;
+  cpl->cells_criteria = NULL;
+  cpl->faces_criteria = NULL;
+
+  cpl->n_local = 0;
+  cpl->faces_local = NULL; /* Coupling boundary faces, numbered 0..n-1 */
+
+  cpl->n_distant = 0;
+  cpl->faces_distant = NULL;
+
+  cpl->coupled_faces = NULL;
+
+  cpl->h_int = NULL;
+  cpl->h_ext = NULL;
+
+  cpl->g_weight = NULL;
+  cpl->ci_cj_vect = NULL;
+  cpl->offset_vect = NULL;
+
+  cpl->thetav = 0;
+  cpl->idiff = 0;
+
+  cpl->cocgb_s_lsq = NULL;
+  cpl->cocgb_s_it = NULL;
+  cpl->cocg_s_it = NULL;
+
+  cpl->namesca = NULL;
+
+  _criteria_initialize(criteria_cells, criteria_faces, cpl);
+
+  /* Initialization of locators */
+  _volume_face_initialize(mesh, cpl);
+
+  _n_internal_couplings++;
+}
+
 
 /*----------------------------------------------------------------------------
  * Define coupling entity using given criterias

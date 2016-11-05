@@ -225,5 +225,20 @@ cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define volumesi from separated meshes as internal coupling zones.
+ *
+ * These zones must be disjoint and the face selection criteria must be specified.
+ *
+ * \param[in, out]  mesh  pointer to a cs_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t  *mesh)
+{
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
