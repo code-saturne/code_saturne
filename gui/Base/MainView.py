@@ -213,17 +213,17 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
     @pyqtSlot()
     def slotPostStatus(self):
         if self.checkBoxPost.isChecked():
-            self.createMesh = True
+            self.createPost = True
         else:
-            self.createMesh = False
+            self.createPost = False
 
 
     @pyqtSlot()
     def slotMeshStatus(self):
         if self.checkBoxMesh.isChecked():
-            self.createPost = True
+            self.createMesh = True
         else:
-            self.createPost = False
+            self.createMesh = False
 
 
     @pyqtSlot()
@@ -693,6 +693,8 @@ class MainView(object):
                 self.scrollArea.setWidget(self.displayFisrtPage())
                 self.case['saved'] = "yes"
 
+                self.actionPrepro.setEnabled(True)
+                self.actionCalculation.setEnabled(True)
                 self.case.undo_signal.connect(self.slotUndoRedoView)
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()

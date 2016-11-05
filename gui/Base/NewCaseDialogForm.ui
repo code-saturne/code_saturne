@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>383</width>
+    <width>392</width>
     <height>417</height>
    </rect>
   </property>
@@ -55,9 +55,12 @@
         </widget>
        </item>
        <item row="1" column="0" colspan="2">
-        <widget class="QCheckBox" name="checkBoxPost">
+        <widget class="QCheckBox" name="checkBoxMesh">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Recommended directory for meshes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="text">
-          <string>create POST directory</string>
+          <string>create MESH directory</string>
          </property>
         </widget>
        </item>
@@ -75,9 +78,12 @@
         </spacer>
        </item>
        <item row="2" column="0" colspan="2">
-        <widget class="QCheckBox" name="checkBoxMesh">
+        <widget class="QCheckBox" name="checkBoxPost">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Recommended directory to place postprocessing scripts or reference data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="text">
-          <string>create MESH directory</string>
+          <string>create POST directory</string>
          </property>
         </widget>
        </item>
