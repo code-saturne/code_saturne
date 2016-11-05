@@ -177,6 +177,23 @@ cs_balance_by_zone(const char *selection_crit,
     return;
   }
 
+  /* Internal coupling variables */
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
+
+  /* Get the calculation option from the field */
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
+  cs_real_t *pvar_local = NULL;
+  cs_real_t *pvar_distant = NULL;
+  cs_real_t hint, hext, heq;
+  cs_lnum_t *faces_local = NULL;
+  cs_int_t n_local;
+  cs_lnum_t n_distant;
+  cs_lnum_t *faces_distant = NULL;
+  int coupling_id;
+  cs_internal_coupling_t *cpl = NULL;
+
   /* Temperature indicator.
      Will multiply by CP in order to have energy. */
   bool itemperature = false;
@@ -207,6 +224,18 @@ cs_balance_by_zone(const char *selection_crit,
     }
   }
 
+  /* Internal coupling initialisation*/
+  if (var_cal_opt.icoupl > 0) {
+    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    coupling_id = cs_field_get_key_int(f, coupling_key_id);
+    cpl = cs_internal_coupling_by_id(coupling_id);
+    cs_internal_coupling_coupled_faces(cpl,
+                                       &n_local,
+                                       &faces_local,
+                                       &n_distant,
+                                       &faces_distant);
+  }
+
   /* Zone cells selection variables*/
   cs_lnum_t n_cells_sel = 0;
   cs_lnum_t *cells_sel_list = NULL;
@@ -220,7 +249,7 @@ cs_balance_by_zone(const char *selection_crit,
   cs_lnum_t *cells_tag_list = NULL;
 
   /*--------------------------------------------------------------------------
-   * This example computes the balance relative to a given scalar
+   * This function computes the balance relative to a given scalar
    * on a selected zone of the mesh.
    * We assume that we want to compute balances (convective and diffusive)
    * at the boundaries of the calculation domain represented below
@@ -252,6 +281,7 @@ cs_balance_by_zone(const char *selection_crit,
     s_wall_balance: contribution from smooth walls
     r_wall_balance: contribution from rough walls
     cpl_balance   : contribution from coupled faces
+    i_cpl_balance : contribution from internal coupled faces
     ndef_balance  : contribution from undefined faces
     tot_balance   : total balance */
 
@@ -268,6 +298,7 @@ cs_balance_by_zone(const char *selection_crit,
   double s_wall_balance = 0.;
   double r_wall_balance = 0.;
   double cpl_balance = 0.;
+  double i_cpl_balance = 0.;
   double ndef_balance = 0.;
   double tot_balance = 0.;
   double unst_balance = 0.;
@@ -292,12 +323,6 @@ cs_balance_by_zone(const char *selection_crit,
   /* Reconstructed value */
   cs_real_3_t *grad;
   BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
-
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-
-  /* Get the calculation option from the field */
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   cs_halo_type_t halo_type;
   cs_gradient_type_t gradient_type;
@@ -737,6 +762,66 @@ cs_balance_by_zone(const char *selection_crit,
         else
           ndef_balance -= term_balance*dt[c_id];
       }
+
+      if (var_cal_opt.icoupl > 0) {
+
+       /* Prepare data for sending from distant */
+        BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
+
+        for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+          cs_lnum_t f_id = faces_distant[ii];
+          cs_lnum_t c_id = b_face_cells[f_id];
+          cs_real_t pip;
+          cs_b_cd_unsteady(ircflp,
+                           diipb[f_id],
+                           grad[c_id],
+                           f->val[c_id],
+                           &pip);
+          pvar_distant[ii] = pip;
+        }
+
+        /* Receive data */
+        BFT_MALLOC(pvar_local, n_local, cs_real_t);
+        cs_internal_coupling_exchange_var(cpl,
+                                          1, /* Dimension */
+                                          pvar_distant,
+                                          pvar_local);
+
+
+        /* flux contribution */
+        for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+          cs_lnum_t f_id = faces_local[ii];
+          cs_lnum_t c_id = b_face_cells[f_id];
+          if (cells_tag_list[c_id] == 1) {
+            cs_real_t pip, pjp;
+            cs_real_t term_balance = 0.;
+
+            cs_b_cd_unsteady(ircflp,
+                             diipb[f_id],
+                             grad[c_id],
+                             f->val[c_id],
+                             &pip);
+
+            pjp = pvar_local[ii];
+
+            hint = cpl->h_int[ii];
+            hext = cpl->h_ext[ii];
+            heq = hint * hext / (hint + hext);
+
+            cs_b_diff_flux_coupling(idiffp,
+                                    pip,
+                                    pjp,
+                                    heq,
+                                    &term_balance);
+
+            i_cpl_balance -= term_balance*dt[c_id];
+          }
+        }
+
+        BFT_FREE(pvar_local);
+        BFT_FREE(pvar_distant);
+
+      }
     }
 
   /* Boundary convective flux is imposed at some faces
@@ -884,6 +969,66 @@ cs_balance_by_zone(const char *selection_crit,
         else
           ndef_balance -= term_balance*dt[c_id];
       }
+    }
+
+    if (var_cal_opt.icoupl > 0) {
+
+     /* Prepare data for sending from distant */
+      BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
+
+      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+        cs_lnum_t f_id = faces_distant[ii];
+        cs_lnum_t c_id = b_face_cells[f_id];
+        cs_real_t pip;
+        cs_b_cd_unsteady(ircflp,
+                         diipb[f_id],
+                         grad[c_id],
+                         f->val[c_id],
+                         &pip);
+        pvar_distant[ii] = pip;
+      }
+
+      /* Receive data */
+      BFT_MALLOC(pvar_local, n_local, cs_real_t);
+      cs_internal_coupling_exchange_var(cpl,
+                                        1, /* Dimension */
+                                        pvar_distant,
+                                        pvar_local);
+
+
+      /* flux contribution */
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        cs_lnum_t f_id = faces_local[ii];
+        cs_lnum_t c_id = b_face_cells[f_id];
+        if (cells_tag_list[c_id] == 1) {
+          cs_real_t pip, pjp;
+          cs_real_t term_balance = 0.;
+
+          cs_b_cd_unsteady(ircflp,
+                           diipb[f_id],
+                           grad[c_id],
+                           f->val[c_id],
+                           &pip);
+
+          pjp = pvar_local[ii];
+
+          hint = cpl->h_int[ii];
+          hext = cpl->h_ext[ii];
+          heq = hint * hext / (hint + hext);
+
+          cs_b_diff_flux_coupling(idiffp,
+                                  pip,
+                                  pjp,
+                                  heq,
+                                  &term_balance);
+
+          i_cpl_balance -= term_balance*dt[c_id];
+        }
+      }
+
+      BFT_FREE(pvar_local);
+      BFT_FREE(pvar_distant);
+
     }
   }
 
@@ -1468,7 +1613,8 @@ cs_balance_by_zone(const char *selection_crit,
               + in_balance + out_balance + sym_balance
               + s_wall_balance + r_wall_balance
               + mass_i_balance + mass_o_balance
-              + cpl_balance + ndef_balance;
+              + cpl_balance + ndef_balance
+              + i_cpl_balance;
 
   unst_balance = vol_balance + div_balance;
 
@@ -1497,8 +1643,8 @@ cs_balance_by_zone(const char *selection_crit,
                "   Sym.         Smooth W.    Rough W.\n"
                "  %12.4e %12.4e %12.4e\n"
                "------------------------------------------------------------\n"
-               "   Coupled      Undef. BC\n"
-               "  %12.4e %12.4e\n"
+               "   Coupled      Int. Coupling    Undef. BC\n"
+               "  %12.4e %12.4e     %12.4e\n"
                "------------------------------------------------------------\n"
                "   Total        Instant. norm. total\n"
                "  %12.4e %12.4e\n"
@@ -1506,8 +1652,8 @@ cs_balance_by_zone(const char *selection_crit,
              nt_cur, scalar_name, selection_crit,
              unst_balance, mass_i_balance, mass_o_balance,
              bi_i_balance, bi_o_balance, in_balance, out_balance, sym_balance,
-             s_wall_balance, r_wall_balance, cpl_balance, ndef_balance,
-             tot_balance, nrm_tot_balance);
+             s_wall_balance, r_wall_balance, cpl_balance, i_cpl_balance,
+             ndef_balance, tot_balance, nrm_tot_balance);
 }
 
 /*----------------------------------------------------------------------------*/
