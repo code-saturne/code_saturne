@@ -1462,14 +1462,15 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
 
     area = cs_math_3_norm(_norm);
 
-    cell_area[cell_id1] += area;
-    cell_area[cell_id2] += area;
-
-    /* Computation of the numerator */
-
-    for (i = 0; i < dim; i++) {
-      cell_cen[dim*cell_id1 + i] += i_face_cog[dim*fac_id + i]*area;
-      cell_cen[dim*cell_id2 + i] += i_face_cog[dim*fac_id + i]*area;
+    if (cell_id1 > -1) {
+      cell_area[cell_id1] += area;
+      for (i = 0; i < dim; i++)
+        cell_cen[dim*cell_id1 + i] += i_face_cog[dim*fac_id + i]*area;
+    }
+    if (cell_id2 > -1) {
+      cell_area[cell_id2] += area;
+      for (i = 0; i < dim; i++)
+        cell_cen[dim*cell_id2 + i] += i_face_cog[dim*fac_id + i]*area;
     }
 
   } /* End of loop on internal faces */
