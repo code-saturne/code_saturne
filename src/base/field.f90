@@ -830,7 +830,7 @@ contains
   !> \param[in]   f_id  field id
   !> \param[out]  name  field's name
 
-  subroutine field_get_name (f_id, name)
+  subroutine field_get_name(f_id, name)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1264,7 +1264,7 @@ contains
   !> \param[in]   name  key name
   !> \param[out]  id    associated key id
 
-  subroutine field_get_key_id (name, id)
+  subroutine field_get_key_id(name, id)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1299,7 +1299,7 @@ contains
   !> \param[in]   k_id     id of associated key
   !> \param[out]  k_value  integer value associated with key id for this field
 
-  subroutine field_get_key_int (f_id, k_id, k_value)
+  subroutine field_get_key_int(f_id, k_id, k_value)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1335,7 +1335,7 @@ contains
   !> \param[in]   k_name   key name
   !> \param[out]  k_value  integer value associated with key id for this field
 
-  subroutine field_get_key_int_by_name (f_id, k_name, k_value)
+  subroutine field_get_key_int_by_name(f_id, k_name, k_value)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1376,7 +1376,7 @@ contains
   !> \param[in]   k_id     id of associated key
   !> \param[out]  k_value  integer value associated with key id for this field
 
-  subroutine field_get_key_double (f_id, k_id, k_value)
+  subroutine field_get_key_double(f_id, k_id, k_value)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1413,7 +1413,7 @@ contains
   !> \param[in]   k_id  id of associated key
   !> \param[in]   str   string associated with key
 
-  subroutine field_set_key_str (f_id, k_id, str)
+  subroutine field_set_key_str(f_id, k_id, str)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1449,7 +1449,7 @@ contains
   !> \param[in]   k_id  id of associated key
   !> \param[out]  str   string associated with key
 
-  subroutine field_get_key_str (f_id, k_id, str)
+  subroutine field_get_key_str(f_id, k_id, str)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1490,7 +1490,7 @@ contains
   ! compared strings are identical except for the last character, respectively
   ! Y, y, V,v, or 2 and Z, z, W, w, or 3.
 
-  subroutine fldsnv (name1, name2, name3)
+  subroutine fldsnv(name1, name2, name3)
 
     implicit none
 
@@ -1580,7 +1580,7 @@ contains
   !> \param[in]   f_id  field id
   !> \param[out]  str   string associated with key
 
-  subroutine field_get_label (f_id, str)
+  subroutine field_get_label(f_id, str)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1621,7 +1621,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to scalar field values
 
-  subroutine field_get_val_s (field_id, p)
+  subroutine field_get_val_s(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1651,7 +1651,7 @@ contains
   !> \param[in]     name      name of given field (which must be scalar)
   !> \param[out]    p         pointer to scalar field values
 
-  subroutine field_get_val_s_by_name (name, p)
+  subroutine field_get_val_s_by_name(name, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1686,7 +1686,7 @@ contains
   !> \param[out]    p         pointer to scalar field values at the previous
   !>                          iteration
 
-  subroutine field_get_val_prev_s_by_name (name, p)
+  subroutine field_get_val_prev_s_by_name(name, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1721,7 +1721,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be vectorial)
   !> \param[out]    p         pointer to vector field values
 
-  subroutine field_get_val_v (field_id, p)
+  subroutine field_get_val_v(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1751,7 +1751,7 @@ contains
   !> \param[in]     name      name of given field (which must be vectorial)
   !> \param[out]    p         pointer to scalar field values
 
-  subroutine field_get_val_v_by_name (name, p)
+  subroutine field_get_val_v_by_name(name, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1786,7 +1786,7 @@ contains
   !> \param[out]    p         pointer to vector field values at the previous
   !>                          iteration
 
-  subroutine field_get_val_prev_v_by_name (name, p)
+  subroutine field_get_val_prev_v_by_name(name, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1819,7 +1819,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to previous scalar field values
 
-  subroutine field_get_val_prev_s (field_id, p)
+  subroutine field_get_val_prev_s(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1850,7 +1850,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to previous scalar field values
 
-  subroutine field_get_val_prev_s_try (field_id, p)
+  subroutine field_get_val_prev_s_try(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1873,7 +1873,6 @@ contains
 
   end subroutine field_get_val_prev_s_try
 
-
   !=============================================================================
 
   !> \brief Return pointer to the previous values array of a given vector field
@@ -1881,7 +1880,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be vectorial)
   !> \param[out]    p         pointer to previous vector field values
 
-  subroutine field_get_val_prev_v (field_id, p)
+  subroutine field_get_val_prev_v(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1911,7 +1910,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to scalar field BC coefa values
 
-  subroutine field_get_coefa_s (field_id, p)
+  subroutine field_get_coefa_s(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1941,7 +1940,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be a vector)
   !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_get_coefa_v (field_id, p)
+  subroutine field_get_coefa_v(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -1972,7 +1971,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_get_coefad_s (field_id, p)
+  subroutine field_get_coefad_s(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2003,7 +2002,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_get_coefad_v (field_id, p)
+  subroutine field_get_coefad_v(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2033,7 +2032,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be a vector)
   !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_get_coefac_v (field_id, p)
+  subroutine field_get_coefac_v(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2063,7 +2062,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to scalar field BC coefa values
 
-  subroutine field_get_coefb_s (field_id, p)
+  subroutine field_get_coefb_s(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2093,7 +2092,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to scalar field BC coefbc values
 
-  subroutine field_get_coefbc_s (field_id, p)
+  subroutine field_get_coefbc_s(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2123,7 +2122,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be a vector)
   !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_get_coefb_uv (field_id, p)
+  subroutine field_get_coefb_uv(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2153,7 +2152,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be a vector)
   !> \param[out]    p         pointer to vector field BC coefbc values
 
-  subroutine field_get_coefbc_uv (field_id, p)
+  subroutine field_get_coefbc_uv(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2183,7 +2182,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be a vector)
   !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_get_coefb_v (field_id, p)
+  subroutine field_get_coefb_v(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2213,7 +2212,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be a vector)
   !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_get_coefbc_v (field_id, p)
+  subroutine field_get_coefbc_v(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2243,7 +2242,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to scalar field BC coefa values
 
-  subroutine field_get_coefaf_s (field_id, p)
+  subroutine field_get_coefaf_s(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2273,7 +2272,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to scalar field BC coefa values
 
-  subroutine field_get_coefac_s (field_id, p)
+  subroutine field_get_coefac_s(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2303,7 +2302,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_get_coefaf_v (field_id, p)
+  subroutine field_get_coefaf_v(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2333,7 +2332,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to scalar field BC coefb values
 
-  subroutine field_get_coefbf_s (field_id, p)
+  subroutine field_get_coefbf_s(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2363,7 +2362,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefb values
 
-  subroutine field_get_coefbf_uv (field_id, p)
+  subroutine field_get_coefbf_uv(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2393,7 +2392,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefb values
 
-  subroutine field_get_coefbf_v (field_id, p)
+  subroutine field_get_coefbf_v(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2424,7 +2423,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefb values
 
-  subroutine field_get_coefbd_s (field_id, p)
+  subroutine field_get_coefbd_s(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2455,7 +2454,7 @@ contains
   !> \param[in]     field_id  id of given field (which must be scalar)
   !> \param[out]    p         pointer to vector field BC coefa values
 
-  subroutine field_get_coefbd_v (field_id, p)
+  subroutine field_get_coefbd_v(field_id, p)
 
     use, intrinsic :: iso_c_binding
     implicit none

@@ -948,8 +948,8 @@ cs_f_field_set_n_previous(int  id,
 }
 
 /*----------------------------------------------------------------------------
- * Return a pointer to a field's variable values (current var if previous does
- * not exists)
+ * Return a pointer to a field's variable values
+ * (current var if previous does not exist)
  *
  * This function is intended for use by Fortran wrappers.
  *
