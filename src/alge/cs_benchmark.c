@@ -971,6 +971,14 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
     for (int c_id = 0; c_id < 3; c_id++) {
 
+      /* Matrix created from shared index may not always handle
+         periodic elements in the same manner */
+
+      if (halo != NULL) {
+        if (halo->n_transforms > 0 && c_id == 2)
+          continue;
+      }
+
       if (c_id < 2) {
 
         ma = cs_matrix_assembler_create(l_range, true);

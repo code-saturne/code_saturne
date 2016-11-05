@@ -2280,7 +2280,7 @@ cs_matrix_assembler_create_from_shared(cs_lnum_t         n_rows,
 
   ma->halo = halo;
 
-  /* Addtional required parallel data */
+  /* Additional required parallel data */
 
   if (ma->halo != NULL) {
 
