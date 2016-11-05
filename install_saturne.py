@@ -39,6 +39,7 @@ def run_command(cmd, stage, app, log):
 
     p = subprocess.Popen(cmd,
                          shell=True,
+                         universal_newlines=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
 
@@ -46,7 +47,7 @@ def run_command(cmd, stage, app, log):
     log.write(output[0])
 
     if p.returncode != 0:
-        sys.stderr.write("Error during " + string.lower(stage) +
+        sys.stderr.write("Error during " + stage.lower() +
                          " stage of " + app + ".\n")
         sys.stderr.write("See " + log.name + " for more information.\n")
         sys.exit(1)
@@ -65,6 +66,7 @@ def run_test(cmd):
 
     p = subprocess.Popen(cmd,
                          shell=True,
+                         universal_newlines=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
 
@@ -133,8 +135,9 @@ def find_executable(names, env_var=None):
     # test it first.
 
     if env_var:
-        if os.environ.has_key(env_var):
-            return os.environ(env_var)
+        k = os.environ.get(env_var)
+        if k:
+            return k
         else:
             for a in sys.argv[1:]:
                 if a.find(env_var) == 0:
@@ -262,6 +265,7 @@ class Package:
 
             p = subprocess.Popen('unzip ' + self.archive,
                                  shell=True,
+                                 universal_newlines=True,
                                  stdout=sys.stdout,
                                  stderr=sys.stderr)
             output = p.communicate()
@@ -388,6 +392,7 @@ class Package:
         try:
             p = subprocess.Popen(self.cc + ' -Xlinker --help',
                                  shell=True,
+                                 universal_newlines=True,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             output = p.communicate()[0]
@@ -757,7 +762,7 @@ to start the installation.
         # setup file reading
         #
         try:
-            setupFile = file('setup', mode='r')
+            setupFile = open('setup', mode='r')
         except IOError:
             sys.stderr.write('Error: opening setup file\n')
             sys.exit(1)
@@ -945,6 +950,7 @@ Check the setup file and some utilities presence.
                 sys.stdout.write("     Python version is ")
             p = subprocess.Popen(cmd,
                                  shell=True,
+                                 universal_newlines=True,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT)
 
@@ -1182,7 +1188,7 @@ Check the setup file and some utilities presence.
         #
         # setup file update
         #
-        sf = file(os.path.join(os.getcwd(), "setup"), mode='w')
+        sf = open(os.path.join(os.getcwd(), "setup"), mode='w')
 
         setupMain = \
 """#========================================================
