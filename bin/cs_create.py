@@ -29,7 +29,8 @@ This module describes the script used to create a study/case for Code_Saturne.
 This module defines the following functions:
 - usage
 - process_cmd_line
-- make_executable
+- set_executable
+- unset_executable
 and the following classes:
 - study
 - class
@@ -140,7 +141,7 @@ def process_cmd_line(argv, pkg):
 # Assign executable mode (chmod +x) to a file
 #-------------------------------------------------------------------------------
 
-def make_executable(filename):
+def set_executable(filename):
     """
     Give executable permission to a given file.
     Equivalent to `chmod +x` shell function.
@@ -153,6 +154,32 @@ def make_executable(filename):
     if mode & stat.S_IROTH:
         mode = mode | stat.S_IXOTH
     os.chmod(filename, mode)
+
+    return
+
+#-------------------------------------------------------------------------------
+# Remove executable mode (chmod -x) from a file or files inside a directory
+#-------------------------------------------------------------------------------
+
+def unset_executable(path):
+    """
+    Remove executable permission from a given file or files inside a directory.
+    Equivalent to `chmod -x` shell function.
+    """
+
+    if os.path.isfile(path):
+        try:
+            st   = os.stat(path)
+            mode = st[stat.ST_MODE] | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+            mode = mode ^ (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            os.chmod(path, mode)
+        except Exception:
+            pass
+
+    elif os.path.isdir(path):
+        l = os.listdir(path)
+        for p in l:
+            unset_executable(p)
 
     return
 
@@ -486,8 +513,10 @@ domains = [
                 abs_f = os.path.join(thch_distpath, f)
                 if os.path.isfile(abs_f):
                     shutil.copy(abs_f, ref)
+                    unset_executable(ref)
             abs_f = os.path.join(datadir, 'cs_user_scripts.py')
             shutil.copy(abs_f, ref)
+            unset_executable(ref)
 
         # Write a wrapper for GUI launching
 
@@ -509,7 +538,7 @@ domains = [
 
         fd.close()
 
-        make_executable(guiscript)
+        set_executable(guiscript)
 
         # User source files directory
 
@@ -522,8 +551,10 @@ domains = [
             user = os.path.join(src, 'REFERENCE')
             user_examples = os.path.join(src, 'EXAMPLES')
             shutil.copytree(user_distpath, user)
+            unset_executable(user)
             if self.package.name == 'code_saturne' :
                 shutil.copytree(user_examples_distpath, user_examples)
+                unset_executable(user_examples)
 
         # Copy data and source files from another case
 
@@ -540,6 +571,7 @@ domains = [
                        f not in [self.package.guiname,
                                  'preprocessor_output']:
                     shutil.copy(os.path.join(ref_data, abs_f), data)
+                    unset_executable(os.path.join(data, f))
 
             # Source files
 
@@ -557,6 +589,7 @@ domains = [
             for f in c_files + h_files + f_files + \
                     cxx_files + cpp_files + hxx_files + hpp_files:
                 shutil.copy(os.path.join(ref_src, f), src)
+                unset_executable(os.path.join(src, f))
 
         # Results directory (only one for all instances)
 
