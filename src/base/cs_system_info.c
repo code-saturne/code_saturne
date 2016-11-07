@@ -30,6 +30,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
 #include <string.h>
 #include <time.h>
 
@@ -87,6 +88,38 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Remove leading and trailing whitespace from a string.
+ *
+ * parameters:
+ *   s <-> string to be cleaned
+ *----------------------------------------------------------------------------*/
+
+static void
+_string_clean(char  *s)
+{
+  assert(s != NULL);
+
+  int l = strlen(s);
+  int i = l - 1;
+  while (i > -1 && (   s[i] == ' ' || s[i] == '\t'
+                    || s[i] == '\n' || s[i] == '\r')) {
+    s[i--] = '\0';
+  }
+
+  i = 0;
+  while (i < l && (   s[i] == ' ' || s[i] == '\t'
+                   || s[i] == '\n' || s[i] == '\r')) {
+    i++;
+  }
+
+  if (i > 0) {
+    int j = 0;
+    while (i <= l)
+      s[j++] = s[i++];
+  }
+}
 
 /*----------------------------------------------------------------------------
  * Return basic available CPU info depending on system.
@@ -147,25 +180,83 @@ _sys_info_cpu(char      *cpu_str,
 #endif /* HAVE_SYS_UTSNAME_H */
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------
- * Print available system information.
+ * Return Linux info based on /etc/issue.
+ *
+ * Only the information prior to a first escape sequence is returned.
+ *
+ * parameters:
+ *   issue_str     --> string with system description
+ *   issue_str_max <-- maximum length of string with system description
  *----------------------------------------------------------------------------*/
+
+static void
+_sys_info_issue(char      *issue_str,
+                unsigned   issue_str_max)
+{
+  issue_str[0] = '\0';
+
+#if defined(__linux__)
+
+  {
+    unsigned _issue_str_max = (issue_str_max > 0) ? issue_str_max - 1 : 0;
+
+    FILE *fp;
+    char *s;
+
+    fp = fopen("/etc/issue", "r");
+
+    if (fp != NULL) {
+
+      issue_str[0] = ' ';
+      issue_str[1] = '(';
+
+      s = fgets(issue_str + 2, _issue_str_max - 4, fp);
+
+      if (s != NULL) {
+        int l = strlen(issue_str);
+        for (int i = 0; i < l; i++)
+          if (s[i] == '\\') {
+            s[i] = '\0';
+            l = i;
+          }
+        _string_clean(issue_str + 2);
+        l = strlen(issue_str);
+        if (l > 2) {
+          issue_str[l] = ')';
+          issue_str[l+1] = '\0';
+        }
+        else /* If no info was kept, empty string */
+          issue_str[0] = '\0';
+      }
+    }
+
+    fclose (fp);
+
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print available system information.
+ *
+ * \param[in]  comm  associated MPI communicator
+ * \param[in]  log   if true, standard logging; otherwise, single output
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
 
 void
-cs_system_info(MPI_Comm comm)
+_system_info(MPI_Comm comm,
+             bool     log)
 
 #else
 
 void
-cs_system_info(void)
+_system_info(bool  log)
 
 #endif
 
@@ -173,6 +264,7 @@ cs_system_info(void)
   time_t          date;
   size_t          ram;
   int             log_id;
+  int             n_logs = (log) ? 2 : 1;
 
   cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
 
@@ -189,6 +281,7 @@ cs_system_info(void)
 
   char  str_date[81];
   char  str_cpu[81];
+  char  str_issue[81];
   char  str_directory[PATH_MAX] = "";
 
 # if defined(HAVE_MPI)
@@ -216,23 +309,28 @@ cs_system_info(void)
   /* Print local configuration */
   /*---------------------------*/
 
-  for (log_id = 0; log_id < 2; log_id++)
-    cs_log_printf(logs[log_id],
-                  "\n%s\n", _("Local case configuration:\n"));
+  if (log) {
+    for (int log_id = 0; log_id < n_logs; log_id++)
+      cs_log_printf(logs[log_id],
+                    "\n%s\n", _("Local case configuration:\n"));
+  }
 
-  for (log_id = 0; log_id < 2; log_id++)
+  for (log_id = 0; log_id < n_logs; log_id++)
     cs_log_printf(logs[log_id],
                   "  %s%s\n", _("Date:                "), str_date);
 
   /* System and machine */
 
+  _sys_info_issue(str_issue, 81);
+
 #if defined(HAVE_UNAME)
 
   if (uname(&sys_config) != -1) {
-    for (log_id = 0; log_id < 2; log_id++) {
+    for (log_id = 0; log_id < n_logs; log_id++) {
       cs_log_printf(logs[log_id],
-                    "  %s%s %s\n", _("System:              "),
-                    sys_config.sysname, sys_config.release);
+                    "  %s%s %s%s\n", _("System:              "),
+                    sys_config.sysname, sys_config.release,
+                    str_issue);
       cs_log_printf(logs[log_id],
                     "  %s%s\n", _("Machine:             "),
                     sys_config.nodename);
@@ -242,7 +340,7 @@ cs_system_info(void)
 
   _sys_info_cpu(str_cpu, 81);
 
-  for (log_id = 0; log_id < 2; log_id++)
+  for (log_id = 0; log_id < n_logs; log_id++)
     cs_log_printf(logs[log_id],
                   "  %s%s\n", _("Processor:           "), str_cpu);
 
@@ -262,7 +360,7 @@ cs_system_info(void)
 #endif
 
   if (ram > 0) {
-    for (log_id = 0; log_id < 2; log_id++)
+    for (log_id = 0; log_id < n_logs; log_id++)
       cs_log_printf(logs[log_id],
                     "  %s%llu %s\n", _("Memory:              "),
                     (unsigned long long)ram, _("MB"));
@@ -306,7 +404,7 @@ cs_system_info(void)
 
   /* Directory info */
 
-  for (log_id = 0; log_id < 2; log_id++)
+  for (log_id = 0; log_id < n_logs; log_id++)
     cs_log_printf(logs[log_id],
                   "  %s%s\n", _("Directory:           "), str_directory);
 
@@ -330,7 +428,7 @@ cs_system_info(void)
       int n_flags = personality.Network_Config.NetFlags;
       int n_hw_threads = Kernel_ProcessorCount();
 
-      for (log_id = 0; log_id < 2; log_id++) {
+      for (log_id = 0; log_id < n_logs; log_id++) {
         cs_log_printf(logs[log_id],
                       "  %s%d\n", _("MPI ranks:           "), n_ranks);
         if (n_world_ranks > n_ranks)
@@ -347,7 +445,7 @@ cs_system_info(void)
       if (n_flags & ND_ENABLE_TORUS_DIM_D) d_torus = 1; else d_torus = 0;
       if (n_flags & ND_ENABLE_TORUS_DIM_E) e_torus = 1; else e_torus = 0;
 
-      for (log_id = 0; log_id < 2; log_id++) {
+      for (log_id = 0; log_id < n_logs; log_id++) {
         cs_log_printf(logs[log_id],
                       "  %s<%d,%d,%d,%d,%d>\n", _("Block shape:         "),
                       personality.Network_Config.Anodes,
@@ -374,7 +472,7 @@ cs_system_info(void)
         appnum = *(int *)attp;
 #     endif
 
-      for (log_id = 0; log_id < 2; log_id++) {
+      for (log_id = 0; log_id < n_logs; log_id++) {
         if (appnum > -1 && log_id == 0)
           cs_log_printf(logs[log_id],
                         "  %s%d (%s %d)\n",
@@ -401,7 +499,7 @@ cs_system_info(void)
   {
     int t_id = omp_get_thread_num();
     if (t_id == 0) {
-      for (log_id = 0; log_id < 2; log_id++) {
+      for (log_id = 0; log_id < n_logs; log_id++) {
         cs_log_printf(logs[log_id],
                       "  %s%d\n", _("OpenMP threads:      "),
                       omp_get_max_threads());
@@ -414,6 +512,68 @@ cs_system_info(void)
       }
     }
   }
+#endif
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print available system information.
+ *
+ * \param[in]  comm  associated MPI communicator
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+
+void
+cs_system_info(MPI_Comm comm)
+
+#else
+
+void
+cs_system_info(void)
+
+#endif
+
+{
+#if defined(HAVE_MPI)
+  _system_info(comm, true);
+#else
+  _system_info(true);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print available system information, without additional logging
+ *
+ * \param[in]  comm  associated MPI communicator
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+
+void
+cs_system_info_no_log(MPI_Comm comm)
+
+#else
+
+void
+cs_system_info_no_log(void)
+
+#endif
+
+{
+#if defined(HAVE_MPI)
+  _system_info(comm, false);
+#else
+  _system_info(false);
 #endif
 }
 

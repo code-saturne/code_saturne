@@ -41,9 +41,13 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Print available system information.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print available system information.
+ *
+ * \param[in]  comm  associated MPI communicator
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
 
@@ -54,6 +58,26 @@ cs_system_info(MPI_Comm comm);
 
 void
 cs_system_info(void);
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print available system information, without additional logging
+ *
+ * \param[in]  comm  associated MPI communicator
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MPI)
+
+void
+cs_system_info_no_log(MPI_Comm comm);
+
+#else
+
+void
+cs_system_info_no_log(void);
 
 #endif
 

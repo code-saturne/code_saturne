@@ -53,6 +53,8 @@
 
 #include "cs_base.h"
 #include "cs_gui_util.h"
+#include "cs_partition.h"
+#include "cs_system_info.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -142,6 +144,9 @@ _arg_env_help(const char  *name)
   fprintf
     (e, _(" --sig-defaults    use default runtime behavior when signals\n"
           "                   are received\n"));
+
+  fprintf
+    (e, _(" --system-info     print system information and exit\n"));
 
   fprintf
     (e, _(" --version         print version number\n"));
@@ -377,6 +382,18 @@ cs_opts_define(int         argc,
     else if (strcmp(s, "--sig-defaults") == 0)
       opts->sig_defaults = true;
 
+    /* system information */
+
+    else if (strcmp(s, "--system-info") == 0) {
+#if defined(HAVE_MPI)
+      cs_system_info_no_log(cs_glob_mpi_comm);
+#else
+      cs_system_info_no_log();
+#endif
+      cs_partition_external_library_info();
+      cs_exit(EXIT_SUCCESS);
+    }
+
     /* Version number */
 
     else if (strcmp(s, "--version") == 0)
@@ -418,6 +435,8 @@ cs_opts_define(int         argc,
     if (cs_gui_load_file(s_param) != 0) {
       fprintf(stderr, _("Error loading parameter file \"%s\".\n"),
               s_param);
+      bft_mem_end();
+      bft_mem_usage_end();
       cs_exit(EXIT_FAILURE);
     }
   }
