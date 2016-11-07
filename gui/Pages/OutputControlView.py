@@ -1876,7 +1876,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.lineEditFrequency.setEnabled(True)
             n = from_qvariant(self.lineEditFrequency.text(), int)
             if self.lineEditFrequency.validator().state == QValidator.Acceptable:
-                log.debug("slotPostproFrequency-> NTCHR = %s" % n)
+                log.debug("slotPostproFrequency = %s" % n)
                 self.mdl.setWriterFrequency(writer_id, str(n))
 
 

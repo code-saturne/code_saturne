@@ -89,36 +89,29 @@ void CS_PROCF (uivima, UIVIMA) (void);
  * SUBROUTINE UIALCL
  * *****************
  *
- *
  * parameters:
- * nozppm       <-- Max number of boundary conditions zone
- * ialtyb       --> ialtyb
- * impale       --> uialcl_fixed_displacement
- * disale       --> See uialcl_fixed_displacement
- * dtref        <-- time step
- * ttcabs       <-- current time
- * ntcabs       <-- current iteration number
- * iuma         <-- See uialcl_fixed_velocity
- * ivma         <-- See uialcl_fixed_velocity
- * iwma         <-- See uialcl_fixed_velocity
- * rcodcl       --> See uialcl_fixed_velocity
+ *   nozppm       <-- Max number of boundary conditions zone
+ *   ialtyb       --> ialtyb
+ *   impale       --> uialcl_fixed_displacement
+ *   disale       --> See uialcl_fixed_displacement
+ *   iuma         <-- See uialcl_fixed_velocity
+ *   ivma         <-- See uialcl_fixed_velocity
+ *   iwma         <-- See uialcl_fixed_velocity
+ *   rcodcl       --> See uialcl_fixed_velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialcl, UIALCL) ( const int *const    nozppm,
-                                 const int *const    ibfixe,
-                                 const int *const    igliss,
-                                 const int *const    ivimpo,
-                                 const int *const    ifresf,
-                                 int       *const    ialtyb,
-                                       int *const    impale,
-                                 cs_real_3_t        *disale,
-                                 double *const       dtref,
-                                 double *const       ttcabs,
-                                 const    int *const ntcabs,
-                                 const int *const    iuma,
-                                 const int *const    ivma,
-                                 const int *const    iwma,
-                                       double *const rcodcl  );
+void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
+                                const int *const    ibfixe,
+                                const int *const    igliss,
+                                const int *const    ivimpo,
+                                const int *const    ifresf,
+                                int       *const    ialtyb,
+                                int       *const    impale,
+                                cs_real_3_t        *disale,
+                                const int *const    iuma,
+                                const int *const    ivma,
+                                const int *const    iwma,
+                                double *const       rcodcl);
 
 /*-----------------------------------------------------------------------------
  * Retreive data for internal coupling. Called once at initialization
@@ -129,7 +122,6 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nozppm,
  * *****************
  *
  * parameters:
- *   nfabor   <-- Number of boundary faces
  *   idfstr   --> Structure definition
  *   mbstru   <-- number of previous structures (-999 or by restart)
  *   aexxst   --> Displacement prediction alpha
@@ -141,8 +133,7 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nozppm,
  *   vstr0    <-> Values of the initial velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uistr1, UISTR1) (const cs_lnum_t  *nfabor,
-                                cs_lnum_t        *idfstr,
+void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
                                 const int        *mbstru,
                                 double           *aexxst,
                                 double           *bexxst,
@@ -161,13 +152,13 @@ void CS_PROCF (uistr1, UISTR1) (const cs_lnum_t  *nfabor,
  * *****************
  *
  * parameters:
- * xmstru       <-- Mass matrix
- * xcstr        <-- Damping matrix
- * xkstru       <-- Stiffness matrix
- * forstr       <-- Fluid force matrix
- * dtref        -->   time step
- * ttcabs       --> current time
- * ntcabs       --> current iteration number
+ * xmstru       --> Mass matrix
+ * xcstr        --> Damping matrix
+ * xkstru       --> Stiffness matrix
+ * forstr       --> Fluid force matrix
+ * dtref        <--  time step
+ * ttcabs       <-- current time
+ * ntcabs       <-- current iteration number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uistr2, UISTR2) ( double *const  xmstru,

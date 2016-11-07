@@ -775,9 +775,9 @@ cs_gui_particles_bcs(const cs_lnum_t  *nfabor,
     char *label = cs_gui_boundary_zone_label(izone + 1);
     char *nature = cs_gui_boundary_zone_nature(izone + 1);
 
-    cs_lnum_t *faces_list = cs_gui_get_faces_list(izone,
-                                                  label,
-                                                  *nfabor, *nozppm, &nelt);
+    cs_lnum_t *faces_list = cs_gui_get_boundary_faces(izone,
+                                                      label,
+                                                      *nozppm, &nelt);
 
     for (cs_lnum_t ielt=0; ielt < nelt; ielt++) {
       cs_lnum_t ifac = faces_list[ielt];

@@ -130,24 +130,11 @@ extern cs_boundary_t *boundaries;
  * *****************
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclim, UICLIM)(const int  *nfabor,
-                               const int  *idarcy,
+void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                                const int  *nozppm,
                                const int  *ncharm,
                                const int  *ncharb,
                                const int  *nclpch,
-                               const int  *iindef,
-                               const int  *ientre,
-                               const int  *iesicf,
-                               const int  *isspcf,
-                               const int  *iephcf,
-                               const int  *isopcf,
-                               const int  *iparoi,
-                               const int  *iparug,
-                               const int  *isymet,
-                               const int  *isolib,
-                               const int  *ifrent,
-                               const int  *ifresf,
                                int        *iqimp,
                                int        *icalke,
                                int        *ientat,
@@ -184,40 +171,13 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nfabor,
  * SUBROUTINE UICLVE
  * *****************
  *
- * integer          nfabor  <-- number of boundary faces
  * integer          nozppm  <-- max number of boundary conditions zone
- * integer          iindef  <-- type of boundary: not defined
- * integer          ientre  <-- type of boundary: inlet
- * integer          iesicf  --> type of boundary: imposed inlet (compressible)
- * integer          isspcf  --> type of boundary: supersonic outlet (compressible)
- * integer          iephcf  --> type of boundary: subsonic inlet at imposed
- *                              total pressure and enthalpy (compressible)
- * integer          isopcf  --> type of boundary: subsonic outlet (compressible)
- * integer          iparoi  <-- type of boundary: smooth wall
- * integer          iparug  <-- type of boundary: rough wall
- * integer          isymet  <-- type of boundary: symetry
- * integer          isolib  <-- type of boundary: outlet
- * integer          ifrent  <-- type of boundary: free inlet outlet
- * integer          ifresf  <-- type of boundary: free surface
  * integer          iale    <-- ale module activated
  * integer          itypfb  <-- type of boundary for each face
  * integer          izfppp  <-- zone number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
-                               const int  *nozppm,
-                               const int  *iindef,
-                               const int  *ientre,
-                               const int  *iesicf,
-                               const int  *iephcf,
-                               const int  *isspcf,
-                               const int  *isopcf,
-                               const int  *iparoi,
-                               const int  *iparug,
-                               const int  *isymet,
-                               const int  *isolib,
-                               const int  *ifrent,
-                               const int  *ifresf,
+void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
                                const int  *iale,
                                int        *itypfb,
                                int        *izfppp);
@@ -270,17 +230,15 @@ cs_gui_boundary_zone_localization(const char *label);
  * parameters:
  *   izone   <--  zone index
  *   label   <--  boundary label
- *   nfabor  <--  number of boundary faces
  *   nozppm  <--  max number of boundary zone for preefined physics
  *   faces   -->  number of faces
  *----------------------------------------------------------------------------*/
 
-cs_lnum_t*
-cs_gui_get_faces_list(int          izone,
-                      const char  *label,
-                      cs_lnum_t    nfabor,
-                      int          nozppm,
-                      cs_lnum_t   *faces);
+cs_lnum_t *
+cs_gui_get_boundary_faces(int          izone,
+                          const char  *label,
+                          int          nozppm,
+                          cs_lnum_t   *faces);
 
 /*----------------------------------------------------------------------------
  * Free boundary conditions structures

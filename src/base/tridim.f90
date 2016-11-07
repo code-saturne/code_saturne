@@ -907,10 +907,8 @@ do while (iterns.le.nterup)
   !    -> sera modifie lors de la restructuration des zones de bord
 
     call uiclim &
-  ( nfabor, ippmod(idarcy),                                        &
+  ( ippmod(idarcy),                                                &
     nozppm, ncharm, ncharb, nclpch,                                &
-    iindef, ientre, iesicf, isspcf, iephcf,                        &
-    isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
     itypfb, izfppp, icodcl,                                        &
@@ -960,13 +958,9 @@ do while (iterns.le.nterup)
   !     - Interface Code_Saturne
   !       ======================
 
-  if(iihmpr.eq.1) then
+  if (iihmpr.eq.1) then
 
-    call uiclve &
-  ( nfabor, nozppm,                                                &
-    iindef, ientre, iesicf, iephcf, isspcf, isopcf,                &
-    iparoi, iparug, isymet, isolib, ifrent, ifresf, iale  ,        &
-    itypfb, izfppp )
+    call uiclve(nozppm, iale, itypfb, izfppp)
 
   endif
 
@@ -1021,7 +1015,6 @@ do while (iterns.le.nterup)
       ialtyb,                            &
       impale,                            &
       disale,                            &
-      dtref, ttcabs, ntcabs,             &
       iuma, ivma, iwma,                  &
       rcodcl)
 
@@ -1475,10 +1468,8 @@ if (ippmod(idarcy).eq.1) then
   !    -> sera modifie lors de la restructuration des zones de bord
 
     call uiclim &
-  ( nfabor, ippmod(idarcy),                                &
+  ( ippmod(idarcy),                                                &
     nozppm, ncharm, ncharb, nclpch,                                &
-    iindef, ientre, iesicf, isspcf, iephcf,                        &
-    isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
     itypfb, izfppp, icodcl,                                        &

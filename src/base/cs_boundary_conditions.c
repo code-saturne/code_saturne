@@ -857,7 +857,7 @@ cs_boundary_conditions_map(cs_mesh_location_type_t    location_type,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_mapped_set(cs_field_t                *f,
+cs_boundary_conditions_mapped_set(const cs_field_t          *f,
                                   ple_locator_t             *locator,
                                   cs_mesh_location_type_t    location_type,
                                   int                        normalize,

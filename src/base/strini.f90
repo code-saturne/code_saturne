@@ -123,18 +123,15 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 2.  REMPLISSAGE DE IDFSTR PAR L'UTILISATEUR
+! 2.  User definition of idfstr
 !===============================================================================
 
-! 2.1 STRUCTURES INTERNES :
-! -----------------------
+! Internal structures
 
 if (iihmpr.eq.1) then
 
   call uistr1 &
-  !==========
-( nfabor,                  &
-  idfstr, mbstru,          &
+( idfstr, mbstru,          &
   aexxst, bexxst, cfopre,  &
   ihistr,                  &
   xstp, xstreq, xpstr )
