@@ -3006,6 +3006,9 @@ cs_partition_get_preprocess(void)
   else
     retval = true;
 
+  if (cs_glob_n_ranks < 2)
+    retval = false;
+
   return retval;
 }
 
