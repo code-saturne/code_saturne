@@ -92,9 +92,7 @@ const.implicitation_precision                = 'implicitation_precision'
 const.displacement_prediction_alpha          = 'displacement_prediction_alpha'
 const.displacement_prediction_beta           = 'displacement_prediction_beta'
 const.stress_prediction_alpha                = 'stress_prediction_alpha'
-const.external_coupling_post_synchronization = 'external_coupling_post_synchronization'
 const.monitor_point_synchronisation          = 'monitor_point_synchronisation'
-
 
 #-------------------------------------------------------------------------------
 # Mobil Mesh model class
@@ -120,7 +118,6 @@ class FluidStructureInteractionModel(Model):
         self.__defaults[const.displacement_prediction_alpha] = 0.5
         self.__defaults[const.displacement_prediction_beta] = 0
         self.__defaults[const.stress_prediction_alpha] = 2
-        self.__defaults[const.external_coupling_post_synchronization] = 'off'
         self.__defaults[const.monitor_point_synchronisation] = 'off'
 
 
@@ -165,25 +162,6 @@ class FluidStructureInteractionModel(Model):
         """
         return self.__getDoubleData(const.implicitation_precision,
                                     self.setPrecision )
-
-    #------------------------------------------------------------------
-    # ExternalCouplingPostSynchronization
-    #------------------------------------------------------------------
-    @Variables.undoLocal
-    def setExternalCouplingPostSynchronization(self, value):
-        """
-        Set value of stress prediction alpha into xml file.
-        """
-        self.__setOnOffXML(const.external_coupling_post_synchronization, value)
-
-
-    @Variables.noUndo
-    def getExternalCouplingPostSynchronization(self):
-        """
-        Get value of external coupling post syncrhonization from xml file.
-        """
-        return self.__getOnOffXML(const.external_coupling_post_synchronization,
-                                  self.setExternalCouplingPostSynchronization)
 
 
     #------------------------------------------------------------------
@@ -381,20 +359,6 @@ class FluidStructureInteractionTestCase(ModelTest):
         assert mdl.getMaxIterations() == 99, \
             'Could not get fluid structure interaction max iteration'
 
-
-    def checkGetandSetPostSynchronization(self):
-        """Check whether the FluidStructureInteraction class could be set and get post synchronization"""
-        mdl = FluidStructureInteractionModel(self.case)
-        mdl.setExternalCouplingPostSynchronization('on')
-
-        doc = """<ale_method status="off">
-                 <external_coupling_post_synchronization status="on"/>
-                 </ale_method>"""
-
-        assert mdl.getNodeALE() == self.xmlNodeFromString(doc), \
-            'Could not set fluid structure interaction post synchronization'
-        assert mdl.getExternalCouplingPostSynchronization() == 'on', \
-            'Could not get fluid structure interaction post synchronization'
 
     def checkGetAndSetAdvancedViewFeatures(self):
         """Check whether the FluidStructureInteraction class could be set and get advanced view features"""

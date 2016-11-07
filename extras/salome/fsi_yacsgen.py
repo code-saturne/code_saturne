@@ -172,7 +172,7 @@ saturne_service = Service("run",
 c2 = CPPComponent("FSI_SATURNE",
                   services = [saturne_service],
                   kind = "exe",
-                  exe_path = "./run_solver.sh")
+                  exe_path = "./run_solver")
 
 # Milieu component
 

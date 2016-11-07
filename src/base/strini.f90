@@ -139,18 +139,14 @@ if (iihmpr.eq.1) then
 endif
 
 call usstr1                                                       &
-!==========
  ( idfstr ,                                                       &
    aexxst , bexxst , cfopre ,                                     &
    xstp   , xpstr  , xstreq )
 
-! 2.2 STRUCTURES EXTERNES : COUPLAGE CODE_SATURNE / CODE_ASTER
-! -----------------------
+! External structures: Code_Saturne / Code_Aster coupling
 
-call usaste                                                       &
-!==========
- ( idfstr )
-
+call uiaste(idfstr, asddlf)
+call usaste(idfstr)
 
 !===============================================================================
 ! 3.  CALCUL DE NBSTRU ET NBASTE

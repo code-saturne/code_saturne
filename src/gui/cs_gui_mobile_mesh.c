@@ -759,6 +759,43 @@ _get_uistr2_data(const char    *label,
                                 dtref, ttcabs, ntcabs);
 }
 
+/*-----------------------------------------------------------------------------
+ * Return the external coupling dof ("DDL") value
+ *
+ *  <boundary_conditions>
+ *      <wall label=label_argument">
+ *          <ale choice="external_coupling">
+ *              <node_name_argument choice="off"/>
+ *
+ * parameters:
+ *   label     <-- boundary label
+ *   node_name <--  Node name: DDLX, DDLY or DDLZ.
+ *----------------------------------------------------------------------------*/
+
+static int
+_get_external_coupling_dof(const char *const label,
+                           const char *const node_name)
+{
+    char* choice;
+    int isOn;
+
+    char *path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "boundary_conditions", "wall");
+    cs_xpath_add_test_attribute(&path, "label", label);
+    cs_xpath_add_element(&path, "ale");
+    cs_xpath_add_test_attribute(&path, "choice", "external_coupling");
+    cs_xpath_add_element(&path, node_name);
+    cs_xpath_add_attribute(&path, "choice");
+
+    choice = cs_gui_get_attribute_value(path);
+    isOn = cs_gui_strcmp(choice, "on");
+
+    BFT_FREE(choice);
+    BFT_FREE(path);
+
+    return isOn;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1115,6 +1152,53 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
                        *ttcabs,
                        *ntcabs);
       ++istru;
+    }
+  }
+}
+
+/*-----------------------------------------------------------------------------
+ * Retreive data for external coupling
+ *
+ * parameters:
+ *   idfstr    <-- Structure definition
+ *   asddlf    --> Block of the DDL forces
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (uiaste, UIASTE) (int     *const idfstr,
+                           double  *const asddlf)
+{
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  cs_lnum_t faces = 0;
+  int izone       = 0;
+  int istruct     = 0;
+
+  int zones = cs_gui_boundary_zones_number();
+
+  /* At each time-step, loop on boundary faces */
+
+  for (izone=0 ; izone < zones ; izone++) {
+
+    const char *label  = boundaries->label[izone];
+
+    if (_get_ale_boundary_nature(label) == ale_boundary_nature_external_coupling) {
+
+      cs_lnum_t *faces_list = cs_gui_get_boundary_faces(izone, label, 0, &faces);
+
+      /* Get DDLX, DDLY and DDLZ values */
+      asddlf[istruct * 3 + 0] = _get_external_coupling_dof(label, "DDLX") ? 0 : 1;
+      asddlf[istruct * 3 + 1] = _get_external_coupling_dof(label, "DDLY") ? 0 : 1;
+      asddlf[istruct * 3 + 2] = _get_external_coupling_dof(label, "DDLZ") ? 0 : 1;
+
+      /* Set idfstr with negativ value starting from -1 */
+      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
+        cs_lnum_t ifbr = faces_list[ifac];
+        idfstr[ifbr]  = -istruct - 1;
+      }
+      ++istruct;
+      BFT_FREE(faces_list);
     }
   }
 }

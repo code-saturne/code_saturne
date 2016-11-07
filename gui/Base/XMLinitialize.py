@@ -1223,6 +1223,12 @@ class XMLinit(Variables):
                     if node['name'] == 'pressure':
                         node['name'] = 'hydraulic_head'
 
+        XMLPhysicalModelALE = XMLThermoPhysicalModelNode.xmlGetNode('ale_method')
+        if XMLPhysicalModelALE:
+            node = XMLPhysicalModelALE.xmlGetNode('external_coupling_post_synchronizationre')
+        if node:
+            node.xmlRemoveNode()
+
         node = self.case.xmlGetNode('variable', name='vec_potential')
         if node:
             node['dim'] = '3'

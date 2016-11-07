@@ -169,6 +169,19 @@ void CS_PROCF (uistr2, UISTR2) ( double *const  xmstru,
                                  double *const  ttcabs,
                                  int *const     ntcabs);
 
+/*-----------------------------------------------------------------------------
+ * Retreive data for external coupling
+ *
+ * parameters:
+ *   nfabor    <-- Number of boundary faces
+ *   idfstr    <-- Structure definition
+ *   asddlf    <-- Block of the DDL forces
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (uiaste, UIASTE) (int     *const idfstr,
+                           double  *const asddlf);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

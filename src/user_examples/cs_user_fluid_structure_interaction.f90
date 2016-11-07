@@ -475,11 +475,11 @@ do ilelt = 1, nlelt
 
 enddo
 
-! --- The movement of external structure called '-1' is blocked in Z direction.
+! The movement of external structure called '-1' is blocked in Z direction.
 
 asddlf(3,1) = 0
 
-! --- The movement of external structure called '-2' is blocked in Z direction.
+! The movement of external structure called '-2' is blocked in Z direction.
 
 asddlf(3,2) = 0
 

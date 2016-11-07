@@ -80,7 +80,6 @@ log = logging.getLogger("FluidStructureInteractionView")
 displacement_prediction_alpha          = 'displacement_prediction_alpha'
 displacement_prediction_beta           = 'displacement_prediction_beta'
 stress_prediction_alpha                = 'stress_prediction_alpha'
-external_coupling_post_synchronization = 'external_coupling_post_synchronization'
 monitor_point_synchronisation          = 'monitor_point_synchronisation'
 
 #-------------------------------------------------------------------------------
@@ -726,13 +725,12 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
 
     def __defineConnection(self):
         """
-        Define coonection for widget that do not depend on the boundary
+        Define connection for widgets that do not depend on the boundary
         """
         self.lineEditNALIMX.textChanged[str].connect(self.__slotNalimx)
 
         self.lineEditEPALIM.textChanged[str].connect(self.__slotEpalim)
         self.pushButtonAdvanced.clicked[bool].connect(self.__slotAdvanced)
-        self.checkBoxPostSynchronization.stateChanged[int].connect(self.__slotPostSynchronization)
 
 
     def __addValidators(self):
@@ -755,8 +753,6 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         self.lineEditNALIMX.setText(str(nalimx))
         epalim = self.__model.getPrecision()
         self.lineEditEPALIM.setText(str(epalim))
-        postSynchronization      = self.__model.getExternalCouplingPostSynchronization()
-        self.checkBoxPostSynchronization.setChecked(postSynchronization == 'on')
 
 
     def __createTableViewItemModel(self, modelLocalization, filterALE):
@@ -818,18 +814,6 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         if self.sender().validator().state == QValidator.Acceptable:
             epalim = from_qvariant(text, float)
             self.__model.setPrecision(epalim)
-
-
-    @pyqtSlot(int)
-    def __slotPostSynchronization(self, value):
-        """
-        Called when check box state changed
-        """
-        postSynchronization = 'on'
-        if not value:
-            postSynchronization = 'off'
-        self.__model.setExternalCouplingPostSynchronization(postSynchronization)
-
 
 
     @pyqtSlot(str)
