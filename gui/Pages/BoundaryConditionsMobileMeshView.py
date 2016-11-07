@@ -153,16 +153,25 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         Called when the combobox changed.
         """
         modelData = self.__comboModel.dicoV2M[str(text)]
-        # Enable/disable formula button.
-        isFormulaEnabled = modelData in ["fixed_velocity", "fixed_displacement"]
-        self.pushButtonMobilBoundary.setEnabled(isFormulaEnabled)
+
+        if modelData == self.__boundary.getALEChoice():
+            return
+
+        self.__boundary.setALEChoice(modelData)
         exp = self.__boundary.getFormula()
+
+        # Hide/Show formula button.
+        # Formula is always reset when changing values, so set
+        # color to red.
+        if modelData in ["fixed_velocity", "fixed_displacement"]:
+            self.pushButtonMobilBoundary.show()
+        else:
+            self.pushButtonMobilBoundary.hide()
         if exp:
-            self.pushButtonMobilBoundary.setStyleSheet("background-color: green")
+            self.pushButtonMobilBoundary.setStyleSheet("background-color: red")
             self.pushButtonMobilBoundary.setToolTip(exp)
         else:
             self.pushButtonMobilBoundary.setStyleSheet("background-color: red")
-        self.__boundary.setALEChoice(modelData)
 
 
     def showWidget(self, b):
@@ -173,8 +182,10 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
             self.__boundary = Boundary("mobile_boundary", b.getLabel(), self.__case)
             modelData = self.__boundary.getALEChoice()
             self.__comboModel.setItem(str_model=modelData)
-            isFormulaEnabled = modelData in ["fixed_velocity", "fixed_displacement"]
-            self.pushButtonMobilBoundary.setEnabled(isFormulaEnabled)
+            if modelData in ["fixed_velocity", "fixed_displacement"]:
+                self.pushButtonMobilBoundary.show()
+            else:
+                self.pushButtonMobilBoundary.hide()
             self.show()
         else:
             self.hideWidget()

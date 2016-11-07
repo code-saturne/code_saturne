@@ -36,9 +36,6 @@
        <layout class="QHBoxLayout" name="horizontalLayout" >
         <item>
          <widget class="QComboBox" name="comboMobilBoundary" >
-          <property name="toolTip" >
-           <string>Code_Saturne key word: IROVAR</string>
-          </property>
          </widget>
         </item>
         <item>
