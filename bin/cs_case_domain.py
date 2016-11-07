@@ -984,7 +984,7 @@ class syrthes_domain(base_domain):
 
     def __init__(self,
                  package,
-                 cmd_line = None,     # Command line to define optional syrthes4 behaviour
+                 cmd_line = None,     # Command line to define optional syrthes4 behavior
                  name = None,
                  param = 'syrthes.data',
                  log_file = None,
@@ -1001,6 +1001,9 @@ class syrthes_domain(base_domain):
                              n_procs_max)
 
         self.n_procs_radiation = n_procs_radiation
+
+        self.n_procs_ref = None
+        self.n_procs_radiation = None
 
         # Additional parameters for Code_Saturne/SYRTHES coupling
         # Directories, and files in case structure
@@ -1121,6 +1124,43 @@ class syrthes_domain(base_domain):
         Build or rebuild syrthes object
         """
 
+        # Now try to read additional data set by Syrthes GUI
+
+        part_tool_name = None
+
+        f = open(os.path.join(self.case_dir, self.param), 'r')
+        lines = f.readlines()
+        del(f)
+        for l in lines:
+            if l[0] == '/':
+                i = l.find('DOMAIN_POS=')
+                if i > -1:
+                    try:
+                        id = int(l[i + 11:].strip())
+                        if id == 0:
+                            part_tool_name = 'scotch'
+                        elif id == 1:
+                            part_tool_name = 'metis'
+                    except Exception:
+                        pass
+                i = l.find('LISTING=')
+                if i > -1:
+                    logfile = l[i + 8:].strip()
+                    if logfile:
+                        self.logfile = logfile
+                i = l.find('NBPROC_COND=')
+                if i > -1:
+                     try:
+                        self.n_procs_ref = int(l[i + 12:].strip())
+                     except Exception:
+                        pass
+                i = l.find('NBPROC_RAD=')
+                if i > -1:
+                     try:
+                        self.n_procs_radiation_ref = int(l[i + 11:].strip())
+                     except Exception:
+                        pass
+
         # Build command-line arguments
 
         args = '-d ' + os.path.join(self.case_dir, self.param)
@@ -1131,6 +1171,9 @@ class syrthes_domain(base_domain):
 
         if self.n_procs_radiation > 0:
             args += ' -r ' + str(self.n_procs_radiation)
+
+        if part_tool_name:
+            args += ' -t ' + part_tool_name
 
         if self.data_dir != None:
             args += ' --data-dir ' + str(self.data_dir)
