@@ -214,7 +214,7 @@ _sys_info_issue(char      *issue_str,
       s = fgets(issue_str + 2, _issue_str_max - 4, fp);
 
       if (s != NULL) {
-        int l = strlen(issue_str);
+        int l = strlen(s);
         for (int i = 0; i < l; i++)
           if (s[i] == '\\') {
             s[i] = '\0';
