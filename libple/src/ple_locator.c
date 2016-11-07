@@ -686,6 +686,12 @@ _intersects_distant(ple_locator_t       *this_locator,
 
   intersects.n = 0;
 
+  /* initialize mesh extents in case mesh is empty or dim < 3 */
+  for (i = 0; i < dim; i++) {
+    extents[i]       =  HUGE_VAL;
+    extents[i + dim] = -HUGE_VAL;
+  }
+
   mesh_extents_f(mesh,
                  1,
                  tolerance_fraction,
