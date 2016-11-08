@@ -513,24 +513,43 @@ _physical_property(const char       *param,
                 _("Error: can not use evaluate property: %s\n"), prop_choice);
     }
 
-    cs_field_t *c_pres = CS_F_(p);
+    /* For incompressible flows, the thermodynamic pressure is constant over
+     * time and is the reference pressure. */
+    cs_real_t *thermodynamic_pressure;
+    BFT_MALLOC(thermodynamic_pressure, ncelet, cs_real_t);
 
-    cs_real_t *ptot;
-    BFT_MALLOC(ptot, ncelet, cs_real_t);
-    for (iel = 0; iel < ncelet; iel++)
-      ptot[iel] = c_pres->val[iel] + p0;
 
-    cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(energy)};
+    cs_field_t *_thermal_f;
 
-    for (i = 0; i < 3; i++)
-      if (_th_f[i]) {
-        if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
-          cs_phys_prop_compute(property,
-                              ncel, ptot, _th_f[i]->val, c_prop->val);
-          break;
-        }
+    if (CS_F_(t)) {
+      if (CS_F_(t)->type & CS_FIELD_VARIABLE) {
+        _thermal_f = CS_F_(t);
+        for (iel = 0; iel < ncelet; iel++)
+          thermodynamic_pressure[iel] = p0;
       }
-    BFT_FREE(ptot);
+    }
+    if (CS_F_(h)) {
+      if (CS_F_(h)->type & CS_FIELD_VARIABLE) {
+        _thermal_f = CS_F_(h);
+        for (iel = 0; iel < ncelet; iel++)
+          thermodynamic_pressure[iel] = p0;
+      }
+    }
+    if (CS_F_(energy)) {
+      if (CS_F_(h)->type & CS_FIELD_VARIABLE) {
+        _thermal_f = CS_F_(energy);
+        for (iel = 0; iel < ncelet; iel++)
+          thermodynamic_pressure[iel] = CS_F_(p)->val[iel];
+      }
+    }
+
+    cs_phys_prop_compute(property,
+                         ncel,
+                         thermodynamic_pressure,
+                         _thermal_f->val,
+                         c_prop->val);
+
+    BFT_FREE(thermodynamic_pressure);
   }
   BFT_FREE(prop_choice);
   BFT_FREE(law);
