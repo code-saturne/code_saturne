@@ -5,6 +5,8 @@ Release 4.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for Coolprop use.
+
 - Lagragian model:
   * Fix some parallel resizing issues.
 
