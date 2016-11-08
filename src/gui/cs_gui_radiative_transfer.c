@@ -741,7 +741,7 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
     faces_list = cs_gui_get_boundary_faces(izone,
                                            boundaries->label[izone],
-                                           nozppm, &faces);
+                                           *nozppm, &faces);
 
     if (cs_gui_strcmp(boundary->nature[izone], "wall")) {
       for (n = 0; n < faces; n++) {

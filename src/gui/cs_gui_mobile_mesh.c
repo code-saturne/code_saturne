@@ -1101,7 +1101,7 @@ void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
 }
 
 /*-----------------------------------------------------------------------------
- * Retreive data for internal coupling. Called at each step
+ * Retrieve data for internal coupling. Called at each step
  *
  * parameters:
  *   xmstru       --> Mass matrix
@@ -1157,7 +1157,7 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
 }
 
 /*-----------------------------------------------------------------------------
- * Retreive data for external coupling
+ * Retrieve data for external coupling
  *
  * parameters:
  *   idfstr    <-- Structure definition
@@ -1177,11 +1177,11 @@ CS_PROCF (uiaste, UIASTE) (int     *const idfstr,
 
   int zones = cs_gui_boundary_zones_number();
 
-  /* At each time-step, loop on boundary faces */
+  /* Loop on boundary faces */
 
-  for (izone=0 ; izone < zones ; izone++) {
+  for (izone = 0; izone < zones; izone++) {
 
-    const char *label  = boundaries->label[izone];
+    char *label = cs_gui_boundary_zone_label(izone+1);
 
     if (_get_ale_boundary_nature(label) == ale_boundary_nature_external_coupling) {
 
@@ -1192,7 +1192,7 @@ CS_PROCF (uiaste, UIASTE) (int     *const idfstr,
       asddlf[istruct * 3 + 1] = _get_external_coupling_dof(label, "DDLY") ? 0 : 1;
       asddlf[istruct * 3 + 2] = _get_external_coupling_dof(label, "DDLZ") ? 0 : 1;
 
-      /* Set idfstr with negativ value starting from -1 */
+      /* Set idfstr with negative value starting from -1 */
       for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
         cs_lnum_t ifbr = faces_list[ifac];
         idfstr[ifbr]  = -istruct - 1;
@@ -1200,6 +1200,8 @@ CS_PROCF (uiaste, UIASTE) (int     *const idfstr,
       ++istruct;
       BFT_FREE(faces_list);
     }
+
+    BFT_FREE(label);
   }
 }
 
