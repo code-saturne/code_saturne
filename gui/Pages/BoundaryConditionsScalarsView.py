@@ -146,21 +146,21 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.modelTypeSpecies.addItem(self.tr("Prescribed value"), 'dirichlet')
         self.modelTypeMeteo.addItem(  self.tr("Prescribed value"), 'dirichlet')
 
-        self.modelTypeThermal.addItem(self.tr("Prescribed value  (user law)"), 'dirichlet_formula')
+        self.modelTypeThermal.addItem(self.tr("Prescribed value (user law)"), 'dirichlet_formula')
         self.modelTypeSpecies.addItem(self.tr("Prescribed value (user law)"), 'dirichlet_formula')
         self.modelTypeMeteo.addItem(  self.tr("Prescribed value (user law)"), 'dirichlet_formula')
 
         if self.nature == 'outlet':
-            self.modelTypeThermal.addItem(self.tr("Prescribed flux"), 'neumann')
-            self.modelTypeSpecies.addItem(self.tr("Prescribed flux"), 'neumann')
-            self.modelTypeMeteo.addItem(  self.tr("Prescribed flux"), 'neumann')
+            self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
+            self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
+            self.modelTypeMeteo.addItem(  self.tr("Prescribed (outgoing) flux"), 'neumann')
         elif self.nature == 'wall':
-            self.modelTypeThermal.addItem(self.tr("Prescribed flux"), 'neumann')
-            self.modelTypeSpecies.addItem(self.tr("Prescribed flux"), 'neumann')
-            self.modelTypeMeteo.addItem(  self.tr("Prescribed flux"), 'neumann')
-            self.modelTypeThermal.addItem(self.tr("Prescribed flux (user law)"), 'neumann_formula')
-            self.modelTypeSpecies.addItem(self.tr("Prescribed flux (user law)"), 'neumann_formula')
-            self.modelTypeMeteo.addItem(  self.tr("Prescribed flux (user law)"), 'neumann_formula')
+            self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
+            self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
+            self.modelTypeMeteo.addItem(  self.tr("Prescribed (outgoing) flux"), 'neumann')
+            self.modelTypeThermal.addItem(self.tr("Prescribed (outgoing) flux (user law)"), 'neumann_formula')
+            self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux (user law)"), 'neumann_formula')
+            self.modelTypeMeteo.addItem(  self.tr("Prescribed (outgoing) flux (user law)"), 'neumann_formula')
             self.modelTypeThermal.addItem(self.tr("Exchange coefficient"), 'exchange_coefficient')
             self.modelTypeSpecies.addItem(self.tr("Exchange coefficient"), 'exchange_coefficient')
             self.modelTypeMeteo.addItem(  self.tr("Exchange coefficient"), 'exchange_coefficient')
@@ -168,7 +168,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.modelTypeSpecies.addItem(self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
             self.modelTypeMeteo.addItem(  self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
         elif self.nature == 'groundwater':
-            self.modelTypeSpecies.addItem(self.tr("Prescribed flux"), 'neumann')
+            self.modelTypeSpecies.addItem(self.tr("Prescribed (outgoing) flux"), 'neumann')
 
         self.species = ""
         self.species_list = self.sca_mo.getUserScalarNameList()
