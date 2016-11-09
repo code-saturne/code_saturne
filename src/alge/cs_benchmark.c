@@ -1264,7 +1264,7 @@ cs_benchmark(int  mpi_trace_mode)
                                NULL,
                                fill_types_nsym,
                                fill_weights_nsym,
-                               10,       /* min expected SpMV products */
+                               50,       /* min expected SpMV products */
                                n_cells,
                                n_cells_ext,
                                n_faces,
@@ -1291,7 +1291,7 @@ cs_benchmark(int  mpi_trace_mode)
                                NULL,
                                fill_types_sym,
                                fill_weights_sym,
-                               10,  /* min expected SpMV products */
+                               50,  /* min expected SpMV products */
                                n_cells,
                                n_cells_ext,
                                n_faces,

@@ -130,7 +130,7 @@ static cs_matrix_t *_matrix_native = NULL;
 /* Tuning options */
 
 static double _t_measure = 0.5;
-static int _n_min_products = 10;
+static int _n_min_products = 50;
 
 /* Pointer to global (block-based) numbering, if used */
 static cs_lnum_t  _row_num_size = 0;
