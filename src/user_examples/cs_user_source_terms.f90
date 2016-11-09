@@ -154,9 +154,10 @@ double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
 
 character*80     chaine
 integer          iel
-double precision ckp, qdm
+double precision ckp, qdm, beta
 
 integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer ::  cvar_temperature
 double precision, dimension(:), pointer ::  cpro_rom
 
 type(var_cal_opt) :: vcopt
@@ -206,7 +207,7 @@ call field_get_val_s(icrom, cpro_rom)
 
 ! ----------------------------------------------
 
-!!< [remaining_1]
+!< [remaining_1]
 ckp  = 10.d0
 qdm  = 100.d0
 
@@ -219,6 +220,20 @@ do iel = 1, ncel
 enddo
 
 !< [remaining_1]
+
+!< [boussinesq_st]
+
+! Expension coefficient
+beta = 1.d0
+
+! Get temperature field
+call field_get_val_s_by_name("temperature", cvar_temperature)
+
+do iel = 1, ncel
+  crvexp(3, iel) = cell_f_vol(iel) * ro0 * beta * (cvar_temperature(iel) - t0)
+enddo
+
+!< [boussinesq_st]
 
 !--------
 ! Formats

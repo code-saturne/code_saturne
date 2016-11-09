@@ -85,8 +85,6 @@
   refer to the user manual or to the comments on the similar command
   \ref getfbr in the routine \ref cs_user_boundary_conditions.
 
-
-
    \section loc_var1 Local variables
 
    \snippet cs_user_source_terms.f90 loc_var_dec_1
@@ -123,7 +121,14 @@ which yields:
 
  \section body1 Body
 
-   \snippet  cs_user_source_terms.f90 remaining_1
+   \snippet cs_user_source_terms.f90 remaining_1
+
+   \section example_source_terms_2 Example of a boussinesq momentum source term
+   Example to add Boussinesq source to the z component of \f$\vect{u}\f$:
+
+ \section body2 Body
+
+   \snippet cs_user_source_terms.f90 boussinesq_st 
 
 */
 //_________________________________________________________________________________________________
