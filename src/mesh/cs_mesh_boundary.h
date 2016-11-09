@@ -1,8 +1,8 @@
-#ifndef __CS_MESH_THINWALL_H__
-#define __CS_MESH_THINWALL_H__
+#ifndef __CS_MESH_BOUNDARY_H__
+#define __CS_MESH_BOUNDARY_H__
 
 /*============================================================================
- * Insert thin walls into the mesh.
+ * Insert boundaries into the mesh.
  *============================================================================*/
 
 /*
@@ -58,21 +58,46 @@ BEGIN_C_DECLS
  * This is done by transforming interior faces into boundary faces.
  * The created faces share vertices.
  *
- * Note that the list of selected faces is sorted by this function.
+ * Note that the ids of selected faces are sorted by this function.
  *
- * \param[in]       mesh           pointer to mesh structure to modify
- * \param[in, out]  face_list      list of selected (interior) faces (0 to n-1)
- * \param[in]       face_list_size number of selected (interior) faces
+ * \param[in]       mesh     pointer to mesh structure to modify
+ * \param[in]       n_faces  number of selected (interior) faces
+ * \param[in, out]  ids      list of selected (interior) faces (0 to n-1)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_create_thinwall(cs_mesh_t  *mesh,
-                   cs_lnum_t  *face_list,
-                   cs_lnum_t   face_list_size);
+cs_mesh_boundary_insert(cs_mesh_t  *mesh,
+                        cs_lnum_t   n_faces,
+                        cs_lnum_t   face_id[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Insert a boundary into the mesh between a given set of cells
+ *        and the the others.
+ *
+ * This is done by transforming interior faces into boundary faces.
+ *
+ * An optional group name may be assigned to newly created boundary faces.
+ *
+ * Note that the list of selected faces is sorted by this function.
+ *
+ * \param[in]  mesh        pointer to mesh structure to modify
+ * \param[in]  group_name  group name to assign to newly created boundary
+ *                         faces, or NULL
+ * \param[in]  n_cells     number of separated cells
+ * \param[in]  cell_id     separated cell ids
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_boundary_insert_separating_cells(cs_mesh_t        *mesh,
+                                         const char       *group_name,
+                                         cs_lnum_t         n_cells,
+                                         const cs_lnum_t   cell_id[]);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_MESH_THINWALL_H__ */
+#endif /* __CS_MESH_BOUNDARY_H__ */

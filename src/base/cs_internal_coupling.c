@@ -58,8 +58,8 @@
 #include "cs_coupling.h"
 #include "cs_halo.h"
 #include "cs_mesh.h"
+#include "cs_mesh_boundary.h"
 #include "cs_mesh_quantities.h"
-#include "cs_mesh_thinwall.h"
 #include "cs_convection_diffusion.h"
 #include "cs_field.h"
 #include "cs_field_operator.h"
@@ -403,7 +403,7 @@ _compute_offset(const cs_internal_coupling_t  *cpl)
  *   cpl <-- pointer to coupling entity
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _compute_ci_cj_vect(const cs_internal_coupling_t  *cpl)
 {
   cs_lnum_t face_id, cell_id;
@@ -483,7 +483,7 @@ _initialize_coupled_faces(cs_internal_coupling_t *cpl)
  *   cpl               --> pointer to coupling structure to initialize
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _criteria_initialize(const char   criteria_cells[],
                      const char   criteria_faces[],
                      cs_internal_coupling_t  *cpl)
@@ -518,94 +518,56 @@ _volume_initialize(cs_mesh_t               *m,
                    cs_internal_coupling_t  *cpl)
 {
   cs_lnum_t  n_selected_cells;
-  cs_lnum_t *selected_faces = NULL;
   cs_lnum_t *selected_cells = NULL;
-
-  cs_lnum_t *cell_tag = NULL;
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  /* Selection of Volme zone using volumic selection criteria*/
+  /* Selection of Volume zone using volumic selection criteria*/
 
   BFT_MALLOC(selected_cells, n_cells_ext, cs_lnum_t);
   cs_selector_get_cell_list(cpl->cells_criteria,
                             &n_selected_cells,
                             selected_cells);
 
-  /* Initialization */
-  BFT_MALLOC(cell_tag, n_cells_ext, cs_lnum_t);
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    cell_tag[cell_id] = 0;
-  }
-
-  /* Tag cells */
-  for (cs_lnum_t ii = 0; ii < n_selected_cells; ii++) {
-    cs_lnum_t cell_id = selected_cells[ii];
-    cell_tag[cell_id] = -1;
-  }
-  if (cs_glob_mesh->halo != NULL)
-    cs_halo_sync_num(cs_glob_mesh->halo, CS_HALO_STANDARD, cell_tag);
-
-  /* Free memory */
-  BFT_FREE(selected_cells);
-
-  /* Select junction between interior and exterior */
-
-  BFT_MALLOC(selected_faces, m->n_i_faces, cs_lnum_t);
-
-  cs_lnum_t  n_selected_faces = 0;
-  for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-
-    cs_lnum_t ii = m->i_face_cells[face_id][0];
-    cs_lnum_t jj = m->i_face_cells[face_id][1];
-    if (cell_tag[ii] != cell_tag[jj] && cell_tag[ii] <=0 && cell_tag[jj] <=0) {
-      selected_faces[n_selected_faces] = face_id;
-      n_selected_faces ++;
-
-      /* Tag only cells next to the future boundary */
-      if (cell_tag[ii] == -1) {
-        cell_tag[ii] = 1;
-        cell_tag[jj] = 2;
-      }
-      else {
-        cell_tag[ii] = 2;
-        cell_tag[jj] = 1;
-      }
-    }
-  }
-
   /* Store number of boundary faces before thin wall, the additional
    * boundary faces will be added at the end of the list */
   cs_lnum_t n_b_faces_prev = m->n_b_faces;
 
-  /* Create a thin wall */
-  cs_create_thinwall(m,
-                     selected_faces,
-                     n_selected_faces);
-
-  BFT_FREE(selected_faces);
+  cs_mesh_boundary_insert_separating_cells(m,
+                                           NULL, /* group_name */
+                                           n_selected_cells,
+                                           selected_cells);
 
   /* Prepare locator */
 
-  cpl->n_local = 2 * n_selected_faces; /* Internal faces are now two boundary faces */
+  cpl->n_local = m->n_b_faces - n_b_faces_prev; /* boundary faces added at end */
 
   BFT_MALLOC(cpl->faces_local, cpl->n_local, cs_lnum_t);
   BFT_MALLOC(cpl->c_tag, cpl->n_local, int);
 
-  cs_lnum_t ii = 0;
+  /* Assign separate cell tags on each side for location */
+
+  cs_lnum_t *cell_tag = NULL;
+
+  BFT_MALLOC(cell_tag, n_cells_ext, cs_lnum_t);
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
+    cell_tag[cell_id] = 0;
+
+  for (cs_lnum_t ii = 0; ii < n_selected_cells; ii++)
+    cell_tag[selected_cells[ii]] = 1;
+
+  BFT_FREE(selected_cells);
 
   /* Loop over new boundary faces */
-  for (cs_lnum_t face_id = n_b_faces_prev; face_id < m->n_b_faces ; face_id++) {
 
+  cs_lnum_t ii = 0;
+  for (cs_lnum_t face_id = n_b_faces_prev; face_id < m->n_b_faces ; face_id++) {
     cs_lnum_t cell_id = m->b_face_cells[face_id];
-    if (cell_tag[cell_id] > 0) {
-      cpl->c_tag[ii] = cell_tag[cell_id];
-      cpl->faces_local[ii] = face_id;
-      ii++;
-    }
+    cpl->c_tag[ii] = cell_tag[cell_id];
+    cpl->faces_local[ii] = face_id;
+    ii++;
   }
 
-  /* Free memory */
   BFT_FREE(cell_tag);
 }
 
@@ -699,7 +661,8 @@ _locator_initialize(cs_mesh_t               *m,
   BFT_MALLOC(cpl->faces_distant,
              cpl->n_distant,
              cs_lnum_t);
-  cs_lnum_t *faces_distant_num = ple_locator_get_dist_locations(cpl->locator);
+  const cs_lnum_t *faces_distant_num
+    = ple_locator_get_dist_locations(cpl->locator);
 
   /* From 1..n to 0..n-1 */
   for (cs_lnum_t i = 0; i < cpl->n_distant; i++)
@@ -1455,7 +1418,7 @@ cs_internal_coupling_initialize(void)
 }
 
 /*----------------------------------------------------------------------------
- * Print informations about the given coupling entity
+ * Log information about a given internal coupling entity
  *
  * parameters:
  *   cpl <-- pointer to coupling entity

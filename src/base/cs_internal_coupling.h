@@ -287,14 +287,14 @@ cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
                                    cs_lnum_t                     *faces_distant[]);
 
 /*----------------------------------------------------------------------------
- * Print informations about the given coupling entity
+ * Log information about a given internal coupling entity
  *
  * parameters:
  *   cpl <-- pointer to coupling entity
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_print(const cs_internal_coupling_t  *c);
+cs_internal_coupling_log(const cs_internal_coupling_t  *cpl);
 
 /*----------------------------------------------------------------------------
  * Print informations about all coupling entities

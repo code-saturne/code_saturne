@@ -61,6 +61,7 @@ cs_join_util.h \
 cs_mesh.h \
 cs_mesh_adjacencies.h \
 cs_mesh_bad_cells.h \
+cs_mesh_boundary.h \
 cs_mesh_builder.h \
 cs_mesh_coherency.h \
 cs_mesh_connect.h \
@@ -96,6 +97,7 @@ cs_join_util.c \
 cs_mesh.c \
 cs_mesh_adjacencies.c \
 cs_mesh_bad_cells.c \
+cs_mesh_boundary.c \
 cs_mesh_builder.c \
 cs_mesh_coherency.c \
 cs_mesh_connect.c \
