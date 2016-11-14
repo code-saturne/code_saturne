@@ -143,8 +143,8 @@ cs_user_model(void)
    *   dim              <-- variable dimension
    */
 
-    cs_parameters_add_variable("species_1", 1);
-    cs_parameters_add_variable("tracer", 1);
+  cs_parameters_add_variable("species_1", 1);
+  cs_parameters_add_variable("tracer", 1);
 
   /*--------------------------------------------------------------------------*/
 
@@ -155,8 +155,8 @@ cs_user_model(void)
    *   variable_name <-- name of associated variable
    */
 
-    cs_parameters_add_variable_variance("variance_1",
-                                        "species_1");
+  cs_parameters_add_variable_variance("variance_1",
+                                      "species_1");
 
   /*--------------------------------------------------------------------------*/
 
@@ -172,9 +172,9 @@ cs_user_model(void)
    *                     CS_MESH_LOCATION_VERTICES
    */
 
-    cs_parameters_add_property("user_b_property_1",
-                               1,
-                               CS_MESH_LOCATION_BOUNDARY_FACES);
+  cs_parameters_add_property("user_b_property_1",
+                             1,
+                             CS_MESH_LOCATION_BOUNDARY_FACES);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -285,7 +285,6 @@ cs_user_internal_coupling(void)
   /*! [param_internal_coupling] */
 
 }
-
 
 /*----------------------------------------------------------------------------*/
 

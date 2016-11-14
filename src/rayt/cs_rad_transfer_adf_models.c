@@ -408,6 +408,12 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
   BFT_FREE(tpaadf);
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Determine the radiation coefficients of the ADF 50 model

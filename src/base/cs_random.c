@@ -399,7 +399,7 @@ cs_random_uniform(cs_lnum_t  n,
  * Box-Muller method for Gaussian random numbers.
  *
  * \param[in]   n  number of values to compute
- * \param[out]  a  pseudo-random numbers following normal distribution
+ * \param[out]  x  pseudo-random numbers following normal distribution
  */
 /*----------------------------------------------------------------------------*/
 
@@ -455,7 +455,7 @@ L1:
  *
  * \param[in]   n   number of values to compute
  * \param[in]   mu  Poisson distribution parameter
- * \param[out]  a   pseudo-random numbers following Poisson distribution
+ * \param[out]  p   pseudo-random numbers following Poisson distribution
  */
 /*----------------------------------------------------------------------------*/
 

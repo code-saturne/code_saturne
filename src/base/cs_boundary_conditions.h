@@ -89,7 +89,7 @@ extern const int  *cs_glob_bc_face_zone;
  * attribute than the boundary type, for appropriate error reporting.
  *
  * parameters:
- * \param[in]  bc_type     array of BC type ids
+ *   bc_flag   <-- array of BC type ids
  *   type_name <-- name of attribute in error, or NULL
  *----------------------------------------------------------------------------*/
 

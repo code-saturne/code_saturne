@@ -106,13 +106,13 @@ typedef int
  * \param[in]   sampling_factor  number of samples per rank
  * \param[in]   elt_size         size associated with each element
  * \param[in]   n_elts           number of elements to be indexed
- * \param[in]   elt              array of elements
+ * \param[in]   elts             array of elements
  * \param[in]   weight           optional weight of each element, or NULL
  * \param[in]   order            ordering array
+ * \param[out]  dest_rank_id     destination rank id (size: n_elts)
  * \param[in]   s_to_elt         coordinate to element conversion function
  * \param[in]   compare          comparison function
  * \param[in]   f_input          optional input to s_to_elt and compare, or NULL
- * \param[out]  dest_rank_id     destination rank id (size: n_elts)
  * \param[in]   comm             MPI communicator on which we build the
  *                               global index
  */

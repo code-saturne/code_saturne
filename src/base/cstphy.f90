@@ -609,7 +609,7 @@ module cstphy
   !> constant used in the definition of LES filtering diameter:
   !> \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}}\f$
   !> \ref xlesfl is a constant used to define, for
-  !> each cell $\Omega_i$, the width of the (implicit) filter:
+  !> each cell $\omega_i$, the width of the (implicit) filter:
   !> \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$\n
   !> Useful if and only if \ref iturb = 40 or 41
   double precision, save :: xlesfl

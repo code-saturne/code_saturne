@@ -77,11 +77,11 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 /*!
-  \enum parameter_error_behavior_t
+  \enum cs_parameter_error_behavior_t
 
   \brief File acces modes
 
-  \var CS_WARN
+  \var CS_WARNING
        Warn only
   \var CS_ABORT_DELAYED
        Abort when \ref cs_parameters_error_barrier is called.

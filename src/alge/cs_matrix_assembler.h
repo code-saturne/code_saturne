@@ -482,7 +482,7 @@ cs_matrix_assembler_get_rank_counts(const cs_matrix_assembler_t  *ma,
  *
  * \param[in]  ma     pointer to matrix assembler structure
  * \param[in]  log    log type
- * \param[in]  title  title for this section
+ * \param[in]  title  name of this assembler
  */
 /*----------------------------------------------------------------------------*/
 

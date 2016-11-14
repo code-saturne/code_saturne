@@ -1243,9 +1243,9 @@ cs_lagr_set_zone_class_density(int        iclass,
 /*!
  * \brief Set density for a given class and boundary zone
  *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   density    pointer to density value
+ * \param[in]   iclass      class number
+ * \param[in]   izone       boundary zone number
+ * \param[in]   foul_index  pointer to fouling index value
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1486,6 +1486,7 @@ cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
  *
  * This function is intended for use by Fortran wrappers.
  *----------------------------------------------------------------------------*/
+
 void
 cs_lagr_finalize(void);
 

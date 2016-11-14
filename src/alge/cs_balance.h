@@ -287,7 +287,7 @@ cs_balance_vector(int                  idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
 

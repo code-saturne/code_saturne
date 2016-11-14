@@ -478,7 +478,7 @@ cs_f_boundary_conditions_get_pointers(int **itypfb,
  * An optional label may be used if the error is related to another
  * attribute than the boundary type, for appropriate error reporting.
  *
- * \param[in]  bc_type     array of BC type ids
+ * \param[in]  bc_flag     array of BC type ids
  * \param[in]  type_name   name of attribute in error, or NULL
  */
 /*----------------------------------------------------------------------------*/

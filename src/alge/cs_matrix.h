@@ -995,10 +995,10 @@ cs_matrix_variant_test(cs_lnum_t              n_rows,
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_get_extend(const cs_matrix_t                 *m,
-                     cs_matrix_vector_product_extend_t **vector_multiply_extend,
-                     cs_matrix_preconditioner_extend_t **preconditioner_extend,
-                     void                              **input_extend);
+cs_matrix_get_extend(const cs_matrix_t                   *m,
+                     cs_matrix_vector_product_extend_t  **vector_multiply_extend,
+                     cs_matrix_preconditioner_extend_t  **preconditioner_extend,
+                     void                               **input_extend);
 
 /*----------------------------------------------------------------------------
  * Set coupling entity associated to matrix, or NULL if no coupling
@@ -1007,7 +1007,7 @@ cs_matrix_get_extend(const cs_matrix_t                 *m,
  * parameters:
  *   m                      <-- pointer to matrix structure
  *   vector_multiply_extend <-- pointer to SpMV extension function
- *   preconditioner_extend <-- pointer to preconditioner extension function
+ *   preconditioner_extend  <-- pointer to preconditioner extension function
  *   input_extend           <-> pointer to associated data
  *----------------------------------------------------------------------------*/
 

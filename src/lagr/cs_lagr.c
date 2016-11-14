@@ -1351,10 +1351,9 @@ cs_lagr_set_zone_class_density(int        iclass,
 /*!
  * \brief Set fouling index for a given class of particles and boundary zone
  *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   fouling index    pointer to density value
- *
+ * \param[in]   iclass      class number
+ * \param[in]   izone       boundary zone number
+ * \param[in]   foul_index  pointer to fouling index value
  */
 /*----------------------------------------------------------------------------*/
 

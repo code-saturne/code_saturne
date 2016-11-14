@@ -6189,55 +6189,6 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Get coupling entity associated to matrix, or NULL if no coupling
- * entity has been set before.
- *
- * parameters:
- * \param[in]      m                      pointer to matrix structure
- * \param[out]     vector_multiply_extend pointer to SpMV extension function
- * \param[out]     preconditioner_extend  pointer to preconditioner extension
- *                                        function
- * \param[out]     input_extend           pointer to associated data
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_matrix_get_extend(const cs_matrix_t                 *m,
-                     cs_matrix_vector_product_extend_t **vector_multiply_extend,
-                     cs_matrix_preconditioner_extend_t **preconditioner_extend,
-                     void                              **input_extend)
-{
-  if (vector_multiply_extend != NULL)
-    *vector_multiply_extend = m->vector_multiply_extend;
-  if (preconditioner_extend != NULL)
-    *preconditioner_extend = m->preconditioner_extend;
-  if (input_extend != NULL)
-    *input_extend = m->input_extend;
-}
-
-/*----------------------------------------------------------------------------*/
-/*! \brief Set coupling entity associated to matrix, or NULL if no coupling
- * entity has been set before.
- *
- * parameters:
- * \param[in]      m                      pointer to matrix structure
- * \param[in]      vector_multiply_extend pointer to SpMV extension function
- * \param[in, out] input_extend           pointer to associated data
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_matrix_set_extend(cs_matrix_t                        *m,
-                     cs_matrix_vector_product_extend_t  *vector_multiply_extend,
-                     cs_matrix_preconditioner_extend_t *preconditioner_extend,
-                     void                               *input_extend)
-{
-  m->vector_multiply_extend = vector_multiply_extend;
-  m->preconditioner_extend = preconditioner_extend;
-  m->input_extend = input_extend;
-}
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Set matrix coefficients, copying values to private arrays.
  *
@@ -7588,6 +7539,57 @@ cs_matrix_variant_test(cs_lnum_t              n_rows,
 
   n_variants = 0;
   BFT_FREE(m_variant);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get coupling entity associated to matrix, or NULL if no coupling
+ *        entity has been set before.
+ *
+ * \param[in]      m                      pointer to matrix structure
+ * \param[out]     vector_multiply_extend pointer to SpMV extension function
+ * \param[out]     preconditioner_extend  pointer to preconditioner extension
+ *                                        function
+ * \param[out]     input_extend           pointer to associated data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_extend(const cs_matrix_t                   *m,
+                     cs_matrix_vector_product_extend_t  **vector_multiply_extend,
+                     cs_matrix_preconditioner_extend_t  **preconditioner_extend,
+                     void                               **input_extend)
+{
+  if (vector_multiply_extend != NULL)
+    *vector_multiply_extend = m->vector_multiply_extend;
+  if (preconditioner_extend != NULL)
+    *preconditioner_extend = m->preconditioner_extend;
+  if (input_extend != NULL)
+    *input_extend = m->input_extend;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set coupling entity associated to matrix, or NULL if no coupling
+ *        entity has been set before.
+ *
+ * \param[in]      m                      pointer to matrix structure
+ * \param[in]      vector_multiply_extend pointer to SpMV extension function
+ * \param[in]      preconditioner_extend  pointer to preconditioner
+ *                                        extension function
+ * \param[in, out] input_extend           pointer to associated data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_set_extend(cs_matrix_t                        *m,
+                     cs_matrix_vector_product_extend_t  *vector_multiply_extend,
+                     cs_matrix_preconditioner_extend_t  *preconditioner_extend,
+                     void                               *input_extend)
+{
+  m->vector_multiply_extend = vector_multiply_extend;
+  m->preconditioner_extend = preconditioner_extend;
+  m->input_extend = input_extend;
 }
 
 /*----------------------------------------------------------------------------*/

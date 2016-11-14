@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_lagr_listing.c
+  \file cs_lagr_log.c
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

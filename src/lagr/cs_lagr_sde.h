@@ -77,7 +77,7 @@ cs_lagr_sde(cs_real_t           dt_p,
  *
  * \f[
  *  \frac{dV}{dt} = \frac{V - PIP}{TCARAC}
- * ]\f
+ * \f]
  *
  * When there is interaction with a boundary face, the integration
  * degenerates to order 1 (even if the 2nd order scheme is active).
