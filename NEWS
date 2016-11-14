@@ -34,6 +34,26 @@ GUI changes
 
 - Add handling of multiple compute builds through the GUI.
 
+- Add mesh extrusion capability to the GUI.
+
+- Add a notebook to add global variables to be used in the GUI (such as variables
+  in the physical laws).
+
+- Add fans modelling (represented as momentum source terms) in the GUI.
+
+- Add "mapped inlet" boundary condition (for recycled inlets) in the GUI.
+
+- Add "imposed pressure" outlet boundary condition in the GUI.
+
+- Add the verbosity mode for transported variables.
+
+- Add "iterative process error estimators" in the GUI in "Volume solution contol".
+  pannel.
+
+- Add automatic transported scalar balance by zone and pressure drop by zone
+  in the GUI.
+
+
 Architectural changes
 ---------------------
 
