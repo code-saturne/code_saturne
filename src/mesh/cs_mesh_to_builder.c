@@ -1037,13 +1037,18 @@ _write_dimensions(cs_mesh_t          *mesh,
     cs_io_write_global("n_groups", 1, 0, 0, 1, lnum_type,
                        &(mesh->n_groups), pp_out);
 
+    cs_lnum_t *_group_idx;
+    BFT_MALLOC(_group_idx, mesh->n_groups + 1, cs_lnum_t);
+    for (i = 0; i < mesh->n_groups + 1; i++)
+      _group_idx[i] = mesh->group_idx[i] + 1;
     cs_io_write_global("group_name_index",
                        mesh->n_groups + 1, 0, 0, 1, lnum_type,
-                       mesh->group_idx, pp_out);
+                       _group_idx, pp_out);
+    BFT_FREE(_group_idx);
 
     cs_io_write_global("group_name",
-                       mesh->group_idx[mesh->n_groups] - 1, 0, 0, 1, CS_CHAR,
-                       mesh->group_lst, pp_out);
+                       mesh->group_idx[mesh->n_groups], 0, 0, 1, CS_CHAR,
+                       mesh->group, pp_out);
   }
 
   cs_io_write_global("group_class_properties",

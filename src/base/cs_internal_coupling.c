@@ -517,6 +517,8 @@ static void
 _volume_initialize(cs_mesh_t               *m,
                    cs_internal_coupling_t  *cpl)
 {
+  char group_name[64];
+
   cs_lnum_t  n_selected_cells;
   cs_lnum_t *selected_cells = NULL;
 
@@ -533,8 +535,16 @@ _volume_initialize(cs_mesh_t               *m,
    * boundary faces will be added at the end of the list */
   cs_lnum_t n_b_faces_prev = m->n_b_faces;
 
+  if (_n_internal_couplings == 0)
+    strncpy(group_name, "[internal_coupling]", 63);
+  else {
+    int coupling_id = _n_internal_couplings + 1;
+    snprintf(group_name, 63, "[internal_coupling_%d]", coupling_id);
+  }
+  group_name[63] = '\0';
+
   cs_mesh_boundary_insert_separating_cells(m,
-                                           NULL, /* group_name */
+                                           group_name,
                                            n_selected_cells,
                                            selected_cells);
 
@@ -688,6 +698,8 @@ _locator_initialize(cs_mesh_t               *m,
   cpl->cocgb_s_it = NULL;
   cpl->cocg_s_it = NULL;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

@@ -57,6 +57,7 @@
 #include "cs_interface.h"
 #include "cs_mesh.h"
 #include "cs_mesh_from_builder.h"
+#include "cs_mesh_group.h"
 #include "cs_parall.h"
 #include "cs_partition.h"
 #include "cs_io.h"
@@ -406,7 +407,7 @@ _mesh_groups_rename(cs_mesh_t          *mesh,
   BFT_MALLOC(new_group_id, n_ids, int);
 
   for (i = 0, j = start_id; i < n_ids; i++, j++) {
-    const char *g_name = mesh->group_lst + (mesh->group_idx[j] - 1);
+    const char *g_name = mesh->group + mesh->group_idx[j];
     new_group_id[i] = -1;
     for (k = 0; k < n_group_renames; k++) {
       if (strcmp(g_name, old_group_names[k]) == 0) {
@@ -432,7 +433,7 @@ _mesh_groups_rename(cs_mesh_t          *mesh,
     for (i = 0; i < n_ids+1; i++)
       saved_idx[i] = mesh->group_idx[start_id + i] - mesh->group_idx[start_id];
     memcpy(saved_names,
-           mesh->group_lst + (mesh->group_idx[start_id] - 1),
+           mesh->group + mesh->group_idx[start_id],
            old_size);
 
     /* Update index */
@@ -450,10 +451,10 @@ _mesh_groups_rename(cs_mesh_t          *mesh,
         = mesh->group_idx[start_id] + new_size;
     }
 
-    BFT_REALLOC(mesh->group_lst, mesh->group_idx[mesh->n_groups] - 1, char);
+    BFT_REALLOC(mesh->group, mesh->group_idx[mesh->n_groups], char);
 
     for (i = 0, j = start_id; i < n_ids; i++, j++) {
-      char *new_dest = mesh->group_lst + (mesh->group_idx[j] - 1);
+      char *new_dest = mesh->group + mesh->group_idx[j];
       const char *new_src = NULL;
       if (new_group_id[i] > -1)
         new_src = new_group_names[new_group_id[i]];
@@ -518,14 +519,14 @@ _colors_to_groups(cs_mesh_t  *mesh,
   if (n_colors > 0) {
     if (mesh->n_groups > 0) {
       BFT_REALLOC(mesh->group_idx, mesh->n_groups + n_colors + 1, cs_int_t);
-      BFT_REALLOC(mesh->group_lst,
-                  mesh->group_idx[mesh->n_groups] - 1 + color_names_size,
+      BFT_REALLOC(mesh->group,
+                  mesh->group_idx[mesh->n_groups] + color_names_size,
                   char);
     }
     else {
       BFT_MALLOC(mesh->group_idx, n_colors + 1, cs_int_t);
-      BFT_MALLOC(mesh->group_lst, color_names_size, char);
-      mesh->group_idx[0] = 1;
+      BFT_MALLOC(mesh->group, color_names_size, char);
+      mesh->group_idx[0] = 0;
     }
   }
 
@@ -536,8 +537,8 @@ _colors_to_groups(cs_mesh_t  *mesh,
       if (mesh->family_item[mesh->n_families*j + i] > 0) {
         int color_id = mesh->family_item[mesh->n_families*j + i];
         int name_size = 1;
-        cs_int_t group_lst_end = mesh->group_idx[mesh->n_groups] - 1;
-        sprintf(mesh->group_lst + group_lst_end, "%d", color_id);
+        cs_int_t group_end = mesh->group_idx[mesh->n_groups];
+        sprintf(mesh->group + group_end, "%d", color_id);
         while (color_id > 0) {
           color_id /= 10;
           name_size += 1;
@@ -864,20 +865,21 @@ _read_dimensions(cs_mesh_t          *mesh,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
         cs_io_set_cs_lnum(&header, pp_in);
+        cs_lnum_t *_group_idx;
+        BFT_MALLOC(_group_idx, n_groups + 1, cs_lnum_t);
+        cs_io_read_global(&header, _group_idx, pp_in);
         if (mesh->group_idx == NULL) {
-          BFT_MALLOC(mesh->group_idx, mesh->n_groups + 1, cs_int_t);
-          cs_io_read_global(&header, mesh->group_idx, pp_in);
+          BFT_MALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+          for (i = 0; i < n_groups+1; i++)
+            mesh->group_idx[i] = _group_idx[i] - 1;
         }
         else {
-          cs_int_t *_group_idx = NULL;
-          BFT_REALLOC(mesh->group_idx, mesh->n_groups + 1, cs_int_t);
-          BFT_MALLOC(_group_idx, n_groups + 1, cs_int_t);
-          cs_io_read_global(&header, _group_idx, pp_in);
+          BFT_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
           for (i = 0, j = mesh->n_groups - n_groups; i < n_groups; i++, j++)
             mesh->group_idx[j + 1] = (   mesh->group_idx[j]
                                       + _group_idx[i+1] - _group_idx[i]);
-          BFT_FREE(_group_idx);
         }
+        BFT_FREE(_group_idx);
       }
 
     }
@@ -892,8 +894,8 @@ _read_dimensions(cs_mesh_t          *mesh,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
         i = mesh->group_idx[mesh->n_groups - n_groups] - mesh->group_idx[0];
-        BFT_REALLOC(mesh->group_lst, i + header.n_vals + 1, char);
-        cs_io_read_global(&header, mesh->group_lst + i, pp_in);
+        BFT_REALLOC(mesh->group, i + header.n_vals + 1, char);
+        cs_io_read_global(&header, mesh->group + i, pp_in);
       }
 
     }
@@ -1812,204 +1814,6 @@ _read_data(int                 file_id,
   cs_io_finalize(&pp_in);
 }
 
-/*----------------------------------------------------------------------------
- * Descend binary tree for the ordering of a mesh's groups.
- *
- * parameters:
- *   mesh   <-- pointer to mesh structure
- *   level  <-- level of the binary tree to descend
- *   n      <-- number of groups in the binary tree to descend
- *   order  <-> ordering array
- *----------------------------------------------------------------------------*/
-
-inline static void
-_groups_descend_tree(const cs_mesh_t  *mesh,
-                     size_t            level,
-                     const size_t      n,
-                     int               order[])
-{
-  size_t i_save, i1, i2, lv_cur;
-
-  i_save = (size_t)(order[level]);
-
-  while (level <= (n/2)) {
-
-    lv_cur = (2*level) + 1;
-
-    if (lv_cur < n - 1) {
-
-      i1 = (size_t)(order[lv_cur+1]);
-      i2 = (size_t)(order[lv_cur]);
-
-      if (strcmp(mesh->group_lst + (mesh->group_idx[i1] - 1),
-                 mesh->group_lst + (mesh->group_idx[i2] - 1)) > 0)
-        lv_cur++;
-    }
-
-    if (lv_cur >= n) break;
-
-    i1 = i_save;
-    i2 = (size_t)(order[lv_cur]);
-
-    if (strcmp(mesh->group_lst + (mesh->group_idx[i1] - 1),
-               mesh->group_lst + (mesh->group_idx[i2] - 1)) >= 0)
-      break;
-
-    order[level] = order[lv_cur];
-    level = lv_cur;
-  }
-
-  order[level] = i_save;
-}
-
-/*----------------------------------------------------------------------------
- * Order mesh groups.
- *
- * parameters:
- *   mesh  <-- pointer to mesh structure
- *   order --> pre-allocated ordering table
- *----------------------------------------------------------------------------*/
-
-static void
-_order_groups(const cs_mesh_t  *mesh,
-              int               order[])
-{
-  int    o_save;
-  size_t i;
-  size_t n = mesh->n_groups;
-
-  /* Initialize ordering array */
-
-  for (i = 0; i < n; i++)
-    order[i] = i;
-
-  if (n < 2)
-    return;
-
-  /* Create binary tree */
-
-  i = (n / 2);
-  do {
-    i--;
-    _groups_descend_tree(mesh, i, n, order);
-  } while (i > 0);
-
-  /* Sort binary tree */
-
-  for (i = n - 1; i > 0; i--) {
-    o_save   = order[0];
-    order[0] = order[i];
-    order[i] = o_save;
-    _groups_descend_tree(mesh, 0, i, order);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Clean mesh group definitions
- *
- * parameters
- *   mesh     <-> pointer to mesh structure
- *----------------------------------------------------------------------------*/
-
-static void
-_clean_groups(cs_mesh_t  *mesh)
-{
-  int i;
-  size_t j;
-  int n_groups = 0;
-  size_t size_tot = 0;
-  char *g_prev = NULL, *g_cur = NULL, *g_lst = NULL;
-  int *order = NULL, *renum = NULL;
-
-  if (mesh->n_groups < 1)
-    return;
-
-  /* Order group names */
-
-  BFT_MALLOC(renum, mesh->n_groups, int);
-  BFT_MALLOC(order, mesh->n_groups, int);
-
-  _order_groups(mesh, order);
-
-  /* Build compact group copy */
-
-  BFT_MALLOC(g_lst, mesh->group_idx[mesh->n_groups], char);
-
-  g_cur = mesh->group_lst + (mesh->group_idx[order[0]] - 1);
-  g_prev = g_cur;
-  n_groups += 1;
-  strcpy(g_lst, g_cur);
-  size_tot += strlen(g_cur) + 1;
-  g_lst[size_tot - 1] = '\0';
-  renum[order[0]] = 0;
-
-  for (i = 1; i < mesh->n_groups; i++) {
-    g_cur = mesh->group_lst + (mesh->group_idx[order[i]] - 1);
-    if (strcmp(g_cur, g_prev) != 0) {
-      g_prev = g_cur;
-      strcpy(g_lst + size_tot, g_cur);
-      n_groups += 1;
-      size_tot += strlen(g_cur) + 1;
-      g_lst[size_tot - 1] = '\0';
-    }
-    renum[order[i]] = n_groups - 1;
-  }
-
-  BFT_FREE(order);
-
-  BFT_REALLOC(mesh->group_idx, n_groups + 1, cs_int_t);
-  BFT_REALLOC(mesh->group_lst, size_tot, char);
-
-  mesh->n_groups = n_groups;
-  memcpy(mesh->group_lst, g_lst, size_tot);
-
-  mesh->group_idx[0] = 1;
-  for (i = 0; i < mesh->n_groups; i++) {
-    j = strlen(mesh->group_lst + (mesh->group_idx[i] - 1)) + 1;
-    mesh->group_idx[i + 1] = mesh->group_idx[i] + j;
-  }
-
-  BFT_FREE(g_lst);
-
-  /* Now renumber groups in group class description */
-
-  size_tot = mesh->n_families * mesh->n_max_family_items;
-
-  for (j = 0; j < size_tot; j++) {
-    int gc_id = mesh->family_item[j];
-    if (gc_id < 0)
-      mesh->family_item[j] = - renum[-gc_id - 1] - 1;
-  }
-
-  BFT_FREE(renum);
-
-  /* Remove empty group if present (it should appear first now) */
-
-  if (mesh->n_groups > 1) {
-
-    if ((mesh->group_idx[1] - mesh->group_idx[0]) == 1) {
-
-      size_t new_lst_size = (  mesh->group_idx[mesh->n_groups]
-                             - mesh->group_idx[1]);
-      for (i = 0; i < mesh->n_groups; i++)
-        mesh->group_idx[i] = mesh->group_idx[i+1] - 1;
-      mesh->n_groups -= 1;
-      memmove(mesh->group_lst, mesh->group_lst+1, new_lst_size);
-
-      BFT_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
-      BFT_REALLOC(mesh->group_lst, new_lst_size, char);
-
-      for (j = 0; j < size_tot; j++) {
-        int gc_id = mesh->family_item[j];
-        if (gc_id < 0)
-          mesh->family_item[j] += 1;
-      }
-
-    }
-  }
-
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2261,7 +2065,7 @@ cs_preprocessor_data_read_headers(cs_mesh_t          *mesh,
 
   /* Clean group names */
 
-  _clean_groups(mesh);
+  cs_mesh_group_clean(mesh);
 }
 
 /*----------------------------------------------------------------------------

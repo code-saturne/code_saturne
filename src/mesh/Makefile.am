@@ -67,6 +67,7 @@ cs_mesh_coherency.h \
 cs_mesh_connect.h \
 cs_mesh_extrude.h \
 cs_mesh_from_builder.h \
+cs_mesh_group.h \
 cs_mesh_halo.h \
 cs_mesh_location.h \
 cs_mesh_quality.h \
@@ -103,6 +104,7 @@ cs_mesh_coherency.c \
 cs_mesh_connect.c \
 cs_mesh_extrude.c \
 cs_mesh_from_builder.c \
+cs_mesh_group.c \
 cs_mesh_halo.c \
 cs_mesh_location.c \
 cs_mesh_quality.c \

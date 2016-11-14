@@ -52,6 +52,7 @@
 #include "fvm_io_num.h"
 
 #include "cs_mesh_builder.h"
+#include "cs_mesh_group.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -868,6 +869,8 @@ cs_mesh_boundary_insert_separating_cells(cs_mesh_t        *mesh,
   cs_lnum_t  n_m_cells = mesh->n_cells;
   cs_lnum_t  n_i_faces = mesh->n_i_faces;
 
+  cs_lnum_t  n_b_faces_old = mesh->n_b_faces;
+
   /* Mark cells and matching faces */
 
   int32_t    *cell_tag;
@@ -951,6 +954,26 @@ cs_mesh_boundary_insert_separating_cells(cs_mesh_t        *mesh,
   _destroy_faces_interface_set(mesh, &face_ifs);
 
   BFT_FREE(face_tag);
+
+  /* Add group name if requested */
+
+  if (group_name != NULL) {
+
+    cs_lnum_t *sel_faces;
+    cs_lnum_t  n_sel = mesh->n_b_faces - n_b_faces_old;
+    BFT_MALLOC(sel_faces, n_sel, cs_lnum_t);
+    for (cs_lnum_t i = 0; i < n_sel; i++)
+      sel_faces[i] = n_b_faces_old + i;
+
+    cs_mesh_group_b_faces_add(mesh,
+                              group_name,
+                              n_sel,
+                              sel_faces);
+
+    BFT_FREE(sel_faces);
+
+  }
+
 }
 
 /*---------------------------------------------------------------------------*/

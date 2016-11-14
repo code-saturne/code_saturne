@@ -35,6 +35,9 @@ GUI changes
 Architectural changes
 ---------------------
 
+- Add functions for definition of mesh groups during mesh preprocessing.
+  * moved most group handling functions to cs_mesh_group.*.
+
 - Replaced icond keyword by icondb, icondv to allow to enable wall condensation
   and condensation on internals at the same time.
 

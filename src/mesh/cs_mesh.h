@@ -149,16 +149,16 @@ typedef struct {
 
   /* Group and family features */
 
-  cs_lnum_t   n_groups;            /* Number of groups */
-  cs_lnum_t  *group_idx;           /* Starting index in the in group_lst */
-  char       *group_lst;           /* List of group names */
+  int         n_groups;            /* Number of groups */
+  int        *group_idx;           /* Starting index in group */
+  char       *group;               /* List of group names */
 
-  cs_lnum_t   n_families;          /* Number of families */
-  cs_lnum_t   n_max_family_items;  /* Max. number of items for one family */
-  cs_lnum_t  *family_item;         /* Family items */
-  cs_lnum_t  *cell_family;         /* Cell family */
-  cs_lnum_t  *i_face_family;       /* Interior face family */
-  cs_lnum_t  *b_face_family;       /* Boundary face family */
+  int         n_families;          /* Number of families */
+  int         n_max_family_items;  /* Max. number of items for one family */
+  int        *family_item;         /* Family items */
+  int        *cell_family;         /* Cell family */
+  int        *i_face_family;       /* Interior face family */
+  int        *b_face_family;       /* Boundary face family */
 
   fvm_group_class_set_t *class_defs;  /* Definition of group classes for
                                          selection and postprocessing (built
@@ -686,6 +686,16 @@ cs_mesh_init_group_classes(cs_mesh_t  *mesh);
 
 void
 cs_mesh_init_selectors(void);
+
+/*----------------------------------------------------------------------------
+ * Update selector and associated structures.
+ *
+ * parameters:
+ *   mesh  <-> pointer to a mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_update_selectors(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Get global lists of periodic face couples.

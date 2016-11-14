@@ -54,6 +54,7 @@
 #include "fvm_selector.h"
 
 #include "cs_base.h"
+#include "cs_mesh_boundary.h"
 #include "cs_join.h"
 #include "cs_join_perio.h"
 #include "cs_mesh.h"
@@ -61,7 +62,6 @@
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_extrude.h"
 #include "cs_mesh_smoother.h"
-#include "cs_mesh_thinwall.h"
 #include "cs_mesh_warping.h"
 #include "cs_parall.h"
 #include "cs_post.h"

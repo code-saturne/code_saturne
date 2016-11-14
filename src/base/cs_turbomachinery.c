@@ -465,8 +465,8 @@ _copy_mesh(const cs_mesh_t  *mesh,
     BFT_MALLOC(mesh_copy->group_idx, mesh->n_groups + 1, cs_lnum_t);
     memcpy(mesh_copy->group_idx, mesh->group_idx,
            (mesh->n_groups + 1)*sizeof(cs_lnum_t));
-    BFT_MALLOC(mesh_copy->group_lst, mesh->group_idx[mesh->n_groups] - 1, char);
-    memcpy(mesh_copy->group_lst, mesh->group_lst,
+    BFT_MALLOC(mesh_copy->group, mesh->group_idx[mesh->n_groups] - 1, char);
+    memcpy(mesh_copy->group, mesh->group,
            (mesh->group_idx[mesh->n_groups] - 1)*sizeof(char));
   }
 

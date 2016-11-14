@@ -2440,7 +2440,7 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
     if (group_flag[i] & '\1') {
 
-      const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
+      const char *g_name = mesh->group + mesh->group_idx[i];
 
       _set_fam_flags(mesh, i, fam_flag);
 
@@ -2511,7 +2511,7 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
     if ((group_flag[i] & '\2') || (group_flag[i] & '\4')) {
 
-      const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
+      const char *g_name = mesh->group + mesh->group_idx[i];
 
       _set_fam_flags(mesh, i, fam_flag);
 
@@ -2650,7 +2650,7 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
 
     if (group_flag[i] != 0) {
 
-      const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
+      const char *g_name = mesh->group + mesh->group_idx[i];
 
       _set_fam_flags(mesh, i, fam_flag);
 
@@ -5950,7 +5950,7 @@ cs_post_add_free_faces(void)
 
       if (group_flag[i] != 0) {
 
-        const char *g_name = mesh->group_lst + mesh->group_idx[i] - 1;
+        const char *g_name = mesh->group + mesh->group_idx[i];
 
         _set_fam_flags(mesh, i, fam_flag);
 

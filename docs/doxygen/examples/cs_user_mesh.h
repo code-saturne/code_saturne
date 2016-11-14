@@ -58,6 +58,19 @@
 
   \snippet cs_user_mesh-modify.c mesh_modify_extrude_1
 
+  Groups of cells, interior, and boundary faces may be created or
+  modified, using the \ref cs_mesh_group_cells_set, \ref cs_mesh_group_i_faces_set,
+  \ref cs_mesh_group_b_faces_set functions to assign a group to selected
+  elements, removing all previous group attributions for those elements,
+  and \ref cs_mesh_group_cells_add, \ref cs_mesh_group_i_faces_add,
+  \ref cs_mesh_group_b_faces_add may be used to add those elements to a group
+  while also keeping previous group information for those elements.
+
+  The mesh is not marked as modified by default for this "light" modification,
+  so the user may force this using a modification flag, as in the example here:
+
+  \snippet cs_user_mesh-modify.c mesh_modify_groups_1
+
   \subsection  cs_user_mesh_h_cs_user_mesh_input Mesh reading and modification
 
   The user function \ref cs_user_mesh_input allows a detailed selection of imported
@@ -170,11 +183,20 @@
 
   \section cs_user_mesh_h_cs_user_mesh_thinwall  Mesh thin wall
 
-  The user function \ref cs_user_mesh_thinwall allows insertion of thin walls in
+  The user function \ref cs_user_mesh_thinwall allows insertion of boundaries in
   the calculation mesh. Currently, this function simply transforms the selected
-  internal faces into boundary faces, on which boundary conditions can (and must)
+  interior faces into boundary faces, on which boundary conditions can (and must)
   be applied.
 
+  Boundaries can be directly inserted based on a selection of interior faces,
+  such as shown here:
+
   \snippet cs_user_mesh-thinwall.c mesh_thinwall
+
+  Boundaries can also be inserted between a set of selected cells and the
+  rest of the mesh. In this case, a mesh group name can be assigned to
+  the added boundary faces.
+
+  \snippet cs_user_mesh-thinwall.c mesh_boundary_cells
 
 */

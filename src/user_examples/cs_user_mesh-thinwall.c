@@ -59,6 +59,7 @@
 #include "fvm_selector.h"
 
 #include "cs_base.h"
+#include "cs_mesh_boundary.h"
 #include "cs_join.h"
 #include "cs_join_perio.h"
 #include "cs_mesh.h"
@@ -66,7 +67,6 @@
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_extrude.h"
 #include "cs_mesh_smoother.h"
-#include "cs_mesh_thinwall.h"
 #include "cs_mesh_warping.h"
 #include "cs_parall.h"
 #include "cs_post.h"
@@ -98,32 +98,58 @@ BEGIN_C_DECLS
 void
 cs_user_mesh_thinwall(cs_mesh_t  *mesh)
 {
-  /* Example: thin wall along a plane */
-  /*----------------------------------*/
+  /* Example: insert boundary along a plane */
+  /*----------------------------------------*/
 
   /*! [mesh_thinwall] */
+  {
+    cs_lnum_t   n_selected_faces = 0;
+    cs_lnum_t  *selected_faces = NULL;
 
-  cs_lnum_t   n_selected_faces = 0;
-  cs_lnum_t  *selected_faces = NULL;
+    /* example of multi-line character string */
 
-  /* example of multi-line character string */
+    const char criteria[] = "plane[0, -1, 0, 0.5, epsilon = 0.0001]"
+                            " or plane[-1, 0, 0, 0.5, epsilon = 0.0001]";
 
-  const char criteria[] = "plane[0, -1, 0, 0.5, epsilon = 0.0001]"
-                          " or plane[-1, 0, 0, 0.5, epsilon = 0.0001]";
+    BFT_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
 
-  BFT_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
+    cs_selector_get_i_face_list(criteria,
+                                &n_selected_faces,
+                                selected_faces);
 
-  cs_selector_get_i_face_list(criteria,
-                              &n_selected_faces,
-                              selected_faces);
+    cs_mesh_boundary_insert(mesh,
+                            selected_faces,
+                            n_selected_faces);
 
-  cs_create_thinwall(mesh,
-                     selected_faces,
-                     n_selected_faces);
+    BFT_FREE(selected_faces);
 
-  BFT_FREE(selected_faces);
-
+  }
   /*! [mesh_thinwall] */
+
+  /* Example: boundary separating cell groups */
+  /*------------------------------------------*/
+
+  /*! [mesh_boundary_cells] */
+  {
+    cs_lnum_t   n_selected_cells = 0;
+    cs_lnum_t  *selected_cells = NULL;
+
+    const char criteria[] = "box[0.5, 0.5, 0, 1, 1, 0.05]";
+
+    BFT_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
+
+    cs_selector_get_cell_list(criteria,
+                              &n_selected_cells,
+                              selected_cells);
+
+    cs_mesh_boundary_insert_separating_cells(mesh,
+                                             "zone_interface",
+                                             n_selected_cells,
+                                             selected_cells);
+
+    BFT_FREE(selected_cells);
+  }
+  /*! [mesh_boundary_cells] */
 }
 
 /*----------------------------------------------------------------------------*/

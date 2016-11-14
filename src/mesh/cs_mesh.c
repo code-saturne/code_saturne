@@ -1477,6 +1477,29 @@ _discard_free_vertices(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
+ * Remove selector and associated structures.
+ *
+ * mesh       <-> pointer to a mesh structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_free_selectors(cs_mesh_t  *mesh)
+{
+  if (mesh->select_cells != NULL)
+    mesh->select_cells = fvm_selector_destroy(mesh->select_cells);
+  if (mesh->select_i_faces != NULL)
+    mesh->select_i_faces = fvm_selector_destroy(mesh->select_i_faces);
+  if (mesh->select_b_faces != NULL)
+    mesh->select_b_faces = fvm_selector_destroy(mesh->select_b_faces);
+
+  /* Destroy group class set after selectors, who reference it */
+
+  if (mesh->class_defs != NULL)
+    mesh->class_defs
+      = fvm_group_class_set_destroy(mesh->class_defs);
+}
+
+/*----------------------------------------------------------------------------
  * Prepare local processor count for mesh stats.
  *
  * parameters:
@@ -1641,7 +1664,7 @@ _print_mesh_group_stats(const cs_mesh_t  *mesh)
     bft_printf(_("\n Groups:\n"));
 
     for (i = 0; i < mesh->n_groups; i++) {
-      bft_printf("    \"%s\"\n", mesh->group_lst + (mesh->group_idx[i] - 1));
+      bft_printf("    \"%s\"\n", mesh->group + mesh->group_idx[i]);
       if (n_elt_groups[i*4] > 0)
         bft_printf(_("       cells:          %12llu\n"),
                    (unsigned long long)(n_elt_groups[i*4]));
@@ -2190,7 +2213,7 @@ cs_mesh_create(void)
 
   mesh->n_groups = 0;
   mesh->group_idx = NULL;
-  mesh->group_lst = NULL;
+  mesh->group = NULL;
 
   mesh->n_max_family_items = 0;
   mesh->n_families = 0;
@@ -2243,7 +2266,7 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   BFT_FREE(mesh->global_vtx_num);
 
   BFT_FREE(mesh->group_idx);
-  BFT_FREE(mesh->group_lst);
+  BFT_FREE(mesh->group);
 
   BFT_FREE(mesh->family_item);
   BFT_FREE(mesh->cell_family);
@@ -2313,18 +2336,7 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
 
   /* Free selection structures */
 
-  if (mesh->select_cells != NULL)
-    mesh->select_cells = fvm_selector_destroy(mesh->select_cells);
-  if (mesh->select_i_faces != NULL)
-    mesh->select_i_faces = fvm_selector_destroy(mesh->select_i_faces);
-  if (mesh->select_b_faces != NULL)
-    mesh->select_b_faces = fvm_selector_destroy(mesh->select_b_faces);
-
-  /* Destroy group class set after selectors, who reference it */
-
-  if (mesh->class_defs != NULL)
-    mesh->class_defs
-      = fvm_group_class_set_destroy(mesh->class_defs);
+  _free_selectors(mesh);
 }
 
 /*----------------------------------------------------------------------------
@@ -3041,7 +3053,7 @@ fvm_group_class_set_t *
 cs_mesh_create_group_classes(cs_mesh_t  *mesh)
 {
   int  i, j;
-  int  grp_nbr, grp_num, grp_idx;
+  int  grp_nbr, grp_num;
 
   char **group = NULL;
 
@@ -3055,13 +3067,12 @@ cs_mesh_create_group_classes(cs_mesh_t  *mesh)
 
     grp_nbr  = 0;
 
-    for (j = 0; j <  mesh->n_max_family_items; j++) {
+    for (j = 0; j < mesh->n_max_family_items; j++) {
 
       if (mesh->family_item[j * mesh->n_families + i] < 0) {
         /* Fortran formulation */
         grp_num = -mesh->family_item[j*mesh->n_families + i] -1;
-        grp_idx = mesh->group_idx[grp_num];
-        group[grp_nbr++] = mesh->group_lst + grp_idx -1;
+        group[grp_nbr++] = mesh->group + mesh->group_idx[grp_num];
       }
 
     }
@@ -3134,6 +3145,20 @@ cs_mesh_init_selectors(void)
                           cs_glob_mesh_quantities->i_face_cog,
                           cs_glob_mesh_quantities->i_face_normal);
 
+}
+
+/*----------------------------------------------------------------------------
+ * Update selector and associated structures.
+ *
+ * parameters:
+ *   mesh  <-> pointer to a mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_update_selectors(cs_mesh_t  *mesh)
+{
+  _free_selectors(mesh);
+  cs_mesh_init_selectors();
 }
 
 /*----------------------------------------------------------------------------

@@ -242,7 +242,7 @@ cs_selector_get_b_face_list(const char  *criteria,
 
     cs_mesh_t *mesh = cs_glob_mesh;
 
-    bool del_class_defs = (mesh->class_defs != NULL) ? true : false;
+    bool del_class_defs = (mesh->class_defs == NULL) ? true : false;
 
     cs_mesh_init_group_classes(mesh);
 
@@ -318,7 +318,7 @@ cs_selector_get_i_face_list(const char  *criteria,
 
     cs_mesh_t *mesh = cs_glob_mesh;
 
-    bool del_class_defs = (mesh->class_defs != NULL) ? true : false;
+    bool del_class_defs = (mesh->class_defs == NULL) ? true : false;
 
     cs_mesh_init_group_classes(mesh);
 
@@ -395,7 +395,7 @@ cs_selector_get_cell_list(const char  *criteria,
 
     cs_mesh_t *mesh = cs_glob_mesh;
 
-    bool del_class_defs = (mesh->class_defs != NULL) ? true : false;
+    bool del_class_defs = (mesh->class_defs == NULL) ? true : false;
 
     cs_mesh_init_group_classes(mesh);
 

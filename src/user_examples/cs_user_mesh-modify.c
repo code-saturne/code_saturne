@@ -53,6 +53,7 @@
 #include "fvm_selector.h"
 
 #include "cs_base.h"
+#include "cs_mesh_boundary.h"
 #include "cs_join.h"
 #include "cs_join_perio.h"
 #include "cs_mesh.h"
@@ -60,7 +61,6 @@
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_extrude.h"
 #include "cs_mesh_smoother.h"
-#include "cs_mesh_thinwall.h"
 #include "cs_mesh_warping.h"
 #include "cs_parall.h"
 #include "cs_post.h"
@@ -170,6 +170,39 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
   }
   /*! [mesh_modify_extrude_1] */
+
+  /* Add groups to given cells */
+
+  /*! [mesh_modify_extrude_1] */
+
+  /* Add a group to cells in a given region */
+
+  /*! [mesh_modify_groups_1] */
+  {
+    cs_lnum_t   n_selected_cells = 0;
+    cs_lnum_t  *selected_cells = NULL;
+
+    const char criteria[] = "box[0.5, 0.5, 0, 1, 1, 0.05]";
+
+    BFT_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
+
+    cs_selector_get_cell_list(criteria,
+                              &n_selected_cells,
+                              selected_cells);
+
+    cs_mesh_group_cells_add(mesh,
+                            "source_region",
+                            n_selected_cells,
+                            selected_cells);
+
+    BFT_FREE(selected_cells);
+
+    /* Mark mesh as modified to save it */
+
+    mesh->modified = 1;
+  }
+  /*! [mesh_modify_groups_1] */
+
 
 }
 
