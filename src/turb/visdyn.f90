@@ -109,10 +109,10 @@ double precision coef, radeux, deux, delta, deltaf
 double precision s11, s22, s33, s11f, s22f, s33f
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision dudyf, dudzf, dvdxf, dvdzf, dwdxf, dwdyf
-double precision xfil, xa, xb, xfil2, xsmgmx
+double precision xfil, xa, xb, xfil2, xsmgmx, xsmgmn
 double precision xl11, xl22, xl33, xl12, xl13, xl23
 double precision xm11, xm22, xm33, xm12, xm13, xm23
-double precision smagma, smagmn, smagmy
+double precision smagma, smagmi, smagmy
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
@@ -153,6 +153,7 @@ xb     = bles
 deux   = 2.d0
 radeux = sqrt(deux)
 xsmgmx = smagmx
+xsmgmn = smagmn
 
 ! Allocate some work arrays
 
@@ -372,7 +373,7 @@ call les_filter(1, w2, w4)
 
 do iel = 1, ncel
   if(abs(w4(iel)).le.epzero) then
-    cpro_smago(iel) = xsmgmx**2
+    cpro_smago(iel) = xsmgmx
   else
     cpro_smago(iel) = w3(iel)/w4(iel)
   endif
@@ -387,11 +388,11 @@ call ussmag                                                       &
 
 iclipc = 0
 do iel = 1, ncel
-  if(cpro_smago(iel).ge.xsmgmx**2) then
-    cpro_smago(iel) = xsmgmx**2
+  if(cpro_smago(iel).ge.xsmgmx) then
+    cpro_smago(iel) = xsmgmx
     iclipc = iclipc + 1
-  elseif(cpro_smago(iel).le.-xsmgmx**2) then
-    cpro_smago(iel) = -xsmgmx**2
+  elseif(cpro_smago(iel).le.xsmgmn) then
+    cpro_smago(iel) = xsmgmn
     iclipc = iclipc + 1
   endif
 enddo
@@ -414,23 +415,23 @@ call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 if (vcopt%iwarni.ge.1) then
 
   smagma = -1.0d12
-  smagmn =  1.0d12
+  smagmi =  1.0d12
   smagmy =  0.d0
   do iel = 1, ncel
     smagma = max(smagma,cpro_smago(iel))
-    smagmn = min(smagmn,cpro_smago(iel))
+    smagmi = min(smagmi,cpro_smago(iel))
     smagmy = smagmy + cpro_smago(iel)*volume(iel)
   enddo
   if (irangp.ge.0) then
     call parmax(smagma)
-    call parmin(smagmn)
+    call parmin(smagmi)
     call parsom(smagmy)
     call parcpt(iclipc)
   endif
   smagmy = smagmy / voltot
   write(nfecra,1000) iclipc
   write(nfecra,2001)
-  write(nfecra,2002) smagmy, smagmn, smagma
+  write(nfecra,2002) smagmy, smagmi, smagma
   write(nfecra,2003)
 
 endif

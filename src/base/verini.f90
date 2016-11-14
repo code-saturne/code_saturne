@@ -1337,6 +1337,10 @@ if (itytur.eq.4) then
       write(nfecra,2511) 'SMAGMX', smagmx
       iok = iok + 1
     endif
+    if (smagmx.lt.smagmn) then
+      write(nfecra,2512) smagmn, smagmx
+      iok = iok + 1
+    endif
   endif
 endif
 
@@ -2782,6 +2786,23 @@ endif
 '@    =========',                                               /,&
 '@',    a6,' DOIT ETRE UN REEL POSITIF',                        /,&
 '@    IL VAUT ICI', e14.5,                                      /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute.',                           /,&
+'@',                                                            /,&
+'@  Verifier les parametres donnes via l''interface',           /,&
+'@    ou cs_user_parameters.f90.',                              /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 2512 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@     SMAGMX DOIT ETRE SUPERIEUR OU EGAL A 0. ET',             /,&
+'@                     INFERIEUR OU EGAL A SMAGMN',             /,&
+'@      ICI SMAGMN = ', e14.5,     ' ET SMAGMX = ', e14.5,      /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
@@ -5248,6 +5269,23 @@ endif
 '@    =========',                                               /,&
 '@',    a6,' DOIT ETRE A POSITIVE REAL',                        /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
+'@',                                                            /,&
+'@   The calculation could NOT run.',                           /,&
+'@',                                                            /,&
+'@ Check the input data given through the User Interface',      /,&
+'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 2512 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@       SMAGMX must be > or =  0.     and',                    /,&
+'@              SMAGMN must be  < or = SMAGMX',                 /,&
+'@      Here SMAGMN = ', e14.5,     ' and SMAGMX = ', e14.5,    /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&

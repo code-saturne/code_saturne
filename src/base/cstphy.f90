@@ -652,14 +652,20 @@ module cstphy
   double precision, save :: xlesfd
 
   !> maximum allowed value for the variable \f$C\f$ appearing in the LES dynamic
-  !> model (the "square" comes from the fact that the
-  !> variable of the dynamic model corresponds to the square of the
-  !> constant of the Smagorinsky model).
+  !> model.
   !> Any larger value yielded by the calculation
-  !> procedure of the dynamic model will be clipped to \f$ smagmx^2\f$.
+  !> procedure of the dynamic model will be clipped to \f$ smagmx\f$.
   !>
   !> Useful if and only if \ref iturb = 41
   double precision, save :: smagmx
+
+  !> minimum allowed value for the variable \f$C\f$ appearing in the LES dynamic
+  !> model.
+  !> Any smaller value yielded by the calculation
+  !> procedure of the dynamic model will be clipped to \f$ smagmn\f$.
+  !>
+  !> Useful if and only if \ref iturb = 41
+  double precision, save :: smagmn
 
   !> van Driest constant appearing in the van Driest damping function
   !> applied to the Smagorinsky constant:

@@ -971,7 +971,8 @@ bles   = 1.d0/3.d0
 csmago = 0.065d0
 cwale  = 0.25d0
 xlesfd = 1.5d0
-smagmx = 10.d0*csmago
+smagmx = csmago**2
+smagmn = 0.
 cdries = 26.d0
 
 !   pour le v2f phi-model

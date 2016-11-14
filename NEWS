@@ -5,6 +5,8 @@ Trunk (unreleased)
 Physical modelling
 ------------------
 
+- modification of the LES dynamic Smagorinsky clippings.
+
 - Add a convection-diffusion equation solver for additional vector variables.
 
 - Add internal coupling for scalars of two domains (for instance temperature
