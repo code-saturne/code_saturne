@@ -333,6 +333,17 @@ cs_internal_coupling_add_volume(cs_mesh_t  *mesh,
                                 const char criteria_cells[]);
 
 /*----------------------------------------------------------------------------
+ * Define coupling volume using given criterias. Then, this volume has been
+ * seperated from the rest of the domain with a thin wall.
+ *
+ * parameters:
+ *   mesh           <-> pointer to mesh structure to modify
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add_volumes_finalize(cs_mesh_t   *mesh);
+
+/*----------------------------------------------------------------------------
  * Define coupling entity using given criterias
  *
  * parameters:

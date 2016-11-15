@@ -47,6 +47,7 @@
 
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
+#include "cs_internal_coupling.h"
 #include "cs_join.h"
 #include "cs_log.h"
 #include "cs_map.h"
@@ -323,6 +324,9 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   /* Print info on mesh */
 
   cs_mesh_print_info(cs_glob_mesh, _("Mesh"));
+
+  /* Second pass to define internal coupling locators */
+  cs_internal_coupling_add_volumes_finalize(cs_glob_mesh);
 
   /* Second way of defining internal coupling */
   cs_user_internal_coupling_from_disjoint_meshes(cs_glob_mesh);
