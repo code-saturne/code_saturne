@@ -31,22 +31,24 @@
 
   The Hydrogeology module of \CS is a numerical model for water flow and solute
   transport in continuous porous media. The flow part is based on the Richards
-  equation, derived from the Darcy law and the conservation of mass. The transport
-  part is based on the the classical advection-diffusion equation, slightly
-  modified to account the specificities of underground transport.
+  equation, derived from the Darcy law and the conservation of mass. The
+  transport part is based on the the classical advection-diffusion equation,
+  slightly modified to account the specificities of underground transport.
 
-  This module can be used to simulate transferts of water and solutes in several
+  This module can be used to simulate transfers of water and solutes in several
   saturated and/or unsaturated porous media. The flow part can be steady or
   unsteady, with scalar or tensorial permeabilities and allows any type of soil
   water retention model, such as the van Genuchten model. The transport part
-  considers dispersion, sorption and radioactive decay.
+  considers dispersion, sorption and radioactive decay. The partition between
+  soil and water phases can be modeled by a classical Kd approach or
+  alternative EK (equilibrium-kinetic) model.
 
   Physical concepts and equations are presented in the \ref theory guide.
 
   The groundwater flow module is recent, and thus, has few limitations:
   - The weighted gradient computation, required for tetrahedral meshes and high
     permeability ratio, can only be used for isotropic soils.
-  - only one solute with anisotropic dispersion can be treated.
+  - Only one solute with anisotropic dispersion can be treated.
 
   \section richards_activ Activation of the module
 
@@ -97,6 +99,11 @@
 
   \snippet cs_user_parameters-richards.f90 richards_steady
 
+  The partition between solid and liquid phases can be modelled by a classical
+  Kd approach or alternative EK (equilibrium-kinetic) model.
+
+  \snippet cs_user_parameters-richards.f90 richards_partition
+
   \section richards_numerics Numerical parameters
 
   Specific numerical parameters can be set in \ref usipsu routine of \ref
@@ -106,15 +113,16 @@
   \subsection richards_numerics_flow Flow part
 
   In the case of soils of very different permeabilities, the resolution of the
-  Richards equation requires a weighted gradient computation for tetrahedral meshes.
+  Richards equation requires a weighted gradient computation for tetrahedral
+  meshes.
   This option is only available for soils with isotropic permeabilities
-  (\ref darcy_anisotropic_permeability = 0) for now. It as to be coupled with the
-  standard least squares gradient recontruction.
+  (\ref darcy_anisotropic_permeability = 0) for now.
 
   \snippet cs_user_parameters-richards.f90 richards_iwgrec
 
-  It is recommended to choose low criteria for gradient reconstruction in order to
-  obtain a smooth darcian velocity field for the transport part. For instance:
+  It is recommended to choose low criteria for gradient reconstruction in order
+  to obtain a smooth darcian velocity field for the transport part. For
+  instance:
 
   \snippet cs_user_parameters-richards.f90 richards_num_flow
 
@@ -223,10 +231,12 @@
 
   \snippet cs_user_physical_properties-richards_unsat.f90 richards_unsat_aniso_disp
 
-  Note that the sorption is considered as a delay with the K_d hypothesis.
-  It is then computed as follow:
+  Sorption models need some parameters. Note that it is necessary to set soil
+  density to compute the delay in both Kd and EK sorption approaches.
 
-  \snippet cs_user_physical_properties-richards_unsat.f90 richards_unsat_sorp
+  \snippet cs_user_physical_properties-richards_unsat.f90 richards_unsat_soilwater_partition
+
+  \section richards_source Source terms
 
   \subsection richards_phys_prop_decay Radioactive decay
 
@@ -234,6 +244,12 @@
   An example can be found in \ref cs_user_source_terms-richards_decay.f90:
 
   \snippet cs_user_source_terms-richards_decay.f90 richards_decay
+
+  \subsection richards_phys_prop_decay Chemicals release
+
+  Substances can be gradually released within the soil.
+
+  \snippet cs_user_source_terms-richards_decay.f90 richards_lixiviate
 
   \section richards_init Initialisation
 
@@ -245,6 +261,10 @@
   or by selecting a precise soil:
 
   \snippet cs_user_initialization-richards.f90 richards_init_grp
+
+  If EK model is considered, sorbed concentration must be initialized.
+
+  \snippet cs_user_initialization-richards.f90 richards_init_sorb
 
   \section richards_bound_cond Boundary conditions
 

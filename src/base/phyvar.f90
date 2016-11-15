@@ -170,7 +170,7 @@ call usphyv &
 
 ! Finalization of physical properties for specific physics
 ! AFTER the user
-if (ippmod(iphpar).ge.1) then
+if (ippmod(iphpar).ge.1 .or. ippmod(idarcy).ge.1) then
   call cs_physical_properties2
 endif
 

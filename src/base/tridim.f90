@@ -161,14 +161,14 @@ double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt
 
 ! Darcy
 integer mbrom
-integer, allocatable, dimension(:) :: delay_id
 double precision, dimension(:), pointer :: cpro_delay, cpro_capacity, cpro_sat
 double precision, dimension(:), pointer :: cproa_delay, cproa_capacity
 double precision, dimension(:), pointer :: cproa_sat
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
-character(len=80) :: fname
 
 double precision, dimension(:), pointer :: coefap, cofafp, cofbfp
+
+type(gwf_soilwater_partition) :: sorption_scal
 
 type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
 
@@ -682,17 +682,6 @@ endif
 
 if (ippmod(idarcy).eq.1) then
 
-  if (nscal.gt.0) then
-    allocate(delay_id(nscal))
-  endif
-
-  do ii = 1, nscal
-
-    call field_get_name(ivarfl(isca(ii)), fname)
-    call field_get_id(trim(fname)//'_delay', delay_id(ii))
-
-  enddo
-
   ! Index of the corresponding field
   call field_get_val_prev_s_by_name('capacity', cproa_capacity)
   call field_get_val_prev_s_by_name('saturation', cproa_sat)
@@ -705,8 +694,11 @@ if (ippmod(idarcy).eq.1) then
   enddo
 
   do ii = 1, nscal
-    call field_get_val_prev_s(delay_id(ii), cproa_delay)
-    call field_get_val_s(delay_id(ii), cpro_delay)
+    ivar = ivarfl(isca(ii))
+    call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(ii)), &
+                                                      sorption_scal)
+    call field_get_val_s(sorption_scal%idel, cpro_delay)
+    call field_get_val_prev_s(sorption_scal%idel, cproa_delay)
     do iel = 1, ncel
       cproa_delay(iel) = cpro_delay(iel)
     enddo
@@ -1324,8 +1316,6 @@ do while (iterns.le.nterup)
 
     deallocate(icodcl, rcodcl)
 
-    if (allocated(delay_id)) deallocate(delay_id)
-
     deallocate(isostd)
 
     return
@@ -1392,8 +1382,10 @@ do while (iterns.le.nterup)
         enddo
 
         do ii = 1, nscal
-          call field_get_val_prev_s(delay_id(ii), cproa_delay)
-          call field_get_val_s(delay_id(ii), cpro_delay)
+          call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(ii)), &
+                                                            sorption_scal)
+          call field_get_val_s(sorption_scal%idel, cpro_delay)
+          call field_get_val_prev_s(sorption_scal%idel, cproa_delay)
           do iel = 1, ncel
             cproa_delay(iel) = cpro_delay(iel)
           enddo
@@ -1739,8 +1731,6 @@ endif
 
 ! Free memory
 deallocate(icodcl, rcodcl)
-
-if (allocated(delay_id)) deallocate(delay_id)
 
 deallocate(isostd)
 

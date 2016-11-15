@@ -76,6 +76,8 @@ use cs_coal_incl
 use cs_fuel_incl
 use mesh
 use field
+use cs_c_bindings
+use darcy_module
 
 !===============================================================================
 
@@ -90,8 +92,11 @@ double precision :: dt(ncelet)
 !< [loc_var_dec]
 integer :: iel, icelt, ncelt
 integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer :: cvar_scal_1, cvar_scal_2, cvar_pr
+double precision, dimension(:), pointer :: cvar_scal_1, cvar_scal_2
+double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:,:), pointer :: cvar_vel
+double precision, dimension(:), pointer :: csorb
+type(gwf_soilwater_partition) :: sorption_sca1
 !< [loc_var_dec]
 
 !===============================================================================
@@ -118,6 +123,9 @@ if (isuite.eq.0) then
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_v(ivarfl(iu), cvar_vel)
 
+  call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
+                                                    sorption_sca1)
+
 !< [richards_init_cell]
 ! Global initialisation
   do iel = 1, ncel
@@ -143,8 +151,18 @@ if (isuite.eq.0) then
     iel = lstelt(icelt)
     cvar_scal_1(iel) = 1.d0
   enddo
-endif
 !< [richards_init_grp]
+
+!< [richards_init_sorb]
+! Index field of sorbed concentration
+  call field_get_val_s(sorption_sca1%isorb, csorb)
+  do iel = 1, ncel
+    ! no initial contamination of sorbed phase
+    csorb(iel) = 0.d0
+  enddo
+!< [richards_init_sorb]
+
+endif
 
 !< [finalize]
 deallocate(lstelt)  ! temporary array for cells selection

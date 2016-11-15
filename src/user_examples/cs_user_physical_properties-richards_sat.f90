@@ -52,6 +52,7 @@ use ppthch
 use ppincl
 use field
 use mesh
+use cs_c_bindings
 use darcy_module
 
 !===============================================================================
@@ -75,25 +76,24 @@ integer          ncelt, icelt, ifcvsl
 character*80     fname
 
 integer, allocatable, dimension(:) :: lstcel
-integer, allocatable, dimension(:) :: delay_id
-double precision, dimension(:), pointer :: delay, capacity, permeability
+double precision, dimension(:), pointer :: kd, capacity, permeability
 double precision, dimension(:,:), pointer :: tensor_permeability
 double precision, dimension(:), pointer :: cpro_vscalt, saturation
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_pr
 
+type(gwf_soilwater_partition) :: sorption_scal
+
 !===============================================================================
 ! Initialisation
 !===============================================================================
 
-! Initialisation of delay table for each solute
-allocate(delay_id(nscal))
-do ii = 1, nscal
-  ! Name of the scalar ivar
-  call field_get_name(ivarfl(isca(ii)), fname)
-  ! Index of the corresponding field
-  call field_get_id(trim(fname)//'_delay', delay_id(ii))
-enddo
+! Index field for soilwater_partition structure
+call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
+                                                  sorption_scal)
+
+! Index field for kd
+call field_get_val_s(sorption_scal%ikd, kd)
 
 ! Index field for the capacity table (C = grad(theta)/grad(h))
 call field_get_val_s_by_name('capacity', capacity)
@@ -180,9 +180,6 @@ enddo
 ! Loop on solute
 do ii = 1, nscal
 
-  ! Index field for delay
-  call field_get_val_s(delay_id(ii), delay)
-
   ! Index field for diffusion (dispersion and molecular diffusion) for the transport part
   call field_get_key_int(ivarfl(isca(ii)), kivisl, ifcvsl)
   if (ifcvsl.ge.0) then
@@ -220,13 +217,11 @@ do ii = 1, nscal
 
   ! No delay for both soils
   do iel = 1, ncel
-    delay(iel) = 1.d0
+    kd(iel) = 0.d0
   enddo
   !< [richards_flow_solut]
 
 enddo
-
-deallocate(delay_id)
 
 !===============================================================================
 

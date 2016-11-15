@@ -166,7 +166,7 @@ double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp, dvar, cprovol, prod, expkdt
-double precision temp, idifftp, roskpl, kminus, kplskm
+double precision temp, idifftp, roskpl, kplskm
 
 double precision rvoid(1)
 
@@ -202,12 +202,13 @@ double precision, dimension(:), pointer :: cpro_delay, cpro_sat
 double precision, dimension(:), pointer :: cproa_delay, cproa_sat
 double precision, dimension(:), pointer :: cvar_var, cvara_var, cvara_varsca
 double precision, dimension(:), pointer :: cpro_rosoil, cpro_sorb
+double precision, dimension(:), pointer :: kplus, kminus
 ! Radiat arrays
 double precision, dimension(:), pointer :: cpro_tsre1, cpro_tsre, cpro_tsri1
 character(len=80) :: f_name
 
 type(var_cal_opt) :: vcopt, vcopt_varsc
-type(gwf_sorption_model) :: sorption_scal
+type(gwf_soilwater_partition) :: sorption_scal
 
 !===============================================================================
 
@@ -1034,16 +1035,17 @@ else
 endif
 
 if (ippmod(idarcy).eq.1) then
-  call field_get_name(ivarfl(ivar), fname)
-  call field_get_id(trim(fname)//'_delay', delay_id)
-  call field_get_val_s(delay_id, cpro_delay)
-  call field_get_val_prev_s(delay_id, cproa_delay)
+  call field_get_key_struct_gwf_soilwater_partition(ivarfl(ivar), sorption_scal)
+  call field_get_val_s(sorption_scal%idel, cpro_delay)
+  call field_get_val_prev_s(sorption_scal%idel, cproa_delay)
   call field_get_val_prev_s_by_name('saturation', cproa_sat)
   call field_get_val_s_by_name('saturation', cpro_sat)
-  call field_get_key_struct_gwf_sorption_model(ivarfl(ivar), sorption_scal)
+
   if (sorption_scal%kinetic.eq.1) then
     call field_get_val_s_by_name('soil_density', cpro_rosoil)
-    call field_get_val_s_by_name(trim(fname)//'_sorb_conc', cpro_sorb)
+    call field_get_val_s(sorption_scal%ikp, kplus)
+    call field_get_val_s(sorption_scal%ikm, kminus)
+    call field_get_val_s(sorption_scal%isorb, cpro_sorb)
   endif
 endif
 
@@ -1065,26 +1067,23 @@ else
   enddo
   !treatment of kinetic sorption
   if (sorption_scal%kinetic.eq.1) then
-    !case of irreversible sorption
-    kminus = sorption_scal%kminus
-    kplskm = sorption_scal%kplus/kminus
-    if (kminus.eq.0) then
-      do iel = 1,ncel
-        roskpl = cpro_rosoil(iel)*sorption_scal%kplus
-        smbrs(iel) = smbrs(iel) - volume(iel)/dt(iel)*roskpl*cvar_var(iel)
-        rovsdt(iel) = rovsdt(iel) + volume(iel)/dt(iel)*roskpl*cvar_var(iel)
-      enddo
-    !general case (reversible sorption)
-    else
-      do iel = 1,ncel
-        expkdt = exp(-kminus*dt(iel))
+    do iel = 1,ncel
+      !case of irreversible sorption
+      if (kminus(iel).gt.epzero) then
+        expkdt = exp(-kminus(iel)*dt(iel))
+        kplskm = kplus(iel)/kminus(iel)
         smbrs(iel) = smbrs(iel)   - volume(iel)/dt(iel)*cpro_rosoil(iel)   &
                                    *(1-expkdt)                             &
                                    *(kplskm *cvar_var(iel)-cpro_sorb(iel))
         rovsdt(iel) = rovsdt(iel) + volume(iel)/dt(iel)*cpro_rosoil(iel)   &
                                    *(1-expkdt)*kplskm
-      enddo
-    endif
+      !general case (reversible sorption)
+      else
+        roskpl = cpro_rosoil(iel)*kplus(iel)
+        smbrs(iel) = smbrs(iel) - volume(iel)/dt(iel)*roskpl*cvar_var(iel)
+        rovsdt(iel) = rovsdt(iel) + volume(iel)/dt(iel)*roskpl*cvar_var(iel)
+      endif
+    enddo
   endif
 endif
 
@@ -1194,20 +1193,6 @@ call codits &
    icvflb , ivoid  ,                                              &
    rovsdt , smbrs  , cvar_var        , dpvar  ,                   &
    xcpp   , rvoid  )
-
-!update of sorbed concentration (implicit case)
-if (ippmod(idarcy).eq.1 .and. sorption_scal%kinetic.eq.1) then
-  do iel = 1,ncel
-    if (sorption_scal%kminus.eq.0) then
-      cpro_sorb(iel) = cpro_sorb(iel) + dt(iel)*sorption_scal%kplus           &
-                                       *cvar_var(iel)
-    else
-      expkdt = exp(-sorption_scal%kminus*dt(iel))
-      cpro_sorb(iel) =  expkdt*cpro_sorb(iel) - (expkdt-1.d0)                 &
-                       *sorption_scal%kplus/sorption_scal%kminus*cvar_var(iel)
-    endif
-  enddo
-endif
 
 !===============================================================================
 ! 4. Writing and clipping

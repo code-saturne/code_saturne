@@ -1,5 +1,5 @@
 /*============================================================================
- * General parameters management.
+ * General parameters management for groundwater flow module.
  *============================================================================*/
 
 /*
@@ -82,12 +82,17 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-static cs_gwf_sorption_model_t _gwf_sorption_model =
+/* soilwater partition model structure */
+
+static cs_gwf_soilwater_partition_t
+_gwf_soilwater_partition =
 {
-  0,    /* sorption kinetic                        */
-  0.,   /*                    */
-  0.,   /*                    */
-  0.,   /*                    */
+  .kinetic =  0, /* 0: Kd model, 1: EK model */
+  .ikd     = -1,
+  .idel    = -1,
+  .ikp     = -1,
+  .ikm     = -1,
+  .isorb   = -1
 };
 
 /*============================================================================
@@ -97,15 +102,16 @@ static cs_gwf_sorption_model_t _gwf_sorption_model =
 /* Log default values of the structure */
 
 static void
-_log_func_gwf_sorption_model(const void *t)
+_log_func_gwf_soilwater_partition(const void *t)
 {
   const char fmt_i[] = N_("      %-19s  %-4d\n");
-  const char fmt_r[] = N_("      %-23s  %-12.3g\n");
-  const cs_gwf_sorption_model_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "kinetic sorption      ", _t->kinetic);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "kd                    ", _t->kd);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "kminus                ", _t->kminus);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "kplus                 ", _t->kplus);
+  const cs_gwf_soilwater_partition_t *_t = (const void *)t;
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "kinetic ", _t->kinetic);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikd     ", _t->ikd);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idel    ", _t->idel);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikp     ", _t->ikp);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikm     ", _t->ikm);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "isorb   ", _t->isorb);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -116,19 +122,17 @@ _log_func_gwf_sorption_model(const void *t)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define field key for sorption model.
+ * \brief Define field key for soilwater partition model.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_parameters_define_field_key_sorption(void)
+cs_gwf_parameters_define_field_key_soilwater_partition(void)
 {
-  /* Structure containing physical properties relative to
-     species scalars used for sorption modelling */
-  cs_field_define_key_struct("gwf_sorption_model",
-                             &_gwf_sorption_model,
-                             _log_func_gwf_sorption_model,
-                             sizeof(cs_gwf_sorption_model_t),
+  cs_field_define_key_struct("gwf_soilwater_partition",
+                             &_gwf_soilwater_partition,
+                             _log_func_gwf_soilwater_partition,
+                             sizeof(cs_gwf_soilwater_partition_t),
                              0);
  }
 

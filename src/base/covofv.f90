@@ -129,7 +129,6 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap, ivissv
 integer          idftnp, iswdyp
 integer          iflid , st_prv_id, st_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
-integer          delay_id
 
 integer          ivoid(1)
 
@@ -164,6 +163,8 @@ double precision, dimension(:), pointer :: cproa_delay, cproa_sat
 double precision, dimension(:,:), pointer :: cvar_var, cvara_var
 
 type(var_cal_opt) :: vcopt
+
+type(gwf_soilwater_partition) :: sorption_scal
 
 !===============================================================================
 
@@ -509,10 +510,9 @@ else
 endif
 
 if (ippmod(idarcy).eq.1) then
-  call field_get_name(ivarfl(isca(iscal)), fname)
-  call field_get_id(trim(fname)//'_delay', delay_id)
-  call field_get_val_s(delay_id, cpro_delay)
-  call field_get_val_prev_s(delay_id, cproa_delay)
+  call field_get_key_struct_gwf_soilwater_partition(ivarfl(ivar), sorption_scal)
+  call field_get_val_s(sorption_scal%idel, cpro_delay)
+  call field_get_val_prev_s(sorption_scal%idel, cproa_delay)
   call field_get_val_prev_s_by_name('saturation', cproa_sat)
   call field_get_val_s_by_name('saturation', cpro_sat)
 endif

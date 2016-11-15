@@ -117,18 +117,14 @@ double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 
-character*80     chaine
+character(len=80) ::  chaine
+
 integer          iiscvr,  iel
-integer          ilelt, nlelt
+integer          icelt, ncelt
+integer, allocatable, dimension(:) :: lstcel
 
-double precision lambda
-
-integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer ::  cpro_rom
-
-integer delay_id
+double precision lambda, leach_time, volume_alveole
 double precision, dimension(:), pointer :: delay, saturation
-character*80     fname
 
 type(var_cal_opt) :: vcopt
 
@@ -137,7 +133,7 @@ type(var_cal_opt) :: vcopt
 ! In groundwater module flow, the radioactive decay of solute is treated as a
 ! source term in the transport equation
 
-allocate(lstelt(ncel))
+allocate(lstcel(ncel))
 
 call field_get_label(ivarfl(isca(iscal)), chaine)
 
@@ -148,6 +144,10 @@ call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
 if (vcopt%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
+
+!===================
+! Radioactive decay
+!===================
 
 !< [richards_decay]
 ! Set the first order decay coefficient
@@ -161,9 +161,34 @@ if (isca(iscal).eq.1) then
 endif
 !< [richards_decay]
 
+!======================
+! Leaching
+!======================
+
+!< [richards_leaching]
+! Leaching from a group of volume
+! Set the duration of leaching
+leach_time = 1.d2
+
+call getcel('ALVEOLE', ncelt, lstcel)
+
+! Compute the source term
+do icelt = 1, ncelt
+  iel = lstcel(icelt)
+  !Progressive leaching
+  if (ttcabs.lt.leach_time) then
+    crvexp(iel) = 1. / leach_time * volume(iel) / volume_alveole &
+         * exp(-lambda*ttcabs) / saturation(iel) / delay(iel)
+  else
+    crvexp(iel) = 0.d0
+  endif
+enddo
+!< [richards_leaching]
+
+
  1000 format(' User source terms for variable ',A8,/)
 
-deallocate(lstelt)
+deallocate(lstcel)
 
 return
 end subroutine ustssc

@@ -246,7 +246,8 @@ implicit none
 
 ! Local variables
 
-type(gwf_sorption_model) :: sorption_sca1
+double precision, dimension(:), pointer :: kd, kplus, kminus
+type(gwf_soilwater_partition) :: sorption_sca1
 
 !----------
 ! Flow part
@@ -286,12 +287,17 @@ darcy_unsteady = 0
 ! Sorption model
 !---------------
 
-!< [sorption_kd]
-! Set sorption kd
-call field_get_key_struct_gwf_sorption_model(ivarfl(isca(1)), sorption_sca1)
-sorption_sca1%kd = 0.1d0
-call field_set_key_struct_gwf_sorption_model(ivarfl(isca(1)), sorption_sca1)
-!< [sorption_kd]
+!< [richards_partition]
+! Get soil-water partition structure
+call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
+                                                  sorption_sca1)
+
+! Set the sorption model to Kd approach (0) or EK model (1).
+! (Kd approach is set by default).
+sorption_sca1%kinetic = 1
+call field_set_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
+                                                  sorption_sca1)
+!< [richards_partition]
 
 return
 

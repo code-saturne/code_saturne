@@ -56,7 +56,8 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
-cs_gwf_parameters.h
+cs_gwf_parameters.h \
+cs_gwf_physical_properties.h
 
 # Library source files
 
@@ -64,7 +65,8 @@ noinst_LTLIBRARIES = libcsdarc.la
 libcsdarc_la_SOURCES = \
 daini1.f90 \
 richards.f90 \
-cs_gwf_parameters.c
+cs_gwf_parameters.c \
+cs_gwf_physical_properties.c
 libcsdarc_la_LDFLAGS = -no-undefined
 
 clean-local:

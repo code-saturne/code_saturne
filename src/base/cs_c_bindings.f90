@@ -95,12 +95,14 @@ module cs_c_bindings
 
   !---------------------------------------------------------------------------
 
-  type, bind(c)  :: gwf_sorption_model
+  type, bind(c)  :: gwf_soilwater_partition
     integer(c_int) :: kinetic
-    real(c_double) :: kd
-    real(c_double) :: kminus
-    real(c_double) :: kplus
-  end type gwf_sorption_model
+    integer(c_int) :: ikd
+    integer(c_int) :: idel
+    integer(c_int) :: ikp
+    integer(c_int) :: ikm
+    integer(c_int) :: isorb
+  end type gwf_soilwater_partition
 
   !---------------------------------------------------------------------------
 
@@ -2004,15 +2006,15 @@ contains
 
   !=============================================================================
 
-  !> \brief Assign a gwf_parameters_sorption_model for a
-  !> cs_gwf_sorption_model_t key to a field.
+  !> \brief Assign a gwf_soilwater_partition for a cs_gwf_soilwater_partition_t
+  !> key to a field.
 
   !> If the field category is not compatible, a fatal error is provoked.
 
   !> \param[in]   f_id     field id
   !> \param[in]   k_value  structure associated with key
 
-  subroutine field_set_key_struct_gwf_sorption_model(f_id, k_value)
+  subroutine field_set_key_struct_gwf_soilwater_partition(f_id, k_value)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2020,19 +2022,19 @@ contains
     ! Arguments
 
     integer, intent(in)                          :: f_id
-    type(gwf_sorption_model), intent(in), target :: k_value
+    type(gwf_soilwater_partition), intent(in), target :: k_value
 
     ! Local variables
 
     integer(c_int)                        :: c_f_id
-    type(gwf_sorption_model),pointer      :: p_k_value
+    type(gwf_soilwater_partition),pointer      :: p_k_value
     type(c_ptr)                           :: c_k_value
-    character(len=23+1, kind=c_char)      :: c_name
+    character(len=34+1, kind=c_char)      :: c_name
 
     integer(c_int), save           :: c_k_id = -1
 
     if (c_k_id .eq. -1) then
-      c_name = "gwf_sorption_model"//c_null_char
+      c_name = "gwf_soilwater_partition"//c_null_char
       c_k_id = cs_f_field_key_id(c_name)
     endif
 
@@ -2045,7 +2047,7 @@ contains
 
     return
 
-  end subroutine field_set_key_struct_gwf_sorption_model
+  end subroutine field_set_key_struct_gwf_soilwater_partition
 
   !=============================================================================
 
@@ -2180,15 +2182,15 @@ contains
 
   !=============================================================================
 
-  !> \brief Return a pointer to the gwf_sorption_model structure for
-  !>        cs_gwf_sorption_model_t key associated with a field.
+  !> \brief Return a pointer to the gwf_soilwater_partition structure for
+  !>        cs_gwf_soilwater_partition_t key associated with a field.
 
   !> If the field category is not compatible, a fatal error is provoked.
 
   !> \param[in]   f_id     field id
   !> \param[out]  k_value  integer value associated with key id for this field
 
-  subroutine field_get_key_struct_gwf_sorption_model (f_id, k_value)
+  subroutine field_get_key_struct_gwf_soilwater_partition(f_id, k_value)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -2196,18 +2198,18 @@ contains
     ! Arguments
 
     integer, intent(in)                             :: f_id
-    type(gwf_sorption_model), intent(inout), target :: k_value
+    type(gwf_soilwater_partition), intent(inout), target :: k_value
 
     ! Local variables
 
     integer(c_int)                        :: c_f_id, c_k_id
-    type(gwf_sorption_model),pointer      :: p_k_value
+    type(gwf_soilwater_partition),pointer      :: p_k_value
     type(c_ptr)                           :: c_k_value
-    character(len=23+1, kind=c_char)      :: c_name
+    character(len=34+1, kind=c_char)      :: c_name
 
-    c_name = "gwf_sorption_model"//c_null_char
+    c_name = "gwf_soilwater_partition"//c_null_char
+
     c_k_id = cs_f_field_key_id(c_name)
-
     c_f_id = f_id
 
     p_k_value => k_value
@@ -2217,7 +2219,7 @@ contains
 
     return
 
-  end subroutine field_get_key_struct_gwf_sorption_model
+  end subroutine field_get_key_struct_gwf_soilwater_partition
 
   !=============================================================================
 

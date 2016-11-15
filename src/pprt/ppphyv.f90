@@ -150,14 +150,11 @@ endif
 
 if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielarc).ge.1       ) then
-
 !     En Joule, on impose a l'utilisateur de programmer ses lois
 !        sur les proprietes (masse volumique , ...)
 !        Des exemples physiques sont fournis dans cs_user_physical_properties.
 !     En arc electrique, on lit un fichier de donnees et on interpole.
-
   call elphyv
-
 endif
 
 ! ---> Aerorefrigerants
@@ -171,7 +168,6 @@ endif
 if (ippmod(iatmos).ge.1) then
    call atphyv()
 endif
-
 
 !----
 ! End
@@ -206,6 +202,7 @@ use coincl
 use cpincl
 use ppincl
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -216,6 +213,22 @@ implicit none
 ! Local variables
 
 !===============================================================================
+
+interface
+
+  !---------------------------------------------------------------------------
+
+  ! Interface to C function defining groundwater flow physical properties.
+
+  subroutine cs_gwf_physical_properties()  &
+    bind(C, name='cs_gwf_physical_properties')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gwf_physical_properties
+
+  !---------------------------------------------------------------------------
+
+end interface
 
 !===============================================================================
 ! 1. Initializations
@@ -228,19 +241,23 @@ implicit none
 ! Gas mixture modelling in presence of noncondensable gases or/and
 ! condensable gas as stream.
 if (ippmod(igmix).ge.0) then
-
   call cs_gas_mix_physical_properties
-
 endif
 
 ! Compressible
-! Has to be called AFTER the gas mix physical properties the isobaric specific
+! Has to be called after the gas mix physical properties. The isobaric specific
 ! heat (Cp) is computed in cs_gas_mix_physical_properties and used in cfphyv to
 ! compute the isochoric specific heat, if gas mix specific physics is enabled.
 if (ippmod(icompf).ge.0) then
-
   call cfphyv
+endif
 
+! Ground water flows
+! Has to be called after the definition of saturation and soil density in order
+! to update the sorbed concentration (in case the kinetic sorption model is
+! enabled) and delay.
+if (ippmod(idarcy).ge.1) then
+  call cs_gwf_physical_properties
 endif
 
 

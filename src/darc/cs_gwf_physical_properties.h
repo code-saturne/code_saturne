@@ -1,8 +1,8 @@
-#ifndef __CS_GWF_PARAMETERS_H__
-#define __CS_GWF_PARAMETERS_H__
+#ifndef __CS_GWF_PHYSICAL_PROPERTIES_H__
+#define __CS_GWF_PHYSICAL_PROPERTIES_H__
 
 /*============================================================================
- * General parameters management for groundwater flow module.
+ * Physical properties management for groundwater flow module.
  *============================================================================*/
 
 /*
@@ -38,58 +38,50 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
-#include "cs_field.h"
+#include "cs_gwf_parameters.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Macro definitions
- *============================================================================*/
-
-/*============================================================================
- * Type definitions
- *============================================================================*/
-
-/* Parameter check behavior when an error is detected */
-
-/*----------------------------------------------------------------------------
- * Structure defining the sorption model
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-  int     kinetic;  /* 0 : sorption at equilibirum
-                       1 : sorption with kinetic   */
-  int     ikd;      /* id for kd */
-  int     idel;     /* id for delay */
-  int     ikp;      /* id for kplus */
-  int     ikm;      /* id for kminus */
-  int     isorb;    /* id for sorbed concentration */
-} cs_gwf_soilwater_partition_t;
-
-/*============================================================================
- * Static global variables
- *============================================================================*/
-
-/*=============================================================================
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define field key for soilwater partition model.
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Update physical properties of the Ground Water Flow module.
+ *
+ * Species transport is delayed by retention in solid phase.
+ * This delay is computed as follows:
+ * R = 1 + rho K_d/theta ;
+ * where R is the delay factor, rho the soil density,
+ * K_d the contaminant distribution coefficient and theta
+ * the moisture content (saturation).
+ *
+ *---------------------------------------------------------------------------*/
 
 void
-cs_gwf_parameters_define_field_key_soilwater_partition(void);
+cs_gwf_physical_properties(void);
+
+/*----------------------------------------------------------------------------
+ * Update sorbed concentration for scalars with kinetic sorption.
+ *
+ * It is estimated by the following analytical expression :
+ * S^{n+1} = S^n exp(- k^{-} dt) - C^n * k^{+}/k^{-}
+ * (exp(- k^{-} dt) - 1)
+ *
+ * parameters:
+ * sorp   -->   structure of soil-water partition
+ * c_scal -->   concentration field
+ *
+ *----------------------------------------------------------------------------*/
 
 void
-cs_gwf_key_init(void);
+cs_gwf_sorbed_concentration_update(cs_gwf_soilwater_partition_t sorp,
+                                   cs_real_t                   *c_scal);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_GWF_PARAMETERS_H__ */
+#endif /* __CS_GWF_PHYSICAL_PROPERTIES_H__ */

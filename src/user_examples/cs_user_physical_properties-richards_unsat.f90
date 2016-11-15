@@ -82,14 +82,15 @@ integer          ncelt, icelt, ifcvsl
 character*80     fname
 
 integer, allocatable, dimension(:) :: lstcel
-integer, allocatable, dimension(:) :: delay_id
-double precision, dimension(:), pointer :: delay, capacity, permeability, saturation
+double precision, dimension(:), pointer :: capacity, permeability
+double precision, dimension(:), pointer :: saturation, soil_density
+double precision, dimension(:), pointer :: kd, kplus, kminus
 double precision, dimension(:,:), pointer :: tensor_permeability, visten
 double precision, dimension(:), pointer :: cpro_vscalt
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_pr
 
-type(gwf_sorption_model) :: sorption_scal
+type(gwf_soilwater_partition) :: sorption_scal
 
 !===============================================================================
 
@@ -103,20 +104,14 @@ call field_get_val_s_by_name('capacity', capacity)
 ! Index field for the saturation table (theta)
 call field_get_val_s_by_name('saturation', saturation)
 
+! Index field for the soil density table (It is bulk density)
+call field_get_val_s_by_name('soil_density', soil_density)
+
 ! Index field for tensorial dipersion
 call field_get_val_v(ivsten, visten)
 
-! Initialisation of delay table for each solute
-allocate(delay_id(nscal))
-do ii = 1, nscal
-  ! Name of the scalar ivar
-  call field_get_name(ivarfl(isca(ii)), fname)
-  ! Index of the corresponding field
-  call field_get_id(trim(fname)//'_delay', delay_id(ii))
-enddo
-
-! Index field for delay
-call field_get_val_s(delay_id(1), delay)
+! Index field for soilwater_partition structure
+call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), sorption_scal)
 
 ! Index field for diffusion (dipersion and molecular diffusion) for the transport part
 call field_get_key_int(ivarfl(isca(1)), kivisl, ifcvsl)
@@ -253,18 +248,31 @@ do iel = 1, ncel
 enddo
 !< [richards_unsat_aniso_disp]
 
-!< [richards_unsat_sorp]
-! Computation of the sorption as a delay term (K_d hypothesis)
-rho = 1.5d0
-call field_get_key_struct_gwf_sorption_model(ivarfl(isca(1)), sorption_scal)
-sorption_scal%kd = 0.1d0
+!< [richards_unsat_soilwater_partition]
+! Set soil density (bulk density!) for computation of delay (delay = 1 + soil_density * K_d / theta
 do iel = 1, ncel
-  delay(iel) = 1.d0 + rho * sorption_scal%kd / saturation(iel)
+  soil_density(iel) = 1.5d0
 enddo
-call field_set_key_struct_gwf_sorption_model(ivarfl(isca(1)), sorption_scal)
-!< [richards_unsat_sorp]
 
-deallocate(delay_id)
+! Get soil-water partition structure
+call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
+                                                  sorption_scal)
+
+! Index field for kd
+call field_get_val_s(sorption_scal%ikd, kd)
+
+! Index field for EK model parameters (kplus and kminus)
+call field_get_val_s(sorption_scal%ikp, kplus)
+call field_get_val_s(sorption_scal%ikm, kminus)
+
+! Set sorption parameters
+do iel=1, ncel
+  kd(iel) = 5.d0
+  ! if EK model is chosen, set specific parameters
+  kplus(iel) =  1.d-3
+  kminus(iel) = 1.d-4
+enddo
+!< [richards_unsat_soilwater_partition]
 
 !===============================================================================
 
