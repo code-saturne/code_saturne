@@ -83,8 +83,8 @@ BEGIN_C_DECLS
  * the moisture content.
  *
  * Please refer to the
- * <a href="../../theory.pdf#gwf_sp_transp"><b>gradient reconstruction</b></a>
- * section of the theory guide for more informations.
+ * <a href="../../theory.pdf#gwf_sp_transp"><b>dedicated section</b></a>
+ * of the theory guide for more informations.
  *
  */
  /*---------------------------------------------------------------------------*/
@@ -131,7 +131,7 @@ void cs_gwf_physical_properties(void)
  *
  * It is estimated by the following analytical expression :
  * \f[
- * S^{n+1} = S^n \exp(- k^{-} \Delta t) - C^n * \dfrac{k^{+}}{k^{-}}
+ * S^{n+1} = S^n \exp(- k^{-} \Delta t) - C^n \dfrac{k^{+}}{k^{-}}
  * \left(\exp(- k^{-} \Delta t) - 1 \right)
  * \f]
  *

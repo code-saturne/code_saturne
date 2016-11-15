@@ -238,18 +238,21 @@
 
   \section richards_source Source terms
 
-  \subsection richards_phys_prop_decay Radioactive decay
+  Source terms can be added to scalar transport equation in \ref ustsns routine
+  of \ref cs_user_source_terms.f90 file.
+
+  \subsection richards_phys_prop_radio_decay Radioactive decay
 
   The radioactive decay is treated as a source term in the transport equation.
   An example can be found in \ref cs_user_source_terms-richards_decay.f90:
 
   \snippet cs_user_source_terms-richards_decay.f90 richards_decay
 
-  \subsection richards_phys_prop_decay Chemicals release
+  \subsection richards_phys_prop_chem_rel Chemicals release
 
   Substances can be gradually released within the soil.
 
-  \snippet cs_user_source_terms-richards_decay.f90 richards_lixiviate
+  \snippet cs_user_source_terms-richards_decay.f90 richards_leaching
 
   \section richards_init Initialisation
 
