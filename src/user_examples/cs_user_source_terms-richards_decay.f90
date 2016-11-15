@@ -123,7 +123,7 @@ integer          iiscvr,  iel
 integer          icelt, ncelt
 integer, allocatable, dimension(:) :: lstcel
 
-double precision lambda, leach_time, volume_alveole
+double precision lambda, leaching_time, leaching_volume
 double precision, dimension(:), pointer :: delay, saturation
 
 type(var_cal_opt) :: vcopt
@@ -166,18 +166,30 @@ endif
 !======================
 
 !< [richards_leaching]
-! Leaching from a group of volume
+! Leaching from volumic zone labelled as 'LEACHING_ZONE'
 ! Set the duration of leaching
-leach_time = 1.d2
+leaching_time = 1.d2
 
-call getcel('ALVEOLE', ncelt, lstcel)
+call getcel('LEACHING_ZONE', ncelt, lstcel)
+
+! Compute the volume of the leaching zone
+leaching_volume = 0.d0
+do icelt = 1, ncelt
+  iel = lstcel(icelt)
+  leaching_volume = leaching_volume + volume(iel)
+enddo
+
+if (irangp.ge.0) then
+  call parsom(leaching_volume)
+endif
+
 
 ! Compute the source term
 do icelt = 1, ncelt
   iel = lstcel(icelt)
   !Progressive leaching
-  if (ttcabs.lt.leach_time) then
-    crvexp(iel) = 1. / leach_time * volume(iel) / volume_alveole &
+  if (ttcabs.lt.leaching_time) then
+    crvexp(iel) = 1. / leaching_time * volume(iel) / leaching_volume &
          * exp(-lambda*ttcabs) / saturation(iel) / delay(iel)
   else
     crvexp(iel) = 0.d0
