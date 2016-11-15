@@ -58,8 +58,8 @@
 !>   which coupled veclocity components next to a boundary.
 !>
 !> Please refer to the
-!> <a href="../../theory.pdf#wallboundary"><b>wall boundary conditions</b></a> section of the
-!> theory guide for more theoretical informations, as well as the
+!> <a href="../../theory.pdf#wallboundary"><b>wall boundary conditions</b></a>
+!> section of the theory guide for more informations, as well as the
 !> <a href="../../theory.pdf#clptur"><b>clptur</b></a> section.
 !-------------------------------------------------------------------------------
 

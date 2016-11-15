@@ -347,8 +347,9 @@
 !> - For other values: take as an approximation the value in the adjacent cell
 !>                     i.e. as above with \c iel = ifabor(ifac).
 !>
-!> Please refer to the <a href="../../theory.pdf#boundary"><b>boundary conditions</b></a>
-!> section of the theory guide for more theoretical informations.
+!> Please refer to the
+!> <a href="../../theory.pdf#boundary"><b>boundary conditions</b></a>
+!> section of the theory guide for more informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

@@ -29,8 +29,9 @@
 !> \brief Management of the mass flux, the viscosity, the density, the specific
 !> heat  and the tsnsa array in case of a theta-scheme.
 !>
-!> Please refer to the <a href="../../theory.pdf#massflux"><b>mass flux</b></a> section
-!> of the theory guide for more theoretical informations.
+!> Please refer to the
+!> <a href="../../theory.pdf#massflux"><b>mass flux</b></a> section
+!> of the theory guide for more informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

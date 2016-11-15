@@ -1019,7 +1019,7 @@ module optcal
   !>        hydrostatic pressure at the boundary, which may otherwise cause
   !>        instabilities. Please refer to the
   !>    <a href="../../theory.pdf#iphydr"><b>handling of the hydrostatic pressure</b></a>
-  !>      section of the theory guide for more theoretical informations.
+  !>      section of the theory guide for more informations.
   integer(c_int), pointer, save :: iphydr
 
   !> improve static pressure algorithm

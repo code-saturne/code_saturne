@@ -104,7 +104,7 @@ BEGIN_C_DECLS
         Arakawa multiplicator for the Rhie and Chow filter (1 by default).\n\n
         Please refer to the
         <a href="../../theory.pdf#arak"><b>Rhie and Chow filter</b></a> section
-        of the theory guide for more theoretical informations.
+        of the theory guide for more informations.
   \var  cs_stokes_model_t::ipucou
         indicates the algorithm for velocity/pressure coupling:
         - 0: standard algorithm,
@@ -173,7 +173,7 @@ BEGIN_C_DECLS
         hydrostatic pressure at the boundary, which may otherwise cause
         instabilities. Please refer to the
         <a href="../../theory.pdf#iphydr"><b>handling of the hydrostatic pressure</b></a>
-        section of the theory guide for more theoretical informations.
+        section of the theory guide for more informations.
   \var  cs_stokes_model_t::igprij
         improve static pressure algorithm
         - 1: take -div(rho R) in the static pressure

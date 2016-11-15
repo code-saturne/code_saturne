@@ -28,9 +28,8 @@
 !>
 !> \brief L.E.S Vortex method data management.
 !>
-!> Please refer to the <a href="../../theory.pdf#vortex"><b>vortex</b></a> section of
-!> the theory guide for more theoretical informations.
-
+!> Please refer to the <a href="../../theory.pdf#vortex"><b>vortex</b></a>
+!> section of the theory guide for more informations.
 !-------------------------------------------------------------------------------
 
 subroutine vortex

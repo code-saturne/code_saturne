@@ -36,8 +36,9 @@
 !> - at the second call, a global estimator on Navier Stokes is computed.
 !>   This second call is done after the correction step (\ref resopv).
 !>
-!> Please refer to the <a href="../../theory.pdf#predvv"><b>predvv</b></b></a> section
-!> of the theory guide for more theoretical informations.
+!> Please refer to the
+!> <a href="../../theory.pdf#predvv"><b>predvv</b></b></a> section
+!> of the theory guide for more informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

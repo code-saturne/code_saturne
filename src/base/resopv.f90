@@ -48,8 +48,9 @@
 !> - if the coefficient arak is set to 1, the the Rhie & Chow filter is
 !>   activated.
 !>
-!> Please refer to the <a href="../../theory.pdf#resopv"><b>resopv</b></a> section
-!> of the theory guide for more theoretical informations.
+!> Please refer to the
+!> <a href="../../theory.pdf#resopv"><b>resopv</b></a>
+!> section of the theory guide for more informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

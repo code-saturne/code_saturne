@@ -26,7 +26,7 @@
 !> step of the compressible algorithm at each time iteration.
 !>
 !> Please refer to the <a href="../../theory.pdf#cfener"><b>cfener</b></a> section
-!> of the theory guide for more theoretical informations.
+!> of the theory guide for more informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

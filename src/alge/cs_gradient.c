@@ -86,8 +86,9 @@ BEGIN_C_DECLS
  * \file cs_gradient.c
  * \brief Gradient reconstruction.
  *
- * Please refer to the <a href="../../theory.pdf#gradreco"><b>gradient reconstruction</b></a>
- * section of the theory guide for more theoretical informations.
+ * Please refer to the
+ * <a href="../../theory.pdf#gradreco"><b>gradient reconstruction</b></a>
+ * section of the theory guide for more informations.
  */
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -103,7 +104,7 @@ BEGIN_C_DECLS
  * Local type definitions
  *============================================================================*/
 
-/* Basic per gradient compuation options and logging */
+/* Basic per gradient computation options and logging */
 /*---------------------------------------------------*/
 
 typedef struct _cs_gradient_info_t {

@@ -35,7 +35,7 @@
 !> In order to ensure the exact conservation of mass, the mass fluxes are
 !> computed following the procedure of the standard subroutine resopv
 !> (See the <a href="../../theory.pdf#resopv"><b>resopv</b></a>
-!> section of the theory guide for more theoretical informations).
+!> section of the theory guide for more informations).
 !>
 !> The hydraulic head is contained in the pressure array, while the velocities
 !> are contained in the velocity arrays.

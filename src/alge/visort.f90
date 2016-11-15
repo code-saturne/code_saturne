@@ -42,7 +42,7 @@
 !>
 !> Please refer to the
 !> <a href="../../theory.pdf#visort"><b>visort</b></a> section of the
-!> theory guide for more theoretical informations.
+!> theory guide for more informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

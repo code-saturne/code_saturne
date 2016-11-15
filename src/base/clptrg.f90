@@ -58,7 +58,7 @@
 !>   which coupled veclocity components next to a boundary.
 !>
 !> Please refer to the <a href="../../theory.pdf#cpltrg"><b>clptrg</b></a> section
-!> of the theory guide for more theoretical informations.
+!> of the theory guide for more informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

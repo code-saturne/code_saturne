@@ -109,7 +109,7 @@ BEGIN_C_DECLS
  *
  * Please refer to the
  * <a href="../../theory.pdf#matrix"><b>matrix</b></a> section of the
- * theory guide for more theoretical informations.
+ * theory guide for more informations.
  */
 /*----------------------------------------------------------------------------*/
 

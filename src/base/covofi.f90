@@ -32,7 +32,7 @@
 !>
 !> Please refer to the
 !> <a href="../../theory.pdf#covofi"><b>covofi</b></a> section of the
-!> theory guide for more theoretical informations.
+!> theory guide for more informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

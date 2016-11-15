@@ -141,7 +141,7 @@ BEGIN_C_DECLS
  *
  * Please refer to the
  * <a href="../../theory.pdf#codits"><b>codits</b></a> section of the
- * theory guide for more theoretical informations.
+ * theory guide for more informations.
  *
  * \param[in]     idtvar        indicateur du schema temporel
  * \param[in]     f_id          field id (or -1)

@@ -66,8 +66,9 @@ BEGIN_C_DECLS
  *
  * \brief Detect bad cells within meshes.
  *
- * Please refer to the <a href="../../theory.pdf#badcells"><b>flagging of bad cells</b></a>
- * section of the theory guide for more theoretical informations.
+ * Please refer to the
+ * <a href="../../theory.pdf#badcells"><b>flagging of bad cells</b></a>
+ * section of the theory guide for more informations.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1030,4 +1031,3 @@ cs_mesh_bad_cells_postprocess(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-
