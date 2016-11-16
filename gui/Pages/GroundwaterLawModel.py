@@ -96,6 +96,7 @@ class GroundwaterLawModel(Variables, Model):
         default['transverse']            = 0.0
         default['isotropic']             = 0.0
         default['diffusion_choice']      = 'variable'
+        default['soil_density']          = 1.5
         return default
 
 
@@ -235,6 +236,38 @@ class GroundwaterLawModel(Variables, Model):
 
 
     @Variables.undoLocal
+    def setSoilDensity(self, zoneid, value):
+        """
+        Input value for variable
+        """
+        self.isInt(int(zoneid))
+        self.isFloat(value)
+
+        nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
+        node = nodeZone.xmlInitChildNode('soil_density')
+
+        node.xmlSetAttribute(value=value)
+
+
+    @Variables.noUndo
+    def getSoilDensity(self, zoneid):
+        """
+        Return value for variable
+        """
+        self.isInt(int(zoneid))
+
+        nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
+        node = nodeZone.xmlInitChildNode('soil_density')
+
+        value = node.xmlGetDouble('soil_density')
+
+        if value == None:
+            value = self.__defaultValues()['soil_density']
+            self.setSoilDensity(zoneid, value)
+        return value
+
+
+    @Variables.undoLocal
     def setGroundwaterLawFormula(self, zoneid, formula):
         """
         Public method.
@@ -356,7 +389,7 @@ permeability=1.;"""
 
         name = self.sca_mo.getScalarDiffusivityName(scalar_label)
 
-        formula = str(name) + " = 0.;\n" + str(scalar_label) + "_delay = 1.;"
+        formula = str(name) + " = 0.;\n" + str(scalar_label) + "_kd = 1.;"
 
         return formula
 

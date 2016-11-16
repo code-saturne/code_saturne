@@ -634,7 +634,7 @@ class XMLElement:
     def xmlSetData(self, tag, textNode, *attrList, **kwargs):
         """
         Set the textNode in an elementNode, which is a single node.
-        If the searched 'tag' doesn't exist, it is create
+        If the searched 'tag' doesn't exist, it is created
         and textNode is added as a child TEXT_NODE nodeType.
         Return a XMLElement list of the created Node.
         """

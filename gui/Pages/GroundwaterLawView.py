@@ -141,7 +141,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
 
         # Create the Page layout.
 
-        # Model and QTreeView for Head Losses
+        # Model and QTreeView
         self.modelGroundwaterLaw = StandardItemModelGroundwaterLaw()
         self.treeView.setModel(self.modelGroundwaterLaw)
 
@@ -181,6 +181,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditKsSaturatedYZ.setValidator(DoubleValidator(self.lineEditKsSaturatedYZ))
         self.lineEditThetasSaturated.setValidator(DoubleValidator(self.lineEditThetasSaturated))
         self.lineEditDispersion.setValidator(DoubleValidator(self.lineEditDispersion))
+        self.lineEditSoilDensity.setValidator(DoubleValidator(self.lineEditSoilDensity))
 
         self.scalar = ""
         scalar_list = self.m_sca.getUserScalarNameList()
@@ -218,6 +219,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditKsSaturatedYZ.textChanged[str].connect(self.slotKsYZSat)
         self.lineEditThetasSaturated.textChanged[str].connect(self.slotThetasSat)
         self.lineEditDispersion.textChanged[str].connect(self.slotDispersion)
+        self.lineEditSoilDensity.textChanged[str].connect(self.slotSoilDensity)
         self.pushButtonUserLaw.clicked.connect(self.slotFormula)
         self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
         self.comboBoxDiff.activated[str].connect(self.slotStateDiff)
@@ -252,6 +254,10 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.groupBoxGroundProperties.show()
 
         # ground properties
+        self.groupBoxSoilDensity.show()
+        value = self.mdl.getSoilDensity(name)
+        self.lineEditSoilDensity.setText(str(value))
+
         if GroundwaterModel(self.case).getUnsaturatedZone() == "true":
             self.groupBoxType.show()
 
@@ -656,6 +662,14 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             val = float(text)
             self.mdl.setDispersionCoefficient(name, "isotropic", val)
 
+    @pyqtSlot(str)
+    def slotSoilDensity(self, text):
+        """
+        """
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditSoilDensity.validator().state == QValidator.Acceptable:
+            val = float(text)
+            self.mdl.setSoilDensity(name, val)
 
     @pyqtSlot()
     def slotFormula(self):
@@ -754,9 +768,9 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         label, namesca, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
         name = self.m_sca.getScalarDiffusivityName(self.scalar)
         exp = self.mdl.getDiffFormula(self.scalar, namesca)
-        delay_name = str(self.scalar) + "_delay"
+        kd_name = str(self.scalar) + "_kd"
         req = [(str(name), str(self.scalar) + ' molecular diffusion (dm)'),
-               (delay_name, str(self.scalar)+ ' delay (R)')]
+               (kd_name, str(self.scalar)+ ' distribution coefficient (Kd)')]
         exa = ''
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),

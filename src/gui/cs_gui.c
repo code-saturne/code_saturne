@@ -5230,10 +5230,12 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
   cs_field_t *fcapacity     = cs_field_by_name_try("capacity");
   cs_field_t *fpermeability = cs_field_by_name_try("permeability");
   cs_field_t *fhhead     = CS_F_(head);
+  cs_field_t *fsoil_density = cs_field_by_name_try("soil_density");
 
   cs_real_t   *saturation_field = fsaturation->val;
   cs_real_t   *capacity_field   = fcapacity->val;
   cs_real_t   *h_head_field   = fhhead->val;
+  cs_real_t   *soil_density   = fsoil_density->val;
 
   cs_real_t     *permeability_field = NULL;
   cs_real_6_t   *permeability_field_v = NULL;
@@ -5260,7 +5262,27 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
       char *zone_id = _volumic_zone_id(i);
       cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
 
-      /* check if user law or Van Genuchten */
+      /* get ground properties for each zone */
+
+      /* get soil density by zone */
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 3,
+                            "thermophysical_models",
+                            "groundwater",
+                            "groundwater_law");
+      cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+      cs_xpath_add_element(&path, "soil_density");
+      cs_xpath_add_attribute(&path, "value");
+      char *rhosoil_str = cs_gui_get_attribute_value(path);
+      cs_real_t rhosoil = atof(rhosoil_str);
+      BFT_FREE(path);
+
+      for (cs_lnum_t icel = 0; icel < cells; icel++) {
+        cs_lnum_t iel = cells_list[icel];
+        soil_density[iel] = rhosoil;
+      }
+
+      /* get permeability law */
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
                             "thermophysical_models",
@@ -5271,6 +5293,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
       char *mdl = cs_gui_get_attribute_value(path);
       BFT_FREE(path);
 
+      /* Van Genuchten law for permeability */
       if (cs_gui_strcmp(mdl, "VanGenuchten")) {
         cs_real_t alpha_param, ks_param, l_param, n_param, thetas_param, thetar_param;
         cs_real_t ks_xx, ks_yy, ks_zz, ks_xy, ks_xz, ks_yz;
@@ -5345,7 +5368,8 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
           }
         }
       }
-      else {  // user law
+      /* user law for permeability */
+      else {
         path = cs_xpath_init_path();
         cs_xpath_add_elements(&path, 3,
                               "thermophysical_models",
@@ -5421,6 +5445,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
         }
       }
 
+      /* get diffusion coefficient (called dispersion in GUI view) */
       if (*diffusion == 1) {
         cs_field_t *fturbvisco
           = cs_field_by_name_try("anisotropic_turbulent_viscosity");
@@ -5498,6 +5523,9 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
         }
       }
 
+      /* get diffusivity and Kd for each zone and each species
+         defined by the user */
+
       int user_id = -1;
       int n_fields = cs_field_n_fields();
       const int kivisl = cs_field_key_id("scalar_diffusivity_id");
@@ -5507,13 +5535,13 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
         if (   (f->type & CS_FIELD_VARIABLE)
             && (f->type & CS_FIELD_USER)) {
           user_id++;
-          char *delayname = NULL;
-          int len = strlen(f->name) + 7;
-          BFT_MALLOC(delayname, len, char);
-          strcpy(delayname, f->name);
-          strcat(delayname, "_delay");
-          cs_field_t *fdelay = cs_field_by_name_try(delayname);
-          cs_real_t   *delay_val = fdelay->val;
+          char *kdname = NULL;
+          int len = strlen(f->name) + 4;
+          BFT_MALLOC(kdname, len, char);
+          strcpy(kdname, f->name);
+          strcat(kdname, "_kd");
+          cs_field_t *fkd = cs_field_by_name_try(kdname);
+          cs_real_t   *kd_val = fkd->val;
 
           char *diffname = NULL;
           BFT_MALLOC(diffname, strlen(f->name) + 13, char);
@@ -5559,13 +5587,13 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
                         _("Error: can not interpret expression: %s\n"),
                         ev_formula->string);
 
-            const char *symbols[] = {delayname,
+            const char *symbols[] = {kdname,
                                      diffname};
 
             if (mei_tree_find_symbols(ev_formula, 2, symbols))
               bft_error(__FILE__, __LINE__, 0,
                         _("Error: can not find the required symbol: %s %s\n"),
-                        delayname, diffname);
+                        kdname, diffname);
 
             cw[0] = 0; cw[1] = 0;
 
@@ -5580,7 +5608,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
               mei_tree_insert(ev_formula, f->name, f->val[iel]);
 
               mei_evaluate(ev_formula);
-              delay_val[iel] = mei_tree_lookup(ev_formula, delayname);
+              kd_val[iel] = mei_tree_lookup(ev_formula, kdname);
               c_prop->val[iel] = mei_tree_lookup(ev_formula, diffname);
 
               if (c_prop->val[iel] < 0.)
@@ -5605,7 +5633,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
 
             cs_gui_add_mei_time(cs_timer_wtime() - time0);
           }
-          BFT_FREE(delayname);
+          BFT_FREE(kdname);
           BFT_FREE(diffname);
         }
       }
