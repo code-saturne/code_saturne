@@ -92,7 +92,6 @@ _gwf_soilwater_partition =
   .idel    = -1,
   .ikp     = -1,
   .ikm     = -1,
-  .isorb   = -1
 };
 
 /*============================================================================
@@ -111,7 +110,6 @@ _log_func_gwf_soilwater_partition(const void *t)
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idel    ", _t->idel);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikp     ", _t->ikp);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikm     ", _t->ikm);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "isorb   ", _t->isorb);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -127,8 +125,10 @@ _log_func_gwf_soilwater_partition(const void *t)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_parameters_define_field_key_soilwater_partition(void)
+cs_gwf_parameters_define_field_keys(void)
 {
+  cs_field_define_key_int("sorbed_concentration_id", -1, CS_FIELD_VARIABLE);
+
   cs_field_define_key_struct("gwf_soilwater_partition",
                              &_gwf_soilwater_partition,
                              _log_func_gwf_soilwater_partition,

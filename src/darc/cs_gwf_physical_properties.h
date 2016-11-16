@@ -71,14 +71,17 @@ cs_gwf_physical_properties(void);
  * (exp(- k^{-} dt) - 1)
  *
  * parameters:
- * sorp   -->   structure of soil-water partition
  * c_scal -->   concentration field
- *
+ * kp     -->   kplus field
+ * km     -->   kminus field
+ * sorb   <--   sorbed concentration field
  *----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sorbed_concentration_update(cs_gwf_soilwater_partition_t sorp,
-                                   cs_real_t                   *c_scal);
+cs_gwf_sorbed_concentration_update(cs_real_t *c_scal,
+                                   cs_real_t *kp,
+                                   cs_real_t *km,
+                                   cs_real_t *sorb);
 
 /*----------------------------------------------------------------------------*/
 

@@ -1689,6 +1689,11 @@ cs_restart_read_variables(cs_restart_t               *r,
                                 "turbulent_flux_id",
                                 _read_flag);
 
+  cs_restart_read_linked_fields(r,
+                                old_field_map,
+                                "sorbed_concentration_id",
+                                _read_flag);
+
   /* Read and convert turbulence variables in case of model change */
 
   const int iturb_cur = cs_glob_turb_model->iturb;
@@ -1789,7 +1794,7 @@ cs_restart_write_variables(cs_restart_t  *r,
   /* Write metadata for turbulent flux models
      (turbulent flux model useful only for warnings, as the turbulent flux
      field id is sufficient  to determine data to be written;
-     last test on n_turbt is a minor optimization to possible avoid a call
+     last test on n_turbt is a minor optimization to possibly avoid a call
      to cs_restart_write_linked_fields, but that call would be no
      more costly than the loop to determine the turbulent flux model
      in the first case...) */
@@ -1870,6 +1875,10 @@ cs_restart_write_variables(cs_restart_t  *r,
     cs_restart_write_linked_fields(r,
                                    "turbulent_flux_id",
                                    _write_flag);
+
+  cs_restart_write_linked_fields(r,
+                                 "sorbed_concentration_id",
+                                 _write_flag);
 
   /* Cleanup */
 

@@ -76,13 +76,13 @@ interface
 
   !---------------------------------------------------------------------------
 
-  ! Interface to C function initializing sorption modelling field key.
+  ! Interface to C function defining field keys for Ground water flow module.
 
-  subroutine cs_gwf_parameters_define_field_key_soilwater_partition()  &
-    bind(C, name='cs_gwf_parameters_define_field_key_soilwater_partition')
+  subroutine cs_gwf_parameters_define_field_keys()  &
+    bind(C, name='cs_gwf_parameters_define_field_keys')
     use, intrinsic :: iso_c_binding
     implicit none
-  end subroutine cs_gwf_parameters_define_field_key_soilwater_partition
+  end subroutine cs_gwf_parameters_define_field_keys
 
   !---------------------------------------------------------------------------
 
@@ -130,7 +130,7 @@ darcy_gravity_y = 0.d0
 darcy_gravity_z = 1.d0
 
 ! Definition of sorption parameters
-call cs_gwf_parameters_define_field_key_soilwater_partition
+call cs_gwf_parameters_define_field_keys
 
 if (iihmpr.eq.1) then
   call uidai1(darcy_anisotropic_permeability,     &

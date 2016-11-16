@@ -65,7 +65,6 @@ typedef struct {
   int     idel;     /* id for delay */
   int     ikp;      /* id for kplus */
   int     ikm;      /* id for kminus */
-  int     isorb;    /* id for sorbed concentration */
 } cs_gwf_soilwater_partition_t;
 
 /*============================================================================
@@ -78,15 +77,12 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define field key for soilwater partition model.
+ * \brief Define field keys for the ground water flow module.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_parameters_define_field_key_soilwater_partition(void);
-
-void
-cs_gwf_key_init(void);
+cs_gwf_parameters_define_field_keys(void);
 
 /*----------------------------------------------------------------------------*/
 

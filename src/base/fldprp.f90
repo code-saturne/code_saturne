@@ -71,7 +71,7 @@ implicit none
 ! Local variables
 
 character(len=80) :: f_label, f_name, s_name, s_label
-integer           :: ii, ivar
+integer           :: ii, ivar, isorb, keysrb
 integer           :: idim1, idim3, idim6, iflid
 integer           :: type_flag, post_flag, location_id
 logical           :: has_previous
@@ -212,35 +212,45 @@ if (ippmod(idarcy).eq.1) then
   f_label = 'Soil density'
   call add_property_field(f_name, f_label, idim1, has_previous, iflid)
 
+  call field_get_key_id("sorbed_concentration_id", keysrb)
+
   do ii = 1, nscal
     ivar = isca(ii)
-    call field_get_key_struct_gwf_soilwater_partition(ivarfl(ivar), sorption_scal)
+    call field_get_key_struct_gwf_soilwater_partition(ivarfl(ivar), &
+                                                      sorption_scal)
     call field_get_name(ivarfl(ivar), s_name)
     call field_get_name(ivarfl(ivar), s_label)
 
     f_name = trim(s_name)//'_kd'
     f_label = trim(s_label)//' Kd'
-    call add_property_field(f_name, f_label, idim1, has_previous, sorption_scal%ikd)
+    call add_property_field(f_name, f_label, idim1, has_previous, &
+                            sorption_scal%ikd)
     call hide_property(sorption_scal%ikd)
     f_name = trim(s_name)//'_delay'
     f_label = trim(s_label)//' delay'
-    call add_property_field(f_name, f_label, idim1, has_previous, sorption_scal%idel)
+    call add_property_field(f_name, f_label, idim1, has_previous, &
+                            sorption_scal%idel)
 
     if (sorption_scal%kinetic.eq.1) then
       f_name = trim(s_name)//'_sorb_conc'
       f_label = trim(s_label)//' sorb conc'
-      call add_property_field(f_name, f_label, idim1, has_previous, sorption_scal%isorb)
+      call add_property_field(f_name, f_label, idim1, has_previous, isorb)
+      call field_set_key_int(ivarfl(ivar), keysrb, isorb)
+
       f_name = trim(s_name)//'_kplus'
       f_label = trim(s_label)//' kplus'
-      call add_property_field(f_name, f_label, idim1, has_previous, sorption_scal%ikp)
+      call add_property_field(f_name, f_label, idim1, has_previous, &
+                              sorption_scal%ikp)
       call hide_property(sorption_scal%ikp)
       f_name = trim(s_name)//'_kminus'
       f_label = trim(s_label)//' kminus'
-      call add_property_field(f_name, f_label, idim1, has_previous, sorption_scal%ikm)
+      call add_property_field(f_name, f_label, idim1, has_previous, &
+                              sorption_scal%ikm)
       call hide_property(sorption_scal%ikm)
     endif
 
-    call field_set_key_struct_gwf_soilwater_partition(ivarfl(ivar), sorption_scal)
+    call field_set_key_struct_gwf_soilwater_partition(ivarfl(ivar), &
+                                                      sorption_scal)
   enddo
 
 endif

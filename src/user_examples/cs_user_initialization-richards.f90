@@ -90,13 +90,12 @@ double precision :: dt(ncelet)
 ! Local variables
 
 !< [loc_var_dec]
-integer :: iel, icelt, ncelt
+integer :: iel, icelt, ncelt, isorb, keysrb
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: cvar_scal_1, cvar_scal_2
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:,:), pointer :: cvar_vel
 double precision, dimension(:), pointer :: csorb
-type(gwf_soilwater_partition) :: sorption_sca1
 !< [loc_var_dec]
 
 !===============================================================================
@@ -123,8 +122,8 @@ if (isuite.eq.0) then
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_v(ivarfl(iu), cvar_vel)
 
-  call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
-                                                    sorption_sca1)
+  call field_get_key_id("sorbed_concentration_id", keysrb)
+  call field_get_key_int(ivarfl(isca(1)), keysrb, isorb)
 
 !< [richards_init_cell]
 ! Global initialisation
@@ -155,7 +154,7 @@ if (isuite.eq.0) then
 
 !< [richards_init_sorb]
 ! Index field of sorbed concentration
-  call field_get_val_s(sorption_sca1%isorb, csorb)
+  call field_get_val_s(isorb, csorb)
   do iel = 1, ncel
     ! no initial contamination of sorbed phase
     csorb(iel) = 0.d0

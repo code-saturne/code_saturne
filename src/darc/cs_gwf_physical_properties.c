@@ -98,6 +98,7 @@ void cs_gwf_physical_properties(void)
   sat = cs_field_by_name("saturation");
   rosoil = cs_field_by_name("soil_density");
 
+  int key_sorbed_c_id = cs_field_key_id("sorbed_concentration_id");
   int key_kinet_soilwater_partition_id =
     cs_field_key_id("gwf_soilwater_partition");
 
@@ -119,8 +120,14 @@ void cs_gwf_physical_properties(void)
 
       /* Update of sorbed concentration
          only if kinetic model is enabled for the scalar */
-      if (sorption_scal.kinetic == 1)
-        cs_gwf_sorbed_concentration_update(sorption_scal, sca->val);
+      if (sorption_scal.kinetic == 1) {
+        int sorbed_c_id = cs_field_get_key_int(sca, key_sorbed_c_id);
+        cs_real_t *sorb = cs_field_by_id(sorbed_c_id)->val;
+        cs_real_t *kp = cs_field_by_id(sorption_scal.ikp)->val;
+        cs_real_t *km = cs_field_by_id(sorption_scal.ikm)->val;
+
+        cs_gwf_sorbed_concentration_update(sca->val, kp, km, sorb);
+      }
     }
   }
 }
@@ -135,19 +142,20 @@ void cs_gwf_physical_properties(void)
  * \left(\exp(- k^{-} \Delta t) - 1 \right)
  * \f]
  *
- * \param[in]   sorp        structure of soil-water partition
  * \param[in]   c_scal      concentration field
+ * \param[in]   kp          kplus field
+ * \param[in]   km          kminus field
+ * \param[in]   sorb        sorbed concentration field
  */
  /*----------------------------------------------------------------------------*/
 
-void cs_gwf_sorbed_concentration_update(cs_gwf_soilwater_partition_t sorp,
-                                        cs_real_t                   *c_scal)
+void cs_gwf_sorbed_concentration_update(cs_real_t *c_scal,
+                                        cs_real_t *kp,
+                                        cs_real_t *km,
+                                        cs_real_t *sorb)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   cs_real_t *dt = CS_F_(dt)->val;
-  cs_real_t *kp = cs_field_by_id(sorp.ikp)->val;
-  cs_real_t *km = cs_field_by_id(sorp.ikm)->val;
-  cs_real_t *sorb = cs_field_by_id(sorp.isorb)->val;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     if (km[c_id] > cs_math_epzero) {

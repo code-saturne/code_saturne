@@ -157,7 +157,7 @@ integer          imucpp, idftnp, iswdyp
 integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
 integer          delay_id, icla
-integer          icrom_scal
+integer          icrom_scal, isorb, keysrb
 
 integer          ivoid(1)
 
@@ -770,9 +770,9 @@ if (itspdv.eq.1) then
       ! SGDH model
       else
         do iel = 1, ncel
-          cproa_scal_st(iel) = cproa_scal_st(iel)                                     &
-               + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                  &
-               *cell_f_vol(iel)/sigmas(iscal)                                     &
+          cproa_scal_st(iel) = cproa_scal_st(iel)                             &
+               + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                     &
+               *cell_f_vol(iel)/sigmas(iscal)                                 &
                *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
@@ -1045,8 +1045,12 @@ if (ippmod(idarcy).eq.1) then
     call field_get_val_s_by_name('soil_density', cpro_rosoil)
     call field_get_val_s(sorption_scal%ikp, kplus)
     call field_get_val_s(sorption_scal%ikm, kminus)
-    call field_get_val_s(sorption_scal%isorb, cpro_sorb)
+    call field_get_key_id("sorbed_concentration_id", keysrb)
+    call field_get_key_int(ivarfl(ivar), keysrb, isorb)
+    call field_get_val_s(isorb, cpro_sorb)
   endif
+
+
 endif
 
 ! Not Darcy
