@@ -822,6 +822,8 @@ Calculation management
             self.setRowOpen(self.tr('Groundwater flows'))
             self.setRowClose(self.tr('Turbulence models'))
             self.setRowClose(self.tr('Turbomachinery'))
+            self.setRowClose(self.tr('Fans'))
+            self.setRowClose(self.tr('Physical properties'))
             self.setRowClose(self.tr('Reference values'))
             self.setRowClose(self.tr('Gravity'))
             self.setRowClose(self.tr('Fluid properties'))
