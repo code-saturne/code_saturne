@@ -1491,17 +1491,21 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
 
     /* Computation of the area of the face */
 
-    for (i = 0; i < dim; i++)
-      _norm[i] = b_face_norm[dim*fac_id + i];
+    /* NB: cell_id1 == -1 may happen for isolated faces (which are cleaned afterwards) */
+    if (cell_id1 > -1) {
+      for (i = 0; i < dim; i++)
+        _norm[i] = b_face_norm[dim*fac_id + i];
 
-    area = cs_math_3_norm(_norm);
-    cell_area[cell_id1] += area;
+      area = cs_math_3_norm(_norm);
 
-    /* Computation of the numerator */
+      cell_area[cell_id1] += area;
 
-    for (i = 0; i < dim; i++)
-      cell_cen[dim*cell_id1 + i] += b_face_cog[dim*fac_id + i]*area;
+      /* Computation of the numerator */
 
+      for (i = 0; i < dim; i++)
+        cell_cen[dim*cell_id1 + i] += b_face_cog[dim*fac_id + i]*area;
+
+    }
   } /* End of loop on border faces */
 
   /* ------------------------------------------------------------------
