@@ -1921,7 +1921,7 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
   const int n_fields = cs_field_n_fields();
   const int n_o_fields = cs_map_name_to_id_size(old_field_map);
 
-  const int key_id = cs_field_key_id(key);
+  const int key_id = cs_field_key_id_try(key);
   const int key_flag = cs_field_key_flag(key_id);
   const int kr = cs_field_key_id_try("restart_name");
 
@@ -2085,7 +2085,7 @@ cs_restart_write_linked_fields(cs_restart_t  *r,
 
   const int n_fields = cs_field_n_fields();
 
-  const int key_id = cs_field_key_id(key);
+  const int key_id = cs_field_key_id_try(key);
   const int key_flag = cs_field_key_flag(key_id);
 
   int *_write_flag = write_flag;
