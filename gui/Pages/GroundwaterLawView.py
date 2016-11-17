@@ -152,10 +152,6 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
 
         self.modelNameDiff = ComboModel(self.comboBoxNameDiff,1,1)
 
-        self.modelDiff = ComboModel(self.comboBoxDiff, 2, 1)
-        self.modelDiff.addItem(self.tr('constant'), 'constant')
-        self.modelDiff.addItem(self.tr('variable'), 'variable')
-
         # Set up validators
 
         self.lineEditKs.setValidator(DoubleValidator(self.lineEditKs))
@@ -182,6 +178,8 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditThetasSaturated.setValidator(DoubleValidator(self.lineEditThetasSaturated))
         self.lineEditDispersion.setValidator(DoubleValidator(self.lineEditDispersion))
         self.lineEditSoilDensity.setValidator(DoubleValidator(self.lineEditSoilDensity))
+        self.lineEditDiffusivity.setValidator(DoubleValidator(self.lineEditDiffusivity))
+        self.lineEditKd.setValidator(DoubleValidator(self.lineEditKd))
 
         self.scalar = ""
         scalar_list = self.m_sca.getUserScalarNameList()
@@ -222,8 +220,8 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditSoilDensity.textChanged[str].connect(self.slotSoilDensity)
         self.pushButtonUserLaw.clicked.connect(self.slotFormula)
         self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
-        self.comboBoxDiff.activated[str].connect(self.slotStateDiff)
-        self.pushButtonDiff.clicked.connect(self.slotFormulaDiff)
+        self.lineEditDiffusivity.textChanged[str].connect(self.slotDiffusivity)
+        self.lineEditKd.textChanged[str].connect(self.slotKd)
 
         # Initialize Widgets
 
@@ -313,25 +311,17 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.lineEditThetasSaturated.setText(str(value))
 
         # solute properties
-        if self.scalar == "":
+        scal = self.scalar
+        if scal == "":
             self.groupBoxSoluteProperties.hide()
         else :
             self.groupBoxSoluteProperties.show()
 
-            diff_choice =  self.mdl.getScalarDiffusivityChoice(self.scalar, name)
-            self.modelDiff.setItem(str_model=diff_choice)
-            self.modelNameDiff.setItem(str_model=str(self.scalar))
-            if diff_choice  != 'variable':
-                self.pushButtonDiff.setEnabled(False)
-                self.pushButtonDiff.setStyleSheet("background-color: None")
-            else:
-                self.pushButtonDiff.setEnabled(True)
-                exp = self.mdl.getDiffFormula(self.scalar, name)
-                if exp:
-                    self.pushButtonDiff.setStyleSheet("background-color: green")
-                    self.pushButtonDiff.setToolTip(exp)
-                else:
-                    self.pushButtonDiff.setStyleSheet("background-color: red")
+            self.modelNameDiff.setItem(str_model=str(scal))
+            value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'diffusivity')
+            self.lineEditDiffusivity.setText(str(value))
+            value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'kd')
+            self.lineEditKd.setText(str(value))
 
         if GroundwaterModel(self.case).getDispersionType() == 'anisotropic':
             self.groupBoxIsotropicDispersion.hide()
@@ -345,10 +335,6 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.groupBoxAnisotropicDispersion.hide()
             value = self.mdl.getDispersionCoefficient(name, "isotropic")
             self.lineEditDispersion.setText(str(value))
-
-        # force to variable property
-        self.comboBoxDiff.setEnabled(False)
-
 
     def initializeVanGenuchten(self, name):
         """
@@ -716,80 +702,39 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.pushButtonUserLaw.setStyleSheet("background-color: green")
             self.pushButtonUserLaw.setToolTip(result)
 
-
     @pyqtSlot(str)
     def slotNameDiff(self, text):
         """
-        Method to set the variance scalar choosed
+        Method to choose the scalar which properties shall be changed
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        choice = self.modelNameDiff.dicoV2M[str(text)]
-        log.debug("slotStateDiff -> %s" % (text))
+        log.debug("slotNameDiff -> %s" % (text))
         self.scalar = str(text)
-
-        self.modelDiff.setItem(str_model=self.mdl.getScalarDiffusivityChoice(self.scalar, name))
-        exp = self.mdl.getDiffFormula(self.scalar, name)
-        if exp:
-            self.pushButtonDiff.setStyleSheet("background-color: green")
-            self.pushButtonDiff.setToolTip(exp)
-        else:
-            self.pushButtonDiff.setStyleSheet("background-color: red")
-
+        scal = self.scalar
+        value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'diffusivity')
+        self.lineEditDiffusivity.setText(str(value))
+        value = self.mdl.getGroundWaterScalarPropertyByZone(scal, name, 'kd')
+        self.lineEditKd.setText(str(value))
 
     @pyqtSlot(str)
-    def slotStateDiff(self, text):
+    def slotDiffusivity(self, text):
         """
-        Method to set diffusion choice for the coefficient
         """
         label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        choice = self.modelDiff.dicoV2M[str(text)]
-        log.debug("slotStateDiff -> %s" % (text))
+        if self.lineEditDiffusivity.validator().state == QValidator.Acceptable:
+            val = float(text)
+            scal = self.scalar
+            self.mdl.setGroundWaterScalarPropertyByZone(scal, name, 'diffusivity', val)
 
-        if choice != 'variable':
-            self.pushButtonDiff.setEnabled(False)
-            self.pushButtonDiff.setStyleSheet("background-color: None")
-        else:
-            self.pushButtonDiff.setEnabled(True)
-            exp = self.mdl.getDiffFormula(self.scalar, name)
-            if exp:
-                self.pushButtonDiff.setStyleSheet("background-color: green")
-                self.pushButtonDiff.setToolTip(exp)
-            else:
-                self.pushButtonDiff.setStyleSheet("background-color: red")
-
-        self.mdl.setScalarDiffusivityChoice(self.scalar, name, choice)
-
-
-    @pyqtSlot()
-    def slotFormulaDiff(self):
+    @pyqtSlot(str)
+    def slotKd(self, text):
         """
-        User formula for the diffusion coefficient
         """
-        label, namesca, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
-        name = self.m_sca.getScalarDiffusivityName(self.scalar)
-        exp = self.mdl.getDiffFormula(self.scalar, namesca)
-        kd_name = str(self.scalar) + "_kd"
-        req = [(str(name), str(self.scalar) + ' molecular diffusion (dm)'),
-               (kd_name, str(self.scalar)+ ' distribution coefficient (Kd)')]
-        exa = ''
-        sym = [('x', 'cell center coordinate'),
-               ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate'),
-               ('saturation', 'saturation')]
-        sym.append((str(self.scalar),str(self.scalar)))
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
-        if dialog.exec_():
-            result = dialog.get_result()
-            log.debug("slotFormulaDiff -> %s" % str(result))
-            self.mdl.setDiffFormula(self.scalar, namesca, str(result))
-            self.pushButtonDiff.setStyleSheet("background-color: green")
-            self.pushButtonDiff.setToolTip(result)
-
+        label, name, local = self.modelGroundwaterLaw.getItem(self.entriesNumber)
+        if self.lineEditKd.validator().state == QValidator.Acceptable:
+            val = float(text)
+            scal = self.scalar
+            self.mdl.setGroundWaterScalarPropertyByZone(scal, name, 'kd', val)
 
     def tr(self, text):
         """

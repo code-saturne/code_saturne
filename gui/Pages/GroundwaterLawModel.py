@@ -97,6 +97,8 @@ class GroundwaterLawModel(Variables, Model):
         default['isotropic']             = 0.0
         default['diffusion_choice']      = 'variable'
         default['soil_density']          = 1.5
+        default['diffusivity']           = 0.0
+        default['kd']                    = 0.0
         return default
 
 
@@ -244,9 +246,8 @@ class GroundwaterLawModel(Variables, Model):
         self.isFloat(value)
 
         nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
-        node = nodeZone.xmlInitChildNode('soil_density')
 
-        node.xmlSetAttribute(value=value)
+        nodeZone.xmlSetData('soil_density', value)
 
 
     @Variables.noUndo
@@ -257,9 +258,7 @@ class GroundwaterLawModel(Variables, Model):
         self.isInt(int(zoneid))
 
         nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
-        node = nodeZone.xmlInitChildNode('soil_density')
-
-        value = node.xmlGetDouble('soil_density')
+        value = nodeZone.xmlGetDouble('soil_density')
 
         if value == None:
             value = self.__defaultValues()['soil_density']
@@ -316,100 +315,40 @@ permeability=1.;"""
         return formula
 
 
-    @Variables.undoLocal
-    def setScalarDiffusivityChoice(self, scalar_label, zoneid, choice):
+    @Variables.noUndo
+    def getGroundWaterScalarPropertyByZone(self, scalar_name, zoneid, prop):
         """
-        Set choice of diffusivity's property for an additional_scalar
-        with label scalar_label
+        Get value for the diffusivity of one scalar on one zone
         """
         self.isInt(int(zoneid))
-        self.isNotInList(scalar_label, self.sca_mo.getScalarsVarianceList())
-        self.isInList(scalar_label, self.sca_mo.getUserScalarNameList())
-        self.isInList(choice, ('constant', 'variable'))
-
-        name = self.sca_mo.getScalarDiffusivityName(scalar_label)
+        self.isNotInList(scalar_name, self.sca_mo.getScalarsVarianceList())
+        self.isInList(scalar_name, self.sca_mo.getUserScalarNameList())
+        self.isInList(prop, ['diffusivity','kd'])
 
         nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
-        n = nodeZone.xmlInitChildNode('variable', name=name)
-        n_diff = n.xmlInitChildNode('property')
-        n_diff['choice'] = choice
+        nodeScalar = nodeZone.xmlInitChildNode('scalar', name=scalar_name)
+        value = nodeScalar.xmlGetDouble(prop)
 
-
-    @Variables.noUndo
-    def getScalarDiffusivityChoice(self, scalar_label, zoneid):
-        """
-        Get choice of diffusivity's property for an additional_scalar
-        with label scalar_label
-        """
-        self.isInt(int(zoneid))
-        self.isNotInList(scalar_label, self.sca_mo.getScalarsVarianceList())
-        self.isInList(scalar_label, self.sca_mo.getUserScalarNameList())
-
-        name = self.sca_mo.getScalarDiffusivityName(scalar_label)
-
-        nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
-        n = nodeZone.xmlInitChildNode('variable', name=name)
-        choice = n.xmlInitChildNode('property')['choice']
-        if not choice:
-            choice = self.__defaultValues()['diffusion_choice']
-            self.setScalarDiffusivityChoice(scalar_label, zoneid, choice)
-
-        return choice
-
-
-    @Variables.noUndo
-    def getDiffFormula(self, scalar_label, zoneid):
-        """
-        Return a formula for I{tag} 'density', 'molecular_viscosity',
-        'specific_heat' or 'thermal_conductivity'
-        """
-        self.isInt(int(zoneid))
-        self.isNotInList(scalar_label, self.sca_mo.getScalarsVarianceList())
-        self.isInList(scalar_label, self.sca_mo.getUserScalarNameList())
-
-        name = self.sca_mo.getScalarDiffusivityName(scalar_label)
-
-        nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
-        n = nodeZone.xmlInitChildNode('variable', name=name)
-        node = n.xmlGetNode('property')
-        formula = node.xmlGetString('formula')
-        if not formula:
-            formula = self.getDefaultFormula(scalar_label)
-            self.setDiffFormula(scalar_label, zoneid, formula)
-        return formula
-
-
-    @Variables.noUndo
-    def getDefaultFormula(self, scalar_label):
-        """
-        Return default formula
-        """
-        self.isNotInList(scalar_label, self.sca_mo.getScalarsVarianceList())
-        self.isInList(scalar_label, self.sca_mo.getUserScalarNameList())
-
-        name = self.sca_mo.getScalarDiffusivityName(scalar_label)
-
-        formula = str(name) + " = 0.;\n" + str(scalar_label) + "_kd = 1.;"
-
-        return formula
+        if value == None:
+            value = self.__defaultValues()[prop]
+            self.setGroundWaterScalarPropertyByZone(scalar_name, zoneid, prop, value)
+        return value
 
 
     @Variables.undoLocal
-    def setDiffFormula(self, scalar_label, zoneid, str):
+    def setGroundWaterScalarPropertyByZone(self, scalar_name, zoneid, prop, value):
         """
-        Gives a formula for 'density', 'molecular_viscosity',
-        'specific_heat'or 'thermal_conductivity'
+        Set value for the diffusivity of one scalar on one zone
         """
         self.isInt(int(zoneid))
-        self.isNotInList(scalar_label, self.sca_mo.getScalarsVarianceList())
-        self.isInList(scalar_label, self.sca_mo.getUserScalarNameList())
-
-        name = self.sca_mo.getScalarDiffusivityName(scalar_label)
+        self.isNotInList(scalar_name, self.sca_mo.getScalarsVarianceList())
+        self.isInList(scalar_name, self.sca_mo.getUserScalarNameList())
+        self.isInList(prop, ['diffusivity','kd'])
 
         nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
-        n = nodeZone.xmlInitChildNode('variable', name=name)
-        node = n.xmlGetNode('property')
-        node.xmlSetData('formula', str)
+        nodeScalar = nodeZone.xmlInitChildNode('scalar', name=scalar_name)
+
+        nodeScalar.xmlSetData(prop, value)
 
 #-------------------------------------------------------------------------------
 # End

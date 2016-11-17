@@ -5215,7 +5215,6 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
 {
   char *path = NULL;
   char *status = NULL;
-  cs_real_t time0;
   char *formula = NULL;
   cs_lnum_t *cells_list = NULL;
   cs_lnum_t cells = 0;
@@ -5265,6 +5264,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
       /* get ground properties for each zone */
 
       /* get soil density by zone */
+      cs_real_t rhosoil = 0.;
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
                             "thermophysical_models",
@@ -5272,9 +5272,8 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
                             "groundwater_law");
       cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
       cs_xpath_add_element(&path, "soil_density");
-      cs_xpath_add_attribute(&path, "value");
-      char *rhosoil_str = cs_gui_get_attribute_value(path);
-      cs_real_t rhosoil = atof(rhosoil_str);
+      cs_xpath_add_function_text(&path);
+      cs_gui_get_double(path, &rhosoil);
       BFT_FREE(path);
 
       for (cs_lnum_t icel = 0; icel < cells; icel++) {
@@ -5447,6 +5446,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
 
       /* get diffusion coefficient (called dispersion in GUI view) */
       if (*diffusion == 1) {
+        /* TODO use a dedidated tensor field by species */
         cs_field_t *fturbvisco
           = cs_field_by_name_try("anisotropic_turbulent_viscosity");
         cs_real_6_t  *visten_v = (cs_real_6_t *)fturbvisco->val;
@@ -5495,7 +5495,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
         }
       }
       else {
-        /* TODO to control */
+        /* TODO use a dedidated field by species (as turbulent_diffusivity) */
         cs_field_t *fturbvisco
           = cs_field_by_name_try("turbulent_viscosity");
         double  *visten = fturbvisco->val;
@@ -5523,8 +5523,8 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
         }
       }
 
-      /* get diffusivity and Kd for each zone and each species
-         defined by the user */
+      /* get diffusivity and Kd for each scalar
+         defined by the user on current zone */
 
       int user_id = -1;
       int n_fields = cs_field_n_fields();
@@ -5535,106 +5535,59 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
         if (   (f->type & CS_FIELD_VARIABLE)
             && (f->type & CS_FIELD_USER)) {
           user_id++;
+
+          /* get kd for current scalar and current zone */
           char *kdname = NULL;
           int len = strlen(f->name) + 4;
           BFT_MALLOC(kdname, len, char);
           strcpy(kdname, f->name);
           strcat(kdname, "_kd");
           cs_field_t *fkd = cs_field_by_name_try(kdname);
-          cs_real_t   *kd_val = fkd->val;
+          BFT_FREE(kdname);
 
-          char *diffname = NULL;
-          BFT_MALLOC(diffname, strlen(f->name) + 13, char);
-          strcpy(diffname, f->name);
-          strcat(diffname, "_diffusivity");
-
-          int diff_id = cs_field_get_key_int(f, kivisl);
-          cs_field_t *c_prop = NULL;
-          if (diff_id >= 0)
-            c_prop = cs_field_by_id(diff_id);
-
+          cs_real_t kd_val = 0.;
           path = cs_xpath_init_path();
           cs_xpath_add_elements(&path, 3,
                                 "thermophysical_models",
                                 "groundwater",
                                 "groundwater_law");
           cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
-          cs_xpath_add_element_num(&path, "variable", user_id +1);
-          cs_xpath_add_element(&path, "property");
-          cs_xpath_add_element(&path, "formula");
+          cs_xpath_add_element(&path, "scalar");
+          cs_xpath_add_test_attribute(&path, "name", f->name);
+          cs_xpath_add_element(&path, "kd");
           cs_xpath_add_function_text(&path);
-
-          formula = cs_gui_get_text_value(path);
+          cs_gui_get_double(path, &kd_val);
           BFT_FREE(path);
 
-          if (formula != NULL) {
-            /* return an empty interpreter */
-            time0 = cs_timer_wtime();
-
-            ev_formula = mei_tree_new(formula);
-            BFT_FREE(formula);
-
-            mei_tree_insert(ev_formula, "x", 0.0);
-            mei_tree_insert(ev_formula, "y", 0.0);
-            mei_tree_insert(ev_formula, "z", 0.0);
-            mei_tree_insert(ev_formula, "saturation", 0.0);
-            mei_tree_insert(ev_formula, f->name, 0.0);
-
-            /* try to build the interpreter */
-
-            if (mei_tree_builder(ev_formula))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not interpret expression: %s\n"),
-                        ev_formula->string);
-
-            const char *symbols[] = {kdname,
-                                     diffname};
-
-            if (mei_tree_find_symbols(ev_formula, 2, symbols))
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Error: can not find the required symbol: %s %s\n"),
-                        kdname, diffname);
-
-            cw[0] = 0; cw[1] = 0;
-
-            for (cs_lnum_t icel = 0; icel < cells; icel++) {
-
-              cs_lnum_t iel = cells_list[icel];
-
-              mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
-              mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
-              mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-              mei_tree_insert(ev_formula, "saturation", saturation_field[iel]);
-              mei_tree_insert(ev_formula, f->name, f->val[iel]);
-
-              mei_evaluate(ev_formula);
-              kd_val[iel] = mei_tree_lookup(ev_formula, kdname);
-              c_prop->val[iel] = mei_tree_lookup(ev_formula, diffname);
-
-              if (c_prop->val[iel] < 0.)
-                cw[0] += 1;
-              if (*diffusion == 1 && c_prop->val[iel] <= 0.)
-                cw[1] += 1;
-            }
-
-            cs_parall_counter(cw, 2);
-
-            if (cw[0] > 0)
-              bft_printf(_("soil_tracer_law, WARNING:\n"
-                           "  isotropic diffusion is < 0 in %llu cells.\n"),
-                         (unsigned long long)(cw[0]));
-            if (cw[1] > 0)
-              bft_printf(_("soil_tracer_law, WARNING:\n"
-                           "  isotropic diffusion is <= 0 in %llu cells\n"
-                           "  and  there is no anisotropic part.\n"),
-                         (unsigned long long)(cw[1]));
-
-            mei_tree_destroy(ev_formula);
-
-            cs_gui_add_mei_time(cs_timer_wtime() - time0);
+          for (cs_lnum_t icel = 0; icel < cells; icel++) {
+            cs_lnum_t iel = cells_list[icel];
+            fkd->val[iel] = kd_val;
           }
-          BFT_FREE(kdname);
-          BFT_FREE(diffname);
+
+          /* get diffusivity for current scalar and current zone */
+          int diff_id = cs_field_get_key_int(f, kivisl);
+          cs_field_t *fdiff = NULL;
+          if (diff_id >= 0)
+            fdiff = cs_field_by_id(diff_id);
+
+          cs_real_t diff_val = 0.;
+          path = cs_xpath_init_path();
+          cs_xpath_add_elements(&path, 3,
+                                "thermophysical_models",
+                                "groundwater",
+                                "groundwater_law");
+          cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+          cs_xpath_add_element(&path, "scalar");
+          cs_xpath_add_test_attribute(&path, "name", f->name);
+          cs_xpath_add_element(&path, "diffusivity");
+          cs_xpath_add_function_text(&path);
+          cs_gui_get_double(path, &diff_val);
+          BFT_FREE(path);
+
+          for (cs_lnum_t icel = 0; icel < cells; icel++) {
+            cs_lnum_t iel = cells_list[icel];
+            fdiff->val[iel] = diff_val;
+          }
         }
       }
 
