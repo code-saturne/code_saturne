@@ -584,7 +584,7 @@ _destroy_faces_interface_set(const cs_mesh_t      *mesh,
 
   cs_mesh_builder_t  *mb = cs_glob_mesh_builder;
 
-  if (cs_glob_n_ranks > 1 && *face_ifs != NULL) {
+  if (mesh->periodicity != NULL && *face_ifs != NULL) {
     cs_mesh_builder_extract_periodic_faces_g(mesh->n_init_perio,
                                              mb,
                                              mesh->periodicity,
