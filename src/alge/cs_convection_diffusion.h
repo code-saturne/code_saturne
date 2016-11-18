@@ -2646,7 +2646,7 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
  * \param[in]     i_dist          distance IJ.Nij
  * \param[in]     i_face_surf     face surface
  * \param[in]     cell_ceni       center of gravity coordinates of cell i
- * \param[in]     cell_cenj       center of gravity coordinates of cell i
+ * \param[in]     cell_cenj       center of gravity coordinates of cell j
  * \param[in]     i_face_normal   face normal
  * \param[in]     i_face_cog      center of gravity coordinates of face ij
  * \param[in]     dijpf           distance I'J'
@@ -4237,8 +4237,10 @@ cs_b_upwind_flux(const int        iconvp,
  * \param[in]     pi           value at cell i
  * \param[in]     pir          relaxed value at cell i
  * \param[in]     pipr         relaxed reconstructed value at cell i
- * \param[in]     coefa        explicit boundary coefficient for convection operator
- * \param[in]     coefb        implicit boundary coefficient for convection operator
+ * \param[in]     coefa        explicit boundary coefficient for convection
+ *                             operator
+ * \param[in]     coefb        implicit boundary coefficient for convection
+ *                             operator
  * \param[in]     b_massflux   mass flux at boundary face
  * \param[in,out] flux         flux at boundary face
  */
@@ -4291,8 +4293,10 @@ cs_b_upwind_flux_vector(const int          iconvp,
  * \param[in]     pi           value at cell i
  * \param[in]     pir          relaxed value at cell i
  * \param[in]     pipr         relaxed reconstructed value at cell i
- * \param[in]     coefa        explicit boundary coefficient for convection operator
- * \param[in]     coefb        implicit boundary coefficient for convection operator
+ * \param[in]     coefa        explicit boundary coefficient for convection
+ *                             operator
+ * \param[in]     coefb        implicit boundary coefficient for convection
+ *                             operator
  * \param[in]     b_massflux   mass flux at boundary face
  * \param[in,out] flux         flux at boundary face
  */
@@ -4342,7 +4346,7 @@ cs_b_upwind_flux_tensor(const int          iconvp,
  * \param[in]     pipr     relaxed reconstructed value at cell i
  * \param[in]     cofafp   explicit boundary coefficient for diffusion operator
  * \param[in]     cofbfp   implicit boundary coefficient for diffusion operator
- * \param[in]     b_visc   mass flux at boundary face
+ * \param[in]     b_visc   boundary face surface
  * \param[in,out] flux     flux at boundary face
  */
 /*----------------------------------------------------------------------------*/
@@ -4371,7 +4375,7 @@ cs_b_diff_flux(const int        idiffp,
  * \param[in]     pipr     relaxed reconstructed value at cell i
  * \param[in]     cofaf    explicit boundary coefficient for diffusion operator
  * \param[in]     cofbf    implicit boundary coefficient for diffusion operator
- * \param[in]     b_visc   mass flux at boundary face
+ * \param[in]     b_visc   boundary face surface
  * \param[in,out] flux     flux at boundary face
  */
 /*----------------------------------------------------------------------------*/
@@ -4406,7 +4410,7 @@ cs_b_diff_flux_vector(const int          idiffp,
  * \param[in]     pipr     relaxed reconstructed value at cell i
  * \param[in]     cofaf    explicit boundary coefficient for diffusion operator
  * \param[in]     cofbf    implicit boundary coefficient for diffusion operator
- * \param[in]     b_visc   mass flux at boundary face
+ * \param[in]     b_visc   boundary face surface
  * \param[in,out] flux     flux at boundary face
  */
 /*----------------------------------------------------------------------------*/
@@ -4645,6 +4649,19 @@ cs_b_cd_unsteady_tensor(const int          ircflp,
   for(int isou = 0; isou< 6; isou++)
     pip[isou] = pi[isou] + recoi[isou];
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add diffusive flux to flux at an internal coupling face.
+ *
+ * \param[in]     idiffp   diffusion flag
+ * \param[in]     pi       value at cell i
+ * \param[in]     pj       value at cell j
+ * \param[in]     b_visc   equivalent exchange coefficient at an internal
+ *                         coupling face
+ * \param[in,out] fluxi    flux at internal coupling face
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
 cs_b_diff_flux_coupling(const int        idiffp,
