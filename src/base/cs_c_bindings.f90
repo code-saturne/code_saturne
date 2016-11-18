@@ -1305,7 +1305,18 @@ module cs_c_bindings
     end subroutine cs_pressure_drop_by_zone
 
     !---------------------------------------------------------------------------
+    ! Interface to C function for balance computation
 
+    subroutine cs_surface_balance(selection_crit, scalar_name, normal)  &
+      bind(C, name='cs_surface_balance')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: selection_crit
+      character(kind=c_char, len=1), dimension(*), intent(in) :: scalar_name
+      real(kind=c_double), dimension(3), intent(in) :: normal
+    end subroutine cs_surface_balance
+
+    !---------------------------------------------------------------------------
     ! Interface to C user function for boundary conditions
 
     subroutine user_boundary_conditions(nvarcl,                           &
@@ -1819,6 +1830,35 @@ contains
     return
 
   end subroutine pressure_drop_by_zone
+
+  !=============================================================================
+
+  !> \brief Compute surface scalar balance for a given surface area
+
+  !> param[in]       sel_crit   selection criterium of a volumic zone
+
+  subroutine surface_balance(sel_crit, name, normal)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in)             :: sel_crit, name
+    real(kind=c_double), dimension(3), intent(in) :: normal
+
+    ! Local variables
+
+    character(len=len_trim(sel_crit)+1, kind=c_char) :: c_sel_crit
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+    c_sel_crit = trim(sel_crit)//c_null_char
+    c_name = trim(name)//c_null_char
+
+    call cs_surface_balance(c_sel_crit, c_name, normal)
+
+    return
+
+  end subroutine surface_balance
 
   !=============================================================================
 

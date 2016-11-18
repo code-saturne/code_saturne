@@ -74,6 +74,51 @@ cs_pressure_drop_by_zone(const char *selection_crit);
 
 /*----------------------------------------------------------------------------*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Computes the surface balance of a scalar which name is
+ * given as argument, on a oriented surface area defined by the criterium also
+ * given as argument. The flux is counted negatively in the given out normal direction.
+ *
+ *
+ * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     scalar_name         scalar name
+ * \param[in]     normal              out normal surface
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_surface_balance(const char *selection_crit,
+                   const char *scalar_name,
+                   const cs_real_3_t normal);
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the face by face surface flux of a scalar which name is
+ * given as argument, on a surface area defined by the criterium also given as
+ * argument. Counted negativly through the normal.
+ *
+ *
+ * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     scalar_name         scalar name
+ * \param[in]     normal              normal surface
+ * \param[in,out] flux_b_faces        pointer surface flux boundary faces
+ * \param[in,out] flux_i_faces        pointer surface flux internal faces
+ * \param[out]    nb_faces_sel        number of boundary faces
+ * \param[out]    ni_faces_sel        number of internal faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_flux_through_surface(const char *selection_crit,
+                        const char *scalar_name,
+                        const cs_real_3_t normal,
+                        cs_real_t *flux_b_faces,
+                        cs_real_t *flux_i_faces,
+                        int *nb_faces_sel,
+                        int *ni_faces_sel);
+/*----------------------------------------------------------------------------*/
 END_C_DECLS
 
 #endif /* __CS_BALANCE_BY_ZONE_H__ */

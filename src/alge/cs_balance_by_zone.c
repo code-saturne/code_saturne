@@ -93,6 +93,580 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
+inline static void
+_balance_boundary_faces(const int          icvflb,
+                        const int          icvfli,
+                        const int          idtvar,
+                        const int          iconvp,
+                        const int          idiffp,
+                        const int          ircflp,
+                        const cs_real_t    relaxp,
+                        const cs_real_3_t  diipb,
+                        const cs_real_3_t  grad,
+                        const cs_real_t    f_val,
+                        const cs_real_t    f_val_pre,
+                        const int          bc_type,
+                        const cs_real_t    b_visc,
+                        const cs_real_t    a_F,
+                        const cs_real_t    b_F,
+                        const cs_real_t    af_F,
+                        const cs_real_t    bf_F,
+                        const cs_real_t    ac_F,
+                        const cs_real_t    bc_F,
+                        const cs_real_t    b_mass_flux,
+                        const cs_real_t    cpro_cp,
+                        cs_real_t          *term_balance)
+{
+
+  if (icvflb == 0) {
+    /* ====================
+       ---> Upwind
+       ====================*/
+
+    /* Steady */
+    if (idtvar < 0) {
+
+      cs_real_t pir, pipr;
+
+      cs_b_cd_steady(ircflp,
+                     relaxp,
+                     diipb,
+                     grad,
+                     f_val,
+                     f_val_pre,
+                     &pir,
+                     &pipr);
+
+      cs_b_upwind_flux(iconvp,
+                       1., /* thetap */
+                       0, /* Conservative formulation, no mass accumulation */
+                       1, /* inc*/
+                       bc_type,
+                       f_val,
+                       pir,
+                       pipr,
+                       a_F,
+                       b_F,
+                       b_mass_flux,
+                       cpro_cp,
+                       term_balance);
+
+      cs_b_diff_flux(idiffp,
+                     1., /* thetap */
+                     1.,
+                     pipr,
+                     af_F,
+                     bf_F,
+                     b_visc,
+                     term_balance);
+
+      /* Unsteady */
+    } else {
+
+      cs_real_t pip;
+
+      cs_b_cd_unsteady(ircflp,
+                       diipb,
+                       grad,
+                       f_val,
+                       &pip);
+
+      cs_b_upwind_flux(iconvp,
+                       1., /* thetap */
+                       0, /* Conservative formulation, no mass accumulation */
+                       1.,
+                       bc_type,
+                       f_val,
+                       f_val, /* no relaxation */
+                       pip,
+                       a_F,
+                       b_F,
+                       b_mass_flux,
+                       cpro_cp,
+                       term_balance);
+
+      cs_b_diff_flux(idiffp,
+                     1., /* thetap */
+                     1.,
+                     pip,
+                     af_F,
+                     bf_F,
+                     b_visc,
+                     term_balance);
+
+
+    }
+
+    /* Boundary convective flux is imposed at some faces
+       (tagged in icvfli array) */
+  } else { /* icvflb =1 */
+  /* ====================
+     ---> Imposed
+     ====================*/
+
+    /* Steady */
+    if (idtvar < 0) {
+
+      cs_real_t pir, pipr;
+
+      cs_b_cd_steady(ircflp,
+                     relaxp,
+                     diipb,
+                     grad,
+                     f_val,
+                     f_val_pre,
+                     &pir,
+                     &pipr);
+
+      cs_b_imposed_conv_flux(iconvp,
+                             1.,
+                             0, /* Conservative formulation, no mass accumulation */
+                             1.,
+                             bc_type,
+                             icvfli,
+                             f_val,
+                             pir,
+                             pipr,
+                             a_F,
+                             b_F,
+                             ac_F,
+                             bc_F,
+                             b_mass_flux,
+                             cpro_cp,
+                             term_balance);
+
+      cs_b_diff_flux(idiffp,
+                     1., /* thetap */
+                     1.,
+                     pipr,
+                     af_F,
+                     bf_F,
+                     b_visc,
+                     term_balance);
+
+      /* Unsteady */
+    } else {
+
+      cs_real_t pip;
+
+      cs_b_cd_unsteady(ircflp,
+                       diipb,
+                       grad,
+                       f_val,
+                       &pip);
+
+      cs_b_imposed_conv_flux(iconvp,
+                             1.,
+                             0, /* Conservative formulation, no mass accumulation */
+                             1.,
+                             bc_type,
+                             icvfli,
+                             f_val,
+                             f_val, /* no relaxation */
+                             pip,
+                             a_F,
+                             b_F,
+                             ac_F,
+                             bc_F,
+                             b_mass_flux,
+                             cpro_cp,
+                             term_balance);
+
+      cs_b_diff_flux(idiffp,
+                     1., /* thetap */
+                     1.,
+                     pip,
+                     af_F,
+                     bf_F,
+                     b_visc,
+                     term_balance);
+
+    }
+
+  }
+
+}
+
+inline static void
+_balance_internal_faces(const int         iupwin,
+                        const int         idtvar,
+                        const int         iconvp,
+                        const int         idiffp,
+                        const int         ircflp,
+                        const int         ischcp,
+                        const int         isstpp,
+                        const cs_real_t   relaxp,
+                        const cs_real_t   blencp,
+                        const cs_real_t   weight,
+                        const cs_real_t   i_dist,
+                        const cs_real_t   i_face_surf,
+                        const cs_real_3_t cell_cen_id1,
+                        const cs_real_3_t cell_cen_id2,
+                        const cs_real_3_t i_face_normal,
+                        const cs_real_3_t i_face_cog,
+                        const cs_real_3_t dijpf,
+                        const cs_real_3_t grad_id1,
+                        const cs_real_3_t grad_id2,
+                        const cs_real_3_t gradup_id1,
+                        const cs_real_3_t gradup_id2,
+                        const cs_real_3_t gradst_id1,
+                        const cs_real_3_t gradst_id2,
+                        const cs_real_t   f_val_id1,
+                        const cs_real_t   f_val_id2,
+                        const cs_real_t   f_val_pre_id1,
+                        const cs_real_t   f_val_pre_id2,
+                        const cs_real_t   i_visc,
+                        const cs_real_t   i_mass_flux,
+                        const cs_real_t   cpro_cp_id1,
+                        const cs_real_t   cpro_cp_id2,
+                        cs_real_2_t       bi_bterms)
+{
+
+  if (iupwin == 1) {
+    /* ====================
+       ---> Upwind
+       ====================*/
+
+    /* Steady */
+    if (idtvar < 0) {
+
+      cs_real_t pip, pjp, pipr, pjpr;
+      cs_real_t pifri, pjfri, pifrj, pjfrj;
+
+      cs_i_cd_steady_upwind(ircflp,
+                            relaxp,
+                            weight,
+                            cell_cen_id1,
+                            cell_cen_id2,
+                            i_face_cog,
+                            dijpf,
+                            grad_id1,
+                            grad_id2,
+                            f_val_id1,
+                            f_val_id2,
+                            f_val_pre_id1,
+                            f_val_pre_id2,
+                            &pifri,
+                            &pifrj,
+                            &pjfri,
+                            &pjfrj,
+                            &pip,
+                            &pjp,
+                            &pipr,
+                            &pjpr);
+
+      cs_i_conv_flux(iconvp,
+                     1.,
+                     0, /* Conservative formulation, no mass accumulation */
+                     f_val_id1,
+                     f_val_id2,
+                     pifri,
+                     pifrj,
+                     pjfri,
+                     pjfrj,
+                     i_mass_flux,
+                     cpro_cp_id1,
+                     cpro_cp_id2,
+                     bi_bterms);
+
+      cs_i_diff_flux(idiffp,
+                     1.,
+                     pip,
+                     pjp,
+                     pipr,
+                     pjpr,
+                     i_visc,
+                     bi_bterms);
+
+      /* Unsteady */
+    } else {
+
+      cs_real_t pip, pjp;
+      cs_real_t pif, pjf;
+
+      cs_i_cd_unsteady_upwind(ircflp,
+                              weight,
+                              cell_cen_id1,
+                              cell_cen_id2,
+                              i_face_cog,
+                              dijpf,
+                              grad_id1,
+                              grad_id2,
+                              f_val_id1,
+                              f_val_id2,
+                              &pif,
+                              &pjf,
+                              &pip,
+                              &pjp);
+
+      cs_i_conv_flux(iconvp,
+                     1.,
+                     0, /* Conservative formulation, no mass accumulation */
+                     f_val_id1,
+                     f_val_id2,
+                     pif,
+                     pif, /* no relaxation */
+                     pjf,
+                     pjf, /* no relaxation */
+                     i_mass_flux,
+                     cpro_cp_id1,
+                     cpro_cp_id2,
+                     bi_bterms);
+
+      cs_i_diff_flux(idiffp,
+                     1.,
+                     pip,
+                     pjp,
+                     pip, /* no relaxation */
+                     pjp, /* no relaxation */
+                     i_visc,
+                     bi_bterms);
+
+    }
+    /* --> Flux with no slope test or Min/Max Beta limiter
+     ====================================================*/
+  } else if (isstpp == 1 || isstpp == 2) {
+
+    /* Steady */
+    if (idtvar < 0) {
+
+      cs_real_t pip, pjp, pipr, pjpr;
+      cs_real_t pifri, pjfri, pifrj, pjfrj;
+
+      cs_i_cd_steady(ircflp,
+                     ischcp,
+                     relaxp,
+                     blencp,
+                     weight,
+                     cell_cen_id1,
+                     cell_cen_id2,
+                     i_face_cog,
+                     dijpf,
+                     grad_id1,
+                     grad_id2,
+                     gradup_id1,
+                     gradup_id2,
+                     f_val_id1,
+                     f_val_id2,
+                     f_val_pre_id1,
+                     f_val_pre_id2,
+                     &pifri,
+                     &pifrj,
+                     &pjfri,
+                     &pjfrj,
+                     &pip,
+                     &pjp,
+                     &pipr,
+                     &pjpr);
+
+      cs_i_conv_flux(iconvp,
+                     1.,
+                     0, /* Conservative formulation, no mass accumulation */
+                     f_val_id1,
+                     f_val_id2,
+                     pifri,
+                     pifrj,
+                     pjfri,
+                     pjfrj,
+                     i_mass_flux,
+                     cpro_cp_id1,
+                     cpro_cp_id2,
+                     bi_bterms);
+
+      cs_i_diff_flux(idiffp,
+                     1.,
+                     pip,
+                     pjp,
+                     pipr,
+                     pjpr,
+                     i_visc,
+                     bi_bterms);
+
+      /* Unsteady */
+    } else {
+
+      cs_real_t pip, pjp;
+      cs_real_t pif, pjf;
+
+      cs_i_cd_unsteady(ircflp,
+                       ischcp,
+                       blencp,
+                       weight,
+                       cell_cen_id1,
+                       cell_cen_id2,
+                       i_face_cog,
+                       dijpf,
+                       grad_id1,
+                       grad_id2,
+                       gradup_id1,
+                       gradup_id2,
+                       f_val_id1,
+                       f_val_id2,
+                       &pif,
+                       &pjf,
+                       &pip,
+                       &pjp);
+
+      cs_i_conv_flux(iconvp,
+                     1.,
+                     0, /* Conservative formulation, no mass accumulation */
+                     f_val_id1,
+                     f_val_id2,
+                     pif,
+                     pif, /* no relaxation */
+                     pjf,
+                     pjf, /* no relaxation */
+                     i_mass_flux,
+                     cpro_cp_id1,
+                     cpro_cp_id2,
+                     bi_bterms);
+
+      cs_i_diff_flux(idiffp,
+                     1.,
+                     pip,
+                     pjp,
+                     pip, /* no relaxation */
+                     pjp, /* no relaxation */
+                     i_visc,
+                     bi_bterms);
+
+    }
+
+    /* --> Flux with slope test or Roe and Sweby limiter
+       ==================================================*/
+
+  } else {
+
+    /* Steady */
+    if (idtvar < 0) {
+
+      cs_real_t pip, pjp, pipr, pjpr;
+      cs_real_t pifri, pjfri, pifrj, pjfrj;
+
+      /* Upwind indicator (useless here) */
+      bool indic = false;
+
+      cs_i_cd_steady_slope_test(&indic,
+                                iconvp,
+                                ircflp,
+                                ischcp,
+                                relaxp,
+                                blencp,
+                                weight,
+                                i_dist,
+                                i_face_surf,
+                                cell_cen_id1,
+                                cell_cen_id2,
+                                i_face_normal,
+                                i_face_cog,
+                                dijpf,
+                                i_mass_flux,
+                                grad_id1,
+                                grad_id2,
+                                gradup_id1,
+                                gradup_id2,
+                                gradst_id1,
+                                gradst_id2,
+                                f_val_id1,
+                                f_val_id2,
+                                f_val_pre_id1,
+                                f_val_pre_id2,
+                                &pifri,
+                                &pifrj,
+                                &pjfri,
+                                &pjfrj,
+                                &pip,
+                                &pjp,
+                                &pipr,
+                                &pjpr);
+
+      cs_i_conv_flux(iconvp,
+                     1.,
+                     0, /* Conservative formulation, no mass accumulation */
+                     f_val_id1,
+                     f_val_id2,
+                     pifri,
+                     pifrj,
+                     pjfri,
+                     pjfrj,
+                     i_mass_flux,
+                     cpro_cp_id1,
+                     cpro_cp_id2,
+                     bi_bterms);
+
+      cs_i_diff_flux(idiffp,
+                     1.,
+                     pip,
+                     pjp,
+                     pipr,
+                     pjpr,
+                     i_visc,
+                     bi_bterms);
+
+      /* Unsteady */
+    } else {
+
+      cs_real_t pip, pjp;
+      cs_real_t pif, pjf;
+
+      /* Upwind indicator (useless here) */
+      bool indic = false;
+
+      cs_i_cd_unsteady_slope_test(&indic,
+                                  iconvp,
+                                  ircflp,
+                                  ischcp,
+                                  blencp,
+                                  weight,
+                                  i_dist,
+                                  i_face_surf,
+                                  cell_cen_id1,
+                                  cell_cen_id2,
+                                  i_face_normal,
+                                  i_face_cog,
+                                  dijpf,
+                                  i_mass_flux,
+                                  grad_id1,
+                                  grad_id2,
+                                  gradup_id1,
+                                  gradup_id2,
+                                  gradst_id1,
+                                  gradst_id2,
+                                  f_val_id1,
+                                  f_val_id2,
+                                  &pif,
+                                  &pjf,
+                                  &pip,
+                                  &pjp);
+
+      cs_i_conv_flux(iconvp,
+                     1.,
+                     0, /* Conservative formulation, no mass accumulation */
+                     f_val_id1,
+                     f_val_id2,
+                     pif,
+                     pif, /* no relaxation */
+                     pjf,
+                     pjf, /* no relaxation */
+                     i_mass_flux,
+                     cpro_cp_id1,
+                     cpro_cp_id2,
+                     bi_bterms);
+
+      cs_i_diff_flux(idiffp,
+                     1.,
+                     pip,
+                     pjp,
+                     pip, /* no relaxation */
+                     pjp, /* no relaxation */
+                     i_visc,
+                     bi_bterms);
+
+    }
+  }
+
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -163,7 +737,6 @@ cs_balance_by_zone(const char *selection_crit,
 
   /* all boundary convective fluxes are upwind */
   int icvflb = 0;
-  int *icvfli = NULL;
 
   /* Get physical fields */
   const cs_real_t *dt = CS_F_(dt)->val;
@@ -428,6 +1001,14 @@ cs_balance_by_zone(const char *selection_crit,
     }
   }
 
+  /* Turbulent part */
+  cs_real_t *c_visct = cs_field_by_name("turbulent_viscosity")->val;
+
+  if (var_cal_opt.idifft == 1) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/1.; //FIXME sigmas Turbulent prandlt
+
+  }
   cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
 
   /* =========================================================================
@@ -621,6 +1202,7 @@ cs_balance_by_zone(const char *selection_crit,
   int idiffp = var_cal_opt.idiff;
   int ircflp = var_cal_opt.ircflu;
   double relaxp = var_cal_opt.relaxv;
+
   /*
     --> Balance on boundary faces
         -------------------------
@@ -628,409 +1210,134 @@ cs_balance_by_zone(const char *selection_crit,
     We handle different types of boundary faces separately to better
     analyze the information, but this is not mandatory. */
 
-  if (icvflb == 0) {
-    /* ====================
-       ---> Upwind
-       ====================*/
+  for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
 
-    /* Steady */
-    if (idtvar < 0) {
+    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    /* Associated boundary cell */
+    cs_lnum_t c_id = b_face_cells[f_id_sel];
 
-      for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
+    cs_real_t term_balance = 0.;
 
-        cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
-        /* Associated boundary cell */
-        cs_lnum_t c_id = b_face_cells[f_id_sel];
+    cs_real_t ac_F = 0.;
+    cs_real_t bc_F = 0.;
 
-        cs_real_t pir, pipr;
-
-        cs_b_cd_steady(ircflp,
-                       relaxp,
-                       diipb[f_id_sel],
-                       grad[c_id],
-                       f->val[c_id],
-                       f->val_pre[c_id],
-                       &pir,
-                       &pipr);
-
-        cs_real_t term_balance = 0.;
-
-        cs_b_upwind_flux(iconvp,
-                         1., /* thetap */
-                         0, /* Conservative formulation, no mass accumulation */
-                         inc,
-                         bc_type[f_id_sel],
-                         f->val[c_id],
-                         pir,
-                         pipr,
-                         a_F[f_id_sel],
-                         b_F[f_id_sel],
-                         b_mass_flux[f_id_sel],
-                         cpro_cp[c_id],
-                         &term_balance);
-
-        cs_b_diff_flux(idiffp,
-                       1., /* thetap */
-                       inc,
-                       pipr,
-                       af_F[f_id_sel],
-                       bf_F[f_id_sel],
-                       b_visc[f_id_sel],
-                       &term_balance);
-
-        if (bc_type[f_id_sel] == CS_INLET ||
-            bc_type[f_id_sel] == CS_FREE_INLET ||
-            bc_type[f_id_sel] == CS_ESICF ||
-            bc_type[f_id_sel] == CS_EPHCF)
-          in_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_OUTLET ||
-                 bc_type[f_id_sel] == CS_SSPCF ||
-                 bc_type[f_id_sel] == CS_SOPCF)
-          out_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_SYMMETRY)
-          sym_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_SMOOTHWALL)
-          s_wall_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_ROUGHWALL)
-          r_wall_balance -= term_balance*dt[c_id];
-        else if (   bc_type[f_id_sel] == CS_COUPLED
-                 || bc_type[f_id_sel] == CS_COUPLED_FD)
-          cpl_balance -= term_balance*dt[c_id];
-        else
-          ndef_balance -= term_balance*dt[c_id];
-      }
-    /* Unsteady */
-    } else {
-
-      for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
-
-        cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
-        /* Associated boundary cell */
-        cs_lnum_t c_id = b_face_cells[f_id_sel];
-
-        cs_real_t pip;
-
-        cs_b_cd_unsteady(ircflp,
-                         diipb[f_id_sel],
-                         grad[c_id],
-                         f->val[c_id],
-                         &pip);
-
-        cs_real_t term_balance = 0.;
-
-        cs_b_upwind_flux(iconvp,
-                         1., /* thetap */
-                         0, /* Conservative formulation, no mass accumulation */
-                         inc,
-                         bc_type[f_id_sel],
-                         f->val[c_id],
-                         f->val[c_id], /* no relaxation */
-                         pip,
-                         a_F[f_id_sel],
-                         b_F[f_id_sel],
-                         b_mass_flux[f_id_sel],
-                         cpro_cp[c_id],
-                         &term_balance);
-
-        cs_b_diff_flux(idiffp,
-                       1., /* thetap */
-                       inc,
-                       pip,
-                       af_F[f_id_sel],
-                       bf_F[f_id_sel],
-                       b_visc[f_id_sel],
-                       &term_balance);
-
-        if (bc_type[f_id_sel] == CS_INLET ||
-            bc_type[f_id_sel] == CS_FREE_INLET ||
-            bc_type[f_id_sel] == CS_ESICF ||
-            bc_type[f_id_sel] == CS_EPHCF)
-          in_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_OUTLET ||
-                 bc_type[f_id_sel] == CS_SSPCF ||
-                 bc_type[f_id_sel] == CS_SOPCF)
-          out_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_SYMMETRY)
-          sym_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_SMOOTHWALL)
-          s_wall_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_ROUGHWALL)
-          r_wall_balance -= term_balance*dt[c_id];
-        else if (   bc_type[f_id_sel] == CS_COUPLED
-                 || bc_type[f_id_sel] == CS_COUPLED_FD)
-          cpl_balance -= term_balance*dt[c_id];
-        else
-          ndef_balance -= term_balance*dt[c_id];
-      }
-
-      if (var_cal_opt.icoupl > 0) {
-
-       /* Prepare data for sending from distant */
-        BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
-
-        for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-          cs_lnum_t f_id = faces_distant[ii];
-          cs_lnum_t c_id = b_face_cells[f_id];
-          cs_real_t pip;
-          cs_b_cd_unsteady(ircflp,
-                           diipb[f_id],
-                           grad[c_id],
-                           f->val[c_id],
-                           &pip);
-          pvar_distant[ii] = pip;
-        }
-
-        /* Receive data */
-        BFT_MALLOC(pvar_local, n_local, cs_real_t);
-        cs_internal_coupling_exchange_var(cpl,
-                                          1, /* Dimension */
-                                          pvar_distant,
-                                          pvar_local);
-
-
-        /* flux contribution */
-        for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-          cs_lnum_t f_id = faces_local[ii];
-          cs_lnum_t c_id = b_face_cells[f_id];
-          if (cells_tag_list[c_id] == 1) {
-            cs_real_t pip, pjp;
-            cs_real_t term_balance = 0.;
-
-            cs_b_cd_unsteady(ircflp,
-                             diipb[f_id],
-                             grad[c_id],
-                             f->val[c_id],
-                             &pip);
-
-            pjp = pvar_local[ii];
-
-            hint = cpl->h_int[ii];
-            hext = cpl->h_ext[ii];
-            heq = hint * hext / (hint + hext);
-
-            cs_b_diff_flux_coupling(idiffp,
-                                    pip,
-                                    pjp,
-                                    heq,
-                                    &term_balance);
-
-            i_cpl_balance -= term_balance*dt[c_id];
-          }
-        }
-
-        BFT_FREE(pvar_local);
-        BFT_FREE(pvar_distant);
-
-      }
+    if (icvflb == 1) {
+      ac_F = f->bc_coeffs->ac[f_id_sel];
+      bc_F = f->bc_coeffs->bc[f_id_sel];
     }
 
-  /* Boundary convective flux is imposed at some faces
-     (tagged in icvfli array) */
-  } else { /* icvflb =1 */
-    /* ====================
-       ---> Imposed
-       ====================*/
+    _balance_boundary_faces(icvflb,
+                            0, /* icvfli */
+                            idtvar,
+                            iconvp,
+                            idiffp,
+                            ircflp,
+                            relaxp,
+                            diipb[f_id_sel],
+                            grad[c_id],
+                            f->val[c_id],
+                            f->val_pre[c_id],
+                            bc_type[f_id_sel],
+                            b_visc[f_id_sel],
+                            a_F[f_id_sel],
+                            b_F[f_id_sel],
+                            af_F[f_id_sel],
+                            bf_F[f_id_sel],
+                            ac_F,
+                            bc_F,
+                            b_mass_flux[f_id_sel],
+                            cpro_cp[c_id],
+                            &term_balance);
 
-    const cs_real_t *ac_F = f->bc_coeffs->ac;
-    const cs_real_t *bc_F = f->bc_coeffs->bc;
+    if (bc_type[f_id_sel] == CS_INLET ||
+        bc_type[f_id_sel] == CS_FREE_INLET ||
+        bc_type[f_id_sel] == CS_ESICF ||
+        bc_type[f_id_sel] == CS_EPHCF)
+      in_balance -= term_balance*dt[c_id];
+    else if (bc_type[f_id_sel] == CS_OUTLET ||
+             bc_type[f_id_sel] == CS_SSPCF ||
+             bc_type[f_id_sel] == CS_SOPCF)
+      out_balance -= term_balance*dt[c_id];
+    else if (bc_type[f_id_sel] == CS_SYMMETRY)
+      sym_balance -= term_balance*dt[c_id];
+    else if (bc_type[f_id_sel] == CS_SMOOTHWALL)
+      s_wall_balance -= term_balance*dt[c_id];
+    else if (bc_type[f_id_sel] == CS_ROUGHWALL)
+      r_wall_balance -= term_balance*dt[c_id];
+    else if (   bc_type[f_id_sel] == CS_COUPLED
+             || bc_type[f_id_sel] == CS_COUPLED_FD)
+      cpl_balance -= term_balance*dt[c_id];
+    else
+      ndef_balance -= term_balance*dt[c_id];
 
-    /* Steady */
-    if (idtvar < 0) {
-
-      for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
-
-        cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
-        /* Associated boundary cell */
-        cs_lnum_t c_id = b_face_cells[f_id_sel];
-
-        cs_real_t pir, pipr;
-
-        cs_b_cd_steady(ircflp,
-                       relaxp,
-                       diipb[f_id_sel],
-                       grad[c_id],
-                       f->val[c_id],
-                       f->val_pre[c_id],
-                       &pir,
-                       &pipr);
-
-        cs_real_t term_balance = 0.;
-
-        cs_b_imposed_conv_flux(iconvp,
-                               1.,
-                               0, /* Conservative formulation, no mass accumulation */
-                               inc,
-                               bc_type[f_id_sel],
-                               icvfli[f_id_sel],
-                               f->val[c_id],
-                               pir,
-                               pipr,
-                               a_F[f_id_sel],
-                               b_F[f_id_sel],
-                               ac_F[f_id_sel],
-                               bc_F[f_id_sel],
-                               b_mass_flux[f_id_sel],
-                               cpro_cp[c_id],
-                               &term_balance);
-
-        cs_b_diff_flux(idiffp,
-                       1., /* thetap */
-                       inc,
-                       pipr,
-                       af_F[f_id_sel],
-                       bf_F[f_id_sel],
-                       b_visc[f_id_sel],
-                       &term_balance);
-
-        if (bc_type[f_id_sel] == CS_INLET ||
-            bc_type[f_id_sel] == CS_FREE_INLET ||
-            bc_type[f_id_sel] == CS_ESICF ||
-            bc_type[f_id_sel] == CS_EPHCF)
-          in_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_OUTLET ||
-                 bc_type[f_id_sel] == CS_SSPCF ||
-                 bc_type[f_id_sel] == CS_SOPCF)
-          out_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_SYMMETRY)
-          sym_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_SMOOTHWALL)
-          s_wall_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_ROUGHWALL)
-          r_wall_balance -= term_balance*dt[c_id];
-        else if (   bc_type[f_id_sel] == CS_COUPLED
-                 || bc_type[f_id_sel] == CS_COUPLED_FD)
-          cpl_balance -= term_balance*dt[c_id];
-        else
-          ndef_balance -= term_balance*dt[c_id];
-      }
-    /* Unsteady */
-    } else {
-
-      for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
-
-        cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
-        /* Associated boundary cell */
-        cs_lnum_t c_id = b_face_cells[f_id_sel];
-
-        cs_real_t pip;
-
-        cs_b_cd_unsteady(ircflp,
-                         diipb[f_id_sel],
-                         grad[c_id],
-                         f->val[c_id],
-                         &pip);
-
-        cs_real_t term_balance = 0.;
-
-        cs_b_imposed_conv_flux(iconvp,
-                               1.,
-                               0, /* Conservative formulation, no mass accumulation */
-                               inc,
-                               bc_type[f_id_sel],
-                               icvfli[f_id_sel],
-                               f->val[c_id],
-                               f->val[c_id], /* no relaxation */
-                               pip,
-                               a_F[f_id_sel],
-                               b_F[f_id_sel],
-                               ac_F[f_id_sel],
-                               bc_F[f_id_sel],
-                               b_mass_flux[f_id_sel],
-                               cpro_cp[c_id],
-                               &term_balance);
-
-        cs_b_diff_flux(idiffp,
-                       1., /* thetap */
-                       inc,
-                       pip,
-                       af_F[f_id_sel],
-                       bf_F[f_id_sel],
-                       b_visc[f_id_sel],
-                       &term_balance);
-
-        if (bc_type[f_id_sel] == CS_INLET ||
-            bc_type[f_id_sel] == CS_FREE_INLET ||
-            bc_type[f_id_sel] == CS_ESICF ||
-            bc_type[f_id_sel] == CS_EPHCF)
-          in_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_OUTLET ||
-                 bc_type[f_id_sel] == CS_SSPCF ||
-                 bc_type[f_id_sel] == CS_SOPCF)
-          out_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_SYMMETRY)
-          sym_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_SMOOTHWALL)
-          s_wall_balance -= term_balance*dt[c_id];
-        else if (bc_type[f_id_sel] == CS_ROUGHWALL)
-          r_wall_balance -= term_balance*dt[c_id];
-        else if (   bc_type[f_id_sel] == CS_COUPLED
-                 || bc_type[f_id_sel] == CS_COUPLED_FD)
-          cpl_balance -= term_balance*dt[c_id];
-        else
-          ndef_balance -= term_balance*dt[c_id];
-      }
-    }
-
-    if (var_cal_opt.icoupl > 0) {
-
-     /* Prepare data for sending from distant */
-      BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
-
-      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-        cs_lnum_t f_id = faces_distant[ii];
-        cs_lnum_t c_id = b_face_cells[f_id];
-        cs_real_t pip;
-        cs_b_cd_unsteady(ircflp,
-                         diipb[f_id],
-                         grad[c_id],
-                         f->val[c_id],
-                         &pip);
-        pvar_distant[ii] = pip;
-      }
-
-      /* Receive data */
-      BFT_MALLOC(pvar_local, n_local, cs_real_t);
-      cs_internal_coupling_exchange_var(cpl,
-                                        1, /* Dimension */
-                                        pvar_distant,
-                                        pvar_local);
-
-
-      /* flux contribution */
-      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-        cs_lnum_t f_id = faces_local[ii];
-        cs_lnum_t c_id = b_face_cells[f_id];
-        if (cells_tag_list[c_id] == 1) {
-          cs_real_t pip, pjp;
-          cs_real_t term_balance = 0.;
-
-          cs_b_cd_unsteady(ircflp,
-                           diipb[f_id],
-                           grad[c_id],
-                           f->val[c_id],
-                           &pip);
-
-          pjp = pvar_local[ii];
-
-          hint = cpl->h_int[ii];
-          hext = cpl->h_ext[ii];
-          heq = hint * hext / (hint + hext);
-
-          cs_b_diff_flux_coupling(idiffp,
-                                  pip,
-                                  pjp,
-                                  heq,
-                                  &term_balance);
-
-          i_cpl_balance -= term_balance*dt[c_id];
-        }
-      }
-
-      BFT_FREE(pvar_local);
-      BFT_FREE(pvar_distant);
-
-    }
   }
+
+  /*
+    --> Balance on coupled faces
+        ------------------------
+
+    We handle different types of boundary faces separately to better
+    analyze the information, but this is not mandatory. */
+
+   if (var_cal_opt.icoupl > 0) {
+
+    /* Prepare data for sending from distant */
+     BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
+
+     for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+       cs_lnum_t f_id = faces_distant[ii];
+       cs_lnum_t c_id = b_face_cells[f_id];
+       cs_real_t pip;
+       cs_b_cd_unsteady(ircflp,
+                        diipb[f_id],
+                        grad[c_id],
+                        f->val[c_id],
+                        &pip);
+       pvar_distant[ii] = pip;
+     }
+
+     /* Receive data */
+     BFT_MALLOC(pvar_local, n_local, cs_real_t);
+     cs_internal_coupling_exchange_var(cpl,
+                                       1, /* Dimension */
+                                       pvar_distant,
+                                       pvar_local);
+
+
+     /* flux contribution */
+     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+       cs_lnum_t f_id = faces_local[ii];
+       cs_lnum_t c_id = b_face_cells[f_id];
+       if (cells_tag_list[c_id] == 1) {
+         cs_real_t pip, pjp;
+         cs_real_t term_balance = 0.;
+
+         cs_b_cd_unsteady(ircflp,
+                          diipb[f_id],
+                          grad[c_id],
+                          f->val[c_id],
+                          &pip);
+
+         pjp = pvar_local[ii];
+
+         hint = cpl->h_int[ii];
+         hext = cpl->h_ext[ii];
+         heq = hint * hext / (hint + hext);
+
+         cs_b_diff_flux_coupling(idiffp,
+                                 pip,
+                                 pjp,
+                                 heq,
+                                 &term_balance);
+
+         i_cpl_balance -= term_balance*dt[c_id];
+       }
+     }
+
+     BFT_FREE(pvar_local);
+     BFT_FREE(pvar_distant);
+
+   }
 
   /*
     --> Balance on boundary faces of the selected zone
@@ -1043,524 +1350,71 @@ cs_balance_by_zone(const char *selection_crit,
   double blencp = var_cal_opt.blencv;
   int iupwin = (blencp > 0.) ? 0 : 1;
 
-  /* Upwind indicator (useless here) */
-  bool indic = false;
 
-  if (iupwin == 1) {
-    /* ====================
-       ---> Upwind
-       ====================*/
+  for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
 
-    /* Steady */
-    if (idtvar < 0) {
+    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    /* Associated boundary-internal cells */
+    cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
+    cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
-      for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
+    cs_real_2_t bi_bterms = {0.,0.};
 
-        cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
-        /* Associated boundary-internal cells */
-        cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
-        cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
+    _balance_internal_faces(iupwin,
+                            idtvar,
+                            iconvp,
+                            idiffp,
+                            ircflp,
+                            ischcp,
+                            isstpp,
+                            relaxp,
+                            blencp,
+                            weight[f_id_sel],
+                            i_dist[f_id_sel],
+                            i_face_surf[f_id_sel],
+                            cell_cen[c_id1],
+                            cell_cen[c_id2],
+                            i_face_normal[f_id_sel],
+                            i_face_cog[f_id_sel],
+                            dijpf[f_id_sel],
+                            grad[c_id1],
+                            grad[c_id2],
+                            gradup[c_id1],
+                            gradup[c_id2],
+                            gradst[c_id1],
+                            gradst[c_id2],
+                            f->val[c_id1],
+                            f->val[c_id2],
+                            f->val_pre[c_id1],
+                            f->val_pre[c_id2],
+                            i_visc[f_id_sel],
+                            i_mass_flux[f_id_sel],
+                            cpro_cp[c_id1],
+                            cpro_cp[c_id2],
+                            bi_bterms);
 
-        cs_real_2_t bi_bterms = {0.,0.};
 
-        cs_real_t pip, pjp, pipr, pjpr;
-        cs_real_t pifri, pjfri, pifrj, pjfrj;
-
-        cs_i_cd_steady_upwind(ircflp,
-                              relaxp,
-                              weight[f_id],
-                              cell_cen[c_id1],
-                              cell_cen[c_id2],
-                              i_face_cog[f_id_sel],
-                              dijpf[f_id_sel],
-                              grad[c_id1],
-                              grad[c_id2],
-                              f->val[c_id1],
-                              f->val[c_id2],
-                              f->val_pre[c_id1],
-                              f->val_pre[c_id2],
-                              &pifri,
-                              &pifrj,
-                              &pjfri,
-                              &pjfrj,
-                              &pip,
-                              &pjp,
-                              &pipr,
-                              &pjpr);
-
-        cs_i_conv_flux(iconvp,
-                       1.,
-                       0, /* Conservative formulation, no mass accumulation */
-                       f->val[c_id1],
-                       f->val[c_id2],
-                       pifri,
-                       pifrj,
-                       pjfri,
-                       pjfrj,
-                       i_mass_flux[f_id_sel],
-                       cpro_cp[c_id1],
-                       cpro_cp[c_id2],
-                       bi_bterms);
-
-        cs_i_diff_flux(idiffp,
-                       1.,
-                       pip,
-                       pjp,
-                       pipr,
-                       pjpr,
-                       i_visc[f_id_sel],
-                       bi_bterms);
-
-        /* (The cell is counted only once in parallel by checking that
-           the c_id is not in the halo) */
-        /* Face normal well oriented (check bi_face_cells array) */
-        if (bi_face_cells[f_id_sel][0] >= 0) {
-          if (c_id1 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_o_balance -= bi_bterms[0]*dt[c_id1];
-            else
-              bi_i_balance -= bi_bterms[0]*dt[c_id1];
-          }
-        }
-        /* Face normal direction reversed */
-        else {
-          if (c_id2 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_i_balance += bi_bterms[1]*dt[c_id2];
-            else
-              bi_o_balance += bi_bterms[1]*dt[c_id2];
-          }
-        }
-      }
-    /* Unsteady */
-    } else {
-
-      for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
-
-        cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
-        /* Associated boundary-internal cells */
-        cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
-        cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
-
-        cs_real_2_t bi_bterms = {0.,0.};
-
-        cs_real_t pip, pjp;
-        cs_real_t pif, pjf;
-
-        cs_i_cd_unsteady_upwind(ircflp,
-                                weight[f_id],
-                                cell_cen[c_id1],
-                                cell_cen[c_id2],
-                                i_face_cog[f_id_sel],
-                                dijpf[f_id_sel],
-                                grad[c_id1],
-                                grad[c_id2],
-                                f->val[c_id1],
-                                f->val[c_id2],
-                                &pif,
-                                &pjf,
-                                &pip,
-                                &pjp);
-
-        cs_i_conv_flux(iconvp,
-                       1.,
-                       0, /* Conservative formulation, no mass accumulation */
-                       f->val[c_id1],
-                       f->val[c_id2],
-                       pif,
-                       pif, /* no relaxation */
-                       pjf,
-                       pjf, /* no relaxation */
-                       i_mass_flux[f_id_sel],
-                       cpro_cp[c_id1],
-                       cpro_cp[c_id2],
-                       bi_bterms);
-
-        cs_i_diff_flux(idiffp,
-                       1.,
-                       pip,
-                       pjp,
-                       pip, /* no relaxation */
-                       pjp, /* no relaxation */
-                       i_visc[f_id_sel],
-                       bi_bterms);
-
-        /* (The cell is counted only once in parallel by checking that
-           the c_id is not in the halo) */
-        /* Face normal well oriented (check bi_face_cells array) */
-        if (bi_face_cells[f_id_sel][0] >= 0) {
-          if (c_id1 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_o_balance -= bi_bterms[0]*dt[c_id1];
-            else
-              bi_i_balance -= bi_bterms[0]*dt[c_id1];
-          }
-        }
-        /* Face normal direction reversed */
-        else {
-          if (c_id2 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_i_balance += bi_bterms[1]*dt[c_id2];
-            else
-              bi_o_balance += bi_bterms[1]*dt[c_id2];
-          }
-        }
+    /* (The cell is counted only once in parallel by checking that
+       the c_id is not in the halo) */
+    /* Face normal well oriented (check bi_face_cells array) */
+    if (bi_face_cells[f_id_sel][0] >= 0) {
+      if (c_id1 < n_cells) {
+        if (i_mass_flux[f_id_sel] > 0)
+          bi_o_balance -= bi_bterms[0]*dt[c_id1];
+        else
+          bi_i_balance -= bi_bterms[0]*dt[c_id1];
       }
     }
-  /* --> Flux with no slope test or Min/Max Beta limiter
-    ====================================================*/
-  } else if (isstpp == 1 || isstpp == 2) {
-
-    /* Steady */
-    if (idtvar < 0) {
-
-      for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
-
-        cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
-        /* Associated boundary-internal cells */
-        cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
-        cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
-
-        cs_real_2_t bi_bterms = {0.,0.};
-
-        cs_real_t pip, pjp, pipr, pjpr;
-        cs_real_t pifri, pjfri, pifrj, pjfrj;
-
-        cs_i_cd_steady(ircflp,
-                       ischcp,
-                       relaxp,
-                       blencp,
-                       weight[f_id],
-                       cell_cen[c_id1],
-                       cell_cen[c_id2],
-                       i_face_cog[f_id_sel],
-                       dijpf[f_id_sel],
-                       grad[c_id1],
-                       grad[c_id2],
-                       gradup[c_id1],
-                       gradup[c_id2],
-                       f->val[c_id1],
-                       f->val[c_id2],
-                       f->val_pre[c_id1],
-                       f->val_pre[c_id2],
-                       &pifri,
-                       &pifrj,
-                       &pjfri,
-                       &pjfrj,
-                       &pip,
-                       &pjp,
-                       &pipr,
-                       &pjpr);
-
-        cs_i_conv_flux(iconvp,
-                       1.,
-                       0, /* Conservative formulation, no mass accumulation */
-                       f->val[c_id1],
-                       f->val[c_id2],
-                       pifri,
-                       pifrj,
-                       pjfri,
-                       pjfrj,
-                       i_mass_flux[f_id_sel],
-                       cpro_cp[c_id1],
-                       cpro_cp[c_id2],
-                       bi_bterms);
-
-        cs_i_diff_flux(idiffp,
-                       1.,
-                       pip,
-                       pjp,
-                       pipr,
-                       pjpr,
-                       i_visc[f_id_sel],
-                       bi_bterms);
-
-        /* (The cell is counted only once in parallel by checking that
-           the c_id is not in the halo) */
-        /* Face normal well oriented (check bi_face_cells array) */
-        if (bi_face_cells[f_id_sel][0] >= 0) {
-          if (c_id1 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_o_balance -= bi_bterms[0]*dt[c_id1];
-            else
-              bi_i_balance -= bi_bterms[0]*dt[c_id1];
-          }
-        }
-        /* Face normal direction reversed */
-        else {
-          if (c_id2 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_i_balance += bi_bterms[1]*dt[c_id2];
-            else
-              bi_o_balance += bi_bterms[1]*dt[c_id2];
-          }
-        }
-      }
-    /* Unsteady */
-    } else {
-
-      for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
-
-        cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
-        /* Associated boundary-internal cells */
-        cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
-        cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
-
-        cs_real_2_t bi_bterms = {0.,0.};
-
-        cs_real_t pip, pjp;
-        cs_real_t pif, pjf;
-
-        cs_i_cd_unsteady(ircflp,
-                         ischcp,
-                         blencp,
-                         weight[f_id],
-                         cell_cen[c_id1],
-                         cell_cen[c_id2],
-                         i_face_cog[f_id_sel],
-                         dijpf[f_id_sel],
-                         grad[c_id1],
-                         grad[c_id2],
-                         gradup[c_id1],
-                         gradup[c_id2],
-                         f->val[c_id1],
-                         f->val[c_id2],
-                         &pif,
-                         &pjf,
-                         &pip,
-                         &pjp);
-
-        cs_i_conv_flux(iconvp,
-                       1.,
-                       0, /* Conservative formulation, no mass accumulation */
-                       f->val[c_id1],
-                       f->val[c_id2],
-                       pif,
-                       pif, /* no relaxation */
-                       pjf,
-                       pjf, /* no relaxation */
-                       i_mass_flux[f_id_sel],
-                       cpro_cp[c_id1],
-                       cpro_cp[c_id2],
-                       bi_bterms);
-
-        cs_i_diff_flux(idiffp,
-                       1.,
-                       pip,
-                       pjp,
-                       pip, /* no relaxation */
-                       pjp, /* no relaxation */
-                       i_visc[f_id_sel],
-                       bi_bterms);
-
-        /* (The cell is counted only once in parallel by checking that
-           the c_id is not in the halo) */
-        /* Face normal well oriented (check bi_face_cells array) */
-        if (bi_face_cells[f_id_sel][0] >= 0) {
-          if (c_id1 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_o_balance -= bi_bterms[0]*dt[c_id1];
-            else
-              bi_i_balance -= bi_bterms[0]*dt[c_id1];
-          }
-        }
-        /* Face normal direction reversed */
-        else {
-          if (c_id2 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_i_balance += bi_bterms[1]*dt[c_id2];
-            else
-              bi_o_balance += bi_bterms[1]*dt[c_id2];
-          }
-        }
+    /* Face normal direction reversed */
+    else {
+      if (c_id2 < n_cells) {
+        if (i_mass_flux[f_id_sel] > 0)
+          bi_i_balance += bi_bterms[1]*dt[c_id2];
+        else
+          bi_o_balance += bi_bterms[1]*dt[c_id2];
       }
     }
 
-  /* --> Flux with slope test or Roe and Sweby limiter
-    ==================================================*/
-
-  } else {
-
-    /* Steady */
-    if (idtvar < 0) {
-
-      for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
-
-        cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
-        /* Associated boundary-internal cells */
-        cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
-        cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
-
-        cs_real_2_t bi_bterms = {0.,0.};
-
-        cs_real_t pip, pjp, pipr, pjpr;
-        cs_real_t pifri, pjfri, pifrj, pjfrj;
-
-        cs_i_cd_steady_slope_test(&indic,
-                                  iconvp,
-                                  ircflp,
-                                  ischcp,
-                                  relaxp,
-                                  blencp,
-                                  weight[f_id],
-                                  i_dist[f_id_sel],
-                                  i_face_surf[f_id_sel],
-                                  cell_cen[c_id1],
-                                  cell_cen[c_id2],
-                                  i_face_normal[f_id_sel],
-                                  i_face_cog[f_id_sel],
-                                  dijpf[f_id_sel],
-                                  i_mass_flux[f_id_sel],
-                                  grad[c_id1],
-                                  grad[c_id2],
-                                  gradup[c_id1],
-                                  gradup[c_id2],
-                                  gradst[c_id1],
-                                  gradst[c_id2],
-                                  f->val[c_id1],
-                                  f->val[c_id2],
-                                  f->val_pre[c_id1],
-                                  f->val_pre[c_id2],
-                                  &pifri,
-                                  &pifrj,
-                                  &pjfri,
-                                  &pjfrj,
-                                  &pip,
-                                  &pjp,
-                                  &pipr,
-                                  &pjpr);
-
-        cs_i_conv_flux(iconvp,
-                       1.,
-                       0, /* Conservative formulation, no mass accumulation */
-                       f->val[c_id1],
-                       f->val[c_id2],
-                       pifri,
-                       pifrj,
-                       pjfri,
-                       pjfrj,
-                       i_mass_flux[f_id_sel],
-                       cpro_cp[c_id1],
-                       cpro_cp[c_id2],
-                       bi_bterms);
-
-        cs_i_diff_flux(idiffp,
-                       1.,
-                       pip,
-                       pjp,
-                       pipr,
-                       pjpr,
-                       i_visc[f_id_sel],
-                       bi_bterms);
-
-        /* (The cell is counted only once in parallel by checking that
-           the c_id is not in the halo) */
-        /* Face normal well oriented (check bi_face_cells array) */
-        if (bi_face_cells[f_id_sel][0] >= 0) {
-          if (c_id1 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_o_balance -= bi_bterms[0]*dt[c_id1];
-            else
-              bi_i_balance -= bi_bterms[0]*dt[c_id1];
-          }
-        }
-        /* Face normal direction reversed */
-        else {
-          if (c_id2 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_i_balance += bi_bterms[1]*dt[c_id2];
-            else
-              bi_o_balance += bi_bterms[1]*dt[c_id2];
-          }
-        }
-      }
-    /* Unsteady */
-    } else {
-
-      for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
-
-        cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
-        /* Associated boundary-internal cells */
-        cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
-        cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
-
-        cs_real_2_t bi_bterms = {0.,0.};
-
-        cs_real_t pip, pjp;
-        cs_real_t pif, pjf;
-
-        cs_i_cd_unsteady_slope_test(&indic,
-                                    iconvp,
-                                    ircflp,
-                                    ischcp,
-                                    blencp,
-                                    weight[f_id],
-                                    i_dist[f_id_sel],
-                                    i_face_surf[f_id_sel],
-                                    cell_cen[c_id1],
-                                    cell_cen[c_id2],
-                                    i_face_normal[f_id_sel],
-                                    i_face_cog[f_id_sel],
-                                    dijpf[f_id_sel],
-                                    i_mass_flux[f_id_sel],
-                                    grad[c_id1],
-                                    grad[c_id2],
-                                    gradup[c_id1],
-                                    gradup[c_id2],
-                                    gradst[c_id1],
-                                    gradst[c_id2],
-                                    f->val[c_id1],
-                                    f->val[c_id2],
-                                    &pif,
-                                    &pjf,
-                                    &pip,
-                                    &pjp);
-
-        cs_i_conv_flux(iconvp,
-                       1.,
-                       0, /* Conservative formulation, no mass accumulation */
-                       f->val[c_id1],
-                       f->val[c_id2],
-                       pif,
-                       pif, /* no relaxation */
-                       pjf,
-                       pjf, /* no relaxation */
-                       i_mass_flux[f_id_sel],
-                       cpro_cp[c_id1],
-                       cpro_cp[c_id2],
-                       bi_bterms);
-
-        cs_i_diff_flux(idiffp,
-                       1.,
-                       pip,
-                       pjp,
-                       pip, /* no relaxation */
-                       pjp, /* no relaxation */
-                       i_visc[f_id_sel],
-                       bi_bterms);
-
-        /* (The cell is counted only once in parallel by checking that
-           the c_id is not in the halo) */
-        /* Face normal well oriented (check bi_face_cells array) */
-        if (bi_face_cells[f_id_sel][0] >= 0) {
-          if (c_id1 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_o_balance -= bi_bterms[0]*dt[c_id1];
-            else
-              bi_i_balance -= bi_bterms[0]*dt[c_id1];
-          }
-        }
-        /* Face normal direction reversed */
-        else {
-          if (c_id2 < n_cells) {
-            if (i_mass_flux[f_id_sel] > 0)
-              bi_i_balance += bi_bterms[1]*dt[c_id2];
-            else
-              bi_o_balance += bi_bterms[1]*dt[c_id2];
-          }
-        }
-      }
-    }
   }
 
   /* Free memory */
@@ -1602,6 +1456,7 @@ cs_balance_by_zone(const char *selection_crit,
   cs_parall_sum(1, CS_DOUBLE, &r_wall_balance);
   cs_parall_sum(1, CS_DOUBLE, &cpl_balance);
   cs_parall_sum(1, CS_DOUBLE, &ndef_balance);
+  cs_parall_sum(1, CS_DOUBLE, &i_cpl_balance);
 
   /* --> Total balance
          ------------- */
@@ -2286,5 +2141,1105 @@ cs_pressure_drop_by_zone(const char *selection_crit)
              in_m_debit, out_m_debit);
 }
 /*----------------------------------------------------------------------------*/
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Computes the surface balance of a scalar which name is
+ * given as argument, on a oriented surface area defined by the criterium also
+ * given as argument. The flux is counted negatively in the given out normal direction.
+ *
+ *
+ * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     scalar_name         scalar name
+ * \param[in]     normal              out normal surface
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_surface_balance(const char *selection_crit,
+                   const char *scalar_name,
+                   const cs_real_3_t normal)
+{
+ /* ---------------------------------------------------- */
+ /*                   Local variables                    */
+ /* ---------------------------------------------------- */
+
+  int nt_cur = cs_glob_time_step->nt_cur;
+  int idtvar = cs_glob_time_step_options->idtvar;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_t *restrict weight = fvq->weight;
+  const cs_real_t *restrict i_dist = fvq->i_dist;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict dijpf
+    = (const cs_real_3_t *restrict)fvq->dijpf;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+
+  const int *bc_type = cs_glob_bc_type;
+
+  const cs_field_t *f = cs_field_by_name_try(scalar_name);
+  const int field_id = cs_field_id_by_name(scalar_name);
+
+
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
+  /* all boundary convective fluxes are upwind */
+  int icvflb = 0;
+
+  /* Internal cuplin varibale initialization*/
+  cs_real_t *pvar_local = NULL;
+  cs_real_t *pvar_distant = NULL;
+  cs_real_t hint, hext, heq;
+  cs_lnum_t *faces_local = NULL;
+  cs_int_t n_local;
+  cs_lnum_t n_distant;
+  cs_lnum_t *faces_distant = NULL;
+  int coupling_id;
+  cs_internal_coupling_t *cpl = NULL;
+
+ /* ---------------------------------------------------- */
+ /*                 Physical properties                  */
+ /* ---------------------------------------------------- */
+
+
+  /* Temperature indicator.
+     Will multiply by CP in order to have energy. */
+  bool itemperature = false;
+  const int scal_id = cs_field_get_key_int(f, cs_field_key_id("scalar_id"));
+  if (scal_id == cs_glob_thermal_model->iscalt) {
+    if (cs_glob_thermal_model->itherm == 1)
+      itemperature = true;
+  }
+
+  /* Specific heat (CP) */
+  cs_real_t *cpro_cp = NULL;
+  const int icp = cs_field_id_by_name("specific_heat");
+  if (itemperature) {
+    if (icp != -1)
+      cpro_cp = CS_F_(cp)->val;
+    else {
+      const double cp0 = cs_glob_fluid_properties->cp0;
+      BFT_MALLOC(cpro_cp, n_cells, cs_real_t);
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cpro_cp[c_id] = cp0;
+      }
+    }
+  }
+  else {
+    BFT_MALLOC(cpro_cp, n_cells, cs_real_t);
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cpro_cp[c_id] = 1.;
+    }
+  }
+
+  /* Boundary condition coefficient for h */
+  const cs_real_t *a_F = f->bc_coeffs->a;
+  const cs_real_t *b_F = f->bc_coeffs->b;
+  const cs_real_t *af_F = f->bc_coeffs->af;
+  const cs_real_t *bf_F = f->bc_coeffs->bf;
+
+  /* Convective mass fluxes for inner and boundary faces */
+  int iflmas = cs_field_get_key_int(f, cs_field_key_id("inner_mass_flux_id"));
+  const cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
+
+  int iflmab = cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id"));
+  const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
+
+  /* Face viscosity */
+  int imvisf = cs_glob_space_disc->imvisf;
+  cs_real_t *i_visc;
+  cs_real_t *b_visc;
+  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
+  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+
+  cs_real_t *c_visc = NULL;
+  const int kivisl =
+    cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
+  if (kivisl != -1)
+    c_visc = cs_field_by_id(kivisl)->val;
+  else {
+    const double visls0 =
+      cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
+    BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      c_visc[c_id] = visls0;
+    }
+  }
+
+  /* Turbulent part */
+  cs_real_t *c_visct = cs_field_by_name("turbulent_viscosity")->val;
+
+  if (var_cal_opt.idifft == 1) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/1.; //FIXME sigmas Turbulent prandlt
+
+  }
+  cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
+
+  /* Internal coupling*/
+
+  if (var_cal_opt.icoupl > 0) {
+    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    coupling_id = cs_field_get_key_int(f, coupling_key_id);
+    cpl = cs_internal_coupling_by_id(coupling_id);
+    cs_internal_coupling_coupled_faces(cpl,
+                                       &n_local,
+                                       &faces_local,
+                                       &n_distant,
+                                       &faces_distant);
+  }
+
+ /* ---------------------------------------------------- */
+ /*                 Gradient calculation                 */
+ /* ---------------------------------------------------- */
+
+  cs_real_3_t *grad;
+  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+
+  cs_halo_type_t halo_type;
+  cs_gradient_type_t gradient_type;
+
+  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  cs_field_gradient_scalar(f,
+                           true, /* use_previous_t */
+                           gradient_type,
+                           halo_type,
+                           1, /* inc */
+                           true, /* _recompute_cocg */
+                           grad);
+
+
+
+  int inc = 1;
+
+  /* Compute the gradient for convective scheme (the slope test, limiter, SOLU, etc) */
+  cs_real_3_t *gradup = NULL;
+  cs_real_3_t *gradst = NULL;
+  if (var_cal_opt.blencv > 0 && var_cal_opt.isstpc == 0) {
+    BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      gradst[c_id][0] = 0.;
+      gradst[c_id][1] = 0.;
+      gradst[c_id][2] = 0.;
+    }
+    /* Slope test gradient */
+    if (var_cal_opt.iconv > 0)
+      cs_slope_test_gradient(field_id,
+                             inc,
+                             halo_type,
+                             grad,
+                             gradst,
+                             f->val,
+                             a_F,
+                             b_F,
+                             i_mass_flux);
+
+  }
+  /* Pure SOLU scheme without using gradient_slope_test function
+     or Roe and Sweby limiters */
+  if (var_cal_opt.blencv > 0
+      && (var_cal_opt.ischcv==2 || var_cal_opt.isstpc==3)) {
+    BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      gradup[c_id][0] = 0.;
+      gradup[c_id][1] = 0.;
+      gradup[c_id][2] = 0.;
+    }
+
+    if (var_cal_opt.iconv > 0)
+      cs_upwind_gradient(field_id,
+                         inc,
+                         halo_type,
+                         a_F,
+                         b_F,
+                         i_mass_flux,
+                         b_mass_flux,
+                         f->val,
+                         gradup);
+
+  }
+
+ /* ---------------------------------------------------- */
+ /*                    Faces selection                   */
+ /* ---------------------------------------------------- */
+
+  cs_lnum_t n_bb_faces_sel = 0;
+  cs_lnum_t *bb_face_sel_list = NULL;
+  cs_lnum_t n_bi_faces_sel = 0;
+  cs_lnum_t *bi_face_sel_list = NULL;
+  cs_lnum_t *cells_tag_list = NULL;
+  cs_lnum_2_t *bi_face_cells = NULL;
+
+
+  BFT_MALLOC(bi_face_sel_list, n_i_faces, cs_lnum_t);
+  BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    bi_face_sel_list[f_id] = -1;
+    bi_face_cells[f_id][0] = -999;
+    bi_face_cells[f_id][1] = -999;
+  }
+  cs_selector_get_i_face_list(selection_crit, &n_bi_faces_sel, bi_face_sel_list);
+
+  BFT_MALLOC(cells_tag_list, n_cells_ext, cs_lnum_t);
+  for (cs_lnum_t c_id = 0; c_id< n_cells_ext; c_id++){
+    cells_tag_list[c_id] = -1;
+  }
+
+  for (cs_lnum_t f_id =0; f_id < n_bi_faces_sel; f_id++) {
+    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
+    cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
+    cs_real_t dot_pro = normal[0]*i_face_normal[f_id_sel][0]
+                          + normal[1]*i_face_normal[f_id_sel][1]
+                          + normal[2]*i_face_normal[f_id_sel][2];
+    if (fabs(dot_pro) < 1.0e-14 ) {
+      dot_pro =0;
+    }
+    if(dot_pro > 0.)
+      bi_face_cells[f_id_sel][0] = c_id1;
+    else if (dot_pro <0.)
+      bi_face_cells[f_id_sel][1] = c_id2;
+  }
+
+  BFT_MALLOC(bb_face_sel_list, n_b_faces, cs_lnum_t);
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    bb_face_sel_list[f_id] = -1;
+  }
+  cs_selector_get_b_face_list(selection_crit, &n_bb_faces_sel, bb_face_sel_list);
+
+  for (cs_lnum_t f_id =0; f_id < n_bb_faces_sel; f_id++) {
+    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    cs_lnum_t c_id = b_face_cells[f_id_sel];
+    cells_tag_list[c_id] = 1;
+  }
+
+
+  double flux_b_faces = 0.;
+  double flux_i_faces = 0.;
+  double bi_i_balance = 0.;
+  double bi_o_balance = 0.;
+  double flux_ic_faces = 0.;
+
+  int iconvp = var_cal_opt.iconv;
+  int idiffp = var_cal_opt.idiff;
+  int ircflp = var_cal_opt.ircflu;
+  double relaxp = var_cal_opt.relaxv;
+
+  /*
+     --> Balance on boundary faces
+        -------------------------
+
+    We handle different types of boundary faces separately to better
+    analyze the information, but this is not mandatory. */
+
+  for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
+
+    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    /* Associated boundary cell */
+    cs_lnum_t c_id = b_face_cells[f_id_sel];
+
+    cs_real_t term_balance = 0.;
+
+    cs_real_t ac_F = 0.;
+    cs_real_t bc_F = 0.;
+
+    if (icvflb == 1) {
+      ac_F = f->bc_coeffs->ac[f_id_sel];
+      bc_F = f->bc_coeffs->bc[f_id_sel];
+    }
+
+    _balance_boundary_faces(icvflb,
+                            0, /* icvfli */
+                            idtvar,
+                            iconvp,
+                            idiffp,
+                            ircflp,
+                            relaxp,
+                            diipb[f_id_sel],
+                            grad[c_id],
+                            f->val[c_id],
+                            f->val_pre[c_id],
+                            bc_type[f_id_sel],
+                            b_visc[f_id_sel],
+                            a_F[f_id_sel],
+                            b_F[f_id_sel],
+                            af_F[f_id_sel],
+                            bf_F[f_id_sel],
+                            ac_F,
+                            bc_F,
+                            b_mass_flux[f_id_sel],
+                            cpro_cp[c_id],
+                            &term_balance);
+
+    flux_b_faces += term_balance;
+
+  }
+
+  /*
+    --> Balance on coupled faces
+        ------------------------
+
+    We handle different types of boundary faces separately to better
+    analyze the information, but this is not mandatory. */
+
+  if (var_cal_opt.icoupl > 0) {
+
+     /* Prepare data for sending from distant */
+      BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
+
+      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+        cs_lnum_t f_id = faces_distant[ii];
+        cs_lnum_t c_id = b_face_cells[f_id];
+        cs_real_t pip;
+        cs_b_cd_unsteady(ircflp,
+                         diipb[f_id],
+                         grad[c_id],
+                         f->val[c_id],
+                         &pip);
+        pvar_distant[ii] = pip;
+      }
+
+      /* Receive data */
+      BFT_MALLOC(pvar_local, n_local, cs_real_t);
+      cs_internal_coupling_exchange_var(cpl,
+                                        1, /* Dimension */
+                                        pvar_distant,
+                                        pvar_local);
+
+
+      /* Flux contribution */
+
+      /* Faces tag for preventing add the contribution of the two opposite */
+      /* ccoupled faces */
+      cs_lnum_t *cpl_faces_tag = NULL;
+      BFT_MALLOC(cpl_faces_tag, n_b_faces, cs_lnum_t);
+      for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
+        cpl_faces_tag[ii] = 0;
+      }
+
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        cs_lnum_t f_id = faces_local[ii];
+        cs_lnum_t c_id = b_face_cells[f_id];
+
+        if (cells_tag_list[c_id] == 1) {
+          if (cpl_faces_tag[faces_distant[ii]] == 0) {
+            cs_real_t pip, pjp;
+            cs_real_t term_balance = 0.;
+
+            cs_b_cd_unsteady(ircflp,
+                             diipb[f_id],
+                             grad[c_id],
+                             f->val[c_id],
+                             &pip);
+
+            pjp = pvar_local[ii];
+
+            hint = cpl->h_int[ii];
+            hext = cpl->h_ext[ii];
+            heq = hint * hext / (hint + hext);
+
+            cs_b_diff_flux_coupling(idiffp,
+                                    pip,
+                                    pjp,
+                                    heq,
+                                    &term_balance);
+
+            flux_ic_faces -= term_balance;
+            cpl_faces_tag[f_id]=1;
+          }
+
+        }
+      }
+
+      BFT_FREE(pvar_local);
+      BFT_FREE(pvar_distant);
+      BFT_FREE(cpl_faces_tag);
+  }
+
+  /*
+    --> Balance on boundary faces of the selected zone
+        that are internal of the total mesh
+        ------------------------------------------------------------
+   */
+
+  int isstpp = var_cal_opt.isstpc;
+  int ischcp = var_cal_opt.ischcv;
+  double blencp = var_cal_opt.blencv;
+  int iupwin = (blencp > 0.) ? 0 : 1;
+
+  for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
+
+    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    /* Associated boundary-internal cells */
+    cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
+    cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
+
+    cs_real_2_t bi_bterms = {0.,0.};
+
+    _balance_internal_faces(iupwin,
+                            idtvar,
+                            iconvp,
+                            idiffp,
+                            ircflp,
+                            ischcp,
+                            isstpp,
+                            relaxp,
+                            blencp,
+                            weight[f_id_sel],
+                            i_dist[f_id_sel],
+                            i_face_surf[f_id_sel],
+                            cell_cen[c_id1],
+                            cell_cen[c_id2],
+                            i_face_normal[f_id_sel],
+                            i_face_cog[f_id_sel],
+                            dijpf[f_id_sel],
+                            grad[c_id1],
+                            grad[c_id2],
+                            gradup[c_id1],
+                            gradup[c_id2],
+                            gradst[c_id1],
+                            gradst[c_id2],
+                            f->val[c_id1],
+                            f->val[c_id2],
+                            f->val_pre[c_id1],
+                            f->val_pre[c_id2],
+                            i_visc[f_id_sel],
+                            i_mass_flux[f_id_sel],
+                            cpro_cp[c_id1],
+                            cpro_cp[c_id2],
+                            bi_bterms);
+
+
+    /* (The cell is counted only once in parallel by checking that
+       the c_id is not in the halo) */
+    /* Face normal well oriented (check i_face_cells array) */
+    if (bi_face_cells[f_id_sel][0] >= 0) {
+      if (c_id1 < n_cells) {
+        if (i_mass_flux[f_id_sel] > 0)
+          bi_o_balance -= bi_bterms[0];
+        else
+          bi_i_balance -= bi_bterms[0];
+      }
+    }
+    /* Face normal direction reversed */
+    else if (bi_face_cells[f_id_sel][1] >= 0){
+      if (c_id2 < n_cells) {
+        if (i_mass_flux[f_id_sel] > 0)
+          bi_i_balance += bi_bterms[1];
+        else
+          bi_o_balance += bi_bterms[1];
+      }
+    }
+  }
+
+  flux_i_faces = bi_i_balance + bi_o_balance;
+
+  /* Sum of values on all rank (parallel calculations */
+
+  cs_parall_sum(1, CS_DOUBLE, &flux_b_faces);
+  cs_parall_sum(1, CS_DOUBLE, &flux_ic_faces);
+  cs_parall_sum(1, CS_DOUBLE, &bi_i_balance);
+  cs_parall_sum(1, CS_DOUBLE, &bi_o_balance);
+  cs_parall_sum(1, CS_DOUBLE, &flux_i_faces);
+
+
+
+  bft_printf(_("\n   ** SURFACE BALANCE at iteration %6i\n"
+               "     ------------------------------------\n"
+               "------------------------------------------------------------\n"
+               "   SCALAR: %s\n"
+               "   ZONE SELECTION CRITERIA: \"%s\"\n"
+               "   OUTGOING NORMAL: [%.2e, %.2e, %.2e] \n"
+               "------------------------------------------------------------\n"
+               "   Internal faces selected: %i of %i \n"
+               "   Boundary faces selected: %i of %i \n"
+               "------------------------------------------------------------\n"
+               "    Boundaries faces:      %12.4e \n"
+               "    Int. Coupling faces:   %12.4e \n"
+               "    Interior faces:        \n"
+               "      In:                  %12.4e \n"
+               "      Out:                 %12.4e \n"
+               "      Balance:             %12.4e \n"
+               "------------------------------------------------------------\n"),
+               nt_cur, scalar_name, selection_crit, normal[0], normal[1], normal[2],
+               n_bi_faces_sel, n_i_faces, n_bb_faces_sel, n_b_faces,
+               flux_b_faces, flux_ic_faces, bi_i_balance, bi_o_balance, flux_i_faces);
+
+  /* Free memory */
+
+  BFT_FREE(grad);
+  if (gradup != NULL)
+    BFT_FREE(gradup);
+  if (gradst != NULL)
+    BFT_FREE(gradst);
+
+  if (!itemperature || icp == -1)
+    BFT_FREE(cpro_cp);
+  if (kivisl == -1)
+    BFT_FREE(c_visc);
+  BFT_FREE(i_visc);
+  BFT_FREE(b_visc);
+  BFT_FREE(cells_tag_list);
+  BFT_FREE(bi_face_sel_list);
+  BFT_FREE(bi_face_cells);
+  BFT_FREE(bb_face_sel_list);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the face by face surface flux of a scalar which name is
+ * given as argument, on a surface area defined by the criterium also given as
+ * argument. Counted negativly through the normal.
+ *
+ *
+ * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     scalar_name         scalar name
+ * \param[in]     normal              normal surface
+ * \param[in,out] flux_b_faces        pointer surface flux boundary faces
+ * \param[in,out] flux_i_faces        pointer surface flux internal faces
+ * \param[out]    nb_faces_sel        number of boundary faces
+ * \param[out]    ni_faces_sel        number of internal faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_flux_through_surface(const char *selection_crit,
+                        const char *scalar_name,
+                        const cs_real_3_t normal,
+                        cs_real_t *flux_b_faces,
+                        cs_real_t *flux_i_faces,
+                        int *nb_faces_sel,
+                        int *ni_faces_sel)
+{
+
+ /* ---------------------------------------------------- */
+ /*                   Local variables                    */
+ /* ---------------------------------------------------- */
+
+  int idtvar = cs_glob_time_step_options->idtvar;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_t *restrict weight = fvq->weight;
+  const cs_real_t *restrict i_dist = fvq->i_dist;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict dijpf
+    = (const cs_real_3_t *restrict)fvq->dijpf;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+
+  const int *bc_type = cs_glob_bc_type;
+
+  const cs_field_t *f = cs_field_by_name_try(scalar_name);
+  const int field_id = cs_field_id_by_name(scalar_name);
+
+
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
+  /* all boundary convective fluxes are upwind */
+  int icvflb = 0;
+
+  /* Internal cuplin varibale initialization*/
+  cs_real_t *pvar_local = NULL;
+  cs_real_t *pvar_distant = NULL;
+  cs_real_t hint, hext, heq;
+  cs_lnum_t *faces_local = NULL;
+  cs_int_t n_local;
+  cs_lnum_t n_distant;
+  cs_lnum_t *faces_distant = NULL;
+  int coupling_id;
+  cs_internal_coupling_t *cpl = NULL;
+
+ /* ---------------------------------------------------- */
+ /*                 Physical properties                  */
+ /* ---------------------------------------------------- */
+
+
+  /* Temperature indicator.
+     Will multiply by CP in order to have energy. */
+  bool itemperature = false;
+  const int scal_id = cs_field_get_key_int(f, cs_field_key_id("scalar_id"));
+  if (scal_id == cs_glob_thermal_model->iscalt) {
+    if (cs_glob_thermal_model->itherm == 1)
+      itemperature = true;
+  }
+
+  /* Specific heat (CP) */
+  cs_real_t *cpro_cp = NULL;
+  const int icp = cs_field_id_by_name("specific_heat");
+  if (itemperature) {
+    if (icp != -1)
+      cpro_cp = CS_F_(cp)->val;
+    else {
+      const double cp0 = cs_glob_fluid_properties->cp0;
+      BFT_MALLOC(cpro_cp, n_cells, cs_real_t);
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        cpro_cp[c_id] = cp0;
+      }
+    }
+  }
+  else {
+    BFT_MALLOC(cpro_cp, n_cells, cs_real_t);
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cpro_cp[c_id] = 1.;
+    }
+  }
+
+  /* Boundary condition coefficient for h */
+  const cs_real_t *a_F = f->bc_coeffs->a;
+  const cs_real_t *b_F = f->bc_coeffs->b;
+  const cs_real_t *af_F = f->bc_coeffs->af;
+  const cs_real_t *bf_F = f->bc_coeffs->bf;
+
+  /* Convective mass fluxes for inner and boundary faces */
+  int iflmas = cs_field_get_key_int(f, cs_field_key_id("inner_mass_flux_id"));
+  const cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
+
+  int iflmab = cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id"));
+  const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
+
+  /* Face viscosity */
+  int imvisf = cs_glob_space_disc->imvisf;
+  cs_real_t *i_visc;
+  cs_real_t *b_visc;
+  BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
+  BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
+
+  cs_real_t *c_visc = NULL;
+  const int kivisl =
+    cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
+  if (kivisl != -1)
+    c_visc = cs_field_by_id(kivisl)->val;
+  else {
+    const double visls0 =
+      cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
+    BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      c_visc[c_id] = visls0;
+    }
+  }
+
+  /* Turbulent part */
+  cs_real_t *c_visct = cs_field_by_name("turbulent_viscosity")->val;
+
+  if (var_cal_opt.idifft == 1) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/1.; //FIXME sigmas Turbulent prandlt
+
+  }
+  cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
+  cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
+
+  /* Internal coupling*/
+
+  if (var_cal_opt.icoupl > 0) {
+    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    coupling_id = cs_field_get_key_int(f, coupling_key_id);
+    cpl = cs_internal_coupling_by_id(coupling_id);
+    cs_internal_coupling_coupled_faces(cpl,
+                                       &n_local,
+                                       &faces_local,
+                                       &n_distant,
+                                       &faces_distant);
+  }
+
+ /* ---------------------------------------------------- */
+ /*                 Gradient calculation                 */
+ /* ---------------------------------------------------- */
+
+  cs_real_3_t *grad;
+  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+
+  cs_halo_type_t halo_type;
+  cs_gradient_type_t gradient_type;
+
+  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  cs_field_gradient_scalar(f,
+                           true, /* use_previous_t */
+                           gradient_type,
+                           halo_type,
+                           1, /* inc */
+                           true, /* _recompute_cocg */
+                           grad);
+
+  /* Compute the gradient for convective scheme (the slope test, limiter, SOLU, etc) */
+  cs_real_3_t *gradup = NULL;
+  cs_real_3_t *gradst = NULL;
+  if (var_cal_opt.blencv > 0 && var_cal_opt.isstpc == 0) {
+    BFT_MALLOC(gradst, n_cells_ext, cs_real_3_t);
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      gradst[c_id][0] = 0.;
+      gradst[c_id][1] = 0.;
+      gradst[c_id][2] = 0.;
+    }
+    /* Slope test gradient */
+    if (var_cal_opt.iconv > 0)
+      cs_slope_test_gradient(field_id,
+                             1, /* inc */
+                             halo_type,
+                             grad,
+                             gradst,
+                             f->val,
+                             a_F,
+                             b_F,
+                             i_mass_flux);
+
+  }
+  /* Pure SOLU scheme without using gradient_slope_test function
+     or Roe and Sweby limiters */
+  if (var_cal_opt.blencv > 0
+      && (var_cal_opt.ischcv==2 || var_cal_opt.isstpc==3)) {
+    BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      gradup[c_id][0] = 0.;
+      gradup[c_id][1] = 0.;
+      gradup[c_id][2] = 0.;
+    }
+
+    if (var_cal_opt.iconv > 0)
+      cs_upwind_gradient(field_id,
+                         1, /* inc */
+                         halo_type,
+                         a_F,
+                         b_F,
+                         i_mass_flux,
+                         b_mass_flux,
+                         f->val,
+                         gradup);
+
+  }
+
+ /* ---------------------------------------------------- */
+ /*                    Faces selection                   */
+ /* ---------------------------------------------------- */
+
+
+
+  cs_lnum_t n_bb_faces_sel = 0;
+  cs_lnum_t *bb_face_sel_list = NULL;
+  cs_lnum_t n_bi_faces_sel = 0;
+  cs_lnum_t *bi_face_sel_list = NULL;
+  cs_lnum_t *cells_tag_list = NULL;
+  cs_lnum_2_t *bi_face_cells = NULL;
+
+
+  BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
+  BFT_MALLOC(bi_face_sel_list, n_i_faces, cs_lnum_t);
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    bi_face_sel_list[f_id] = -1;
+    bi_face_cells[f_id][0] = -999;
+    bi_face_cells[f_id][1] = -999;
+  }
+
+  cs_selector_get_i_face_list(selection_crit, &n_bi_faces_sel, bi_face_sel_list);
+
+  BFT_REALLOC(flux_i_faces, n_bi_faces_sel, cs_real_t);
+  BFT_MALLOC(cells_tag_list, n_cells_ext, cs_lnum_t);
+  for (cs_lnum_t c_id = 0; c_id< n_cells_ext; c_id++){
+    cells_tag_list[c_id] = -1;
+  }
+
+
+  for (cs_lnum_t f_id =0; f_id < n_bi_faces_sel; f_id++) {
+    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
+    cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
+
+    cs_real_t dot_pro = normal[0]*i_face_normal[f_id_sel][0]
+                      + normal[1]*i_face_normal[f_id_sel][1]
+                      + normal[2]*i_face_normal[f_id_sel][2];
+    if (fabs(dot_pro) < 1.0e-14)//FIXME
+      dot_pro =0;
+    if(dot_pro > 0.)
+      bi_face_cells[f_id_sel][0] = c_id1;
+    else if (dot_pro < 0.)
+      bi_face_cells[f_id_sel][1] = c_id2;
+
+    flux_i_faces[f_id] = 0.;
+  }
+
+  BFT_MALLOC(bb_face_sel_list, n_b_faces, cs_lnum_t);
+  cs_selector_get_b_face_list(selection_crit, &n_bb_faces_sel, bb_face_sel_list);
+
+  BFT_REALLOC(flux_b_faces, n_bb_faces_sel, cs_real_t);
+  for( cs_lnum_t f_id =0; f_id < n_bb_faces_sel; f_id++){
+    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    cs_lnum_t c_id = b_face_cells[f_id_sel];
+    cells_tag_list[c_id] = 1;
+    flux_b_faces[f_id] = 0.;
+  }
+
+  *nb_faces_sel = n_bb_faces_sel;
+  *ni_faces_sel = n_bi_faces_sel;
+
+  /* ------------------------------------------------------*/
+  /*               Boundary faces contribution             */
+  /* ------------------------------------------------------*/
+
+  int iconvp = var_cal_opt.iconv;
+  int idiffp = var_cal_opt.idiff;
+  int ircflp = var_cal_opt.ircflu;
+  double relaxp = var_cal_opt.relaxv;
+
+  for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
+
+    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    /* Associated boundary cell */
+    cs_lnum_t c_id = b_face_cells[f_id_sel];
+
+    cs_real_t term_balance = 0.;
+
+    cs_real_t ac_F = 0.;
+    cs_real_t bc_F = 0.;
+
+    if (icvflb == 1) {
+      ac_F = f->bc_coeffs->ac[f_id_sel];
+      bc_F = f->bc_coeffs->bc[f_id_sel];
+    }
+
+    _balance_boundary_faces(icvflb,
+                            0, /* icvfli */
+                            idtvar,
+                            iconvp,
+                            idiffp,
+                            ircflp,
+                            relaxp,
+                            diipb[f_id_sel],
+                            grad[c_id],
+                            f->val[c_id],
+                            f->val_pre[c_id],
+                            bc_type[f_id_sel],
+                            b_visc[f_id_sel],
+                            a_F[f_id_sel],
+                            b_F[f_id_sel],
+                            af_F[f_id_sel],
+                            bf_F[f_id_sel],
+                            ac_F,
+                            bc_F,
+                            b_mass_flux[f_id_sel],
+                            cpro_cp[c_id],
+                            &term_balance);
+
+    flux_b_faces[f_id] = term_balance;
+
+  }
+
+  /*
+    --> Balance on coupled faces
+        ------------------------
+
+    We handle different types of boundary faces separately to better
+    analyze the information, but this is not mandatory. */
+
+  if (var_cal_opt.icoupl > 0) {
+
+     /* Prepare data for sending from distant */
+      BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
+
+      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+        cs_lnum_t f_id = faces_distant[ii];
+        cs_lnum_t c_id = b_face_cells[f_id];
+        cs_real_t pip;
+        cs_b_cd_unsteady(ircflp,
+                         diipb[f_id],
+                         grad[c_id],
+                         f->val[c_id],
+                         &pip);
+        pvar_distant[ii] = pip;
+      }
+
+      /* Receive data */
+      BFT_MALLOC(pvar_local, n_local, cs_real_t);
+      cs_internal_coupling_exchange_var(cpl,
+                                        1, /* Dimension */
+                                        pvar_distant,
+                                        pvar_local);
+
+
+      /* Flux contribution */
+
+      /* Faces tag for preventing add the contribution of the two opposite */
+      /* ccoupled faces */
+      cs_lnum_t *cpl_faces_tag = NULL;
+      BFT_MALLOC(cpl_faces_tag, n_b_faces, cs_lnum_t);
+      for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
+        cpl_faces_tag[ii] = 0;
+      }
+
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        cs_lnum_t f_id = faces_local[ii];
+        cs_lnum_t c_id = b_face_cells[f_id];
+
+        if (cells_tag_list[c_id] == 1) {
+          if(cpl_faces_tag[faces_distant[ii]] ==0){
+            cs_real_t pip, pjp;
+            cs_real_t term_balance = 0.;
+
+            cs_b_cd_unsteady(ircflp,
+                             diipb[f_id],
+                             grad[c_id],
+                             f->val[c_id],
+                             &pip);
+
+            pjp = pvar_local[ii];
+
+            hint = cpl->h_int[ii];
+            hext = cpl->h_ext[ii];
+            heq = hint * hext / (hint + hext);
+
+            cs_b_diff_flux_coupling(idiffp,
+                                    pip,
+                                    pjp,
+                                    heq,
+                                    &term_balance);
+
+            flux_b_faces[f_id] = -term_balance;
+            cpl_faces_tag[f_id] = 1;
+          }
+
+        }
+      }
+
+      BFT_FREE(pvar_local);
+      BFT_FREE(pvar_distant);
+      BFT_FREE(cpl_faces_tag);
+  }
+
+  /*
+    --> Balance on boundary faces of the selected zone
+        that are internal of the total mesh
+        ------------------------------------------------------------
+   */
+
+  int isstpp = var_cal_opt.isstpc;
+  int ischcp = var_cal_opt.ischcv;
+  double blencp = var_cal_opt.blencv;
+  int iupwin = (blencp > 0.) ? 0 : 1;
+
+  for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
+
+    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    /* Associated boundary-internal cells */
+    cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
+    cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
+
+    cs_real_2_t bi_bterms = {0.,0.};
+
+    _balance_internal_faces(iupwin,
+                            idtvar,
+                            iconvp,
+                            idiffp,
+                            ircflp,
+                            ischcp,
+                            isstpp,
+                            relaxp,
+                            blencp,
+                            weight[f_id_sel],
+                            i_dist[f_id_sel],
+                            i_face_surf[f_id_sel],
+                            cell_cen[c_id1],
+                            cell_cen[c_id2],
+                            i_face_normal[f_id_sel],
+                            i_face_cog[f_id_sel],
+                            dijpf[f_id_sel],
+                            grad[c_id1],
+                            grad[c_id2],
+                            gradup[c_id1],
+                            gradup[c_id2],
+                            gradst[c_id1],
+                            gradst[c_id2],
+                            f->val[c_id1],
+                            f->val[c_id2],
+                            f->val_pre[c_id1],
+                            f->val_pre[c_id2],
+                            i_visc[f_id_sel],
+                            i_mass_flux[f_id_sel],
+                            cpro_cp[c_id1],
+                            cpro_cp[c_id2],
+                            bi_bterms);
+
+
+    /* (The cell is counted only once in parallel by checking that
+       the c_id is not in the halo) */
+    /* Face normal well oriented (check i_face_cells array) */
+    if (bi_face_cells[f_id_sel][0] >= 0) {
+      if (c_id1 < n_cells)
+        flux_i_faces[f_id] -= bi_bterms[0];
+    }
+    /* Face normal direction reversed */
+    else if (bi_face_cells[f_id_sel][1] >= 0) {
+      if (c_id2 < n_cells)
+        flux_i_faces[f_id] += bi_bterms[1];
+    }
+  }
+
+  /* Free memory */
+
+  BFT_FREE(grad);
+  if (gradup != NULL)
+    BFT_FREE(gradup);
+  if (gradst != NULL)
+    BFT_FREE(gradst);
+
+  if (!itemperature || icp == -1)
+    BFT_FREE(cpro_cp);
+  if (kivisl == -1)
+    BFT_FREE(c_visc);
+  BFT_FREE(i_visc);
+  BFT_FREE(b_visc);
+  BFT_FREE(cells_tag_list);
+  BFT_FREE(bi_face_sel_list);
+  BFT_FREE(bb_face_sel_list);
+
+  /* Sum of values on all rank (parallel calculations */
+
+}
 
 END_C_DECLS
