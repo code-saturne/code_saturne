@@ -681,6 +681,33 @@ _locator_initialize(cs_mesh_t               *m,
  * Public function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Impose wall BCs to internal coupled faces if not yet defined.
+ *
+ *   \param[in,out]     bc_type       face boundary condition type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_bcs(int         bc_type[])
+{
+  cs_internal_coupling_t *cpl;
+
+  for (int cpl_id = 0; cpl_id < _n_internal_couplings; cpl_id++) {
+    cpl = _internal_coupling + cpl_id;
+
+    const cs_lnum_t n_local = cpl->n_local;
+    const cs_lnum_t *faces_local = cpl->faces_local;
+
+    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+      cs_lnum_t face_id = faces_local[ii];
+      if (bc_type[face_id] == 0)
+        bc_type[face_id] = CS_SMOOTHWALL;
+    }
+  }
+}
+
 /*----------------------------------------------------------------------------
  * Add contribution from coupled faces (internal coupling) to initialisation
  * for iterative scalar gradient calculation

@@ -1078,6 +1078,11 @@ do while (iterns.le.nterup)
 
   endif
 
+
+  ! For internal coupling, set itypfb to wall function by default
+  ! if not set by the user
+  call cs_internal_coupling_bcs(itypfb)
+
   !     ON CALCULE LES COEFFICIENTS ASSOCIES AUX CONDITIONS LIMITES
 
   call condli &
@@ -1504,6 +1509,9 @@ if (ippmod(idarcy).eq.1) then
     icodcl ,          itypfb , izfppp ,                            &
     rcodcl )
 
+  ! For internal coupling, set itypfb to wall function by default
+  ! if not set by the user
+  call cs_internal_coupling_bcs(itypfb)
 
   call condli &
    ( nvar   , nscal  , iterns ,                                    &

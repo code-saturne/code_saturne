@@ -1766,6 +1766,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function handling BCs for internal coupling
+
+    subroutine cs_internal_coupling_bcs(bc_type)                &
+        bind(C, name='cs_internal_coupling_bcs')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), dimension(*) :: bc_type
+    end subroutine cs_internal_coupling_bcs
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

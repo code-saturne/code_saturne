@@ -105,8 +105,16 @@ typedef struct {
  * Public function prototypes
  *============================================================================*/
 
-ple_locator_t *
-cs_internal_coupling_create_locator(cs_internal_coupling_t  *cpl);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Impose wall BCs to internal coupled faces if not yet defined.
+ *
+ *   \param[in,out]     bc_type       face boundary condition type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_bcs(int         bc_type[]);
 
 /*----------------------------------------------------------------------------
  * Destruction of all internal coupling related structures.
