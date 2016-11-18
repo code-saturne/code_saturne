@@ -64,6 +64,7 @@
 #include "cs_field.h"
 #include "cs_field_operator.h"
 #include "cs_selector.h"
+#include "cs_parall.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -1415,32 +1416,18 @@ cs_internal_coupling_log(const cs_internal_coupling_t  *cpl)
   if (cpl == NULL)
     return;
 
-  const cs_lnum_t n_local = cpl->n_local;
+  cs_gnum_t n_local = cpl->n_local;
 
-  if (cpl->faces_criteria == NULL)
-    bft_printf("  Coupled scalar: %s\n"
-               "  Cell group selection criterion: %s\n"
-               "  Locator: - n dist points = %d\n"
-               "           - n interior = %d\n"
-               "           - n exterior = %d\n",
-               cpl->namesca,
-               cpl->cells_criteria,
-               ple_locator_get_n_dist_points(cpl->locator),
-               ple_locator_get_n_interior(cpl->locator),
-               ple_locator_get_n_exterior(cpl->locator));
-  else
-    bft_printf("  Coupled scalar: %s\n"
-               "  Cell group selection criterion: %s\n"
-               "  Face group selection criterion: %s\n"
-               "  Locator: - n dist points = %d\n"
-               "           - n interior = %d\n"
-               "           - n exterior = %d\n",
-               cpl->namesca,
-               cpl->cells_criteria,
-               cpl->faces_criteria,
-               ple_locator_get_n_dist_points(cpl->locator),
-               ple_locator_get_n_interior(cpl->locator),
-               ple_locator_get_n_exterior(cpl->locator));
+  cs_parall_counter(&n_local, 1);
+
+  bft_printf("   Coupled scalar: %s\n"
+             "   Cell group selection criterion: %s\n"
+             "   Face group selection criterion: %s\n"
+             "   Locator: n dist points (total coupled boundary faces) = %d\n",
+             cpl->namesca,
+             cpl->cells_criteria,
+             cpl->faces_criteria,
+             n_local);
 
 }
 
@@ -1462,7 +1449,7 @@ cs_internal_coupling_dump(void)
   bft_printf("\n Internal coupling\n");
   for (int cpl_id = 0; cpl_id < _n_internal_couplings; cpl_id++) {
     cpl = _internal_coupling + cpl_id;
-    bft_printf("coupling_id = %d\n", cpl_id);
+    bft_printf("   coupling_id = %d\n", cpl_id);
     cs_internal_coupling_log(cpl);
   }
 }
