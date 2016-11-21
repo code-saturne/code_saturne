@@ -3207,6 +3207,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
  *   coefav         <-- B.C. coefficients for boundary face normals
  *   coefbv         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
+ *   c_weight       <-- weighted gradient coefficient variable
  *   gradv          --> gradient of pvar (du_i/dx_j : gradv[][i][j])
  *----------------------------------------------------------------------------*/
 
@@ -3218,6 +3219,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
                             const cs_real_3_t   *restrict coefav,
                             const cs_real_33_t  *restrict coefbv,
                             cs_real_3_t         *restrict pvar,
+                            const cs_real_t              *c_weight,
                             cs_real_33_t        *restrict gradv)
 {
   int g_id, t_id;
@@ -3286,6 +3288,12 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
         pond = weight[face_id];
 
+        cs_real_t ktpond = (c_weight == NULL) ?
+          pond :              // no cell weightening
+          pond * c_weight[cell_id1] // cell weightening active
+            / (      pond * c_weight[cell_id1]
+              + (1.0-pond)* c_weight[cell_id2]);
+
         /*
            Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
                                     + (1-\alpha_\ij) \varia_\cellj\f$
@@ -3295,8 +3303,9 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
                    \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
         */
         for (int i = 0; i < 3; i++) {
-          cs_real_t pfaci = (1.0-pond) * (pvar[cell_id2][i] - pvar[cell_id1][i]);
-          cs_real_t pfacj = - pond * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+          cs_real_t pfaci = (1.0-ktpond) * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+          cs_real_t pfacj = - ktpond * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+
           for (int j = 0; j < 3; j++) {
             gradv[cell_id1][i][j] += pfaci * i_f_face_normal[face_id][j];
             gradv[cell_id2][i][j] -= pfacj * i_f_face_normal[face_id][j];
@@ -3389,6 +3398,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
  *   coefav         <-- B.C. coefficients for boundary face normals
  *   coefbv         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
+ *   c_weight       <-- weighted gradient coefficient variable
  *   gradv          <-> gradient of pvar (du_i/dx_j : gradv[][i][j])
  *----------------------------------------------------------------------------*/
 
@@ -3404,6 +3414,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                            const cs_real_3_t   *restrict coefav,
                            const cs_real_33_t  *restrict coefbv,
                            const cs_real_3_t   *restrict pvar,
+                           const cs_real_t              *c_weight,
                            cs_real_33_t        *restrict gradv)
 {
   int isweep, g_id, t_id;
@@ -3483,6 +3494,12 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
             cs_lnum_t cell_id2 = i_face_cells[face_id][1];
             pond = weight[face_id];
 
+            cs_real_t ktpond = (c_weight == NULL) ?
+              pond :                     // no cell weightening
+              pond  * c_weight[cell_id1] // cell weightening active
+                / (      pond  * c_weight[cell_id1]
+                  + (1.0-pond) * c_weight[cell_id2]);
+
             /*
                Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
                                         + (1-\alpha_\ij) \varia_\cellj\f$
@@ -3505,8 +3522,9 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                             );
               cs_real_t pfacj = pfaci;
 
-              pfaci += (1.0-pond) * (pvar[cell_id2][i] - pvar[cell_id1][i]);
-              pfacj -=       pond * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+              pfaci += (1.0-ktpond) * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+              pfacj -=      ktpond  * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+
               for (int j = 0; j < 3; j++) {
                 rhs[cell_id1][i][j] += pfaci * i_f_face_normal[face_id][j];
                 rhs[cell_id2][i][j] -= pfacj * i_f_face_normal[face_id][j];
@@ -5885,6 +5903,7 @@ cs_gradient_vector(const char                *var_name,
                                 bc_coeff_a,
                                 bc_coeff_b,
                                 var,
+                                c_weight,
                                 gradv);
 
     /* If reconstructions are required */
@@ -5901,6 +5920,7 @@ cs_gradient_vector(const char                *var_name,
                                  bc_coeff_a,
                                  bc_coeff_b,
                                  (const cs_real_3_t *)var,
+                                 c_weight,
                                  gradv);
 
   } else if (gradient_type == CS_GRADIENT_LSQ) {
@@ -5915,6 +5935,7 @@ cs_gradient_vector(const char                *var_name,
                                   bc_coeff_a,
                                   bc_coeff_b,
                                   var,
+                                  c_weight,
                                   gradv);
 
     /* Reconstruction with Least square method */
@@ -5971,6 +5992,7 @@ cs_gradient_vector(const char                *var_name,
                                bc_coeff_a,
                                bc_coeff_b,
                                (const cs_real_3_t *)var,
+                               c_weight,
                                gradv);
 
   }
