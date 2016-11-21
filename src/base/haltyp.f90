@@ -71,7 +71,11 @@ ivoset = 0
 imrgrl = abs(imrgra)
 imrgrl = modulo(imrgrl,10)
 
-if (imrgrl.eq.2 .or. imrgrl.eq.3 .or. imrgrl.eq.5 .or. imrgrl.eq.6) ivoset = 1
+if (     imrgrl.eq.2 .or. imrgrl.eq.3 &
+    .or. imrgrl.eq.5 .or. imrgrl.eq.6 &
+    .or. imrgrl.eq.8 .or. imrgrl.eq.9) then
+  ivoset = 1
+endif
 
 if (iturb.eq.41) ivoset = 1
 

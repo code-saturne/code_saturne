@@ -2090,6 +2090,11 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option)
     _compute_cocg_s_it = true;
     _compute_cocg_s_lsq = true;
     break;
+  case 7:
+  case 8:
+  case 9:
+    _compute_cocg_s_lsq = true;
+    break;
   /* deprecated options */
   case 10:
     _compute_cocg_s_it = true;

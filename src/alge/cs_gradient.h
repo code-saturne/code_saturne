@@ -56,6 +56,8 @@ typedef enum {
   CS_GRADIENT_ITER,              /* Iterative */
   CS_GRADIENT_LSQ,               /* Least-squares */
   CS_GRADIENT_LSQ_ITER_OLD,      /* LSQ followed by iterative (old) */
+  CS_GRADIENT_LSQ_ITER,          /* "iterative" gradient reconstructed
+                                    (1 sweep) with LSQ */
   CS_GRADIENT_ITER_OLD           /* Iterative (old) */
 
 } cs_gradient_type_t;

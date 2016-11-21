@@ -926,6 +926,81 @@ cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
 }
 
 /*----------------------------------------------------------------------------
+ * Add internal coupling contribution for reconstruction of the gradient of a
+ * scalar.
+ *
+ * parameters:
+ *   cpl      <-- pointer to coupling entity
+ *   r_grad   <-- pointer to reconstruction gradient
+ *   grad     <-> pointer to gradient to be reconstructed
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
+                                 cs_real_3_t          *restrict r_grad,
+                                 cs_real_3_t                    grad[])
+{
+  int ll;
+  cs_lnum_t face_id, cell_id;
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+  const cs_lnum_t n_distant = cpl->n_distant;
+  const cs_lnum_t *faces_distant = cpl->faces_distant;
+  const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
+
+  const cs_mesh_t* m = cs_glob_mesh;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+
+  /* Exchange r_grad */
+
+  cs_real_t *r_grad_distant = NULL;
+  BFT_MALLOC(r_grad_distant, 3*n_distant, cs_real_t);
+  for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+    face_id = faces_distant[ii];
+    cell_id = b_face_cells[face_id];
+    for (ll = 0; ll < 3; ll++) {
+      r_grad_distant[3*ii+ll] = r_grad[cell_id][ll];
+    }
+  }
+  cs_real_t *r_grad_local = NULL;
+  BFT_MALLOC(r_grad_local, 3*n_local, cs_real_t);
+  cs_internal_coupling_exchange_var(cpl,
+                                    3,
+                                    r_grad_distant,
+                                    r_grad_local);
+  /* Free memory */
+  BFT_FREE(r_grad_distant);
+
+  /* Compute rhs */
+
+  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+    face_id = faces_local[ii] - 1;
+    cell_id = b_face_cells[face_id];
+
+    /* Reconstruction part
+         compared to _iterative_scalar_gradient :
+         b_f_face_normal <==> i_f_face_normal */
+    cs_real_t rfac = 0.5;
+    rfac *= offset_vect[ii][0]*(r_grad_local[3*ii  ]+r_grad[cell_id][0])
+           +offset_vect[ii][1]*(r_grad_local[3*ii+1]+r_grad[cell_id][1])
+           +offset_vect[ii][2]*(r_grad_local[3*ii+2]+r_grad[cell_id][2]);
+
+    for (int j = 0; j < 3; j++) {
+      grad[cell_id][j] += rfac * b_f_face_normal[face_id][j];
+    }
+
+  }
+
+  BFT_FREE(r_grad_local);
+}
+
+/*----------------------------------------------------------------------------
  * Add internal coupling rhs contribution for LSQ gradient calculation
  *
  * parameters:
@@ -1742,4 +1817,3 @@ cs_matrix_preconditionning_add_coupling_contribution(void       *input,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-

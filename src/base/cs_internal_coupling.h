@@ -246,6 +246,21 @@ cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
                               cs_real_3_t                    rhs[]);
 
 /*----------------------------------------------------------------------------
+ * Add internal coupling contribution for reconstruction of the gradient of a
+ * scalar.
+ *
+ * parameters:
+ *   cpl      <-- pointer to coupling entity
+ *   r_grad   <-- pointer to reconstruction gradient
+ *   grad     <-> pointer to gradient to be reconstructed
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
+                                 cs_real_3_t          *restrict r_grad,
+                                 cs_real_3_t                    grad[]);
+
+/*----------------------------------------------------------------------------
  * Modify matrix-vector product in case of internal coupling
  *
  * parameters:

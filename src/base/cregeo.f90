@@ -117,7 +117,7 @@ call pstgeo
 imrgrl = abs(imrgra)
 imrgrl = modulo(imrgrl,10)
 
-if (imrgrl.eq.3 .or. imrgrl.eq.6) then
+if (imrgrl.eq.3 .or. imrgrl.eq.6 .or. imrgrl.eq.9) then
   call redvse (anomax)
 endif
 
