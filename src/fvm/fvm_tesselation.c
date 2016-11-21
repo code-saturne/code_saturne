@@ -2621,6 +2621,10 @@ fvm_tesselation_decode(const fvm_tesselation_t  *this_tesselation,
  *   data               <-> undistributed data in, distributed data out
  *----------------------------------------------------------------------------*/
 
+#if defined(__INTEL_COMPILER) && defined(__KNC__)
+#pragma optimization_level 1 /* Crash with O2 on KNC with icc 14.0.0 20130728 */
+#endif
+
 void
 fvm_tesselation_distribute(const fvm_tesselation_t  *this_tesselation,
                            fvm_element_t             connect_type,

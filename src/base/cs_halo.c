@@ -1078,6 +1078,10 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
  *   num       <-> pointer to local number value array
  *----------------------------------------------------------------------------*/
 
+#if defined(__INTEL_COMPILER) && defined(__KNC__)
+#pragma optimization_level 1 /* Crash with O2 on KNC with icc 14.0.0 20130728 */
+#endif
+
 void
 cs_halo_sync_untyped(const cs_halo_t  *halo,
                      cs_halo_type_t    sync_mode,

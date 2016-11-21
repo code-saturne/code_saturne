@@ -332,6 +332,10 @@ _extra_vertex_get_gnum(const fvm_nodal_t  *mesh,
  *   pointer to next section helper structure in list
  *----------------------------------------------------------------------------*/
 
+#if defined(__INTEL_COMPILER) && defined(__KNC__)
+#pragma optimization_level 1 /* Crash with O2 on KNC with icc 14.0.0 20130728 */
+#endif
+
 static const fvm_writer_section_t *
 _field_helper_output_eg(fvm_writer_field_helper_t          *helper,
                         void                               *context,
