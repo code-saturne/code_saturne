@@ -467,7 +467,7 @@ _copy_mesh(const cs_mesh_t  *mesh,
            (mesh->n_groups + 1)*sizeof(cs_lnum_t));
     BFT_MALLOC(mesh_copy->group, mesh->group_idx[mesh->n_groups], char);
     memcpy(mesh_copy->group, mesh->group,
-           (mesh->group_idx[mesh->n_groups])*sizeof(char));
+           mesh->group_idx[mesh->n_groups]*sizeof(char));
   }
 
   mesh_copy->n_families = mesh->n_families;

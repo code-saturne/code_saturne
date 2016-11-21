@@ -1489,10 +1489,12 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
 
     cell_id1 = b_face_cells[fac_id];
 
-    /* Computation of the area of the face */
+    /* Computation of the area of the face
+       (note that cell_id1 == -1 may happen for isolated faces,
+       which are cleaned afterwards) */
 
-    /* NB: cell_id1 == -1 may happen for isolated faces (which are cleaned afterwards) */
     if (cell_id1 > -1) {
+
       for (i = 0; i < dim; i++)
         _norm[i] = b_face_norm[dim*fac_id + i];
 
@@ -1506,6 +1508,7 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
         cell_cen[dim*cell_id1 + i] += b_face_cog[dim*fac_id + i]*area;
 
     }
+
   } /* End of loop on border faces */
 
   /* ------------------------------------------------------------------

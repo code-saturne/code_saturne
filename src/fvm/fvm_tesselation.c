@@ -1385,55 +1385,6 @@ _count_and_index_sub_polyhedra(fvm_tesselation_t  *this_tesselation,
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Update global_num_end when limiting partial connectivity range end index.
- *
- * parameters:
- *   this_tesselation   <-- tesselation structure
- *   end_id             <-- initial end of subset in parent section
- *   global_num_end     <-> past the end (maximum + 1) parent element
- *                          global number (reduced on return if required
- *                          by buffer_size)
- *   comm               <-- associated MPI communicator
- *
- * returns:
- *   index corresponding to end of decoded range
- *----------------------------------------------------------------------------*/
-
-static void
-_expand_limit_g(const fvm_tesselation_t  *this_tesselation,
-                cs_lnum_t                 end_id,
-                cs_gnum_t                *global_num_end,
-                MPI_Comm                  comm)
-{
-  cs_gnum_t local_max, global_max;
-
-  const cs_gnum_t *global_element_num
-    = fvm_io_num_get_global_num(this_tesselation->global_element_num);
-
-  /* Check if the maximum id returned on some ranks leads to
-     a lower global_num_end than initially required
-     (due to local buffer being full) */
-
-  if (end_id < this_tesselation->n_elements) {
-    if (global_element_num != NULL)
-      local_max = global_element_num[end_id];
-    else
-      local_max = end_id + 1;
-  }
-  else
-    local_max = *global_num_end;
-
-  MPI_Allreduce(&local_max, &global_max, 1, CS_MPI_GNUM, MPI_MIN, comm);
-
-  if (global_max < *global_num_end)
-    *global_num_end = global_max;
-}
-
-#endif /* defined(HAVE_MPI) */
-
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
  * Decode polygons tesselation to a connectivity buffer.
  *
  * parameters:

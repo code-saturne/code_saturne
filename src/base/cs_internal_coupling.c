@@ -576,7 +576,7 @@ _volume_face_initialize(cs_mesh_t               *m,
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  /* Selection of Volme zone using volumic selection criteria*/
+  /* Selection of Volume zone using selection criteria */
 
   BFT_MALLOC(selected_cells, n_cells_ext, cs_lnum_t);
   cs_selector_get_cell_list(cpl->cells_criteria,
@@ -585,12 +585,14 @@ _volume_face_initialize(cs_mesh_t               *m,
 
 
   /* Initialization */
+
   BFT_MALLOC(cell_tag, n_cells_ext, cs_lnum_t);
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     cell_tag[cell_id] = 2;
   }
 
   /* Tag cells */
+
   for (cs_lnum_t ii = 0; ii < n_selected_cells; ii++) {
     cs_lnum_t cell_id = selected_cells[ii];
     cell_tag[cell_id] = 1;
@@ -599,9 +601,11 @@ _volume_face_initialize(cs_mesh_t               *m,
     cs_halo_sync_num(cs_glob_mesh->halo, CS_HALO_STANDARD, cell_tag);
 
   /* Free memory */
+
   BFT_FREE(selected_cells);
 
-  /* Selection of the juncture */
+  /* Selection of the interface */
+
   cs_lnum_t  n_selected_faces = 0;
 
   BFT_MALLOC(selected_faces, m->n_b_faces, cs_lnum_t);
@@ -611,7 +615,8 @@ _volume_face_initialize(cs_mesh_t               *m,
 
   /* Prepare locator */
 
-  cpl->n_local = n_selected_faces; /* WARNING: only valid for conformal meshes */
+  cpl->n_local = n_selected_faces; /* WARNING: only numerically
+                                      valid for conformal meshes */
 
   BFT_MALLOC(cpl->faces_local, cpl->n_local, cs_lnum_t);
   BFT_MALLOC(cpl->c_tag, cpl->n_local, int);
@@ -624,6 +629,7 @@ _volume_face_initialize(cs_mesh_t               *m,
   }
 
   /* Free memory */
+
   BFT_FREE(selected_faces);
   BFT_FREE(cell_tag);
 }
@@ -1624,22 +1630,12 @@ cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
 void
 cs_internal_coupling_add_volumes_finalize(cs_mesh_t   *mesh)
 {
-
-  if (_n_internal_couplings == 0)
-    return;
-
   /* Initialization of locators  for all coupling entities */
 
-  cs_internal_coupling_t* cpl;
-
-  /* Loop over coupling entities */
   for (int cpl_id = 0; cpl_id < _n_internal_couplings; cpl_id++) {
-    cpl = _internal_coupling + cpl_id;
-
-    _volume_face_initialize(mesh,
-                            cpl);
+    cs_internal_coupling_t  *cpl = _internal_coupling + cpl_id;
+    _volume_face_initialize(mesh, cpl);
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1697,10 +1693,8 @@ cs_internal_coupling_add(cs_mesh_t   *mesh,
   /* Initialization of locators */
   _volume_face_initialize(mesh, cpl);
 
-
   _n_internal_couplings++;
 }
-
 
 /*----------------------------------------------------------------------------
  * Define coupling entity using given criterias
