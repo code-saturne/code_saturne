@@ -3065,6 +3065,8 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   cs_field_t *f;
 
+  cs_real_t *gweight = NULL;
+
   cs_real_t  *v_slope_test = _get_v_slope_test(f_id,  var_cal_opt);
 
   /*==========================================================================*/
@@ -3126,6 +3128,20 @@ cs_convection_diffusion_vector(int                         idtvar,
      || (   iconvp != 0 && iupwin == 0
          && (ischcp == 0 || ircflp == 1 || isstpp == 0))) {
 
+    if (f_id != -1) {
+      /* Get the calculation option from the field */
+      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
+        if (var_cal_opt.idiff > 0) {
+          int key_id = cs_field_key_id("gradient_weighting_id");
+          int diff_id = cs_field_get_key_int(f, key_id);
+          if (diff_id > -1) {
+            cs_field_t *weight_f = cs_field_by_id(diff_id);
+            gweight = weight_f->val;
+          }
+        }
+      }
+    }
+
     cs_gradient_vector(var_name,
                        gradient_type,
                        halo_type,
@@ -3138,6 +3154,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                        coefav,
                        coefbv,
                        pvar,
+                       gweight, /* weighted gradient */
                        grad);
 
   } else {
@@ -6815,6 +6832,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                        coefav,
                        coefbv,
                        pvar,
+                       NULL, /* weighted gradient */
                        gradv);
 
   } else {

@@ -234,6 +234,7 @@ cs_gradient_scalar(const char                *var_name,
  *   bc_coeff_a     <-- boundary condition term a
  *   bc_coeff_b     <-- boundary condition term b
  *   var            <-> gradient's base variable
+ *   c_weight       <-> weighted gradient coefficient variable or NULL
  *   gradv          --> gradient (du_i/dx_j : gradv[][i][j])
  *----------------------------------------------------------------------------*/
 
@@ -250,6 +251,7 @@ cs_gradient_vector(const char                *var_name,
                    const cs_real_3_t          bc_coeff_a[],
                    const cs_real_33_t         bc_coeff_b[],
                    cs_real_3_t      *restrict var,
+                   cs_real_t        *restrict c_weight,
                    cs_real_33_t     *restrict gradv);
 
 /*----------------------------------------------------------------------------*/

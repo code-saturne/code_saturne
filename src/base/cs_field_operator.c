@@ -606,8 +606,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute cell gradient of scalar field or component of vector or
- * tensor field.
+ * \brief  Compute cell gradient of vector field.
  *
  * \param[in]       f               pointer to field
  * \param[in]       use_previous_t  should we use values from the previous
@@ -629,9 +628,21 @@ cs_field_gradient_vector(const cs_field_t          *f,
 {
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
+  cs_real_t *c_weight = NULL;
 
   /* Get the calculation option from the field */
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
+    if (var_cal_opt.idiff > 0) {
+      /* Weighted gradient coefficients */
+      int key_id = cs_field_key_id("gradient_weighting_id");
+      int diff_id = cs_field_get_key_int(f, key_id);
+      if (diff_id > -1) {
+        cs_field_t *weight_f = cs_field_by_id(diff_id);
+        c_weight = weight_f->val;
+      }
+    }
+  }
 
   cs_real_3_t *var = (use_previous_t) ? (cs_real_3_t *)(f->val_pre)
                                       : (cs_real_3_t *)(f->val);
@@ -648,6 +659,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
                      (const cs_real_3_t *)(f->bc_coeffs->a),
                      (const cs_real_33_t *)(f->bc_coeffs->b),
                      var,
+                     c_weight,
                      grad);
 }
 

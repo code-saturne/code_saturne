@@ -2420,15 +2420,14 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                                      &rhsv[jj][0]);
             }
             else {
-              for (ll = 0; ll < 3; ll++)
-                rhsv[ii][ll] +=  c_weight[jj]
-                               / (pond*c_weight[ii] + (1. - pond)*c_weight[jj])
-                               * fctb[ll];
+              cs_real_t denom = 1. / (  pond       *c_weight[ii]
+                                      + (1. - pond)*c_weight[jj]);
 
               for (ll = 0; ll < 3; ll++)
-                rhsv[jj][ll] +=  c_weight[ii]
-                               / (pond*c_weight[ii] + (1. - pond)*c_weight[jj])
-                               * fctb[ll];
+                rhsv[ii][ll] +=  c_weight[jj] * denom * fctb[ll];
+
+              for (ll = 0; ll < 3; ll++)
+                rhsv[jj][ll] +=  c_weight[ii] * denom * fctb[ll];
             }
           }
           else {
@@ -3910,6 +3909,7 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
                      const cs_real_3_t   *restrict coefav,
                      const cs_real_33_t  *restrict coefbv,
                      const cs_real_3_t   *restrict pvar,
+                     cs_real_t                    *c_weight,
                      cs_real_33_t        *restrict gradv)
 {
   const cs_lnum_t n_cells = m->n_cells;
@@ -3937,6 +3937,7 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;
+  const cs_real_t *restrict weight = fvq->weight;
 
   cs_lnum_t  cell_id1, cell_id2, i, j, k;
   cs_real_t  pfac, ddc;
@@ -3986,13 +3987,30 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
         ddc = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        for (i = 0; i < 3; i++) {
-          pfac =  (pvar[cell_id2][i] - pvar[cell_id1][i]) * ddc;
+        if (c_weight != NULL) {
+          cs_real_t pond = weight[face_id];
+          cs_real_t denom = 1. / (  pond       *c_weight[cell_id1]
+                                  + (1. - pond)*c_weight[cell_id2]);
 
-          for (j = 0; j < 3; j++) {
-            fctb[j] = dc[j] * pfac;
-            rhs[cell_id1][i][j] += fctb[j];
-            rhs[cell_id2][i][j] += fctb[j];
+          for (i = 0; i < 3; i++) {
+            pfac =  (pvar[cell_id2][i] - pvar[cell_id1][i]) * ddc;
+
+            for (j = 0; j < 3; j++) {
+              fctb[j] = dc[j] * pfac;
+              rhs[cell_id1][i][j] += c_weight[cell_id2] * denom * fctb[j];
+              rhs[cell_id2][i][j] += c_weight[cell_id1] * denom * fctb[j];
+            }
+          }
+        }
+        else {
+          for (i = 0; i < 3; i++) {
+            pfac =  (pvar[cell_id2][i] - pvar[cell_id1][i]) * ddc;
+
+            for (j = 0; j < 3; j++) {
+              fctb[j] = dc[j] * pfac;
+              rhs[cell_id1][i][j] += fctb[j];
+              rhs[cell_id2][i][j] += fctb[j];
+            }
           }
         }
 
@@ -5408,6 +5426,7 @@ void CS_PROCF (cgdvec, CGDVEC)
                      coefav,
                      coefbv,
                      pvar,
+                     NULL, /* weighted gradient */
                      gradv);
 }
 
@@ -5544,7 +5563,8 @@ cs_gradient_finalize(void)
  * \param[in, out]  var             gradient's base variable
  * \param[in, out]  c_weight        weighted gradient coefficient variable,
  *                                  or NULL
- * \param[in, out]  cpl structure associated with internal coupling, or NULL
+ * \param[in, out]  cpl             structure associated with internal coupling,
+ *                                  or NULL
  * \param[out]      grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -5635,6 +5655,7 @@ cs_gradient_scalar(const char                *var_name,
       cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, var);
     else
       cs_halo_sync_var(halo, halo_type, var);
+
     if (c_weight != NULL)
       cs_halo_sync_var(halo, halo_type, c_weight);
 
@@ -5811,6 +5832,8 @@ cs_gradient_scalar(const char                *var_name,
  * \param[in]       bc_coeff_a      boundary condition term a
  * \param[in]       bc_coeff_b      boundary condition term b
  * \param[in, out]  var             gradient's base variable
+ * \param[in, out]  c_weight        weighted gradient coefficient variable,
+ *                                  or NULL
  * \param[out]      gradv           gradient
                                     (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
@@ -5829,6 +5852,7 @@ cs_gradient_vector(const char                *var_name,
                    const cs_real_3_t          bc_coeff_a[],
                    const cs_real_33_t         bc_coeff_b[],
                    cs_real_3_t      *restrict var,
+                   cs_real_t        *restrict c_weight,
                    cs_real_33_t     *restrict gradv)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -5842,6 +5866,11 @@ cs_gradient_vector(const char                *var_name,
   if (update_stats == true) {
     t0 = cs_timer_time();
     gradient_info = _find_or_add_system(var_name, gradient_type);
+  }
+
+  if (mesh->halo != NULL) {
+    if (c_weight != NULL)
+      cs_halo_sync_var(mesh->halo, halo_type, c_weight);
   }
 
   /* Compute gradient */
@@ -5899,6 +5928,7 @@ cs_gradient_vector(const char                *var_name,
                            bc_coeff_a,
                            bc_coeff_b,
                            (const cs_real_3_t *)var,
+                           c_weight,
                            gradv);
 
   } else if (gradient_type == CS_GRADIENT_LSQ_ITER_OLD) {
@@ -5918,6 +5948,7 @@ cs_gradient_vector(const char                *var_name,
                          bc_coeff_a,
                          bc_coeff_b,
                          (const cs_real_3_t *)var,
+                         c_weight,
                          gradv);
 
     _vector_gradient_clipping(mesh,
