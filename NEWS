@@ -57,6 +57,9 @@ GUI changes
 Architectural changes
 ---------------------
 
+- Allow detection of HDF5 libraries named libhdf5-shared and libhdf5-static as well
+  as libhdf5 (when built with CMake)
+
 - Add functions for definition of mesh groups during mesh preprocessing.
   * moved most group handling functions to cs_mesh_group.*.
 
