@@ -135,6 +135,7 @@ const char *cs_gradient_type_name[]
   = {N_("Iterative reconstruction"),
      N_("Least-squares"),
      N_("Least-squares, then iterative (old))"),
+     N_("conservative, reconstruction with Least-squares"),
      N_("Iterative (old)")};
 
 /* Timer statistics */
