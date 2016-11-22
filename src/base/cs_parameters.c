@@ -735,6 +735,22 @@ cs_f_piso_get_pointers(int     **nterup,
 
 /*----------------------------------------------------------------------------
  *!
+ * \brief Provide acces to cs_glob_space_disc
+ *
+ * needed to initialize structure with GUI and user C functions.
+ *
+ * \return  piso information structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_space_disc_t *
+cs_get_glob_space_disc(void)
+{
+  return &_space_disc;
+}
+
+/*----------------------------------------------------------------------------
+ *!
  * \brief Provide acces to cs_glob_piso
  *
  * needed to initialize structure with GUI

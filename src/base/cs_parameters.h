@@ -226,9 +226,22 @@ extern const cs_piso_t        *cs_glob_piso;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Provide acces to cs_glob_space_disc
+ *
+ * needed to initialize structure in GUI and user C functions.
+ *
+ * \return   piso information structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_space_disc_t *
+cs_get_glob_space_disc(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Provide acces to cs_glob_piso
  *
- * needed to initialize structure with GUI
+ * needed to initialize structure with GUI and user C functions.
  *
  * \return   piso information structure
  */
