@@ -1,4 +1,12 @@
 
+Release 4.0.7 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- Fix several face weight indices in scalar balance by zone.
+
 Release 4.0.6 (07 Oct 2016)
 ===========================
 
