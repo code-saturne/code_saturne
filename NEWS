@@ -57,6 +57,8 @@ GUI changes
 Architectural changes
 ---------------------
 
+- Add handling of lmod-based environment modules.
+
 - Allow detection of HDF5 libraries named libhdf5-shared and libhdf5-static as well
   as libhdf5 (when built with CMake)
 
