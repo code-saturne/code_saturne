@@ -22,29 +22,75 @@
 
 #-------------------------------------------------------------------------------
 
-SUBDIRS = Base Pages Autovnv trackcvg
+if HAVE_QT5
+  PYUIC=$(PYUIC5)
+else
+  PYUIC=$(PYUIC4)
+endif
 
-EXTRA_DIST = Base/icons/code_saturne.ico
+if HAVE_QT5
+  PYRCC = $(PYRCC5)
+else
+  PYRCC = $(PYRCC4) -py$(PYRCC4VER)
+endif
 
-# Install data
+# Python files
 
-imagesdir = ${pkgdatadir}/images
+PYFILES = \
+MainView.py
 
-images_DATA = \
-Base/icons/splashscreen.png
+#if HAVE_QT5
+#  PYFILES += qt5/QtCore.py qt5/QtGui.py qt5/QtWidgets.py
+#else
+#  PYFILES += qt4/QtCore.py qt4/QtGui.py qt4/QtWidgets.py
+#endif
 
-install-exec-local:
-	@case ${host_os} in \
-	  *mingw* | *cygwin*) \
-	    $(INSTALL_PROGRAM) $(srcdir)/Base/icons/code_saturne.ico $(DESTDIR)$(bindir); \
-	    ;; \
-	esac
+# PyQt User Interface files
 
-uninstall-local:
-	@case ${host_os} in \
-	  *mingw* | *cygwin*) \
-	    rm $(DESTDIR)$(bindir)/code_saturne.ico; \
-	    rmdir $(DESTDIR)$(bindir); \
-	    ;; \
-	esac
+UIFILES = \
+MainForm.ui
 
+# PyQt Resources files
+
+QRCFILES = \
+resource_base.qrc
+
+# Distribute icons directory, resources files and user interface files
+
+EXTRA_DIST = \
+icons \
+$(UIFILES) \
+$(QRCFILES)
+
+# Generated files
+
+FORMS = $(UIFILES:.ui=.py)
+RESOURCES = $(QRCFILES:.qrc=_rc.py)
+
+# Specific rules
+
+PYRCC4VER = `$(PYTHON) --version 2>&1 | cut -c 8`
+
+SUFFIXES = .ui .qrc _rc.py
+
+.ui.py:
+	$(PYUIC) -o $@ $<
+
+.qrc_rc.py:
+	$(PYRCC) -o $@ $<
+
+all-local: $(FORMS) $(RESOURCES)
+
+clean-local:
+	-rm -f $(FORMS) $(RESOURCES)
+
+# Install Python library
+
+basedir = $(pkgpythondir)/trackcvg
+dist_base_PYTHON = \
+__init__.py \
+$(PYFILES)
+
+nodist_base_PYTHON = \
+$(FORMS) \
+$(RESOURCES)

@@ -1,0 +1,20 @@
+<RCC>
+  <qresource prefix="/new/prefix1">
+    <file>icons/22x22/edit-clear.png</file>
+    <file>icons/22x22/add.png</file>
+    <file>icons/22x22/remove.png</file>
+    <file>icons/22x22/help.png</file>
+    <file>icons/22x22/weather-few-clouds.png</file>
+    <file>icons/22x22/document-new.png</file>
+    <file>icons/22x22/user-trash-full.png</file>
+    <file>icons/22x22/edit-find-replace.png</file>
+    <file>icons/22x22/bookmark-new.png</file>
+    <file>icons/22x22/document-open.png</file>
+    <file>icons/22x22/folder-open.png</file>
+    <file>icons/22x22/network-server.png</file>
+    <file>icons/22x22/preferences-system.png</file>
+    <file>icons/32x32/go-next.png</file>
+    <file>icons/32x32/go-previous.png</file>
+    <file>icons/welcome.png</file>
+  </qresource>
+</RCC>

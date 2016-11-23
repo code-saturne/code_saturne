@@ -313,6 +313,7 @@ class ListingDialogView(CommandMgrDialogView):
 
         self.pushButtonStop.clicked.connect(self.__slotStop)
         self.pushButtonStopAt.clicked.connect(self.__slotStopAt)
+        self.pushButtonCvgTool.clicked.connect(self.__slotCvgTool)
 
         self.scratch_dir = ""
         self.result_dir = ""
@@ -410,6 +411,33 @@ class ListingDialogView(CommandMgrDialogView):
             result = dlg.get_result()
             msg = self.tr("Stop at iteration number: %i" % result['iter'])
             self.__stopExec(result['iter'], msg)
+
+
+    @pyqtSlot()
+    def __slotCvgTool(self):
+        """
+        Private slot. Running convergence tracking tool
+        """
+        import subprocess
+
+        if self.case['package'].code_name == 'Code_Saturne':
+            import cs_package
+            cmd = os.path.join(cs_package.package().dirs['bindir'][1], "code_saturne")
+            cmd = cmd + " trackcvg "
+            if self.scratch_dir:
+                cmd = cmd + "-r " + self.scratch_dir
+            elif self.result_dir:
+                cmd = cmd + "-r " + self.result_dir
+            self.runProcess = subprocess.Popen(cmd, shell=True)
+        elif self.case['package'].code_name == 'NEPTUNE_CFD':
+            import nc_package
+            cmd = os.path.join(nc_package.package().dirs['bindir'][1], "neptune_cfd")
+            cmd = cmd + " trackcvg "
+            if self.scratch_dir:
+                cmd = cmd + "-r " + self.scratch_dir
+            elif self.result_dir:
+                cmd = cmd + "-r " + self.result_dir
+            self.runProcess = subprocess.Popen(cmd, shell=True)
 
 
     @pyqtSlot("QProcess::ProcessState")

@@ -42,6 +42,7 @@ class master_script:
                          'create':self.create,
                          'gui':self.gui,
                          'autovnvgui':self.autovnvgui,
+                         'trackcvg':self.trackcvg,
                          'info':self.info,
                          'run':self.run,
                          'salome':self.salome,
@@ -107,6 +108,7 @@ Topics:
   create
   gui
   autovnvgui
+  trackcvg
   info
   run
   salome
@@ -148,6 +150,10 @@ Options:
     def autovnvgui(self, options = None):
         import cs_autovnvgui
         return cs_autovnvgui.main(options, self.package)
+
+    def trackcvg(self, options = None):
+        import cs_trackcvg
+        return cs_trackcvg.main(options, self.package)
 
     def info(self, options = None):
         import cs_info
