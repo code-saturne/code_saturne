@@ -1209,27 +1209,21 @@ class XMLinit(Variables):
         XMLPhysicalModelGWNode = XMLThermoPhysicalModelNode.xmlGetNode('groundwater')
         if XMLPhysicalModelGWNode:
 
-            cpt = 0
             for XMLGWLaw in XMLPhysicalModelGWNode.xmlGetNodeList('groundwater_law'):
                 if XMLGWLaw:
                     for XMLGWScalar in XMLGWLaw.xmlGetNodeList('variable'):
                         if XMLGWScalar:
-                            name_diff = XMLGWScalar['name']
-                            pattern = '_diffusivity'
-                            name_delay = re.sub(pattern, '_delay', name_diff)
-                            name_kd = re.sub(pattern, '_kd', name_diff)
-
                             XMLGWScalarProp = XMLGWScalar.xmlGetNode('property')
-                            XMLGWScalarPropForm = XMLGWScalarProp.xmlGetNode('formula')
-                            content = XMLGWScalarPropForm.xmlGetTextNode()
-                            if re.search(name_delay, content):
-                                content = re.sub(name_delay, name_kd, content)
-                                XMLGWScalarPropForm.xmlSetTextNode(content)
-                                cpt = cpt + 1
-            if cpt:
-                print("Warning: while updating the xml parameter file,")
-                print("the delay property for at least one scalar on at least one zone has been replaced by the Kd property.")
-                print("The formula for the Kd property has to be defined.")
+                            if XMLGWScalarProp:
+                                if XMLGWScalarProp.xmlGetNode('formula'):
+                                    XMLGWScalarProp.xmlRemoveChild('formula')
+                                XMLGWScalar.xmlRemoveChild('property')
+                            XMLGWLaw.xmlRemoveChild('variable')
+
+                            print("Warning: xml parameter file must be updated manually.")
+                            print("Settings of diffusivity and delay for the "
+                                  "defined scalars have been removed "
+                                  "to ensure a partial compatibility.")
 
             XMLVelPrNode = XMLThermoPhysicalModelNode.xmlGetNode('velocity_pressure')
             for node in XMLVelPrNode.xmlGetNodeList('variable', 'name'):
