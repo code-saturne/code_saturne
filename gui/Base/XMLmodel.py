@@ -115,7 +115,9 @@ class XMLmodel(Variables):
         nodeList = []
 
         if model != 'off':
-            nodeList.append(nodeTurb.xmlGetNode('property', name='turbulent_viscosity'))
+            nodeTurbVisc = nodeTurb.xmlGetNode('property', name='turbulent_viscosity')
+            if nodeTurbVisc:
+                nodeList.append(nodeTurbVisc)
 
         if model == 'LES_dynamique':
             nodeList.append(nodeTurb.xmlGetNode('property', name='smagorinsky_constant^2'))
