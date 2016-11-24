@@ -7,6 +7,14 @@ Bug fixes:
 
 - Fix several face weight indices in scalar balance by zone.
 
+Architectural changes
+---------------------
+
+- Add handling of lmod-based environment modules.
+
+- Allow detection of HDF5 libraries named libhdf5-shared and libhdf5-static as well
+  as libhdf5 (when built with CMake)
+
 Release 4.0.6 (07 Oct 2016)
 ===========================
 

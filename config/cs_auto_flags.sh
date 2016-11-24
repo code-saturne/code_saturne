@@ -250,6 +250,14 @@ elif test "x$cs_gcc" = "xicc"; then
   cs_ac_cc_version=`$CC --version 2>&1 | head -1`
   cs_cc_compiler_known=yes
 
+  # Some version numbers
+  cs_cc_vers_major=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f1 -d.`
+  cs_cc_vers_minor=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f2 -d.`
+  cs_cc_vers_patch=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f3 -d.`
+  test -n "$cs_cc_vers_major" || cs_cc_vers_major=0
+  test -n "$cs_cc_vers_minor" || cs_cc_vers_minor=0
+  test -n "$cs_cc_vers_patch" || cs_cc_vers_patch=0
+
   # Default compiler flags
   # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
   cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
@@ -257,7 +265,12 @@ elif test "x$cs_gcc" = "xicc"; then
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
   cflags_default_prf="-p"
-  cflags_default_omp="-openmp"
+  cflags_default_omp="-qopenmp"
+  case "$cs_cc_vers_major" in
+    1[0123456])
+      cflags_default_omp="-openmp"
+      ;;
+  esac
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -629,19 +642,32 @@ elif test "x$cs_gxx" = "xicc"; then
   cs_ac_cxx_version=`$CXX --version 2>&1 | head -1`
   cs_cxx_compiler_known=yes
 
+  cs_cxx_vers_major=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f1 -d.`
+  cs_cxx_vers_minor=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f2 -d.`
+  cs_cxx_vers_patch=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f3 -d.`
+  test -n "$cs_cxx_vers_major" || cs_cxx_vers_major=0
+  test -n "$cs_cxx_vers_minor" || cs_cxx_vers_minor=0
+  test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
+
   # Default compiler flags
   cxxflags_default="-strict-ansi -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cxxflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_prf="-p"
-  cxxflags_default_omp="-openmp"
+  cxxflags_default_omp="-qopenmp"
 
   # Modify default flags on certain systems
 
   case "$host-os-$host_cpu" in
     *ia64)
       cxxflags_default_opt="-O2 -mcpu=itanium2-p9000"
+      ;;
+  esac
+
+  case "$cs_cxx_vers_major" in
+    1[0123456])
+      cxxflags_default_omp="-openmp"
       ;;
   esac
 
@@ -965,6 +991,13 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     cs_ac_fc_version=`$FC --version 2>&1 | head -1`
     cs_fc_compiler_known=yes
 
+    cs_fc_vers_major=`echo $cs_ac_fc_version | cut -f 3 -d" " | cut -f1 -d.`
+    cs_fc_vers_minor=`echo $cs_ac_fc_version | cut -f 3 -d" " | cut -f2 -d.`
+    cs_fc_vers_patch=`echo $cs_ac_fc_version | cut -f 3 -d" " | cut -f3 -d.`
+    test -n "$cs_fc_vers_major" || cs_fc_vers_major=0
+    test -n "$cs_fc_vers_minor" || cs_fc_vers_minor=0
+    test -n "$cs_fc_vers_patch" || cs_fc_vers_patch=0
+
     # Default compiler flags
     # (temporarily disable "unused variable" remark -- 7712)
     fcflags_default="-cpp -fpic -warn -diag-disable 7712"
@@ -972,7 +1005,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_opt="-O2"
     fcflags_default_hot="-O3"
     fcflags_default_prf="-p"
-    fcflags_default_omp="-openmp"
+    fcflags_default_omp="-qopenmp"
 
     # Modify default flags on certain systems
 
@@ -980,6 +1013,12 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
       *ia64)
         fcflags_default_opt="-O2 -mcpu=itanium2-p9000"
         fcflags_default_hot="-O3 -mcpu=itanium2-p9000"
+        ;;
+    esac
+
+    case "$cs_cxx_vers_major" in
+      1[0123456])
+        fcflags_default_omp="-openmp"
         ;;
     esac
 

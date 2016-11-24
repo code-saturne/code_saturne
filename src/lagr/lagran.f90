@@ -588,7 +588,7 @@ module lagran
   !> massic flow rate for a boudary zone
   double precision, save ::  deblag(nflagm)
 
-  !> number of particles per class and per boudary zone
+  !> number of particles per class and per boundary zone
   integer, save ::  ijnbp
   !> injection frequency
   !> (if < 0 : particle are introduced only at first iteration

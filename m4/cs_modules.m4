@@ -89,8 +89,16 @@ elif test "x$with_modules" != "xno" ; then
 
 fi
 
-# Find the modulecmd executable
-AC_PATH_PROG([MODULECMD], [modulecmd], [], [${MODULESHOME}/bin:$PATH])
+# Find the modulecmd executable; handle both modules and lmod
+
+if test "x$LMOD_CMD" != "x" ; then
+  MODULECMD=$LMOD_CMD
+  AC_SUBST(MODULECMD)
+elif test "x$MODULE_VERSION" != "x" ; then
+  AC_PATH_PROG([MODULECMD], [modulecmd], [], [${MODULESHOME}/bin:$PATH])
+else
+  AC_MSG_WARN([no supported environment module commmand detected])
+fi
 
 AC_SUBST(cs_env_modules)
 
