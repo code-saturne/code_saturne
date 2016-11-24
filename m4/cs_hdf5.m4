@@ -29,6 +29,7 @@ AC_DEFUN([CS_AC_TEST_HDF5], [
 
 cs_have_hdf5=no
 cs_have_hdf5_header=no
+cs_hdf5_libpath=""
 hdf5_prefix=""
 
 AC_ARG_WITH(hdf5,
@@ -58,6 +59,7 @@ AC_ARG_WITH(hdf5-lib,
                with_hdf5=yes
              fi
              HDF5_LDFLAGS="-L$with_hdf5_lib"
+             cs_hdf5_libpath="$with_hdf5_lib"
              # Add the libdir to the runpath as HDF5 might not be libtoolized
              HDF5RUNPATH="-R$with_hdf5_lib"],
             [if test "x$with_hdf5" != "xno" -a "x$with_hdf5" != "xyes" \
@@ -65,6 +67,7 @@ AC_ARG_WITH(hdf5-lib,
                HDF5_LDFLAGS="-L$with_hdf5/lib"
                # Add the libdir to the runpath as HDF5 might not be libtoolized
                HDF5RUNPATH="-R$with_hdf5/lib"
+               cs_hdf5_libpath="$with_hdf5/lib"
              fi])
 
 
@@ -92,11 +95,6 @@ if test "x$with_hdf5" != "xno" ; then
                      [])
   fi
 
-  HDF5_LIBS="-lhdf5 $PTHREAD_LIBS"
-
-  LDFLAGS="${LDFLAGS} ${HDF5_LDFLAGS}"
-  LIBS="${HDF5_LIBS} ${LIBS}"
-
   # If HDF5 was built with MPI support, it might also be needed here
 
   AC_EGREP_CPP([cs_hdf5_parallel],
@@ -111,35 +109,77 @@ if test "x$with_hdf5" != "xno" ; then
                 [cs_hdf5_need_mpi=yes],
                 [cs_hdf5_need_mpi=no])
 
-  if test "x$cs_hdf5_need_mpi" = "xyes" ; then
-    HDF5_CPPFLAGS_MPI=$MPI_CPPFLAGS
-    HDF5_LDFLAGS_MPI=$MPI_LDFLAGS
-    HDF5_LIBS_MPI=$MPI_LIBS
-    CPPFLAGS="${CPPFLAGS} ${HDF5_CPPFLAGS_MPI}"
-    LDFLAGS="${LDFLAGS} ${HDF5_LDFLAGS_MPI}"
-    LIBS="${HDF5_LIBS} ${HDF5_LIBS_MPI}"
+  LDFLAGS="${LDFLAGS} ${HDF5_LDFLAGS}"
+
+  cs_hdf5_libnames="hdf5-shared hdf5-static hdf5"
+  cs_hdf5_libname=""
+
+  if test "x$cs_hdf5_libpath" != x ; then
+    if test ! -d "$cs_hdf5_libpath" ; then
+      AC_MSG_FAILURE([directory specified by --with-hdf5-lib=$cs_hdf5_libpath does not exist!])
+    fi
+    for n in $cs_hdf5_libnames ; do
+      if test "x$cs_hdf5_libname" = "x" ; then
+        ls "$cs_hdf5_libpath"/"$n".* > /dev/null 2>&1
+        if test $? == "0"; then
+          cs_hdf5_libname=$n
+          cs_hdf5_libnames="$cs_hdf5_libname"
+        fi
+      fi
+    done
   fi
 
-  # Now check library
+  unset cs_hdf5_libname
 
-  AC_CHECK_LIB(hdf5, H5Fopen,
-               [ AC_DEFINE([HAVE_HDF5], 1, [HDF5 file support])
-                 cs_have_hdf5=yes
-               ],
-               [if test "x$with_hdf5" != "xcheck" ; then
-                  AC_MSG_FAILURE([HDF5 support is requested, but test for HDF5 failed!])
-                else
-                  AC_MSG_WARN([no HDF5 file support])
-                fi
-               ],
-               )
+  for hdf5_libname in $cs_hdf5_libnames ; do
+
+    if test "x$cs_have_hdf5" = "xno"; then
+
+      if test "x$cs_hdf5_need_mpi" = "xyes" ; then
+        HDF5_CPPFLAGS_MPI=$MPI_CPPFLAGS
+        HDF5_LDFLAGS_MPI=$MPI_LDFLAGS
+        CPPFLAGS="${CPPFLAGS} ${HDF5_CPPFLAGS_MPI}"
+        LDFLAGS="${LDFLAGS} ${HDF5_LDFLAGS_MPI}"
+      fi
+
+      HDF5_LIBS="-l${hdf5_libname} $PTHREAD_LIBS"
+      LIBS="${HDF5_LIBS} ${saved_LIBS}"
+
+      if test "x$cs_hdf5_need_mpi" = "xyes" ; then
+        HDF5_LIBS_MPI=$MPI_LIBS
+        LIBS="${HDF5_LIBS} ${HDF5_LIBS_MPI}"
+      fi
+
+      # Now check library
+
+      AC_CHECK_LIB($hdf5_libname, H5Fopen,
+                   [ AC_DEFINE([HAVE_HDF5], 1, [HDF5 file support])
+                     cs_have_hdf5=yes
+                   ],
+                   [],
+                   )
+
+    fi
+
+    if test "x$cs_have_hdf5" = "xno"; then
+      HDF5_LIBS=""
+      HDF5_CPPFLAGS_MPI=""
+      HDF5_LDFLAGS_MPI=""
+      HDF5_LIBS_MPI=""
+    fi
+
+  done
 
   if test "x$cs_have_hdf5" = "xno"; then
-    HDF5_LIBS=""
-    HDF5_CPPFLAGS_MPI=""
-    HDF5_LDFLAGS_MPI=""
-    HDF5_LIBS_MPI=""
+    if test "x$with_hdf5" != "xcheck" ; then
+      AC_MSG_FAILURE([HDF5 support is requested, but test for HDF5 failed!])
+    else
+      AC_MSG_WARN([no HDF5 file support])
+    fi
   fi
+
+  unset cs_hdf5_libnames
+  unset cs_hdf5_libpath
 
   CPPFLAGS="$saved_CPPFLAGS"
   LDFLAGS="$saved_LDFLAGS"
