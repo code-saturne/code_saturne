@@ -137,7 +137,7 @@ if test "x$with_hdf5" != "xno" ; then
     done
   fi
 
-  unset $cs_hdf5_libname
+  unset cs_hdf5_libname
 
   for hdf5_libname in $cs_hdf5_libnames ; do
 
@@ -186,8 +186,8 @@ if test "x$with_hdf5" != "xno" ; then
     fi
   fi
 
-  unset $cs_hdf5_libnames
-  unset $cs_hdf5_libpath
+  unset cs_hdf5_libnames
+  unset cs_hdf5_libpath
 
   CPPFLAGS="$saved_CPPFLAGS"
   LDFLAGS="$saved_LDFLAGS"
