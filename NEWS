@@ -10,6 +10,14 @@ Bug fixes:
 - Lagragian model:
   * Fix some parallel resizing issues.
 
+Architectural changes
+---------------------
+
+- Add handling of lmod-based environment modules.
+
+- Allow detection of HDF5 libraries named libhdf5-shared and libhdf5-static as well
+  as libhdf5 (when built with CMake)
+
 Release 4.3.1 (October 7 2016)
 ==============================
 
@@ -51,13 +59,6 @@ Bug fixes:
 
 - Fix for build with MED and without MPI.
 
-Architectural changes
----------------------
-
-- Add handling of lmod-based environment modules.
-
-- Allow detection of HDF5 libraries named libhdf5-shared and libhdf5-static as well
-  as libhdf5 (when built with CMake)
 
 Release 4.3.0 (July 29 2016)
 ============================
