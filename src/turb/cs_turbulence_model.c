@@ -821,14 +821,23 @@ const double cs_turb_xlesfd = 1.5;
 
 /*!
  * Maximum allowed value for the variable \f$C\f$ appearing in the LES dynamic
- * model (the "square" comes from the fact that the variable of the dynamic
- * model corresponds to the square of the constant of the Smagorinsky model).
+ * model.
  * Any larger value yielded by the calculation procedure of the dynamic model
- * will be clipped to \f$ smagmx^2\f$.
+ * will be clipped to \f$ smagmx\f$.
  *
  * Useful if and only if \ref iturb = 41.
  */
 double cs_turb_smagmx;
+
+/*!
+ * Minimum allowed value for the variable \f$C\f$ appearing in the LES dynamic
+ * model.
+ * Any smaller value yielded by the calculation procedure of the dynamic model
+ * will be clipped to \f$ smagmn\f$.
+ *
+ * Useful if and only if \ref iturb = 41.
+ */
+double cs_turb_smagmn;
 
 /*!
  * Van Driest constant appearing in the van Driest damping function applied to
@@ -1139,7 +1148,8 @@ cs_f_turb_complete_constants(void)
                    - xkappa2/(cs_turb_ckwsw2*sqrt(cs_turb_cmu));
   cs_turb_csaw1 =   cs_turb_csab1/xkappa2
                   + 1./cs_turb_csasig*(1. + cs_turb_csab2);
-  cs_turb_smagmx = 10.*cs_turb_csmago;
+  cs_turb_smagmx = cs_turb_csmago*cs_turb_csmago;
+  cs_turb_smagmn = 0.;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

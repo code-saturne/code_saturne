@@ -972,7 +972,7 @@ csmago = 0.065d0
 cwale  = 0.25d0
 xlesfd = 1.5d0
 smagmx = csmago**2
-smagmn = 0.
+smagmn = 0.d0
 cdries = 26.d0
 
 !   pour le v2f phi-model
