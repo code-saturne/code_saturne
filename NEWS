@@ -5,6 +5,9 @@ Release 4.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix Neumann boundary condition on turbulent dissipation for k-epsilon models
+  at walls when testing if boundary cell is outside the viscous sub-layer.
+
 - Fix for Coolprop use.
 
 - Lagragian model:
