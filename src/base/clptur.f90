@@ -963,7 +963,7 @@ do ifac = 1, nfabor
 
       ! If yplus=0, uiptn is set to 0 to avoid division by 0.
       ! By the way, in this case: iuntur=0
-      if (yplus.gt.epzero) then !.and.iuntur.eq.1) then !FIXME use only iuntur
+      if (yplus.gt.epzero.and.iuntur.eq.1) then !FIXME use only iuntur
         efvisc = visclc/romc + exp(-xkappa*(8.5-5.2)) * roughness * uk
         pimp = distbf*4.d0*uk**5/           &
             (xkappa*efvisc**2*(yplus+dplus)**2)
