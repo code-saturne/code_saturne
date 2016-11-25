@@ -2888,14 +2888,14 @@ cs_time_moment_restart_write(cs_restart_t  *restart)
       else
         name = mt->name;
       const size_t l = strlen(name) + 1;
-      if (names_idx[i] + l > names_max_size) {
-        while (names_idx[i] + l > names_max_size)
+      if (names_idx[j] + l > names_max_size) {
+        while (names_idx[j] + l > names_max_size)
           names_max_size *= 2;
         BFT_REALLOC(names, names_max_size, char);
       }
-      strcpy(names + names_idx[i], name);
-      names[names_idx[i] + l - 1] = '\0';
-      names_idx[i+1] = names_idx[i] + l;
+      strcpy(names + names_idx[j], name);
+      names[names_idx[j] + l - 1] = '\0';
+      names_idx[j+1] = names_idx[j] + l;
 
     }
 
