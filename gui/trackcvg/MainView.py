@@ -85,8 +85,6 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-import time
-
 import xml
 from xml.dom.minidom import parse, Document
 
@@ -443,7 +441,6 @@ class MyMplCanvas(FigureCanvas):
 
 
     def update_figure(self, name, data, nb_probes, lstProbes):
-        start_time = time.time()
         self.xAxe = data[0].tolist()
         for j in range(nb_probes - 1):
             if (lstProbes[j].status == "on"):
@@ -453,11 +450,9 @@ class MyMplCanvas(FigureCanvas):
 
                 self.axes[lstProbes[j].subplot_id - 1].plot(self.xAxe, self.yAxe, label = lbl)
                 self.axes[lstProbes[j].subplot_id - 1].legend()
-        print("--- update_figure %s seconds ---" % (time.time() - start_time))
 
 
     def update_figure_listing(self, name, data, nb_probes, lstProbes):
-        start_time = time.time()
         self.xAxe = data[0].tolist()
         for j in range(nb_probes):
             if (lstProbes[j].status == "on"):
@@ -467,16 +462,13 @@ class MyMplCanvas(FigureCanvas):
 
                 self.axes[lstProbes[j].subplot_id - 1].plot(self.xAxe, self.yAxe, label = lbl)
                 self.axes[lstProbes[j].subplot_id - 1].legend()
-        print("--- update_figure_listing %s seconds ---" % (time.time() - start_time))
 
 
     def drawFigure(self):
-        start_time = time.time()
         for it in range(len(self.axes)):
             self.axes[it].grid(True)
 
         self.fig.canvas.draw()
-        print("--- drawFigure %s seconds ---" % (time.time() - start_time))
 
 
     def clear(self):
@@ -485,7 +477,6 @@ class MyMplCanvas(FigureCanvas):
 
 
     def setSubplotNumber(self, subplotNb):
-        #start_time = time.time()
         self.fig.clear()
         for it in range(len(self.axes)):
             self.axes.remove(self.axes[0])
@@ -503,7 +494,6 @@ class MyMplCanvas(FigureCanvas):
             self.axes.append(self.fig.add_subplot(222))
             self.axes.append(self.fig.add_subplot(223))
             self.axes.append(self.fig.add_subplot(224))
-        #print("--- setSubplotNumber %s seconds ---" % (time.time() - start_time))
 
 
 #-------------------------------------------------------------------------------
@@ -904,7 +894,6 @@ class MainView(object):
     def updateView(self):
         """
         """
-        start_time = time.time()
         self.dc.clear()
         for (name, fle, status, subplot_id, probes_number) in self.fileList:
                 if name == "listing":
@@ -924,7 +913,6 @@ class MainView(object):
                     nm, ext = os.path.splitext(name)
                     nm = nm[7:]
                     self.dc.update_figure(nm, data, probes_number, self.listFileProbes[name])
-        print("--- updateView %s seconds ---" % (time.time() - start_time))
         self.dc.drawFigure()
 
 
@@ -975,7 +963,6 @@ class MainView(object):
     def ReadDatFile(self, name, probes_number):
         """
         """
-        start_time = time.time()
         data = []
         ficIn= open(name, 'r')
         comp = 0
@@ -1001,7 +988,6 @@ class MainView(object):
         A = numpy.array(data)
         B = numpy.reshape(A,(-1, probes_number))
         C = numpy.transpose(B)
-        print("--- ReadDatFile %s seconds ---" % (time.time() - start_time))
 
         return C
 
@@ -1009,7 +995,6 @@ class MainView(object):
     def ReadDatFileHeader(self, name):
         """
         """
-        start_time = time.time()
         size = 0
         comp = 0
         ficIn= open(name, 'r')
@@ -1021,7 +1006,6 @@ class MainView(object):
                 if comp == 0:
                     size = len(content)
         ficIn.close()
-        print("--- ReadDatFile %s seconds ---" % (time.time() - start_time))
 
         return size
 
@@ -1054,7 +1038,6 @@ class MainView(object):
     def ReadListingFile(self, name):
         """
         """
-        start_time = time.time()
         ficIn= open(name, 'r')
         data = []
         lst = []
@@ -1085,7 +1068,6 @@ class MainView(object):
         A = numpy.array(data)
         B = numpy.reshape(A,(-1, len(self.listingVariable) + 1))
         C = numpy.transpose(B)
-        print("--- ReadListingFile %s seconds ---" % (time.time() - start_time))
         return C, dico
 
 
