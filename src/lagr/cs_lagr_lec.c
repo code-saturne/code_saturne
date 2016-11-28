@@ -173,12 +173,11 @@ cs_restart_lagrangian_checkpoint_read(void)
 
   if (cs_glob_lagr_stat_options->isuist == 1) {
 
-    /*  ---> Ouverture */
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "   ** INFORMATIONS SUR LE CALCUL LAGRANGIEN\n"
-                  "-------------------------------------\n"
-                  "   Lecture d'un fichier suite\n"
-                  "   sur les statistiques et TS couplage retour\n");
+    cs_log_printf
+      (CS_LOG_DEFAULT,
+       "   ** INFORMATION ON THE LAGRANGIAN COMPUTATION\n"
+       "-------------------------------------\n"
+       "   Read restart file for statistics and return coupling source terms\n");
 
     char const *ficsui = "lagrangian_stats";
     cs_lag_stat_restart = cs_restart_create(ficsui, NULL, CS_RESTART_MODE_READ);
@@ -205,27 +204,12 @@ cs_restart_lagrangian_checkpoint_read(void)
       ierror = cs_restart_read_section(cs_lag_stat_restart, rubriq,
                                        itysup, nbval, CS_TYPE_cs_int_t, tabvar);
       BFT_FREE(tabvar);
+      if (ierror != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Abort while opening the lagrangian module restart file: %s\n"
+                    "This file does not seem to be a Lagrangian checkpoint file."),
+                  ficsui);
     }
-    if (ierror != 0)
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("@\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"
-           "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-           "@    =========     LAGRANGIEN %s\n"
-           "@      TYPE DE FICHIER INCORRECT\n"
-           "@\n"
-           "@    Ce fichier ne semble pas etre un fichier\n"
-           "@      suite Lagrangien.\n"
-           "@\n"
-           "@    Le calcul ne peut etre execute.\n"
-           "@\n"
-           "@    Verifier que le fichier suite utilise correspond bien\n"
-           "@        a un fichier suite Lagrangien.\n"
-           "@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"),
-         ficsui);
 
     {
       itysup = 0;
@@ -239,104 +223,41 @@ cs_restart_lagrangian_checkpoint_read(void)
                                        itysup, nbval, CS_TYPE_cs_int_t, tabvar);
       jsttio = tabvar[0];
       BFT_FREE(tabvar);
-    }
-    if (ierror != 0)
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"
-           "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-           "@    =========     LAGRANGIEN %s\n"
-           "@      ERREUR A LA LECTURE DE LA RUBRIQUE\n"
-           "@ %s\n"
-           "@    Le calcul ne peut pas etre execute.\n"
-           "@\n"
-           "@    Verifier que ce fichier suite\n"
-           "@        correspond bien a un fichier suite Lagrangien,\n"
-           "@        et qu'il n'a pas ete endommage.\n"
-           "@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"),
-         ficsui,
-         "indicateur_ecoulement_stationnaire");
 
-    /* Dimensions des supports   */
+      if (ierror != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Abort while opening the lagrangian module restart file: %s\n"
+                    "Error reading section: %s"),
+                  ficsui, rubriq);
+    }
+
+    /* Mesh dimensions*/
     bool ncelok, nfaiok, nfabok, nsomok;
     cs_restart_check_base_location (cs_lag_stat_restart, &ncelok, &nfaiok,
                                     &nfabok, &nsomok);
 
-    if ( ! ncelok) {
-
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         _("@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"
-           "@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE\n"
-           "@    =========     LAGRANGIEN %s\n"
-           "@      DONNEES AMONT ET ACTUELLES INCOHERENTES\n"
-           "@\n"
-           "@    Le nombre de cellules a ete modifie\n"
-           "@\n"
-           "@    Le calcul ne peut etre execute.\n"
-           "@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"),
-         ficsui);
-      iok++;
-
-    }
+    if (! ncelok)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("in Lagrangian module"),
+         _("The number of cells in restart file: %s\n"
+           "is different from that of the current mesh.\n"));
 
     if (! nfaiok)
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         _("@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"
-           "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-           "@    =========     LAGRANGIEN %s\n"
-           "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-           "@\n"
-           "@    Le nombre de faces %s a ete modifie.\n"
-           "@\n"
-           "@    Le calcul peut etre execute mais les donnees\n"
-           "@      sur les faces %s ne seront pas relues\n"
-           "@      dans le fichier suite.\n"
-           "@    Elles seront initialisees par des valeurs par defaut.\n"
-           "@\n"
-           "@    Le calcul se poursuit...\n"
-           "@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"),
-         ficsui,
-         "internes",
-         "internes");
+      cs_parameters_error
+        (CS_WARNING,
+         _("in Lagrangian module"),
+         _("The number of interior faces in restart file: %s\n"
+           "is different from that of the current mesh.\n\n"
+           "interior face data will be reinitialized.\n"));
 
     if (! nfabok)
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         _("@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"
-           "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"
-           "@    =========     LAGRANGIEN %s\n"
-           "@      DONNEES AMONT ET ACTUELLES DIFFERENTES\n"
-           "@\n"
-           "@    Le nombre de faces %s a ete modifie.\n"
-           "@\n"
-           "@    Le calcul peut etre execute mais les donnees\n"
-           "@      sur les faces %s ne seront pas relues\n"
-           "@      dans le fichier suite.\n"
-           "@    Elles seront initialisees par des valeurs par defaut.\n"
-           "@\n"
-           "@    Le calcul se poursuit...\n"
-           "@\n"
-           "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-           "@\n"),
-         ficsui,
-         "de bord",
-         "de bord");
+      cs_parameters_error
+        (CS_WARNING,
+         _("in Lagrangian module"),
+         _("The number of boundary faces in restart file: %s\n"
+           "is different from that of the current mesh.\n\n"
+           "boundary face data will be reinitialized.\n"));
 
     /* --> Est-on cense lire une suite de stats volumiques ?   */
     if (cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt) {
@@ -387,7 +308,7 @@ cs_restart_lagrangian_checkpoint_read(void)
                 && cs_glob_time_step->nt_cur < cs_glob_lagr_stat_options->nstist))
           cs_log_printf
             (CS_LOG_DEFAULT,
-             _("@\n"
+             ("@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n"
                "@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE\n"

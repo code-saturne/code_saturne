@@ -3815,7 +3815,7 @@ cs_field_log_key_defs(void)
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"
                   "Default values for structure keys:\n"
-                  "-----------------------------------\n\n"));
+                  "----------------------------------\n\n"));
   cs_log_printf(CS_LOG_SETUP, _("  %s %s Description\n"),
                 tmp_str[0], tmp_str[1]);
 

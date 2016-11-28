@@ -395,7 +395,7 @@ cs_lagr_log_setup(void)
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("  Start of calculation from absolute iteration n°: %10d\n"),
+     _("  Start of calculation from absolute iteration number: %10d\n"),
      cs_glob_lagr_stat_options->idstnt);
 
   if (cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt) {
@@ -404,7 +404,7 @@ cs_lagr_log_setup(void)
       cs_log_printf
         (CS_LOG_SETUP,
          _("  Start of steady-state statistics from Lagrangian "
-           "iteration n°: %10d)\n"),
+           "iteration number: %10d)\n"),
          cs_glob_lagr_stat_options->nstist);
 
     }
@@ -441,13 +441,11 @@ cs_lagr_log_iteration(void)
   const cs_lagr_particle_counter_t *pc = cs_lagr_update_particle_counter();
 
   /* Number of particles  */
-  cs_log_printf(CS_LOG_DEFAULT,
-                _("\n"));
+  cs_log_printf(CS_LOG_DEFAULT, "\n");
   cs_log_printf(CS_LOG_DEFAULT,
                 _("   Current number of particles "
                   "(with and without statistical weight) :\n"));
-  cs_log_printf(CS_LOG_DEFAULT,
-                _("\n"));
+  cs_log_printf(CS_LOG_DEFAULT, "\n");
   cs_log_printf
     (CS_LOG_DEFAULT,
      _("ln  newly injected                           %8llu   %14.5E\n"),
