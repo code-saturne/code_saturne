@@ -119,42 +119,42 @@
 // _____________________________________________________________________________
 /*!
 
-  \page field How to access and manage variables and properties using the cs_field API and the deprecated array \c propce ?
+  \page field How to access and manage variables and properties using the cs_field API?
 
-  \ref cs_var_dico_vars "Variables" and \ref cs_var_dico_props "properties" can be accessed both in Fortran and in C using the \ref field.f90 "cs_field" API. Some Fortran
-  properties can also still be accessed through the deprecated array \c propce.
+  \ref cs_var_dico_vars "Variables" and \ref cs_var_dico_props "properties" can be accessed both in Fortran and in C using the \ref field.f90 "cs_field" API.
 
   \par Accessing variables and properties in Fortran:
 
     - Both \ref cs_var_dico_vars "variables" and \ref cs_var_dico_props "properties" can be accessed via the
-      \ref field.f90 "cs_field" API, as in the following examples: \n
+      \ref field.f90 "cs_field" API, using the global field indices and indirections arrays, as in the following examples: \n
       - For one-dimensional arrays :\n\n
       <tt>call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref numvar::ipr "ipr"), cvar_pr)
           \n pres =  cvar_pr(iel)</tt>, \n\n
-      <tt>call \ref field::field_get_val_s_by_name "field_get_val_s_by_name"("pressure", cvar_pr)
-          \n pres =  cvar_pr(iel)</tt>, \n\n
       <tt>call \ref field::field_get_val_s "field_get_val_s"(\ref cstphy::icp "icp", cpro_cp) \n
-          cp = cpro_cp(iel)</tt>, \n\n
-          The scalar values are accessed as follows:\n\n
+          cp = cpro_cp(iel)</tt> \n\n
+          The values of scalar variable can be accessed as follows:\n\n
        <tt>call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref isca "isca"(iscalt)), cvar_scalt) \n
-          temp = cvar_scalt(iel)</tt>, \n\n
+          temp = cvar_scalt(iel)</tt> \n\n
       - For interleaved multidimensional arrays:\n\n
             <tt>call \ref field::field_get_val_v "field_get_val_v"(ivarfl(\ref numvar::iu "iu"), cvar_vel)
-          \n ux = cvar_vel(1,iel)</tt>, \n\n
+          \n ux = cvar_vel(1,iel)</tt> \n\n
       .
-       where \ref numvar::ipr "ipr", \ref numvar::iu "iu" are variable indexes,
-       \ref cstphy::icp "icp" is a property index and \ref isca "isca"(iscalt) is a scalar index.\n\n
-    - \ref cs_var_dico_props "Properties" can alternatively be accessed through the
-       deprecated array \c propce as: \n
-      <tt>propce(iel,index)</tt>.
+       \ref numvar::ipr "ipr", \ref numvar::iu "iu" are here variable indices and the array ivarfl allows to get the corresponding field indices.\n
+       \ref isca "isca"(iscalt) is also a variable index (\ref optcal::iscalt "iscalt" is the scalar index of the thermal scalar).\n
+       \ref cstphy::icp "icp" is directly a field index (there is no equivalent to the array ivarfl for field of type properties).\n\n
+
+    - Alternatively, if no global index is pointing to the searched field, \ref cs_var_dico_vars "variables" and \ref cs_var_dico_props "properties" can be accessed using their field names: \n
+      - For one-dimensional arrays :\n\n
+      <tt>call \ref field::field_get_val_s_by_name "field_get_val_s_by_name"("pressure", cvar_pr)
+          \n pres =  cvar_pr(iel)</tt>
 
   \par Accessing variables and properties in C:
 
     - Almost all \ref cs_var_dico_vars "variables" and \ref cs_var_dico_props "properties" can be accessed using the \ref CS_F_ macro: \n
      - For one-dimensional arrays :\n\n
       <tt>press = CS_F_(p)->val[cell_id]</tt>, \n\n
-      <tt>cp = CS_F_(cp)->val[cell_id]</tt>, \n\n
-      <tt>temp = CS_F_(t)->val[cell_id]</tt>, \n\n
+      <tt>cp = CS_F_(cp)->val[cell_id]</tt> \n\n
+      <tt>temp = CS_F_(t)->val[cell_id]</tt> \n\n
      - For multidimensional arrays:\n\n
       <tt>uz = CS_F_(u)->val[3*cell_id + 2]</tt>\n\n
       These arrays can also be casted as follows (for a 3-D array):\n\n
