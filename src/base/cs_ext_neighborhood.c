@@ -1054,7 +1054,7 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
                                    &vtx_gcells_idx,
                                    &vtx_gcells_lst);
 
-      /* Tag cells to eliminate (0 to eleiminate, 1 to keep) */
+      /* Tag cells to eliminate (0 to eliminate, 1 to keep) */
 
       char *cell_cells_tag;
       BFT_MALLOC(cell_cells_tag, mesh->cell_cells_idx[n_cells], char);

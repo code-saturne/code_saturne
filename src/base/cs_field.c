@@ -155,20 +155,26 @@ union _key_val_t {
 
 typedef struct {
 
-  union _key_val_t            def_val;      /* Default value container (int,
-                                               double, or pointer to string
-                                               or structure) */
-  cs_field_log_key_struct_t  *log_func;     /* print function for structure */
-  size_t                      type_size;    /* Type length for added types
-                                               (0 for 'i', 'd', or 's') */
-  int                         type_flag;    /* Field type flag */
-  char                        type_id;      /* i: int; d: double; s: str;
-                                               t: type */
-  char                        log_id;       /* s: setup; n: none */
+  union _key_val_t            def_val;          /* Default value container (int,
+                                                   double, or pointer to string
+                                                   or structure) */
+  cs_field_log_key_struct_t  *log_func;         /* print function for
+                                                   structure */
 
-  bool                        is_sub;       /* Indicate if the key is a sub-key
-                                               (in which case def_val contains
-                                               the parent key id */
+  cs_field_log_key_struct_t  *log_func_default; /* default values print function
+                                                   for structure */
+
+  size_t                      type_size;        /* Type length for added types
+                                                   (0 for 'i', 'd', or 's') */
+  int                         type_flag;        /* Field type flag */
+  char                        type_id;          /* i: int; d: double; s: str;
+                                                   t: type */
+  char                        log_id;           /* s: setup; n: none */
+
+  bool                        is_sub;           /* Indicate if the key is a
+                                                   sub-key (in which case
+                                                   def_val contains the parent
+                                                   key id */
 
 } cs_field_key_def_t;
 
@@ -2575,12 +2581,13 @@ cs_field_define_key_str(const char  *name,
  * If the key has already been defined, its previous default value is replaced
  * by the current value, and its id is returned.
  *
- * \param[in]  name            key name
- * \param[in]  default_value   pointer to default value associated with key
- * \param[in]  log_func        pointer to logging function
- * \param[in]  size            sizeof structure
- * \param[in]  type_flag       mask associated with field types with which
- *                             the key may be associated, or 0
+ * \param[in]  name              key name
+ * \param[in]  default_value     pointer to default value associated with key
+ * \param[in]  log_func          pointer to logging function
+ * \param[in]  log_func_default  pointer to default logging function
+ * \param[in]  size              sizeof structure
+ * \param[in]  type_flag         mask associated with field types with which
+ *                               the key may be associated, or 0
  *
  * \return  id associated with key
  */
@@ -2590,6 +2597,7 @@ int
 cs_field_define_key_struct(const char                 *name,
                            const void                 *default_value,
                            cs_field_log_key_struct_t  *log_func,
+                           cs_field_log_key_struct_t  *log_func_default,
                            size_t                      size,
                            int                         type_flag)
 {
@@ -2610,6 +2618,7 @@ cs_field_define_key_struct(const char                 *name,
   else
     kd->def_val.v_p = NULL;
   kd->log_func = log_func;
+  kd->log_func_default = log_func_default;
   kd->type_size = size;
   kd->type_flag = type_flag;
   kd->type_id = 't';
@@ -3703,7 +3712,7 @@ cs_field_log_key_defs(void)
 
   /* Print logging header */
 
-  cs_log_strpad(tmp_s[0], _("Field"), 24, 64);
+  cs_log_strpad(tmp_s[0], _("Key"), 24, 64);
   cs_log_strpad(tmp_s[1], _("Default"), 12, 64);
   cs_log_strpad(tmp_s[2], _("Type"), 7, 64);
   cs_log_strpad(tmp_s[3], _("Id"), 4, 64);
@@ -3791,9 +3800,47 @@ cs_field_log_key_defs(void)
         _log_add_type_flag(kd->type_flag);
         cs_log_printf(CS_LOG_SETUP, "\n");
       }
+    }
+  } /* End of loop on keys */
 
-      if (kd->log_func != NULL)
-        kd->log_func(t);
+  /* Third loop on keys structures for default values printing */
+
+  char tmp_str[2][64] =  {"", ""};
+
+  /* Print logging header */
+
+  cs_log_strpad(tmp_str[0], _("Key"), 24, 64);
+  cs_log_strpad(tmp_str[1], _("Default"), 12, 64);
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "Default values for structure keys:\n"
+                  "-----------------------------------\n\n"));
+  cs_log_printf(CS_LOG_SETUP, _("  %s %s Description\n"),
+                tmp_str[0], tmp_str[1]);
+
+  for (i = 0; i < 24; i++)
+    tmp_str[0][i] = '-';
+  tmp_str[0][24] = '\0';
+  for (i = 0; i < 12; i++)
+    tmp_str[1][i] = '-';
+  tmp_str[1][12] = '\0';
+
+  cs_log_printf(CS_LOG_SETUP, _("  %s %s -----------------------------------------\n"),
+                tmp_str[0], tmp_str[1]);
+
+  for (i = 0; i < _n_keys; i++) {
+
+    int key_id = cs_map_name_to_id_try(_key_map,
+                                       cs_map_name_to_id_key(_key_map, i));
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    const void *t;
+
+    if (kd->type_id == 't') {
+      t = kd->def_val.v_p;
+
+      if (kd->log_func_default != NULL)
+        kd->log_func_default(t);
     }
 
   } /* End of loop on keys */

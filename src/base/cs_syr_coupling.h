@@ -331,6 +331,12 @@ cs_syr_coupling_set_conservativity(int  flag);
 void
 cs_syr_coupling_set_explicit_treatment(void);
 
+/*----------------------------------------------------------------------------*
+ * Print SYRTHES coupling informations to setup.log.
+*----------------------------------------------------------------------------*/
+void
+cs_syr_coupling_log_setup(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

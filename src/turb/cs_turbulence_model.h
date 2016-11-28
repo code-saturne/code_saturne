@@ -333,6 +333,20 @@ cs_get_glob_turb_rans_model(void);
 cs_turb_les_model_t *
 cs_get_glob_turb_les_model(void);
 
+/*----------------------------------------------------------------------------*
+ * Print the turbulence model parameters to setup.log.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_turb_model_log_setup(void);
+
+/*----------------------------------------------------------------------------*
+ * Print the turbulent constants to setup.log.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_turb_constants_log_setup(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

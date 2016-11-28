@@ -62,6 +62,7 @@ integer          ii, jj, ivar, imom, iok, ikw
 integer          icompt, nbccou, keyvar, flag
 integer          nscacp, iscal
 integer          imrgrp
+integer          kcpsyr, icpsyr
 
 logical          is_set
 
@@ -78,6 +79,8 @@ iok = 0
 call field_get_n_fields(n_fields)
 
 call field_get_key_id("variable_id", keyvar)
+
+call field_get_key_id("syrthes_coupling", kcpsyr)
 
 call cs_f_turb_complete_constants
 
@@ -852,7 +855,8 @@ if (nscal.gt.0) then
 !       On compte le nombre de scalaires couples
     nscacp = 0
     do iscal = 1, nscal
-      if (icpsyr(iscal).eq.1) then
+      call field_get_key_int(ivarfl(isca(iscal)), kcpsyr, icpsyr)
+      if (icpsyr.eq.1) then
         nscacp = nscacp + 1
       endif
     enddo
@@ -862,7 +866,8 @@ if (nscal.gt.0) then
 
 !         On couple le scalaire temperature de la phase
       if (iscalt.gt.0.and.iscalt.le.nscal) then
-        icpsyr(iscalt) = 1
+        icpsyr = 1
+        call field_set_key_int(ivarfl(isca(iscalt)), kcpsyr, icpsyr)
         goto 100
       endif
  100        continue
@@ -870,14 +875,6 @@ if (nscal.gt.0) then
     endif
 
   endif
-
-!     Pour tous les autres scalaires, non renseignes pas l'utilisateur
-!       on ne couple pas
-  do iscal = 1, nscamx
-    if (icpsyr(iscal).eq.-999) then
-      icpsyr(iscal) = 0
-    endif
-  enddo
 
 endif
 

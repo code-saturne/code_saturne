@@ -544,12 +544,13 @@ cs_field_define_key_str(const char  *name,
  * by the current value, and its id is returned.
  *
  * parameters:
- *   name          <-- key name
- *   default_value <-- pointer to default value associated with key
- *   log_funct     <-- pointer to logging function
- *   size          <-- sizeof structure
- *   type_flag     <-- mask associated with field types with which
- *                     the key may be associated, or 0
+ *   name             <-- key name
+ *   default_value    <-- pointer to default value associated with key
+ *   log_funct        <-- pointer to logging function
+ *   log_func_default <-- pointer to default logging function
+ *   size             <-- sizeof structure
+ *   type_flag        <-- mask associated with field types with which
+ *                        the key may be associated, or 0
  *
  * returns:
  *   id associated with key
@@ -559,6 +560,7 @@ int
 cs_field_define_key_struct(const char                 *name,
                            const void                 *default_value,
                            cs_field_log_key_struct_t  *log_func,
+                           cs_field_log_key_struct_t  *log_func_default,
                            size_t                      size,
                            int                         type_flag);
 

@@ -79,6 +79,7 @@ use ppppar
 use ppthch
 use ppincl
 use pointe
+use field
 
 !===============================================================================
 
@@ -96,6 +97,7 @@ integer          ll, nbccou, inbcou, inbcoo, nbfcou
 integer          ifac, iloc, iscal
 integer          mode
 integer          issurf
+integer          icpsyr, kcpsyr
 
 integer, dimension(:), allocatable :: lfcou
 double precision, dimension(:), allocatable :: thpar, h_b
@@ -123,6 +125,8 @@ interface
 !===============================================================================
 ! SYRTHES coupling: get wall temperature
 !===============================================================================
+
+call field_get_key_id("syrthes_coupling", kcpsyr)
 
 ! Get number of coupling cases
 
@@ -163,7 +167,9 @@ do inbcou = 1, nbccou
 
     do iscal = 1, nscal
 
-      if (icpsyr(iscal).eq.1) then
+      call field_get_key_int(ivarfl(isca(iscal)), kcpsyr, icpsyr)
+
+      if (icpsyr.eq.1) then
 
         ! For scalars coupled with SYRTHES, prescribe a Dirichlet
         ! condition at coupled faces.

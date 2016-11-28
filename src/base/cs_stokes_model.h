@@ -137,6 +137,13 @@ extern const cs_stokes_model_t  *cs_glob_stokes_model;
 cs_stokes_model_t *
 cs_get_glob_stokes_model(void);
 
+/*----------------------------------------------------------------------------*
+ * Print the stokes model parameters to setup.log.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_stokes_model_log_setup(int iappel);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

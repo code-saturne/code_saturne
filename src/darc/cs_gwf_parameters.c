@@ -98,7 +98,7 @@ _gwf_soilwater_partition =
  * Private function definitions
  *============================================================================*/
 
-/* Log default values of the structure */
+/* Log values of the structure */
 
 static void
 _log_func_gwf_soilwater_partition(const void *t)
@@ -110,6 +110,25 @@ _log_func_gwf_soilwater_partition(const void *t)
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idel    ", _t->idel);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikp     ", _t->ikp);
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikm     ", _t->ikm);
+}
+
+/* Log default values of the structure */
+
+static void
+_log_func_default_gwf_soilwater_partition(const void *t)
+{
+  const char fmt_i[] = N_("      %-19s  %-4d %s\n");
+  const cs_gwf_soilwater_partition_t *_t = (const void *)t;
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "kinetic ", _t->kinetic,
+                _("Sorption model (0: Kd, 1: EK model)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikd     ", _t->ikd,
+                _("Field id of Kd"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idel    ", _t->idel,
+                _("Field id of delay"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikp     ", _t->ikp,
+                _("Field id of Kplus (-1 if EK disabled)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ikm     ", _t->ikm,
+                _("Field id of Kminus (-1 if EK disabled)"));
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -132,6 +151,7 @@ cs_gwf_parameters_define_field_keys(void)
   cs_field_define_key_struct("gwf_soilwater_partition",
                              &_gwf_soilwater_partition,
                              _log_func_gwf_soilwater_partition,
+                             _log_func_default_gwf_soilwater_partition,
                              sizeof(cs_gwf_soilwater_partition_t),
                              0);
  }

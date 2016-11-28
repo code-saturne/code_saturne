@@ -1777,6 +1777,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief  Check calculation parameters.
+
+    subroutine parameters_check() &
+      bind(C, name='cs_parameters_check')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine parameters_check
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

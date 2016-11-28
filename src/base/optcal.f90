@@ -984,14 +984,6 @@ module optcal
   !> (see \ref condli, useful in case of coupling with syrthes)
   integer(c_int), pointer, save :: itbrrb
 
-  !> indicates if the scalar isca is coupled with syrthes
-  !>    - 1: coupled with syrthes
-  !>    - 0: uncoupled
-  !>
-  !> \remark
-  !> only one scalar can be coupled with syrthes
-  integer, save :: icpsyr(nscamx)
-
   !> improve static pressure algorithm
   !>    - 1: impose the equilibrium of the static part of the pressure
   !>         with any external force, even head losses

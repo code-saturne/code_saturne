@@ -108,6 +108,13 @@ extern const cs_thermal_model_t  *cs_glob_thermal_model;
 cs_thermal_model_t *
 cs_get_glob_thermal_model(void);
 
+/*----------------------------------------------------------------------------
+ * Print the thermal model structure to setup.log.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_thermal_model_log_setup(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

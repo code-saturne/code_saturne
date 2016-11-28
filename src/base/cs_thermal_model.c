@@ -204,6 +204,34 @@ cs_get_glob_thermal_model(void)
   return &_thermal_model;
 }
 
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Print the thermal model structure to setup.log.
+ *
+ *----------------------------------------------------------------------------*/
+
+void
+cs_thermal_model_log_setup(void)
+{
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n"
+       "Thermal model options\n"
+       "---------------------\n\n"
+       "  Continuous phase:\n\n"
+       "    itherm:      %14d (0: no thermal model)\n"
+       "                                (1: temperature)\n"
+       "                                (2: enthalpy)\n"
+       "                                (3: total energy)\n"
+       "    itpscl:      %14d (0: none)\n"
+       "                                (1: temperature in kelvin)\n"
+       "                                (2: temperature in celsius)\n"
+       "    iscalt:      %14d (thermal scalar number)\n"),
+       cs_glob_thermal_model->itherm,
+       cs_glob_thermal_model->itpscl,
+       cs_glob_thermal_model->iscalt);
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

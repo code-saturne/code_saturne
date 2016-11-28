@@ -197,6 +197,7 @@ call user_linear_solvers
 iok = 0
 
 call verini (iok)
+call parameters_check
 
 if(iok.gt.0) then
   write(nfecra,9999)iok

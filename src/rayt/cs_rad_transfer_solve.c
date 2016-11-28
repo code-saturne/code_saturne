@@ -57,6 +57,7 @@
 #include "cs_mesh.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
+#include "cs_parameters_check.h"
 #include "cs_thermal_model.h"
 #include "cs_prototypes.h"
 #include "cs_equation_iterative_solve.h"

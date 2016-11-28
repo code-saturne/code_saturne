@@ -54,6 +54,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
+#include "cs_parameters_check.h"
 #include "cs_restart.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"

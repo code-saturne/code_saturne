@@ -555,6 +555,71 @@ cs_get_glob_fluid_properties(void)
   return &_fluid_properties;
 }
 
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Print the physical constants structure to setup.log.
+ *
+ *----------------------------------------------------------------------------*/
+
+void
+cs_physical_constants_log_setup(void)
+{
+
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n"
+       "Physical properties\n"
+       "-------------------\n\n"));
+
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("    gx:          %14.5e (Gravity x component)\n"
+       "    gy:          %14.5e (Gravity y component)\n"
+       "    gz:          %14.5e (Gravity z component)\n"
+       "    icorio:      %14d (Coriolis source terms)\n\n"),
+       cs_glob_physical_constants->gx,
+       cs_glob_physical_constants->gy,
+       cs_glob_physical_constants->gz,
+       cs_glob_physical_constants->icorio);
+}
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Print the fluid properties structure to setup.log.
+ *
+ *----------------------------------------------------------------------------*/
+
+void
+cs_fluid_properties_log_setup(void)
+{
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("   Continuous phase:\n"
+       "    ro0:         %14.5e (Reference density)\n"
+       "    viscl0:      %14.5e (Ref. molecular dyn. visc.)\n"
+       "    cp0:         %14.5e (Ref. specific heat)\n"
+       "    icp:         %14d (> 0: Variable cp (cs_user_physical_properties))\n"
+       "    p0:          %14.5e (Ref. total pressure)\n"
+       "    pred0:       %14.5e (Ref. reduced pressure)\n"
+       "    t0:          %14.5e (Ref. temperature)\n\n"
+       "    irovar:      %14d (Density constant(0) or not(1))\n"
+       "    ivivar:      %14d (Molec. visc cst.(0) or not(1))\n\n"
+       "    Initial reference point for pressure\n"
+       "    xyzp0:       %14.5e %14.5e %14.5e\n"),
+       cs_glob_fluid_properties->ro0,
+       cs_glob_fluid_properties->viscl0,
+       cs_glob_fluid_properties->cp0,
+       cs_glob_fluid_properties->icp,
+       cs_glob_fluid_properties->p0,
+       cs_glob_fluid_properties->pred0,
+       cs_glob_fluid_properties->t0,
+       cs_glob_fluid_properties->irovar,
+       cs_glob_fluid_properties->ivivar,
+       cs_glob_fluid_properties->xyzp0[0],
+       cs_glob_fluid_properties->xyzp0[1],
+       cs_glob_fluid_properties->xyzp0[2]);
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

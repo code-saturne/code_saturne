@@ -52,16 +52,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Parameter check behavior when an error is detected */
-
-typedef enum {
-
-  CS_WARNING,
-  CS_ABORT_DELAYED,
-  CS_ABORT_IMMEDIATE
-
-} cs_parameter_error_behavior_t;
-
 /*----------------------------------------------------------------------------
  * Structure of variable calculation options
  *----------------------------------------------------------------------------*/
@@ -171,7 +161,7 @@ typedef struct {
                                       neighborhood
                                  - 3: least square method with reduced extended
                                       neighborhood
-                                 - 4: iterative precess initialized by the least
+                                 - 4: iterative process initialized by the least
                                       square method */
 
   double        anomax;       /* non orthogonality angle of the faces, in radians.
@@ -226,11 +216,40 @@ extern const cs_piso_t        *cs_glob_piso;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide acces to cs_glob_space_disc
+ * \brief For a given field, returns the scalar number of the fluctuating field
+ * if given field is a variance.
+ *
+ * \param[in]  f  field
+ *
+ * \return        if f is a variance: scalar number of fluctuating field
+ *                else if f is not a variance: 0
+ *                else if f is the variance of a field that is not a scalar: -1
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline int
+cs_parameters_iscavr(cs_field_t *f)
+{
+  int iscvr = 0, f_id = 0;
+  int kscavr = cs_field_key_id("first_moment_id");
+  int keysca = cs_field_key_id("scalar_id");
+
+  if (kscavr >= 0) {
+    f_id = cs_field_get_key_int(f, kscavr);
+    if (f_id >= 0)
+      iscvr = cs_field_get_key_int(cs_field_by_id(f_id), keysca);
+  }
+
+  return iscvr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide access to cs_glob_space_disc
  *
  * needed to initialize structure in GUI and user C functions.
  *
- * \return   piso information structure
+ * \return   space discretization description structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -418,133 +437,12 @@ cs_parameters_var_cal_opt_default(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print general parameters error or warning info.
- *
- * \param[in]  err_behavior  warn or abort ?
- * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
- * \param [in] format        format string, as printf() and family.
- * \param [in] ...           variable arguments based on format string.
- */
-/*----------------------------------------------------------------------------*/
-
-#if defined(__GNUC__)
-
-void
-cs_parameters_error(cs_parameter_error_behavior_t   err_behavior,
-                    const char                     *section_desc,
-                    const char                     *format,
-                    ...)
-  __attribute__((format(printf, 3, 4)));
-
-#else
-
-void
-cs_parameters_error(cs_parameter_error_behavior_t   err_behavior,
-                    const char                     *section_desc,
-                    const char                     *format,
-                    ...);
-
-#endif
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print general parameters error or warning info.
- *
- * \param[in]  err_behavior  warn or abort ?
- * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
- * \param [in] format        format string, as printf() and family.
- * \param [in] ...           variable arguments based on format string.
+ * \brief Print the space discretization structure to setup.log.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_parameters_error(cs_parameter_error_behavior_t   err_behavior,
-                    const char                     *section_desc,
-                    const char                     *format,
-                    ...);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print header for a given parameters error message type.
- *
- * \param[in]  err_behavior  warn or abort ?
- * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_error_header(cs_parameter_error_behavior_t   err_behavior,
-                           const char                     *section_desc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print footer for a given parameters error message type.
- *
- * \param[in]  err_behavior  warn or abort ?
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_error_footer(cs_parameter_error_behavior_t   err_behavior);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check that a given integer keyword has values in a specified range.
- *
- * \param[in]  err_behavior  warn or abort ?
- * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
- * \param[in]  param_name    name of parameter whose value we are checking
- * \param[in]  param_value   parameter's current_value
- * \param[in]  range_l       range lower bound (included)
- * \param[in]  range_u       range upper bound (excluded)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_is_in_range_int(cs_parameter_error_behavior_t   err_behavior,
-                              const char                     *section_desc,
-                              const char                     *param_name,
-                              int                             param_value,
-                              int                             range_l,
-                              int                             range_u);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check that a given integer keyword has values in a specified range.
- *
- * \param[in]  err_behavior  warn or abort ?
- * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
- * \param[in]  param_name    name of parameter whose value we are checking
- * \param[in]  param_value   parameter's current_value
- * \param[in]  enum_size     size of possible enumeration
- * \param[in]  enum_values   optional list of enumerated values, or NULL
- *                           (in which case {0, ... enum_sizes-1} assumed
- * \param[in]  enum_names    optional list of value names, or NULL
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_is_in_list_int(cs_parameter_error_behavior_t   err_behavior,
-                             const char                     *section_desc,
-                             const char                     *param_name,
-                             int                             param_value,
-                             int                             enum_size,
-                             const int                      *enum_values,
-                             const char                     *enum_names[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Abort if the the parameter errors count is nonzero.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_error_barrier(void);
+cs_space_disc_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 

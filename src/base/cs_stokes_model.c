@@ -45,10 +45,15 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_log.h"
 #include "cs_map.h"
+#include "cs_mesh_quantities.h"
 #include "cs_parall.h"
+#include "cs_parameters.h"
 #include "cs_mesh_location.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -360,6 +365,83 @@ cs_stokes_model_t *
 cs_get_glob_stokes_model(void)
 {
   return &_stokes_model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print the stokes model parameters to setup.log.
+ *
+ *----------------------------------------------------------------------------*/
+
+void
+cs_stokes_model_log_setup(int iappel)
+{
+  cs_var_cal_opt_t var_cal_opt;
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+
+  if (iappel == 1) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("\n"
+         "Secondary viscosity\n"
+         "-------------------\n\n"
+         "   Continuous phase:\n\n"
+         "    ivisse:      %14d (1: accounted for)\n\n"),
+         cs_glob_stokes_model->ivisse);
+  } else if (iappel == 2) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("\n"
+         "Stokes model\n"
+         "------------\n\n"
+         "    idilat:      %14d (1: without unsteady term\n"
+         "                                    in the continuity equation\n"
+         "                                 2: with unsteady term in\n"
+         "                                    the continuity equation)\n"
+         "    iporos:      %14d (0: without porous media\n"
+         "                                 1: with porous media)\n"
+         "    iphydr:      %14d (1: account for explicit\n"
+         "                                    balance between pressure\n"
+         "                                    gradient, gravity source\n"
+         "                                    terms, and head losses)\n"
+         "    icalhy:      %14d (1: compute hydrostatic\n"
+         "                                    pressure for dirichlet\n"
+         "                                    conditions for pressure\n"
+         "                                    on outlet)\n"
+         "    iprco :      %14d (1: pressure-continuity)\n"
+         "    ipucou:      %14d (1: reinforced u-p coupling)\n"
+         "    nterup:      %14d (n: n sweeps on navsto for\n"
+         "                                    velocity/pressure coupling)\n"),
+         cs_glob_stokes_model->idilat,
+         cs_glob_porous_model,
+         cs_glob_stokes_model->iphydr,
+         cs_glob_stokes_model->icalhy,
+         cs_glob_stokes_model->iprco,
+         cs_glob_stokes_model->ipucou,
+         cs_glob_piso->nterup);
+
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("\n"
+         "   Continuous phase:\n\n"
+         "    irevmc:      %14d (Velocity reconstruction mode)\n"),
+         cs_glob_stokes_model->irevmc);
+
+    if (cs_glob_time_step_options->idtvar >= 0) {
+      cs_field_get_key_struct(CS_F_(p), key_cal_opt_id, &var_cal_opt);
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    relaxv:      %14.5e for pressure (relaxation)\n"
+           "    arak:        %14.5e (Arakawa factor)\n"),
+           var_cal_opt.relaxv, cs_glob_stokes_model->arak);
+    } else {
+      cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    arak:        %14.5e (Arakawa factor)\n"),
+           var_cal_opt.relaxv * cs_glob_stokes_model->arak);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

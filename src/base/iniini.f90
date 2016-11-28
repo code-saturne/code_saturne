@@ -755,12 +755,6 @@ do ii = 1, ntypmx
   ifinty(ii) = 0
 enddo
 
-! --- Traitement de la temperature pour couplage SYRTHES
-
-do iscal = 1, nscamx
-  icpsyr(iscal) = -999
-enddo
-
 
 ! --- Estimateurs d'erreur pour Navier-Stokes
 !       En attendant un retour d'experience et pour l'avoir,

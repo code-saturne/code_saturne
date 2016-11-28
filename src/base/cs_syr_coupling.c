@@ -59,9 +59,10 @@
 #include "cs_coupling.h"
 #endif
 
+#include "cs_log.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
-
+#include "cs_thermal_model.h"
 #include "cs_syr4_coupling.h"
 
 /*----------------------------------------------------------------------------
@@ -512,7 +513,6 @@ void CS_PROCF(tsursy, TSURSY)
 
       if (scb->face_sel_c != NULL)
         *issurf = 1;
-
     }
 
   }
@@ -997,6 +997,78 @@ void
 cs_syr_coupling_set_explicit_treatment(void)
 {
   cs_syr4_coupling_set_explicit_treatment();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print SYRTHES coupling informations to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_syr_coupling_log_setup(void)
+{
+
+  /* Get the number of SYRTHES coupling */
+  int n_coupl = cs_syr_coupling_n_couplings();
+  const int keysca = cs_field_key_id("scalar_id");
+  const int kcpsyr = cs_field_key_id("syrthes_coupling");
+  int icpsyr;
+
+  if (n_coupl >= 1) {
+
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("SYRTHES coupling\n"
+         "----------------\n\n"
+         "    nbccou:          %10d (Number of couplings)\n"),
+         n_coupl);
+
+    int n_surf_coupl = 0, n_vol_coupl = 0, issurf, isvol;
+
+    for (int ii = 1 ; ii <= n_coupl ; ii++) {
+      /* Add a new surface coupling if detected */
+      issurf = 0;
+      CS_PROCF(tsursy, TSURSY)(&ii, &issurf);
+      n_surf_coupl += issurf;
+
+      /* Add a new volume coupling if detected */
+      isvol = 0;
+      CS_PROCF(tvolsy, TVOLSY)(&ii, &isvol);
+      n_vol_coupl += isvol;
+    }
+
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    with             %10d surface coupling(s)\n"
+         "    with             %10d volume coupling(s)\n"),
+         n_surf_coupl, n_vol_coupl);
+
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("\n"
+         "   Coupled scalars\n"
+         "------------------------\n"
+         " Scalar    Number icpsyr\n"
+         "------------------------\n"));
+
+
+    for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+      cs_field_t  *f = cs_field_by_id(f_id);
+      if ((f->type & CS_FIELD_VARIABLE) || (f->type & CS_FIELD_USER)) {
+        int ii = cs_field_get_key_int(f, keysca);
+        if (ii > 0) {
+          icpsyr = cs_field_get_key_int(f, kcpsyr);
+          cs_log_printf
+            (CS_LOG_SETUP,
+             _(" %s %7d %7d\n"),cs_field_get_label(f),ii, icpsyr);
+        }
+      }
+    }
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("------------------------\n\n"
+         "    icpsyr = 0 or 1         (1: scalar coupled to SYRTHES)\n"));
+  }
 }
 
 /*----------------------------------------------------------------------------*/

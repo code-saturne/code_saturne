@@ -84,7 +84,7 @@ BEGIN_C_DECLS
   \brief Sparse linear equation solver driver.
 
   The Sparse Linear Equation Solver subsystem is designed to allow
-  both simple usage of built-in solvers, and pluggging of solvers
+  both simple usage of built-in solvers, and plugging of solvers
   from external libraries.
 
   As the options associated with different solvers may be very varied,

@@ -119,7 +119,7 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-cs_turbomachinery_t  *cs_glob_turbomachinery = NULL;
+cs_turbomachinery_t  *_turbomachinery = NULL;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -506,7 +506,7 @@ static void
 _update_geometry(cs_mesh_t  *mesh,
                  cs_real_t   t)
 {
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  cs_turbomachinery_t *tbm = _turbomachinery;
 
   cs_lnum_t  f_id, v_id;
 
@@ -587,7 +587,7 @@ _update_geometry(cs_mesh_t  *mesh,
 static void
 _check_geometry(cs_mesh_t  *mesh)
 {
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  cs_turbomachinery_t *tbm = _turbomachinery;
 
   cs_gnum_t n_errors = 0;
 
@@ -684,7 +684,7 @@ _update_mesh(bool     restart_mode,
   double  t_start, t_end;
 
   cs_halo_type_t halo_type = cs_glob_mesh->halo_type;
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  cs_turbomachinery_t *tbm = _turbomachinery;
 
   int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
   int t_top_id = cs_timer_stats_switch(t_stat_id);
@@ -914,13 +914,13 @@ void
 cs_f_map_turbomachinery_module(cs_int_t    *iturbo,
                                cs_int_t   **irotce)
 {
-  if (cs_glob_turbomachinery != NULL) {
+  if (_turbomachinery != NULL) {
 
-    *iturbo = cs_glob_turbomachinery->model;
+    *iturbo = _turbomachinery->model;
 
     /* Assign rotor cells flag array to module */
 
-    *irotce = cs_glob_turbomachinery->cell_rotor_num;
+    *irotce = _turbomachinery->cell_rotor_num;
 
   }
   else {
@@ -948,15 +948,15 @@ void
 cs_turbomachinery_set_model(cs_turbomachinery_model_t  model)
 {
   if (   model == CS_TURBOMACHINERY_NONE
-      && cs_glob_turbomachinery != NULL) {
+      && _turbomachinery != NULL) {
     cs_turbomachinery_finalize();
     return;
   }
 
-  else if (cs_glob_turbomachinery == NULL)
-    cs_glob_turbomachinery = _turbomachinery_create();
+  else if (_turbomachinery == NULL)
+    _turbomachinery = _turbomachinery_create();
 
-  cs_glob_turbomachinery->model = model;
+  _turbomachinery->model = model;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -968,10 +968,10 @@ cs_turbomachinery_set_model(cs_turbomachinery_model_t  model)
 cs_turbomachinery_model_t
 cs_turbomachinery_get_model(void)
 {
-  if (cs_glob_turbomachinery == NULL)
+  if (_turbomachinery == NULL)
    return CS_TURBOMACHINERY_NONE;
   else
-    return cs_glob_turbomachinery->model;
+    return _turbomachinery->model;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -991,7 +991,7 @@ cs_turbomachinery_add_rotor(const char    *cell_criteria,
                             const double   rotation_axis[3],
                             const double   rotation_invariant[3])
 {
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  cs_turbomachinery_t *tbm = _turbomachinery;
   if (tbm == NULL)
     return;
 
@@ -1107,10 +1107,10 @@ cs_turbomachinery_initialize(void)
   cs_gui_turbomachinery();
   cs_user_turbomachinery();
 
-  if (cs_glob_turbomachinery == NULL)
+  if (_turbomachinery == NULL)
     return;
 
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  cs_turbomachinery_t *tbm = _turbomachinery;
 
   if (tbm->model == CS_TURBOMACHINERY_NONE)
     return;
@@ -1176,9 +1176,9 @@ cs_turbomachinery_initialize(void)
 void
 cs_turbomachinery_finalize(void)
 {
-  if (cs_glob_turbomachinery != NULL) {
+  if (_turbomachinery != NULL) {
 
-    cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+    cs_turbomachinery_t *tbm = _turbomachinery;
 
     for (int i = tbm->n_rotors -1; i >= 0; i--)
       BFT_FREE(tbm->rotor_cells_c[i]);
@@ -1195,7 +1195,7 @@ cs_turbomachinery_finalize(void)
     cs_glob_rotation = NULL;
   }
 
-  BFT_FREE(cs_glob_turbomachinery);
+  BFT_FREE(_turbomachinery);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1288,7 +1288,7 @@ cs_turbomachinery_rotation_matrix(int        rotor_num,
                                   double     theta,
                                   cs_real_t  matrix[3][4])
 {
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  cs_turbomachinery_t *tbm = _turbomachinery;
   const cs_rotation_t *r = tbm->rotation + rotor_num;
 
   cs_rotation_matrix(theta, r->axis, r->invariant, matrix);
@@ -1309,7 +1309,7 @@ cs_turbomachinery_rotation_matrix(int        rotor_num,
 const int *
 cs_turbomachinery_get_cell_rotor_num(void)
 {
-  return cs_glob_turbomachinery->cell_rotor_num;
+  return _turbomachinery->cell_rotor_num;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1323,7 +1323,7 @@ cs_turbomachinery_get_cell_rotor_num(void)
 double
 cs_turbomachinery_get_rotation_velocity(int rotor_num)
 {
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  cs_turbomachinery_t *tbm = _turbomachinery;
 
   return (tbm->rotation + rotor_num)->omega;
 }
@@ -1340,7 +1340,7 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
   cs_lnum_t i;
   cs_real_34_t  *m;
 
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  cs_turbomachinery_t *tbm = _turbomachinery;
   cs_real_t time_step = dt[0];
 
   BFT_MALLOC(m, tbm->n_rotors+1, cs_real_34_t);
@@ -1434,7 +1434,7 @@ cs_turbomachinery_relative_velocity(int              rotor_num,
                                     const cs_real_t  coords[3],
                                     cs_real_t        velocity[3])
 {
-  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  cs_turbomachinery_t *tbm = _turbomachinery;
   const cs_rotation_t *r = tbm->rotation + rotor_num;
 
   _relative_velocity(r->omega,

@@ -117,6 +117,7 @@ cs_numbering.h \
 cs_opts.h \
 cs_order.h \
 cs_parameters.h \
+cs_parameters_check.h \
 cs_parall.h \
 cs_part_to_block.h \
 cs_physical_constants.h \
@@ -266,6 +267,7 @@ csopli.f90 \
 cs_opts.c \
 cs_parall.c \
 cs_parameters.c \
+cs_parameters_check.c \
 cs_physical_constants.c \
 cs_physical_properties.c \
 cs_post.c \

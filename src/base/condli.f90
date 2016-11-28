@@ -442,7 +442,7 @@ allocate(grad(3,ncelet))
 !  pour le couplage syrthes ou module thermique 1d
 !  -----------------------------------------------
 !  ici, on fait une boucle "inutile"  (on ne fait quelque chose
-!    que pour icpsyr(iscal) = 1). c'est pour preparer le traitement
+!    que pour icpsyr = 1). c'est pour preparer le traitement
 !    eventuel de plusieurs temperatures (ie plusieurs couplages
 !    syrthes a la fois ; noter cependant que meme dans ce cas,
 !    une seule temperature sera recue de chaque couplage. en polyph,

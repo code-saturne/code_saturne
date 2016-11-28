@@ -45,13 +45,17 @@
 #include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_log.h"
+#include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
+#include "cs_stokes_model.h"
+#include "cs_thermal_model.h"
 #include "cs_time_moment.h"
 #include "cs_turbomachinery.h"
 #include "cs_rad_transfer_options.h"
 #include "cs_rotation.h"
+#include "cs_turbulence_model.h"
 #include "cs_lagr_log.h"
 
 /*----------------------------------------------------------------------------
@@ -95,23 +99,55 @@ BEGIN_C_DECLS
 static void
 _log_global_model_options(void)
 {
+  int iappel;
+
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"
                   "Physical model options\n"
                   "----------------------\n"));
 
-  /* Rotation info */
+  /* Physical properties */
 
+  cs_physical_constants_log_setup();
+
+  cs_fluid_properties_log_setup();
+
+  /* TODO : Add diftl0 printing */
+
+  /* Thermal model */
+
+  cs_thermal_model_log_setup();
+
+  /* Turbulence */
+  cs_turb_model_log_setup();
+
+  cs_turb_constants_log_setup();
+
+  cs_time_step_log_setup();
+
+  iappel = 1;
+  cs_stokes_model_log_setup(iappel);
+
+  /* Stokes model*/
+  iappel = 2;
+  cs_stokes_model_log_setup(iappel);
+
+  /* TODO : Partie iroext etc... */
+
+  /* Face viscosity */
+  cs_space_disc_log_setup();
+
+  /* Rotation info */
   if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_NONE) {
     const cs_rotation_t  *r = cs_glob_rotation;
 
-    cs_log_printf(CS_LOG_SETUP, "\n");
+    cs_log_printf(CS_LOG_SETUP, _("\nSubdomain rotation\n"
+                                  "------------------\n\n"));
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("\n"
-                    "  Global domain rotation:\n"
-                    "    axis:             [%g, %g, %g]"
-                    "    invariant point:  [%g, %g, %g]"
+                  _("  Global domain rotation:\n"
+                    "    axis:             [%g, %g, %g]\n"
+                    "    invariant point:  [%g, %g, %g]\n"
                     "    angular velocity:  %g radians/s\n"),
                   r->axis[0], r->axis[1], r->axis[2],
                   r->invariant[0], r->invariant[1], r->invariant[2],

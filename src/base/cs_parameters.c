@@ -504,10 +504,6 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-/* Counter for parameter checking errors */
-
-static int  _param_check_errors = 0;
-
 /* Default variable compute options */
 
 static cs_var_cal_opt_t _var_cal_opt =
@@ -605,10 +601,10 @@ cs_f_piso_get_pointers(int     **nterup,
  * Private function definitions
  *============================================================================*/
 
-/* Log default values of the structure */
+/* Log values of the structure */
 
 static void
-_log_func_var_opt_cal(const void *t)
+_log_func_var_cal_opt(const void *t)
 {
   const char fmt_i[] = N_("      %-19s  %-4d\n");
   const char fmt_r[] = N_("      %-19s  %-12.3g\n");
@@ -640,37 +636,140 @@ _log_func_var_opt_cal(const void *t)
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "relaxv", _t->relaxv);
 }
 
+/* Log default values of the structure */
+
+static void
+_log_func_default_var_cal_opt(const void *t)
+{
+  const char fmt_i[] = N_("      %-19s  %-12d %s\n");
+  const char fmt_r[] = N_("      %-19s  %-12.3g %s\n");
+  const cs_var_cal_opt_t *_t = (const void *)t;
+  cs_log_printf(CS_LOG_SETUP,"  var_cal_opt\n");
+
+  cs_log_printf(CS_LOG_SETUP,_("    Printing\n"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iwarni", _t->iwarni,
+                _("Verbosity level: 0, 1 or 2"));
+
+  cs_log_printf(CS_LOG_SETUP,"    Time stepping\n");
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "istat ", _t->istat,
+                _("Take unsteady terms into account: 1 for unsteady"));
+
+  cs_log_printf(CS_LOG_SETUP,"    Convection/Diffusion\n");
+
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iconv ", _t->iconv,
+                _("Take convection into account: 1 for convection active"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idiff ", _t->idiff,
+                _("Take diffusion into account: 1 for total diffusion active"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idifft", _t->idifft,
+                _("Take turbulent diffusion into account: 1 for turbulent "
+                  "diffusion active"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idften", _t->idften,
+                _("Type of diffusivity: scalar (1), orthotropic (3) or symmetric "
+                  "tensor (6)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ischcv", _t->ischcv,
+                _("Type of convective scheme: 2nd order linear upwind (0), "
+                  "centered (1), SOLU (2)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "isstpc", _t->isstpc,
+                _("0 for slope test, 1 for no slope test, 2 for min/max limiter "
+                  "and 3 for Roe Sweby limiter"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "blencv", _t->blencv,
+                _("[0.;1.] (1-upwind proportion)"));
+
+  cs_log_printf(CS_LOG_SETUP,"    Gradients calculation\n");
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imrgra", _t->imrgra,
+                _("Reconstruction mode"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "nswrgr", _t->nswrgr,
+                _("Number of sweeps gradient reconstruction"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsrgr", _t->epsrgr,
+                _("Gradient reconstruction precision"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "extrag", _t->extrag,
+                _("[0.;1.] (gradients extrapolation)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imligr", _t->imligr,
+                _("< 0, 0 or 1 (gradient limitation method)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "climgr", _t->climgr,
+                _("> 1 or 1 (gradient limitation coefficient)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iwgrec", _t->iwgrec,
+                _("Gradient calculation: standard (0) or weighted (1)"));
+
+  cs_log_printf(CS_LOG_SETUP,"    Rhs reconstruction\n");
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ircflu", _t->ircflu,
+                _("0 or 1 (flux reconstruction)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "nswrsm", _t->nswrsm,
+                _("Number of sweeps rhs reconstruction"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsrsm", _t->epsrsm,
+                _("Rhs reconstruction precision"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iswdyn", _t->iswdyn,
+                _("Dynamic relaxation type"));
+
+  cs_log_printf(CS_LOG_SETUP,"    Iterative solvers\n");
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsilo", _t->epsilo,
+                _("Resolution precision"));
+
+  cs_log_printf(CS_LOG_SETUP,"    Time-scheme\n");
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "thetav", _t->thetav,
+                _("[0.;1.] theta-scheme for the main variables (0.5 for "
+                  "Crank-Nicolson)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ibdtso", _t->ibdtso,
+                _("Backward differential scheme in time order"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "relaxv", _t->relaxv,
+                _("Relaxation of variables (1 stands fo no relaxation)"));
+}
+
+/* Log values of the structure */
+
 static void
 _log_func_gas_mix_species_prop(const void *t)
 {
-  const char fmt[] = N_("      %-23s  %-12.3g\n");
+  const char fmt[] = N_("      %-19s  %-12.3g\n");
   const cs_gas_mix_species_prop_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "molar mass            ", _t->mol_mas);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "specific heat         ", _t->cp);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "volume diffusion      ", _t->vol_dif);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "dynamic viscosity a   ", _t->mu_a);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "dynamic viscosity b   ", _t->mu_b);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "thermal conductivity a", _t->lambda_a);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "thermal conductivity b", _t->lambda_b);
-  cs_log_printf(CS_LOG_SETUP, _(fmt),
-                "reference thermal viscosity (Sutherland)",
-                _t->muref);
-  cs_log_printf(CS_LOG_SETUP, _(fmt),
-                "reference thermal conductivity (Sutherland)",
-                _t->lamref);
-  cs_log_printf(CS_LOG_SETUP, _(fmt),
-                "reference temperature (Sutherland for viscosity)",
-                _t->trefmu);
-  cs_log_printf(CS_LOG_SETUP, _(fmt),
-                "reference temperature (Sutherland conductivity)",
-                _t->treflam);
-  cs_log_printf(CS_LOG_SETUP, _(fmt),
-                "Sutherland temperature for viscosity",
-                _t->smu);
-  cs_log_printf(CS_LOG_SETUP, _(fmt),
-                "Sutherland tempertaure for conductivity",
-                _t->slam);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "mol_mas ", _t->mol_mas);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "cp      ", _t->cp);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "vol_diff", _t->vol_dif);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "mu_a    ", _t->mu_a);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "mu_b    ", _t->mu_b);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "lambda_a", _t->lambda_a);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "lambda_b", _t->lambda_b);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "muref   ", _t->muref);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "lamref  ", _t->lamref);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "trefmu  ", _t->trefmu);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "treflam ", _t->treflam);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "smu     ", _t->smu);
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "slam    ", _t->slam);
+}
 
+/* Log default values of the structure */
+
+static void
+_log_func_default_gas_mix_species_prop(const void *t)
+{
+  const char fmt[] = N_("      %-19s  %-12.3g %s\n");
+  const cs_gas_mix_species_prop_t *_t = (const void *)t;
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "mol_mas ", _t->mol_mas,
+                _("Molar mass"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "cp      ", _t->cp,
+                _("Specific heat"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "vol_diff", _t->vol_dif,
+                _("Volume diffusion"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "mu_a    ", _t->mu_a,
+                _("Dynamic viscosity a"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "mu_b    ", _t->mu_b,
+                _("Dynamic viscosity b"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "lambda_a", _t->lambda_a,
+                _("Thermal conductivity a"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "lambda_b", _t->lambda_b,
+                _("Thermal conductivity b"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "muref   ", _t->muref,
+                _("Reference thermal viscosity (Sutherland)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "lamref  ", _t->lamref,
+                _("Reference thermal conductivity (Sutherland)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "trefmu  ", _t->trefmu,
+                _("Reference temperature (Sutherland for viscosity)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "treflam ", _t->treflam,
+                _("Reference temperature (Sutherland conductivity)"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "smu     ", _t->smu,
+                _("Sutherland temperature for viscosity"));
+  cs_log_printf(CS_LOG_SETUP, _(fmt), "slam    ", _t->slam,
+                _("Sutherland temperature for conductivity"));
 }
 
 /*============================================================================
@@ -769,7 +868,7 @@ cs_get_glob_piso(void)
 /*!
  * \brief Define general field keys.
  *
- * A recommened practice for different submodules would be to use
+ * A recommended practice for different submodules would be to use
  * "cs_<module>_key_init() functions to define keys specific to those modules.
  */
 /*----------------------------------------------------------------------------*/
@@ -799,6 +898,8 @@ cs_parameters_define_field_keys(void)
 
   cs_field_define_key_int("scalar_class", 0, 0);
   cs_field_define_key_int("first_moment_id", -1, 0); /* iscavr(iscal) */
+
+  cs_field_define_key_int("syrthes_coupling", 0, 0); /* icpsyr(iscal) */
 
   cs_field_define_key_int("source_term_prev_id", -1, CS_FIELD_VARIABLE);
   /* TODO merge with previous key word */
@@ -830,7 +931,8 @@ cs_parameters_define_field_keys(void)
   /* Structure containing the calculation options of the field variables */
   cs_field_define_key_struct("var_cal_opt",
                              &_var_cal_opt,
-                             _log_func_var_opt_cal,
+                             _log_func_var_cal_opt,
+                             _log_func_default_var_cal_opt,
                              sizeof(cs_var_cal_opt_t),
                              CS_FIELD_VARIABLE);
 
@@ -838,6 +940,7 @@ cs_parameters_define_field_keys(void)
      (used for listing, not setup, so set NULL setup logging function) */
   cs_field_define_key_struct("solving_info",
                              &_solving_info,
+                             NULL,
                              NULL,
                              sizeof(cs_solving_info_t),
                              CS_FIELD_VARIABLE);
@@ -860,6 +963,7 @@ cs_parameters_define_field_key_gas_mix(void)
   cs_field_define_key_struct("gas_mix_species_prop",
                              &_gas_mix_species_prop,
                              _log_func_gas_mix_species_prop,
+                             _log_func_default_gas_mix_species_prop,
                              sizeof(cs_gas_mix_species_prop_t),
                              0);
 }
@@ -1342,216 +1446,42 @@ cs_parameters_var_cal_opt_default(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print general parameters error or warning info.
- *
- * \param[in]  err_behavior  warn or abort ?
- * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
- * \param [in] format        format string, as printf() and family.
- * \param [in] ...           variable arguments based on format string.
+ * \brief Print the space discretization structure to setup.log.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_parameters_error(cs_parameter_error_behavior_t   err_behavior,
-                    const char                     *section_desc,
-                    const char                     *format,
-                    ...)
+cs_space_disc_log_setup(void)
 {
-  cs_parameters_error_header(err_behavior, section_desc);
-
-  int log_id = CS_LOG_DEFAULT;
-
-  va_list  arg_ptr;
-  va_start(arg_ptr, format);
-
-  cs_log_vprintf(log_id, format, arg_ptr);
-
-  va_end(arg_ptr);
-
-  cs_parameters_error_footer(err_behavior);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print header for a given parameters error message type.
- *
- * \param[in]  err_behavior  warn or abort ?
- * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_error_header(cs_parameter_error_behavior_t   err_behavior,
-                           const char                     *section_desc)
-{
-  const int err_type_id = (err_behavior <= CS_WARNING) ? 0 : 1;
-  const char *error_type[] = {N_("Warning"),
-                              N_("Error")};
-
-  int log_id = CS_LOG_DEFAULT;
-
-  if (section_desc != NULL)
-    cs_log_printf(log_id, "%s %s\n", _(error_type[err_type_id]), section_desc);
-  else
-    cs_log_printf(log_id, "%s\n", _(error_type[err_type_id]));
-  size_t l = cs_log_strlen(_(error_type[err_type_id]));
-  char underline[81];
-
-  for (size_t i = 0; i < 80 && i < l; i++)
-    underline[i] = '-';
-  underline[CS_MIN(l,80)] = '\0';
-  cs_log_printf(log_id, "%s\n", underline);
-
-  if (err_behavior > CS_WARNING)
-    _param_check_errors++;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print footer for a given parameters error message type.
- *
- * \param[in]  err_behavior  warn or abort ?
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_error_footer(cs_parameter_error_behavior_t   err_behavior)
-{
-  if (err_behavior == CS_ABORT_IMMEDIATE)
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("\nCheck your data and parameters (GUI and user subroutines)."));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check that a given integer keyword has values in a specified range.
- *
- * \param[in]  err_behavior  warn or abort ?
- * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
- * \param[in]  param_name    name of parameter whose value we are checking
- * \param[in]  param_value   parameter's current_value
- * \param[in]  range_l       range lower bound (included)
- * \param[in]  range_u       range upper bound (excluded)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_is_in_range_int(cs_parameter_error_behavior_t   err_behavior,
-                              const char                     *section_desc,
-                              const char                     *param_name,
-                              int                             param_value,
-                              int                             range_l,
-                              int                             range_u)
-{
-  if (param_value < range_l || param_value >= range_u) {
-
-    cs_parameters_error_header(err_behavior, section_desc);
-
-    int log_id = CS_LOG_DEFAULT;
-
-    cs_log_printf(log_id,
-                  _("Parameter: %s = %d\n"
-                    "while its value must be in range [%d, %d].\n"),
-                  param_name, param_value, range_l, range_u-1);
-
-    cs_parameters_error_footer(err_behavior);
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check that a given integer keyword has values in a specified range.
- *
- * \param[in]  err_behavior  warn or abort ?
- * \param[in]  section_desc  optional description of code section
- *                           containing this parameter, or NULL
- * \param[in]  param_name    name of parameter whose value we are checking
- * \param[in]  param_value   parameter's current_value
- * \param[in]  enum_size     size of possible enumeration
- * \param[in]  enum_values   optional list of enumerated values, or NULL
- *                           (in which case {0, ... enum_sizes-1} assumed
- * \param[in]  enum_names    optional list of value names, or NULL
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_is_in_list_int(cs_parameter_error_behavior_t   err_behavior,
-                             const char                     *section_desc,
-                             const char                     *param_name,
-                             int                             param_value,
-                             int                             enum_size,
-                             const int                      *enum_values,
-                             const char                     *enum_names[])
-{
-  /* Check if we are in the defined range */
-
-  if (enum_values != NULL) {
-    for (int i = 0; i < enum_size; i++) {
-      if (param_value == enum_values[i])
-        return;
-    }
-  }
-  else if (param_value >= 0 && param_value < enum_size)
-    return;
-
-  /* If we are not, report error */
-
-  cs_parameters_error_header(err_behavior, section_desc);
-
-  int log_id = CS_LOG_DEFAULT;
-
-  if (enum_names != NULL) {
-    cs_log_printf(log_id,
-                  _("Parameter: %s = %d\n"
-                    "while its value must be one of:\n"),
-                  param_name, param_value);
-    for (int i = 0; i < enum_size; i++)
-      cs_log_printf(log_id, "  %s\n", enum_names[i]);
-  }
-  else if (enum_values != NULL) {
-    cs_log_printf(log_id,
-                  _("Parameter: %s = %d\n"
-                    "while its value must be one of:\n"),
-                  param_name, param_value);
-    for (int i = 0; i < enum_size; i++)
-      cs_log_printf(log_id, "  %d\n", i);
-  }
-  else {
-    cs_log_printf(log_id,
-                  _("Parameter: %s = %d\n"
-                    "while its value must be in range [%d, %d].\n"),
-                  param_name, param_value, 0, enum_size-1);
-  }
-
-  cs_parameters_error_footer(err_behavior);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Abort if the the parameter errors count is nonzero.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_parameters_error_barrier(void)
-{
-  cs_lnum_t n_errors = _param_check_errors;
-  cs_parall_counter_max(&n_errors, 1);
-
-  if (n_errors > 0)
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("%d parameter error(s) reported.\n"
-         "\n"
-         "Read error messages above for details, then\n"
-         "check your data and parameters (GUI and user subroutines)."),
-       n_errors);
-
-  _param_check_errors = 0;
+   cs_log_printf
+     (CS_LOG_SETUP,
+      _("\n"
+        "Space discretization options\n"
+        "----------------------------\n\n"
+        "    imvisf:      %d (face interpolation\n"
+        "                    0: arithmetic\n"
+        "                    1: harmonic)\n"
+        "\n"
+        "    imrgra:      %d (type of gradient reconstruction\n"
+        "                    0: iterative process\n"
+        "                    1: standard least square method\n"
+        "                    2: least square method with extended "
+        "neighborhood\n"
+        "                    3: standard least square method with reduced "
+        "extended neighborhood\n"
+        "                    4: iterative process initialized by the least "
+        "square method)\n"
+        "\n"
+        "    anomax       %-12.3g (non-orthogonality angle (rad) above which "
+        "cells are selected for the extended neighborhood)\n"
+        "    iflxmw:      %d (method to compute inner mass flux due to mesh "
+        "velocity in ALE\n"
+        "                    0: based on mesh velocity at cell centers\n"
+        "                    1: based on nodes displacement)\n"),
+        cs_glob_space_disc->imvisf,
+        cs_glob_space_disc->imrgra,
+        cs_glob_space_disc->anomax,
+        cs_glob_space_disc->iflxmw);
 }
 
 /*----------------------------------------------------------------------------*/

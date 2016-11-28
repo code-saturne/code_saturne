@@ -143,6 +143,20 @@ cs_get_glob_physical_constants(void);
 cs_fluid_properties_t *
 cs_get_glob_fluid_properties(void);
 
+/*----------------------------------------------------------------------------
+ * Print the physical constants structure to setup.log.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_physical_constants_log_setup(void);
+
+/*----------------------------------------------------------------------------
+ * Print the fluid properties structure to setup.log.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_fluid_properties_log_setup(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

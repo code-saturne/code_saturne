@@ -114,6 +114,7 @@ integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
 integer          ielpdc, iflmas, iflmab
+integer          kcpsyr, icpsyr
 
 double precision tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
@@ -250,11 +251,14 @@ ipass = ipass + 1
 !     on utilise le meme scalaire que celui qui sert a Syrthes (s'il y a
 !     couplage Syrthes), sinon on stocke le scalaire thermique.
 
+call field_get_key_id("syrthes_coupling", kcpsyr)
+
 call nbcsyr (nbccou)
 isvhb = 0
 if (nbccou .ge. 1) then
   do iscal = 1, nscal
-    if(icpsyr(iscal).eq.1) then
+    call field_get_key_int(ivarfl(isca(iscal)), kcpsyr, icpsyr)
+    if(icpsyr.eq.1) then
       isvhb = iscal
     endif
   enddo

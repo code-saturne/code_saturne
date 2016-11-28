@@ -76,16 +76,15 @@ integer          iok
 
 ! Local variables
 
-character        chaine*80, chain2*80
+character        chaine*80
 integer          ii    , iis   , jj    , iisct
 integer          iscal , iest  , iiesca, ivar
-integer          nbsccp
 integer          f_id, n_fields
-integer          nbccou, imrgrl
-integer          iokpre, indest, iiidef, istop
+integer          indest, iiidef, istop
 integer          kscmin, kscmax, ifcvsl
 integer          keyvar, keysca
-double precision arakfr, scmaxp, scminp
+integer          kcpsyr, icpsyr
+double precision scmaxp, scminp
 
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
@@ -126,11 +125,6 @@ if (nthist.le.0.and.nthist.ne.-1) then
   iok = iok + 1
 endif
 
-if (ntlist.ne.-1.and.ntlist.le.0) then
-  write(nfecra,1210) 'NTLIST (Periode   Sortie Listing)',ntlist
-  iok = iok + 1
-endif
-
 !===============================================================================
 ! 2. OPTIONS DU CALCUL : TABLEAUX DE optcal : formats 2000
 !===============================================================================
@@ -154,89 +148,12 @@ if (nvar.lt.0.or.nvar.gt.nvarmx) then
   iok = iok + 1
 endif
 
-! --- Thermal model
-
-if (itherm.lt.0 .or. itherm.gt.3) then
-  write(nfecra,2050) itherm
-  iok = iok + 1
-endif
-
-! --- Rho et visc constants ou variables
-
-if (irovar.ne.0.and.irovar.ne.1) then
-  write(nfecra,2201)'IROVAR',irovar
-  iok = iok + 1
-endif
-if (ivivar.ne.0.and.ivivar.ne.1) then
-  write(nfecra,2201)'IVIVAR',ivivar
-  iok = iok + 1
-endif
-
-! --- Definition des equations, schema en temps, schema convectif
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if ((vcopt%iconv .ne.0.and.vcopt%iconv .ne.1).or.                            &
-        (vcopt%istat .ne.0.and.vcopt%istat .ne.1).or.                            &
-        (vcopt%idiff .ne.0.and.vcopt%idiff .ne.1).or.                            &
-        (vcopt%idifft.ne.0.and.vcopt%idifft.ne.1).or.                            &
-        (vcopt%thetav.gt.1.d0.or.vcopt%thetav.lt.0.d0).or.                       &
-        (vcopt%blencv.gt.1.d0.or.vcopt%blencv.lt.0.d0).or.                       &
-        (vcopt%ischcv.lt.0.and.vcopt%ischcv.gt.3).or.                            &
-        (vcopt%isstpc.lt.0.and.vcopt%isstpc.gt.3)   ) then
-      call field_get_label(f_id, chaine)
-      write(nfecra,2100) chaine(1:16),                            &
-                         vcopt%istat,vcopt%iconv,                 &
-                         vcopt%idiff,vcopt%idifft,                &
-                         vcopt%thetav,vcopt%blencv,vcopt%ischcv,  &
-                         vcopt%isstpc
-      iok = iok + 1
-    endif
-  endif
-enddo
-
-
 !     Extrap de rho : necessairement rho variable
 if (irovar.eq.0.and.iroext.gt.0) then
   write(nfecra,2005)iroext,irovar
   iok = iok + 1
 endif
 
-!     Theta pression : vaut 1
-!       Pour le moment, theta est fixe automatiquement dans modini
-!         (on ne devrait donc jamais voir cet affichage)
-!       On conserve quand meme le test pour plus tard puisqu'il est ecrit.
-jj = ipr
-call field_get_key_struct_var_cal_opt(ivarfl(jj), vcopt)
-if (abs(vcopt%thetav-1.0d0).gt.epzero) then
-  call field_get_label(ivarfl(jj), chaine)
-  write(nfecra,2112) vcopt%thetav
-  iok = iok + 1
-endif
-
-!     En LES il y a des verification de coherence supplementaires.
-!       (simple avertissement si on s'ecarte des choix std)
-!        mais stop si on fait plus de 5% d'upwind
-!     Schema centre sans/avec test de pente, nwsrsm
-if (itytur.eq.4) then
-  call field_get_label(ivarfl(iu), chaine)
-  call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-  chaine = trim(chaine)
-  if (abs(vcopt%thetav-0.5d0).gt.epzero) then
-    write(nfecra,2121) chaine(1:16),vcopt%thetav
-  endif
-  if (vcopt%blencv.lt.0.95d0) then
-    write(nfecra,2127) chaine(1:16),vcopt%blencv
-  iok = iok + 1
-  elseif (abs(vcopt%blencv-1.d0).gt.epzero) then
-    write(nfecra,2122) chaine(1:16),vcopt%blencv
-  endif
-  if (vcopt%isstpc.eq.0) then
-    write(nfecra,2123) chaine(1:16),vcopt%isstpc
-  endif
-endif
 if (itytur.eq.4.or.ischtp.eq.2) then
   call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
   call field_get_label(ivarfl(iu), chaine)
@@ -253,24 +170,8 @@ if (itytur.eq.4.or.ischtp.eq.2) then
     write(nfecra,2125) chaine(1:16),iiidef,vcopt%nswrsm
   endif
 endif
+
 do ii = 1, nscal
-  if (itytur.eq.4) then
-    jj    = isca(ii)
-    call field_get_key_struct_var_cal_opt(ivarfl(jj), vcopt)
-    call field_get_label(ivarfl(jj), chaine)
-    if (abs(vcopt%thetav-0.5d0).gt.epzero) then
-      write(nfecra,2121) chaine(1:16),vcopt%thetav
-    endif
-    if (vcopt%blencv.lt.0.95d0) then
-      write(nfecra,2127) chaine(1:16),vcopt%blencv
-      iok = iok + 1
-    elseif (abs(vcopt%blencv-1.d0).gt.epzero) then
-      write(nfecra,2122) chaine(1:16),vcopt%blencv
-    endif
-    if (vcopt%isstpc.eq.1) then
-      write(nfecra,2124) chaine(1:16),vcopt%isstpc
-    endif
-  endif
   if (itytur.eq.4.or.ischtp.eq.2) then
     iiidef = 10
     if (vcopt%nswrsm.ne.iiidef) then
@@ -381,17 +282,6 @@ if ( (abs(vcopt%thetav-1.0d0).gt.1.d-3).or.               &
          iviext,thetvi
     iok = iok + 1
   endif
-endif
-
-!     Iterations sur navsto
-!     Doit etre un entier superieur ou egal a 1
-!     Pour le moment, on interdit NTERUP > 1 et
-!       estimateurs, matrices poids, pression hydrostatique
-!       et algo stationnaire
-
-if (nterup.le.0) then
-  WRITE(NFECRA,3100) 'NTERUP', NTERUP
-  iok = iok + 1
 endif
 
 if (nterup.gt.1) then
@@ -544,145 +434,6 @@ if (iirayo.gt.0) then
   endif
 endif
 
-! --- Algorithme stationnaire
-if (idtvar.lt.0) then
-  do f_id = 0, n_fields-1
-    call field_get_key_int(f_id, keyvar, ii)
-    if (ii.ge.1) then
-      call field_get_key_struct_var_cal_opt(f_id, vcopt)
-      if (vcopt%relaxv.gt.1d0.or.vcopt%relaxv.lt.0d0) then
-        call field_get_label(f_id, chaine)
-        write(nfecra,2149) chaine(1:16),vcopt%relaxv
-        iok = iok + 1
-      endif
-    endif
-  enddo
-!       L'algorithme stationnaire n'est pas compatible avec le module Lagrangien
-  if (iilagr.ne.0) then
-    write(nfecra,2151) iilagr
-    iok = iok + 1
-  endif
-!       L'algorithme stationnaire n'est pas compatible avec la LES
-  if (itytur.eq.4) then
-    write(nfecra,2152) iturb
-    iok = iok + 1
-  endif
-endif
-
-! --- Reconstruction des gradients
-if (imrgra.gt.16 .or. imrgra.lt.-16) then
-  write(nfecra,2205) 'IMRGRA', imrgra
-  iok = iok + 1
-endif
-
-imrgrl = abs(imrgra)
-imrgrl = modulo(imrgrl,10)
-
-! On verifie l'angle de non orthogonalite de selection du
-!   voisinage etendu dans le cas du moindre carre qui l'utilise
-
-if (imrgrl.eq.3.or.imrgrl.eq.6) then
-  if (anomax.gt.pi*0.5d0.or.anomax.lt.0.d0) then
-    write(nfecra,2206) anomax, imrgra
-  endif
-endif
-
-! Extrapolation : indetermination possible par mc,
-!     necessitant un traitement particulier dans gradmc,
-!     pour lequel on fait certaines hypotheses
-call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-if (imrgrl.ne.0.and.imrgrl.ne.4) then
-  if (      (abs(vcopt%extrag-1.d0).gt.epzero)             &
-      .and. (abs(vcopt%extrag     ).gt.epzero)) then
-    write(nfecra,2207) imrgra, vcopt%extrag
-    iok = iok + 1
-  endif
-endif
-
-! Les nombres de sweeps n'ont pas a etre verifies :
-!  ce sont simplement des entiers (negatifs si on veut etre sur de ne
-!  *jamais* entrer dans les boucles)
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if (vcopt%imligr.gt.1) then
-      call field_get_label(f_id, chaine)
-      write(nfecra,2300) chaine(1:16),ii,vcopt%imligr
-      iok = iok + 1
-    endif
-  endif
-enddo
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if (vcopt%ircflu.ne.1.and.vcopt%ircflu.ne.0) then
-      call field_get_label(f_id, chaine)
-      write(nfecra,2310) chaine(1:16),ii,vcopt%ircflu
-      iok = iok + 1
-    endif
-  endif
-enddo
-! Non reconstruction des flux en SOLU n'a pas de sens pour la convection
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if (vcopt%ircflu.eq.0.and.vcopt%ischcv.eq.0.and.vcopt%blencv.ne.0.d0) then
-      call field_get_label(f_id, chaine)
-      write(nfecra,2311) chaine(1:16),ii,vcopt%ircflu,ii,vcopt%ischcv
-      iok = iok + 1
-    endif
-  endif
-enddo
-
-! Il n'y a pas besoin de test sur les epsilons
-!   Ce sont simplement des reels
-!   Une valeur negative indique qu'on veut atteindre
-!   le nombre d'iterations maximal
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if (vcopt%climgr.lt.1.d0) then
-      call field_get_label(f_id, chaine)
-      write(nfecra,2320) chaine(1:16),ii,vcopt%climgr
-      iok = iok + 1
-    endif
-  endif
-enddo
-
-
-! EXTRAG non nul permis uniquement pour la pression.
-!        et dans ce cas egal a 1
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if (abs(vcopt%extrag).ge.epzero) then
-      iokpre = 0
-      if (ii.eq.ipr) then
-        iokpre = 1
-        if (abs(vcopt%extrag-1.d0).ge.epzero) then
-          call field_get_label(f_id, chaine)
-          write(nfecra,2330) chaine(1:16),ii,vcopt%extrag
-          iok = iok + 1
-        endif
-      endif
-      if (iokpre.eq.0) then
-        call field_get_label(f_id, chaine)
-        write(nfecra,2331) chaine(1:16),ii,vcopt%extrag
-        iok = iok + 1
-      endif
-    endif
-  endif
-enddo
-
-
 ! --- Solveurs iteratifs
 
 ! Il n'y a pas besoin de test sur les epsilons
@@ -719,36 +470,6 @@ if (iecaux.eq.0.or.ileaux.eq.0) then
   endif
 endif
 
-! --- Reperage du temps et marche en temps
-
-! Le nombre de pas de temps pourrait bien etre negatif : pas de test.
-
-if (inpdt0.ne.0.and.inpdt0.ne.1) then
-  write(nfecra,2200) 'INPDT0',inpdt0
-  iok = iok + 1
-endif
-
-if (idtvar.lt.-1.or.idtvar.gt.2) then
-  write(nfecra,2500) 'IDTVAR',idtvar
-  iok = iok + 1
-endif
-
-if (idtvar.gt.0.and.varrdt.lt.0.d0) then
-  write(nfecra,2510)'VARRDT', varrdt
-  iok = iok + 1
-endif
-
-if (dtref .lt.0.d0) then
-  write(nfecra,2510)'DTREF ', dtref
-  iok = iok + 1
-endif
-
-if (dtmin.le.0.d0 .or. dtmax.le.0.d0 .or. dtmin.gt.dtmax) then
-  write(nfecra,2520) dtmin, dtmax
-  if (idtvar.gt.0) then
-    iok = iok + 1
-  endif
-endif
 
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
@@ -761,63 +482,7 @@ do f_id = 0, n_fields-1
   endif
 enddo
 
-if (iptlro.ne.0.and.iptlro.ne.1) then
-  write(nfecra,2200) 'IPTLRO',iptlro
-  iok = iok + 1
-endif
-
-!     Si on est en pas de temps constant, on ne touche pas le pas de temps,
-!     mais on indique juste les depassements de critere local.
-if (idtvar.eq.0.and.iptlro.eq.1) then
-  write(nfecra,2540) iptlro,idtvar
-endif
-if (idtvar.eq.-1.and.iptlro.eq.1) then
-  write(nfecra,2541) iptlro,idtvar
-endif
-
 ! --- Turbulence
-
-!    Modele
-
-if ( iturb.ne. 0.and.iturb.ne.10.and.iturb.ne.20.and.        &
-     iturb.ne.21.and.iturb.ne.30.and.iturb.ne.31.and.        &
-     iturb.ne.32.and.                                        &
-     iturb.ne.40.and.iturb.ne.41.and.iturb.ne.42.and.        &
-     iturb.ne.50.and.iturb.ne.51.and.iturb.ne.60.and.iturb.ne.70 ) then
-  write(nfecra,2600) 'ITURB  ',iturb
-  iok = iok + 1
-endif
-
-! Rotation curvature correction for eddy-viscosity models
-if ( irccor.ne.0.and.irccor.ne.1 ) then
-  write(nfecra,2601) 'IRCCOR ',irccor
-  iok = iok + 1
-endif
-
-! Rotation curvature correction compatible only with RANS eddy-viscosity models
-if ( irccor.eq.1.and.(itytur.ne.2 .and.itytur.ne.5 .and.      &
-                      iturb .ne.60.and.iturb .ne.70) ) then
-  write(nfecra,2602) iturb
-  iok = iok + 1
-endif
-
-! In lagrangian with two-way coupling, k-omega SST is forbidden (not
-! properly implemented)
-if (iturb.eq.60 .and. iilagr.eq.2) then
-  write(nfecra,2603) iilagr
-  iok = iok + 1
-endif
-
-!     Methode des vortex pour la LES
-
-if (ivrtex.ne.0 .and.ivrtex.ne.1) then
-  write(nfecra,2200) 'IVRTEX ',ivrtex
-  iok = iok + 1
-endif
-if (ivrtex.eq.1.and.itytur.ne.4) then
-  write(nfecra,2606)itytur,ivrtex
-  ivrtex = 0
-endif
 
 !    Nb de variables
 
@@ -856,21 +521,6 @@ if (nscal.ge.1) then
 
 endif
 
-if (iwallf.lt.0.or.iwallf.gt.6) then
-  write(nfecra,2001)'IWALLF',6,iwallf
-  iok = iok + 1
-endif
-if (iwallf.gt.2 .and.                                    &
-    (iturb.eq.0 .or. iturb.eq.10 .or.                    &
-    itytur.eq.4 .or. iturb.eq.70)) then
-  write(nfecra,2209)iturb,iwallf
-  iok = iok + 1
-endif
-if (iwallt.lt.0.or.iwallt.gt.1) then
-  write(nfecra,2201)'IWALLT',iwallt
-  iok = iok + 1
-endif
-
 !      Specifique k-epsilon, v2f et k-omega
 
 if (itytur.eq.2 .or. iturb.eq.50                          &
@@ -883,36 +533,7 @@ if (itytur.eq.2 .or. iturb.eq.50                          &
          'OPTION POUR LA TURBULENCE      ',iturb
     iok = iok + 1
   endif
-  !     Le choix de ICLKEP n'est possible qu'en k-eps ou v2f
-  if (iturb.ne.60) then
-    if (iclkep.ne.0.and.iclkep.ne.1) then
-      WRITE(NFECRA,2201)'ICLKEP',ICLKEP
-      iok = iok + 1
-    endif
-  endif
-  if (ikecou.ne.0.and.ikecou.ne.1) then
-    WRITE(NFECRA,2201)'IKECOU',IKECOU
-    iok = iok + 1
-  endif
-  !     En k-eps a prod lin et en v2f on force IKECOU a 0
-  if (ikecou.eq.1 .and. (iturb.eq.21 .or. itytur.eq.5)) then
-    write(nfecra,2208)iturb,ikecou
-    iok = iok + 1
-  endif
-  !     En stationnaire on force IKECOU a 0
-  if (ikecou.ne.0.and.idtvar.lt.0) then
-    write(nfecra,2210)ikecou
-    iok = iok + 1
-  endif
 
-  if (igrhok.ne.0.and.igrhok.ne.1) then
-    write(nfecra,2201)'IGRHOK',igrhok
-    iok = iok + 1
-  endif
-  if (igrake.ne.0.and.igrake.ne.1) then
-    write(nfecra,2201)'IGRAKE',igrake
-    iok = iok + 1
-  endif
   !        IF ( IGRAKE.EQ.1.AND.(GX**2+GY**2+GZ**2).LE.EPZERO**2 ) THEN
   !          WRITE(NFECRA,2620)'IGRAKE',IGRAKE,GX,GY,GZ
   !          IOK = IOK + 1
@@ -925,41 +546,6 @@ if (itytur.eq.2 .or. iturb.eq.50                          &
       endif
     endif
   endif
-
-  !     Si RELAXV(IK) a ete modifie par l'utilisateur mais que IKECOU n'est
-  !     pas egal a 0, on previent que ce sera sans effet
-  !     Sinon on verifie que RELAXV(IK) est bien compris entre 0 et 1
-  !     (en stationnaire cela a deja ete fait plus haut)
-  if (itytur.eq.6) then
-    call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
-    call field_get_key_struct_var_cal_opt(ivarfl(iomg), vcopt1)
-    if ( (abs(vcopt%relaxv+999.d0).gt.epzero .or.                 &
-          abs(vcopt1%relaxv+999.d0).gt.epzero ) .and.             &
-         ikecou.ne.0) write(nfecra,2623)                        &
-         vcopt%relaxv,vcopt1%relaxv
-    if (ikecou.eq.0 .and. idtvar.ge.0) then
-      if (vcopt%relaxv.gt.1.d0.or.vcopt%relaxv.lt.0.d0 .or.         &
-           vcopt1%relaxv.gt.1.d0.or.vcopt1%relaxv.lt.0.d0) then
-        write(nfecra,2624) vcopt%relaxv,vcopt1%relaxv
-        iok = iok + 1
-      endif
-    endif
-  else
-    call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
-    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt1)
-    if ( (abs(vcopt%relaxv+999.d0).gt.epzero .or.                 &
-          abs(vcopt1%relaxv+999.d0).gt.epzero ) .and.             &
-         ikecou.ne.0) write(nfecra,2623)                        &
-         vcopt%relaxv,vcopt1%relaxv
-    if (ikecou.eq.0 .and. idtvar.ge.0) then
-      if (vcopt%relaxv.gt.1.d0.or.vcopt%relaxv.lt.0.d0 .or.         &
-           vcopt1%relaxv.gt.1.d0.or.vcopt1%relaxv.lt.0.d0) then
-        write(nfecra,2624) vcopt%relaxv,vcopt1%relaxv
-        iok = iok + 1
-      endif
-    endif
-  endif
-
 endif
 
 !     Specifique Rij-epsilon
@@ -971,42 +557,10 @@ if (itytur.eq.3) then
          'OPTION POUR LA TURBULENCE      ', iturb
     iok = iok + 1
   endif
-  if (irijnu.ne.0.and.irijnu.ne.1) then
-    write(nfecra,2201)'IRIJNU',irijnu
-    iok = iok + 1
-  endif
-  if (irijrb.ne.0.and.irijrb.ne.1) then
-    write(nfecra,2201)'IRIJRB',irijrb
-    iok = iok + 1
-  endif
-  if (iturb.eq.30) then
-    !     echo de paroi et implicitation speciale de la diffusion de epsilon
-    !     seulement en Rij standard
-    if (irijec.ne.0.and.irijec.ne.1) then
-      write(nfecra,2201)'IRIJEC',irijec
-      iok = iok + 1
-    endif
-    if (idifre.ne.0.and.idifre.ne.1) then
-      write(nfecra,2201)'IDIFRE',idifre
-      iok = iok + 1
-    endif
-  endif
-  if (igrari.ne.0.and.igrari.ne.1) then
-    write(nfecra,2201)'IGRARI',igrari
-    iok = iok + 1
-  endif
   !        IF ( IGRARI.EQ.1.AND.(GX**2+GY**2+GZ**2).LE.EPZERO**2 ) THEN
   !          WRITE(NFECRA,2620)'IGRARI',IGRARI,GX,GY,GZ
   !          IOK = IOK + 1
   !        ENDIF
-  if (iclsyr.ne.0.and.iclsyr.ne.1) then
-    write(nfecra,2201)'ICLSYR',iclsyr
-    iok = iok + 1
-  endif
-  if (iclptr.ne.0.and.iclptr.ne.1) then
-    write(nfecra,2201)'ICLPTR',iclptr
-    iok = iok + 1
-  endif
   if (nscal.gt.0) then
     if (iscalt.le.0.and.(gx**2+gy**2+gz**2).ge.epzero**2) then
       write(nfecra,2621)gx,gy,gz,iscalt
@@ -1016,156 +570,6 @@ if (itytur.eq.3) then
     endif
   endif
 endif
-
-!     Specifique LES
-
-if (itytur.eq.4) then
-  if (idries.ne.1.and.idries.ne.0) then
-    write(nfecra,2201)'IDRIES',idries
-    iok = iok + 1
-  endif
-  if (idries.ne.0.and.(iturb.eq.41.or.iturb.eq.42)) then
-    write(nfecra,2630) idries,iturb
-    iok = iok + 1
-  endif
-  !         La reduction du voisinage etendu peut degrader
-  !         les resultats du modele dynamique en LES
-  if (     iturb.eq.41                                                       &
-      .and.(imrgrl.eq.3.or.imrgrl.eq.6)) then
-    write(nfecra,2607) iturb, imrgra
-  endif
-endif
-
-! --- Stokes
-
-
-if (iprco .ne.0.and.iprco .ne.1) then
-  write(nfecra,2200) 'IPRCO ',iprco
-  iok = iok + 1
-endif
-if (iprco.eq.1) then
-  if (irevmc.ne.0.and.irevmc.ne.1.and.irevmc.ne.2) then
-    write(nfecra,2211) 'IREVMC',irevmc
-    iok = iok + 1
-  endif
-  arakfr = arak
-  call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-  if (idtvar.lt.0) arakfr=arakfr*vcopt%relaxv
-  if (arakfr.gt.1.d0 .or. arakfr.lt.0.d0) then
-    write(nfecra,2640) 'ARAK  ',arakfr
-    iok = iok + 1
-  endif
-  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-  if (vcopt%relaxv.gt.1d0 .or. vcopt%relaxv.lt.0d0) then
-    write(nfecra,2625) vcopt%relaxv
-    iok = iok + 1
-  endif
-endif
-
-! --- Couplage U-P
-
-if (ipucou.ne.0.and.ipucou.ne.1) then
-  write(nfecra,2200) 'IPUCOU ',ipucou
-  iok = iok + 1
-endif
-
-! Incompatibilite pour le moment des matrices poids avec un theta schema
-! Si theta n'est pas egal a 1 pour la vitesse (incompatibilite du
-! pas de temps variable aussi)
-
-jj = iu
-call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-if ((abs(vcopt%thetav-1.0d0).gt.epzero).and.                       &
-     ((idtvar.ne.0).or.(ipucou.eq.1))) then
-  write(nfecra,2204) vcopt%thetav,idtvar,ipucou
-endif
-
-! --- Champ de vitesse fige
-
-if (iccvfg.ne.0.and.iccvfg.ne.1) then
-  write(nfecra,2200) 'ICCVFG ',iccvfg
-  iok = iok + 1
-endif
-
-! --- Interpolation face des viscosites
-
-if (imvisf.ne.0.and.imvisf.ne.1) then
-  write(nfecra,2200) 'IMVISF',imvisf
-  iok = iok + 1
-endif
-
-! --- Traitement de la temperature pour couplage SYRTHES
-!     Verification du nombre de couplages
-
-if (itbrrb.ne.0 .and. itbrrb.ne.1       ) then
-  write(nfecra,2200) 'ITBRRB',itbrrb
-  iok = iok + 1
-endif
-
-!     On regarde si ICPSYR a des valeurs realistes
-if (nscal.gt.0) then
-  do iscal = 1, nscal
-    if (icpsyr(iscal).ne.0.and.icpsyr(iscal).ne.1) then
-      call field_get_label(ivarfl(isca(iscal)), chaine)
-      write(nfecra,2650)chaine(1:16),'ICPSYR',iscal,icpsyr(iscal)
-      iok = iok + 1
-    endif
-  enddo
-endif
-
-!     On compte le nombre de scalaires couples
-nbsccp = 0
-if (nscal.gt.0) then
-  do iscal = 1, nscal
-    nbsccp = nbsccp+icpsyr(iscal)
-  enddo
-endif
-
-! On regarde s'il y a du couplage
-
-call nbcsyr (nbccou)
-
-! S'il n'y a pas de couplage
-if (nbccou.eq.0) then
-
-  !  et qu'il n'y a pas zero scalaire couple, on s'arrete
-  if (nbsccp.ne.0) then
-    write(nfecra,2660)nbsccp,nscal
-    iok = iok + 1
-  endif
-
-  ! Sinon, s'il y a du couplage
-else
-
-  ! et qu'il n'y a pas un et un seul scalaire couple, on s'arrete
-  if (nbsccp.ne.1) then
-    write(nfecra,2661)nscal,nbsccp
-    iok = iok + 1
-  endif
-
-  ! que le scalaire couple n'est pas la temperature, on s'arrete
-  ! attention : tout est pret, mais il n'y a pas eu de valid.
-  ! en outre, ca permet de bien verifier que l'utilisateur
-  ! ne s'est pas trompe dans 99% des cas d'utilisation
-  ! (en compressible, on couple l'energie)
-  do iscal = 1, nscal
-    if (icpsyr(iscal).eq.1) then
-      if (ippmod(icompf).lt.0) then
-        if (abs(iscacp(iscal)).ne.1) then
-          write(nfecra,2662)iscal,iscal,iscacp(iscal)
-          iok = iok + 1
-        endif
-      else
-        if (iscal.eq.iscalt .and. itherm.ne.3) then
-          write(nfecra,2663)iscal,iscalt
-          iok = iok + 1
-        endif
-      endif
-    endif
-  enddo
-
-endif
-
 
 ! --- Estimateurs  d'erreur pour Navier-Stokes
 
@@ -1235,72 +639,9 @@ if (ineedy.eq.1) then
 
 endif
 
-! --- Dynamic relaxation option
-
-do ivar = 1, nvar
-  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  if (vcopt%iswdyn.ge.1) then
-    ! The number of reconstruction sweeps is set to 20 at least
-    if (vcopt%nswrsm.lt.20) then
-      vcopt%nswrsm = 20
-      write(nfecra,2742) vcopt%nswrsm
-    endif
-    if (ivar.eq.iu) then
-      if (vcopt%isstpc.eq.0) then
-        vcopt%isstpc = 1
-        write(nfecra, 2743)
-      endif
-    endif
-  endif
-  call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-enddo
-
-do ivar = 1, nvar
-  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  if (vcopt%nswrsm.le.0) then
-    call field_get_label(ivarfl(ivar), chaine)
-    write(nfecra,2747) chaine(1:16), vcopt%nswrsm, 1
-    vcopt%nswrsm = 1
-    call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-  endif
-enddo
-
 !===============================================================================
 ! 3. TABLEAUX DE cstphy : formats 4000
 !===============================================================================
-
-! --- Constantes physiques de chaque phase
-
-if (ro0.lt.0d0) then
-  write(nfecra,2511) 'RO0   ', ro0
-  iok = iok + 1
-endif
-if (viscl0.lt.0d0) then
-  write(nfecra,2511) 'VISCL0', viscl0
-  iok = iok + 1
-endif
-
-! --- Turbulence
-
-!    On a besoin de UREF si on initialise la turbulence (debut de calcul
-!      en turbulence ou suite laminaire->turbulent)
-!    Ici on met juste un avertissement, car sans UREF l'utilisateur peut
-!      initialiser la turbulence a la main. Un test complementaire sera fait
-!      dans inivar.
-if (itytur.eq.2.or.itytur.eq.3                    &
-     .or.itytur.eq.5.or.iturb.eq.60               &
-     .or.iturb.eq.70) then
-  if (uref  .lt.0.d0) then
-    write(nfecra,4100) uref
-  endif
-endif
-
-if (iturb.eq.10) then
-  if (xlomlg.le.0.d0) then
-    write(nfecra,2511)'XLOMLG', xlomlg
-    iok = iok + 1
-  endif
-endif
 
 !     LES
 if (itytur.eq.4) then
@@ -1337,10 +678,6 @@ if (itytur.eq.4) then
       write(nfecra,2511) 'SMAGMX', smagmx
       iok = iok + 1
     endif
-    if (smagmx.lt.smagmn) then
-      write(nfecra,2512) smagmn, smagmx
-      iok = iok + 1
-    endif
   endif
 endif
 
@@ -1354,29 +691,6 @@ if (nscal.gt.0) then
       call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4300)chaine(1:16),ii,iscacp(ii)
       iok = iok + 1
-    endif
-  enddo
-
-!     Scalaire associe dans le cas des variances
-  do ii = 1, nscal
-    if (iscavr(ii).gt.nscal.or.iscavr(ii).lt.0) then
-      call field_get_label(ivarfl(isca(ii)), chaine)
-      write(nfecra,4320)chaine(1:16),ii,nscal,iscavr(ii)
-      iok = iok + 1
-    endif
-  enddo
-
-!     On verifie que le scalaire associe a une fluctuation n'est
-!     pas une fluctuation
-  do ii = 1, nscal
-    if (iscavr(ii).gt.0) then
-      if (iscavr(iscavr(ii)).gt.0) then
-        call field_get_label(ivarfl(isca(ii)), chaine)
-        call field_get_label(ivarfl(isca(iscavr(ii))), chain2)
-        write(nfecra,4321)chaine(1:16),chain2(1:16),ii,iscavr(ii),  &
-             iscavr(ii),iscavr(iscavr(ii))
-        iok = iok + 1
-      endif
     endif
   enddo
 
@@ -1398,17 +712,6 @@ if (nscal.gt.0) then
         write(nfecra,4331)chaine(1:16),ii,iclvfl(ii)
         iok = iok + 1
       endif
-    endif
-  enddo
-
-!     Valeur de la diffusivite positive (si cste)
-!        si pas cste, on verifiera apres usphyv
-  do ii = 1, nscal
-    call field_get_key_int (ivarfl(isca(ii)), kivisl, ifcvsl)
-    if (ifcvsl.lt.0.and.visls0(ii).lt.0d0) then
-      call field_get_label(ivarfl(isca(ii)), chaine)
-      write(nfecra,4340)chaine(1:16),ii,ifcvsl,visls0(ii)
-      iok = iok + 1
     endif
   enddo
 
@@ -1621,11 +924,6 @@ endif
 ! 8. Rotating frame and unsteady rotor/stator coupling: 9000 formats
 !===============================================================================
 
-if (icorio.ne.0 .and. icorio.ne.1) then
-  write(nfecra,9000) icorio
-  iok = iok + 1
-endif
-
 if (imobil.eq.1 .or. iturbo.eq.2) then
   ! Unsteady rotor/stator coupling is not compatible with the
   !   steady algorithm...
@@ -1638,17 +936,6 @@ if (imobil.eq.1 .or. iturbo.eq.2) then
     write(nfecra,9011) idtvar
     iok = iok + 1
   endif
-endif
-
-! Unsteady rotor/stator coupling is not compatible with the Lagrangian module
-if (iturbo.eq.2.and.iilagr.ne.0) then
-    write(nfecra,9012)
-    iok = iok + 1
-endif
-
-if (icorio.ne.0 .and. iturbo.ne.0) then
-  write(nfecra,9020) icorio
-  iok = iok + 1
 endif
 
 !===============================================================================
@@ -1710,6 +997,19 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 1135 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ERREUR :     ARRET A L''ENTREE DES DONNEES',              /,&
+'@    ========',                                                /,&
+'@   LE CHOIX DU SCHEMA EN TEMPS ISCHTP = 2 N''EST PAS',        /,&
+'@   COMPATIBLE AVEC IBDTSO > 1',                               /,&
+'@  Verifier les parametres donnes via l''interface',           /,&
+'@    ou cs_user_parameters.f90.',                              /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
  2000 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1718,23 +1018,6 @@ endif
 '@    =========',                                               /,&
 '@',    a6,' DOIT ETRE UN ENTIER',                              /,&
 '@      STRICTEMENT POSITIF ET INFERIEUR OU EGAL A', i10,       /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute',                            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2001 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN ENTIER POSITIF',                      /,&
-'@      ET INFERIEUR OU EGAL A', i10,                           /,&
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute',                            /,&
@@ -1762,148 +1045,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2050 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    ITHERM DOIT ETRE UN ENTIER EGAL A 0, 1, 2 or 3',      /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2100 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@     PARAMETRES DU SCHEMA NUMERIQUE POUR LA VARIABLE ', a16,  /,&
-'@',                                                            /,&
-'@ Parametre               ISTAT     ICONV',                    /,&
-'@ Valeurs acceptees     0 ou  1   0 ou  1',                    /,&
-'@ Valeurs entrees ici',i10,     i10,                           /,&
-'@',                                                            /,&
-'@ Parametre                         IDIFF     IDIFFT',         /,&
-'@ Valeurs acceptees               0 ou  1   0 ou  1',          /,&
-'@ Valeurs entrees ici',10X,     i10,      i10,                 /,&
-'@',                                                            /,&
-'@ Parametre               THETAV   BLENCV    ISCHCV    ISSTPC',/,&
-'@ Valeurs acceptees     [0.; 1.] [0.; 1.]   0,1,2,3   0,1,2,3',/,&
-'@ Valeurs entrees ici',      e9.2,     e9.2,i10,  i10,         /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2112 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@   DONNEES NON ADMISSIBLES POUR LE SCHEMA EN TEMPS',          /,&
-'@',                                                            /,&
-'@  LE PARAMETRE THETAV POUR LA PRESSION DOIT VALOIR 1',        /,&
-'@',                                                            /,&
-'@  Il vaut ici', e14.5,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2121 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
-'@    =========',                                               /,&
-'@   CHOIX NON STANDARD DU SCHEMA EN TEMPS',                    /,&
-'@',                                                            /,&
-'@   EN L.E.S.',                                                /,&
-'@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE THETAV DU SCHEMA', /,&
-'@     EN TEMPS DE LA VARIABLE', a16, ' EST 0.5',               /,&
-'@     THETAV A ETE IMPOSE ICI A', e14.5,                       /,&
-'@',                                                            /,&
-'@  Le calcul sera execute',                                    /,&
-'@',                                                            /,&
-'@  Il est conseille de verifier les parametres donnes via',    /,&
-'@  l''interface ou cs_user_parameters.f90.',                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2122 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
-'@    =========',                                               /,&
-'@   CHOIX NON STANDARD DU SCHEMA EN TEMPS',                    /,&
-'@',                                                            /,&
-'@   EN L.E.S.',                                                /,&
-'@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE BLENCV DU SCHEMA', /,&
-'@     CONVECTIF DE LA VARIABLE', a16, ' EST 1.0',              /,&
-'@     BLENCV A ETE IMPOSE ICI A', e14.5,                       /,&
-'@',                                                            /,&
-'@  Le calcul sera execute',                                    /,&
-'@',                                                            /,&
-'@  Il est conseille de verifier les parametres donnes via',    /,&
-'@  l''interface ou cs_user_parameters.f90.',                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2123 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
-'@    =========',                                               /,&
-'@   CHOIX NON STANDARD DU SCHEMA EN TEMPS',                    /,&
-'@',                                                            /,&
-'@   EN L.E.S.',                                                /,&
-'@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE ISSTPC DU SCHEMA', /,&
-'@     CONVECTIF DE LA VARIABLE', a16, ' EST 1',                /,&
-'@     ISSTPC A ETE IMPOSE ICI A', i10,                         /,&
-'@',                                                            /,&
-'@  Le calcul sera execute',                                    /,&
-'@',                                                            /,&
-'@  Il est conseille de verifier les parametres donnes via',    /,&
-'@  l''interface ou cs_user_parameters.f90.',                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2124 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
-'@    =========',                                               /,&
-'@   CHOIX NON STANDARD DU SCHEMA EN TEMPS',                    /,&
-'@',                                                            /,&
-'@   EN L.E.S.',                                                /,&
-'@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE ISSTPC DU SCHEMA', /,&
-'@     CONVECTIF DE LA VARIABLE', a16, ' EST 0',                /,&
-'@     ISSTPC A ETE IMPOSE ICI A', i10,                         /,&
-'@',                                                            /,&
-'@  Le calcul sera execute',                                    /,&
-'@',                                                            /,&
-'@  Il est conseille de verifier les parametres donnes via',    /,&
-'@  l''interface ou cs_user_parameters.f90.',                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2125 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1921,39 +1062,6 @@ endif
 '@',                                                            /,&
 '@  Il est conseille de verifier les parametres donnes via',    /,&
 '@  l''interface ou cs_user_parameters.f90.',                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2127 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@   CHOIX NON STANDARD DU SCHEMA EN TEMPS',                    /,&
-'@',                                                            /,&
-'@   EN L.E.S.',                                                /,&
-'@   LA VALEUR RECOMMANDEE POUR LE PARAMETRE BLENCV DU SCHEMA', /,&
-'@     CONVECTIF DE LA VARIABLE', a16, ' EST 1.0',              /,&
-'@     BLENCV A ETE IMPOSE ICI A', e14.5,                       /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute',                             /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1135 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ERREUR :     ARRET A L''ENTREE DES DONNEES',              /,&
-'@    ========',                                                /,&
-'@   LE CHOIX DU SCHEMA EN TEMPS ISCHTP = 2 N''EST PAS',        /,&
-'@   COMPATIBLE AVEC IBDTSO > 1',                               /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -2348,59 +1456,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2149 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@     ALGORITHME STATIONNAIRE',                                /,&
-'@     COEFFICIENT DE RELAXATION POUR LA VARIABLE', a16,        /,&
-'@',                                                            /,&
-'@ RELAXV doit etre un reel compris entre 0 et 1',              /,&
-'@ Il vaut ici', e14.5,                                         /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2151  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@   L''ALGORITHME STATIONNAIRE N''EST PAS COMPATIBLE AVEC',    /,&
-'@    LE MODULE LAGRANGIEN QUI EST UNE APPROCHE INSTATIONNAIRE',/,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  L''indicateur IILAGR a ete positionne a', i10,              /,&
-'@    dans uslag1 (module lagrangien active pour IILAGR>0).',   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2152  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@   L''ALGORITHME STATIONNAIRE N''EST PAS COMPATIBLE AVEC',    /,&
-'@    LA L.E.S. QUI EST UNE MODELISATION INSTATIONNAIRE DE',    /,&
-'@    LA TURBULENCE',                                           /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  L''indicateur ITURB a ete positionne a', i10,               /,&
-'@    dans l''interface ou usipph.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
  2200 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2411,292 +1466,6 @@ endif
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2201 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN ENTIER EGAL A 0 OU 1',                /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2204 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@   DONNEES NON ADMISSIBLES POUR LE SCHEMA EN TEMPS',          /,&
-'@',                                                            /,&
-'@  ON DEMANDE LA PRISE UN SCHEMA EN TEMPS POUR LA VITESSE',    /,&
-'@    D''ORDRE 2 AVEC UN PAS DE TEMPS NON CONSTANT, UN',        /,&
-'@    ALGORITHME STATIONNAIRE OU LES MATRICES POIDS',           /,&
-'@',                                                            /,&
-'@  THETAV VAUT ICI', e14.5,' POUR LA VITESSE',                 /,&
-'@  ALORS QUE IDTVAR VAUT', i10,                                /,&
-'@  ET IPUCOU VAUT',        i10,                                /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2205 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN ENTIER COMPRIS ENTRE -6 et 6',        /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2206 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    ANOMAX DOIT ETRE UN REEL POSITIF OU NUL ET',              /,&
-'@                             INFERIEUR OU EGAL A PI/2',       /,&
-'@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  On demande la reconstruction des gradients par moindres',   /,&
-'@    carres sur voisinage etendu reduit (IMRGRA = ', i10,  ').',/,&
-'@    Le critere est base sur l''angle de non orthogonalite',   /,&
-'@    des faces ANOMAX qui doit etre fourni en radians et',     /,&
-'@    compris dans les bornes indiquees ci-dessus.',            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2207 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    L''UTILISATION DE LA METHODE DE CALCUL DE GRADIENT PAR',  /,&
-'@      MOINDRES CARRES EST IMPOSSIBLE AVEC',                   /,&
-'@        EXTRAG(IPR) DIFFERENT DE 0 ET 1',                     /,&
-'@',                                                            /,&
-'@    ON A ICI',                                                /,&
-'@        IMRGRA         = ', i10,                              /,&
-'@        EXTRAG(IPR) = ', e14.5,                               /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2208 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    EN K-EPS PROD LIN (ITURB=21) ET EN V2F (ITURB=50/51)',    /,&
-'@    IKECOU DOIT ETRE EGAL A 0',                               /,&
-'@    ITURB  VAUT ICI', i10,                                    /,&
-'@    IKECOU VAUT ICI', i10,                                    /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2209 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    LE MODELE DE PAROI A DEUX ECHELLES (IWALLF=3, 4 OU 5)',   /,&
-'@    EST INCOMPATIBLE AVEC UN CALCUL EN LAMINAIRE, EN',        /,&
-'@    LONGUEUR DE MELANGE, EN SPALART-ALLMARAS OU EN L.E.S.',   /,&
-'@    ON A ICI ITURB=',i10,                                     /,&
-'@         ET IWALLF=',i10,                                     /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2210 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    L''ALGORITHME STATIONNAIRE EST INCOMPATIBLE AVEC LE',     /,&
-'@    COUPLAGE DES TERMES SOURCES EN K-EPS, V2F OU K-OMEGA',    /,&
-'@',                                                            /,&
-'@    ON A ICI IKECOU=',i10,                                    /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2211 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN ENTIER EGAL A 0, 1 OU 2',             /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2300 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IMLIGR(',i10,   ') DOIT ETRE UN ENTIER',                  /,&
-'@      INFERIEUR OU EGAL A 1',                                 /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  IMLIGR(I) indique le mode de limitation des gradients',     /,&
-'@    pour la variable I',                                      /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2310 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IRCFLU(',i10,   ') DOIT ETRE UN ENTIER EGAL A 0 OU 1',    /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  IRCFLU(I) indique si les flux sont reconstruits',           /,&
-'@    pour la variable I',                                      /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2311 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IRCFLU(',i10,   ') = ', i10,   ' EST INCOMPATIBLE AVEC',  /,&
-'@    ISCHCV(',i10,   ') = ', i10,                              /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  IRCFLU(I) = 0 indique que les flux ne sont pas',            /,&
-'@    reconstruits pour la variable I.',                        /,&
-'@  ISCHCV(I) = 0 (schema SOLU) demande une reconstruction',    /,&
-'@    pour les flux convectifs.',                               /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2320 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    CLIMGR(',i10,   ') DOIT ETRE UN REEL',                    /,&
-'@      SUPERIEUR OU EGAL A 1',                                 /,&
-'@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  CLIMGR(I) est le coefficient de limitation des gradients',  /,&
-'@    pour la variable I',                                      /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2330 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    EXTRAG(',i10,   ') DOIT ETRE UN REEL EGAL A 0 OU 1',      /,&
-'@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2331 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    EXTRAG(',i10,   ') DOIT ETRE NUL',                        /,&
-'@      (Des valeurs non nulles sont autorisees pour la',       /,&
-'@       pression uniquement)',                                 /,&
-'@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
@@ -2746,38 +1515,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2500 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN ENTIER EGAL A -1, 0, 1 OU 2',         /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2510 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN REEL POSITIF',                        /,&
-'@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2511 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2789,42 +1526,6 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2512 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@     SMAGMX DOIT ETRE SUPERIEUR OU EGAL A 0. ET',             /,&
-'@                     INFERIEUR OU EGAL A SMAGMN',             /,&
-'@      ICI SMAGMN = ', e14.5,     ' ET SMAGMX = ', e14.5,      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2520 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@     DTMIN DOIT ETRE SUPERIEUR OU EGAL A 0. ET',              /,&
-'@                     INFERIEUR OU EGAL A DTMAX',              /,&
-'@      ICI DTMIN = ', e14.5,     ' ET DTMAX = ', e14.5,        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Quand le pas de temps n est pas uniforme et constant,',     /,&
-'@    les reels DTMIN et DTMAX bornent ses variations.',        /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -2849,102 +1550,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2540 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@  ON DEMANDE UNE LIMITATION DU PAS DE TEMPS LIEE AUX EFFETS', /,&
-'@    DE DENSITE (IPTLRO = ', i10,   ') AVEC UNE OPTION DE',    /,&
-'@    PAS DE TEMPS FIXE (IDTVAR = ', i10,   ')',                /,&
-'@',                                                            /,&
-'@  Le calcul sera engage, mais le pas de temps ne sera pas',   /,&
-'@    clippe. Le code indiquera juste les eventuels',           /,&
-'@    depassements de critere local.',                          /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2541 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@  ON DEMANDE UNE LIMITATION DU PAS DE TEMPS LIEE AUX EFFETS', /,&
-'@    DE DENSITE (IPTLRO = ', i10,   ') AVEC UN ALGORITHME',    /,&
-'@    STATIONNAIRE (IDTVAR = ', i10,   ')',                     /,&
-'@',                                                            /,&
-'@  Le calcul sera engage, l''option IPTLRO ignoree.',          /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2600 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN ENTIER EGAL A 0, 10, 20, 21, 30, 31,',/,&
-'@    40, 41, 42, 50, 51 OU 60',                                /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2601 format(                                                     &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
-'@    ========='                                               ,/,&
-'@    ',A6,' DOIT ETRE UN ENTIER EGAL A 0 OU 1'                ,/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
-'@'                                                            ,/,&
-'@  Le calcul ne peut etre execute.'                           ,/,&
-'@'                                                            ,/,&
-'@  Verifier les parametres donnes via l''interface'           ,/,&
-'@    ou cs_user_parameters.f90.'                              ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
- 2602 format( &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
-'@    ========='                                               ,/,&
-'@    L''OPTION IRCCOR = 1 N''EST COMPATIBLE QU''AVEC'         ,/,&
-'@    L''OPTION ITURB = 20, 21, 50, 51, 60 ou 70'              ,/,&
-'@    ITURB VAUT ICI ',I10                                     ,/,&
-'@'                                                            ,/,&
-'@  Le calcul ne peut etre execute.'                           ,/,&
-'@'                                                            ,/,&
-'@  Verifier les parametres donnes via l''interface'           ,/,&
-'@    ou cs_user_parameters.f90.'                              ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
- 2603 format( &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
-'@    ========='                                               ,/,&
-'@    LE MODELE DE TURBULENCE K-OMEGA SST N''EST PAS'          ,/,&
-'@     COMPATIBLE AVEC LE LAGRANGIEN EN COUPLAGE INVERSE'      ,/,&
-'@'                                                            ,/,&
-'@  Le calcul ne peut etre execute.'                           ,/,&
-'@'                                                            ,/,&
-'@  Verifier les parametres donnes via l''interface'           ,/,&
-'@    ou cs_user_parameters.f90.'                              ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
  2604 format(&
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2962,52 +1567,6 @@ endif
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
- 2606 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    LA METHODE DES VORTEX NE CONCERNE QUE LES CALCULS EN LES',/,&
-'@    ON A ICI',                                                /,&
-'@    ITURB   = ',i10,                                          /,&
-'@    IVRETX  = ',i10,                                          /,&
-'@',                                                            /,&
-'@  Le calcul sera execute en ignorant le mot clef IVRTEX.',    /,&
-'@    (il est repositione a 0)',                                /,&
-'@',                                                            /,&
-'@  Il est conseille de verifier les parametres donnes via',    /,&
-'@  l''interface ou cs_user_parameters.f90.',                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2607 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    ON DEMANDE LA REDUCTION DU VOISINAGE ETENDU POUR LE',     /,&
-'@    CALCUL DES GRADIENTS PAR MOINDRE CARRES, POUR UN',        /,&
-'@    CALCUL EN L.E.S AVEC LE MODELE DYNAMIQUE.',               /,&
-'@    MODELE DYNAMIQUE.',                                       /,&
-'@      ITURB = ',i10,                                          /,&
-'@      IMRGRA= ',i10,                                          /,&
-'@',                                                            /,&
-'@  Le calcul sera engage.',                                    /,&
-'@',                                                            /,&
-'@  Le calcul de la moyenne locale de la constante de',         /,&
-'@    Smagorinsky dynamique peut etre degrade.',                /,&
-'@',                                                            /,&
-'@  Il est conseille :',                                        /,&
-'@    - soit d''utiliser une methode de calculs des gradients', /,&
-'@      par moindre carres sur voisinage etendu complet',       /,&
-'@      (IMRGRA = 2)',                                          /,&
-'@    - soit de calculer sa propre moyenne de la constante',    /,&
-'@      dynamique dans la subroutine USSMAG.',                  /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2610 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3068,198 +1627,6 @@ endif
 '@    la temperature ou l''enthalpie ; si c''est le cas, ce',   /,&
 '@    message pourra etre ignore ; sinon, verifier usipsu',     /,&
 '@    ou imposer une variation de masse volumique.',            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2623 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',                                                            /,&
-'@ Le coefficient RELAXV des variables de la turbulence a ete', /,&
-'@ modifie alors que IKECOU ne vaut pas 0. Il vaut ici',        /,&
-'@ - pour k                  :', e12.4,                         /,&
-'@ - pour epsilon (ou omega) :', e12.4,                         /,&
-'@',                                                            /,&
-'@ La modification sera sans effet (RELAXV n''est utile que',   /,&
-'@ si IKECOU=0)',                                               /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2624 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',                                                            /,&
-'@ Le coefficient RELAXV des variables de la turbulence doit',  /,&
-'@ etre un reel compris entre 0 et 1. Il vaut ici :',           /,&
-'@ - pour k                  :', e12.4,                         /,&
-'@ - pour epsilon (ou omega) :', e12.4,                         /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2625 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',                                                            /,&
-'@ Le coefficient RELAXV de la pression doit etre un reel',     /,&
-'@ compris entre 0 et 1. Il vaut ici :', e12.4,                 /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2630 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',                                                            /,&
-'@  On demande la prise en compte de l''amortissement de',      /,&
-'@    Van Driest (IDRIES = ',  i10,')',                         /,&
-'@    avec un modele LES incompatible (ITURB = ', i10,')',      /,&
-'@    (modele dynamique et modele WALE)',                       /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas realise.',                            /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2640 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@',    a6,' DOIT ETRE UN REEL INCLUS DANS L''INTERVALLE [0;1]',/,&
-'@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2650 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    SCALAIRE ', a16,                                          /,&
-'@',    a6,'(',i10,   ') DOIT ETRE UN ENTIER EGAL A 0 OU 1',    /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  ICPSYR(I) est l indicateur de couplage du scalaire I avec', /,&
-'@    SYRTHES.',                                                /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2660 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    INCOHERENCE POUR LE COUPLAGE SYRTHES',                    /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Aucun couplage avec SYRTHES n''a ete defini.',              /,&
-'@  Le nombre de scalaires couples est cependant', i10,         /,&
-'@    (Le nombre de scalaires total est ici', i10,   ')',       /,&
-'@  Verifier le couplage SYRTHES-Noyau.',                       /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2661 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    INCOHERENCE POUR LE COUPLAGE SYRTHES',                    /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Un couplage avec SYRTHES a ete defini.',                    /,&
-'@  Le couplage avec SYRTHES necessite de disposer d''un',      /,&
-'@    scalaire couple (et d''un seul).',                        /,&
-'@  Le nombre de scalaires total   est ici', i10,               /,&
-'@  Le nombre de scalaires couples est ici', i10,               /,&
-'@  Verifier le couplage SYRTHES-Noyau.',                       /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2662 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    INCOHERENCE POUR LE COUPLAGE SYRTHES',                    /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Un couplage avec SYRTHES a ete defini.',                    /,&
-'@  Si le code est couple a SYRTHES, le scalaire couple doit',  /,&
-'@    etre la temperature.',                                    /,&
-'@  Le scalaire couple est ici le scalaire ', i10,              /,&
-'@    Ce n''est pas une temperature car',                       /,&
-'@                    ISCCACP(',i10,   ') = ', i10,             /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@  Pour coupler un scalaire qui n''est pas la temperature,',   /,&
-'@    contacter l''equipe de developpement.',                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2663 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    INCOHERENCE POUR LE COUPLAGE SYRTHES',                    /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Un couplage avec SYRTHES a ete defini.',                    /,&
-'@  En compressible, si le code est couple a SYRTHES, le',      /,&
-'@    scalaire couple doit etre l''energie.',                   /,&
-'@  Le scalaire couple est ici le scalaire ', i10,              /,&
-'@    Ce n''est pas l''energie car',                            /,&
-'@                    ISCALT = ', i10,                          /,&
-'@',                                                            /,&
-'@  Contacter l''equipe de developpement.',                     /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -3371,50 +1738,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2742 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :',                                             /,&
-'@    =========',                                               /,&
-'@    OPTION iswdyn = 1  : ON SOUHAITE NSWRSM(IPR) > 19',       /,&
-'@    NSWRSM(IPR) VAUT ICI', i10,                               /,&
-'@',                                                            /,&
-'@  Le calcul continue avec nswrsm(ipr) = 20.',                 /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2743 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :',                                             /,&
-'@    =========',                                               /,&
-'@    OPTION SWPDYN = 1  : LE TEST DE PENTE SUR U DOIT',        /,&
-'@    ETRE DESACTIVE.',                                         /,&
-'@',                                                            /,&
-'@  Le calcul continue avec :',                                 /,&
-'@  isstpc = 1 pour la vitesse.',                                           /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2747 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :      A L''ENTREE DES DONNEES',                /,&
-'@    =========',                                               /,&
-'@   LA VALEUR POUR LE PARAMETRE NSWRSM POUR'                   /,&
-'@     LA VARIABLE', a16, 'DOIT ETRE POSITIVE, VAUT ICI',  i10, /,&
-'@     NSWRSM A ETE IMPOSE A', i10,                             /,&
-'@',                                                            /,&
-'@  Le calcul sera execute',                                    /,&
-'@',                                                            /,&
-'@  Il est conseille de verifier les parametres donnes via',    /,&
-'@  l''interface ou cs_user_parameters.f90.',                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2750 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3449,23 +1772,6 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
 
- 4100 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ENTREE DES DONNEES',                          /,&
-'@    =========',                                               /,&
-'@    LA VITESSE DE REFERENCE UREF N''A PAS ETE INITIALISEE',   /,&
-'@    OU A ETE MAL INITIALISEE (VALEUR NEGATIVE).',             /,&
-'@    ELLE VAUT ICI', e14.5,                                    /,&
-'@',                                                            /,&
-'@  Le calcul pourra etre execute si la turbulence est',        /,&
-'@  initialisee a partir d''un fichier suite de calcul ou par', /,&
-'@  l''interface ou par la routine cs_user_initialization',     /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
  4300 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -3478,52 +1784,6 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 4320 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    SCALAIRE ', a16,                                          /,&
-'@    iscavr(',i10,   ') DOIT ETRE UN ENTIER',                  /,&
-'@      POSITIF OU NUL ET',                                     /,&
-'@      INFERIEUR OU EGAL A NSCAL = ', i10,                     /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Si iscavr(I) est nul, le scalaire I n est pas une variance',/,&
-'@  Si iscavr(I) est positif, le scalaire I est une variance :',/,&
-'@    il s agit de la variance des fluctuations du scalaire J', /,&
-'@    dont le numero est iscavr(I)',                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 4321 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    LE SCALAIRE ', a16, 'EST DEFINI COMME LA FLUCTUATION',    /,&
-'@    DU SCALAIRE ', a16,                                       /,&
-'@    (iscavr(',i10,   ') = ', i10,   '),',                     /,&
-'@    QUI EST LUI-MEME DEFINI COMME UNE FLUCTUATION',           /,&
-'@    (iscavr(',i10,   ') = ', i10,   ').',                     /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Si iscavr(I) est positif, le scalaire I est une variance :',/,&
-'@    il s agit de la variance des fluctuations du scalaire J', /,&
-'@    dont le numero est iscavr(I) et on a donc forcement',     /,&
-'@    iscavr(J) = 0',                                           /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -3566,29 +1826,6 @@ endif
 '@    Il n est pas utilise pour les autres scalaires.',         /,&
 '@  L utilisateur est invite a ne pas modifier ICLVFL pour',    /,&
 '@    les scalaires qui ne sont pas des variances.',            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 4340 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    SCALAIRE ', a16,                                          /,&
-'@    VISLS0(',i10,   ') DOIT ETRE UN REEL POSITIF',            /,&
-'@      QUAND scalar_diffusivity_id = ', i10,                   /,&
-'@    IL VAUT ICI', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  VISLS0(I) est le coefficient de diffusion moleculaire du',  /,&
-'@    scalaire et doit etre positif quand la valeur de son',    /,&
-'@    mot cle scalar_diffusivity_id est inferieur a 0',         /,&
-'@    (dans ce cas, un coefficient variable est donne',         /,&
-'@    via l''interface ou usphyv).',                            /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -4041,23 +2278,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9000 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    INDICATEUR DE PRISE EN COMPTE DE LA ROTATION'             /,&
-'@',                                                            /,&
-'@  ICORIO DOIT VALOIR 0 OU 1',                                 /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via cs_user_parameter.f90'  ,/,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  9010  format(                                                    &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -4088,35 +2308,6 @@ endif
 '@',                                                            /,&
 '@  L''indicateur IDTVAR a ete positionne a', i10,              /,&
 '@    par l''interface ou dans cs_user_parameter.f90',          /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 9012  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@   LE COUPLAGE ROTOR/STATOR INSTATIONNAIRE N''EST PAS',       /,&
-'@     COMPATIBLE AVEC LE MODULE LAGRANGIEN',                   /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 9020  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@   LE CALCUL EN REFERENTIEL RELATIF (ICORIO = 1) N''EST PAS', /,&
-'@     COMPATIBLE AVEC LE MODULE TURBOMACHINE (ITURBO > 0)',    /,&
-'@',                                                            /,&
-'@  Si necessaire, utiliser uniquement le module turbomachine', /,&
-'@    en definissant plusieurs rotors',                         /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -4208,23 +2399,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2001 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER POSITIVE ',                     /,&
-'@      AND LESS THAN or EGAL TO',i10,                          /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2005 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -4240,151 +2414,6 @@ endif
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2050 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    ITHERM MUST BE AN INTEGER EGAL TO 0, 1, 2 or 3',      /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2100 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@     PARAMETERS OF NUMERICAL SCHEME FOR VARIABLE ',    a16,   /,&
-'@',                                                            /,&
-'@ Parameter               ISTAT     ICONV',                    /,&
-'@ Values   accepted     0 or  1   0 or  1',                    /,&
-'@ Values entered here',i10,     i10,                           /,&
-'@',                                                            /,&
-'@ PARAMETER                         IDIFF     IDIFFT',         /,&
-'@ Values   accepted               0 or  1   0 or  1',          /,&
-'@ Values entered here',10X,     i10,      i10,                 /,&
-'@',                                                            /,&
-'@ PARAMETER               THETAV   BLENCV    ISCHCV    ISSTPC',/,&
-'@ Values   accepted     [0.; 1.] [0.; 1.]   0,1,2,3   0,1,2,3',/,&
-'@ Values entered here',      e9.2,     e9.2,i10,  i10,         /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2112 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@  INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME',            /,&
-'@',                                                            /,&
-'@  PARAMETER THETAV FOR PRESSURE MUST BE EQUAL TO    1',       /,&
-'@',                                                            /,&
-'@  It has value', e14.5,                                       /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2121 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING  :      WHEN READING INPUT DATA',                /&
-'@    =========',                                               /,&
-'@   NON-STANDARD CHOICE WITH  TIME-SCHEME',                    /,&
-'@',                                                            /,&
-'@   IN L.E.S.',                                                /,&
-'@   RECOMMENDED VALUE FOR PARAMETER THETAV IN TIME-SCHEME',    /,&
-'@   FOR VARIABLE',               a16, ' IS 0.5',               /,&
-'@     THETAV IS NOW IMPOSED AT',  e14.5,                       /,&
-'@',                                                            /,&
-'@  computation will go on',                                    /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2122 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
-'@    =========',                                               /,&
-'@   NON-STANDARD CHOICE WITH  TIME-SCHEME',                    /,&
-'@',                                                            /,&
-'@   WITH L.E.S.',                                              /,&
-'@   THE VALUE RECOMMANDED FOR THE PARAMETER BLENCV',  /,   &
-'@   FOR CONVECTION OF VARIABLE', a16, ' EST 1.0',              /,&
-'@     BLENCV IS NOW IMPOSED AS', e14.5,                        /,&
-'@',                                                            /,&
-'@  computation will go on',                                    /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2123 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
-'@    =========',                                               /,&
-'@   NON-STANDARD CHOICE WITH  TIME-SCHEME',                    /,&
-'@',                                                            /,&
-'@   EN L.E.S.',                                                /,&
-'@   THE VALUE RECOMMANDED FOR THE PARAMETER ISSTPC IN SCHEME', /,&
-'@     CONVECTION OF VARIABLE', a16, ' IS    1',                /,&
-'@     ISSTPC IS NOW IMPOSED AS',  i10,                         /,&
-'@',                                                            /,&
-'@  Computation will go on',                                    /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2124 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
-'@    =========',                                               /,&
-'@   NON-STANDARD CHOICE WITH  TIME-SCHEME',                    /,&
-'@',                                                            /,&
-'@   EN L.E.S.',                                                /,&
-'@   THE VALUE RECOMMANDED FOR THE PARAMETER ISSTPC IN SCHEME', /,&
-'@     CONVECTION OF VARIABLE',   a16, ' IS  0',                /,&
-'@     ISSTPC IS NOW IMPOSED AS',  i10,                         /,&
-'@',                                                            /,&
-'@  Computation will go on',                                    /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -4406,26 +2435,6 @@ endif
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2127 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@   NON-STANDARD CHOICE WITH  TIME-SCHEME',                    /,&
-'@',                                                            /,&
-'@   EN L.E.S.',                                                /,&
-'@   THE VALUE RECOMMANDED FOR THE PARAMETER BLENCV IN',        /,&
-'@     CONVECTION OF VARIABLE',   a16, ' IS  1.0',              /,&
-'@     BLENCV IS NOW IMPOSED AS',  e14.5,                       /,&
-'@',                                                            /,&
-'@  Computation will NOT proceed',                              /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -4609,7 +2618,7 @@ endif
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@  A second ordre time-scheme was requested:',                 /,&
-'@      U : THETA = ', e12.4,                                   /,&
+'@      U,V,W : THETA = ', 3e12.4,                              /,&
 '@     Source terme in Navier-Stokes: ISNO2T = ', i10,          /,&
 '@                                    THETSN = ', e12.4,        /,&
 '@      Density                     : IROEXT = ', i10,          /,&
@@ -4832,58 +2841,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2149 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@     ALGORITHME STATIONNAIRE',                                /,&
-'@     COEFFICIENT DE RELAXATION POUR LA VARIABLE', a16,        /,&
-'@',                                                            /,&
-'@ RELAXV MUST BE A  REAL comprised between    0 et 1',         /,&
-'@ it has here a value of', e14.5,                              /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2151  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@   L''ALGORITHME STATIONNAIRE N''EST PAS COMPATIBLE AVEC',    /,&
-'@    LE MODULE LAGRANGIEN QUI EST UNE APPROCHE INSTATIONNAIRE',/,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@   Integer parameter IILAGR was set to',    i10,              /,&
-'@    in uslag1 (lagrangian module active for IILAGR>0).',      /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2152  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@   STEADY STATE SOLVER SCHEME IS NOT COMPATIBLE WITH',        /,&
-'@   L.E.S. TRUBULENCE MODELLING WHICH IS TIME-DEPENDENT',      /,&
-'@    BY NATURE',                                               /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@  Integer parameter ITURB was set to', i10,                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
  2200 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -4894,292 +2851,6 @@ endif
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2201 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER EQUAL  0  OR 1',                /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2204 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@  INCOMPATIBILITY FOR TIME DISCRETISATION SCHEME',            /,&
-'@',                                                            /,&
-'@  ON DEMANDE LA PRISE UN SCHEMA EN TEMPS FOR    VELOCITY',    /,&
-'@    D''ORDRE 2 AVEC UN PAS DE TEMPS NON CONSTANT, UN',        /,&
-'@    ALGORITHME STATIONNAIRE or the MATRICES POIDS',           /,&
-'@',                                                            /,&
-'@  THETAV IS EQUAL', e14.5,' FOR    VELOCITY',                 /,&
-'@  ALORS QUE IDTVAR VAUT', i10,                                /,&
-'@  ET IPUCOU VAUT',        i10,                                /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2205 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER BETWEEN -6 and 6',              /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2206 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    ANOMAX MUST BE A REAL POSITIVE or NUL AND',               /,&
-'@                             LESS THAN or EQUAL TO PI/2',     /,&
-'@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@  On demande la reconstruction des gradients par moindres',   /,&
-'@    carres sur voisinage etendu reduit (IMRGRA = ', i10,  ').',/,&
-'@    Le critere est base sur l''angle de non orthogonalite',   /,&
-'@    des faces ANOMAX qui doit etre fourni en radians et',     /,&
-'@    compris dans the bornes indiquees ci-dessus.',            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2207 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    L''UTILISATION DE LA METHODE DE CALCUL DE GRADIENT PAR',  /,&
-'@      MOINDRES CARRES EST IMPOSSIBLE AVEC',                   /,&
-'@        EXTRAG(IPR) DIFFERENT DE 0 ET 1',                     /,&
-'@',                                                            /,&
-'@    ON A ICI',                                                /,&
-'@        IMRGRA      = ', i10,                                 /,&
-'@        EXTRAG(IPR) = ', e14.5,                               /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2208 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    EN K-EPS PROD LIN (ITURB=21) ET EN V2F (ITURB=50/51)',    /,&
-'@    IKECOU DOIT ETRE EGAL A 0',                               /,&
-'@    ITURB  IS EQUAL', i10,                                    /,&
-'@    IKECOU IS EQUAL', i10,                                    /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2209 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    2u*scales version of WALL FUNCTION (IWALLF=3, 4 or 5)',   /,&
-'@    EST INCOMPATIBLE AVEC UN CALCUL EN LAMINAIRE, EN',        /,&
-'@    LONGUEUR DE MELANGE or EN L.E.S.',                        /,&
-'@    ON A ICI ITURB=',i10,                                     /,&
-'@         ET IWALLF=',i10,                                     /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2210 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    SOLVE STEADY-STATE EQN. OPTION IS NOT COMPATIBLE WITH',   /,&
-'@    COUPLING OF SOURCE TERMS IN K-EPS, V2F or K-OMEGA',       /, &
-'@',                                                            /,&
-'@    WE HAVE  IKECOU=',i10,                                    /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2211 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER EGAL A 0, 1 or 2',             /, &
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2300 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IMLIGR(',i10,   ') MUST BE AN INTEGER',                  /, &
-'@      LESS THAN or EGAL A 1',                                 /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  IMLIGR(I) indique le mode de limitation des gradients',     /,&
-'@    pour la variable I',                                      /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2310 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IRCFLU(',i10,   ') MUST BE AN INTEGER EQUAL  0  OR 1',    /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  IRCFLU(I) flags if fluxes are reconstructed for',            /&
-'@             variable I',                                      /&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2311 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IRCFLU(',i10,   ') = ', i10,  ' IS  INCOMPATIBLE WITH',   /,&
-'@    ISCHCV(',i10,   ') = ', i10,                              /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  IRCFLU(I) = 0 fluxes are not reconstructed for variable I', /,&
-'@',                            /,                          &
-'@  ISCHCV(I) = 0 (schema SOLU) requests a  reconstruction',    /,&
-'@   for convective fluxes',                                    /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2320 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    CLIMGR(',i10,   ') DOIT ETRE A  REAL',                    /,&
-'@      SUPERIEUR or EGAL A 1',                                 /,&
-'@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  CLIMGR(I) is the coefficient limiting the gradients',       /,&
-'@    for variable I',                                          /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2330 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    EXTRAG(',i10,   ')  MUST BE REAL and equal 0 or 1',       /,&
-'@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2331 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    EXTRAG(',i10,   ') MUST BE ZERO',                         /,&
-'@      (non zero values are only possible for pressure',       /,&
-'@',                                                            /,&
-'@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
@@ -5229,38 +2900,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2500 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER equal to -1, 0, 1 or 2',        /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2510 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' must be a positive real number',                   /,&
-'@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2511 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -5272,42 +2911,6 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2512 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@       SMAGMX must be > or =  0.     and',                    /,&
-'@              SMAGMN must be  < or = SMAGMX',                 /,&
-'@      Here SMAGMN = ', e14.5,     ' and SMAGMX = ', e14.5,    /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2520 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@       DTMIN must be > or =  0.     and',                     /,&
-'@              DTMIN must be  < or = DTMAX',                   /,&
-'@      Here DTMIN = ', e14.5,     ' and DTMAX = ', e14.5,      /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  When the time-step is non uniforme and constant',           /,&
-'@              DTMIN <= timestep <= DTMAX',                    /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
@@ -5332,102 +2935,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2540 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@  ON DEMANDE UNE LIMITATION DU PAS DE TEMPS LIEE AUX EFFETS', /,&
-'@    DE DENSITE (IPTLRO = ', i10,   ') AVEC UNE OPTION DE',    /,&
-'@    PAS DE TEMPS FIXE (IDTVAR = ', i10,   ')',                /,&
-'@',                                                            /,&
-'@  Le calcul sera engage, mais le pas de temps ne sera pas',   /,&
-'@    clippe. Le code indiquera juste the eventuels',           /,&
-'@    depassements de critere local.',                          /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2541 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@  A time-step reduction in liaison with variable density',    /,&
-'@    effects (IPTLRO = ', i10,   ') was requested while',      /,&
-'@   steady-state algorythm is selected (IDTVAR = ', i10,   ')',/,&
-'@',                                                            /,&
-'@  Computation will run, but option IPTLRO is ignored',        /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2600 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' MUST BE AN INTEGER EGAL A 0, 10, 20, 21, 30, 31,', /,&
-'@    40, 41, 42, 50, 51 or 60',                                /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2601 format( &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    ',A6,' MUST BE AN INTEGER EGAL A 0 OR 1',                 /,&
-'@   IT HAS VALUE ',I10                                        ,/,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2602 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING:   STOP WHILE READING INPUT DATA',                /,&
-'@    =========',                                               /,&
-'@    IRCCOR = 1 OPTION IS ONLY COMPATIBLE WITH',               /,&
-'@    ITURB = 20, 21, 50, 51, 60 OR 70',                        /,&
-'@    ITURB HAS VALUE ',I10                                    ,/,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
- 2603 format( &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    THE K-OMEGA SST TURBULENCE MODEL IS NOT COMPATIBLE WITH', /,&
-'@    TWO-WAY COUPLING IN LAGRANGIAN MODELLING',                /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
 2604 format( &
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -5445,53 +2952,6 @@ endif
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
- 2606 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    Synthetic Vortex method is only for for LES',             /,&
-'@    here we have',                                            /,&
-'@    ITURB   = ',i10,                                          /,&
-'@    IVRETX  = ',i10,                                          /,&
-'@',                                                            /,&
-'@  computation will go on while ignoring keyword  IVRTEX.',    /,&
-'@    (it is reset to       0)',                                /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2607 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@   A reduction of the extened neighborhood was selected',     /,&
-'@   for the caculation of the gradients by least squares.',    /,&
-'@   However this will also be applied to the averaging in',    /,&
-'@    the LES Dynamic model (also selected)',                   /,&
-'@      ITURB = ',i10,                                          /,&
-'@      IMRGRA= ',i10,                                          /,&
-'@',                                                            /,&
-'@  Computation will run, but',                                 /,&
-'@',                                                            /,&
-'@  averaging of the Smagorinsky constant can be',              /,&
-'@  degraded, as it uses the same reduced neighborhood.',       /,&
-'@',                                                            /,&
-'@  Recommendation',                                            /,&
-'@    - use extended neighborhood',                             /,&
-'@',                                                            /,&
-'@      (IMRGRA = 2)',                                          /,&
-'@    - user defines (yourself) the averaging of the dynamic',  /,&
-'@   Smagorinsky constant via  subroutine USSMAG.',             /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2610 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -5550,197 +3010,6 @@ endif
 '@    Check that density is variable.',                         /,&
 '@     other than via temperature',                             /,&
 '@  this could be by user defined density.',                    /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2623 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',                                                            /,&
-'@ Coefficient RELAXV for turbulence variables was modified',   /,&
-'@ although IKECOU is not = 0.      It is in fact to',          /,&
-'@ - for k                   :', e12.4,                         /,&
-'@ - for  epsilon (or omega) :', e12.4,                         /,&
-'@',                                                            /,&
-'@ The  modification will be ignored (RELAXV is only useful',   /,&
-'@ if IKECOU=0)',                                               /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2624 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',                                                            /,&
-'@ LCoefficient RELAXV for turbulence variables must',          /,&
-'@ be a REAL comprised between 0 and 1. IT IS EQUAL :',         /,&
-'@ - for  k                  :', e12.4,                         /,&
-'@ - for  epsilon (ou omega) :', e12.4,                         /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2625 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',                                                            /,&
-'@ Coefficient RELAXV for the pressure must be a REAL',         /,&
-'@ between  0 et 1. It  IS EQUAL :', e12.4,                     /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2630 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',                                                            /,&
-'@   Van Driest near wall damping was selected',                /,&
-'@    Van Driest (IDRIES = ', i10,')',                          /,&
-'@    with a LES model not compatible (ITURB = ', i10,')',      /,&
-'@    (dynamic model or WALE model)',                           /,&
-'@',                                                            /,&
-'@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2640 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@',    a6,' must be a REAL number in the range  [0;1]',        /,&
-'@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2650 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    SCALAR ',   a16,                                          /,&
-'@',    a6,'(',i10,   ') MUST BE AN INTEGER EQUAL  0  OR 1',    /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  ICPSYR(I) is a flag for coupling scalar I with',            /,&
-'@    SYRTHES  (solid walls modeller)',                         /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2660 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    INCOHERENCE POUR LE COUPLAGE SYRTHES',                    /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  No coupling with  SYRTHES has been defined',                /,&
-'@  The number of coupled scalars is however',     i10,         /,&
-'@    (the total number of scalars is',i10,   ')',              /,&
-'@  Verify  the couplage SYRTHES-Noyau.',                       /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2661 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    INCOHERENCE POUR LE COUPLAGE SYRTHES',                    /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  A coupling with   SYRTHES was defined',                     /,&
-'@  This requires a coupled scalar (and only one).',            /,&
-'@  The total number of scalars   is', i10,                     /,&
-'@  The number of coupled scalars is', i10,                     /,&
-'@  Verify   le couplage SYRTHES-Noyau.',                       /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2662 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    INCOHERENCE for coupling with SYRTHES',                   /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@  The coupled scalar must be the temperature',                /,&
-'@',                                                            /,&
-'@  Here it is scalar number :', i10,                           /,&
-'@    which is not temperature because',                        /,&
-'@                    ISCACP(',i10,   ') = ', i10,              /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2663 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    INCOHERENCE IN COUPLING WITH SYRTHES',                    /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@  For compressible and SYRTHES coupling',                     /,&
-'@    the coupled scalar must be energy.',                      /,&
-'@  here it is scalar ',                      i10,              /,&
-'@    which is not the energy  here since',                     /,&
-'@                    ISCALT = ', i10,                          /,&
 '@',                                                            /,&
 '@',                                                            /,&
 '@',                                                            /,&
@@ -5854,51 +3123,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2742 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING:',                                                /,&
-'@    =========',                                               /,&
-'@    iswdyn = 1 OPTION: NSWRSM(IPR) > 19 IS REQUIRED',         /,&
-'@    NSWRSM(IPR) HAS VALUE', i10,                              /,&
-'@',                                                            /,&
-'@  The calculation continue with nswrsm(ipr) = 20.',           /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2743 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING:',                                                /,&
-'@    =========',                                               /,&
-'@    SWPDYN = 1 OPTION: THE SLOPE TEST ON U MUST BE',          /,&
-'@    DEACTIVATED.',                                            /,&
-'@',                                                            /,&
-'@  The calculation is resumed with:',                          /,&
-'@  isstpc = 1 for the velocity field.',                        /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2747 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHEN READING INPUT DATA',                /,&
-'@    =========',                                               /,&
-'@   THE PARAMETER NSWRSM FOR THE',                             /,&
-'@        VARIABLE', a16, 'MUST BE POSITIVE, HAS VALUE',  i10,  /,&
-'@     NSWRSM IS NOW IMPOSED AS',  i10,                         /,&
-'@',                                                            /,&
-'@  computation will go on',                                    /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2750 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -5933,23 +3157,6 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
 
- 4100 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ENTREE DES DONNEES',                          /,&
-'@    =========',                                               /,&
-'@    REFERENCE VELOCITY  UREF WAS NOT DEFINED',                /,&
-'@    or is ill defined  (NEGATIVE value ? ).',                 /,&
-'@   It IS EQUAL', e14.5,                                       /,&
-'@',                                                            /,&
-'@  calculation can only run if turbulence is defined',         /,&
-'@  via a restart file or the interface or the',                /,&
-'@  cs_user_initialization subroutine.',                        /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
  4300 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -5962,52 +3169,6 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 4320 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    SCALAR ', a16,                                            /,&
-'@    iscavr(',i10,   ') MUST BE AN INTEGER',                   /,&
-'@      POSITIVE or NUL AND',                                   /,&
-'@      LESS THAN or EGAL A NSCAL = ', i10,                     /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  If iscavr(I) =0,  le scalare  I is not a  variance',        /,&
-'@  If iscavr(I) is POSITIVE, scalare I is a variance :',       /,&
-'@    it is the variance of fluctuations of scalaire J',        /,&
-'@    who''s number is   iscavr(I)',                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 4321 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    THE SCALAR ', a16, 'IS DEFINED AS        FLUCTUATION',    /,&
-'@    OF SCALAR ', a16,                                         /,&
-'@    (iscavr(',i10,   ') = ', i10,   '),',                     /,&
-'@    WHICH ITSELF IS DEFINED AS A FLUCTUATION',                /,&
-'@    (iscavr(',i10,   ') = ', i10,   ').',                     /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  If iscavr(I) is POSITIVE, scalar  I is a  variance :',      /,&
-'@    variance of fluctuations of scalar J',                    /,&
-'@    who''s number is iscavr(I),  so we must have',            /,&
-'@    iscavr(J) = 0',                                           /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
@@ -6049,30 +3210,6 @@ endif
 '@',                                                            /,&
 '@',                                                            /,&
 '@',                                                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 4340 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    SCALAR ', a16,                                            /,&
-'@    VISLS0(',i10,   ') MUST BE   A  POSITIVE REAL',           /,&
-'@      WHILE scalar_diffusivity_id = ', i10,                   /,&
-'@   IT HAS VALUE', e14.5,                                      /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  VISLS0(I) is the molecular diffusion coefficient  of the',  /,&
-'@    scalar and  MUST BE POSITIVE when that field''s',         /,&
-'@    scalar_diffusivity_id key value is less than 0',          /,&
-'@    (in which case a variable coefficient is given',          /,&
-'@    using the User Interface or usphyv).',                    /,&
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
@@ -6530,23 +3667,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9000 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    FLAG FOR CONSIDERATION OF ROTATION',                      /,&
-'@',                                                            /,&
-'@  ICORIO should be = 0 or 1',                                 /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  Verify the parameters given in cs_user_parameter.f90',      /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  9010  format(                                                    &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -6576,36 +3696,6 @@ endif
 '@',                                                            /,&
 '@  Integer parameter IDTVAR was set to', i10,                  /,&
 '@    through the User Interface or in cs_user_parameters.f90.',/,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 9012  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@   UNSTEADY ROTOR/STATOR COUPLING IS NOT COMPATIBLE',         /,&
-'@     WITH THE LAGRANGIAN MODULE',                             /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 9020  format(                                                    &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@   THE COMPUTATION IN A RELATIVE FRAME OF REFERENCE',         /,&
-'@     (ICORIO = 1) IS NOT COMPATIBLE WITH THE TURBOMACHINERY', /,&
-'@     MODULE (ITURBO > 0)',                                    /,&
-'@',                                                            /,&
-'@  If necessary, use only the turbomachinery module defining', /,&
-'@    several rotors',                                          /,&
-'@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
