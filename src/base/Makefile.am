@@ -358,7 +358,6 @@ tdesi1.f90 \
 tridim.f90 \
 tspdcv.f90 \
 typecl.f90 \
-undscr.f90 \
 varpos.f90 \
 vericl.f90 \
 verini.f90 \
