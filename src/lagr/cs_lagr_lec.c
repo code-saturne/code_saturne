@@ -56,6 +56,7 @@
 
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
+#include "cs_parameters_check.h"
 #include "cs_physical_model.h"
 #include "cs_restart.h"
 
