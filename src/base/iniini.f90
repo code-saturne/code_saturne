@@ -255,11 +255,6 @@ enddo
 
 do ii = 1, nusrmx
   impusr(ii) = 69+ii
-  if (irangp .le. 0) then
-    write(ficusr(ii),'(1a4,i2.2)')'usrf',ii
-  else
-    write(ficusr(ii),'(1a4,i2.2,1a3,i4.4)')'usrf',ii,'.n_',irangp+1
-  endif
 enddo
 
 ! ---> Sorties listing

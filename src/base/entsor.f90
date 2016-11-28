@@ -232,19 +232,6 @@ module entsor
   !> (therefore always useful, by security)
   integer, save ::      impusr(nusrmx)
 
-  !> name of the potential user specified files.
-  !>
-  !> In the case of a non-parallel
-  !> calculation, the suffix applied the file name is a two digit number:
-  !> from \f$ \texttt{usrf01} \f$ to \f$ \texttt{usrf10} \f$ .
-  !> In the case of a parallel-running calculation, the four digit processor index-number is
-  !> added to the suffix. For instance, for a calculation running on two
-  !> processors: from \f$ \texttt{usrf01.n\_0001} \f$ to  \f$ \texttt{usrf10.n\_0001} \f$ and
-  !> from \f$ \texttt{usrf01.n\_0002} \f$ to \f$ \texttt{usrf10.n\_0002} \f$ . The opening,
-  !> closing, format and location of these files must be managed by the user.
-  !> useful if and only if the user needs files (therefore always useful, by security)
-  character(len=13), save :: ficusr(nusrmx)
-
   !> \}
 
   !> \defgroup listing Output listing
