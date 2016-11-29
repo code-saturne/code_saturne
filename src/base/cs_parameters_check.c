@@ -807,6 +807,12 @@ cs_parameters_check(void)
   const int kivisl = cs_field_key_id("scalar_diffusivity_id");
   const int kvisls0 = cs_field_key_id("scalar_diffusivity_ref");
 
+  cs_field_t *f_pot = NULL;
+  if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0)
+    f_pot = CS_F_(h);
+  else
+    f_pot = CS_F_(p);
+
   char *f_desc = NULL;
 
   /*--------------------------------------------------------------------------
@@ -898,15 +904,15 @@ cs_parameters_check(void)
                                     _(f_desc),
                                     "var_cal_opt.isstpc (slope test)",
                                     var_cal_opt.isstpc,
-                                    0, 2);
+                                    0, 4);
 
       BFT_FREE(f_desc);
     }
   }
 
   /* thetav for pressure must be equal to 1 */
-  cs_field_get_key_struct(CS_F_(p), key_cal_opt_id, &var_cal_opt);
-  f_desc = _field_section_desc(CS_F_(p), "while reading numerical "
+  cs_field_get_key_struct(f_pot, key_cal_opt_id, &var_cal_opt);
+  f_desc = _field_section_desc(f_pot, "while reading numerical "
                                          "parameters for variable");
 
   cs_parameters_is_equal_double(CS_ABORT_DELAYED,
@@ -1068,7 +1074,7 @@ cs_parameters_check(void)
                                 _("while reading input data"),
                                 "cs_glob_space_disc->imrgra",
                                 cs_glob_space_disc->imrgra,
-                                -9, 11);
+                                -10, 11);
 
   int imrgrl = CS_ABS(cs_glob_space_disc->imrgra);
   imrgrl = imrgrl%10;
@@ -1113,7 +1119,7 @@ cs_parameters_check(void)
 
       /* Extrag can be different from zero only for the pressure
          and in that case equal to 1 */
-      if (f_id == CS_F_(p)->id) {
+      if (f_id == f_pot->id) {
         const cs_real_t extrag_vals[2] = {0., 1.};
         cs_parameters_is_in_list_double(CS_ABORT_DELAYED,
                                         _(f_desc),
@@ -1203,22 +1209,22 @@ cs_parameters_check(void)
   if (cs_glob_time_step_options->idtvar == 0) {
     cs_parameters_is_equal_int(CS_WARNING,
                                _("while reading input data,\n"
-                                 "a time-step clipping is enabled\nbut a "
+                                 "a time-step clipping is enabled but a "
                                  "constant time-step is set.\nPotential local "
                                  "criteria violations will be highlighted\n"
                                  "but the time-step won't be clipped."),
                                "cs_glob_time_step_options->iptlro",
                                cs_glob_time_step_options->iptlro,
-                               1);
+                               0);
   } else if (cs_glob_time_step_options->idtvar == -1) {
     cs_parameters_is_equal_int(CS_WARNING,
                                _("while reading input data,\n"
-                                 "a time-step clipping is enabled\nbut a "
+                                 "a time-step clipping is enabled but a "
                                  "steady-state algorithm (SIMPLE) is set.\n "
                                  "This setting will be ignored."),
                                "cs_glob_time_step_options->iptlro",
                                cs_glob_time_step_options->iptlro,
-                               1);
+                               0);
   }
 
   /* Turbulence */
@@ -1567,10 +1573,16 @@ cs_parameters_check(void)
                                cs_glob_stokes_model->irevmc,
                                0);
 
+    cs_real_t arakfr = cs_glob_stokes_model->arak;
+    if (cs_glob_time_step_options->idtvar < 0) {
+      cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
+      arakfr *= var_cal_opt.relaxv;
+    }
+
     cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                      _("while reading input data"),
                                      "cs_glob_stokes_model->arak",
-                                     cs_glob_stokes_model->arak,
+                                     arakfr,
                                      0., 1.);
   }
 
