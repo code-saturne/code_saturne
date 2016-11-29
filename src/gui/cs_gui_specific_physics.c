@@ -2813,7 +2813,7 @@ cs_gui_labels_electric_arcs(int  n_gasses)
   for (i = 0; i < n_gasses - 1; i++) {
     f = CS_FI_(ycoel, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "esl_fraction", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "esl_fraction_", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "joule_effect", name);
     }
   }

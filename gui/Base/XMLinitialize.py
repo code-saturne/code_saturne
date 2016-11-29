@@ -600,7 +600,7 @@ class XMLinit(Variables):
                     ("scalar",                       "user_"),
                     ("PotElecReal",                  "elec_pot_r"),
                     ("POT_EL_I",                     "elec_pot_i"),
-                    ("YM_ESL",                       "esl_fraction"),
+                    ("YM_ESL",                       "esl_fraction_"),
                     ("POT_VEC",                      "vec_potential_"),
                     ("Fra_MEL",                      "mixture_fraction"),
                     ("Var_FMe",                      "mixture_fraction_variance"),
