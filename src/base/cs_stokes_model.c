@@ -52,6 +52,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
+#include "cs_physical_model.h"
 #include "cs_mesh_location.h"
 #include "cs_time_step.h"
 
@@ -379,6 +380,13 @@ cs_stokes_model_log_setup(int iappel)
   cs_var_cal_opt_t var_cal_opt;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
+  cs_field_t *f_pot = NULL;
+  if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0)
+    f_pot = CS_F_(head);
+  else
+    f_pot = CS_F_(p);
+  const char *f_pot_label = cs_field_get_label(f_pot);
+
   if (iappel == 1) {
     cs_log_printf
       (CS_LOG_SETUP,
@@ -428,12 +436,12 @@ cs_stokes_model_log_setup(int iappel)
          cs_glob_stokes_model->irevmc);
 
     if (cs_glob_time_step_options->idtvar >= 0) {
-      cs_field_get_key_struct(CS_F_(p), key_cal_opt_id, &var_cal_opt);
+      cs_field_get_key_struct(f_pot, key_cal_opt_id, &var_cal_opt);
       cs_log_printf
         (CS_LOG_SETUP,
-         _("    relaxv:      %14.5e for pressure (relaxation)\n"
+         _("    relaxv:      %14.5e for %s (relaxation)\n"
            "    arak:        %14.5e (Arakawa factor)\n"),
-           var_cal_opt.relaxv, cs_glob_stokes_model->arak);
+           var_cal_opt.relaxv, f_pot_label, cs_glob_stokes_model->arak);
     } else {
       cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
       cs_log_printf

@@ -809,7 +809,7 @@ cs_parameters_check(void)
 
   cs_field_t *f_pot = NULL;
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0)
-    f_pot = CS_F_(h);
+    f_pot = CS_F_(head);
   else
     f_pot = CS_F_(p);
 
@@ -825,9 +825,9 @@ cs_parameters_check(void)
                                cs_glob_log_frequency,
                                -1);
 
-  /*----------------------------------------------------------------------------
+  /*--------------------------------------------------------------------------
    * Computation parameters
-   *----------------------------------------------------------------------------*/
+   *--------------------------------------------------------------------------*/
 
   /* Thermal model */
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
@@ -889,14 +889,15 @@ cs_parameters_check(void)
 
       cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                        _(f_desc),
-                                       "var_cal_opt.blencv (2nd order scheme share "
-                                                                   "for convection)",
+                                       "var_cal_opt.blencv (2nd order scheme "
+                                       "share for convection)",
                                        var_cal_opt.blencv,
                                        0., 1.);
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
-                                    "var_cal_opt.ischcv (2nd order scheme choice)",
+                                    "var_cal_opt.ischcv (2nd order scheme "
+                                    "choice)",
                                     var_cal_opt.ischcv,
                                     0, 4);
 
