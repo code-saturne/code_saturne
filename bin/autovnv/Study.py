@@ -114,11 +114,9 @@ class Case(object):
         runcase = cs_runcase.runcase(run_ref)
 
         if runcase.cmd_name == "code_saturne":
-            from Base.XMLinitialize import XMLinit
             from cs_package import package
             pkg = package(old_pkg.scriptdir)
         elif runcase.cmd_name == "neptune_cfd":
-            from core.XMLinitialize import XMLinit
             from nc_package import package
             pkg = package(old_pkg.scriptdir)
 
