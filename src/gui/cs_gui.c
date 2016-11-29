@@ -5225,6 +5225,8 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
+  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(u)->val);
+
   cs_field_t *fsaturation   = cs_field_by_name_try("saturation");
   cs_field_t *fcapacity     = cs_field_by_name_try("capacity");
   cs_field_t *fpermeability = cs_field_by_name_try("permeability");
@@ -5444,98 +5446,15 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
         }
       }
 
-      /* get diffusion coefficient (called dispersion in GUI view) */
-      if (*diffusion == 1) {
-        /* TODO use a dedidated tensor field by species */
-        cs_field_t *fturbvisco
-          = cs_field_by_name_try("anisotropic_turbulent_viscosity");
-        cs_real_6_t  *visten_v = (cs_real_6_t *)fturbvisco->val;
-        const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(u)->val);
-
-        double laminar_diffus;
-        double turbulent_diffus;
-        path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 3,
-                              "thermophysical_models",
-                              "groundwater",
-                              "groundwater_law");
-        cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
-        cs_xpath_add_element(&path, "diffusion_coefficient");
-        cs_xpath_add_element(&path, "longitudinal");
-        cs_xpath_add_function_text(&path);
-        cs_gui_get_double(path, &laminar_diffus);
-        BFT_FREE(path);
-
-        path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 3,
-                              "thermophysical_models",
-                              "groundwater",
-                              "groundwater_law");
-        cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
-        cs_xpath_add_element(&path, "diffusion_coefficient");
-        cs_xpath_add_element(&path, "transverse");
-        cs_xpath_add_function_text(&path);
-        cs_gui_get_double(path, &turbulent_diffus);
-        BFT_FREE(path);
-
-        for (cs_lnum_t icel = 0; icel < cells; icel++) {
-          cs_lnum_t iel = cells_list[icel];
-          double norm = sqrt(vel[iel][0] * vel[iel][0] +
-                             vel[iel][1] * vel[iel][1] +
-                             vel[iel][2] * vel[iel][2]);
-          double tmp = turbulent_diffus * norm;
-          double diff = laminar_diffus - turbulent_diffus;
-          double denom = norm + 1.e-15;
-          visten_v[iel][0] = tmp + diff * vel[iel][0] * vel[iel][0] / denom;
-          visten_v[iel][1] = tmp + diff * vel[iel][1] * vel[iel][1] / denom;
-          visten_v[iel][2] = tmp + diff * vel[iel][2] * vel[iel][2] / denom;
-          visten_v[iel][3] =       diff * vel[iel][1] * vel[iel][0] / denom;
-          visten_v[iel][4] =       diff * vel[iel][1] * vel[iel][2] / denom;
-          visten_v[iel][5] =       diff * vel[iel][2] * vel[iel][0] / denom;
-        }
-      }
-      else {
-        /* TODO use a dedidated field by species (as turbulent_diffusivity) */
-        cs_field_t *fturbvisco
-          = cs_field_by_name_try("turbulent_viscosity");
-        double  *visten = fturbvisco->val;
-        const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(u)->val);
-
-        double diffus;
-        path = cs_xpath_init_path();
-        cs_xpath_add_elements(&path, 3,
-                              "thermophysical_models",
-                              "groundwater",
-                              "groundwater_law");
-        cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
-        cs_xpath_add_element(&path, "diffusion_coefficient");
-        cs_xpath_add_element(&path, "isotropic");
-        cs_xpath_add_function_text(&path);
-        cs_gui_get_double(path, &diffus);
-        BFT_FREE(path);
-
-        for (cs_lnum_t icel = 0; icel < cells; icel++) {
-          cs_lnum_t iel = cells_list[icel];
-          double norm = sqrt(vel[iel][0] * vel[iel][0] +
-                             vel[iel][1] * vel[iel][1] +
-                             vel[iel][2] * vel[iel][2]);
-          visten[iel] = diffus * norm;
-        }
-      }
+      const int kivisl = cs_field_key_id("scalar_diffusivity_id");
+      int n_fields = cs_field_n_fields();
 
       /* get diffusivity and Kd for each scalar
          defined by the user on current zone */
-
-      int user_id = -1;
-      int n_fields = cs_field_n_fields();
-      const int kivisl = cs_field_key_id("scalar_diffusivity_id");
-
       for (int f_id = 0; f_id < n_fields; f_id++) {
         cs_field_t *f = cs_field_by_id(f_id);
         if (   (f->type & CS_FIELD_VARIABLE)
             && (f->type & CS_FIELD_USER)) {
-          user_id++;
-
           /* get kd for current scalar and current zone */
           char *kdname = NULL;
           int len = strlen(f->name) + 4;
@@ -5566,9 +5485,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
 
           /* get diffusivity for current scalar and current zone */
           int diff_id = cs_field_get_key_int(f, kivisl);
-          cs_field_t *fdiff = NULL;
-          if (diff_id >= 0)
-            fdiff = cs_field_by_id(diff_id);
+          cs_field_t *fdiff = cs_field_by_id(diff_id);
 
           cs_real_t diff_val = 0.;
           path = cs_xpath_init_path();
@@ -5587,6 +5504,93 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
           for (cs_lnum_t icel = 0; icel < cells; icel++) {
             cs_lnum_t iel = cells_list[icel];
             fdiff->val[iel] = diff_val;
+          }
+        }
+      }
+
+      /* get dispersion coefficient */
+      if (*diffusion == 1) { /* anisotropic dispersion */
+        /* TODO use a dedicated tensor field by species */
+        cs_field_t *fturbvisco
+          = cs_field_by_name_try("anisotropic_turbulent_viscosity");
+        cs_real_6_t  *visten_v = (cs_real_6_t *)fturbvisco->val;
+
+        cs_real_t long_diffus;
+        double trans_diffus;
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 3,
+                              "thermophysical_models",
+                              "groundwater",
+                              "groundwater_law");
+        cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+        cs_xpath_add_element(&path, "diffusion_coefficient");
+        cs_xpath_add_element(&path, "longitudinal");
+        cs_xpath_add_function_text(&path);
+        cs_gui_get_double(path, &long_diffus);
+        BFT_FREE(path);
+
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 3,
+                              "thermophysical_models",
+                              "groundwater",
+                              "groundwater_law");
+        cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+        cs_xpath_add_element(&path, "diffusion_coefficient");
+        cs_xpath_add_element(&path, "transverse");
+        cs_xpath_add_function_text(&path);
+        cs_gui_get_double(path, &trans_diffus);
+        BFT_FREE(path);
+
+        for (cs_lnum_t icel = 0; icel < cells; icel++) {
+          cs_lnum_t iel = cells_list[icel];
+          double norm = sqrt(vel[iel][0] * vel[iel][0] +
+                             vel[iel][1] * vel[iel][1] +
+                             vel[iel][2] * vel[iel][2]);
+          double tmp = trans_diffus * norm;
+          double diff = long_diffus - trans_diffus;
+          double denom = norm + 1.e-15;
+          visten_v[iel][0] = tmp + diff * vel[iel][0] * vel[iel][0] / denom;
+          visten_v[iel][1] = tmp + diff * vel[iel][1] * vel[iel][1] / denom;
+          visten_v[iel][2] = tmp + diff * vel[iel][2] * vel[iel][2] / denom;
+          visten_v[iel][3] =       diff * vel[iel][1] * vel[iel][0] / denom;
+          visten_v[iel][4] =       diff * vel[iel][1] * vel[iel][2] / denom;
+          visten_v[iel][5] =       diff * vel[iel][2] * vel[iel][0] / denom;
+        }
+      }
+      else { /* isotropic dispersion */
+        /* - same value of isotropic dispersion for each species
+           - assigned to diffusivity field of each species
+           TODO: allow to specifiy one value by species in GUI */
+        double diffus;
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 3,
+                              "thermophysical_models",
+                              "groundwater",
+                              "groundwater_law");
+        cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+        cs_xpath_add_element(&path, "diffusion_coefficient");
+        cs_xpath_add_element(&path, "isotropic");
+        cs_xpath_add_function_text(&path);
+        cs_gui_get_double(path, &diffus);
+        BFT_FREE(path);
+
+        for (int f_id = 0; f_id < n_fields; f_id++) {
+          cs_field_t *f = cs_field_by_id(f_id);
+          if (   (f->type & CS_FIELD_VARIABLE)
+              && (f->type & CS_FIELD_USER)) {
+            int diff_id = cs_field_get_key_int(f, kivisl);
+            cs_field_t *fdiff = cs_field_by_id(diff_id);
+            cs_real_t *visten = fdiff->val;
+
+            /* WARNING: dispersion adds up to diffusivity
+               already assigned above */
+            for (cs_lnum_t l_id = 0; l_id < cells; l_id++) {
+              cs_lnum_t c_id = cells_list[l_id];
+              cs_real_t norm = sqrt(vel[c_id][0] * vel[c_id][0] +
+                                    vel[c_id][1] * vel[c_id][1] +
+                                    vel[c_id][2] * vel[c_id][2]);
+              visten[c_id] = visten[c_id] + diffus * norm;
+            }
           }
         }
       }
