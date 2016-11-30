@@ -136,8 +136,6 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
   if test "x$cs_have_medcoupling" = "xno" ; then
     if test "x$with_medcoupling" != "xcheck" ; then
       AC_MSG_FAILURE([MEDCoupling support is requested, but test for MEDCoupling failed!])
-    else
-      AC_MSG_WARN([no MEDCoupling support])
     fi
   fi
 

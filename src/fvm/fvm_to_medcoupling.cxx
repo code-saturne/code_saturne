@@ -159,11 +159,7 @@ _get_medcoupling_mesh_id(fvm_to_medcoupling_t  *writer,
   assert(writer != NULL);
 
   for (i = 0; i < writer->n_med_meshes; i++) {
-#if (MEDCOUPLING_VERSION  >= 0x070300)
     if (strcmp(mesh_name, writer->med_meshes[i]->getName().c_str()) == 0)
-#else
-    if (strcmp(mesh_name, writer->med_meshes[i]->getName()) == 0)
-#endif
       break;
   }
 
@@ -410,13 +406,8 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
 
     f = (writer->fields[f_id])->f;
 
-#if (MEDCOUPLING_VERSION  >= 0x070300)
     if (   writer->fields[f_id]->mesh_id == mesh_id
         && strcmp(fieldname, f->getName().c_str()) == 0) {
-#else
-    if (   writer->fields[f_id]->mesh_id == mesh_id
-        && strcmp(fieldname, f->getName()) == 0) {
-#endif
 
       /* If field exists, check that dimensions and type are compatible */
 
@@ -429,11 +420,7 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
                     "coupling \"%s\" and mesh \"%s\" with %d components,\n"
                     "but re-defined with %d components."),
                   fieldname, writer->name,
-#if (MEDCOUPLING_VERSION  >= 0x070300)
                   writer->med_meshes[field->mesh_id]->getName().c_str(),
-#else
-                  writer->med_meshes[field->mesh_id]->getName(),
-#endif
                   field->dim, dim);
 
       else if (type_ref != type)
@@ -442,11 +429,7 @@ _get_medcoupling_field_id(fvm_to_medcoupling_t      *writer,
                     "coupling \"%s\" and mesh \"%s\" with type %d,\n"
                     "but re-defined with type %d."),
                   fieldname, writer->name,
-#if (MEDCOUPLING_VERSION  >= 0x070300)
                   writer->med_meshes[field->mesh_id]->getName().c_str(),
-#else
-                  writer->med_meshes[field->mesh_id]->getName(),
-#endif
                   (int)type_ref, type);
 
       else if ((writer->fields[f_id])->td != td)
@@ -1269,6 +1252,7 @@ fvm_to_medcoupling_export_field(void                  *this_writer_p,
   if (td != NO_TIME)
     f->setTime(time_value, time_step, -1);
   f->getArray()->declareAsNew();
+
 }
 
 /*----------------------------------------------------------------------------
