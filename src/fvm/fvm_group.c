@@ -442,7 +442,7 @@ fvm_group_class_set_t *
 fvm_group_class_set_destroy(fvm_group_class_set_t  *this_group_class_set)
 {
   if (this_group_class_set == NULL)
-    return;
+    return NULL;
 
   for (int i = 0; i < this_group_class_set->size; i++) {
 
