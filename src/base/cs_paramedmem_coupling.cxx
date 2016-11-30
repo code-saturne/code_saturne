@@ -50,8 +50,6 @@
 #include <ParaMESH.hxx>
 #include <InterpKernelDEC.hxx>
 
-#include <MED_version.h>
-
 #include <MEDCouplingUMesh.hxx>
 #include <MEDCouplingField.hxx>
 #include <MEDCouplingFieldDouble.hxx>
@@ -228,7 +226,7 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
                   const cs_lnum_t   *elts_list,
                   MEDCouplingUMesh  *med_mesh)
 {
-  cs_lnum_t i, j, k;
+  cs_lnum_t i, j;
   INTERP_KERNEL::NormalizedCellType type;
 
   cs_lnum_t vtx_count = 0;
@@ -349,8 +347,7 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
                   MEDCouplingUMesh  *med_mesh)
 {
   cs_lnum_t i, j, k;
-  cs_lnum_t  c_id, c_id1, c_id2, face_id, n_loc_cells;
-  fvm_element_t fvm_type;
+  cs_lnum_t  c_id, c_id1, c_id2, face_id;
   INTERP_KERNEL::NormalizedCellType type;
 
   cs_lnum_t vtx_count = 0, cell_count = 0;
@@ -561,7 +558,6 @@ static void
 _init_mesh(cs_paramedmem_coupling_t  *coupling,
            _paramedmem_mesh_t        *mesh)
 {
-  cs_lnum_t i;
   cs_mesh_t *parent_mesh = cs_glob_mesh;
 
   assert(mesh != NULL);
@@ -746,8 +742,6 @@ cs_paramedmem_define_mesh(cs_paramedmem_coupling_t  *coupling,
                           bool                       is_dest)
 {
   int id;
-  char *coupled_mesh_name = NULL;
-  cs_lnum_t *elt_list = NULL;
 
   _paramedmem_mesh_t *mesh = NULL;
 
@@ -831,12 +825,8 @@ cs_paramedmem_mesh_id(cs_paramedmem_coupling_t  *coupling,
   assert(coupling != NULL);
 
   for (i = 0; i < coupling->n_meshes; i++) {
-#if (SALOMEMED_VERSION  >= 0x070300)
     if (   strcmp(mesh_name, coupling->meshes[i]->med_mesh->getName().c_str())
         == 0)
-#else
-    if (strcmp(mesh_name, coupling->meshes[i]->med_mesh->getName()) == 0)
-#endif
       break;
   }
 
@@ -1019,13 +1009,8 @@ cs_paramedmem_field_get_id(cs_paramedmem_coupling_t  *coupling,
   /* Loop on fields to know if field has already been created */
 
   for (int f_id = 0; f_id < coupling->n_fields; f_id++) {
-#if (SALOMEMED_VERSION  >= 0x070300)
     if (   coupling->fields[f_id]->mesh_id == mesh_id
         && strcmp(name, coupling->fields[f_id]->f->getName().c_str()) == 0)
-#else
-    if (   coupling->fields[f_id]->mesh_id == mesh_id
-        && strcmp(name, coupling->fields[f_id]->f->getName()) == 0)
-#endif
       return f_id;
   }
 
