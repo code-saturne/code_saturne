@@ -10,6 +10,8 @@ Bug fixes:
 Architectural changes
 ---------------------
 
+- Minor simplifications in detection of optional libraries or unused features.
+
 - Add handling of lmod-based environment modules.
 
 - Allow detection of HDF5 libraries named libhdf5-shared and libhdf5-static as well

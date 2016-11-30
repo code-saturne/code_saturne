@@ -1026,7 +1026,6 @@ echo " Zlib (gzipped file) support: "$cs_have_zlib""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 if (test x$cs_have_mpi = xyes) ; then
   echo "   MPI I/O support: "$cs_have_mpi_io""
-  echo "   MPI2 one-sided communication support: "$cs_have_mpi_one_sided""
 fi
 echo " OpenMP support: "$cs_have_openmp""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
@@ -1043,9 +1042,6 @@ echo " CCM support: "$cs_have_ccm""
 echo " HDF (Hierarchical Data Format) support: "$cs_have_hdf5""
 echo " CGNS (CFD General Notation System) support: "$cs_have_cgns""
 echo " MED (Model for Exchange of Data) support: "$cs_have_med""
-if (test x$cs_have_med = xyes) ; then
-  echo "   MED MPI I/O support: "$cs_have_med_mpi""
-fi
 echo " MEDCoupling support: "$cs_have_medcoupling""
 if test x$cs_have_medcoupling = xyes ; then
   echo " ParaMEDMEM support: "$cs_have_paramedmem""

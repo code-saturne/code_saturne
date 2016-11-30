@@ -51,6 +51,10 @@ AC_ARG_WITH(salome,
 
 if test "x$with_salome" != "xno" ; then
 
+  if test ! -d "$with_salome" ; then
+    AC_MSG_FAILURE([directory specified by --with-salome=$with_salome does not exist!])
+  fi
+
   # Recommended environment file for salome-platform.org installer builds
   if test "x$SALOMEENVCMD" = "x"; then
     salome_env=$(find $with_salome -maxdepth 2 -name salome.sh | tail -1 2>/dev/null)
@@ -154,9 +158,15 @@ CS_AC_TEST_SALOME_KERNEL
 CS_AC_TEST_SALOME_GUI
 CS_AC_TEST_SALOME_YACS
 
+AC_LANG_SAVE
+
+omniORB_ok=no # in case following test is not called
+
 AS_IF([test $cs_have_salome_kernel = yes -o $cs_have_salome_gui = yes],
       [CS_AC_TEST_OMNIORB
        CS_AC_TEST_CORBA])
+
+AC_LANG_RESTORE
 
 AM_CONDITIONAL(HAVE_SALOME,
                test $cs_have_salome_kernel = yes \
@@ -167,7 +177,7 @@ AM_CONDITIONAL(HAVE_SALOME,
 
 # CS_AC_TEST_SALOME_KERNEL
 #-------------------------
-# modifies or sets cs_have_salome_kernel, SALOME_KERNEL_CPPFLAGS, SALOME_KERNEL_LDFLAGS, and SALOME_KERNEL_LIBS
+# modifies or sets cs_have_salome_kernel, SALOME_KERNEL_CPPFLAGS, SALOME_KERNEL_LDFLAGS
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_SALOME_KERNEL], [
@@ -185,7 +195,7 @@ AC_ARG_WITH(salome-kernel,
                fi
              fi],
             [if test -z "$KERNEL_ROOT_DIR"; then
-               with_salome_kernel=check
+               with_salome_kernel=no
              else
                with_salome_kernel=$KERNEL_ROOT_DIR
              fi])
@@ -240,7 +250,6 @@ AC_SUBST(SALOME_KERNEL)
 AC_SUBST(SALOME_KERNEL_CPPFLAGS)
 AC_SUBST(SALOME_KERNEL_IDL)
 AC_SUBST(SALOME_KERNEL_LDFLAGS)
-AC_SUBST(SALOME_KERNEL_LIBS)
 
 AC_SUBST(cs_have_calcium)
 AC_SUBST(CALCIUM_LIBS)
@@ -253,7 +262,7 @@ AM_CONDITIONAL(HAVE_CALCIUM, test x$cs_have_calcium = xyes)
 
 # CS_AC_TEST_SALOME_GUI
 #----------------------
-# modifies or sets cs_have_salome_gui, SALOME_GUI_CPPFLAGS, SALOME_GUI_LDFLAGS, and SALOME_GUI_LIBS
+# modifies or sets cs_have_salome_gui, SALOME_GUI_CPPFLAGS, SALOME_GUI_LDFLAGS
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_SALOME_GUI], [
@@ -293,7 +302,6 @@ if test x"$with_salome_gui" != xno ; then
   SALOME_GUI_CPPFLAGS="-I$SALOME_GUI/include/salome"
   SALOME_GUI_IDL="-I$SALOME_GUI/idl/salome"
   SALOME_GUI_LDFLAGS="-L$SALOME_GUI/lib/salome"
-  SALOME_GUI_LIBS=
 
 else
   cs_have_salome_gui=no
@@ -304,7 +312,6 @@ AC_SUBST(SALOME_GUI)
 AC_SUBST(SALOME_GUI_CPPFLAGS)
 AC_SUBST(SALOME_GUI_IDL)
 AC_SUBST(SALOME_GUI_LDFLAGS)
-AC_SUBST(SALOME_GUI_LIBS)
 
 AM_CONDITIONAL(HAVE_SALOME_GUI, test x$cs_have_salome_gui = xyes)
 
@@ -313,7 +320,7 @@ AM_CONDITIONAL(HAVE_SALOME_GUI, test x$cs_have_salome_gui = xyes)
 
 # CS_AC_TEST_SALOME_YACS
 #----------------------
-# modifies or sets cs_have_salome_yacs, SALOME_YACS_CPPFLAGS, SALOME_YACS_LDFLAGS, and SALOME_YACS_LIBS
+# modifies or sets cs_have_salome_yacs
 # depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_SALOME_YACS], [
@@ -350,23 +357,12 @@ if test x"$with_salome_yacs" != xno ; then
     SALOME_YACS="/usr"
   fi
 
-  SALOME_YACS_CPPFLAGS="-I$SALOME_YACS/include/salome"
-  SALOME_YACS_IDL="-I$SALOME_YACS/idl/salome"
-  SALOME_YACS_LDFLAGS="-L$SALOME_YACS/lib/salome"
-  SALOME_YACS_LIBS=
-
 else
   cs_have_salome_yacs=no
 fi
 
 AC_SUBST(cs_have_salome_yacs)
 AC_SUBST(SALOME_YACS)
-AC_SUBST(SALOME_YACS_CPPFLAGS)
-AC_SUBST(SALOME_YACS_IDL)
-AC_SUBST(SALOME_YACS_LDFLAGS)
-AC_SUBST(SALOME_YACS_LIBS)
-
-AM_CONDITIONAL(HAVE_SALOME_YACS, test x$cs_have_salome_yacs = xyes)
 
 ])dnl
 
@@ -464,39 +460,43 @@ AC_ARG_WITH(salome-med,
             [AS_HELP_STRING([--with-salome-med=PATH],
                             [specify directory for MEDCoupling and ParaMEDMEM])],
             [if test "x$withval" = "x"; then
-               if test -z "$MEDCOUPLING_ROOT_DIR"; then
-                 with_salome_med=yes
-               else
-                 with_salome_med=$MEDCOUPLING_ROOT_DIR
-               fi
+               with_salome_med=yes
              fi],
-            [if test -z "$MEDCOUPLING_ROOT_DIR"; then
-               with_salome_med=check
-             else
-               with_salome_med=$MEDCOUPLING_ROOT_DIR
-             fi])
+            [with_salome_med=check])
 
-if test "x$with_salome_med" != "xno" -a "x$enable_shared" = "xno" ; then
-  AC_MSG_WARN([SALOME MEDCoupling support plugin disabled as build is static only.])
-  with_salome_med=no
+if test "$with_salome_med" != no ; then
+
+  if test "$with_salome_med" = yes -o "$with_salome_med" = check ; then
+    if test ! -z "$MEDCOUPLING_ROOT_DIR"; then
+      MEDCOUPLING=$MEDCOUPLING_ROOT_DIR
+    fi
+  else
+    if test -d "$with_salome_med" ; then
+      MEDCOUPLING="$with_salome_med"
+    else
+      AC_MSG_FAILURE([directory specified by --with-salome_med=$with_salome_med does not exist!])
+    fi
+  fi
+
+  if test "x$enable_shared" = "xno" ; then
+    AC_MSG_WARN([MEDCoupling support plugin disabled as build is static only.])
+    with_salome_med=no
+  fi
+
 fi
 
 if test "x$with_salome_med" != "xno" ; then
-
-  if test x"$with_salome_med" != xyes -a x"$with_salome_med" != xcheck ; then
-    SALOME_MED="$with_salome_med"
-  else
-    SALOME_MED="/usr"
-  fi
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  MEDCOUPLING_CPPFLAGS="-I$SALOME_MED/include/salome"
-  MEDCOUPLING_LDFLAGS="-L$SALOME_MED/lib/salome"
-  # Add the libdir to the runpath as libtool does not do this for modules
-  MEDCOUPLINGRUNPATH="-R$SALOME_MED/lib/salome"
+  if test "x$with_salome_med" != "x" ; then
+    MEDCOUPLING_CPPFLAGS="-I$MEDCOUPLING/include"
+    MEDCOUPLING_LDFLAGS="-L$MEDCOUPLING/lib"
+    # Add the libdir to the runpath as libtool does not do this for modules
+    MEDCOUPLINGRUNPATH="-R$MEDCOUPLING/lib"
+  fi
   MEDCOUPLING_LIBS="-lmedcoupling -linterpkernel"
 
   CPPFLAGS="${CPPFLAGS} ${MEDCOUPLING_CPPFLAGS}"
@@ -559,8 +559,6 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
   if test "x$cs_have_medcoupling" = "xno" ; then
     if test "x$with_salome_med" != "xcheck" ; then
       AC_MSG_FAILURE([MEDCoupling support is requested, but test for MEDCoupling failed!])
-    else
-      AC_MSG_WARN([no MEDCoupling support])
     fi
   fi
 

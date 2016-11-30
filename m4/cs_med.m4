@@ -28,7 +28,6 @@ dnl-----------------------------------------------------------------------------
 AC_DEFUN([CS_AC_TEST_MED], [
 
 cs_have_med=no
-cs_have_med_mpi=no
 cs_have_med_headers=no
 cs_have_med_link_cxx=no
 med_prefix=""
@@ -164,32 +163,6 @@ Otherwise, you need to provide a MED 3.0 library and development headers.])
                      ],
                      )
       AC_LANG_POP(C++)
-
-    fi
-
-    # Check for parallel MED options
-    #-------------------------------
-
-    if test "x$cs_have_mpi" = "xyes" -a "x$cs_have_med" = "xyes"; then
-
-      if test "x$cs_have_med_link_cxx" = "xno"; then
-        AC_LANG_PUSH(C++)
-      fi
-
-      AC_LINK_IFELSE([AC_LANG_PROGRAM(
-[[#include <mpi.h>
-#include <med.h>]],
-[[(void)MEDparFileOpen(NULL, MED_ACC_RDONLY, MPI_COMM_NULL, MPI_INFO_NULL);]])
-                     ],
-                     [ AC_DEFINE([HAVE_MED_MPI], 1, [MED file MPI support])
-                       cs_have_med_mpi=yes
-                     ],
-                     [ AC_MSG_WARN([no MED file MPI support]) ],
-                    )
-
-      if test "x$cs_have_med_link_cxx" = "xno"; then
-        AC_LANG_POP(C++)
-      fi
 
     fi
 
