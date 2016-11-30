@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2013 EDF S.A.
+dnl Copyright (C) 1998-2016 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -136,7 +136,7 @@ if test "x$with_mpi" != "xno" ; then
   if test "x$cs_have_mpi" = "xyes"; then
 
     if test "x$mpi_includedir" = "x" -o "x$mpi_libdir" = "x" ; then
-      for arg in `$CC -show`; do 
+      for arg in `$CC -show`; do
         case ${arg} in
           -I*)
             if test "x$mpi_includedir" = "x";
@@ -161,7 +161,7 @@ if test "x$with_mpi" != "xno" ; then
     CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
     AC_CHECK_HEADERS([mpi.h],
                      [cs_have_mpi_header=yes],
-                     [], 
+                     [],
                      [])
   fi
 
@@ -179,7 +179,7 @@ if test "x$with_mpi" != "xno" ; then
     CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
     AC_CHECK_HEADERS([mpi.h],
                      [cs_have_mpi_header=yes],
-                     [], 
+                     [],
                      [])
   fi
 
@@ -289,7 +289,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
 
   # Now try to determine if we are in fact using a variant MPI,
   # which does not define its own version macros in mpi.h but still uses its
-  # own numbering (horrible, but Intel and Bull do it).
+  # own numbering (very ugly, but Intel and Bull do it).
 
   case $mpi_type in
     OpenMPI)         if test -d "${mpi_libdir}/bullxmpi" ; then
@@ -310,7 +310,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                        if test $? = 0 ; then
                          mpi_type=Intel_MPI
                          AC_DEFINE([MPI_VENDOR_NAME], "Intel MPI", [MPI vendor name])
-                       fi  
+                       fi
                      fi
                      unset cs_mpisupport
                      ;;
@@ -457,13 +457,6 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                      [cs_have_mpi_io=no])
       AC_MSG_RESULT($cs_have_mpi_io)
     fi
-    AC_MSG_CHECKING([for MPI2 one-sided communication])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                   [[ MPI_Win_free((void *)0); ]])],
-                   [AC_DEFINE([HAVE_MPI_ONE_SIDED], 1, [MPI one-sided communication])
-                    cs_have_mpi_one_sided=yes],
-                   [cs_have_mpi_one_sided=no])
-    AC_MSG_RESULT($cs_have_mpi_one_sided)
     AC_MSG_CHECKING([for MPI2 features])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
                    [[ MPI_Allreduce(MPI_IN_PLACE, (void *)0, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); ]])],

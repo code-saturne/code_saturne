@@ -13,6 +13,14 @@ Bug fixes:
 
 - Fix postprocessing output of parallel rank for sub-meshes.
 
+Architectural changes
+---------------------
+
+- Add handling of lmod-based environment modules.
+
+- Allow detection of HDF5 libraries named libhdf5-shared and libhdf5-static as well
+  as libhdf5 (when built with CMake).
+
 Release 3.0.8 (15 Mar 2016)
 ===========================
 

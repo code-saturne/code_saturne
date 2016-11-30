@@ -83,7 +83,7 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH;
         sys.exit(1)
 
     # Skipped modules (version 6.3.0): YACS,JOBMANAGER,HOMARD,OPENTURNS
-    default_modules = "GEOM,SMESH,MED,CFDSTUDY,PARAVIS,VISU"
+    default_modules = "GEOM,SMESH,MED,CFDSTUDY,PARAVIS"
 
     run_cmd = cfg.salome_run
     if not run_cmd:
