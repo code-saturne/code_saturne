@@ -120,7 +120,9 @@ AC_ARG_WITH(coolprop-pythonpath,
                find $with_coolprop -name CoolProp.py > /dev/null 2>&1;
                if test $? == "0"; then
                  cs_coolprop_tmp=`find $with_coolprop -name CoolProp.py | head -1`
-                 COOLPROPPYTHONPATH="`dirname $cs_coolprop_tmp`"
+                 if test "x$cs_coolprop_tmp" != x ; then
+                   COOLPROPPYTHONPATH="`dirname $cs_coolprop_tmp`"
+                 fi
                  unset cs_coolprop_tmp
                fi
              fi])

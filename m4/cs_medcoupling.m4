@@ -44,10 +44,8 @@ AC_ARG_WITH(medcoupling,
 if test "$with_medcoupling" != no ; then
 
   if test "$with_medcoupling" = yes -o "$with_medcoupling" = check ; then
-    if test -z "$MEDCOUPLING_ROOT_DIR"; then
+    if test ! -z "$MEDCOUPLING_ROOT_DIR"; then
       MEDCOUPLING=$MEDCOUPLING_ROOT_DIR
-    else
-      MEDCOUPLING="/usr"
     fi
   else
     if test -d "$with_medcoupling" ; then
@@ -70,10 +68,12 @@ if test "x$with_medcoupling" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  MEDCOUPLING_CPPFLAGS="-I$MEDCOUPLING/include"
-  MEDCOUPLING_LDFLAGS="-L$MEDCOUPLING/lib"
-  # Add the libdir to the runpath as libtool does not do this for modules
-  MEDCOUPLINGRUNPATH="-R$MEDCOUPLING/lib"
+  if test "x$with_medcoupling" != "x" ; then
+    MEDCOUPLING_CPPFLAGS="-I$MEDCOUPLING/include"
+    MEDCOUPLING_LDFLAGS="-L$MEDCOUPLING/lib"
+    # Add the libdir to the runpath as libtool does not do this for modules
+    MEDCOUPLINGRUNPATH="-R$MEDCOUPLING/lib"
+  fi
   MEDCOUPLING_LIBS="-lmedcoupling -linterpkernel"
 
   CPPFLAGS="${CPPFLAGS} ${MEDCOUPLING_CPPFLAGS}"
