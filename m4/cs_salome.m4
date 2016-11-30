@@ -462,7 +462,7 @@ AC_ARG_WITH(salome-med,
             [if test "x$withval" = "x"; then
                with_salome_med=yes
              fi],
-            [with_salome_med=check])
+            [with_salome_med=no])
 
 if test "$with_salome_med" != no ; then
 
