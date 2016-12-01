@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS>
     <context>
         <name>@default</name>
@@ -19,23 +20,23 @@
         </message>
         <message>
             <source>SET_CFDSTUDY_STUDY_TEXT</source>
-            <translation>Positionnement du repertoire d'etude CFD</translation>
+            <translation>Selection d'une étude CFD existante ou Création</translation>
         </message>
         <message>
             <source>SET_CFDSTUDY_STUDY_TIP</source>
-            <translation>Positionnement du repertoire d'une nouvelle etude CFD</translation>
+            <translation>Selection d'une étude CFD existante ou Création</translation>
         </message>
         <message>
             <source>SET_CFDSTUDY_STUDY_SB</source>
-            <translation>Positionnement du repertoire d'une nouvelle etude CFD</translation>
+            <translation>Selection d'une étude CFD existante ou Création</translation>
         </message>
         <message>
             <source>SET_STUDY_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choix du repertoire de l'etude CFD</translation>
+            <translation>Choix du répertoire de l'etude CFD</translation>
         </message>
         <message>
             <source>SET_CASE_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choix du repertoire du cas d'etude CFD</translation>
+            <translation>Choix du répertoire du cas d'etude CFD</translation>
         </message>
         <message>
             <source>ADD_CFDSTUDY_CASE_TEXT</source>
@@ -79,11 +80,11 @@
         </message>
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_TIP</source>
-            <translation>Mise a jour de l'Object Browser (relecture du repertoire racine)</translation>
+            <translation>Mise a jour de l'Object Browser (relecture du répertoire racine)</translation>
         </message>
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_SB</source>
-            <translation>Mise a jour de l'Object Browser (relecture du repertoire racine)</translation>
+            <translation>Mise a jour de l'Object Browser (relecture du répertoire racine)</translation>
         </message>
         <message>
             <source>INFO_CFDSTUDY_TEXT</source>
@@ -187,7 +188,7 @@
         </message>
         <message>
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
-            <translation>Voulez-vous supprimer %s de cette etude?</translation>
+            <translation>Voulez-vous supprimer definitivement le répertoire %s de cette étude sur le disque dur?</translation>
         </message>
         <message>
             <source>CLOSE_CFD_GUI_ACTION_TIP</source>
@@ -368,7 +369,7 @@
         </message>
         <message>
             <source>STMSG_SET_STUDY_LOCATION</source>
-            <translation>Reglagedu repertoire d'etude...</translation>
+            <translation>Reglagedu répertoire d'etude...</translation>
         </message>
         <message>
             <source>STMSG_UPDATE_STUDY</source>
@@ -396,7 +397,7 @@
         </message>
         <message>
             <source>ENV_DLG_INVALID_DIRECTORY</source>
-            <translation>Le repertoire %s n'existe pas!!! </translation>
+            <translation>Le répertoire %s n'existe pas!!! </translation>
         </message>
         <message>
             <source>ENV_DLG_INVALID_FILE</source>
@@ -414,7 +415,10 @@
             <source>INFO_DLG_CASE</source>
             <translation> Le cas d'etdue %s existe deja ! </translation>
         </message>
-
+        <message>
+            <source>CASE_ALREADY_EXISTS</source>
+            <translation>Le cas : %s existe déjà dans l'étude CFD %s</translation>
+        </message>
     </context>
     <context>
         <name>InfoDialogHandler</name>
@@ -458,6 +462,10 @@
     <context>
         <name>SetTreeLocationDialogHandler</name>
         <message>
+            <source>Add new case to study</source>
+            <translation>Ajout d'un nouveau cas à l'étude</translation>
+        </message>
+        <message>
             <source>DLG_OK_BUTTON_TEXT</source>
             <translation>Valider</translation>
         </message>
@@ -467,7 +475,7 @@
         </message>
         <message>
             <source>LOCATION_DLG_CAPTION</source>
-            <translation>Emplacement de l'etude CFDSTUDY</translation>
+            <translation>Emplacement de l'étude CFDSTUDY</translation>
         </message>
         <message>
             <source>LOCATION_DLG_CASE_NAME</source>
@@ -475,27 +483,71 @@
         </message>
         <message>
             <source>LOCATION_DLG_STUDY_DIR_LABEL</source>
-            <translation>Emplacement de l'etude</translation>
+            <translation>Emplacement de l'étude</translation>
         </message>
         <message>
             <source>SET_STUDY_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choisir l'emplacement de l'etude</translation>
+            <translation>Choisir l'emplacement de l'étude</translation>
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_OPEN_MESS</source>
-            <translation>Le repertoire %s est deja ouvert! Choisissez-en un autre.</translation>
+            <translation>Le répertoire %s est deja chargé dans l'Object Browser de SALOME! Choisissez un autre répertoire d'étude.</translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS</source>
-            <translation>Le repertoire %s existe deja. Voulez-vous utiliser cette etude?</translation>
+            <translation>Le répertoire %s existe deja. Choisissez un autre nom d'étude.</translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS1</source>
-            <translation>Le repertoire %s existe deja. Voulez-vous creer une autre etude?</translation>
+            <translation>Le répertoire %s existe deja. Voulez-vous creer une autre etude?</translation>
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_MESS</source>
-            <translation>Le repertoire %s n'existe pas ou le nom de l'tude est vide! Choisissez une autre repertoire.</translation>
+            <translation>Le nom de l'étude n'est pas renseigné! Indiquez un nom d'étude.</translation>
+        </message>
+        <message>
+            <source>CASE_DLG_ERROR_MESS</source>
+            <translation>Le répertoire sélectionné : %s n'est pas un répertoire cas CFD, Choisir un autre répertoire</translation>
+        </message>
+        <message>
+            <source>Select an existing CFD Study Directory</source>
+            <translation>Selection d'un répertoire d'etude CFD existant</translation>
+        </message>
+        <message>
+            <source>Select a directory location to create a new CFD Study</source>
+            <translation>Selection d'un répertoire pour la création d'une nouvelle étude CFD</translation>
+        </message>
+        <message>
+            <source>Load existing study</source>
+            <translation>Chargement d'une étude existante</translation>
+        </message>
+        <message>
+            <source>Create Study</source>
+            <translation>Création d'une étude</translation>
+        </message>
+        <message>
+            <source>Study name</source>
+            <translation>Nom de l'étude</translation>
+        </message>
+        <message>
+            <source>create MESH directory</source>
+            <translation>creation du répertoire MESH</translation>
+        </message>
+        <message>
+            <source>create POST directory</source>
+            <translation>creation du répertoire POST</translation>
+        </message>
+        <message>
+            <source>copy from existing case</source>
+            <translation>copie d'un cas existant</translation>
+        </message>
+        <message>
+            <source>New study directory name created</source>
+            <translation>Nom du nouveau répertoire d'étude créé</translation>
+        </message>
+        <message>
+            <source>Input cases names separated with space</source>
+            <translation>Entrer le ou les noms des cas séparés par des espaces</translation>
         </message>
     </context>
     <context>

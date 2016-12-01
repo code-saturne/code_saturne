@@ -19,15 +19,15 @@
         </message>
         <message>
             <source>SET_CFDSTUDY_STUDY_TEXT</source>
-            <translation>Set CFD study Location</translation>
+            <translation>Choose an existing CFD study or Create</translation>
         </message>
         <message>
             <source>SET_CFDSTUDY_STUDY_TIP</source>
-            <translation>Set location for new CFD study</translation>
+            <translation>Choose an existing CFD study or Create</translation>
         </message>
         <message>
             <source>SET_CFDSTUDY_STUDY_SB</source>
-            <translation>Set location for new CFD study</translation>
+            <translation>Choose an existing CFD study or Create</translation>
         </message>
         <message>
             <source>SET_STUDY_LOCATION_BROWSE_CAPTION</source>
@@ -187,7 +187,7 @@
         </message>
         <message>
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
-            <translation>Do You want to remove of %s from this study?</translation>
+            <translation>Do You really want to delete %s directory?</translation>
         </message>
         <message>
             <source>CLOSE_CFD_GUI_ACTION_TIP</source>
@@ -400,7 +400,7 @@
         </message>
         <message>
             <source>ENV_DLG_INVALID_FILE</source>
-            <translation>%s : File %s does not exists!!! </translation>
+            <translation>%s: File %s does not exists!!! </translation>
         </message>
         <message>
             <source>INFO_DLG_INVALID_ENV</source>
@@ -414,7 +414,10 @@
             <source>INFO_DLG_CASE</source>
             <translation> Study Case %s already exists ! </translation>
         </message>
-
+        <message>
+            <source>CASE_ALREADY_EXISTS</source>
+            <translation>Case name: %s already exists in the CFD Study %s</translation>
+        </message>
     </context>
     <context>
         <name>InfoDialogHandler</name>
@@ -458,6 +461,10 @@
     <context>
         <name>SetTreeLocationDialogHandler</name>
         <message>
+            <source>Add new case to study</source>
+            <translation>Add new case to study</translation>
+        </message>
+        <message>
             <source>DLG_OK_BUTTON_TEXT</source>
             <translation>OK</translation>
         </message>
@@ -483,11 +490,11 @@
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_OPEN_MESS</source>
-            <translation>The Directory %s is already opened! Please, choose another directory.</translation>
+            <translation>The Directory %s is already loaded into SALOME Object Browser ! Please, choose another directory.</translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS</source>
-            <translation>The Directory %s already exists. Do You want to use that study?</translation>
+            <translation>This Study directory %s already exists. Choose another one. </translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS1</source>
@@ -495,7 +502,51 @@
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_MESS</source>
-            <translation>The Directory %s does not exist or Study Name is empty! Please, choose another directory.</translation>
+            <translation>Study Name is not set! Please, enter a study name.</translation>
+        </message>
+        <message>
+            <source>CASE_DLG_ERROR_MESS</source>
+            <translation>Directory chosen: %s is not a CFD case directory, choose another one</translation>
+        </message>
+        <message>
+            <source>Select an existing CFD Study</source>
+            <translation>Select an existing CFD Study</translation>
+        </message>
+        <message>
+            <source>Select a directory location to create a new CFD Study</source>
+            <translation>Select a directory location to create a new CFD Study</translation>
+        </message>
+        <message>
+            <source>Load existing study</source>
+            <translation>Load existing study</translation>
+        </message>
+        <message>
+            <source>Create Study</source>
+            <translation>Create Study</translation>
+        </message>
+        <message>
+            <source>Study name</source>
+            <translation>Study name</translation>
+        </message>
+        <message>
+            <source>create MESH directory</source>
+            <translation>create MESH directory</translation>
+        </message>
+        <message>
+            <source>create POST directory</source>
+            <translation>create POST directory</translation>
+        </message>
+        <message>
+            <source>copy from existing case</source>
+            <translation>copy from existing case</translation>
+        </message>
+        <message>
+            <source>New study directory name created</source>
+            <translation>New study directory name created</translation>
+        </message>
+        <message>
+            <source>Input cases names separated with space</source>
+            <translation>Input cases names separated with space</translation>
         </message>
     </context>
     <context>

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>381</width>
-    <height>378</height>
+    <height>604</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <property name="modal">
    <bool>true</bool>
   </property>
-  <layout class="QGridLayout" name="gridLayout_4">
-   <item row="0" column="0">
+  <layout class="QVBoxLayout" name="verticalLayout_3">
+   <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string/>
@@ -25,22 +25,40 @@
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="0">
        <widget class="QCheckBox" name="checkBoxLoad">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
         <property name="text">
-         <string>Load existing study / Cases</string>
+         <string>Load existing study</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <property name="autoExclusive">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
       <item row="1" column="0">
        <widget class="QCheckBox" name="checkBoxCreate">
         <property name="text">
-         <string>Add new case(s)</string>
+         <string>Create Study</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <property name="autoExclusive">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
      </layout>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item>
     <widget class="QGroupBox" name="StudyGB">
      <property name="title">
       <string/>
@@ -59,16 +77,6 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="StudyDirName"/>
-      </item>
-      <item row="0" column="2">
-       <widget class="QPushButton" name="BrowseButton">
-        <property name="text">
-         <string>Browse...</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="NameLabel">
         <property name="text">
@@ -81,16 +89,32 @@
       </item>
       <item row="1" column="1">
        <widget class="QLineEdit" name="StudyLineEdit">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>New study directory name created</string>
+        </property>
         <property name="text">
-         <string>Input new Tree name</string>
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="StudyDirName">
+        <property name="enabled">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
      </layout>
     </widget>
    </item>
-   <item row="2" column="0">
+   <item>
     <widget class="QGroupBox" name="CaseGroupBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="title">
       <string/>
      </property>
@@ -100,8 +124,8 @@
      <property name="checked">
       <bool>false</bool>
      </property>
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
        <widget class="QLabel" name="CaseLabel">
         <property name="text">
          <string>Cases</string>
@@ -111,14 +135,17 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item>
        <widget class="QLineEdit" name="CaseLineEdit">
+        <property name="toolTip">
+         <string>Input cases names separated with space</string>
+        </property>
         <property name="text">
-         <string>Input case name</string>
+         <string/>
         </property>
        </widget>
       </item>
-      <item row="1" column="0" colspan="2">
+      <item>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <widget class="QRadioButton" name="radioButtonNeptune">
@@ -135,56 +162,28 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBoxMesh">
+         <widget class="QCheckBox" name="checkBoxCopyFrom">
           <property name="text">
-           <string>create MESH directory</string>
+           <string>copy from existing case</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBoxPOST">
-          <property name="text">
-           <string>create POST directory</string>
+         <widget class="QLineEdit" name="copyFromCase">
+          <property name="enabled">
+           <bool>false</bool>
           </property>
          </widget>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-           <widget class="QCheckBox" name="checkBoxCopyFrom">
-            <property name="text">
-             <string>copy from</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="BrowseButtonCopy">
-            <property name="text">
-             <string>Browse...</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
         </item>
        </layout>
       </item>
      </layout>
     </widget>
    </item>
-   <item row="3" column="0">
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <spacer name="horizontalSpacer_4">
@@ -260,22 +259,6 @@
  <resources/>
  <connections>
   <connection>
-   <sender>BrowseButton</sender>
-   <signal>clicked()</signal>
-   <receiver>SetTreeLocationDialog</receiver>
-   <slot>onBrowsePath()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>OKButton</sender>
    <signal>clicked()</signal>
    <receiver>SetTreeLocationDialog</receiver>
@@ -304,22 +287,6 @@
     <hint type="destinationlabel">
      <x>20</x>
      <y>20</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>BrowseButtonCopy</sender>
-   <signal>clicked()</signal>
-   <receiver>SetTreeLocationDialog</receiver>
-   <slot>onBrowsePathCopy()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>151</x>
-     <y>304</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>190</x>
-     <y>188</y>
     </hint>
    </hints>
   </connection>

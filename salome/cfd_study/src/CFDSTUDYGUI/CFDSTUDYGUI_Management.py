@@ -238,6 +238,15 @@ class CFDGUI_Management:
                                 boo = True
         return boo
 
+    def findDock(self, xmlName, caseName, studyCFDName):
+        boo = False
+        for studyId in self.d_CfdCases.keys():
+            for l in self.d_CfdCases[studyId]:
+                if l[self.xmlCFDFileNamePosInListe] == xmlName:
+                    if l[self.caseCFDPosInListe].GetName() == caseName:
+                        if l[self.studyCFDPosInListe].GetName() == studyCFDName:
+                            boo = True
+        return boo
 
     def showDockWindows(self, studyId, xmlName, caseName, studyCFDName):
         for l in self.d_CfdCases[studyId]:

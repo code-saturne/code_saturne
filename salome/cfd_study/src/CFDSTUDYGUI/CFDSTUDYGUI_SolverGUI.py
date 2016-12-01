@@ -167,7 +167,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aCase, "^DATA$")
             if not len(aChildList)== 1:
                 # no DATA folder
-                mess = "There are not DATA directory  in the case"
+                mess = "DATA directory is not present in the case"
                 QMessageBox.warning(None, "Warning: ", mess)
                 return None
 
@@ -224,7 +224,6 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             old_xml_file = self._CurrentWindow.case['xmlfile']
             self._CurrentWindow.fileSaveAs()
             xml_file = self._CurrentWindow.case['xmlfile']
-
             if old_xml_file == "":
                 old_xml_file = None
             if xml_file == "":
@@ -371,7 +370,13 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         self.Workspace = WorkSpace
         pkg = package()
         case, splash = process_cmd_line(Args)
-        mw = MainView(pkg, case, aCase)
+        try:
+            mw = MainView(pkg, case, aCase)
+        except:
+            mess = "Error in Opening CFD GUI"
+            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
+            return None
+
         # Put the standard panel of the MainView inside a QDockWidget
         # in the SALOME Desktop
         aTitle = self.setWindowTitle_CFD(mw, aCase, Title)

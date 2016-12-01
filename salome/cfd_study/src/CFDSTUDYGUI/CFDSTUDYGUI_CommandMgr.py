@@ -81,9 +81,6 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
         self.setWindowTitle(title)
         self.pushButton.setEnabled(False)
 
-        if start_directory != None and start_directory != "":
-            os.chdir(start_directory)
-
         self.objBr = None
         if obj_directory != None and obj_directory != "":
             self.objBr = obj_directory
@@ -105,7 +102,6 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
     def __process(self):
         if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
             self.proc.start(self.cmd)
-            print "self.cmd_list = ",self.cmd_list
             if self.cmd_list:
                 self.cmd = self.cmd_list.pop(0)
                 self.proc.finished['int', 'QProcess::ExitStatus'].connect(self.__process)
@@ -175,9 +171,6 @@ def runCommand(cmd, start_directory, prefix, *args):
     """
     import subprocess
     import os
-
-    if start_directory != None and start_directory != "":
-        os.chdir(start_directory)
 
     try:
         pipe = subprocess.Popen(cmd, bufsize = 0, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

@@ -67,6 +67,7 @@ import os
 import re
 import string
 import logging
+import subprocess
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -130,22 +131,22 @@ dict_object["Study"]         = 100002
 dict_object["Case"]          = 100003
 dict_object["CaseInProcess"] = 100004
 
-dict_object["DATAFolder"]    = 100010
-dict_object["DATAFile"]      = 100013
-dict_object["DRAFTFolder"]   = 100014
-dict_object["DATADRAFTFile"] = 100015
-dict_object["THCHFolder"]    = 100016
-dict_object["THCHFile"]      = 100017
-dict_object["DATALaunch"]    = 100018
-dict_object["DATAfileXML"]   = 100019
+dict_object["DATAFolder"]             = 100010
+dict_object["REFERENCEDATAFolder"]    = 100011
+dict_object["REFERENCEDATAFile"]      = 100012
+dict_object["DATAFile"]               = 100013
+dict_object["DRAFTFolder"]            = 100014
+dict_object["DATADRAFTFile"]          = 100015
 
+dict_object["DATALaunch"]             = 100018
+dict_object["DATAfileXML"]            = 100019
 
-dict_object["SRCFolder"]    = 100020
-dict_object["SRCFile"]      = 100021
-dict_object["SRCDRAFTFile"] = 100022
-dict_object["LOGSRCFile"]   = 100023
-dict_object["USERSFolder"]  = 100024
-dict_object["USRSRCFile"]   = 100025
+dict_object["SRCFolder"]          = 100020
+dict_object["SRCFile"]            = 100021
+dict_object["SRCDRAFTFile"]       = 100022
+dict_object["LOGSRCFile"]         = 100023
+dict_object["USERSFolder"]        = 100024
+dict_object["USRSRCFile"]         = 100025
 
 dict_object["RESUSubErrFolder"]  = 100029
 dict_object["RESUFolder"]     = 100030
@@ -198,9 +199,11 @@ icon_collection[dict_object["CaseInProcess"]]  = "CFDSTUDY_CASE_IN_PROC_OBJ_ICON
 icon_collection[dict_object["DATAFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["DATAFile"]]       = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["DRAFTFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
+icon_collection[dict_object["REFERENCEDATAFolder"]] = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["DATADRAFTFile"]]  = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
-icon_collection[dict_object["THCHFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
-icon_collection[dict_object["THCHFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
+
+icon_collection[dict_object["REFERENCEDATAFile"]] = "CFDSTUDY_DOCUMENT_OBJ_ICON"
+
 icon_collection[dict_object["DATALaunch"]]     = "CFDSTUDY_EXECUTABLE_OBJ_ICON"
 icon_collection[dict_object["DATAfileXML"]]    = "CFDSTUDY_DATA_XML_FILE_OBJ_ICON"
 
@@ -380,11 +383,8 @@ def _findOrCreateComponent():
 
     return father
 
-
-def _SetStudyLocation(theStudyPath, theCaseNames,
-                      theCreateOpt = None, theMeshOpt = None,
-                      thePostOpt = None, theCopyOpt = None,
-                      theNameRef = ""):
+def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
+                      theCopyOpt, theNameRef = ""):
     """
     Constructs the tree representation of a CFD study (with the
     associated cases) for the Object Browser. All branch of the tree is
@@ -426,8 +426,9 @@ def _SetStudyLocation(theStudyPath, theCaseNames,
         if theCopyOpt:
             if not os.path.exists(theNameRef):
                 raise ValueError, "reference case is not a repository"
-        iok = _CallCreateScript(theStudyPath, CreateStudy, theCaseNames,
-                                theMeshOpt, thePostOpt, theCopyOpt, theNameRef)
+        if CreateStudy == True :
+            iok = _CallCreateScript(theStudyPath, CreateStudy, theCaseNames,
+                                    theCopyOpt, theNameRef)
         if iok :
             UpdateSubTree(studyObject)
     else :
@@ -435,38 +436,13 @@ def _SetStudyLocation(theStudyPath, theCaseNames,
         if os.path.exists(theStudyPath):
             CreateStudy = False
             iok = _CallCreateScript(theStudyPath, CreateStudy, theCaseNames,
-                                    theMeshOpt, thePostOpt, theCopyOpt, theNameRef)
-        # here, if CreateStudy is True, _SetStudyLocation is used to add a case into a CFD study
-        #updating Object browser : optimization : UpdateSubTree(studyObject) updates all the cases inside of de studyObject
-        # here it only updates the concerned cases
-        if iok :
-            objList = []
-            objMap  = {}
-            iter  = study.NewChildIterator(studyObject)
-            while iter.More():
-                casename = iter.Value().GetName()
-                if casename != "" :
-                    objList.append(iter.Value().GetName())
-                    objMap[iter.Value().GetName()]  = iter.Value()
-                iter.Next()
-            if len(theCaseNames) != 0 :
-                import string
-                CaseName_list = string.split(theCaseNames, ' ')
+                                    theCopyOpt, theNameRef)
 
-                for casename in CaseName_list :
-                    if not casename == "" and casename not in objList :
-                        caseObject  = builder.NewObject(studyObject)
-                        attr    = builder.FindOrCreateAttribute(caseObject, "AttributeLocalID")
-                        attr.SetValue(dict_object["Case"])
-                        attr = builder.FindOrCreateAttribute(caseObject, "AttributeName")
-                        attr.SetValue(casename)
-                        _SetIcon(caseObject, builder)
-                        attr = builder.FindOrCreateAttribute(caseObject, "AttributeComment")
-                        UpdateSubTree(caseObject)
+        UpdateSubTree(studyObject)
     return iok
 
 def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
-                      theMeshOpt, thePostOpt, theCopyOpt, theNameRef):
+                      theCopyOpt, theNameRef):
     """
     Builds new CFD study, and/or new cases on the file system.
 
@@ -478,51 +454,38 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
     @param theCaseNames: unix pathes of the new CFD cases to be build.
     """
     mess = ""
-    if isCreateStudy or theCaseNames != "":
-        scrpt, c ,mess = BinCode()
-        if mess == "" :
-            curd = os.path.abspath('.')
 
-            start_dir = ""
-            if isCreateStudy:
-                fatherdir,etude = os.path.split(theStudyPath)
-                start_dir = fatherdir
-            else:
-                start_dir = theStudyPath
+    scrpt, c ,mess = BinCode()
 
-            args = [scrpt]
-            args.append('create')
+    if mess == "" :
+        curd = os.getcwd()
 
-            if isCreateStudy:
-                args.append("--study")
-                args.append(os.path.basename(theStudyPath))
+        start_dir = ""
+        if isCreateStudy:
+            fatherdir,etude = os.path.split(theStudyPath)
+            start_dir = fatherdir
+        else:
+            start_dir = theStudyPath
 
+        args = [scrpt]
+        args.append('create')
+
+        if isCreateStudy:
+            args.append("--study")
+            args.append(theStudyPath)
+        if theCaseNames != "":
             for i in theCaseNames.split(' '):
                 args.append("--case")
-                args.append(i)
-            if theCopyOpt:
-                args.append("--copy-from")
-                args.append(theNameRef)
+                args.append(os.path.join(theStudyPath,i))
+        if theCopyOpt:
+            args.append("--copy-from")
+            args.append(theNameRef)
 
-            if Trace():
-                print '_CreateStudy',theStudyPath,theCaseNames,'curdir',curd
-                print 'CFDSTUDYGUI_DataModel : _CallCreateScript : scrpt = ',scrpt
-                print 'CFDSTUDYGUI_DataModel : _CallCreateScript : args  = ',args
-                print 'CFDSTUDYGUI_DataModel : _CallCreateScript : start_dir = ',start_dir
-            runCommand(args, start_dir, "")
+        runCommand(args, start_dir, "")
 
-            if theMeshOpt:
-                path = os.path.join(theStudyPath, "MESH")
-                if not os.path.exists(path):
-                    os.mkdir(path)
-            if thePostOpt:
-                path = os.path.join(theStudyPath, "POST")
-                if not os.path.exists(path):
-                    os.mkdir(path)
-            os.chdir(curd)
-        else:
-            QMessageBox.critical(None,
-                                "Error", mess, QMessageBox.Ok, 0)
+    else:
+        QMessageBox.critical(None,
+                            "Error", mess, QMessageBox.Ok,QMessageBox.NoButton)
     return mess == ""
 
 
@@ -791,14 +754,14 @@ def _FillObject(theObject, theParent, theBuilder):
     # parent is DATA folder
     elif parentId == dict_object["DATAFolder"]:
         if os.path.isdir(path):
+            if name == "REFERENCE":
+                objectId = dict_object["REFERENCEDATAFolder"]
             if name == "DRAFT":
                 objectId = dict_object["DRAFTFolder"]
-            elif name == "THCH":
-                objectId = dict_object["THCHFolder"]
         else:
             if name[0:10] == "SaturneGUI" or name[0:10] == "NeptuneGUI":
                 objectId = dict_object["DATALaunch"]
-            elif re.match("^dp_", name):
+            elif re.match("^dp_", name) or re.match("^meteo",name) or re.match("^cs_", name):
                 objectId = dict_object["DATAFile"]
             else:
                 if os.path.isfile(path):
@@ -821,7 +784,7 @@ def _FillObject(theObject, theParent, theBuilder):
         draftParentFolder = os.path.basename(_GetPath(theParent.GetFather()))
         if os.path.isfile(path):
             if draftParentFolder == "DATA":
-                if re.match("^dp_", name):
+                if re.match("^dp_", name) or re.match("^meteo",name) or re.match("^cs_", name):
                     objectId = dict_object["DATADRAFTFile"]
             elif draftParentFolder == "SRC":
                 if re.match(".*\.[fF]$", name) or \
@@ -841,11 +804,11 @@ def _FillObject(theObject, theParent, theBuilder):
         elif os.path.isdir(path):
             objectId = dict_object["OtherFolder"]
 
-    # parent is THCH folder
-    elif parentId == dict_object["THCHFolder"]:
+    # parent is REFERENCE folder into DATA folder
+    elif parentId == dict_object["REFERENCEDATAFolder"]:
         if os.path.isfile(path):
-            if re.match("^dp_", name):
-                objectId = dict_object["THCHFile"]
+            if re.match("^dp_", name) or re.match("^meteo",name) or re.match("^cs_", name):
+                objectId = dict_object["REFERENCEDATAFile"]
         elif os.path.isdir(path):
             objectId = dict_object["OtherFolder"]
 
@@ -919,7 +882,7 @@ def _FillObject(theObject, theParent, theBuilder):
             elif re.match(".*\.log$", name):
                 objectId = dict_object["LOGSRCFile"]
         elif os.path.isdir(path):
-            if name == "REFERENCE":
+            if name == "REFERENCE" or name == "EXAMPLES" :
                 objectId = dict_object["USERSFolder"]
             elif name == "DRAFT":
                 objectId = dict_object["DRAFTFolder"]
@@ -1412,6 +1375,36 @@ def GetCaseList(theStudy):
 
     return CaseList
 
+def getXmlCaseNameList(theCase):
+    """
+    Returns a list of xml file names from case aCase
+    """
+    XmlCaseNameList = []
+    if not checkType(theCase, dict_object["Case"]):
+        return XmlCaseNameList
+    aChildList = []
+
+    aChildList = ScanChildren(theCase, "^DATA$")
+    if len(aChildList) != 1:
+        # no DATA folder
+        print "There are no data folder in selected by user case"
+        return
+
+    aDataObj =  aChildList[0]
+    aDataPath = _GetPath(aDataObj)
+    study   = _getStudy()
+    builder = study.NewBuilder()
+
+    iter  = study.NewChildIterator(aDataObj)
+
+    while iter.More():
+        aName = iter.Value().GetName()
+        if aName != "" :
+            if "XML" in subprocess.check_output(["file",aName]) :
+                XmlCaseNameList.append(iter.Value().GetName())
+        iter.Next()
+    return XmlCaseNameList
+
 
 def ScanChildren(theObject, theRegExp):
     """
@@ -1526,7 +1519,7 @@ def checkCaseLaunchGUI(theCase):
     aChildList = ScanChildren(theCase, "^DATA$")
     if not len(aChildList) == 1:
         # no DATA folder
-        print "There are not data folder in selected by user case"
+        print "There are no data folder in selected by user case"
         return False
 
     aDataObj =  aChildList[0]
@@ -1544,7 +1537,7 @@ def checkCaseLaunchGUI(theCase):
         else:
             aChildList = ScanChildren(aDataObj, "^NeptuneGUI$")
     if not len(aChildList) == 1:
-        if Trace(): print "There are not SaturneGUI or NeptuneGUI in selected by user case"
+        if Trace(): print "There are no SaturneGUI or NeptuneGUI in selected by user case"
         return False
 
     return True
@@ -1770,7 +1763,6 @@ def findMaxDeepObject(thePath):
             obj_list = ScanChildren(parent, ".*") #all children
         else:
             break
-
     return parent
 
 
