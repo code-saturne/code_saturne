@@ -92,7 +92,7 @@
         <item row="1" column="0" colspan="2">
          <widget class="QLabel" name="labelMeteoData">
           <property name="text">
-           <string>thermochemistry data file: </string>
+           <string>Thermochemistry data file: </string>
           </property>
          </widget>
         </item>
@@ -102,7 +102,7 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="../../../../../../../../netdata/I51157/Version_electrique/saturne_trunk/gui/Pages/resources_pages.qrc">
+           <iconset>
             <normaloff>:/new/prefix1/icons/22x22/document-open.png</normaloff>:/new/prefix1/icons/22x22/document-open.png</iconset>
           </property>
           <property name="iconSize">

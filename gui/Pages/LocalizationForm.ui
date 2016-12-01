@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>476</width>
+    <width>490</width>
     <height>448</height>
    </rect>
   </property>
@@ -16,6 +16,9 @@
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxLocalization">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add volume or boundary regions manually or automatically from a preprocessor file or from Salome.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>GroupBox</string>
      </property>
@@ -27,6 +30,9 @@
           <width>0</width>
           <height>250</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add volume or boundary regions manually or automatically from a preprocessor file or from Salome.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="statusTip">
          <string>Click right for context menu</string>
@@ -59,6 +65,9 @@
         </item>
         <item>
          <widget class="QPushButton" name="pushButtonNew">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a volume or boundary region.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Add</string>
           </property>
@@ -66,6 +75,9 @@
         </item>
         <item>
          <widget class="QPushButton" name="pushButtonDelete">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added volume or boundary region.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Delete</string>
           </property>
@@ -73,6 +85,9 @@
         </item>
         <item>
          <widget class="QPushButton" name="pushButtonModify">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Modify the nature of the selected region.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Modify</string>
           </property>
@@ -80,6 +95,9 @@
         </item>
         <item>
          <widget class="QPushButton" name="pushButtonSalome">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a volume or boundary region from Salome.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Add from Salome</string>
           </property>
@@ -102,6 +120,9 @@
       </item>
       <item row="2" column="0">
        <widget class="QGroupBox" name="groupBoxCreation">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Automatically add groups and references from a preprocessor listing.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="title">
          <string>Add from Preprocessor listing</string>
         </property>
@@ -123,6 +144,9 @@
           <layout class="QHBoxLayout">
            <item>
             <widget class="QLabel" name="labelCreation">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Import groups and references from a preprocessor.log file.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Import groups and references from Preprocessor listing</string>
              </property>
@@ -143,6 +167,9 @@
            </item>
            <item>
             <widget class="QToolButton" name="toolButtonCreation">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Import groups and references from a preprocessor.log file.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>

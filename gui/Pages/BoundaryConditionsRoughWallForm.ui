@@ -1,34 +1,38 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>BoundaryConditionsRoughWallForm</class>
- <widget class="QWidget" name="BoundaryConditionsRoughWallForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="BoundaryConditionsRoughWallForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>240</width>
+    <width>280</width>
     <height>133</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" >
-   <item row="0" column="0" >
-    <widget class="QGroupBox" name="groupBoxRough" >
-     <property name="title" >
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBoxRough">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify whether the wall is smooth or rough. In case of a rough wall, the roughness height must be defined.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
       <string>Smooth or rough wall</string>
      </property>
-     <layout class="QGridLayout" name="_6" >
-      <item row="0" column="0" >
-       <layout class="QGridLayout" name="_7" >
-        <item row="0" column="0" >
-         <layout class="QGridLayout" name="_8" >
-          <item row="0" column="0" >
+     <layout class="QGridLayout" name="_6">
+      <item row="0" column="0">
+       <layout class="QGridLayout" name="_7">
+        <item row="0" column="0">
+         <layout class="QGridLayout" name="_8">
+          <item row="0" column="0">
            <spacer>
-            <property name="orientation" >
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" stdset="0" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>40</width>
               <height>20</height>
@@ -36,58 +40,64 @@
             </property>
            </spacer>
           </item>
-          <item row="0" column="1" >
-           <widget class="QRadioButton" name="radioButtonSmooth" >
-            <property name="text" >
-             <string>smooth wall</string>
+          <item row="0" column="1">
+           <widget class="QRadioButton" name="radioButtonSmooth">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify whether the wall is smooth or rough. In case of a rough wall, the roughness height must be defined.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Smooth wall</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="2" >
-           <widget class="QRadioButton" name="radioButtonRough" >
-            <property name="text" >
-             <string>rough wall</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="3" >
+          <item row="0" column="4">
            <spacer>
-            <property name="orientation" >
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" stdset="0" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>40</width>
               <height>20</height>
              </size>
             </property>
            </spacer>
+          </item>
+          <item row="0" column="3">
+           <widget class="QRadioButton" name="radioButtonRough">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify whether the wall is smooth or rough. In case of a rough wall, the roughness height must be defined.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Rough wall</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
-        <item row="1" column="0" >
-         <widget class="QFrame" name="frameRoughness" >
-          <property name="minimumSize" >
+        <item row="1" column="0">
+         <widget class="QFrame" name="frameRoughness">
+          <property name="minimumSize">
            <size>
             <width>16</width>
             <height>42</height>
            </size>
           </property>
-          <property name="frameShape" >
+          <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
-          <property name="frameShadow" >
+          <property name="frameShadow">
            <enum>QFrame::Raised</enum>
           </property>
-          <layout class="QGridLayout" name="_9" >
-           <item row="0" column="0" >
-            <layout class="QGridLayout" name="_10" >
-             <item row="0" column="0" >
+          <layout class="QGridLayout" name="_9">
+           <item row="0" column="0">
+            <layout class="QGridLayout" name="_10">
+             <item row="0" column="0">
               <spacer>
-               <property name="orientation" >
+               <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" stdset="0" >
+               <property name="sizeHint" stdset="0">
                 <size>
                  <width>40</width>
                  <height>20</height>
@@ -95,36 +105,45 @@
                </property>
               </spacer>
              </item>
-             <item row="0" column="1" >
-              <widget class="QLabel" name="labelRoughCoef" >
-               <property name="text" >
+             <item row="0" column="1">
+              <widget class="QLabel" name="labelRoughCoef">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify whether the wall is smooth or rough. In case of a rough wall, the roughness height must be defined.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
                 <string>Roughness height</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="2" >
-              <widget class="QLineEdit" name="lineEditRoughCoef" >
-               <property name="maximumSize" >
+             <item row="0" column="2">
+              <widget class="QLineEdit" name="lineEditRoughCoef">
+               <property name="maximumSize">
                 <size>
                  <width>80</width>
                  <height>16777215</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify whether the wall is smooth or rough. In case of a rough wall, the roughness height must be defined.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
               </widget>
              </item>
-             <item row="0" column="3" >
-              <widget class="QLabel" name="labelRoughUnit" >
-               <property name="text" >
+             <item row="0" column="3">
+              <widget class="QLabel" name="labelRoughUnit">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify whether the wall is smooth or rough. In case of a rough wall, the roughness height must be defined.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
                 <string>m</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="4" >
+             <item row="0" column="4">
               <spacer>
-               <property name="orientation" >
+               <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" stdset="0" >
+               <property name="sizeHint" stdset="0">
                 <size>
                  <width>51</width>
                  <height>20</height>

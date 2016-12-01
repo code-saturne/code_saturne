@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>382</width>
-    <height>241</height>
+    <width>402</width>
+    <height>291</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,6 +16,9 @@
   <layout class="QGridLayout">
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the case directory. Please give the absolute path of the case directory or use the dialog box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>Directory of the case</string>
      </property>
@@ -27,7 +30,7 @@
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint">
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>22</height>
@@ -43,6 +46,9 @@
             <height>0</height>
            </size>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the case directory. Please give the absolute path of the case directory or use the dialog box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="statusTip">
            <string>Please give the absolute path of the case directory or use the dialog box.</string>
           </property>
@@ -50,6 +56,9 @@
         </item>
         <item>
          <widget class="QToolButton" name="toolButton">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the case directory. Please give the absolute path of the case directory or use the dialog box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="statusTip">
            <string>Select the case directory</string>
           </property>
@@ -57,7 +66,8 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/folder-open.png</iconset>
+           <iconset resource="resources_pages.qrc">
+            <normaloff>:/new/prefix1/icons/22x22/folder-open.png</normaloff>:/new/prefix1/icons/22x22/folder-open.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -75,7 +85,7 @@
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint">
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>22</height>
@@ -90,6 +100,9 @@
    </item>
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBox_2">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Associated sub-directories of the case. This is filled automatically.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>Associated sub-directories of the case</string>
      </property>
@@ -101,7 +114,7 @@
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint">
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>22</height>
@@ -113,6 +126,9 @@
          <layout class="QGridLayout">
           <item row="0" column="0">
            <widget class="QLabel" name="label_1">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The DATA directory contains the xml file and the SaturneGui python script to launch the GUI.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Data</string>
             </property>
@@ -126,6 +142,9 @@
               <height>0</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The DATA directory contains the xml file and the SaturneGui python script to launch the GUI.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -133,6 +152,9 @@
           </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label_2">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The RESULTS directory contains the results of the computations.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Results</string>
             </property>
@@ -146,6 +168,9 @@
               <height>0</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The RESULTS directory contains the results of the computations.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -153,6 +178,9 @@
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="label_3">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The SRC directories contains user subroutines used for non-standard computation setup.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>User subroutines</string>
             </property>
@@ -166,6 +194,9 @@
               <height>0</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The SRC directories contains user subroutines used for non-standard computation setup.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -173,6 +204,9 @@
           </item>
           <item row="3" column="0">
            <widget class="QLabel" name="label_4">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The SCRIPTS directory contains the runcase script which allows to run computations.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Running scripts</string>
             </property>
@@ -186,6 +220,9 @@
               <height>0</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The SCRIPTS directory contains the runcase script which allows to run computations.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -198,7 +235,7 @@
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint">
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>22</height>
@@ -216,7 +253,7 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint">
+     <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
        <height>20</height>

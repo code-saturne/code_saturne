@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>338</width>
+    <width>396</width>
     <height>358</height>
    </rect>
   </property>
@@ -29,7 +29,7 @@
          <item row="0" column="1">
           <widget class="QLabel" name="labelIVISV2">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISV2</string>
+            <string/>
            </property>
            <property name="text">
             <string>Particle velocity</string>
@@ -39,7 +39,7 @@
          <item row="0" column="2">
           <widget class="QCheckBox" name="checkBoxIVISV2">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISV2</string>
+            <string/>
            </property>
            <property name="text">
             <string/>
@@ -49,7 +49,7 @@
          <item row="1" column="1">
           <widget class="QLabel" name="labelIVISV1">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISV1</string>
+            <string/>
            </property>
            <property name="text">
             <string>Fluid velocity seen by particles</string>
@@ -59,7 +59,7 @@
          <item row="1" column="2">
           <widget class="QCheckBox" name="checkBoxIVISV1">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISV1</string>
+            <string/>
            </property>
            <property name="text">
             <string/>
@@ -69,7 +69,7 @@
          <item row="2" column="1">
           <widget class="QLabel" name="labelIVISTP">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISTP</string>
+            <string/>
            </property>
            <property name="text">
             <string>Residence time</string>
@@ -79,7 +79,7 @@
          <item row="2" column="2">
           <widget class="QCheckBox" name="checkBoxIVISTP">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISTP</string>
+            <string/>
            </property>
            <property name="text">
             <string/>
@@ -89,7 +89,7 @@
          <item row="3" column="1">
           <widget class="QLabel" name="labelIVISDM">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISDM</string>
+            <string/>
            </property>
            <property name="text">
             <string>Particle diameter</string>
@@ -99,7 +99,7 @@
          <item row="3" column="2">
           <widget class="QCheckBox" name="checkBoxIVISDM">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISDM</string>
+            <string/>
            </property>
            <property name="text">
             <string/>
@@ -122,7 +122,7 @@
          <item row="4" column="1">
           <widget class="QLabel" name="labelIVISTE">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISTE</string>
+            <string/>
            </property>
            <property name="text">
             <string>Particle temperature</string>
@@ -132,7 +132,7 @@
          <item row="4" column="2">
           <widget class="QCheckBox" name="checkBoxIVISTE">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISTE</string>
+            <string/>
            </property>
            <property name="text">
             <string/>
@@ -155,7 +155,7 @@
          <item row="5" column="1">
           <widget class="QLabel" name="labelIVISMP">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISMP</string>
+            <string/>
            </property>
            <property name="text">
             <string>Particle mass</string>
@@ -165,7 +165,7 @@
          <item row="5" column="2">
           <widget class="QCheckBox" name="checkBoxIVISMP">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISMP</string>
+            <string/>
            </property>
            <property name="text">
             <string/>
@@ -175,7 +175,7 @@
          <item row="6" column="1">
           <widget class="QLabel" name="labelIVISDK">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISDK</string>
+            <string/>
            </property>
            <property name="text">
             <string>Shrinking core diameter of the coal particles</string>
@@ -185,7 +185,7 @@
          <item row="6" column="2">
           <widget class="QCheckBox" name="checkBoxIVISDK">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISDK</string>
+            <string/>
            </property>
            <property name="text">
             <string/>
@@ -195,7 +195,7 @@
          <item row="7" column="1">
           <widget class="QLabel" name="labelIVISCH">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISCH</string>
+            <string/>
            </property>
            <property name="text">
             <string>Mass of reactive coal of the coal particles</string>
@@ -205,7 +205,7 @@
          <item row="7" column="2">
           <widget class="QCheckBox" name="checkBoxIVISCH">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISCH</string>
+            <string/>
            </property>
            <property name="text">
             <string/>
@@ -215,7 +215,7 @@
          <item row="8" column="1">
           <widget class="QLabel" name="labelIVISCK">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISCK</string>
+            <string/>
            </property>
            <property name="text">
             <string>Mass of char of the coal particles</string>
@@ -225,7 +225,7 @@
          <item row="8" column="2">
           <widget class="QCheckBox" name="checkBoxIVISCK">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISCK</string>
+            <string/>
            </property>
            <property name="text">
             <string/>
@@ -235,7 +235,7 @@
          <item row="9" column="1">
           <widget class="QLabel" name="labelIMoisture">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISCK</string>
+            <string/>
            </property>
            <property name="text">
             <string>Mass of moisture</string>
@@ -245,7 +245,7 @@
          <item row="9" column="2">
           <widget class="QCheckBox" name="checkBoxMoisture">
            <property name="toolTip">
-            <string>Code_Saturne key word: IVISCK</string>
+            <string/>
            </property>
            <property name="text">
             <string/>

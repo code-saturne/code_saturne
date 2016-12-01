@@ -1,32 +1,33 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>StartRestartAdvancedDialogForm</class>
- <widget class="QDialog" name="StartRestartAdvancedDialogForm" >
-  <property name="geometry" >
+ <widget class="QDialog" name="StartRestartAdvancedDialogForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>336</width>
-    <height>202</height>
+    <height>220</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <layout class="QGridLayout" >
-   <item row="0" column="0" >
-    <widget class="QGroupBox" name="groupBoxRestart" >
-     <property name="title" >
+  <layout class="QGridLayout">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBoxRestart">
+     <property name="title">
       <string/>
      </property>
-     <layout class="QGridLayout" >
-      <item row="0" column="0" >
-       <layout class="QHBoxLayout" >
+     <layout class="QGridLayout">
+      <item row="0" column="0">
+       <layout class="QHBoxLayout">
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>20</width>
             <height>20</height>
@@ -35,32 +36,32 @@
          </spacer>
         </item>
         <item>
-         <widget class="QLabel" name="labelILEAUX" >
-          <property name="toolTip" >
-           <string>Code_Saturne key word: ILEAUX</string>
+         <widget class="QLabel" name="labelILEAUX">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate whether the auxilary restart file sould be read or not.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ILEAUX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
-          <property name="text" >
+          <property name="text">
            <string>Read the auxiliary restart file
 at the begin of the calculation</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBoxReadAuxFile" >
-          <property name="toolTip" >
-           <string>Code_Saturne key word: ILEAUX</string>
+         <widget class="QCheckBox" name="checkBoxReadAuxFile">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate whether the auxilary restart file sould be read or not.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ILEAUX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
-          <property name="text" >
+          <property name="text">
            <string/>
           </property>
          </widget>
         </item>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>16</height>
@@ -73,33 +74,36 @@ at the begin of the calculation</string>
      </layout>
     </widget>
    </item>
-   <item row="1" column="0" >
-    <widget class="QGroupBox" name="groupBoxFreq" >
-     <property name="title" >
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="groupBoxFreq">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the restart checkpoint frequency, four choices are possible:&lt;br/&gt;- Never,&lt;br/&gt;- Only at the end of the calculation&lt;br/&gt;- 4 restart checkpoints: default value,&lt;br/&gt;- Checkpoint frequency: enter a value for the frequency of restart checkpoints.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NSUIT&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
       <string>Frequency of restart checkpoints</string>
      </property>
-     <layout class="QGridLayout" >
-      <item row="0" column="0" >
-       <layout class="QHBoxLayout" >
+     <layout class="QGridLayout">
+      <item row="0" column="0">
+       <layout class="QHBoxLayout">
         <item>
-         <widget class="QComboBox" name="comboBoxFreq" >
-          <property name="minimumSize" >
+         <widget class="QComboBox" name="comboBoxFreq">
+          <property name="minimumSize">
            <size>
             <width>200</width>
             <height>0</height>
            </size>
           </property>
-          <property name="toolTip" >
-           <string>Code_Saturne key word: NTSUIT</string>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the restart checkpoint frequency, four choices are possible:&lt;br/&gt;- Never,&lt;br/&gt;- Only at the end of the calculation&lt;br/&gt;- 4 restart checkpoints: default value,&lt;br/&gt;- Checkpoint frequency: enter a value for the frequency of restart checkpoints.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NSUIT&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>20</width>
             <height>20</height>
@@ -108,15 +112,15 @@ at the begin of the calculation</string>
          </spacer>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineEditNSUIT" >
-          <property name="maximumSize" >
+         <widget class="QLineEdit" name="lineEditNSUIT">
+          <property name="maximumSize">
            <size>
             <width>60</width>
             <height>16777215</height>
            </size>
           </property>
-          <property name="toolTip" >
-           <string>Code_Saturne key word: NSUIT</string>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the restart checkpoint frequency, four choices are possible:&lt;br/&gt;- Never,&lt;br/&gt;- Only at the end of the calculation&lt;br/&gt;- 4 restart checkpoints: default value,&lt;br/&gt;- Checkpoint frequency: enter a value for the frequency of restart checkpoints.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NSUIT&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
@@ -125,25 +129,25 @@ at the begin of the calculation</string>
      </layout>
     </widget>
    </item>
-   <item row="2" column="0" >
-    <widget class="QDialogButtonBox" name="buttonBox" >
-     <property name="orientation" >
+   <item row="2" column="0">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <property name="standardButtons" >
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
-     <property name="centerButtons" >
+     <property name="centerButtons">
       <bool>true</bool>
      </property>
     </widget>
    </item>
-   <item row="3" column="0" >
+   <item row="3" column="0">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
        <height>16</height>
@@ -161,11 +165,11 @@ at the begin of the calculation</string>
    <receiver>StartRestartAdvancedDialogForm</receiver>
    <slot>reject()</slot>
    <hints>
-    <hint type="sourcelabel" >
+    <hint type="sourcelabel">
      <x>316</x>
      <y>260</y>
     </hint>
-    <hint type="destinationlabel" >
+    <hint type="destinationlabel">
      <x>286</x>
      <y>274</y>
     </hint>
@@ -177,11 +181,11 @@ at the begin of the calculation</string>
    <receiver>StartRestartAdvancedDialogForm</receiver>
    <slot>accept()</slot>
    <hints>
-    <hint type="sourcelabel" >
+    <hint type="sourcelabel">
      <x>248</x>
      <y>254</y>
     </hint>
-    <hint type="destinationlabel" >
+    <hint type="destinationlabel">
      <x>157</x>
      <y>274</y>
     </hint>

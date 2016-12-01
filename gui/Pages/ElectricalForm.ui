@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>536</width>
-    <height>553</height>
+    <height>683</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,6 +16,9 @@
   <layout class="QGridLayout" name="gridLayout_8">
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define options for the electric model.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>Electric model</string>
      </property>
@@ -43,13 +46,19 @@
           <layout class="QGridLayout" name="gridLayout">
            <item row="0" column="0" colspan="2">
             <widget class="QLabel" name="labelPropertiesData">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a physical properties data file. The file must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;dp_ELE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and has to be put in the DATA directory of the case.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
-              <string>physical properties data file: </string>
+              <string>Physical properties data file: </string>
              </property>
             </widget>
            </item>
            <item row="0" column="2">
             <widget class="QPushButton" name="pushButtonPropertiesData">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a physical properties data file. The file must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;dp_ELE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and has to be put in the DATA directory of the case.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
@@ -86,6 +95,9 @@
                <bold>true</bold>
               </font>
              </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a physical properties data file. The file must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;dp_ELE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and has to be put in the DATA directory of the case.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="layoutDirection">
               <enum>Qt::LeftToRight</enum>
              </property>
@@ -109,16 +121,19 @@
            </item>
            <item row="3" column="0" rowspan="2">
             <widget class="QLabel" name="label">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the sub-relaxation coefficient SRROM for the density:&lt;br/&gt;&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; = SRROM * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; + (1-SRROM) * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;SRROM&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Relaxation coefficient
- for mass density</string>
+for mass density</string>
              </property>
             </widget>
            </item>
            <item row="4" column="1" colspan="2">
             <widget class="QLineEdit" name="lineEditSRROM">
              <property name="toolTip">
-              <string>Code_Saturne key word: SRROM</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the sub-relaxation coefficient SRROM for the density:&lt;br/&gt;&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; = SRROM * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; + (1-SRROM) * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;SRROM&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
            </item>
@@ -145,7 +160,7 @@
            <item row="6" column="0" colspan="2">
             <widget class="QCheckBox" name="checkBoxScaling">
              <property name="toolTip">
-              <string>Code_Saturne key word: IELCOR</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify whether an electric variables scaling should be done. In that case, the boundary conditions for the potential will be tuned at each time step in order to reach a user-specified target dissipated power (Joule effect) or a user-specified target current intensity (electric arcs).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IELCOR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Electric variables scaling</string>
@@ -185,6 +200,9 @@
       </item>
       <item row="1" column="0">
        <widget class="QGroupBox" name="groupBoxElectricArc">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify electric model options in case of electric arcs.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="title">
          <string>Electric Arc</string>
         </property>
@@ -193,6 +211,9 @@
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
             <widget class="QLabel" name="label_3">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the imposed current intensity. This is the target current intensity (A) for the calculations with boundary condition tuning for the potential. The target intensity will be reached if the boundary conditions are expressed using the variable &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;dpot&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; or if the initial boundary conditions are multiplied by the variable &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;coejou&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;COUIMP&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Imposed current 
 intensity</string>
@@ -200,7 +221,11 @@ intensity</string>
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineEditCurrent"/>
+            <widget class="QLineEdit" name="lineEditCurrent">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the imposed current intensity. This is the target current intensity (A) for the calculations with boundary condition tuning for the potential. The target intensity will be reached if the boundary conditions are expressed using the variable &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;dpot&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; or if the initial boundary conditions are multiplied by the variable &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;coejou&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;COUIMP&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -221,13 +246,20 @@ intensity</string>
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
             <widget class="QLabel" name="labelScalingModel">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the variables scaling model between:&lt;br/&gt;- General case: the boundary condition tuning is done using the global power.&lt;br/&gt;- Plane define: define a scaling plane for boundary condition tuning. Variables will be multiplied by a certain coefficient so that the integral over the plane surface of the current density is equal to the imposed current intensity.&lt;br/&gt;- User define: define an electric scaling using the user subroutine &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_electric_scaling&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;MODREC&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
-              <string>modele de recalage</string>
+              <string>Variables scaling model</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBoxScalingModel"/>
+            <widget class="QComboBox" name="comboBoxScalingModel">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the variables scaling model between:&lt;br/&gt;- General case: the boundary condition tuning is done using the global power.&lt;br/&gt;- Plane define: define a scaling plane for boundary condition tuning. Variables will be multiplied by a certain coefficient so that the integral over the plane surface of the current density is equal to the imposed current intensity.&lt;br/&gt;- User define: define an electric scaling using the user subroutine &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_electric_scaling&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;MODREC&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -246,6 +278,9 @@ intensity</string>
          </item>
          <item row="2" column="1">
           <widget class="QGroupBox" name="groupBoxRecalage">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the scaling plane parameters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="title">
             <string>Scaling plane parameters</string>
            </property>
@@ -254,14 +289,21 @@ intensity</string>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
                <widget class="QLabel" name="label_5">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the current density direction.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
-                 <string>current density
+                 <string>Current density
 direction</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QComboBox" name="comboBoxDirection"/>
+               <widget class="QComboBox" name="comboBoxDirection">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the current density direction.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
@@ -280,6 +322,9 @@ direction</string>
             </item>
             <item row="1" column="0">
              <widget class="QLabel" name="labePlaneDefinition">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the plane equation coefficients &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;b&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; where &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;aX + bY + cZ = 0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Plane definition</string>
               </property>
@@ -301,40 +346,68 @@ direction</string>
             <item row="2" column="0" colspan="2">
              <layout class="QHBoxLayout" name="horizontalLayout_4">
               <item>
-               <widget class="QLineEdit" name="lineEditPlaneDefinitionA"/>
+               <widget class="QLineEdit" name="lineEditPlaneDefinitionA">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the plane equation coefficients &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;b&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; where &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;aX + bY + cZ = 0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="QLabel" name="label_4">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the plane equation coefficients &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;b&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; where &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;aX + bY + cZ = 0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>X +</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="lineEditPlaneDefinitionB"/>
+               <widget class="QLineEdit" name="lineEditPlaneDefinitionB">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the plane equation coefficients &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;b&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; where &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;aX + bY + cZ = 0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="QLabel" name="label_6">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the plane equation coefficients &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;b&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; where &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;aX + bY + cZ = 0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Y +</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="lineEditPlaneDefinitionC"/>
+               <widget class="QLineEdit" name="lineEditPlaneDefinitionC">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the plane equation coefficients &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;b&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; where &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;aX + bY + cZ = 0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="QLabel" name="label_7">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the plane equation coefficients &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;b&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; where &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;aX + bY + cZ = 0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Z +</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="lineEditPlaneDefinitionD"/>
+               <widget class="QLineEdit" name="lineEditPlaneDefinitionD">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the plane equation coefficients &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;b&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; where &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;aX + bY + cZ = 0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="QLabel" name="label_8">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the plane equation coefficients &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;b&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; where &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;aX + bY + cZ = 0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>= 0</string>
                 </property>
@@ -347,7 +420,7 @@ direction</string>
               <item>
                <widget class="QLabel" name="label_9">
                 <property name="text">
-                 <string>epsilon</string>
+                 <string>Epsilon</string>
                 </property>
                </widget>
               </item>
@@ -377,6 +450,9 @@ direction</string>
       </item>
       <item row="2" column="0">
        <widget class="QGroupBox" name="groupBoxJoule">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify electric model options in case of Joule model.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="title">
          <string>Joule model</string>
         </property>
@@ -397,17 +473,28 @@ direction</string>
             </spacer>
            </item>
            <item row="0" column="1">
-            <widget class="QComboBox" name="comboBoxJouleModel"/>
+            <widget class="QComboBox" name="comboBoxJouleModel">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the Joule model between:&lt;br/&gt;- AC/DC,&lt;br/&gt;- Three-phase.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="1" column="0">
             <widget class="QLabel" name="label_2">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the imposed power in case of a Joule model. This is the target dissipated power (W) for the calculations with boundary condition tuning for the potential.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The target power will be reached if the boundary conditions are expressed using the variable &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;dpot&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; or if the initial boundary conditions are multiplied by the variable &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;coejou&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;PUISIM&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Imposed power</string>
              </property>
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QLineEdit" name="lineEditPower"/>
+            <widget class="QLineEdit" name="lineEditPower">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the imposed power in case of a Joule model. This is the target dissipated power (W) for the calculations with boundary condition tuning for the potential.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The target power will be reached if the boundary conditions are expressed using the variable &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;dpot&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; or if the initial boundary conditions are multiplied by the variable &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;coejou&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;PUISIM&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>

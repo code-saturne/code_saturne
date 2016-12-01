@@ -1,7 +1,8 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>TurbulenceForm</class>
- <widget class="QWidget" name="TurbulenceForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="TurbulenceForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -9,35 +10,38 @@
     <height>242</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" >
-   <item row="0" column="0" >
-    <widget class="QGroupBox" name="groupBoxModel" >
-     <property name="title" >
+  <layout class="QGridLayout">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBoxModel">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the turbulence model.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne keyword: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ITURB&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
       <string>Turbulence model</string>
      </property>
-     <layout class="QGridLayout" >
-      <item row="0" column="0" >
-       <layout class="QVBoxLayout" >
+     <layout class="QGridLayout">
+      <item row="0" column="0">
+       <layout class="QVBoxLayout">
         <item>
-         <widget class="QFrame" name="frame" >
-          <property name="frameShape" >
+         <widget class="QFrame" name="frame">
+          <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
-          <property name="frameShadow" >
+          <property name="frameShadow">
            <enum>QFrame::Plain</enum>
           </property>
-          <layout class="QGridLayout" >
-           <item row="0" column="0" >
-            <layout class="QHBoxLayout" >
+          <layout class="QGridLayout">
+           <item row="0" column="0">
+            <layout class="QHBoxLayout">
              <item>
               <spacer>
-               <property name="orientation" >
+               <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0">
                 <size>
                  <width>16</width>
                  <height>16</height>
@@ -46,27 +50,27 @@
               </spacer>
              </item>
              <item>
-              <widget class="QComboBox" name="comboBoxTurbModel" >
-               <property name="minimumSize" >
+              <widget class="QComboBox" name="comboBoxTurbModel">
+               <property name="minimumSize">
                 <size>
                  <width>350</width>
                  <height>0</height>
                 </size>
                </property>
-               <property name="toolTip" >
-                <string>Code_Saturne key word: ITURB</string>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the turbulence model.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne keyword: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ITURB&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
-               <property name="statusTip" >
+               <property name="statusTip">
                 <string>For mixing length contact the development team.</string>
                </property>
               </widget>
              </item>
              <item>
               <spacer>
-               <property name="orientation" >
+               <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0">
                 <size>
                  <width>16</width>
                  <height>16</height>
@@ -80,29 +84,29 @@
          </widget>
         </item>
         <item>
-         <widget class="Line" name="line" >
-          <property name="orientation" >
+         <widget class="Line" name="line">
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QFrame" name="frameAdvanced" >
-          <property name="frameShape" >
+         <widget class="QFrame" name="frameAdvanced">
+          <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
-          <property name="frameShadow" >
+          <property name="frameShadow">
            <enum>QFrame::Raised</enum>
           </property>
-          <layout class="QGridLayout" >
-           <item row="0" column="0" >
-            <layout class="QHBoxLayout" >
+          <layout class="QGridLayout">
+           <item row="0" column="0">
+            <layout class="QHBoxLayout">
              <item>
               <spacer>
-               <property name="orientation" >
+               <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0">
                 <size>
                  <width>20</width>
                  <height>21</height>
@@ -111,21 +115,28 @@
               </spacer>
              </item>
              <item>
-              <widget class="QLabel" name="labelAdvanced" >
-               <property name="text" >
+              <widget class="QLabel" name="labelAdvanced">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Set options associated to the chosen turbulence model; enable and select wall treatment for high Reynolds models; take into account or not buoyancy terms in turbulence equations.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
                 <string>Advanced options</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButtonAdvanced" >
-               <property name="text" >
+              <widget class="QPushButton" name="pushButtonAdvanced">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Set options associated to the chosen turbulence model; enable and select wall treatment for high Reynolds models; take into account or not buoyancy terms in turbulence equations.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
                 <string/>
                </property>
-               <property name="icon" >
-                <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/preferences-system.png</iconset>
+               <property name="icon">
+                <iconset resource="resources_pages.qrc">
+                 <normaloff>:/new/prefix1/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/icons/22x22/preferences-system.png</iconset>
                </property>
-               <property name="iconSize" >
+               <property name="iconSize">
                 <size>
                  <width>22</width>
                  <height>22</height>
@@ -135,10 +146,10 @@
              </item>
              <item>
               <spacer>
-               <property name="orientation" >
+               <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0">
                 <size>
                  <width>16</width>
                  <height>31</height>
@@ -152,22 +163,22 @@
          </widget>
         </item>
         <item>
-         <widget class="QFrame" name="frameLength" >
-          <property name="frameShape" >
+         <widget class="QFrame" name="frameLength">
+          <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
-          <property name="frameShadow" >
+          <property name="frameShadow">
            <enum>QFrame::Raised</enum>
           </property>
-          <layout class="QGridLayout" >
-           <item row="0" column="0" >
-            <layout class="QHBoxLayout" >
+          <layout class="QGridLayout">
+           <item row="0" column="0">
+            <layout class="QHBoxLayout">
              <item>
               <spacer>
-               <property name="orientation" >
+               <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0">
                 <size>
                  <width>20</width>
                  <height>21</height>
@@ -176,40 +187,40 @@
               </spacer>
              </item>
              <item>
-              <widget class="QLabel" name="labelLength" >
-               <property name="toolTip" >
-                <string>Code_Saturne key word: XLOMLG</string>
+              <widget class="QLabel" name="labelLength">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;For the mixing length model, define a length scale greater than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XLOMLG&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
-               <property name="statusTip" >
-                <string>The mixing length is a > 0 real.</string>
+               <property name="statusTip">
+                <string>The mixing length is a &gt; 0 real.</string>
                </property>
-               <property name="text" >
+               <property name="text">
                 <string>Length scale</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="lineEditLength" >
-               <property name="maximumSize" >
+              <widget class="QLineEdit" name="lineEditLength">
+               <property name="maximumSize">
                 <size>
                  <width>100</width>
                  <height>16777215</height>
                 </size>
                </property>
-               <property name="toolTip" >
-                <string>Code_Saturne key word: XLOMLG</string>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;For the mixing length model, define a length scale greater than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XLOMLG&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
-               <property name="statusTip" >
-                <string>The mixing length is a > 0 real.</string>
+               <property name="statusTip">
+                <string>The mixing length is a &gt; 0 real.</string>
                </property>
               </widget>
              </item>
              <item>
               <spacer>
-               <property name="orientation" >
+               <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" >
+               <property name="sizeHint" stdset="0">
                 <size>
                  <width>16</width>
                  <height>16</height>
@@ -227,12 +238,12 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0" >
+   <item row="1" column="0">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
        <height>20</height>
@@ -243,7 +254,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="resources_pages.qrc" />
+  <include location="resources_pages.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>655</width>
-    <height>485</height>
+    <width>667</width>
+    <height>517</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,8 +23,11 @@
        <bold>false</bold>
       </font>
      </property>
+     <property name="toolTip">
+      <string/>
+     </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="tabOUTPUT">
       <attribute name="title">
@@ -33,6 +36,9 @@
       <layout class="QGridLayout" name="gridLayout_6">
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBoxListings">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the writing frequency of the log file listing which contains informations about convergence, variables values, time evolution...&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Log frequency</string>
          </property>
@@ -42,7 +48,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -73,7 +88,7 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>Code_Saturne key word: NTLIST</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a writing frequency between:&lt;br/&gt;- Output listing at each time step,&lt;br/&gt;- Output every 'n' time steps: set the value of 'n' in the text line,&lt;br/&gt;- No output.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NTLIST&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -86,7 +101,7 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>Code_Saturne key word: NTLIST</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a writing frequency between:&lt;br/&gt;- Output listing at each time step,&lt;br/&gt;- Output every 'n' time steps: set the value of 'n' in the text line,&lt;br/&gt;- No output.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NTLIST&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -107,6 +122,9 @@
           </item>
           <item row="1" column="0">
            <widget class="QGroupBox" name="groupBoxListingParticles">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a writing frequency for particles between:&lt;br/&gt;- Output listing at each time step,&lt;br/&gt;- Output every 'n' time steps: set the value of 'n' in the text line,&lt;br/&gt;- No output.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NTLAL&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="title">
              <string>Log frequency for particles</string>
             </property>
@@ -135,7 +153,7 @@
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Code_Saturne key word: NTLAL</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a writing frequency for particles between:&lt;br/&gt;- Output listing at each time step,&lt;br/&gt;- Output every 'n' time steps: set the value of 'n' in the text line,&lt;br/&gt;- No output.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NTLAL&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                 </widget>
                </item>
@@ -154,7 +172,7 @@
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Code_Saturne key word: NTLAL</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a writing frequency for particles between:&lt;br/&gt;- Output listing at each time step,&lt;br/&gt;- Output every 'n' time steps: set the value of 'n' in the text line,&lt;br/&gt;- No output.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NTLAL&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                 </widget>
                </item>
@@ -199,7 +217,16 @@
        <string>Writer</string>
       </attribute>
       <layout class="QGridLayout">
-       <property name="margin">
+       <property name="leftMargin">
+        <number>9</number>
+       </property>
+       <property name="topMargin">
+        <number>9</number>
+       </property>
+       <property name="rightMargin">
+        <number>9</number>
+       </property>
+       <property name="bottomMargin">
         <number>9</number>
        </property>
        <property name="spacing">
@@ -207,11 +234,23 @@
        </property>
        <item row="3" column="0">
         <widget class="QGroupBox" name="groupBoxOptions">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define options for the selected writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Options</string>
          </property>
          <layout class="QGridLayout">
-          <property name="margin">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>9</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
            <number>9</number>
           </property>
           <property name="spacing">
@@ -222,7 +261,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -240,7 +288,16 @@
             </item>
             <item>
              <layout class="QGridLayout">
-              <property name="margin">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
                <number>0</number>
               </property>
               <property name="spacing">
@@ -248,8 +305,11 @@
               </property>
               <item row="0" column="0">
                <widget class="QLabel" name="labelformat">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a format for the selected writer:&lt;br/&gt;- Binary(native),&lt;br/&gt;- Binary (big endian),&lt;br/&gt;- Text.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
-                 <string>format</string>
+                 <string>Format</string>
                 </property>
                </widget>
               </item>
@@ -261,12 +321,18 @@
                   <height>0</height>
                  </size>
                 </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a format for the selected writer:&lt;br/&gt;- Binary(native),&lt;br/&gt;- Binary (big endian),&lt;br/&gt;- Text.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                </widget>
               </item>
               <item row="1" column="0">
                <widget class="QLabel" name="labelPolygon">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polygonal mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polygons are not displayed),&lt;br/&gt;- Subdivide (polygons are subdivided into triangles).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
-                 <string>polygons</string>
+                 <string>Polygons</string>
                 </property>
                </widget>
               </item>
@@ -278,12 +344,18 @@
                   <height>0</height>
                  </size>
                 </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polygonal mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polygons are not displayed),&lt;br/&gt;- Subdivide (polygons are subdivided into triangles).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                </widget>
               </item>
               <item row="2" column="0">
                <widget class="QLabel" name="labelPolyhedra">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polyheddral mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polyhedra are not displayed),&lt;br/&gt;- Subdivide (polyhedra are subdivided into pyramids and tetrahedra).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
-                 <string>polyhedra</string>
+                 <string>Polyhedra</string>
                 </property>
                </widget>
               </item>
@@ -294,6 +366,9 @@
                   <width>120</width>
                   <height>0</height>
                  </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polyheddral mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polyhedra are not displayed),&lt;br/&gt;- Subdivide (polyhedra are subdivided into pyramids and tetrahedra).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>
@@ -322,18 +397,40 @@
          <property name="spacing">
           <number>6</number>
          </property>
-         <property name="margin">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
           <number>0</number>
          </property>
          <item>
-          <widget class="QTableView" name="tableViewWriter"/>
+          <widget class="QTableView" name="tableViewWriter">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define new postprocessing writers or modify existing ones. Writers are objects managing results output. Each writer has the following properties:&lt;br/&gt;- A name,&lt;br/&gt;- An ID: a negative ID indicates that the writer cannot be destroyed, whereas a positive ID denotes a user writer.&lt;br/&gt;- A Format, which can be Ensight, MED...&lt;br/&gt;- A directory where the output files will be written.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
          </item>
          <item>
           <layout class="QHBoxLayout">
            <property name="spacing">
             <number>6</number>
            </property>
-           <property name="margin">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
             <number>0</number>
            </property>
            <item>
@@ -351,6 +448,9 @@
            </item>
            <item>
             <widget class="QPushButton" name="pushButtonAddWriter">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a postprocessing writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
@@ -362,6 +462,9 @@
            </item>
            <item>
             <widget class="QPushButton" name="pushButtonDeleteWriter">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added postprocessing writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
@@ -390,11 +493,23 @@
        </item>
        <item row="1" column="0">
         <widget class="QGroupBox" name="groupBoxFrequency">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the writing frequency for the selected writer between:&lt;br/&gt;- No periodic output,&lt;br/&gt;- Output every 'n' time steps,&lt;br/&gt;- Output every 'x' seconds,&lt;br/&gt;- Output using a formula, in which case, the formula editor has to be filled. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;An output can be written at the end of the calculation by checking the corresponding box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Frequency</string>
          </property>
          <layout class="QGridLayout">
-          <property name="margin">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>9</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
            <number>9</number>
           </property>
           <property name="spacing">
@@ -421,6 +536,9 @@
               <height>0</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the writing frequency for the selected writer between:&lt;br/&gt;- No periodic output,&lt;br/&gt;- Output every 'n' time steps,&lt;br/&gt;- Output every 'x' seconds,&lt;br/&gt;- Output using a formula, in which case, the formula editor has to be filled. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;An output can be written at the end of the calculation by checking the corresponding box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
            </widget>
           </item>
           <item row="0" column="2">
@@ -430,6 +548,9 @@
               <width>100</width>
               <height>0</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the writing frequency for the selected writer between:&lt;br/&gt;- No periodic output,&lt;br/&gt;- Output every 'n' time steps,&lt;br/&gt;- Output every 'x' seconds,&lt;br/&gt;- Output using a formula, in which case, the formula editor has to be filled. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;An output can be written at the end of the calculation by checking the corresponding box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -441,10 +562,16 @@
               <height>0</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the writing frequency for the selected writer between:&lt;br/&gt;- No periodic output,&lt;br/&gt;- Output every 'n' time steps,&lt;br/&gt;- Output every 'x' seconds,&lt;br/&gt;- Output using a formula, in which case, the formula editor has to be filled. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;An output can be written at the end of the calculation by checking the corresponding box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
            </widget>
           </item>
           <item row="0" column="4">
            <widget class="QPushButton" name="pushButtonFrequency">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the writing frequency for the selected writer between:&lt;br/&gt;- No periodic output,&lt;br/&gt;- Output every 'n' time steps,&lt;br/&gt;- Output every 'x' seconds,&lt;br/&gt;- Output using a formula, in which case, the formula editor has to be filled. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;An output can be written at the end of the calculation by checking the corresponding box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -469,6 +596,9 @@
           </item>
           <item row="1" column="1">
            <widget class="QCheckBox" name="checkBoxOutputEnd">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the writing frequency for the selected writer between:&lt;br/&gt;- No periodic output,&lt;br/&gt;- Output every 'n' time steps,&lt;br/&gt;- Output every 'x' seconds,&lt;br/&gt;- Output using a formula, in which case, the formula editor has to be filled. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;An output can be written at the end of the calculation by checking the corresponding box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Output at end of calculation</string>
             </property>
@@ -479,11 +609,23 @@
        </item>
        <item row="2" column="0">
         <widget class="QGroupBox" name="groupBoxTimeDependency">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Set the time behaviour of the meshes associated to the selected writer. Three choices are possible:&lt;br/&gt;- Fixed mesh: all meshes associated to the selected writer are steady,&lt;br/&gt;- Transient coordinates: associated meshes are deformable,&lt;br/&gt;- Transient connectivity: associated meshes have a transient number of elements (for example, the number of elements can change in relation to a physical criterion)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Time-dependency</string>
          </property>
          <layout class="QGridLayout">
-          <property name="margin">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>9</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
            <number>9</number>
           </property>
           <property name="spacing">
@@ -516,7 +658,11 @@
            </spacer>
           </item>
           <item row="0" column="1">
-           <widget class="QComboBox" name="comboBoxTimeDependency"/>
+           <widget class="QComboBox" name="comboBoxTimeDependency">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Set the time behaviour of the meshes associated to the selected writer. Three choices are possible:&lt;br/&gt;- Fixed mesh: all meshes associated to the selected writer are steady,&lt;br/&gt;- Transient coordinates: associated meshes are deformable,&lt;br/&gt;- Transient connectivity: associated meshes have a transient number of elements (for example, the number of elements can change in relation to a physical criterion)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -528,7 +674,16 @@
        <string>Mesh</string>
       </attribute>
       <layout class="QGridLayout">
-       <property name="margin">
+       <property name="leftMargin">
+        <number>9</number>
+       </property>
+       <property name="topMargin">
+        <number>9</number>
+       </property>
+       <property name="rightMargin">
+        <number>9</number>
+       </property>
+       <property name="bottomMargin">
         <number>9</number>
        </property>
        <property name="spacing">
@@ -539,18 +694,40 @@
          <property name="spacing">
           <number>6</number>
          </property>
-         <property name="margin">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
           <number>0</number>
          </property>
          <item>
-          <widget class="QTableView" name="tableViewMesh"/>
+          <widget class="QTableView" name="tableViewMesh">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select or create mesh parts and associate them with previously defined writers. A mesh part has the following properties:&lt;br/&gt;- A name,&lt;br/&gt;- An ID: a negative ID indicates that the mesh part cannot be destroyed, whereas a positive ID denotes a user mesh part.&lt;br/&gt;- A type: cells, interior faces or boundary faces,&lt;br/&gt;- A selection criteria: similar to the selection criteria of the boundary conditions definition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
          </item>
          <item>
           <layout class="QHBoxLayout">
            <property name="spacing">
             <number>6</number>
            </property>
-           <property name="margin">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
             <number>0</number>
            </property>
            <item>
@@ -568,6 +745,9 @@
            </item>
            <item>
             <widget class="QPushButton" name="pushButtonAddMesh">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
@@ -579,6 +759,9 @@
            </item>
            <item>
             <widget class="QPushButton" name="pushButtonDeleteMesh">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
@@ -607,11 +790,23 @@
        </item>
        <item row="1" column="0">
         <widget class="QGroupBox" name="groupBoxVariable">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This box has to be checked if no variable is associated in the subroutine &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_postprocess_var.f90&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is negative, only the variables selected in the Volume solution control heading will be taken into account by the writer associated to the selected mesh part,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is positive, all variables are taken into account by the writer associated to the selected mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Variables</string>
          </property>
          <layout class="QGridLayout">
-          <property name="margin">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>9</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
            <number>9</number>
           </property>
           <property name="spacing">
@@ -645,6 +840,9 @@
           </item>
           <item row="0" column="1">
            <widget class="QCheckBox" name="checkBoxAllVariables">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This box has to be checked if no variable is associated in the subroutine &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_postprocess_var.f90&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is negative, only the variables selected in the Volume solution control heading will be taken into account by the writer associated to the selected mesh part,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is positive, all variables are taken into account by the writer associated to the selected mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Auto</string>
             </property>
@@ -655,11 +853,23 @@
        </item>
        <item row="2" column="0">
         <widget class="QGroupBox" name="groupBoxAssociatedWriter">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Associate a mesh part with a previously defined writer. Double click on the line to choose a writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Associated Writers</string>
          </property>
          <layout class="QGridLayout">
-          <property name="margin">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>9</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
            <number>9</number>
           </property>
           <property name="spacing">
@@ -670,7 +880,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -687,7 +906,11 @@
              </spacer>
             </item>
             <item>
-             <widget class="QTableView" name="tableViewAssociatedWriter"/>
+             <widget class="QTableView" name="tableViewAssociatedWriter">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Associate a mesh part with a previously defined writer. Double click on the line to choose a writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item>
              <spacer>
@@ -709,7 +932,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -727,6 +959,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="pushButtonAddAssociatedWriter">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a writer to associate to the selected mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -738,6 +973,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="pushButtonDeleteAssociatedWriter">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added writer to associate to the selected mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -772,7 +1010,16 @@
        <string>Particles mesh</string>
       </attribute>
       <layout class="QGridLayout">
-       <property name="margin">
+       <property name="leftMargin">
+        <number>9</number>
+       </property>
+       <property name="topMargin">
+        <number>9</number>
+       </property>
+       <property name="rightMargin">
+        <number>9</number>
+       </property>
+       <property name="bottomMargin">
         <number>9</number>
        </property>
        <property name="spacing">
@@ -783,18 +1030,40 @@
          <property name="spacing">
           <number>6</number>
          </property>
-         <property name="margin">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
           <number>0</number>
          </property>
          <item>
-          <widget class="QTableView" name="tableViewLagrangianMesh"/>
+          <widget class="QTableView" name="tableViewLagrangianMesh">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select or create particle mesh parts and associate them with previously defined writers. A particle mesh part has the following properties:&lt;br/&gt;- A name,&lt;br/&gt;- An ID: a negative ID indicates that the mesh part cannot be destroyed, whereas a positive ID denotes a user mesh part.&lt;br/&gt;- A type: cells, interior faces or boundary faces,&lt;br/&gt;- A selection criteria: similar to the selection criteria of the boundary conditions definition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
          </item>
          <item>
           <layout class="QHBoxLayout">
            <property name="spacing">
             <number>6</number>
            </property>
-           <property name="margin">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
             <number>0</number>
            </property>
            <item>
@@ -812,6 +1081,9 @@
            </item>
            <item>
             <widget class="QPushButton" name="pushButtonAddLagrangianMesh">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a particle mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
@@ -823,6 +1095,9 @@
            </item>
            <item>
             <widget class="QPushButton" name="pushButtonDeleteLagrangianMesh">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added particle mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
@@ -851,11 +1126,23 @@
        </item>
        <item row="1" column="0">
         <widget class="QGroupBox" name="groupBoxLagrangianVariable">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This box has to be checked if no variable is associated in the subroutine &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_postprocess_var.f90&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the particle mesh part ID is negative, only the variables selected in the Volume solution control heading will be taken into account by the writer associated to the selected particle mesh part,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the particle mesh part ID is positive, all variables are taken into account by the writer associated to the selected particle mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Variables</string>
          </property>
          <layout class="QGridLayout">
-          <property name="margin">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>9</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
            <number>9</number>
           </property>
           <property name="spacing">
@@ -889,6 +1176,9 @@
           </item>
           <item row="0" column="1">
            <widget class="QCheckBox" name="checkBoxAllLagrangianVariables">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This box has to be checked if no variable is associated in the subroutine &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_postprocess_var.f90&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the particle mesh part ID is negative, only the variables selected in the Volume solution control heading will be taken into account by the writer associated to the selected particle mesh part,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the particle mesh part ID is positive, all variables are taken into account by the writer associated to the selected particle mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Auto</string>
             </property>
@@ -899,11 +1189,23 @@
        </item>
        <item row="2" column="0">
         <widget class="QGroupBox" name="groupBoxAssociatedLagrangianWriter">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Associate a particle mesh part with a previously defined writer. Double click on the line to choose a writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Associated Writers</string>
          </property>
          <layout class="QGridLayout">
-          <property name="margin">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>9</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
            <number>9</number>
           </property>
           <property name="spacing">
@@ -914,7 +1216,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -931,7 +1242,11 @@
              </spacer>
             </item>
             <item>
-             <widget class="QTableView" name="tableViewAssociatedLagrangianWriter"/>
+             <widget class="QTableView" name="tableViewAssociatedLagrangianWriter">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Associate a particle mesh part with a previously defined writer. Double click on the line to choose a writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item>
              <spacer>
@@ -953,7 +1268,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -971,6 +1295,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="pushButtonAddAssociatedLagrangianWriter">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a writer to associate to the selected particle mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -982,6 +1309,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="pushButtonDeleteAssociatedLagrangianWriter">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added writer to associate to the selected particle mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -1018,11 +1348,23 @@
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBoxMonitoring">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define monitoring points output frequency and format. A monitoring point allows a time evaluation of variables at specific locations (probes).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Monitoring points output</string>
          </property>
          <layout class="QGridLayout">
-          <property name="margin">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>9</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
            <number>9</number>
           </property>
           <property name="spacing">
@@ -1033,7 +1375,16 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -1057,6 +1408,9 @@
                 <height>0</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the monitoring points frequency:&lt;br/&gt;- at each time step,&lt;br/&gt;- every 'n' time steps,&lt;br/&gt;- every 'x' seconds,&lt;br/&gt;- never (no monitoring points file created).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NTHIST&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -1074,7 +1428,7 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>Code_Saturne key word: NTHIST</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the monitoring points frequency:&lt;br/&gt;- at each time step,&lt;br/&gt;- every 'n' time steps,&lt;br/&gt;- every 'x' seconds,&lt;br/&gt;- never (no monitoring points file created).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NTHIST&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -1093,12 +1447,15 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>Code_Saturne key word: NTHIST</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the monitoring points frequency:&lt;br/&gt;- at each time step,&lt;br/&gt;- every 'n' time steps,&lt;br/&gt;- every 'x' seconds,&lt;br/&gt;- never (no monitoring points file created).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NTHIST&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QLabel" name="label">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the format of the monitoring points:&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;.dat&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: blank-separated values,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;.csv&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: comma-separated values.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Format</string>
               </property>
@@ -1111,6 +1468,9 @@
                 <width>20</width>
                 <height>0</height>
                </size>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the format of the monitoring points:&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;.dat&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: blank-separated values,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;.csv&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: comma-separated values.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="sizeAdjustPolicy">
                <enum>QComboBox::AdjustToContents</enum>
@@ -1143,6 +1503,9 @@
            <height>1000</height>
           </size>
          </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Table of monitoring points coordinates.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Monitoring points coordinates</string>
          </property>
@@ -1160,6 +1523,9 @@
               <width>16777215</width>
               <height>300</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Table of monitoring points coordinates.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -1192,6 +1558,9 @@
                 <height>16777215</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a monitoring point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -1214,6 +1583,9 @@
                 <width>80</width>
                 <height>16777215</height>
                </size>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added monitoring point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="statusTip">
                <string>Delet several lines if you want</string>
@@ -1241,6 +1613,9 @@
                 <height>16777215</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Duplicate the selected monitoring point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="statusTip">
                <string>Delet several lines if you want</string>
               </property>
@@ -1263,11 +1638,14 @@
                 <height>16777215</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Import a list of monitoring points and their cooordinates from a CSV file.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="statusTip">
                <string>Delet several lines if you want</string>
               </property>
               <property name="text">
-               <string>import from CSV</string>
+               <string>Import from CSV</string>
               </property>
              </widget>
             </item>
@@ -1291,8 +1669,11 @@
        </item>
        <item row="2" column="0">
         <widget class="QGroupBox" name="groupBoxProbesDisplay">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Display monitoring points on SALOME VTK Viewer. The probe's radius has to be defined in meters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
-          <string>Display monitoring points on SALOME VTK viewver</string>
+          <string>Display monitoring points on SALOME VTK viewer</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -1317,13 +1698,20 @@
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
                <widget class="QLabel" name="labelProbesRadius">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Display monitoring points on SALOME VTK Viewer. The probe's radius has to be defined in meters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Probe's radius (m)</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="lineEditProbesRadius"/>
+               <widget class="QLineEdit" name="lineEditProbesRadius">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Display monitoring points on SALOME VTK Viewer. The probe's radius has to be defined in meters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>

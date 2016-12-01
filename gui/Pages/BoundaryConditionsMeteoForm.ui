@@ -1,30 +1,34 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>BoundaryConditionsMeteoForm</class>
- <widget class="QWidget" name="BoundaryConditionsMeteoForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="BoundaryConditionsMeteoForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>324</width>
-    <height>103</height>
+    <width>349</width>
+    <height>114</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_2" >
-   <item row="0" column="0" >
-    <widget class="QGroupBox" name="groupBoxMeteo" >
-     <property name="title" >
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBoxMeteo">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the boundary conditions for the atmospheric flows. One can choose either to impose standard boundary conditions or to use the data file &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; to fill the boundary conditions.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
       <string>Atmospheric flows</string>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout" >
+     <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <spacer name="horizontalSpacer" >
-        <property name="orientation" >
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>5</width>
           <height>13</height>
@@ -33,29 +37,35 @@
        </spacer>
       </item>
       <item>
-       <layout class="QGridLayout" name="gridLayout" >
-        <item row="0" column="0" >
-         <widget class="QCheckBox" name="checkBoxReadData" >
-          <property name="text" >
-           <string>meteorological profile from data</string>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QCheckBox" name="checkBoxReadData">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Use the data file &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; to fill the boundary conditions.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Meteorological profile from data</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="0" >
-         <widget class="QCheckBox" name="checkBoxAutoNature" >
-          <property name="text" >
-           <string>automatic inlet/outlet nature from data</string>
+        <item row="1" column="0">
+         <widget class="QCheckBox" name="checkBoxAutoNature">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Inlet/outlet are automatically computed from the data file &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Automatic inlet/outlet nature from data</string>
           </property>
          </widget>
         </item>
        </layout>
       </item>
       <item>
-       <spacer name="horizontalSpacer_2" >
-        <property name="orientation" >
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>6</width>
           <height>13</height>

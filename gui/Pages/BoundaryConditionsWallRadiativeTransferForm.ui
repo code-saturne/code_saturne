@@ -1,32 +1,33 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>BoundaryConditionsWallRadiativeTransferForm</class>
- <widget class="QWidget" name="BoundaryConditionsWallRadiativeTransferForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="BoundaryConditionsWallRadiativeTransferForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>372</width>
+    <width>374</width>
     <height>248</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_2" >
-   <item row="0" column="0" >
-    <widget class="QGroupBox" name="groupBoxRadiative" >
-     <property name="title" >
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBoxRadiative">
+     <property name="title">
       <string>Thermal radiative transfer</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout" >
-      <item row="0" column="0" >
-       <layout class="QHBoxLayout" name="horizontalLayout_4" >
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
-         <spacer name="horizontalSpacer_7" >
-          <property name="orientation" >
+         <spacer name="horizontalSpacer_7">
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" stdset="0" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>17</width>
             <height>17</height>
@@ -35,15 +36,15 @@
          </spacer>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout" >
+         <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_3" >
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
             <item>
-             <spacer name="horizontalSpacer_5" >
-              <property name="orientation" >
+             <spacer name="horizontalSpacer_5">
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" stdset="0" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>17</width>
                 <height>17</height>
@@ -52,24 +53,24 @@
              </spacer>
             </item>
             <item>
-             <widget class="QComboBox" name="comboBoxRadiative" >
-              <property name="minimumSize" >
+             <widget class="QComboBox" name="comboBoxRadiative">
+              <property name="minimumSize">
                <size>
                 <width>300</width>
                 <height>50</height>
                </size>
               </property>
-              <property name="toolTip" >
-               <string>Code_Saturne keyword: ISOTHP</string>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne keyword: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ISOTHP&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item>
-             <spacer name="horizontalSpacer_6" >
-              <property name="orientation" >
+             <spacer name="horizontalSpacer_6">
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" stdset="0" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>13</width>
                 <height>13</height>
@@ -80,29 +81,29 @@
            </layout>
           </item>
           <item>
-           <widget class="QTableView" name="tableViewScalars" >
-            <property name="alternatingRowColors" >
+           <widget class="QTableView" name="tableViewScalars">
+            <property name="alternatingRowColors">
              <bool>true</bool>
             </property>
-            <property name="selectionBehavior" >
+            <property name="selectionBehavior">
              <enum>QAbstractItemView::SelectRows</enum>
             </property>
-            <property name="verticalScrollMode" >
+            <property name="verticalScrollMode">
              <enum>QAbstractItemView::ScrollPerPixel</enum>
             </property>
-            <property name="horizontalScrollMode" >
+            <property name="horizontalScrollMode">
              <enum>QAbstractItemView::ScrollPerPixel</enum>
             </property>
            </widget>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_2" >
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
-             <spacer name="horizontalSpacer_2" >
-              <property name="orientation" >
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" stdset="0" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>17</width>
                 <height>20</height>
@@ -111,20 +112,20 @@
              </spacer>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout" >
+             <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
-               <widget class="QLabel" name="label" >
-                <property name="text" >
+               <widget class="QLabel" name="label">
+                <property name="text">
                  <string>Post-processing zone: no.</string>
                 </property>
                </widget>
               </item>
               <item>
-               <spacer name="horizontalSpacer" >
-                <property name="orientation" >
+               <spacer name="horizontalSpacer">
+                <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
-                <property name="sizeHint" stdset="0" >
+                <property name="sizeHint" stdset="0">
                  <size>
                   <width>17</width>
                   <height>17</height>
@@ -133,8 +134,8 @@
                </spacer>
               </item>
               <item>
-               <widget class="QLineEdit" name="lineEditZone" >
-                <property name="maximumSize" >
+               <widget class="QLineEdit" name="lineEditZone">
+                <property name="maximumSize">
                  <size>
                   <width>80</width>
                   <height>16777215</height>
@@ -145,11 +146,11 @@
              </layout>
             </item>
             <item>
-             <spacer name="horizontalSpacer_4" >
-              <property name="orientation" >
+             <spacer name="horizontalSpacer_4">
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" stdset="0" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>17</width>
                 <height>17</height>
@@ -162,11 +163,11 @@
          </layout>
         </item>
         <item>
-         <spacer name="horizontalSpacer_8" >
-          <property name="orientation" >
+         <spacer name="horizontalSpacer_8">
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" stdset="0" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>17</width>
             <height>17</height>

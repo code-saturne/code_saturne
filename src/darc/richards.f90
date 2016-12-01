@@ -313,7 +313,7 @@ ndircp = ndircl(ipr) ! no diagonal stepped aside
 thetap = 1.d0 ! implicit scheme
 imucpp = 0 ! do not multiply the convectiv term by anything
 
-! Note that the computed matrrix is always the same in the loop over iterns
+! Note that the computed matrix is always the same in the loop over iterns
 ! (loop of the Newton scheme, handled by tridim)
 ! Another option would be to store the arrays dam and xam in a global array
 ! rather than computing the matrix at each call to 'richards'.

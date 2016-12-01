@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>592</width>
-    <height>740</height>
+    <width>608</width>
+    <height>868</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -23,7 +23,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="toolTip">
-      <string/>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Mesh selection, modification and parameters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="currentIndex">
       <number>0</number>
@@ -49,7 +49,7 @@
               <item>
                <widget class="QRadioButton" name="radioButtonImport">
                 <property name="toolTip">
-                 <string>Import files using the Preprocessor</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Import files using the Preprocessor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>Import meshes</string>
@@ -59,7 +59,7 @@
               <item>
                <widget class="QRadioButton" name="radioButtonExists">
                 <property name="toolTip">
-                 <string>Use mesh output from the Preprocessor or from a previous run.</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Use mesh output from the Preprocessor or from a previous run.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>Use existing mesh input</string>
@@ -97,6 +97,13 @@
                <enum>QFrame::Raised</enum>
               </property>
               <layout class="QGridLayout" name="gridLayout_2">
+               <item row="0" column="0">
+                <widget class="QLabel" name="labelMeshInput">
+                 <property name="text">
+                  <string>Mesh input</string>
+                 </property>
+                </widget>
+               </item>
                <item row="1" column="0">
                 <layout class="QHBoxLayout" name="horizontalLayout_2">
                  <item>
@@ -108,17 +115,15 @@
                     </sizepolicy>
                    </property>
                    <property name="toolTip">
-                    <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'DejaVu Sans'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;mesh_input&lt;/span&gt; (file or directory containing files produced by Preprocessor)&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;or &lt;span style=&quot; font-weight:600;&quot;&gt;mesh_output&lt;/span&gt; from previous run.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;mesh_input&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; (file or directory containing files produced by Preprocessor)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;or &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;mesh_output&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; from previous run.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                   </widget>
                  </item>
                  <item>
                   <widget class="QToolButton" name="toolButtonMeshInput">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select input mesh file or directory.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
                    <property name="text">
                     <string/>
                    </property>
@@ -129,13 +134,6 @@ p, li { white-space: pre-wrap; }
                   </widget>
                  </item>
                 </layout>
-               </item>
-               <item row="0" column="0">
-                <widget class="QLabel" name="labelMeshInput">
-                 <property name="text">
-                  <string>Mesh input</string>
-                 </property>
-                </widget>
                </item>
               </layout>
              </widget>
@@ -173,7 +171,7 @@ p, li { white-space: pre-wrap; }
                     </size>
                    </property>
                    <property name="toolTip">
-                    <string>Optional directory in which meshes are searched for.</string>
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Optional directory in which meshes are searched for.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                    <property name="readOnly">
                     <bool>true</bool>
@@ -182,6 +180,9 @@ p, li { white-space: pre-wrap; }
                  </item>
                  <item>
                   <widget class="QToolButton" name="toolButtonMeshDir">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a local mesh directory.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
                    <property name="text">
                     <string>...</string>
                    </property>
@@ -193,6 +194,9 @@ p, li { white-space: pre-wrap; }
                  </item>
                  <item>
                   <widget class="QToolButton" name="toolButtonMeshDirClear">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Clean the selected mesh directory.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
                    <property name="text">
                     <string>...</string>
                    </property>
@@ -222,6 +226,9 @@ p, li { white-space: pre-wrap; }
                </item>
                <item>
                 <widget class="QLabel" name="labelMeshes">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select one or several meshes to import.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                  <property name="text">
                   <string>List of meshes</string>
                  </property>
@@ -234,6 +241,9 @@ p, li { white-space: pre-wrap; }
                    <width>350</width>
                    <height>100</height>
                   </size>
+                 </property>
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select one or several meshes to import&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="horizontalScrollBarPolicy">
                   <enum>Qt::ScrollBarAsNeeded</enum>
@@ -266,6 +276,9 @@ p, li { white-space: pre-wrap; }
                  </item>
                  <item>
                   <widget class="QPushButton" name="pushButtonAddMesh">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a mesh.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
                    <property name="text">
                     <string/>
                    </property>
@@ -277,6 +290,9 @@ p, li { white-space: pre-wrap; }
                  </item>
                  <item>
                   <widget class="QPushButton" name="pushButtonDeleteMesh">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added mesh.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
                    <property name="text">
                     <string/>
                    </property>
@@ -312,8 +328,7 @@ p, li { white-space: pre-wrap; }
        <item row="1" column="0">
         <widget class="QGroupBox" name="groupBoxJoin">
          <property name="toolTip">
-          <string>Join abutting boundary faces (conforming or not);
-joined faces become interior faces.</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Join abutting boundary faces (conforming or not); joined faces become interior faces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="title">
           <string>Face joining (optional)</string>
@@ -331,7 +346,16 @@ joined faces become interior faces.</string>
              <enum>QFrame::Raised</enum>
             </property>
             <layout class="QGridLayout">
-             <property name="margin">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
               <number>0</number>
              </property>
              <property name="spacing">
@@ -394,6 +418,9 @@ joined faces become interior faces.</string>
       <layout class="QGridLayout" name="gridLayout_6">
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBoxThinWall">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Transform selected internal faces into abutting boundary faces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Thin wall (optional)</string>
          </property>
@@ -404,14 +431,27 @@ joined faces become interior faces.</string>
              <string/>
             </property>
             <layout class="QGridLayout" name="_4">
-             <property name="margin">
+             <property name="leftMargin">
+              <number>9</number>
+             </property>
+             <property name="topMargin">
+              <number>9</number>
+             </property>
+             <property name="rightMargin">
+              <number>9</number>
+             </property>
+             <property name="bottomMargin">
               <number>9</number>
              </property>
              <property name="spacing">
               <number>6</number>
              </property>
              <item row="0" column="0">
-              <widget class="QTableView" name="tableViewThinWall"/>
+              <widget class="QTableView" name="tableViewThinWall">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Transform selected internal faces into abutting boundary faces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
@@ -421,7 +461,16 @@ joined faces become interior faces.</string>
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -442,11 +491,23 @@ joined faces become interior faces.</string>
               <property name="spacing">
                <number>6</number>
               </property>
-              <property name="margin">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
                <number>0</number>
               </property>
               <item>
                <widget class="QPushButton" name="pushButtonAddThinWall">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a thin wall.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Add</string>
                 </property>
@@ -454,6 +515,9 @@ joined faces become interior faces.</string>
               </item>
               <item>
                <widget class="QPushButton" name="pushButtonDeleteThinWall">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added thin wall.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Delete</string>
                 </property>
@@ -481,6 +545,9 @@ joined faces become interior faces.</string>
        </item>
        <item row="1" column="0">
         <widget class="QGroupBox" name="groupBoxExtrudeMesh">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Extrude selected boundary faces along normal direction; groups of adjacent boundary faces are extended to the newly created ones.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Extrude mesh (optional)</string>
          </property>
@@ -491,14 +558,27 @@ joined faces become interior faces.</string>
              <string/>
             </property>
             <layout class="QGridLayout" name="_7">
-             <property name="margin">
+             <property name="leftMargin">
+              <number>9</number>
+             </property>
+             <property name="topMargin">
+              <number>9</number>
+             </property>
+             <property name="rightMargin">
+              <number>9</number>
+             </property>
+             <property name="bottomMargin">
               <number>9</number>
              </property>
              <property name="spacing">
               <number>6</number>
              </property>
              <item row="0" column="0">
-              <widget class="QTableView" name="tableViewExtrude"/>
+              <widget class="QTableView" name="tableViewExtrude">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Extrude selected boundary faces along normal direction; groups of adjacent boundary faces are extended to the newly created ones.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
@@ -508,7 +588,16 @@ joined faces become interior faces.</string>
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -529,11 +618,23 @@ joined faces become interior faces.</string>
               <property name="spacing">
                <number>6</number>
               </property>
-              <property name="margin">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
                <number>0</number>
               </property>
               <item>
                <widget class="QPushButton" name="pushButtonAddExtrude">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a mesh extrusion.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Add</string>
                 </property>
@@ -541,6 +642,9 @@ joined faces become interior faces.</string>
               </item>
               <item>
                <widget class="QPushButton" name="pushButtonDeleteExtrude">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added mesh extrusion.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Delete</string>
                 </property>
@@ -568,6 +672,9 @@ joined faces become interior faces.</string>
        </item>
        <item row="2" column="0">
         <widget class="QGroupBox" name="groupBoxWarp">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Faces are cut with a Delaunay method if their warp angle is greater than a minimal angle in degrees. (Default angle value: 0.01)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Subdivide warped faces</string>
          </property>
@@ -584,7 +691,16 @@ joined faces become interior faces.</string>
              <enum>QFrame::Raised</enum>
             </property>
             <layout class="QGridLayout" name="_34">
-             <property name="margin">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
               <number>0</number>
              </property>
              <property name="spacing">
@@ -609,8 +725,11 @@ joined faces become interior faces.</string>
                 <layout class="QHBoxLayout" name="_36">
                  <item>
                   <widget class="QLabel" name="label_9">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Faces are cut with a Delaunay method if their warp angle is greater than a minimal angle in degrees. (Default angle value: 0.01)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
                    <property name="statusTip">
-                    <string>Faces are cut with a Delaunay method if their warp angle is greatter than an minimal angle in degrees (default angle value: 0.01).</string>
+                    <string/>
                    </property>
                    <property name="text">
                     <string>Max warp angle</string>
@@ -637,6 +756,9 @@ joined faces become interior faces.</string>
                      <width>100</width>
                      <height>16777215</height>
                     </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Faces are cut with a Delaunay method if their warp angle is greater than a minimal angle in degrees. (Default angle value: 0.01)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                   </widget>
                  </item>
@@ -665,6 +787,9 @@ joined faces become interior faces.</string>
        </item>
        <item row="3" column="0">
         <widget class="QGroupBox" name="groupBoxMeshSmooth">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Mitigate local defects by averaging the mesh quality. It may be useful for calculation robustness or/and results quality.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Mesh smoothing</string>
          </property>
@@ -681,7 +806,16 @@ joined faces become interior faces.</string>
              <enum>QFrame::Raised</enum>
             </property>
             <layout class="QGridLayout" name="_30">
-             <property name="margin">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
               <number>0</number>
              </property>
              <property name="spacing">
@@ -706,8 +840,11 @@ joined faces become interior faces.</string>
                 <layout class="QHBoxLayout" name="_32">
                  <item>
                   <widget class="QLabel" name="label_8">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The feature angle between a vertex and one of its adjacent faces is defined by the angle between the vertex normal and the face normal.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
                    <property name="statusTip">
-                    <string>Faces are cut with a Delaunay method if their warp angle is greatter than an minimal angle in degrees (default angle value: 0.01).</string>
+                    <string/>
                    </property>
                    <property name="text">
                     <string>Feature angle</string>
@@ -734,6 +871,9 @@ joined faces become interior faces.</string>
                      <width>100</width>
                      <height>16777215</height>
                     </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The feature angle between a vertex and one of its adjacent faces is defined by the angle between the vertex normal and the face normal.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                   </widget>
                  </item>
@@ -787,8 +927,7 @@ periodic faces become interior faces.</string>
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBoxPerio">
          <property name="toolTip">
-          <string>Define periodic faces (conforming or not);
-periodic faces become interior faces.</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define periodic faces (conforming or not); periodic faces become interior faces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="title">
           <string>Periodicity</string>
@@ -806,7 +945,16 @@ periodic faces become interior faces.</string>
              <enum>QFrame::Raised</enum>
             </property>
             <layout class="QGridLayout">
-             <property name="margin">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
               <number>0</number>
              </property>
              <property name="spacing">
@@ -834,6 +982,9 @@ periodic faces become interior faces.</string>
                    <height>200</height>
                   </size>
                  </property>
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define periodic faces (conforming or not); periodic faces become interior faces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                 </widget>
                </item>
               </layout>
@@ -844,207 +995,10 @@ periodic faces become interior faces.</string>
          </layout>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QGroupBox" name="groupBoxMode">
-         <property name="title">
-          <string>Type of definition for the selected periodicity</string>
-         </property>
-         <layout class="QGridLayout">
-          <item row="0" column="0">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>16</width>
-              <height>16</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="1">
-           <widget class="QComboBox" name="comboBoxPeriodicity">
-            <property name="statusTip">
-             <string>Periodicity's transformation mode selection </string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QGroupBox" name="groupBoxTranslation">
-         <property name="toolTip">
-          <string>Translation vector.</string>
-         </property>
-         <property name="title">
-          <string>Translation vector </string>
-         </property>
-         <layout class="QGridLayout">
-          <item row="0" column="0">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>180</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLabel" name="labelTX">
-            <property name="text">
-             <string>T&lt;sub&gt;X&lt;/sub&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QLineEdit" name="lineEditTX">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>20</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="baseSize">
-             <size>
-              <width>0</width>
-              <height>0</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="3">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>180</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="1" column="0">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>180</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLabel" name="labelTY">
-            <property name="text">
-             <string>T&lt;sub&gt;Y&lt;/sub&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QLineEdit" name="lineEditTY">
-            <property name="minimumSize">
-             <size>
-              <width>20</width>
-              <height>0</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="3">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>180</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="2" column="0">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>180</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="2" column="1">
-           <widget class="QLabel" name="labelTZ">
-            <property name="text">
-             <string>T&lt;sub&gt;Z&lt;/sub&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QLineEdit" name="lineEditTZ">
-            <property name="minimumSize">
-             <size>
-              <width>20</width>
-              <height>0</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="3">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>180</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </widget>
-       </item>
        <item row="3" column="0">
         <widget class="QGroupBox" name="groupBoxRotation">
          <property name="toolTip">
-          <string>Rotation defined by angle in degrees,
-an axis vector (does not need to be normalized),
-and coordinates of an invariant point.</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Rotation defined by angle in degrees, an axis vector (does not need to be normalized), and coordinates of an invariant point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="title">
           <string>Rotation definition</string>
@@ -1098,13 +1052,20 @@ and coordinates of an invariant point.</string>
                 <family>Standard Symbols L</family>
                </font>
               </property>
+              <property name="toolTip">
+               <string/>
+              </property>
               <property name="text">
                <string>a</string>
               </property>
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QLineEdit" name="lineEditAngle"/>
+             <widget class="QLineEdit" name="lineEditAngle">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Angle of rotation, in degrees.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item row="1" column="2">
              <spacer>
@@ -1121,13 +1082,20 @@ and coordinates of an invariant point.</string>
             </item>
             <item row="1" column="3">
              <widget class="QLabel" name="labelDX">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>D&lt;sub&gt;X&lt;/sub&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="4">
-             <widget class="QLineEdit" name="lineEditDX"/>
+             <widget class="QLineEdit" name="lineEditDX">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item row="1" column="5">
              <spacer>
@@ -1144,13 +1112,20 @@ and coordinates of an invariant point.</string>
             </item>
             <item row="1" column="6">
              <widget class="QLabel" name="labelX1">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coordinates of the invariant point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>X&lt;sub&gt;0&lt;/sub&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="7">
-             <widget class="QLineEdit" name="lineEditX1"/>
+             <widget class="QLineEdit" name="lineEditX1">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coordinates of the invariant point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item row="1" column="8">
              <spacer>
@@ -1180,13 +1155,20 @@ and coordinates of an invariant point.</string>
             </item>
             <item row="2" column="3">
              <widget class="QLabel" name="labelDY">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>D&lt;sub&gt;Y&lt;/sub&gt;</string>
               </property>
              </widget>
             </item>
             <item row="2" column="4">
-             <widget class="QLineEdit" name="lineEditDY"/>
+             <widget class="QLineEdit" name="lineEditDY">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item row="2" column="5">
              <spacer>
@@ -1203,13 +1185,20 @@ and coordinates of an invariant point.</string>
             </item>
             <item row="2" column="6">
              <widget class="QLabel" name="labelY1">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coordinates of the invariant point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Y&lt;sub&gt;0&lt;/sub&gt;</string>
               </property>
              </widget>
             </item>
             <item row="2" column="7">
-             <widget class="QLineEdit" name="lineEditY1"/>
+             <widget class="QLineEdit" name="lineEditY1">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coordinates of the invariant point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item row="2" column="8">
              <spacer>
@@ -1242,6 +1231,9 @@ and coordinates of an invariant point.</string>
               <property name="enabled">
                <bool>true</bool>
               </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>D&lt;sub&gt;Z&lt;/sub&gt;</string>
               </property>
@@ -1251,6 +1243,9 @@ and coordinates of an invariant point.</string>
              <widget class="QLineEdit" name="lineEditDZ">
               <property name="enabled">
                <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>0</string>
@@ -1275,6 +1270,9 @@ and coordinates of an invariant point.</string>
               <property name="enabled">
                <bool>true</bool>
               </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coordinates of the invariant point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Z&lt;sub&gt;0&lt;/sub&gt;</string>
               </property>
@@ -1284,6 +1282,9 @@ and coordinates of an invariant point.</string>
              <widget class="QLineEdit" name="lineEditZ1">
               <property name="enabled">
                <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coordinates of the invariant point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>0</string>
@@ -1306,7 +1307,7 @@ and coordinates of an invariant point.</string>
             <item row="0" column="1">
              <widget class="QLabel" name="label">
               <property name="toolTip">
-               <string>Angle of rotation, in degrees</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Angle of rotation, in degrees.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Angle (deg)</string>
@@ -1316,8 +1317,7 @@ and coordinates of an invariant point.</string>
             <item row="0" column="4">
              <widget class="QLabel" name="label_2">
               <property name="toolTip">
-               <string>Vector defining the axis direction
-(does not need to be normalized)</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Axis direction</string>
@@ -1327,7 +1327,7 @@ and coordinates of an invariant point.</string>
             <item row="0" column="7">
              <widget class="QLabel" name="label">
               <property name="toolTip">
-               <string>Coordinates of invariant point</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coordinates of the invariant point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Invariant point</string>
@@ -1342,9 +1342,7 @@ and coordinates of an invariant point.</string>
        <item row="4" column="0">
         <widget class="QGroupBox" name="groupBoxMixed">
          <property name="toolTip">
-          <string>The first 3x3 block corresponds to rotation, and the last column to translation.
-Any combination of rotations and translations may be expressed using
-(non-commutative) matrix products.</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;The first 3x3 block corresponds to rotation, and the last column to translation. Any combination of rotations and translations may be expressed using (non-commutative) matrix products.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="title">
           <string>Transformation matrix (homogeneous coordinates)</string>
@@ -1728,6 +1726,225 @@ Any combination of rotations and translations may be expressed using
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="2" column="0">
+        <widget class="QGroupBox" name="groupBoxTranslation">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Translation vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="title">
+          <string>Translation vector </string>
+         </property>
+         <layout class="QGridLayout">
+          <item row="0" column="0">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="labelTX">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;First component of the translation vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>T&lt;sub&gt;X&lt;/sub&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLineEdit" name="lineEditTX">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>20</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="baseSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;First component of the translation vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="0">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="labelTY">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Second component of the translation vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>T&lt;sub&gt;Y&lt;/sub&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QLineEdit" name="lineEditTY">
+            <property name="minimumSize">
+             <size>
+              <width>20</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Second component of the translation vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="2" column="0">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="labelTZ">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Third component of the translation vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>T&lt;sub&gt;Z&lt;/sub&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QLineEdit" name="lineEditTZ">
+            <property name="minimumSize">
+             <size>
+              <width>20</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Third component of the translation vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="3">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>180</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBoxMode">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Three types of periodicity can be chosen:translation, rotation or mixed.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="title">
+          <string>Type of definition for the selected periodicity</string>
+         </property>
+         <layout class="QGridLayout">
+          <item row="0" column="0">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="comboBoxPeriodicity">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Three types of periodicity can be chosen:translation, rotation or mixed.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="statusTip">
+             <string>Periodicity's transformation mode selection </string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
        </item>
       </layout>
      </widget>

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>344</width>
-    <height>41</height>
+    <height>52</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -31,6 +31,9 @@
      </item>
      <item>
       <widget class="QLabel" name="label">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the external head losses for a free inlet/outlet boundary condition. This boundary condition corresponds to the standard outlet when the flow is outgoing, but to a free inlet when the flow is ingoing. The Bernoulli relationship is used to derive a boundary condition on the pressure increment to couple velocity and pressure at these free inlet faces. This external head losses is taken into account in the Bernoulli relationship.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>External head losses definition</string>
        </property>
@@ -51,6 +54,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="pushButtonHeadLossesFormula">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the external head losses for a free inlet/outlet boundary condition. This boundary condition corresponds to the standard outlet when the flow is outgoing, but to a free inlet when the flow is ingoing. The Bernoulli relationship is used to derive a boundary condition on the pressure increment to couple velocity and pressure at these free inlet faces. This external head losses is taken into account in the Bernoulli relationship.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string/>
        </property>

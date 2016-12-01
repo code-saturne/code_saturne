@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>300</width>
-    <height>603</height>
+    <width>356</width>
+    <height>699</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,6 +16,9 @@
   <layout class="QGridLayout" name="gridLayout_9">
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxVelocity">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the velocity for the selected inlet boundary condition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>Velocity</string>
      </property>
@@ -34,13 +37,24 @@
        </spacer>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="comboBoxVelocity"/>
+       <widget class="QComboBox" name="comboBoxVelocity">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to impose the velocity. Different choices are available:&lt;br/&gt;- Norm (m/s): impose a constant norm for the velocity,&lt;br/&gt;- Mass flow rate (kg/s): impose the velocity through a constant mass flow rate,&lt;br/&gt;- Volumic flow rate (m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/s): impose the velocity through a constant volumic flow rate,&lt;br/&gt;- Norm (user_law) (m/s): impose a norm for the velocity using the formula editor,&lt;br/&gt;- Mass flow rate (user_law) (kg/s): impose the velocity through a mass flow rate using the formula editor,&lt;br/&gt;- Volumic flow rate (user_law) (m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/s): impose the velocity through a volumic flow rate using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
       </item>
       <item row="0" column="2">
-       <widget class="QLineEdit" name="lineEditVelocity"/>
+       <widget class="QLineEdit" name="lineEditVelocity">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to impose the velocity. Different choices are available:&lt;br/&gt;- Norm (m/s): impose a constant norm for the velocity,&lt;br/&gt;- Mass flow rate (kg/s): impose the velocity through a constant mass flow rate,&lt;br/&gt;- Volumic flow rate (m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/s): impose the velocity through a constant volumic flow rate,&lt;br/&gt;- Norm (user_law) (m/s): impose a norm for the velocity using the formula editor,&lt;br/&gt;- Mass flow rate (user_law) (kg/s): impose the velocity through a mass flow rate using the formula editor,&lt;br/&gt;- Volumic flow rate (user_law) (m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/s): impose the velocity through a volumic flow rate using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
       </item>
       <item row="0" column="3">
        <widget class="QLabel" name="labelUnitVelocity">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to impose the velocity. Different choices are available:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Norm (m/s): impose a constant norm for the velocity,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Mass flow rate (kg/s): impose the velocity through a constant mass flow rate,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Volumic flow rate (m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/s): impose the velocity through a constant volumic flow rate,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Norm (user_law) (m/s): impose a norm for the velocity using the formula editor,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Mass flow rate (user_law) (kg/s): impose the velocity through a mass flow rate using the formula editor,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Volumic flow rate (user_law) (m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/s): impose the velocity through a volumic flow rate using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>TextLabel</string>
         </property>
@@ -91,13 +105,20 @@
       </item>
       <item row="1" column="1">
        <widget class="QLabel" name="labelDirection">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify a direction for the velocity vector. It can be:&lt;br/&gt;- Normal direction to the inlet,&lt;br/&gt;- Specified coordinates: specify a constant vector direction,&lt;br/&gt;- User profile: impose a non-uniform variable vector direction using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Direction</string>
         </property>
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QComboBox" name="comboBoxDirection"/>
+       <widget class="QComboBox" name="comboBoxDirection">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify a direction for the velocity vector. It can be:&lt;br/&gt;- Normal direction to the inlet,&lt;br/&gt;- Specified coordinates: specify a constant vector direction,&lt;br/&gt;- User profile: impose a non-uniform variable vector direction using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
       </item>
       <item row="1" column="5">
        <widget class="QPushButton" name="pushButtonDirectionFormula">
@@ -124,6 +145,9 @@
           <height>42</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the three directions of the velocity vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
@@ -149,6 +173,9 @@
          </item>
          <item>
           <widget class="QLabel" name="labelXVelocity">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; direction of the velocity vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="text">
             <string>X</string>
            </property>
@@ -161,6 +188,9 @@
              <width>80</width>
              <height>16777215</height>
             </size>
+           </property>
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; direction of the velocity vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
@@ -179,6 +209,9 @@
          </item>
          <item>
           <widget class="QLabel" name="labelYVelocity">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; direction of the velocity vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="text">
             <string>Y</string>
            </property>
@@ -191,6 +224,9 @@
              <width>80</width>
              <height>16777215</height>
             </size>
+           </property>
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; direction of the velocity vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
@@ -209,6 +245,9 @@
          </item>
          <item>
           <widget class="QLabel" name="labelZVelocity">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; direction of the velocity vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="text">
             <string>Z</string>
            </property>
@@ -221,6 +260,9 @@
              <width>80</width>
              <height>16777215</height>
             </size>
+           </property>
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; direction of the velocity vector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
@@ -245,13 +287,25 @@
    </item>
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBoxCompressible">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the compressible variables for the selected inlet boundary condition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>Compressible</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_8">
       <item row="0" column="0">
        <layout class="QGridLayout" name="_2">
-        <property name="margin">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
          <number>0</number>
         </property>
         <property name="spacing">
@@ -278,6 +332,9 @@
             <height>0</height>
            </size>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the type of compressible inlet between:&lt;br/&gt;- Imposed inlet: specify the value of 2 variables on the boundary condition. Only 2 variables out of the 4 variables are independent and must be set and the two others will be computed automatically (except the pair &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Temperature&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Total Energy&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;br/&gt;- Subsonic inlet: specify the total pressure and the total enthalpy. 2 characteristics out of 3 are inward and thus, 2 informations must be given.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
          </widget>
         </item>
         <item row="0" column="2">
@@ -297,6 +354,9 @@
       </item>
       <item row="1" column="0">
        <widget class="QGroupBox" name="groupBoxThermodynamic">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the value of 2 variables on the boundary condition. Only 2 variables out of the 4 variables are independent and must be set and the two others will be computed automatically (except the pair &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Temperature &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Total Energy&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="title">
          <string>Thermodynamic</string>
         </property>
@@ -305,6 +365,9 @@
           <layout class="QGridLayout" name="gridLayout">
            <item row="0" column="0">
             <widget class="QLabel" name="labelPressure">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the pressure in Pa. Tick the check box and fill the box to choose the pressure as one of the two variables to set.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Pressure</string>
              </property>
@@ -325,16 +388,26 @@
            </item>
            <item row="0" column="2">
             <widget class="QCheckBox" name="checkBoxPressure">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the pressure in Pa. Tick the check box and fill the box to choose the pressure as one of the two variables to set.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
             </widget>
            </item>
            <item row="0" column="3">
-            <widget class="QLineEdit" name="lineEditPressure"/>
+            <widget class="QLineEdit" name="lineEditPressure">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the pressure in Pa. Tick the check box and fill the box to choose the pressure as one of the two variables to set.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="1" column="0">
             <widget class="QLabel" name="labelDensity">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the density in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. Tick the check box and fill the box to choose the density as one of the two variables to set.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Density</string>
              </property>
@@ -355,16 +428,26 @@
            </item>
            <item row="1" column="2">
             <widget class="QCheckBox" name="checkBoxDensity">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the density in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. Tick the check box and fill the box to choose the density as one of the two variables to set.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
             </widget>
            </item>
            <item row="1" column="3">
-            <widget class="QLineEdit" name="lineEditDensity"/>
+            <widget class="QLineEdit" name="lineEditDensity">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the density in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. Tick the check box and fill the box to choose the density as one of the two variables to set.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="2" column="0">
             <widget class="QLabel" name="labelTemperature">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the temperature in K. Tick the check box and fill the box to choose the temperature as one of the two variables to set. The total energy cannot be selected together with the temperature.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Temperature</string>
              </property>
@@ -385,16 +468,26 @@
            </item>
            <item row="2" column="2">
             <widget class="QCheckBox" name="checkBoxTemperature">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the temperature in K. Tick the check box and fill the box to choose the temperature as one of the two variables to set. The total energy cannot be selected together with the temperature.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
             </widget>
            </item>
            <item row="2" column="3">
-            <widget class="QLineEdit" name="lineEditTemperature"/>
+            <widget class="QLineEdit" name="lineEditTemperature">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the temperature in K. Tick the check box and fill the box to choose the temperature as one of the two variables to set. The total energy cannot be selected together with the temperature.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="3" column="0">
             <widget class="QLabel" name="labelEnergy">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the total energy in J/kg. Tick the check box and fill the box to choose the total energy as one of the two variables to set. The total energy cannot be selected together with the temperature.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Total energy</string>
              </property>
@@ -415,13 +508,20 @@
            </item>
            <item row="3" column="2">
             <widget class="QCheckBox" name="checkBoxEnergy">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the total energy in J/kg. Tick the check box and fill the box to choose the total energy as one of the two variables to set. The total energy cannot be selected together with the temperature.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
             </widget>
            </item>
            <item row="3" column="3">
-            <widget class="QLineEdit" name="lineEditEnergy"/>
+            <widget class="QLineEdit" name="lineEditEnergy">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the total energy in J/kg. Tick the check box and fill the box to choose the total energy as one of the two variables to set. The total energy cannot be selected together with the temperature.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -480,6 +580,9 @@
           <layout class="QGridLayout" name="gridLayout_3">
            <item row="0" column="0">
             <widget class="QLabel" name="labelDensity2">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the total pressure in Pa.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Total pressure</string>
              </property>
@@ -499,10 +602,17 @@
             </spacer>
            </item>
            <item row="0" column="2">
-            <widget class="QLineEdit" name="lineEditTotalPressure"/>
+            <widget class="QLineEdit" name="lineEditTotalPressure">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the total pressure in Pa.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="1" column="0">
             <widget class="QLabel" name="labelDensity2_2">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the total enthalpy in J/Kg.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Total enthalpy</string>
              </property>
@@ -522,7 +632,11 @@
             </spacer>
            </item>
            <item row="1" column="2">
-            <widget class="QLineEdit" name="lineEditTotalEnthalpy"/>
+            <widget class="QLineEdit" name="lineEditTotalEnthalpy">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the total enthalpy in J/Kg.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -547,6 +661,9 @@
    </item>
    <item row="2" column="0">
     <widget class="QGroupBox" name="groupBoxGasCombustion">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the temperature and/or the mean mixture fraction for the selected inlet boundary condition in case of gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>Gas Combustion</string>
      </property>
@@ -555,7 +672,16 @@
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
          <layout class="QGridLayout" name="_9">
-          <property name="margin">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
            <number>0</number>
           </property>
           <property name="spacing">
@@ -595,6 +721,9 @@
               <height>0</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;For the EBU pre-mixed flame module or the LW pre-mixed flame module, one can choose between burned and unburned gas inlet. The mixing rate and the temperature in K must be specified afterwards.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;For the &amp;quot;3 points&amp;quot; diffusion flame module, one can choose between the “oxidiser inlet” type or the &amp;quot;fuel inlet&amp;quot; type.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
            </widget>
           </item>
           <item row="1" column="1">
@@ -616,6 +745,9 @@
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0">
            <widget class="QLabel" name="labelTemperature_2">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the inlet temperature (in K) of the selected boundary condition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Temperature</string>
             </property>
@@ -642,10 +774,16 @@
               <height>16777215</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the inlet temperature (in K) of the selected boundary condition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
            </widget>
           </item>
           <item row="0" column="3">
            <widget class="QLabel" name="labelUnitTemp">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the inlet temperature (in K) of the selected boundary condition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>K</string>
             </property>
@@ -666,6 +804,9 @@
           </item>
           <item row="1" column="0" colspan="2">
            <widget class="QLabel" name="labelFraction">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the mean mixture fraction for the selected inlet boundary condition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Mean Mixture Fraction</string>
             </property>
@@ -678,6 +819,9 @@
               <width>80</width>
               <height>16777215</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the mean mixture fraction for the selected inlet boundary condition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>

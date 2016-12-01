@@ -1,35 +1,43 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>ConjugateHeatTransferForm</class>
- <widget class="QWidget" name="ConjugateHeatTransferForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="ConjugateHeatTransferForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>305</width>
+    <width>330</width>
     <height>197</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2" >
+  <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <widget class="QGroupBox" name="groupBoxSyrthes" >
-     <property name="title" >
+    <widget class="QGroupBox" name="groupBoxSyrthes">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Include conjugate heat transfers by coupling Code_Saturne and SYRTHES. The zones where the coupling occurs be must defined and a projection axis can be specified in case of 2D coupling.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
       <string>Conjugate heat  transfer: Syrthes coupling</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout" >
+     <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QTableView" name="tableViewSyrthes" />
+       <widget class="QTableView" name="tableViewSyrthes">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Include conjugate heat transfers by coupling Code_Saturne and SYRTHES. The zones where the coupling occurs be must defined and a projection axis can be specified in case of 2D coupling.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2" >
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <spacer name="horizontalSpacer_2" >
-          <property name="orientation" >
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" stdset="0" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>40</width>
             <height>20</height>
@@ -38,20 +46,23 @@
          </spacer>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout" >
+         <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
-           <widget class="QPushButton" name="pushButtonAdd" >
-            <property name="text" >
+           <widget class="QPushButton" name="pushButtonAdd">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a conjugate heat transfer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
              <string>Add</string>
             </property>
            </widget>
           </item>
           <item>
-           <spacer name="horizontalSpacer" >
-            <property name="orientation" >
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" stdset="0" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>17</width>
               <height>20</height>
@@ -60,8 +71,11 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButtonDelete" >
-            <property name="text" >
+           <widget class="QPushButton" name="pushButtonDelete">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added conjugate heat transfer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
              <string>Delete</string>
             </property>
            </widget>
@@ -69,11 +83,11 @@
          </layout>
         </item>
         <item>
-         <spacer name="horizontalSpacer_3" >
-          <property name="orientation" >
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" stdset="0" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>40</width>
             <height>20</height>
@@ -87,11 +101,11 @@
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer" >
-     <property name="orientation" >
+    <spacer name="verticalSpacer">
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" stdset="0" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
        <height>0</height>

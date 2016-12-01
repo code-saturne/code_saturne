@@ -1,50 +1,81 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>BoundaryConditionsScalarsForm</class>
- <widget class="QWidget" name="BoundaryConditionsScalarsForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="BoundaryConditionsScalarsForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>353</width>
-    <height>486</height>
+    <height>504</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" >
-   <property name="margin" >
+  <layout class="QGridLayout">
+   <property name="leftMargin">
     <number>9</number>
    </property>
-   <property name="spacing" >
+   <property name="topMargin">
+    <number>9</number>
+   </property>
+   <property name="rightMargin">
+    <number>9</number>
+   </property>
+   <property name="bottomMargin">
+    <number>9</number>
+   </property>
+   <property name="spacing">
     <number>6</number>
    </property>
-   <item row="0" column="0" >
-    <widget class="QGroupBox" name="groupBoxThermal" >
-     <property name="title" >
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBoxThermal">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the boundary conditions for the thermal scalar.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
       <string>Thermal</string>
      </property>
-     <layout class="QGridLayout" >
-      <property name="margin" >
+     <layout class="QGridLayout">
+      <property name="leftMargin">
        <number>9</number>
       </property>
-      <property name="spacing" >
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="rightMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
+       <number>9</number>
+      </property>
+      <property name="spacing">
        <number>6</number>
       </property>
-      <item row="0" column="0" >
-       <layout class="QHBoxLayout" >
-        <property name="margin" >
+      <item row="0" column="0">
+       <layout class="QHBoxLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <property name="leftMargin">
          <number>0</number>
         </property>
-        <property name="spacing" >
-         <number>6</number>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
         </property>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>20</height>
@@ -53,21 +84,25 @@
          </spacer>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBoxThermal" />
+         <widget class="QComboBox" name="comboBoxThermal">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Thermal scalar on which the boundary conditions will be applied.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
         </item>
         <item>
-         <widget class="Line" name="line" >
-          <property name="orientation" >
+         <widget class="Line" name="line">
+          <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
          </widget>
         </item>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>20</height>
@@ -76,64 +111,105 @@
          </spacer>
         </item>
         <item>
-         <layout class="QVBoxLayout" >
-          <property name="margin" >
-           <number>0</number>
-          </property>
-          <property name="spacing" >
+         <layout class="QVBoxLayout">
+          <property name="spacing">
            <number>6</number>
           </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
           <item>
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
             </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
-             <widget class="QLabel" name="labelThermal" >
-              <property name="text" >
+             <widget class="QLabel" name="labelThermal">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the thermal scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the thermal scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the thermal scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the thermal scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the thermal scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the thermal scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the thermal scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string>Type</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="comboBoxTypeThermal" />
+             <widget class="QComboBox" name="comboBoxTypeThermal">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the thermal scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the thermal scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the thermal scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the thermal scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the thermal scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the thermal scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the thermal scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonThermal" >
-              <property name="text" >
+             <widget class="QPushButton" name="pushButtonThermal">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the thermal scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the thermal scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the thermal scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the thermal scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the thermal scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the thermal scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the thermal scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string/>
               </property>
-              <property name="icon" >
-               <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+              <property name="icon">
+               <iconset resource="resources_pages.qrc">
+                <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
               </property>
              </widget>
             </item>
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
             </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
-             <widget class="QLabel" name="labelValueThermal" >
-              <property name="text" >
+             <widget class="QLabel" name="labelValueThermal">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the thermal scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the thermal scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the thermal scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the thermal scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the thermal scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the thermal scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the thermal scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string>Value</string>
               </property>
              </widget>
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>16</width>
                 <height>20</height>
@@ -142,31 +218,47 @@
              </spacer>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditValueThermal" />
+             <widget class="QLineEdit" name="lineEditValueThermal">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the thermal scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the thermal scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the thermal scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the thermal scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the thermal scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the thermal scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the thermal scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
             </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
-             <widget class="QLabel" name="labelExThermal" >
-              <property name="text" >
+             <widget class="QLabel" name="labelExThermal">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the thermal scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the thermal scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the thermal scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the thermal scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the thermal scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the thermal scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the thermal scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string>Exchange coefficient</string>
               </property>
              </widget>
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>16</width>
                 <height>20</height>
@@ -175,7 +267,11 @@
              </spacer>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditExThermal" />
+             <widget class="QLineEdit" name="lineEditExThermal">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the thermal scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the thermal scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the thermal scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the thermal scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the thermal scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the thermal scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the thermal scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -183,10 +279,10 @@
         </item>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>20</height>
@@ -199,32 +295,53 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="0" >
-    <widget class="QGroupBox" name="groupBoxMeteo" >
-     <property name="title" >
+   <item row="2" column="0">
+    <widget class="QGroupBox" name="groupBoxMeteo">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the boundary conditions for meteo scalars.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
       <string>Meteo scalar</string>
      </property>
-     <layout class="QGridLayout" >
-      <property name="margin" >
+     <layout class="QGridLayout">
+      <property name="leftMargin">
        <number>9</number>
       </property>
-      <property name="spacing" >
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="rightMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
+       <number>9</number>
+      </property>
+      <property name="spacing">
        <number>6</number>
       </property>
-      <item row="0" column="0" >
-       <layout class="QHBoxLayout" >
-        <property name="margin" >
+      <item row="0" column="0">
+       <layout class="QHBoxLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <property name="leftMargin">
          <number>0</number>
         </property>
-        <property name="spacing" >
-         <number>6</number>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
         </property>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>20</height>
@@ -233,21 +350,25 @@
          </spacer>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBoxMeteo" />
+         <widget class="QComboBox" name="comboBoxMeteo">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the boundary conditions for meteo scalars.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
         </item>
         <item>
-         <widget class="Line" name="line_3" >
-          <property name="orientation" >
+         <widget class="Line" name="line_3">
+          <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
          </widget>
         </item>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>20</height>
@@ -256,64 +377,105 @@
          </spacer>
         </item>
         <item>
-         <layout class="QVBoxLayout" >
-          <property name="margin" >
-           <number>0</number>
-          </property>
-          <property name="spacing" >
+         <layout class="QVBoxLayout">
+          <property name="spacing">
            <number>6</number>
           </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
           <item>
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
             </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
-             <widget class="QLabel" name="labelMeteo" >
-              <property name="text" >
+             <widget class="QLabel" name="labelMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string>Type</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="comboBoxTypeMeteo" />
+             <widget class="QComboBox" name="comboBoxTypeMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonMeteo" >
-              <property name="text" >
+             <widget class="QPushButton" name="pushButtonMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string/>
               </property>
-              <property name="icon" >
-               <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+              <property name="icon">
+               <iconset resource="resources_pages.qrc">
+                <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
               </property>
              </widget>
             </item>
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
             </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
-             <widget class="QLabel" name="labelValueMeteo" >
-              <property name="text" >
+             <widget class="QLabel" name="labelValueMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string>Value</string>
               </property>
              </widget>
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>16</width>
                 <height>20</height>
@@ -322,31 +484,47 @@
              </spacer>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditValueMeteo" />
+             <widget class="QLineEdit" name="lineEditValueMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
             </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
-             <widget class="QLabel" name="labelExMeteo" >
-              <property name="text" >
+             <widget class="QLabel" name="labelExMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string>Exchange coefficient</string>
               </property>
              </widget>
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>16</width>
                 <height>20</height>
@@ -355,7 +533,11 @@
              </spacer>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditExMeteo" />
+             <widget class="QLineEdit" name="lineEditExMeteo">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the meteo scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the meteo scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the meteo scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the meteo scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the meteo scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the meteo scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -363,10 +545,10 @@
         </item>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>20</width>
             <height>20</height>
@@ -379,32 +561,53 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0" >
-    <widget class="QGroupBox" name="groupBoxSpecies" >
-     <property name="title" >
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="groupBoxSpecies">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the boundary conditions for scalars.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
       <string>Species</string>
      </property>
-     <layout class="QGridLayout" >
-      <property name="margin" >
+     <layout class="QGridLayout">
+      <property name="leftMargin">
        <number>9</number>
       </property>
-      <property name="spacing" >
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="rightMargin">
+       <number>9</number>
+      </property>
+      <property name="bottomMargin">
+       <number>9</number>
+      </property>
+      <property name="spacing">
        <number>6</number>
       </property>
-      <item row="0" column="0" >
-       <layout class="QHBoxLayout" >
-        <property name="margin" >
+      <item row="0" column="0">
+       <layout class="QHBoxLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <property name="leftMargin">
          <number>0</number>
         </property>
-        <property name="spacing" >
-         <number>6</number>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
         </property>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>20</height>
@@ -413,21 +616,25 @@
          </spacer>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBoxSpecies" />
+         <widget class="QComboBox" name="comboBoxSpecies">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the boundary conditions for scalars.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
         </item>
         <item>
-         <widget class="Line" name="line_2" >
-          <property name="orientation" >
+         <widget class="Line" name="line_2">
+          <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
          </widget>
         </item>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>16</width>
             <height>20</height>
@@ -436,64 +643,105 @@
          </spacer>
         </item>
         <item>
-         <layout class="QVBoxLayout" >
-          <property name="margin" >
-           <number>0</number>
-          </property>
-          <property name="spacing" >
+         <layout class="QVBoxLayout">
+          <property name="spacing">
            <number>6</number>
           </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
           <item>
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
             </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
-             <widget class="QLabel" name="labelSpecies" >
-              <property name="text" >
+             <widget class="QLabel" name="labelSpecies">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string>Type</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="comboBoxTypeSpecies" />
+             <widget class="QComboBox" name="comboBoxTypeSpecies">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonSpecies" >
-              <property name="text" >
+             <widget class="QPushButton" name="pushButtonSpecies">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string/>
               </property>
-              <property name="icon" >
-               <iconset resource="resources_pages.qrc" >:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
+              <property name="icon">
+               <iconset resource="resources_pages.qrc">
+                <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
               </property>
              </widget>
             </item>
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
             </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
-             <widget class="QLabel" name="labelValueSpecies" >
-              <property name="text" >
+             <widget class="QLabel" name="labelValueSpecies">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string>Value</string>
               </property>
              </widget>
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>16</width>
                 <height>20</height>
@@ -502,31 +750,47 @@
              </spacer>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditValueSpecies" />
+             <widget class="QLineEdit" name="lineEditValueSpecies">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" >
-            <property name="margin" >
-             <number>0</number>
-            </property>
-            <property name="spacing" >
+           <layout class="QHBoxLayout">
+            <property name="spacing">
              <number>6</number>
             </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
-             <widget class="QLabel" name="labelExSpecies" >
-              <property name="text" >
+             <widget class="QLabel" name="labelExSpecies">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
                <string>Exchange coefficient</string>
               </property>
              </widget>
             </item>
             <item>
              <spacer>
-              <property name="orientation" >
+              <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" >
+              <property name="sizeHint" stdset="0">
                <size>
                 <width>16</width>
                 <height>20</height>
@@ -535,7 +799,11 @@
              </spacer>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditExSpecies" />
+             <widget class="QLineEdit" name="lineEditExSpecies">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -543,10 +811,10 @@
         </item>
         <item>
          <spacer>
-          <property name="orientation" >
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>20</width>
             <height>20</height>
@@ -562,7 +830,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="resources_pages.qrc" />
+  <include location="resources_pages.qrc"/>
  </resources>
  <connections/>
 </ui>

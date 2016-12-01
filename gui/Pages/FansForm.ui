@@ -28,7 +28,16 @@
         <property name="spacing">
          <number>6</number>
         </property>
-        <property name="margin">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
          <number>0</number>
         </property>
         <item>
@@ -49,11 +58,23 @@
           <property name="spacing">
            <number>6</number>
           </property>
-          <property name="margin">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
            <number>0</number>
           </property>
           <item>
            <widget class="QPushButton" name="pushButtonAddSFan">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a fan.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Add</string>
             </property>
@@ -61,6 +82,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="pushButtonDeleteFan">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added fan.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Delete</string>
             </property>
@@ -86,9 +110,7 @@
       <item row="2" column="0">
        <widget class="QGroupBox" name="groupBoxFanOption">
         <property name="toolTip">
-         <string>Rotation defined by angle in degrees,
-an axis vector (does not need to be normalized),
-and coordinates of an invariant point.</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Rotation defined by angle in degrees, an axis vector (does not need to be normalized), and coordinates of an invariant point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="title">
          <string>Fan options</string>
@@ -125,8 +147,7 @@ and coordinates of an invariant point.</string>
            <item row="0" column="2">
             <widget class="QLabel" name="label_3">
              <property name="toolTip">
-              <string>Vector defining the axis direction
-(does not need to be normalized)</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Inlet axis</string>
@@ -149,7 +170,7 @@ and coordinates of an invariant point.</string>
            <item row="0" column="5">
             <widget class="QLabel" name="label_4">
              <property name="toolTip">
-              <string>Coordinates of invariant point</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Outlet axis</string>
@@ -172,10 +193,10 @@ and coordinates of an invariant point.</string>
            <item row="0" column="8">
             <widget class="QLabel" name="label_8">
              <property name="toolTip">
-              <string>Coordinates of invariant point</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coefficients of the terms of degree 0, 1 and 2 of the pressure drop/flow rate&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
-              <string>curve coefficient</string>
+              <string>Curve coefficient</string>
              </property>
             </widget>
            </item>
@@ -194,13 +215,20 @@ and coordinates of an invariant point.</string>
            </item>
            <item row="1" column="1">
             <widget class="QLabel" name="labelDX">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>X</string>
              </property>
             </widget>
            </item>
            <item row="1" column="2">
-            <widget class="QLineEdit" name="lineEditInletX"/>
+            <widget class="QLineEdit" name="lineEditInletX">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="1" column="3">
             <spacer>
@@ -217,13 +245,20 @@ and coordinates of an invariant point.</string>
            </item>
            <item row="1" column="4">
             <widget class="QLabel" name="labelX1">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>X</string>
              </property>
             </widget>
            </item>
            <item row="1" column="5">
-            <widget class="QLineEdit" name="lineEditOutletX"/>
+            <widget class="QLineEdit" name="lineEditOutletX">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="1" column="6">
             <spacer>
@@ -240,13 +275,20 @@ and coordinates of an invariant point.</string>
            </item>
            <item row="1" column="7">
             <widget class="QLabel" name="labelX1_2">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coefficients of the terms of degree 0, 1 and 2 of the pressure drop/flow rate&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>X</string>
              </property>
             </widget>
            </item>
            <item row="1" column="8">
-            <widget class="QLineEdit" name="lineEditCoefX"/>
+            <widget class="QLineEdit" name="lineEditCoefX">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coefficients of the terms of degree 0, 1 and 2 of the pressure drop/flow rate&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="2" column="0">
             <spacer>
@@ -263,13 +305,20 @@ and coordinates of an invariant point.</string>
            </item>
            <item row="2" column="1">
             <widget class="QLabel" name="labelDY">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Y</string>
              </property>
             </widget>
            </item>
            <item row="2" column="2">
-            <widget class="QLineEdit" name="lineEditInletY"/>
+            <widget class="QLineEdit" name="lineEditInletY">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="2" column="3">
             <spacer>
@@ -286,13 +335,20 @@ and coordinates of an invariant point.</string>
            </item>
            <item row="2" column="4">
             <widget class="QLabel" name="labelY1">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Y</string>
              </property>
             </widget>
            </item>
            <item row="2" column="5">
-            <widget class="QLineEdit" name="lineEditOutletY"/>
+            <widget class="QLineEdit" name="lineEditOutletY">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="2" column="6">
             <spacer>
@@ -309,13 +365,20 @@ and coordinates of an invariant point.</string>
            </item>
            <item row="2" column="7">
             <widget class="QLabel" name="labelY1_2">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coefficients of the terms of degree 0, 1 and 2 of the pressure drop/flow rate&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Y</string>
              </property>
             </widget>
            </item>
            <item row="2" column="8">
-            <widget class="QLineEdit" name="lineEditCoefY"/>
+            <widget class="QLineEdit" name="lineEditCoefY">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coefficients of the terms of degree 0, 1 and 2 of the pressure drop/flow rate&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
            </item>
            <item row="3" column="0">
             <spacer>
@@ -335,6 +398,9 @@ and coordinates of an invariant point.</string>
              <property name="enabled">
               <bool>true</bool>
              </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Z</string>
              </property>
@@ -344,6 +410,9 @@ and coordinates of an invariant point.</string>
             <widget class="QLineEdit" name="lineEditInletZ">
              <property name="enabled">
               <bool>true</bool>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>0</string>
@@ -368,6 +437,9 @@ and coordinates of an invariant point.</string>
              <property name="enabled">
               <bool>true</bool>
              </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Z</string>
              </property>
@@ -377,6 +449,9 @@ and coordinates of an invariant point.</string>
             <widget class="QLineEdit" name="lineEditOutletZ">
              <property name="enabled">
               <bool>true</bool>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Vector defining the axis direction (does not need to be normalized)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>0</string>
@@ -401,6 +476,9 @@ and coordinates of an invariant point.</string>
              <property name="enabled">
               <bool>true</bool>
              </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coefficients of the terms of degree 0, 1 and 2 of the pressure drop/flow rate&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Z</string>
              </property>
@@ -410,6 +488,9 @@ and coordinates of an invariant point.</string>
             <widget class="QLineEdit" name="lineEditCoefZ">
              <property name="enabled">
               <bool>true</bool>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Coefficients of the terms of degree 0, 1 and 2 of the pressure drop/flow rate&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>0</string>

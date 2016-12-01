@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>412</width>
-    <height>343</height>
+    <width>452</width>
+    <height>440</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tabPartition">
       <attribute name="title">
@@ -55,6 +55,9 @@
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="label_5">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;For each integer in this white-space separated list, a partitioning for the given number of MPI ranks will be computed and output.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>List of partitionings for use
 by later calculation</string>
@@ -77,11 +80,7 @@ by later calculation</string>
           <item row="2" column="1" colspan="2">
            <widget class="QLineEdit" name="lineEdit_PartList">
             <property name="toolTip">
-             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For each integer in this white-space separated list, a partitioning for the given number of MPI ranks will be computed and output.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;For each integer in this white-space separated list, a partitioning for the given number of MPI ranks will be computed and output.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -90,7 +89,7 @@ p, li { white-space: pre-wrap; }
             <item>
              <widget class="QLabel" name="label">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use existing partition input file if available, or recompute partitioning.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Use existing partition input file if available, or recompute partitioning.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Use existing partition input</string>
@@ -100,7 +99,7 @@ p, li { white-space: pre-wrap; }
             <item>
              <widget class="QRadioButton" name="radioButtonYes">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use existing partition input file if available, or recompute partitioning.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Use existing partition input file if available, or recompute partitioning.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>on</string>
@@ -110,7 +109,7 @@ p, li { white-space: pre-wrap; }
             <item>
              <widget class="QRadioButton" name="radioButtonNo">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use existing partition input file if available, or recompute partitioning.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Use existing partition input file if available, or recompute partitioning.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>off</string>
@@ -150,6 +149,9 @@ p, li { white-space: pre-wrap; }
              </item>
              <item>
               <widget class="QLabel" name="labelPartitionDir">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Selection of the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;partition_input&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; directory.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="text">
                 <string>Partition input directory</string>
                </property>
@@ -171,12 +173,15 @@ p, li { white-space: pre-wrap; }
                    <height>0</height>
                   </size>
                  </property>
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Selection of the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;partition_input&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; directory.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                 </widget>
                </item>
                <item>
                 <widget class="QToolButton" name="toolButton_PartInputDir">
                  <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Selection of the partition_input directory&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Selection of the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;partition_input&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; directory.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>...</string>
@@ -231,6 +236,9 @@ p, li { white-space: pre-wrap; }
            <layout class="QGridLayout" name="gridLayout">
             <item row="1" column="0">
              <widget class="QLabel" name="label_7">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;PT-SCOTCH or ParMETIS will run on &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; font-style:italic;&quot;&gt;n_global_ranks&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; font-style:italic;&quot;&gt;MPI_rank_step&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; ranks, so in case partitioning quality degradation with increasing number of ranks is observed or suspected, using a value &amp;gt; 1 should increase partition quality.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;In addition to running slower, using a too high value may lead to partitioning requiring more memory than is available on active ranks.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>MPI rank step</string>
               </property>
@@ -239,7 +247,7 @@ p, li { white-space: pre-wrap; }
             <item row="1" column="3">
              <widget class="QCheckBox" name="checkBox_IgnorePerio">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;For graph-based partitionings, ignoring periodicity may slightly decrease partitioning quality, but may avoid degrading the performance of the mesh matching in case of couplings using the PLE library (such asSYRTHES, Code_Saturne, or NEPTUNE_CFD).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;For graph-based partitionings, ignoring periodicity may slightly decrease partitioning quality, but may avoid degrading the performance of the mesh matching in case of couplings using the PLE library (such as SYRTHES, Code_Saturne, or NEPTUNE_CFD).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Ignore Periodicity</string>
@@ -248,6 +256,9 @@ p, li { white-space: pre-wrap; }
             </item>
             <item row="0" column="0">
              <widget class="QLabel" name="label_4">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;By default, graph-based partitioning is used if available (PT-SCOTCH or Par METIS in parallel, SCOTCH or METIS).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Partitioning type</string>
               </property>
@@ -256,19 +267,14 @@ p, li { white-space: pre-wrap; }
             <item row="0" column="2" colspan="2">
              <widget class="QComboBox" name="comboBox_PartType">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;By default, graph-based partitioning is used if available (PT-SCOTCH or Par METIS in parallel, SCOTCH or METIS).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;By default, graph-based partitioning is used if available (PT-SCOTCH or Par METIS in parallel, SCOTCH or METIS).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="2">
              <widget class="RankSpinBoxWidget" name="spinBoxRankStep">
               <property name="toolTip">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'DejaVu Sans'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;PT-SCOTCH or ParMETIS will run on &lt;span style=&quot; font-style:italic;&quot;&gt;n_global_ranks&lt;/span&gt; / &lt;span style=&quot; font-weight:600; font-style:italic;&quot;&gt;MPI_rank_step&lt;/span&gt; ranks, so in case partitioning quality degradation with increasing number of ranks is observed or suspected, using a value &amp;gt; 1 should increase partition quality.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;In addition to running slower, using a too high value may lead to partitioning requiring more memory than is available on active ranks.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;PT-SCOTCH or ParMETIS will run on &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; font-style:italic;&quot;&gt;n_global_ranks&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;/&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;/&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; font-style:italic;&quot;&gt;MPI_rank_step&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; ranks, so in case partitioning quality degradation with increasing number of ranks is observed or suspected, using a value &amp;gt; 1 should increase partition quality.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;In addition to running slower, using a too high value may lead to partitioning requiring more memory than is available on active ranks.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="minimum">
                <number>1</number>
@@ -319,6 +325,9 @@ p, li { white-space: pre-wrap; }
            <layout class="QGridLayout" name="gridLayout_7">
             <item row="2" column="0">
              <widget class="QLabel" name="label_9">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Using a value &amp;gt; 1 here, at most 1 of every &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; font-style:italic;&quot;&gt;MPI_rank_step&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; ranks will participate in parallel IO and associated block distribution.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This may increase performance in some cases, at the expense of increased memory use during IO operations for those ranks which do participate in block IO.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>MPI rank step</string>
               </property>
@@ -327,20 +336,15 @@ p, li { white-space: pre-wrap; }
             <item row="0" column="1" colspan="3">
              <widget class="QComboBox" name="comboBox_IORead">
               <property name="toolTip">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'DejaVu Sans'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;File block access options define the way files containing distributable data such as mesh input, partition input, and restart files are read.&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif';&quot;&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;In parallel, metadata is usually read only by one rank, and broadcast to others, but output of block data may be handled in several manners. By default, collective MPI IO is used if available.&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif';&quot;&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Additional, advanced options may be available through the user functions to be found in cs_user_performance_tuning.c.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;File block access options define the way files containing distributable data such as mesh input, partition input, and restart files are read. &lt;br/&gt;&lt;br/&gt;In parallel, metadata is usually read only by one rank, and broadcast to others, but output of block data may be handled in several manners. By default, collective MPI IO is used if available.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Additional, advanced options may be available through the user functions to be found in &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_performance_tuning.c.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="0" column="0">
              <widget class="QLabel" name="label_10">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;File block access options define the way files containing distributable data such as mesh input, partition input, and restart files are read. &lt;br/&gt;&lt;br/&gt;In parallel, metadata is usually read only by one rank, and broadcast to others, but output of block data may be handled in several manners. By default, collective MPI IO is used if available.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Additional, advanced options may be available through the user functions to be found in &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_performance_tuning.c.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Read method</string>
               </property>
@@ -348,6 +352,9 @@ p, li { white-space: pre-wrap; }
             </item>
             <item row="1" column="0">
              <widget class="QLabel" name="label_11">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;File block access options define the way files containing distributable data such as mesh input, partition input, and restart files are read. &lt;br/&gt;&lt;br/&gt;In parallel, metadata is usually read only by one rank, and broadcast to others, but output of block data may be handled in several manners. By default, collective MPI IO is used if available.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Additional, advanced options may be available through the user functions to be found in &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_performance_tuning.c.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Write method</string>
               </property>
@@ -356,15 +363,7 @@ p, li { white-space: pre-wrap; }
             <item row="1" column="1" colspan="3">
              <widget class="QComboBox" name="comboBox_IOWrite">
               <property name="toolTip">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'DejaVu Sans'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;File block access options define the way files containing distributable data such as checkpoint and EnSight output files are written.&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif';&quot;&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;In parallel, metadata is usually written only by one rank, but output of block data may be handled in several manners. By default, collective MPI IO is used if available.&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif';&quot;&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Additional, advanced options may be available through the user functions to be found in cs_user_performance_tuning.c.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;File block access options define the way files containing distributable data such as mesh input, partition input, and restart files are read. &lt;br/&gt;&lt;br/&gt;In parallel, metadata is usually read only by one rank, and broadcast to others, but output of block data may be handled in several manners. By default, collective MPI IO is used if available.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Additional, advanced options may be available through the user functions to be found in &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_performance_tuning.c.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -383,6 +382,9 @@ p, li { white-space: pre-wrap; }
             </item>
             <item row="3" column="0">
              <widget class="QLabel" name="label_3">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Using a value &amp;gt; 1 here, data will be distributed by blocks such as the minimum size of non-empty blocks will by equal to the prescibed value, the last block being possibly smaller.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This limits the number of active blocks to a value proportional to the data size (mitigating latency issues for small data sets, while not requiring too much local memory).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Minimum block size</string>
               </property>
@@ -391,12 +393,7 @@ p, li { white-space: pre-wrap; }
             <item row="2" column="1">
              <widget class="RankSpinBoxWidget" name="spinBoxIORankStep">
               <property name="toolTip">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'DejaVu Sans';&quot;&gt;Using a value &amp;gt; 1 here, at most 1 of every &lt;/span&gt;&lt;span style=&quot; font-family:'DejaVu Sans'; font-weight:600; font-style:italic;&quot;&gt;MPI_rank_step&lt;/span&gt;&lt;span style=&quot; font-family:'DejaVu Sans';&quot;&gt; ranks will participate in parallel IO and associated block distribution.&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'DejaVu Sans';&quot;&gt;This may increase performance in some cases, at the expense of increased memory use during IO operations for those ranks which do participate in block IO.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Using a value &amp;gt; 1 here, at most 1 of every &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; font-style:italic;&quot;&gt;MPI_rank_step&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; ranks will participate in parallel IO and associated block distribution.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This may increase performance in some cases, at the expense of increased memory use during IO operations for those ranks which do participate in block IO.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="minimum">
                <number>1</number>
@@ -409,13 +406,7 @@ p, li { white-space: pre-wrap; }
             <item row="3" column="1" colspan="2">
              <widget class="BufferSpinBoxWidget" name="spinBoxIOMinBlockSize">
               <property name="toolTip">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'DejaVu Sans'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;Using a value &amp;gt; 1 here, data will be distributed by blocks such as the minimum size of non-empty blocks will by equal to the prescibed value, the last block being possibly smaller.&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif';&quot;&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Sans Serif';&quot;&gt;This limits the number of active blocks to a value proportional to the data size (mitigating latency issues for small data sets, while not requiring too much local memory).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Using a value &amp;gt; 1 here, data will be distributed by blocks such as the minimum size of non-empty blocks will by equal to the prescibed value, the last block being possibly smaller.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This limits the number of active blocks to a value proportional to the data size (mitigating latency issues for small data sets, while not requiring too much local memory).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="minimum">
                <number>0</number>

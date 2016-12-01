@@ -22,6 +22,9 @@
        <height>0</height>
       </size>
      </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the script file that will be used for the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>Script file</string>
      </property>
@@ -44,7 +47,7 @@
         <item>
          <widget class="QLabel" name="labelBatch">
           <property name="toolTip">
-           <string>The batch command file name is searched for in </string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the script file that will be used for the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Select the script file</string>
@@ -70,7 +73,7 @@
         <item>
          <widget class="QToolButton" name="toolButtonSearchBatch">
           <property name="toolTip">
-           <string>Search for the script</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the script file that will be used for the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>...</string>
@@ -114,6 +117,9 @@
    </item>
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBoxJob">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Fill this section for a parallel computation on a cluster.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string> Job parameters</string>
      </property>
@@ -135,6 +141,9 @@
        <layout class="QGridLayout" name="jobManagementLayout">
         <item row="0" column="0">
          <widget class="QLabel" name="labelJobName">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the job name.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Job name</string>
           </property>
@@ -163,6 +172,9 @@
               <height>0</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the job name.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
            </widget>
           </item>
           <item>
@@ -182,6 +194,9 @@
         </item>
         <item row="1" column="0">
          <widget class="QLabel" name="labelNodes">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specifiy the number of nodes the number of tasks per node. It depends on the cluster's architecture.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Number of nodes</string>
           </property>
@@ -191,6 +206,9 @@
          <layout class="QHBoxLayout" name="horizontalLayoutNodes">
           <item>
            <widget class="QSpinBox" name="spinBoxNodes">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specifiy the number of nodes the number of tasks per node. It depends on the cluster's architecture.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="minimum">
              <number>1</number>
             </property>
@@ -218,7 +236,7 @@
           <item>
            <widget class="QLabel" name="labelPpn">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of MPI processes per node&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Number of MPI processes per node.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Tasks per node</string>
@@ -227,6 +245,9 @@
           </item>
           <item>
            <widget class="QSpinBox" name="spinBoxPpn">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Number of MPI processes per node.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="minimum">
              <number>1</number>
             </property>
@@ -255,6 +276,9 @@
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="labelProcs">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of MPI processes.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Number of Processes</string>
           </property>
@@ -265,7 +289,7 @@
           <item>
            <widget class="QSpinBox" name="spinBoxProcs">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of MPI processes&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of MPI processes.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="minimum">
              <number>1</number>
@@ -292,6 +316,9 @@
         </item>
         <item row="3" column="0">
          <widget class="QLabel" name="labelThreads">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of OpenMP threads per MPI task.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Threads per task</string>
           </property>
@@ -302,7 +329,7 @@
           <item>
            <widget class="QSpinBox" name="spinBoxThreads">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of OpenMP threads per MPI task&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of OpenMP threads per MPI task.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="minimum">
              <number>1</number>
@@ -329,6 +356,9 @@
         </item>
         <item row="4" column="0">
          <widget class="QLabel" name="labelWTime">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the wall-clock time, which is the maximal execution time of the job.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Wall-clock  time</string>
           </property>
@@ -338,6 +368,9 @@
          <layout class="QHBoxLayout" name="horizontalLayoutWallclock">
           <item>
            <widget class="QSpinBox" name="spinBoxDays">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the wall-clock time, which is the maximal execution time of the job.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="maximum">
              <number>60</number>
             </property>
@@ -345,6 +378,9 @@
           </item>
           <item>
            <widget class="QLabel" name="labelDays">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the wall-clock time, which is the maximal execution time of the job.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>d</string>
             </property>
@@ -365,6 +401,9 @@
           </item>
           <item>
            <widget class="QSpinBox" name="spinBoxHours">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the wall-clock time, which is the maximal execution time of the job.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="maximum">
              <number>23</number>
             </property>
@@ -372,6 +411,9 @@
           </item>
           <item>
            <widget class="QLabel" name="labelHours">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the wall-clock time, which is the maximal execution time of the job.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>h</string>
             </property>
@@ -392,6 +434,9 @@
           </item>
           <item>
            <widget class="QSpinBox" name="spinBoxMinutes">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the wall-clock time, which is the maximal execution time of the job.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="maximum">
              <number>59</number>
             </property>
@@ -402,6 +447,9 @@
           </item>
           <item>
            <widget class="QLabel" name="labelMinutes">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the wall-clock time, which is the maximal execution time of the job.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>m</string>
             </property>
@@ -422,6 +470,9 @@
           </item>
           <item>
            <widget class="QSpinBox" name="spinBoxSeconds">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the wall-clock time, which is the maximal execution time of the job.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="maximum">
              <number>59</number>
             </property>
@@ -429,6 +480,9 @@
           </item>
           <item>
            <widget class="QLabel" name="labelSeconds">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the wall-clock time, which is the maximal execution time of the job.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>s</string>
             </property>
@@ -478,6 +532,9 @@
         </item>
         <item row="6" column="0">
          <widget class="QLabel" name="labelJobAccount">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the job account allocation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Account</string>
           </property>
@@ -492,6 +549,9 @@
               <width>300</width>
               <height>0</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the job account allocation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -512,6 +572,9 @@
         </item>
         <item row="7" column="0">
          <widget class="QLabel" name="labelJobWCKey">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the WCKey of the job.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>WCKey</string>
           </property>
@@ -526,6 +589,9 @@
               <width>300</width>
               <height>0</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the WCKey of the job.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -565,6 +631,9 @@
    </item>
    <item row="2" column="0">
     <widget class="QGroupBox" name="groupBoxScript">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Complete the calculation script parameters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="statusTip">
       <string/>
      </property>
@@ -591,6 +660,9 @@
          <layout class="QGridLayout" name="gridLayout">
           <item row="0" column="0">
            <widget class="QLabel" name="label">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the Run type between:&lt;br/&gt;- Import mesh only: prepare the mesh for the computation without modifying it and create the mesh_input file which contains data describing the mesh,&lt;br/&gt;- Mesh preprocessing: the kernel of Code_Saturne will performs the following steps:&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Face joining&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Warped face subdividing&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Periodic boundaries definition&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Execution of the modification defined in &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_mesh.c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Creation of the mesh_ouput file,&lt;br/&gt;- Mesh quality criteria : run only the mesh verification step,&lt;br/&gt;- Standard: run all the above operations and eventually run the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Run type</string>
             </property>
@@ -610,20 +682,34 @@
            </spacer>
           </item>
           <item row="0" column="2">
-           <widget class="QComboBox" name="comboBoxRunType"/>
+           <widget class="QComboBox" name="comboBoxRunType">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the Run type between:&lt;br/&gt;- Import mesh only: prepare the mesh for the computation without modifying it and create the mesh_input file which contains data describing the mesh,&lt;br/&gt;- Mesh preprocessing: the kernel of Code_Saturne will performs the following steps:&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Face joining&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Warped face subdividing&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Periodic boundaries definition&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Execution of the modification defined in &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_mesh.c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Creation of the mesh_ouput file,&lt;br/&gt;- Mesh quality criteria : run only the mesh verification step,&lt;br/&gt;- Standard: run all the above operations and eventually run the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
           </item>
           <item row="1" column="0">
            <widget class="QLabel" name="labelRunId">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Name of the calculation directory that will be created.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Run id</string>
             </property>
            </widget>
           </item>
           <item row="1" column="2">
-           <widget class="QLineEdit" name="lineEditRunId"/>
+           <widget class="QLineEdit" name="lineEditRunId">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Name of the calculation directory that will be created.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="labelNProcs">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of MPI processes for the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Number of processes</string>
             </property>
@@ -632,7 +718,7 @@
           <item row="2" column="2">
            <widget class="QSpinBox" name="spinBoxNProcs">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of MPI processes&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of MPI processes for the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
              <number>524288</number>
@@ -641,6 +727,9 @@
           </item>
           <item row="3" column="0">
            <widget class="QLabel" name="labelNThreads">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of OpenMP threads per MPI task.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Threads per task</string>
             </property>
@@ -649,7 +738,7 @@
           <item row="3" column="2">
            <widget class="QSpinBox" name="spinBoxNThreads">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of OpenMP threads per MPI task&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of OpenMP threads per MPI task.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
              <number>128</number>
@@ -672,6 +761,9 @@
           </item>
           <item row="5" column="0">
            <widget class="QLabel" name="labelAdvanced">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Modify advanced options for the calculation such as the output management and debug options.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Advanced options</string>
             </property>
@@ -679,6 +771,9 @@
           </item>
           <item row="5" column="2">
            <widget class="QToolButton" name="toolButtonAdvanced">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Modify advanced options for the calculation such as the output management and debug options.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>...</string>
             </property>
@@ -718,9 +813,12 @@
     <widget class="QGroupBox" name="groupBox">
      <property name="sizeHint" stdset="0">
       <size>
-       <width>198</width>
+       <width>202</width>
        <height>67</height>
       </size>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Run the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Calculation start</string>
@@ -741,6 +839,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonRunSubmit">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Run the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="layoutDirection">
          <enum>Qt::LeftToRight</enum>
         </property>

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>576</width>
-    <height>1227</height>
+    <width>594</width>
+    <height>1476</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,6 +16,9 @@
   <layout class="QGridLayout" name="gridLayout_4">
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxBoundaries">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the Lagrangian boundary conditions.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>Lagrangian boundary conditions</string>
      </property>
@@ -44,6 +47,9 @@
             <width>16777215</width>
             <height>300</height>
            </size>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;For each boundary condition, specify its nature, the particle-boundary interaction and the number of classes for particle inlets.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="autoScrollMargin">
            <number>14</number>
@@ -108,7 +114,7 @@
              <item row="0" column="1">
               <widget class="QLabel" name="labelICLAS">
                <property name="toolTip">
-                <string>Code_Saturne key word: ICLAS</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the number of the class to define.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Class number</string>
@@ -128,13 +134,6 @@
                </property>
               </spacer>
              </item>
-             <item row="0" column="3">
-              <widget class="QSpinBox" name="spinBoxICLAS">
-               <property name="toolTip">
-                <string>Code_Saturne key word: ICLAS</string>
-               </property>
-              </widget>
-             </item>
              <item row="0" column="4">
               <spacer>
                <property name="orientation">
@@ -147,6 +146,13 @@
                 </size>
                </property>
               </spacer>
+             </item>
+             <item row="0" column="3">
+              <widget class="QSpinBox" name="spinBoxICLAS">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the number of the class to define.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
              </item>
             </layout>
            </item>
@@ -164,7 +170,7 @@
              <item row="0" column="1">
               <widget class="QLabel" name="labelIJNBP">
                <property name="toolTip">
-                <string>Code_Saturne key word: IJNBP</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of particles in each class defined above.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Number of particles in class</string>
@@ -180,14 +186,14 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word: IJNBP</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of particles in each class defined above.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
              <item row="1" column="1">
               <widget class="QLabel" name="labelIJFRE">
                <property name="toolTip">
-                <string>Code_Saturne key word: IJFRE</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the frequency of injection.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Frequency of injection</string>
@@ -203,7 +209,7 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word: IJFRE</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the frequency of injection.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
@@ -223,7 +229,7 @@
              <item row="2" column="1">
               <widget class="QLabel" name="labelICLST">
                <property name="toolTip">
-                <string>Code_Saturne key word: ICLST</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Number of the group to which the particle belongs (only if one wishes to calculate statistics per group).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Cluster number for particle</string>
@@ -252,7 +258,7 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word: ICLST</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Number of the group to which the particle belongs (only if one wishes to calculate statistics per group).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
@@ -272,7 +278,7 @@
              <item row="3" column="1">
               <widget class="QLabel" name="labelIROPT">
                <property name="toolTip">
-                <string>Code_Saturne key word: IROPT</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the particle density.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Density</string>
@@ -288,21 +294,24 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word: IROPT</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the particle density.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
              <item row="3" column="4">
               <widget class="QLabel" name="labelUnitIROPT">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the particle density.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="text">
-                <string>kg/m3</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;kg/m&lt;span style=&quot; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
              <item row="4" column="1">
               <widget class="QLabel" name="labelIRCOLM">
                <property name="toolTip">
-                <string>Code_Saturne key word: IRCOLM</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IRCOLM&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Fouling index</string>
@@ -318,14 +327,14 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word: IRCOLM</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IRCOLM&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
              <item row="4" column="4">
               <widget class="QLabel" name="labelUnitIRCOLM">
                <property name="text">
-                <string></string>
+                <string/>
                </property>
               </widget>
              </item>
@@ -367,7 +376,7 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word: IPOIT</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to define the statistical weight profile.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
@@ -393,7 +402,16 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout">
-                <property name="margin">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
                  <number>0</number>
                 </property>
                 <item row="0" column="0">
@@ -401,7 +419,7 @@
                   <item row="0" column="0">
                    <widget class="QLabel" name="labelIDEBT">
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IDEBT</string>
+                     <string/>
                     </property>
                     <property name="text">
                      <string>Flow rate</string>
@@ -430,7 +448,7 @@
                      </size>
                     </property>
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IDEBT</string>
+                     <string/>
                     </property>
                    </widget>
                   </item>
@@ -468,7 +486,16 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout">
-                <property name="margin">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
                  <number>0</number>
                 </property>
                 <item row="0" column="0">
@@ -476,7 +503,7 @@
                   <item row="0" column="0">
                    <widget class="QLabel" name="labelIPOIT">
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IPOIT</string>
+                     <string/>
                     </property>
                     <property name="text">
                      <string>Statistical weight</string>
@@ -505,7 +532,7 @@
                      </size>
                     </property>
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IPOIT</string>
+                     <string/>
                     </property>
                    </widget>
                   </item>
@@ -521,6 +548,9 @@
         </item>
         <item>
          <widget class="QGroupBox" name="groupBoxVelocity">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the velocity profile for the selected particle inlet boundary condition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="title">
            <string>Velocity</string>
           </property>
@@ -536,7 +566,7 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word: IJUVW</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the velocity profile for the selected particle inlet boundary condition. Four choices are available:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Flow velocity: impose the flow velocity for the particle velocity,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Normal direction velocities: impose velocity along the normal direction of the boundary face,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Velocity given by values: specify the value of each component of the velocity vector,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- User-defined profile: specify the velocity vector in the user subroutines.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
@@ -568,7 +598,16 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout">
-                <property name="margin">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
                  <number>0</number>
                 </property>
                 <item row="0" column="0">
@@ -576,7 +615,7 @@
                   <item row="0" column="0">
                    <widget class="QLabel" name="labelIUNO">
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IUNO</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the norm of the velocity vector. Its direction is normal to boundary faces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                     <property name="text">
                      <string>Norm</string>
@@ -586,12 +625,15 @@
                   <item row="0" column="1">
                    <widget class="QLineEdit" name="lineEditIUNO">
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IUNO</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the norm of the velocity vector. Its direction is normal to boundary faces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="2">
                    <widget class="QLabel" name="labelUnitIUNO">
+                    <property name="toolTip">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the norm of the velocity vector. Its direction is normal to boundary faces.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
                     <property name="text">
                      <string>m/s</string>
                     </property>
@@ -630,7 +672,16 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout">
-                <property name="margin">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
                  <number>0</number>
                 </property>
                 <item row="0" column="0">
@@ -638,7 +689,7 @@
                   <item row="0" column="0">
                    <widget class="QLabel" name="labelIUPT">
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IUPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the value of each velocity vector component.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                     <property name="text">
                      <string>U</string>
@@ -654,12 +705,15 @@
                      </size>
                     </property>
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IUPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the value of each velocity vector component.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="2">
                    <widget class="QLabel" name="labelUnitIUPT">
+                    <property name="toolTip">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the value of each velocity vector component.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
                     <property name="text">
                      <string>m/s</string>
                     </property>
@@ -681,7 +735,7 @@
                   <item row="0" column="4">
                    <widget class="QLabel" name="labelIVPT">
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IVPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the value of each velocity vector component.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                     <property name="text">
                      <string>V</string>
@@ -697,12 +751,15 @@
                      </size>
                     </property>
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IVPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the value of each velocity vector component.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="6">
                    <widget class="QLabel" name="labelUnitIVPT">
+                    <property name="toolTip">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the value of each velocity vector component.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
                     <property name="text">
                      <string>m/s</string>
                     </property>
@@ -724,7 +781,7 @@
                   <item row="0" column="8">
                    <widget class="QLabel" name="labelIWPT">
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IWPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the value of each velocity vector component.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                     <property name="text">
                      <string>W</string>
@@ -740,12 +797,15 @@
                      </size>
                     </property>
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IWPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the value of each velocity vector component.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="10">
                    <widget class="QLabel" name="labelUnitIWPT">
+                    <property name="toolTip">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the value of each velocity vector component.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
                     <property name="text">
                      <string>m/s</string>
                     </property>
@@ -763,6 +823,9 @@
         </item>
         <item>
          <widget class="QGroupBox" name="groupBoxDiameter">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the diameter of each particle class.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="title">
            <string>Diameter</string>
           </property>
@@ -778,7 +841,7 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word:IJRDP</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the way to impose the diameter between:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Diameter set by values: impose a constant mean diameter and a standard deviation,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- User-defined diameter: impose a diameter profile using the user subroutines.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
@@ -810,7 +873,16 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout">
-                <property name="margin">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
                  <number>0</number>
                 </property>
                 <item row="0" column="0">
@@ -818,7 +890,7 @@
                   <item row="0" column="0">
                    <widget class="QLabel" name="labelIDPT">
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IDPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify a constant mean diameter and a standard deviation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                     <property name="text">
                      <string>Mean value</string>
@@ -834,12 +906,15 @@
                      </size>
                     </property>
                     <property name="toolTip">
-                     <string>Code_Saturne key word:IDPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify a constant mean diameter and a standard deviation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="2">
                    <widget class="QLabel" name="labelUnitIDPT">
+                    <property name="toolTip">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify a constant mean diameter and a standard deviation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
                     <property name="text">
                      <string>m</string>
                     </property>
@@ -861,7 +936,7 @@
                   <item row="0" column="4">
                    <widget class="QLabel" name="labelIVDPT">
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IVDPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify a constant mean diameter and a standard deviation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                     <property name="text">
                      <string>Standard deviation</string>
@@ -877,12 +952,15 @@
                      </size>
                     </property>
                     <property name="toolTip">
-                     <string>Code_Saturne key word: IVDPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify a constant mean diameter and a standard deviation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="6">
                    <widget class="QLabel" name="labelUnitIVDPT">
+                    <property name="toolTip">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify a constant mean diameter and a standard deviation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
                     <property name="text">
                      <string>m</string>
                     </property>
@@ -913,6 +991,9 @@
         </item>
         <item>
          <widget class="QGroupBox" name="groupBoxTemperature">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the temperature profile for the selected boundary condition.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="title">
            <string>Temperature</string>
           </property>
@@ -928,7 +1009,7 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word:IJRTP</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a way to impose the temperature profile:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Temperature set by values: impose a constant and uniform temperature profile,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- User-defined temperature: specify the temperature profile in the user subroutines.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
@@ -947,7 +1028,16 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QGridLayout">
-                <property name="margin">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
                  <number>0</number>
                 </property>
                 <item row="0" column="0">
@@ -955,7 +1045,7 @@
                   <item row="0" column="0">
                    <widget class="QLabel" name="labelITPT">
                     <property name="toolTip">
-                     <string>Code_Saturne key word: ITPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify a constant and uniform temperature profile in Celsius.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                     <property name="text">
                      <string>Temperature</string>
@@ -971,12 +1061,15 @@
                      </size>
                     </property>
                     <property name="toolTip">
-                     <string>Code_Saturne key word: ITPT</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify a constant and uniform temperature profile in Celsius.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="2">
                    <widget class="QLabel" name="labelUnitITPT">
+                    <property name="toolTip">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify a constant and uniform temperature profile in Celsius.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
                     <property name="text">
                      <string>C</string>
                     </property>
@@ -999,7 +1092,7 @@
                <item row="0" column="0">
                 <widget class="QLabel" name="labelICPT">
                  <property name="toolTip">
-                  <string>Code_Saturne key word: ICPT</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the specific heat for each particle class.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>Specific heat</string>
@@ -1015,12 +1108,15 @@
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Code_Saturne key word: ICPT</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the specific heat for each particle class.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                 </widget>
                </item>
                <item row="0" column="2">
                 <widget class="QLabel" name="labelUnitICPT">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the specific heat for each particle class.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                  <property name="text">
                   <string>J/kg/K</string>
                  </property>
@@ -1029,7 +1125,7 @@
                <item row="1" column="0">
                 <widget class="QLabel" name="labelIEPSI">
                  <property name="toolTip">
-                  <string>Code_Saturne key word: IEPSI</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the emissivity for each particle class.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>Emissivity</string>
@@ -1045,7 +1141,7 @@
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Code_Saturne key word: IEPSI</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the emissivity for each particle class.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                 </widget>
                </item>
@@ -1058,6 +1154,9 @@
         </item>
         <item>
          <widget class="QGroupBox" name="groupBoxCoal">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify coal informations for each particle class in case of coal combustion.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="title">
            <string>Coal</string>
           </property>
@@ -1067,7 +1166,7 @@
              <item row="0" column="1">
               <widget class="QLabel" name="labelINUCHL">
                <property name="toolTip">
-                <string>Code_Saturne key word: INUCHL</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of the coal of the particle.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Coal number</string>
@@ -1083,14 +1182,14 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word: INUCHL</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of the coal of the particle.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
              <item row="1" column="1">
               <widget class="QLabel" name="labelIRAWCL">
                <property name="toolTip">
-                <string>Code_Saturne key word: IMCHT</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the coal composition. Two choices are available:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Raw coal,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- User-defined coal composition: impose a non standard coal composition through the user subroutines.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Coal composition</string>
@@ -1098,7 +1197,11 @@
               </widget>
              </item>
              <item row="1" column="3">
-              <widget class="QComboBox" name="comboBoxIRAWCL"/>
+              <widget class="QComboBox" name="comboBoxIRAWCL">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the coal composition. Two choices are available:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Raw coal,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- User-defined coal composition: impose a non standard coal composition through the user subroutines.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
              </item>
              <item row="2" column="0">
               <spacer>
@@ -1116,7 +1219,7 @@
              <item row="2" column="1">
               <widget class="QLabel" name="labelIHPT">
                <property name="toolTip">
-                <string>Code_Saturne key word: IHPT</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the coal temperature for each particle class.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Temperature</string>
@@ -1148,12 +1251,15 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Code_Saturne key word: IHPT</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the coal temperature for each particle class.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
              <item row="2" column="4">
               <widget class="QLabel" name="labelUnitIHPT">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the coal temperature for each particle class.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="text">
                 <string>K</string>
                </property>

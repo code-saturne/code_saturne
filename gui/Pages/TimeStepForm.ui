@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>425</width>
-    <height>440</height>
+    <width>437</width>
+    <height>444</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,6 +18,9 @@
     <layout class="QVBoxLayout">
      <item>
       <widget class="QGroupBox" name="groupBox">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the time step options.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="title">
         <string/>
        </property>
@@ -41,6 +44,9 @@
            <layout class="QHBoxLayout">
             <item>
              <widget class="QLabel" name="label">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select between a constant or variable time step.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IDTVAR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Time step option</string>
               </property>
@@ -53,6 +59,9 @@
                 <width>241</width>
                 <height>21</height>
                </size>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select between a constant or variable time step.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IDTVAR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -100,7 +109,7 @@
             <item row="0" column="0">
              <widget class="QLabel" name="label_2">
               <property name="toolTip">
-               <string>Code_Saturne key word: DTREF</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference time step used to initialize the time step in case of a non-constant time step. For a uniform and constant time step, the reference time step is used.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DTREF&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Reference time step</string>
@@ -122,12 +131,15 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>Code_Saturne key word: DTREF</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference time step used to initialize the time step in case of a non-constant time step. For a uniform and constant time step, the reference time step is used.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DTREF&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="0" column="2">
              <widget class="QLabel" name="label_3">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference time step used to initialize the time step in case of a non-constant time step. For a uniform and constant time step, the reference time step is used.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DTREF&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>s</string>
               </property>
@@ -136,7 +148,7 @@
             <item row="1" column="0">
              <widget class="QLabel" name="label_4">
               <property name="toolTip">
-               <string>Code_Saturne key word: NTMABS</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the number of the last time step after which the calculation stops. In case of restart calculations, it takes into account the number of time steps of the previous calculation.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NTMABS&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="statusTip">
                <string>Absolute time step number of the simulation, restarts included.</string>
@@ -161,7 +173,7 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>Code_Saturne key word: NTMABS</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the number of the last time step after which the calculation stops. In case of restart calculations, it takes into account the number of time steps of the previous calculation.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NTMABS&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="statusTip">
                <string>Absolute time step number of the simulation, restarts included.</string>
@@ -212,7 +224,7 @@
             <item>
              <widget class="QLabel" name="label_8">
               <property name="toolTip">
-               <string>Code_Saturne key word: INPDT0</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the calculation mode: check the box for a zero time step calculation, i.e. without solving the transport equations.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;INPDT0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="statusTip">
                <string/>
@@ -238,7 +250,7 @@
             <item>
              <widget class="QCheckBox" name="checkBoxINPDT0">
               <property name="toolTip">
-               <string>Code_Saturne key word: INPDT0</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the calculation mode: check the box for a zero time step calculation, i.e. without solving the transport equations.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;INPDT0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string/>
@@ -289,10 +301,10 @@
             <item>
              <widget class="QLabel" name="labelIPTLRO">
               <property name="toolTip">
-               <string>Code_Saturne key word: IPTLRO</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate wether the time step should be limited by the local thermal time step based onthe Brunt-Vaisala frequency.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IPTLRO&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="statusTip">
-               <string>Accesible if gravity  is not nul, if density is not constant and if the time step is variable</string>
+               <string>Accessible if gravity is not zero, if density is not constant and if the time step is variable</string>
               </property>
               <property name="text">
                <string>Time step limitation with    
@@ -316,7 +328,7 @@ the local thermal time step</string>
             <item>
              <widget class="QCheckBox" name="checkBoxIPTLRO">
               <property name="toolTip">
-               <string>Code_Saturne key word: INPDT0</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate wether the time step should be limited by the local thermal time step based onthe Brunt-Vaisala frequency.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IPTLRO&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="statusTip">
                <string>Code_Saturne key word: INPDT0</string>
@@ -387,7 +399,7 @@ the local thermal time step</string>
                <item row="0" column="0">
                 <widget class="QLabel" name="labelCOUMAX">
                  <property name="toolTip">
-                  <string>Code_Saturne key word: COUMAX</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the maximal CFL number.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;COUMAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="statusTip">
                   <string>Accessible entry if the time step is variable.</string>
@@ -406,23 +418,10 @@ the local thermal time step</string>
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Code_Saturne key word: COUMAX</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the maximal CFL number.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;COUMAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="statusTip">
                   <string>Accessible entry if the time step is variable.</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="labelFOUMAX">
-                 <property name="toolTip">
-                  <string>Code_Saturne key word: FOUMAX</string>
-                 </property>
-                 <property name="statusTip">
-                  <string>Accessible entry if the time step is variable.</string>
-                 </property>
-                 <property name="text">
-                  <string>Maximal Fourier number</string>
                  </property>
                 </widget>
                </item>
@@ -435,7 +434,7 @@ the local thermal time step</string>
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Code_Saturne key word: FOUMAX</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the maximal Fourier number.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;FOUMAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="statusTip">
                   <string>Accessible entry if the time step is variable.</string>
@@ -445,7 +444,7 @@ the local thermal time step</string>
                <item row="2" column="0">
                 <widget class="QLabel" name="labelCDTMIN">
                  <property name="toolTip">
-                  <string>Code_Saturne key word: DTMIN/DTREF</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the lower limit for the calculated time step.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DTMIN&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DTREF&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="statusTip">
                   <string>Accessible entry if the time step is variable.</string>
@@ -464,7 +463,7 @@ the local thermal time step</string>
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Code_Saturne key word: DTMIN/DTREF</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the lower limit for the calculated time step.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DTMIN&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DTREF&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="statusTip">
                   <string>Accessible entry if the time step is variable.</string>
@@ -474,7 +473,7 @@ the local thermal time step</string>
                <item row="3" column="0">
                 <widget class="QLabel" name="labelCDTMAX">
                  <property name="toolTip">
-                  <string>Code_Saturne key word: DTMAX/DTREF</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the upper limit for the calculated time step.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DTMAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DTREF&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="statusTip">
                   <string>Accessible entry if the time step is variable.</string>
@@ -493,7 +492,7 @@ the local thermal time step</string>
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Code_Saturne key word: DTMAX/DTREF</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the upper limit for the calculated time step.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DTMAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;/&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DTREF&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="statusTip">
                   <string>Accessible entry if the time step is variable.</string>
@@ -503,7 +502,7 @@ the local thermal time step</string>
                <item row="4" column="0">
                 <widget class="QLabel" name="labelVARRDT">
                  <property name="toolTip">
-                  <string>Code_Saturne key word: VARRDT</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the maximal variation between two consecutive computed time steps.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VARRDT&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="statusTip">
                   <string>Accessible entry if the time step is variable.</string>
@@ -522,10 +521,23 @@ the local thermal time step</string>
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Code_Saturne key word: VARRDT</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the maximal variation between two consecutive computed time steps.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VARRDT&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="statusTip">
                   <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="labelFOUMAX">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the maximal Fourier number.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;FOUMAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="statusTip">
+                  <string>Accessible entry if the time step is variable.</string>
+                 </property>
+                 <property name="text">
+                  <string>Maximal Fourier number</string>
                  </property>
                 </widget>
                </item>

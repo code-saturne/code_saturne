@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>355</width>
-    <height>172</height>
+    <height>176</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -22,6 +22,9 @@
   <layout class="QGridLayout" name="gridLayout_3">
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxSpecies">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the boundary condition in case of a groundwater flow.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>Richards equation</string>
      </property>
@@ -43,6 +46,9 @@
         </item>
         <item>
          <widget class="QLabel" name="labelHydraulicHead_2">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Three different types of boundary condition can be imposed on the hydraulic head:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed value: imposed a Dirichlet boundary condition on the Hydraulic head,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Pescribed value (user law): impose a non-uniform, variable Dircihlet boundary condition on the Hydraulic head using the formula editor,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed flux: imposed a constant Neumann boundary condition on the Hydraulic head.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Hydraulic head</string>
           </property>
@@ -73,7 +79,16 @@
           <property name="spacing">
            <number>6</number>
           </property>
-          <property name="margin">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
            <number>0</number>
           </property>
           <item>
@@ -81,18 +96,34 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
              <widget class="QLabel" name="labelHydraulicHeadChoice">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Three different types of boundary condition can be imposed on the hydraulic head:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed value: imposed a Dirichlet boundary condition on the Hydraulic head,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Pescribed value (user law): impose a non-uniform, variable Dircihlet boundary condition on the Hydraulic head using the formula editor,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed flux: imposed a constant Neumann boundary condition on the Hydraulic head.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Type</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="comboBoxTypeHydraulicHead"/>
+             <widget class="QComboBox" name="comboBoxTypeHydraulicHead">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Three different types of boundary condition can be imposed on the hydraulic head:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed value: imposed a Dirichlet boundary condition on the Hydraulic head,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Pescribed value (user law): impose a non-uniform, variable Dircihlet boundary condition on the Hydraulic head using the formula editor,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed flux: imposed a constant Neumann boundary condition on the Hydraulic head.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QPushButton" name="pushButtonHydraulicHead">
@@ -112,11 +143,23 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
              <widget class="QLabel" name="labelValueHydraulicHead">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Three different types of boundary condition can be imposed on the hydraulic head:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed value: imposed a Dirichlet boundary condition on the Hydraulic head,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Pescribed value (user law): impose a non-uniform, variable Dircihlet boundary condition on the Hydraulic head using the formula editor,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed flux: imposed a constant Neumann boundary condition on the Hydraulic head.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Value</string>
               </property>
@@ -136,7 +179,11 @@
              </spacer>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditValueHydraulicHead"/>
+             <widget class="QLineEdit" name="lineEditValueHydraulicHead">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Three different types of boundary condition can be imposed on the hydraulic head:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed value: imposed a Dirichlet boundary condition on the Hydraulic head,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Pescribed value (user law): impose a non-uniform, variable Dircihlet boundary condition on the Hydraulic head using the formula editor,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed flux: imposed a constant Neumann boundary condition on the Hydraulic head.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -145,11 +192,23 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
              <widget class="QLabel" name="labelExHydraulicHead">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Three different types of boundary condition can be imposed on the hydraulic head:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed value: imposed a Dirichlet boundary condition on the Hydraulic head,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Pescribed value (user law): impose a non-uniform, variable Dircihlet boundary condition on the Hydraulic head using the formula editor,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed flux: imposed a constant Neumann boundary condition on the Hydraulic head.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Flux</string>
               </property>
@@ -169,7 +228,11 @@
              </spacer>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditExHydraulicHead"/>
+             <widget class="QLineEdit" name="lineEditExHydraulicHead">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Three different types of boundary condition can be imposed on the hydraulic head:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed value: imposed a Dirichlet boundary condition on the Hydraulic head,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Pescribed value (user law): impose a non-uniform, variable Dircihlet boundary condition on the Hydraulic head using the formula editor,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Prescribed flux: imposed a constant Neumann boundary condition on the Hydraulic head.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>

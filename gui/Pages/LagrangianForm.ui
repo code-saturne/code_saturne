@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>564</width>
-    <height>684</height>
+    <height>755</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,58 @@
    <item row="0" column="0">
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
+      <widget class="QGroupBox" name="groupBoxIILAGR">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the lagrangian module coupling status between:&lt;br/&gt;- One-way coupling: no influence of the particles on the continuous phase,&lt;br/&gt;- Two-way coupling: influence of the particles on the dynamics of the continuous phase. Dynamics, temperature and mass may be coupled independently.&lt;br/&gt;- Frozen carrier flow: all the Eulerian fields are frozen (including the scalar fields).&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This option can only be used in case of a calculation restart.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="title">
+        <string>Eulerian/Lagrangian Multi-phase Treatment</string>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_8">
+        <item>
+         <spacer>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>77</width>
+            <height>21</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QComboBox" name="comboBoxIILAGR">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the lagrangian module coupling status between:&lt;br/&gt;- One-way coupling: no influence of the particles on the continuous phase,&lt;br/&gt;- Two-way coupling: influence of the particles on the dynamics of the continuous phase. Dynamics, temperature and mass may be coupled independently.&lt;br/&gt;- Frozen carrier flow: all the Eulerian fields are frozen (including the scalar fields).&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This option can only be used in case of a calculation restart.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="statusTip">
+           <string>Select the type of lagrangian module</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>77</width>
+            <height>21</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
       <widget class="QGroupBox" name="groupBoxMain">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the main parameters of the Lagrangian module.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="title">
         <string>Main parameters</string>
        </property>
@@ -40,7 +91,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="labelISUILA">
             <property name="toolTip">
-             <string>Code_Saturne key word: ISUILA</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the calculation restart for particles. The global calculation must also be a restart calculation. &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Calculation restart for particles</string>
@@ -50,7 +101,7 @@
           <item row="0" column="1">
            <widget class="QCheckBox" name="checkBoxISUILA">
             <property name="toolTip">
-             <string>Code_Saturne key word: ISUILA</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the calculation restart for particles. The global calculation must also be a restart calculation. &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string/>
@@ -60,7 +111,7 @@
           <item row="1" column="0">
            <widget class="QLabel" name="labelISTTIO">
             <property name="toolTip">
-             <string>Code_Saturne key word: ISTTIO</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify whether the continuous phase flow is steady or not.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>The continuous phase flow is a steady flow</string>
@@ -70,7 +121,7 @@
           <item row="1" column="1">
            <widget class="QCheckBox" name="checkBoxISTTIO">
             <property name="toolTip">
-             <string>Code_Saturne key word: ISTTIO</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify whether the continuous phase flow is steady or not.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string/>
@@ -97,6 +148,9 @@
      </item>
      <item>
       <widget class="QGroupBox" name="groupBoxPhysicsModels">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define additional models associated with the particles.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="title">
         <string>Additional models associated with the particles</string>
        </property>
@@ -119,7 +173,7 @@
           <item>
            <widget class="QComboBox" name="comboBoxIPHYLA">
             <property name="toolTip">
-             <string>Code_Saturne key word: IPHYLA</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define additional models associated with the particles.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -150,7 +204,7 @@
                <item row="0" column="0">
                 <widget class="QLabel" name="labelITPVAR">
                  <property name="toolTip">
-                  <string>Code_Saturne key word: ITPVAR</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate the particle heat transfer for an evolution equation on the particle temperature (in degrees Celsius). Useful only if there is a thermal scalar associated with the continuous phase.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>Particles heat transfer</string>
@@ -173,7 +227,7 @@
                <item row="0" column="2">
                 <widget class="QCheckBox" name="checkBoxITPVAR">
                  <property name="toolTip">
-                  <string>Code_Saturne key word: ITPVAR</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate the particle heat transfer for an evolution equation on the particle temperature (in degrees Celsius). Useful only if there is a thermal scalar associated with the continuous phase.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string/>
@@ -186,7 +240,7 @@
                   <bool>false</bool>
                  </property>
                  <property name="toolTip">
-                  <string>Code_Saturne key word: IMPVAR</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the evaporation of droplets for an evolution equation on the particle mass.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>Evaporation of droplets</string>
@@ -212,7 +266,7 @@
                   <bool>false</bool>
                  </property>
                  <property name="toolTip">
-                  <string>Code_Saturne key word: IMPVAR</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the evaporation of droplets for an evolution equation on the particle mass.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string/>
@@ -264,7 +318,7 @@
                <item>
                 <widget class="QLabel" name="labelIENCRA">
                  <property name="toolTip">
-                  <string>Code_Saturne key word: IENCRA</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the option of coal particle fouling. It is then necessary to specify the domain boundaries on which fouling may take place.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>Coal particle fouling (Watt &amp; Fereday's model)</string>
@@ -287,7 +341,7 @@
                <item>
                 <widget class="QCheckBox" name="checkBoxIENCRA">
                  <property name="toolTip">
-                  <string>Code_Saturne key word: IENCRA</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the option of coal particle fouling. It is then necessary to specify the domain boundaries on which fouling may take place.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string/>
@@ -342,6 +396,9 @@
      </item>
      <item>
       <widget class="QGroupBox" name="groupBox2way">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the two-way coupling parameters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="title">
         <string>Two-way coupling</string>
        </property>
@@ -364,7 +421,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="labelLTSDYN">
             <property name="toolTip">
-             <string>Code_Saturne key word: LTSDYN</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the the two-way coupling on the dynamics of the continuous phase.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Two-way coupling for velocity and turbulence</string>
@@ -374,7 +431,7 @@
           <item row="0" column="1">
            <widget class="QCheckBox" name="checkBoxLTSDYN">
             <property name="toolTip">
-             <string>Code_Saturne key word: LTSDYN</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the the two-way coupling on the dynamics of the continuous phase.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string/>
@@ -384,7 +441,7 @@
           <item row="1" column="0">
            <widget class="QLabel" name="labelLTSTHE">
             <property name="toolTip">
-             <string>Code_Saturne key word: LTSTHE</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the the two-way coupling on temperature.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Two-way coupling for temperature</string>
@@ -394,7 +451,7 @@
           <item row="1" column="1">
            <widget class="QCheckBox" name="checkBoxLTSTHE">
             <property name="toolTip">
-             <string>Code_Saturne key word: LTSTHE</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the the two-way coupling on temperature.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string/>
@@ -404,7 +461,7 @@
           <item row="2" column="1">
            <widget class="QCheckBox" name="checkBoxLTSMAS">
             <property name="toolTip">
-             <string>Code_Saturne key word: LTSMAS</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the the two-way coupling on the mass.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string/>
@@ -414,7 +471,7 @@
           <item row="3" column="0">
            <widget class="QLabel" name="labelNSTITS">
             <property name="toolTip">
-             <string>Code_Saturne key word: NSTITS</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of absolute time steps (including the restarts) after which a time-average of the two-way coupling source terms is calculated.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Start coupling from Lagrangian iteration n°</string>
@@ -430,14 +487,14 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Code_Saturne key word: NSTITS</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of absolute time steps (including the restarts) after which a time-average of the two-way coupling source terms is calculated.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="labelLTSMAS">
             <property name="toolTip">
-             <string>Code_Saturne key word: LTSMAS</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the the two-way coupling on the mass.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Two-way coupling for mass (evaporation)</string>
@@ -464,6 +521,9 @@
      </item>
      <item>
       <widget class="QGroupBox" name="groupBox_turbdepo">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the particle deposition sub-model.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="title">
         <string>Turbulent deposition modeling</string>
        </property>
@@ -486,7 +546,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="labelIENCRA_2">
             <property name="toolTip">
-             <string>Code_Saturne key word: IDEPST</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the particle deposition sub-model.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Particle deposition sub-model</string>
@@ -496,7 +556,7 @@
           <item row="0" column="1">
            <widget class="QCheckBox" name="checkBoxIDEPST">
             <property name="toolTip">
-             <string>Code_Saturne key word: IDEPST</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the particle deposition sub-model.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string/>
@@ -523,6 +583,9 @@
      </item>
      <item>
       <widget class="QGroupBox" name="groupBox">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the numerical scheme advanced options.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="title">
         <string>Numerical scheme</string>
        </property>
@@ -544,6 +607,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout_6">
           <item>
            <widget class="QLabel" name="labelAdvanced">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the numerical scheme advanced options.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>Advanced options</string>
             </property>
@@ -564,6 +630,9 @@
           </item>
           <item>
            <widget class="QToolButton" name="toolButtonAdvanced">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the numerical scheme advanced options.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>...</string>
             </property>

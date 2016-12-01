@@ -143,7 +143,7 @@
                  <item row="0" column="0">
                   <widget class="QLabel" name="labelLongitudinal">
                    <property name="text">
-                    <string>longitudinal</string>
+                    <string>Longitudinal</string>
                    </property>
                   </widget>
                  </item>
@@ -166,7 +166,7 @@
                  <item row="1" column="0">
                   <widget class="QLabel" name="labelTransverse">
                    <property name="text">
-                    <string>transverse</string>
+                    <string>Transverse</string>
                    </property>
                   </widget>
                  </item>
@@ -244,7 +244,7 @@
                    <item>
                     <widget class="QLabel" name="label_2">
                      <property name="text">
-                      <string>diffusivity</string>
+                      <string>Diffusivity</string>
                      </property>
                     </widget>
                    </item>
@@ -932,7 +932,7 @@ p, li { white-space: pre-wrap; }
                <item>
                 <widget class="QLabel" name="label_5">
                  <property name="text">
-                  <string>user laws</string>
+                  <string>User laws</string>
                  </property>
                 </widget>
                </item>

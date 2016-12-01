@@ -14,30 +14,60 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout">
-   <property name="margin">
+   <property name="leftMargin">
+    <number>4</number>
+   </property>
+   <property name="topMargin">
+    <number>4</number>
+   </property>
+   <property name="rightMargin">
+    <number>4</number>
+   </property>
+   <property name="bottomMargin">
     <number>4</number>
    </property>
    <property name="spacing">
-    <number>-1</number>
+    <number>6</number>
    </property>
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxTurbulence">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify boundary conditions for turbulent variables.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>Turbulence</string>
      </property>
      <layout class="QGridLayout">
-      <property name="margin">
+      <property name="leftMargin">
+       <number>4</number>
+      </property>
+      <property name="topMargin">
+       <number>4</number>
+      </property>
+      <property name="rightMargin">
+       <number>4</number>
+      </property>
+      <property name="bottomMargin">
        <number>4</number>
       </property>
       <property name="spacing">
-       <number>-1</number>
+       <number>6</number>
       </property>
       <item row="0" column="0">
        <layout class="QHBoxLayout">
         <property name="spacing">
          <number>6</number>
         </property>
-        <property name="margin">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
          <number>0</number>
         </property>
         <item>
@@ -58,7 +88,16 @@
           <property name="spacing">
            <number>6</number>
           </property>
-          <property name="margin">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
            <number>0</number>
           </property>
           <item>
@@ -66,14 +105,30 @@
             <property name="spacing">
              <number>6</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
-             <widget class="QComboBox" name="comboBoxTurbulence"/>
+             <widget class="QComboBox" name="comboBoxTurbulence">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the method to specify the boundary conditions on turbulence between three choices:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Calculation by hydraulic diameter: the boundary conditions are imposed using correlations on the head loss coefficient, the hydraulic diameter and the reference velocity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Calculation by turbulent intensity: the boundary conditions are imposed using the turbulent intensity and the reference velocity.        &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Calculation by formula: specify the boundary conditions on turbulence using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QPushButton" name="pushButtonTurb">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the method to specify the boundary conditions on turbulence between three choices:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Calculation by hydraulic diameter: the boundary conditions are imposed using correlations on the head loss coefficient, the hydraulic diameter and the reference velocity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Calculation by turbulent intensity: the boundary conditions are imposed using the turbulent intensity and the reference velocity.        &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Calculation by formula: specify the boundary conditions on turbulence using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -106,7 +161,16 @@
              <enum>QFrame::Raised</enum>
             </property>
             <layout class="QGridLayout">
-             <property name="margin">
+             <property name="leftMargin">
+              <number>9</number>
+             </property>
+             <property name="topMargin">
+              <number>9</number>
+             </property>
+             <property name="rightMargin">
+              <number>9</number>
+             </property>
+             <property name="bottomMargin">
               <number>9</number>
              </property>
              <property name="spacing">
@@ -114,7 +178,16 @@
              </property>
              <item row="0" column="0">
               <layout class="QGridLayout">
-               <property name="margin">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
                 <number>0</number>
                </property>
                <property name="spacing">
@@ -122,6 +195,9 @@
                </property>
                <item row="0" column="0">
                 <widget class="QLabel" name="labelDiameter">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the hydraulic diameter that will be used for turbulence boundary conditions calculation. This diameter is equal to 4S/P with S the surface and P the perimeter of the wet wall.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                  <property name="text">
                   <string>Hydraulic diameter</string>
                  </property>
@@ -142,13 +218,15 @@
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Inlet hydraulic diameter =
-4S/P with S=surface and P=perimeter of wet wall</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the hydraulic diameter that will be used for turbulence boundary conditions calculation. This diameter is equal to 4S/P with S the surface and P the perimeter of the wet wall.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                 </widget>
                </item>
                <item row="0" column="2">
                 <widget class="QLabel" name="labelUnitDiameter">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the hydraulic diameter that will be used for turbulence boundary conditions calculation. This diameter is equal to 4S/P with S the surface and P the perimeter of the wet wall.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                  <property name="text">
                   <string>m</string>
                  </property>
@@ -174,7 +252,16 @@
              <enum>QFrame::Raised</enum>
             </property>
             <layout class="QGridLayout">
-             <property name="margin">
+             <property name="leftMargin">
+              <number>9</number>
+             </property>
+             <property name="topMargin">
+              <number>9</number>
+             </property>
+             <property name="rightMargin">
+              <number>9</number>
+             </property>
+             <property name="bottomMargin">
               <number>9</number>
              </property>
              <property name="spacing">
@@ -182,7 +269,16 @@
              </property>
              <item row="0" column="0">
               <layout class="QGridLayout">
-               <property name="margin">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
                 <number>0</number>
                </property>
                <property name="spacing">
@@ -190,6 +286,9 @@
                </property>
                <item row="0" column="0">
                 <widget class="QLabel" name="labelIntensity">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the turbulent intensity in percent that will be used for the turbulence boundary conditions calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                  <property name="text">
                   <string>Intensity</string>
                  </property>
@@ -210,12 +309,15 @@
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>turbulent intensity expressed in percent </string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the turbulent intensity in percent that will be used for the turbulence boundary conditions calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                 </widget>
                </item>
                <item row="0" column="2">
                 <widget class="QLabel" name="labelUnitIntensity">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the turbulent intensity in percent that will be used for the turbulence boundary conditions calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                  <property name="text">
                   <string>%</string>
                  </property>
@@ -223,6 +325,9 @@
                </item>
                <item row="1" column="0">
                 <widget class="QLabel" name="labelDiameterIntens">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the hydraulic diameter that will be used for turbulence boundary conditions calculation. This diameter is equal to 4S/P with S the surface and P the perimeter of the wet wall.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                  <property name="text">
                   <string>Hydraulic diameter</string>
                  </property>
@@ -243,13 +348,15 @@
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>Inlet hydraulic diameter =
-4S/P with S=surface and P=perimeter of wet wall</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the hydraulic diameter that will be used for turbulence boundary conditions calculation. This diameter is equal to 4S/P with S the surface and P the perimeter of the wet wall.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                 </widget>
                </item>
                <item row="1" column="2">
                 <widget class="QLabel" name="labelUnitDiameterintens">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the hydraulic diameter that will be used for turbulence boundary conditions calculation. This diameter is equal to 4S/P with S the surface and P the perimeter of the wet wall.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                  <property name="text">
                   <string>m</string>
                  </property>

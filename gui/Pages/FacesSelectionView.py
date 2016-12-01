@@ -165,8 +165,8 @@ class StandardItemModelFaces(QStandardItemModel):
                         self.tr("Visualization"),
                         self.tr("Selection criteria")]
 
-        self.tooltip = [self.tr("Relative merge tolerance"),
-                        self.tr("Maximum angle for normals of coplanar faces"),
+        self.tooltip = [self.tr("Relative merge tolerance (between 0 and 0.49, 0.1 by default) : maximum intersection distance"),
+                        self.tr("Maximum angle between normals of coplanar faces (25 degrees by default)"),
                         self.tr("Verbosity level"),
                         self.tr("Visualization output level (0 for none)"),
                         self.tr("Selection criteria string")]

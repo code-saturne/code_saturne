@@ -38,7 +38,7 @@
         <item row="0" column="0">
          <widget class="QLabel" name="labelISUIST">
           <property name="toolTip">
-           <string>Code_Saturne key word: ISUIST</string>
+           <string/>
           </property>
           <property name="text">
            <string>Particles statistics read from restart file</string>
@@ -48,7 +48,7 @@
         <item row="0" column="1">
          <widget class="QCheckBox" name="checkBoxISUIST">
           <property name="toolTip">
-           <string>Code_Saturne key word: ISUIST</string>
+           <string/>
           </property>
           <property name="text">
            <string/>
@@ -58,7 +58,7 @@
         <item row="1" column="0">
          <widget class="QLabel" name="labelNBCLST">
           <property name="toolTip">
-           <string>Code_Saturne key word: NBCLST</string>
+           <string/>
           </property>
           <property name="text">
            <string>Number of particle clusters </string>
@@ -74,14 +74,14 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Code_Saturne key word: NBCLST</string>
+           <string/>
           </property>
          </widget>
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="labelIDSTNT">
           <property name="toolTip">
-           <string>Code_Saturne key word: IDSTNT</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the absolute time step number (including the restarts) after which the calculation of the volume statistics is activated.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Statistics start from iteration n°
@@ -98,14 +98,14 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Code_Saturne key word: IDSTNT</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the absolute time step number (including the restarts) after which the calculation of the volume statistics is activated.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
         <item row="3" column="0">
          <widget class="QLabel" name="labelNSTIST">
           <property name="toolTip">
-           <string>Code_Saturne key word: NSTIST</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the absolute time step number (includings the restarts) after which the volume statistics are cumulated over time (they are then said to be steady).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Start of steady-state statistics from iteration n°
@@ -122,14 +122,14 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Code_Saturne key word: NSTIST</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the absolute time step number (includings the restarts) after which the volume statistics are cumulated over time (they are then said to be steady).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
         <item row="4" column="0">
          <widget class="QLabel" name="labelSEUIL">
           <property name="toolTip">
-           <string>Code_Saturne key word: SEUIL</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the threshold for statistical meaning.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Threshold for statistical weight</string>
@@ -145,7 +145,7 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Code_Saturne key word: THRESHOLD</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the threshold for statistical meaning.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
@@ -195,7 +195,7 @@
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBoxISTALA">
          <property name="toolTip">
-          <string>Volume statistics field definitions</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Volume statistics field definitions&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="title">
           <string>Calculation of volume statistics</string>
@@ -229,7 +229,7 @@
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBoxIENSI3">
          <property name="toolTip">
-          <string>Code_Saturne key word: IENSI3</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Activate or not the recording of the particle/boundary interactions and of the calculation of the statistics at the corresponding boundaries.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="title">
           <string>Calculation of boundary statistics</string>
