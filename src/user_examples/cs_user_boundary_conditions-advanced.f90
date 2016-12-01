@@ -131,6 +131,7 @@ double precision xitur
 double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer :: boundary_roughness
 !< [loc_var_dec]
 
 !===============================================================================
@@ -254,6 +255,29 @@ do ilelt = 1, nlelt
 
 enddo
 !< [example_3]
+
+! Example of wall boundary condition with automatic continuous switch
+! between rough and smooth.
+
+!< [example_4]
+call field_get_val_s_by_name("boundary_roughness", boundary_roughness)
+
+call getfbr('6789', nlelt, lstelt)
+!==========
+do ilelt = 1, nlelt
+
+  ifac = lstelt(ilelt)
+
+  ! CAUTION: wall function keyword "iwallf" must be set to 6
+  !          in cs_user_parameters.
+
+  itypfb(ifac) = iparoi
+
+  ! Boundary roughtness (in meter)
+  boundary_roughness(ifac) = 0.05
+
+enddo
+!< [example_4]
 
 !--------
 ! Formats

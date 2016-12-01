@@ -172,7 +172,7 @@
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page channel_inlet_mapped Infinite channel inlet
 
   A method of defining an inlet condition which converges towards an infinite
@@ -211,7 +211,7 @@
   subroutine if we define an equivalent inlet condition using the GUI,
   which will ensure the appropriate initialization before entering the
   user subroutine.
-  
+
   \snippet cs_user_boundary_conditions-mapped_inlet.f90 example_1_base
 
   \section channel_inlet_mapped_example_1_map_init Mapping definition
@@ -261,7 +261,7 @@
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page channel_inlet_auto Infinite channel inlet with near-inlet feedback
 
   A second method of defining an inlet condition which converges towards
@@ -293,7 +293,7 @@
 
   \warning We assume other boundary conditions are defined before this one
   (ideally, using the GUI).
-  
+
   \warning We also assume that the mesh is orthogonal at the inlet, and we are using a RANS
   (not LES) computation.
   to the current inlet.
@@ -308,7 +308,7 @@
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page advanced_examples Advanced examples
 
   \section advanced_loc_var_be Local variables to be added
@@ -353,10 +353,17 @@
 
   \snippet cs_user_boundary_conditions-advanced.f90 example_3
 
+  \section advanced_ex_4 Example 4
+
+  Example of wall boundary condition with automatic continuous switch
+  between rough and smooth.
+
+  \snippet cs_user_boundary_conditions-advanced.f90 example_4
+
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page atmospheric_examples Atmospheric examples
 
   \section advanced_loc_var_atm Local variables to be added
@@ -408,7 +415,7 @@
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page compressible_examples Compressible examples
 
   \section advanced_loc_var_ce Local variables to be added
@@ -424,10 +431,10 @@
    Example of input / output for which everything is known.
 
    Without presuming subsonic or supersonic character,
-   the user wishes to impose all the flow characteristics. 
+   the user wishes to impose all the flow characteristics.
    A supersonic inlet is a special case.
 
-   If the speed is outgoing, an homogenous Neumann is imposed 
+   If the speed is outgoing, an homogenous Neumann is imposed
    on turbulence and user scalars.
 
   \snippet cs_user_boundary_conditions-compressible.f90 example_1
@@ -440,8 +447,8 @@
    Internal values are used to calculate the flow edge, they should not be imposed.
 
 
-   For turbulence and scalar, if RCODCL values are provided, 
-   they will be used in Dirichlet if the mass flow is incoming, 
+   For turbulence and scalar, if RCODCL values are provided,
+   they will be used in Dirichlet if the mass flow is incoming,
    otherwise a null flow is imposed (flow outgoing mass or RCODCL informed here).
    Note that for turbulence RCODCL must be defined for all turbulent variables.
    Otherwise a null  flow is applied).
@@ -537,7 +544,7 @@ TODO : Verifier la traduction
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page electric_arcs_examples Electric arcs examples
 
   \section elec_loc_var Local variables to be added
@@ -592,7 +599,7 @@ TODO : Verifier la traduction
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page electric_arcs_ieljou_3_or_4_examples Electric arcs Joule examples
 
   \section elec2_loc_var Local variables to be added
@@ -629,7 +636,7 @@ TODO : Verifier la traduction
 
   Take in account of Boundary Conditions
   \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90 step_2_5
-  
+
   \section elec2_step3 Finalization step
 
   Test, if not any reference transformer a piece of wall may be at ground:
@@ -638,7 +645,7 @@ TODO : Verifier la traduction
 */
 // __________________________________________________________________________________
 /*!
-   
+
   \page fuel_examples Fuel examples
 
   \section advanced_loc_var_fe Local variables to be added
@@ -682,7 +689,7 @@ TODO : Verifier la traduction
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page gas_3ptchem_examples Gas 3 PTCHEM examples
 
   \section advanced_loc_var_ptchem Local variables to be added
@@ -726,7 +733,7 @@ TODO : Verifier la traduction
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page gas_ebu_examples Gas EBU examples
 
   \section advanced_loc_var_ebu Local variables to be added
@@ -770,7 +777,7 @@ TODO : Verifier la traduction
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page gas_libby_williams_examples Gas Libby-Williams examples
 
   \section advanced_loc_var_lw Local variables to be added
@@ -814,7 +821,7 @@ TODO : Verifier la traduction
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page pulverized_coal1 Pulverized coal
 
   \section advanced_loc_var_pc Local variables to be added
@@ -858,7 +865,7 @@ TODO : Verifier la traduction
 */
 // __________________________________________________________________________________
 /*!
- 
+
   \page pulverized_coal2 Pulverized coal lagrangian
 
   \section advanced_loc_var_pcl Local variables to be added
