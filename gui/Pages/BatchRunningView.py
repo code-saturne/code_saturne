@@ -874,9 +874,14 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         cmd = None
         run_title = None
 
+        run_id = self.jmdl.dictValues['run_id']
+
         if rm_type == None:
-            run_id, run_title = self.__suggest_run_id()
-            self.__updateRuncase(run_id)
+            if not run_id:
+                tmp_run_id, run_title = self.__suggest_run_id()
+                self.__updateRuncase(tmp_run_id)
+            else:
+                run_title = self.case['package'].code_name + run_id
             cmd = cs_exec_environment.enquote_arg(batch)
         else:
             run_title = self.case['package'].code_name + ' - Job Submission'
@@ -886,7 +891,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         dlg = ListingDialogView(self.parent, self.case, run_title, cmd)
         dlg.show()
 
-        if rm_type == None:
+        if rm_type == None and not run_id:
             self.__updateRuncase('')  # remove --id <id> from runcase
 
         os.chdir(prv_dir)
@@ -899,8 +904,13 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         cmd = os.path.join(self.case['package'].get_dir('bindir'),
                            self.case['package'].name)
         cmd = cs_exec_environment.enquote_arg(cmd) + " run --suggest-id"
-        if self.mdl.getRunType() != "standard":
-            cmd += " --id-prefix=preprocess"
+        runtype = self.mdl.getRunType()
+        if runtype == "none":
+            cmd += " --id-prefix=import_"
+        elif runtype == "mesh preprocess":
+            cmd += " --id-prefix=preprocess_"
+        elif runtype == "mesh quality":
+            cmd += " --id-prefix=quality_"
 
         r_title = subprocess.Popen(cmd,
                                    shell=True,

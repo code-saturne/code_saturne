@@ -66,9 +66,9 @@ class ScriptRunningModel(Model):
         Get run type.
         """
         val = self.node_mgt.xmlGetString('run_type')
-        prepro = self.case.xmlGetNode('additional_scalars')
 
         if preproview == None:
+            prepro = self.case.xmlGetNode('additional_scalars')
             if prepro:
                 preproview = False
             else:
