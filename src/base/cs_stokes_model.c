@@ -370,13 +370,16 @@ cs_get_glob_stokes_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print the stokes model parameters to setup.log.
- *
- *----------------------------------------------------------------------------*/
+ * \brief Print the stokes model parameters to setup log.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_stokes_model_log_setup(int iappel)
+cs_stokes_model_log_setup(void)
 {
+  if (cs_glob_field_pointers == NULL)
+    return;
+
   cs_var_cal_opt_t var_cal_opt;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
@@ -385,70 +388,72 @@ cs_stokes_model_log_setup(int iappel)
     f_pot = CS_F_(head);
   else
     f_pot = CS_F_(p);
+
+  if (f_pot == NULL)
+    return;
+  
   const char *f_pot_label = cs_field_get_label(f_pot);
 
-  if (iappel == 1) {
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("\n"
-         "Secondary viscosity\n"
-         "-------------------\n\n"
-         "   Continuous phase:\n\n"
-         "    ivisse:      %14d (1: accounted for)\n\n"),
-         cs_glob_stokes_model->ivisse);
-  } else if (iappel == 2) {
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("\n"
-         "Stokes model\n"
-         "------------\n\n"
-         "    idilat:      %14d (1: without unsteady term\n"
-         "                                    in the continuity equation\n"
-         "                                 2: with unsteady term in\n"
-         "                                    the continuity equation)\n"
-         "    iporos:      %14d (0: without porous media\n"
-         "                                 1: with porous media)\n"
-         "    iphydr:      %14d (1: account for explicit\n"
-         "                                    balance between pressure\n"
-         "                                    gradient, gravity source\n"
-         "                                    terms, and head losses)\n"
-         "    icalhy:      %14d (1: compute hydrostatic\n"
-         "                                    pressure for dirichlet\n"
-         "                                    conditions for pressure\n"
-         "                                    on outlet)\n"
-         "    iprco :      %14d (1: pressure-continuity)\n"
-         "    ipucou:      %14d (1: reinforced u-p coupling)\n"
-         "    nterup:      %14d (n: n sweeps on navsto for\n"
-         "                                    velocity/pressure coupling)\n"),
-         cs_glob_stokes_model->idilat,
-         cs_glob_porous_model,
-         cs_glob_stokes_model->iphydr,
-         cs_glob_stokes_model->icalhy,
-         cs_glob_stokes_model->iprco,
-         cs_glob_stokes_model->ipucou,
-         cs_glob_piso->nterup);
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n"
+       "Secondary viscosity\n"
+       "-------------------\n\n"
+       "   Continuous phase:\n\n"
+       "    ivisse:      %14d (1: accounted for)\n\n"),
+     cs_glob_stokes_model->ivisse);
+  
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n"
+       "Stokes model\n"
+       "------------\n\n"
+       "    idilat:      %14d (1: without unsteady term\n"
+       "                                    in the continuity equation\n"
+       "                                 2: with unsteady term in\n"
+       "                                    the continuity equation)\n"
+       "    iporos:      %14d (0: without porous media\n"
+       "                                 1: with porous media)\n"
+       "    iphydr:      %14d (1: account for explicit\n"
+       "                                    balance between pressure\n"
+       "                                    gradient, gravity source\n"
+       "                                    terms, and head losses)\n"
+       "    icalhy:      %14d (1: compute hydrostatic\n"
+       "                                    pressure for dirichlet\n"
+       "                                    conditions for pressure\n"
+       "                                    on outlet)\n"
+       "    iprco :      %14d (1: pressure-continuity)\n"
+       "    ipucou:      %14d (1: reinforced u-p coupling)\n"
+       "    nterup:      %14d (n: n sweeps on navsto for\n"
+       "                                    velocity/pressure coupling)\n"),
+     cs_glob_stokes_model->idilat,
+     cs_glob_porous_model,
+     cs_glob_stokes_model->iphydr,
+     cs_glob_stokes_model->icalhy,
+     cs_glob_stokes_model->iprco,
+     cs_glob_stokes_model->ipucou,
+     cs_glob_piso->nterup);
 
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n"
+       "   Continuous phase:\n\n"
+       "    irevmc:      %14d (Velocity reconstruction mode)\n"),
+     cs_glob_stokes_model->irevmc);
+
+  if (cs_glob_time_step_options->idtvar >= 0) {
+    cs_field_get_key_struct(f_pot, key_cal_opt_id, &var_cal_opt);
     cs_log_printf
       (CS_LOG_SETUP,
-       _("\n"
-         "   Continuous phase:\n\n"
-         "    irevmc:      %14d (Velocity reconstruction mode)\n"),
-         cs_glob_stokes_model->irevmc);
-
-    if (cs_glob_time_step_options->idtvar >= 0) {
-      cs_field_get_key_struct(f_pot, key_cal_opt_id, &var_cal_opt);
-      cs_log_printf
-        (CS_LOG_SETUP,
-         _("    relaxv:      %14.5e for %s (relaxation)\n"
-           "    arak:        %14.5e (Arakawa factor)\n"),
-           var_cal_opt.relaxv, f_pot_label, cs_glob_stokes_model->arak);
-    } else {
-      cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
-      cs_log_printf
-        (CS_LOG_SETUP,
-         _("    arak:        %14.5e (Arakawa factor)\n"),
-           var_cal_opt.relaxv * cs_glob_stokes_model->arak);
-    }
+       _("    relaxv:      %14.5e for %s (relaxation)\n"
+	 "    arak:        %14.5e (Arakawa factor)\n"),
+       var_cal_opt.relaxv, f_pot_label, cs_glob_stokes_model->arak);
+  } else {
+    cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    arak:        %14.5e (Arakawa factor)\n"),
+       var_cal_opt.relaxv * cs_glob_stokes_model->arak);
   }
 }
 
