@@ -391,7 +391,7 @@ cs_stokes_model_log_setup(void)
 
   if (f_pot == NULL)
     return;
-  
+
   const char *f_pot_label = cs_field_get_label(f_pot);
 
   cs_log_printf
@@ -402,7 +402,7 @@ cs_stokes_model_log_setup(void)
        "   Continuous phase:\n\n"
        "    ivisse:      %14d (1: accounted for)\n\n"),
      cs_glob_stokes_model->ivisse);
-  
+
   cs_log_printf
     (CS_LOG_SETUP,
      _("\n"
@@ -446,7 +446,7 @@ cs_stokes_model_log_setup(void)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    relaxv:      %14.5e for %s (relaxation)\n"
-	 "    arak:        %14.5e (Arakawa factor)\n"),
+         "    arak:        %14.5e (Arakawa factor)\n"),
        var_cal_opt.relaxv, f_pot_label, cs_glob_stokes_model->arak);
   } else {
     cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);

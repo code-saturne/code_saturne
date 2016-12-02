@@ -99,8 +99,6 @@ BEGIN_C_DECLS
 static void
 _log_global_model_options(void)
 {
-  int iappel;
-
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"
                   "Physical model options\n"
@@ -125,12 +123,8 @@ _log_global_model_options(void)
 
   cs_time_step_log_setup();
 
-  iappel = 1;
-  cs_stokes_model_log_setup(iappel);
-
   /* Stokes model*/
-  iappel = 2;
-  cs_stokes_model_log_setup(iappel);
+  cs_stokes_model_log_setup();
 
   /* TODO : Partie iroext etc... */
 

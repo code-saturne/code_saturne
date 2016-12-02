@@ -268,7 +268,8 @@ cs_run(void)
 
   /* Print info on fields and associated keys and other setup options */
 
-  cs_log_setup();
+  if (opts.verif == false && opts.preprocess == false && opts.benchmark <= 0)
+    cs_log_setup();
 
   /* Preprocess mesh */
 

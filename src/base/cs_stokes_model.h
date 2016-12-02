@@ -97,7 +97,7 @@ typedef struct {
                                  - 0: no treatment (default) */
   int           igpust;       /* improve static pressure algorithm
                                  - 1: take user momemtum source terms in the
-				   static pressure treatment IF iphydr=1 (default)
+                                   static pressure treatment IF iphydr=1 (default)
                                  - 0: no treatment */
   int           iifren;       /* indicates the presence of a Bernoulli boundary
                                  face (automatically computed)
@@ -109,9 +109,9 @@ typedef struct {
                                  - 1: true
                                  - 0: false (default) */
   int           irecmf;       /* use interpolated face diffusion coefficient
-				 instead of cell diffusion coefficient for the
-				 mass flux reconstruction for the
-				 non-orthogonalities
+                                 instead of cell diffusion coefficient for the
+                                 mass flux reconstruction for the
+                                 non-orthogonalities
                                  - 1: true
                                  - 0: false (default) */
 
