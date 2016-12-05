@@ -6071,7 +6071,7 @@ cs_gradient_scalar(const char                *var_name,
     /* This case already handled in fldini */
     if (halo_type == CS_HALO_EXTENDED)
       bft_error(__FILE__, __LINE__, 0,
-               "Extended least-square gradient reconstruction \
+               "Extended least-squares gradient reconstruction \
                 is not supported with internal coupling");
     /* Case with hydrostatic pressure */
     if (hyd_p_flag != 0 && hyd_p_flag != 2)
@@ -6415,7 +6415,7 @@ cs_gradient_vector(const char                *var_name,
                                   c_weight,
                                   gradv);
 
-    /* Reconstruction with Least square method */
+    /* Reconstruction with least squares method */
 
     else
       _lsq_vector_gradient(mesh,
@@ -6436,7 +6436,7 @@ cs_gradient_vector(const char                *var_name,
     const cs_int_t  _imlini = 1;
     const cs_real_t _climin = 1.5;
 
-    /* Initialization by the Least square method */
+    /* Initialization by the least squares method */
 
     _lsq_vector_gradient(mesh,
                          cs_glob_mesh_adjacencies,

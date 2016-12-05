@@ -1081,12 +1081,12 @@ cs_parameters_check(void)
   imrgrl = imrgrl%10;
 
   /* We check the non-orthogonality angle of the extended neighborhood
-   * in case of a least square gradient method */
+   * in case of a least squares gradient method */
   if (imrgrl == 3 || imrgrl == 6 || imrgrl == 9) {
     cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                      _("while reading gradient "
                                        "reconstruction parameters for "
-                                       "least square method on reduced "
+                                       "least squares method on reduced "
                                        "extended neighborhood"),
                                      "cs_glob_space_disc->anomax "
                                      "(max. non-orthogonality angle in radians)",

@@ -7796,7 +7796,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  *                               - 1 otherwise
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
- *                               - 1 least square gradient
+ *                               - 1 least squares gradient
  * \param[in]     iccocg        indicator
  *                               - 1 re-compute cocg matrix
  *                                 (for iterative gradients)
@@ -8141,7 +8141,7 @@ cs_face_diffusion_potential(const int                 f_id,
  *                               - 1 otherwise
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
- *                               - 1 least square gradient
+ *                               - 1 least squares gradient
  * \param[in]     iccocg        indicator
  *                               - 1 re-compute cocg matrix
                                     (for iterativ gradients)
@@ -8615,7 +8615,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
  *                               - 1 otherwise
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
- *                               - 1 least square gradient
+ *                               - 1 least squares gradient
  * \param[in]     iccocg        indicator
  *                               - 1 re-compute cocg matrix
  *                                 (for iterative gradients)
@@ -8996,10 +8996,10 @@ cs_diffusion_potential(const int                 f_id,
  *                               - 1 otherwise
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
- *                               - 1 least square gradient
+ *                               - 1 least squares gradient
  * \param[in]     iccocg        indicator
  *                               - 1 re-compute cocg matrix
-                                     (for iterativ gradients)
+                                     (for iterative gradients)
  *                               - 0 otherwise
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients

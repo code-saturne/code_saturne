@@ -97,8 +97,8 @@ cs_mesh_quantities_t  *cs_glob_mesh_quantities = NULL;
 
 static int cs_glob_mesh_quantities_cell_cen = 0;
 
-/* Choice of the option for computing cocg (iterative or Least square method)
-   or not */
+/* Choice of the option for computing cocg
+   (iterative or least squares method) or not */
 
 static bool _compute_cocg_s_it = false;
 static bool _compute_cocg_s_lsq = false;
@@ -628,7 +628,7 @@ _compute_cell_cocg_it(const cs_mesh_t      *m,
 }
 
 /*----------------------------------------------------------------------------
- * Compute 3x3 matrix cocg for the least square iterative gradient
+ * Compute 3x3 matrix cocg for the least squares iterative gradient
  *
  * parameters:
  *   m               <--  mesh
@@ -1996,7 +1996,7 @@ CS_PROCF (algcen, ALGCEN) (cs_int_t  *const iopt)
 
 /*----------------------------------------------------------------------------
  * Set behavior for computing the cocg matrixes for the iterative algo
- * and for the Least square method for scalar and vector gradients.
+ * and for the least squares method for scalar and vector gradients.
  *
  * Fortran interface :
  *

@@ -108,10 +108,10 @@ BEGIN_C_DECLS
   \var  cs_space_disc_t::imrgra
         type of gradient reconstruction
         - 0: iterative process
-        - 1: standard least square method
-        - 2: least square method with extended neighborhood
-        - 3: least square method with reduced extended neighborhood
-        - 4: iterative process initialized by the least square method
+        - 1: standard least squares method
+        - 2: least squares method with extended neighborhood
+        - 3: least squares method with reduced extended neighborhood
+        - 4: iterative process initialized by the least squares method
   \var  cs_space_disc_t::anomax
         <a name="anomax"></a>
         non orthogonality angle of the faces, in radians.
@@ -423,8 +423,8 @@ BEGIN_C_DECLS
        type of gradient reconstruction
           - 0: iterative process
           - 1: standard least squares method
-          - 2: least square method with extended neighborhood
-          - 3: least square method with reduced extended neighborhood
+          - 2: least squares method with extended neighborhood
+          - 3: least squares method with reduced extended neighborhood
           - 4: iterative precess initialized by the least squares method
   \var cs_var_cal_opt_t::imligr
        type of gradient clipping
@@ -1464,10 +1464,10 @@ cs_space_disc_log_setup(void)
         "\n"
         "    imrgra:      %d (type of gradient reconstruction\n"
         "                    0: iterative process\n"
-        "                    1: standard least square method\n"
-        "                    2: least square method with extended "
+        "                    1: standard least squares method\n"
+        "                    2: least squares method with extended "
         "neighborhood\n"
-        "                    3: standard least square method with reduced "
+        "                    3: standard least squares method with reduced "
         "extended neighborhood\n"
         "                    4: iterative process initialized by the least "
         "squares method)\n"

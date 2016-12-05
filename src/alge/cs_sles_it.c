@@ -142,9 +142,8 @@ BEGIN_C_DECLS
 #define HUGE_VAL  1.E+12
 #endif
 
-/* SIMD unit size to ensure SIMD alignement (2 to 4 required on most
- * current architectures, so 16 should be enough on most architectures
- * through at least 2012) */
+/* SIMD unit size to ensure SIMD alignement (2 to 8 required on most
+ * current architectures, so 16 should be enough on most architectures) */
 
 #define CS_SIMD_SIZE(s) (((s-1)/16+1)*16)
 
