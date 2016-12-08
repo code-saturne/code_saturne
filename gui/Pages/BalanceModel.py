@@ -59,7 +59,7 @@ class BalanceModel(Variables, Model):
         self.node_model      = self.case.xmlInitNode('thermophysical_models')
         self.node_model_vp   = self.node_model.xmlInitNode('velocity_pressure')
         self.node_var_vp     = self.node_model_vp.xmlGetNodeList('variable')
-        self.__var_prop_list = self.getVariablesAndVolumeProperties()
+        self.__var_prop_list = self.getScalarVariables()
 
 
     def defaultValues(self):
@@ -73,24 +73,20 @@ class BalanceModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getVariablesAndVolumeProperties(self):
+    def getScalarVariables(self):
         """
-        Creates a dictionnary to connect name and label from
-        variables and properties.
+        Creates a dictionnary to connect name and label of
+        scalar variables (different pressure).
         """
         self.dicoLabel2Name = {}
         model = XMLmodel(self.case)
         output = OutputVolumicVariablesModel(self.case)
         for nodeList in [self.node_var_vp,
                          model.getTurbVariable(),
-                         output.getFluidProperty(),
-                         output.getAdditionalScalarProperty(),
-                         output.getTimeProperty(),
-                         output.getListOfTimeAverage(),
-                         output.getPuCoalScalProper(),
-                         output.getGasCombScalProper(),
-                         output.getMeteoScalProper(),
-                         output.getElecScalProper(),
+                         output.getModelVariables('solid_fuels'),
+                         output.getModelVariables('gas_combustion'),
+                         output.getModelVariables('atmospheric_flows'),
+                         output.getModelVariables('joule_effect'),
                          output.getThermalScalar(),
                          output.getAdditionalScalar()]:
 
@@ -102,11 +98,8 @@ class BalanceModel(Variables, Model):
 
                 dim = node['dimension']
                 if not dim or int(dim) == 1:
-                    if not (node['support'] and node['support'] == "boundary"):
-                        if name != 'local_time_step' and \
-                           name != 'courant_number' and \
-                           name != 'fourier_number':
-                            self.dicoLabel2Name[label] = (name, str(0))
+                    if name != "pressure":
+                        self.dicoLabel2Name[label] = (name, str(0))
 
         return list(self.dicoLabel2Name.keys())
 

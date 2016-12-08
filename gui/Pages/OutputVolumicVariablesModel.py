@@ -304,7 +304,7 @@ class OutputVolumicVariablesModel(Variables, Model):
     @Variables.noUndo
     def getGasCombScalProper(self):
         """
-        Return list fo nodes of gas combustion.
+        Return list of nodes of gas combustion.
         Also called by ProfilesModel and TimeAveragesModel
         """
         nodList = []
@@ -354,6 +354,23 @@ class OutputVolumicVariablesModel(Variables, Model):
                 nodList = node.xmlGetNodeList(var)
                 for nodvar in nodList:
                     varList.append(nodvar)
+        return varList
+
+
+    @Variables.noUndo
+    def getModelVariables(self, model_name):
+        """
+        Return list of variable nodes for a given model.
+        """
+        nodList = []
+        node = self.node_models.xmlGetNode(model_name, 'model')
+        if not node: return []
+        model = node['model']
+        varList = []
+        if model != 'off':
+            nodList = node.xmlGetNodeList('variable')
+            for nodvar in nodList:
+                varList.append(nodvar)
         return varList
 
 

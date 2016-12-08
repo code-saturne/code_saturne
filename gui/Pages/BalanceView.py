@@ -423,7 +423,7 @@ class BalanceView(QWidget, Ui_BalanceForm):
 
         #update list of variables, properties, scalars ...
         liste_label = []
-        for label in self.mdl.getVariablesAndVolumeProperties():
+        for label in self.mdl.getScalarVariables():
             liste_label.append(label)
         self.modelDrag.setStringList(sorted(liste_label, key=str.lower))
 
