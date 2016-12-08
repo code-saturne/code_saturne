@@ -114,6 +114,9 @@ Architectural changes
 Bug fixes
 ---------
 
+- Fix turbulent exchange coefficient of condensation in case of forced
+  convection (the wall function computes Sch*y+/Y+ and not y+/Y+).
+
 - Fix Neumann boundary condition for vectors with anisotropic diffusion.
   A priori, could be used only if the thermal turbulent flux was solved.
 

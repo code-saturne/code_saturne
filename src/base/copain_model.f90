@@ -441,7 +441,7 @@ do ii = 1, nfbpcd
     sigmat = 0.9d0
     call hturbp(iwalfs,schdt,sigmat,yplus,dplus,hflui,ypth)
 
-    hcdt =  cpro_viscl(iel)/distbf*hflui
+    hcdt =  diff_m(iel)/distbf*hflui
 
     h3max = max(h3max,hcdt)
     h3min = min(h3min,hcdt)
@@ -539,8 +539,11 @@ do ii = 1, nfbpcd
 
   h1max = max(h1max,hw_enth)
   h1min = min(h1min,hw_enth)
+  if (izcophg(iz).eq.1) then
 
-  if (izcophg(iz).eq.2) then
+    !-- [1]. Choose the (hw_enth) exch. coeff
+    hpcond(ii) = hw_enth
+  else if (izcophg(iz).eq.2) then
 
     !-- [2]. Choose the (hp_cop) exch. coeff
     !-----------------------------------------------
