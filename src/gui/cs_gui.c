@@ -1919,6 +1919,10 @@ _get_profile_label_name(int   id,
           BFT_FREE(tmp);
         }
       }
+      else {
+        BFT_MALLOC(label, strlen(name)+1, char);
+        strcpy(label, name);
+      }
     }
   }
 
