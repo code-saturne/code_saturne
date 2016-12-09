@@ -114,6 +114,8 @@ Architectural changes
 Bug fixes
 ---------
 
+- Allow use of Modak absorption using the GUI for gas combustion.
+
 - Fix turbulent exchange coefficient of condensation in case of forced
   convection (the wall function computes Sch*y+/Y+ and not y+/Y+).
 
