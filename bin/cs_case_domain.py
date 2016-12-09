@@ -662,14 +662,15 @@ class domain(base_domain):
             if not os.path.isabs(restart_input):
                 restart_input = os.path.join(self.case_dir, restart_input)
 
-            if os.path.exists(restart_input):
-
-                if not os.path.isdir(restart_input):
-                    err_str = restart_input + ' is not a directory.'
-                    raise RunCaseError(err_str)
-                else:
-                    self.symlink(restart_input,
-                                 os.path.join(self.exec_dir, 'restart'))
+            if not os.path.exists(restart_input):
+                err_str = restart_input + ' does not exist.'
+                raise RunCaseError(err_str)
+            elif not os.path.isdir(restart_input):
+                err_str = restart_input + ' is not a directory.'
+                raise RunCaseError(err_str)
+            else:
+                self.symlink(restart_input,
+                             os.path.join(self.exec_dir, 'restart'))
 
         # Partition input files
 
