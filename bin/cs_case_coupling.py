@@ -43,7 +43,8 @@ import cs_runcase
 def coupling(package,
              domains,
              casedir,
-             verbose=True,
+             staging_dir = None,
+             verbose = True,
              package_compute = None):
 
     use_saturne = False
@@ -76,18 +77,27 @@ def coupling(package,
             msg += 'script or domain key is missing.'
             raise RunCaseError(msg)
 
-        if (d.get('solver') == 'Code_Saturne' or d.get('solver') == 'Saturne'):
+        if (d.get('solver') == 'Code_Saturne' or d.get('solver') == 'NEPTUNE_CFD'):
 
-            try:
-                runcase = cs_runcase.runcase(os.path.join(os.getcwd(),
-                                                          d.get('domain'),
-                                                          'SCRIPTS',
-                                                          d.get('script')))
-                param = runcase.get_parameters()
+            script = d.get('script')
 
-            except Exception:
-                err_str = 'Cannot read Code_Saturne script: ' + runcase
-                raise RunCaseError(err_str)
+            if script[-4:] == '.xml':
+                param = script
+
+            else:
+                runcase_path = os.path.join(os.getcwd(),
+                                            d.get('domain'),
+                                            'SCRIPTS',
+                                            script)
+                try:
+                    runcase = cs_runcase.runcase(runcase_path)
+                    param = runcase.get_parameters()
+
+                except Exception:
+                    err_str = 'Cannot read ' + d.get('solver') \
+                              + ' script: ' + runcase_path
+                    raise RunCaseError(err_str)
+                d['script'] = param
 
             dom = domain(package,
                          package_compute = package_compute,
@@ -97,8 +107,12 @@ def coupling(package,
                          n_procs_min = d.get('n_procs_min'),
                          n_procs_max = d.get('n_procs_max'))
 
-            use_saturne = True
-            sat_domains.append(dom)
+            if (d.get('solver')) == 'Code_Saturne':
+                use_saturne = True
+                sat_domains.append(dom)
+            elif (d.get('solver')) == 'NEPTUNE_CFD':
+                use_neptune = True
+                nep_domains.append(dom)
 
         elif (d.get('solver') == 'SYRTHES'):
 
@@ -120,30 +134,6 @@ def coupling(package,
 
             use_syrthes = True
             syr_domains.append(dom)
-
-        elif (d.get('solver') == 'NEPTUNE_CFD'):
-
-            try:
-                runcase = cs_runcase.runcase(os.path.join(os.getcwd(),
-                                                          d.get('domain'),
-                                                          'SCRIPTS',
-                                                          d.get('script')))
-                param = runcase.get_parameters()
-
-            except Exception:
-                err_str = 'Cannot read NEPTUNE_CFD script: ' + runcase
-                raise RunCaseError(err_str)
-
-            dom = domain(package,
-                         package_compute = package_compute,
-                         name = d.get('domain'),
-                         param = param,
-                         n_procs_weight = d.get('n_procs_weight'),
-                         n_procs_min = d.get('n_procs_min'),
-                         n_procs_max = d.get('n_procs_max'))
-
-            use_neptune = True
-            nep_domains.append(dom)
 
         elif (d.get('solver') == 'Code_Aster' or d.get('solver') == 'Aster'):
 
@@ -192,9 +182,35 @@ def coupling(package,
 
     # Now handle case for the corresponding calculation domain(s).
 
+    coupling_parameters = \
+"""
+# -*- coding: utf-8 -*-"
+
+domains = [
+
+"""
+
+    d_first = True
+    for d in domains:
+        if not d_first:
+            coupling_parameters += ",\n\n"
+        d_first = False
+        s_p_weight = str(d.get('n_procs_weight'))
+        s_p_min = str(d.get('n_procs_min'))
+        s_p_max = str(d.get('n_procs_max'))
+        coupling_parameters += "    {'solver': '" + d.get('solver') + "',\n"
+        coupling_parameters += "     'domain': '" + d.get('domain') + "',\n"
+        coupling_parameters += "     'script': '" + d.get('script') + "',\n"
+        coupling_parameters += "     'n_procs_weight': " + s_p_weight + ",\n"
+        coupling_parameters += "     'n_procs_min': " + s_p_min + ",\n"
+        coupling_parameters += "     'n_procs_max': " + s_p_max + "}"
+    coupling_parameters += "\n\n    ]\n\n"
+
     c = case(package,
              package_compute = package_compute,
              case_dir = casedir,
+             staging_dir = staging_dir,
+             coupling_parameters = coupling_parameters,
              domains = sat_domains + nep_domains,
              syr_domains = syr_domains,
              ast_domain = ast_domain,

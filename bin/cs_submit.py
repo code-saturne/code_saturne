@@ -121,7 +121,7 @@ def main(argv, pkg):
     if not runcase_path:
         return 1
 
-    scripts_dir = os.path.dirname(runcase_path)
+    scripts_dir = os.path.abspath(os.path.dirname(runcase_path))
 
     runcase = cs_runcase.runcase(runcase_path)
 

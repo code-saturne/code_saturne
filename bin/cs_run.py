@@ -144,6 +144,7 @@ def process_cmd_line(argv, pkg):
     # Try to determine case directory
 
     casedir = None
+    staging_dir = None
     param = None
     coupling= None
     data = None
@@ -174,12 +175,23 @@ def process_cmd_line(argv, pkg):
             sys.stderr.write(err_str)
             sys.exit(1)
 
+        if options.id:
+            cwd = os.path.split(coupling)[0]
+            if os.path.basename(cwd) == str(options.id):
+                d = os.path.split(cwd)[0]
+                if os.path.basename(d) == 'RESU_COUPLING':
+                    staging_dir = cwd
+
         if options.case:
             casedir = os.path.realpath(options.case)
         else:
             casedir = os.path.split(coupling)[0]
+            if staging_dir:
+                casedir = os.path.split(os.path.split(staging_dir)[0])[0]
 
     else:
+
+        cwd = os.getcwd()
 
         # Single domain case
 
@@ -190,6 +202,12 @@ def process_cmd_line(argv, pkg):
                 (casedir, data) = os.path.split(datadir)
                 if data != 'DATA': # inconsistent paramaters location.
                     casedir = None
+
+        if options.id:
+            if os.path.basename(cwd) == str(options.id):
+                d = os.path.split(cwd)[0]
+                if os.path.basename(d) == 'RESU':
+                    staging_dir = cwd
 
         if options.case:
             casedir = os.path.realpath(options.case)
@@ -267,7 +285,7 @@ def process_cmd_line(argv, pkg):
     n_procs = options.nprocs
     n_threads = options.nthreads
 
-    return  (casedir, options.id, param, coupling,
+    return  (casedir, staging_dir, options.id, param, coupling,
              options.id_prefix, options.id_suffix, options.suggest_id, force_id,
              n_procs, n_threads, stages, compute_build)
 
@@ -281,7 +299,7 @@ def run(argv, pkg):
     returns return code, run id, and results directory path when created.
     """
 
-    (casedir, run_id, param, coupling,
+    (casedir, staging_dir, run_id, param, coupling,
      id_prefix, id_suffix, suggest_id, force, n_procs, n_threads,
      stages, compute_build) = process_cmd_line(argv, pkg)
 
@@ -309,7 +327,11 @@ def run(argv, pkg):
 
         if os.path.isfile(coupling):
             try:
-                exec(compile(open(coupling).read(), user_scripts, 'exec'))
+                c_locals = {}
+                exec(compile(open(coupling).read(), coupling, 'exec'),
+                     globals(),
+                     c_locals)
+                domains = c_locals['domains']
             except Exception:
                 execfile(coupling)
 
@@ -320,6 +342,7 @@ def run(argv, pkg):
         c = cs_case_coupling.coupling(pkg,
                                       domains,
                                       casedir,
+                                      staging_dir=staging_dir,
                                       verbose=verbose,
                                       package_compute=pkg_compute)
 
@@ -331,6 +354,7 @@ def run(argv, pkg):
         c = cs_case.case(pkg,
                          package_compute=pkg_compute,
                          case_dir=casedir,
+                         staging_dir=staging_dir,
                          domains=d)
 
     # Determine run id if not forced

@@ -155,7 +155,7 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
-    def set_case_dir(self, case_dir):
+    def set_case_dir(self, case_dir, staging_dir = None):
 
         # Names, directories, and files in case structure
 
@@ -167,6 +167,14 @@ class base_domain:
         self.data_dir = os.path.join(self.case_dir, 'DATA')
         self.result_dir = os.path.join(self.case_dir, 'RESU')
         self.src_dir = os.path.join(self.case_dir, 'SRC')
+
+        # If computation is already staged, avoid reading data in upstream
+        # case directories, as it may have changed since staging.
+
+        if staging_dir:
+            self.case_dir = staging_dir
+            self.data_dir = self.case_dir
+            self.src_dir = None
 
     #---------------------------------------------------------------------------
 
@@ -450,11 +458,11 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def set_case_dir(self, case_dir):
+    def set_case_dir(self, case_dir, staging_dir = None):
 
         # Names, directories, and files in case structure
 
-        base_domain.set_case_dir(self, case_dir)
+        base_domain.set_case_dir(self, case_dir, staging_dir)
 
         # We may now import user python script functions if present.
 
@@ -1047,9 +1055,9 @@ class syrthes_domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def set_case_dir(self, case_dir):
+    def set_case_dir(self, case_dir, staging_dir = None):
 
-        base_domain.set_case_dir(self, case_dir)
+        base_domain.set_case_dir(self, case_dir, staging_dir)
 
         # Names, directories, and files in case structure
 
@@ -1353,9 +1361,9 @@ class aster_domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def set_case_dir(self, case_dir):
+    def set_case_dir(self, case_dir, staging_dir = None):
 
-        base_domain.set_case_dir(self, case_dir)
+        base_domain.set_case_dir(self, case_dir, staging_dir)
 
         e = []
         p = os.path.join(self.case_dir, self.param)

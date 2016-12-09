@@ -78,6 +78,8 @@ class case:
                  package,                     # main package
                  package_compute = None,      # package for compute environment
                  case_dir = None,
+                 staging_dir = None,
+                 coupling_parameters = None,
                  domains = None,
                  syr_domains = None,
                  ast_domain = None,
@@ -168,11 +170,14 @@ class case:
             self.script_dir = self.case_dir
 
         for d in self.domains:
-            d.set_case_dir(self.case_dir)
+            d_staging_dir = staging_dir
+            if n_domains > 1:
+                d_staging_dir = os.path.join(staging_dir, d.name)
+            d.set_case_dir(self.case_dir, d_staging_dir)
         for d in self.syr_domains:
-            d.set_case_dir(self.case_dir)
+            d.set_case_dir(self.case_dir, os.path.join(staging_dir, d.name))
         for d in self.ast_domains:
-            d.set_case_dir(self.case_dir)
+            d.set_case_dir(self.case_dir, os.path.join(staging_dir, d.name))
 
         # Mesh directory for default study structure
 
@@ -203,6 +208,10 @@ class case:
             err_str = 'In case of multiple domains (i.e. code coupling), ' \
                 + 'all or no domains must execute their solver.\n'
             raise RunCaseError(err_str)
+
+        # Coupling parameters if present
+
+        self.coupling_parameters = coupling_parameters
 
         # Date or other name
 
@@ -1316,35 +1325,34 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
     def update_scripts_tmp(self, src, dest):
 
         """
-        Create a stamp file in the scripts directory, rename it, or destroy it.
+        Create a stamp file in the execution directory, rename it, or destroy it.
         """
 
-        # Create a temporary file for SALOME (equivalent to "control_file")
+        # Create a temporary file to determine status
 
         src_tmp_name = None
         dest_tmp_name = None
 
+        base_path = os.path.join(self.exec_dir, 'run_status.')
+
         if src != None:
             if type(src) == tuple:
                 for s in src:
-                    p = os.path.join(self.script_dir, s + '.' + self.run_id)
+                    p = base_path + s
                     if os.path.isfile(p):
                         src_tmp_name = p
 
             else:
-                p = os.path.join(self.script_dir, src + '.' + self.run_id)
+                p = base_path + src
                 if os.path.isfile(p):
                     src_tmp_name = p
 
         try:
             if dest != None:
-                dest_tmp_name = os.path.join(self.script_dir,
-                                             dest + '.' + self.run_id)
+                dest_tmp_name = base_path + dest
                 if src_tmp_name == None:
                     scripts_tmp = open(dest_tmp_name, 'w')
-                    scripts_tmp.write(self.run_id + '\n')
-                    scripts_tmp.write(self.exec_dir + '\n')
-                    scripts_tmp.write(self.result_dir + '\n')
+                    scripts_tmp.write(self.case_dir + '\n')
                     scripts_tmp.close()
                 else:
                     os.rename(src_tmp_name, dest_tmp_name)
@@ -1440,6 +1448,13 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
             d.prepare_data()
             if len(d.error) > 0:
                 self.error = d.error
+
+        # Output coupling parameters for staging
+
+        if self.coupling_parameters:
+            s = open('coupling_parameters.py', 'w')
+            s.write(self.coupling_parameters)
+            s.close()
 
         # Rename temporary file to indicate new status
 
@@ -1611,10 +1626,7 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
 
         # Indicate status using temporary file for SALOME.
 
-        if self.domains[0].logging_args == '--log 0':
-            self.update_scripts_tmp('ready', 'runningstd')
-        else:
-            self.update_scripts_tmp('ready', 'runningext')
+        self.update_scripts_tmp('ready', 'running')
 
         sys.stdout.write('\n'
                          ' **********************\n'
@@ -1682,7 +1694,7 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         else:
             status = 'failed'
 
-        self.update_scripts_tmp(('runningstd', 'runningext'), status)
+        self.update_scripts_tmp(('running',), status)
 
         return retcode
 
@@ -1875,8 +1887,7 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
             if self.run_id != None:
                 self.update_scripts_tmp(('preparing',
                                          'ready',
-                                         'runningstd',
-                                         'runningext',
+                                         'running',
                                          'finished',
                                          'failed'), None)
 

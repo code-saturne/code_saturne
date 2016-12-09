@@ -293,7 +293,8 @@ class runcase(object):
         args = separate_args(self.lines[self.run_cmd_line_id])
 
         return get_command_single_value(args,
-                                        ('--coupling',))
+                                        ('--coupling',
+                                         '--coupling='))
 
     #---------------------------------------------------------------------------
 
