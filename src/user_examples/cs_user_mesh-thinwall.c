@@ -118,11 +118,10 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
                                 selected_faces);
 
     cs_mesh_boundary_insert(mesh,
-                            selected_faces,
-                            n_selected_faces);
+                            n_selected_faces,
+                            selected_faces);
 
     BFT_FREE(selected_faces);
-
   }
   /*! [mesh_thinwall] */
 
