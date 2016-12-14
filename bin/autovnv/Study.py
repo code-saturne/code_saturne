@@ -535,13 +535,18 @@ class Case(object):
         lines = l.readlines()
 
         tab = []
+
+        # autovnv compare log only for field of real values
         for i in range(len(lines)):
-            if lines[i].find("Support") != -1:
+            # only select section with "Type" (english and french) on first line
+            if lines[i].find("Type") != -1:
                 line = [x.replace("\""," ").strip() for x in lines[i].split(";")]
                 name = line[0]
                 info = [x.split(":") for x in line[1:]]
                 info = [[x[0].strip(),x[1].strip()] for x in info]
-                if info[1][1] not in ['i4', 'u4', 'c']:
+                # section with 4 informations (name, location, type, size)
+                # and of type r (real)
+                if len(info) == 3 and info[1][1] not in ['i4', 'u4', 'c'] and :
                     line = [x.strip() for x in lines[i+1].split(";")]
                     vals = [x.split(":") for x in line]
                     vals = [[x[0].strip(),x[1].strip()] for x in vals]

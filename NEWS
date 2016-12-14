@@ -5,6 +5,8 @@ Release 4.3.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix autovnv compare log for english environment (LANG different from fr_FR).
+
 - Fix Neumann boundary condition on turbulent dissipation for k-epsilon models
   at walls when testing if boundary cell is outside the viscous sub-layer.
 
