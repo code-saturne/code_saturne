@@ -203,7 +203,13 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.groupBoxMeteo.hide()
 
         if (self.atm.getAtmosphericFlowsModel() != "off" and self.nature == 'wall'):
-            self.groupBoxThermal.hide()
+            self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
+            if len(self.meteo_list) > 0:
+                self.groupBoxMeteo.show()
+                for m in self.meteo_list:
+                    self.modelMeteo.addItem(self.tr(m), m)
+                self.meteo = self.meteo_list[0]
+                self.modelMeteo.setItem(str_model = self.meteo)
 
         if (self.atm.getAtmosphericFlowsModel() != "off" and \
            (self.nature == 'inlet' or self.nature == 'outlet')):
@@ -334,12 +340,15 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.pushButtonMeteo.setEnabled(False)
         self.pushButtonMeteo.setStyleSheet("background-color: None")
 
-        if (self.meteo_list and (self.nature == 'inlet' or self.nature == 'outlet')):
+        if (self.meteo_list):
             label = self.__boundary.getLabel()
-            nature = "meteo_" + self.nature
+            if self.nature != 'wall':
+                nature = "meteo_" + self.nature
+            else:
+                nature = self.nature
             bb = Boundary(nature, label, self.__case)
 
-            if bb.getMeteoDataStatus() == 'off':
+            if self.nature == 'wall' or bb.getMeteoDataStatus() == 'off':
                 self.meteo_type = self.__boundary.getScalarChoice(self.meteo)
                 self.modelTypeMeteo.setItem(str_model = self.meteo_type)
                 self.labelValueMeteo.setText('Value')
