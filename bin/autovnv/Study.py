@@ -546,7 +546,7 @@ class Case(object):
                 info = [[x[0].strip(),x[1].strip()] for x in info]
                 # section with 4 informations (name, location, type, size)
                 # and of type r (real)
-                if len(info) == 3 and info[1][1] not in ['i4', 'u4', 'c'] and :
+                if len(info) == 3 and info[1][1] not in ['i4', 'u4', 'c']:
                     line = [x.strip() for x in lines[i+1].split(";")]
                     vals = [x.split(":") for x in line]
                     vals = [[x[0].strip(),x[1].strip()] for x in vals]
