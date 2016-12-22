@@ -328,6 +328,8 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
   }
 }
 
+#endif /* defined(HAVE_MPI) */
+
 /*----------------------------------------------------------------------------
  * Cell selection function adapted to generate space-filling curves.
  *
@@ -368,8 +370,6 @@ _sfc_cell_select(void        *input,
 
   fvm_writer_finalize(w);
 }
-
-#endif /* defined(HAVE_MPI) */
 
 /*============================================================================
  * User function definitions
