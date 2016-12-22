@@ -812,7 +812,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
 
   /* Initialize parameters */
 
-  *n_inter = 0 ;
+  *n_inter = 0;
 
   assert(p1e1.gnum != p2e1.gnum);
   assert(p1e2.gnum != p2e2.gnum);
@@ -1418,7 +1418,6 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
     }
 
   }
-
 
 }
 
