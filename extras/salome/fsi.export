@@ -9,9 +9,12 @@ P ncpus 1
 P nomjob yacs
 P soumbtc oui
 P tpsjob 1
-P version NEW11
+P version 12.3
 A memjeveux 512
 A tpmax 3600
 F conf fsi_config.txt D  0
-F comm example.comm D  1
-F mail example.mail D  20
+F comm solid.comm D  1
+F mail solid.med D  20
+F libr solid.mail R  21
+F dat dep.agr R  59
+F mess solid.mess R  6
