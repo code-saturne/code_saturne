@@ -1381,7 +1381,7 @@ You can have a look at the log file meanwhile.
 Before using Code_Saturne, please update your environment with:
 
   cspath=%(cspath)s
-  alias code_saturne="$cspath/bin"
+  alias code_saturne="$cspath/code_saturne"
 
 The documentation should then be available through the commands:
   code_saturne info -g refcard
