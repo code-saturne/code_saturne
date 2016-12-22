@@ -54,6 +54,7 @@
 
 #include "cs_base.h"
 #include "cs_mesh_boundary.h"
+#include "cs_mesh_group.h"
 #include "cs_join.h"
 #include "cs_join_perio.h"
 #include "cs_mesh.h"

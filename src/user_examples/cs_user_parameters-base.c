@@ -62,6 +62,7 @@
 #include "cs_gui_util.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
+#include "cs_internal_coupling.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
