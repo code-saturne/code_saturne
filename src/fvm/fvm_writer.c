@@ -609,19 +609,25 @@ _format_writer_init(fvm_writer_t  *this_writer,
 
   const char *name = this_writer->name;
 
-  if (mesh_name != NULL) {
-    if (strlen(mesh_name) > 0) {
-      size_t lw = strlen(this_writer->name);
-      size_t l = lw + 1 + strlen(mesh_name);
-      BFT_MALLOC(tmp_name, l + 1, char);
-      sprintf(tmp_name, "%s_%s", this_writer->name, mesh_name);
-      for (size_t i = lw + 1, j = 0; i < l; i++, j++) {
-        if (tmp_name[i] == ' ')
-          tmp_name[i] = '_';
+  if (name != NULL) {
+    size_t lw = strlen(this_writer->name);
+    if (lw == 0)
+      name = mesh_name;
+    else if (mesh_name != NULL) {
+      if (strlen(mesh_name) > 0) {
+        size_t l = lw + 1 + strlen(mesh_name);
+        BFT_MALLOC(tmp_name, l + 1, char);
+        sprintf(tmp_name, "%s_%s", this_writer->name, mesh_name);
+        for (size_t i = lw + 1, j = 0; i < l; i++, j++) {
+          if (tmp_name[i] == ' ')
+            tmp_name[i] = '_';
+        }
+        name = tmp_name;
       }
-      name = tmp_name;
     }
   }
+  else
+    name = mesh_name;
 
   /* Initialize format-specific writer */
 

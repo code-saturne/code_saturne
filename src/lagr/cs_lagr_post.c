@@ -198,6 +198,7 @@ _write_particle_vars(cs_lagr_post_options_t  *options,
 
       if (options->attr_output[attr_id] == 1)
         cs_post_write_particle_values(mesh_id,
+                                      CS_POST_WRITER_ALL_ASSOCIATED,
                                       attr_id,
                                       var_name,
                                       -1,
@@ -214,6 +215,7 @@ _write_particle_vars(cs_lagr_post_options_t  *options,
                    component_id+1);
           var_name_component[63] = '\0';
           cs_post_write_particle_values(mesh_id,
+                                        CS_POST_WRITER_ALL_ASSOCIATED,
                                         attr_id,
                                         var_name_component,
                                         component_id,
@@ -343,6 +345,7 @@ _cs_lagr_post(void                  *input,
       }
 
       cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
                         var_name,
                         1,       /* var_dim */
                         true,    /* interlace */
@@ -364,6 +367,7 @@ _cs_lagr_post(void                  *input,
   if (cat_id == -2) {
     cs_lagr_bdy_condition_t  *bdy_cond = cs_glob_lagr_bdy_conditions;
     cs_post_write_var(mesh_id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       "lagrangian_boundary_zones",
                       1,       /* var_dim */
                       true,    /* interlace */

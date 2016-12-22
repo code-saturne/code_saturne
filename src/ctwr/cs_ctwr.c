@@ -895,6 +895,7 @@ _cs_ctwr_post_function(void                  *ct,
   if (_ct->post_mesh_id != 0) {
 
     cs_post_write_var(_ct->post_mesh_id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       _("T water"),
                       1,
                       false,
@@ -906,6 +907,7 @@ _cs_ctwr_post_function(void                  *ct,
                       ts);
 
     cs_post_write_var(_ct->post_mesh_id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       _("Flux water"),
                       1,
                       false,

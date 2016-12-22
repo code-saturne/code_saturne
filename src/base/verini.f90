@@ -83,7 +83,6 @@ integer          f_id, n_fields
 integer          indest, iiidef, istop
 integer          kscmin, kscmax, ifcvsl
 integer          keyvar, keysca
-integer          kcpsyr, icpsyr
 double precision scmaxp, scminp
 
 character(len=3), dimension(3) :: nomext3
@@ -114,11 +113,6 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 !===============================================================================
 
 ! --- Suite, Historiques, Listing
-
-if (ncapt.lt.0.or.ncapt.gt.ncaptm) then
-  write(nfecra,1230)ncaptm,ncapt
-  iok = iok + 1
-endif
 
 if (nthist.le.0.and.nthist.ne.-1) then
   write(nfecra,1210) 'NTHIST (Periode   Sortie Histo. )',nthist
@@ -974,24 +968,6 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1230 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    NCAPT  DOIT ETRE UN ENTIER INFERIEUR OU EGAL A', i10,     /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  NCAPT  est le nombre de sondes utilisees pour les',         /,&
-'@    historiques.',                                            /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -2358,24 +2334,6 @@ endif
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1230 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    NCAPT  MUST BE AN INTEGER LESS THAN or EGAL A', i10,     /, &
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The computation CANNOT  start.',                           /,&
-'@',                                                            /,&
-'@  NCAPT  is the number of probes for history/ time series',   /,&
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&

@@ -979,12 +979,6 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 
     ttchis = ttcabs
 
-    call ecrhis(modhis)
-
-    ! if (iilagr.gt.0) then
-    !   call laghis
-    ! endif
-
     if (ihistr.eq.1) then
       call strhis(modhis)
     endif
@@ -992,8 +986,6 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
   endif
 
 endif
-
-call ushist(nvar, nscal, dt)
 
 !===============================================================================
 ! Write to "listing" every ntlist iterations
@@ -1051,7 +1043,6 @@ write(nfecra,4000)
 call timer_stats_start(post_stats_id)
 
 modhis = 2
-call ecrhis(modhis)
 
 ! if (iilagr.gt.0) then
 !   call laghis

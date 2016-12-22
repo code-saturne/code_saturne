@@ -328,83 +328,25 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
   }
 }
 
-#endif /* defined(HAVE_MPI) */
-
-/*============================================================================
- * User function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------
- * Define post-processing writers.
+ * Cell selection function adapted to generate space-filling curves.
  *
- * The default output format and frequency may be configured, and additional
- * post-processing writers allowing outputs in different formats or with
- * different format options and output frequency than the main writer may
- * be defined.
+ * This is a specific case, where we do not actually select any cells, but
+ * generate a temporary, speicif writer (based on writer -1 settings),
+ * and edge meshes illustrating the various space-filling curve
+ * possibilities are output using this writer.
+ *
+ * Doing this with this function allows executing these steps once the
+ * mesh is preprocessed.
  *----------------------------------------------------------------------------*/
 
-void
-cs_user_postprocess_writers(void)
+static void
+_sfc_cell_select(void        *input,
+                 cs_lnum_t   *n_cells,
+                 cs_lnum_t  **cell_ids)
 {
-  /* Every writer has a strictly positive or negative id. Negative ids
-   * are for predefined writers, positive ids for user writers.
-   * All predefined writers use the settings from writer -1, and
-   * redefining that writer here allows changing from the default or GUI
-   * settings.
-   *
-   * Defining or configuring a writer is done by calling the
-   * cs_post_define_writer() function, whose arguments are:
-   *   writer_id     <-- number of writer to create (< 0 reserved, > 0 for user)
-   *   case_name     <-- associated case name
-   *   dir_name      <-- associated directory name
-   *   fmt_name      <-- associated format name
-   *   fmt_opts      <-- associated format options string
-   *   time_dep      <-- FVM_WRITER_FIXED_MESH if mesh definitions are fixed,
-   *                     FVM_WRITER_TRANSIENT_COORDS if coordinates change,
-   *                     FVM_WRITER_TRANSIENT_CONNECT if connectivity changes
-   *   output_at_end <-- force output at calculation end if not 0
-   *   frequency_n   <-- default output frequency in time-steps, or < 0
-   *   frequency_t   <-- default output frequency in seconds, or < 0
-   *                     (has priority over frequency_n)
-   *
-   * Allowed output format names: "EnSight Gold", "MED", or "CGNS".
-   * (EnSight output is built-in; MED or CGNS are only available if the
-   * code was built with these optional libraries)
-   *
-   * An output options string may contain options (separated by whitespace
-   * or commas) from the following list:
-   *   'text'              (text format, for EnSight)
-   *   'big_endian'        (forces binary EnSight output to 'big-endian' mode)
-   *   'adf'               (use ADF file type, for CGNS)
-   *   'hdf5'              (force HDF5 file type, usually the default for CGNS)
-   *   'discard_polygons'  (ignore polygon-type faces)
-   *   'discard_polyhedra' (ignore polyhedron-type cells)
-   *   'divide_polygons'   (subdivides polygon-type faces)
-   *   'divide_polyhedra'  (subdivides polyhedron-type cells)
-   *   'separate_meshes'   (use separate outputs for different meshes) */
-
-  /* Set time plot file writer flush behavior defaults.
-   *   flush_wtime     <-- elapsed time interval between file flushes;
-   *                       if < 0, no forced flush
-   *   n_buffer_steps  <-- number of time steps in output buffer if
-   *                       file is not to be kept open */
-}
-
-/*----------------------------------------------------------------------------
- * Define post-processing meshes.
- *
- * The main post-processing meshes may be configured, and additional
- * post-processing meshes may be defined as a subset of the main mesh's
- * cells or faces (both interior and boundary).
- *----------------------------------------------------------------------------*/
-
-void
-cs_user_postprocess_meshes(void)
-{
-  /* In this example, a specific, temporary writer is built,
-     using the defaults (based on writer -1), and
-     edge meshes illustrating the various space-filling curve
-     possibilities are output using this writer. */
+  *n_cells = 0;
+  *cell_ids = NULL;
 
   fvm_writer_t *w = NULL;
 
@@ -427,29 +369,37 @@ cs_user_postprocess_meshes(void)
   fvm_writer_finalize(w);
 }
 
+#endif /* defined(HAVE_MPI) */
+
+/*============================================================================
+ * User function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
- * Override default frequency or calculation end based output.
+ * Define post-processing meshes.
  *
- * This allows fine-grained control of activation or deactivation,
- *
- * parameters:
- *   nt_max_abs <-- maximum time step number
- *   nt_cur_abs <-- current time step number
- *   t_cur_abs  <-- absolute time at the current time step
+ * The main post-processing meshes may be configured, and additional
+ * post-processing meshes may be defined as a subset of the main mesh's
+ * cells or faces (both interior and boundary).
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_postprocess_activate(int     nt_max_abs,
-                             int     nt_cur_abs,
-                             double  t_cur_abs)
+cs_user_postprocess_meshes(void)
 {
-  /* Use the cs_post_activate_writer() function to force the
-   * "active" or "inactive" flag for a specific writer or for all
-   * writers for the current time step.
+  {
+    const int n_writers = 1;
+    const int writer_ids[] = {CS_POST_WRITER_DEFAULT};
 
-   * the parameters for cs_post_activate_writer() are:
-   *   writer_id <-- writer id, or 0 for all writers
-   *   activate  <-- false to deactivate, true to activate */
+    cs_post_define_volume_mesh_by_func(1,               /* mesh id */
+                                       "SFC",
+                                       _sfc_cell_select,
+                                       NULL,            /* _sfc_cell_select_input */
+                                       false,           /* time varying */
+                                       false,           /* add_groups */
+                                       false,           /* auto_variables */
+                                       n_writers,
+                                       writer_ids);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

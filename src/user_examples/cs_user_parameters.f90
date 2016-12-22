@@ -1544,37 +1544,15 @@ vcopt%iwarni = 2
 call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 
 !===============================================================================
-! 2. Definition of probes
+! 2. Definition of deformable structure time plots
 !===============================================================================
 
-! --- probes output step
+! structures output step
 
 nthist = 1
 frhist = -1.d0
 
-
-! --- Number of monitoring points (probes) and their positions
-!     (limited to ncaptm=200)
-
-ncapt  = 4
 tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)
-
-xyzcap(1,1) = 0.30d0
-xyzcap(2,1) = 0.15d0
-xyzcap(3,1) = 0.01d0
-
-xyzcap(1,2) = 0.30d0
-xyzcap(2,2) = 0.00d0
-xyzcap(3,2) = 0.01d0
-
-xyzcap(1,3) = 0.30d0
-xyzcap(2,3) =-0.08d0
-xyzcap(3,3) = 0.01d0
-
-xyzcap(1,4) = 0.60d0
-xyzcap(2,4) =-0.05d0
-xyzcap(3,4) = 0.01d0
-
 
 !===============================================================================
 ! 3. Fine control of variables output

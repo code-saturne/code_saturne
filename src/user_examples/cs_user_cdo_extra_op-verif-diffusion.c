@@ -478,7 +478,8 @@ _cdovb_post(const cs_mesh_t            *m,
     BFT_MALLOC(postlabel, len, char);
     sprintf(postlabel, "%s.Error", field->name);
 
-    cs_post_write_vertex_var(-1,          /* id du maillage de post */
+    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                             CS_POST_WRITER_ALL_ASSOCIATED,
                              postlabel,
                              1,           /* dim */
                              false,       /* interlace */
@@ -488,7 +489,8 @@ _cdovb_post(const cs_mesh_t            *m,
                              time_step);  /* time step structure */
 
     sprintf(postlabel, "%s.RefSol", field->name);
-    cs_post_write_vertex_var(-1,          /* id du maillage de post */
+    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                             CS_POST_WRITER_ALL_ASSOCIATED,
                              postlabel,
                              1,           /* dim */
                              false,       /* interlace */
@@ -514,7 +516,8 @@ _cdovb_post(const cs_mesh_t            *m,
       work[i] = fabs(ddip[i]);
 
     sprintf(postlabel, "%s.AbsErr", field->name);
-    cs_post_write_vertex_var(-1,          /* id du maillage de post */
+    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                             CS_POST_WRITER_ALL_ASSOCIATED,
                              postlabel,
                              1,           /* dim */
                              false,       /* interlace */
@@ -639,7 +642,8 @@ _cdovb_post(const cs_mesh_t            *m,
     cs_reco_ccen_edge_dofs(connect, cdoq, gdi, &work);
 
     sprintf(postlabel, "%s.GrdRec", field->name);
-    cs_post_write_var(-1,              // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       postlabel,
                       3,               // dim
                       true,            // interlace
@@ -653,7 +657,8 @@ _cdovb_post(const cs_mesh_t            *m,
     cs_reco_ccen_edge_dofs(connect, cdoq, ddig, &work);
 
     sprintf(postlabel, "%s.ErrGrd", field->name);
-    cs_post_write_var(-1,              // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       postlabel,
                       3,               // dim
                       true,            // interlace
@@ -795,7 +800,8 @@ _cdofb_post(const cs_mesh_t            *m,
     len = strlen(field->name) + 8 + 1;
     BFT_MALLOC(postlabel, len, char);
     sprintf(postlabel, "%s.RefSolB", field->name);
-    cs_post_write_var(-2,                    // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_BOUNDARY,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       postlabel,
                       1,                     // dim
                       false,                 // interlace
@@ -807,7 +813,8 @@ _cdofb_post(const cs_mesh_t            *m,
                       time_step);            // time step management structure
 
     sprintf(postlabel, "%s.ErrBord", field->name);
-    cs_post_write_var(-2,                    // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_BOUNDARY,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       postlabel,
                       1,                     // dim
                       false,                 // interlace
@@ -831,7 +838,8 @@ _cdofb_post(const cs_mesh_t            *m,
 
     /* Post-processing of the error */
     sprintf(postlabel, "%s.Error", field->name);
-    cs_post_write_var(-1,              // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       postlabel,
                       1,               // dim
                       false,           // interlace
@@ -869,7 +877,8 @@ _cdofb_post(const cs_mesh_t            *m,
       work[i] = fabs(cell_dpdi[i]);
 
     sprintf(postlabel, "%s.AbsErr", field->name);
-    cs_post_write_var(-1,              // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       postlabel,
                       1,               // dim
                       false,           // interlace

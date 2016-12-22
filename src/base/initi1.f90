@@ -137,7 +137,7 @@ call cs_user_time_moments
 ! Postprocessing and logging
 
 if (iihmpr.eq.1) then
-  call csenso(ncapt, nthist, frhist, iecaux, tplfmt, xyzcap)
+  call csenso(iecaux)
 endif
 
 ! Restart

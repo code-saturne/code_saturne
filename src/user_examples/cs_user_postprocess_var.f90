@@ -124,7 +124,7 @@ double precision, dimension(:), pointer :: bfpro_rom
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_var
 
-double precision, dimension(:), pointer :: cmom_1, cmom_2, cdt
+double precision, dimension(:), pointer :: cmom_1, cmom_2
 
 double precision, dimension(:,:), pointer :: cvar_vel
 
@@ -216,50 +216,12 @@ endif
 ! Examples for initialization
 !===============================================================================
 
-! Pointer to local time step
-call field_get_id('dt', f_id)
-call field_get_val_s(f_id, cdt)
-
-!< [postprocess_var_ex_1]
 
 !===============================================================================
 ! Examples of volume variables on the main volume mesh (ipart = -1)
 !===============================================================================
 
 if (ipart .eq. -1) then
-
-  ! Output of k=1/2(R11+R22+R33) for the Rij-epsilon model
-  ! ------------------------------------------------------
-
-  if (itytur .eq. 3) then
-
-    allocate(scel(ncelps))
-
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-
-    do iloc = 1, ncelps
-      iel = lstcel(iloc)
-      scel(iloc) = 0.5d0*(  cvar_r11(iel)  &
-                          + cvar_r22(iel)  &
-                          + cvar_r33(iel))
-    enddo
-
-    idimt = 1        ! 1: scalar, 3: vector, 6/9: symm/non-symm tensor
-    ientla = .true.  ! dimension 1 here, so no effect
-    ivarpr = .false. ! defined on the work array, not on the parent
-
-    ! Output values; as we have no face values, we can pass a
-    ! trivial array rvoid for those.
-    call post_write_var(ipart, 'Turb energy', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, scel, rvoid, rvoid)
-
-    deallocate(scel)
-
-  endif
-
-!< [postprocess_var_ex_1]
 
 !< [postprocess_var_ex_2]
 

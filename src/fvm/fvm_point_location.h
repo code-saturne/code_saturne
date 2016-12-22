@@ -95,11 +95,14 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
 
 /*----------------------------------------------------------------------------
  * For each point previously located in a element, find among vertices of this
- * element the closest vertex to this point.
- * Update located_ent_num and distance.
+ * element the closest vertex relative to this point.
+ *
  * As input, located_ent_num is an array with a numbering not using a parent
- * numbering. As output, located_ent_num may use a parent vertex numbering
- * according to the value of locate_on_parents
+ * numbering. As output, located_ent_num may use a parent numbering
+ * according to the value of locate_on_parents.
+ *
+ * The located_vtx_num output is also determined relative to the
+ * locate_on_parents option.
  *
  * parameters:
  *   this_nodal           <-- pointer to nodal mesh representation structure
@@ -111,11 +114,8 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
  *   located_ent_num      <-> input: list of elements (cells or faces according
  *                            to max entity dim) where points have been
  *                            initially located or not (size: n_points)
- *                            output: list of vertices closest to each point
- *   distance             <-> distance from point to vertex indicated by
- *                            location[]: < 0 if unlocated, 0 - 1 if inside,
- *                            and > 1 if outside a volume element, or absolute
- *                            distance to a surface element (size: n_points)
+ *                            output: possibly modified by parent numbering
+ *   located_vtx_num      <-> output: list of vertices closest to each point
  *----------------------------------------------------------------------------*/
 
 void
@@ -124,7 +124,7 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
                                   cs_lnum_t           n_points,
                                   const cs_coord_t    point_coords[],
                                   cs_lnum_t           located_ent_num[],
-                                  float               distance[]);
+                                  cs_lnum_t           located_vtx_num[]);
 
 /*----------------------------------------------------------------------------*/
 

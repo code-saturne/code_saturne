@@ -969,7 +969,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                             b_face_warping,
                             face_to_cell);
 
-        cs_post_write_var(-1,
+        cs_post_write_var(CS_POST_MESH_VOLUME,
+                          CS_POST_WRITER_ALL_ASSOCIATED,
                           "Face_Warp_c_max",
                           1,
                           false,
@@ -989,7 +990,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                            b_face_warping,
                            face_to_vtx);
 
-        cs_post_write_vertex_var(-1,
+        cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                                 CS_POST_WRITER_ALL_ASSOCIATED,
                                  "Face_Warp_v_max",
                                  1,
                                  false,
@@ -1002,7 +1004,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
     } /* End of post-processing on volume */
 
     if (brd_fields == true)
-      cs_post_write_var(-2,
+      cs_post_write_var(CS_POST_MESH_BOUNDARY,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
                         "Face_Warp",
                         1,
                         false,
@@ -1057,7 +1060,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
       if (face_to_cell != NULL) {
 
         _cell_from_max_face(mesh, 0.5, weighting, NULL, face_to_cell);
-        cs_post_write_var(-1,
+        cs_post_write_var(CS_POST_MESH_VOLUME,
+                          CS_POST_WRITER_ALL_ASSOCIATED,
                           "Weighting_c_max",
                           1,
                           false,
@@ -1072,7 +1076,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
       if (face_to_vtx != NULL) {
 
         _vtx_from_max_face(mesh, 0.5, weighting, NULL, face_to_vtx);
-        cs_post_write_vertex_var(-1,
+        cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                                 CS_POST_WRITER_ALL_ASSOCIATED,
                                  "Weighting_v_max",
                                  1,
                                  false,
@@ -1082,7 +1087,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                  NULL);
 
       }
-      cs_post_write_var(-1,
+      cs_post_write_var(CS_POST_MESH_VOLUME,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
                         "Offset",
                         1,
                         false,
@@ -1141,7 +1147,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
       if (face_to_cell != NULL) {
 
         _cell_from_max_face(mesh, 0., i_face_ortho, b_face_ortho, face_to_cell);
-        cs_post_write_var(-1,
+        cs_post_write_var(CS_POST_MESH_VOLUME,
+                          CS_POST_WRITER_ALL_ASSOCIATED,
                           "Non_Ortho_c_max",
                           1,
                           false,
@@ -1156,7 +1163,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
       if (face_to_vtx != NULL) {
 
         _vtx_from_max_face(mesh, 0., i_face_ortho, b_face_ortho, face_to_vtx);
-        cs_post_write_vertex_var(-1,
+        cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                                 CS_POST_WRITER_ALL_ASSOCIATED,
                                  "Non_Ortho_v_max",
                                  1,
                                  false,
@@ -1169,7 +1177,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
     } /* End of post-processing on volume */
 
     if (brd_fields == true)
-      cs_post_write_var(-2,
+      cs_post_write_var(CS_POST_MESH_BOUNDARY,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
                         "Non_Ortho",
                         1,
                         false,
@@ -1201,7 +1210,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
     /* Post processing */
 
     if (vol_fields == true)
-      cs_post_write_var(-1,
+      cs_post_write_var(CS_POST_MESH_VOLUME,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
                         "Cell_Volume",
                         1,
                         false,
@@ -1233,7 +1243,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
     /* Post processing */
 
     if (vol_fields == true)
-      cs_post_write_var(-2,
+      cs_post_write_var(CS_POST_MESH_BOUNDARY,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
                         "Boundary_Cell_Thickness",
                         1,
                         false,

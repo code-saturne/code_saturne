@@ -288,7 +288,7 @@ do f_id = 0, n_fields - 1
   call field_get_key_int(f_id, keyvis, flag)
   if (iand(flag, POST_MONITOR).ne.0) icompt = icompt+1
 enddo
-if( (icompt.eq.0.or.ncapt.eq.0) .and. ihistr.eq.0 ) then
+if(icompt.eq.0 .and. ihistr.eq.0) then
   nthist = -1
   frhist = -1.d0
 endif

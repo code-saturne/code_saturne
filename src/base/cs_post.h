@@ -39,6 +39,7 @@
 #include "fvm_writer.h"
 
 #include "cs_base.h"
+#include "cs_interpolate.h"
 #include "cs_probe.h"
 #include "cs_time_step.h"
 
@@ -50,9 +51,7 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/*
- * Output type masks
- */
+/* Output type masks */
 
 #define CS_POST_ON_LOCATION          (1 << 0)  /* postprocess variables
                                                   on their base location
@@ -61,6 +60,24 @@ BEGIN_C_DECLS
                                                   without reconstruction */
 
 #define CS_POST_MONITOR              (1 << 2)  /* monitor variables */
+
+/* Default writer ids and filters */
+
+#define CS_POST_WRITER_ALL_ASSOCIATED  0       /* all associated writers */
+
+#define CS_POST_WRITER_DEFAULT        -1       /* default visualisation */
+#define CS_POST_WRITER_ERRORS         -2       /* error visualisation */
+#define CS_POST_WRITER_PROBES         -3       /* probe monitoring */
+#define CS_POST_WRITER_PARTICLES      -4       /* particle visualisation */
+#define CS_POST_WRITER_TRAJECTORIES   -5       /* trajectories visualisation */
+
+/* Default mesh ids */
+
+#define CS_POST_MESH_VOLUME           -1       /* volume mesh output */
+#define CS_POST_MESH_BOUNDARY         -2       /* boundary mesh output */
+#define CS_POST_MESH_PARTICLES        -3       /* particle output */
+#define CS_POST_MESH_PROBES           -4       /* probess output */
+#define CS_POST_MESH_TRAJECTORIES     -3       /* particle output */
 
 /*============================================================================
  * Local type definitions
@@ -177,51 +194,91 @@ typedef void
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Configure the post-processing output so that a mesh displacement field
- * may be output automatically for meshes based on the global volume mesh/
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_set_deformable(void);
-
-/*----------------------------------------------------------------------------
- * Configure the post-processing output so that mesh connectivity
- * may be automatically updated.
- *
- * This is done for meshes defined using selection criteria or functions.
- * The behavior of Lagrangian meshes is unchanged.
- *
- * To be effective, this function should be called before defining
- * postprocessing meshes.
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_set_changing_connectivity(void);
-
-/*----------------------------------------------------------------------------
- * Define a writer; this objects manages a case's name, directory, and format,
- * as well as associated mesh's time dependency, and the default output
- * frequency for associated variables.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a writer; this objects manages a case's name, directory,
+ *        and format, as well as associated mesh's time dependency, and the
+ *        default output frequency for associated variables.
  *
  * This function must be called before the time loop. If a writer with a
  * given id is defined multiple times, the last definition supercedes the
  * previous ones.
  *
- * parameters:
- *   writer_id     <-- number of writer to create (< 0 reserved, > 0 for user)
- *   case_name     <-- associated case name
- *   dir_name      <-- associated directory name
- *   fmt_name      <-- associated format name
- *   fmt_opts      <-- associated format options string
- *   time_dep      <-- FVM_WRITER_FIXED_MESH if mesh definitions are fixed,
- *                     FVM_WRITER_TRANSIENT_COORDS if coordinates change,
- *                     FVM_WRITER_TRANSIENT_CONNECT if connectivity changes
- *   output_at_end <-- force output at calculation end if not 0
- *   frequency_n   <-- default output frequency in time-steps, or < 0
- *   frequency_t   <-- default output frequency in seconds, or < 0
- *                     (has priority over frequency_n)
- *----------------------------------------------------------------------------*/
+ * Current reserved ids are the following: CS_POST_WRITER_DEFAULT
+ * for main/default output, CS_POST_WRITER_ERRORS for error visualization,
+ * CS_POST_WRITER_PROBES for main probes, CS_POST_WRITER_PARTICLES for
+ * particles, CS_POST_WRITER_TRAJECTORIES for trajectories. Other negative
+ * ids may be dynamically reserved by the code depending on options.
+ * Positive ids identify user-defined writers.
+ *
+ * \warning depending on the chosen format, the \em case_name may be
+ * shortened (maximum number of characters: 32 for \em MED, 19 for \em EnSight,
+ * or modified automatically (white-space or forbidden characters will be
+ * replaced by "_").
+ *
+ * The \c \b format_name argument is used to choose the output format, and the
+ * following values are allowed (assuming the matching
+ * support was built):
+ *
+ * - \c \b EnSight \c \b Gold (\c \b EnSight also accepted)
+ * - \c \b MED
+ * - \c \b CGNS
+ * - \c \b CCM (only for the full volume and boundary meshes)
+ * - \c \b Catalyst (in-situ visualization)
+ * - \c \b MEDCoupling (in-memory structure, to be used from other code)
+ * - \c \b plot (comma or whitespace separated 2d plot files)
+ * - \c \b time_plot (comma or whitespace separated time plot files)
+ *
+ * The format name is case-sensitive, so \c \b ensight or \c \b cgns are also valid.
+ *
+ * The optional \c \b fmt_opts character string contains a list of options related
+ * to the format, separated by spaces or commas; these options include:
+ *
+ * - \c \b binary for a binary format version (default)
+ * - \c \b big_endian to force outputs to be in \c \b big-endian mode
+ *         (for \c \b EnSight).
+ * - \c \b text for a text format version (for \c \b EnSight).
+ * - \c \b adf for ADF file type (for \c \b CGNS).
+ * - \c \b hdf5 for HDF5 file type (for \c \b CGNS, normally the default if
+ *         HDF5 support is available).
+ * - \c \b discard_polygons to prevent from exporting faces with more than
+ *         four edges (which may not be recognized by some post-processing
+ *         tools); such faces will therefore not appear in the post-processing
+ *         mesh.
+ * - \c \b discard_polyhedra to prevent from exporting elements which are
+ *         neither tetrahedra, prisms, pyramids nor hexahedra (which may not
+ *         be recognized by some post-processing tools); such elements will
+ *         therefore not appear in the post-processing mesh.
+ * - \c \b divide_polygons to divide faces with more than four edges into
+ *         triangles, so that any post-processing tool can recognize them.
+ * - \c \b divide_polyhedra} to divide elements which are neither tetrahedra,
+ *         prisms, pyramids nor hexahedra into simpler elements (tetrahedra and
+ *         pyramids), so that any post-processing tool can recognize them.
+ * - \c \b separate_meshes to multiple meshes and associated fields to
+ *         separate outputs.
+ *
+ * Note that the white-spaces in the beginning or in the end of the
+ * character strings given as arguments here are suppressed automatically.
+ *
+ * \param[in]  writer_id      id of writer to create. (< 0 reserved,
+ *                            > 0 for user); eveb for reserved ids,
+ *                            the matching writer's options
+ *                            may be redifined by calls to this function
+ * \param[in]  case_name      associated case name
+ * \param[in]  dir_name       associated directory name
+ * \param[in]  fmt_name       associated format name
+ * \param[in]  fmt_opts       associated format options string
+ * \param[in]  time_dep       \ref FVM_WRITER_FIXED_MESH if mesh definitions
+ *                            are fixed, \ref FVM_WRITER_TRANSIENT_COORDS if
+ *                            coordinates change,
+ *                            \ref FVM_WRITER_TRANSIENT_CONNECT if
+ *                            connectivity changes
+ * \param[in]  output_at_end  force output at calculation end if not 0
+ * \param[in]  frequency_n    default output frequency in time-steps, or < 0
+ * \param[in]  frequency_t    default output frequency in seconds, or < 0
+ *                            (has priority over frequency_n)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_define_writer(int                     writer_id,
@@ -234,18 +291,20 @@ cs_post_define_writer(int                     writer_id,
                       int                     frequency_n,
                       double                  frequency_t);
 
-/*----------------------------------------------------------------------------
- * Define a volume post-processing mesh.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a volume post-processing mesh.
  *
- * parameters:
- *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
- *   mesh_name      <-- associated mesh name
- *   cell_criteria  <-- selection criteria for cells
- *   add_groups     <-- if true, add group information if present
- *   auto_variables <-- if true, automatic output of main variables
- *   n_writers      <-- number of associated writers
- *   writer_ids     <-- ids of associated writers
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  mesh_name       associated mesh name
+ * \param[in]  cell_criteria   selection criteria for cells
+ * \param[in]  add_groups      if true, add group information if present
+ * \param[in]  auto_variables  if true, automatic output of main variables
+ * \param[in]  n_writers       number of associated writers
+ * \param[in]  writer_ids      ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_define_volume_mesh(int          mesh_id,
@@ -256,8 +315,9 @@ cs_post_define_volume_mesh(int          mesh_id,
                            int          n_writers,
                            const int    writer_ids[]);
 
-/*----------------------------------------------------------------------------
- * Define a volume post-processing mesh using a selection function.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a volume post-processing mesh using a selection function.
  *
  * The selection may be updated over time steps if both the time_varying
  * flag is set to true and the mesh is only associated with writers defined
@@ -269,18 +329,20 @@ cs_post_define_volume_mesh(int          mesh_id,
  * - post-processing output must be ensured using cs_post_write_meshes()
  *   with a fixed-mesh writer before the data pointed to goes out of scope;
  *
- * parameters:
- *   mesh_id           <-- id of mesh to define (< 0 reserved, > 0 for user)
- *   mesh_name         <-- associated mesh name
- *   cell_select_func  <-- pointer to cells selection function
- *   cell_select_input <-> pointer to optional input data for the cell
- *                         selection function, or NULL
- *   time_varying      <-- if true, try to redefine mesh at each output time
- *   add_groups        <-- if true, add group information if present
- *   auto_variables    <-- if true, automatic output of main variables
- *   n_writers         <-- number of associated writers
- *   writer_ids        <-- ids of associated writers
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id            id of mesh to define
+ *                                (< 0 reserved, > 0 for user)
+ * \param[in]  mesh_name          associated mesh name
+ * \param[in]  cell_select_func   pointer to cells selection function
+ * \param[in]  cell_select_input  pointer to optional input data for the cell
+ *                                selection function, or NULL
+ * \param[in]  time_varying       if true, try to redefine mesh at each
+ *                                output time
+ * \param[in]  add_groups         if true, add group information if present
+ * \param[in]  auto_variables     if true, automatic output of main variables
+ * \param[in]  n_writers          number of associated writers
+ * \param[in]  writer_ids         ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_define_volume_mesh_by_func(int                    mesh_id,
@@ -293,19 +355,21 @@ cs_post_define_volume_mesh_by_func(int                    mesh_id,
                                    int                    n_writers,
                                    const int              writer_ids[]);
 
-/*----------------------------------------------------------------------------
- * Define a surface post-processing mesh.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a surface post-processing mesh.
  *
- * parameters:
- *   mesh_id         <-- id of mesh to define (< 0 reserved, > 0 for user)
- *   mesh_name       <-- associated mesh name
- *   i_face_criteria <-- selection criteria for interior faces
- *   b_face_criteria <-- selection criteria for boundary faces
- *   add_groups      <-- if true, add group information if present
- *   auto_variables  <-- if true, automatic output of main variables
- *   n_writers       <-- number of associated writers
- *   writer_ids      <-- ids of associated writers
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id          id of mesh to define
+ *                              (< 0 reserved, > 0 for user)
+ * \param[in]  mesh_name        associated mesh name
+ * \param[in]  i_face_criteria  selection criteria for interior faces
+ * \param[in]  b_face_criteria  selection criteria for boundary faces
+ * \param[in]  add_groups       if true, add group information if present
+ * \param[in]  auto_variables   if true, automatic output of main variables
+ * \param[in]  n_writers        number of associated writers
+ * \param[in]  writer_ids       ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_define_surface_mesh(int          mesh_id,
@@ -317,8 +381,9 @@ cs_post_define_surface_mesh(int          mesh_id,
                             int          n_writers,
                             const int    writer_ids[]);
 
-/*----------------------------------------------------------------------------
- * Define a surface post-processing mesh using selection functions.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a surface post-processing mesh using selection functions.
  *
  * The selection may be updated over time steps if both the time_varying
  * flag is set to true and the mesh is only associated with writers defined
@@ -331,21 +396,23 @@ cs_post_define_surface_mesh(int          mesh_id,
  * - post-processing output must be ensured using cs_post_write_meshes()
  *   with a fixed-mesh writer before the data pointed to goes out of scope;
  *
- * parameters:
- *   mesh_id             <-- id of mesh to define (< 0 reserved, > 0 for user)
- *   mesh_name           <-- associated mesh name
- *   i_face_select_func  <-- pointer to interior faces selection function
- *   b_face_select_func  <-- pointer to boundary faces selection function
- *   i_face_select_input <-> pointer to optional input data for the interior
- *                           faces selection function, or NULL
- *   b_face_select_input <-> pointer to optional input data for the boundary
- *                           faces selection function, or NULL
- *   time_varying        <-- if true, try to redefine mesh at each output time
- *   add_groups          <-- if true, add group information if present
- *   auto_variables      <-- if true, automatic output of main variables
- *   n_writers           <-- number of associated writers
- *   writer_ids          <-- ids of associated writers
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id              id of mesh to define
+ *                                  (< 0 reserved, > 0 for user)
+ * \param[in]  mesh_name            associated mesh name
+ * \param[in]  i_face_select_func   pointer to interior faces selection function
+ * \param[in]  b_face_select_func   pointer to boundary faces selection function
+ * \param[in]  i_face_select_input  pointer to optional input data for the
+ *                                  interior faces selection function, or NULL
+ * \param[in]  b_face_select_input  pointer to optional input data for the
+ *                                  boundary faces selection function, or NULL
+ * \param[in]  time_varying         if true, try to redefine mesh at each
+ *                                  output time
+ * \param[in]  add_groups           if true, add group information if present
+ * \param[in]  auto_variables       if true, automatic output of main variables
+ * \param[in]  n_writers            number of associated writers
+ * \param[in]  writer_ids          ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_define_surface_mesh_by_func(int                    mesh_id,
@@ -360,8 +427,9 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
                                     int                    n_writers,
                                     const int              writer_ids[]);
 
-/*----------------------------------------------------------------------------
- * Define a particles post-processing mesh.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a particles post-processing mesh.
  *
  * Such a mesh is always time-varying, and will only be output by writers
  * defined with the FVM_WRITER_TRANSIENT_CONNECT option.
@@ -372,18 +440,19 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
  * trajectory segments for the current time step will be added to
  * the output at each output time step.
  *
- * parameters:
- *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
- *   mesh_name      <-- associated mesh name
- *   cell_criteria  <-- selection criteria for cells containing particles,
- *                      or NULL.
- *   density        <-- fraction of the particles in the selected area
- *                      which should be output (0 < density <= 1)
- *   trajectory     <-- if true, activate trajectory mode
- *   auto_variables <-- if true, automatic output of main variables
- *   n_writers      <-- number of associated writers
- *   writer_ids     <-- ids of associated writers
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  mesh_name       associated mesh name
+ * \param[in]  cell_criteria   selection criteria for cells containing
+ *                             particles, or NULL.
+ * \param[in]  density         fraction of the particles in the selected area
+ *                             which should be output (0 < density <= 1)
+ * \param[in]  trajectory      if true, activate trajectory mode
+ * \param[in]  auto_variables  if true, automatic output of main variables
+ * \param[in]  n_writers       number of associated writers
+ * \param[in]  writer_ids      ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_define_particles_mesh(int          mesh_id,
@@ -395,8 +464,9 @@ cs_post_define_particles_mesh(int          mesh_id,
                               int          n_writers,
                               const int    writer_ids[]);
 
-/*----------------------------------------------------------------------------
- * Define a particles post-processing mesh using a selection function.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a particles post-processing mesh using a selection function.
  *
  * The selection may be updated over time steps.
  *
@@ -413,19 +483,18 @@ cs_post_define_particles_mesh(int          mesh_id,
  * to valid data when the selection function is called, so
  * that value or structure should not be temporary (i.e. local);
  *
- * parameters:
- *   mesh_id        <-- id of mesh to define (< 0 reserved, > 0 for user)
- *   mesh_name      <-- associated mesh name
- *   p_select_func  <-- pointer to particles selection function
- *   p_select_input <-> pointer to optional input data for the particles
- *                      selection function, or NULL
- *   density        <-- fraction of the particles in the selected area
- *                      which should be output (0 < density <= 1)
- *   trajectory     <-- if true, activate trajectory mode
- *   auto_variables <-- if true, automatic output of main variables
- *   n_writers      <-- number of associated writers
- *   writer_ids     <-- ids of associated writers
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  mesh_name       associated mesh name
+ * \param[in]  p_select_func   pointer to particles selection function
+ * \param[in]  p_select_input  pointer to optional input data for the particles
+ *                             selection function, or NULL
+ * \param[in]  trajectory      if true, activate trajectory mode
+ * \param[in]  auto_variables  if true, automatic output of main variables
+ * \param[in]  n_writers       number of associated writers
+ * \param[in]  writer_ids      ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_define_particles_mesh_by_func(int                    mesh_id,
@@ -439,67 +508,8 @@ cs_post_define_particles_mesh_by_func(int                    mesh_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a post-processing mesh for probes (set of probes should have
- *        been already defined)
- *
- * \param[in] mesh_id        id of mesh to define (<0 reserved, >0 for user)
- * \param[in] pset           pointer to a cs_probe_set_t structure
- * \param[in] time_varying   true if probe coords may change during computation
- * \param[in] is_profile     true if probe set is related to a profile
- * \param[in] on_boundary    true if probes are located on boundary
- * \param[in] auto_variable  true if the set of variables to post is predefined
- * \param[in] n_writers      number of associated writers
- * \param[in] writer_ids     ids of associated writers
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_post_define_probe_mesh(int                    mesh_id,
-                          cs_probe_set_t        *pset,
-                          bool                   time_varying,
-                          bool                   is_profile,
-                          bool                   on_boundary,
-                          bool                   auto_variable,
-                          int                    n_writers,
-                          const int              writer_ids[]);
-
-/*----------------------------------------------------------------------------
- * Create an alias to a post-processing mesh.
- *
- * An alias allows association of an extra identifier (id) to an
- * existing post-processing mesh, and thus to associate different writers
- * than those associated with the existing mesh. For example, this allows
- * outputting a set of main variables every n1 time steps with one writer,
- * and outputting a specific set of variables every n2 time time steps to
- * another post-processing set using another writer, without the overhead
- * that would be incurred by duplication of the post-processing mesh.
- *
- * An alias is thus treated in all points like its associated mesh;
- * if the definition of either one is modified, that of the other is
- * modified also.
- *
- * It is forbidden to associate an alias to another alias (as there is no
- * identified use for this, and it would make consistency checking more
- * difficult), but multiple aliases may be associated with a given mesh.
- *
- * parameters:
- *   mesh_id         <-- id of mesh to define (< 0 reserved, > 0 for user)
- *   aliased_mesh_id <-- id of aliased mesh
- *   auto_variables  <-- if true, automatic output of main variables
- *   n_writers       <-- number of associated writers
- *   writer_ids      <-- ids of associated writers
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_define_alias_mesh(int        mesh_id,
-                          int        aliased_mesh_id,
-                          bool       auto_variables,
-                          int        n_writers,
-                          const int  writer_ids[]);
-
-/*----------------------------------------------------------------------------
- * Create a post-processing mesh associated with an existing exportable mesh
- * representation.
+ * \brief Create a post-processing mesh associated with an existing exportable
+ * mesh representation.
  *
  * If the exportable mesh is not intended to be used elsewhere, one can choose
  * to transfer its property to the post-processing mesh, which will then
@@ -515,16 +525,18 @@ cs_post_define_alias_mesh(int        mesh_id,
  * would indicate that parent cells are mapped to edges.
  * This is important when variables values are exported.
  *
- * parameters:
- *   mesh_id        <-- number of mesh to create (< 0 reserved, > 0 for user)
- *   exp_mesh       <-- mesh in exportable representation (i.e. fvm_nodal_t)
- *   dim_shift      <-- nonzero if exp_mesh has been projected
- *   transfer       <-- if true, ownership of exp_mesh is transferred to
- *                      the post-processing mesh
- *   auto_variables <-- if true, automatic output of main variables
- *   n_writers      <-- number of associated writers
- *   writer_ids     <-- ids of associated writers
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  exp_mesh        mesh in exportable representation
+ *                             (i.e. fvm_nodal_t)
+ * \param[in]  dim_shift       nonzero if exp_mesh has been projected
+ * \param[in]  transfer        if true, ownership of exp_mesh is transferred
+ *                             to the post-processing mesh
+ * \param[in]  auto_variables  if true, automatic output of main variables
+ * \param[in]  n_writers       number of associated writers
+ * \param[in]  writer_ids      ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_define_existing_mesh(int           mesh_id,
@@ -535,8 +547,9 @@ cs_post_define_existing_mesh(int           mesh_id,
                              int           n_writers,
                              const int     writer_ids[]);
 
-/*----------------------------------------------------------------------------
- * Create a mesh based upon the extraction of edges from an existing mesh.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a mesh based upon the extraction of edges from an existing mesh.
  *
  * The newly created edges have no link to their parent elements, so
  * no variable referencing parent elements may be output to this mesh,
@@ -545,12 +558,13 @@ cs_post_define_existing_mesh(int           mesh_id,
  * faces may be visualized correctly if their edges are overlaid on
  * the surface mesh with subdivided polygons.
  *
- * parameters:
- *   mesh_id      <-- id of edges mesh to create (< 0 reserved, > 0 for user)
- *   base_mesh_id <-- id of existing mesh (< 0 reserved, > 0 for user)
- *   n_writers    <-- number of associated writers
- *   writer_ids   <-- ids of associated writers
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id       id of edges mesh to create
+ *                           (< 0 reserved, > 0 for user)
+ * \param[in]  base_mesh_id  id of existing mesh (< 0 reserved, > 0 for user)
+ * \param[in]  n_writers     number of associated writers
+ * \param[in]  writer_ids    ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_define_edges_mesh(int        mesh_id,
@@ -558,348 +572,414 @@ cs_post_define_edges_mesh(int        mesh_id,
                           int        n_writers,
                           const int  writer_ids[]);
 
-/*----------------------------------------------------------------------------
- * Get a postprocessing meshes entity presence flag.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a postprocessing meshes entity presence flag.
  *
- * This flag is an array of 3 integers, indicating the presence of elements
+ * This flag is an array of 5 integers, indicating the presence of elements
  * of given types on at least one subdomain (i.e. rank):
  *   0: presence of cells
  *   1: presence of interior faces
  *   2: presence of boundary faces
+ *   3: presence of particles
+ *   4: presence of probes
  *
- * parameters:
- *   mesh_id <-- postprocessing mesh id
+ * \param[in]  mesh_id  postprocessing mesh id
  *
- * returns:
- *   pointer to entity presence flag
- *----------------------------------------------------------------------------*/
+ * \return  pointer to entity presence flag
+ */
+/*----------------------------------------------------------------------------*/
 
 const int *
 cs_post_mesh_get_ent_flag(int  mesh_id);
 
-/*----------------------------------------------------------------------------
- * Get a postprocessing mesh's number of cells.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a postprocessing mesh's number of cells
  *
- * parameters:
- *   mesh_id <-- postprocessing mesh id
+ * \param[in]  mesh_id  postprocessing mesh id
  *
- * returns:
- *   number of cells of postprocessing mesh.
- *----------------------------------------------------------------------------*/
+ * \return  number of cells of postprocessing mesh.
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_post_mesh_get_n_cells(int  mesh_id);
 
-/*----------------------------------------------------------------------------
- * Get a postprocessing mesh's list of cells.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a postprocessing mesh's list of cells
  *
  * The array of cell ids must be of at least size
  * cs_post_mesh_get_n_cells(mesh_id).
  *
- * parameters:
- *   mesh_id  <-- postprocessing mesh id
- *   cell_ids --> array of associated cell ids (0 to n-1 numbering,
- *                relative to main mesh)
- *----------------------------------------------------------------------------*/
+ * \param[in]   mesh_id   postprocessing mesh id
+ * \param[out]  cell_ids  array of associated cell ids (0 to n-1 numbering,
+ *                        relative to main mesh)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_mesh_get_cell_ids(int         mesh_id,
                           cs_lnum_t  *cell_ids);
 
-/*----------------------------------------------------------------------------
- * Get a postprocessing mesh's number of interior faces.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a postprocessing mesh's number of interior faces
  *
- * parameters:
- *   mesh_id <-- postprocessing mesh id
+ * \param[in]  mesh_id  postprocessing mesh id
  *
- * returns:
- *   number of cells of postprocessing mesh.
- *----------------------------------------------------------------------------*/
+ * \return  number of cells of postprocessing mesh.
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_post_mesh_get_n_i_faces(int  mesh_id);
 
-/*----------------------------------------------------------------------------
- * Get a postprocessing mesh's list of boundary faces.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a postprocessing mesh's list of boundary faces.
  *
  * The array of boundary face ids must be of at least size
  * cs_post_mesh_get_n_b_faces(mesh_id).
  *
- * parameters:
- *   mesh_id    <-- postprocessing mesh id
- *   i_face_ids --> array of associated interior faces ids
- *                  (0 to n-1 numbering, relative to main mesh)
- *----------------------------------------------------------------------------*/
+ * \param[in]   mesh_id     postprocessing mesh id
+ * \param[out]  i_face_ids  array of associated interior faces ids
+ *                          (0 to n-1 numbering, relative to main mesh)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_mesh_get_i_face_ids(int        mesh_id,
                             cs_lnum_t  i_face_ids[]);
 
-/*----------------------------------------------------------------------------
- * Get a postprocessing mesh's number of boundary faces
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a postprocessing mesh's number of boundary faces
  *
- * parameters:
- *   mesh_id <-- postprocessing mesh id
+ * \param[in]  mesh_id  postprocessing mesh id
  *
- * returns:
- *   number of cells of postprocessing mesh.
- *----------------------------------------------------------------------------*/
+ * \return  number of cells of postprocessing mesh.
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_post_mesh_get_n_b_faces(int  mesh_id);
 
-/*----------------------------------------------------------------------------
- * Get a postprocessing mesh's list of boundary faces.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a postprocessing mesh's list of boundary faces.
  *
  * The array of boundary face ids must be of at least size
  * cs_post_mesh_get_n_b_faces(mesh_id).
  *
- * parameters:
- *   mesh_id    <-- postprocessing mesh id
- *   b_face_ids --> array of associated boundary faces ids
- *                  (0 to n-1 numbering, relative to main mesh)
- *----------------------------------------------------------------------------*/
+ * \param[in]   mesh_id     postprocessing mesh id
+ * \param[out]  b_face_ids  array of associated boundary faces ids
+ *                          (0 to n-1 numbering, relative to main mesh)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_mesh_get_b_face_ids(int        mesh_id,
                             cs_lnum_t  b_face_ids[]);
 
-/*----------------------------------------------------------------------------
- * Set whether postprocessing mesh's parallel domain should be output.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a postprocessing mesh's number of vertices
  *
- * parameters:
- *   mesh_id     <-- id of mesh to remove
- *   post_domain <- true if parallel domain should be output,
- *                  false otherwise.
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id  postprocessing mesh id
+ *
+ * \return  number of vertices of postprocessing mesh.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_post_mesh_get_n_vertices(int  mesh_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a postprocessing mesh's list of vertices
+ *
+ * The array of vertex ids must be of at least size
+ * cs_post_mesh_get_n_vertices(mesh_id).
+ *
+ * \param[in]   mesh_id     postprocessing mesh id
+ * \param[out]  vertex_ids  array of associated vertex ids (0 to n-1 numbering,
+ *                          relative to main mesh)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_get_vertex_ids(int         mesh_id,
+                            cs_lnum_t  *vertex_ids);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set whether postprocessing mesh's parallel domain should be output.
+ *
+ * \param[in]  mesh_id      postprocessing mesh id
+ * \param[in]  post_domain  true if parallel domain should be output,
+ *                          false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_mesh_set_post_domain(int   mesh_id,
                              bool  post_domain);
 
-/*----------------------------------------------------------------------------
- * Remove a post-processing mesh.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Remove a post-processing mesh.
  *
  * No further post-processing output will be allowed on this mesh,
  * so the associated structures may be freed.
  *
  * A post-processing mesh that has been associated with a time-varying
- * writer or that is referenced by an alias may not be removed.
+ * writer may not be removed.
  *
- * parameters:
- *   mesh_id <-- id of mesh to remove
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id  postprocessing mesh id
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_free_mesh(int  mesh_id);
 
-/*----------------------------------------------------------------------------
- * Check for the existence of a writer of the given id.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check for the existence of a writer of the given id.
  *
- * parameters:
- *   writer_id <-- writer id to check
+ * \param[in]  writer_id  writer id to check
  *
- * returns:
- *   true if writer with this id exists, false otherwise
- *----------------------------------------------------------------------------*/
+ * \return  true if writer with this id exists, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
 
 bool
 cs_post_writer_exists(int  writer_id);
 
-/*----------------------------------------------------------------------------
- * Return a pointer to the FVM writer associated to a writer_id.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check for the existence of a post-processing mesh of the given id.
  *
- * parameters:
- *   writer_id <-- associated writer id
+ * \param[in]  mesh_id  mesh id to check
  *
- * returns:
- *  a pointer to a fvm_writer_t structure
- *----------------------------------------------------------------------------*/
-
-fvm_writer_t *
-cs_post_get_writer(int  writer_id);
-
-/*----------------------------------------------------------------------------
- * Return time dependency associated to a writer_id.
- *
- * parameters:
- *   writer_id <-- associated writer id
- *
- * returns:
- *   associated writer's time dependency
- *----------------------------------------------------------------------------*/
-
-fvm_writer_time_dep_t
-cs_post_get_writer_time_dep(int  writer_id);
-
-/*----------------------------------------------------------------------------
- * Add an activation time step for a specific writer or for all writers.
- *
- * If a negative value is provided, a previously added activation time
- * step matching that absolute value will be removed, if present.
- *
- * parameters:
- *   writer_id <-- writer id, or 0 for all writers
- *   nt        <-- time step value to add (or remove)
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_add_writer_t_step(int  writer_id,
-                          int  nt);
-
-/*----------------------------------------------------------------------------
- * Add an activation time value for a specific writer or for all writers.
- *
- * If a negative value is provided, a previously added activation time
- * step matching that absolute value will be removed, if present.
- *
- * parameters:
- *   writer_id <-- writer id, or 0 for all writers
- *   t         <-- time value to add (or remove)
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_add_writer_t_value(int     writer_id,
-                           double  t);
-
-/*----------------------------------------------------------------------------
- * Check for the existence of a post-processing mesh of the given id.
- *
- * parameters:
- *   mesh_id <-- mesh id to check
- *
- * returns:
- *   true if mesh with this id exists, false otherwise
- *----------------------------------------------------------------------------*/
+ * \return  true if mesh with this id exists, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
 
 bool
 cs_post_mesh_exists(int  mesh_id);
 
-/*----------------------------------------------------------------------------
- * Modify an existing post-processing mesh.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the default writer format name
  *
- * The lists of cells or faces are redefined, for example to update an
- * extracted mesh based in "interesting" zones.
- *
- * It is not necessary to use this function if a mesh is simply deformed.
- *
- * parameters:
- *   mesh_id     <-- id of mesh to modify (< 0 reserved, > 0 for user)
- *   n_cells     <-- number of associated cells
- *   n_i_faces   <-- number of associated interior faces
- *   n_b_faces   <-- number of associated boundary faces
- *   cell_list   <-> list of associated cells
- *   i_face_list <-> list of associated interior faces
- *   b_face_list <-> list of associated boundary faces
- *
- *----------------------------------------------------------------------------*/
-
-void
-cs_post_modify_mesh(int        mesh_id,
-                    cs_lnum_t  n_cells,
-                    cs_lnum_t  n_i_faces,
-                    cs_lnum_t  n_b_faces,
-                    cs_lnum_t  cell_list[],
-                    cs_lnum_t  i_face_list[],
-                    cs_lnum_t  b_face_list[]);
-
-/*----------------------------------------------------------------------------
- * Return the default writer format name
- *
- * Returns:
- *   name of the default writer format
- *----------------------------------------------------------------------------*/
+ * \return  name of the default writer format
+ */
+/*----------------------------------------------------------------------------*/
 
 const char *
 cs_post_get_default_format(void);
 
-/*----------------------------------------------------------------------------
- * Return the default writer format options
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the default writer format options
  *
- * Returns:
- *   default writer format options string
- *----------------------------------------------------------------------------*/
+ * \return  default writer format options string
+ */
+/*----------------------------------------------------------------------------*/
 
 const char *
 cs_post_get_default_format_options(void);
 
-/*----------------------------------------------------------------------------
- * Return the next "reservable" (i.e. non-user) writer id available.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the next "reservable" (i.e. non-user) writer id available.
  *
- * Returns:
- *   the smallest negative integer present, -1
- *----------------------------------------------------------------------------*/
+ * \return  the smallest negative integer present, -1
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_post_get_free_writer_id(void);
 
-/*----------------------------------------------------------------------------
- * Return the next "reservable" (i.e. non-user) mesh id available.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the next "reservable" (i.e. non-user) mesh id available.
  *
- * Returns:
- *   the smallest negative integer present, -1
- *----------------------------------------------------------------------------*/
+ * \return  the smallest negative integer present, -1
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_post_get_free_mesh_id(void);
 
-/*----------------------------------------------------------------------------
- * Update "active" or "inactive" flag of writers based on the time step.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update "active" or "inactive" flag of writers based on the time step.
  *
  * Writers are activated if their output frequency is a divisor of the
  * current time step, or if their optional time step and value output lists
  * contain matches for the current time step.
  *
- * parameters:
- *   ts <-- time step status structure
- *----------------------------------------------------------------------------*/
+ * \param[in]  ts  time step status structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_activate_by_time_step(const cs_time_step_t  *ts);
 
-/*----------------------------------------------------------------------------
- * Force the "active" or "inactive" flag for a specific writer or for all
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Force the "active" or "inactive" flag for a specific writer or for all
  * writers for the current time step.
  *
- * parameters:
- *   writer_id <-- writer id, or 0 for all writers
- *   activate  <-- false to deactivate, true to activate
- *----------------------------------------------------------------------------*/
+ * \param[in]  writer_id  writer id, or 0 for all writers
+ * \param[in]  activate   false to deactivate, true to activate
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_activate_writer(int   writer_id,
                         bool  activate);
 
-/*----------------------------------------------------------------------------
- * Output post-processing meshes using associated writers.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Disable specific writer or all writers not currently active until
+ *        \ref cs_post_enable_writer or \ref cs_post_activate_writer
+ *        is called for those writers.
  *
- * parameters:
- *   ts <-- time step status structure
- *----------------------------------------------------------------------------*/
+ * For each call to this function for a given writer, the same number
+ * of calls to \ref cs_post_enable_writer or a single call to
+ * \ref cs_post_activate_writer is required to re-enable the writer.
+ *
+ * This is useful to disable output even of fixed meshes in preprocessing
+ * stages.
+ *
+ * \param[in]  writer_id  writer id, or 0 for all writers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_disable_writer(int   writer_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Enable a specific writer or all writers currently disabled by
+ *        previous calls to \ref cs_post_disable_writer.
+ *
+ * For each previous call to \ref cs_post_disable_writer for a given writer,
+ * a call to this function (or a single call to \ref cs_post_activate_writer)
+ * is required to re-enable the writer.
+ *
+ * This is useful to disable output even of fixed meshes in preprocessing
+ * stages.
+ *
+ * \param[in]  writer_id  writer id, or 0 for all writers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_enable_writer(int   writer_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to the FVM writer associated to a writer_id.
+ *
+ * \param[in]  writer_id  associated writer id
+ *
+ * \return  a pointer to a fvm_writer_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+fvm_writer_t *
+cs_post_get_writer(int  writer_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return time dependency associated to a writer_id.
+ *
+ * \param[in]  writer_id  associated writer id
+ *
+ * \return  associated writer's time dependency
+ */
+/*----------------------------------------------------------------------------*/
+
+fvm_writer_time_dep_t
+cs_post_get_writer_time_dep(int  writer_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add an activation time step for a specific writer or for all writers.
+ *
+ * If a negative value is provided, a previously added activation time
+ * step matching that absolute value will be removed, if present.
+ *
+ * \param[in]  writer_id  writer id, or 0 for all writers
+ * \param[in]  nt         time step value to add (or remove)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_add_writer_t_step(int  writer_id,
+                          int  nt);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add an activation time value for a specific writer or for all writers.
+ *
+ * If a negative value is provided, a previously added activation time
+ * step matching that absolute value will be removed, if present.
+ *
+ * \param[in]  writer_id  writer id, or 0 for all writers
+ * \param[in]  t          time value to add (or remove)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_add_writer_t_value(int     writer_id,
+                           double  t);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output post-processing meshes using associated writers.
+ *
+ * If the time step structure argument passed is NULL, a time-independent
+ * output will be assumed.
+ *
+ * \param[in]  ts  time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_write_meshes(const cs_time_step_t  *ts);
 
-/*----------------------------------------------------------------------------
- * Output a variable defined at cells or faces of a post-processing mesh
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output a variable defined at cells or faces of a post-processing mesh
  * using associated writers.
  *
- * parameters:
- *   mesh_id     <-- id of associated mesh
- *   var_name    <-- name of variable to output
- *   var_dim     <-- 1 for scalar, 3 for vector
- *   interlace   <-- if a vector, true for interlaced values, false otherwise
- *   use_parent  <-- true if values are defined on "parent" mesh,
- *                   false if values are defined on post-processing mesh
- *   var_type    <-- variable's data type
- *   cel_vals    <-- cell values
- *   i_face_vals <-- interior face values
- *   b_face_vals <-- boundary face values
- *   ts          <-- time step status structure, or NULL
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id      id of associated mesh
+ * \param[in]  writer_id    id of specified associated writer,
+ *                          or \ref CS_POST_WRITER_ALL_ASSOCIATED for all
+ * \param[in]  var_name     name of variable to output
+ * \param[in]  var_dim      1 for scalar, 3 for vector, 6 for symmetric tensor,
+ *                          9 for non-symmetric tensor
+ * \param[in]  interlace    if a vector, true for interlaced values,
+ *                          false otherwise
+ * \param[in]  use_parent   true if values are defined on "parent" mesh,
+ *                          false if values are defined on post-processing mesh
+ * \param[in]  var_type     variable's data type
+ * \param[in]  cel_vals     cell values
+ * \param[in]  i_face_vals  interior face values
+ * \param[in]  b_face_vals  boundary face values
+ * \param[in]  ts           time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_write_var(int                    mesh_id,
+                  int                    writer_id,
                   const char            *var_name,
                   int                    var_dim,
                   bool                   interlace,
@@ -910,24 +990,30 @@ cs_post_write_var(int                    mesh_id,
                   const void            *b_face_vals,
                   const cs_time_step_t  *ts);
 
-/*----------------------------------------------------------------------------
- * Output a variable defined at vertices of a post-processing mesh using
- * associated writers.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output a variable defined at vertices of a post-processing mesh using
+ *        associated writers.
  *
- * parameters:
- *   mesh_id    <-- id of associated mesh
- *   var_name   <-- name of variable to output
- *   var_dim    <-- 1 for scalar, 3 for vector
- *   interlace  <-- if a vector, true for interlaced values, false otherwise
- *   use_parent <-- true if values are defined on "parent" mesh,
- *                  false if values are defined on post-processing mesh
- *   var_type   <-- variable's data type
- *   vtx_vals   <-- vertex values
- *   ts          <-- time step status structure, or NULL
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id     id of associated mesh
+ * \param[in]  writer_id   id of specified associated writer,
+ *                         or \ref CS_POST_WRITER_ALL_ASSOCIATED for all
+ * \param[in]  var_name    name of variable to output
+ * \param[in]  var_dim     1 for scalar, 3 for vector, 6 for symmetric tensor,
+ *                         9 for non-symmetric tensor
+ * \param[in]  interlace   if a vector, true for interlaced values,
+ *                         false otherwise
+ * \param[in]  use_parent  true if values are defined on "parent" mesh,
+ *                         false if values are defined on post-processing mesh
+ * \param[in]  var_type    variable's data type
+ * \param[in]  vtx_vals    vertex values
+ * \param[in]  ts          time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_write_vertex_var(int                    mesh_id,
+                         int                    writer_id,
                          const char            *var_name,
                          int                    var_dim,
                          bool                   interlace,
@@ -936,29 +1022,69 @@ cs_post_write_vertex_var(int                    mesh_id,
                          const void            *vtx_vals,
                          const cs_time_step_t  *ts);
 
-/*----------------------------------------------------------------------------
- * Output an existing lagrangian particle attribute at particle
- * positions or trajectory endpoints of a particle mesh using
- * associated writers.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output an existing lagrangian particle attribute at particle
+ *        positions or trajectory endpoints of a particle mesh using
+ *        associated writers.
  *
- * parameters:
- *   mesh_id      <-- id of associated mesh
- *   attr         <-- associated particle attribute id
- *   var_name     <-- name of variable to output
- *   component_id <-- if -1 : extract the whole attribute
- *                    if >0 : id of the component to extract
- *   ts           <-- time step status structure, or NULL
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh_id       id of associated mesh
+ * \param[in]  writer_id     id of specified associated writer,
+ *                           or \ref CS_POST_WRITER_ALL_ASSOCIATED for all
+ * \param[in]  attr_id       associated particle attribute id
+ * \param[in]  var_name      name of variable to output
+ * \param[in]  component_id  if -1 : extract the whole attribute
+ *                           if >0 : id of the component to extract
+ * \param[in]  ts            time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_write_particle_values(int                    mesh_id,
+                              int                    writer_id,
                               int                    attr_id,
                               const char            *var_name,
                               int                    component_id,
                               const cs_time_step_t  *ts);
 
-/*----------------------------------------------------------------------------
- * Update references to parent mesh of post-processing meshes in case of
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output a variable defined at cells or faces of a post-processing mesh
+ *        using associated writers.
+ *
+ * \param[in]  mesh_id              id of associated mesh
+ * \param[in]  writer_id            id of specified associated writer,
+ *                                  or \ref CS_POST_WRITER_ALL_ASSOCIATED for all
+ * \param[in]  var_name             name of variable to output
+ * \param[in]  var_dim              1 for scalar, 3 for vector, 6 for symmetric
+ *                                  tensor, 9 for non-symmetric tensor
+ * \param[in]  var_type             variable's data type
+ * \param[in]  parent_location_id   asociated values mesh location, or 0
+ *                                  if values are passed directly
+ * \param[in]  interpolation_func   pointer to interpolation function,
+ *                                  or NULL for default
+ * \param[in]  interpolation_input  pointer to optional interpolation input data,
+ *                                  or NULL for default
+ * \param[in]  vals                 variable's values
+ * \param[in]  ts                   time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_write_probe_values(int                              mesh_id,
+                           int                              writer_id,
+                           const char                      *var_name,
+                           int                              var_dim,
+                           cs_post_type_t                   var_type,
+                           int                              parent_location_id,
+                           cs_interpolate_from_location_t  *interpolate_func,
+                           void                            *interpolate_input,
+                           const void                      *vals,
+                           const cs_time_step_t            *ts);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update references to parent mesh of post-processing meshes in case of
  * computational mesh cell renumbering.
  *
  * This function may be called only once, after possible renumbering of cells,
@@ -966,15 +1092,16 @@ cs_post_write_particle_values(int                    mesh_id,
  * after renumbering will automatically be based upon the new numbering,
  * so this function will not need to be called again.
  *
- * parameters:
- *   init_cell_num <-- initial cell numbering (new -> old)
- *----------------------------------------------------------------------------*/
+ * \param[in]  init_cell_num  initial cell numbering (new -> old)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_renum_cells(const cs_lnum_t  init_cell_num[]);
 
-/*----------------------------------------------------------------------------
- * Update references to parent mesh of post-processing meshes in case of
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update references to parent mesh of post-processing meshes in case of
  * computational mesh interior and/or boundary faces renumbering.
  *
  * This function may be called only once, after possible renumbering of faces,
@@ -982,24 +1109,54 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[]);
  * after renumbering will automatically be based upon the new numbering,
  * so this function will not need to be called again.
  *
- * parameters:
- *   init_i_face_num <-- initial interior numbering (new -> old)
- *   init_b_face_num <-- initial boundary numbering (new -> old)
- *----------------------------------------------------------------------------*/
+ * \param[in]  init_i_face_num  initial interior numbering (new -> old)
+ * \param[in]  init_b_face_num  initial boundary numbering (new -> old)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
                     const cs_lnum_t  init_b_face_num[]);
 
-/*----------------------------------------------------------------------------
- * Initialize post-processing writers
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Configure the post-processing output so that a mesh displacement
+ *        field may be output automatically for meshes based on the global
+ *        volume mesh.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_set_deformable(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Configure the post-processing output so that mesh connectivity
+ * may be automatically updated.
+ *
+ * This is done for meshes defined using selection criteria or functions.
+ * The behavior of Lagrangian meshes is unchanged.
+ *
+ * To be effective, this function should be called before defining
+ * postprocessing meshes.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_set_changing_connectivity(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize post-processing writers
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_init_writers(void);
 
-/*----------------------------------------------------------------------------
- * Initialize main post-processing meshes
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize main post-processing meshes
  *
  * The check_flag variable is a mask, used for additionnal post-processing:
  *
@@ -1009,73 +1166,80 @@ cs_post_init_writers(void);
  *  - If (check_flag & 2), boundary submeshes are output by groups if more
  *    than one group is present and the default writer uses the EnSight format.
  *
- * Note that all alias-type post-processing meshes and the meshes they
- * relate to should have been defined before calling this function, so it is
- * recommended that user-defined post-processing meshes be defined before
- * calling this function, though specific "automatic" meshes (for example
- * those related to couplings) may be defined between this call and a
- * time loop.
+ * It is recommended that post-processing meshes be defined before calling
+ * this function, though specific "automatic" meshes (for example those
+ * related to couplings) may be defined between this call and a time loop.
  *
- * parameters:
- *   check_flag <-- mask used for additional output
- *----------------------------------------------------------------------------*/
+ * \param[in]  check_mask  mask used for additional output
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_init_meshes(int check_mask);
 
-/*----------------------------------------------------------------------------
- * Loop on post-processing meshes to output variables.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Loop on post-processing meshes to output variables.
  *
  * This handles all default fields output, as well as all
- * registred output functions.
+ * registered output functions and outputs defined in
+ * \ref cs_user_postprocess_values
  *
- * parameters:
- *   ts <-- time step status structure, or NULL
- *----------------------------------------------------------------------------*/
+ * \param[in]  ts  time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_write_vars(const cs_time_step_t  *ts);
 
-/*----------------------------------------------------------------------------
- * Destroy all structures associated with post-processing
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy all structures associated with post-processing
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_finalize(void);
 
-/*----------------------------------------------------------------------------
- * Postprocess free (isolated) faces of the current global mesh
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Postprocess free (isolated) faces of the current global mesh
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_add_free_faces(void);
 
-/*----------------------------------------------------------------------------
- * Initialize post-processing writer with same format and associated
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize post-processing writer with same format and associated
  * options as default writer, but no time dependency, intended to
  * troubleshoot errors.
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_init_error_writer(void);
 
-/*----------------------------------------------------------------------------
- * Initialize post-processing writer with same format and associated
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize post-processing writer with same format and associated
  * options as default writer, but no time dependency, and associate
  * and output global volume mesh.
  *
  * This is intended to help troubleshoot errors using fields based
  * on cells.
  *
- * returns:
- *   id of error output mesh (< 0), or 0 if all writers are deactivated
- *----------------------------------------------------------------------------*/
+ * \return  id of error output mesh (< 0), or 0 if all writers are deactivated
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_post_init_error_writer_cells(void);
 
-/*----------------------------------------------------------------------------
- * Register a processing of time-dependent variables to the call to
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Register a processing of time-dependent variables to the call to
  * cs_post_write_vars().
  *
  * Note: if the input pointer is non-NULL, it must point to valid data
@@ -1084,17 +1248,18 @@ cs_post_init_error_writer_cells(void);
  * - post-processing output must be ensured using cs_post_write_var()
  *   or similar before the data pointed to goes out of scope.
  *
- * parameters:
- *   function <-- function to register
- *   input    <-> pointer to optional (untyped) value or structure.
- *----------------------------------------------------------------------------*/
+ * \param[in]       function  function to register
+ * \param[in, out]  input     pointer to optional (untyped) value or structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_add_time_dep_output(cs_post_time_dep_output_t  *function,
                             void                       *input);
 
-/*----------------------------------------------------------------------------
- * Register a processing of time-dependent variables than can be output
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Register a processing of time-dependent variables than can be output
  * on different meshes to the call to cs_post_write_vars().
  *
  * Note: if the input pointer is non-NULL, it must point to valid data
@@ -1103,10 +1268,10 @@ cs_post_add_time_dep_output(cs_post_time_dep_output_t  *function,
  * - post-processing output must be ensured using cs_post_write_var()
  *   or similar before the data pointed to goes out of scope.
  *
- * parameters:
- *   function <-- function to register
- *   input    <-> pointer to optional (untyped) value or structure.
- *----------------------------------------------------------------------------*/
+ * \param[in]       function  function to register
+ * \param[in, out]  input     pointer to optional (untyped) value or structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_post_add_time_mesh_dep_output(cs_post_time_mesh_dep_output_t  *function,

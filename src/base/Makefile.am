@@ -104,6 +104,7 @@ cs_gas_mix.h \
 cs_halo.h \
 cs_halo_perio.h \
 cs_interface.h \
+cs_interpolate.h \
 cs_internal_coupling.h \
 cs_io.h \
 cs_log.h \
@@ -254,6 +255,7 @@ cs_field_operator.c \
 cs_gas_mix.c \
 cs_halo.c \
 cs_halo_perio.c \
+cs_interpolate.c \
 csinit.f90 \
 cs_log_iteration.c \
 cs_log_setup.c \
@@ -310,7 +312,6 @@ driflu.f90 \
 dttvar.f90 \
 dvvpst.f90 \
 ecrava.f90 \
-ecrhis.f90 \
 ecrlis.f90 \
 findpt.f90 \
 fldini.f90 \

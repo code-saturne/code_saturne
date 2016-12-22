@@ -77,10 +77,8 @@ implicit none
 ! Local variables
 
 character        name*300, chaine*80
-integer          iokss , iokcaz
 integer          ii    , iiesca, iest
 integer          iwar  , kval
-integer          nbccou, nbsucp, nbvocp, issurf, isvol
 integer          kscmin, kscmax, keyvar
 integer          f_id, n_fields
 integer          igg, ige
@@ -89,7 +87,7 @@ double precision scmaxp, scminp
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
 
-type(var_cal_opt) :: vcopt, vcopt1
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -1138,7 +1136,7 @@ write(nfecra,7500)
 write(nfecra,7510) ntsuit
 
 !   - Fichiers historiques
-write(nfecra,7530) nthist,frhist,ncapt
+write(nfecra,7530) nthist,frhist
 write(nfecra,7532)
 
 !   - Fichiers listing
@@ -1183,8 +1181,7 @@ write(nfecra,9900)
  7530 format(                                                     &
 ' --- Fichiers historiques',                                    /,&
 '       NTHIST = ',4x,i10,    ' (Periode de sortie    )',       /,&
-'       FRHIST = ',4x,e11.5,  ' (Periode de sortie (s))',       /,&
-'       NCAPT  = ',4x,i10,    ' (Nombre de capteurs   )')
+'       FRHIST = ',4x,e11.5,  ' (Periode de sortie (s))')
  7531 format(1X,          A16,6X,         i10                )
  7532 format(                                                     &
 '         --           --                --',                   /)
@@ -1216,8 +1213,7 @@ write(nfecra,9900)
  7530 format(                                                     &
 ' --- Probe history files',                                     /,&
 '       NTHIST = ',4x,i10,    ' (Output frequency     )',       /,&
-'       FRHIST = ',4x,e11.5,  ' (Output frequency (s) )',       /,&
-'       NCAPT  = ',4x,i10,    ' (Number of probes     )')
+'       FRHIST = ',4x,e11.5,  ' (Output frequency (s) )')
  7531 format(1X,          A16,6X,         i10                )
  7532 format(                                                     &
 '         --           --                --',                   /)

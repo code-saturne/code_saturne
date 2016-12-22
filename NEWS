@@ -59,7 +59,7 @@ Architectural changes
 
 - Extended run staging and submission to coupled cases. Temporary status file
   is now in execution ad not scripts directory.
-  
+
 - Add handling of lmod-based environment modules.
 
 - Allow detection of HDF5 libraries named libhdf5-shared and libhdf5-static as well

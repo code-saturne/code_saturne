@@ -35,6 +35,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
+#include "cs_probe.h"
 
 #include "cs_domain.h"
 
@@ -561,6 +562,25 @@ cs_user_postprocess_probes(void);
 
 void
 cs_user_postprocess_meshes(void);
+
+/*----------------------------------------------------------------------------
+ * User function for output of values on a post-processing mesh.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_postprocess_values(const char            *mesh_name,
+                           int                    mesh_id,
+                           int                    cat_id,
+                           cs_probe_set_t        *probes,
+                           cs_lnum_t              n_cells,
+                           cs_lnum_t              n_i_faces,
+                           cs_lnum_t              n_b_faces,
+                           cs_lnum_t              n_vertices,
+                           const cs_lnum_t        cell_list[],
+                           const cs_lnum_t        i_face_list[],
+                           const cs_lnum_t        b_face_list[],
+                           const cs_lnum_t        vertex_list[],
+                           const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------
  * Override default frequency or calculation end based output.

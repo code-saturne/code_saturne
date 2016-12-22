@@ -46,6 +46,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/rayt \
+-I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -107,7 +108,6 @@ cs_user_turbomachinery.c \
 cs_user_boundary_conditions_ale.f90 \
 usatch.f90 \
 usctdz.f90 \
-ushist.f90 \
 cs_user_lagr_model.c \
 cs_user_lagr_bcs.c \
 cs_user_lagr_particle.c \

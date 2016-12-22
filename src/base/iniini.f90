@@ -201,8 +201,6 @@ ficmet = 'meteo'
 !     EMPHIS : EMPlacement
 !     PREHIS : PREfixe
 !     EXTHIS : EXTension
-!     IMPUSH : Unite fichiers specifiques ushist
-!     FICUSH : Nom   fichiers specifiques ushist
 !     IMPSTH : fichier stock + unite d'ecriture des variables
 !              des structures mobiles
 
@@ -212,44 +210,18 @@ impsth(2) = 31
 emphis = 'monitoring/'
 prehis = 'probes_'
 
-do ii = 1, nushmx
-  impush(ii) = 32+ii
-  if (irangp .le. 0) then
-    write(ficush(ii),'(1a3,i3.3)')'ush',ii
-  else
-    write(ficush(ii),'(1a3,i3.3,1a3,i4.4)')'ush',ii,'.n_',irangp+1
-  endif
-enddo
-
 ! tplfmt : time plot format (1: .dat, 2: .csv, 3: both)
-! ncapt  : nombre de sondes total (limite a ncaptm)
 ! nthist : periode de sortie (> 0 ou -1 (jamais))
 ! frhist : frequence de sortie, en secondes (prioritaire sur nthist si > 0)
 ! ihistr : indicateur d'ecriture des historiques des structures
 !          mobiles internes (=0 ou 1)
-! ncapt  : nombre de sondes total (limite a ncaptm)
-! nodcap : element correspondant aux sondes
-! ndrcap : rang du processus contenant nodcap (parallelisme)
-! xyzcap : position demandee des sondes
 
 tplfmt = 1
-ncapt = 0
 
 nthist = 1
 frhist = -1.d0
 
 ihistr = 0
-
-do ii = 1, ncaptm
-  nodcap(ii) = 1
-  ndrcap(ii) = -1
-enddo
-
-do ii = 1, ncaptm
-  xyzcap(1,ii) = 0.d0
-  xyzcap(2,ii) = 0.d0
-  xyzcap(3,ii) = 0.d0
-enddo
 
 ! ---> Fichiers utilisateurs
 
@@ -258,21 +230,6 @@ do ii = 1, nusrmx
 enddo
 
 ! ---> Sorties listing
-
-!   COMMUNES
-!     IPP*   : Pointeurs de reperage des variables pour les sorties
-!              1 pointe sur une case poubelle et constitue donc une
-!              bonne initialisation
-!     NOMVAR : Nom des variables
-!     ITRSVR : numero de variable si IPP correspond a une variable resolue (p,u,k...)
-!              0 si IPP correspond a une variable annexe (cp, mut...)ou a rien
-!     NTLIST : periode d'ecriture
-!       ( -1 : dernier pas de temps : > 0 : periode)
-
-ippdt        = 1
-ipptx        = 1
-ippty        = 1
-ipptz        = 1
 
 ntlist = 1
 

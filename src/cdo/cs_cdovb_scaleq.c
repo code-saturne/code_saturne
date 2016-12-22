@@ -1833,7 +1833,8 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
                                           eqp->advection_info,
                                           work_c);
 
-    cs_post_write_var(-1,                   // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       postlabel,
                       1,
                       true,                 // interlace

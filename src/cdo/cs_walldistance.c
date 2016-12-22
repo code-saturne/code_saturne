@@ -131,7 +131,8 @@ _compute_cdofb(const cs_cdo_connect_t     *connect,
 
   } // Loop on cells
 
-  cs_post_write_var(-1,              // id du maillage de post
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_ALL_ASSOCIATED,
                     field->name,
                     1,               // dim
                     false,           // interlace
@@ -227,7 +228,8 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
   }
 
   /* Post-processing */
-  cs_post_write_vertex_var(-1,              // id du maillage de post
+  cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                           CS_POST_WRITER_ALL_ASSOCIATED,
                            field->name,
                            1,               // dim
                            false,           // interlace

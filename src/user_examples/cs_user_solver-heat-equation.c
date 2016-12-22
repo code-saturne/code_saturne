@@ -266,7 +266,8 @@ cs_user_solver(const cs_mesh_t             *mesh,
   cs_post_activate_writer(-1,     /* default writer */
                           true);  /* activate if 1 */
 
-  cs_post_write_var(-1,                      /* default mesh */
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_ALL_ASSOCIATED,
                     var_name,                /* variable name */
                     1,                       /* variable dimension */
                     false,                   /* interleave if true */
@@ -277,7 +278,8 @@ cs_user_solver(const cs_mesh_t             *mesh,
                     NULL,                    /* value on boundary faces */
                     NULL);                   /* time-independent output */
 
-  cs_post_write_var(-1,                      /* default mesh */
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_ALL_ASSOCIATED,
                     "solution",              /* variable name */
                     1,                       /* variable dimension */
                     false,                   /* interleave if true */

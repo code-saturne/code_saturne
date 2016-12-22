@@ -826,7 +826,8 @@ cs_cdofb_scaleq_extra_op(const char            *eqname,
   BFT_MALLOC(postlabel, len, char);
   sprintf(postlabel, "%s.Border", field->name);
 
-  cs_post_write_var(-2,                    // id du maillage de post
+  cs_post_write_var(CS_POST_MESH_BOUNDARY,
+                    CS_POST_WRITER_ALL_ASSOCIATED,
                     postlabel,
                     field->dim,
                     true,

@@ -1469,7 +1469,8 @@ cs_property_extra_post(const cs_property_t       *pty,
     /* Compute Fourier number */
     cs_property_get_fourier(pty, dt_cur, fourier);
 
-    cs_post_write_var(-1,             // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       label,
                       1,
                       true,           // interlace

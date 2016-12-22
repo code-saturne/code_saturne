@@ -32,6 +32,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_mesh.h"
+#include "cs_mesh_location.h"
+#include "fvm_nodal.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -49,19 +52,41 @@ typedef struct _cs_probe_set_t  cs_probe_set_t;
 
 typedef enum {
 
-  CS_PROBE_MODE_EXACT,               /* Get the value exactly where it is
-                                        requested. This mode may require an
-                                        interpolation step. */
-  CS_PROBE_MODE_NEAREST_CELL_CENTER, /* Get the value at the nearest cell
-                                        center */
-  CS_PROBE_MODE_NEAREST_VERTEX,      /* Get the value at the nearest vertex */
-  CS_PROBE_N_MODES
+  CS_PROBE_SNAP_NONE,            /*!< No position change */
+  CS_PROBE_SNAP_ELT_CENTER,      /*!< snap to nearest cell or face center */
+  CS_PROBE_SNAP_VERTEX           /*!> snap to nearest vertex */
 
-} cs_probe_mode_t;
+} cs_probe_snap_t;
 
 /*============================================================================
  * Local type definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer to definition of probes based on rank-local points.
+ *
+ * If non-empty and not containing all elements, a list of coordinates
+ * as well as a list of curvilinear coordinates should be allocated
+ * (using BFT_MALLOC) and defined by this function when called.
+ * Those list's lifecycle is then managed automatically by the
+ * probe set object.
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * \param[in, out]  input   pointer to optional (untyped) value or structure
+ * \param[out]      n_elts  number of selected coordinates
+ * \param[out]      coords  coordinates of selected elements.
+ * \param[out]      s       curvilinear coordinates of selected elements
+ *----------------------------------------------------------------------------*/
+
+typedef void
+(cs_probe_set_define_local_t) (void          *input,
+                               cs_lnum_t     *n_elts,
+                               cs_real_3_t  **coords,
+                               cs_real_t    **s);
 
 /*============================================================================
  *  Global variables
@@ -73,7 +98,16 @@ typedef enum {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the number of probe sets defined
+ * \brief  Free all structures related to a set of probes.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the number of probe sets defined.
  *
  * \return the number of probe sets defined
  */
@@ -84,7 +118,7 @@ cs_probe_get_n_sets(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve a cs_probe_set_t structure
+ * \brief  Retrieve a cs_probe_set_t structure.
  *
  * \param[in]   name        name of the set of probes to find
  *
@@ -97,7 +131,7 @@ cs_probe_set_get(const char    *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve a cs_probe_set_t structure from its id
+ * \brief  Retrieve a cs_probe_set_t structure from its id.
  *
  * \param[in]   pset_id       id related to the set of probes to find
  *
@@ -110,7 +144,7 @@ cs_probe_set_get_by_id(int   pset_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the name related to a cs_probe_set_t structure
+ * \brief  Retrieve the name related to a cs_probe_set_t structure.
  *
  * \param[in]   pset       pointer to a cs_probe_set_t structure
  *
@@ -123,42 +157,47 @@ cs_probe_set_get_name(cs_probe_set_t   *pset);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve information useful for the postprocessing step
+ * \brief  Retrieve information useful for the postprocessing step.
  *
- * \param[in]  pset          pointer to a cs_probe_set_t structure
- * \param[out] time_varying  true if probe coords may change during computation
- * \param[out] is_profile    true if probe set is related to a profile
- * \param[out] on_boundary   true if probes are located on boundary
- * \param[out] is_automatic  true if the set of variables to post is predefined
- * \param[out] n_writers     number of associated  user-defined writers
- * \param[out] writer_ids    list of writer ids
+ * Output arguments may be set to NULL if we do not need to query them.
+ *
+ * \param[in]  pset            pointer to a cs_probe_set_t structure
+ * \param[out] time_varying    true if probe locations may change with time
+ * \param[out] on_boundary     true if probes are located on boundary
+ * \param[out] on_curve        true if the probe set has cuvilinear coordinates
+ * \param[out] auto_variables  true if set of variables to output is predefined
+ * \param[out] n_writers       number of associated  user-defined writers,
+ *                             or -1 if default unchanged
+ * \param[out] writer_ids      pointer to a list of writer ids
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_probe_set_get_post_info(const cs_probe_set_t   *pset,
                            bool                   *time_varying,
-                           bool                   *is_profile,
                            bool                   *on_boundary,
-                           bool                   *is_automatic,
+                           bool                   *on_curve,
+                           bool                   *auto_variables,
                            int                    *n_writers,
                            int                    *writer_ids[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if a set of monitoring probes has been defined among all the
- *         probe sets
+ * \brief  Return the location filter selection criteria string for a
+ *         given probe set
  *
- * \return true or false
+ * \param[in]   pset       pointer to a cs_probe_set_t structure
+ *
+ * \return selection criteria string, or NULL if no filter defined
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_probe_set_have_monitoring(void);
+const char *
+cs_probe_set_get_location_criteria(cs_probe_set_t   *pset);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new set of probes
+ * \brief  Create a new set of probes.
  *
  * \param[in]   name        name of the set of probes
  *
@@ -171,22 +210,26 @@ cs_probe_set_create(const char    *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new probe to an existing set of probes
+ * \brief  Add a new probe to an existing set of probes.
  *
  * \param[in, out]  pset    set of probes
- * \param[in]       xyz     coordinates of the point to add
+ * \param[in]       x       x coordinate  of the point to add
+ * \param[in]       y       y coordinate  of the point to add
+ * \param[in]       z       z coordinate  of the point to add
  * \param[in]       label   NULL or the name of the point (optional)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_probe_set_add_probe(cs_probe_set_t     *pset,
-                       const cs_real_t    *xyz,
+                       cs_real_t           x,
+                       cs_real_t           y,
+                       cs_real_t           z,
                        const char         *label);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a new set of probes from an array of coordinates
+ * \brief  Define a new set of probes from an array of coordinates.
  *
  * \param[in]   name      name of the set of probes
  * \param[in]   n_probes  number of probes in coords and labels
@@ -198,14 +241,14 @@ cs_probe_set_add_probe(cs_probe_set_t     *pset,
 /*----------------------------------------------------------------------------*/
 
 cs_probe_set_t *
-cs_probe_set_create_from_array(const char         *name,
-                               int                 n_probes,
-                               const cs_real_t    *coords,
-                               const char        **labels);
+cs_probe_set_create_from_array(const char          *name,
+                               int                  n_probes,
+                               const cs_real_3_t   *coords,
+                               const char         **labels);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a new set of probes from the segment spanned by two points
+ * \brief Define a new set of probes from the segment spanned by two points.
  *
  * \param[in]  name          name of the set of probes
  * \param[in]  n_probes      number of probes
@@ -224,7 +267,45 @@ cs_probe_set_create_from_segment(const char        *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate a list of writers to a probe set
+ * \brief Define a new set of probes from rank-local definition function.
+ *
+ * The local definition function given by the \ref p_define_func pointer
+ * is called just before location probes on the parent mesh, so this allows
+ * building probe sets based on subsets of the computational mesh.
+ *
+ * Note: if the p_define_input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * \param[in]  name           name of the set of probes
+ * \param[in]  p_define_func  function used for local definition
+ * \param[in]  p_define_input optional input for local definition function
+ *
+ * \return a pointer to a new allocated cs_probe_set_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_probe_set_t *
+cs_probe_set_create_from_local(const char                   *name,
+                               cs_probe_set_define_local_t  *p_define_func,
+                               void                         *p_define_input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  allow overwriting the definition of a given probe set.
+ *
+ * If no a probe set of the given name exists, the operation is ignored.
+ *
+ * \param[in]  name  name of the probe set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_allow_overwrite(const char  *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a list of writers to a probe set.
  *
  * \param[in, out] pset        pointer to a cs_probe_set_t structure to set
  * \param[in]      n_writers   number of writers assocuated to this probe set
@@ -239,7 +320,34 @@ cs_probe_set_associate_writers(cs_probe_set_t   *pset,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set snap mode related to the management of a set of probes.
+ *
+ * \param[in, out] pset        pointer to a cs_probe_set_t structure
+ * \param[in]      snap_mode   snap mode to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_snap_mode(cs_probe_set_t   *pset,
+                       cs_probe_snap_t   snap_mode);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set optional parameters related to the management of a set of probes
+ *
+ * Available option key names accepting \c true or \c false:
+ *
+ * - \c \b transient_location if \c true, relocate probes relative to
+ *         deforming or moving mesh (default: \c false)
+ * - \c \b boundary  if \ c true, locate on boundary mesh; if \c false,
+ *         locate on volume mesh (default)
+ * - \c \b auto_variables if \c true (default), automatic outut of main
+ *         variables
+ *
+ * Other options:
+ *
+ * - \c \b selection_criteria where keyval is selection criteria string
+ * - \c \b tolerance  where keyval is for instance "0.05" (default "0.10")
  *
  * \param[in, out] pset     pointer to a cs_probe_set_t structure to set
  * \param[in]      keyname  name of the keyword related to the parameter to set
@@ -254,19 +362,27 @@ cs_probe_set_option(cs_probe_set_t   *pset,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Try to locate each probe and define the coordinate really use for
- *         the postprocessing step
+ * \brief  Try to locate each probe and define the coordinate really used for
+ *         the postprocessing step.
  *
- * \param[in, out]  pset    pointer to a cs_probe_set_t structure
+ * For better performance when using multiple probe sets, a pointer to
+ * an existing location mesh may be passed to this function. The caller is
+ * responsible for ensuring this mesh matches selection criteria for the
+ * probe set.
+ *
+ * \param[in, out]  pset           pointer to a cs_probe_set_t structure
+ * \param[in]       location_mesh  optional pointer to mesh relative to which
+ *                                 probe set should be located, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_probe_set_locate(cs_probe_set_t   *pset);
+cs_probe_set_locate(cs_probe_set_t     *pset,
+                    const fvm_nodal_t  *location_mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a fvm_nodal_t structure from the set of probes
+ * \brief  Define a fvm_nodal_t structure from the set of probes.
  *
  * \param[in, out]  pset        pointer to a cs_probe_set_t structure
  * \param[in]       mesh_name   name of the mesh to export
@@ -281,16 +397,22 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all structures related to a set of probes
+ * \brief  Define a fvm_nodal_t structure from the set of unlocated probes.
+ *
+ * \param[in, out]  pset        pointer to a cs_probe_set_t structure
+ * \param[in]       mesh_name   name of the mesh to export
+ *
+ * \return a pointer to a fvm_nodal_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_probe_finalize(void);
+fvm_nodal_t *
+cs_probe_set_unlocated_export_mesh(cs_probe_set_t   *pset,
+                                   const char       *mesh_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Dump a cs_probe_set_t structure
+ * \brief  Dump a cs_probe_set_t structure.
  *
  * \param[in]  pset    pointer to a cs_probe_set_t structure
  */
@@ -301,24 +423,50 @@ cs_probe_set_dump(const cs_probe_set_t   *pset);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the main members of a cs_probe_set_t structure
+ * \brief  Retrieve the main members of a cs_probe_set_t structure.
  *
- * \param[in]      pset      pointer to a cs_probe_set_t structure
- * \param[in, out] mode      mode of location
- * \param[in, out] n_probes  number of probes
- * \param[in, out] coords    probe coordinates
- * \param[in, out] ent_num   entity numbers (-1 if not located on this rank)
- * \param[in, out] distances distance of each probe from its related cell center
+ * \param[in]       pset       pointer to a cs_probe_set_t structure
+ * \param[in, out]  snap_mode  mode of location
+ * \param[in, out]  n_probes   number of probes
+ * \param[in, out]  coords     probe coordinates
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_probe_set_get_members(const cs_probe_set_t   *pset,
-                         int                    *mode,
+                         cs_probe_snap_t        *snap_mode,
                          int                    *n_probes,
-                         cs_real_t              *coords[],
-                         cs_lnum_t              *ent_num[],
-                         float                  *distances[]);
+                         cs_real_3_t            *coords[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the number probes in the local domain.
+ *
+ * \param[in]       pset       pointer to a cs_probe_set_t structure
+ *
+ * \return  number of probes in local domain
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_probe_set_get_n_local(const cs_probe_set_t   *pset);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the ids of a probe set's local matching elements, relative
+ *         to a given mesh location.
+ *
+ * The mesh_location id must match one of \ref CS_MESH_LOCATION_CELLS,
+ * \ref CS_MESH_LOCATION_BOUNDARY_FACES, or \ref CS_MESH_LOCATION_VERTICES.
+ *
+ * \param[in]  pset              pointer to a cs_probe_set_t structure
+ * \param[in]  mesh_location_id  id of parent mesh location
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_probe_set_get_elt_ids(const cs_probe_set_t  *pset,
+                         int                    mesh_location_id);
 
 /*----------------------------------------------------------------------------*/
 

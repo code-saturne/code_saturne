@@ -2409,7 +2409,8 @@ cs_equation_extra_post(const cs_equation_t     *eq,
                             peclet);
 
     /* Post-process */
-    cs_post_write_var(-1,             // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       postlabel,
                       1,
                       true,           // interlace

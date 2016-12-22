@@ -970,7 +970,8 @@ _cs_multigrid_post_function(void                  *mgh,
     sprintf(var_name, "mg %s %2d",
             base_name, (ii+1));
 
-    cs_post_write_var(-1,
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       var_name,
                       1,
                       false,
@@ -988,7 +989,8 @@ _cs_multigrid_post_function(void                  *mgh,
       sprintf(var_name, "rk %s %2d",
               base_name, (ii+1));
 
-      cs_post_write_var(-1,
+      cs_post_write_var(CS_POST_MESH_VOLUME,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
                         var_name,
                         1,
                         false,

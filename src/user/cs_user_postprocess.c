@@ -116,6 +116,49 @@ cs_user_postprocess_probes(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief User function for output of values on a post-processing mesh.
+ *
+ * \param[in]       mesh_name    name of the output mesh for the current call
+ * \param[in]       mesh_id      id of the output mesh for the current call
+ * \param[in]       cat_id       category id of the output mesh for the
+ *                               current call
+ * \param[in]       probes       pointer to associated probe set structure if
+ *                               the mesh is a probe set, NULL otherwise
+ * \param[in]       n_cells      local number of cells of post_mesh
+ * \param[in]       n_i_faces    local number of interior faces of post_mesh
+ * \param[in]       n_b_faces    local number of boundary faces of post_mesh
+ * \param[in]       n_vertices   local number of vertices faces of post_mesh
+ * \param[in]       cell_list    list of cells (0 to n-1) of post-processing
+ *                               mesh
+ * \param[in]       i_face_list  list of interior faces (0 to n-1) of
+ *                               post-processing mesh
+ * \param[in]       b_face_list  list of boundary faces (0 to n-1) of
+ *                               post-processing mesh
+ * \param[in]       vertex_list  list of vertices (0 to n-1) of
+ *                               post-processing mesh
+ * \param[in]       ts           time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_postprocess_values(const char            *mesh_name,
+                           int                    mesh_id,
+                           int                    cat_id,
+                           cs_probe_set_t        *probes,
+                           cs_lnum_t              n_cells,
+                           cs_lnum_t              n_i_faces,
+                           cs_lnum_t              n_b_faces,
+                           cs_lnum_t              n_vertices,
+                           const cs_lnum_t        cell_list[],
+                           const cs_lnum_t        i_face_list[],
+                           const cs_lnum_t        b_face_list[],
+                           const cs_lnum_t        vertex_list[],
+                           const cs_time_step_t  *ts)
+{
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * Override default frequency or calculation end based output.
  *
  * This allows fine-grained control of activation or deactivation,

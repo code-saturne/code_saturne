@@ -347,6 +347,7 @@ _cs_syr4_coupling_post_function(void                  *coupling,
           cell_temp = coupling_ent->solid_temp;
 
         cs_post_write_var(coupling_ent->post_mesh_id,
+                          CS_POST_WRITER_ALL_ASSOCIATED,
                           _("Solid T"),
                           1,
                           false,
@@ -359,6 +360,7 @@ _cs_syr4_coupling_post_function(void                  *coupling,
 
         if (type_id == 1)
           cs_post_write_var(coupling_ent->post_mesh_id,
+                            CS_POST_WRITER_ALL_ASSOCIATED,
                             _("Solid heat flux"),
                             1,
                             false,
@@ -808,6 +810,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     cs_post_write_meshes(cs_glob_time_step);
 
     cs_post_write_var(coupling_ent->post_mesh_id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       _("distance_to_solid"),
                       1,
                       false,
@@ -881,6 +884,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
       cs_post_write_meshes(cs_glob_time_step);
 
       cs_post_write_vertex_var(mesh_id,
+                               CS_POST_WRITER_ALL_ASSOCIATED,
                                _("distance_to_fluid"),
                                1,
                                false,

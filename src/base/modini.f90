@@ -59,7 +59,7 @@ implicit none
 
 integer          n_fields, f_id, n_moments
 integer          ii, jj, ivar, imom, iok, ikw
-integer          icompt, nbccou, keyvar, flag
+integer          nbccou, keyvar, flag
 integer          nscacp, iscal
 integer          imrgrp
 integer          kcpsyr, icpsyr
@@ -126,19 +126,6 @@ do imom = 1, n_moments
   call field_is_key_set(f_id, keylog, is_set)
   if (.not. is_set) call field_set_key_int(f_id, keylog, 1)
 enddo
-
-!     Si on est en ALE, on a un test equivalent dans strini.F
-if (iale.eq.0) then
-  icompt = 0
-  do f_id = 0, n_fields - 1
-    call field_get_key_int(f_id, keyvis, flag)
-    if (iand(flag, POST_MONITOR).ne.0) icompt = icompt+1
-  enddo
-  if (icompt.eq.0.or.ncapt.eq.0) then
-    nthist = -1
-    frhist = -1.d0
-  endif
-endif
 
 ! Adapt the output frequency parameters according to the time scheme.
 if (idtvar.lt.0.or.idtvar.eq.2) then

@@ -1123,6 +1123,8 @@ fvm_nodal_destroy(fvm_nodal_t   *this_nodal)
 
   /* Local structures */
 
+  _remove_global_vertex_labels(this_nodal);
+
   if (this_nodal->name != NULL)
     BFT_FREE(this_nodal->name);
 
@@ -1145,8 +1147,6 @@ fvm_nodal_destroy(fvm_nodal_t   *this_nodal)
 
   if (this_nodal->gc_set != NULL)
     this_nodal->gc_set = fvm_group_class_set_destroy(this_nodal->gc_set);
-
-  _remove_global_vertex_labels(this_nodal);
 
   /* Main structure destroyed and NULL returned */
 

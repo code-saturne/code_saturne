@@ -114,16 +114,11 @@
 
   \snippet cs_user_parameters-output.f90 usipes_ex_04
 
-  \subsection cs_f_user_parameters_h_example_probes Probes output
+  \subsection cs_f_user_parameters_h_example_structures Structures output
 
-  Probes output step.
+  Structures output step.
 
   \snippet cs_user_parameters-output.f90 usipes_ex_05
-
-  Number of monitoring points (probes) and their positions.
-  Limited to ncaptm=200.
-
-  \snippet cs_user_parameters-output.f90 usipes_ex_06
 
   \subsection cs_f_user_parameters_h_example_post Postprocessing output
 

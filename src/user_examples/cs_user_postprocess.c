@@ -49,6 +49,10 @@
 #include "cs_post.h"
 #include "cs_time_plot.h"
 
+#include "cs_field_pointer.h"
+#include "cs_parameters.h"
+#include "cs_turbulence_model.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -276,15 +280,15 @@ cs_user_postprocess_writers(void)
   /* ----------------------- */
 
   /*! [post_define_writer_m1] */
-  cs_post_define_writer(-1,                /* writer_id */
-                        "results",         /* writer name */
-                        "postprocessing",  /* directory name */
-                        "EnSight Gold",    /* format_name */
-                        "",                /* format_options */
+  cs_post_define_writer(CS_POST_WRITER_DEFAULT,       /* writer_id */
+                        "results",                    /* writer name */
+                        "postprocessing",             /* directory name */
+                        "EnSight Gold",               /* format_name */
+                        "",                           /* format_options */
                         FVM_WRITER_FIXED_MESH,
-                        true,              /* output_at_end */
-                        -1,                /* frequency_n */
-                        -1.0);             /* frequency_t */
+                        true,                         /* output_at_end */
+                        -1,                           /* frequency_n */
+                        -1.0);                        /* frequency_t */
   /*! [post_define_writer_m1] */
 
   /* Define additional writers */
@@ -360,7 +364,7 @@ cs_user_postprocess_meshes(void)
     int n_writers = 0;
     const int *writer_ids = NULL;
 
-    cs_post_define_surface_mesh(-2,          /* mesh_id of main boundary mesh */
+    cs_post_define_surface_mesh(CS_POST_MESH_BOUNDARY,  /* mesh_id */
                                 "Boundary",  /* mesh name */
                                 NULL,        /* interior face selection criteria */
                                 "all[]",     /* boundary face selection criteria */
@@ -395,31 +399,6 @@ cs_user_postprocess_meshes(void)
 
   }
   /*! [post_define_mesh_1] */
-
-  /*--------------------------------------------------------------------------*/
-
-  /* The same variables will be output through all writers associated
-   * to a mesh. In cases where different variables of a same mesh should
-   * be output throught different writers, the solution is to define one or
-   * several "aliases" of that mesh, allowing to assign a different id,
-   * writers, and variables to each secondary copy of the mesh, without the
-   * overhead of a full copy. The cs_post_define_alias_mesh() function
-   * may be used for such a purpose. */
-
-  /*! [post_define_mesh_2] */
-  {
-    /* Example: define an alias of the main surface mesh */
-
-    const int n_writers = 1;
-    const int writer_ids[] = {4};  /* Associate to writer 4 */
-
-    cs_post_define_alias_mesh(2,                 /* mesh id */
-                              -2,                /* aliased mesh id */
-                              false,             /* auto_variables */
-                              n_writers,
-                              writer_ids);
-  }
-  /*! [post_define_mesh_2] */
 
   /*--------------------------------------------------------------------------*/
 
@@ -500,20 +479,22 @@ cs_user_postprocess_meshes(void)
 void
 cs_user_postprocess_probes(void)
 {
-   /* Define monitoring probes */
+  /* Define monitoring probes */
+
+  /* A writer (id = CS_POST_WRITER_PROBES) using the format "time_plot" is
+     associated by default to a set of monitoring probes.
+     This is not the case for a profile. */
+
+  /*! [post_define_probes_1] */
   {
-    cs_real_3_t  m1 = {0.25, 0.025, 0.025};
-    cs_real_3_t  m2 = {0.50, 0.025, 0.025};
-    cs_real_3_t  m3 = {0.75, 0.025, 0.025};
     cs_probe_set_t  *pset = cs_probe_set_create("Monitoring");
 
-    cs_probe_set_add_probe(pset, m1, "M1");
-    cs_probe_set_add_probe(pset, m2, "M2");
-    cs_probe_set_add_probe(pset, m3, "M3");
+    cs_probe_set_add_probe(pset, 0.25, 0.025, 0.025, "M1");
+    cs_probe_set_add_probe(pset, 0.50, 0.025, 0.025, "M2");
+    cs_probe_set_add_probe(pset, 0.75, 0.025, 0.025, "M3");
 
-    /* A writer (id = -3) using the format "time_plot" is associated by default
-       to a set of monitoring probes. This is not the case for a profile. */
   }
+  /*! [post_define_probes_1] */
 
   /* Add a first profile */
   {
@@ -541,7 +522,7 @@ cs_user_postprocess_probes(void)
                                      end);    // end coordinates
   }
 
-  /* Add a second profile attached to border vertices */
+  /* Add a second profile attached to boundary vertices */
   {
     cs_coord_3_t  start = {0., 0., 0.};
     cs_coord_3_t  end = {1., 0., 0.};
@@ -556,8 +537,99 @@ cs_user_postprocess_probes(void)
     cs_probe_set_associate_writers(pset, 1, writer_ids);
 
     cs_probe_set_option(pset, "boundary", "true");
-    cs_probe_set_option(pset, "mode", "nearest_vertex");
+    cs_probe_set_option(pset, "snap_mode", "vertex");
   }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User function for output of values on a post-processing mesh.
+ *
+ * \param[in]       mesh_name    name of the output mesh for the current call
+ * \param[in]       mesh_id      id of the output mesh for the current call
+ * \param[in]       cat_id       category id of the output mesh for the
+ *                               current call
+ * \param[in]       probes       pointer to associated probe set structure if
+ *                               the mesh is a probe set, NULL otherwise
+ * \param[in]       n_cells      local number of cells of post_mesh
+ * \param[in]       n_i_faces    local number of interior faces of post_mesh
+ * \param[in]       n_b_faces    local number of boundary faces of post_mesh
+ * \param[in]       n_vertices   local number of vertices faces of post_mesh
+ * \param[in]       cell_list    list of cells (0 to n-1) of post-processing
+ *                               mesh
+ * \param[in]       i_face_list  list of interior faces (0 to n-1) of
+ *                               post-processing mesh
+ * \param[in]       b_face_list  list of boundary faces (0 to n-1) of
+ *                               post-processing mesh
+ * \param[in]       vertex_list  list of vertices (0 to n-1) of
+ *                               post-processing mesh
+ * \param[in]       ts           time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_postprocess_values(const char            *mesh_name,
+                           int                    mesh_id,
+                           int                    cat_id,
+                           cs_probe_set_t        *probes,
+                           cs_lnum_t              n_cells,
+                           cs_lnum_t              n_i_faces,
+                           cs_lnum_t              n_b_faces,
+                           cs_lnum_t              n_vertices,
+                           const cs_lnum_t        cell_list[],
+                           const cs_lnum_t        i_face_list[],
+                           const cs_lnum_t        b_face_list[],
+                           const cs_lnum_t        vertex_list[],
+                           const cs_time_step_t  *ts)
+{
+  /* Output of k=1/2(R11+R22+R33) for the Rij-epsilon model
+     ------------------------------------------------------ */
+
+  /*< [postprocess_values_ex_1] */
+  if (cat_id == CS_POST_MESH_VOLUME && cs_glob_turb_model->itytur == 3) {
+
+    cs_real_t *s_cell;
+    BFT_MALLOC(s_cell, n_cells, cs_real_t);
+
+    if (cs_glob_turb_rans_model->irijco) {
+      const cs_real_6_t *cvar_r = (const cs_real_6_t *)(CS_F_(rij)->val);
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+        cs_lnum_t cell_id = cell_list[i];
+        s_cell[i] = 0.5* (  cvar_r[cell_id][0]
+                          + cvar_r[cell_id][1]
+                          + cvar_r[cell_id][2]);
+      }
+    }
+
+    else {
+      const cs_real_t *cvar_r11 = CS_F_(r11)->val;
+      const cs_real_t *cvar_r22 = CS_F_(r22)->val;
+      const cs_real_t *cvar_r33 = CS_F_(r33)->val;
+
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+        cs_lnum_t cell_id = cell_list[i];
+        s_cell[i] = 0.5* (  cvar_r11[cell_id]
+                          + cvar_r22[cell_id]
+                          + cvar_r33[cell_id]);
+      }
+    }
+
+    cs_post_write_var(mesh_id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
+                      "Turb energy",                  /* var_name */
+                      1,                              /* var_dim */
+                      true,                           /* interlace, */
+                      false,                          /* use_parent */
+                      CS_POST_TYPE_cs_real_t,         /* var_type */
+                      s_cell,                         /* cel_vals */
+                      NULL,                           /* i_face_vals */
+                      NULL,                           /* b_face_vals */
+                      ts);
+
+    BFT_FREE(s_cell);
+  }
+  /*< [postprocess_values_ex_1] */
 
 }
 

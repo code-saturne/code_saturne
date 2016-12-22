@@ -47,9 +47,11 @@
 #include "fvm_point_location.h"
 
 #include "cs_base.h"
+#include "cs_map.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
+#include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
 #include "cs_selector.h"
 #include "cs_timer.h"
@@ -82,14 +84,11 @@ BEGIN_C_DECLS
 
 /* Predefined masks to set a flag for a probe set structure */
 
-#define CS_PROBE_ACTIVATED   (1 << 0) //   1: state = activated
-#define CS_PROBE_PREDEFINED  (1 << 1) //   2: predefined (ie not user)
-#define CS_PROBE_TRANSIENT   (1 << 2) //   4: locations of probes may change
-#define CS_PROBE_INTERPOLATE (1 << 3) //   8: switch on the interpolation step
-#define CS_PROBE_BOUNDARY    (1 << 4) //  16: locations only on the border mesh
-#define CS_PROBE_PROFILE     (1 << 5) //  32: probe set is a profile
-#define CS_PROBE_POST_DIST   (1 << 6) //  64: post distance to exact location
-#define CS_PROBE_USER_VAR    (1 << 7) // 128: post user-defined set of variables
+#define CS_PROBE_TRANSIENT   (1 << 0) //   1: locations of probes may change
+#define CS_PROBE_BOUNDARY    (1 << 1) //   2: locations only on the border mesh
+#define CS_PROBE_ON_CURVE    (1 << 2) //   4: locations are on a curve
+#define CS_PROBE_AUTO_VAR    (1 << 3) //   8: automatic output of variables
+#define CS_PROBE_OVERWRITE   (1 << 4) //  16: allow re-creation of probe set
 
 /*=============================================================================
  * Local Structure Definitions
@@ -101,36 +100,46 @@ struct _cs_probe_set_t {
 
   char            *name;          /* Associated name */
 
-  cs_flag_t        flag;          /* Metadata related to a set of probes */
+  int32_t          flags;         /* Metadata related to a set of probes */
 
   char            *sel_criter;    /* Selection criterion to filter entities
                                      before the location step */
   double           tolerance;     /* Criterion to define a threshold during
                                      the location step. This is a relative
                                      criterion. */
-  cs_probe_mode_t  mode;          /* Indicate how the value of the probes are
-                                     computed */
+  cs_probe_snap_t  snap_mode;     /* Indicate how the positions of the
+                                     probes are computed */
 
   cs_lnum_t     n_max_probes;   /* Number of probes initially requested */
   cs_lnum_t     n_probes;       /* Number of probes really used */
   cs_lnum_t     n_loc_probes;   /* Number of probes located on this rank */
 
-  cs_real_t    *s_coords;       /* NULL or curvilinear abscissa for a profile */
-  cs_real_t    *coords;         /* Coordinates of the set of probes
+  cs_real_3_t  *coords;         /* Coordinates of the set of probes
                                    Initially allocated to n_max_probes. */
+  cs_real_t    *s_coords;       /* NULL or curvilinear coordinates
+                                   for a profile */
+
   char        **labels;         /* List of labels for each probe (optional)
                                    By default, this is set to NULL */
-  cs_lnum_t    *entity_num;     /* Ids related to the entity where the probe
-                                   has been located.
-                                   -1 if not found on this rank */
-  float        *distances;      /* Distance between the probe coordinates and
-                                   the entity if found */
 
-  fvm_nodal_t  *location_mesh;  /* Nodal mesh used for locating probes */
+  cs_probe_set_define_local_t  *p_define_func;   /* Advanced local definition
+                                                    function */
+  void                         *p_define_input;  /* Advanced local definition
+                                                    input */
+
+  int          *loc_id;         /* ids of probes located on local domain */
+
+  cs_lnum_t    *elt_id;         /* Element ids where the probes have been
+                                   located (size: n_loc_probes); -1 for
+                                   unlocated probes assigned to local domain*/
+  cs_lnum_t    *vtx_id;         /* Vertex ids closest to probes; -1 for
+                                   unlocated probes assigned to local domain*/
+
+  char         *located;        /* 1 for located probes, 0 for unlocated */
 
   /* User-defined writers associated to this set of probes */
 
-  int           n_writers;      /* Number of writers */
+  int           n_writers;      /* Number of writers (-1 if unset) */
   int          *writer_ids;     /* List of writer ids */
 
 };
@@ -139,15 +148,12 @@ struct _cs_probe_set_t {
 
 typedef enum {
 
-  PSETKEY_ACTIVATED,
+  PSETKEY_TRANSIENT_LOC,
   PSETKEY_BOUNDARY,
-  PSETKEY_MODE,
-  //PSETKEY_OUTPUT_DISTANCE, // TODO
-  PSETKEY_PROFILE,
+  PSETKEY_SNAP_MODE,
+  PSETKEY_AUTO_VAR,
   PSETKEY_SELECT_CRIT,
   PSETKEY_TOLERANCE,
-  PSETKEY_TRANSIENT_LOC,
-  //PSETKEY_USER_VAR, //TODO
   PSETKEY_ERROR
 
 } psetkey_t;
@@ -158,21 +164,15 @@ typedef enum {
 
 /* Each structure stores a set of probes with some metadata */
 static int  _n_probe_sets = 0;
-static cs_probe_set_t   *_probe_set_array = NULL;
+static cs_probe_set_t  **_probe_set_array = NULL;
 
-static const char _err_empty_pset[] =
-  N_(" Stop execution since the given cs_probe_set_t structure is empty.\n"
-     " Please check your settings.\n");
-static const char _err_truefalse_key[] =
-  N_(" Invalid value %s for setting key %s\n"
-     " Valid choices are true or false.\n"
-     " Please modify your setting.\n");
-
-static const char
-cs_probe_mode_name[CS_PROBE_N_MODES][CS_BASE_STRING_LEN]=
-  { N_("exact"),
-    N_("nearest cell center"),
-    N_("nearest vertex") };
+static const char _err_empty_pset[]
+  = N_(" Stop execution since the given cs_probe_set_t structure is empty.\n"
+       " Please check your settings.\n");
+static const char _err_truefalse_key[]
+  = N_(" Invalid value %s for setting key %s\n"
+       " Valid choices are true or false.\n"
+       " Please modify your setting.\n");
 
 /*============================================================================
  * Private function definitions
@@ -193,20 +193,16 @@ _print_psetkey(psetkey_t  key)
 {
   switch (key) {
 
-  case PSETKEY_ACTIVATED:
-    return "activated";
+  case PSETKEY_TRANSIENT_LOC:
+    return "transient_location";
+  case PSETKEY_SNAP_MODE:
+    return "snap_mode";
   case PSETKEY_BOUNDARY:
     return "boundary";
-  case PSETKEY_MODE:
-    return "mode";
-  case PSETKEY_PROFILE:
-    return "profile";
   case PSETKEY_SELECT_CRIT:
-    return "selection_criterion";
+    return "selection_criteria";
   case PSETKEY_TOLERANCE:
     return "tolerance";
-  case PSETKEY_TRANSIENT_LOC:
-    return "moving_probes";
   default:
     assert(0);
   }
@@ -230,20 +226,16 @@ _get_psetkey(const char  *keyname)
 {
   psetkey_t  key = PSETKEY_ERROR;
 
-  if (strcmp(keyname, "activation") == 0)
-    key = PSETKEY_ACTIVATED;
+  if (strcmp(keyname, "transient_location") == 0)
+    key = PSETKEY_TRANSIENT_LOC;
   else if (strcmp(keyname, "boundary") == 0)
     key = PSETKEY_BOUNDARY;
   else if (strcmp(keyname, "mode") == 0)
-    key = PSETKEY_MODE;
-  else if (strcmp(keyname, "profile") == 0)
-    key = PSETKEY_PROFILE;
-  else if (strcmp(keyname, "selection_criterion") == 0)
+    key = PSETKEY_SNAP_MODE;
+  else if (strcmp(keyname, "selection_criteria") == 0)
     key = PSETKEY_SELECT_CRIT;
   else if (strcmp(keyname, "tolerance") == 0)
     key = PSETKEY_TOLERANCE;
-  else if (strcmp(keyname, "moving_probes") == 0)
-    key = PSETKEY_TRANSIENT_LOC;
 
   return key;
 }
@@ -274,6 +266,41 @@ _copy_label(const char  *name)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Free a cs_probe_set_t structure
+ *
+ * \param[in, out]  pset          pointer to a cs_probe_set_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_probe_set_free(cs_probe_set_t   *pset)
+{
+  if (pset == NULL)
+    return;
+
+  BFT_FREE(pset->name);
+  BFT_FREE(pset->coords);
+  BFT_FREE(pset->sel_criter);
+  BFT_FREE(pset->loc_id);
+  BFT_FREE(pset->elt_id);
+  BFT_FREE(pset->vtx_id);
+  BFT_FREE(pset->located);
+
+  if (pset->labels != NULL) {
+    for (int i = 0; i < pset->n_probes; i++)
+      BFT_FREE(pset->labels[i]);
+    BFT_FREE(pset->labels);
+  }
+
+  if (pset->s_coords != NULL)
+    BFT_FREE(pset->s_coords);
+
+  if (pset->n_writers > 0)
+    BFT_FREE(pset->writer_ids);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate and initialize by default a new set of probes
  *
  * \param[in]  name          name of the probe set
@@ -287,76 +314,62 @@ static cs_probe_set_t *
 _probe_set_create(const char    *name,
                   cs_lnum_t      n_max_probes)
 {
+  cs_probe_set_t *pset = cs_probe_set_get(name);
+
+  /* Already defined */
+
+  if (pset != NULL) {
+    if (pset->flags & CS_PROBE_OVERWRITE)
+      _probe_set_free(pset);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Error adding a new set of probes.\n"
+                  " %s is already used as a name for a set of probes.\n"
+                  " Please check your settings."), name);
+  }
+
   /* Add a new set of probes */
-  int  pset_id = _n_probe_sets;
 
-  _n_probe_sets++;
-  BFT_REALLOC(_probe_set_array, _n_probe_sets, cs_probe_set_t);
+  else {
+    int pset_id = _n_probe_sets;
 
-  cs_probe_set_t  *pset = _probe_set_array + pset_id;
+    _n_probe_sets++;
+    BFT_REALLOC(_probe_set_array, _n_probe_sets, cs_probe_set_t *);
+    BFT_MALLOC(pset, 1, cs_probe_set_t);
+    _probe_set_array[pset_id] = pset;
+  }
 
   /* Copy name */
   int  len = strlen(name) + 1;
   BFT_MALLOC(pset->name, len, char);
   strncpy(pset->name, name, len);
 
-  pset->flag = CS_PROBE_ACTIVATED;
-  pset->mode = CS_PROBE_MODE_NEAREST_CELL_CENTER;
+  pset->flags = 0;
   pset->tolerance = 0.1;
   pset->sel_criter = NULL;
+
+  pset->snap_mode = CS_PROBE_SNAP_NONE;
 
   pset->n_max_probes = n_max_probes;
   pset->n_probes = 0;
   pset->n_loc_probes = 0;
 
-  BFT_MALLOC(pset->coords, 3*n_max_probes, cs_real_t);
-
-  pset->labels = NULL;
+  BFT_MALLOC(pset->coords, n_max_probes, cs_real_3_t);
   pset->s_coords = NULL;
-  pset->entity_num = NULL;
-  pset->distances = NULL;
+  pset->labels = NULL;
 
-  pset->location_mesh = NULL;
+  pset->p_define_func = NULL;
+  pset->p_define_input = NULL;
 
-  pset->n_writers = 0;
+  pset->loc_id = NULL;
+  pset->elt_id = NULL;
+  pset->vtx_id = NULL;
+  pset->located = NULL;
+
+  pset->n_writers = -1;
   pset->writer_ids = NULL;
 
   return pset;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a cs_probe_set_t structure
- *
- * \param[in, out]  pset          pointer to a cs_probe_set_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_free_probe_set(cs_probe_set_t   *pset)
-{
-  if (pset == NULL)
-    return;
-
-  BFT_FREE(pset->name);
-  BFT_FREE(pset->coords);
-  BFT_FREE(pset->sel_criter);
-  BFT_FREE(pset->entity_num);
-  BFT_FREE(pset->distances);
-
-  if (pset->labels != NULL) {
-    for (int i = 0; i < pset->n_probes; i++)
-      BFT_FREE(pset->labels[i]);
-    BFT_FREE(pset->labels);
-  }
-
-  if (pset->s_coords != NULL)
-    BFT_FREE(pset->s_coords);
-
-  pset->location_mesh = fvm_nodal_destroy(pset->location_mesh);
-
-  if (pset->n_writers > 0)
-    BFT_FREE(pset->writer_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -398,7 +411,26 @@ _check_probe_set_name(const cs_probe_set_t   *pset,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the number of probe sets defined
+ * \brief  Free all structures related to a set of probes.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_finalize(void)
+{
+  for (int i = 0; i < _n_probe_sets; i++) {
+    cs_probe_set_t *pset = _probe_set_array[i];
+    _probe_set_free(pset);
+    BFT_FREE(pset);
+  }
+
+  _n_probe_sets = 0;
+  BFT_FREE(_probe_set_array);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the number of probe sets defined.
  *
  * \return the number of probe sets defined
  */
@@ -412,7 +444,7 @@ cs_probe_get_n_sets(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve a cs_probe_set_t structure
+ * \brief  Retrieve a cs_probe_set_t structure.
  *
  * \param[in]   name        name of the set of probes to find
  *
@@ -431,8 +463,8 @@ cs_probe_set_get(const char  *name)
 
   /* Check if the given name is already used */
   for (int pset_id = 0; pset_id < _n_probe_sets; pset_id++) {
-    if (_check_probe_set_name(_probe_set_array + pset_id, name)) {
-      pset = _probe_set_array + pset_id;
+    if (_check_probe_set_name(_probe_set_array[pset_id], name)) {
+      pset = _probe_set_array[pset_id];
       break;
     }
   }
@@ -442,7 +474,7 @@ cs_probe_set_get(const char  *name)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve a cs_probe_set_t structure from its id
+ * \brief  Retrieve a cs_probe_set_t structure from its id.
  *
  * \param[in]   pset_id       id related to the set of probes to find
  *
@@ -457,12 +489,12 @@ cs_probe_set_get_by_id(int   pset_id)
   if (pset_id < 0 || pset_id >= _n_probe_sets)
     return  NULL;
 
-  return _probe_set_array + pset_id;
+  return _probe_set_array[pset_id];
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the name related to a cs_probe_set_t structure
+ * \brief  Retrieve the name related to a cs_probe_set_t structure.
  *
  * \param[in]   pset       pointer to a cs_probe_set_t structure
  *
@@ -481,67 +513,73 @@ cs_probe_set_get_name(cs_probe_set_t   *pset)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve information useful for the postprocessing step
+ * \brief  Retrieve information useful for the postprocessing step.
  *
- * \param[in]  pset          pointer to a cs_probe_set_t structure
- * \param[out] time_varying  true if probe coords may change during computation
- * \param[out] is_profile    true if probe set is related to a profile
- * \param[out] on_boundary   true if probes are located on boundary
- * \param[out] is_automatic  true if set of variables to output is predefined
- * \param[out] n_writers     number of associated  user-defined writers
- * \param[out] writer_ids    pointer to a list of writer ids
+ * Output arguments may be set to NULL if we do not need to query them.
+ *
+ * \param[in]  pset            pointer to a cs_probe_set_t structure
+ * \param[out] time_varying    true if probe locations may change with time
+ * \param[out] on_boundary     true if probes are located on boundary
+ * \param[out] on_curve        true if the probe set has cuvilinear coordinates
+ * \param[out] auto_variables  true if set of variables to output is predefined
+ * \param[out] n_writers       number of associated  user-defined writers,
+ *                             or -1 if default unchanged
+ * \param[out] writer_ids      pointer to a list of writer ids
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_probe_set_get_post_info(const cs_probe_set_t   *pset,
                            bool                   *time_varying,
-                           bool                   *is_profile,
                            bool                   *on_boundary,
-                           bool                   *is_automatic,
+                           bool                   *on_curve,
+                           bool                   *auto_variables,
                            int                    *n_writers,
                            int                    *writer_ids[])
 {
   if (pset == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_pset);
 
-  *time_varying = (pset->flag & CS_PROBE_TRANSIENT) ? true : false;
-  *is_automatic = (pset->flag & CS_PROBE_USER_VAR) ? false : true;
-  *is_profile = (pset->flag & CS_PROBE_PROFILE) ? true : false;
-  *on_boundary = (pset->flag & CS_PROBE_BOUNDARY) ? true : false;
+  if (time_varying != NULL)
+    *time_varying = (pset->flags & CS_PROBE_TRANSIENT) ? true : false;
+  if (auto_variables != NULL)
+    *auto_variables = (pset->flags & CS_PROBE_AUTO_VAR) ? true: false;
+  if (on_curve != NULL)
+    *on_curve = (pset->flags & CS_PROBE_ON_CURVE) ? true : false;
+  if (on_boundary != NULL)
+    *on_boundary = (pset->flags & CS_PROBE_BOUNDARY) ? true : false;
 
-  *n_writers = pset->n_writers;
-  *writer_ids = pset->writer_ids;
+  if (n_writers != NULL)
+    *n_writers = pset->n_writers;
+  if (writer_ids != NULL)
+    *writer_ids = pset->writer_ids;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if a set of monitoring probes has been defined among all the
- *         probe sets
+ * \brief  Return the location filter selection criteria string for a
+ *         given probe set
  *
- * \return true or false
+ * \param[in]   pset       pointer to a cs_probe_set_t structure
+ *
+ * \return selection criteria string, or NULL if no filter defined
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_probe_set_have_monitoring(void)
+const char *
+cs_probe_set_get_location_criteria(cs_probe_set_t   *pset)
 {
-  bool  have_monitoring = false;
+  if (pset == NULL)
+    return  NULL;
 
-  for (int i = 0; i < _n_probe_sets; i++) {
-    cs_probe_set_t  *pset = _probe_set_array + i;
-    if (!(pset->flag & CS_PROBE_PROFILE))
-      have_monitoring = true;
-  }
-
-  return have_monitoring;
+  return pset->sel_criter;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new set of probes
+ * \brief  Create a new set of probes.
  *
- * \param[in]   name        name of the set of probes
+ * \param[in]   name   name of the set of probes
  *
  * \return a pointer to a new allocated cs_probe_set_t structure
  */
@@ -550,36 +588,32 @@ cs_probe_set_have_monitoring(void)
 cs_probe_set_t *
 cs_probe_set_create(const char  *name)
 {
-  cs_probe_set_t *pset = cs_probe_set_get(name);
-
-  if (pset != NULL) /* Already defined */
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Error adding a new set of probes.\n"
-                " %s is already used as a name for a set of probes.\n"
-                " Please check your settings."), name);
-
   /* Default initialization of a set of probes (max number is set to 4 by
-     default but a realloc is available is the max. number of probes is
+     default but a realloc is available if the max. number of probes is
      reached) */
 
-  pset = _probe_set_create(name, 4);
+  cs_probe_set_t *pset = _probe_set_create(name, 4);
 
   return  pset;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new probe to an existing set of probes
+ * \brief  Add a new probe to an existing set of probes.
  *
  * \param[in, out]  pset    set of probes
- * \param[in]       xyz     coordinates of the point to add
+ * \param[in]       x       x coordinate  of the point to add
+ * \param[in]       y       y coordinate  of the point to add
+ * \param[in]       z       z coordinate  of the point to add
  * \param[in]       label   NULL or the name of the point (optional)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_probe_set_add_probe(cs_probe_set_t     *pset,
-                       const cs_real_t    *xyz,
+                       cs_real_t           x,
+                       cs_real_t           y,
+                       cs_real_t           z,
                        const char         *label)
 {
   if (pset == NULL)
@@ -591,15 +625,15 @@ cs_probe_set_add_probe(cs_probe_set_t     *pset,
 
   if (point_id >= pset->n_max_probes) { /* Reallocate arrays */
     pset->n_max_probes *= 2;
-    BFT_REALLOC(pset->coords, 3*pset->n_max_probes, cs_real_t);
+    BFT_REALLOC(pset->coords, pset->n_max_probes, cs_real_3_t);
     if (pset->labels != NULL)
       BFT_REALLOC(pset->labels, pset->n_max_probes, char *);
   }
 
   /* Set coordinates */
-  pset->coords[3*point_id]     = xyz[0];
-  pset->coords[3*point_id + 1] = xyz[1];
-  pset->coords[3*point_id + 2] = xyz[2];
+  pset->coords[point_id][0] = x;
+  pset->coords[point_id][1] = y;
+  pset->coords[point_id][2] = z;
 
   if (label != NULL) { /* Manage the label */
     if (pset->labels == NULL)
@@ -612,7 +646,7 @@ cs_probe_set_add_probe(cs_probe_set_t     *pset,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a new set of probes from an array of coordinates
+ * \brief  Define a new set of probes from an array of coordinates.
  *
  * \param[in]   name      name of the set of probes
  * \param[in]   n_probes  number of probes in coords and labels
@@ -624,45 +658,35 @@ cs_probe_set_add_probe(cs_probe_set_t     *pset,
 /*----------------------------------------------------------------------------*/
 
 cs_probe_set_t *
-cs_probe_set_create_from_array(const char         *name,
-                               int                 n_probes,
-                               const cs_real_t    *coords,
-                               const char        **labels)
+cs_probe_set_create_from_array(const char          *name,
+                               int                  n_probes,
+                               const cs_real_3_t   *coords,
+                               const char         **labels)
 {
-  cs_probe_set_t  *pset = cs_probe_set_get(name);
+  cs_probe_set_t  *pset = _probe_set_create(name, n_probes);
 
-  if (pset != NULL) /* Already defined */
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Stop adding a new set of probes.\n"
-                " %s is already used as a name for a set of probes.\n"
-                " Please check your settings."), name);
-
-  pset = _probe_set_create(name, n_probes);
   pset->n_probes = n_probes;
 
   /* Coordinates */
   for (int i = 0; i < n_probes; i++) {
-    const cs_lnum_t shift = 3*i;
-    pset->coords[shift  ] = coords[shift];
-    pset->coords[shift+1] = coords[shift+1];
-    pset->coords[shift+2] = coords[shift+2];
+    pset->coords[i][0] = coords[i][0];
+    pset->coords[i][1] = coords[i][1];
+    pset->coords[i][2] = coords[i][2];
   }
 
   /* Copy labels */
   if (labels != NULL) {
-
     BFT_MALLOC(pset->labels, n_probes, char *);
     for (int i = 0; i < n_probes; i++)
       pset->labels[i] = _copy_label(labels[i]);
-
-  } // labels != NULL
+  }
 
   return  pset;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a new set of probes from the segment spanned by two points
+ * \brief Define a new set of probes from the segment spanned by two points.
  *
  * \param[in]  name          name of the set of probes
  * \param[in]  n_probes      number of probes
@@ -679,17 +703,10 @@ cs_probe_set_create_from_segment(const char        *name,
                                  const cs_real_t    start_coords[3],
                                  const cs_real_t    end_coords[3])
 {
-  cs_probe_set_t  *pset = cs_probe_set_get(name);
+  cs_probe_set_t  *pset = _probe_set_create(name, n_probes);
 
-  if (pset != NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Stop adding a new set of probes.\n"
-                " %s is already used as a name for a set of probes.\n"
-                " Please check your settings."), name);
-
-  pset = _probe_set_create(name, n_probes);
   pset->n_probes = n_probes;
-  pset->flag |= CS_PROBE_PROFILE;
+  pset->flags |= CS_PROBE_ON_CURVE;
 
   BFT_MALLOC(pset->s_coords, n_probes, cs_real_t);
 
@@ -707,28 +724,82 @@ cs_probe_set_create_from_segment(const char        *name,
   /* Set the starting probe */
   pset->s_coords[0] = 0;
   for (int k = 0; k < 3; k++)
-    pset->coords[k] = start_coords[k];
+    pset->coords[0][k] = start_coords[k];
 
   /* Set additional probes */
   for (int i = 1; i < n_probes - 1; i++) {
 
     pset->s_coords[i] = pset->s_coords[i-1] + delta;
     for (int k = 0; k < 3; k++)
-      pset->coords[3*i+k] = pset->coords[3*(i-1)+k] + delta_vect[k];
+      pset->coords[i][k] = pset->coords[i-1][k] + delta_vect[k];
 
   }
 
   /* Set the ending probe */
   pset->s_coords[n_probes-1] = distance;
   for (int k = 0; k < 3; k++)
-    pset->coords[3*(n_probes-1)+k] = end_coords[k];
+    pset->coords[n_probes-1][k] = end_coords[k];
 
   return  pset;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate a list of writers to a probe set
+ * \brief Define a new set of probes from rank-local definition function.
+ *
+ * The local definition function given by the \ref p_define_func pointer
+ * is called just before location probes on the parent mesh, so this allows
+ * building probe sets based on subsets of the computational mesh.
+ *
+ * Note: if the p_define_input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * \param[in]  name           name of the set of probes
+ * \param[in]  p_define_func  function used for local definition
+ * \param[in]  p_define_input optional input for local definition function
+ *
+ * \return a pointer to a new allocated cs_probe_set_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_probe_set_t *
+cs_probe_set_create_from_local(const char                   *name,
+                               cs_probe_set_define_local_t  *p_define_func,
+                               void                         *p_define_input)
+{
+  cs_probe_set_t  *pset = _probe_set_create(name, 0);
+
+  pset->flags |= CS_PROBE_ON_CURVE;
+
+  pset->p_define_func = p_define_func;
+  pset->p_define_input = p_define_input;
+
+  return  pset;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  allow overwriting the definition of a given probe set.
+ *
+ * If no a probe set of the given name exists, the operation is ignored.
+ *
+ * \param[in]  name  name of the probe set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_allow_overwrite(const char  *name)
+{
+  cs_probe_set_t *pset = cs_probe_set_get(name);
+
+  if (pset != NULL)
+    pset->flags = pset->flags | CS_PROBE_OVERWRITE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a list of writers to a probe set.
  *
  * \param[in, out] pset        pointer to a cs_probe_set_t structure to set
  * \param[in]      n_writers   number of writers assocuated to this probe set
@@ -744,6 +815,9 @@ cs_probe_set_associate_writers(cs_probe_set_t   *pset,
   if (pset == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pset));
 
+  if (pset->n_writers < 0)
+    pset->n_writers = 0;
+
   int  n_init_writers = pset->n_writers;
   pset->n_writers += n_writers;
   BFT_REALLOC(pset->writer_ids, pset->n_writers, int);
@@ -754,18 +828,40 @@ cs_probe_set_associate_writers(cs_probe_set_t   *pset,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set snap mode related to the management of a set of probes.
+ *
+ * \param[in, out] pset        pointer to a cs_probe_set_t structure
+ * \param[in]      snap_mode   snap mode to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_snap_mode(cs_probe_set_t   *pset,
+                       cs_probe_snap_t   snap_mode)
+{
+  if (pset == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pset));
+
+  pset->snap_mode = snap_mode;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set optional parameters related to the management of a set of probes
  *
- * Available option key names are the following:
+ * Available option key names accepting \c true or \c false:
  *
- * \li \c \b activated where keyval is either \c true or \c false (default)
- * \li \c \b boundary  where keyval is either \c true or \c false (default)
- * \li \c \b mode      where keyval is \c exact, \c nearest_vertex or
- *                   \c nearest_center (default)
- * \li \c \b profile   where keyval is either \c true or \c false
- * \li \c \b selection_criteria where keyval is selection criteria string
- * \li \c \b tolerance  where keyval is for instance "0.05" (default "0.10")
- * \li \c \b moving_probes  where keyval is either \c true or \c false (default)
+ * - \c \b transient_location if \c true, relocate probes relative to
+ *         deforming or moving mesh (default: \c false)
+ * - \c \b boundary  if \ c true, locate on boundary mesh; if \c false,
+ *         locate on volume mesh (default)
+ * - \c \b auto_variables if \c true (default), automatic outut of main
+ *         variables
+ *
+ * Other options:
+ *
+ * - \c \b selection_criteria where keyval is selection criteria string
+ * - \c \b tolerance  where keyval is for instance "0.05" (default "0.10")
  *
  * \param[in, out] pset     pointer to a cs_probe_set_t structure to set
  * \param[in]      keyname  name of the keyword related to the parameter to set
@@ -796,7 +892,7 @@ cs_probe_set_option(cs_probe_set_t   *pset,
       }
     }
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting the set of probes %s.\n"
+              _(" Invalid key for probe options %s.\n"
                 " Please read listing for more details and"
                 " modify your settings."), pset->name);
 
@@ -804,12 +900,12 @@ cs_probe_set_option(cs_probe_set_t   *pset,
 
   switch(key) {
 
-  case PSETKEY_ACTIVATED:
+  case PSETKEY_AUTO_VAR:
     if (strcmp(keyval, "true") == 0)
-      pset->flag |= CS_PROBE_ACTIVATED;
-    else if (strcmp(keyval, "false") == 0) { // remove the flag if it is set
-      if (pset->flag & CS_PROBE_ACTIVATED)
-        pset->flag ^= CS_PROBE_ACTIVATED;
+      pset->flags |= CS_PROBE_AUTO_VAR;
+    else if (strcmp(keyval, "false") == 0) { // remove the flags if it is set
+      if (pset->flags & CS_PROBE_AUTO_VAR)
+        pset->flags ^= CS_PROBE_AUTO_VAR;
     }
     else
       bft_error(__FILE__, __LINE__, 0, _err_truefalse_key, keyval, keyname);
@@ -817,39 +913,28 @@ cs_probe_set_option(cs_probe_set_t   *pset,
 
   case PSETKEY_BOUNDARY:
     if (strcmp(keyval, "true") == 0)
-      pset->flag |= CS_PROBE_BOUNDARY;
-    else if (strcmp(keyval, "false") == 0) { // remove the flag if it is set
-      if (pset->flag & CS_PROBE_BOUNDARY)
-        pset->flag ^= CS_PROBE_BOUNDARY;
+      pset->flags |= CS_PROBE_BOUNDARY;
+    else if (strcmp(keyval, "false") == 0) { // remove the flags if it is set
+      if (pset->flags & CS_PROBE_BOUNDARY)
+        pset->flags ^= CS_PROBE_BOUNDARY;
     }
     else
       bft_error(__FILE__, __LINE__, 0, _err_truefalse_key, keyval, keyname);
     break;
 
-  case PSETKEY_MODE:
-    if (strcmp(keyval, "exact") == 0)
-      pset->mode = CS_PROBE_MODE_EXACT;
-    else if (strcmp(keyval, "nearest_cell_center") == 0)
-      pset->mode = CS_PROBE_MODE_NEAREST_CELL_CENTER;
-    else if (strcmp(keyval, "nearest_vertex") == 0)
-      pset->mode = CS_PROBE_MODE_NEAREST_VERTEX;
+  case PSETKEY_SNAP_MODE:
+    if (strcmp(keyval, "none") == 0)
+      pset->snap_mode = CS_PROBE_SNAP_NONE;
+    else if (strcmp(keyval, "element_center") == 0)
+      pset->snap_mode = CS_PROBE_SNAP_ELT_CENTER;
+    else if (strcmp(keyval, "vertex") == 0)
+      pset->snap_mode = CS_PROBE_SNAP_VERTEX;
     else
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid value %s for setting key %s.\n"
                   " Valid choices are exact, nearest_center or"
                   " nearest_vertex\n"
                   " Please check your settings."), keyval, keyname);
-    break;
-
-  case PSETKEY_PROFILE:
-    if (strcmp(keyval, "true") == 0)
-      pset->flag |= CS_PROBE_PROFILE;
-    else if (strcmp(keyval, "false") == 0) { // remove the flag if it is set
-      if (pset->flag & CS_PROBE_PROFILE)
-        pset->flag ^= CS_PROBE_PROFILE;
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0, _err_truefalse_key, keyval, keyname);
     break;
 
   case PSETKEY_SELECT_CRIT:
@@ -862,10 +947,10 @@ cs_probe_set_option(cs_probe_set_t   *pset,
 
   case PSETKEY_TRANSIENT_LOC:
     if (strcmp(keyval, "true") == 0)
-      pset->flag |= CS_PROBE_TRANSIENT;
+      pset->flags |= CS_PROBE_TRANSIENT;
     else if (strcmp(keyval, "false") == 0) { // remove the flag if it is set
-      if (pset->flag & CS_PROBE_TRANSIENT)
-        pset->flag ^= CS_PROBE_TRANSIENT;
+      if (pset->flags & CS_PROBE_TRANSIENT)
+        pset->flags ^= CS_PROBE_TRANSIENT;
     }
     else
       bft_error(__FILE__, __LINE__, 0, _err_truefalse_key, keyval, keyname);
@@ -886,112 +971,141 @@ cs_probe_set_option(cs_probe_set_t   *pset,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Try to locate each probe and define the coordinate really use for
- *         the postprocessing step
+ * \brief  Try to locate each probe and define the coordinate really used for
+ *         the postprocessing step.
  *
- * \param[in, out]  pset    pointer to a cs_probe_set_t structure
+ * For better performance when using multiple probe sets, a pointer to
+ * an existing location mesh may be passed to this function. The caller is
+ * responsible for ensuring this mesh matches selection criteria for the
+ * probe set.
+ *
+ * \param[in, out]  pset           pointer to a cs_probe_set_t structure
+ * \param[in]       location_mesh  optional pointer to mesh relative to which
+ *                                 probe set should be located, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_probe_set_locate(cs_probe_set_t   *pset)
+cs_probe_set_locate(cs_probe_set_t     *pset,
+                    const fvm_nodal_t  *location_mesh)
 {
   if (pset == NULL)
     return;
 
+  bool first_location = false;
   const double  tolerance_base = 0.;
   const cs_mesh_t  *mesh = cs_glob_mesh;
+  fvm_nodal_t *_location_mesh = NULL;
 
-  cs_lnum_t  n_select_elements = 0;
-  cs_lnum_t  *selected_elements = NULL;
+  const bool  on_boundary = (pset->flags & CS_PROBE_BOUNDARY) ? true : false;
 
-  const bool  on_boundary = (pset->flag & CS_PROBE_BOUNDARY) ? true : false;
+  /* Allocate on first pass */
 
-  /* Temporary name for the location mesh */
-  char  *tmp_name = NULL;
-
-  BFT_MALLOC(tmp_name, strlen(pset->name) + strlen("_tmp") + 1, char);
-  sprintf(tmp_name, "%s_tmp", pset->name);
-
-  if (on_boundary) { /* Deal with the surfacic mesh related to the boundary */
-
-    n_select_elements = mesh->n_b_faces;
-    if (pset->sel_criter != NULL) {
-      if (strcmp(pset->sel_criter, "all[]")) {
-        BFT_MALLOC(selected_elements, mesh->n_b_faces, cs_lnum_t);
-        cs_selector_get_b_face_num_list(pset->sel_criter,
-                                        &n_select_elements, selected_elements);
-      }
-    } /* Need to define a list of faces ? */
-
-    pset->location_mesh = cs_mesh_connect_faces_to_nodal(mesh,
-                                                         tmp_name,
-                                                         false, // no family info
-                                                         0,     // interior faces
-                                                         n_select_elements,
-                                                         NULL,  // interior faces
-                                                         selected_elements);
-
+  if (pset->located == NULL) {
+    BFT_MALLOC(pset->located, pset->n_probes, char);
+    first_location = true;
   }
-  else { /* Deal with the volumic mesh */
 
-    n_select_elements = mesh->n_cells;
-    if (pset->sel_criter != NULL) {
-      if (strcmp(pset->sel_criter, "all[]")) {
-        BFT_MALLOC(selected_elements, mesh->n_cells, cs_lnum_t);
-        cs_selector_get_cell_num_list(pset->sel_criter,
-                                      &n_select_elements, selected_elements);
-      }
-    } /* Need to define a list of cells ? */
+  /* Realocate on all passes, in case local sizes change */
 
-    pset->location_mesh = cs_mesh_connect_cells_to_nodal(mesh,
-                                                         tmp_name,
-                                                         false, // no family info
-                                                         n_select_elements,
-                                                         selected_elements);
+  BFT_REALLOC(pset->loc_id, pset->n_probes, int);
+  BFT_REALLOC(pset->elt_id, pset->n_probes, cs_lnum_t);
+  BFT_FREE(pset->vtx_id);
 
-  } /* volumic or surfacic mesh */
+  if (location_mesh == NULL) {
+
+    cs_lnum_t  n_select_elements = 0;
+    cs_lnum_t  *selected_elements = NULL;
+
+    if (on_boundary) { /* Deal with the surface mesh related to the boundary */
+
+      n_select_elements = mesh->n_b_faces;
+      if (pset->sel_criter != NULL) {
+        if (strcmp(pset->sel_criter, "all[]")) {
+          BFT_MALLOC(selected_elements, mesh->n_b_faces, cs_lnum_t);
+          cs_selector_get_b_face_num_list(pset->sel_criter,
+                                          &n_select_elements, selected_elements);
+        }
+      } /* Need to define a list of faces ? */
+
+      _location_mesh = cs_mesh_connect_faces_to_nodal(mesh,
+                                                      "probe_location_mesh",
+                                                      false, // no family info
+                                                      0,     // interior faces
+                                                      n_select_elements,
+                                                      NULL,  // interior faces
+                                                      selected_elements);
+
+    }
+    else { /* Deal with the volumic mesh */
+
+      n_select_elements = mesh->n_cells;
+      if (pset->sel_criter != NULL) {
+        if (strcmp(pset->sel_criter, "all[]")) {
+          BFT_MALLOC(selected_elements, mesh->n_cells, cs_lnum_t);
+          cs_selector_get_cell_num_list(pset->sel_criter,
+                                        &n_select_elements, selected_elements);
+        }
+      } /* Need to define a list of cells ? */
+
+      _location_mesh = cs_mesh_connect_cells_to_nodal(mesh,
+                                                      "probe_location_mesh",
+                                                      false, // no family info
+                                                      n_select_elements,
+                                                      selected_elements);
+
+    } /* volumic or surfacic mesh */
+
+    if (selected_elements != NULL)
+      BFT_FREE(selected_elements);
+
+    location_mesh = _location_mesh;
+  }
 
   /* Locate probes on this location mesh */
-  BFT_MALLOC(pset->entity_num, pset->n_probes, cs_lnum_t);
-  BFT_MALLOC(pset->distances, pset->n_probes, float);
+
+  float *distance;
+
+  BFT_MALLOC(distance, pset->n_probes, float);
 
   for (int i = 0; i < pset->n_probes; i++) {
-    pset->entity_num[i] = -1;
-    pset->distances[i] = -1.0;
+    pset->elt_id[i] = -1;
+    distance[i] = -1.0;
   }
 
-  int  locate_on_parents = 1; // true by default
-  if (pset->mode == CS_PROBE_MODE_NEAREST_VERTEX)
-    /* One needs a second step which is easier if parent_num is not used */
-    locate_on_parents = 0;
-
-  fvm_point_location_nodal(pset->location_mesh,
+  fvm_point_location_nodal(location_mesh,
                            tolerance_base,
                            pset->tolerance,
-                           locate_on_parents,
+                           0, /* locate_on_parents */
                            pset->n_probes,
-                           NULL,             // point_tag (not useful here)
-                           pset->coords,
-                           pset->entity_num,
-                           pset->distances);
+                           NULL, /* point_tag */
+                           (const cs_coord_t *)(pset->coords),
+                           pset->elt_id,
+                           distance);
 
-  for (int i = 0; i < pset->n_probes; i++)
-    if (pset->entity_num[i] < 0) // Not found
-      pset->distances[i] = HUGE_VAL;
-
-  /* Free memory */
-  BFT_FREE(tmp_name);
-  if (selected_elements != NULL)
-    BFT_FREE(selected_elements);
+  for (int i = 0; i < pset->n_probes; i++) {
+    if (pset->elt_id[i] < 0) /* Not found */
+      distance[i] = HUGE_VAL;
+  }
 
   /* Warning if points have not beeen located */
   cs_gnum_t  n_unlocated_probes = 0;
 
+  int n_loc_probes = 0;
+
   if (cs_glob_n_ranks == 1) {
-    for (int i = 0; i < pset->n_probes; i++)
-      if (pset->distances[i] > 0.99*HUGE_VAL)
+    for (int i = 0; i < pset->n_probes; i++) {
+      if (distance[i] >= 0.5*HUGE_VAL) {
+        pset->located[i] = 0;
         n_unlocated_probes++;
+      }
+      else {
+        pset->loc_id[n_loc_probes] = i;
+        pset->elt_id[n_loc_probes] = pset->elt_id[i];
+        pset->located[i] = 1;
+        n_loc_probes += 1;
+      }
+    }
   }
 
 #if defined(HAVE_MPI)
@@ -1004,17 +1118,25 @@ cs_probe_set_locate(cs_probe_set_t   *pset)
 
     for (int i = 0; i < pset->n_probes; i++) {
       gmin_loc[i].id = loc[i].id = cs_glob_rank_id;
-      gmin_loc[i].val = loc[i].val = pset->distances[i];
+      gmin_loc[i].val = loc[i].val = distance[i];
     }
 
     MPI_Allreduce(loc, gmin_loc, pset->n_probes, MPI_DOUBLE_INT, MPI_MINLOC,
                   cs_glob_mpi_comm);
 
     for (int i = 0; i < pset->n_probes; i++) {
-      if (gmin_loc[i].id != cs_glob_rank_id)
-        pset->entity_num[i] = -1;
-      if (gmin_loc[i].val > 0.99*HUGE_VAL)
+      if (gmin_loc[i].val >= 0.5*HUGE_VAL) {
+        pset->located[i] = 0;
         n_unlocated_probes++;
+      }
+      else {
+        pset->located[i] = 1;
+        if (gmin_loc[i].id == cs_glob_rank_id) {
+          pset->loc_id[n_loc_probes] = i;
+          pset->elt_id[n_loc_probes] = pset->elt_id[i];
+          n_loc_probes += 1;
+        }
+      }
     }
 
     BFT_FREE(gmin_loc);
@@ -1022,18 +1144,98 @@ cs_probe_set_locate(cs_probe_set_t   *pset)
   }
 #endif
 
-  if (n_unlocated_probes > 0) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("\nWarning: probe set \"%s\"\n"
-                 "         %lu probes have not been located"
-                 "         on the associated mesh."),
+  BFT_FREE(distance);
+
+  if (n_unlocated_probes > 0 && first_location) {
+    bft_printf(_("\n Warning: probe set \"%s\"\n"
+                 "          %lu probes have not been located"
+                 " on the associated mesh.\n"),
                pset->name, (unsigned long)n_unlocated_probes);
   }
+
+  pset->n_loc_probes = n_loc_probes;
+
+  if (n_unlocated_probes) {
+
+    /* For a transient mesh, non-located probes may vary, so we need to maintain
+       them in the structure to avoid having a varying number of columns in a
+       plot. We add those locations to the last rank */
+
+    if (pset->flags & CS_PROBE_TRANSIENT) {
+      if (cs_glob_rank_id == cs_glob_n_ranks - 1 || cs_glob_n_ranks == 1)
+        pset->n_loc_probes += n_unlocated_probes;
+    }
+
+    /* For a fixed mesh, if we do not have labels, we add labels based on the
+       probe global ids so as to maintain probe ids in the output metadata. */
+
+    else if (   pset->labels == NULL
+             && (pset->flags & CS_PROBE_ON_CURVE) == false) {
+      BFT_MALLOC(pset->labels, pset->n_probes, char *);
+      char label[16];
+      for (int i = 0; i < pset->n_probes; i++) {
+        snprintf(label, 15, "%d", i+1); label[15] = '\0';
+        pset->labels[i] = _copy_label(label);
+      }
+    }
+
+  }
+
+  BFT_REALLOC(pset->loc_id, pset->n_loc_probes, cs_lnum_t);
+  BFT_REALLOC(pset->elt_id, pset->n_loc_probes, cs_lnum_t);
+  BFT_MALLOC(pset->vtx_id, pset->n_loc_probes, cs_lnum_t);
+
+  /* Now also locate relative to closest vertices and update
+     element num relative to parents */
+
+  cs_coord_3_t  *probe_coords = NULL;
+  BFT_MALLOC(probe_coords, pset->n_loc_probes, cs_coord_3_t);
+  for (int i = 0; i < n_loc_probes; i++) {
+    int j = pset->loc_id[i];
+    for (int k = 0; k < 3; k++)
+      probe_coords[i][k] = pset->coords[j][k];
+  }
+
+  fvm_point_location_closest_vertex(location_mesh,
+                                    1, /* locate on parents */
+                                    n_loc_probes,
+                                    (const cs_coord_t *)(probe_coords),
+                                    pset->elt_id,
+                                    pset->vtx_id);
+
+  BFT_FREE(probe_coords);
+
+  /* Now switch to 0-based location */
+
+  for (int i = 0; i < n_loc_probes; i++) {
+    if (pset->elt_id[i] > -1) {
+      pset->elt_id[i] -= 1;
+      pset->vtx_id[i] -= 1;
+    }
+  }
+
+  if (_location_mesh != NULL)
+    _location_mesh = fvm_nodal_destroy(_location_mesh);
+
+  /* Finally, effectively add non-located probe info when required */
+
+  if (pset->n_loc_probes > n_loc_probes) {
+    for (int i = 0; i < pset->n_probes; i++) {
+      if (pset->located[i] == 0) {
+        pset->loc_id[n_loc_probes] = i;
+        pset->elt_id[n_loc_probes] = -1;
+        pset->vtx_id[n_loc_probes] = -1;
+        n_loc_probes++;
+      }
+    }
+  }
+
+  assert(n_loc_probes == pset->n_loc_probes);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a fvm_nodal_t structure from the set of probes
+ * \brief  Define a fvm_nodal_t structure from the set of probes.
  *
  * \param[in, out]  pset        pointer to a cs_probe_set_t structure
  * \param[in]       mesh_name   name of the mesh to export
@@ -1049,119 +1251,68 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
   if (pset == NULL)
     return  NULL;
 
-  int  n_exp_probes = 0;
   cs_gnum_t  *global_num = NULL;
   cs_coord_3_t  *probe_coords = NULL;
   fvm_nodal_t  *exp_mesh = fvm_nodal_create(mesh_name, 3);
 
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *quant = cs_glob_mesh_quantities;
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
 
-  BFT_MALLOC(probe_coords, pset->n_probes, cs_coord_3_t);
-  BFT_MALLOC(global_num, pset->n_probes, cs_gnum_t);
+  const cs_real_t *centers = mq->cell_cen;
+
+  if (pset->flags & CS_PROBE_BOUNDARY) centers = mq->b_face_cog;
+
+  BFT_MALLOC(probe_coords, pset->n_loc_probes, cs_coord_3_t);
+  BFT_MALLOC(global_num, pset->n_loc_probes, cs_gnum_t);
 
   /* Build the final list of probe coordinates */
-  switch (pset->mode) {
-
-  case CS_PROBE_MODE_NEAREST_CELL_CENTER:
-    {
-      bool  *cell_tag = NULL;
-
-      BFT_MALLOC(cell_tag, mesh->n_cells, bool);
-      for (int i = 0; i < mesh->n_cells; i++)
-        cell_tag[i] = false;
-
-      for (int i = 0; i < pset->n_probes; i++) {
-        if (pset->entity_num[i] > -1) { /* Located on this rank */
-
-          const cs_lnum_t  cell_id = pset->entity_num[i] - 1;
-
-          if (cell_tag[cell_id] == false) {
-            cell_tag[cell_id] = true;
-
-            const cs_real_t  *xp = pset->coords + 3*i;
-            const cs_real_t  *xc = quant->cell_cen + 3*cell_id;
-            for (int k = 0; k < 3; k++)
-              probe_coords[n_exp_probes][k] = xc[k];
-            pset->distances[i] = cs_math_3_length(xp, xc);
-            global_num[n_exp_probes] = i+1;
-            n_exp_probes++;
-          }
-
-        }
-      } // Loop on probes
-
-      BFT_FREE(cell_tag);
-
-    } /* Nearest cell center */
-    break;
-
-  case CS_PROBE_MODE_NEAREST_VERTEX:
-    {
-      fvm_point_location_closest_vertex(pset->location_mesh,
-                                        1, // locate on parents
-                                        pset->n_probes,
-                                        pset->coords,
-                                        pset->entity_num,
-                                        pset->distances);
-
-      bool  *vtx_tag = NULL;
-
-      BFT_MALLOC(vtx_tag, mesh->n_vertices, bool);
-      for (int i = 0; i < mesh->n_vertices; i++)
-        vtx_tag[i] = false;
-
-      for (int i = 0; i < pset->n_probes; i++) {
-        if (pset->entity_num[i] > -1) { /* Located on this rank */
-
-          const cs_lnum_t  vtx_id = pset->entity_num[i] - 1;
-
-          if (vtx_tag[vtx_id] == false) {
-            vtx_tag[vtx_id] = true;
-            for (int k = 0; k < 3; k++)
-              probe_coords[n_exp_probes][k] = mesh->vtx_coord[3*vtx_id+k];
-            global_num[n_exp_probes] = i+1;
-            n_exp_probes++;
-          }
-
-        }
-      } // Loop on probes
-
-      BFT_FREE(vtx_tag);
-
-    } /* Nearest vertex */
-    break;
-
-  case CS_PROBE_MODE_EXACT:
-
-    for (int i = 0; i < pset->n_probes; i++) {
-      if (pset->entity_num[i] > -1) { /* Located on this rank */
-        for (int k = 0; k < 3; k++)
-          probe_coords[n_exp_probes][k] = pset->coords[3*i+k];
-        global_num[n_exp_probes] = i+1;
-        n_exp_probes++;
-      }
-    }
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              N_(" This mode is not yet implemented to handle probe set.\n"
-                 " Please modify your settings."));
-
-  } // Switch on pset->mode
-
-  /* Update the probe set structure */
-  pset->n_loc_probes = n_exp_probes;
-  BFT_REALLOC(probe_coords, n_exp_probes, cs_coord_3_t);
-
-  fvm_nodal_define_vertex_list(exp_mesh, n_exp_probes, NULL);
-  fvm_nodal_transfer_vertices(exp_mesh, (cs_coord_t *)probe_coords);
 
   cs_real_t  max_distance = 0., gmax_distance = 0.;
-  for (int i = 0; i < pset->n_probes; i++)
-    if (pset->entity_num[i] > -1)  /* Located on this rank */
-      max_distance = fmax(max_distance, pset->distances[i]);
+
+  for (int i = 0; i < pset->n_loc_probes; i++) {
+    int j = pset->loc_id[i];
+
+    for (int k = 0; k < 3; k++)
+      probe_coords[i][k] = pset->coords[j][k];
+
+    global_num[i] = j+1;
+
+    if (pset->elt_id[i] > -1) {
+      const cs_real_t  *elt_coords = centers + pset->elt_id[i]*3;
+      cs_real_t v[3];
+      for (int k = 0; k < 3; k++)
+        v[k] = elt_coords[k] - pset->coords[j][k];
+      max_distance = fmax(max_distance, cs_math_3_square_norm(v));
+    }
+  }
+
+  /* Handle snap mode if active */
+
+  if (pset->snap_mode == CS_PROBE_SNAP_ELT_CENTER) {
+    for (int i = 0; i < pset->n_loc_probes; i++) {
+      int j = pset->loc_id[i];
+      if (pset->elt_id[i] > -1) {
+        const cs_real_t  *elt_coords = centers + pset->elt_id[i]*3;
+        for (int k = 0; k < 3; k++)
+          pset->coords[j][k] = elt_coords[k];
+      }
+    }
+  }
+  else if (pset->snap_mode == CS_PROBE_SNAP_VERTEX) {
+    for (int i = 0; i < pset->n_loc_probes; i++) {
+      int j = pset->loc_id[i];
+      if (pset->vtx_id[i] > -1) {
+        const cs_real_t  *vtx_coords = m->vtx_coord + pset->vtx_id[i]*3;
+        for (int k = 0; k < 3; k++)
+          pset->coords[j][k] = vtx_coords[k];
+      }
+    }
+  }
+
+  /* Update the probe set structure */
+
+  fvm_nodal_define_vertex_list(exp_mesh, pset->n_loc_probes, NULL);
+  fvm_nodal_transfer_vertices(exp_mesh, (cs_coord_t *)probe_coords);
 
   if (cs_glob_n_ranks > 1) {
 
@@ -1176,9 +1327,10 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
   else
     gmax_distance = max_distance;
 
-  bft_printf("\n Probe set: \"%s\":\n"
-             "   maximum distance between real and requested coordinates:"
-             " %5.3e\n", pset->name, gmax_distance);
+  bft_printf(_("\n Probe set: \"%s\":\n"
+               "   maximum distance between cell centers and"
+               " requested coordinates:"
+               " %5.3e\n"), pset->name, gmax_distance);
 
   BFT_FREE(global_num);
 
@@ -1191,7 +1343,7 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
 
     int j = 0;
     for (int i = 0; i < pset->n_probes; i++) {
-      if (pset->distances[i] <= 0.99*HUGE_VAL)
+      if (pset->located[i] != 0)
         g_labels[j++] = _copy_label(pset->labels[i]);
     }
     assert(j == ngl);
@@ -1199,30 +1351,83 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
 
   }
 
-  // probe_coords is managed by exp_mesh
+  /* probe_coords is managed by exp_mesh */
 
   return exp_mesh;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all structures related to a set of probes
+ * \brief  Define a fvm_nodal_t structure from the set of unlocated probes.
+ *
+ * \param[in, out]  pset        pointer to a cs_probe_set_t structure
+ * \param[in]       mesh_name   name of the mesh to export
+ *
+ * \return a pointer to a fvm_nodal_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_probe_finalize(void)
+fvm_nodal_t *
+cs_probe_set_unlocated_export_mesh(cs_probe_set_t   *pset,
+                                   const char       *mesh_name)
 {
-  for (int i = 0; i < _n_probe_sets; i++)
-    _free_probe_set(_probe_set_array + i);
+  if (pset == NULL)
+    return  NULL;
 
-  _n_probe_sets = 0;
-  BFT_FREE(_probe_set_array);
+  int  n_exp_probes = 0;
+  cs_gnum_t  *global_num = NULL;
+  cs_coord_3_t  *probe_coords = NULL;
+  fvm_nodal_t  *exp_mesh = fvm_nodal_create(mesh_name, 3);
+
+  BFT_MALLOC(probe_coords, pset->n_probes, cs_coord_3_t);
+  BFT_MALLOC(global_num, pset->n_loc_probes, cs_gnum_t);
+
+  /* Build the final list of probe coordinates */
+
+  for (int i = 0; i < pset->n_probes; i++) {
+    if (pset->located[i] == 0) {
+      for (int k = 0; k < 3; k++)
+        probe_coords[n_exp_probes][k] = pset->coords[i][k];
+      global_num[n_exp_probes] = i+1;
+      n_exp_probes++;
+    }
+  }
+
+  /* Update the probe set structure */
+
+  fvm_nodal_define_vertex_list(exp_mesh, n_exp_probes, NULL);
+  fvm_nodal_transfer_vertices(exp_mesh, (cs_coord_t *)probe_coords);
+
+  /* Set a global numbering */
+  if (cs_glob_n_ranks > 1)
+    fvm_nodal_init_io_num(exp_mesh, global_num, 0); // 0 = vertices
+
+  BFT_FREE(global_num);
+
+  /* Add global labels */
+
+  if (pset->labels != NULL) {
+    char **g_labels;
+    int ngl = fvm_nodal_get_n_g_vertices(exp_mesh);
+    BFT_MALLOC(g_labels, ngl, char *);
+
+    int j = 0;
+    for (int i = 0; i < pset->n_probes; i++) {
+      if (pset->located[i] == 0)
+        g_labels[j++] = _copy_label(pset->labels[i]);
+    }
+    assert(j == ngl);
+    fvm_nodal_transfer_global_vertex_labels(exp_mesh, g_labels);
+  }
+
+  /* probe_coords is managed by exp_mesh */
+
+  return exp_mesh;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Dump a cs_probe_set_t structure
+ * \brief  Dump a cs_probe_set_t structure.
  *
  * \param[in]  pset    pointer to a cs_probe_set_t structure
  */
@@ -1236,11 +1441,11 @@ cs_probe_set_dump(const cs_probe_set_t   *pset)
   if (pset == NULL)
     return;
 
-  bft_printf(" name:       %s\n"
-             " flag:       %d\n"
-             " mode:       %s\n"
-             " tolerance:  %5.3e\n",
-             pset->name, pset->flag, cs_probe_mode_name[pset->mode],
+  bft_printf(" name:                %s\n"
+             " flags:               %d\n"
+             " location criteria:   %s\n"
+             " tolerance:           %5.3e\n",
+             pset->name, pset->flags, pset->sel_criter,
              pset->tolerance);
 
   if (pset->sel_criter != NULL)
@@ -1248,76 +1453,111 @@ cs_probe_set_dump(const cs_probe_set_t   *pset)
 
   bft_printf(" n_probes:   %d; %d; %d (locally located; defined; max.)\n",
              pset->n_loc_probes, pset->n_probes, pset->n_max_probes);
-  bft_printf(" nodal mesh: %p\n\n", (void *)pset->location_mesh);
 
   for (int i = 0; i < pset->n_probes; i++) {
 
     bft_printf(" %4d | %-5.3e %-5.3e %-5.3e |", i,
-               pset->coords[3*i], pset->coords[3*i+1], pset->coords[3*i+2]);
+               pset->coords[3][0], pset->coords[i][1], pset->coords[i][2]);
 
     if (pset->s_coords != NULL)
       bft_printf(" %5.3e |", pset->s_coords[i]);
-    if (pset->entity_num != NULL && pset->distances != NULL)
-      bft_printf(" %6d | %5.3e |", pset->entity_num[i], pset->distances[i]);
+    if (pset->elt_id != NULL && pset->located != NULL)
+      bft_printf(" %6d | %c |", pset->elt_id[i], pset->located[i]);
     if (pset->labels != NULL)
       if (pset->labels[i] != NULL)
         bft_printf(" %s", pset->labels[i]);
     bft_printf("\n");
 
-  } // Loop on probes
+  }
 
-  if (true && pset->location_mesh != NULL)
-    fvm_nodal_dump(pset->location_mesh);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the main members of a cs_probe_set_t structure
+ * \brief  Retrieve the main members of a cs_probe_set_t structure.
  *
- * \param[in]      pset      pointer to a cs_probe_set_t structure
- * \param[in, out] mode      mode of location
- * \param[in, out] n_probes  number of probes
- * \param[in, out] coords    probe coordinates
- * \param[in, out] ent_num   entity numbers (-1 if not located on this rank)
- * \param[in, out] distances distance of each probe from its related cell center
+ * \param[in]       pset       pointer to a cs_probe_set_t structure
+ * \param[in, out]  snap_mode  mode of location
+ * \param[in, out]  n_probes   number of probes
+ * \param[in, out]  coords     probe coordinates
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_probe_set_get_members(const cs_probe_set_t   *pset,
-                         int                    *mode,
+                         cs_probe_snap_t        *snap_mode,
                          int                    *n_probes,
-                         cs_real_t              *coords[],
-                         cs_lnum_t              *ent_num[],
-                         float                  *distances[])
+                         cs_real_3_t            *coords[])
 {
   if (pset == NULL)
     return;
 
-  switch (pset->mode) {
-
-  case CS_PROBE_MODE_NEAREST_CELL_CENTER:
-    *mode = 0;
-    break;
-  case CS_PROBE_MODE_NEAREST_VERTEX:
-    *mode = 1;
-    break;
-  case CS_PROBE_MODE_EXACT:
-    *mode = 2;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              N_(" This mode is not yet implemented to handle probe set.\n"
-                 " Please modify your settings."));
-
-  } // Switch on pset->mode
-
   /* Return pointers */
-  *n_probes = pset->n_probes;
-  *coords = pset->coords;
-  *ent_num = pset->entity_num;
-  *distances = pset->distances;
+
+  if (snap_mode != NULL)
+    *snap_mode = pset->snap_mode;
+
+  if (n_probes != NULL)
+    *n_probes = pset->n_probes;
+
+  if (coords != NULL)
+    *coords = pset->coords;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the number probes in the local domain.
+ *
+ * \param[in]       pset       pointer to a cs_probe_set_t structure
+ *
+ * \return  number of probes in local domain
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_probe_set_get_n_local(const cs_probe_set_t   *pset)
+{
+  int retval = 0;
+
+  if (pset != NULL)
+    retval = pset->n_loc_probes;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the ids of a probe set's local matching elements, relative
+ *         to a given mesh location.
+ *
+ * The mesh_location id must match one of \ref CS_MESH_LOCATION_CELLS,
+ * \ref CS_MESH_LOCATION_BOUNDARY_FACES, or \ref CS_MESH_LOCATION_VERTICES.
+ *
+ * \param[in]  pset              pointer to a cs_probe_set_t structure
+ * \param[in]  mesh_location_id  id of parent mesh location
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_probe_set_get_elt_ids(const cs_probe_set_t  *pset,
+                         int                    mesh_location_id)
+{
+  const cs_lnum_t *retval = NULL;
+
+  if (pset == NULL)
+    return retval;
+
+  bool on_boundary = (pset->flags & CS_PROBE_BOUNDARY) ? true : false;
+
+  if (mesh_location_id == CS_MESH_LOCATION_CELLS && on_boundary == false)
+    retval = pset->elt_id;
+  else if (mesh_location_id == CS_MESH_LOCATION_BOUNDARY_FACES && on_boundary)
+    retval = pset->elt_id;
+
+  else if (CS_MESH_LOCATION_VERTICES)
+    retval = pset->vtx_id;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

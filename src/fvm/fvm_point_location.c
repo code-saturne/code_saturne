@@ -3391,11 +3391,14 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
 
 /*----------------------------------------------------------------------------
  * For each point previously located in a element, find among vertices of this
- * element the closest vertex to this point.
- * Update located_ent_num and distance.
+ * element the closest vertex relative to this point.
+ *
  * As input, located_ent_num is an array with a numbering not using a parent
- * numbering. As output, located_ent_num may use a parent vertex numbering
- * according to the value of locate_on_parents
+ * numbering. As output, located_ent_num may use a parent numbering
+ * according to the value of locate_on_parents.
+ *
+ * The located_vtx_num output is also determined relative to the
+ * locate_on_parents option.
  *
  * parameters:
  *   this_nodal           <-- pointer to nodal mesh representation structure
@@ -3407,11 +3410,8 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
  *   located_ent_num      <-> input: list of elements (cells or faces according
  *                            to max entity dim) where points have been
  *                            initially located or not (size: n_points)
- *                            output: list of vertices closest to each point
- *   distance             <-> distance from point to vertex indicated by
- *                            location[]: < 0 if unlocated, 0 - 1 if inside,
- *                            and > 1 if outside a volume element, or absolute
- *                            distance to a surface element (size: n_points)
+ *                            output: possibly modified by parent numbering
+ *   located_vtx_num      <-> output: list of vertices closest to each point
  *----------------------------------------------------------------------------*/
 
 void
@@ -3420,13 +3420,14 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
                                   cs_lnum_t           n_points,
                                   const cs_coord_t    point_coords[],
                                   cs_lnum_t           located_ent_num[],
-                                  float               distance[])
+                                  cs_lnum_t           located_vtx_num[])
 {
-  if (this_nodal == NULL)
+  if (this_nodal == NULL || n_points == 0)
     return;
 
   /* Sanity checks */
-  assert(point_coords != NULL && located_ent_num != NULL && distance != NULL);
+  assert(   point_coords != NULL
+         && located_ent_num != NULL && located_vtx_num != NULL);
   assert(this_nodal->dim == 3);
 
   if (this_nodal->dim != 3)
@@ -3471,6 +3472,8 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
     const cs_lnum_t  num = located_ent_num[p_id];
     const cs_coord_t  *p_coord = point_coords + 3*p_id;
 
+    located_vtx_num[p_id] = -1; /* initialization */
+
     if (num > -1) { /* This point has been previously located on this rank */
 
       int  max_dim_s_id;
@@ -3493,7 +3496,7 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
       double  min_length = cs_math_infinite_r;
       cs_lnum_t  chosen_id = -1;
 
-      if (section->type == FVM_CELL_POLY) { // There are polyhedra
+      if (section->type == FVM_CELL_POLY) { /* There are polyhedra */
 
         for (cs_lnum_t j = section->face_index[elt_id];
              j < section->face_index[elt_id + 1]; j++) {
@@ -3561,20 +3564,22 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
                     " mesh %s\n"), num, this_nodal->name);
 
       /* Update arrays to return */
-      distance[p_id] = (float)min_length;
-      located_ent_num[p_id] = chosen_id + 1;
+      located_vtx_num[p_id] = chosen_id + 1;
+
+      if (locate_on_parents && section->parent_element_num != NULL)
+        located_ent_num[p_id] = section->parent_element_num[elt_id];
 
     } /* num > -1 */
 
-  } // Loop on points
+  } /* Loop on points */
 
   /* Apply parent_vertex_num if needed */
   if (locate_on_parents == 1) {
     if (this_nodal->parent_vertex_num != NULL) {
       for (int p_id = 0; p_id < n_points; p_id++) {
-        const cs_lnum_t  prev_id = located_ent_num[p_id] - 1;
+        const cs_lnum_t  prev_id = located_vtx_num[p_id] - 1;
         if (prev_id > -1)
-          located_ent_num[p_id] = this_nodal->parent_vertex_num[prev_id];
+          located_vtx_num[p_id] = this_nodal->parent_vertex_num[prev_id];
       }
     }
   }

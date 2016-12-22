@@ -213,7 +213,7 @@ _coords_output(void           *context,
     switch(dimension) {
     case 3:
       for (cs_lnum_t i = 0; i < n_coords; i++)
-        fprintf(_f, "%6i %14.7e %14.7e %14.7e\n",
+        fprintf(_f, "# %6i %14.7e %14.7e %14.7e\n",
                 i + 1,
                 coords[i*3],
                 coords[i*3 + 1],
@@ -221,14 +221,14 @@ _coords_output(void           *context,
       break;
     case 2:
       for (cs_lnum_t i = 0; i < n_coords; i++)
-        fprintf(_f, "%6i %14.7e %14.7e\n",
+        fprintf(_f, "# %6i %14.7e %14.7e\n",
                 i + 1,
                 coords[i*2],
                 coords[i*2 + 1]);
       break;
     case 1:
       for (cs_lnum_t i = 0; i < n_coords; i++)
-        fprintf(_f, "%6i %14.7e\n",
+        fprintf(_f, "# %6i %14.7e\n",
                 i + 1,
                 coords[i]);
       break;
@@ -306,67 +306,84 @@ _field_output(void           *context,
 
   if (buffer == NULL) return;
 
-  int p_id = cs_map_name_to_id(w->f_map, c->name);
-
-  /* Build plot name */
-
-  char tmpn[128], tmpe[6];
-
-  char *plot_name = tmpn;
-
-  fvm_writer_field_component_name(tmpe, 6, false, dimension, component_id);
-
-  size_t lce = strlen(tmpe);
-  size_t l =  strlen(c->name) + 1;
-
-  if (lce > 0)
-    l += 2 + lce;
-
-  if (l > 128)
-    BFT_MALLOC(plot_name, l, char);
-
-  if (lce > 0)
-    sprintf(plot_name, "%s[%s]", c->name, tmpe);
-  else
-    strcpy(plot_name, c->name);
-
-  if (p_id >= w->n_plots) {
-
-    w->n_plots += 1;
-    BFT_REALLOC(w->tp, w->n_plots, cs_time_plot_t *);
-
-    int n_probes = (block_end > block_start) ? block_end - block_start : 0;
-
-    const char **probe_names = fvm_nodal_get_global_vertex_labels(c->mesh);
-
-    w->tp[p_id] = cs_time_plot_init_probe(plot_name,
-                                          w->prefix,
-                                          w->format,
-                                          w->use_iteration,
-                                          w->flush_wtime,
-                                          w->n_buf_steps,
-                                          n_probes,
-                                          NULL,
-                                          NULL, /* probe_coords */
-                                          probe_names);
-
-  }
-
-  if (plot_name != tmpn)
-    BFT_FREE(plot_name);
-
-  p = w->tp[p_id];
+  assert(component_id == 0);
 
   int n_vals = block_end - block_start;
 
-  const cs_real_t *vals = (const cs_real_t *)buffer;
+  cs_real_t *_vals = NULL;
 
-  if (p != NULL)
-    cs_time_plot_vals_write(p,
-                            w->nt,
-                            w->t,
-                            n_vals,
-                            vals);
+  if (dimension > 1)
+    BFT_MALLOC(_vals, n_vals, cs_real_t);
+
+  for (int _component_id = 0; _component_id < dimension; _component_id++) {
+
+    /* Build plot name */
+
+    char tmpn[128], tmpe[6];
+
+    char *plot_name = tmpn;
+
+    fvm_writer_field_component_name(tmpe, 6, false, dimension, _component_id);
+
+    size_t lce = strlen(tmpe);
+    size_t l =  strlen(c->name) + 1;
+
+    if (lce > 0)
+      l += 2 + lce;
+
+    if (l > 128)
+      BFT_MALLOC(plot_name, l, char);
+
+    if (lce > 0)
+      sprintf(plot_name, "%s[%s]", c->name, tmpe);
+    else
+      strcpy(plot_name, c->name);
+
+    int p_id = cs_map_name_to_id(w->f_map, plot_name);
+
+    if (p_id >= w->n_plots) {
+
+      w->n_plots += 1;
+      BFT_REALLOC(w->tp, w->n_plots, cs_time_plot_t *);
+
+      int n_probes = (block_end > block_start) ? block_end - block_start : 0;
+
+      const char **probe_names = fvm_nodal_get_global_vertex_labels(c->mesh);
+
+      w->tp[p_id] = cs_time_plot_init_probe(plot_name,
+                                            w->prefix,
+                                            w->format,
+                                            w->use_iteration,
+                                            w->flush_wtime,
+                                            w->n_buf_steps,
+                                            n_probes,
+                                            NULL,
+                                            NULL, /* probe_coords */
+                                            probe_names);
+
+    }
+
+    if (plot_name != tmpn)
+      BFT_FREE(plot_name);
+
+    p = w->tp[p_id];
+
+    if (p != NULL) {
+      const cs_real_t *vals = (const cs_real_t *)buffer;
+      if (dimension > 1) {
+        for (int i = 0; i < n_vals; i++)
+          _vals[i] = vals[i*dimension + _component_id];
+        vals = _vals;
+      }
+      cs_time_plot_vals_write(p,
+                              w->nt,
+                              w->t,
+                              n_vals,
+                              vals);
+    }
+  }
+
+  BFT_FREE(_vals);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -675,7 +692,7 @@ fvm_to_time_plot_export_field(void                  *writer,
     = fvm_writer_field_helper_create(mesh,
                                      NULL, /* section list */
                                      dimension,
-                                     CS_NO_INTERLACE,
+                                     CS_INTERLACE,
                                      dest_datatype,
                                      location);
 

@@ -652,6 +652,7 @@ cs_boundary_conditions_error(const int       *bc_flag,
 
         if (mesh_id[ii] != 0)
           cs_post_write_var(mesh_id[ii],
+                            writer_id,
                             var_name,
                             1,
                             false, /* no interlace */

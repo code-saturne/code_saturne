@@ -46,13 +46,6 @@
 
   \section cs_user_postprocess_var_h_volume_mesh Output on the volume mesh (ipart = -1)
 
-  \subsection cs_user_postprocess_var_h_volume_mesh_tke Output of the turbulent kinetic energy for the Rij-Epsilon model on the volume mesh
-
-  One can define, compute and post-process the turbulent kinetic energy for the Rij-Epsilon
-  as shown in the following example.
-
-  \snippet cs_user_postprocess_var.f90 postprocess_var_ex_1
-
   \subsection cs_user_postprocess_var_h_volume_mesh_mom Output of a combination of moments
 
   A combination of moments can also be post-processed using the \ref usvpst subroutine.

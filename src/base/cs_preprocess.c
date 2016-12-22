@@ -212,6 +212,10 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   int t_top_id = cs_timer_stats_switch(t_stat_id);
 
+  /* Disable all writers until explicitely enabled for this stage */
+
+  cs_post_disable_writer(0);
+
   /* Set partitioning options */
 
   {
@@ -358,6 +362,10 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_mesh_dump(cs_glob_mesh);
   cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
 #endif
+
+  /* Re-enable writers disabled when entering this stage */
+
+  cs_post_enable_writer(0);
 
   cs_timer_stats_switch(t_top_id);
 }

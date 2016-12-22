@@ -1516,7 +1516,8 @@ cs_advection_field_extra_post(const cs_adv_field_t      *adv,
     fld = cs_field_by_id(adv->vtx_field_id);
 
   if (fld != NULL && post_field)
-    cs_post_write_vertex_var(-1,              // volumic mesh
+    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                             CS_POST_WRITER_ALL_ASSOCIATED,
                              fld->name,
                              3,               // dim
                              true,            // interlace
@@ -1531,7 +1532,8 @@ cs_advection_field_extra_post(const cs_adv_field_t      *adv,
     fld = cs_field_by_id(adv->cell_field_id);
 
   if (fld != NULL && post_field)
-    cs_post_write_var(-1,              // volumic mesh
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       fld->name,
                       3,               // dim
                       true,            // interlace
@@ -1569,7 +1571,8 @@ cs_advection_field_extra_post(const cs_adv_field_t      *adv,
       }
     }
 
-    cs_post_write_var(-1,             // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       label,
                       1,
                       true,           // interlace

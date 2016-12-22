@@ -2174,7 +2174,8 @@ cs_groundwater_extra_post(void                      *input,
 
   if (gw->flag & CS_GROUNDWATER_POST_MOISTURE) {
     cs_field_t  *f = gw->moisture_content;
-    cs_post_write_var(-1,              // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       f->name,
                       1,               // dim
                       true,            // interlace
@@ -2188,7 +2189,8 @@ cs_groundwater_extra_post(void                      *input,
 
   if (gw->with_gravitation) { /* Post-process pressure head */
     cs_field_t  *f = gw->pressure_head;
-    cs_post_write_var(-1,              // id du maillage de post
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       f->name,
                       1,               // dim
                       true,            // interlace

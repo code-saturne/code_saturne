@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-12-04 03:22+0100\n"
+"POT-Creation-Date: 2016-12-15 15:34+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5866,6 +5866,10 @@ msgid "Called cs_interface_set_max with unhandled datatype (%d)."
 msgstr ""
 
 #, c-format
+msgid "Function %s does not currently handle %s data type."
+msgstr ""
+
+#, c-format
 msgid ""
 "Error reading file: \"%s\".\n"
 "File format is not the correct version.\n"
@@ -7189,14 +7193,6 @@ msgstr ""
 "Le numéro de gestionnaire de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-#, c-format
-msgid ""
-"The mesh %d cannot be an alias of mesh %d,\n"
-"which is itself an alias of mesh %d.\n"
-msgstr ""
-"Le maillage %d ne peut être un alias du maillage %d,\n"
-"qui est lui-même déjà un alias du maillage %d.\n"
-
 msgid " edges"
 msgstr " arêtes"
 
@@ -7206,11 +7202,11 @@ msgstr "%s appelé avant les maillages de post-traitement ne soient construits."
 
 #, c-format
 msgid ""
-"Post-processing mesh number %d has been aliased\n"
-"by mesh %d, so it may not be freed.\n"
+"Post-processing mesh number %d has been referenced\n"
+"by probe set mesh %d, so it may not be freed.\n"
 msgstr ""
 "Le maillage de post-traitement %d est référencé\n"
-"par le maillage %d, donc il ne peut être libéré.\n"
+"par l'ensemble de sondes %d, donc il ne peut être libéré.\n"
 
 #, c-format
 msgid ""
@@ -7369,15 +7365,6 @@ msgid ""
 " Please modify your setting.\n"
 msgstr ""
 
-msgid "exact"
-msgstr ""
-
-msgid "nearest cell center"
-msgstr ""
-
-msgid "nearest vertex"
-msgstr ""
-
 msgid " The given name for this set of probes is empty."
 msgstr ""
 
@@ -7397,7 +7384,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key for setting the set of probes %s.\n"
+" Invalid key for probe options %s.\n"
 " Please read listing for more details and modify your settings."
 msgstr ""
 
@@ -7415,14 +7402,23 @@ msgstr " La clé %s n'est pas encore gérée."
 #, c-format
 msgid ""
 "\n"
-"Warning: probe set \"%s\"\n"
-"         %lu probes have not been located         on the associated mesh."
+" Warning: probe set \"%s\"\n"
+"          %lu probes have not been located on the associated mesh.\n"
 msgstr ""
+"\n"
+" Attention : ensembe de sondes \"%s\"\n"
+"          %lu sondes n'ont pas été localisées dans le maillage associé.\n"
 
+#, c-format
 msgid ""
-" This mode is not yet implemented to handle probe set.\n"
-" Please modify your settings."
+"\n"
+" Probe set: \"%s\":\n"
+"   maximum distance between cell centers and requested coordinates: %5.3e\n"
 msgstr ""
+"\n"
+" Sondes : \"%s\":\n"
+"   distance maximale entre centres cellules et coordonnées demandées : "
+"%5.3e\n"
 
 #, c-format
 msgid "Called %s with unhandled datatype (%d)."
@@ -8736,8 +8732,8 @@ msgid ""
 "         as restart data for \"%s\" does not match.\n"
 msgstr ""
 "\n"
-"Attention: le calcul du moment temporel \"%s\" sera remis à zéro,\n"
-"           car les données de reprise pour \"%s\" ne correspondent pas.\n"
+"Attention : le calcul du moment temporel \"%s\" sera remis à zéro,\n"
+"            car les données de reprise pour \"%s\" ne correspondent pas.\n"
 
 #, c-format
 msgid ""
@@ -8754,8 +8750,8 @@ msgid ""
 "           as restart data for \"%s\" is not available.\n"
 msgstr ""
 "\n"
-"Attention: le calcul du moment temporel \"%s\" sera remis à zéro,\n"
-"           car les données de reprise pour \"%s\" ne sont pas disponibles.\n"
+"Attention : le calcul du moment temporel \"%s\" sera remis à zéro,\n"
+"            car les données de reprise pour \"%s\" ne sont pas disponibles.\n"
 
 #, c-format
 msgid ""
@@ -16177,3 +16173,10 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
+#~ msgid ""
+#~ "The mesh %d cannot be an alias of mesh %d,\n"
+#~ "which is itself an alias of mesh %d.\n"
+#~ msgstr ""
+#~ "Le maillage %d ne peut être un alias du maillage %d,\n"
+#~ "qui est lui-même déjà un alias du maillage %d.\n"

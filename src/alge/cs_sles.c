@@ -1757,6 +1757,7 @@ cs_sles_post_error_output_var(const char   *name,
     n_non_norm = _value_type(_diag_block_size[1]*n_cells, var, val_type);
 
     cs_post_write_var(mesh_id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
                       name,
                       _diag_block_size[0],
                       true, /* interlace */
@@ -1783,6 +1784,7 @@ cs_sles_post_error_output_var(const char   *name,
       strcat(type_name, "_fp_type");
 
       cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
                         type_name,
                         _diag_block_size[0],
                         true, /* interlace */

@@ -46,6 +46,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/rayt \
+-I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(PETSC_CPPFLAGS) \
 $(MPI_CPPFLAGS)
@@ -169,7 +170,6 @@ cs_user_source_terms-scalar_in_a_channel.f90 \
 cs_user_source_terms.f90 \
 usatch_4spe5reac.f90 \
 usctdz.f90 \
-ushist.f90 \
 usthht.f90 \
 usvort.f90 \
 usvosy.f90

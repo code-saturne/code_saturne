@@ -190,7 +190,7 @@ _write_probe_header_dat(cs_time_plot_t    *p,
       if (probe_list != NULL)
         probe_id = probe_list[i] - 1;
       if (probe_names != NULL)
-        fprintf(_f, "%16s [%14.7e, %14.7e, %14.7e]\n",
+        fprintf(_f, "# %16s [%14.7e, %14.7e, %14.7e]\n",
                 probe_names[i],
                 probe_coords[probe_id*3],
                 probe_coords[probe_id*3 + 1],
@@ -207,7 +207,8 @@ _write_probe_header_dat(cs_time_plot_t    *p,
   else if (probe_names != NULL) {
     fprintf(_f, _("# Monitoring points:\n"));
     for (i = 0; i < n_probes; i++)
-      fprintf(_f, "%s\n", probe_names[i]);
+      fprintf(_f, "# %s\n", probe_names[i]);
+    fprintf(_f, "#\n");
   }
 
   fprintf(_f, _("# Columns:\n"));
@@ -229,14 +230,26 @@ _write_probe_header_dat(cs_time_plot_t    *p,
     probe_id = i;
     if (probe_list != NULL)
       probe_id = probe_list[i] - 1;
-    if (probe_coords != NULL)
-      fprintf(_f, " | %d [%9.5e, %9.5e, %9.5e]",
-              probe_id + 1,
-              probe_coords[probe_id*3],
-              probe_coords[probe_id*3 + 1],
-              probe_coords[probe_id*3 + 2]);
-    else
-      fprintf(_f, " | %d", probe_id + 1);
+    if (probe_names != NULL) {
+      if (probe_coords != NULL)
+        fprintf(_f, " | %s [%9.5e, %9.5e, %9.5e]",
+                probe_names[i],
+                probe_coords[probe_id*3],
+                probe_coords[probe_id*3 + 1],
+                probe_coords[probe_id*3 + 2]);
+      else
+        fprintf(_f, " | %s", probe_names[i]);
+    }
+    else {
+      if (probe_coords != NULL)
+        fprintf(_f, " | %d [%9.5e, %9.5e, %9.5e]",
+                probe_id + 1,
+                probe_coords[probe_id*3],
+                probe_coords[probe_id*3 + 1],
+                probe_coords[probe_id*3 + 2]);
+      else
+        fprintf(_f, " | %d", probe_id + 1);
+    }
   }
   fprintf(_f, "\n");
 

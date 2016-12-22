@@ -576,7 +576,8 @@ _bad_cells_post(const cs_mesh_t             *mesh,
       cs_parall_counter_max(&crit_flag, 1);
 
       if (crit_flag > 0)
-        cs_post_write_var(-1,
+        cs_post_write_var(CS_POST_MESH_VOLUME,
+                          CS_POST_WRITER_ALL_ASSOCIATED,
                           _(criterion_name[i]),
                           1,
                           false,
