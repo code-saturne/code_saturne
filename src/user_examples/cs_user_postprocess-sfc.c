@@ -43,11 +43,13 @@
 
 #include "cs_base.h"
 #include "cs_field.h"
+#include "cs_interpolate.h"
 #include "cs_mesh.h"
 #include "cs_selector.h"
-#include "cs_probe.h"
 #include "cs_post.h"
+#include "cs_probe.h"
 #include "cs_time_plot.h"
+
 #include "cs_order.h"
 #include "cs_part_to_block.h"
 #include "fvm_nodal_append.h"
