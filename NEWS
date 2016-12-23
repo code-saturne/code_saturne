@@ -5,6 +5,8 @@ Release 4.2.3 (unreleased)
 Bug fixes:
 ----------
 
+- Allow mesh joining when no vertices are modified.
+
 - Fix Neumann boundary condition on turbulent dissipation for k-epsilon models
   at walls when testing if boundary cell is outside the viscous sub-layer.
 
