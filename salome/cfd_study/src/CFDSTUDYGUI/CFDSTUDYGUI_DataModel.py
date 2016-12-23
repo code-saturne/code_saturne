@@ -480,7 +480,6 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
         if theCopyOpt:
             args.append("--copy-from")
             args.append(theNameRef)
-
         runCommand(args, start_dir, "")
 
     else:
@@ -699,6 +698,36 @@ def _CreateItem(theFather,theNewName) :
         _CreateObject(theFather, theBuilder, theNewName)
 
 
+def getNameCodeFromXmlCasePath(XMLCasePath) :
+    """
+    """
+    code = ""
+    if os.path.isfile(XMLCasePath):
+        fd = os.open(XMLCasePath,os.O_RDONLY)
+        f = os.fdopen(fd)
+        l1 = f.readline()
+        if l1.startswith('''<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI''') or l1.startswith('''<?xml version="1.0" encoding="utf-8"?><NEPTUNE_CFD_GUI'''):
+            if "Code_Saturne" in l1 :
+                code = "Code_Saturne"
+            elif "NEPTUNE_CFD" in l1 :
+                code = "NEPTUNE_CFD"
+        elif l1.startswith('''<?xml version="1.0" encoding="utf-8"?>''') :
+            l2 = f.readline()
+            if l2.startswith('''<Code_Saturne_GUI''') or l2.startswith('''<NEPTUNE_CFD_GUI'''):
+                if "Code_Saturne" in l2 :
+                    code = "Code_Saturne"
+                elif "NEPTUNE_CFD" in l2 :
+                    code = "NEPTUNE_CFD"
+            else :
+                mess = str(ObjectTR.tr("XML_DATA_FILE"))%(XMLCasePath)
+                QMessageBox.warning(None, "File Error: ",mess)
+        else :
+            mess = str(ObjectTR.tr("XML_DATA_FILE"))%(XMLCasePath)
+            QMessageBox.warning(None, "File Error: ",mess)
+        f.close()
+    return code
+
+
 def _FillObject(theObject, theParent, theBuilder):
     """
     Creates the attribute "AttributeLocalID" for the branch I{theObject}.
@@ -774,9 +803,6 @@ def _FillObject(theObject, theParent, theBuilder):
                         l2 = f.readline()
                         if l2.startswith('''<Code_Saturne_GUI''') or l2.startswith('''<NEPTUNE_CFD_GUI'''):
                             objectId = dict_object["DATAfileXML"]
-                        else :
-                            mess = str(ObjectTR.tr("XML_DATA_FILE"))%(path)
-                            QMessageBox.warning(None, "File Error: ",mess)
                     f.close()
 
     # parent is DRAFT folder
@@ -1817,13 +1843,12 @@ def getMeshFromMesh(meshSobjItem) :
 
     return meshItem
 
-def SetAutoColor (meshSobjItem) :
+def SetAutoColor(meshSobjItem) :
     obj = getOrLoadObject(meshSobjItem)
     if obj is not None:
         mesh = obj._narrow(SMESH.SMESH_Mesh)
         if mesh is not None:
             mesh.SetAutoColor(1)
-
 
 def getMeshFromGroup(meshGroupItem):
     """

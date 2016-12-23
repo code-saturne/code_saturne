@@ -171,7 +171,6 @@ def runCommand(cmd, start_directory, prefix, *args):
     """
     import subprocess
     import os
-
     try:
         pipe = subprocess.Popen(cmd, bufsize = 0, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 

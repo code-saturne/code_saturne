@@ -42,7 +42,7 @@ import logging
 from code_saturne.Base.QtCore    import *
 from code_saturne.Base.QtGui     import *
 from code_saturne.Base.QtWidgets import *
-
+from code_saturne.Base import QtPage
 #-------------------------------------------------------------------------------
 # Salome modules
 #-------------------------------------------------------------------------------
@@ -83,6 +83,7 @@ LaunchGUIAction               = 4
 OpenGUIAction                 = 5
 UpdateObjBrowserAction        = 6
 InfoCFDSTUDYAction            = 7
+OpenAnExistingCase            = 8
 
 #common actions
 RemoveAction                  = 20
@@ -252,7 +253,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action.triggered.connect(self.slotLaunchGUI)
 
         action = sgPyQt.createAction(-1,\
-                                      ObjectTR.tr("Open GUI"),\
+                                      ObjectTR.tr("OPEN_CFDSTUDY_GUI_TEXT"),\
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_TIP"),\
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_SB"),\
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_ICON"))
@@ -260,6 +261,18 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[OpenGUIAction] = action_id
         action.triggered.connect(self.slotOpenCFD_GUI)
+
+        # Open An Existing Case with a Menu button
+        action = sgPyQt.createAction(-1,\
+                                      ObjectTR.tr("OPEN_EXISTING_CASE_GUI_TEXT"),\
+                                      ObjectTR.tr("OPEN_EXISTING_CASE_GUI_TIP"),\
+                                      ObjectTR.tr("OPEN_EXISTING_CASE_GUI_SB"),\
+                                      ObjectTR.tr("OPENEXISTINGCASEFILEXML_CFD_GUI_ACTION_ICON"))
+        sgPyQt.createTool(action, tool_id)
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._CommonActionIdMap[OpenAnExistingCase] = action_id
+        action.triggered.connect(self.slotOpenAnExistingCaseFileFromMenu)
 
         action = sgPyQt.createSeparator()
         sgPyQt.createMenu(action, menu_id)
@@ -517,7 +530,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         # close GUI action
         action = sgPyQt.createAction(-1,\
-                                      ObjectTR.tr("Close GUI"),\
+                                      ObjectTR.tr("CLOSE_CFD_GUI_ACTION_TEXT"),\
                                       ObjectTR.tr("CLOSE_CFD_GUI_ACTION_TIP"),\
                                       ObjectTR.tr("CLOSE_CFD_GUI_ACTION_SB"),\
                                       ObjectTR.tr("CLOSE_CFD_GUI_ACTION_ICON"),
@@ -723,7 +736,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             #disable all actions except Study Location
             for i in self._CommonActionIdMap:
                 if not i == InfoCFDSTUDYAction:
-                    if i == SetStudyAction:
+                    if i == SetStudyAction or i == OpenAnExistingCase:
                         self.commonAction(i).setEnabled(True)
                     else:
                         self.commonAction(i).setEnabled(False)
@@ -738,7 +751,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if sobj == None : #multiple selection not authorized
             for i in self._CommonActionIdMap:
                 if i != InfoCFDSTUDYAction:
-                    if i == SetStudyAction:
+                    if i == SetStudyAction or i == OpenAnExistingCase:
                         self.commonAction(i).setEnabled(True)
                     else:
                         self.commonAction(i).setEnabled(False)#multiple selection not authorized
@@ -778,7 +791,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             self.solverAction(NCSolverHelpDoxygen).setEnabled(False)
 
         if sobj != None:
-            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
+            self.updateActionsXmlFile(sobj)
+
+
+    def updateActionsXmlFile(self, XMLSobj) :
+
+        if XMLSobj != None:
+            if CFDSTUDYGUI_DataModel.checkType(XMLSobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
                 self.solverAction(SolverCloseAction).setEnabled(False)
                 self.solverAction(SolverSaveAction).setEnabled(False)
                 self.solverAction(SolverSaveAsAction).setEnabled(False)
@@ -787,11 +806,11 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 self.solverAction(SolverPreproModeAction).setEnabled(False)
                 self.solverAction(SolverCalculationModeAction).setEnabled(False)
 
-                case   = CFDSTUDYGUI_DataModel.GetCase(sobj)
-                study  = CFDSTUDYGUI_DataModel.GetStudyByObj(sobj)
+                case   = CFDSTUDYGUI_DataModel.GetCase(XMLSobj)
+                study  = CFDSTUDYGUI_DataModel.GetStudyByObj(XMLSobj)
                 if case != None and study != None:
 
-                    if CFDSTUDYGUI_SolverGUI._c_CFDGUI.findDock(sobj.GetName(), case.GetName(),study.GetName()):
+                    if CFDSTUDYGUI_SolverGUI._c_CFDGUI.findDock(XMLSobj.GetName(), case.GetName(),study.GetName()):
                         self.solverAction(SolverCloseAction).setEnabled(True)
                         self.commonAction(OpenGUIAction).setEnabled(False)
                         self.solverAction(SolverSaveAction).setEnabled(True)
@@ -800,7 +819,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                         self.solverAction(SolverRedoAction).setEnabled(True)
                         self.solverAction(SolverPreproModeAction).setEnabled(True)
                         self.solverAction(SolverCalculationModeAction).setEnabled(True)
-
 
     def customPopup(self, id, popup):
         """
@@ -968,7 +986,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         dialog.StudyPath = CFDSTUDYGUI_DataModel._GetPath(studyObj)
         dialog.StudyDirName.setText(os.path.dirname(CFDSTUDYGUI_DataModel._GetPath(studyObj)))
         dialog.StudyLineEdit.setText(studyObj.GetName())
-
+        
         if not os.path.exists(dialog.StudyPath):
             mess = str(self.tr("ENV_DLG_INVALID_DIRECTORY"))%(dialog.StudyPath) +str(self.tr("STMSG_UPDATE_STUDY_INCOMING"))
             QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
@@ -981,7 +999,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         _SetCFDCode(dialog.code)
 #Get existing case name list of a CFD study
         ExistingCaseNameList = CFDSTUDYGUI_DataModel.GetCaseNameList(studyObj)
-
         if dialog.CaseNames != "" :
             newCaseList = string.split(string.strip(dialog.CaseNames)," ")
             for i in newCaseList:
@@ -995,6 +1012,16 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                                                   theCreateOpt = dialog.CreateOption,
                                                                   theCopyOpt   = dialog.CopyFromOption,
                                                                   theNameRef   = dialog.CaseRefName)
+        if string.strip(dialog.CaseNames) == "" :
+            if "CASE1" in ExistingCaseNameList:
+                mess = str(self.tr("DEFAULT_CASE_ALREADY_EXISTS"))%("CASE1",CFDSTUDYGUI_DataModel._GetPath(studyObj))
+                QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
+            else :
+                iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath = dialog.StudyPath,
+                                                              theCaseNames = "CASE1",
+                                                              theCreateOpt = dialog.CreateOption,
+                                                              theCopyOpt   = dialog.CopyFromOption,
+                                                              theNameRef   = dialog.CaseRefName)            
         self.updateObjBrowser()
 
 
@@ -1078,7 +1105,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             mess = str(ObjectTR.tr("REMOVE_ACTION_CONFIRM_MESS"))%(sobjpath)#sobj.GetName())
             if QMessageBox.warning(None, "Warning", mess, QMessageBox.Yes, QMessageBox.No) == QMessageBox.No:
                 return
-
 
             c = CFDSTUDYGUI_DataModel.GetCase(sobj).GetName()
             caseName  = sobj.GetName()
@@ -1488,6 +1514,79 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 return
             self.OpenCFD_GUI(sobj)
 
+    def slotOpenAnExistingCaseFileFromMenu(self):
+        """
+        Open into Salome the CFD GUI an existing XML file case from the Gui menu and not from Object browser
+        """     
+        log.debug("slotOpenAnExistingCaseFileFromMenu")
+        boo         = False
+        StudyPath   = ""
+        CaseName    = ""
+        xmlfileName = ""
+        title = str(self.tr("Open An Existing Case"))
+        xmlfileName, _ = QFileDialog.getOpenFileName(None,title,QDir.currentPath(), "*.xml")
+        if xmlfileName == "" :
+            return
+        boo,StudyPath,CasePath = self.checkCFDCaseDir(str(xmlfileName))
+        if boo and StudyPath != "" and CasePath != "" :
+            CaseName = os.path.basename(CasePath)
+            iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath = StudyPath,
+                                                          theCaseNames = CasePath,
+                                                          theCreateOpt = False,
+                                                          theCopyOpt   = False,
+                                                          theNameRef   = "")
+            studyObj = CFDSTUDYGUI_DataModel.FindStudyByPath(StudyPath)
+            caseObj  = CFDSTUDYGUI_DataModel.getSObject(studyObj,CaseName)
+            DATAObj  = CFDSTUDYGUI_DataModel.getSObject(caseObj,"DATA")
+            XMLObj   = CFDSTUDYGUI_DataModel.getSObject(DATAObj,os.path.basename(xmlfileName))
+            codeName = CFDSTUDYGUI_DataModel.getNameCodeFromXmlCasePath(xmlfileName)
+            self.OpenCFD_GUI(XMLObj)
+            self.updateActionsXmlFile(XMLObj)
+
+
+    def checkCFDCaseDir(self,filepath) :
+        """
+        Check if filepath is an XML file which belong to a CFD case directory
+        The structure of the case directory must include DATA RESU SCRIPTS SRC directory
+        """
+        log.debug("checkCFDCaseDir")
+        boo = True
+        StudyPath = ""
+        CasePath  = ""
+
+        if not os.path.exists(filepath):
+            mess = str(self.tr("ENV_DLG_INVALID_FILE"))%("CFD_Code",filepath)
+            QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
+            return False,StudyPath,CasePath
+
+        # Test if filepath is a CFD xml file for Code_Saturne or NEPTUNE_CFD
+        codeName = CFDSTUDYGUI_DataModel.getNameCodeFromXmlCasePath(filepath)
+        if codeName == "":
+            boo = False
+            mess = str(self.tr("ENV_DLG_INVALID_FILE_XML"))%("CFD_Code",filepath)
+            QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
+            return boo,StudyPath,CasePath
+        else :
+            _SetCFDCode(codeName)
+
+        repDATA = os.path.dirname(filepath)
+        if os.path.isdir(repDATA) and os.path.basename(repDATA) == "DATA":
+            CasePath = os.path.dirname(repDATA)
+            repListe = os.listdir(CasePath)
+            for i in ['SRC', 'RESU', 'DATA', 'SCRIPTS'] :
+                boo = boo and os.path.isdir(os.path.join(CasePath,i))
+            if not boo :
+                mess = str(self.tr("ENV_DLG_CASE_FILE"))%(filepath,CasePath)
+                QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
+                return boo,StudyPath,CasePath
+            StudyPath = os.path.dirname(CasePath)
+        else:
+            boo = False
+            mess = str(self.tr("ENV_INVALID_DATA_FILE_XML"))%("CFD_Code",filepath)
+            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
+        return boo,StudyPath,CasePath
+                
+
     def CloseCFD_GUI(self, sobj):
         """
         Close into Salome the CFD GUI from an XML file whose name is sobj.GetName()
@@ -1500,14 +1599,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if aCase:
                 aCaseName = aCase.GetName()
             else:
-                mess = "Error: "+ aXmlFileName + " file has no CFD Case into the Salome Object browser"
+                mess = str(self.tr("INFO_DLG_NO_CASE_INTO_OB"))%(aXmlFileName)
                 QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
                 return
-
             if aStudy:
                 aStudyName = aStudy.GetName()
             else:
-                mess = "Error: "+ aXmlFileName + " file has no CFD Study into the Salome Object browser"
+                mess = str(self.tr("INFO_DLG_NO_CFD_STUDY_INTO_OB"))%(aXmlFileName)
                 QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
                 return
         else:

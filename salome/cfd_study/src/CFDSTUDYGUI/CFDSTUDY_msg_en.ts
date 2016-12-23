@@ -62,6 +62,10 @@
             <translation>Run Case</translation>
         </message>
         <message>
+            <source>OPEN_CFDSTUDY_GUI_TEXT</source>
+            <translation>Open GUI</translation>
+        </message>
+        <message>
             <source>LAUNCH_CFDSTUDY_GUI_TEXT</source>
             <translation>Launch GUI</translation>
         </message>
@@ -73,6 +77,19 @@
             <source>LAUNCH_CFDSTUDY_GUI_SB</source>
             <translation>Launching of CFD code interface</translation>
         </message>
+        <message>
+            <source>OPEN_EXISTING_CASE_GUI_TEXT</source>
+            <translation>Open An Existing Case</translation>
+        </message>
+        <message>
+            <source>OPEN_EXISTING_CASE_GUI_TIP</source>
+            <translation>Open An Existing Case</translation>
+        </message>
+        <message>
+            <source>OPEN_EXISTING_CASE_GUI_SB</source>
+            <translation>Open An Existing Case</translation>
+        </message>
+
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_TEXT</source>
             <translation>Update Object Browser</translation>
@@ -187,7 +204,11 @@
         </message>
         <message>
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
-            <translation>Do You really want to delete %s directory?</translation>
+            <translation>Do You really want to delete the study case directory: %s, on your disk ?</translation>
+        </message>
+        <message>
+            <source>CLOSE_CFD_GUI_ACTION_TEXT</source>
+            <translation>Close GUI</translation>
         </message>
         <message>
             <source>CLOSE_CFD_GUI_ACTION_TIP</source>
@@ -400,8 +421,33 @@
         </message>
         <message>
             <source>ENV_DLG_INVALID_FILE</source>
-            <translation>%s: File %s does not exists!!! </translation>
+            <translation>%s: File %s does not exist!!! </translation>
         </message>
+        <message>
+            <source>ENV_DLG_INVALID_FILE_XML</source>
+            <translation>%s: File %s is not a Code_Saturne or NEPTUNE_CFD xml data file !!! </translation>
+        </message>
+        <message>
+            <source>ENV_INVALID_DATA_FILE_XML</source>
+            <translation>%s: File %s is not into a DATA directory required for a CFD case !!! </translation>
+        </message>
+        <message>
+            <source>ENV_DLG_CASE_FILE</source>
+            <translation>CFD case directory structure for the file %s is not correct : One or several directories among DATA  RESU  SCRIPTS  SRC are missing into directory %s !!! </translation>
+        </message>
+        <message>
+            <source>Open An Existing Case</source>
+            <translation>Open An Existing Case</translation>
+        </message>
+        <message>
+            <source>INFO_DLG_NO_CASE_INTO_OB</source>
+            <translation>Error: %s file has no CFD Case into the Salome Object browser</translation>
+        </message>
+        <message>
+            <source>INFO_DLG_NO_CFD_STUDY_INTO_OB</source>
+            <translation>Error: %s file has no CFD Study into the Salome Object browser</translation>
+        </message>
+
         <message>
             <source>INFO_DLG_INVALID_ENV</source>
             <translation>Invalid environment for %s ! </translation>
@@ -417,6 +463,10 @@
         <message>
             <source>CASE_ALREADY_EXISTS</source>
             <translation>Case name: %s already exists in the CFD Study %s</translation>
+        </message>
+        <message>
+            <source>DEFAULT_CASE_ALREADY_EXISTS</source>
+            <translation>Default case name: %s already exists in the CFD Study %s</translation>
         </message>
     </context>
     <context>

@@ -63,17 +63,35 @@
             <translation>Ouverture du cas</translation>
         </message>
         <message>
+            <source>OPEN_CFDSTUDY_GUI_TEXT</source>
+            <translation>Ouverture du GUI</translation>
+        </message>
+        <message>
             <source>LAUNCH_CFDSTUDY_GUI_TEXT</source>
-            <translation>Execution du GUI</translation>
+            <translation>Lancement du GUI</translation>
         </message>
         <message>
             <source>LAUNCH_CFDSTUDY_GUI_TIP</source>
-            <translation>Execution de l'interface du code CFD</translation>
+            <translation>Lancement de l'interface du code CFD</translation>
         </message>
         <message>
             <source>LAUNCH_CFDSTUDY_GUI_SB</source>
-            <translation>Execution de l'interface du code CFD</translation>
+            <translation>Lancement de l'interface du code CFD</translation>
         </message>
+
+        <message>
+            <source>OPEN_EXISTING_CASE_GUI_TEXT</source>
+            <translation>Ouverture d'un Cas Existant</translation>
+        </message>
+        <message>
+            <source>OPEN_EXISTING_CASE_GUI_TIP</source>
+            <translation>Ouverture d'un Cas Existant</translation>
+        </message>
+        <message>
+            <source>OPEN_EXISTING_CASE_GUI_SB</source>
+            <translation>Ouverture d'un Cas Existant</translation>
+        </message>
+
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_TEXT</source>
             <translation>Mise a jour de l'Object Browser</translation>
@@ -188,7 +206,11 @@
         </message>
         <message>
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
-            <translation>Voulez-vous supprimer definitivement le répertoire %s de cette étude sur le disque dur?</translation>
+            <translation>Voulez-vous vraiment supprimer le répertoire de cas: %s, de cette étude sur le disque?</translation>
+        </message>
+        <message>
+            <source>CLOSE_CFD_GUI_ACTION_TEXT</source>
+            <translation>Fermeture du GUI</translation>
         </message>
         <message>
             <source>CLOSE_CFD_GUI_ACTION_TIP</source>
@@ -404,6 +426,33 @@
             <translation>%s : le fichier %s  n'existe pas!!! </translation>
         </message>
         <message>
+            <source>ENV_DLG_INVALID_FILE_XML</source>
+            <translation>%s: le fichier %s n'est pas un fichier de données de type Code_Saturne ou NEPTUNE_CFD !!! </translation>
+        </message>
+        <message>
+            <source>ENV_INVALID_DATA_FILE_XML</source>
+            <translation>%s: Le fichier %s n'est pas dans un répertoire DATA requis pour un cas CFD !!! </translation>
+        </message>
+        <message>
+            <source>ENV_DLG_CASE_FILE</source>
+            <translation>La structure du répertoire de cas CFD pour le fichier %s n'est pas correcte : un ou plusieurs des répertoires DATA  RESU  SCRIPTS  SRC manquent dans le répertoire %s !!! </translation>
+        </message>
+        <message>
+            <source>Open An Existing Case</source>
+            <translation>Ouverture d'un cas existant</translation>
+        </message>
+
+        <message>
+            <source>INFO_DLG_NO_CASE_INTO_OB</source>
+            <translation>Erreur: le fichier %s n'a pas d'objet père de type cas CFD dans l'Object browser de Salome</translation>
+        </message>
+        <message>
+            <source>INFO_DLG_NO_CFD_STUDY_INTO_OB</source>
+            <translation>Erreur: le fichier %s n'a pas d'objet père de type étude CFD dans l'Object browser de Salome</translation>
+        </message>
+
+
+        <message>
             <source>INFO_DLG_INVALID_ENV</source>
             <translation>Environnement invalide pour %s ! </translation>
         </message>
@@ -418,6 +467,10 @@
         <message>
             <source>CASE_ALREADY_EXISTS</source>
             <translation>Le cas : %s existe déjà dans l'étude CFD %s</translation>
+        </message>
+        <message>
+            <source>DEFAULT_CASE_ALREADY_EXISTS</source>
+            <translation>Le cas par défaut: %s existe déjà dans l'étude CFD %s</translation>
         </message>
     </context>
     <context>
