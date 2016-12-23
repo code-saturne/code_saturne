@@ -1071,7 +1071,11 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
   const cs_join_vertex_t  *j_vertices = join_mesh->vertices;
   const cs_lnum_t  n_vertices = n_bs_vertices + n_j_vertices;
 
-  assert(mesh->global_vtx_num != NULL);
+  if (mesh->global_vtx_num == NULL) {
+    BFT_MALLOC(mesh->global_vtx_num, n_bs_vertices, cs_gnum_t);
+    for (i = 0; i < n_bs_vertices; i++)
+      mesh->global_vtx_num[i] = i+1;
+  }
 
   /* Update initial vertices (local and global numbering) */
 

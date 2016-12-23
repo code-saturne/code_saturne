@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-12-15 15:34+0100\n"
+"POT-Creation-Date: 2016-12-23 02:14+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7365,9 +7365,6 @@ msgid ""
 " Please modify your setting.\n"
 msgstr ""
 
-msgid " The given name for this set of probes is empty."
-msgstr ""
-
 #, c-format
 msgid ""
 " Error adding a new set of probes.\n"
@@ -7375,11 +7372,7 @@ msgid ""
 " Please check your settings."
 msgstr ""
 
-#, c-format
-msgid ""
-" Stop adding a new set of probes.\n"
-" %s is already used as a name for a set of probes.\n"
-" Please check your settings."
+msgid " The given name for this set of probes is empty."
 msgstr ""
 
 #, c-format
@@ -13226,10 +13219,10 @@ msgstr ""
 
 msgid ""
 "\n"
-"  Joining operation is null.\n"
+"  Joining operation did modify any vertices.\n"
 msgstr ""
 "\n"
-"  L'opération de recollement est nulle.\n"
+"  L'opération de recollement n'a modifé aucun sommet.\n"
 
 msgid ""
 "\n"
@@ -13258,6 +13251,13 @@ msgid ""
 msgstr ""
 "\n"
 "  Fusion de sommets et mise à jour du maillage terminées.\n"
+
+msgid ""
+"\n"
+"  Joining operation is null.\n"
+msgstr ""
+"\n"
+"  L'opération de recollement est nulle.\n"
 
 #, c-format
 msgid ""

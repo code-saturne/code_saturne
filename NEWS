@@ -117,6 +117,8 @@ Architectural changes
 Bug fixes
 ---------
 
+- Allow mesh joining when no vertices are modified.
+
 - Allow use of Modak absorption using the GUI for gas combustion.
 
 - Fix turbulent exchange coefficient of condensation in case of forced
