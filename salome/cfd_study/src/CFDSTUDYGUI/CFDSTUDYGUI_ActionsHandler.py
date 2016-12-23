@@ -852,7 +852,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAFile"]:
             popup.addAction(self.commonAction(EditAction))
             popup.addAction(self.commonAction(MoveToDRAFTAction))
-            popup.addAction(self.commonAction(CopyCaseFileAction))
+#            popup.addAction(self.commonAction(CopyCaseFileAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATADRAFTFile"]:
             popup.addAction(self.commonAction(EditAction))
             popup.addAction(self.commonAction(RemoveAction))
@@ -865,14 +865,14 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]:
             popup.addAction(self.commonAction(OpenGUIAction))
             popup.addAction(self.solverAction(SolverCloseAction))
-            popup.addAction(self.commonAction(CopyCaseFileAction))
+#            popup.addAction(self.commonAction(CopyCaseFileAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SRCFolder"]:
             popup.addAction(self.commonAction(CheckCompilationAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SRCFile"]:
             popup.addAction(self.commonAction(CheckCompilationAction))
             popup.addAction(self.commonAction(EditAction))
             popup.addAction(self.commonAction(MoveToDRAFTAction))
-            popup.addAction(self.commonAction(CopyCaseFileAction))
+#            popup.addAction(self.commonAction(CopyCaseFileAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SRCDRAFTFile"]:
             popup.addAction(self.commonAction(EditAction))
             popup.addAction(self.commonAction(RemoveAction))
