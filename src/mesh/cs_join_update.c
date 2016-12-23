@@ -1060,6 +1060,8 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
   cs_lnum_t  i, j, k, o_id, j_id, v_id;
   cs_gnum_t  prev, cur;
 
+  bool tmp_global_vtx_num = false;
+
   cs_lnum_t  n_as_vertices = -1; /* ac: after splitting */
   cs_lnum_t  *order = NULL;
   cs_real_t  *new_vtx_coord = NULL;
@@ -1072,6 +1074,7 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
   const cs_lnum_t  n_vertices = n_bs_vertices + n_j_vertices;
 
   if (mesh->global_vtx_num == NULL) {
+    tmp_global_vtx_num = true;
     BFT_MALLOC(mesh->global_vtx_num, n_bs_vertices, cs_gnum_t);
     for (i = 0; i < n_bs_vertices; i++)
       mesh->global_vtx_num[i] = i+1;
@@ -1202,6 +1205,9 @@ _update_vertices_after_split(const cs_join_mesh_t  *join_mesh,
   }
 
   /* Free memory */
+
+  if (tmp_global_vtx_num)
+    BFT_FREE(mesh->global_vtx_num);
 
   BFT_FREE(o2n_vtx_id);
   BFT_FREE(mesh->vtx_coord);
