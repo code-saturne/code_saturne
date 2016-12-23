@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>CFD study and cases creation</string>
+   <string>CFD study localization or creation</string>
   </property>
   <property name="modal">
    <bool>true</bool>

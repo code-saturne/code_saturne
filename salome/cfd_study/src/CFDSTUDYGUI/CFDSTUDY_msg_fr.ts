@@ -4,7 +4,7 @@
         <name>@default</name>
         <message>
             <source>CFDSTUDY_INVALID_ENV</source>
-            <translation>code de CFD non trouves!</translation>
+            <translation>Code CFD non trouvé!</translation>
         </message>
         <message>
             <source>CFDSTUDY_INVALID_SOLVER_NAME</source>
@@ -20,7 +20,7 @@
         </message>
         <message>
             <source>SET_CFDSTUDY_STUDY_TEXT</source>
-            <translation>Selection d'une étude CFD existante ou Création</translation>
+            <translation>Sélection d'une étude CFD existante ou Création</translation>
         </message>
         <message>
             <source>SET_CFDSTUDY_STUDY_TIP</source>
@@ -30,13 +30,10 @@
             <source>SET_CFDSTUDY_STUDY_SB</source>
             <translation>Selection d'une étude CFD existante ou Création</translation>
         </message>
-        <message>
-            <source>SET_STUDY_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choix du répertoire de l'etude CFD</translation>
-        </message>
+
         <message>
             <source>SET_CASE_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choix du répertoire du cas d'etude CFD</translation>
+            <translation>Choix du répertoire du cas d'étude CFD</translation>
         </message>
         <message>
             <source>ADD_CFDSTUDY_CASE_TEXT</source>
@@ -48,19 +45,7 @@
         </message>
         <message>
             <source>ADD_CFDSTUDY_CASE_SB</source>
-            <translation>Ajout d'un csa</translation>
-        </message>
-        <message>
-            <source>LAUNCH_CFDSTUDY_CASE_TEXT</source>
-            <translation>Ouverture du cas</translation>
-        </message>
-        <message>
-            <source>LAUNCH_CFDSTUDY_CASE_TIP</source>
-            <translation>Ouverture du cas</translation>
-        </message>
-        <message>
-            <source>LAUNCH_CFDSTUDY_CASE_SB</source>
-            <translation>Ouverture du cas</translation>
+            <translation>Ajout d'un cas</translation>
         </message>
         <message>
             <source>OPEN_CFDSTUDY_GUI_TEXT</source>
@@ -81,28 +66,28 @@
 
         <message>
             <source>OPEN_EXISTING_CASE_GUI_TEXT</source>
-            <translation>Ouverture d'un Cas Existant</translation>
+            <translation>Ouverture d'un cas existant</translation>
         </message>
         <message>
             <source>OPEN_EXISTING_CASE_GUI_TIP</source>
-            <translation>Ouverture d'un Cas Existant</translation>
+            <translation>Ouverture d'un Cas existant</translation>
         </message>
         <message>
             <source>OPEN_EXISTING_CASE_GUI_SB</source>
-            <translation>Ouverture d'un Cas Existant</translation>
+            <translation>Ouverture d'un Cas existant</translation>
         </message>
 
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_TEXT</source>
-            <translation>Mise a jour de l'Object Browser</translation>
+            <translation>Mise à jour de l'Object Browser</translation>
         </message>
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_TIP</source>
-            <translation>Mise a jour de l'Object Browser (relecture du répertoire racine)</translation>
+            <translation>Mise à jour de l'Object Browser (relecture du répertoire racine)</translation>
         </message>
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_SB</source>
-            <translation>Mise a jour de l'Object Browser (relecture du répertoire racine)</translation>
+            <translation>Mise à jour de l'Object Browser (relecture du répertoire racine)</translation>
         </message>
         <message>
             <source>INFO_CFDSTUDY_TEXT</source>
@@ -118,19 +103,19 @@
         </message>
         <message>
             <source>RUN_SCRIPT_ACTION_TEXT</source>
-            <translation>Execution du script...</translation>
+            <translation>Exécution du script...</translation>
         </message>
         <message>
             <source>RUN_SCRIPT_ACTION_TIP</source>
-            <translation>Execution du script...</translation>
+            <translation>Exécution du script...</translation>
         </message>
         <message>
             <source>RUN_SCRIPT_ACTION_SB</source>
-            <translation>Execution du script...</translation>
+            <translation>Exécution du script...</translation>
         </message>
         <message>
             <source>RUN_SCRIPT_ACTION_ACCESS_ERROR</source>
-            <translation>Vous n'avez pas les droits d'acces pour le script d'execution!</translation>
+            <translation>Vous n'avez pas les droits d'accès pour le script d'exécution!</translation>
         </message>
         <message>
             <source>SOLVER_FILE_MENU_TEXT</source>
@@ -138,27 +123,27 @@
         </message>
         <message>
             <source>SOLVER_SAVE_ACTION_TEXT</source>
-            <translation>Sauver le fichier de parametres CFD</translation>
+            <translation>Sauvegarder le fichier de paramètres CFD</translation>
         </message>
         <message>
             <source>SOLVER_SAVE_ACTION_TIP</source>
-            <translation>Sauver le fichier de parametres CFD</translation>
+            <translation>Sauvegarder le fichier de paramètres CFD</translation>
         </message>
         <message>
             <source>SOLVER_SAVE_ACTION_SB</source>
-            <translation>Sauver le fichier de parametres CFD</translation>
+            <translation>Sauvegarder le fichier de paramètres CFD</translation>
         </message>
         <message>
             <source>SOLVER_SAVEAS_ACTION_TEXT</source>
-            <translation>Sauver comme un fichier de parametres CFD</translation>
+            <translation>Sauvegarder sous un fichier de type paramètres CFD</translation>
         </message>
         <message>
             <source>SOLVER_SAVEAS_ACTION_TIP</source>
-            <translation>Sauver comme un fichier de parametres CFD</translation>
+            <translation>Sauvegarder sous un fichier de type paramètres CFD</translation>
         </message>
         <message>
             <source>SOLVER_SAVEAS_ACTION_SB</source>
-            <translation>Sauver comme un fichier de parametres CFD</translation>
+            <translation>Sauvegarder sous un fichier de type paramètres CFD</translation>
         </message>
         <message>
             <source>XML_DATA_FILE</source>
@@ -182,15 +167,15 @@
         </message>
         <message>
             <source>SOLVER_DISPLAYCASE_ACTION_TEXT</source>
-            <translation>Affichier le contenu du XML</translation>
+            <translation>Afficher le contenu du XML</translation>
         </message>
         <message>
             <source>SOLVER_DISPLAYCASE_ACTION_TIP</source>
-            <translation>Affichier le contenu du XML</translation>
+            <translation>Afficher le contenu du XML</translation>
         </message>
         <message>
             <source>SOLVER_DISPLAYCASE_ACTION_SB</source>
-            <translation>Affichier le contenu du XML</translation>
+            <translation>Afficher le contenu du XML</translation>
         </message>
         <message>
             <source>REMOVE_ACTION_TEXT</source>
@@ -203,6 +188,10 @@
         <message>
             <source>REMOVE_ACTION_SB</source>
             <translation>Supprimer</translation>
+        </message>
+        <message>
+            <source>REMOVE_ACTION_CONFIRM_MESS</source>
+            <translation>Voulez-vous vraiment supprimer le répertoire de cas: %s, de cette étude sur le disque?</translation>
         </message>
         <message>
             <source>CLOSE_ACTION_TEXT</source>
@@ -219,11 +208,6 @@
         <message>
             <source>CLOSE_ACTION_CONFIRM_MESS</source>
             <translation>Voulez-vous vraiment fermer cette étude CFD : %s, et ses cas associés de l'Object Browser de SALOME ?</translation>
-        </message>
-
-        <message>
-            <source>REMOVE_ACTION_CONFIRM_MESS</source>
-            <translation>Voulez-vous vraiment supprimer le répertoire de cas: %s, de cette étude sur le disque?</translation>
         </message>
         <message>
             <source>CLOSE_CFD_GUI_ACTION_TEXT</source>
@@ -263,19 +247,19 @@
         </message>
         <message>
             <source>MOVE_TO_DRAFT_ACTION_TEXT</source>
-            <translation>Deplacer dans DRAFT</translation>
+            <translation>Déplacer dans DRAFT</translation>
         </message>
         <message>
             <source>MOVE_TO_DRAFT_ACTION_TIP</source>
-            <translation>Deplacer dans DRAFT</translation>
+            <translation>Déplacer dans DRAFT</translation>
         </message>
         <message>
             <source>MOVE_TO_DRAFT_ACTION_SB</source>
-            <translation>Deplacer dans DRAFT</translation>
+            <translation>Déplacer dans DRAFT</translation>
         </message>
         <message>
             <source>OVERWRITE_CONFIRM_MESS</source>
-            <translation>Le fichier cible existe deja. Voulez vous l'ecraser?</translation>
+            <translation>Le fichier cible existe deja. Voulez vous l'écraser?</translation>
         </message>
         <message>
             <source>COPY_IN_DATA_ACTION_TEXT</source>
@@ -339,7 +323,7 @@
         </message>
         <message>
             <source>EXPORT_IN_SMESH_ACTION_WARNING</source>
-            <translation>Erreurs durant l'operation EXPORT!</translation>
+            <translation>Erreur durant l'operation EXPORT!</translation>
         </message>
         <message>
             <source>ECS_CONVERT_ACTION_TEXT</source>
@@ -355,68 +339,55 @@
         </message>
         <message>
             <source>CHECK_COMPILATION_ACTION_TEXT</source>
-            <translation>Controle de la compilation</translation>
+            <translation>Contrôle de la compilation</translation>
         </message>
         <message>
             <source>CHECK_COMPILATION_ACTION_TIP</source>
-            <translation>Controle de la compilation</translation>
+            <translation>Contrôle de la compilation</translation>
         </message>
         <message>
             <source>CHECK_COMPILATION_ACTION_SB</source>
-            <translation>Controle de la compilation</translation>
-        </message>
-        <message>
-            <source>CFDSTUDY_PREF_TAB</source>
-            <translation>CFDSTUDY</translation>
+            <translation>Contrôle de la compilation</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_GEN_GROUP</source>
-            <translation>General</translation>
+            <translation>Général</translation>
         </message>
         <message>
-            <source>CFDSTUDY_PREF_KERNEL</source>
-            <translation>Repertoire noyau CFDSTUDY</translation>
+            <source>EDITOR</source>
+            <translation>Editeur</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_EDITOR</source>
-            <translation>editeur</translation>
+            <translation>gvim</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_READER</source>
-            <translation>editeur</translation>
+            <translation>gview</translation>
+        </message>
+        <message>
+            <source>EXTERNAL_READER</source>
+            <translation>Lecteur de fichier</translation>
+        </message>
+        <message>
+            <source>EXTERNAL_EDITOR</source>
+            <translation>Editeur de fichier</translation>
+        </message>
+        <message>
+            <source>ADD_VIEWER_NAME_PREFERENCE</source>
+            <translation>Pas de nom d'éditeur dans les préférences de SALOME. Entrez le nom d'un éditeur dans les préférences du module CFDSTUDY de SALOME, dans le champ %s (Menu déroulant Fichier puis Préférences...)</translation>
+        </message>
+        <message>
+            <source>VERIFY_VIEWER_NAME_PREFERENCE</source>
+            <translation>Vérifier dans les préférences de SALOME CFDSTUDY si le nom du viewer est valide. Vérifier le champ %s (Menu déroulant Fichier puis Préférences...)</translation>
+        </message>
+        <message>
+            <source>VERIFY_EDITOR_NAME_PREFERENCE</source>
+            <translation>Vérifier dans les préférences de SALOME CFDSTUDY si le nom de l'éditeur est valide. Vérifier le champ %s (Menu déroulant Fichier puis Préférences...)</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_DIFF</source>
             <translation>Outils de Diff</translation>
-        </message>
-        <message>
-            <source>CFDSTUDY_PREF_DISPLAY</source>
-            <translation>Ecran</translation>
-        </message>
-        <message>
-            <source>CFDSTUDY_PREF_ENV_GROUP</source>
-            <translation>Environnement</translation>
-        </message>
-        <message>
-            <source>CFDSTUDY_PREF_SHOW_INFO_DLG</source>
-            <translation>Ne pas voir les informations lors de la premiere activation</translation>
-        </message>
-
-        <message>
-            <source>CFDSTUDY_ENV_WARN_MESSAGE</source>
-            <translation>You can't activate CFDSTUDY module without required enviroment variables. Please, set it</translation>
-        </message>
-        <message>
-            <source>STMSG_SET_STUDY_LOCATION</source>
-            <translation>Reglagedu répertoire d'etude...</translation>
-        </message>
-        <message>
-            <source>STMSG_UPDATE_STUDY</source>
-            <translation>Mise a jour de la structure d'etude...</translation>
-        </message>
-        <message>
-            <source>STMSG_ADD_CASE</source>
-            <translation>Ajout de cas CFD...</translation>
         </message>
         <message>
             <source>STMSG_ECS_CONVERT</source>
@@ -424,11 +395,11 @@
         </message>
         <message>
             <source>STMSG_RUN_SCRIPT</source>
-            <translation>Executer Code_Saturne</translation>
+            <translation>Exécution de Code_Saturne</translation>
         </message>
         <message>
             <source>STMSG_CHECK_COMPILATION</source>
-            <translation>Controler la compilation</translation>
+            <translation>Contrôler la compilation</translation>
         </message>
         <message>
             <source>STMSG_COMPILATION</source>
@@ -455,11 +426,6 @@
             <translation>La structure du répertoire de cas CFD pour le fichier %s n'est pas correcte : un ou plusieurs des répertoires DATA  RESU  SCRIPTS  SRC manquent dans le répertoire %s !!! </translation>
         </message>
         <message>
-            <source>Open An Existing Case</source>
-            <translation>Ouverture d'un cas existant</translation>
-        </message>
-
-        <message>
             <source>INFO_DLG_NO_CASE_INTO_OB</source>
             <translation>Erreur: le fichier %s n'a pas d'objet père de type cas CFD dans l'Object browser de Salome</translation>
         </message>
@@ -467,19 +433,13 @@
             <source>INFO_DLG_NO_CFD_STUDY_INTO_OB</source>
             <translation>Erreur: le fichier %s n'a pas d'objet père de type étude CFD dans l'Object browser de Salome</translation>
         </message>
-
-
         <message>
             <source>INFO_DLG_INVALID_ENV</source>
             <translation>Environnement invalide pour %s ! </translation>
         </message>
         <message>
             <source>STMSG_UPDATE_STUDY_INCOMING</source>
-            <translation> ...mise a jour de la structure de l'etude MAINTENANT ! </translation>
-        </message>
-        <message>
-            <source>INFO_DLG_CASE</source>
-            <translation> Le cas d'etdue %s existe deja ! </translation>
+            <translation> ...Mise à jour de la structure de l'etude MAINTENANT ! </translation>
         </message>
         <message>
             <source>CASE_ALREADY_EXISTS</source>
@@ -497,36 +457,51 @@
             <translation>CFDSTUDY information</translation>
         </message>
         <message>
-            <source>INFO_DLG_NOT_INSTALLED</source>
-            <translation>Non Installe!!!</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_ENV_GROUP</source>
-            <translation>Variables d'environnement</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_ENV_REQUIRED</source>
-            <translation>%s (requis)</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_ENV_OPTIONAL</source>
-            <translation>%s(option)</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_CHECKBOX_TEXT</source>
-            <translation>Don't show me again on startup module</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_ENV_EDIT</source>
-            <translation>Edit environnement...</translation>
-        </message>
-        <message>
             <source>INFO_DLG_INVALID_ENV</source>
             <translation>Invalid environment! Please, correct required or non-existent variables:</translation>
         </message>
         <message>
             <source>DLG_OK_BUTTON_TEXT</source>
             <translation>Valider</translation>
+        </message>
+    </context>
+    <context>
+        <name>SetTreeLocationDialog</name>
+        <message>
+            <source>CFD study localization or creation</source>
+            <translation>Localisation ou création d'une étude CFD</translation>
+        </message>
+        <message>
+            <source>Load existing study</source>
+            <translation>Chargement d'une étude existante</translation>
+        </message>
+        <message>
+            <source>Create Study</source>
+            <translation>Création d'une étude</translation>
+        </message>
+        <message>
+            <source>Study location</source>
+            <translation>Localisation de l'étude</translation>
+        </message>
+        <message>
+            <source>Study name</source>
+            <translation>Nom de l'étude</translation>
+        </message>
+        <message>
+            <source>Cases</source>
+            <translation>Cas</translation>
+        </message>
+        <message>
+            <source>copy from existing case</source>
+            <translation>copie d'un cas existant</translation>
+        </message>
+        <message>
+            <source>New study directory name created</source>
+            <translation>Nom du nouveau répertoire d'étude créé</translation>
+        </message>
+        <message>
+            <source>Input cases names separated with space</source>
+            <translation>Entrer le ou les noms des cas séparés par des espaces</translation>
         </message>
     </context>
     <context>
@@ -542,22 +517,6 @@
         <message>
             <source>DLG_CANCEL_BUTTON_TEXT</source>
             <translation>Annuler</translation>
-        </message>
-        <message>
-            <source>LOCATION_DLG_CAPTION</source>
-            <translation>Emplacement de l'étude CFDSTUDY</translation>
-        </message>
-        <message>
-            <source>LOCATION_DLG_CASE_NAME</source>
-            <translation>Cas</translation>
-        </message>
-        <message>
-            <source>LOCATION_DLG_STUDY_DIR_LABEL</source>
-            <translation>Emplacement de l'étude</translation>
-        </message>
-        <message>
-            <source>SET_STUDY_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choisir l'emplacement de l'étude</translation>
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_OPEN_MESS</source>
@@ -580,44 +539,12 @@
             <translation>Le répertoire sélectionné : %s n'est pas un répertoire cas CFD, Choisir un autre répertoire</translation>
         </message>
         <message>
-            <source>Select an existing CFD Study Directory</source>
-            <translation>Selection d'un répertoire d'etude CFD existant</translation>
+            <source>Select an existing CFD Study</source>
+            <translation>Sélection d'une étude CFD existante</translation>
         </message>
         <message>
             <source>Select a directory location to create a new CFD Study</source>
-            <translation>Selection d'un répertoire pour la création d'une nouvelle étude CFD</translation>
-        </message>
-        <message>
-            <source>Load existing study</source>
-            <translation>Chargement d'une étude existante</translation>
-        </message>
-        <message>
-            <source>Create Study</source>
-            <translation>Création d'une étude</translation>
-        </message>
-        <message>
-            <source>Study name</source>
-            <translation>Nom de l'étude</translation>
-        </message>
-        <message>
-            <source>create MESH directory</source>
-            <translation>creation du répertoire MESH</translation>
-        </message>
-        <message>
-            <source>create POST directory</source>
-            <translation>creation du répertoire POST</translation>
-        </message>
-        <message>
-            <source>copy from existing case</source>
-            <translation>copie d'un cas existant</translation>
-        </message>
-        <message>
-            <source>New study directory name created</source>
-            <translation>Nom du nouveau répertoire d'étude créé</translation>
-        </message>
-        <message>
-            <source>Input cases names separated with space</source>
-            <translation>Entrer le ou les noms des cas séparés par des espaces</translation>
+            <translation>Sélection d'un répertoire pour la création d'une nouvelle étude CFD</translation>
         </message>
     </context>
     <context>
@@ -654,28 +581,8 @@
             <translation>Annuler</translation>
         </message>
         <message>
-            <source>COPY_DLG_DEST_FILE_LABEL</source>
-            <translation>Fichier</translation>
-        </message>
-        <message>
-            <source>COPY_DLG_DEST_CASE_LABEL</source>
-            <translation>Cas</translation>
-        </message>
-        <message>
-            <source>COPY_DLG_DEST_STUDY_LABEL</source>
-            <translation>Etude</translation>
-        </message>
-        <message>
-            <source>COPY_DLG_SOURCE_CASE_LABEL</source>
-            <translation>Cas</translation>
-        </message>
-        <message>
-            <source>COPY_DLG_FILE_NAME_LABEL</source>
-            <translation>Fichier</translation>
-        </message>
-        <message>
             <source>COPY_DLG_CAPTION</source>
-            <translation>Copier le fichier de parametres</translation>
+            <translation>Copier le fichier de paramètres</translation>
         </message>
         <message>
             <source>COPY_DLG_EXISTS_ERROR_CAPTION</source>
@@ -699,10 +606,6 @@
         <message>
             <source>GUIACTIVATE_DLG_OPTIONS_TITLE</source>
             <translation>Options</translation>
-        </message>
-        <message>
-            <source>GUIACTIVATE_DLG_NEW_CASE</source>
-            <translation>Nouveau Cas</translation>
         </message>
         <message>
             <source>ICSACTIVATE_DLG_CAPTION</source>

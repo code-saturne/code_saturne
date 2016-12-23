@@ -1001,7 +1001,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         dialog.StudyLineEdit.setText(studyObj.GetName())
         
         if not os.path.exists(dialog.StudyPath):
-            mess = str(self.tr("ENV_DLG_INVALID_DIRECTORY"))%(dialog.StudyPath) +str(self.tr("STMSG_UPDATE_STUDY_INCOMING"))
+            mess = self.tr("ENV_DLG_INVALID_DIRECTORY")%(dialog.StudyPath) +self.tr("STMSG_UPDATE_STUDY_INCOMING")
             QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
             return
         dialog.exec_()
@@ -1016,7 +1016,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             newCaseList = string.split(string.strip(dialog.CaseNames)," ")
             for i in newCaseList:
                 if i in ExistingCaseNameList:
-                    mess = str(self.tr("CASE_ALREADY_EXISTS"))%(i,CFDSTUDYGUI_DataModel._GetPath(studyObj))
+                    mess = self.tr("CASE_ALREADY_EXISTS")%(i,CFDSTUDYGUI_DataModel._GetPath(studyObj))
 
                     QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
                 else :
@@ -1027,7 +1027,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                                                   theNameRef   = dialog.CaseRefName)
         if string.strip(dialog.CaseNames) == "" :
             if "CASE1" in ExistingCaseNameList:
-                mess = str(self.tr("DEFAULT_CASE_ALREADY_EXISTS"))%("CASE1",CFDSTUDYGUI_DataModel._GetPath(studyObj))
+                mess = self.tr("DEFAULT_CASE_ALREADY_EXISTS")%("CASE1",CFDSTUDYGUI_DataModel._GetPath(studyObj))
                 QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
             else :
                 iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath = dialog.StudyPath,
@@ -1079,31 +1079,44 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         Edits in the read only mode the file selected in the Object Browser.
         Warning, the editor is always emacs!
         """
-        viewerName = str( sgPyQt.stringSetting( "CFDSTUDY", "ExternalEditor", str(self.tr("CFDSTUDY_PREF_EDITOR")).strip() ) )
+        viewerName = str( sgPyQt.stringSetting( "CFDSTUDY", "ExternalReader", str(self.tr("CFDSTUDY_PREF_READER")) ).strip() )
         if viewerName != "":
             sobj = self._singleSelectedObject()
             if sobj is not None:
                 path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-                if re.match(".*emacs$", viewerName):
-                    subprocess.Popen([viewerName, path, "-f", "toggle-read-only"])
-                elif re.match("vi", viewerName) or re.match("vim", viewerName):
-                    subprocess.call("xterm -sb -e vi " + path, shell=True)
-                else:
-                    subprocess.Popen([viewerName, path])
-
+                try:
+                    if re.match(".*emacs$", viewerName):
+                        subprocess.Popen([viewerName, path, "-f", "toggle-read-only"])
+                    elif re.match("vi", viewerName) or re.match("vim", viewerName):
+                        subprocess.Popen("xterm -sb -e vi " + path, shell=True)
+                    elif viewerName == "gvim":
+                        subprocess.Popen([viewerName, path, "-R"])
+                    else:
+                        subprocess.Popen([viewerName, path])
+                except:
+                    mess = self.tr("VERIFY_VIEWER_NAME_PREFERENCE")%(str(ObjectTR.tr("EXTERNAL_READER")))
+                    QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
+        else :
+            mess = self.tr("ADD_VIEWER_NAME_PREFERENCE")%(str(ObjectTR.tr("EXTERNAL_READER")))
+            QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
 
     def slotEditAction(self):
         """
         Edits in the user's editor the file selected in the Object Browser.
         """
-        viewerName = str( sgPyQt.stringSetting( "CFDSTUDY", "ExternalEditor", str(self.tr("CFDSTUDY_PREF_EDITOR") ).strip() ))
-
-        if viewerName != "":
-            #viewerName = str(viewer.toLatin1())
+        viewerName = str( sgPyQt.stringSetting( "CFDSTUDY", "ExternalEditor", str(self.tr("CFDSTUDY_PREF_EDITOR") ) ).strip())
+        if str(viewerName) != "":
             sobj = self._singleSelectedObject()
             if not sobj == None:
                 path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-                subprocess.Popen([viewerName, path])
+                try:
+                    subprocess.Popen([viewerName, path])
+                except:
+                    mess = self.tr("VERIFY_EDITOR_NAME_PREFERENCE")%(str(ObjectTR.tr("EXTERNAL_EDITOR")))
+                    QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
+        else :
+            mess = self.tr("ADD_VIEWER_NAME_PREFERENCE")%(str(ObjectTR.tr("EXTERNAL_EDITOR")))
+            QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
 
     def slotCloseStudyAction(self):
         """
@@ -1116,7 +1129,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         xmlcaseList= []
         if theStudy != None:
             theStudypath = CFDSTUDYGUI_DataModel._GetPath(theStudy)
-            mess = str(ObjectTR.tr("CLOSE_ACTION_CONFIRM_MESS"))%(theStudypath)#sobj.GetName())
+            mess = ObjectTR.tr("CLOSE_ACTION_CONFIRM_MESS")%(theStudypath)#sobj.GetName())
             if QMessageBox.warning(None, "Warning", mess, QMessageBox.Yes, QMessageBox.No) == QMessageBox.No:
                 return
         caseList = CFDSTUDYGUI_DataModel.GetCaseList(theStudy)
@@ -1137,7 +1150,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sobj = self._singleSelectedObject()
         if sobj != None:
             sobjpath = CFDSTUDYGUI_DataModel._GetPath(sobj)
-            mess = str(ObjectTR.tr("REMOVE_ACTION_CONFIRM_MESS"))%(sobjpath)#sobj.GetName())
+            mess = ObjectTR.tr("REMOVE_ACTION_CONFIRM_MESS")%(sobjpath)#sobj.GetName())
             if QMessageBox.warning(None, "Warning", mess, QMessageBox.Yes, QMessageBox.No) == QMessageBox.No:
                 return
 
@@ -1185,7 +1198,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 if not parent == None and parent.GetName() == "DATA":
                     parentPath = CFDSTUDYGUI_DataModel._GetPath(parent)
                     newpath = os.path.join(parentPath, sobj.GetName())
-                    mess = ObjectTR.tr("OVERWRITE_CONFIRM_MESS")
                     if os.path.exists(newpath):
                         mess = ObjectTR.tr("OVERWRITE_CONFIRM_MESS")
                         if QMessageBox.warning(None, "Warning", mess, QMessageBox.Yes, QMessageBox.No) == QMessageBox.No:
@@ -1340,7 +1352,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 if not aStatus:
                     QApplication.restoreOverrideCursor()
                     mess = ObjectTR("EXPORT_IN_SMESH_ACTION_WARNING")
-                    QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+                    QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
                     return
 
                 (reppath,fileName)=   os.path.split(path)
@@ -1363,7 +1375,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         if self._multipleSelectedObject() == None:
             mess = "Display MESH: No object selected into Object Browser"
-            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
             return
         smeshgui = salome.ImportComponentGUI("SMESH")
         studyId = salome.sg.getActiveStudyId()
@@ -1375,7 +1387,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 entry = sobj.GetID()
                 if entry == None:
                     mess = "slotDisplayMESH: No mesh with the Name: " + sobj.GetName() + ", under Mesh into Object Browser"
-                    QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+                    QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
                     QApplication.restoreOverrideCursor()
                     return
                 #Displaying Mesh
@@ -1386,7 +1398,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                     salome.sg.FitAll()
             else:
                 mess = "slotDisplayMESH: Entry Id not stored for the mesh: " + sobj.GetName()
-                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
         QApplication.restoreOverrideCursor()
 
 
@@ -1400,7 +1412,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         if self._multipleSelectedObject() == None:
             mess = "Display MESH Groups: No object selected into Object Browser"
-            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
             return
         smeshgui = salome.ImportComponentGUI("SMESH")
 
@@ -1411,7 +1423,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                     smeshgui.CreateAndDisplayActor(sobj_group.GetID())
             else:
                 mess = "No group "+ sobj_group.GetName() + " whose mesh father name is:",sobj_group.GetFatherComponent().GetName() #GetFather().GetFather().GetName()
-                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
         salome.sg.UpdateView()
         salome.sg.FitAll()
 
@@ -1433,7 +1445,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             smeshgui.CreateAndDisplayActor(id)
         else:
             mess = "No Entry Id for group "+ sobj.GetName() + " whose mes Name is:",sobj.GetFatherComponent().GetName() #GetFather().GetFather().GetName()
-            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
         salome.sg.UpdateView()
         salome.sg.FitAll()
 
@@ -1448,7 +1460,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         if self._multipleSelectedObject() == None:
             mess = "Hide MESH Groups: No object selected into Object Browser"
-            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
             return
 
         for sobj in self._multipleSelectedObject():
@@ -1459,7 +1471,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                     salome.sg.Erase(id)
             else:
                 mess = "No Entry Id for group "+ sobj.GetName() + " whose mesh Name is:",sobj.GetFatherComponent().GetName() # sobj.GetFather().GetFather().GetName()
-                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
         salome.sg.UpdateView()
         salome.sg.FitAll()
 
@@ -1475,7 +1487,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         if self._multipleSelectedObject() == None:
             mess = "Hide MESH: No object selected into Object Browser"
-            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+            QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
             return
 
         for sobj in self._multipleSelectedObject():
@@ -1485,7 +1497,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                     salome.sg.Erase(id)
             else:
                 mess = "No Entry Id for mesh "+ sobj.GetName()
-                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
         salome.sg.UpdateView()
         salome.sg.FitAll()
 
@@ -1500,7 +1512,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         import os
         if sobj != None:
             if not os.path.exists(CFDSTUDYGUI_DataModel._GetPath(sobj)):
-                mess = str(self.tr("ENV_DLG_INVALID_FILE"))%("CFD_Code",CFDSTUDYGUI_DataModel._GetPath(sobj))+ str(self.tr("STMSG_UPDATE_STUDY_INCOMING"))
+                mess = self.tr("ENV_DLG_INVALID_FILE")%("CFD_Code",CFDSTUDYGUI_DataModel._GetPath(sobj))+ self.tr("STMSG_UPDATE_STUDY_INCOMING")
                 QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
                 self.updateObjBrowser()
                 return
@@ -1543,7 +1555,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if sobj != None:
             import os
             if not os.path.exists(CFDSTUDYGUI_DataModel._GetPath(sobj)):
-                mess = str(self.tr("ENV_DLG_INVALID_FILE"))%("CFD_Code",CFDSTUDYGUI_DataModel._GetPath(sobj))+ str(self.tr("STMSG_UPDATE_STUDY_INCOMING"))
+                mess = self.tr("ENV_DLG_INVALID_FILE")%("CFD_Code",CFDSTUDYGUI_DataModel._GetPath(sobj))+ self.tr("STMSG_UPDATE_STUDY_INCOMING")
                 QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
                 self.updateObjBrowser()
                 return
@@ -1558,7 +1570,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         StudyPath   = ""
         CaseName    = ""
         xmlfileName = ""
-        title = str(self.tr("Open An Existing Case"))
+        title = str(self.tr("OPEN_EXISTING_CASE_GUI_TEXT"))
         xmlfileName, _ = QFileDialog.getOpenFileName(None,title,QDir.currentPath(), "*.xml")
         if xmlfileName == "" :
             return
@@ -1588,9 +1600,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         boo = True
         StudyPath = ""
         CasePath  = ""
-
         if not os.path.exists(filepath):
-            mess = str(self.tr("ENV_DLG_INVALID_FILE"))%("CFD_Code",filepath)
+            mess = self.tr("ENV_DLG_INVALID_FILE")%("CFD_Code",filepath)
             QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
             return False,StudyPath,CasePath
 
@@ -1598,7 +1609,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         codeName = CFDSTUDYGUI_DataModel.getNameCodeFromXmlCasePath(filepath)
         if codeName == "":
             boo = False
-            mess = str(self.tr("ENV_DLG_INVALID_FILE_XML"))%("CFD_Code",filepath)
+            mess = self.tr("ENV_DLG_INVALID_FILE_XML")%("CFD_Code",filepath)
             QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
             return boo,StudyPath,CasePath
         else :
@@ -1611,13 +1622,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             for i in ['SRC', 'RESU', 'DATA', 'SCRIPTS'] :
                 boo = boo and os.path.isdir(os.path.join(CasePath,i))
             if not boo :
-                mess = str(self.tr("ENV_DLG_CASE_FILE"))%(filepath,CasePath)
+                mess = self.tr("ENV_DLG_CASE_FILE")%(filepath,CasePath)
                 QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
                 return boo,StudyPath,CasePath
             StudyPath = os.path.dirname(CasePath)
         else:
             boo = False
-            mess = str(self.tr("ENV_INVALID_DATA_FILE_XML"))%("CFD_Code",filepath)
+            mess = self.tr("ENV_INVALID_DATA_FILE_XML")%("CFD_Code",filepath)
             QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
         return boo,StudyPath,CasePath
                 
@@ -1634,14 +1645,14 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if aCase:
                 aCaseName = aCase.GetName()
             else:
-                mess = str(self.tr("INFO_DLG_NO_CASE_INTO_OB"))%(aXmlFileName)
-                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+                mess = self.tr("INFO_DLG_NO_CASE_INTO_OB")%(aXmlFileName)
+                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
                 return
             if aStudy:
                 aStudyName = aStudy.GetName()
             else:
-                mess = str(self.tr("INFO_DLG_NO_CFD_STUDY_INTO_OB"))%(aXmlFileName)
-                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+                mess = self.tr("INFO_DLG_NO_CFD_STUDY_INTO_OB")%(aXmlFileName)
+                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
                 return
         else:
             # close the active CFDGUI window with the icon button CLOSE_CFD_GUI_ACTION_ICON in the tool bar
@@ -1699,7 +1710,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             aCase = CFDSTUDYGUI_DataModel.GetCase(sobj)
         import os
         if not os.path.exists(CFDSTUDYGUI_DataModel._GetPath(aCase)):
-            mess = str(self.tr("ENV_DLG_INVALID_DIRECTORY"))%(CFDSTUDYGUI_DataModel._GetPath(aCase)) + str(self.tr("STMSG_UPDATE_STUDY_INCOMING"))
+            mess = self.tr("ENV_DLG_INVALID_DIRECTORY")%(CFDSTUDYGUI_DataModel._GetPath(aCase)) + self.tr("STMSG_UPDATE_STUDY_INCOMING")
             QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
             self.updateObjBrowser()
             return
@@ -1763,13 +1774,14 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         env_code, mess = CheckCFD_CodeEnv(CFD_Code())
         if not env_code:
-            QMessageBox.critical(self,"Error", mess, QMessageBox.Ok, 0)
+            QMessageBox.critical(None,"Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
+ 
         else:
             b, c,mess = BinCode()
             if mess == "":
                 cmd = b + " compile -t"
             else:
-                QMessageBox.critical(self,"Error", mess, QMessageBox.Ok, 0)
+                QMessageBox.critical(None,"Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
         return cmd
 
 
@@ -1805,7 +1817,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         aChList = CFDSTUDYGUI_DataModel.ScanChildren(aStudyObj, "MESH")
         if not len(aChList) == 1:
             mess = "Directory MESH does not exist !"
-            QMessageBox.critical(self, "Error", mess, QMessageBox.Ok, 0)
+            QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
             return
 
         aMeshFold = aChList[0]
@@ -1816,7 +1828,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         b, c, mess = BinCode()
         if mess != "":
-            QMessageBox.critical(self,"Error", mess, QMessageBox.Ok, 0)
+            QMessageBox.critical(None,"Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
         else:
             args = c
 
@@ -1901,8 +1913,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
             # check exec rights
             if not os.access(path, os.F_OK or os.X_OK):
-                mess = str(self.tr("RUN_SCRIPT_ACTION_ACCESS_ERROR"))
-                QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, 0)
+                mess = self.tr("RUN_SCRIPT_ACTION_ACCESS_ERROR")
+                QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
                 return
 
             dlg = CFDSTUDYGUI_CommandMgr.CFDSTUDYGUI_QProcessDialog(sgPyQt.getDesktop(),
@@ -1976,7 +1988,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                 self.OpenCFD_GUI(NewSObj)
                     else:
                         mess = "DATA directory is not found into Object Browser for case " +  theCaseName + "and study = " + study.GetName()
-                        QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, 0)
+                        QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
             return
 
         if xml_file != None and xml_file != old_xml_file and old_xml_file != None:

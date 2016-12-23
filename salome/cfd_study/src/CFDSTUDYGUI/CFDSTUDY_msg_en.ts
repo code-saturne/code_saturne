@@ -30,10 +30,6 @@
             <translation>Choose an existing CFD study or Create</translation>
         </message>
         <message>
-            <source>SET_STUDY_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choose CFD study location</translation>
-        </message>
-        <message>
             <source>SET_CASE_LOCATION_BROWSE_CAPTION</source>
             <translation>Choose CFD case location</translation>
         </message>
@@ -48,18 +44,6 @@
         <message>
             <source>ADD_CFDSTUDY_CASE_SB</source>
             <translation>Adding Case</translation>
-        </message>
-        <message>
-            <source>LAUNCH_CFDSTUDY_CASE_TEXT</source>
-            <translation>Run Case</translation>
-        </message>
-        <message>
-            <source>LAUNCH_CFDSTUDY_CASE_TIP</source>
-            <translation>Run Case</translation>
-        </message>
-        <message>
-            <source>LAUNCH_CFDSTUDY_CASE_SB</source>
-            <translation>Run Case</translation>
         </message>
         <message>
             <source>OPEN_CFDSTUDY_GUI_TEXT</source>
@@ -79,17 +63,16 @@
         </message>
         <message>
             <source>OPEN_EXISTING_CASE_GUI_TEXT</source>
-            <translation>Open An Existing Case</translation>
+            <translation>Open an existing case</translation>
         </message>
         <message>
             <source>OPEN_EXISTING_CASE_GUI_TIP</source>
-            <translation>Open An Existing Case</translation>
+            <translation>Open an existing case</translation>
         </message>
         <message>
             <source>OPEN_EXISTING_CASE_GUI_SB</source>
-            <translation>Open An Existing Case</translation>
+            <translation>Open an existing case</translation>
         </message>
-
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_TEXT</source>
             <translation>Update Object Browser</translation>
@@ -128,7 +111,7 @@
         </message>
         <message>
             <source>RUN_SCRIPT_ACTION_ACCESS_ERROR</source>
-            <translation>You have not access rights for this script execution!</translation>
+            <translation>You don't have access rights for this script execution!</translation>
         </message>
         <message>
             <source>SOLVER_FILE_MENU_TEXT</source>
@@ -206,7 +189,6 @@
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
             <translation>Do You really want to delete the study case directory: %s, on your disk ?</translation>
         </message>
-
         <message>
             <source>CLOSE_ACTION_TEXT</source>
             <translation>Close</translation>
@@ -365,57 +347,44 @@
             <translation>Check compilation</translation>
         </message>
         <message>
-            <source>CFDSTUDY_PREF_TAB</source>
-            <translation>CFDSTUDY</translation>
-        </message>
-        <message>
             <source>CFDSTUDY_PREF_GEN_GROUP</source>
             <translation>General</translation>
         </message>
         <message>
-            <source>CFDSTUDY_PREF_KERNEL</source>
-            <translation>Home Kernel CFDSTUDY</translation>
+            <source>EDITOR</source>
+            <translation>Editor</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_EDITOR</source>
-            <translation>editor</translation>
+            <translation>gvim</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_READER</source>
-            <translation>editor</translation>
+            <translation>gview</translation>
+        </message>
+        <message>
+            <source>EXTERNAL_READER</source>
+            <translation>External Reader</translation>
+        </message>
+        <message>
+            <source>EXTERNAL_EDITOR</source>
+            <translation>External Editor</translation>
+        </message>
+        <message>
+            <source>ADD_VIEWER_NAME_PREFERENCE</source>
+            <translation>No preference editor name set. Please, enter an editor name into SALOME CFDSTUDY preferences for the field %s (File Menu then Preferences...)</translation>
+        </message>
+        <message>
+            <source>VERIFY_VIEWER_NAME_PREFERENCE</source>
+            <translation>Verify into SALOME CFDSTUDY preferences if the viewer name set is valid. Check the field %s (File Menu then Preferences...)</translation>
+        </message>
+        <message>
+            <source>VERIFY_EDITOR_NAME_PREFERENCE</source>
+            <translation>Verify into SALOME CFDSTUDY preferences if the editor name is valid. Check the field %s (File Menu then Preferences...)</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_DIFF</source>
             <translation>Diff tool</translation>
-        </message>
-        <message>
-            <source>CFDSTUDY_PREF_DISPLAY</source>
-            <translation>Display</translation>
-        </message>
-        <message>
-            <source>CFDSTUDY_PREF_ENV_GROUP</source>
-            <translation>Environment</translation>
-        </message>
-        <message>
-            <source>CFDSTUDY_PREF_SHOW_INFO_DLG</source>
-            <translation>Don't show Information Dialog on first module activation</translation>
-        </message>
-
-        <message>
-            <source>CFDSTUDY_ENV_WARN_MESSAGE</source>
-            <translation>You can't activate CFDSTUDY module without required enviroment variables. Please, set it</translation>
-        </message>
-        <message>
-            <source>STMSG_SET_STUDY_LOCATION</source>
-            <translation>Setting study location...</translation>
-        </message>
-        <message>
-            <source>STMSG_UPDATE_STUDY</source>
-            <translation>Updating study structure...</translation>
-        </message>
-        <message>
-            <source>STMSG_ADD_CASE</source>
-            <translation>Adding CFD cases...</translation>
         </message>
         <message>
             <source>STMSG_ECS_CONVERT</source>
@@ -454,10 +423,6 @@
             <translation>CFD case directory structure for the file %s is not correct : One or several directories among DATA  RESU  SCRIPTS  SRC are missing into directory %s !!! </translation>
         </message>
         <message>
-            <source>Open An Existing Case</source>
-            <translation>Open An Existing Case</translation>
-        </message>
-        <message>
             <source>INFO_DLG_NO_CASE_INTO_OB</source>
             <translation>Error: %s file has no CFD Case into the Salome Object browser</translation>
         </message>
@@ -475,10 +440,6 @@
             <translation> ...Study structure updating NOW ! </translation>
         </message>
         <message>
-            <source>INFO_DLG_CASE</source>
-            <translation> Study Case %s already exists ! </translation>
-        </message>
-        <message>
             <source>CASE_ALREADY_EXISTS</source>
             <translation>Case name: %s already exists in the CFD Study %s</translation>
         </message>
@@ -494,36 +455,51 @@
             <translation>CFDSTUDY information</translation>
         </message>
         <message>
-            <source>INFO_DLG_NOT_INSTALLED</source>
-            <translation>Not Installed!!!</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_ENV_GROUP</source>
-            <translation>Environment Variables</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_ENV_REQUIRED</source>
-            <translation>%s (required)</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_ENV_OPTIONAL</source>
-            <translation>%s(optional)</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_CHECKBOX_TEXT</source>
-            <translation>Don't show me again on startup module</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_ENV_EDIT</source>
-            <translation>Edit environnement...</translation>
-        </message>
-        <message>
             <source>INFO_DLG_INVALID_ENV</source>
             <translation>Invalid environment! Please, correct required or non-existent variables:</translation>
         </message>
         <message>
             <source>DLG_OK_BUTTON_TEXT</source>
             <translation>OK</translation>
+        </message>
+    </context>
+    <context>
+        <name>SetTreeLocationDialog</name>
+        <message>
+            <source>CFD study localization or creation</source>
+            <translation>CFD study localization or creation</translation>
+        </message>
+        <message>
+            <source>Load existing study</source>
+            <translation>Load existing study</translation>
+        </message>
+        <message>
+            <source>Create Study</source>
+            <translation>Create Study</translation>
+        </message>
+        <message>
+            <source>Study location</source>
+            <translation>Study location</translation>
+        </message>
+        <message>
+            <source>Study name</source>
+            <translation>Study name</translation>
+        </message>
+        <message>
+            <source>Cases</source>
+            <translation>Cases</translation>
+        </message>
+        <message>
+            <source>copy from existing case</source>
+            <translation>copy from existing case</translation>
+        </message>
+        <message>
+            <source>New study directory name created</source>
+            <translation>New study directory name created</translation>
+        </message>
+        <message>
+            <source>Input cases names separated with space</source>
+            <translation>Input cases names separated with space</translation>
         </message>
     </context>
     <context>
@@ -539,22 +515,6 @@
         <message>
             <source>DLG_CANCEL_BUTTON_TEXT</source>
             <translation>Cancel</translation>
-        </message>
-        <message>
-            <source>LOCATION_DLG_CAPTION</source>
-            <translation>Location of CFDSTUDY study</translation>
-        </message>
-        <message>
-            <source>LOCATION_DLG_CASE_NAME</source>
-            <translation>Cases</translation>
-        </message>
-        <message>
-            <source>LOCATION_DLG_STUDY_DIR_LABEL</source>
-            <translation>Study location</translation>
-        </message>
-        <message>
-            <source>SET_STUDY_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choose CFDSTUDY Study location</translation>
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_OPEN_MESS</source>
@@ -583,38 +543,6 @@
         <message>
             <source>Select a directory location to create a new CFD Study</source>
             <translation>Select a directory location to create a new CFD Study</translation>
-        </message>
-        <message>
-            <source>Load existing study</source>
-            <translation>Load existing study</translation>
-        </message>
-        <message>
-            <source>Create Study</source>
-            <translation>Create Study</translation>
-        </message>
-        <message>
-            <source>Study name</source>
-            <translation>Study name</translation>
-        </message>
-        <message>
-            <source>create MESH directory</source>
-            <translation>create MESH directory</translation>
-        </message>
-        <message>
-            <source>create POST directory</source>
-            <translation>create POST directory</translation>
-        </message>
-        <message>
-            <source>copy from existing case</source>
-            <translation>copy from existing case</translation>
-        </message>
-        <message>
-            <source>New study directory name created</source>
-            <translation>New study directory name created</translation>
-        </message>
-        <message>
-            <source>Input cases names separated with space</source>
-            <translation>Input cases names separated with space</translation>
         </message>
     </context>
     <context>
@@ -651,26 +579,6 @@
             <translation>Cancel</translation>
         </message>
         <message>
-            <source>COPY_DLG_DEST_FILE_LABEL</source>
-            <translation>File</translation>
-        </message>
-        <message>
-            <source>COPY_DLG_DEST_CASE_LABEL</source>
-            <translation>Case</translation>
-        </message>
-        <message>
-            <source>COPY_DLG_DEST_STUDY_LABEL</source>
-            <translation>Study</translation>
-        </message>
-        <message>
-            <source>COPY_DLG_SOURCE_CASE_LABEL</source>
-            <translation>Case</translation>
-        </message>
-        <message>
-            <source>COPY_DLG_FILE_NAME_LABEL</source>
-            <translation>File</translation>
-        </message>
-        <message>
             <source>COPY_DLG_CAPTION</source>
             <translation>Copy file of parameters</translation>
         </message>
@@ -696,10 +604,6 @@
         <message>
             <source>GUIACTIVATE_DLG_OPTIONS_TITLE</source>
             <translation>Options</translation>
-        </message>
-        <message>
-            <source>GUIACTIVATE_DLG_NEW_CASE</source>
-            <translation>New Case</translation>
         </message>
         <message>
             <source>ICSACTIVATE_DLG_CAPTION</source>

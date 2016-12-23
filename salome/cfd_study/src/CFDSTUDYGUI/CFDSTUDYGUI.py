@@ -91,6 +91,9 @@ ObjectTR = QObject()
 
 DEFAULT_EDITOR_NAME = ObjectTR.tr("CFDSTUDY_PREF_EDITOR")
 
+DEFAULT_READER_NAME = ObjectTR.tr("CFDSTUDY_PREF_READER")
+
+
 #-------------------------------------------------------------------------------
 # Callback GUI functions
 #-------------------------------------------------------------------------------
@@ -103,6 +106,8 @@ def initialize():
     log.debug("initialize")
     if not sgPyQt.hasSetting( "CFDSTUDY", "ExternalEditor"):
         sgPyQt.addSetting( "CFDSTUDY", "ExternalEditor", DEFAULT_EDITOR_NAME )
+    if not sgPyQt.hasSetting( "CFDSTUDY", "ExternalReader"):
+        sgPyQt.addSetting( "CFDSTUDY", "ExternalReader", DEFAULT_READER_NAME )
     pass
 
 
@@ -173,9 +178,12 @@ def createPreferences():
     log.debug("createPreferences")
     sgPyQt = CFDSTUDYGUI_DataModel.sgPyQt
     genTab = sgPyQt.addPreference(ObjectTR.tr("CFDSTUDY_PREF_GEN_GROUP"))
-    editorGroup = sgPyQt.addPreference("Editor",genTab)
-    editor      = sgPyQt.addPreference("External Editor",editorGroup,SalomePyQt.PT_String, "CFDSTUDY","ExternalEditor")
-    Reader      = sgPyQt.addPreference("External Reader",editorGroup,SalomePyQt.PT_String, "CFDSTUDY","ExternalReader")
+    EditorField = str(ObjectTR.tr("EDITOR"))
+    editorGroup = sgPyQt.addPreference(EditorField,genTab)
+    externalEditorField = str(ObjectTR.tr("EXTERNAL_EDITOR"))
+    externalReaderField= str(ObjectTR.tr("EXTERNAL_READER"))
+    editor      = sgPyQt.addPreference(externalEditorField,editorGroup,SalomePyQt.PT_String, "CFDSTUDY","ExternalEditor")
+    Reader      = sgPyQt.addPreference(externalReaderField,editorGroup,SalomePyQt.PT_String, "CFDSTUDY","ExternalReader")
 
 
 def preferenceChanged( section, setting ):

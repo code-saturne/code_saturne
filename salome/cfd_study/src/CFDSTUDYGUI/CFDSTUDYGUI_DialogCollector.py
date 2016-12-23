@@ -42,7 +42,9 @@ import os, re, shutil, logging
 from code_saturne.Base.QtCore    import *
 from code_saturne.Base.QtGui     import *
 from code_saturne.Base.QtWidgets import *
+# ObjectTR is a convenient object for traduction purpose
 
+ObjectTR = QObject()
 #-------------------------------------------------------------------------------
 # Salome modules
 #-------------------------------------------------------------------------------
@@ -112,7 +114,7 @@ class InfoDialogHandler(InfoDialog):
                 InfoDialog.accept(self)
         else:
             Error = "Error : " + self.tr("INFO_DLG_INVALID_ENV")
-            QMessageBox.critical(self, Error, mess, QMessageBox.Ok, 0)
+            QMessageBox.critical(None, Error, mess, QMessageBox.Ok, QMessageBox.NoButton)
 
 
     def setCode(self, env_saturne, env_neptune):
@@ -302,8 +304,7 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
 
         CopyFromCasePath = ""
         if self.findChild(QLineEdit,"StudyDirName").text() != "":
-
-            CopyFromCasePath = QFileDialog.getExistingDirectory(None, str(self.tr("SET_CASE_LOCATION_BROWSE_CAPTION")))
+            CopyFromCasePath = QFileDialog.getExistingDirectory(None, ObjectTR.tr("SET_CASE_LOCATION_BROWSE_CAPTION"))
 
             if CopyFromCasePath == None or str(CopyFromCasePath) == "":
                 self.findChild(QCheckBox,"checkBoxCopyFrom").setChecked(False)
@@ -368,7 +369,7 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
         self.CopyFromOption = self.findChild(QCheckBox, "checkBoxCopyFrom").isChecked()
         if  aNameLE.text() == "" :
             mess = str(self.tr("LOCATION_DLG_ERROR_MESS"))
-            QMessageBox.critical(self, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
+            QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
             return False
 
         # check study directory
@@ -391,12 +392,12 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
             if studyObj != None:
                 mess = str(self.tr("LOCATION_DLG_ERROR_OPEN_MESS"))
                 mess = mess%(self.StudyPath)
-                QMessageBox.critical( self, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
+                QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
                 return False
 
             if self.StudyName == '':
                 mess = str(self.tr("LOCATION_DLG_ERROR_MESS"))
-                QMessageBox.critical(self, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
+                QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
                 return False
 
         # ckeck case name
@@ -404,7 +405,7 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
             if self.StudyName == '':
                 mess = str(self.tr("LOCATION_DLG_ERROR_MESS"))
                 mess = mess%(aStudyDir)
-                QMessageBox.critical(self, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
+                QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
                 return False
             self.CaseNames = str(aCaseLE.text())
             self.CreateOption = True
@@ -598,7 +599,7 @@ class CopyDialogHandler(CopyDialog):
         aDestFileName   = str(self.DestFileLE.text())
         aDestFilePath = os.path.join(aDestDirName, aDestFileName)
         if os.path.exists(aDestFilePath) and os.path.isfile(aDestFilePath):
-            QMessageBox.critical(self, self.tr("COPY_DLG_EXISTS_ERROR_CAPTION"), self.tr("COPY_DLG_EXISTS_ERROR_TEXT"), QMessageBox.Ok, QMessageBox.NoButton)
+            QMessageBox.critical(None, self.tr("COPY_DLG_EXISTS_ERROR_CAPTION"), self.tr("COPY_DLG_EXISTS_ERROR_TEXT"), QMessageBox.Ok, QMessageBox.NoButton)
             return False
 
         aSourceFilePath = CFDSTUDYGUI_DataModel._GetPath(self.Object)

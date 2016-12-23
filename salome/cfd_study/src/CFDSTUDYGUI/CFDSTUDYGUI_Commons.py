@@ -130,15 +130,16 @@ def CheckCFD_CodeEnv(code):
     bindir = ""
 
     if code not in [CFD_Saturne, CFD_Neptune]:
-        mess = str(ObjectTR.tr("CFDSTUDY_INVALID_SOLVER_NAME"))%(code,CFD_Saturne,CFD_Saturne)
+        mess = ObjectTR.tr("CFDSTUDY_INVALID_SOLVER_NAME")%(code,CFD_Saturne,CFD_Neptune)
         iok= False
+        return iok,mess
 
     if code == CFD_Saturne:
         try:
             from cs_package import package
             iok = True
         except ImportError,e:
-            mess = str(ObjectTR.tr("INFO_DLG_INVALID_ENV"))%(code) + e.__str__()
+            mess = ObjectTR.tr("INFO_DLG_INVALID_ENV")%(code) + e.__str__()
             if "cs_package" in e.__str__():
                 mess = mess + " ; Check for cs_package file in Code_Saturne python package"
             elif "code_saturne" in e.__str__():
@@ -149,7 +150,7 @@ def CheckCFD_CodeEnv(code):
             from nc_package import package
             iok = True
         except ImportError,e:
-            mess = str(ObjectTR.tr("INFO_DLG_INVALID_ENV"))%(code) + e.__str__()
+            mess = ObjectTR.tr("INFO_DLG_INVALID_ENV")%(code) + e.__str__()
             if "nc_package" in e.__str__():
                 mess = mess + " ; Check for nc_package file in NEPTUNE_CFD python package"
             elif "neptune_cfd" in e.__str__():
@@ -167,12 +168,12 @@ def CheckCFD_CodeEnv(code):
         log.debug("CheckCFD_CodeEnv -> prefix = %s" % (bindir))
 
         if not os.path.exists(prefix):
-            mess1 = str(ObjectTR.tr("ENV_DLG_INVALID_DIRECTORY"))
+            mess1 = ObjectTR.tr("ENV_DLG_INVALID_DIRECTORY")
             mess = mess + mess1%(prefix)
             iok = False
         else:
             if not os.path.exists(bindir):
-                mess2 =  str(ObjectTR.tr("ENV_DLG_INVALID_DIRECTORY"))
+                mess2 =  ObjectTR.tr("ENV_DLG_INVALID_DIRECTORY")
                 mess = mess + mess2%(bindir)
                 iok = False
 
