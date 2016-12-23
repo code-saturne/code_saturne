@@ -161,6 +161,8 @@ dict_object["SUITEFolder"]    = 100038
 dict_object["RESMEDFile"]     = 100039
 dict_object["RESXMLFile"]     = 100040
 dict_object["POSTPROFolder"]  = 100041
+#MP integration of ensight .case type file
+dict_object["RESENSIGHTFile"] = 100042
 
 dict_object["SCRPTFolder"]    = 100050
 dict_object["SCRPTLanceFile"] = 100051
@@ -227,6 +229,8 @@ icon_collection[dict_object["SUITEFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESMEDFile"]]     = "VISU_OBJ_ICON"
 icon_collection[dict_object["RESXMLFile"]]     = "CFDSTUDY_EXECUTABLE_OBJ_ICON"
 icon_collection[dict_object["POSTPROFolder"]]  = "CFDSTUDY_FOLDER_OBJ_ICON"
+icon_collection[dict_object["RESENSIGHTFile"]] = "VISU_OBJ_ICON"
+
 
 icon_collection[dict_object["SCRPTFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["SCRPTLanceFile"]] = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
@@ -988,6 +992,8 @@ def _FillObject(theObject, theParent, theBuilder):
         if os.path.isfile(path):
             if re.match(".*\.med$", name):
                 objectId = dict_object["RESMEDFile"]
+            if re.match(".*\.case$", name):
+                objectId = dict_object["RESENSIGHTFile"]
 
     # parent is HIST folder
     elif parentId == dict_object["HISTFolder"]:

@@ -881,7 +881,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         elif id == CFDSTUDYGUI_DataModel.dict_object["HISTFile"]:
             popup.addAction(self.commonAction(ViewAction))
             popup.addAction(self.commonAction(ExportInParaViSAction))
-        elif id == CFDSTUDYGUI_DataModel.dict_object["RESMEDFile"]:
+        elif id == CFDSTUDYGUI_DataModel.dict_object["RESMEDFile"] \
+             or id == CFDSTUDYGUI_DataModel.dict_object["RESENSIGHTFile"]:
             popup.addAction(self.commonAction(ExportInParaViSAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SCRPTLanceFile"]:
             popup.addAction(self.commonAction(ViewAction))
@@ -1251,7 +1252,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             import salome
             pvsimple.ShowParaviewView()
             path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-            if re.match(".*\.med$", sobj.GetName()) :
+            if re.match(".*\.med$", sobj.GetName()) or re.match(".*\.case$", sobj.GetName()):
                 #export Med file from CFDSTUDY into PARAVIS
                 engine = salome.lcc.FindOrLoadComponent("FactoryServer", "PARAVIS")
                 renderView1 = pvsimple.GetActiveViewOrCreate('RenderView')

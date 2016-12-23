@@ -163,6 +163,10 @@
             <translation>VISU_Plot.png</translation>
         </message>
         <message>
+            <source>VISU_OBJ_ICON</source>
+            <translation>paravisFile.png</translation>
+        </message>
+        <message>
             <source>EXPORT_IN_POSTPRO_ACTION_ICON</source>
             <translation>VISU_Module_Export.png</translation>
         </message>
