@@ -61,6 +61,7 @@
 #include "cs_join_util.h"
 #include "cs_log.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_timer.h"
 
@@ -544,7 +545,7 @@ _intersect_edges(cs_join_t               *this_join,
   if (join_type == CS_JOIN_TYPE_NULL) {
 
     if (cs_glob_mesh->verbosity > 0) {
-      bft_printf(_("\n  Joining operation is null.\n"));
+      bft_printf(_("\n  Joining operation did modify any vertices.\n"));
       bft_printf_flush();
     }
 
@@ -921,20 +922,20 @@ _prepare_update_after_merge(cs_join_t          *this_join,
  * Update local and work structures after the merge step.
  *
  * parameters:
- *  this_join            <--  pointer to a cs_join_t structure
- *  n_iwm_vertices       <--  initial number of vertices in work struct.
- *  init_max_vtx_gnum    <--  initial max. global numbering for vertices
- *  n_g_new_vertices     <--  global number of vertices created with the
- *                            intersection of edges
- *  vtx_eset             <->  structure storing equivalences between vertices
- *                            Two vertices are equivalent if they are each
- *                            other in their tolerance; freed here after use
- *  inter_edges          <->  structure storing the definition of new vertices
- *                            on initial edges; freed here after use
- *  p_work_jmesh         <->  pointer to a cs_join_mesh_t structure
- *  p_work_join_edges    <->  pointer to a cs_join_edges_t structure
- *  p_local_jmesh        <->  pointer to a cs_join_mesh_t structure
- *  mesh                 <->  pointer to a cs_mesh_t struct. to update
+ *   this_join            <--  pointer to a cs_join_t structure
+ *   n_iwm_vertices       <--  initial number of vertices in work struct.
+ *   init_max_vtx_gnum    <--  initial max. global numbering for vertices
+ *   n_g_new_vertices     <--  global number of vertices created with the
+ *                             intersection of edges
+ *   vtx_eset             <->  structure storing equivalences between vertices
+ *                             Two vertices are equivalent if they are each
+ *                             other in their tolerance; freed here after use
+ *   inter_edges          <->  structure storing the definition of new vertices
+ *                             on initial edges; freed here after use
+ *   p_work_jmesh         <->  pointer to a cs_join_mesh_t structure
+ *   p_work_join_edges    <->  pointer to a cs_join_edges_t structure
+ *   p_local_jmesh        <->  pointer to a cs_join_mesh_t structure
+ *   mesh                 <->  pointer to a cs_mesh_t struct. to update
  *---------------------------------------------------------------------------*/
 
 static void
@@ -1157,18 +1158,20 @@ _prepare_update_after_split(cs_join_t          *this_join,
  *
  * parameters:
  *  this_join            <-- pointer to a cs_join_t structure
- *  work_join_edges      <--  pointer to a cs_join_edges_t structure
- *  work_face_normal     <--  normal based on the original face definition
- *  rank_face_gnum_index <--  index on face global numering to determine the
- *                            related rank
- *  p_work_jmesh         <->  pointer to a cs_join_mesh_t structure
- *  local_jmesh          <--  pointer to a cs_join_mesh_t structure
- *  mesh                 <->  pointer to cs_mesh_t structure
- *  mesh_builder         <->  pointer to cs_mesh_builder structure
+ *  join_type            <-- join type as detected so far
+ *  work_join_edges      <-- pointer to a cs_join_edges_t structure
+ *  work_face_normal     <-- normal based on the original face definition
+ *  rank_face_gnum_index <-- index on face global numering to determine the
+ *                           related rank
+ *  p_work_jmesh         <-> pointer to a cs_join_mesh_t structure
+ *  local_jmesh          <-- pointer to a cs_join_mesh_t structure
+ *  mesh                 <-> pointer to cs_mesh_t structure
+ *  mesh_builder         <-> pointer to cs_mesh_builder structure
  *---------------------------------------------------------------------------*/
 
 static void
 _split_faces(cs_join_t           *this_join,
+             cs_join_type_t       join_type,
              cs_join_edges_t     *work_join_edges,
              cs_coord_t          *work_face_normal,
              cs_join_mesh_t     **p_work_jmesh,
@@ -1228,6 +1231,35 @@ _split_faces(cs_join_t           *this_join,
 
   if (param.visualization > 2)
     cs_join_post_dump_mesh("SplitWorkMesh", *p_work_jmesh, param);
+
+  /* Check join type if required */
+
+  if (cs_glob_mesh->verbosity > 0 && join_type == CS_JOIN_TYPE_NULL) {
+
+    int _join_type = CS_JOIN_TYPE_NULL;
+    for (cs_lnum_t i = 0; i < history->n_elts; i++) {
+      if (history->index[i+1] != i+1) {
+        _join_type = (int)CS_JOIN_TYPE_NON_CONFORMING;
+        break;
+      }
+      else if (local_jmesh->face_gnum[i] != history->g_elts[i]) {
+        _join_type = (int)CS_JOIN_TYPE_CONFORMING;
+        break;
+      }
+    }
+    cs_parall_max(1, CS_INT_TYPE, &_join_type);
+
+    join_type = _join_type;
+
+    if (join_type == CS_JOIN_TYPE_NULL)
+      bft_printf(_("\n  Joining operation is null.\n"));
+    else if (join_type == CS_JOIN_TYPE_CONFORMING)
+      bft_printf(_("\n  Joining operation is conforming.\n"));
+    else if (join_type == CS_JOIN_TYPE_NON_CONFORMING)
+      bft_printf(_("\n  Joining operation is non-conforming.\n"));
+    bft_printf_flush();
+
+  }
 
   /* Free memory */
 
@@ -1717,7 +1749,7 @@ cs_join_all(bool  preprocess)
       }
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
-    _dump_mesh(join_param.num, "MeshAfterMerge", mesh);
+      _dump_mesh(join_param.num, "MeshAfterMerge", mesh);
 #endif
 
       /*
@@ -1726,14 +1758,14 @@ cs_join_all(bool  preprocess)
          Update cs_mesh_t structure.
       */
 
-      if (join_type != CS_JOIN_TYPE_NULL)
-        _split_faces(this_join,
-                     work_join_edges,
-                     work_face_normal,
-                     &work_jmesh,
-                     local_jmesh,
-                     mesh,
-                     mesh_builder);
+      _split_faces(this_join,
+                   join_type,
+                   work_join_edges,
+                   work_face_normal,
+                   &work_jmesh,
+                   local_jmesh,
+                   mesh,
+                   mesh_builder);
 
       /* Free memory */
 

@@ -9364,10 +9364,10 @@ msgstr "    Intersections d'arêtes:                         %10.3g\n"
 
 msgid ""
 "\n"
-"  Joining operation is null.\n"
+"  Joining operation did modify any vertices.\n"
 msgstr ""
 "\n"
-"  L'opération de recollement est nulle.\n"
+"  L'opération de recollement n'a modifé aucun sommet.\n"
 
 msgid ""
 "\n"
@@ -9408,6 +9408,13 @@ msgid ""
 msgstr ""
 "\n"
 "  Fusion de sommets et mise à jour du maillage terminées.\n"
+
+msgid ""
+"\n"
+"  Joining operation is null.\n"
+msgstr ""
+"\n"
+"  L'opération de recollement est nulle.\n"
 
 #, c-format
 msgid "    Split old faces and reconstruct new faces:      %10.3g\n"
