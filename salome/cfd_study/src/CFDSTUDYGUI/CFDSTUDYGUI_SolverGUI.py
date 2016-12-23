@@ -575,6 +575,17 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         return case
 
 
+    def removeDockWindowfromStudyAndCaseNames(self, studyCFDName, caseName):
+        """
+        Close the CFD_study_dock_windows if opened from close Study popup menu into the object browser
+        """
+        log.debug("removeDockWindow -> %s %s" % (studyCFDName, caseName))
+        dsk = sgPyQt.getDesktop()
+        studyId = sgPyQt.getStudyId()
+        if _c_CFDGUI != None:
+           _c_CFDGUI.delDockfromStudyAndCaseNames(dsk, studyId, studyCFDName, caseName)
+
+
     def removeDockWindow(self, studyCFDName, caseName, xmlName):
         """
         Close the CFD_study_dock_windows from remove  popup menu in object browser

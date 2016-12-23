@@ -130,6 +130,10 @@
             <translation>Delete.png</translation>
         </message>
         <message>
+            <source>CLOSE_ACTION_ICON</source>
+            <translation>Close.png</translation>
+        </message>
+        <message>
             <source>CLOSE_CFD_GUI_ACTION_ICON</source>
             <translation>CloseGui.png</translation>
         </message>

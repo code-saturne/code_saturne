@@ -161,7 +161,6 @@ dict_object["SUITEFolder"]    = 100038
 dict_object["RESMEDFile"]     = 100039
 dict_object["RESXMLFile"]     = 100040
 dict_object["POSTPROFolder"]  = 100041
-#MP integration of ensight .case type file
 dict_object["RESENSIGHTFile"] = 100042
 
 dict_object["SCRPTFolder"]    = 100050
@@ -484,6 +483,7 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
         if theCopyOpt:
             args.append("--copy-from")
             args.append(theNameRef)
+
         runCommand(args, start_dir, "")
 
     else:
@@ -524,6 +524,17 @@ def UpdateSubTree(theObject=None):
     studyId = sgPyQt.getStudyId()
     sgPyQt.updateObjBrowser(studyId,1)
 
+def closeCFDStudyTree(theObject):
+    """
+    Close a CFD Study from the Object browser
+    """
+    log.debug("closeCFDStudyTree")
+    if theObject == None:
+        return
+    study   = _getStudy()
+    builder = study.NewBuilder()
+    builder.RemoveObjectWithChildren(theObject)
+    return
 
 def _RebuildTreeRecursively(theObject):
     """
@@ -1432,7 +1443,7 @@ def getXmlCaseNameList(theCase):
     while iter.More():
         aName = iter.Value().GetName()
         if aName != "" :
-            if "XML" in subprocess.check_output(["file",aName]) :
+            if "XML" in subprocess.check_output(["file",aName]):
                 XmlCaseNameList.append(iter.Value().GetName())
         iter.Next()
     return XmlCaseNameList

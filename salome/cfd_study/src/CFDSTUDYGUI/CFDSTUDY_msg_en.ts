@@ -206,6 +206,24 @@
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
             <translation>Do You really want to delete the study case directory: %s, on your disk ?</translation>
         </message>
+
+        <message>
+            <source>CLOSE_ACTION_TEXT</source>
+            <translation>Close</translation>
+        </message>
+        <message>
+            <source>CLOSE_ACTION_TIP</source>
+            <translation>Close</translation>
+        </message>
+        <message>
+            <source>CLOSE_ACTION_SB</source>
+            <translation>Close</translation>
+        </message>
+        <message>
+            <source>CLOSE_ACTION_CONFIRM_MESS</source>
+            <translation>Do you really want to close this CFD Study : %s, and all of its cases from the SALOME Object Browser ?</translation>
+        </message>
+
         <message>
             <source>CLOSE_CFD_GUI_ACTION_TEXT</source>
             <translation>Close GUI</translation>

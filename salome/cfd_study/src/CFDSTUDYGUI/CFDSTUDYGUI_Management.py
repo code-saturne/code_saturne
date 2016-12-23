@@ -172,6 +172,15 @@ class CFDGUI_Management:
         """
         return self.getElem(studyId, self.dockWBPosInListe)
 
+    def getDockWithCFDStudyAndCaseNames(self, studyId, studyCFDName, caseName):
+        l = []
+        if self.d_CfdCases == {} :
+            return l
+        for liste in self.d_CfdCases[studyId]:
+            if liste[self.studyCFDPosInListe].GetName() == studyCFDName \
+              and liste[self.caseCFDPosInListe].GetName() == caseName:
+                l.append(liste)
+        return l
 
     def getDockWithCFDNames(self, studyId, studyCFDName, caseName, xmlName):
         l = []
@@ -272,7 +281,27 @@ class CFDGUI_Management:
             return None
 
 
+    def delDockfromStudyAndCaseNames(self, dsk, studyId, studyCFDName, caseName):
+        """
+        Delete all the opened dock windows from a study name and a case name 
+        """
+        liste = self.getDockWithCFDStudyAndCaseNames(studyId, studyCFDName, caseName)
+        if liste == []:
+            return
+        for ll in liste :
+            dockcfd, docwb = ll[self.dockPosInListe], ll[self.dockWBPosInListe]
+            for dock in [dockcfd, docwb]:
+                if dock != None:
+                    dsk.removeDockWidget(dock)
+                    dock.setParent(None)
+                    dock.close()
+            # remove the liste which contains the removed docks in the dictionary
+            self.d_CfdCases[studyId].remove(ll)
+
     def delDock(self, dsk, studyId, studyCFDName, caseName, xmlName):
+        """
+        Delete the opened dock window from a study name, a case name, a xml file name
+        """
         liste = self.getDockWithCFDNames(studyId, studyCFDName, caseName, xmlName)
         if liste == []:
             return

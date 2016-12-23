@@ -205,6 +205,23 @@
             <translation>Supprimer</translation>
         </message>
         <message>
+            <source>CLOSE_ACTION_TEXT</source>
+            <translation>Fermer</translation>
+        </message>
+        <message>
+            <source>CLOSE_ACTION_TIP</source>
+            <translation>Fermer</translation>
+        </message>
+        <message>
+            <source>CLOSE_ACTION_SB</source>
+            <translation>Fermer</translation>
+        </message>
+        <message>
+            <source>CLOSE_ACTION_CONFIRM_MESS</source>
+            <translation>Voulez-vous vraiment fermer cette étude CFD : %s, et ses cas associés de l'Object Browser de SALOME ?</translation>
+        </message>
+
+        <message>
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
             <translation>Voulez-vous vraiment supprimer le répertoire de cas: %s, de cette étude sur le disque?</translation>
         </message>

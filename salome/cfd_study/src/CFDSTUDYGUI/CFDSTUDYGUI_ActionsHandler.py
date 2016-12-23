@@ -93,6 +93,7 @@ MoveToDRAFTAction             = 23
 CopyInDATAAction              = 24
 CopyInSRCAction               = 25
 CopyCaseFileAction            = 26
+CloseStudyAction              = 27
 
 #export/convert actions
 ExportInParaViSAction         = 40
@@ -312,6 +313,16 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[RemoveAction] = action_id
         action.triggered.connect(self.slotRemoveAction)
+
+        action = sgPyQt.createAction(-1,\
+                                      ObjectTR.tr("CLOSE_ACTION_TEXT"),\
+                                      ObjectTR.tr("CLOSE_ACTION_TIP"),\
+                                      ObjectTR.tr("CLOSE_ACTION_SB"),\
+                                      ObjectTR.tr("CLOSE_ACTION_ICON"))
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._CommonActionIdMap[CloseStudyAction] = action_id
+        action.triggered.connect(self.slotCloseStudyAction)
 
         action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("VIEW_ACTION_TEXT"),\
@@ -834,6 +845,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if id == CFDSTUDYGUI_DataModel.dict_object["Study"]:
             popup.addAction(self.commonAction(AddCaseAction))
             popup.addAction(self.commonAction(UpdateObjBrowserAction))
+            popup.addAction(self.commonAction(CloseStudyAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["Case"]:
             popup.addAction(self.commonAction(LaunchGUIAction))
             popup.addAction(self.commonAction(RemoveAction))
@@ -1092,6 +1104,28 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if not sobj == None:
                 path = CFDSTUDYGUI_DataModel._GetPath(sobj)
                 subprocess.Popen([viewerName, path])
+
+    def slotCloseStudyAction(self):
+        """
+        Close file or folder and children from the Object Browser.
+        Delete dock windows cases attached to a CFD Study if this study is being closed from the Object Browser.
+        """
+        log.debug("slotCloseStudyAction")
+        theStudy = self._singleSelectedObject()
+        caseList = []
+        xmlcaseList= []
+        if theStudy != None:
+            theStudypath = CFDSTUDYGUI_DataModel._GetPath(theStudy)
+            mess = str(ObjectTR.tr("CLOSE_ACTION_CONFIRM_MESS"))%(theStudypath)#sobj.GetName())
+            if QMessageBox.warning(None, "Warning", mess, QMessageBox.Yes, QMessageBox.No) == QMessageBox.No:
+                return
+        caseList = CFDSTUDYGUI_DataModel.GetCaseList(theStudy)
+        if caseList != []:
+            for aCase in caseList:
+                self._SolverGUI.removeDockWindowfromStudyAndCaseNames(theStudy.GetName(), aCase.GetName())
+        CFDSTUDYGUI_DataModel.closeCFDStudyTree(theStudy)
+
+        self.updateObjBrowser()
 
 
     def slotRemoveAction(self):
@@ -1902,9 +1936,9 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         oldStudy = CFDSTUDYGUI_DataModel.GetStudyByObj(oldCase)
         old_xml_file, xml_file = self._SolverGUI.SaveAsXmlFile()
         if old_xml_file == None and xml_file != None:
-            #MP 25/04/2012 - A faire: tester si le fichier xml_file est deja ouvert dans une etude SALOME avec CFDSTUDYGUI_Management.py
+            #MP 25/04/2012 - A faire: tester si le fichier xml_file est deja ouvert dans le GUI dans une etude SALOME avec CFDSTUDYGUI_Management.py
             # classe CFDGUI_Management, methode findElem(xmlName, caseName, studyCFDName)
-            # emettre un warning car on vient de sauvegarder dans un fichier xml existant et de plus ouvert dans une etude salome
+            # emettre un warning car on vient de sauvegarder dans un fichier xml existant et de plus ouvert dans une etude salome ==> #MP 2016/12/14 Corrections a faire
             theNewStudyPath = os.path.dirname(os.path.dirname(os.path.dirname(xml_file)))
             study = CFDSTUDYGUI_DataModel.FindStudyByPath(theNewStudyPath)
             theCaseName = os.path.basename(os.path.dirname(os.path.dirname(xml_file)))
