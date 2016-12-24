@@ -1700,6 +1700,10 @@ cs_join_all(bool  preprocess)
 
   full_clock_start = cs_timer_wtime();
 
+  /* Disable all writers until explicitely enabled for this stage */
+
+  cs_post_disable_writer(0);
+
   cs_join_post_init();
 
   /* Loop on each defined joining to deal with */
@@ -1947,6 +1951,10 @@ cs_join_all(bool  preprocess)
     BFT_FREE(cs_glob_join_array);
     cs_glob_n_joinings = 0;
   }
+
+  /* Re-enable writers disabled when entering this stage */
+
+  cs_post_enable_writer(0);
 
   full_clock_end = cs_timer_wtime();
 

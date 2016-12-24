@@ -898,52 +898,6 @@ void CS_PROCF (csenso, CSENSO) (cs_int_t  *iecaux)
 
   _output_value("auxiliary_restart_file_writing", iecaux);
   _output_value("listing_printing_frequency", &cs_glob_log_frequency);
-
-  int n_probes = cs_gui_get_tag_count("/analysis_control/output/probe", 1);
-
-  if (n_probes > 0) {
-
-    cs_real_3_t *p_coords;
-    BFT_MALLOC(p_coords, n_probes, cs_real_3_t);
-
-    for (int i = 0; i < n_probes; i++) {
-      p_coords[i][0] = _probe_coordinate(i+1, "probe_x");
-      p_coords[i][1] = _probe_coordinate(i+1, "probe_y");
-      p_coords[i][2] = _probe_coordinate(i+1, "probe_z");
-    }
-
-    cs_probe_set_create_from_array("probes",
-                                   n_probes,
-                                   (const cs_real_3_t *)p_coords,
-                                   NULL);
-
-    BFT_FREE(p_coords);
-
-    int frequency_n = 1;
-    cs_real_t frequency_t = -1.;
-
-    _output_value("probe_recording_frequency", &frequency_n);
-    _output_time_value("probe_recording_frequency_time", &frequency_t);
-
-    /* Time plot (probe) format */
-    char fmt_opts[16], fmtprb[16];
-    _output_choice("probe_format", fmtprb, sizeof(fmtprb) - 1);
-    if (!strcmp(fmtprb, "DAT"))
-      strncpy(fmt_opts, "dat", 16);
-    else if (!strcmp(fmtprb, "CSV"))
-      fmt_opts[0] = '\0';
-
-    cs_post_define_writer(CS_POST_WRITER_PROBES,   /* writer_id */
-                          "",                      /* case_name */
-                          "monitoring",            /* dir_name */
-                          "time_plot",
-                          fmt_opts,
-                          FVM_WRITER_FIXED_MESH,
-                          false,                   /* output_at_end */
-                          frequency_n,
-                          frequency_t);
-  }
-
   const int n_fields = cs_field_n_fields();
 
   /* temporary field -> moment ids */
@@ -1071,6 +1025,53 @@ cs_gui_postprocess_meshes(void)
     BFT_FREE(location);
     BFT_FREE(type);
     BFT_FREE(path);
+  }
+
+  /* Probe definitions */
+
+  int n_probes = cs_gui_get_tag_count("/analysis_control/output/probe", 1);
+
+  if (n_probes > 0) {
+
+    cs_real_3_t *p_coords;
+    BFT_MALLOC(p_coords, n_probes, cs_real_3_t);
+
+    for (int i = 0; i < n_probes; i++) {
+      p_coords[i][0] = _probe_coordinate(i+1, "probe_x");
+      p_coords[i][1] = _probe_coordinate(i+1, "probe_y");
+      p_coords[i][2] = _probe_coordinate(i+1, "probe_z");
+    }
+
+    cs_probe_set_create_from_array("probes",
+                                   n_probes,
+                                   (const cs_real_3_t *)p_coords,
+                                   NULL);
+
+    BFT_FREE(p_coords);
+
+    int frequency_n = 1;
+    cs_real_t frequency_t = -1.;
+
+    _output_value("probe_recording_frequency", &frequency_n);
+    _output_time_value("probe_recording_frequency_time", &frequency_t);
+
+    /* Time plot (probe) format */
+    char fmt_opts[16], fmtprb[16];
+    _output_choice("probe_format", fmtprb, sizeof(fmtprb) - 1);
+    if (!strcmp(fmtprb, "DAT"))
+      strncpy(fmt_opts, "dat", 16);
+    else if (!strcmp(fmtprb, "CSV"))
+      fmt_opts[0] = '\0';
+
+    cs_post_define_writer(CS_POST_WRITER_PROBES,   /* writer_id */
+                          "",                      /* case_name */
+                          "monitoring",            /* dir_name */
+                          "time_plot",
+                          fmt_opts,
+                          FVM_WRITER_FIXED_MESH,
+                          false,                   /* output_at_end */
+                          frequency_n,
+                          frequency_t);
   }
 }
 
