@@ -6034,8 +6034,6 @@ cs_gradient_scalar(const char                *var_name,
   const cs_halo_t  *halo = mesh->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  int coupl_id;
-
   cs_gradient_info_t *gradient_info = NULL;
   cs_timer_t t0, t1;
 

@@ -368,5 +368,6 @@ cs_user_boundary_conditions(int         nvarcl,
   BFT_FREE(nborne);
 }
 
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

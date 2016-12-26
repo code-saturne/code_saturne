@@ -999,7 +999,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         dialog.StudyPath = CFDSTUDYGUI_DataModel._GetPath(studyObj)
         dialog.StudyDirName.setText(os.path.dirname(CFDSTUDYGUI_DataModel._GetPath(studyObj)))
         dialog.StudyLineEdit.setText(studyObj.GetName())
-        
+
         if not os.path.exists(dialog.StudyPath):
             mess = self.tr("ENV_DLG_INVALID_DIRECTORY")%(dialog.StudyPath) +self.tr("STMSG_UPDATE_STUDY_INCOMING")
             QMessageBox.information(None, "Information", mess, QMessageBox.Ok, QMessageBox.NoButton)
@@ -1034,7 +1034,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                                               theCaseNames = "CASE1",
                                                               theCreateOpt = dialog.CreateOption,
                                                               theCopyOpt   = dialog.CopyFromOption,
-                                                              theNameRef   = dialog.CaseRefName)            
+                                                              theNameRef   = dialog.CaseRefName)
         self.updateObjBrowser()
 
 
@@ -1564,7 +1564,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
     def slotOpenAnExistingCaseFileFromMenu(self):
         """
         Open into Salome the CFD GUI an existing XML file case from the Gui menu and not from Object browser
-        """     
+        """
         log.debug("slotOpenAnExistingCaseFileFromMenu")
         boo         = False
         StudyPath   = ""
@@ -1631,7 +1631,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             mess = self.tr("ENV_INVALID_DATA_FILE_XML")%("CFD_Code",filepath)
             QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, QMessageBox.NoButton)
         return boo,StudyPath,CasePath
-                
+
 
     def CloseCFD_GUI(self, sobj):
         """
@@ -1775,7 +1775,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         env_code, mess = CheckCFD_CodeEnv(CFD_Code())
         if not env_code:
             QMessageBox.critical(None,"Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
- 
+
         else:
             b, c,mess = BinCode()
             if mess == "":

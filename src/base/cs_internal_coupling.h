@@ -367,6 +367,22 @@ void
 cs_internal_coupling_add_volumes_finalize(cs_mesh_t   *mesh);
 
 /*----------------------------------------------------------------------------
+ * Define coupling volume using given criteria.
+ *
+ * Then, this volume must be seperated from the rest of the domain with a wall.
+ *
+ * parameters:
+ *   mesh           <-> pointer to mesh structure to modify
+ *   criteria_cells <-- selection criteria for the first group of cells
+ *   criteria_faces <-- selection criteria for faces to be joined
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_add(cs_mesh_t   *mesh,
+                         const char   criteria_cells[],
+                         const char   criteria_faces[]);
+
+/*----------------------------------------------------------------------------
  * Define coupling entity using given criterias
  *
  * parameters:

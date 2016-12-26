@@ -49,6 +49,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
+#include "bft_mem_usage.h"
 #include "bft_printf.h"
 
 #include "cs_base.h"

@@ -156,7 +156,7 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imucpp, idftnp, iswdyp
 integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
-integer          delay_id, icla
+integer          icla
 integer          icrom_scal, isorb, keysrb
 
 integer          ivoid(1)

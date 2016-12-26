@@ -846,7 +846,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
       cell_gnum[ii] = cs_glob_mesh->global_cell_num[ii];
     if (halo != NULL)
       cs_halo_sync_untyped(halo,
-                           CS_HALO_ROTATION_COPY,
+                           CS_HALO_STANDARD,
                            sizeof(cs_gnum_t),
                            cell_gnum);
   }
@@ -874,7 +874,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
     r_g_id[ii] = ii + l_range[0];
   if (halo != NULL)
     cs_halo_sync_untyped(halo,
-                         CS_HALO_ROTATION_COPY,
+                         CS_HALO_STANDARD,
                          sizeof(cs_gnum_t),
                          r_g_id);
 

@@ -96,7 +96,6 @@ implicit none
 ! Local variables
 
 integer          modhis, iappel, modntl, iisuit
-integer          ivar
 integer          iel
 
 integer          inod   , idim, ifac

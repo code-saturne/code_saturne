@@ -43,6 +43,7 @@
 
 #include "bft_mem.h"
 
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_physical_constants.h"
@@ -825,20 +826,22 @@ _lagesd(cs_real_t           dtp,
   cs_real_t energi, dissip;
   if (yplus <= 5.0) {
 
-    energi = 0.1 * (pow(yplus, 2)) * pow(ustar, 2);
+    energi = 0.1 * cs_math_sq(yplus) * cs_math_sq(ustar);
     dissip = 0.2 * pow(ustar, 4) / visccf;
 
   }
 
-  else if (yplus > 5.0 && yplus <= 30.0) {
+  else if (yplus <= 30.0) {
 
-    energi = pow(ustar, 2) / pow((0.09), 0.5);
+    energi = cs_math_sq(ustar) / sqrt(0.09);
     dissip = 0.2 * pow(ustar, 4) / visccf;
 
   }
-  else if (yplus > 30.0 && yplus <= 100.0) {
+  else {
 
-    energi   = pow(ustar, 2) / pow((0.09), 0.5);
+    assert(yplus <= 100.0); /* should not arrive here otherwise */
+
+    energi   = cs_math_sq(ustar) / sqrt(0.09);
     dissip   = pow(ustar, 4) / (0.41 * yplus * visccf);
 
   }
@@ -884,17 +887,19 @@ _lagesd(cs_real_t           dtp,
 
   cs_real_t norm = sqrt(pow(vflui[1],2)+pow(vflui[2],2));
 
-  /* Velocity norm w.r.t y+    */
+  /* Velocity norm w.r.t y+ */
   cs_real_t norm_vit;
 
   if (yplus <= 5.0)
     norm_vit = yplus * ustar;
 
-  else if (yplus > 5.0 && yplus <= 30.0)
+  else if (yplus <= 30.0)
     norm_vit = ( -3.05 + 5.0 * log(yplus)) * ustar;
 
-  else if (yplus > 30.0 && yplus < 100.0)
+  else {
+    assert(yplus < 100.0);
     norm_vit = (2.5 * log (yplus) + 5.5) * ustar;
+  }
 
   if (norm_vit > 0.) {
     vflui[1] = norm_vit * vflui[1] / norm;
@@ -1820,12 +1825,11 @@ _lagesd(cs_real_t           dtp,
                     cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT)
                     * (1 + cs_glob_lagr_consolidation_model->slope_consol
                        * 0.5 * log((1.0+param)/(1.0-param) ) );
-
+              }
               cs_random_uniform(1, &random);
               height_reent = random * (p_height - clust_consol_height);
               height_reent = CS_MIN(height_reent, p_height);
               height_reent = CS_MAX(height_reent, 0.0);
-              }
 
               /* Treatment of the new rolling particle */
               cs_lnum_t itreated = 0;

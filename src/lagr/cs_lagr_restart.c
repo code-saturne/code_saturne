@@ -383,7 +383,7 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
 
   /* Check component_id */
   if (component_id < -1 || component_id >= stride) {
-    char attr_name[127] = "";
+    char attr_name[128] = "";
     attr_name[127] = '\0';
     const char *_attr_name = attr_name;
     if (attr < CS_LAGR_N_ATTRIBUTES) {

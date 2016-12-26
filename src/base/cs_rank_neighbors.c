@@ -639,7 +639,9 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
 
 #endif /* defined(HAVE_MPI_IBARRIER) */
 
-  else if (_exchange_type == CS_RANK_NEIGHBORS_CRYSTAL_ROUTER) {
+  else { /* if (_exchange_type == CS_RANK_NEIGHBORS_CRYSTAL_ROUTER) */
+
+    assert(_exchange_type == CS_RANK_NEIGHBORS_CRYSTAL_ROUTER);
 
     /* Create Crystal-router structure */
 

@@ -272,7 +272,6 @@ cs_user_lagr_in(int                         time_id,
   cs_lagr_bdy_condition_t  *lagr_bdy_conditions = cs_lagr_get_bdy_conditions();
 
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
-  const cs_lagr_attribute_map_t *p_am = p_set->p_am;
 
   if (p_set->n_part_new == 0)
     return;
@@ -302,8 +301,6 @@ cs_user_lagr_in(int                         time_id,
       if (ntcabs % userdata->injection_frequency == 0) {
 
         for (cs_lnum_t ip = npt; ip < npt + userdata->nb_part; ip++) {
-
-          cs_lnum_t face_id = injfac[ip]; /* id of injection face */
 
           _inlet2(p_set, ip);
 
@@ -374,8 +371,6 @@ cs_user_lagr_new_p_attr(unsigned char                  *particle,
                         cs_lnum_t                       face_id,
                         cs_lagr_attribute_t             attr_id)
 {
-  const cs_real_t pis6   = cs_math_pi / 6.0;
-
   /* Velocity profile */
 
   if (attr_id == CS_LAGR_VELOCITY) {
@@ -451,24 +446,10 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
   const cs_lagr_attribute_map_t *p_am = p_set->p_am;
 
-  cs_lnum_t nxlist = 100;
-
-  const cs_lnum_t nfac        = cs_glob_mesh->n_i_faces;
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  const cs_real_3_t *ifacel   = cs_glob_mesh->i_face_cells;
-
-  const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_vertices  = cs_glob_mesh->n_vertices;
-
-  const cs_real_t *cdgfac   = cs_glob_mesh_quantities->i_face_cog;
-  const cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
-  const cs_real_t *pond     = cs_glob_mesh_quantities->weight;
-
   /* Example: computation of the particle mass flow rate on 4 planes
      --------------------------------------------------------------- */
 
-  if (false) {
-
+  {
     cs_real_t zz[4] = {0.1e0, 0.15e0, 0.20e0, 0.25e0};
 
     /* If we are in an unsteady case, or if the beginning of the steady stats

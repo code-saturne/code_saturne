@@ -118,8 +118,6 @@ cs_restart_lagrangian_checkpoint_read(void)
   cs_lnum_t mstist, jdstnt, nclsto, mstbor, jsttio;
   cs_lnum_t jturb , jtytur;
 
-  cs_lnum_t iok = 0;
-
   cs_int_t  ierror = CS_RESTART_SUCCESS;
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
@@ -242,7 +240,8 @@ cs_restart_lagrangian_checkpoint_read(void)
         (CS_ABORT_DELAYED,
          _("in Lagrangian module"),
          _("The number of cells in restart file: %s\n"
-           "is different from that of the current mesh.\n"));
+           "is different from that of the current mesh.\n"),
+         cs_restart_get_name(cs_lag_stat_restart));
 
     if (! nfaiok)
       cs_parameters_error
@@ -250,7 +249,8 @@ cs_restart_lagrangian_checkpoint_read(void)
          _("in Lagrangian module"),
          _("The number of interior faces in restart file: %s\n"
            "is different from that of the current mesh.\n\n"
-           "interior face data will be reinitialized.\n"));
+           "interior face data will be reinitialized.\n"),
+         cs_restart_get_name(cs_lag_stat_restart));
 
     if (! nfabok)
       cs_parameters_error
@@ -258,7 +258,8 @@ cs_restart_lagrangian_checkpoint_read(void)
          _("in Lagrangian module"),
          _("The number of boundary faces in restart file: %s\n"
            "is different from that of the current mesh.\n\n"
-           "boundary face data will be reinitialized.\n"));
+           "boundary face data will be reinitialized.\n"),
+         cs_restart_get_name(cs_lag_stat_restart));
 
     /* --> Est-on cense lire une suite de stats volumiques ?   */
     if (cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt) {

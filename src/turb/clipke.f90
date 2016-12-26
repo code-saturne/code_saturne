@@ -60,7 +60,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar, ncelet, ncel
+integer          ncelet, ncel
 integer          iclip
 
 ! Local variables

@@ -223,6 +223,8 @@ cs_user_periodicity(void)
      Advanced parameters may be modified to solve errors during the
      joining step or to get a better mesh quality. */
 
+  int    join_num = -1; /* replace by number from previous definition */
+
   /*! [mesh_periodicity_4] */
   {
     /* Merge tolerance factor:
@@ -301,8 +303,6 @@ cs_user_periodicity(void)
      double tmr_distrib = 2.0;
 
      /* Set advanced parameters */
-
-     int    join_num;
 
      cs_join_set_advanced_param(join_num,
                                 mtf, pmf, tcm, icm,

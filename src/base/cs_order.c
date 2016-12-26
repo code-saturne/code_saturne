@@ -1315,7 +1315,7 @@ cs_order_real_allocated(const cs_lnum_t  list[],
   /* Explicit numbering */
 
   if (list != NULL) {
-    BFT_MALLOC(val_list, nb_ent, cs_lnum_t);
+    BFT_MALLOC(val_list, nb_ent, cs_real_t);
     for (i = 0 ; i < nb_ent ; i++)
       val_list[i] = val[list[i] - 1];
     _order_real(val_list,

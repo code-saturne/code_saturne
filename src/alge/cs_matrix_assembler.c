@@ -2292,7 +2292,7 @@ cs_matrix_assembler_create_from_shared(cs_lnum_t         n_rows,
       t_g_id[i] = (cs_gnum_t)i + ma->l_range[0];
 
     cs_halo_sync_untyped(ma->halo,
-                         CS_HALO_ROTATION_COPY,
+                         CS_HALO_STANDARD,
                          sizeof(cs_gnum_t),
                          t_g_id);
 

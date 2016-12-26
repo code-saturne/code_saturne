@@ -1531,12 +1531,11 @@ cs_internal_coupling_log(const cs_internal_coupling_t  *cpl)
   bft_printf("   Coupled scalar: %s\n"
              "   Cell group selection criterion: %s\n"
              "   Face group selection criterion: %s\n"
-             "   Locator: n dist points (total coupled boundary faces) = %d\n",
+             "   Locator: n dist points (total coupled boundary faces) = %llu\n",
              cpl->namesca,
              cpl->cells_criteria,
              cpl->faces_criteria,
-             n_local);
-
+             (unsigned long long)n_local);
 }
 
 /*----------------------------------------------------------------------------
@@ -1639,13 +1638,14 @@ cs_internal_coupling_add_volumes_finalize(cs_mesh_t   *mesh)
 }
 
 /*----------------------------------------------------------------------------
- * Define coupling volume using given criterias. Then, this volume has tobe
- * seperated from the rest of the domain with a wall.
+ * Define coupling volume using given criteria.
+ *
+ * Then, this volume must be seperated from the rest of the domain with a wall.
  *
  * parameters:
  *   mesh           <-> pointer to mesh structure to modify
  *   criteria_cells <-- selection criteria for the first group of cells
- *   criteria_faces <-- selection criteria for faces to be joint
+ *   criteria_faces <-- selection criteria for faces to be joined
  *----------------------------------------------------------------------------*/
 
 void

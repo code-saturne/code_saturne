@@ -1629,7 +1629,6 @@ cs_rad_transfer_solve(int               bc_type[],
 
   /* Check net flux */
   cs_real_t xlimit = -cs_math_big_r * 0.1;
-  cs_real_t flunmn = cs_math_big_r;
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     if (f_fnet->val[ifac] <= xlimit)

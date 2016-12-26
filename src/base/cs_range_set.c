@@ -774,13 +774,13 @@ cs_range_set_sync(const cs_range_set_t  *rs,
   else if (rs->halo != NULL) {
     if (datatype == CS_REAL_TYPE) {
       if (stride == 1)
-        cs_halo_sync_var(rs->halo, CS_HALO_ROTATION_COPY, val);
+        cs_halo_sync_var(rs->halo, CS_HALO_STANDARD, val);
       else
-        cs_halo_sync_var_strided(rs->halo, CS_HALO_ROTATION_COPY, val, stride);
+        cs_halo_sync_var_strided(rs->halo, CS_HALO_STANDARD, val, stride);
     }
     else {
       size_t d_size = cs_datatype_size[datatype]*stride;
-      cs_halo_sync_untyped(rs->halo, CS_HALO_ROTATION_COPY, d_size, val);
+      cs_halo_sync_untyped(rs->halo, CS_HALO_STANDARD, d_size, val);
     }
   }
 }

@@ -46,7 +46,6 @@
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for the variables
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
@@ -60,7 +59,7 @@ subroutine covofv &
    iscal  ,                                                       &
    icepdc , icetsm ,                                              &
    itypsm ,                                                       &
-   dt     , tslagr ,                                              &
+   dt     ,                                                       &
    ckupdc , smacel ,                                              &
    viscf  , viscb  )
 
@@ -109,14 +108,13 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
-double precision tslagr(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 
 ! Local variables
 
 logical          lprev
-character(len=80) :: chaine, fname
+character(len=80) :: chaine
 integer          ivar
 integer          ifac , iel, isou, jsou
 integer          iiun, ibcl
@@ -342,10 +340,7 @@ endif
 !     Ordre 2 non pris en compte
 
 if (ippmod(iphpar).ge.1) then
-  call pptsvv &
-  !==========
- ( iscal  ,                                                       &
-   smbrv  , fimp , tslagr )
+  call pptsvv(iscal, smbrv, fimp)
 endif
 
 ! Mass source term
@@ -357,7 +352,6 @@ if (ncesmp.gt.0) then
   ! On incremente SMBRV par -Gamma RTPA et ROVSDT par Gamma
   allocate(gavinj(3,ncelet))
   call catsmv &
-  !==========
  ( ncelet , ncel   , ncesmp , iiun   , isso2t(iscal) ,            &
    icetsm , itypsm(1,ivar) ,                                      &
    cell_f_vol , cvara_var    , smacel(1,ivar) , smacel(1,ipr),    &
@@ -435,7 +429,6 @@ if (vcopt%idiff.ge.1) then
     endif
 
     call viscfa &
-    !==========
    ( imvisf ,                      &
      w1     ,                      &
      viscf  , viscb  )
@@ -491,7 +484,6 @@ if (vcopt%idiff.ge.1) then
     endif
 
     call vistnv &
-    !==========
    ( imvisf ,                                                       &
      viscce ,                                                       &
      viscf  , viscb )
@@ -548,7 +540,6 @@ if (iscdri.ge.1) then
   allocate(divflu(ncelet))
 
   call driflu &
-  !=========
   ( iflid  ,                                                       &
     dt     ,                                                       &
     imasfl , bmasfl ,                                              &

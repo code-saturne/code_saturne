@@ -1060,10 +1060,10 @@ cs_lagr_deposition(cs_real_t  dtp,
   cs_real_t ttotal = tstruc + tdiffu;
 
   /* The velocity Vstruc is estimated as the square-root of turbulent kinetic
-   *  energy times rapkvp, which corresponds roughly to v' in most of the turbulent boundary
-   * layer */
+   * energy times rapkvp, which corresponds roughly to v' in most of the
+   * turbulent boundary layer */
 
-  cs_real_t vstruc = sqrt (*enertur * rapkvp);
+  cs_real_t vstruc = sqrt(*enertur * rapkvp);
 
   /* From Vstruc we estimate the diffusion coefficient Kdif to balance the fluxes.
      * Kdif is roughly equal to sqrt(k/(4*pi)) in the core flow (which is the
@@ -1071,17 +1071,16 @@ cs_lagr_deposition(cs_real_t  dtp,
      *    flux_langevin = sig / sqrt(2*pi)  = v' / sqrt(2*pi)
      * and (v') = k * C0 /( 1 + 3*C0/2 ) = approx. k/2 (see Minier & Pozorski, 1999) */
 
-  cs_real_t kdif;
+  cs_real_t tt = (sqrt(cs_math_pi * rapkvp) * tstruc);
 
-  if (ttotal > (sqrt (cs_math_pi * rapkvp) * tstruc))
-    kdif = sqrt (*enertur / tlag2) * (ttotal - sqrt (cs_math_pi * rapkvp) * tstruc) / tdiffu;
+  cs_real_t kdif = 0;
 
-  else {
+  if (ttotal > tt)
+    kdif =   sqrt(*enertur / tlag2) * (ttotal - tt) / tdiffu;
 
-    bft_printf(_("Incorrect parameter values in LAGCLI"));
-    cs_exit (1);
-
-  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              "Incorrect parameter values in %s", __func__);
 
   /* Ratios computation of the flux to determine the kdifcl value */
 

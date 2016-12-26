@@ -117,7 +117,8 @@ BEGIN_C_DECLS
 void
 cs_user_initialization(void)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

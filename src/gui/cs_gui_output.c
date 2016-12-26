@@ -1036,7 +1036,7 @@ cs_gui_postprocess_meshes(void)
     cs_real_3_t *p_coords;
     BFT_MALLOC(p_coords, n_probes, cs_real_3_t);
 
-    for (int i = 0; i < n_probes; i++) {
+    for (i = 0; i < n_probes; i++) {
       p_coords[i][0] = _probe_coordinate(i+1, "probe_x");
       p_coords[i][1] = _probe_coordinate(i+1, "probe_y");
       p_coords[i][2] = _probe_coordinate(i+1, "probe_z");

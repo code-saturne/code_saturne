@@ -324,22 +324,22 @@ cs_rad_transfer_read(void)
   }
 
   ierror = cs_restart_read_field_vals(rp, CS_F_(qinci)->id, 0);
-  nberro =+ ierror;
+  nberro += ierror;
 
   ierror = cs_restart_read_field_vals(rp, CS_F_(hconv)->id, 0);
-  nberro =+ ierror;
+  nberro += ierror;
 
   ierror = cs_restart_read_field_vals(rp, CS_F_(fconv)->id, 0);
-  nberro =+ ierror;
+  nberro += ierror;
 
   /* Cells */
 
   ierror = cs_restart_read_field_vals(rp, CS_FI_(rad_est, 0)->id, 0);
-  nberro =+ ierror;
+  nberro += ierror;
   ierror = cs_restart_read_field_vals(rp,  CS_FI_(rad_ist, 0)->id, 0);
-  nberro =+ ierror;
+  nberro += ierror;
   ierror = cs_restart_read_field_vals(rp, CS_F_(rad_lumin)->id, 0);
-  nberro =+ ierror;
+  nberro += ierror;
 
   /* --> Si pb : arret    */
 

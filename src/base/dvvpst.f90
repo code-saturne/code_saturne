@@ -109,7 +109,6 @@ double precision rbid(1)
 double precision vr(3)
 
 double precision, allocatable, dimension(:,:) :: grad
-double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, dimension(:), pointer :: tplusp
 double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp

@@ -61,15 +61,12 @@
 !> \param[in]     iscal         number in list of additional variables
 !> \param[in,out] smbrv         explicit source term part
 !> \param[in,out] fimp          implicit source term part
-!> \param[in]     tslagr        coupling term for the Lagrangian module
 !______________________________________________________________________________!
 
 
 subroutine pptsvv &
-!================
-
  ( iscal  ,                                                       &
-   smbrv  , fimp , tslagr )
+   smbrv  , fimp )
 
 !===============================================================================
 ! Module files
@@ -81,7 +78,6 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe, only: itypfb
 use ppppar
 use ppthch
 use coincl
@@ -99,7 +95,6 @@ implicit none
 integer          iscal
 
 double precision smbrv(3,ncelet), fimp(3,3,ncelet)
-double precision tslagr(ncelet,*)
 
 ! Local variables
 

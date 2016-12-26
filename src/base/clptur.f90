@@ -2603,26 +2603,23 @@ integer          icodcl(nfabor,nvarcl)
 
 double precision rcodcl(nfabor,nvarcl,3)
 double precision byplus(nfabor), bdplus(nfabor)
-double precision hbord(nfabor), theipb(nfabor), buk(nfabor)
-double precision tetmax, tetmin, tplumx, tplumn
+double precision hbord(nfabor), buk(nfabor)
 
 ! Local variables
 
-integer          ivar, f_id, b_f_id, isvhbl, inc, iprev
-integer          ifac, iel, isou, jsou
-integer          ifcvsl, itplus, itstar
+integer          ivar, f_id, isvhbl, inc, iprev
+integer          ifac, iel, isou
+integer          ifcvsl
 
-double precision cpp, rkl, prdtl, visclc, romc, tplus, cofimp, cpscv
+double precision cpp, rkl, prdtl, visclc, romc, cofimp
 double precision distbf, hint, heq, yptp, hflui, hext
-double precision yplus, dplus, phit, rcprod, temp, tet, uk
-double precision viscis, visctc, xmutlm, ypth, xnuii, srfbnf
+double precision yplus, dplus, rcprod, temp, uk
+double precision visctc, xmutlm, ypth, xnuii, srfbnf
 double precision rcodcx, rcodcy, rcodcz, rcodcn, rnx, rny, rnz
 double precision upx, upy, upz, usn, tx, ty, tz, txn, txn0, utau
 
 double precision, allocatable, dimension(:,:) :: vecipb
 double precision, allocatable, dimension(:,:,:) :: gradv
-
-character(len=80) :: fname
 
 double precision, dimension(:), pointer :: crom, viscls
 double precision, dimension(:,:), pointer :: val_p_v

@@ -314,7 +314,7 @@ if (nscapp.gt.0) then
      iisc   ,                                                       &
      icepdc , icetsm ,                                              &
      itypsm ,                                                       &
-     dtr    , tslagr ,                                              &
+     dtr    ,                                                       &
      ckupdc , smacel ,                                              &
      viscf  , viscb  )
 
@@ -491,7 +491,7 @@ if (nscaus.gt.0) then
      iisc   ,                                                       &
      icepdc , icetsm ,                                              &
      itypsm ,                                                       &
-     dtr    , tslagr ,                                              &
+     dtr    ,                                                       &
      ckupdc , smacel ,                                              &
      viscf  , viscb  )
 

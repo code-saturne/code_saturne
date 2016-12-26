@@ -117,7 +117,8 @@ void
 cs_user_1d_wall_thermal(int iappel,
                         int isuit1)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

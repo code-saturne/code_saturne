@@ -286,8 +286,6 @@ cs_user_rad_transfer_net_flux(const int        itypfb[],
   /*< [init]*/
   /* Initializations */
 
-  /* Stop indicator (forgotten boundary faces)     */
-  int iok = 0;
   /*< [init]*/
 
   /*< [net_flux]*/

@@ -55,6 +55,7 @@
 #include "bft_error.h"
 
 #include "cs_physical_constants.h"
+#include "cs_random.h"
 #include "cs_thermal_model.h"
 
 #include "cs_lagr.h"
@@ -273,13 +274,14 @@ cs_lagr_resuspension(void)
 
             cs_real_t sub_dt = cs_glob_lagr_time_step->dtp / ndiam;
 
-            cs_real_t v_part_inst = v_part_t + sub_dt * (v_part_t_dt + v_part_t) / cs_glob_lagr_time_step->dtp;
+            cs_real_t v_part_inst =   v_part_t + sub_dt * (v_part_t_dt + v_part_t)
+                                    / cs_glob_lagr_time_step->dtp;
 
             if (   test_colli == 1
                    && cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) > 0) {
 
               cs_real_t kinetic_energy =  0.5 * p_mass
-                * (  pow(part_vel[0], 2)
+                * (    pow(part_vel[0], 2)
                      + pow(part_vel[1], 2)
                      + pow(part_vel[2], 2));
 
@@ -474,9 +476,7 @@ cs_lagr_resuspension(void)
             cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, 0);
             cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
 
-            cs_real_t norm_face = cs_glob_mesh_quantities->b_face_surf[face_id];
-
-            cs_real_t norm_velocity = sqrt(pow(part_vel[0], 2) + pow (part_vel[1], 2) + pow (part_vel[2], 2));
+            cs_real_t norm_velocity = cs_math_3_norm(part_vel);
 
             cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)*2.0/p_mass);
             cs_real_t angle_reent =

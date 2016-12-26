@@ -64,16 +64,6 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-static const double  fvm_hilbert_distrib_tol = 0.10;
-
-/* Max. number of sub-iterations to get a well-balanced distribution */
-static const int fvm_hilbert_distrib_n_iter_max = 5;
-
-static const int _sampling_factors[4] = {1, /* OD */
-                                         2, /* 1D */
-                                         2, /* 2D */
-                                         4, /* 3D */};
-
 static const unsigned  _imax = ~(0U);
 
 /* 2 dimension to nkey conversion */

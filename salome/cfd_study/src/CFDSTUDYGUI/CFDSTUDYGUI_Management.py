@@ -283,7 +283,7 @@ class CFDGUI_Management:
 
     def delDockfromStudyAndCaseNames(self, dsk, studyId, studyCFDName, caseName):
         """
-        Delete all the opened dock windows from a study name and a case name 
+        Delete all the opened dock windows from a study name and a case name
         """
         liste = self.getDockWithCFDStudyAndCaseNames(studyId, studyCFDName, caseName)
         if liste == []:

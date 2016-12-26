@@ -249,13 +249,13 @@ _sys_info_issue(char      *issue_str,
 
 #if defined(HAVE_MPI)
 
-void
+static void
 _system_info(MPI_Comm comm,
              bool     log)
 
 #else
 
-void
+static void
 _system_info(bool  log)
 
 #endif
@@ -310,7 +310,7 @@ _system_info(bool  log)
   /*---------------------------*/
 
   if (log) {
-    for (int log_id = 0; log_id < n_logs; log_id++)
+    for (log_id = 0; log_id < n_logs; log_id++)
       cs_log_printf(logs[log_id],
                     "\n%s\n", _("Local case configuration:\n"));
   }

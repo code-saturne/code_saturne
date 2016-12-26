@@ -1908,8 +1908,8 @@ _dump_node(const fvm_box_tree_t  *bt,
 
   bft_printf("\n"
              "  node %10d (%s)\n"
-             "    level:   %3hu - anchor: [ %10u %10u %10u ]\n"
-             "    n_boxes: %3hd - start_id: %u\n"
+             "    level:   %3u - anchor: [ %10u %10u %10u ]\n"
+             "    n_boxes: %3d - start_id: %u\n"
              "    boxes:\n",
              node_id, node_type[(int)(node->is_leaf)],
              m_code.L, m_code.X[0], m_code.X[1], m_code.X[2],

@@ -1035,8 +1035,8 @@ integer          icodcl(nfabor,nvarcl)
 
 ! Local variables
 
-integer          ivar, f_id, f_dim
-integer          ifac, iel, isou, jsou
+integer          ivar, f_id
+integer          ifac, iel
 integer          ifcvsl
 
 double precision rkl, visclc
@@ -1044,14 +1044,12 @@ double precision distbf, srfbnf
 double precision rnx, rny, rnz, temp
 double precision hintt(6)
 
-character(len=80) :: fname
-
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: coefav, cofafv
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, dimension(:,:), pointer :: visten
 
-double precision, dimension(:), pointer :: viscl, visct, viscls, cpro_cp
+double precision, dimension(:), pointer :: viscl, visct, viscls
 
 type(var_cal_opt) :: vcopt
 

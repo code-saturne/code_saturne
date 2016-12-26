@@ -108,9 +108,6 @@ double precision vstr0(3,nstrmx)
 
 ! Local variables
 
-integer          ifac
-integer          ilelt, nlelt
-
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
@@ -204,8 +201,6 @@ double precision dtstr(nstrmx)
 
 ! Local variables
 
-integer          ii, jj, istr
-
 !===============================================================================
 
 !===============================================================================
@@ -266,9 +261,6 @@ integer          nbstru
 integer          idfstr(nfabor)
 
 ! Local variables
-
-integer          ifac
-integer          ilelt, nlelt
 
 integer, allocatable, dimension(:) :: lstelt
 

@@ -274,8 +274,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
   cs_lagr_dim_t *lagdim = cs_glob_lagr_dim;
 
-  cs_lagr_bdy_condition_t  *bdy_cond = cs_lagr_get_bdy_conditions();
-
   /* Default initializations for Lagrangian module. */
 
   lagr_time_scheme->iilagr = 0;

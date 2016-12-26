@@ -1186,6 +1186,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
     else if (teloc[iel] >= tt[nt - 1])
       kp = pco2[iel] * kpco2[nt - 1] + ph2o[iel] * kpco2[nt - 1];
     else {
+      kp = 0.;
       for (int it = 0; it < nt - 1; it++) {
         if ((teloc[iel] >= tt[it]) && (teloc[iel] < tt[it + 1])) {
           cs_real_t kp1 = pco2[iel] * kpco2[it] + ph2o[iel] * kph2o[it];
