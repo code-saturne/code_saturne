@@ -461,7 +461,7 @@ _add_b_faces(cs_mesh_t        *mesh,
  *
  * parameters:
  *   i_face_cells  <-- interior faces -> cells connectivity
- *   n_g_faces     <-- old number of global boundary faces
+ *   n_g_b_faces   <-- old number of global boundary faces
  *   n_b_faces     <-- old number of local boundary faces
  *   list          <-- list of boundary faces to add (with gost)
  *   list_size     <-- size of list
@@ -471,7 +471,7 @@ _add_b_faces(cs_mesh_t        *mesh,
 
 static void
 _refresh_b_glob_num(const cs_lnum_2_t  *i_face_cells,
-                    cs_gnum_t           n_g_faces,
+                    cs_gnum_t           n_g_b_faces,
                     cs_lnum_t           n_b_faces,
                     const cs_lnum_t    *list,
                     cs_lnum_t           list_size,
@@ -484,12 +484,12 @@ _refresh_b_glob_num(const cs_lnum_2_t  *i_face_cells,
   for (ii = 0; ii < list_size; ii++) {
     if (i_face_cells[list[ii]][0] > -1) {
       b_faces_glob_num[n_b_faces + inc]
-        = n_g_faces + 2*(list_glob_num[ii] - 1) + 1;
+        = n_g_b_faces + 2*(list_glob_num[ii] - 1) + 1;
       inc++;
     }
     if (i_face_cells[list[ii]][1] > -1) {
       b_faces_glob_num[n_b_faces + inc]
-        = n_g_faces + 2*(list_glob_num[ii] - 1) + 2;
+        = n_g_b_faces + 2*(list_glob_num[ii] - 1) + 2;
       inc++;
     }
   }
@@ -799,6 +799,9 @@ _boundary_insert(cs_mesh_t           *mesh,
   BFT_REALLOC(mesh->i_face_cells, mesh->n_i_faces, cs_lnum_2_t);
   BFT_REALLOC(mesh->i_face_family, mesh->n_i_faces, cs_lnum_t);
 
+  if (mesh->n_g_b_faces != _n_g_b_faces)
+    mesh->modified = 1;
+
   mesh->n_g_b_faces = _n_g_b_faces;
   mesh->n_g_i_faces = _n_g_i_faces;
 
@@ -973,7 +976,6 @@ cs_mesh_boundary_insert_separating_cells(cs_mesh_t        *mesh,
     BFT_FREE(sel_faces);
 
   }
-
 }
 
 /*---------------------------------------------------------------------------*/

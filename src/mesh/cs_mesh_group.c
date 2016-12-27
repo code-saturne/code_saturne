@@ -561,13 +561,6 @@ _add_gc(cs_mesh_t   *mesh,
              (n_f_prv * mesh->n_max_family_items)*sizeof(int));
     }
 
-    /* If a nonzero family is empty, it is family 1 */
-
-    if (mesh->n_max_family_items*mesh->n_families > 0) {
-      if (mesh->family_item[0] == 0)
-        gc_id_shift = 1;
-    }
-
     gc_id = mesh->n_families + gc_id_shift;
 
     mesh->n_families += 1;
@@ -625,7 +618,7 @@ _mesh_group_set(cs_mesh_t        *mesh,
   int _gc_id = _add_gc(mesh, name);
 
   for (cs_lnum_t i = 0; i < n_selected_elts; i++)
-    gc_id[selected_elt_id[i]] = _gc_id;
+    gc_id[selected_elt_id[i]] = _gc_id + 1;
 
   if (mesh->class_defs != NULL)
     cs_mesh_update_selectors(mesh);
@@ -656,6 +649,12 @@ _mesh_group_add(cs_mesh_t        *mesh,
 {
   int _gc_id = _add_gc(mesh, name);
 
+  int null_family = 0;
+  if (mesh->n_families > 0) {
+    if (mesh->family_item[0] == 0)
+      null_family = 1;
+  }
+
   /* Build index on entities (previous group class for elements
      not selected, previous + new for those selected) */
 
@@ -666,8 +665,11 @@ _mesh_group_add(cs_mesh_t        *mesh,
 
   for (cs_lnum_t i = 0; i < n_elts; i++)
     gc_tmp_idx[i+1] = 1;
-  for (cs_lnum_t i = 0; i < n_selected_elts; i++)
-    gc_tmp_idx[selected_elt_id[i]+1] += 1;
+  for (cs_lnum_t i = 0; i < n_selected_elts; i++) {
+    cs_lnum_t j= selected_elt_id[i];
+    if (gc_id[j] != null_family)
+      gc_tmp_idx[j+1] += 1;
+  }
 
   /* Transform count to index */
 
@@ -681,7 +683,10 @@ _mesh_group_add(cs_mesh_t        *mesh,
     gc_tmp[gc_tmp_idx[i]] = gc_id[i];
   for (cs_lnum_t i = 0; i < n_selected_elts; i++) {
     cs_lnum_t j = selected_elt_id[i];
-    gc_tmp[gc_tmp_idx[j] + 1] = _gc_id;
+    if (gc_id[j] != null_family)
+      gc_tmp[gc_tmp_idx[j] + 1] = _gc_id + 1;
+    else
+      gc_tmp[gc_tmp_idx[j]] = _gc_id + 1;
   }
 
   /* Merge definitions */
