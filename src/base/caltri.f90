@@ -246,6 +246,10 @@ endif
 ! Mass source terms
 ! -----------------
 
+! Initialize
+ncepdc = 0
+ncetsm = 0
+
 call cs_user_mass_source_terms &
 ( nvar   , nscal  , ncepdc ,                                     &
   ncetsm , iappel ,                                              &
