@@ -20,10 +20,11 @@
 
 !-------------------------------------------------------------------------------
 !> \file atiniv.f90
-!> \brief   Initialisation of calculation variables for the atmospheric module,
-!>              it is the counterpart of usiniv.f90.
-!>      Initialise for example the meteorological field for each cell of
-!>    the domain by interpolation of the data from the meteo file
+!> \brief Initialisation of calculation variables for the atmospheric module,
+!> it is the counterpart of usiniv.f90.
+!>
+!> Initialise for example the meteorological field for each cell of
+!> the domain by interpolation of the data from the meteo file
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -33,8 +34,8 @@
 !> \param[in]   nscal       total number of scalars
 !> \param[in]   dt          time step value
 !-------------------------------------------------------------------------------
-subroutine atiniv  ( nvar, nscal, dt )
 
+subroutine atiniv  ( nvar, nscal, dt )
 
 !===============================================================================
 ! Module files
