@@ -1354,23 +1354,15 @@ class XMLinitTestCase(unittest.TestCase):
         '<physical_properties>'\
                 '<fluid_properties>'\
                         '<property choice="constant" label="Density" name="density">'\
-                                '<listing_printing status="off"/>'\
-                                '<postprocessing_recording status="off"/>'\
                                 '<initial_value>1.17862</initial_value>'\
                         '</property>'\
                         '<property choice="constant" label="LamVisc" name="molecular_viscosity">'\
-                                '<listing_printing status="off"/>'\
-                                '<postprocessing_recording status="off"/>'\
                                 '<initial_value>1.83e-05</initial_value>'\
                         '</property>'\
                         '<property choice="constant" label="SpecHeat" name="specific_heat">'\
-                                '<listing_printing status="off"/>'\
-                                '<postprocessing_recording status="off"/>'\
                                 '<initial_value>1017.24</initial_value>'\
                         '</property>'\
                         '<property choice="constant" label="ThermalCond" name="thermal_conductivity">'\
-                                '<listing_printing status="off"/>'\
-                                '<postprocessing_recording status="off"/>'\
                                 '<initial_value>0.02495</initial_value>'\
                         '</property>'\
                 '</fluid_properties>'\

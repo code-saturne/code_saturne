@@ -503,8 +503,6 @@ class FluidCharacteristicsModel(Variables, Model):
         node['choice'] = choice
 
         if choice == 'constant':
-            node.xmlInitNode('listing_printing')['status'] = 'off'
-            node.xmlInitNode('postprocessing_recording')['status'] = 'off'
 
             if tag == 'density':
                 from code_saturne.Pages.TimeStepModel import TimeStepModel
@@ -555,23 +553,15 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         mdl.setInitialValue('thermal_conductivity', 0.04)
         doc = '''<fluid_properties>
                     <property choice="constant" label="Density" name="density">
-                        <listing_printing status="off"/>
-                        <postprocessing_recording status="off"/>
                         <initial_value>123</initial_value>
                     </property>
                     <property choice="constant" label="LamVisc" name="molecular_viscosity">
-                        <listing_printing status="off"/>
-                        <postprocessing_recording status="off"/>
                         <initial_value>1.5e-05</initial_value>
                     </property>
                     <property choice="constant" label="Sp. heat" name="specific_heat">
-                        <listing_printing status="off"/>
-                        <postprocessing_recording status="off"/>
                         <initial_value>1212</initial_value>
                     </property>
                     <property choice="constant" label="Th. cond" name="thermal_conductivity">
-                        <listing_printing status="off"/>
-                        <postprocessing_recording status="off"/>
                         <initial_value>0.04</initial_value>
                     </property>
                  </fluid_properties>'''
@@ -585,8 +575,6 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         mdl = FluidCharacteristicsModel(self.case)
         mdl.setInitialValueDensity(89.98)
         doc = '''<property choice="constant" label="Density" name="density">
-                    <listing_printing status="off"/>
-                    <postprocessing_recording status="off"/>
                     <initial_value>89.98</initial_value>
                  </property>'''
         assert mdl.node_density == self.xmlNodeFromString(doc),\
@@ -599,8 +587,6 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         mdl = FluidCharacteristicsModel(self.case)
         mdl.setInitialValueViscosity(1.2e-4)
         doc = '''<property choice="constant" label="LamVisc" name="molecular_viscosity">
-                    <listing_printing status="off"/>
-                    <postprocessing_recording status="off"/>
                     <initial_value>1.2e-4</initial_value>
                  </property>'''
         assert mdl.node_viscosity == self.xmlNodeFromString(doc),\
@@ -613,8 +599,6 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         mdl = FluidCharacteristicsModel(self.case)
         mdl.setInitialValueHeat(456.9)
         doc = '''<property choice="constant" label="Sp. heat" name="specific_heat">
-                    <listing_printing status="off"/>
-                    <postprocessing_recording status="off"/>
                     <initial_value>456.9</initial_value>
                  </property>'''
         assert mdl.node_heat == self.xmlNodeFromString(doc),\
@@ -627,8 +611,6 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         mdl = FluidCharacteristicsModel(self.case)
         mdl.setInitialValueCond(456.9)
         doc = '''<property choice="constant" label="Th. cond" name="thermal_conductivity">
-                    <listing_printing status="off"/>
-                    <postprocessing_recording status="off"/>
                     <initial_value>456.9</initial_value>
                  </property>'''
         assert mdl.node_cond == self.xmlNodeFromString(doc),\
@@ -651,8 +633,6 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         mdl.setPropertyMode('density', 'constant')
         doc2 = '''<property choice="constant" label="Density" name="density">
                     <initial_value>1.17862</initial_value>
-                    <listing_printing status="off"/>
-                    <postprocessing_recording status="off"/>
                  </property>'''
         assert mdl.node_density == self.xmlNodeFromString(doc2),\
         'Could not set listing and recording status for property and remove this nodes'

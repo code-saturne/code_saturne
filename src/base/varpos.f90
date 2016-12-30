@@ -128,6 +128,9 @@ pflag = POST_ON_LOCATION + POST_MONITOR
 ! CP when variable
 if (icp.ge.0) then
   call add_property_field_1d('specific_heat', 'Specific Heat', icp)
+
+  call field_set_key_int(icp, keyvis, 1)
+  call field_set_key_int(icp, keylog, 1)
 endif
 
 ! Density at the second previous time step for cavitation algorithm
