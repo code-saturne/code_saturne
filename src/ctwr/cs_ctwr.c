@@ -1445,7 +1445,7 @@ void cs_ctwr_bulk_mass_source_term(const int       iappel,
                                          stored for pressure */
                         p0,
                         molmassrat,
-			                  exp_st,
+                                          exp_st,
                         imp_st);
 
     for (cs_lnum_t i = 0; i < *n_tot; i++) {
