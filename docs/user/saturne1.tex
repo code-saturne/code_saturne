@@ -2881,9 +2881,9 @@ it has little interest for a non-developer, or its modification is
 potentially hazardous. The environment variables used by the \pcs
 are described here:
 
-\envvar{CS\_RENUMBER}
+\envvar{OMP\_NUM\_THREADS}
 
-Deactivating renumbering is possible by setting \code{CS\_RENUMBER=off}.
+Deactivating OPENMP by setting \code{OMP\_NUM\_THREADS=1}.
 
 \envvar{CS\_PREPROCESS\_MEM\_LOG}
 
@@ -2909,6 +2909,11 @@ If this variable is defined and is a strictly positive integer, coordinate
 systems in \ideas universal format files will be ignored. The behaviour
 of the \pcs will thus be the same as that of versions 1.0 and 1.1.
 Note that in any case, non Cartesian coordinate systems are not handled yet.
+
+\envvar{CS\_RENUMBER}
+
+Deactivating renumbering is possible by setting \code{CS\_RENUMBER=off}.
+
 
 \subsubsection{System environment variables\label{sec:envpcs:sys}}
 
