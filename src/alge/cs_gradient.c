@@ -151,7 +151,7 @@ static int _gradient_stat_id = -1;
  * \brief Compute array index bounds for a local thread.
  *
  * When called inside an OpenMP parallel section, this will return the
- * start an past-the-end indexes for the array range assigned to that thread.
+ * start and past-the-end indexes for the array range assigned to that thread.
  * In other cases, the start index is 1, and the past-the-end index is n;
  *
  * \param[in]   n     size of array
@@ -2209,7 +2209,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   cs_real_33_t   *restrict cocgb = (cpl == NULL) ?
     fvq->cocgb_s_lsq :
     cpl->cocgb_s_lsq;
-  cs_real_33_t   *restrict cocg = fvq->cocg_s_lsq;
+  cs_real_33_t   *restrict cocg = fvq->cocg_lsq;
   cs_real_33_t   *restrict _cocg = NULL;
   cs_real_33_t   *restrict _cocgb = NULL;
 

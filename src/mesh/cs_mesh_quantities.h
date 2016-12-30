@@ -89,14 +89,12 @@ typedef struct {
   cs_real_t      max_vol;        /* Maximum cell volume */
   cs_real_t      tot_vol;        /* Total volume */
 
-  cs_real_33_t  *cocgb_s_it;     /* coupling of gradient compponents for
+  cs_real_33_t  *cocgb_s_it;     /* coupling of gradient components for
                                     iterative reconstruction at boundary */
-  cs_real_33_t  *cocg_s_it;      /* coupling of gradient compponents for
+  cs_real_33_t  *cocg_s_it;      /* coupling of gradient components for
                                     iterative reconstruction */
-  cs_real_33_t  *cocgb_s_lsq;    /* coupling of gradient compponents for
+  cs_real_33_t  *cocgb_s_lsq;    /* coupling of gradient components for
                                     least-square reconstruction at boundary */
-  cs_real_33_t  *cocg_s_lsq;     /* coupling of gradient compponents for
-                                    least-square reconstruction */
 
   cs_real_33_t  *cocg_it;        /* Interleaved cocg matrix
                                     for iterative gradients */
@@ -396,9 +394,9 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
  *----------------------------------------------------------------------------*/
 
 void
-cs_compute_cell_cocg_s_lsq_coupling(const cs_mesh_t         *m,
-                                    cs_mesh_quantities_t    *fvq,
-                                    cs_internal_coupling_t  *ce);
+cs_compute_cell_cocg_lsq_coupling(const cs_mesh_t         *m,
+                                  cs_mesh_quantities_t    *fvq,
+                                  cs_internal_coupling_t  *ce);
 
 /*----------------------------------------------------------------------------
  * Compute 3x3 matrix cocg for the scalar gradient iterative algorithm

@@ -308,8 +308,8 @@ _compute_geometrical_face_weight(const cs_internal_coupling_t  *cpl)
 
 static void
 _compute_physical_face_weight(const cs_internal_coupling_t  *cpl,
-                              const cs_real_t        c_weight[],
-                              cs_real_t              rweight[])
+                              const cs_real_t                c_weight[],
+                              cs_real_t                      rweight[])
 {
   cs_lnum_t face_id, cell_id;
 
@@ -1496,9 +1496,9 @@ cs_internal_coupling_initialize(void)
                                               cs_glob_mesh_quantities,
                                               cpl);
         } else if (var_cal_opt.imrgra == 1) {
-          cs_compute_cell_cocg_s_lsq_coupling(cs_glob_mesh,
-                                              cs_glob_mesh_quantities,
-                                              cpl);
+          cs_compute_cell_cocg_lsq_coupling(cs_glob_mesh,
+                                            cs_glob_mesh_quantities,
+                                            cpl);
         }
 
         /* Update user information */
