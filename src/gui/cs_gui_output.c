@@ -870,11 +870,11 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
 
     if (_surfacic_variable_post("yplus", true))
       ipstdv[1] = 1;
-    if (_surfacic_variable_post("tplus", true))
+    if (_surfacic_variable_post("tplus", false))
       ipstdv[2] = 1;
-    if (_surfacic_variable_post("thermal_flux", true))
+    if (_surfacic_variable_post("thermal_flux", false))
       ipstdv[3] = 1;
-    if (_surfacic_variable_post("boundary_temperature", true)) {
+    if (_surfacic_variable_post("boundary_temperature", false)) {
       cs_field_t *bf = cs_parameters_add_boundary_temperature();
       if (bf != NULL) {
         int k_vis = cs_field_key_id("post_vis");
@@ -882,7 +882,7 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
       }
     }
 
-    if (_surfacic_variable_post("boundary_layer_nusselt", true))
+    if (_surfacic_variable_post("boundary_layer_nusselt", false))
       ipstdv[4] = 1;
   }
 }

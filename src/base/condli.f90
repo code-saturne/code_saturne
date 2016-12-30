@@ -3028,7 +3028,7 @@ if (allocated(rijipb)) deallocate(rijipb)
 ! 16. Update of boundary temperature when saved and not a variable.
 !===============================================================================
 
-if (itherm.eq.2 .and. itempb.gt.0) then
+if (itherm.eq.2 .and. itempb.ge.0) then
 
   call field_get_val_s(itempb, btemp_s)
 
