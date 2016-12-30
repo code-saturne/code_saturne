@@ -264,7 +264,7 @@ typedef int
 /* maximum number of exchanging ranks for which we use asynchronous
    MPI sends and receives instead of MPI_SendRecv */
 
-static int _ple_locator_async_threshold = 0;
+static int _ple_locator_async_threshold = 128;
 
 /* global logging function */
 

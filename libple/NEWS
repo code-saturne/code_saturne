@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Use asyncronous locator variable exchange by default when
+  number of communicating ranks is not too large (< 128).
+
 - Implement handling of point tags so as to ignore location
   on elements sharing tag (also requires matching features
   in ple_mesh_elements_locate_t function used.

@@ -1,3 +1,8 @@
+2016-12-28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Set default asynchronous exchange threshold for locator
+	to nonzero value.
+
 2015-06-27  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Add support for internationalization.
