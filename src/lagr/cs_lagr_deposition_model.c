@@ -49,6 +49,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_error.h"
 #include "bft_printf.h"
 
 #include "cs_physical_constants.h"

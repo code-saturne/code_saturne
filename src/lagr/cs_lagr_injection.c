@@ -167,7 +167,7 @@ cs_lagr_injection(int        time_id,
   /* User initialization by class and boundary */
 
   if (cs_gui_file_is_loaded() && ts->nt_cur == ts->nt_prev +1)
-    cs_gui_particles_bcs(&(mesh->n_b_faces), &(extra->nozppm));
+    cs_gui_particles_bcs(&(extra->nozppm));
 
   cs_user_lagr_boundary_conditions(itypfb);
 
