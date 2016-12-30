@@ -13915,6 +13915,33 @@ msgstr ""
 "dégradée...\n"
 
 #, c-format
+msgid "%s should be called before halo creation in case of periodicity."
+msgstr ""
+"%s devrait être appelé avant la création des halos en cas de périodicité."
+
+#, c-format
+msgid ""
+" %s\n"
+"   Number of cells:          %llu\n"
+"   Number of interior faces: %llu\n"
+"   Number of boundary faces: %llu\n"
+"   Number of vertices:       %llu\n"
+"\n"
+msgstr ""
+" %s\n"
+"  Nombre de cellules :       %llu\n"
+"  Nombre de faces internes : %llu\n"
+"  Nombre de faces de bord :  %llu\n"
+"  Nombre de sommets :        %llu\n"
+"\n"
+
+msgid "Before insertion of user-defined boundary"
+msgstr "Avant insertion de frontière définie par l'utilisateur"
+
+msgid "After insertion of user-defined boundary"
+msgstr "Après insertion de frontière définie par l'utilisateur"
+
+#, c-format
 msgid "%s should be called before halo creation."
 msgstr "%s devrait être appelé avant la création des halos."
 

@@ -44,6 +44,7 @@
 
 #include "cs_base.h"
 #include "cs_mesh.h"
+#include "cs_sort.h"
 
 #include "fvm_defs.h"
 #include "fvm_nodal.h"
@@ -746,6 +747,150 @@ cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
   /* We are done */
 
   return extr_mesh;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a vertex to cell connectivity for marked vertices only.
+ *
+ * It is the caller's responsibility to free the v2c_idx and v2c arrays,
+ * which are allocated by this function.
+ *
+ * \param[in]    mesh      pointer to mesh structure
+ * \param[in]    v_flag    vertex selection flag (0: not selected, 1: selected)
+ * \param[out]   v2c_idx   vertex to cells index (size: mesh->n_vertices +1)
+ * \param[out]   v2c       vertex to cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
+                                  const char    v_flag[],
+                                  cs_lnum_t   **v2c_idx,
+                                  cs_lnum_t   **v2c)
+{
+  cs_lnum_t n_vertices = mesh->n_vertices;
+
+  /* Mark vertices which may be split (vertices lying on new boundary faces) */
+
+  cs_lnum_t  *_v2c_idx;
+  BFT_MALLOC(_v2c_idx, n_vertices+1, cs_lnum_t);
+
+  _v2c_idx[0] = 0;
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
+    _v2c_idx[i+1] = 0;
+
+  /* Now build vertex -> cells index
+     (which will contain duplicate entries at first) */
+
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
+    cs_lnum_t s_id = mesh->i_face_vtx_idx[f_id];
+    cs_lnum_t e_id = mesh->i_face_vtx_idx[f_id+1];
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+      cs_lnum_t vtx_id = mesh->i_face_vtx_lst[i];
+      if (v_flag[vtx_id] != 0) {
+        if (mesh->i_face_cells[f_id][0] > -1)
+          _v2c_idx[vtx_id + 1] += 1;
+        if (mesh->i_face_cells[f_id][1] > -1)
+          _v2c_idx[vtx_id + 1] += 1;
+      }
+    }
+  }
+
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
+    cs_lnum_t s_id = mesh->b_face_vtx_idx[f_id];
+    cs_lnum_t e_id = mesh->b_face_vtx_idx[f_id+1];
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+      cs_lnum_t vtx_id = mesh->b_face_vtx_lst[i];
+      if (v_flag[vtx_id] != 0)
+        _v2c_idx[vtx_id + 1] += 1;
+    }
+  }
+
+  /* Transform count to index */
+
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
+    _v2c_idx[i+1] += _v2c_idx[i];
+
+  /* Now define selected vertex->cell adjacency */
+
+  cs_lnum_t *_v2c;
+  BFT_MALLOC(_v2c, _v2c_idx[n_vertices], cs_lnum_t);
+
+  cs_lnum_t *v2c_count;
+  BFT_MALLOC(v2c_count, n_vertices, cs_lnum_t);
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
+    v2c_count[i] = 0;
+
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
+    cs_lnum_t s_id = mesh->i_face_vtx_idx[f_id];
+    cs_lnum_t e_id = mesh->i_face_vtx_idx[f_id+1];
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+      cs_lnum_t vtx_id = mesh->i_face_vtx_lst[i];
+      if (v_flag[vtx_id] != 0) {
+        cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
+        cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
+        cs_lnum_t j = _v2c_idx[vtx_id] + v2c_count[vtx_id];
+        if (c_id_0 > -1) {
+          _v2c[j++] = c_id_0;
+          v2c_count[vtx_id] += 1;
+        }
+        if (c_id_1 > -1) {
+          _v2c[j++] = c_id_1;
+          v2c_count[vtx_id] += 1;
+        }
+      }
+    }
+  }
+
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
+    cs_lnum_t s_id = mesh->b_face_vtx_idx[f_id];
+    cs_lnum_t e_id = mesh->b_face_vtx_idx[f_id+1];
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+      cs_lnum_t vtx_id = mesh->b_face_vtx_lst[i];
+      if (v_flag[vtx_id] != 0) {
+        cs_lnum_t c_id_0 = mesh->b_face_cells[f_id];
+        cs_lnum_t j = _v2c_idx[vtx_id] + v2c_count[vtx_id];
+        _v2c[j] = c_id_0;
+        v2c_count[vtx_id] += 1;
+      }
+    }
+  }
+
+  BFT_FREE(v2c_count);
+
+  /* Order and compact adjacency array */
+
+  cs_sort_indexed(n_vertices, _v2c_idx, _v2c);
+
+  cs_lnum_t *tmp_v2c_idx = NULL;
+
+  BFT_MALLOC(tmp_v2c_idx, n_vertices+1, cs_lnum_t);
+  memcpy(tmp_v2c_idx, _v2c_idx, (n_vertices+1)*sizeof(cs_lnum_t));
+
+  cs_lnum_t k = 0;
+
+  for (cs_lnum_t i = 0; i < n_vertices; i++) {
+    cs_lnum_t js = tmp_v2c_idx[i];
+    cs_lnum_t je = tmp_v2c_idx[i+1];
+    cs_lnum_t v2c_prev = -1;
+    _v2c_idx[i] = k;
+    for (cs_lnum_t j = js; j < je; j++) {
+      if (v2c_prev != _v2c[j]) {
+        _v2c[k++] = _v2c[j];
+        v2c_prev = _v2c[j];
+      }
+    }
+  }
+  _v2c_idx[n_vertices] = k;
+
+  assert(_v2c_idx[n_vertices] <= tmp_v2c_idx[n_vertices]);
+
+  BFT_FREE(tmp_v2c_idx);
+  BFT_REALLOC(_v2c, _v2c_idx[n_vertices], cs_lnum_t);
+
+  *v2c_idx = _v2c_idx;
+  *v2c = _v2c;
 }
 
 /*----------------------------------------------------------------------------*/

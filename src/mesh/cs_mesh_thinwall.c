@@ -102,7 +102,9 @@ cs_create_thinwall(cs_mesh_t  *mesh,
                    cs_lnum_t  *face_list,
                    cs_lnum_t   face_list_size)
 {
-  cs_mesh_boundary_insert(mesh, face_list_size, face_list);
+  cs_mesh_boundary_insert_with_shared_vertices(mesh,
+                                               face_list_size,
+                                               face_list);
 }
 
 /*---------------------------------------------------------------------------*/

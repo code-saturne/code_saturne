@@ -67,7 +67,6 @@
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_extrude.h"
 #include "cs_mesh_smoother.h"
-#include "cs_mesh_thinwall.h"
 #include "cs_mesh_warping.h"
 #include "cs_parall.h"
 #include "cs_post.h"

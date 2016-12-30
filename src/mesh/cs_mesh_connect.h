@@ -142,6 +142,26 @@ cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
                                cs_lnum_t         b_face_list[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a vertex to cell connectivity for marked vertices only.
+ *
+ * It is the caller's responsibility to free the v2c_idx and v2c arrays,
+ * which are allocated by this function.
+ *
+ * \param[in]    mesh      pointer to mesh structure
+ * \param[in]    v_flag    vertex selection flag (0: not selected, 1: selected)
+ * \param[out]   v2c_idx   vertex to cells index (size: mesh->n_vertices +1)
+ * \param[out]   v2c       vertex to cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
+                                  const char    v_flag[],
+                                  cs_lnum_t   **v2c_idx,
+                                  cs_lnum_t   **v2c);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

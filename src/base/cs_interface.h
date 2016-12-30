@@ -54,7 +54,7 @@ BEGIN_C_DECLS
 
 /*
   Pointer to structures representing an interface and a list of interfaces.
-  The structures themselves are private, and is defined in cs_interface.c
+  The structures themselves are private, and are defined in cs_interface.c
 */
 
 typedef struct _cs_interface_t     cs_interface_t;
@@ -186,7 +186,7 @@ cs_interface_get_tr_index(const cs_interface_t  *itf);
  *
  * parameters:
  *   n_elts             <-- number of local elements considered
- *                          (size of parent_element_number[]
+ *                          (size of parent_element_id[]
  *   parent_element_id  <-- pointer to list of selected elements local
  *                          numbers (0 to n-1), or NULL if all first n_elts
  *                          elements are used
@@ -415,6 +415,32 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
 
 void
 cs_interface_set_sum(const cs_interface_set_t  *ifs,
+                     cs_lnum_t                  n_elts,
+                     cs_lnum_t                  stride,
+                     bool                       interlace,
+                     cs_datatype_t              datatype,
+                     void                      *var);
+
+/*----------------------------------------------------------------------------
+ * Update to minimum value for elements associated with an interface set.
+ *
+ * On input, the variable array should contain local contributions. On output,
+ * contributions from matching elements on parallel or periodic boundaries
+ * have been added.
+ *
+ * Only the values of elements belonging to the interfaces are modified.
+ *
+ * parameters:
+ *   ifs       <-- pointer to a fvm_interface_set_t structure
+ *   n_elts    <-- number of elements in var buffer
+ *   stride    <-- number of values (non interlaced) by entity
+ *   interlace <-- true if variable is interlaced (for stride > 1)
+ *   datatype  <-- type of data considered
+ *   var       <-> variable buffer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_interface_set_min(const cs_interface_set_t  *ifs,
                      cs_lnum_t                  n_elts,
                      cs_lnum_t                  stride,
                      bool                       interlace,

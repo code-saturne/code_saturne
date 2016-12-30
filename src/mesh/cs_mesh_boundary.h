@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Insert thin walls into the mesh.
+ * \brief Insert boundary into the mesh.
  *
  * This is done by transforming interior faces into boundary faces.
  * The created faces share vertices.
@@ -70,6 +70,29 @@ void
 cs_mesh_boundary_insert(cs_mesh_t  *mesh,
                         cs_lnum_t   n_faces,
                         cs_lnum_t   face_id[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Insert boundary into the mesh, sharing vertices on both sides.
+ *
+ * This is done by transforming interior faces into boundary faces.
+ *
+ * Note that the ids of selected faces are sorted by this function.
+ *
+ * \deprecated Use of this function is not recommended, as sharing vertices
+ *             may cause issues with vertex-based values, gradient extended
+ *             neighborhoods, and some visualization operations.
+
+ * \param[in]       mesh     pointer to mesh structure to modify
+ * \param[in]       n_faces  number of selected (interior) faces
+ * \param[in, out]  ids      list of selected (interior) faces (0 to n-1)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_boundary_insert_with_shared_vertices(cs_mesh_t  *mesh,
+                                             cs_lnum_t   n_faces,
+                                             cs_lnum_t   face_id[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
