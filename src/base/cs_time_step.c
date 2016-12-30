@@ -222,21 +222,31 @@ BEGIN_C_DECLS
 
 /* main time step structure and associated pointer */
 
-static cs_time_step_t  _time_step = {0, 0, 0, 0, -1, 2, 0., 0., -1.};
+static cs_time_step_t  _time_step = {
+  .is_variable = 0,
+  .is_local = 0,
+  .nt_prev = 0,
+  .nt_cur = 0,
+  .nt_max = -1,
+  .nt_ini = 2,
+  .t_prev = 0.,
+  .t_cur = 0.,
+  .t_max = -1.
+};
 
 static cs_time_step_options_t  _time_step_options =
 {
-  0,          /* inpdt0 */
-  0,          /* iptlro */
-  0,          /* idtvar */
-  -1.e12*10., /* dtref  */
-  1.,         /* coumax */
-  0.99,       /* cflmmx */
-  10.,        /* foumax */
-  0.1,        /* varrdt */
-  -1.e12*10., /* dtmin  */
-  -1.e12*10., /* dtmax  */
-  0.7         /* relxst */
+  .inpdt0 = 0,
+  .iptlro = 0,
+  .idtvar = 0,
+  .dtref  = -1.e12*10.,
+  .coumax = 1.,
+  .cflmmx = 0.99,
+  .foumax = 10.,
+  .varrdt = 0.1,
+  .dtmin  = -1.e12*10.,
+  .dtmax  = -1.e12*10.,
+  .relxst = 0.7
 };
 
 const cs_time_step_t  *cs_glob_time_step = &_time_step;
