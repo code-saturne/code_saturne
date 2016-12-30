@@ -146,8 +146,11 @@ endif
 ! Logging and postprocessing output
 
 if (irovar.eq.0) then
-  call hide_property(irom)
+  call hide_property(icrom)
   call field_set_key_int(ibrom, keylog, 0)
+else
+  call field_set_key_int(icrom, keylog, 1)
+  call field_set_key_int(icrom, keyvis, 1)
 endif
 
 if (idtvar.lt.0) then

@@ -359,6 +359,9 @@ dim = 1
 
 call add_property_field(name, label, dim, has_previous, f_id)
 
+call field_set_key_int(f_id, keylog, 1)
+call field_set_key_int(f_id, keyvis, 1)
+
 return
 
 end subroutine add_property_field_1d
