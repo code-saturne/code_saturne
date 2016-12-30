@@ -57,6 +57,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
+#include "cs_sort.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -906,13 +907,18 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
 
   } /* End of loop on cells */
 
+  /* Sort line elements by column id (for better access patterns) */
+
+  bool unique = cs_sort_indexed(n_cells, cell_cells_idx, cell_cells_lst);
+
+  assert(unique == true);
+
   *p_cell_cells_idx = cell_cells_idx;
   *p_cell_cells_lst = cell_cells_lst;
 
   /* Free memory */
 
   BFT_FREE(cell_buffer);
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1204,6 +1210,8 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
     } /* If there is and extended neighborhood */
 
   } /* If _first_call == 0 */
+
+  cs_sort_indexed(n_cells, mesh->cell_cells_idx, mesh->cell_cells_lst);
 
   cs_mesh_quantities_reduce_extended(mesh, mesh_quantities);
   cs_mesh_adjacencies_update_cell_cells_e();

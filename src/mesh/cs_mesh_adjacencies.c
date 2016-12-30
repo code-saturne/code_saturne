@@ -174,10 +174,11 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
     cs_lnum_t k = 0;
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
-      cs_lnum_t n_cols = c2c_idx[i+1] - c2c_idx[i];
+      cs_lnum_t js = tmp_c2c_idx[i];
+      cs_lnum_t je = tmp_c2c_idx[i+1];
       cs_lnum_t c2c_prev = -1;
       c2c_idx[i] = k;
-      for (cs_lnum_t j = 0; j < n_cols; j++) {
+      for (cs_lnum_t j = js; j < je; j++) {
         if (c2c_prev != c2c[j]) {
           c2c[k++] = c2c[j];
           c2c_prev = c2c[j];
@@ -308,8 +309,6 @@ cs_mesh_adjacencies_finalize(void)
 void
 cs_mesh_adjacencies_update_mesh(void)
 {
-  const cs_mesh_t *m = cs_glob_mesh;
-
   cs_mesh_adjacencies_t *ma = &_cs_glob_mesh_adjacencies;
 
   /* (re)build cell -> cell connectivities */
@@ -318,8 +317,7 @@ cs_mesh_adjacencies_update_mesh(void)
 
   /* Map shared connectivities */
 
-  ma->cell_cells_e_idx = m->cell_cells_idx;
-  ma->cell_cells_e = m->cell_cells_lst;
+  cs_mesh_adjacencies_update_cell_cells_e();
 
   /* (re)build cell -> boundary face connectivities */
 
