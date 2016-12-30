@@ -118,9 +118,9 @@ end interface
 !         Il y a toujours, pour toutes les phases,  rho, viscl, visct
 !         Il y a toujours la pression totale (sauf en compressible)
 !         Lorsqu'elles sont variables, on a les proprietes suivantes :
-!           . cp    (par phase)
+!           . cp
 !           . visls (par scalaire)
-!           . csmago (par phase) en LES dynamique
+!           . csmago en LES dynamique
 !         En ALE on a la viscosite de maillage
 !         On a aussi les flux de masse porteurs :
 !           . les variables u,v,w,p,turbulence sont portees par leur
@@ -186,7 +186,6 @@ endif
 ! --- Modifications pour la physique particuliere
 
 call ppprop
-!==========
 
 ! --- Properties for Darcy module
 

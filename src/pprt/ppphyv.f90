@@ -83,6 +83,8 @@ use cpincl
 use ppincl
 use mesh
 
+use field
+
 !===============================================================================
 
 implicit none

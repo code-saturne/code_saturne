@@ -23,7 +23,7 @@
 subroutine cttssc &
 !================
 
- ( iscal  ,                                                       &
+ ( iscal  , ncesmp , icetsm ,                                          &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -37,14 +37,12 @@ subroutine cttssc &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iscal            ! i  ! <-- ! scalar number                                  !
+! ncesmp           ! i  ! <-- ! number of cells with mass source terms         !
+! icetsm           ! i  ! <-- ! index of cells with mass source term           !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -64,6 +62,7 @@ use ppincl
 use ctincl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -71,36 +70,50 @@ implicit none
 
 ! Arguments
 
-integer          iscal
+integer          iscal, ncesmp
+integer          icetsm(ncesmp)
 
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-character(len=80) :: chaine
-integer          ivar
+double precision, dimension (:), allocatable :: ct_smbrs, ct_rovsdt
+
+integer evap_model       ! evaporation model
+integer i, iel
 
 !===============================================================================
 
-!===============================================================================
-! 1. INITIALISATION
-!===============================================================================
-
-
-! --- Numero du scalaire a traiter : ISCAL
-
-! --- Numero de la variable associee au scalaire a traiter ISCAL
-ivar = isca(iscal)
-
-! --- Nom de la variable associee au scalaire a traiter ISCAL
-call field_get_label(ivarfl(ivar), chaine)
+allocate(ct_smbrs(1:ncesmp),ct_rovsdt(1:ncesmp))
 
 !===============================================================================
-! 2. PRISE EN COMPTE DES TERMES SOURCES ET VARIABLES STANDARDS
+! 1. Compute the phase change source terms per unit volume in the packing zone
 !===============================================================================
+
+do i = 1, ncesmp
+  ct_smbrs(i) = 0d0
+  ct_rovsdt(i) = 0d0
+end do
+
+call cs_ctwr_source_term(ivarfl(isca(iscal)),            &
+                         p0,                             &
+                         molmass_rat,                    &
+                         ct_smbrs, ct_rovsdt);
+
+!===============================================================================
+! 2. Compute the scalar source terms
+!===============================================================================
+
+do i = 1, ncesmp
+  iel = icetsm(i)
+  smbrs(iel) = smbrs(iel) + ct_smbrs(i)*cell_f_vol(iel)
+  rovsdt(iel) = rovsdt(iel) + ct_rovsdt(i)*cell_f_vol(iel)
+end do
+
+deallocate(ct_smbrs,ct_rovsdt)
 
 !----
-! FIN
+! End
 !----
 
 return

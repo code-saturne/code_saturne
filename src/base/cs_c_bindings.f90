@@ -1787,6 +1787,92 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C user function for cooling tower
+
+    subroutine cs_ctwr_field_pointer_map()  &
+      bind(C, name='cs_ctwr_field_pointer_map')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_ctwr_field_pointer_map
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for Cooling towers
+
+    subroutine cs_ctwr_init_field_vars(rho0, t0, p0, molmassrat)           &
+      bind(C, name='cs_ctwr_init_field_vars')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), value :: rho0, t0, p0, molmassrat
+    end subroutine cs_ctwr_init_field_vars
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for Cooling towers
+
+    subroutine cs_ctwr_phyvar_update(rho0, t0, p0, molmassrat)             &
+      bind(C, name='cs_ctwr_phyvar_update')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), value :: rho0, t0, p0, molmassrat
+    end subroutine cs_ctwr_phyvar_update
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for Cooling towers
+
+    subroutine cs_ctwr_init_flow_vars(liq_mass_flow)                               &
+      bind(C, name='cs_ctwr_init_flow_vars')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(inout) :: liq_mass_flow
+    end subroutine cs_ctwr_init_flow_vars
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for Cooling towers
+
+    subroutine cs_ctwr_transport_vars(iflag)                                      &
+      bind(C, name='cs_ctwr_transport_vars')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: iflag
+    end subroutine cs_ctwr_transport_vars
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for Cooling towers
+
+    subroutine cs_ctwr_bulk_mass_source_term(iappel, p0, molmassrat,         &
+                                             n_tot, packing_cell,            &
+                                             mass_source)                    &
+      bind(C, name='cs_ctwr_bulk_mass_source_term')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: iappel
+      real(kind=c_double), value :: p0, molmassrat
+      integer(c_int), intent(inout) :: n_tot
+      integer(c_int), dimension(*), intent(inout) :: packing_cell
+      real(kind=c_double), dimension(*), intent(inout) :: mass_source
+    end subroutine cs_ctwr_bulk_mass_source_term
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for Cooling towers
+
+    subroutine cs_ctwr_source_term(f_id, p0, molmassrat,           &
+                                   exp_st, imp_st)                 &
+      bind(C, name='cs_ctwr_source_term')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      real(kind=c_double), value :: p0, molmassrat
+      real(kind=c_double), dimension(*), intent(inout) :: exp_st
+      real(kind=c_double), dimension(*), intent(inout) :: imp_st
+    end subroutine cs_ctwr_source_term
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

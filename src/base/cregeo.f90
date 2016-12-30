@@ -82,29 +82,6 @@ if (nbrsyr .gt. 0) then
 endif
 
 !===============================================================================
-! 2. Create extruded mesh for cooling tower exchange zones
-!===============================================================================
-
-if (ippmod(iaeros).ge.0) then
-
-  call usctdz
-
-  call nbzect(nbzech)
-
-  if (nbzech .gt. 0) then
-    call geoct
-    if (ichrze.gt.0) then
-      call pstict
-    endif
-  endif
-
-  if (ippmod(iaeros).ge.0.and.isuict.eq.1) then
-     call lecctw ('cooling_towers'//c_null_char)
-  endif
-
-endif
-
-!===============================================================================
 ! 3. Write time-independent post-processing meshes
 !===============================================================================
 

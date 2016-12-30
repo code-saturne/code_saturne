@@ -124,7 +124,7 @@ _output_value(const char  *const param,
   if (cs_gui_strcmp(param, "auxiliary_restart_file_writing")) {
 
     cs_xpath_add_attribute(&path, "status");
-    if(cs_gui_get_status(path, &result)) *keyword = result;
+    if (cs_gui_get_status(path, &result)) *keyword = result;
 
   }
   else {

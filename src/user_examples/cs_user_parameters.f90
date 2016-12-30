@@ -2069,8 +2069,7 @@ end subroutine uscfx2
 !===============================================================================
 
 
-subroutine uscti1
-!================
+subroutine cs_user_cooling_towers
 
 
 !===============================================================================
@@ -2109,68 +2108,30 @@ implicit none
 
 !===============================================================================
 
-!< [uscti1]
+!< [cs_user_cooling_towers]
 
 !===============================================================================
 ! 1. Parameters for prescibed temperature difference
 !===============================================================================
 
-! Activation
-iaeeri = 0
+! Air and liquid properties
+cp_a    = 1006.0d0
+cp_v    = 1831.0d0
+cp_l    = 4179.0d0
+hv0    = 2501600.0d0
+rho_l   = 997.85615d0
+viscl0 = 1.765d-5
+lambda_l = 0.02493d0
+humidity0 = 0.d0
 
-! Temperature difference (cooling) to prescribe
-vaeeri = 13.d0
-
-! Temperature modification frequency
-iaeerp = 5
-
-! Temperature step to compute difference slope tref(teau)
-paseri = 0.015d0
-
-! Maximum average hot water temperature
-aetemx = 80.d0
-
-! Minimum average cooled water temperature
-aetemn = 10.d0
-
-! Number of excange zones with a water inlet boundary
-nbzsup = 2
-
-! List of the nbzsup exchange zones at water inlet boundary
-lizsup(1) = 1
-lizsup(2) = 2
-
-! Number of excange zones with a water outlet boundary
-nbzinf = 2
-
-! List of the nbzinf exchange zones at water outlet boundary
-lizinf(1) = 1
-lizinf(2) = 2
-
-! Prescribed difference activation start time
-
-inbaei = 1000.d0
-
-!===============================================================================
-! 2. Post-processing of exchange zones
-!===============================================================================
-
-ichrze = 1
-
-!===============================================================================
-! 3. Cooling tower restart
-!===============================================================================
-
-isuict = isuite
-
-!< [uscti1]
+!< [cs_user_cooling_towers]
 
 !----
 ! End
 !----
 
 return
-end subroutine uscti1
+end subroutine cs_user_cooling_towers
 
 
 !===============================================================================

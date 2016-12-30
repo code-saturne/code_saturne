@@ -5,7 +5,9 @@ Trunk (unreleased)
 Physical modelling
 ------------------
 
-- modification of the LES dynamic Smagorinsky clippings.
+- Add a cooling towers module to simulate exchange zones.
+
+- Modification of the LES dynamic Smagorinsky clippings.
 
 - Add a convection-diffusion equation solver for additional vector variables.
 

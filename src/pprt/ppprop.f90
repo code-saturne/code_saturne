@@ -59,6 +59,8 @@ use coincl
 use cpincl
 use atincl
 use ppincl
+use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -68,7 +70,7 @@ implicit none
 
 character(len=80) :: name_d, label_d
 
-integer          idim1
+integer          idim1, type_flag, f_id
 logical       :: has_previous
 
 !===============================================================================
@@ -118,6 +120,15 @@ endif
 !      dry and humid atmosphere (ippmod(iatmos) = 1,2)
 if (ippmod(iatmos).ge.1) then
   call atprop
+endif
+
+! ---> Cooling towers model
+if (ippmod(iaeros).ge.0) then
+  call add_property_field_1d('humidity', 'Humidity', ihumid)
+  call add_property_field_1d('x_s', 'Humidity sat', f_id)
+  call add_property_field_1d('enthalpy', 'Enthalpy humid air', ihm)
+  call add_property_field_1d('temperature_liquid', 'Temp liq', itml)
+  call add_property_field_1d('vertvel_l', 'Vertical vel liq', ivertvel)
 endif
 
 ! Add the mixture molar mass fraction field

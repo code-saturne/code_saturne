@@ -66,7 +66,6 @@ implicit none
 ! Local variables
 
 integer jj, isc
-double precision cpa,cpe,cpv,hv0,rhoe,visc,conduc
 
 type(var_cal_opt) :: vcopt
 
@@ -76,50 +75,40 @@ type(var_cal_opt) :: vcopt
 ! 1. Transported variables
 !===============================================================================
 
-irovar = 1
-ivivar = 0
-
-! --> Physical or numerical properties specific to scalars
+irovar = 1 ! Variable density
+ivivar = 0 ! Constant molecular viscosity
 
 do isc = 1, nscapp
 
   jj = iscapp(isc)
 
-  if (iscavr(jj).le.0) then
+  if (iscavr(jj).le.0) then  ! iscavr = 0 for scalars which are not mean square errors of other scalars
     visls0(jj) = viscl0
   endif
 
   call field_get_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
 
-  vcopt%blencv = 1.d0
+  ! Upwind for scalars in the packing zones
+  if (jj.eq.iyml .or. jj.eq.ihml) then
+    vcopt%blencv = 0.d0
+    vcopt%idiff  = 0
+    vcopt%idifft = 0
+  else
+    vcopt%blencv = 1.d0
+  endif
 
   call field_set_key_struct_var_cal_opt(ivarfl(isca(jj)), vcopt)
 
 enddo
 
-! Postprocessing output
-
-ichrze = 1
-
-! Air properties
-
-cpa    = 1006.0d0
-cpv    = 1831.0d0
-cpe    = 4179.0d0
-hv0    = 2501600.0d0
-rhoe   = 997.85615d0
-visc   = 1.765d-5
-conduc = 0.02493d0
-
-call ctprof(cpa, cpv, cpe, hv0, rhoe, visc, conduc, gx, gy, gz)
-!==========
-
 !===============================================================================
 ! 2. Define user settings
 !===============================================================================
 
-call uscti1
-!==========
+call cs_user_cooling_towers()
+
+call ctprof(cp_a, cp_v, cp_l, hv0, rho_l, viscl0, lambda_h, &
+     lambda_l, gx, gy, gz)
 
 return
 end subroutine

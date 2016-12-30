@@ -482,7 +482,7 @@ endif
 if (ippmod(iphpar).ge.1) then
   call pptssc &
   !==========
- ( iscal  ,                                                       &
+ ( iscal  , ncesmp , icetsm ,                                       &
    smbrs  , rovsdt , tslagr )
 endif
 
@@ -574,6 +574,7 @@ if (iilagr.eq.2 .and. ltsthe.eq.1)  then
 endif
 
 ! Mass source term
+
 if (ncesmp.gt.0) then
 
   ! Entier egal a 1 (pour navsto : nb de sur-iter)

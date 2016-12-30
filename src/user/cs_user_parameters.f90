@@ -660,7 +660,7 @@ end subroutine uscfx2
 !===============================================================================
 
 
-subroutine uscti1
+subroutine cs_user_cooling_towers
 !================
 
 
@@ -721,7 +721,8 @@ endif
 '@',/,                                                            &
 '@ @@ WARNING:    stop in data input',/,                          &
 '@    =======',/,                                                 &
-'@     The user subroutine ''uscti1'' must be completed',/,       &
+'@     The user subroutine ''cs_user_cooling_towers''',/,         &
+'@     must be completed',/,                                      &
 '@     for the cooling tower module',/,                           &
 '@                                                            ',/,&
 '@',/,                                                            &
@@ -738,7 +739,7 @@ endif
 !----
 
 return
-end subroutine uscti1
+end subroutine cs_user_cooling_towers
 
 
 !===============================================================================

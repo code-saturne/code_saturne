@@ -34,7 +34,6 @@
 !> - The volume mesh (ipart=-1)
 !> - The boundary mesh (ipart=-2)
 !> - SYRTHES coupling surface (ipart < -2)
-!> - Cooling tower exchange zone meshes (ipart < -2) if 'ichrze' = 1
 !>
 !> Additional meshes (cells or faces) may also be defined through the GUI or
 !> using the \ref cs_user_postprocess_meshes function from the

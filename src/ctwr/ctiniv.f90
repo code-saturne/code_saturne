@@ -20,52 +20,25 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ctiniv &
-!================
-
- ( nvar   , nscal  ,                                              &
-   dt     )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! INITIALISATION DES VARIABLES DE CALCUL
-!    POUR LA PHYSIQUE PARTICULIERE : ECOULEMENTS ATMOSPHERIQUES
-!    PENDANT DE USINIV.F
-
-! Cette routine est appelee en debut de calcul (suite ou non)
-!     avant le debut de la boucle en temps
-
-! Elle permet d'INITIALISER ou de MODIFIER (pour les calculs suite)
-!     les variables de calcul,
-!     les valeurs du pas de temps
-
-
-! On dispose ici de ROM et VISCL initialises par RO0 et VISCL0
-!     ou relues d'un fichier suite
-! On ne dispose des variables VISCLS, CP (quand elles sont
-!     definies) que si elles ont pu etre relues dans un fichier
-!     suite de calcul
-
-! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
-!     ET PAS ICI
-
+!-------------------------------------------------------------------------------
+!> \file ctiniv.f90
+!> \brief Initialisation of calculation variables for the cooling tower module,
+!> it is the counterpart of usiniv.f90.
+!>
+!> Initialise for example the meteorological field for each cell of
+!> the domain by interpolation of the data from the meteo file
+!
+!-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   nvar        total number of variables
+!> \param[in]   nscal       total number of scalars
+!> \param[in]   dt          time step value
+!-------------------------------------------------------------------------------
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine ctiniv(nvar   , nscal  , dt)
 
 !===============================================================================
 ! Module files
@@ -80,7 +53,10 @@ use entsor
 use ppppar
 use ppthch
 use ctincl
+use ppincl
+use field
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -92,34 +68,122 @@ double precision dt(ncelet)
 
 ! Local variables
 
+integer          iel, ifac, ii, jj, f_id
+integer          iflmas, iflmab
+
+double precision drop_vel(3)
+
+double precision, dimension(:), pointer :: cvar_temp, cvar_templ, cvar_yml
+double precision, dimension(:), pointer :: cvar_yma
+double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: cpro_rho
+double precision humidity, humid_sat
+double precision t_h, h_h, cp_h
+double precision t_l, h_l
+double precision den_rat
+double precision gnorm, gx_norm, gy_norm, gz_norm
+double precision liq_mass_flux, liq_surf
+
 !===============================================================================
-!===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
+! 1. Initialization
 !===============================================================================
 
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_temp)
+call field_get_val_s(ivarfl(isca(iyml)), cvar_yml)
+call field_get_val_s(ivarfl(isca(iyma)), cvar_yma)
+call field_get_val_s(itml, cvar_templ)
+call field_get_val_s(icrom, cpro_rho)
 
 !===============================================================================
-! 2. STANDARD INITIALIZATION
+! 2. Standard initialization
 !===============================================================================
 
+! Only if the simulation is not a restart from another one
+if (isuite.eq.0) then
+  do iel = 1, ncel
+    cvar_temp(iel) = (t0 - tkelvi)
+    cvar_yma(iel) = 1.d0 / ( 1.d0 + humidity0)
+    ! The liquid values can be adjusted in the packing regions
+    ! using 'cs_user_f_initialization'
+    cvar_templ(iel) = cvar_temp(iel)
+    cvar_yml(iel) = 0.0
 
+  enddo
+
+  call synsca(cvar_temp)
+  call synsca(cvar_yma)
+  call synsca(cvar_templ)
+  call synsca(cvar_yml)
+
+  ! Diffusivities of the dry air and the injected liquid
+  ! Note: this comes after 'cs_user_cooling_towers' so it will overwrite
+  !       what users may have specified there
+  visls0(iyma) = 1.d-12
+  visls0(iyml) = 1.d-12
+
+  ! initialise:
+  !   - the enthalpies, which are the solution variables
+  !   - the humidity, which users might have modified if they changed the
+  !     mass fraction of dry air in the humid air
+
+  call cs_ctwr_init_field_vars(ro0,t0,p0,molmass_rat)
+
+  ! Reference diffusivity of the injected liquid enthalpy
+  ! The diffusivity of the injected liquid enthalpy is variable
+  ! and, therefore, updated at each time step in 'ctphyv')
+  if (cp_l.le.0.0 .or. lambda_l.le.0.0) then
+    !!FIXME - stop the code and publish an error message
+  else
+    visls0(ihml) = lambda_l/cp_l
+  endif
+
+endif
 
 !===============================================================================
-! 3. USER  OPTIONS
+! 3. User initialization
 !===============================================================================
 
 call cs_user_f_initialization &
-!==========================
 ( nvar   , nscal  ,                                            &
   dt     )
 
+!===============================================================================
+! 5. Imposed injected liquid mass flux in packing zones
+!===============================================================================
+
+f_id = ivarfl(isca(iyml))
+
+! Id of the mass flux
+call field_get_key_int(f_id, kimasf, iflmas) ! interior mass flux
+! Pointer to the internal mass flux
+call field_get_val_s(iflmas, imasfl)
+
+! Id of the mass flux
+call field_get_key_int(f_id, kbmasf, iflmab) ! boundary mass flux
+! Pointer to the Boundary mass flux
+call field_get_val_s(iflmab, bmasfl)
+
+! Initialise the liquid mass flow through the cell faces
+! and a band of ghost cells on each side of the packing zone in order
+! to impose boundary values
+call cs_ctwr_init_flow_vars(imasfl)
+
+call synsca(cvar_temp)
+call synsca(cvar_yma)
+call synsca(cvar_templ)
+call synsca(cvar_yml)
+
+do ifac = 1, nfabor
+  bmasfl(ifac) = 0.d0
+enddo
+
+
+!--------
+! Formats
+!--------
 
 !----
-! FORMATS
-!----
-
-!----
-! FIN
+! End
 !----
 
 return

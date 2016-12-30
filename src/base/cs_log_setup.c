@@ -186,6 +186,8 @@ cs_log_setup(void)
 
   cs_fan_log_setup();
 
+  cs_ctwr_log_setup();
+
   cs_log_printf_flush(CS_LOG_SETUP);
 }
 

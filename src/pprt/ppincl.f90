@@ -126,7 +126,7 @@ module ppincl
   !>       with a parametric file
   integer :: iphpar
 
-  !> pointer for speciphic physics
+  !> pointer for specific physics
   !> - ippmod(icod3p) = 0 adiabatic conditions
   !> - ippmod(icod3p) = 1 permeatic conditions (enthalpy transport)
   !> - ippmod(icod3p) =-1 module not activated
@@ -650,16 +650,35 @@ module ppincl
   !> \addtogroup cooling
   !> \{
 
+  !> Molar mass ratio = Ratio of the molar mass (H2O) over the molar mass (air)
+  double precision :: molmass_rat
+  parameter(molmass_rat = 0.622d0)
+
   !> \defgroup cool_transported  Transported variables
 
   !> \addtogroup cool_transported
   !> \{
 
-  !> pointer do define the air temperature in array isca(itemp4)
-  integer, save :: itemp4
+  !> pointer to define the bulk (mixture), humid air temperature in array isca(itempm)
+  integer, save :: itempm
 
-  !> pointer do define the air humidity in array isca(ihumid)
+  !> pointer to define the mass fraction of the dry air in array isca(iyma)
+  integer, save :: iyma
+
+  !> pointer to define mass fraction of liquid water which is injected in the packing
+  integer, save :: iyml
+
+  !> pointer to define the temperature isca(itml) of liquid water which is injected in the packing
+  integer, save :: itml
+
+  !> pointer to define the field enthalpy of liquid water
+  integer, save :: ihml
+
+  !> pointer to define the air humidity
   integer, save :: ihumid
+
+  !> pointer to define the vertical velocity of liquid water
+  integer, save :: ivertvel
 
   !> \}
   !> \}
@@ -669,7 +688,7 @@ module ppincl
   !> \addtogroup enthalpy
   !> \{
 
-  !> enthalpy, if transported
+  !> enthalpy, if transported or if deduced
   integer, save :: ihm
 
   !> \anchor srrom

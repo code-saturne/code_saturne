@@ -43,6 +43,7 @@
 #include "bft_mem.h"
 
 #include "cs_base.h"
+#include "cs_physical_constants.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -74,31 +75,33 @@ cs_ctwr_fluid_props_t  *cs_glob_ctwr_props = NULL;
 
 void CS_PROCF (ctprof, CTPROF)
 (
-  const cs_real_t   *cpa,   /* Capacite calorifique de l air          */
-  const cs_real_t   *cpv,   /* Capacite calorifique de la vapeur      */
-  const cs_real_t   *cpe,   /* Capacite calorifique de l eau          */
-  const cs_real_t   *hv0,   /* Chaleur latente                        */
-  const cs_real_t   *rhoe,  /* Masse volumique de l eau               */
-  const cs_real_t   *visc,  /* Viscosite Dynamique                    */
-  const cs_real_t   *cond,  /* Conductivite                           */
-  const cs_real_t   *gravx, /* gravite selon x                        */
-  const cs_real_t   *gravy, /* gravite selon y                        */
-  const cs_real_t   *gravz  /* gravite selon z                        */
+  const cs_real_t   *cp_a,   /* Capacite calorifique de l air        */
+  const cs_real_t   *cp_v,   /* Capacite calorifique de la vapeur    */
+  const cs_real_t   *cp_l,   /* Capacite calorifique de l eau        */
+  const cs_real_t   *hv0,    /* Chaleur latente                      */
+  const cs_real_t   *rho_l,  /* Masse volumique de l eau             */
+  const cs_real_t   *visc,   /* Molecular viscosity of humid air     */
+  const cs_real_t   *cond_h, /* Humid air conductivity               */
+  const cs_real_t   *cond_l, /* Water conductivity                   */
+  const cs_real_t   *gravx,  /* gravite selon x                      */
+  const cs_real_t   *gravy,  /* gravite selon y                      */
+  const cs_real_t   *gravz   /* gravite selon z                      */
 )
 {
   if (cs_glob_ctwr_props == NULL)
     BFT_MALLOC(cs_glob_ctwr_props, 1, cs_ctwr_fluid_props_t);
 
-  cs_glob_ctwr_props->cpa   = *cpa;
-  cs_glob_ctwr_props->cpv   = *cpv;
-  cs_glob_ctwr_props->cpe   = *cpe;
-  cs_glob_ctwr_props->hv0   = *hv0;
-  cs_glob_ctwr_props->rhoe  = *rhoe;
-  cs_glob_ctwr_props->visc  = *visc;
-  cs_glob_ctwr_props->cond  = *cond;
-  cs_glob_ctwr_props->gravx = *gravx;
-  cs_glob_ctwr_props->gravy = *gravy;
-  cs_glob_ctwr_props->gravz = *gravz;
+  cs_glob_ctwr_props->cp_a   = *cp_a;
+  cs_glob_ctwr_props->cp_v   = *cp_v;
+  cs_glob_ctwr_props->cp_l   = *cp_l;
+  cs_glob_ctwr_props->hv0    = *hv0;
+  cs_glob_ctwr_props->rho_l  = *rho_l;
+  cs_glob_ctwr_props->visc   = *visc;
+  cs_glob_ctwr_props->cond_h = *cond_h;
+  cs_glob_ctwr_props->cond_l = *cond_l;
+  cs_glob_ctwr_props->gravx  = *gravx;
+  cs_glob_ctwr_props->gravy  = *gravy;
+  cs_glob_ctwr_props->gravz  = *gravz;
 }
 
 /*----------------------------------------------------------------------------
@@ -110,16 +113,18 @@ void CS_PROCF (ctprof, CTPROF)
  * ****************
  *
  * DOUBLE PRECISION TH   : <-  : temperature in Celsius degree
+ * DOUBLE PRECISION P0   : <-  : reference pressure
  * DOUBLE PRECISION XSAT :  -> : absolute humidity of saturated air
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (xsath, XSATH)
 (
  const cs_real_t  *th,
+ const cs_real_t  *p0,
        cs_real_t  *xsat
 )
 {
-  *xsat = cs_ctwr_xsath(*th);
+  *xsat = cs_ctwr_xsath(*th, *p0);
 }
 
 /*----------------------------------------------------------------------------
@@ -131,41 +136,202 @@ void CS_PROCF (xsath, XSATH)
  * *****************
  *
  * DOUBLE PRECISION TH    : <-  : temperature in Celsius degree
+ * DOUBLE PRECISION P0    : <-  : reference pressure
  * DOUBLE PRECISION DXSAT :  -> : derivative of the humidity of saturated air
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (dxsath, DXSATH)
 (
  const cs_real_t  *th,
+ const cs_real_t  *p0,
        cs_real_t  *dxsat
 )
 {
-  *dxsat =  cs_ctwr_dxsath(*th);
+  *dxsat =  cs_ctwr_dxsath(*th, *p0);
 }
 
+/*----------------------------------------------------------------------------
+ * Calculation of the density of humid air
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE RHO_HUMIDAIR
+ * **********************
+ *
+ *   DOUBLE PRECISION HUMID        : <-  : absolute humidity of humid air
+ *   DOUBLE PRECISION R0           : <-  : reference density of humid air
+ *   DOUBLE PRECISION T0           : <-  : reference temperature of humid air
+ *   DOUBLE PRECISION MOLMASSRAT   : <-  : dry air to water vapour molecular mass ratio
+ *   DOUBLE PRECISION T_H          : <-  : temperature of humid air in Celsius
+ *
+ *   DOUBLE PRECISION RHO_HUMIDAIR : ->  : density of humid air
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (rho_humidair, RHO_HUMIDAIR)
+(
+ const cs_real_t *x,
+ const cs_real_t *rho0,
+ const cs_real_t *p0,
+ const cs_real_t *t0,
+ const cs_real_t *molmassrat,
+ const cs_real_t *t_h,
+       cs_real_t *rho_humidair
+)
+{
+  *rho_humidair =  cs_ctwr_rho_humidair(*x, *rho0, *p0, *t0, *molmassrat, *t_h);
+}
+
+/*----------------------------------------------------------------------------
+ * Calculation of the Cp of humid air
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE CP_HUMIDAIR
+ * **********************
+ *
+ *   DOUBLE PRECISION HUMID       : <-  : absolute humidity of humid air
+ *   DOUBLE PRECISION HUMID_SAT   : <-  : absolute humidity of saturated humid air
+ *
+ *   DOUBLE PRECISION CP_HUMIDAIR : ->  : specific heat of humid air
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cp_humidair, CP_HUMIDAIR)
+(
+ const cs_real_t  *x,
+ const cs_real_t  *x_s,
+       cs_real_t  *cp_humidair
+)
+{
+  *cp_humidair =  cs_ctwr_cp_humidair(*x,*x_s);
+}
+
+/*----------------------------------------------------------------------------
+ * Calculation of the specific enthalpy of humid air
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE H_HUMIDAIR
+ * *********************
+ *
+ *   DOUBLE PRECISION CP_HUMIDAIR : <-  : specific heat of humid air
+ *   DOUBLE PRECISION X           : <-  : absolute humidity of humid air
+ *   DOUBLE PRECISION HUMID_SAT   : <-  : absolute humidity of saturated humid air
+ *   DOUBLE PRECISION T_HUMIDAIR  : <-  : humid air temperature in Celsius (in Celsius)
+ *
+ *   DOUBLE PRECISION H_HUMIDAIR  : ->  : specific enthalpy of humid air
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (h_humidair, H_HUMIDAIR)
+(
+ const cs_real_t  *cp_humidair,
+ const cs_real_t  *x,
+ const cs_real_t  *x_s,
+ const cs_real_t  *t_humidair,
+       cs_real_t  *h_humidair
+)
+{
+  *h_humidair =  cs_ctwr_h_humidair(*cp_humidair,*x,*x_s,*t_humidair);
+}
+
+/*----------------------------------------------------------------------------
+ * Calculation of the temperature of humid air
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE T_HUMIDAIR
+ * *********************
+ *
+ *   DOUBLE PRECISION CP_HUMIDAIR : <-  : specific heat of humid air
+ *   DOUBLE PRECISION X           : <-  : absolute humidity of humid air
+ *   DOUBLE PRECISION HUMID_SAT   : <-  : absolute humidity of saturated humid air
+ *   DOUBLE PRECISION H_HUMIDAIR  : <-  : specific enthalpy of humid air
+ *
+ *   DOUBLE PRECISION T_HUMIDAIR  : ->  : humid air temperature in Celsius (in Celsius)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (t_humidair, T_HUMIDAIR)
+(
+ const cs_real_t  *cp_humidair,
+ const cs_real_t  *x,
+ const cs_real_t  *x_s,
+ const cs_real_t  *h_humidair,
+       cs_real_t  *t_humidair
+
+)
+{
+  *t_humidair =  cs_ctwr_t_humidair(*cp_humidair,*x,*x_s,*h_humidair);
+}
+
+/*----------------------------------------------------------------------------
+ * Calculation of the specific enthalpy of liquid water
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE H_LIQUIDWATER
+ * ************************
+ *
+ *   DOUBLE PRECISION T_LIQWATER : <-  : liquid water temperature (in Celsius)
+ *
+ *   DOUBLE PRECISION H_LIQWATER : ->  : specific enthalpy of liquid water
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (h_liqwater, H_LIQWATER)
+(
+ const cs_real_t  *t_liqwater,
+       cs_real_t  *h_liqwater
+)
+{
+  *h_liqwater =  cs_ctwr_h_liqwater(*t_liqwater);
+}
+
+/*----------------------------------------------------------------------------
+ * Calculation of the specific enthalpy of humid air at a
+ * specified humidity and temperature
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE H_HUMIDAIR_FIXED
+ * ***************************
+ *
+ *   DOUBLE PRECISION T_AIR : <-  : humid air temperature (in Celsius)
+ *   DOUBLE PRECISION X_AIR : <-  : humid air humidity
+ *
+ *   DOUBLE PRECISION H_AIR : ->  : specific enthalpy of humid air
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (h_humidair_fixed, H_HUMIDAIR_FIXED)
+(
+ const cs_real_t  *x_air,
+ const cs_real_t  *t_air,
+ cs_real_t  *h_humidair_fixed
+)
+{
+  *h_humidair_fixed =  cs_ctwr_enthair(*x_air,*t_air);//FIXME rename because it is generic
+}
 
 /*============================================================================
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Calculation of the air humidity at saturation for a given temperature
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the air humidity at saturation for a given temperature
  *
- * parameters:
- *   th <-- temperature in Celsius degree
+ * \return absolute humidity of saturated air
  *
- * returns:
- *   absolute humidity of saturated air
- *----------------------------------------------------------------------------*/
+ * \param[in]     th            temperature in Celsius degree
+ * \param[in]     p0            reference pressure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_ctwr_xsath(const cs_real_t  th)
+cs_ctwr_xsath(const cs_real_t  th,
+              const cs_real_t  p0)
 {
-  const cs_real_t  Pres = 101325.;
   cs_real_t  a1,b1,c1,ps,pv;
   cs_real_t  xsat = 0.;
 
-  /* T less than -20 degrees */
+  /* T less than -20 degrees C */
 
   if (th  < -20.) {
 
@@ -182,7 +348,7 @@ cs_ctwr_xsath(const cs_real_t  th)
     c1  = 271.68;
     ps  = a1 + (b1 * th)/(c1 + th);
     pv  = exp(ps);
-    xsat  = 0.622 * pv/(Pres - pv);
+    xsat  = 0.622 * pv/(p0 - pv);
 
   }
 
@@ -195,7 +361,7 @@ cs_ctwr_xsath(const cs_real_t  th)
     c1  = 239.78;
     ps  = a1 + (b1 * th)/(c1 + th);
     pv  = exp(ps);
-    xsat  = 0.622 * pv/(Pres - pv);
+    xsat  = 0.622 * pv/(p0 - pv);
   }
 
   /* T between 40 and 80 degrees C */
@@ -222,7 +388,7 @@ cs_ctwr_xsath(const cs_real_t  th)
     g4 = A4 * (pow(10.,py) - 1.);
     ps = A0 + g1 + g2 + g3 + g4;
     pv = pow(10.,ps) * 100.;
-    xsat = 0.622 * pv/(Pres-pv);
+    xsat = 0.622 * pv/(p0-pv);
 
   }
 
@@ -235,66 +401,86 @@ cs_ctwr_xsath(const cs_real_t  th)
   return xsat;
 }
 
-/*----------------------------------------------------------------------------
- * Calculation of moist air mass enthalpy
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of moist air mass enthalpy
  *
- * parameters:
- *   hair <-- absolute humidity of saturated air
- *   tair <-- air temperature in Celsius degree
+ * \return air mass enthalpy
  *
- * returns:
- *   air mass enthalpy
- *----------------------------------------------------------------------------*/
+ * \param[in]     xair          absolute humidity of saturated air
+ * \param[in]     tair          air temperature in Celsius
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
 cs_ctwr_enthair(const cs_real_t  xair,
                 const cs_real_t  tair)
 {
-  const cs_real_t        Cpa = 1006. ;
-  const cs_real_t        Cpv = 1831. ;
-  const cs_real_t        Hvo = 2501600. ;
-  cs_real_t  hair;
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
-  hair  = ( Cpa +  xair * Cpv )* tair + xair * Hvo;
+  cs_real_t  h_air;
 
-  return  hair;
+  h_air  = (ct_prop->cp_a + xair*ct_prop->cp_v) * tair
+         + xair*ct_prop->hv0;//FIXME /1+x a priori not
+
+  return  h_air;
 }
 
-/*----------------------------------------------------------------------------
- * Calculation water mass enthalpy
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation water mass enthalpy
  *
- * parameters:
- *   teau <-- water temperature in Celsius degree
+ * \return water mass enthalpy
  *
- * returns:
- *   water mass enthalpy
- *----------------------------------------------------------------------------*/
+ * \param[in]     teau          water temperature in Celsius degree
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
 cs_ctwr_heau(const cs_real_t  teau)
 {
-  const cs_real_t  Cpe =  4179.0 ;
-  cs_real_t        heau;
-
-  heau = Cpe * teau;
+  cs_real_t heau = (cs_glob_ctwr_props->cp_l) * teau;
 
   return  heau;
 }
 
-/*----------------------------------------------------------------------------
- * Calculation of the derivate of the absolute humidity at saturation
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation water vapour mass enthalpy
  *
- * parameters:
- *   th <-- temperature in Celsius degree
+ * \return water vapour mass enthalpy
  *
- * returns:
- *   derivative of the humidity of saturated air
- *----------------------------------------------------------------------------*/
+ * \param[in]     t_vap          water vapour temperature in Celsius
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_ctwr_dxsath(const cs_real_t  th)
+cs_ctwr_hvap(const cs_real_t  t_vap)
 {
-  const cs_real_t  Pres = 101325.;
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
+
+  cs_real_t h_vap;
+
+  h_vap = ct_prop->hv0 + ct_prop->cp_v * t_vap;
+
+  return  h_vap;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the derivate of the absolute humidity at saturation
+ *
+ * \return derivative of the humidity of saturated air
+ *
+ * \param[in]     th            temperature in Celsius degree
+ * \param[in]     p0            reference pressure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ctwr_dxsath(const cs_real_t  th,
+               const cs_real_t  p0)
+{
   cs_real_t   a1,b1,c1,ps,pv,grpim;
   cs_real_t   dxsath = 0.;
 
@@ -317,7 +503,7 @@ cs_ctwr_dxsath(const cs_real_t  th)
     pv = exp(ps);
     grpim =  b1 *   c1 / pow(c1 + th,2.);
 
-    dxsath = 0.622 * pv * Pres * grpim /pow(Pres - pv,2.);
+    dxsath = 0.622 * pv * p0 * grpim /pow(p0 - pv,2.);
 
   }
 
@@ -332,7 +518,7 @@ cs_ctwr_dxsath(const cs_real_t  th)
     pv = exp(ps);
     grpim =  b1 *   c1 / pow(c1 + th,2.);
 
-    dxsath =0.622 * pv * Pres * grpim /pow(Pres - pv,2.);
+    dxsath =0.622 * pv * p0 * grpim /pow(p0 - pv,2.);
 
   }
 
@@ -369,7 +555,7 @@ cs_ctwr_dxsath(const cs_real_t  th)
     pspr = g1pr + g2pr + g3pr + g4pr;
     pv = pow(10., ps) *100.;
     pvpr  = log(10.) * pspr * pv;
-    dxsath= Pres * pvpr * 0.622 / pow (Pres - pv, 2);
+    dxsath= p0 * pvpr * 0.622 / pow (p0 - pv, 2);
 
   }
   else if (th > 80.) {
@@ -379,6 +565,186 @@ cs_ctwr_dxsath(const cs_real_t  th)
   }
 
   return dxsath ;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the density of humid air
+ *
+ * \return density of humid air
+ *
+ * \param[in]     x             absolute humidity of humid air
+ * \param[in]     rho0          reference density of humid air
+ * \param[in]     p0            reference pressure
+ * \param[in]     t0            reference temperature of humid air
+ * \param[in]     molmassrat    dry air to water vapour molecular mass ratio
+ * \param[in]     t_h           temperature of humid air in Celsius
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ctwr_rho_humidair(const cs_real_t x,
+                     const cs_real_t rho0,
+                     const cs_real_t p0,
+                     const cs_real_t t0,
+                     const cs_real_t molmassrat,
+                     const cs_real_t t_h)
+{
+  cs_real_t  rho_h;
+
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+  cs_real_t x_s = cs_ctwr_xsath(t_h, p0);
+
+  if (x <= x_s)
+    rho_h = rho0*(t0/(t_h+tkelvi))*molmassrat / (molmassrat+x);
+  else {
+    rho_h = rho0*(t0/(t_h+tkelvi))*molmassrat / (molmassrat+x_s);
+    cs_real_t rho_l;
+    if (t_h <= 0.)
+      rho_l = 917.0;
+    else
+      rho_l = 998.36 - 0.4116 * (t_h-20.)
+            - 2.24 * (t_h - 20.) * (t_h - 70.)/625.;//FIXME clipping if > 100 deg?
+
+    rho_h  = 1. / (1. / rho_h + (x - x_s)/rho_l);
+  }
+
+  /* humid air */
+  rho_h *= (1. + x);
+
+  return rho_h;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the Cp of humid air
+ *
+ * \return specific heat of humid air
+ *
+ * \param[in]     x             absolute humidity of humid air
+ * \param[in]     x_s           absolute humidity of saturated humid air
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ctwr_cp_humidair(const cs_real_t  x,
+                    const cs_real_t  x_s)
+{
+  cs_real_t  cp_h;
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
+
+  if (x <= x_s) {
+    cp_h = ct_prop->cp_a + x*ct_prop->cp_v;
+  } else {
+    cp_h = ct_prop->cp_a + x_s*ct_prop->cp_v + (x-x_s)*ct_prop->cp_l;
+  } //FIXME + dX_s * hv ?
+
+  cp_h = cp_h/(1.0+x);
+
+  return cp_h;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the specific enthalpy of humid air
+ *
+ * \return specific enthalpy of humid air
+ *
+ * \param[in]     cp_h          Cp of humid air
+ * \param[in]     x             absolute humidity of humid air
+ * \param[in]     x_s           absolute humidity of saturated humid air
+ * \param[in]     t_h           temperature of humid air in Celsius
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ctwr_h_humidair(const cs_real_t  cp_h,
+                   const cs_real_t  x,
+                   const cs_real_t  x_s,
+                   const cs_real_t  t_h)
+{
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
+  cs_real_t h_h;
+
+  if (x <= x_s) {
+    h_h  = cp_h*t_h + x*ct_prop->hv0/(1.0+x);
+  } else {
+    h_h  = cp_h*t_h + x_s*ct_prop->hv0/(1.0+x);
+  }
+
+  return  h_h;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the temperature of humid air
+ *
+ * \return temperature of humid air (in Celsius)
+ *
+ * \param[in]     cp_h          Cp of humid air
+ * \param[in]     x             absolute humidity of humid air
+ * \param[in]     x_s           absolute humidity of saturated humid air
+ * \param[in]     h_h           humid air enthalpy
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ctwr_t_humidair(const cs_real_t  cp_h,
+                   const cs_real_t  x,
+                   const cs_real_t  x_s,
+                   const cs_real_t  h_h)
+{
+  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
+  cs_real_t t_h;
+
+  if (x <= x_s) {
+    t_h = (h_h - x     * ct_prop->hv0/(1.0+x))/cp_h;
+  } else {
+    t_h = (h_h - x_s * ct_prop->hv0/(1.0+x))/cp_h;
+  }
+
+  return  t_h;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the temperature of liquid water
+ *
+ * \return liquid water temperature (in Celsius)
+ *
+ * \param[in]     h_l           specific enthalpy of liquid water
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ctwr_t_liqwater(const cs_real_t h_l)
+{
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+  cs_real_t t_l = h_l/(cs_glob_ctwr_props->cp_l) - tkelvi;
+
+  return  t_l;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the specific enthalpy of liquid water
+ *
+ * \return specific enthalpy of liquid water
+ *
+ * \param[in]     t_l            liquid water temperature (in Celsius)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ctwr_h_liqwater(const cs_real_t t_l)
+{
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+  cs_real_t h_l = cs_glob_ctwr_props->cp_l * (t_l + tkelvi);
+
+  return  h_l;
 }
 
 /*----------------------------------------------------------------------------*/

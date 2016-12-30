@@ -1358,11 +1358,11 @@ cs_parameters_add_boundary_temperature(void)
   cs_field_t *bf = NULL;
 
   /* Check if we already have a temperature variable field
-    (temperature or enthalpy */
+    (temperature or enthalpy) */
 
   cs_field_t *f = cs_field_by_name_try("temperature");
 
-  if (f != NULL)
+  if (f != NULL) //FIXME it might be not a variable as in Cooling towers
     bf = cs_parameters_add_boundary_values(f);
 
   else {

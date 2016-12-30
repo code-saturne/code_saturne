@@ -30,22 +30,20 @@ module ctincl
 
   !=============================================================================
 
-  ! ichrze : activate postprocessing of cooling tower exchange zones
 
-  integer, save :: ichrze
+  ! cp_a     : Cp of dry air
+  ! cp_v     : Cp of water vapour
+  ! cp_l     : Cp of liquid water
+  ! hv0      : enthalpy of vapourisation of water
+  ! rho_l    : density of liquid water
+  ! lambda_l : conductivity of liquid water
+  ! lambda_h : conductivity of humid air
 
-  ! iaeeri : activation de l'ecart impose
-  ! iaeerp : frequence de modification de la temperature
+  double precision, save :: cp_a, cp_v, cp_l, hv0, rho_l, lambda_l, lambda_h
 
-  integer, save :: iaeeri, iaeerp, nbzsup, nbzinf
+  ! humidity0 : initial absolute humidity in the cooling tower
 
-  ! vaeeri : ecart de refrigeration a imposer
-  ! paseri : pas de temperature pour le calcul de la pente de ecartref(teau)
-  ! aetemn : minimum de la temperature d'eau refroidie moyenne ponderee
-  ! aetemx : maximum de la temperature d'eau chaude moyenne ponderee
-
-  double precision, save :: vaeeri, paseri, aetemn, aetemx, inbaei, &
-                            lizsup(100), lizinf(100)
+  double precision, save :: humidity0
 
   !=============================================================================
 

@@ -65,9 +65,7 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_ctwr_air_props.h \
-cs_ctwr.h \
-cs_ctwr_halo.h \
-cs_ctwr_mesh.h
+cs_ctwr.h
 
 # Library source files
 
@@ -75,9 +73,7 @@ noinst_LTLIBRARIES = libcsctwr.la
 libcsctwr_la_SOURCES = \
 cs_ctwr.c \
 cs_ctwr_air_props.c \
-cs_ctwr_f2c.f90 \
-cs_ctwr_halo.c \
-cs_ctwr_mesh.c \
+cs_ctwr_bcond.f90 \
 ctini1.f90 \
 ctiniv.f90 \
 ctphyv.f90 \

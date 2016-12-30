@@ -66,9 +66,7 @@
 
 
 subroutine pptssc &
-!================
-
- ( iscal  ,                                                       &
+ ( iscal  , ncesmp , icetsm ,                                       &
    smbrs  , rovsdt , tslagr )
 
 !===============================================================================
@@ -96,7 +94,8 @@ implicit none
 
 ! Arguments
 
-integer          iscal
+integer          iscal, ncesmp
+integer          icetsm(ncesmp)
 
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
@@ -167,7 +166,7 @@ endif
 ! ---> Version aerorefrigerant :
 
 if (ippmod(iaeros).ge.0) then
-  call cttssc(iscal, smbrs, rovsdt)
+  call cttssc(iscal, ncesmp, icetsm, smbrs, rovsdt)
 endif
 
 !----

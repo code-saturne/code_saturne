@@ -98,7 +98,7 @@ double precision d2s3
 double precision, dimension(:,:), pointer :: vel
 
 integer, allocatable, dimension(:) :: lstelt
-double precision, dimension(:), pointer :: cvar_temp4, cvar_humid
+double precision, dimension(:), pointer :: cvar_temp, cpro_humid
 !< [loc_var_dec]
 
 !===============================================================================
@@ -127,13 +127,13 @@ if (isuite.eq.0) then
 !                      de l'humidite de l'air a 0.0063
 !       pour toutes les cellules
 
-  call field_get_val_s(ivarfl(isca(itemp4)), cvar_temp4)
-  call field_get_val_s(ivarfl(isca(ihumid)), cvar_humid)
+  call field_get_val_s(ivarfl(isca(itempm)), cvar_temp)
+  call field_get_val_s(ihumid, cpro_humid)!FIXME
 
   do iel = 1, ncel
 
-    cvar_temp4(iel) = 11.d0
-    cvar_humid(iel) = 0.0063d0
+    cvar_temp(iel) = 11.d0
+    cpro_humid(iel) = 0.0063d0
 
   enddo
 
@@ -151,8 +151,8 @@ if (isuite.eq.0) then
 
     vel(1,iel) = -0.5d0
 
-    cvar_temp4(iel) = 20.d0
-    cvar_humid(iel) = 0.012d0
+    cvar_temp(iel) = 20.d0
+    cpro_humid(iel) = 0.012d0
 
   enddo
 

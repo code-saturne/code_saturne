@@ -94,6 +94,7 @@ cs_user_mesh-periodicity.c \
 cs_user_mesh-quality.c \
 cs_user_mesh-thinwall.c \
 cs_user_parameters-base.c \
+cs_user_parameters-ctwr.c \
 cs_user_parameters-fans.c \
 cs_user_parameters-linear_solvers.c \
 cs_user_parameters-time_moments.c \
@@ -169,7 +170,6 @@ cs_user_source_terms-richards_decay.f90 \
 cs_user_source_terms-scalar_in_a_channel.f90 \
 cs_user_source_terms.f90 \
 usatch_4spe5reac.f90 \
-usctdz.f90 \
 usthht.f90 \
 usvort.f90 \
 usvosy.f90

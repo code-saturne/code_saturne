@@ -260,7 +260,7 @@ elseif (ippmod(icolwc).ge.0) then
   call lwctcl(itypfb, izfppp, rcodcl)
   !==========
 
-! ---> Combustion charbon pulverise USCPCL
+! ---> Combustion charbon pulverise
 
 elseif ( ippmod(iccoal).ge.0 ) then
 
@@ -274,14 +274,14 @@ elseif (ippmod(icpl3c).ge.0) then
   call cpltcl(itypfb, izfppp, rcodcl)
   !==========
 
-! ---> Combustion fuel USFUCL
+! ---> Combustion fuel
 
 elseif (ippmod(icfuel).ge.0) then
 
   call cs_fuel_bcond(itypfb, izfppp, icodcl, rcodcl)
   !=================
 
-! ---> Compressible USCFCL
+! ---> Compressible
 
 elseif (ippmod(icompf).ge.0) then
 
@@ -302,14 +302,20 @@ elseif (ippmod(iatmos).ge.0) then
 ! ---> Ecoulements electrique
 ! nothing
 
+! ---> Cooling towers
+
+elseif (ippmod(iaeros).ge.0) then
+
+  call cs_ctwr_bcond(itypfb, izfppp, icodcl, rcodcl)
+
 endif
-!----
-! FORMATS
-!----
 
+!--------
+! Formats
+!--------
 
 !----
-! FIN
+! End
 !----
 
 return

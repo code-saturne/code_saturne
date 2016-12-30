@@ -64,6 +64,7 @@ use ppincl
 use cpincl
 use coincl
 use atincl
+use ctincl
 use atsoil
 use lagran
 use vorinc
@@ -418,40 +419,6 @@ if (ipass.eq.1) then
 endif
 
 !===============================================================================
-! 5.  LES VALEURS COURANTES ECRASENT LES VALEURS ANTERIEURES
-!===============================================================================
-
-! --- Noter que exceptionnellement, on fait un calcul avec NCELET,
-!       pour eviter une nouvelle communication sur RTPA et les autres
-!       tableaux du pas de temps precedent
-
-ifld = -1
-do ivar = 1, nvar
-  if (ivarfl(ivar) .ne. ifld) then
-    ifld = ivarfl(ivar)
-    call field_current_to_previous(ifld)
-  endif
-enddo
-
-! If required, the density at time step n-2 is updated
-if (icavit.ge.0.or.idilat.gt.1) then
-  call field_get_val_prev_s(icrom, crom_prev)
-  call field_get_val_s(icroaa, crom_prev2)
-  do iel = 1, ncelet
-    crom_prev2(iel) = crom_prev(iel)
-  enddo
-endif
-
-! If required, the density at time step n-1 is updated
-if (icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0.or.ipthrm.eq.1) then
-  call field_get_val_s(icrom, crom)
-  call field_get_val_prev_s(icrom, crom_prev)
-  do iel = 1, ncelet
-    crom_prev(iel) = crom(iel)
-  enddo
-endif
-
-!===============================================================================
 ! 6. DANS LE CAS  "zero pas de temps" EN "SUITE" DE CALCUL
 !      ON SORT ICI
 !===============================================================================
@@ -586,6 +553,14 @@ if(nctsmt.gt.0) then
   dt     ,                                                       &
   ckupdc , smacel )
 
+  if (ippmod(iaeros).gt.0) then
+     ! Cooling tower model
+     ! Evaporation mass exchange term
+     call cs_ctwr_bulk_mass_source_term&
+          (iappel, p0, molmass_rat,     &
+          ncetsm, icetsm, smacel(1,ipr))
+  endif
+
 endif
 
 !------------------------------------------------------------------------
@@ -683,6 +658,41 @@ if (icondv.eq.0) then
   endif
 
 endif
+
+!===============================================================================
+! 5.  LES VALEURS COURANTES ECRASENT LES VALEURS ANTERIEURES
+!===============================================================================
+
+! --- Noter que exceptionnellement, on fait un calcul avec NCELET,
+!       pour eviter une nouvelle communication sur RTPA et les autres
+!       tableaux du pas de temps precedent
+
+ifld = -1
+do ivar = 1, nvar
+  if (ivarfl(ivar) .ne. ifld) then
+    ifld = ivarfl(ivar)
+    call field_current_to_previous(ifld)
+  endif
+enddo
+
+! If required, the density at time step n-2 is updated
+if (icavit.ge.0.or.idilat.gt.1) then
+  call field_get_val_prev_s(icrom, crom_prev)
+  call field_get_val_s(icroaa, crom_prev2)
+  do iel = 1, ncelet
+    crom_prev2(iel) = crom_prev(iel)
+  enddo
+endif
+
+! If required, the density at time step n-1 is updated
+if (icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0.or.ipthrm.eq.1) then
+  call field_get_val_s(icrom, crom)
+  call field_get_val_prev_s(icrom, crom_prev)
+  do iel = 1, ncelet
+    crom_prev(iel) = crom(iel)
+  enddo
+endif
+
 
 if (ippmod(idarcy).eq.1) then
 

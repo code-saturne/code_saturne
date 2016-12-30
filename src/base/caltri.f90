@@ -67,6 +67,7 @@ use ihmpre
 use radiat
 use cplsat
 use atincl
+use ctincl
 use cfpoin
 use mesh
 use field
@@ -257,6 +258,16 @@ call cs_user_mass_source_terms &
   ivoid  , ivoid  , izctsm ,                                     &
   rvoid  ,                                                       &
   ckupdc , rvoid  )
+
+if (ippmod(iaeros).gt.0) then
+   ! Cooling tower model
+   ! Evaporation mass exchange term
+
+   call cs_ctwr_bulk_mass_source_term&
+        (iappel, p0, molmass_rat,      &
+        ncetsm, ivoid, rvoid)
+
+endif
 
 ! Total number of cells with mass source term
 nctsmt = ncetsm
@@ -677,8 +688,15 @@ if(nctsmt.gt.0) then
   dt     ,                                                       &
   ckupdc , smacel )
 
-endif
+  if (ippmod(iaeros).gt.0) then
+     ! Cooling tower model
+     ! Evaporation mass exchange term
+     call cs_ctwr_bulk_mass_source_term&
+          (iappel, p0, molmass_rat,      &
+          ncetsm, icetsm, smacel)
+  endif
 
+endif
 
 ! -- Methode des vortex pour la L.E.S.
 !    (dans verini on s'est deja assure que ITYTUR=4 si IVRTEX=1)
@@ -919,10 +937,6 @@ if (iisuit.eq.1) then
     call ecrsyn('les_inflow'//c_null_char)
   endif
 
-  if (ippmod(iaeros).ge.0) then
-    call ecrctw ('cooling_towers'//c_null_char)
-  endif
-
   if (iilagr.gt.0) then
     call lagout()
   endif
@@ -961,7 +975,11 @@ endif
 
 call timer_stats_start(post_stats_id)
 
+if (ippmod(iaeros).ge.0) call cs_ctwr_transport_vars(1)
+
 call pstvar(ntcabs, nvar, nscal)
+
+if (ippmod(iaeros).ge.0) call cs_ctwr_transport_vars(2)
 
 !===============================================================================
 ! Probes

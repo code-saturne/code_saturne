@@ -421,10 +421,6 @@ module optcal
   !> Useful if nfpt1d > 0
   integer, save :: isuit1
 
-  !> For the cooling tower module, activate or not the
-  !> the reading of the restart file.
-  integer, save :: isuict
-
   !> For the vortex method, indicates whether the synthetic
   !> vortices at the inlet should be initialised or read
   !> from the restart file.

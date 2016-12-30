@@ -161,7 +161,7 @@ endif
 
 ! ---> Ecoulements atmospheriques
 
-if ( ippmod(iatmos).ge.0 ) then
+if (ippmod(iatmos).ge.0) then
 
   call atiniv                                                     &
  ( nvar   , nscal  ,                                              &
@@ -169,9 +169,9 @@ if ( ippmod(iatmos).ge.0 ) then
 
 endif
 
-! ---> Ecoulements aerorefrigerants
+! ---> Cooling towers
 
-if ( ippmod(iaeros).ge.0 ) then
+if (ippmod(iaeros).ge.0) then
 
   call ctiniv(nvar, nscal, dt)
 

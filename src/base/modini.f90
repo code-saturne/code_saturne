@@ -64,6 +64,8 @@ integer          nscacp, iscal
 integer          imrgrp
 integer          kcpsyr, icpsyr
 
+integer          ilog
+
 logical          is_set
 
 double precision relxsp, omgnrm

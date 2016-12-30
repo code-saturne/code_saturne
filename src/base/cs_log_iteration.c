@@ -1370,6 +1370,7 @@ cs_log_iteration(void)
   cs_lagr_log_iteration();
 
   cs_fan_log_iteration();
+  cs_ctwr_log_balance();
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1,4 +1,5 @@
 /*============================================================================
+ *
  * Definitions, Global variables variables, and functions associated with the
  * exchange zones
  *============================================================================*/
@@ -51,18 +52,24 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
-#include "bft_mem.h"
 
 #include "fvm_nodal_extract.h"
 
 #include "cs_base.h"
 #include "cs_ctwr_air_props.h"
-#include "cs_ctwr_halo.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_halo.h"
+#include "cs_log.h"
 #include "cs_math.h"
+#include "cs_mesh.h"
 #include "cs_mesh_location.h"
+#include "cs_mesh_quantities.h"
+#include "cs_parall.h"
+#include "cs_physical_constants.h"
 #include "cs_post.h"
 #include "cs_restart.h"
 #include "cs_selector.h"
@@ -97,8 +104,6 @@ cs_ctwr_zone_t     ** cs_glob_ct_tab   = NULL;
 /* Start and end (negative) numbers associated with
    dedicated post processing meshes */
 
-static int  cs_glob_ct_post_mesh_ext[2] = {0, 1};
-
 /* array containing the stacking of the exchange area*/
 cs_lnum_t  *  cs_stack_ct    = NULL;
 
@@ -106,8 +111,6 @@ cs_lnum_t  *  cs_stack_ct    = NULL;
 cs_lnum_t  *  cs_chain_ct = NULL;
 
 /* Restart file */
-
-static cs_restart_t *cs_glob_ctwr_suite = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -119,838 +122,59 @@ static cs_restart_t *cs_glob_ctwr_suite = NULL;
  * Fonctions publiques pour API Fortran
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Ajout d'une zone d'echange
- *
- * Interface Fortran :
- *
- * SUBROUTINE DEFCT1
- *
- * INTEGER          ICOUL       : <-- : Couleur des elements de la zone d'echange
- * INTEGER          IMctCH      : <-- :
- * INTEGER          NTYPct      : <-- :
- * INTEGER          NELEct      : <-- :
- * REAL             XAP         : <-- :
- * REAL             XNP         : <-- :
- * REAL             SURFACE     : <-- : Surface de la face superieure de la ct
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (defct1, DEFCT1)
-(
-  const cs_int_t   *const idimct,   /* Dimemsion du probleme 2:2D  3:3D       */
-  const char       *ze_name,        /* Name of Ct area */
-  cs_int_t         *ze_n_len,       /* lenght of Name of Ct area */
-  const cs_int_t   *const imctch,   /* 1: Modele de Poppe
-                                       2: Merkel 0: Rien                      */
-  const cs_int_t   *const ntypct,   /* 1: Contre courant  2: Courant croises
-                                       3: Zone de pluie                      */
-  const cs_int_t   *const nelect,   /* Nombre d'elements sur chaque ligne du
-                                       maillage eau pour la zone de noeuds par
-                                       segment eau */
-  const cs_real_t  *const deltat,   /* Ecart de temperature impose en entree
-                                       de la zone d'echange */
-  const cs_real_t  *const teau,     /* Teau en entree de la zone d'echange    */
-  const cs_real_t  *const fem,      /* fem en entree de la zone d'echange     */
-  const cs_real_t  *const xap,      /* coefficient lambda de la loi d'echange */
-  const cs_real_t  *const xnp,      /* exposant n de la loi d'echange         */
-  const cs_real_t  *const surface,  /* Surface totale arrivee d eau de la ct  */
-  const cs_real_t  *const   dgout   /* Diametre de goutte pour
-                                       les zones de pluie                     */
-)
+void
+cs_ctwr_field_pointer_map(void)
 {
-  char *_ze_name = NULL;
-
-  if (ze_name != NULL && *ze_n_len > 0)
-    _ze_name = cs_base_string_f_to_c_create(ze_name,
-                                                      *ze_n_len);
-  if (_ze_name != NULL && strlen(_ze_name) == 0)
-    cs_base_string_f_to_c_free(&_ze_name);
-
-  cs_ctwr_definit(*idimct,_ze_name, *imctch,*ntypct,*nelect,
-                  *deltat,*teau,*fem,*xap,*xnp,*surface,*dgout);
-
-  if (_ze_name != NULL)
-    cs_base_string_f_to_c_free(&_ze_name);
-}
-
-/*----------------------------------------------------------------------------
- * Recuperation du nombre de zones d'echanges
- *
- * Interface Fortran :
- *
- * SUBROUTINE NBZECT
- * *****************
- *
- * INTEGER          NBRct         : --> : nombre de zones d'echange
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (nbzect, NBZECT)
-(
-  cs_int_t  *const nbrct             /* <-- nombre de zones d'echanges        */
-)
-{
-  *nbrct = cs_glob_ct_nbr;
-}
-
-/*----------------------------------------------------------------------------
- * Recuperation du modele de Poppe ou de Merkel
- *
- * Interface Fortran :
- *
- * SUBROUTINE AEMODEL
- * ******************
- *
- * INTEGER          IMctCH         : --> : type de ct (Poppe ou Merkel)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (aemode, AEMODE)
-(
- cs_int_t  *const  imctch              /* <-- type de ct (Poppe ou Merkel)  */
-)
-{
-  cs_ctwr_zone_t   *ct = cs_glob_ct_tab[0];
-
-  *imctch = ct->imctch;
-}
-
-/*----------------------------------------------------------------------------
- * Addition d'une constante au vecteur de temperature pour toutes les zones
- * d'echange
- *
- * Interface Fortran :
- *
- * SUBROUTINE AEPROTP
- * ******************
- *
- * INTEGER          IMctCH         : --> : type de ct (Poppe ou Merkel)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (aeprot, AEPROT)
-(
- cs_real_t  *const   cons             /* <-- constante */
-)
-{
-  cs_int_t ct_id, i, j, ii;
-  cs_ctwr_zone_t  *ct;
-
-  for (ct_id = 0; ct_id < cs_glob_ct_nbr; ct_id++) {
-
-    ct = cs_glob_ct_tab[ct_id];
-
-    for (i = 0; i < ct->nnpsct; i++)
-      for (j = 0; j < ct->nelect; j++) {
-          ii = i*ct->nelect + j;
-          ct->teau[ii] += (*cons);
-    }
-
-  }
-}
-
-
-/*----------------------------------------------------------------------------
- * Resolution des variables eau
- *
- * Interface Fortran :
- *
- * SUBROUTINE AETEAU ( )
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (aeteau, AETEAU)
-(
-  cs_real_t          temp[],              /* Temperature air */
-  cs_real_t          xa[]  ,              /* humidite air */
-  cs_real_t          rho[] ,              /* masse volumique air */
-  cs_real_t          vitx[],              /* vitesse air suivant x */
-  cs_real_t          vity[],              /* vitesse air suivant y */
-  cs_real_t          vitz[]               /* vitesse air suivant z */
-
-)
-{
-  cs_ctwr_aeteau(temp,xa,rho,vitx,vity,vitz);
-}
-
-/*----------------------------------------------------------------------------
- * Calcul des termes sources pour l'air
- *
- * Interface Fortran :
- *
- * SUBROUTINE AETSSC ( )
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (aetssc, AETSSC)
-(
-  const cs_int_t    *const iscal,       /*   */
-
-  cs_real_t             temp[] ,   /* Temperature air            */
-  cs_real_t             xa[]   ,   /* humidite air               */
-  cs_real_t             rho[]  ,   /* masse volumique air        */
-  cs_real_t             utsim[],   /* vitesse verticale air      */
-  cs_real_t             utsex[],   /* vitesse horizontale air    */
-  cs_real_t             vitx[] ,   /* vitesse air suivant x      */
-  cs_real_t             vity[] ,   /* vitesse air suivant y      */
-  cs_real_t             vitz[]     /* vitesse air suivant z      */
-)
-{
-  cs_ctwr_aetssc(*iscal, temp,xa,rho,utsim,utsex,vitx,vity,vitz);
-}
-
-/*----------------------------------------------------------------------------
- * Calcul des PdC induites dans les zones de pluie
- *
- * Interface Fortran :
- *
- * SUBROUTINE AETSVI ( )
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (aetsvi, AETSVI)
-(
-  const cs_int_t    *const idim,
-  const cs_real_t   rho[],              /* masse volumique air    */
-  const cs_real_t   vitx[],             /* vitesse air suivant x  */
-  const cs_real_t   vity[],             /* vitesse air suivant y  */
-  const cs_real_t   vitz[],             /* vitesse air suivant z  */
-  const cs_real_t   xair[],             /* humidite de l'air      */
-  cs_real_t   utsex[]                   /* terme source explicite */
-
-)
-{
-  cs_ctwr_aetsvi(*idim,rho,vitx,vity,vitz,xair,utsex);
-}
-
-/*----------------------------------------------------------------------------
- * Bilan dans les ct
- *
- * Interface Fortran :
- *
- * SUBROUTINE BILANct ( )
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (bilanct, BILANCT)
-(
-  const cs_real_t   *const time,
-  cs_real_t   fem_entree[],           /* debit eau entree           */
-  cs_real_t   fem_sortie[],           /* debit eau sortie           */
-  cs_real_t   teau_entree[],          /* temperature eau entree     */
-  cs_real_t   teau_sortie[],          /* temperature eau sortie     */
-  cs_real_t   heau_entree[],          /* enthalpie eau entree       */
-  cs_real_t   heau_sortie[],          /* enthalpie eau sortie       */
-  cs_real_t   tair_entree[],          /* temperature air entree     */
-  cs_real_t   tair_sortie[],          /* temperature air sortie     */
-  cs_real_t   xair_entree[],          /*                            */
-  cs_real_t   xair_sortie[],          /*                            */
-  cs_real_t   hair_entree[],          /*                            */
-  cs_real_t   hair_sortie[],          /*                            */
-  cs_real_t   debit_entree[],         /*                            */
-  cs_real_t   debit_sortie[],         /*                            */
-
-  const cs_real_t   temp[],           /* Temperature air            */
-  const cs_real_t   xa[],             /* humidite air               */
-  const cs_real_t   flux_masse_fac[], /* vitesse verticale air      */
-  const cs_real_t   flux_masse_fbr[], /* vitesse horizontale air    */
-  const cs_real_t   vitx[],           /* vitesse air suivant x      */
-  const cs_real_t   vity[],           /* vitesse air suivant y      */
-  const cs_real_t   vitz[]            /* vitesse air suivant z      */
-)
-{
-  cs_ctwr_bilanct(*time,fem_entree,fem_sortie,teau_entree,teau_sortie,
-                  heau_entree,heau_sortie,tair_entree,tair_sortie,
-                  xair_entree,xair_sortie,hair_entree,hair_sortie,
-                  debit_entree,debit_sortie,
-                  temp,xa,flux_masse_fac,flux_masse_fbr,vitx,vity,vitz,
-                  cs_glob_mesh, cs_glob_mesh_quantities);
-
-}
-
-/*----------------------------------------------------------------------------
- * Initialict post processing.
- *
- * Fortran Interface:
- *
- * SUBROUTINE PSTIct
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(pstict, PSTICT)
-(
- void
-)
-{
-  cs_int_t ct_id;
-
-  for (ct_id = 0; ct_id < cs_glob_ct_nbr; ct_id++)
-    cs_ctwr_post_init(ct_id, -1);
-}
-
-/*----------------------------------------------------------------------------
- * Write the restart file of the cooling tower module
- *
- * Fortran interface:
- *
- * subroutine ecrctw
- * *****************
- *
- * character(kind=c_char)  nomsui : <-- : Name of the restart file
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (ecrctw, ECRCTW)
-(
- const char  *nomsui
-)
-{
-  int  nbvent;
-  int  ict;
-
-  cs_restart_t            *suite;
-  cs_mesh_location_type_t  location_id,support;
-  cs_restart_val_type_t    typ_val;
-
-  cs_ctwr_zone_t  *ct;
-  char            *location_name = NULL;
-  cs_int_t         length        = 0;
-  cs_gnum_t       *g_elt_num     = NULL;
-
-  cs_lnum_t n_g_elements, n_elements;
-
-  /* Open the restart file */
-
-  cs_glob_ctwr_suite
-    = cs_restart_create(nomsui, NULL, CS_RESTART_MODE_WRITE);
-
-  /* Pointer to the global restart structure */
-  suite = cs_glob_ctwr_suite;
-
-  if (cs_glob_ctwr_suite == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Abort while opening the cooling tower module restart "
-                "file in write mode.\n"
-                "Verify the existence and the name of the restart file: %s\n"),
-              nomsui);
-
-  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
-
-    ct = cs_glob_ct_tab[ict];
-
-    length = strlen("Cooling_Tower_restart_") + 3;
-    BFT_MALLOC(location_name, length, char);
-    sprintf(location_name, "Cooling_Tower_restart_%02d", ct->num);
-
-    n_g_elements = fvm_nodal_get_n_g_elements(ct->water_mesh, FVM_CELL_HEXA);
-    n_elements = fvm_nodal_get_n_elements(ct->water_mesh, FVM_CELL_HEXA);
-
-    BFT_MALLOC(g_elt_num, n_g_elements, cs_gnum_t);
-
-    fvm_nodal_get_global_element_num(ct->water_mesh,
-                                     FVM_CELL_HEXA,
-                                     g_elt_num);
-
-    location_id = cs_restart_add_location(suite,
-                                          location_name,
-                                          n_g_elements,
-                                          n_elements,
-                                          g_elt_num);
-
-
-    { /* Write the header */
-      char * nomrub;
-      cs_int_t   *tabvar;
-
-      length = strlen("Parametres_int_ctwr_") + 3;
-      BFT_MALLOC(nomrub, length, char);
-      sprintf(nomrub, "Parametres_int_ctwr_%02d", ct->num);
-
-
-      BFT_MALLOC(tabvar, 3, cs_int_t);
-
-      tabvar[ 0 ] = ct->imctch; /* modele*/
-      tabvar[ 1 ] = ct->ntypct; /* Type*/
-      tabvar[ 2 ] = ct->nelect; /* nb of node per segment*/
-
-      nbvent  = 3;
-      support = CS_MESH_LOCATION_NONE;
-      typ_val = CS_TYPE_cs_int_t;
-
-      cs_restart_write_section(suite,
-                               nomrub,
-                               support,
-                               nbvent,
-                               typ_val,
-                               tabvar);
-
-      BFT_FREE(tabvar);
-    }
-
-    {/* Write the header */
-      char * nomrub;
-      cs_real_t   *tabvar;
-
-      length = strlen("Parametres_real_ctwr_") + 3;
-      BFT_MALLOC(nomrub, length, char);
-      sprintf(nomrub, "Parametres_real_ctwr_%02d", ct->num);
-
-      BFT_MALLOC(tabvar, 4, cs_real_t);
-
-      tabvar[ 0 ] = ct->cl_teau; /*  Water entry temperature*/
-      tabvar[ 1 ] = ct->cl_fem;  /*  Water flow */
-      tabvar[ 2 ] = ct->xap;     /* xap         */
-      tabvar[ 3 ] = ct->xnp;     /* xnp         */
-
-
-      nbvent  = 4;
-      support = CS_MESH_LOCATION_NONE;
-      typ_val = CS_TYPE_cs_real_t;
-
-      cs_restart_write_section(suite,
-                               nomrub,
-                               support,
-                               nbvent,
-                               typ_val,
-                               tabvar);
-
-      BFT_FREE(tabvar);
-    }
-
-
-    { /* Write the temperature */
-      char       nomrub[] = "Temperature_eau";
-
-      typ_val = CS_TYPE_cs_real_t;
-      nbvent  = 1;
-      cs_restart_write_section(suite,
-                               nomrub,
-                               location_id,
-                               nbvent,
-                               typ_val,
-                               ct->teau);
-
-    }
-
-    { /* Write the  */
-      char       nomrub[] = "Flux_eau";
-
-      typ_val = CS_TYPE_cs_real_t;
-      nbvent  = 1;
-      cs_restart_write_section(suite,
-                               nomrub,
-                               location_id,
-                               nbvent,
-                               typ_val,
-                               ct->fem);
-
-    }
-
-    {/* Write the  */
-      char       nomrub[] = "vitesse_goutte";
-
-      typ_val = CS_TYPE_cs_real_t;
-      nbvent  = 1;
-      cs_restart_write_section(suite,
-                               nomrub,
-                               location_id,
-                               nbvent,
-                               typ_val,
-                               ct->vgoutte);
-
-    }
-
-  }
-
-  /* Close the restart file and free structures */
-  cs_restart_destroy(&cs_glob_ctwr_suite);
-}
-
-/*----------------------------------------------------------------------------
- * Read the restart file of the cooling tower module
- *
- * Fortran interface:
- *
- * SUBROUTINE LECTWR
- * *****************
- *
- * character(kind=c_char)  nomsui : <-- : Name of the restart file
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (lecctw, LECCTW)
-(
- const char  *nomsui
-)
-{
-  bool                corresp_cel, corresp_fac, corresp_fbr, corresp_som;
-  cs_int_t            nbvent;
-  cs_int_t            i, ict,indfac, ierror;
-
-  cs_restart_t             *suite;
-  cs_mesh_location_type_t   location_id,support;
-  cs_restart_val_type_t     typ_val;
-
-  cs_lnum_t n_g_elements, n_elements;
-
-  cs_ctwr_zone_t  *ct;
-
-  char        *location_name = NULL;
-  cs_int_t     length        = 0;
-  cs_gnum_t   *g_elt_num     = NULL;
-
-  ierror = CS_RESTART_SUCCESS;
-
-  /* Open the restart file */
-
-  cs_glob_ctwr_suite
-    = cs_restart_create(nomsui, NULL, CS_RESTART_MODE_READ);
-
-  if (cs_glob_ctwr_suite == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Abort while opening the cooling tower AERO module restart file "
-                "in read mode.\n"
-                "Verify the existence and the name of the restart file: %s\n"),
-              nomsui);
-
-
-  /* Pointer to the global restart structure */
-  suite = cs_glob_ctwr_suite;
-
-  /* Verification of the associated "support" to the restart file */
-  cs_restart_check_base_location(suite, &corresp_cel, &corresp_fac,
-                                 &corresp_fbr, &corresp_som);
-
-  /* Only boundary faces are of interest */
-  indfac = (corresp_fbr == true ? 1 : 0);
-  if (indfac == 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Abort while reading the 1D-wall thermal module restart file.\n"
-                "The number of boundary faces has been modified\n"
-                "Verify that the restart file corresponds to "
-                "the present study.\n"));
-
-  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
-
-    ct = cs_glob_ct_tab[ict];
-    length = strlen("Cooling_Tower_restart_") + 3;
-    BFT_MALLOC(location_name, length, char);
-    sprintf(location_name, "Cooling_Tower_restart_%02d", ct->num);
-
-    n_g_elements = fvm_nodal_get_n_g_elements(ct->water_mesh, FVM_CELL_HEXA);
-    n_elements   = fvm_nodal_get_n_elements  (ct->water_mesh, FVM_CELL_HEXA);
-
-    BFT_MALLOC(g_elt_num , n_g_elements, cs_gnum_t);
-
-    fvm_nodal_get_global_element_num(ct->water_mesh ,
-                                     FVM_CELL_HEXA  ,
-                                     g_elt_num);
-
-    location_id = cs_restart_add_location(suite,
-                                          location_name,
-                                          n_g_elements,
-                                          n_elements,
-                                          g_elt_num);
-
-
-    {
-      char * nomrub;
-      cs_int_t   *tabvar;
-      length = strlen("Parametres_int_ctwr_") + 3;
-      BFT_MALLOC(nomrub, length, char);
-      sprintf(nomrub, "Parametres_int_ctwr_%02d", ct->num);
-
-      BFT_MALLOC(tabvar, 3, cs_int_t);
-
-      nbvent  = 3;
-      support = CS_MESH_LOCATION_NONE;
-      typ_val = CS_TYPE_cs_int_t;
-
-      ierror = cs_restart_read_section(suite,
-                                       nomrub,
-                                       support,
-                                       nbvent,
-                                       typ_val,
-                                       tabvar);
-
-      if (ierror < CS_RESTART_SUCCESS)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Problem while reading section in the restart file\n"
-                    "for the cooling tower module:\n"
-                    "<%s>\n"
-                    "The calculation will not be run.\n"), nomrub);
-
-      /* Coherency checks between the read   and the one from usctdz */
-
-      if (tabvar[ 0 ] != ct->imctch) /* modele*/
-        bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
-                     "********               cooling tower MODULE\n"
-                     "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
-                     "\n"
-                     "The model is different \n"
-                     "PREVIOUS: %d \n"
-                     "CURRENT:  %d \n"), tabvar[ 0 ], ct->imctch);
-
-      if (tabvar[ 1 ] != ct->ntypct) /* Type*/
-        bft_error(  __FILE__, __LINE__, 0,
-                     _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
-                       "********               cooling tower MODULE\n"
-                       "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
-                       "\n"
-                       "The type is different \n"
-                       "PREVIOUS: %d \n"
-                       "CURRENT:  %d \n"), tabvar[ 1 ], ct->ntypct);
-
-      if (tabvar[ 2 ] != ct->nelect) /* nb of node per segment*/
-        bft_error(__FILE__, __LINE__, 0,
-                  _("WARNING: ABORT WHILE READING THE RESTART FILE\n"
-                    "********               cooling tower MODULE\n"
-                    "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
-                    "\n"
-                    "The number of nodes on each vertical mesh for \n"
-                    "the water mesh has been modified.\n"
-                    "PREVIOUS: %d nodes\n"
-                    "CURRENT:  %d nodes\n"
-                    "\n"
-                    "The calculation will not be run.\n"
-                    "\n"
-                    "Verify that the restart file corresponds to a\n"
-                    "restart file for the cooling tower  module.\n"
-                    "Verify usctdz.\n"), tabvar[ 2 ], ct->nelect);
-
-      BFT_FREE(tabvar);
-
-    }
-
-    {
-      char * nomrub;
-      cs_real_t   *tabvar;
-      length = strlen("Parametres_real_ctwr_") + 3;
-      BFT_MALLOC(nomrub, length, char);
-      sprintf(nomrub, "Parametres_real_ctwr_%02d", ct->num);
-
-
-      BFT_MALLOC(tabvar, 4, cs_real_t);
-
-      nbvent  = 4;
-      support = CS_MESH_LOCATION_NONE;
-      typ_val = CS_TYPE_cs_real_t;
-
-      ierror = cs_restart_read_section(suite,
-                                       nomrub,
-                                       support,
-                                       nbvent,
-                                       typ_val,
-                                       tabvar);
-
-      if (ierror < CS_RESTART_SUCCESS)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Problem while reading section in the restart file\n"
-                    "for the cooling tower module:\n"
-                    "<%s>\n"
-                    "The calculation will not be run.\n"), nomrub);
-
-      /* Coherency checks between the read   and the one from usctdz */
-
-      if (CS_ABS(tabvar[ 0 ] - ct->cl_teau) > 1e-10)
-        bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
-                     "********               cooling tower MODULE\n"
-                     "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
-                     "\n"
-                     "The Water entry temperature  is different \n"
-                     "PREVIOUS: %f \n"
-                     "CURRENT:  %f \n"), tabvar[ 0 ], ct->cl_teau);
-
-      if (CS_ABS(tabvar[ 1 ] - ct->cl_fem) > 1e-10)
-        bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
-                     "********               cooling tower MODULE\n"
-                     "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
-                     "\n"
-                     "The Water entry flow is different \n"
-                     "PREVIOUS: %f \n"
-                     "CURRENT:  %f \n"), tabvar[ 1 ], ct->cl_fem);
-
-      if (CS_ABS(tabvar[ 2 ] - ct->xap) > 1e-10)
-        bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
-                     "********               cooling tower MODULE\n"
-                     "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
-                     "\n"
-                     "The value of Exchange law lambda coefficient is different \n"
-                     "PREVIOUS: %f \n"
-                     "CURRENT:  %f \n"), tabvar[ 2 ], ct->xap);
-
-      if (CS_ABS(tabvar[ 3 ] - ct->xnp) > 1e-10)
-        bft_printf(_("WARNING: ABORT WHILE READING THE RESTART FILE\n"
-                     "********               cooling tower MODULE\n"
-                     "       CURRENT AND PREVIOUS DATA ARE DIFFERENT\n"
-                     "\n"
-                     "The value of Exchange law lambda coefficient is different \n"
-                     "PREVIOUS: %f \n"
-                     "CURRENT:  %f \n"), tabvar[ 3 ], ct->xnp);
-
-      BFT_FREE(tabvar);
-    }
-
-
-    { /* Read the wall thickness and check the coherency with USPT1D*/
-      char        nomrub[] = "Temperature_eau";
-      cs_real_t   *tabvar;
-
-      BFT_MALLOC(tabvar, n_elements, cs_real_t);
-
-      nbvent  = 1;
-      typ_val = CS_TYPE_cs_real_t;
-
-      ierror = cs_restart_read_section(suite,
-                                       nomrub,
-                                       location_id,
-                                       nbvent,
-                                       typ_val,
-                                       tabvar);
-
-      if (ierror < CS_RESTART_SUCCESS)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Problem while reading section in the restart file\n"
-                    "for the cooling tower module:\n"
-                    "<%s>\n"
-                    "The calculation will not be run.\n"), nomrub);
-
-      for (i = 0; i < n_elements; i++)
-        ct->teau[i]= tabvar[i];
-
-      BFT_FREE(tabvar);
-
-    }
-
-    { /* Read the wall thickness and check the coherency with USPT1D*/
-      char        nomrub[] = "Flux_eau";
-      cs_real_t   *tabvar;
-
-      BFT_MALLOC(tabvar, n_elements, cs_real_t);
-
-      nbvent  = 1;
-      typ_val = CS_TYPE_cs_real_t;
-
-      ierror = cs_restart_read_section(suite,
-                                       nomrub,
-                                       location_id,
-                                       nbvent,
-                                       typ_val,
-                                       tabvar);
-
-      if (ierror < CS_RESTART_SUCCESS)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Problem while reading section in the restart file\n"
-                    "for the cooling tower module:\n"
-                    "<%s>\n"
-                    "The calculation will not be run.\n"), nomrub);
-
-      for (i = 0; i < n_elements; i++)
-        ct->fem[i]= tabvar[i];
-
-      BFT_FREE(tabvar);
-    }
-
-    { /* Read the wall thickness and check the coherency with USPT1D*/
-      char        nomrub[] = "vitesse_goutte";
-      cs_real_t   *tabvar;
-
-
-      BFT_MALLOC(tabvar, n_elements, cs_real_t);
-
-      nbvent  = 1;
-      typ_val = CS_TYPE_cs_real_t;
-
-      ierror = cs_restart_read_section(suite,
-                                       nomrub,
-                                       location_id,
-                                       nbvent,
-                                       typ_val,
-                                       tabvar);
-
-      if (ierror < CS_RESTART_SUCCESS)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Problem while reading section in the restart file\n"
-                    "for the cooling tower module:\n"
-                    "<%s>\n"
-                    "The calculation will not be run.\n"), nomrub);
-
-      for (i = 0; i < n_elements; i++)
-        ct->vgoutte[i]= tabvar[i];
-
-      BFT_FREE(tabvar);
-    }
-
-  }
-
-  /* Close the restart file and free structures */
-  cs_restart_destroy(&cs_glob_ctwr_suite);
-}
-
-/*----------------------------------------------------------------------------
- * Post process variables associated with exchange area
- *
- * parameters:
- *   ct  <--  Void pointer to cooling tower function
- *   ts  <--  time step status structure, or NULL
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_ctwr_post_function(void                  *ct,
-                       const cs_time_step_t  *ts)
-{
-  const cs_ctwr_zone_t  *_ct = ct;
-
-  if (_ct->post_mesh_id != 0) {
-
-    cs_post_write_var(_ct->post_mesh_id,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      _("T water"),
-                      1,
-                      false,
-                      false,
-                      CS_POST_TYPE_cs_real_t,
-                      _ct->teau,
-                      NULL,
-                      NULL,
-                      ts);
-
-    cs_post_write_var(_ct->post_mesh_id,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      _("Flux water"),
-                      1,
-                      false,
-                      false,
-                      CS_POST_TYPE_cs_real_t,
-                      _ct->fem,
-                      NULL,
-                      NULL,
-                      ts);
-
-  }
-
+  /* No need to redefine the temperature and enthalpy for humid air as they
+     have already been defined in 'cs_field_pointer_map',
+     which comes after 'ctvarp' */
+  cs_field_pointer_map(CS_ENUMF_(humid), cs_field_by_name_try("humidity"));
+  cs_field_pointer_map(CS_ENUMF_(ym_a), cs_field_by_name_try("ym_dry_air"));
+  cs_field_pointer_map(CS_ENUMF_(t_l), cs_field_by_name_try("temperature_liquid"));
+  cs_field_pointer_map(CS_ENUMF_(h_l), cs_field_by_name_try("enthalpy_liquid"));
+  cs_field_pointer_map(CS_ENUMF_(ym_l), cs_field_by_name_try("ym_liquid"));
+  cs_field_pointer_map(CS_ENUMF_(thermal_diff_h),
+      cs_field_by_name_try("thermal_conductivity"));
 }
 
 /*============================================================================
  * Fonctions publiques
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Definition d'une zone d'echange (qui est ajoutee a celles deja definies)
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cooling tower exchange zone
+ *
+ * \param[in]   zone_criterion  Zone name for selction
+ * \param[in]   imctch          model : 1 Poppe
+ *                                      2 Merkel
+ *                                      0 None
+ * \param[in]   ct_type         type  : 1 Counter current
+ *                                      2 Crossed current
+ *                                      3 Rain zone
+ * \param[in]   delta_t         Imposed delta temperature delta between inlet
+ *                              and oulet of the zone
+ * \param[in]   relax           Relaxation of the imposed delta temperature
+ * \param[in]   t_l_bc          Liquid water temperature at the inlet
+ * \param[in]   q_l_bc          Mass flow rate at the inlet
+ * \param[in]   xap             Beta_x_0 of the exchange law
+ * \param[in]   xnp             Exponent n of the exchange law
+ * \param[in]   surface         Total Surface of ingoing water
+ * \param[in]   droplet_diam    Droplet diameter in rain zones
+ */
+/*----------------------------------------------------------------------------*/
 
-void cs_ctwr_definit
-(
-  const int        idimct,    /* Dimemsion du probleme 2:2D  3:3D */
-  const char      *ze_name,   /* Nom de la zone aero */
-  const int        imctch,    /* 1: Modele de Poppe
-                                 2: Merkel
-                                 0: Rien */
-  const int        ntypct,    /* 1: Contre courant
-                                 2: Courant croises
-                                 3: Zone de pluie */
-  const cs_lnum_t  nelect,    /* Nombre d'elements sur chaque ligne du maillage
-                                 eau pour la zone de noeuds par segment eau */
-  const cs_real_t  deltat,    /* Ecart de temperature impose en entree de la
-                                 zone d'echange */
-  const cs_real_t  teau_cl,   /* Teau en entree de la zone d'echange */
-  const cs_real_t  fem_cl,    /* debit en entree de la zone d'echange */
-  const cs_real_t  xap,       /* coefficient lambda de la loi d'echange */
-  const cs_real_t  xnp,       /* exposant n de la loi d'echange */
-  const cs_real_t  surface,   /* Surface totale arrive d eau de la ct */
-  const cs_real_t   dgout     /* Diametre de goutte pour les zones de pluie */
-)
+void cs_ctwr_define(const char       zone_criterion[],
+                    const int        imctch,
+                    const int        ct_type,
+                    const cs_real_t  delta_t,
+                    const cs_real_t  relax,
+                    const cs_real_t  t_l_bc,
+                    const cs_real_t  q_l_bc,
+                    const cs_real_t  xap,
+                    const cs_real_t  xnp,
+                    const cs_real_t  surface,
+                    const cs_real_t  droplet_diam)
 {
   cs_ctwr_zone_t  *ct;
   int length;
@@ -961,142 +185,140 @@ void cs_ctwr_definit
 
   BFT_MALLOC(ct, 1, cs_ctwr_zone_t);
 
+  ct->ze_name = NULL;
+  BFT_MALLOC(ct->ze_name, strlen(zone_criterion)+1, char);
+  strcpy(ct->ze_name, zone_criterion);
+
   ct->num = cs_glob_ct_nbr + 1;
 
-  ct->idimct = idimct;
   ct->imctch = imctch;
-  ct->ntypct = ntypct;
-  ct->nelect = nelect;
+  ct->ct_type = ct_type;
 
-  ct->hmin  =  10000.;
-  ct->hmax  = -10000.;
-
-  ct->voiseau  = NULL;
-  ct->pvoiseau = NULL;
-  ct->voisair  = NULL;
-  ct->pvoisair = NULL;
-
-  ct->fac_sup_connect_idx = NULL;
-  ct->fac_sup_connect_lst = NULL;
-
-  ct->surf_fac_sup = NULL;
-  ct->coefeau  = NULL;
-  ct->coefair  = NULL;
-
-  ct->deltat   = deltat;
-  ct->cl_teau  = teau_cl;
-  ct->cl_fem = fem_cl;
+  ct->delta_t   = delta_t;
+  ct->relax = relax;
+  ct->t_l_bc   = t_l_bc;
+  ct->q_l_bc   = q_l_bc;
+  ct->y_l_bc   = 100.; /* Mass of liquid water divided by the mass of humid air
+                          in packing zones.
+                        Factice version, will be used for rain zones */
   ct->xap = xap;
   ct->xnp = xnp;
 
   ct->surface_in  = 0.;
   ct->surface_out = 0.;
-  ct->surface     = surface;
-  ct->nnpsct = 0;
+  ct->surface = surface;
 
-  ct->nbfac_sct = 0;
-  ct->nbfac_ict = 0;
-  ct->nbfac_lct = 0;
-  ct->nbfac_ct  = 0;
-  ct->nbfbr_sct = 0;
-  ct->nbfbr_ict = 0;
-  ct->nbfbr_lct = 0;
+  ct->n_cells = 0;
 
-  ct->nbevct = 0;
+  ct->up_ct_id = -1;
 
-  ct->id_amont = 999;
+  ct->n_inlet_faces = 0;
+  ct->n_outlet_faces = 0;
+  ct->inlet_faces_list = NULL;
+  ct->outlet_faces_list = NULL;
 
-  ct->face_sup_mesh = NULL;
-  ct->face_inf_mesh = NULL;
-  ct->face_lat_mesh = NULL;
+  ct->q_l_in = 0.0;
+  ct->q_l_out = 0.0;
+  ct->t_l_in = 0.0;
+  ct->t_l_out = 0.0;
+  ct->h_l_in = 0.0;
+  ct->h_l_out = 0.0;
+  ct->t_h_in = 0.0;
+  ct->t_h_out = 0.0;
+  ct->xair_e = 0.0;//FIXME useless ?
+  ct->xair_s = 0.0;
+  ct->h_h_in = 0.0;
+  ct->h_h_out = 0.0;
+  ct->q_h_in = 0.0;
+  ct->q_h_out = 0.0;
 
-  ct->cell_mesh    = NULL;
-  ct->water_mesh   = NULL;
+  ct->droplet_diam = droplet_diam;
 
-  ct->teau    = NULL;
-  ct->fem     = NULL;
-  ct->vgoutte = NULL;
-
-  ct->fem_e   = 0.0;
-  ct->fem_s   = 0.0;
-  ct->teau_e  = 0.0;
-  ct->teau_s  = 0.0;
-  ct->heau_e  = 0.0;
-  ct->heau_s  = 0.0;
-  ct->tair_e  = 0.0;
-  ct->tair_s  = 0.0;
-  ct->xair_e  = 0.0;
-  ct->xair_s  = 0.0;
-  ct->hair_e  = 0.0;
-  ct->hair_s  = 0.0;
-  ct->debit_e = 0.0;
-  ct->debit_s = 0.0;
-
-  ct->dgout = dgout;
-
-  /* Selection des cellules */
-
-  BFT_MALLOC(ct->ze_cell_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
-
-  cs_selector_get_cell_list(ze_name, &(ct->nbevct), ct->ze_cell_list);
-
-  BFT_REALLOC(ct->ze_cell_list, ct->nbevct, cs_lnum_t);
-
-  /* Redimensionnement du tableau des zones d'echange si necessaire */
+  /* Cells selection */
+  ct->ze_cell_list = NULL;
 
   if (cs_glob_ct_nbr == cs_glob_ct_nbr_max) {
     cs_glob_ct_nbr_max = (cs_glob_ct_nbr_max + 1);
     BFT_REALLOC(cs_glob_ct_tab, cs_glob_ct_nbr_max, cs_ctwr_zone_t *);
   }
 
-  /* Ajout dans le tableau des zones d'echanges */
+  /* Add it to exchange zones array */
 
   cs_glob_ct_tab[cs_glob_ct_nbr] = ct;
   cs_glob_ct_nbr += 1;
 
-#if defined(HAVE_MPI)
-  ct->cs_array_rank = NULL;
-#endif
-  ct->locat_air_water     = NULL;
-  ct->locat_water_air     = NULL;
-  ct->locat_cell_ct_upwind= NULL;
-
-  ct->post_mesh_id = 0;
-
-  ct->nnpsct_with_ghosts = 0;
-  ct->water_halo    = NULL;
-
-
   if (cs_glob_rank_id <= 0) {
-    length = strlen("bltctc.") + 3;
+    length = strlen("cooling_towers_balance.") + 3;
     BFT_MALLOC(file_name, length, char);
-    sprintf(file_name, "bltctc.%02d", ct->num);
+    sprintf(file_name, "cooling_towers_balance.%02d", ct->num);
 
     f = fopen(file_name, "a");
 
-    fprintf(f, "# BILANS POUR LA ZONE D'ECHANGES \n");
-    fprintf(f, "# ===============================\n");
-    fprintf(f, "\tTEMP\tFLUX A/E\tTA MOY SOR\t TE MOY SOR");
-    fprintf(f, "\tXA MOY SOR\tDEBI A ENT\tDEBI A SOR \n");
+    fprintf(f, "# Balance for the exchange zone %02d\n", ct->num);
+    fprintf(f, "# ==========================================================\n");
+    fprintf(f, "\tTime\tFlux air/liq");
+    fprintf(f, "\tTemp liq in");
+    fprintf(f, "\tTemp liq out");
+    fprintf(f, "\tTemp air in");
+    fprintf(f, "\tTemp air out");
+    fprintf(f, "\tDeb liq in\tDeb liq out");
+    fprintf(f, "\tDeb air in\tDeb air out\n");
     fclose(f);
     BFT_FREE(file_name);
   }
 
 }
 
-/*----------------------------------------------------------------------------
- * Destroy cs_ctwr_t structures
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the cells belonging to the different packing zones.
+ *
+ * \param[in]   mesh             associated mesh structure
+ * \param[in]   mesh_quantities  mesh quantities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_build_all(const cs_mesh_t              *mesh,
+                  const cs_mesh_quantities_t   *mesh_quantities)
+{
+
+  /* Create an array for cells flaging */
+  /*-----------------------------------*/
+
+  cs_ctwr_zone_t  *ct;
+
+  for (int id = 0; id < cs_glob_ct_nbr; id++) {
+
+    ct = cs_glob_ct_tab[id];
+    /* Cells selection */
+    BFT_MALLOC(ct->ze_cell_list, mesh->n_cells_with_ghosts, cs_lnum_t);
+
+    cs_selector_get_cell_list(ct->ze_name, &(ct->n_cells), ct->ze_cell_list);
+
+    BFT_REALLOC(ct->ze_cell_list, ct->n_cells, cs_lnum_t);
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy cs_ctwr_t structures
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_ctwr_all_destroy(void)
 {
-  int i;
   cs_ctwr_zone_t  *ct;
 
-  for (i = 0; i < cs_glob_ct_nbr; i++) {
+  for (int id = 0; id < cs_glob_ct_nbr; id++) {
 
-    ct = cs_glob_ct_tab[i];
+    ct = cs_glob_ct_tab[id];
+    BFT_FREE(ct->ze_name);
+    BFT_FREE(ct->ze_cell_list);
+    BFT_FREE(ct->inlet_faces_list);
+    BFT_FREE(ct->outlet_faces_list);
     BFT_FREE(ct);
 
   }
@@ -1111,1470 +333,1181 @@ cs_ctwr_all_destroy(void)
   BFT_FREE(cs_glob_ct_tab);
 }
 
-/*----------------------------------------------------------------------------
- * Water variables resolution
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log Packing zone definition setup information.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_aeteau(cs_real_t   temp[],      /* Temperature air */
-               cs_real_t   xa[],        /* humidite air */
-               cs_real_t   rho[],       /* masse volumique air */
-                 cs_real_t   vitx[],      /* vitesse air suivant x */
-               cs_real_t   vity[],      /* vitesse air suivant y */
-               cs_real_t   vitz[]       /* vitesse air suivant z */
-
-)
+cs_ctwr_log_setup(void)
 {
-  cs_lnum_t  ict,iseg,iloc,i, ii,j ,ieau, nb_dist_water, nb_dist_upw, ind;
-  cs_real_t dhi,vvai,vhai,norme_g;
-  cs_real_t gravite[3];
-  cs_real_t faxn,bxan,xsata,xsate,cfen,ff1,ff2,xlew,eta,aux;
-  cs_real_t vgin,dvg,cpx,rre,rpr,anu;
-  cs_real_t   cpe, cpv, cpa, hv0, dgout, visc, conduc, rhoe;
+  if (cs_glob_ct_nbr < 1)
+    return;
 
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "Cooling towers\n"
+                  "--------------\n"));
 
-  cs_lnum_t *lst_par_fac_sup_ct, *lst_par_fac_inf_ct_upw;
-  const cs_lnum_t *locat_cel_upw = NULL;
+  for (int i = 0; i < cs_glob_ct_nbr; i++) {
+    cs_ctwr_zone_t *ct = cs_glob_ct_tab[i];
 
-  cs_ctwr_zone_t  *ct;
-  cs_ctwr_zone_t  *ct_upw;
-  cs_real_t *tai_inter, *xai_inter, *rhoai_inter,*vx_inter, *vy_inter,*vz_inter;
-  cs_real_t *tai, *xai, *rhoai,*vx, *vy, *vz, *teau_upw_rec, *teau_upw_send;
-  cs_real_t *fem_upw_rec, *fem_upw_send;
-  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
-
-  faxn = 0.;
-
-  gravite[0] = -ct_prop->gravx;
-  gravite[1] = -ct_prop->gravy;
-  gravite[2] = -ct_prop->gravz;
-
-  norme_g = sqrt( pow(gravite[0],2.)
-                  +pow(gravite[1],2.)
-                  +pow(gravite[2],2.));
-
-  gravite[0] /= norme_g;
-  gravite[1] /= norme_g;
-  gravite[2] /= norme_g;
-
-
-  /*--------------------------------------------*
-   * Resolution des variable eau                *
-   * sur chaque  ct                             *
-   *--------------------------------------------*/
-  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
-
-    ct = cs_glob_ct_tab[cs_chain_ct[ict]];
-
-    if ((ct->ntypct>=2) && (ct->idimct==2))
-     gravite[2] = 1.0;
-
-    cpa    = ct_prop->cpa;
-    cpv    = ct_prop->cpv;
-    cpe    = ct_prop->cpe;
-    hv0    = ct_prop->hv0;
-    rhoe   = ct_prop->rhoe;
-    visc   = ct_prop->visc;
-    conduc = ct_prop->cond ;
-
-    dgout  = ct->dgout;
-
-    /*--------------------------------------------*
-     * synchronisation   Halo                             *
-     *--------------------------------------------*/
-
-    if (ct->water_halo != NULL) {
-
-      cs_halo_t *halo = ct->water_halo;
-
-      cs_halo_sync_var(halo, ct->halo_type, temp);
-      cs_halo_sync_var(halo, ct->halo_type, xa);
-      cs_halo_sync_var(halo, ct->halo_type, rho);
-      cs_halo_sync_var(halo, ct->halo_type, vitx);
-      cs_halo_sync_var(halo, ct->halo_type, vity);
-      cs_halo_sync_var(halo, ct->halo_type, vitz);
-
+    char *model_type;
+    if (ct->imctch == 0) {
+      BFT_MALLOC(model_type, 5, char);
+      sprintf(model_type, "None");
+    } else if (ct->imctch == 1) {
+      BFT_MALLOC(model_type, 6, char);
+      sprintf(model_type, "Poppe");
+    } else if (ct->imctch == 2) {
+      BFT_MALLOC(model_type, 7, char);
+      sprintf(model_type, "Merkel");
     }
 
-    /*--------------------------------------------*
-     * interpolation  air->eau                    *
-     *--------------------------------------------*/
-    nb_dist_water = (int) ple_locator_get_n_dist_points(ct->locat_air_water);
-
-    BFT_MALLOC(tai_inter  , nb_dist_water, cs_real_t);
-    BFT_MALLOC(xai_inter  , nb_dist_water, cs_real_t);
-    BFT_MALLOC(rhoai_inter, nb_dist_water, cs_real_t);
-    BFT_MALLOC(vx_inter   , nb_dist_water, cs_real_t);
-    BFT_MALLOC(vy_inter   , nb_dist_water, cs_real_t);
-    BFT_MALLOC(vz_inter   , nb_dist_water, cs_real_t);
-
-    for (ieau= 0; ieau < nb_dist_water; ieau++) {
-       tai_inter[ieau]   = 0.;
-       xai_inter[ieau]   = 0.;
-       rhoai_inter[ieau] = 0.;
-       vx_inter[ieau]    = 0.;
-       vy_inter[ieau]    = 0.;
-       vz_inter[ieau]    = 0.;
-      for (i = (ct->pvoiseau[ieau]); i < (ct->pvoiseau[ieau+1]); i++) {
-        tai_inter[ieau]  += ct->coefeau[i] * temp[ct->voiseau[i]];
-        xai_inter[ieau]  += ct->coefeau[i] * xa[ct->voiseau[i]];
-        rhoai_inter[ieau]+= ct->coefeau[i] * rho[ct->voiseau[i]];
-        vx_inter[ieau]   += ct->coefeau[i] * vitx[ct->voiseau[i]];
-        vy_inter[ieau]   += ct->coefeau[i] * vity[ct->voiseau[i]];
-        vz_inter[ieau]   += ct->coefeau[i] * vitz[ct->voiseau[i]];
-      }
-    }
-    BFT_MALLOC(tai  , ct->nnpsct*ct->nelect, cs_real_t);
-    BFT_MALLOC(xai  , ct->nnpsct*ct->nelect, cs_real_t);
-    BFT_MALLOC(rhoai, ct->nnpsct*ct->nelect, cs_real_t);
-    BFT_MALLOC(vx   , ct->nnpsct*ct->nelect, cs_real_t);
-    BFT_MALLOC(vy   , ct->nnpsct*ct->nelect, cs_real_t);
-    BFT_MALLOC(vz   , ct->nnpsct*ct->nelect, cs_real_t);
-
-    ple_locator_exchange_point_var(ct->locat_air_water,
-                                   tai_inter, tai, NULL, sizeof(cs_real_t),1,0);
-    ple_locator_exchange_point_var(ct->locat_air_water,
-                                   xai_inter, xai, NULL, sizeof(cs_real_t),1,0);
-    ple_locator_exchange_point_var(ct->locat_air_water,
-                                   rhoai_inter,rhoai, NULL, sizeof(cs_real_t),1,0);
-    ple_locator_exchange_point_var(ct->locat_air_water,
-                                   vx_inter,vx, NULL, sizeof(cs_real_t),1,0);
-    ple_locator_exchange_point_var(ct->locat_air_water,
-                                   vy_inter,vy, NULL, sizeof(cs_real_t),1,0);
-    ple_locator_exchange_point_var(ct->locat_air_water,
-                                   vz_inter,vz, NULL, sizeof(cs_real_t),1,0);
-
-    BFT_FREE(tai_inter);
-    BFT_FREE(xai_inter);
-    BFT_FREE(rhoai_inter);
-    BFT_FREE(vx_inter);
-    BFT_FREE(vy_inter);
-    BFT_FREE(vz_inter);
-    /*--------------------------------------------*
-     *  end interpolation  air->eau               *
-     *--------------------------------------------*/
-
-
-
-   /*--------------------------------------------*
-    * Calcul pour la face superieure ,           *
-    * Introduction des conditions aux limites ct *
-    *--------------------------------------------*/
-    BFT_MALLOC(lst_par_fac_sup_ct , ct->nnpsct, cs_lnum_t);
-
-    fvm_nodal_get_parent_num(ct->face_sup_mesh,
-                                      2,lst_par_fac_sup_ct);
-    ind = 0;
-    for (j=0; j < cs_glob_ct_nbr; j++)
-      if (cs_stack_ct[cs_chain_ct[ict]*cs_glob_ct_nbr + cs_chain_ct[j]] == 1) {
-        ct_upw = cs_glob_ct_tab[ cs_chain_ct[j]];
-
-        nb_dist_upw =
-              (int)ple_locator_get_n_dist_points(ct->locat_cell_ct_upwind[ind]);
-
-        BFT_MALLOC(teau_upw_send, nb_dist_upw, cs_real_t);
-        BFT_MALLOC(fem_upw_send, nb_dist_upw, cs_real_t);
-        BFT_MALLOC(lst_par_fac_inf_ct_upw,
-                   (ct_upw->nbfac_ict+ct_upw->nbfbr_ict),
-                   cs_lnum_t);
-
-        fvm_nodal_get_parent_num(ct_upw->face_inf_mesh,
-                                 2, lst_par_fac_inf_ct_upw);
-        locat_cel_upw
-          = ple_locator_get_dist_locations(ct->locat_cell_ct_upwind[ind]);
-
-        for (i=0; i < nb_dist_upw; i++) {
-          teau_upw_send[i] =  ct_upw->teau[(cs_lnum_t) locat_cel_upw[i]-1];
-          fem_upw_send[i]  =  ct_upw->fem[(cs_lnum_t) locat_cel_upw[i]-1];
-        }
-
-        BFT_MALLOC(teau_upw_rec,
-                   (ct_upw->nbfac_ict+ct_upw->nbfbr_ict), cs_real_t);
-        BFT_MALLOC(fem_upw_rec,
-                   (ct_upw->nbfac_ict+ct_upw->nbfbr_ict), cs_real_t);
-
-        ple_locator_exchange_point_var(ct->locat_cell_ct_upwind[ind],
-                                       teau_upw_send,
-                                       teau_upw_rec,
-                                       NULL,
-                                       sizeof(cs_real_t),
-                                       1,0);
-        ple_locator_exchange_point_var(ct->locat_cell_ct_upwind[ind],
-                                       fem_upw_send,
-                                       fem_upw_rec,
-                                       NULL,
-                                       sizeof(cs_real_t),
-                                       1,0);
-
-        for (i=0; i < ct->nnpsct; i++) {
-          ii = 0;
-          while (ii < (ct_upw->nbfac_ict+ct_upw->nbfbr_ict)) {
-            if (lst_par_fac_sup_ct[i] == lst_par_fac_inf_ct_upw[ii]) {
-              ct->teau[i*ct->nelect] = teau_upw_rec[ii];
-              ct->fem[i*ct->nelect]  = fem_upw_rec[ii];
-              ii = ct_upw->nbfac_ict+ct_upw->nbfbr_ict;
-            }
-            ii++;
-          }
-        }
-        BFT_FREE(teau_upw_rec);
-        BFT_FREE(teau_upw_send);
-        BFT_FREE(fem_upw_rec);
-        BFT_FREE(fem_upw_send);
-        BFT_FREE(lst_par_fac_inf_ct_upw);
-        ind++;
-      }
-
-    BFT_FREE(lst_par_fac_sup_ct);
-
-    /* Pas d'espace */
-    dhi = -(ct->hmax-ct->hmin)/(ct->nelect-1);
-
-    /*--------------------------------------------*/
-    /* Modele de Poppe                            */
-    /*--------------------------------------------*/
-    if (ct->imctch==1) {
-      /*--------------------------------------------*/
-      /* courant-croise ou contre-courant           */
-      /*--------------------------------------------*/
-      if (ct->ntypct<=2) {
-
-        for (iseg = 0; iseg < ct->nnpsct; iseg++) {
-          /*--------------------------------------------*/
-          /* Resolution Fe                              */
-          /*--------------------------------------------*/
-          for (iloc = 1; iloc < ct->nelect; iloc++) {
-
-            ieau = iseg*ct->nelect + iloc;
-
-
-            vvai = sqrt(  pow((vx[ieau]*gravite[0]),2.)
-                         +pow((vy[ieau]*gravite[1]),2.)
-                         +pow((vz[ieau]*gravite[2]),2.));
-            vhai = sqrt(pow((vx[ieau]*(1.-gravite[0])),2.)
-                       +pow((vy[ieau]*(1.-gravite[1])),2.)
-                       +pow((vz[ieau]*(1.-gravite[2])),2.));
-            /* fin interpolation air->eau */
-
-            xsate = cs_ctwr_xsath(ct->teau[ieau]);
-            xsata = cs_ctwr_xsath(tai[ieau]);
-            if (ct->ntypct==1) {
-              faxn=rhoai[ieau]*vvai;
-            }
-            if (ct->ntypct==2) {
-              faxn=rhoai[ieau]*vhai;
-            }
-            bxan=ct->xap*ct->fem[ieau]*pow((faxn/ct->fem[ieau]),ct->xnp);
-            if (xai[ieau]>xsata) {
-              aux=xsata;
-            }else{
-              aux=xai[ieau];
-            }
-            cfen=bxan*(xsate- aux)/(ct->fem[ieau]);
-            ct->fem[ieau]=ct->fem[ieau-1]/(1.0-cfen*dhi);
-          }
-          /* Fin de resolution de Fe */
-
-          /*--------------------------------------------*/
-          /* Resolution Te                              */
-          /*--------------------------------------------*/
-          for (iloc = 1; iloc < ct->nelect; iloc++) {
-
-            ieau = iseg*ct->nelect + iloc;
-
-            vvai = sqrt( pow((vx[ieau]*gravite[0]),2.)
-                        +pow((vy[ieau]*gravite[1]),2.)
-                        +pow((vz[ieau]*gravite[2]),2.));
-            vhai = sqrt( pow((vx[ieau]*(1.-gravite[0])),2.)
-                        +pow((vy[ieau]*(1.-gravite[1])),2.)
-                        +pow((vz[ieau]*(1.-gravite[2])),2.));
-            /* fin interpolation air->eau */
-
-            xsate = cs_ctwr_xsath(ct->teau[ieau]);
-            xsata = cs_ctwr_xsath(tai[ieau]);
-            if (ct->ntypct==1) {
-              faxn=rhoai[ieau]*vvai;
-            }
-            if (ct->ntypct==2) {
-              faxn=rhoai[ieau]*vhai;
-            }
-            bxan = ct->xap*ct->fem[ieau]*pow((faxn/ct->fem[ieau]),ct->xnp);
-            cfen = bxan/ct->fem[ieau]/cpe;
-            eta  = (0.622+xsate)/(0.622+xai[ieau]);
-            xlew = pow(0.866,(2./3.))*(eta-1.)/log(eta);
-            if (xai[ieau]<=xsata) {
-              ff1 = (cpa+cpv*xsate)+(cpa+cpv*xai[ieau])*(xlew-1.);
-              ff2 = xlew*(cpa+cpv*xai[ieau])*tai[ieau] -(xsate-xai[ieau])*hv0;
-            }
-            else {
-              ff1 = xlew*(cpa+cpv*xsata)+(xsate-xsata)*(cpv-cpe);
-              ff2 = xlew*(cpa+cpv*xsata+cpe*(xai[ieau]-xsata))*tai[ieau]
-                    -(xsate-xsata)*(cpe*tai[ieau]+hv0);
-            }
-            ct->teau[ieau] = (ct->teau[ieau-1]-cfen*ff2*dhi)
-                             /(1.0-cfen*ff1*dhi);
-
-          }
-          /* Fin de resolution Te  */
-
-
-        }
-      }
-      /* Fin courant-croise ou contre-courant  */
-
-
-      /*--------------------------------------------*/
-      /* zone de pluie                              */
-      /*--------------------------------------------*/
-      else if (ct->ntypct==3) {
-        for (iseg = 0; iseg < ct->nnpsct; iseg++) {
-          /*--------------------------------------------*/
-          /* Resolution Fe                              */
-          /*--------------------------------------------*/
-          for (iloc = 1; iloc < ct->nelect; iloc++) {
-
-            ieau = iseg*ct->nelect + iloc;
-            vgin=ct->vgoutte[ieau];
-
-            if (CS_ABS(vgin)>=0.1) {
-
-              vvai = sqrt( pow((vx[ieau]*gravite[0]),2.)
-                          +pow((vy[ieau]*gravite[1]),2.)
-                          +pow((vz[ieau]*gravite[2]),2.));
-              vhai = sqrt( pow((vx[ieau]*(1.-gravite[0])),2.)
-                          +pow((vy[ieau]*(1.-gravite[1])),2.)
-                          +pow((vz[ieau]*(1.-gravite[2])),2.));
-              /* fin interpolation air->eau */
-
-              xsate = cs_ctwr_xsath(ct->teau[ieau]);
-              xsata = cs_ctwr_xsath(tai[ieau]);
-              dvg=sqrt(pow((vgin+vvai),2.)+pow(vhai,2.));
-              if (xai[ieau]<=xsata) {
-                cpx = cpa+xai[ieau]*cpv;
-              }
-              else {
-                cpx = cpa+xsata*cpv+(xai[ieau]-xsata)*cpe;
-              }
-              rre  = dvg*rhoai[ieau]*(1.+xai[ieau])*dgout/visc;
-              rpr  = cpx*visc/conduc;
-              anu  = 2.+0.6*sqrt(rre)*pow(rpr,(1./3.));
-              bxan = 6.*conduc*anu*ct->fem[ieau]
-                    /(0.92*rhoe*vgin*pow(dgout,2.)*cpx);
-              if (xai[ieau]>xsata) {
-                aux = xsata;
-              }else{
-                aux = xai[ieau];
-              }
-
-              cfen=bxan*(xsate - aux)/(ct->fem[ieau]);
-              ct->fem[ieau]=ct->fem[ieau-1]/(1.0-cfen*dhi);
-            }
-            else {
-              ct->fem[ieau]=ct->fem[ieau-1];
-            }
-          }
-          /* Fin de resolution Fe */
-
-          /*--------------------------------------------*/
-          /* Resolution Te                              */
-          /*--------------------------------------------*/
-          for (iloc = 1; iloc < ct->nelect; iloc++) {
-
-            ieau = iseg*ct->nelect + iloc;
-
-            vgin=ct->vgoutte[ieau];
-
-            if (CS_ABS(vgin)>=0.1) {
-
-              vvai = sqrt(pow((vx[ieau]*gravite[0]),2.)
-                         +pow((vy[ieau]*gravite[1]),2.)
-                         +pow((vz[ieau]*gravite[2]),2.));
-              vhai = sqrt(pow((vx[ieau]*(1.-gravite[0])),2.)
-                         +pow((vy[ieau]*(1.-gravite[1])),2.)
-                         +pow((vz[ieau]*(1.-gravite[2])),2.));
-              /* fin interpolation air->eau */
-
-              xsate = cs_ctwr_xsath(ct->teau[ieau]);
-              xsata = cs_ctwr_xsath(tai[ieau]);
-              dvg=sqrt(pow((vgin+vvai),2.)+pow(vhai,2.));
-              if (xai[ieau]<=xsata) {
-                cpx = cpa+xai[ieau]*cpv;
-              }
-              else  {
-                cpx = cpa+xsata*cpv+(xai[ieau]-xsata)*cpe;
-              }
-              rre  = dvg*rhoai[ieau]*(1.+xai[ieau])*dgout/visc;
-              rpr  = cpx*visc/conduc;
-              anu  = 2.+0.6*sqrt(rre)*pow(rpr,(1./3.));
-              bxan = 6.*conduc*anu*ct->fem[ieau]
-                    /(0.92*rhoe*vgin*pow(dgout,2.)*cpx);
-              cfen = bxan/ct->fem[ieau]/cpe;
-              eta = (0.622+xsate)/(0.622+xai[ieau]);
-              xlew = pow(0.866,(2./3.))*(eta-1.)/log(eta);
-              if (xai[ieau]<=xsata) {
-                ff1 = (cpa+cpv*xsate)+(cpa+cpv*xai[ieau])*(xlew-1.)-(xsate-xai[ieau])*cpe;
-                ff2 = xlew*(cpa+cpv*xai[ieau])*tai[ieau] -(xsate-xai[ieau])*hv0;
-              }
-              else {
-                ff1 = xlew*(cpa+cpv*xsata)+(xsate-xsata)*(cpv-cpe)
-                      -(xsate-xsata)*cpe;
-                ff2 = xlew*(cpa+cpv*xsata+cpe*(xai[ieau]-xsata))*tai[ieau]
-                      -(xsate-xsata)*(cpe*tai[ieau]+hv0);
-              }
-              ct->teau[ieau] = (ct->teau[ieau-1]-cfen*ff2*dhi)
-                             /(1.0-cfen*ff1*dhi);
-            }
-            else {
-              ct->teau[ieau]=ct->teau[ieau-1];
-            }
-
-          }
-          /* Fin de resolution Te */
-        }
-      }
-      /*--------------------------------------------*/
-      /* fin sur la zone de pluie ntype=3           */
-      /*--------------------------------------------*/
-    }
-    /*--------------------------------------------*/
-    /* Fin Modele de Poppe                        */
-    /*--------------------------------------------*/
-
-    /*--------------------------------------------*/
-    /* Modele de Merkel                           */
-    /*--------------------------------------------*/
-    if (ct->imctch==2) {
-
-      if (ct->ntypct<=2) {
-
-      for (iseg = 0; iseg < ct->nnpsct; iseg++) {
-
-        for (iloc = 1; iloc < ct->nelect; iloc++) {
-
-          ieau = iseg*ct->nelect + iloc;
-
-          vvai = sqrt( pow((vx[ieau]*gravite[0]),2.)
-                      +pow((vy[ieau]*gravite[1]),2.)
-                      +pow((vz[ieau]*gravite[2]),2.));
-          vhai = sqrt( pow((vx[ieau]*(1.-gravite[0])),2.)
-                      +pow((vy[ieau]*(1.-gravite[1])),2.)
-                      +pow((vz[ieau]*(1.-gravite[2])),2.));
-          /* fin interpolation air->eau */
-
-          ct->fem[ieau]=ct->fem[ieau-1];
-          xsate = cs_ctwr_xsath(ct->teau[ieau]);
-          xsata = cs_ctwr_xsath(tai[ieau]);
-          if (ct->ntypct==1) {
-           faxn = rhoai[ieau]*vvai;
-          }
-          if (ct->ntypct==2) {
-            faxn = rhoai[ieau]*vhai;
-          }
-
-          bxan = ct->xap*ct->fem[ieau]*pow((faxn/ct->fem[ieau]),ct->xnp);
-          cfen = bxan/ct->fem[ieau]/cpe;
-          ff1 = cpa+cpv*xsate;
-          ff2 = (cpa+xsata*cpv)*tai[ieau]-(xsate-xsata)*hv0;
-          ct->teau[ieau] = (ct->teau[ieau-1]-cfen*ff2*dhi)
-                      /(1.0-cfen*ff1*dhi);
-        }
-      } /* fin sur iseg */
-    } /* fin if pour le ntypct<=2 */
-
-    else if (ct->ntypct==3) { /* zone de pluie */
-
-      for (iseg = 0; iseg < ct->nnpsct; iseg++) {
-
-        for (iloc = 1; iloc < ct->nelect; iloc++) {
-          ieau = iseg*ct->nelect + iloc;
-          ct->fem[ieau]=ct->fem[ieau-1];
-          vgin=ct->vgoutte[ieau];
-
-          if (CS_ABS(vgin)>=0.1) {
-
-            vvai = sqrt( pow((vx[ieau]*gravite[0]),2.)
-                        +pow((vy[ieau]*gravite[1]),2.)
-                        +pow((vz[ieau]*gravite[2]),2.));
-            vhai = sqrt(pow((vx[ieau]*(1.-gravite[0])),2.)
-                       +pow((vy[ieau]*(1.-gravite[1])),2.)
-                       +pow((vz[ieau]*(1.-gravite[2])),2.));
-            /* fin interpolation air->eau */
-
-            xsate = cs_ctwr_xsath(ct->teau[ieau]);
-            xsata = cs_ctwr_xsath(tai[ieau]);
-            dvg=sqrt(pow((vgin+vvai),2.)+pow(vhai,2.));
-            cpx = cpa+xai[ieau]*cpv;
-            rre  = dvg*rhoai[ieau]*(1.+xai[ieau])*dgout/visc;
-            rpr  = cpx*visc/conduc;
-            anu  = 2.+0.6*sqrt(rre)*pow(rpr,(1./3.));
-            bxan = 6.*conduc*anu*ct->fem[ieau]
-                  /(0.92*rhoe*vgin*pow(dgout,2.)*cpx);
-            cfen = bxan/ct->fem[ieau]/cpe;
-            ff1 = cpa+cpv*xsate;
-            ff2 = (cpa+xsata*cpv)*tai[ieau]-(xsate-xsata)*hv0;
-            ct->teau[ieau]=(ct->teau[ieau-1]-cfen*ff2*dhi)
-                            /(1.0-cfen*ff1*dhi);
-            }
-            else {
-              ct->teau[ieau]=ct->teau[ieau-1];
-            }
-          }
-        } /* fin sur iseg */
-      }   /* fin sur la zone de pluie ntype=3 */
-    }
-    /*--------------------------------------------*/
-    /* Fin du modele de Merkel                    */
-    /*--------------------------------------------*/
-
-    BFT_FREE(tai);
-    BFT_FREE(xai);
-    BFT_FREE(rhoai);
-    BFT_FREE(vx);
-    BFT_FREE(vy);
-    BFT_FREE(vz);
-
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("  Cooling tower zone id: %d\n"
+         "    criterion: ""%s""\n"
+         "    Parameters:\n"
+         "      Model: %s\n"
+         "      Beta_x_0 of the exchange law: %f\n"
+         "      Exponent n of the exchange law: %f\n"
+         "      Type: %d\n"
+         "        Droplet diameter: %f\n"
+         "      Delta Temperature: %f\n"
+         "        Relaxation: %f\n"
+         "      Injected water temperature: %f\n"
+         "      Injected mass flow rate: %f\n"
+         "      Total surface of ingoing water: %f\n"),
+       ct->num,
+       ct->ze_name,
+       model_type,
+       ct->xap,
+       ct->xnp,
+       ct->ct_type,
+       ct->droplet_diam,
+       ct->delta_t,
+       ct->relax,
+       ct->t_l_bc,
+       ct->q_l_bc,
+       ct->surface);
   }
-  /*--------------------------------------------*/
-  /* Fin de resolution des variable eau         */
-  /* sur chaque  ct                             */
-  /*--------------------------------------------*/
 }
 
-/*----------------------------------------------------------------------------
-* Function cs_ctwr_aetssc
-* Calcul des termes source pour l'air
-*----------------------------------------------------------------------------*/
-void cs_ctwr_aetssc
-(
-  int         iscal,       /*   */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Perform balances in packing zones.
+ */
+/*----------------------------------------------------------------------------*/
 
-  cs_real_t   temp[],      /* Temperature air */
-  cs_real_t   xa[],        /* humidite air */
-  cs_real_t   rho[],       /* masse volumique air */
-  cs_real_t   utsim[],     /* vitesse verticale air */
-  cs_real_t   utsex[],     /* vitesse horizontale air */
-  cs_real_t   vitx[],      /* vitesse air suivant x */
-  cs_real_t   vity[],      /* vitesse air suivant y */
-  cs_real_t   vitz[]       /* vitesse air suivant z */
-)
+void
+cs_ctwr_log_balance(void)
 {
-  cs_lnum_t  ict,iseg,iloc,ieau,iair,i,nb,nb_dist_water,nb_dist_air;
-  cs_real_t cd1,ain,bin,dhi,dvga,gravite[3],norme_g;
-  cs_real_t fax,fx0,vvai,vhai,tim,tex,xim,xex;
-  cs_real_t bxa,xsata,xsate,ff1,xlew,eta;
-  cs_real_t dvg,cpx,rre,rpr,anu;
-  cs_real_t   cpe, cpv, cpa, hv0, dgout, visc, conduc, rhoe;
-  cs_ctwr_zone_t  *ct;
-  cs_real_t *tai_inter, *xai_inter, *rhoai_inter,*vx_inter, *vy_inter,*vz_inter,
-            *tei_inter, *femei_inter, *vgin_inter;
-  cs_real_t *tai, *xai, *rhoai,*vx, *vy, *vz, *tei, *femei, *vgin;
-  cs_lnum_t  *lst_par_cel;
-  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
-
-  fax = 0.;
-
-  gravite[0] = -ct_prop->gravx;
-  gravite[1] = -ct_prop->gravy;
-  gravite[2] = -ct_prop->gravz;
-
-  norme_g = sqrt(  pow(gravite[0],2.)
-                  +pow(gravite[1],2.)
-                  +pow(gravite[2],2.));
-
-  gravite[0] /= norme_g;
-  gravite[1] /= norme_g;
-  gravite[2] /= norme_g;
-
-
-  /*--------------------------------------------*/
-  /* Calcul de la vitesse des gouttes pour les  */
-  /* zones de pluie                             */
-  /*--------------------------------------------*/
-  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
-
-    ct = cs_glob_ct_tab[cs_chain_ct[ict]];
-    cpa    = ct_prop->cpa;
-    cpv    = ct_prop->cpv;
-    cpe    = ct_prop->cpe;
-    hv0    = ct_prop->hv0;
-    rhoe   = ct_prop->rhoe;
-    visc   = ct_prop->visc;
-    conduc = ct_prop->cond ;
-
-    dgout  = ct->dgout;
-
-    if (ct->ntypct==3) {
-      /*--------------------------------------------*
-      * synchronisation   Halo                            *
-      *--------------------------------------------*/
-
-      if (ct->water_halo != NULL) {
-
-        cs_halo_t *halo = ct->water_halo;
-
-        cs_halo_sync_var(halo, ct->halo_type, temp);
-        cs_halo_sync_var(halo, ct->halo_type, xa);
-        cs_halo_sync_var(halo, ct->halo_type, rho);
-        cs_halo_sync_var(halo, ct->halo_type, vitx);
-        cs_halo_sync_var(halo, ct->halo_type, vity);
-        cs_halo_sync_var(halo, ct->halo_type, vitz);
-
-     }
-
-      /*--------------------------------------------*
-      * interpolation  air->eau                   *
-      *--------------------------------------------*/
-      nb_dist_water = (int) ple_locator_get_n_dist_points(ct->locat_air_water);
-
-      BFT_MALLOC(tai_inter  , nb_dist_water, cs_real_t);
-      BFT_MALLOC(xai_inter  , nb_dist_water, cs_real_t);
-      BFT_MALLOC(rhoai_inter, nb_dist_water, cs_real_t);
-      BFT_MALLOC(vx_inter   , nb_dist_water, cs_real_t);
-      BFT_MALLOC(vy_inter   , nb_dist_water, cs_real_t);
-      BFT_MALLOC(vz_inter   , nb_dist_water, cs_real_t);
-
-      for (ieau= 0; ieau < nb_dist_water; ieau++) {
-        tai_inter[ieau]   = 0.;
-        xai_inter[ieau]   = 0.;
-        rhoai_inter[ieau] = 0.;
-        vx_inter[ieau]    = 0.;
-        vy_inter[ieau]    = 0.;
-        vz_inter[ieau]    = 0.;
-        for (i = (ct->pvoiseau[ieau]); i < (ct->pvoiseau[ieau+1]); i++) {
-          tai_inter[ieau]  += ct->coefeau[i] * temp[ct->voiseau[i]];
-          xai_inter[ieau]  += ct->coefeau[i] * xa[ct->voiseau[i]];
-          rhoai_inter[ieau]+= ct->coefeau[i] * rho[ct->voiseau[i]];
-          vx_inter[ieau]   += ct->coefeau[i] * vitx[ct->voiseau[i]];
-          vy_inter[ieau]   += ct->coefeau[i] * vity[ct->voiseau[i]];
-          vz_inter[ieau]   += ct->coefeau[i] * vitz[ct->voiseau[i]];
-        }
-      }
-      BFT_MALLOC(tai  , ct->nnpsct*ct->nelect, cs_real_t);
-      BFT_MALLOC(xai  , ct->nnpsct*ct->nelect, cs_real_t);
-      BFT_MALLOC(rhoai, ct->nnpsct*ct->nelect, cs_real_t);
-      BFT_MALLOC(vx   , ct->nnpsct*ct->nelect, cs_real_t);
-      BFT_MALLOC(vy   , ct->nnpsct*ct->nelect, cs_real_t);
-      BFT_MALLOC(vz   , ct->nnpsct*ct->nelect, cs_real_t);
-
-      ple_locator_exchange_point_var(ct->locat_air_water,
-                                   tai_inter, tai, NULL, sizeof(cs_real_t),1,0);
-      ple_locator_exchange_point_var(ct->locat_air_water,
-                                   xai_inter, xai, NULL, sizeof(cs_real_t),1,0);
-      ple_locator_exchange_point_var(ct->locat_air_water,
-                                   rhoai_inter,rhoai, NULL, sizeof(cs_real_t),1,0);
-      ple_locator_exchange_point_var(ct->locat_air_water,
-                                   vx_inter,vx, NULL, sizeof(cs_real_t),1,0);
-      ple_locator_exchange_point_var(ct->locat_air_water,
-                                   vy_inter,vy, NULL, sizeof(cs_real_t),1,0);
-      ple_locator_exchange_point_var(ct->locat_air_water,
-                                   vz_inter,vz, NULL, sizeof(cs_real_t),1,0);
-      /*--------------------------------------------*
-      *  end interpolation  air->eau              *
-      *--------------------------------------------*/
-
-
-      dhi = -(ct->hmax-ct->hmin)/(ct->nelect-1);
-
-      nb = (int) fvm_nodal_get_n_entities(ct->cell_mesh, 3);
-
-      BFT_MALLOC(lst_par_cel , nb, cs_lnum_t);
-      fvm_nodal_get_parent_num(ct->cell_mesh, 3, lst_par_cel);
-
-      for (iseg = 0; iseg < ct->nnpsct; iseg++) {
-
-        for (iloc = 1; iloc < ct->nelect; iloc++) {
-
-          ieau = iseg*ct->nelect + iloc;
-
-          vvai = sqrt(pow((vx[ieau]*gravite[0]),2.)
-                   +pow((vy[ieau]*gravite[1]),2.)
-                   +pow((vz[ieau]*gravite[2]),2.));
-          /* fin interpolation air->eau */
-
-          dvga = CS_ABS(ct->vgoutte[ieau]+vvai);
-
-          rre  = dvga*rhoai[ieau]*dgout/visc;
-          cd1 = (1.+0.15*pow(rre,0.687));
-          ain = (18.*visc*cd1)/(rhoe*pow(dgout,2.));
-          bin = -ain*dvga + 9.81;
-          if (bin>0.) {
-            ff1 = 2.*bin*dhi;
-          }
-          else {
-            ff1 = 0.;
-          }
-          ct->vgoutte[ieau] = sqrt((pow(ct->vgoutte[ieau-1],2.)-ff1));
-        }
-      }
-      BFT_FREE(lst_par_cel);
-      BFT_FREE(tai);
-      BFT_FREE(xai);
-      BFT_FREE(rhoai);
-      BFT_FREE(vx);
-      BFT_FREE(vy);
-      BFT_FREE(vz);
-      BFT_FREE(tai_inter);
-      BFT_FREE(xai_inter);
-      BFT_FREE(rhoai_inter);
-      BFT_FREE(vx_inter);
-      BFT_FREE(vy_inter);
-      BFT_FREE(vz_inter);
-    }
-
-  }  /* fin boucle ict sur les ct */
-  /* Fin du calcul de la vitesse des gouttes pour les zones de pluie */
-
-  /*--------------------------------------------*/
-  /* Calcul des termes sources pour T et x      */
-  /* pour chaque ct                             */
-  /*--------------------------------------------*/
-  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
-    ct = cs_glob_ct_tab[cs_chain_ct[ict]];
-
-    if ((ct->ntypct >= 2) && (ct->idimct==2))
-     gravite[2] = 1.0;
-
-    cpa    = ct_prop->cpa;
-    cpv    = ct_prop->cpv;
-    cpe    = ct_prop->cpe;
-    hv0    = ct_prop->hv0;
-    rhoe   = ct_prop->rhoe;
-    visc   = ct_prop->visc;
-    conduc = ct_prop->cond ;
-
-    dgout  = ct->dgout;
-
-    nb = (int) fvm_nodal_get_n_entities(ct->cell_mesh, 3);
-
-    /*--------------------------------------------*
-    * synchronisation Halo                        *
-    *--------------------------------------------*/
-
-    if (ct->water_halo != NULL) {
-      cs_halo_t *halo = ct->water_halo;
-      cs_halo_sync_var(halo, ct->halo_type, ct->teau);
-      cs_halo_sync_var(halo, ct->halo_type, ct->fem);
-      cs_halo_sync_var(halo, ct->halo_type, ct->vgoutte);
-    }
-
-
-    BFT_MALLOC(lst_par_cel , nb, cs_lnum_t);
-    fvm_nodal_get_parent_num(ct->cell_mesh, 3, lst_par_cel);
-    /*--------------------------------------------*
-     * interpolation  eau->air                    *
-     *--------------------------------------------*/
-    nb_dist_air = (int) ple_locator_get_n_dist_points(ct->locat_water_air);
-
-    BFT_MALLOC(tei_inter   , nb_dist_air, cs_real_t);
-    BFT_MALLOC(femei_inter , nb_dist_air, cs_real_t);
-    BFT_MALLOC(vgin_inter  , nb_dist_air, cs_real_t);
-
-    for (iair= 0; iair < nb_dist_air; iair++) {
-       tei_inter  [ iair ] = 0.;
-       femei_inter[ iair ] = 0.;
-       vgin_inter [ iair ] = 0.;
-
-      for (i = (ct->pvoisair[iair]); i < (ct->pvoisair[iair+1]); i++) {
-        tei_inter[iair]    += ct->coefair[ i ]* ct->teau   [ ct->voisair[i] ];
-        femei_inter[iair]  += ct->coefair[ i ]* ct->fem    [ ct->voisair[i] ];
-        vgin_inter[iair]   += ct->coefair[ i ]* ct->vgoutte[ ct->voisair[i] ];
-      }
-    }
-    BFT_MALLOC(tei   , ct->nbevct, cs_real_t);
-    BFT_MALLOC(femei , ct->nbevct, cs_real_t);
-    BFT_MALLOC(vgin  , ct->nbevct, cs_real_t);
-
-    ple_locator_exchange_point_var(ct->locat_water_air,
-                                   tei_inter,     tei, NULL, sizeof(cs_real_t),1,0);
-    ple_locator_exchange_point_var(ct->locat_water_air,
-                                   femei_inter, femei, NULL, sizeof(cs_real_t),1,0);
-    ple_locator_exchange_point_var(ct->locat_water_air,
-                                   vgin_inter,   vgin, NULL, sizeof(cs_real_t),1,0);
-
-
-
-    /*--------------------------------------------*
-     *  end interpolation  air->eau               *
-     *--------------------------------------------*/
-
-    /*--------------------------------------------*
-     * Modele de Poppe                            *
-     *--------------------------------------------*/
-    if (ct->imctch==1)  {
-      /*--------------------------------------------*
-       * courant-croise ou contre-courant           *
-       *--------------------------------------------*/
-      if (ct->ntypct<=2) {
-        for (iloc = 0; iloc < ct->nbevct; iloc++) {
-          iair = lst_par_cel[iloc]-1;
-          /* fin interpolation eau->air */
-
-          if (femei[iloc]>1.e-6) {
-            vvai = sqrt(pow((vitx[iair]*gravite[0]),2.)
-                       +pow((vity[iair]*gravite[1]),2.)
-                       +pow((vitz[iair]*gravite[2]),2.));
-            vhai = sqrt(pow((vitx[iair]*(1.-gravite[0])),2.)
-                       +pow((vity[iair]*(1.-gravite[1])),2.)
-                       +pow((vitz[iair]*(1.-gravite[2])),2.));
-            if (ct->ntypct==1) {
-              fax = rho[iair]*vvai;
-            }
-            else {
-              fax = rho[iair]*vhai;
-            }
-            bxa = ct->xap*femei[iloc]*pow((fax/femei[iloc]),ct->xnp);
-            xsata = cs_ctwr_xsath(temp[iair]);
-            xsate = cs_ctwr_xsath(tei[iloc]);
-            eta = (0.622+xsate)/(0.622+xa[iair]);
-            xlew = pow(0.866,(2./3.))*(eta-1.)/log(eta);
-            if (xa[iair]<=xsata) {
-              tex = ((cpa+xsate*cpv)+(xlew-1.)*(cpa+xa[iair]*cpv))*tei[iloc];
-              tim = ((cpa+xsate*cpv)+(xlew-1.)*(cpa+xa[iair]*cpv));
-              xex = xsate;
-              xim = 1.;
-            }
-            else {
-              tex=xlew*(cpa+cpv*xsata+(xa[iair]-xsata)*cpe)*tei[iloc]
-                  +(xsate-xsata)*cpv*tei[iloc]+(xsate-xsata)*hv0;
-              tim = xlew*(cpa+cpv*xsata+(xa[iair]-xsata)*cpe)+ (xsate-xsata)*cpe;
-              xex = xsate - xsata;
-              xim = 0.;
-            }
-            /* termes sources pour T */
-            if (iscal==1) {
-              utsex[iair] = bxa*tex;
-              utsim[iair] = bxa*tim;
-            }
-            /* termes sources pour x */
-            if (iscal==2) {
-              utsex[iair] = bxa*xex;
-              utsim[iair] = bxa*xim;
-            }
-          }
-        }
-      }
-      /* Fin courant-croise ou contre-courant  */
-
-      /*--------------------------------------------*/
-      /* zone de pluie                              */
-      /*--------------------------------------------*/
-      else if (ct->ntypct==3) {
-
-        for (iloc = 0; iloc < ct->nbevct; iloc++) {
-          iair = lst_par_cel[iloc]-1;
-
-          if (CS_ABS(vgin[iloc])>=0.1) {
-            vvai = sqrt(pow((vitx[iair]*gravite[0]),2.)
-                       +pow((vity[iair]*gravite[1]),2.)
-                       +pow((vitz[iair]*gravite[2]),2.));
-            vhai = sqrt(pow((vitx[iair]*(1.-gravite[0])),2.)
-                       +pow((vity[iair]*(1.-gravite[1])),2.)
-                       +pow((vitz[iair]*(1.-gravite[2])),2.));
-            dvg = sqrt(pow((vvai+vgin[iloc]),2.)+pow(vhai,2.));
-
-            bxa = ct->xap*femei[iloc]*pow((fax/femei[iloc]),ct->xnp);
-            xsata = cs_ctwr_xsath(temp[iair]);
-            xsate = cs_ctwr_xsath(tei[iloc]);
-            if (xa[iair]<=xsata) {
-              cpx = cpa+xa[iair]*cpv;
-            }
-            else {
-            cpx = cpa+xsata*cpv+(xa[iair]-xsata)*cpe;
-            }
-            rre = dvg*rho[iair]*(1.+xsata)*dgout/visc;
-            rpr = cpx*visc/conduc;
-            anu = 2.+0.6*sqrt(rre)*pow(rpr,(1./3.));
-            bxa = (6.*conduc*anu*femei[iloc])/(0.92*rhoe*vgin[iloc]*pow(dgout,2.)*cpx);
-            eta = (0.622 + xsate)/(0.622 + xa[iair]);
-            xlew = pow(0.866,(2./3.))*(eta-1.)/log(eta);
-            if (xa[iair]<=xsata) {
-              tex = ((cpa+xsate*cpv)+(xlew-1.)*(cpa+xa[iair]*cpv))*tei[iloc];
-              tim = ((cpa+xsate*cpv)+(xlew-1.)*(cpa+xa[iair]*cpv));
-              xex = xsate;
-              xim = 1.;
-            }
-            else {
-              tex = xlew*(cpa+cpv*xsata+(xa[iair]-xsata)*cpe)*tei[iloc]
-                    +(xsate-xsata)*cpv*tei[iloc]+(xsate-xsata)*hv0;
-              tim = xlew*(cpa+cpv*xsata+(xa[iair]-xsata)*cpe)+ (xsate-xsata)*cpe;
-              xex = xsate - xsata;
-              xim = 0.;
-            }
-            /* termes sources pour T */
-            if (iscal==1) {
-              utsex[iair] = bxa*tex;
-              utsim[iair] = bxa*tim;
-            }
-            /* termes sources pour x */
-            if (iscal==2) {
-              utsex[iair] = bxa*xex;
-              utsim[iair] = bxa*xim;
-            }
-          }
-        }
-      }
-      /* Fin de la zone de pluie  */
-    }
-    /*--------------------------------------------*/
-    /* Fin du modele de Poppe                     */
-    /*--------------------------------------------*/
-
-    /*--------------------------------------------*/
-    /* Modele de Merkel                           */
-    /*--------------------------------------------*/
-    if (ct->imctch==2)  {
-      if (ct->ntypct<=2) {
-        for (iloc = 0; iloc < ct->nbevct; iloc++) {
-          iair = lst_par_cel[iloc]-1;
-          if (femei[iloc]>1.e-6) {
-            vvai = sqrt(pow((vitx[iair]*gravite[0]),2.)
-                       +pow((vity[iair]*gravite[1]),2.)
-                       +pow((vitz[iair]*gravite[2]),2.));
-            vhai = sqrt(pow((vitx[iair]*(1.-gravite[0])),2.)
-                       +pow((vity[iair]*(1.-gravite[1])),2.)
-                       +pow((vitz[iair]*(1.-gravite[2])),2.));
-
-            if (ct->ntypct==1) {
-              fax=rho[iair]*vvai;
-            }
-            else {
-              fax=rho[iair]*vhai;
-            }
-
-            xsata = cs_ctwr_xsath(temp[iair]);
-            xsate = cs_ctwr_xsath(tei[iloc]);
-            bxa = ct->xap*femei[iloc]*pow((fax/femei[iloc]),ct->xnp);
-            fx0 = (xsate-xsata)*(cpv*tei[iloc]+hv0);
-            if (iscal==1) {
-              utsex[iair] = bxa*tei[iloc]*(cpa+cpv*xsata)+bxa*fx0;
-              utsim[iair] = bxa*(cpa+cpv*xsata);
-            }
-            if (iscal==2) {
-              utsex[iair] = 1.e20*xsata;
-              utsim[iair] = 1.e20;
-            }
-          }
-        }
-      } /*Fin du ntypct<=2 */
-
-      else if (ct->ntypct==3) { /* zone de pluie */
-
-        for (iloc = 0; iloc < ct->nbevct; iloc++) {
-          iair = lst_par_cel[iloc]-1;
-
-          if (CS_ABS(vgin[iloc])>=0.1) {
-
-            vvai = sqrt(pow((vitx[iair]*gravite[0]),2.)
-                       +pow((vity[iair]*gravite[1]),2.)
-                       +pow((vitz[iair]*gravite[2]),2.));
-            vhai = sqrt(pow((vitx[iair]*(1.-gravite[0])),2.)
-                       +pow((vity[iair]*(1.-gravite[1])),2.)
-                       +pow((vitz[iair]*(1.-gravite[2])),2.));
-
-            dvg = sqrt(pow((vvai+vgin[iloc]),2.)+pow(vhai,2.));
-            xsata = cs_ctwr_xsath(temp[iair]);
-            xsate = cs_ctwr_xsath(tei[iloc]);
-            cpx = cpa+xsata*cpv;
-            rre = dvg*rho[iair]*(1.+xsata)*dgout/visc;
-            rpr = cpx*visc/conduc;
-            anu = 2.+0.6*sqrt(rre)*pow(rpr,(1./3.));
-            bxa = (6.*conduc*anu*femei[iloc])/(0.92*rhoe*vgin[iloc]*pow(dgout,2.)*cpx);
-            fx0 = (xsate-xsata)*(cpv*tei[iloc]+hv0);
-            if (iscal==1) {
-              utsex[iair] = bxa*tei[iloc]*(cpa+cpv*xsata)+bxa*fx0;
-              utsim[iair] = bxa*(cpa+cpv*xsata);
-            }
-            if (iscal==2) {
-              utsex[iair] = 1.e20*xsata;
-              utsim[iair] = 1.e20;
-            }
-          }
-        }
-      }/* Fin de la zone de pluie ntypct=3 */
-    }
-    /*--------------------------------------------*/
-    /* Fin pour le modele de Merkel */
-    /*--------------------------------------------*/
-    BFT_FREE(lst_par_cel);
-    BFT_FREE(tei_inter);
-    BFT_FREE(femei_inter);
-    BFT_FREE(vgin_inter);
-    BFT_FREE(tei);
-    BFT_FREE(femei);
-    BFT_FREE(vgin);
-  }
-  /*--------------------------------------------*/
-  /* Fin  calcul des termes sources pour T et x*/
-  /* pour chaque ct                             */
-  /*--------------------------------------------*/
-}
-
-
-/*----------------------------------------------------------------------------
-* Function cs_ctwr_aetsvi
-* Calcul des PdC induites dans les zones de pluie
-*----------------------------------------------------------------------------*/
-
-void cs_ctwr_aetsvi
-(
-  const int         idim,
-  const cs_real_t   rho[],       /* masse volumique air */
-  const cs_real_t   vitx[],      /* vitesse air suivant x */
-  const cs_real_t   vity[],      /* vitesse air suivant y */
-  const cs_real_t   vitz[],      /* vitesse air suivant z */
-  const cs_real_t   xair[],      /* humidite de l'air */
-  cs_real_t         utsex[]      /* terme source explicite */
-)
-{
-  cs_lnum_t  ict, iloc, iair, i, *lst_par_cel, nb,nb_dist_air;
-  cs_real_t dgout, visc, rhoe;
-  cs_real_t absgrv, vginu,vginv,vginw,dvg,qer,rre,cdd1,cff0;
-
-  cs_real_t  *femei_inter, *vgin_inter;
-  cs_real_t  *femei, *vgin;
-  cs_ctwr_zone_t  *ct;
-  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
-
-  absgrv = sqrt(pow(ct_prop->gravx,2.)+pow(ct_prop->gravy,2.)+pow(ct_prop->gravz,2.));
-
-  /*--------------------------------------------*/
-  /* Calcul de Kg pour chaque ct                */
-  /*--------------------------------------------*/
-  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
-    ct = cs_glob_ct_tab[cs_chain_ct[ict]];
-    rhoe   = ct_prop->rhoe;
-    dgout  = ct->dgout;
-    visc   = ct_prop->visc;
-
-     /*--------------------------------------------*
-    * synchronisation Halo                        *
-    *--------------------------------------------*/
-
-    if (ct->water_halo != NULL) {
-      cs_halo_t *halo = ct->water_halo;
-      cs_halo_sync_var(halo, ct->halo_type, ct->teau);
-      cs_halo_sync_var(halo, ct->halo_type, ct->fem);
-      cs_halo_sync_var(halo, ct->halo_type, ct->vgoutte);
-    }
-
-    nb = (int) fvm_nodal_get_n_entities(ct->cell_mesh, 3);
-
-    BFT_MALLOC(lst_par_cel , (nb*3), cs_lnum_t);
-    fvm_nodal_get_parent_num(ct->cell_mesh, 3, lst_par_cel);
-    /*--------------------------------------------*
-     * interpolation  eau->air                    *
-     *--------------------------------------------*/
-    nb_dist_air = (int) ple_locator_get_n_dist_points(ct->locat_water_air);
-
-    BFT_MALLOC(femei_inter  , nb_dist_air, cs_real_t);
-    BFT_MALLOC(vgin_inter  , nb_dist_air, cs_real_t);
-
-    for (iair= 0; iair < nb_dist_air; iair++) {
-
-       femei_inter[iair] = 0.;
-       vgin_inter[iair]  = 0.;
-
-      for (i = (ct->pvoisair[iair]); i < (ct->pvoisair[iair+1]); i++) {
-
-        femei_inter[ iair ]  += ct->coefair[ i ]* ct->fem    [ ct->voisair[i] ];
-        vgin_inter [ iair ]  += ct->coefair[ i ]* ct->vgoutte[ ct->voisair[i] ];
-      }
-    }
-
-    BFT_MALLOC(femei , ct->nbevct, cs_real_t);
-    BFT_MALLOC(vgin , ct->nbevct, cs_real_t);
-
-    ple_locator_exchange_point_var(ct->locat_water_air,
-                                   femei_inter, femei, NULL, sizeof(cs_real_t),1,0);
-    ple_locator_exchange_point_var(ct->locat_water_air,
-                                   vgin_inter, vgin, NULL, sizeof(cs_real_t),1,0);
-
-    /*--------------------------------------------*/
-    /* zone de pluie                              */
-    /*--------------------------------------------*/
-    if (ct->ntypct==3)  {
-      for (iloc = 0; iloc < ct->nbevct; iloc++) {
-        iair = lst_par_cel[iloc]-1;
-
-        vginu  = -ct_prop->gravx/ absgrv * vgin[iloc];
-        vginv  = -ct_prop->gravy/ absgrv * vgin[iloc];
-        vginw  = -ct_prop->gravz/ absgrv * vgin[iloc];
-        dvg = sqrt(pow((vitx[iair]+vginu),2.)
-              + pow((vity[iair]+vginv),2.)
-              + pow((vitz[iair]+vginw),2.));
-        if (vgin[iloc] > 0.1) {
-          qer = femei[iloc]/rhoe;
-          rre = dvg*rho[iair]*(1 + xair[iair])*dgout/visc;
-          cdd1 = (1.+0.15*pow(rre,0.687));
-          cff0 = 18.*cdd1*visc*qer/(vgin[iloc]*pow(dgout,2.));
-          if (idim==1) {utsex[iair] = -cff0 *(vitx[iair]+vginu);}
-          if (idim==2) {utsex[iair] = -cff0 *(vity[iair]+vginv);}
-          if (idim==3) {utsex[iair] = -cff0 *(vitz[iair]+vginw);}
-        }
-      }
-    }
-    /* Fin  zones de pluie */
-    BFT_FREE(lst_par_cel);
-    BFT_FREE(femei_inter);
-    BFT_FREE(vgin_inter);
-    BFT_FREE(femei);
-    BFT_FREE(vgin);
-  }
-  /* Fin de calcul de Kg pour chaque ct */
-}
-
-/*----------------------------------------------------------------------------
-* Bilan dans les ct
-*----------------------------------------------------------------------------*/
-
-void cs_ctwr_bilanct
-(
-  const cs_real_t   time,                /*   */
-  cs_real_t   fem_entree[],       /* debit eau entree */
-  cs_real_t   fem_sortie[],       /* debit eau sortie */
-  cs_real_t   teau_entree[],      /* temperature eau entree */
-  cs_real_t   teau_sortie[],      /* temperature eau sortie */
-  cs_real_t   heau_entree[],      /* enthalpie eau entree */
-  cs_real_t   heau_sortie[],      /* enthalpie eau sortie */
-  cs_real_t   tair_entree[],      /* temperature air entree */
-  cs_real_t   tair_sortie[],      /* temperature air sortie */
-  cs_real_t   xair_entree[],      /*   */
-  cs_real_t   xair_sortie[],      /*   */
-  cs_real_t   hair_entree[],      /*   */
-  cs_real_t   hair_sortie[],      /*   */
-  cs_real_t   debit_entree[],     /*   */
-  cs_real_t   debit_sortie[],     /*   */
-
-  const cs_real_t   temp[],             /* Temperature air */
-  const cs_real_t   xa[],               /* humidite air */
-  const cs_real_t   flux_masse_fac[],   /* vitesse verticale air */
-  const cs_real_t   flux_masse_fbr[],   /* vitesse horizontale air */
-  const cs_real_t   vitx[],             /* vitesse air suivant x */
-  const cs_real_t   vity[],             /* vitesse air suivant y */
-  const cs_real_t   vitz[],             /* vitesse air suivant z */
-
-  const cs_mesh_t             *mesh,      /* <-- structure maillage associee  */
-  const cs_mesh_quantities_t  *mesh_quantities   /* <-- grandeurs du maillage */
-)
-{
-  const cs_real_t  *i_face_normal = mesh_quantities->i_face_normal;
-  const cs_real_t  *b_face_normal = mesh_quantities->b_face_normal;
-  cs_lnum_t         icel_1, icel_2, ict, idim, i, j, ieau_Sup, ieau_inf, length;
-  cs_lnum_t         icel = -1, ifac = -1;
-  cs_real_t        cpv, cpa, hv0;
-  const cs_real_t  *coo_cen  = mesh_quantities->cell_cen;
-  cs_real_t        debit,hair,n_sortant[3],vitair[3],aux,
-                   surf,surf_e,surf_s;
-
-  cs_lnum_t  *face_sup;      /* liste des faces  superieures de la ct */
-  cs_lnum_t  *face_inf;      /* liste des faces  inferior de la ct */
-  cs_lnum_t  *face_lat;      /* liste des faces  inferior de la ct */
-
-  cs_ctwr_zone_t  *ct;
+  const cs_lnum_2_t *i_face_cells =
+    (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
+  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;      /* humid air (bulk) density */
+  cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;       /* humid air temperature */
+  cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;       /* humid air enthalpy */
+  cs_real_t *y_a = (cs_real_t *)CS_F_(ym_a)->val;       /* dry air mass fraction in humid air */
+  cs_real_t *x = (cs_real_t *)CS_F_(humid)->val; /* humidity in humid air (bulk) */
+
+  cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;     /* liquid temperature */
+  cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;     /* liquid enthalpy */
+  cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;       /* liquid mass per unit cell volume */
+
+  cs_real_t *liq_mass_flow = cs_field_by_name("inner_mass_flux_ym_liquid")->val;
+  cs_real_t *mass_flow = cs_field_by_name("inner_mass_flux")->val;
+
+  int length;
   FILE *f;
   char  *file_name = NULL;
-  cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
+  cs_real_t cp_l = cs_glob_ctwr_props->cp_l;
 
-  for (ict=0; ict < cs_glob_ct_nbr; ict++) {
+  /* Loop over Cooling tower zones */
+  for (int ict=0; ict < cs_glob_ct_nbr; ict++) {
 
-    cs_lnum_t nbr_fbr_air[3][2];
+    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
 
-    ct = cs_glob_ct_tab[cs_chain_ct[ict]];
-    cpa    = ct_prop->cpa;
-    cpv    = ct_prop->cpv;
-    hv0    = ct_prop->hv0;
+    ct->q_l_in = 0.0;
+    ct->q_l_out = 0.0;
+    ct->t_l_in = 0.0;
+    ct->h_l_out = 0.0;
+    ct->h_l_in = 0.0;
+    ct->t_l_out = 0.0;
+    ct->t_h_in = 0.0;
+    ct->t_h_out = 0.0;
+    ct->xair_e = 0.0;
+    ct->xair_s = 0.0;
+    ct->h_h_in = 0.0;
+    ct->h_h_out = 0.0;
+    ct->q_h_in = 0.0;
+    ct->q_h_out = 0.0;
 
-    nbr_fbr_air[0][0] = ct->nnpsct;
-    nbr_fbr_air[0][1] = ct->nbfbr_sct;
-    nbr_fbr_air[1][0] = ct->nbfbr_ict + ct->nbfac_ict;
-    nbr_fbr_air[1][1] = ct->nbfbr_ict;
-    nbr_fbr_air[2][0] = ct->nbfbr_lct + ct->nbfac_lct;
-    nbr_fbr_air[2][1] = ct->nbfbr_lct;
+    /* Compute liquid water quantities
+     * And humid air quantities at liquid inlet */
+    for (cs_lnum_t i = 0; i < ct->n_inlet_faces; i++) {
 
-    BFT_MALLOC(face_sup ,(ct->nbfac_sct + ct->nbfbr_sct) ,cs_lnum_t);
-    fvm_nodal_get_parent_num(ct->face_sup_mesh, 2, face_sup);
-    BFT_MALLOC(face_inf ,(ct->nbfac_ict + ct->nbfbr_ict) ,cs_lnum_t);
-    fvm_nodal_get_parent_num(ct->face_inf_mesh, 2, face_inf);
-    BFT_MALLOC(face_lat ,(ct->nbfbr_lct + ct->nbfac_lct) ,cs_lnum_t);
-    fvm_nodal_get_parent_num(ct->face_lat_mesh, 2, face_lat);
+      cs_lnum_t face_id = ct->inlet_faces_list[i];
+      cs_lnum_t cell_id_l, cell_id_h;
 
-    ct->fem_e   = 0.0;
-    ct->fem_s   = 0.0;
-    ct->teau_e  = 0.0;
-    ct->heau_s  = 0.0;
-    ct->heau_e  = 0.0;
-    ct->teau_s  = 0.0;
-    ct->tair_e  = 0.0;
-    ct->tair_s  = 0.0;
-    ct->xair_e  = 0.0;
-    ct->xair_s  = 0.0;
-    ct->hair_e  = 0.0;
-    ct->hair_s  = 0.0;
-    ct->debit_e = 0.0;
-    ct->debit_s = 0.0;
-
-    /* calcul des valeurs eau */
-
-    for (i = 0; i < ct->nnpsct; i++) {
-       ieau_Sup = i*ct->nelect;
-       ieau_inf = (i+1)*ct->nelect - 1;
-
-       surf = ct->surf_fac_sup[i];
-
-       ct->teau_e += ct->teau[ieau_Sup]*ct->fem[ieau_Sup]*surf;
-       ct->fem_e  += ct->fem[ieau_Sup]*surf;
-       ct->heau_e += ct->teau[ieau_Sup]*ct->fem[ieau_Sup]*surf;
-
-       ct->teau_s += ct->teau[ieau_inf]*ct->fem[ieau_inf]*surf;
-       ct->fem_s  += ct->fem[ieau_inf]*surf;
-       ct->heau_s += ct->teau[ieau_inf]*ct->fem[ieau_inf]*surf;
-
-    }
-
-#if defined(HAVE_MPI)
-    if (cs_glob_n_ranks > 1) {
-
-      MPI_Allreduce (&ct->teau_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
-      ct->teau_e = aux;
-
-      MPI_Allreduce (&ct->fem_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
-      ct->fem_e = aux;
-
-      MPI_Allreduce (&ct->heau_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
-      ct->heau_e = aux;
-
-      MPI_Allreduce (&ct->teau_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
-      ct->teau_s = aux;
-
-      MPI_Allreduce (&ct->fem_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
-      ct->fem_s = aux;
-
-      MPI_Allreduce (&ct->heau_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                      cs_glob_mpi_comm);
-      ct->heau_s = aux;
-
-    }
-#endif
-
-    ct->teau_e /= ct->fem_e;
-    ct->fem_e  /= ct->surface_in;
-    ct->heau_e *= ct_prop->cpe;
-
-    ct->teau_s /= ct->fem_s;
-    ct->fem_s  /= ct->surface_out ;
-    ct->heau_s *= ct_prop->cpe;
-
-    /* calcul des valeurs air */
-
-    surf_e = 0.;
-    surf_s = 0.;
-
-    for (j = 0; j < 3; j++)
-    for (i = 0; i < nbr_fbr_air[j][0]; i++) {
-      if (i< nbr_fbr_air[j][1]) {
-        if (j==0) ifac = (cs_lnum_t) face_sup[i]-1;
-        if (j==1) ifac = (cs_lnum_t) face_inf[i]-1;
-        if (j==2) ifac = (cs_lnum_t) face_lat[i]-1;
-        icel = mesh->b_face_cells[ifac];
-        for (idim = 0; idim<3; idim++)
-          n_sortant[idim] =  mesh_quantities->b_face_normal[ifac*3+idim];
-        debit = CS_ABS(flux_masse_fbr[ifac]);
-        surf  = cs_math_3_norm((b_face_normal + 3*ifac));
+      /* Convention: inlet is negativ mass flux
+       * Then upwind cell for liquid is i_face_cells[][1] */
+      int sign = 1;
+      if (liq_mass_flow[face_id] > 0) {
+        sign = -1;
+        cell_id_l = i_face_cells[face_id][0];
+        cell_id_h = i_face_cells[face_id][1];
       } else {
-        if (j==0) ifac = (cs_lnum_t) face_sup[i] - mesh->n_b_faces - 1;
-        if (j==1) ifac = (cs_lnum_t) face_inf[i] - mesh->n_b_faces - 1;
-        if (j==2) ifac = (cs_lnum_t) face_lat[i] - mesh->n_b_faces - 1;
-        icel_1 = mesh->i_face_cells[ifac][0];
-        icel_2 = mesh->i_face_cells[ifac][1];
-        if (ct->mark_ze[icel_1] == 1) {
-
-          icel = icel_2;
-          for (idim = 0; idim < 3; idim++) {
-            n_sortant[idim] =  coo_cen[icel_2*3 + idim] - coo_cen[icel_1*3 + idim];
-          }
-        }
-        if (ct->mark_ze[icel_2] == 1) {
-
-          icel = icel_1;
-          for (idim = 0; idim < 3; idim++) {
-            n_sortant[idim] =  coo_cen[icel_1*3 + idim] - coo_cen[icel_2*3 + idim];
-          }
-        }
-        debit = CS_ABS(flux_masse_fac[ifac]);
-        surf  = cs_math_3_norm((i_face_normal + 3*ifac));
+        cell_id_l = i_face_cells[face_id][1];
+        cell_id_h = i_face_cells[face_id][0];
       }
-      hair = (cpa+xa[icel]*cpv)*temp[icel]+xa[icel]*hv0;
-      vitair[0] = vitx[icel];
-      vitair[1] = vity[icel];
-      vitair[2] = vitz[icel];
-      if (cs_math_3_dot_product(n_sortant, vitair)>0.) {
-        surf_s += surf;
-        ct->hair_s  += hair*debit;
-        ct->xair_s  += debit*xa[icel];
-        ct->tair_s  += debit*temp[icel];
-        ct->debit_s += debit;
+
+      /* (y_l. h_l) is transported with (rho u_l)
+       * so h_l is transported with (y_l rho u_l) */
+      ct->t_l_in += sign * t_l[cell_id_l]
+                         * y_l[cell_id_l] * liq_mass_flow[face_id];
+      ct->h_l_in += sign * h_l[cell_id_l] * liq_mass_flow[face_id];
+      ct->q_l_in += sign * y_l[cell_id_l] * liq_mass_flow[face_id];
+
+      ct->t_h_out += sign * t_h[cell_id_h] * mass_flow[face_id];
+      ct->h_h_out += sign * h_h[cell_id_h] * mass_flow[face_id];
+      ct->q_h_out += sign * mass_flow[face_id];
+
+      //ct->xair_s  += debit*xa[icel];
+    }
+
+    cs_parall_sum(1, CS_DOUBLE, &(ct->t_l_in));
+    cs_parall_sum(1, CS_DOUBLE, &(ct->h_l_in));
+    cs_parall_sum(1, CS_DOUBLE, &(ct->q_l_in));
+
+    cs_parall_sum(1, CS_DOUBLE, &(ct->t_h_out));
+    cs_parall_sum(1, CS_DOUBLE, &(ct->h_h_out));
+    cs_parall_sum(1, CS_DOUBLE, &(ct->q_h_out));
+
+    ct->t_l_in /= ct->q_l_in;
+    ct->h_l_in /= ct->q_l_in;
+    ct->q_l_in /= ct->surface_in;
+
+    if (CS_ABS(ct->q_h_out) > 1e-10) {
+      ct->t_h_out /= ct->q_h_out;
+      ct->h_h_out /= ct->q_h_out;
+    }
+    ct->q_h_out /= ct->surface_in;
+
+    /* Compute liquid water quantities
+     * And humid air quantities at liquid outlet */
+    for (cs_lnum_t i = 0; i < ct->n_outlet_faces; i++) {
+
+      cs_lnum_t face_id = ct->outlet_faces_list[i];
+      cs_lnum_t cell_id_l, cell_id_h;
+
+      /* Convention: outlet is positiv mass flux
+       * Then upwind cell for liquid is i_face_cells[][0] */
+      int sign = 1;
+      if (liq_mass_flow[face_id] < 0) {
+        sign = -1;
+        cell_id_l = i_face_cells[face_id][1];
+        cell_id_h = i_face_cells[face_id][0];
+      } else {
+        cell_id_l = i_face_cells[face_id][0];
+        cell_id_h = i_face_cells[face_id][1];
       }
-      else {
-        surf_e += surf;
-        ct->hair_e  += hair*debit;
-        ct->xair_e  += debit*xa[icel];
-        ct->tair_e  += debit*temp[icel];
-        ct->debit_e += debit;
-      }
+
+      /* h_l is in fact (y_l. h_l),
+       * and the transport field is (y_l*liq_mass_flow) */
+      ct->t_l_out += sign * t_l[cell_id_l]
+                          * y_l[cell_id_l] * liq_mass_flow[face_id];
+      ct->q_l_out += sign * y_l[cell_id_l] * liq_mass_flow[face_id];
+      ct->h_l_out += sign * h_l[cell_id_l] * liq_mass_flow[face_id];
+
+      ct->t_h_in  += sign * t_h[cell_id_h] * mass_flow[face_id];
+      ct->h_h_in  += sign * h_h[cell_id_h] * mass_flow[face_id];
+      ct->q_h_in  += sign * mass_flow[face_id];
     }
 
-#if defined(HAVE_MPI)
-    if (cs_glob_n_ranks > 1) {
+    cs_parall_sum(1, CS_DOUBLE, &(ct->t_l_out));
+    cs_parall_sum(1, CS_DOUBLE, &(ct->q_l_out));
+    cs_parall_sum(1, CS_DOUBLE, &(ct->h_l_out));
 
-      MPI_Allreduce (&ct->tair_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                     cs_glob_mpi_comm);
-      ct->tair_e = aux;
+    cs_parall_sum(1, CS_DOUBLE, &(ct->t_h_in));
+    cs_parall_sum(1, CS_DOUBLE, &(ct->h_h_in));
+    cs_parall_sum(1, CS_DOUBLE, &(ct->q_h_in));
 
-      MPI_Allreduce (&ct->xair_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                     cs_glob_mpi_comm);
-      ct->xair_e = aux;
+    ct->t_l_out /= ct->q_l_out;
+    ct->h_l_out /= ct->q_l_out;
+    ct->q_l_out /= ct->surface_out;
 
-      MPI_Allreduce (&ct->debit_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                     cs_glob_mpi_comm);
-      ct->debit_e = aux;
-
-      MPI_Allreduce (&ct->hair_e, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                     cs_glob_mpi_comm);
-      ct->hair_e = aux;
-
-      MPI_Allreduce (&ct->tair_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                     cs_glob_mpi_comm);
-      ct->tair_s = aux;
-
-      MPI_Allreduce (&ct->xair_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                     cs_glob_mpi_comm);
-      ct->xair_s = aux;
-
-      MPI_Allreduce (&ct->debit_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                     cs_glob_mpi_comm);
-      ct->debit_s = aux;
-
-      MPI_Allreduce (&ct->hair_s, &aux, 1, CS_MPI_REAL, MPI_SUM,
-                     cs_glob_mpi_comm);
-      ct->hair_s = aux;
-
+    if (CS_ABS(ct->q_h_in) > 1e-10) {
+      ct->t_h_in /= ct->q_h_in;
+      ct->h_h_in /= ct->q_h_in;
     }
-#endif
+    ct->q_h_in /= ct->surface_out;
 
-    if (CS_ABS(ct->debit_e) > 1e-10) {
-      ct->tair_e /= ct->debit_e;
-      ct->xair_e /= ct->debit_e;
-    }
-
-    if (CS_ABS(ct->debit_s) > 1e-10) {
-      ct->tair_s /= ct->debit_s;
-      ct->xair_s /= ct->debit_s;
-    }
-
-    fem_entree[ict]   = ct->fem_e;
-    fem_sortie[ict]   = ct->fem_s;
-    teau_entree[ict]  = ct->teau_e;
-    teau_sortie[ict]  = ct->teau_s;
-    heau_entree[ict]  = ct->heau_e;
-    heau_sortie[ict]  = ct->heau_s;
-    tair_entree[ict]  = ct->tair_e;
-    tair_sortie[ict]  = ct->tair_s;
-    xair_entree[ict]  = ct->xair_e;
-    xair_sortie[ict]  = ct->xair_s;
-    hair_entree[ict]  = ct->hair_e;
-    hair_sortie[ict]  = ct->hair_s;
-
-    ct->debit_e *= (ct->surface/ct->surface_in);
-    ct->debit_s *= (ct->surface/ct->surface_out);
-
-    debit_entree[ict] = ct->debit_e;
-    debit_sortie[ict] = ct->debit_s;
-
+    /* Writings */
     if (cs_glob_rank_id <= 0) {
-      length = strlen("bltctc.") + 3;
+      length = strlen("cooling_towers_balance.") + 3;
       BFT_MALLOC(file_name, length, char);
-      sprintf(file_name, "bltctc.%02d", ct->num);
+      sprintf(file_name, "cooling_towers_balance.%02d", ct->num);
 
-      if (CS_ABS(ct->heau_e-ct->heau_s)> 1.e-6) {
+      if (CS_ABS(ct->h_l_in - ct->h_l_out)> 1.e-6) {
         f = fopen(file_name, "a");
 
-        aux = CS_ABS((ct->hair_s - ct->hair_e)/(ct->heau_e - ct->heau_s));
-        fprintf(f, "%10f\t%10f\t%10f\t%10f\t%12.5e\t%10f\t%10f\n",
-                time,
+        cs_real_t aux = CS_ABS((ct->h_h_out - ct->h_h_in)/(ct->h_l_in - ct->h_l_out));
+        fprintf(f, "%10f\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\n",
+                cs_glob_time_step->t_cur,
                 aux,
-                ct->tair_s,
-                ct->teau_s,
-                ct->xair_s,
-                ct->debit_e,
-                ct->debit_s);
+                ct->t_l_in,
+                ct->t_l_out,
+                ct->t_h_in,
+                ct->t_h_out,
+                ct->q_l_in,
+                ct->q_l_out,
+                ct->q_h_in,
+                ct->q_h_out);
 
         fclose(f);
       }
     }
 
     BFT_FREE(file_name);
-    BFT_FREE(face_sup);
-    BFT_FREE(face_inf);
-    BFT_FREE(face_lat);
-  } /* fin de la boucle sur les zones d'echanges */
+  }
 
 }
 
-/*----------------------------------------------------------------------------
- * Initialict post-processing
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialise the field variables
  *
- * parameters:
- *   ct_id         -->  Id of exchange area
- *   writer_id           -->  Id of associated writer
- *----------------------------------------------------------------------------*/
+ * \param[in]     rho0        Reference density of humid air
+ * \param[in]     t0          Reference temperature of humid air
+ * \param[in]     p0          Reference pressure
+ * \param[in]     molmassrat  Dry air to water vapour molecular mass ratio
+ */
+/*----------------------------------------------------------------------------*/
 
-void
-cs_ctwr_post_init(int  ct_id,
-                  int  writer_id)
+void cs_ctwr_init_field_vars(const cs_real_t rho0,
+                             const cs_real_t t0,
+                             const cs_real_t p0,
+                             const cs_real_t molmassrat)
 {
-  int  mesh_id = cs_post_get_free_mesh_id();
-  int  writer_ids[] = {writer_id};
+  cs_real_t cp_h;
 
-  cs_ctwr_zone_t * ct = cs_ctwr_by_id(ct_id);
+  // Initialise the fields - based on map
+  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;      /* humid air (bulk) density */
+  cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;       /* humid air temperature */
+  cs_real_t *t_h_a = (cs_real_t *)CS_F_(t)->val_pre;  /* humid air temperature */
+  cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;       /* humid air enthalpy */
+  cs_real_t *y_a = (cs_real_t *)CS_F_(ym_a)->val;       /* dry air mass fraction in humid air */
+  cs_real_t *x_s = cs_field_by_name("x_s")->val;
+  cs_real_t *x = (cs_real_t *)CS_F_(humid)->val; /* humidity in humid air (bulk) */
 
-  assert(ct != NULL);
+  cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;     /* liquid temperature */
+  cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;     /* liquid enthalpy */
+  cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;       /* liquid mass per unit cell volume */
 
-  /* Exit silently if associated writer is not available */
+  cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  if (cs_post_writer_exists(writer_id) != true)
-    return;
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
-  /* Initialict post processing flag, and free previous arrays in
-     case this function is called more than once */
+    // Update humidity field
+    // in case users have updated the initial dry air mass fraction
+    // Note: this is a bit dubious as users could also have chosen to reset the humidity?
+    if (y_a[cell_id] > 0.0 && y_a[cell_id] <= 1.0) {
+      x[cell_id] = (1.0-y_a[cell_id])/y_a[cell_id];
+    } else {
+      //Put stop signal here - !!FIXME
+    }
 
-  ct->post_mesh_id = mesh_id;
+    /* Bulk humid air temperature */
+    t_h[cell_id] = t0 - cs_physical_constants_celsius_to_kelvin;
+    t_h_a[cell_id] = t_h[cell_id];
 
-  /* Associate external mesh description with post processing subsystem */
+    // Update the humid air density
+    rho_h[cell_id] = cs_ctwr_rho_humidair(x[cell_id],
+                                          rho0,
+                                          p0,
+                                          t0,
+                                          molmassrat,
+                                          t_h[cell_id]);
 
-  cs_post_define_existing_mesh(mesh_id,
-                               ct->water_mesh,
-                               0,
-                               false,
-                               false,
-                               1,
-                               writer_ids);
+    // Update the humid air enthalpy
+    x_s[cell_id] = cs_ctwr_xsath(t_h[cell_id],p0);
+    cp_h = cs_ctwr_cp_humidair(x[cell_id], x_s[cell_id]);
 
-  /* Register post processing function */
+    h_h[cell_id] = cs_ctwr_h_humidair(cp_h,
+                                      x[cell_id],
+                                      x_s[cell_id],
+                                      t_h[cell_id]);
 
-  cs_post_add_time_dep_output(_cs_ctwr_post_function, (void *)ct);
+  }
 
-  /* Update start and end (negative) numbers associated with
-     dedicated post processing meshes */
+  /* Loop over exchange zones */
+  for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
 
-  if (cs_glob_ct_post_mesh_ext[0] == 0)
-    cs_glob_ct_post_mesh_ext[0] = mesh_id;
+    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
 
-  cs_glob_ct_post_mesh_ext[1] = mesh_id;
+    for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
+      cs_lnum_t cell_id = ct->ze_cell_list[i];
+
+      /* Initialize with the injection water temperature */
+      t_l[cell_id] = ct->t_l_bc;
+
+      /* Update the injected liquid enthalpy */
+      h_l[cell_id] = cs_ctwr_h_liqwater(t_l[cell_id]);
+
+      /* Initialise the liquid transported variables:
+         liquid mass and enthalpy corrected by the density ratio */
+      y_l[cell_id] = ct->y_l_bc;
+
+      /* The transported value is (y_l.h_l) and not (h_l) */
+      h_l[cell_id] *= y_l[cell_id];
+
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialise the flow variables relevant to the cooling tower scalars
+ * inside the packing zones
+ *
+ * \param[in,out] liq_mass_flow Liquid mass flow rate
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
+{
+  /* humid air (bulk) density */
+  const cs_real_t  *rho_h = (cs_real_t *)CS_F_(rho)->val;
+  cs_real_t *y_l = cs_field_by_name("ym_liquid")->val;
+  cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;    /*liquid enthalpy */
+  cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;    /*liquid temperature */
+
+  /* liquid vertical velocity component */
+  cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val;
+
+  const cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
+
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->i_face_normal;
+
+  const cs_lnum_2_t *i_face_cells =
+    (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
+
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
+
+  const cs_halo_t *halo = cs_glob_mesh->halo;
+
+  cs_real_t gravity[3], norm_g;
+  cs_lnum_t *packing_cell;
+
+  cs_lnum_t cell_id;
+
+  /* Normalised gravity vector */
+
+  gravity[0] = ct_prop->gravx;
+  gravity[1] = ct_prop->gravy;
+  gravity[2] = ct_prop->gravz;
+
+  norm_g = cs_math_3_norm(gravity);
+
+  gravity[0] /= norm_g;
+  gravity[1] /= norm_g;
+  gravity[2] /= norm_g;
+
+  /* Tag and initialise the ct values in the packing zone cells */
+
+  BFT_MALLOC(packing_cell, n_cells_with_ghosts, cs_lnum_t);
+
+  for (cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
+    packing_cell[cell_id] = -1;
+
+  /* Loop over Cooling tower zones */
+  for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
+    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+
+    BFT_MALLOC(ct->inlet_faces_list, n_i_faces, cs_lnum_t);
+    BFT_MALLOC(ct->outlet_faces_list, n_i_faces, cs_lnum_t);
+    for (int i = 0; i < ct->n_cells; i++) {
+      cell_id = ct->ze_cell_list[i];
+      packing_cell[cell_id] = ict;
+      /* Initialise the liquid vertical velocity component */
+      vel_l[cell_id] = ct->q_l_bc / (rho_h[cell_id] * ct->y_l_bc * ct->surface);
+    }
+  }
+
+  /* Parallel synchronization */
+  if (halo != NULL) {
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, vel_l);
+    cs_halo_sync_untyped(halo, CS_HALO_STANDARD, sizeof(int), packing_cell);
+  }
+
+  /* Initialise the liquid mass flux at packing zone faces
+   * and the ghost cells for the liquid mass and enthalpy
+   * Initialise the couples (inlet faces, upwind cells) and
+   * (outlet faces, upwind cells) arrays */
+
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+
+    cs_lnum_t cell_id_1 = i_face_cells[face_id][0];
+    cs_lnum_t cell_id_2 = i_face_cells[face_id][1];
+
+    if (packing_cell[cell_id_1] != -1 || packing_cell[cell_id_2] != -1) {
+
+      int ct_id = CS_MAX(packing_cell[cell_id_1], packing_cell[cell_id_2]);
+      cs_ctwr_zone_t *ct = cs_glob_ct_tab[ct_id];
+
+      // Vertical (align with gravity) component of the surface vector
+      cs_real_t liq_surf = cs_math_3_dot_product(gravity, i_face_normal[face_id]);
+
+      /* Face mass flux of the liquid */
+      cs_real_t y_l_bc = ct->y_l_bc;
+      liq_mass_flow[face_id] = ct->q_l_bc / (ct->surface * ct->y_l_bc) * liq_surf;
+
+      /* Initialise a band of ghost cells on the top side of the
+         packing zone in order to impose boundary values
+         Take the upwinded value for initialisation */
+
+      if (packing_cell[cell_id_1] >= 0 && packing_cell[cell_id_2] == -1) {
+
+        /* cell_id_2 is an inlet halo */
+        if (liq_mass_flow[face_id] < 0.0) {
+
+          ct->inlet_faces_list[ct->n_inlet_faces] = face_id;
+
+          ct->n_inlet_faces ++;
+          ct->surface_in += liq_surf;
+          y_l[cell_id_2] = ct->y_l_bc;
+          t_l[cell_id_2] = ct->t_l_bc;
+          h_l[cell_id_2] = cs_ctwr_h_liqwater(ct->t_l_bc);
+          /* The transported value is (y_l.h_l) and not (h_l) */
+          h_l[cell_id_2] *= y_l[cell_id_2];
+        }
+        /* face_id is an outlet */
+        else {
+          ct->outlet_faces_list[ct->n_outlet_faces] = face_id;
+
+          ct->n_outlet_faces ++;
+          ct->surface_out += liq_surf;
+        }
+      }
+      else if (packing_cell[cell_id_1] == -1 && packing_cell[cell_id_2] >= 0) {
+
+        /* cell_id_1 is an inlet halo */
+        if (liq_mass_flow[face_id] > 0.0) {
+
+          ct->inlet_faces_list[ct->n_inlet_faces] = face_id;
+
+          ct->n_inlet_faces ++;
+          ct->surface_in += liq_surf;
+          y_l[cell_id_1] = ct->y_l_bc;
+          t_l[cell_id_1] = ct->t_l_bc;
+          h_l[cell_id_1] = cs_ctwr_h_liqwater(ct->t_l_bc);
+          /* The transported value is (y_l.h_l) and not (h_l) */
+          h_l[cell_id_1] *= y_l[cell_id_1];
+        }
+        /* cell_id_1 is an outlet */
+        else {
+          ct->outlet_faces_list[ct->n_outlet_faces] = face_id;
+
+          ct->n_outlet_faces ++;
+          ct->surface_out += liq_surf;
+        }
+
+        /* Neighbouring zones, inlet for one, outlet fot the other */
+      } else if (  packing_cell[cell_id_1] >= 0 && packing_cell[cell_id_2] >= 0
+                && packing_cell[cell_id_1] != packing_cell[cell_id_2]) {
+
+        /* cell_id_1 is an inlet for CT2, an outlet for CT1 */
+        if (liq_mass_flow[face_id] > 0.0) {
+          /* CT2 */
+          ct = cs_glob_ct_tab[packing_cell[cell_id_2]];
+
+          ct->inlet_faces_list[ct->n_inlet_faces] = face_id;
+
+          ct->n_inlet_faces ++;
+          ct->surface_in += liq_surf;
+
+          /* CT1 */
+          ct = cs_glob_ct_tab[packing_cell[cell_id_1]];
+
+          ct->outlet_faces_list[ct->n_outlet_faces] = face_id;
+
+          ct->n_outlet_faces ++;
+          ct->surface_out += liq_surf;
+
+        }
+        /* cell_id_2 is an inlet for CT1, an outlet for CT2 */
+        else {
+          /* CT2 */
+          ct = cs_glob_ct_tab[packing_cell[cell_id_2]];
+
+          ct->outlet_faces_list[ct->n_outlet_faces] = face_id;
+
+          ct->n_outlet_faces ++;
+          ct->surface_out += liq_surf;
+
+          /* CT1 */
+          ct = cs_glob_ct_tab[packing_cell[cell_id_1]];
+
+          ct->inlet_faces_list[ct->n_inlet_faces] = face_id;
+
+          ct->n_inlet_faces ++;
+          ct->surface_in += liq_surf;
+        }
+
+      }
+    } else {
+      liq_mass_flow[face_id] = 0.0;
+    }
+  }
+
+  /* Loop over Cooling tower zones */
+  for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
+    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+
+    BFT_REALLOC(ct->inlet_faces_list, ct->n_inlet_faces, cs_lnum_t);
+    BFT_REALLOC(ct->outlet_faces_list, ct->n_outlet_faces, cs_lnum_t);
+
+    cs_parall_sum(1, CS_DOUBLE, &(ct->surface_in));
+    cs_parall_sum(1, CS_DOUBLE, &(ct->surface_out));
+  }
+
+  BFT_FREE(packing_cell);
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the thermo physical properties fields for the humid air and
+ * the liquid
+ *
+ * \param[in]     rho0        Reference density of humid air
+ * \param[in]     t0          Reference temperature of humid air
+ * \param[in]     p0          Reference pressure
+ * \param[in]     molmassrat  Dry air to water vapour molecular mass ratio
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_ctwr_phyvar_update(const cs_real_t rho0,
+                           const cs_real_t t0,
+                           const cs_real_t p0,
+                           const cs_real_t molmassrat)
+{
+  const cs_lnum_2_t *i_face_cells =
+    (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
+  const cs_halo_t *halo = cs_glob_mesh->halo;
+
+  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;      /* humid air (bulk) density */
+  cs_real_t *cp_h = (cs_real_t *)CS_F_(cp)->val;        /* humid air (bulk) Cp */
+
+  // Fields based on maps
+  cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;       /* humid air temperature */
+  cs_real_t *t_h_a = (cs_real_t *)CS_F_(t)->val_pre;  /* humid air temperature */
+  cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;       /* humid air enthalpy */
+  cs_real_t *therm_diff_h = cs_field_by_name_try("thermal_conductivity")->val;
+  cs_real_t *y_a = (cs_real_t *)CS_F_(ym_a)->val;       /* dry air mass fraction in humid air */
+  cs_real_t *x = (cs_real_t *)CS_F_(humid)->val; /* humidity in humid air (bulk) */
+  cs_real_t *x_s = cs_field_by_name("x_s")->val;
+
+  cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;    /*liquid temperature */
+  cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;    /*liquid enthalpy */
+  cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;      /*liquid mass per unit cell volume*/
+
+  cs_real_t *liq_mass_flow = cs_field_by_name("inner_mass_flux_ym_liquid")->val;
+
+  cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  cs_real_t lambda_h = cs_glob_ctwr_props->cond_h;
+  cs_real_t cp_l = cs_glob_ctwr_props->cp_l;
+  cs_real_t lambda_l = cs_glob_ctwr_props->cond_l;
+
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    /* Update humidity field */
+    if (y_a[cell_id] > 0.0 && y_a[cell_id] <= 1.0) {
+      x[cell_id] = (1.0-y_a[cell_id])/y_a[cell_id];
+    } else {
+      //Put stop signal here - !!FIXME
+    }
+
+    // Update the humid air Cp - Not completely right
+    // ultimately, should have a coupled solution on t_h and humidity
+    x_s[cell_id] = cs_ctwr_xsath(t_h[cell_id], p0);
+
+    /* Update the humid air temperature using new enthalpy but old
+     * Specific heat */
+
+    cp_h[cell_id] = cs_ctwr_cp_humidair(x[cell_id], x_s[cell_id]);
+
+    h_h[cell_id] += (t_h[cell_id] - t_h_a[cell_id]) * cp_h[cell_id];
+
+    // Udate the umid air enthalpy diffusivity lambda_h if solve for T_h?
+    // Need to update since lambda is variable as a function of T and humidity
+    therm_diff_h[cell_id] = lambda_h;
+
+    /* Update the humid air density */
+    rho_h[cell_id] = cs_ctwr_rho_humidair(x[cell_id],
+                                          rho0,
+                                          p0,
+                                          t0,
+                                          molmassrat,
+                                          t_h[cell_id]);
+
+  }
+
+  /* Loop over Cooling tower zones */
+  for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
+    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+
+    for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
+      cs_lnum_t cell_id = ct->ze_cell_list[i];
+
+      /* Update the injected liquid temperature
+       * NB: (y_l.h_l) is transported and not (h_l) */
+      if (y_l[cell_id] > 0.) {
+        cs_real_t h_liq = h_l[cell_id]/y_l[cell_id];
+        t_l[cell_id] = cs_ctwr_t_liqwater(h_liq);
+      }
+
+    }
+    /* Update Inlet packing zone temperature if imposed */
+    if (ct->delta_t > 0) {
+      /* Recompute outgoing temperature */
+      ct->t_l_out = 0.0;
+
+      /* Compute liquid water quantities
+       * And humid air quantities at liquid outlet */
+      for (cs_lnum_t i = 0; i < ct->n_outlet_faces; i++) {
+
+        cs_lnum_t face_id = ct->outlet_faces_list[i];
+        cs_lnum_t cell_id_l, cell_id_h;
+
+        /* Convention: outlet is positiv mass flux
+         * Then upwind cell for liquid is i_face_cells[][0] */
+        int sign = 1;
+        if (liq_mass_flow[face_id] < 0) {
+          sign = -1;
+          cell_id_l = i_face_cells[face_id][1];
+          cell_id_h = i_face_cells[face_id][0];
+        } else {
+          cell_id_l = i_face_cells[face_id][0];
+          cell_id_h = i_face_cells[face_id][1];
+        }
+
+        /* h_l is in fact (y_l. h_l),
+         * and the transport field is (y_l*liq_mass_flow) */
+        ct->t_l_out += sign * t_l[cell_id_l]
+          * y_l[cell_id_l] * liq_mass_flow[face_id];
+        ct->q_l_out += sign * y_l[cell_id_l] * liq_mass_flow[face_id];
+      }
+
+      cs_parall_sum(1, CS_DOUBLE, &(ct->t_l_out));
+      cs_parall_sum(1, CS_DOUBLE, &(ct->q_l_out));
+
+      ct->t_l_out /= ct->q_l_out;
+
+      /* Relaxation of ct->t_l_bc */
+      ct->t_l_bc = (1. - ct->relax) * ct->t_l_bc
+                 + ct->relax * (ct->t_l_out + ct->delta_t);
+
+      /* Clippling between 0 and 100 */
+      ct->t_l_bc = CS_MAX(CS_MIN(ct->t_l_bc, 100.), 0.);
+
+    }
+
+  }
+
+
+  /* Parallel synchronization */
+  if (halo != NULL) {
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, x);
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, x_s);
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, cp_h);
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, h_h);
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, rho_h);
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, t_l);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Phase change source terms - Exchange terms between the injected liquid
+ *        and the water vapour phase in the bulk, humid air
+ * \param[in]     f_id          field id
+   \param[in]     p0            Reference pressure
+   \param[in]     molmassrat    dry air to water vapour molecular mass ratio
+   \param[in,out] exp_st        Explicit source term
+   \param[in,out] imp_st        Implicit source term
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_ctwr_source_term(const int       f_id,
+                         const cs_real_t p0,
+                         const cs_real_t molmassrat,
+                         cs_real_t       exp_st[],
+                         cs_real_t       imp_st[])
+{
+  cs_lnum_t  iloc;
+
+  cs_real_t  *rho_h = (cs_real_t *)CS_F_(rho)->val; /* humid air (bulk) density */
+  cs_real_3_t *u_air = (cs_real_3_t *)CS_F_(u)->val;   /* humid air (bulk) */
+
+  cs_real_t *y_a = (cs_real_t *)CS_F_(ym_a)->val;       /* dry air mass fraction in humid air */
+
+  cs_real_t *t_h = cs_field_by_name("temperature")->val; /* humid air temperature */
+  cs_real_t *h_h   = cs_field_by_name("enthalpy")->val;    /* humid air enthalpy */
+  cs_real_t *t_l = cs_field_by_name("temperature_liquid")->val;      /*liquid temperature */
+  cs_real_t *x = cs_field_by_name("humidity")->val; /* humidity in humid air (bulk) */
+  cs_real_t *x_s = cs_field_by_name("x_s")->val;
+  cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val;  /*liquid vertical velocity component */
+  cs_real_t *y_l = cs_field_by_name("ym_liquid")->val;
+
+  cs_real_t vertical[3], horizontal[3], norme_g;
+  cs_real_t vvai, vhai;
+  cs_real_t dvg, cpx, rre, rpr, anu;
+  cs_real_t cp_l, cp_v, cp_a, visc, conduc;
+
+  /* Need to cook up the cell value of the liquid mass flux
+     In the old code, it seems to be taken as the value of the
+     face mass flux upstream of the cell */
+  cs_real_t mass_flux_l;      /* injected liquid mass flux */
+
+  cs_ctwr_fluid_props_t *ct_prop = cs_glob_ctwr_props;
+
+  cs_real_t v_air, xi;
+
+  cs_real_t mass_flux_h = 0.; // Highly suspicious for rain zones - not recomputed
+
+  /* Identify the source term formulation for the required field */
+
+  const cs_field_t *f = cs_field_by_id(f_id);
+  const char       *f_name = f->name;
+
+  cs_real_t *f_var = f->val;  /* field variable */
+
+  /* Compute the source terms */
+
+  vertical[0] = -ct_prop->gravx;
+  vertical[1] = -ct_prop->gravy;
+  vertical[2] = -ct_prop->gravz;
+
+  norme_g = cs_math_3_norm(vertical);
+
+  vertical[0] /= norme_g;
+  vertical[1] /= norme_g;
+  vertical[2] /= norme_g;
+  horizontal[0] = vertical[0] -1.;
+  horizontal[1] = vertical[1] -1.;
+  horizontal[2] = vertical[2] -1.;
+
+  cp_a = ct_prop->cp_a;
+  cp_v = ct_prop->cp_v;
+  cp_l = ct_prop->cp_l;
+  cs_real_t hv0 = ct_prop->hv0;
+  cs_real_t rho_l = ct_prop->rho_l;
+  visc = ct_prop->visc;
+  conduc = ct_prop->cond_h ;
+
+  cs_lnum_t i = 0;
+
+  for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
+
+    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+
+    /* Packing zone characteristics */
+    cs_real_t drop_diam  = ct->droplet_diam;
+    cs_real_t beta_x_0 = ct->xap;
+    cs_real_t xnp = ct->xnp;
+    int ct_type = ct->ct_type;
+    int evap_model = ct->imctch;
+
+    if (evap_model > 0) {
+
+      for (cs_lnum_t j = 0; j < ct->n_cells; j++) {
+
+        cs_lnum_t cell_id = ct->ze_cell_list[j];
+
+        /* For correlations, T_h cannot be greter than T_l */
+        cs_real_t temp_h = CS_MIN(t_h[cell_id], t_l[cell_id]);
+
+        /* saturation humidity at humid air temperature */
+        cs_real_t x_s_th = cs_ctwr_xsath(temp_h, p0);
+
+        /* saturation humidity at injected liquid temperature */
+        cs_real_t x_s_tl = cs_ctwr_xsath(t_l[cell_id], p0);
+
+        cs_real_t beta_x_a, xlew;
+
+        if (evap_model == 1) {
+
+          /*--------------------------------------------*
+           * Poppe Model                                *
+           *--------------------------------------------*/
+
+          if (ct_type == 1 || ct_type == 2) {
+
+            /*--------------------------------------------*
+             * Counter or cross flow packing zone         *
+             *--------------------------------------------*/
+
+            if (ct_type == 1) {
+              /* Counter flow packing */
+              v_air = CS_ABS(cs_math_3_dot_product(u_air[cell_id], vertical));
+            }
+            else {
+              /* Cross flow packing */
+              v_air = CS_ABS(cs_math_3_dot_product(u_air[cell_id], horizontal));
+            }
+
+            /* Dry air flux */
+            mass_flux_h = rho_h[cell_id] * v_air;
+
+            /* Liquid mass flux */
+            mass_flux_l = rho_h[cell_id] * y_l[cell_id] * vel_l[cell_id];
+
+            /* Evaporation coefficient 'Beta_x' times exchange surface 'a' */
+            beta_x_a = beta_x_0*mass_flux_l*pow((mass_flux_h/mass_flux_l), xnp);
+
+            /* Compute evaporation source terms using Bosnjakovic hypothesis
+             * NB: clippings ensuring xi > 1 and xlew > 0 */
+            xi = (molmassrat + x_s_tl)/(molmassrat + CS_MIN(x[cell_id], x_s_tl));
+            if ((xi - 1.) < 1.e-15)
+              xlew = pow(0.866,(2./3.));
+            else
+              xlew = pow(0.866,(2./3.))*(xi-1.)/log(xi);
+
+          }
+
+          else if (ct_type == 3) {//FIXME
+
+            /*--------------------------------------------*/
+            /* Rain zone                                  */
+            /*--------------------------------------------*/
+
+            cs_real_t *vgin;
+            if (CS_ABS(vgin[iloc])>=0.1) { /* vgin looks like the drop velocity */
+              /* Is it the modulus ? */
+              vvai = CS_ABS(cs_math_3_dot_product(u_air[cell_id], vertical));
+              vhai = CS_ABS(cs_math_3_dot_product(u_air[cell_id], horizontal));
+
+              dvg = sqrt(pow((vvai+vgin[iloc]),2.)+pow(vhai,2.)); /* This looks wrong - should be
+                                                                     the difference: relative
+                                                                     velocity p. 32 */
+
+              //Looks wrong too: mass_flux_h = 0. from initialisation at the top
+              //Why is it here anyway since it is recalculated below? - old copy/paste error?
+              beta_x_a = beta_x_0*mass_flux_l*pow((mass_flux_h/mass_flux_l),xnp);
+
+              if (x[cell_id] <= x_s_th) {
+                cpx = cp_a + x[cell_id]*cp_v;
+              }
+              else {
+                cpx = cp_a + x_s_th*cp_v + (x[cell_id] - x_s_th)*cp_l;
+              }
+
+              rre = dvg*rho_h[cell_id]*(1. + x_s_th)*drop_diam/visc; /* Reynolds number p. 32 */
+              rpr = cpx*visc/conduc; /* Prandtl number p. 31 */
+              anu = 2.+0.6*sqrt(rre)*pow(rpr,(1./3.)); /* Nusselt number p. 31 */
+
+              beta_x_a = (6.*conduc*anu*mass_flux_l)/(0.92*rho_l*vgin[iloc]*pow(drop_diam,2.)*cpx);
+
+              /* Compute evaporation source terms using Bosnjakovic hypothesis
+               * NB: clippings ensuring xi > 1 and xlew > 0 */ //FIXME xi not computed
+              xlew = pow(0.866,(2./3.))*(xi-1.)/log(xi);
+              xi = (molmassrat + x_s_tl)/(molmassrat + CS_MIN(x[cell_id], x_s_tl));
+              if ((xi - 1.) < 1.e-15)
+                xlew = pow(0.866,(2./3.));
+              else
+                xlew = pow(0.866,(2./3.))*(xi-1.)/log(xi);
+
+            }
+          }
+        }
+        else if (evap_model == 2) {
+
+          /*--------------------------------------------*
+           * Merkel Model                               *
+           *--------------------------------------------*/
+
+          if (ct_type <= 2) {
+
+            /*--------------------------------------------*
+             * Counter or cross flow packing zone         *
+             *--------------------------------------------*/
+
+            /* Hypothes of Lewis */
+            xlew = 1.;
+
+            /* Liquid mass flux - Fe in reference */
+            mass_flux_l = rho_h[cell_id] * y_l[cell_id] * vel_l[cell_id];
+
+            if (mass_flux_l > 1.e-6) {
+
+              /* Counter flow packing */
+              if (ct_type == 1) {
+                v_air = CS_ABS(cs_math_3_dot_product(u_air[cell_id], vertical));
+              }
+              /* Cross flow packing */
+              else {
+                v_air = CS_ABS(cs_math_3_dot_product(u_air[cell_id], horizontal));
+              }
+
+              /* Dry air flux - Fa in reference */
+              mass_flux_h = rho_h[cell_id] * v_air;
+
+              /* Evaporation coefficient Beta_x times exchange surface 's' */
+              beta_x_a = beta_x_0*mass_flux_l*pow((mass_flux_h/mass_flux_l),xnp);
+
+            }
+          }
+
+          else if (ct_type == 3) {  //FIXME
+
+            /*--------------------------------------------*/
+            /* Rain zone                                  */
+            /*--------------------------------------------*/
+
+            cs_real_t *vgin;
+            if (CS_ABS(vgin[iloc])>=0.1) {
+
+              vvai = CS_ABS(cs_math_3_dot_product(u_air[cell_id], vertical));
+              vhai = CS_ABS(cs_math_3_dot_product(u_air[cell_id], horizontal));
+              dvg = sqrt(pow((vvai+vgin[iloc]),2.)+pow(vhai,2.)); //FIXME "vvai+vgin" should be "vvai-vgin"
+
+              cpx = cp_a + x_s_th*cp_v;
+              rre = dvg*rho_h[cell_id]*(1. + x_s_th)*drop_diam/visc;
+              rpr = cpx*visc/conduc;
+              anu = 2.+0.6*sqrt(rre)*pow(rpr,(1./3.));
+
+              beta_x_a = (6.*conduc*anu*mass_flux_l)/(0.92*rho_l*vgin[iloc]*pow(drop_diam,2.)*cpx);
+
+            }
+          }
+        } /* end evaporation model */
+
+        /* Source terms for the different equations */
+
+        // Humid air mass source term
+        cs_real_t mass_source = 0.0;
+        if (x[cell_id] <= x_s_th) {
+          mass_source = beta_x_a*(x_s_tl - x[cell_id]);
+        } else {
+          mass_source = beta_x_a*(x_s_tl - x_s_th);
+        }
+        mass_source = CS_MAX(mass_source, 0.);
+
+        /* Global continuity (pressure) equation */
+        if (f_id == (CS_F_(p)->id)) {
+          exp_st[i] = mass_source;
+          imp_st[i] = 0.0;
+        }
+
+        /* Dry air mass fraction equation */
+        else if (f_id == (CS_F_(ym_a)->id)) {
+          exp_st[i] = -mass_source*f_var[cell_id];
+          imp_st[i] = CS_MAX(mass_source, 0.);
+        }
+
+        /* Injected liquid mass equation (solve in drift model form) */
+        else if (f_id == (CS_F_(ym_l)->id)) {
+          exp_st[i] = -mass_source * y_l[cell_id];
+          imp_st[i] = CS_MAX(mass_source, 0.);
+        }
+
+        /* Humid air temperature equation */
+        else if (f_id == (CS_F_(t)->id)) {
+          /* Because the writing is in a non-conservtiv form */
+          imp_st[i] = CS_MAX(mass_source, 0.);
+          if (x[cell_id] <= x_s_th) {
+            /* Implicit term */
+            imp_st[i] += beta_x_a * ( xlew * (cp_a + x[cell_id] * cp_v) //FIXME divide by (1+x)
+                                   + (x_s_tl - x[cell_id]) * cp_v);
+            exp_st[i] += imp_st[i] * (t_l[cell_id] - f_var[cell_id]);
+          } else {
+            cs_real_t coeft = xlew * (cp_a + x_s_th * cp_v + (x[cell_id] - x_s_th) * cp_l);//FIXME divide by (1+x)
+            /* Implicit term */
+            imp_st[i] += beta_x_a * ( coeft + (x_s_tl - x_s_th) * cp_l);
+            exp_st[i] += beta_x_a * ( coeft * t_l[cell_id]
+                                    + (x_s_tl - x_s_th) * (cp_v * t_l[cell_id] + hv0)
+                                    )
+                       - imp_st[i] * f_var[cell_id];
+          }
+          imp_st[i] = CS_MAX(imp_st[i], 0.);
+        }
+
+        /* Injected liquid enthalpy equation (solve in drift model form)
+         * NB: it is in fact "y_l x h_l" */
+        else if (f_id == (CS_F_(h_l)->id)) {
+          /* Implicit term */
+          imp_st[i] = CS_MAX(mass_source, 0.);
+          if (x[cell_id] <= x_s_th) {
+            cs_real_t coefh = beta_x_a * ( xlew * (cp_a + x[cell_id] * cp_v) //FIXME divide by (1+x)
+                                        + (x_s_tl - x[cell_id]) * cp_v);
+            exp_st[i] = coefh * (t_h[cell_id] - t_l[cell_id]);
+          } else {
+            cs_real_t coefh = xlew * (cp_a + x_s_th * cp_v + (x[cell_id] - x_s_th) * cp_l);//FIXME divide by (1+x)
+            exp_st[i] += beta_x_a * ( coefh * t_h[cell_id]
+                                    + (x_s_tl - x_s_th) * cp_l * t_h[cell_id]
+                                    - coefh * t_l[cell_id]
+                                    - (x_s_tl - x_s_th) * (cp_v * t_l[cell_id] + hv0)
+                                    );
+          }
+          /* Because we deal with an increment */
+          exp_st[i] -= imp_st[i] * f_var[cell_id];
+
+        }
+
+        i++;
+
+      } /* end loop over cells */
+    } /* end evaporation model */
+  } /* end packing zone */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Phase change mass source term from the evaporating liquid to the bulk,
+ * humid air.
+ * Careful, this is different from an injection source term, which would normally
+ * be handled with 'cs_user_mass_source_term'
+ *
+ * \param[in]   iappel          Calling sequence flag
+ * \param[in]   p0              Reference pressure
+ * \param[in]   molmassrat      Dry air to water vapour molecular mass ratio
+ * \param[in]   n_tot           Pointer to the total number
+ *                              of cells in the packing zones
+ * \param[in]   packing_cell    Packing cell ids
+ * \param[in]   mass_source     Mass source term
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_ctwr_bulk_mass_source_term(const int       iappel,
+                                   const cs_real_t p0,
+                                   const cs_real_t molmassrat,
+                                   int             *n_tot,
+                                   cs_lnum_t       packing_cell[],
+                                   cs_real_t       mass_source[])
+{
+  if (iappel == 1) {
+    // Count the total number of cells in which the source term will be applied
+    // This is the total number of cells in the packing regions
+
+    if (*n_tot != 0) {
+      //Error message - This would indicate that 'cs_user_mass_source_term' is also
+      //in use, which would be inconsistent with activating the cooling towers model
+
+    }
+    for (cs_lnum_t ict = 0; ict < cs_glob_ct_nbr; ict++) {
+      cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+      *n_tot = *n_tot + (ct->n_cells);
+    }
+
+  } else if (iappel == 2) {
+
+    // Fill in the array of cells in which the source term will be applied
+    // These are the cells located in the packing regions
+
+    cs_lnum_t i = 0;
+
+    for (cs_lnum_t ict = 0; ict < cs_glob_ct_nbr; ict++) {
+
+      cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+
+      for (cs_lnum_t j = 0; j < ct->n_cells; j++) {
+        cs_lnum_t cell_id = ct->ze_cell_list[j];
+        /* Careful, cell number and not cell id because used in Fortran */
+        packing_cell[i] = cell_id + 1;
+        i++;
+      }
+
+    }
+
+  } else if (iappel == 3) {
+
+    // Compute the mass exchange term
+    cs_real_t *exp_st;
+    cs_real_t *imp_st;
+
+    BFT_MALLOC(exp_st, *n_tot, cs_real_t);
+    BFT_MALLOC(imp_st, *n_tot, cs_real_t);
+
+    for (cs_lnum_t i = 0; i < *n_tot; i++) {
+      exp_st[i] = 0.0;
+      imp_st[i] = 0.0;
+    }
+
+
+    cs_ctwr_source_term(CS_F_(p)->id, /* Bulk mass source term is
+                                         stored for pressure */
+                        p0,
+                        molmassrat,
+			                  exp_st,
+                        imp_st);
+
+    for (cs_lnum_t i = 0; i < *n_tot; i++) {
+      mass_source[i] = mass_source[i] + exp_st[i];
+    }
+
+    BFT_FREE(exp_st);
+    BFT_FREE(imp_st);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Convert the injected liquid scalars from and to their transported form.
+ *
+ * \param[in]   iflag     1: Convert transported variables to physical variables
+ *                        2: Convert physical variables to
+ *                           transported variables
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_ctwr_transport_vars(const int iflag)
+{
+  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;  /* humid air (bulk) density */
+
+  // Fields based on maps
+  cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val; /* liquid enthalpy */
+  cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;   /* liquid mass per unit cell volume*/
+
+  cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  if (iflag == 1) {
+
+    //Convert the transported variables to physical variables
+    for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
+
+      cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+
+      for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
+        cs_lnum_t cell_id = ct->ze_cell_list[i];
+
+        if (y_l[cell_id] > 0.)
+          h_l[cell_id] = h_l[cell_id]/y_l[cell_id];
+      }
+    }
+
+  } else {
+
+    // Convert the physical variables to transported variables
+    for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
+
+      cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+
+      for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
+        cs_lnum_t cell_id = ct->ze_cell_list[i];
+
+        h_l[cell_id] = h_l[cell_id]*y_l[cell_id];
+      }
+    }
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -2592,8 +1525,7 @@ cs_ctwr_by_id(int ct_id)
 {
   cs_ctwr_zone_t  *retval = NULL;
 
-  if (   ct_id > -1
-      && ct_id <  cs_glob_ct_nbr)
+  if (ct_id > -1 && ct_id <  cs_glob_ct_nbr)
     retval = cs_glob_ct_tab[ct_id];
 
   return retval;

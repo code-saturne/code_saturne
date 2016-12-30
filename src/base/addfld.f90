@@ -281,6 +281,11 @@ endif
 
 call cs_field_pointer_map_boundary
 
+! Cooling towers mappings
+if (ippmod(iaeros).ge.0) then
+  call cs_ctwr_field_pointer_map
+endif
+
 call field_get_id_try('boundary_temperature', itempb)
 
 if (itempb .ge. 0) then

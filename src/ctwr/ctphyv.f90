@@ -79,10 +79,6 @@ subroutine ctphyv
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -95,11 +91,14 @@ use optcal
 use cstnum
 use cstphy
 use entsor
+use ctincl
 use ppppar
 use ppthch
 use ppincl
 use mesh
 use field
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
@@ -108,200 +107,70 @@ implicit none
 
 ! Local variables
 
-integer          iel
-integer          ivart
+integer          iel, ifcvsl
 
-double precision rho   , r     , cpa   , cpe , cpv , del
-double precision hv0 , hvti , rhoj , tti , xxi,  xsati , dxsati
-double precision rho0 , t00 , p00 , t1
+double precision t_h, humidity, humid_sat, cp_h
+
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: cpro_cp
-double precision, dimension(:), pointer :: cvar_temp4, cvar_humid
+double precision, dimension(:), pointer :: cvar_temp4, cvar_yma, cvar_press
+double precision, dimension(:), pointer :: cpro_humid, cpro_cp_h
+double precision, dimension(:), pointer :: cpro_viscls_h, cpro_viscls_l
 
 integer          ipass
 data             ipass /0/
 save             ipass
 
-!===============================================================================
+integer iflid
+character(len=80) :: fname
+
 !===============================================================================
 ! 0 - INITIALISATIONS A CONSERVER
 !===============================================================================
 
 ! --- Initialisation memoire
 
-
 ipass = ipass + 1
 
-!===============================================================================
-! 1 - MASSE VOLUMIQUE
-!===============================================================================
-
-!   Positions des variables, coefficients
-!   -------------------------------------
-
-! --- Numero de variable thermique
-!       (et de ses conditions limites)
-
-ivart = isca(itemp4)
-
-call field_get_val_s(icrom, crom)
-
-call field_get_val_s(ivarfl(isca(itemp4)), cvar_temp4)
-call field_get_val_s(ivarfl(isca(ihumid)), cvar_humid)
-
-! --- Coefficients des lois choisis et imposes par l'utilisateur
-!       Les valeurs donnees ici sont fictives
-
-rho0 = 1.293d0
-t00  = 273.15d0
-p00  = 101325.d0
-del  = 0.622d0
-t1   = 273.15d0
-r    = cs_physical_constants_r
-
-
-!   Masse volumique au centre des cellules
-!   ---------------------------------------
-
-do iel = 1, ncel
-
-  tti = cvar_temp4(iel)
-  xxi = cvar_humid(iel)
-
-  call xsath(tti,xsati)
-  !==========
-
-  if (xxi .le. xsati) then
-
-    rho = rho0*t00/(tti+t1)*del/(del+xxi)
-
-  else
-
-    if (tti.le.0.d0) then
-      rhoj = 917.0d0
-    else
-      rhoj = 998.36d0 - 0.4116d0*(tti-20.d0)                    &
-           - 2.24d0*(tti-20.d0)*(tti-70.d0)/625.d0
-    endif
-
-    rho = 1.0d0/((tti+t1)*p00/(t00*p00*rho0*del)                &
-         *(del+xsati)+(xxi-xsati)/rhoj)
-
-  endif
-
-  if (rho .lt. 0.1d0) rho = 0.1d0
-  crom(iel) = rho
-
-enddo
-
-!===============================================================================
-! 2 - CHALEUR SPECIFIQUE
-!===============================================================================
-
-!   Positions des variables, coefficients
-!   -------------------------------------
-
-! --- Numero de variable thermique
-
-ivart = isca(itemp4)
-
-! --- Stop si CP n'est pas variable
-
-if(icp.lt.0) then
+! --- Stop if Cp of humid air is not set to variable
+if (icp.lt.0) then
   write(nfecra,1000) icp
   call csexit (1)
 endif
 
-call field_get_val_s(icp, cpro_cp)
-
-! --- Coefficients des lois choisis et imposes par l'utilisateur
-!       Les valeurs donnees ici sont fictives
-
-cpa    = 1006.0d0
-cpv    = 1831.0d0
-cpe    = 4179.0d0
-hv0    = 2501600.0d0
-
-
-!   Chaleur specifique J/(kg degres) au centre des cellules
-!   --------------------------------------------------------
-
-if (ippmod(iaeros).eq.1) then
-
-  do iel = 1, ncel
-
-    tti = cvar_temp4(iel)
-    xxi = cvar_humid(iel)
-
-    call xsath(tti,xsati)
-    !==========
-
-    if (xxi .le. xsati) then
-      cpro_cp(iel) = cpa + xxi*cpv
-    else
-      hvti = (cpv-cpe)*tti + hv0
-      call dxsath(tti,dxsati)
-      !==========
-      cpro_cp(iel) = cpa + xsati*cpv + (xxi-xsati)*cpe + dxsati*hvti
-    endif
-
-  enddo
-
-elseif (ippmod(iaeros).eq.2) then
-
-  do iel = 1, ncel
-
-    tti = cvar_temp4(iel)
-
-    call xsath(tti,xsati)
-    !==========
-
-    hvti = cpv*tti + hv0
-
-    call dxsath(tti,dxsati)
-    !==========
-
-    cpro_cp(iel) = cpa + xsati*cpv + dxsati*hvti
-
-  enddo
-
-endif
-
-
 !===============================================================================
-! 3 - ON PASSE LA MAIN A L'UTILISATEUR
+! 1 - Update properties at cell centres
 !===============================================================================
 
-
+call cs_ctwr_phyvar_update(ro0,t0,p0,molmass_rat)
 
 ! La masse volumique au bord est traitee dans phyvar (recopie de la valeur
 !     de la cellule de bord).
 
 !--------
-! FORMATS
+! Formats
 !--------
 
  1000 format(                                                     &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
-'@                                                            ',/,&
-'@      la chaleur specifique est uniforme '                  ,/,&
-'@        ICP = ',I10   ,' alors que                          ',/,&
-'@      usphyv impose une chaleur specifique variable.        ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Modifier les parametres ou usphyv.                       ',/,&
-'@                                                            ',/,&
+'@    ========='                                               ,/,&
+'@    DONNEES DE CALCUL INCOHERENTES'                          ,/,&
+'@'                                                            ,/,&
+'@      la chaleur specifique est uniforme'                    ,/,&
+'@        ICP = ',I10   ,' alors que'                          ,/,&
+'@      ctphyv impose une chaleur specifique variable.'        ,/,&
+'@'                                                            ,/,&
+'@    Le calcul ne sera pas execute.'                          ,/,&
+'@'                                                            ,/,&
+'@    Modifier les parametres ou usphyv.'                      ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
 
 !----
-! FIN
+! End
 !----
 
 return
