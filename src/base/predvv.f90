@@ -1634,9 +1634,9 @@ endif
 if (ippmod(ielarc).ge.1) then
   call field_get_val_v_by_name('laplace_force', lapla)
   do iel = 1, ncel
-      smbr(1,iel) = smbr(1,iel) + cell_f_vol(iel) * lapla(1,iel)
-      smbr(2,iel) = smbr(2,iel) + cell_f_vol(iel) * lapla(2,iel)
-      smbr(3,iel) = smbr(3,iel) + cell_f_vol(iel) * lapla(3,iel)
+    smbr(1,iel) = smbr(1,iel) + cell_f_vol(iel) * lapla(1,iel)
+    smbr(2,iel) = smbr(2,iel) + cell_f_vol(iel) * lapla(2,iel)
+    smbr(3,iel) = smbr(3,iel) + cell_f_vol(iel) * lapla(3,iel)
   enddo
 endif
 
