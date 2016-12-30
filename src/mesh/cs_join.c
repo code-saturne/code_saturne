@@ -1105,7 +1105,7 @@ _prepare_update_after_split(cs_join_t          *this_join,
  *
  * parameters:
  *  this_join            <-- pointer to a cs_join_t structure
- *  join_type            <-- join type as detected so far
+ *  join_type            <-> join type as detected so far
  *  work_join_edges      <-- pointer to a cs_join_edges_t structure
  *  work_face_normal     <-- normal based on the original face definition
  *  rank_face_gnum_index <-- index on face global numering to determine the
@@ -1118,7 +1118,7 @@ _prepare_update_after_split(cs_join_t          *this_join,
 
 static void
 _split_faces(cs_join_t           *this_join,
-             cs_join_type_t       join_type,
+             cs_join_type_t      *join_type,
              cs_join_edges_t     *work_join_edges,
              cs_coord_t          *work_face_normal,
              cs_join_mesh_t     **p_work_jmesh,
@@ -1175,7 +1175,7 @@ _split_faces(cs_join_t           *this_join,
 
   /* Check join type if required */
 
-  if (cs_glob_mesh->verbosity > 0 && join_type == CS_JOIN_TYPE_NULL) {
+  if (cs_glob_mesh->verbosity > 0 && *join_type == CS_JOIN_TYPE_NULL) {
 
     int _join_type = CS_JOIN_TYPE_NULL;
     for (cs_lnum_t i = 0; i < history->n_elts; i++) {
@@ -1190,7 +1190,7 @@ _split_faces(cs_join_t           *this_join,
     }
     cs_parall_max(1, CS_INT_TYPE, &_join_type);
 
-    join_type = _join_type;
+    *join_type = _join_type;
 
     if (join_type == CS_JOIN_TYPE_NULL)
       bft_printf(_("\n  Joining operation is null.\n"));
@@ -1847,7 +1847,7 @@ cs_join_all(bool  preprocess)
       */
 
       _split_faces(this_join,
-                   join_type,
+                   &join_type,
                    work_join_edges,
                    work_face_normal,
                    &work_jmesh,
