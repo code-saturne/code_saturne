@@ -199,6 +199,10 @@ allocate(izftcd(ncel)) ! should be in init_pcond only
 ! Head-loss
 ! ---------
 
+! Initialize
+ncepdc = 0
+ncetsm = 0
+
 if (iihmpr.eq.1) then
   call uikpdc &
 ( iappel ,          &
@@ -247,10 +251,6 @@ endif
 ! Mass source terms
 ! -----------------
 
-! Initialize
-ncepdc = 0
-ncetsm = 0
-
 call cs_user_mass_source_terms &
 ( nvar   , nscal  , ncepdc ,                                     &
   ncetsm , iappel ,                                              &
@@ -263,7 +263,7 @@ if (ippmod(iaeros).gt.0) then
    ! Cooling tower model
    ! Evaporation mass exchange term
 
-   call cs_ctwr_bulk_mass_source_term&
+   call cs_ctwr_bulk_mass_source_term  &
         (iappel, p0, molmass_rat,      &
         ncetsm, ivoid, rvoid)
 
