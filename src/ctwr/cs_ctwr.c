@@ -282,9 +282,8 @@ void
 cs_ctwr_build_all(const cs_mesh_t              *mesh,
                   const cs_mesh_quantities_t   *mesh_quantities)
 {
-
-  /* Create an array for cells flaging */
-  /*-----------------------------------*/
+  /* Create an array for cells flagging */
+  /*------------------------------------*/
 
   cs_ctwr_zone_t  *ct;
 
@@ -298,7 +297,6 @@ cs_ctwr_build_all(const cs_mesh_t              *mesh,
 
     BFT_REALLOC(ct->ze_cell_list, ct->n_cells, cs_lnum_t);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -404,17 +402,22 @@ cs_ctwr_log_setup(void)
 void
 cs_ctwr_log_balance(void)
 {
-  const cs_lnum_2_t *i_face_cells =
-    (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
-  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;      /* humid air (bulk) density */
-  cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;       /* humid air temperature */
-  cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;       /* humid air enthalpy */
-  cs_real_t *y_a = (cs_real_t *)CS_F_(ym_a)->val;       /* dry air mass fraction in humid air */
-  cs_real_t *x = (cs_real_t *)CS_F_(humid)->val; /* humidity in humid air (bulk) */
+  if (cs_glob_ct_nbr < 1)
+    return;
 
-  cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;     /* liquid temperature */
-  cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;     /* liquid enthalpy */
-  cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;       /* liquid mass per unit cell volume */
+  const cs_lnum_2_t *i_face_cells
+    = (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
+  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;  /* humid air bulk density */
+  cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;      /* humid air temperature */
+  cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;      /* humid air enthalpy */
+  cs_real_t *y_a = (cs_real_t *)CS_F_(ym_a)->val;   /* dry air mass fraction
+                                                       in humid air */
+  cs_real_t *x = (cs_real_t *)CS_F_(humid)->val;    /* humid air bulk humidity */
+
+  cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;    /* liquid temperature */
+  cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;    /* liquid enthalpy */
+  cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;   /* liquid mass per unit
+                                                       cell volume */
 
   cs_real_t *liq_mass_flow = cs_field_by_name("inner_mass_flux_ym_liquid")->val;
   cs_real_t *mass_flow = cs_field_by_name("inner_mass_flux")->val;
@@ -477,13 +480,13 @@ cs_ctwr_log_balance(void)
       //ct->xair_s  += debit*xa[icel];
     }
 
-    cs_parall_sum(1, CS_DOUBLE, &(ct->t_l_in));
-    cs_parall_sum(1, CS_DOUBLE, &(ct->h_l_in));
-    cs_parall_sum(1, CS_DOUBLE, &(ct->q_l_in));
+    double stmp[6] = {ct->t_l_in, ct->h_l_in, ct->q_l_in,
+                      ct->t_h_out, ct->h_h_out, ct->q_h_out};
 
-    cs_parall_sum(1, CS_DOUBLE, &(ct->t_h_out));
-    cs_parall_sum(1, CS_DOUBLE, &(ct->h_h_out));
-    cs_parall_sum(1, CS_DOUBLE, &(ct->q_h_out));
+    cs_parall_sum(6, CS_DOUBLE, stmp);
+
+    ct->t_l_in = stmp[0]; ct->h_l_in = stmp[1]; ct->q_l_in = stmp[2];
+    ct->t_h_out = stmp[3]; ct->h_h_out = stmp[4]; ct->q_h_out = stmp[5];
 
     ct->t_l_in /= ct->q_l_in;
     ct->h_l_in /= ct->q_l_in;
@@ -552,9 +555,11 @@ cs_ctwr_log_balance(void)
 
       if (CS_ABS(ct->h_l_in - ct->h_l_out)> 1.e-6) {
         f = fopen(file_name, "a");
-
-        cs_real_t aux = CS_ABS((ct->h_h_out - ct->h_h_in)/(ct->h_l_in - ct->h_l_out));
-        fprintf(f, "%10f\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\n",
+        cs_real_t aux = CS_ABS(  (ct->h_h_out - ct->h_h_in)
+                               / (ct->h_l_in - ct->h_l_out));
+        fprintf(f,
+                "%10f\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t"
+                "%12.5e\t%12.5e\t%12.5e\t%12.5e\n",
                 cs_glob_time_step->t_cur,
                 aux,
                 ct->t_l_in,
@@ -565,14 +570,12 @@ cs_ctwr_log_balance(void)
                 ct->q_l_out,
                 ct->q_h_in,
                 ct->q_h_out);
-
         fclose(f);
       }
     }
 
     BFT_FREE(file_name);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1051,7 +1054,7 @@ void cs_ctwr_source_term(const int       f_id,
                          cs_real_t       exp_st[],
                          cs_real_t       imp_st[])
 {
-  cs_lnum_t  iloc;
+  cs_lnum_t  iloc = 0;
 
   cs_real_t  *rho_h = (cs_real_t *)CS_F_(rho)->val; /* humid air (bulk) density */
   cs_real_3_t *u_air = (cs_real_3_t *)CS_F_(u)->val;   /* humid air (bulk) */
@@ -1188,8 +1191,8 @@ void cs_ctwr_source_term(const int       f_id,
             /* Rain zone                                  */
             /*--------------------------------------------*/
 
-            cs_real_t *vgin;
-            if (CS_ABS(vgin[iloc])>=0.1) { /* vgin looks like the drop velocity */
+            cs_real_t *vgin = NULL;
+            if (CS_ABS(vgin[iloc]) >= 0.1) { /* vgin looks like the drop velocity */
               /* Is it the modulus ? */
               vvai = CS_ABS(cs_math_3_dot_product(u_air[cell_id], vertical));
               vhai = CS_ABS(cs_math_3_dot_product(u_air[cell_id], horizontal));
@@ -1271,7 +1274,7 @@ void cs_ctwr_source_term(const int       f_id,
             /* Rain zone                                  */
             /*--------------------------------------------*/
 
-            cs_real_t *vgin;
+            cs_real_t *vgin = NULL;
             if (CS_ABS(vgin[iloc])>=0.1) {
 
               vvai = CS_ABS(cs_math_3_dot_product(u_air[cell_id], vertical));
