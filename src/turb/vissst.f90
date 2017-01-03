@@ -177,13 +177,15 @@ do iel = 1, ncel
   rom = crom(iel)
   xmu = viscl(iel)
   xdist = w1(iel)
-  xarg2 = max (                                                   &
-       2.d0*sqrt(xk)/cmu/xw/xdist,                                &
-       500.d0*xmu/rom/xw/xdist**2 )
-  xf2 = tanh(xarg2**2)
-
-  visct(iel) = rom*ckwa1*xk                               &
-       /max( ckwa1*xw , sqrt(cpro_s2kw(iel))*xf2 )
+  if (xk > 0.d0) then
+    xarg2 = max (2.d0*sqrt(xk)/cmu/xw/xdist,                  &
+                 500.d0*xmu/rom/xw/xdist**2)
+    xf2 = tanh(xarg2**2)
+    visct(iel) =   rom*ckwa1*xk                               &
+                 / max(ckwa1*xw, sqrt(cpro_s2kw(iel))*xf2)
+  else
+    visct(iel) = 1.d-30
+  endif
 
 enddo
 
