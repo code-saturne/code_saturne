@@ -91,7 +91,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.__boundary = None
 
         self.__case.undoStopGlobal()
-        self.notebook = NotebookModel(self.case)
+        self.notebook = NotebookModel(self.__case)
 
         self.lineEditValueThermal.textChanged[str].connect(self.slotValueThermal)
         self.lineEditValueSpecies.textChanged[str].connect(self.slotValueSpecies)

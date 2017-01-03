@@ -87,7 +87,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.__boundary = None
 
         self.__case.undoStopGlobal()
-        self.notebook = NotebookModel(self.case)
+        self.notebook = NotebookModel(self.__case)
 
         self.comboBoxTurbulence.activated[str].connect(self.__slotChoiceTurbulence)
 

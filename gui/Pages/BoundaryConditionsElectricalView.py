@@ -90,7 +90,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.__boundary = None
         self.__model = ElectricalModel(self.__case)
         self.species_list = []
-        self.notebook = NotebookModel(self.case)
+        self.notebook = NotebookModel(self.__case)
 
         self.lineEditValuePotElec.textChanged[str].connect(self.slotPotElec)
         self.lineEditValuePotElecIm.textChanged[str].connect(self.slotPotElecIm)

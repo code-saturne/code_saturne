@@ -84,7 +84,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         """
         self.__case = case
         self.__boundary = None
-        self.notebook = NotebookModel(self.case)
+        self.notebook = NotebookModel(self.__case)
 
         self.__case.undoStopGlobal()
 

@@ -85,7 +85,7 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
         """
         self.__case = case
         self.__boundary = None
-        self.notebook = NotebookModel(self.case)
+        self.notebook = NotebookModel(self.__case)
 
         self.__case.undoStopGlobal()
 

@@ -276,7 +276,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         self.__boundary = None
 
         self.__case.undoStopGlobal()
-        self.notebook = NotebookModel(self.case)
+        self.notebook = NotebookModel(self.__case)
 
         # Connections
         self.comboBoxTypeInlet.activated[str].connect(self.__slotInletType)

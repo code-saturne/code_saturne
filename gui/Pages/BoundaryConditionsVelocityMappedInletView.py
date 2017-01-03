@@ -90,7 +90,7 @@ class BoundaryConditionsVelocityMappedInletView(QWidget, Ui_BoundaryConditionsVe
         self.__boundary = None
 
         self.__case.undoStopGlobal()
-        self.notebook = NotebookModel(self.case)
+        self.notebook = NotebookModel(self.__case)
 
         # Connections
         self.comboBoxVelocity.activated[str].connect(self.__slotChoiceVelocity)
