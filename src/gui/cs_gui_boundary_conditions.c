@@ -218,6 +218,43 @@ _wall_roughness(const char  *label,
 }
 
 /*-----------------------------------------------------------------------------
+ * add notebook variable to formula
+ *----------------------------------------------------------------------------*/
+
+static void
+_add_notebook_variables(mei_tree_t *ev_law)
+{
+  char *path = NULL;
+
+  /* number of variable */
+  int nbvar = cs_gui_get_tag_count("/physical_properties/notebook/var\n", 1);
+
+  if (nbvar == 0)
+    return;
+
+  for (int ivar = 0; ivar < nbvar; ivar++) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "physical_properties", "notebook");
+    cs_xpath_add_element_num(&path, "var", ivar +1);
+    cs_xpath_add_attribute(&path, "name");
+    char *name = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "physical_properties", "notebook");
+    cs_xpath_add_element_num(&path, "var", ivar +1);
+    cs_xpath_add_attribute(&path, "value");
+    char *value = cs_gui_get_attribute_value(path);
+    double val = atof(value);
+    BFT_FREE(path);
+
+    mei_tree_insert(ev_law, name, val);
+    BFT_FREE(name);
+    BFT_FREE(value);
+  }
+}
+
+/*-----------------------------------------------------------------------------
  * Get value of data for inlet velocity.
  *
  * parameters:
@@ -408,6 +445,9 @@ _boundary_scalar_init_mei_tree(const char   *formula,
   mei_tree_insert(tree, "t", ttcabs);
   mei_tree_insert(tree, "dt", dtref);
   mei_tree_insert(tree, "iter", ntcabs);
+
+  /* add variable from notebook */
+  _add_notebook_variables(tree);
 
   /* try to build the interpreter */
   if (mei_tree_builder(tree))
@@ -922,6 +962,9 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
   mei_tree_insert(tree, "x",    0.0);
   mei_tree_insert(tree, "y",    0.0);
   mei_tree_insert(tree, "z",    0.0);
+
+  /* add variable from notebook */
+  _add_notebook_variables(tree);
 
   /* try to build the interpreter */
   if (mei_tree_builder(tree))
@@ -1776,6 +1819,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                 mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
                 mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
                 mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+
+                /* add variable from notebook */
+                _add_notebook_variables(ev_formula);
+
                 icodcl[(ivar + i) *n_b_faces + ifbr] = 1;
                 mei_evaluate(ev_formula);
                 if (f->dim > 1)
@@ -1803,6 +1850,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                 mei_tree_insert(ev_formula, "t", ts->t_cur);
                 mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
                 mei_tree_insert(ev_formula, "iter", ts->nt_cur);
+
+                /* add variable from notebook */
+                _add_notebook_variables(ev_formula);
+
                 mei_evaluate(ev_formula);
                 rcodcl[2 * n_b_faces * (*nvarcl) + (ivar + i) * n_b_faces + ifbr]
                   = mei_tree_lookup(ev_formula, "flux");
@@ -1819,6 +1870,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                 mei_tree_insert(ev_formula, "t", ts->t_cur);
                 mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
                 mei_tree_insert(ev_formula, "iter", ts->nt_cur);
+
+                /* add variable from notebook */
+                _add_notebook_variables(ev_formula);
+
                 mei_evaluate(ev_formula);
                 if (f->dim > 1)
                 {
@@ -1943,6 +1998,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
           mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
+
+          /* add variable from notebook */
+          _add_notebook_variables(boundaries->velocity[izone]);
+
           mei_evaluate(boundaries->velocity[izone]);
 
           if (cs_gui_strcmp(choice_v, "flow1_formula"))
@@ -1989,6 +2048,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
           mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
+
+          /* add variable from notebook */
+          _add_notebook_variables(boundaries->velocity[izone]);
+
           mei_evaluate(boundaries->velocity[izone]);
 
           if (cs_gui_strcmp(choice_v, "flow1_formula"))
@@ -2066,6 +2129,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
+          /* add variable from notebook */
+          _add_notebook_variables(boundaries->velocity[izone]);
+
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac];
 
@@ -2133,6 +2199,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
           mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
+
+          /* add variable from notebook */
+          _add_notebook_variables(boundaries->velocity[izone]);
 
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac];
@@ -2206,6 +2275,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         mei_tree_insert(boundaries->direction[izone], "t", ts->t_cur);
         mei_tree_insert(boundaries->direction[izone], "dt", cs_glob_time_step_options->dtref);
         mei_tree_insert(boundaries->direction[izone], "iter", ts->nt_cur);
+
+          /* add variable from notebook */
+          _add_notebook_variables(boundaries->direction[izone]);
 
         if (cs_gui_strcmp(choice_v, "norm")) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
@@ -2351,6 +2423,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
             mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
             mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+
+            /* add variable from notebook */
+            _add_notebook_variables(ev_formula);
+
             mei_evaluate(ev_formula);
             rcodcl[ivar1 * n_b_faces + ifbr]
               = mei_tree_lookup(ev_formula, "H");
@@ -2377,6 +2453,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(ev_formula, "t", ts->t_cur);
           mei_tree_insert(ev_formula, "dt", cs_glob_time_step_options->dtref);
           mei_tree_insert(ev_formula, "iter", ts->nt_cur);
+
+          /* add variable from notebook */
+          _add_notebook_variables(ev_formula);
+
           /* try to build the interpreter */
 
           if (mei_tree_builder(ev_formula))
@@ -2687,6 +2767,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
             mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
             mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+
+            /* add variable from notebook */
+            _add_notebook_variables(ev_formula);
+
             mei_evaluate(ev_formula);
             rcodcl[ivar1 * n_b_faces + ifbr]
               = mei_tree_lookup(ev_formula, "H");
@@ -2720,6 +2804,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         mei_tree_insert(boundaries->headLoss[izone], "t", ts->t_cur);
         mei_tree_insert(boundaries->headLoss[izone], "dt", cs_glob_time_step_options->dtref);
         mei_tree_insert(boundaries->headLoss[izone], "iter", ts->nt_cur);
+
+        /* add variable from notebook */
+        _add_notebook_variables(boundaries->headLoss[izone]);
 
         for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac];
@@ -2795,6 +2882,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
           mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
           mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
+
+          /* add variable from notebook */
+          _add_notebook_variables(ev_formula);
+
           mei_evaluate(ev_formula);
           rcodcl[ivar1 * n_b_faces + ifbr]
             = mei_tree_lookup(ev_formula, "H");

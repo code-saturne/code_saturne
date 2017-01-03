@@ -64,6 +64,7 @@ from code_saturne.Pages.FluidStructureInteractionAdvancedOptionsDialogForm impor
 Ui_FluidStructureInteractionAdvancedOptionsDialogForm
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -71,7 +72,6 @@ from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
 logging.basicConfig()
 log = logging.getLogger("FluidStructureInteractionView")
-#log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 # Constants
@@ -400,11 +400,15 @@ class FormulaCoupling(Coupling):
         Constructor
         """
         Coupling.__init__(self, button, getter, setter)
+        self.notebook = NotebookModel(self.case)
 
         self.__default  = default
         self.__required = required
         self.__examples = examples
         self.__symbols  = symbols
+
+        for (nme, val) in self.notebook.getNotebookList():
+            self.__symbols.append((nme, 'value (notebook) = ' + str(val)))
         button.clicked.connect(self.__slotFormula)
 
 

@@ -45,7 +45,8 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Pages.BoundaryConditionsVelocityMappedInletForm import Ui_BoundaryConditionsVelocityMappedInletForm
+from code_saturne.Pages.BoundaryConditionsVelocityMappedInletForm \
+     import Ui_BoundaryConditionsVelocityMappedInletForm
 
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
@@ -53,6 +54,7 @@ from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.Boundary import Boundary
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -88,6 +90,7 @@ class BoundaryConditionsVelocityMappedInletView(QWidget, Ui_BoundaryConditionsVe
         self.__boundary = None
 
         self.__case.undoStopGlobal()
+        self.notebook = NotebookModel(self.case)
 
         # Connections
         self.comboBoxVelocity.activated[str].connect(self.__slotChoiceVelocity)
@@ -245,6 +248,9 @@ class BoundaryConditionsVelocityMappedInletView(QWidget, Ui_BoundaryConditionsVe
                ('dt', 'time step'),
                ('t', 'current time'),
                ('iter', 'number of iteration')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.__case['package'].get_check_syntax(),

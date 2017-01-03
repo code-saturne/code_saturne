@@ -57,6 +57,7 @@ from code_saturne.Pages.InitializationModel import InitializationModel
 from code_saturne.Pages.CompressibleModel import CompressibleModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 from code_saturne.Pages.GroundwaterModel import GroundwaterModel
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -92,6 +93,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.th_sca  = DefineUserScalarsModel(self.case)
         self.comp    = CompressibleModel(self.case)
         self.volzone = LocalizationModel('VolumicZone', self.case)
+        self.notebook = NotebookModel(self.case)
 
         # create group to control hide/show options
         self.turb_group = [self.labelTurbulence, self.pushButtonTurbulence,
@@ -281,6 +283,10 @@ class InitializationView(QWidget, Ui_InitializationForm):
                ('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -343,6 +349,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         elif turb_model == 'Spalart-Allmaras':
             req = [('nu_tilda', "nusa")]
 
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -375,6 +384,10 @@ class InitializationView(QWidget, Ui_InitializationForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -403,6 +416,10 @@ class InitializationView(QWidget, Ui_InitializationForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -430,6 +447,10 @@ class InitializationView(QWidget, Ui_InitializationForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -608,6 +629,10 @@ pressure = p0 + g * ro * z;\n"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -636,6 +661,10 @@ pressure = p0 + g * ro * z;\n"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -664,6 +693,10 @@ pressure = p0 + g * ro * z;\n"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -692,6 +725,10 @@ pressure = p0 + g * ro * z;\n"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -720,6 +757,10 @@ pressure = p0 + g * ro * z;\n"""
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,

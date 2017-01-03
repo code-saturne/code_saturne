@@ -54,6 +54,7 @@ from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.Boundary import Boundary
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -91,6 +92,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         self.__case.undoStopGlobal()
 
         self.__model = MobileMeshModel(self.__case)
+        self.notebook = NotebookModel(self.case)
 
         self.__comboModel = ComboModel(self.comboMobilBoundary, 6, 1)
         self.__comboModel.addItem(self.tr("Fixed boundary"), "fixed_boundary")
@@ -132,6 +134,9 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         symbs = [('dt', 'time step'),
                  ('t', 'current time'),
                  ('iter', 'number of iteration')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbs.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.__case['package'].get_check_syntax(),

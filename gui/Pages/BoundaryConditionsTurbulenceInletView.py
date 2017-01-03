@@ -51,6 +51,7 @@ from code_saturne.Pages.TurbulenceModel import TurbulenceModel
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -86,6 +87,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.__boundary = None
 
         self.__case.undoStopGlobal()
+        self.notebook = NotebookModel(self.case)
 
         self.comboBoxTurbulence.activated[str].connect(self.__slotChoiceTurbulence)
 
@@ -244,14 +246,20 @@ cmu = 0.09;
 kappa = 0.42;
 k   = ustar2/sqrt(cmu);
 epsilon = ustar2^1.5/(kappa*dh*0.1);"""
+
             req = [('k', "turbulent energy"),
                    ('epsilon', "turbulent dissipation")]
+
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
+
+            for (nme, val) in self.notebook.getNotebookList():
+                sym.append((nme, 'value (notebook) = ' + str(val)))
+
             dialog = QMeiEditorView(self,
                                     check_syntax = self.__case['package'].get_check_syntax(),
                                     expression = exp,
@@ -270,6 +278,7 @@ epsilon = ustar2^1.5/(kappa*dh*0.1);"""
             exp = self.__boundary.getTurbFormula()
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
+
             exa = """#exemple :
 uref2 = 10.;
 dh = 0.2;
@@ -303,6 +312,7 @@ r12 = 0;
 r13 = 0;
 r23 = 0;
 """
+
             req = [('r11', "Reynolds stress R11"),
                    ('r22', "Reynolds stress R22"),
                    ('r33', "Reynolds stress R33"),
@@ -310,12 +320,17 @@ r23 = 0;
                    ('r13', "Reynolds stress R13"),
                    ('r23', "Reynolds stress R23"),
                    ('epsilon', "turbulent dissipation")]
+
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
+
+            for (nme, val) in self.notebook.getNotebookList():
+                sym.append((nme, 'value (notebook) = ' + str(val)))
+
             dialog = QMeiEditorView(self,
                                     check_syntax = self.__case['package'].get_check_syntax(),
                                     expression = exp,
@@ -334,6 +349,7 @@ r23 = 0;
             exp = self.__boundary.getTurbFormula()
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
+
             exa = """#exemple :
 uref2 = 10.;
 dh = 0.2;
@@ -368,6 +384,7 @@ r13 = 0;
 r23 = 0;
 alpha =  1.;
 """
+
             req = [('r11', "Reynolds stress R11"),
                    ('r22', "Reynolds stress R22"),
                    ('r33', "Reynolds stress R33"),
@@ -376,12 +393,17 @@ alpha =  1.;
                    ('r23', "Reynolds stress R23"),
                    ('epsilon', "turbulent dissipation"),
                    ('alpha', "alpha")]
+
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
+
+            for (nme, val) in self.notebook.getNotebookList():
+                sym.append((nme, 'value (notebook) = ' + str(val)))
+
             dialog = QMeiEditorView(self,
                                     check_syntax = self.__case['package'].get_check_syntax(),
                                     expression = exp,
@@ -400,6 +422,7 @@ alpha =  1.;
             exp = self.__boundary.getTurbFormula()
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
+
             exa = """#exemple :
 uref2 = 10.;
 dh = 0.2;
@@ -428,16 +451,22 @@ k   = ustar2/sqrt(cmu);
 epsilon = ustar2^1.5/(kappa*dh*0.1);
 phi = d2s3;
 alpha = 0;"""
+
             req = [('k', "turbulent energy"),
                    ('epsilon', "turbulent dissipation"),
                    ('phi', "variable phi in v2f model"),
                    ('alpha', "variable alpha in v2f model")]
+
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
+
+            for (nme, val) in self.notebook.getNotebookList():
+                sym.append((nme, 'value (notebook) = ' + str(val)))
+
             dialog = QMeiEditorView(self,
                                     check_syntax = self.__case['package'].get_check_syntax(),
                                     expression = exp,
@@ -456,6 +485,7 @@ alpha = 0;"""
             exp = self.__boundary.getTurbFormula()
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
+
             exa = """#exemple :
 uref2 = 10.;
 dh = 0.2;
@@ -482,14 +512,20 @@ kappa = 0.42;
 k   = ustar2/sqrt(cmu);
 eps = ustar2^1.5/(kappa*dh*0.1);
 omega = eps/(cmu * k);"""
+
             req = [('k', "turbulent energy"),
                    ('omega', "specific dissipation rate")]
+
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
+
+            for (nme, val) in self.notebook.getNotebookList():
+                sym.append((nme, 'value (notebook) = ' + str(val)))
+
             dialog = QMeiEditorView(self,
                                     check_syntax = self.__case['package'].get_check_syntax(),
                                     expression = exp,
@@ -508,6 +544,7 @@ omega = eps/(cmu * k);"""
             exp = self.__boundary.getTurbFormula()
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
+
             exa = """#exemple :
 uref2 = 10.;
 dh = 0.2;
@@ -534,13 +571,19 @@ kappa = 0.42;
 k   = ustar2/sqrt(cmu);
 eps = ustar2^1.5/(kappa*dh*0.1);
 nu_tilda = eps/(cmu * k);"""
+
             req = [('nu_tilda', "nu_tilda")]
+
             sym = [('x','cell center coordinate'),
                    ('y','cell center coordinate'),
                    ('z','cell center coordinate'),
                    ('t','time'),
                    ('dt','time step'),
                    ('iter','number of time step')]
+
+            for (nme, val) in self.notebook.getNotebookList():
+                sym.append((nme, 'value (notebook) = ' + str(val)))
+
             dialog = QMeiEditorView(self,
                                     check_syntax = self.__case['package'].get_check_syntax(),
                                     expression = exp,

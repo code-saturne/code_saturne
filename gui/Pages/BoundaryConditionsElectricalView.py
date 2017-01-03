@@ -54,6 +54,7 @@ from code_saturne.Pages.ElectricalModel import ElectricalModel
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 from code_saturne.Pages.Boundary import Boundary
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -89,6 +90,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.__boundary = None
         self.__model = ElectricalModel(self.__case)
         self.species_list = []
+        self.notebook = NotebookModel(self.case)
 
         self.lineEditValuePotElec.textChanged[str].connect(self.slotPotElec)
         self.lineEditValuePotElecIm.textChanged[str].connect(self.slotPotElecIm)
@@ -346,6 +348,9 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                ('dt', 'time step'),
                ('t', 'current time'),
                ('iter', 'number of iteration')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,expression = exp,
                                  required   = req,

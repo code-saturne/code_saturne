@@ -55,6 +55,7 @@ from code_saturne.Pages.PorosityForm import Ui_PorosityForm
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 from code_saturne.Pages.PorosityModel import PorosityModel
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -132,6 +133,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
         self.case.undoStopGlobal()
 
         self.mdl = PorosityModel(self.case)
+        self.notebook = NotebookModel(self.case)
 
         # Create the Page layout.
 
@@ -235,6 +237,9 @@ class PorosityView(QWidget, Ui_PorosityForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

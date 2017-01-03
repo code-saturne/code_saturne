@@ -53,6 +53,7 @@ from code_saturne.Pages.BoundaryConditionsHydraulicHeadForm import \
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.Boundary import Boundary
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -83,6 +84,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         """
         self.__case = case
         self.__boundary = None
+        self.notebook = NotebookModel(self.case)
 
         self.__case.undoStopGlobal()
 
@@ -192,6 +194,9 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
                ('dt', 'time step'),
                ('t', 'current time'),
                ('iter', 'number of iteration')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.__case['package'].get_check_syntax(),

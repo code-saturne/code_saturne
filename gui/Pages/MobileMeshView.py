@@ -53,6 +53,7 @@ from code_saturne.Base.QtPage    import IntValidator,  ComboModel, from_qvariant
 from code_saturne.Pages.MobileMeshModel import MobileMeshModel
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -127,6 +128,7 @@ if (xray2 < xr2) {
         self.case.undoStopGlobal()
         self.mdl = MobileMeshModel(self.case)
         self.browser = browser
+        self.notebook = NotebookModel(self.case)
 
         # Combo model VISCOSITY
         self.modelVISCOSITY = ComboModel(self.comboBoxVISCOSITY,2,1)
@@ -241,6 +243,9 @@ if (xray2 < xr2) {
                 ('dt', 'time step'),
                 ('t', 'current time'),
                 ('iter', 'number of iteration')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symb.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

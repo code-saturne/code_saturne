@@ -58,6 +58,7 @@ import code_saturne.Pages.CoalCombustionModel as CoalCombustion
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.Boundary import Boundary
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -275,6 +276,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         self.__boundary = None
 
         self.__case.undoStopGlobal()
+        self.notebook = NotebookModel(self.case)
 
         # Connections
         self.comboBoxTypeInlet.activated[str].connect(self.__slotInletType)
@@ -551,6 +553,9 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
                ('t', 'current time'),
                ('iter', 'number of iteration')]
 
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.__case['package'].get_check_syntax(),
                                 expression = exp,
@@ -647,6 +652,9 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
                ('dt', 'time step'),
                ('t', 'current time'),
                ('iter', 'number of iteration')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.__case['package'].get_check_syntax(),

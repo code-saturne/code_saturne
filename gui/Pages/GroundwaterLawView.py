@@ -56,6 +56,7 @@ from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 from code_saturne.Pages.GroundwaterLawModel import GroundwaterLawModel
 from code_saturne.Pages.GroundwaterModel import GroundwaterModel
 from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -133,6 +134,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.case.undoStopGlobal()
 
         self.mdl = GroundwaterLawModel(self.case)
+        self.notebook = NotebookModel(self.case)
 
         self.list_scalars = []
         self.m_sca = DefineUserScalarsModel(self.case)
@@ -688,6 +690,9 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

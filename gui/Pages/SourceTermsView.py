@@ -56,6 +56,7 @@ from code_saturne.Pages.SourceTermsModel import SourceTermsModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 from code_saturne.Pages.GroundwaterModel import GroundwaterModel
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -86,6 +87,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.parent = parent
 
         self.mdl     = SourceTermsModel(self.case)
+        self.notebook = NotebookModel(self.case)
         self.therm   = ThermalScalarModel(self.case)
         self.th_sca  = DefineUserScalarsModel(self.case)
         self.volzone = LocalizationModel('VolumicZone', self.case)
@@ -304,6 +306,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         sym.append( ("velocity[1]", 'Y velocity component'))
         sym.append( ("velocity[2]", 'Z velocity component'))
 
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -334,6 +339,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
 
         name = self.th_sca.getScalarName(self.scalar)
         sym.append((name, 'current species'))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -367,6 +375,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         name = self.th_sca.getScalarName(self.scalar)
         sym.append((name, 'current species'))
 
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,
@@ -394,6 +405,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
                ('t', 'current time')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
@@ -452,6 +466,10 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
             sym.append(('total_energy', 'thermal scalar'))
         else:
             sym.append(('temperature', 'thermal scalar'))
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),
                                 expression = exp,

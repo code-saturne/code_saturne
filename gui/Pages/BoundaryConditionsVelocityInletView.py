@@ -55,6 +55,7 @@ from code_saturne.Pages.CompressibleModel import CompressibleModel
 from code_saturne.Pages.GasCombustionModel import GasCombustionModel
 
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -94,6 +95,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         self.mdl = CompressibleModel(self.__case)
         self.gas = GasCombustionModel(self.__case)
+        self.notebook = NotebookModel(self.case)
 
         # Connections
         self.comboBoxVelocity.activated[str].connect(self.__slotChoiceVelocity)
@@ -136,7 +138,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         self.modelTypeInlet = ComboModel(self.comboBoxTypeInlet, 2, 1)
         self.modelTypeInlet.addItem(self.tr("imposed inlet"), 'imposed_inlet')
-        self.modelTypeInlet.addItem(self.tr("subsonic inlet (imposed total pressure and total enthalpy)"), 'subsonic_inlet_PH')
+        self.modelTypeInlet.addItem(self.tr("subsonic inlet (imposed total pressure and total enthalpy)"), \
+                                            'subsonic_inlet_PH')
 
         self.modelTypeInletGasComb = ComboModel(self.comboBoxTypeInletGasComb, 2, 1)
         model = self.gas.getGasCombustionModel()
@@ -427,6 +430,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                ('t', 'current time'),
                ('iter', 'number of iteration')]
 
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
         dialog = QMeiEditorView(self,
                                 check_syntax = self.__case['package'].get_check_syntax(),
                                 expression = exp,
@@ -523,6 +529,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                ('dt', 'time step'),
                ('t', 'current time'),
                ('iter', 'number of iteration')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.__case['package'].get_check_syntax(),

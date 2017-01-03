@@ -55,6 +55,7 @@ from code_saturne.Base.QtPage import to_qvariant, from_qvariant
 from code_saturne.Pages.ProfilesForm import Ui_ProfilesForm
 from code_saturne.Pages.ProfilesModel import ProfilesModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -168,6 +169,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.case = case
         self.case.undoStopGlobal()
         self.mdl = ProfilesModel(self.case)
+        self.notebook = NotebookModel(self.case)
 
         #  Initialize variables concerning the display of the Hlist
 
@@ -472,6 +474,9 @@ z = z1*s + z0*(1.-s);"""
                ('y', "y formula"),
                ('z', "z formula")]
         sym = [('s', 'parameter')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
 
         dialog = QMeiEditorView(self,
                                 check_syntax = self.case['package'].get_check_syntax(),

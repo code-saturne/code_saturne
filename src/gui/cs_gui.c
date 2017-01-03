@@ -630,6 +630,9 @@ _compressible_physical_property(const char       *param,
         }
       }
 
+      /* add variable from notebook */
+      _add_notebook_variables(ev_law);
+
       /* try to build the interpreter */
 
       if (mei_tree_builder(ev_law))
@@ -1730,6 +1733,9 @@ _init_mei_tree(const char  *formula,
   mei_tree_insert(tree, "x",    0.0);
   mei_tree_insert(tree, "y",    0.0);
   mei_tree_insert(tree, "z",    0.0);
+
+  /* add variable from notebook */
+  _add_notebook_variables(tree);
 
   /* try to build the interpreter */
   if (mei_tree_builder(tree))
@@ -3382,6 +3388,9 @@ void CS_PROCF (uiporo, UIPORO) (const int        *iporos)
         mei_tree_insert(ev_formula,"y",0.0);
         mei_tree_insert(ev_formula,"z",0.0);
 
+        /* add variable from notebook */
+        _add_notebook_variables(ev_formula);
+
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
           bft_error(__FILE__, __LINE__, 0,
@@ -3512,6 +3521,10 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
         mei_tree_insert(ev_formula, "velocity[0]", 0.0);
         mei_tree_insert(ev_formula, "velocity[1]", 0.0);
         mei_tree_insert(ev_formula, "velocity[2]", 0.0);
+
+        /* add variable from notebook */
+        _add_notebook_variables(ev_formula);
+
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
           bft_error(__FILE__, __LINE__, 0,
@@ -3666,6 +3679,10 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
           mei_tree_insert(ev_formula,"y",0.);
           mei_tree_insert(ev_formula,"z",0.);
           mei_tree_insert(ev_formula, f->name, 0.0);
+
+          /* add variable from notebook */
+          _add_notebook_variables(ev_formula);
+
           /* try to build the interpreter */
           if (mei_tree_builder(ev_formula))
             bft_error(__FILE__, __LINE__, 0,
@@ -3696,6 +3713,10 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
           mei_tree_insert(ev_formula,"y",0.);
           mei_tree_insert(ev_formula,"z",0.);
           mei_tree_insert(ev_formula,"t",0.);
+
+          /* add variable from notebook */
+          _add_notebook_variables(ev_formula);
+
           /* try to build the interpreter */
           if (mei_tree_builder(ev_formula))
             bft_error(__FILE__, __LINE__, 0,
@@ -3806,6 +3827,10 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
         mei_tree_insert(ev_formula,"y",0.);
         mei_tree_insert(ev_formula,"z",0.);
         mei_tree_insert(ev_formula, f->name, 0.0);
+
+        /* add variable from notebook */
+        _add_notebook_variables(ev_formula);
+
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
           bft_error(__FILE__, __LINE__, 0,
@@ -3914,6 +3939,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           mei_tree_insert(ev_formula_uvw, "y", 0.);
           mei_tree_insert(ev_formula_uvw, "z", 0.);
           mei_tree_insert(ev_formula_uvw, "uref", cs_glob_turb_ref_values->uref);
+
+          /* add variable from notebook */
+          _add_notebook_variables(ev_formula_uvw);
+
           /* try to build the interpreter */
           if (mei_tree_builder(ev_formula_uvw))
             bft_error(__FILE__, __LINE__, 0,
@@ -4005,6 +4034,9 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             mei_tree_insert(ev_formula_turb, "x", 0.0);
             mei_tree_insert(ev_formula_turb, "y", 0.0);
             mei_tree_insert(ev_formula_turb, "z", 0.0);
+
+            /* add variable from notebook */
+            _add_notebook_variables(ev_formula_turb);
 
             /* try to build the interpreter */
 
@@ -4223,6 +4255,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
           mei_tree_insert(ev_formula_sca, "x", 0.);
           mei_tree_insert(ev_formula_sca, "y", 0.);
           mei_tree_insert(ev_formula_sca, "z", 0.);
+
+          /* add variable from notebook */
+          _add_notebook_variables(ev_formula_sca);
+
           /* try to build the interpreter */
           if (mei_tree_builder(ev_formula_sca))
             bft_error(__FILE__, __LINE__, 0,
@@ -4281,6 +4317,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             mei_tree_insert(ev_formula_sca, "x", 0.);
             mei_tree_insert(ev_formula_sca, "y", 0.);
             mei_tree_insert(ev_formula_sca, "z", 0.);
+
+            /* add variable from notebook */
+            _add_notebook_variables(ev_formula_sca);
+
             /* try to build the interpreter */
             if (mei_tree_builder(ev_formula_sca))
               bft_error(__FILE__, __LINE__, 0,
@@ -4345,6 +4385,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
             mei_tree_insert(ev_formula_meteo, "x", 0.);
             mei_tree_insert(ev_formula_meteo, "y", 0.);
             mei_tree_insert(ev_formula_meteo, "z", 0.);
+
+            /* add variable from notebook */
+            _add_notebook_variables(ev_formula_meteo);
+
             /* try to build the interpreter */
             if (mei_tree_builder(ev_formula_meteo))
               bft_error(__FILE__, __LINE__, 0,
@@ -4792,6 +4836,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
           mei_tree_insert(ev_law,"y",0.0);
           mei_tree_insert(ev_law,"z",0.0);
           mei_tree_insert(ev_law,tmp2,*visls0);
+
+          /* add variable from notebook */
+          _add_notebook_variables(ev_law);
+
           BFT_FREE(tmp2);
 
           for (int f_id2 = 0; f_id2 < n_fields; f_id2++) {
@@ -4971,6 +5019,10 @@ void CS_PROCF (uiprof, UIPROF) (void)
       formula = cs_gui_get_text_value(path);
       ev_formula = mei_tree_new(formula);
       mei_tree_insert(ev_formula, "s", 0.0);
+
+      /* add variable from notebook */
+      _add_notebook_variables(ev_formula);
+
       BFT_FREE(formula);
       BFT_FREE(path);
 
@@ -5392,6 +5444,9 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
           mei_tree_insert(ev_formula,"x",0.0);
           mei_tree_insert(ev_formula,"y",0.0);
           mei_tree_insert(ev_formula,"z",0.0);
+
+          /* add variable from notebook */
+          _add_notebook_variables(ev_formula);
 
           /* try to build the interpreter */
           if (mei_tree_builder(ev_formula))

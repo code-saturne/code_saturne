@@ -63,6 +63,7 @@ from code_saturne.Pages.OutputControlForm import Ui_OutputControlForm
 from code_saturne.Pages.OutputControlModel import OutputControlModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 from code_saturne.Pages.LagrangianModel import LagrangianModel
+from code_saturne.Pages.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -1215,6 +1216,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.case = case
         self.case.undoStopGlobal()
         self.mdl = OutputControlModel(self.case)
+        self.notebook = NotebookModel(self.case)
 
         if self.case['prepro'] == False:
             # lagrangian model
@@ -1910,6 +1912,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             req = [('iactive', 'at a time step the writer is active or not')]
             sym = [('t', 'current time'),
                    ('niter', 'current time step')]
+
+            for (nme, val) in self.notebook.getNotebookList():
+                sym.append((nme, 'value (notebook) = ' + str(val)))
+
             dialog = QMeiEditorView(self,
                                     check_syntax = self.case['package'].get_check_syntax(),
                                     expression = exp,

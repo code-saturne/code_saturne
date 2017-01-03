@@ -167,6 +167,43 @@ _get_ale_status(int  *const keyword)
 }
 
 /*-----------------------------------------------------------------------------
+ * add notebook variable to formula
+ *----------------------------------------------------------------------------*/
+
+static void
+_add_notebook_variables(mei_tree_t *ev_law)
+{
+  char *path = NULL;
+
+  /* number of variable */
+  int nbvar = cs_gui_get_tag_count("/physical_properties/notebook/var\n", 1);
+
+  if (nbvar == 0)
+    return;
+
+  for (int ivar = 0; ivar < nbvar; ivar++) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "physical_properties", "notebook");
+    cs_xpath_add_element_num(&path, "var", ivar +1);
+    cs_xpath_add_attribute(&path, "name");
+    char *name = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "physical_properties", "notebook");
+    cs_xpath_add_element_num(&path, "var", ivar +1);
+    cs_xpath_add_attribute(&path, "value");
+    char *value = cs_gui_get_attribute_value(path);
+    double val = atof(value);
+    BFT_FREE(path);
+
+    mei_tree_insert(ev_law, name, val);
+    BFT_FREE(name);
+    BFT_FREE(value);
+  }
+}
+
+/*-----------------------------------------------------------------------------
  * Initialize mei tree and check for symbols existence
  *
  * parameters:
@@ -210,6 +247,9 @@ _init_mei_tree(char          *formula,
   mei_tree_insert(tree, "dt",   dtref);
   mei_tree_insert(tree, "t",    ttcabs);
   mei_tree_insert(tree, "iter", ntcabs);
+
+  /* add variable from notebook */
+  _add_notebook_variables(tree);
 
   /* try to build the interpreter */
   if (mei_tree_builder(tree))
