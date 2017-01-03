@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-12-30 17:37+0100\n"
+"POT-Creation-Date: 2017-01-03 00:39+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7396,11 +7396,19 @@ msgstr " La clé %s n'est pas encore gérée."
 msgid ""
 "\n"
 " Warning: probe set \"%s\"\n"
-"          %lu probes have not been located on the associated mesh.\n"
+"   %lu (of %d) probes are not located on the associated mesh:\n"
 msgstr ""
 "\n"
 " Attention : ensembe de sondes \"%s\"\n"
-"          %lu sondes n'ont pas été localisées dans le maillage associé.\n"
+"   %lu sondes (sur %d) ne sont pas localisées dans le maillage associé :\n"
+
+#, c-format
+msgid "    %2d ([%8.3e, %8.3e, %8.3e])\n"
+msgstr ""
+
+#, c-format
+msgid "    %s ([%8.3e, %8.3e, %8.3e])\n"
+msgstr ""
 
 #, c-format
 msgid ""

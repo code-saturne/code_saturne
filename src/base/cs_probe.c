@@ -1148,9 +1148,26 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
   if (n_unlocated_probes > 0 && first_location) {
     bft_printf(_("\n Warning: probe set \"%s\"\n"
-                 "          %lu probes have not been located"
-                 " on the associated mesh.\n"),
-               pset->name, (unsigned long)n_unlocated_probes);
+                 "   %lu (of %d) probes are not located"
+                 " on the associated mesh:\n"),
+               pset->name, (unsigned long)n_unlocated_probes,
+               pset->n_probes);
+    for (int i = 0; i < pset->n_probes; i++) {
+      if (pset->located[i] == 0) {
+        if (pset->labels == NULL)
+          bft_printf(_("    %2d ([%8.3e, %8.3e, %8.3e])\n"),
+                     i+1,
+                     pset->coords[i][0],
+                     pset->coords[i][1],
+                     pset->coords[i][2]);
+        else
+          bft_printf(_("    %s ([%8.3e, %8.3e, %8.3e])\n"),
+                     pset->labels[i],
+                     pset->coords[i][0],
+                     pset->coords[i][1],
+                     pset->coords[i][2]);
+      }
+    }
   }
 
   pset->n_loc_probes = n_loc_probes;
@@ -1457,7 +1474,7 @@ cs_probe_set_dump(const cs_probe_set_t   *pset)
   for (int i = 0; i < pset->n_probes; i++) {
 
     bft_printf(" %4d | %-5.3e %-5.3e %-5.3e |", i,
-               pset->coords[3][0], pset->coords[i][1], pset->coords[i][2]);
+               pset->coords[i][0], pset->coords[i][1], pset->coords[i][2]);
 
     if (pset->s_coords != NULL)
       bft_printf(" %5.3e |", pset->s_coords[i]);
