@@ -1,6 +1,6 @@
 # Shell script
 
-# Copyright (C) 2005-2016 EDF
+# Copyright (C) 2005-2017 EDF
 
 # This file is part of the PLE software package.  For license
 # information, see the COPYING file in the top level directory of the
