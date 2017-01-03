@@ -419,7 +419,7 @@ if (ipass.eq.1) then
 endif
 
 !===============================================================================
-! 6. DANS LE CAS  "zero pas de temps" EN "SUITE" DE CALCUL
+! 5. DANS LE CAS  "zero pas de temps" EN "SUITE" DE CALCUL
 !      ON SORT ICI
 !===============================================================================
 !  on sort avant SCHTMP car sinon a l'ordre 2 en temps la valeur du
@@ -660,12 +660,11 @@ if (icondv.eq.0) then
 endif
 
 !===============================================================================
-! 5.  LES VALEURS COURANTES ECRASENT LES VALEURS ANTERIEURES
+! 7.bis Current to previous
 !===============================================================================
 
 ! --- Noter que exceptionnellement, on fait un calcul avec NCELET,
-!       pour eviter une nouvelle communication sur RTPA et les autres
-!       tableaux du pas de temps precedent
+!       pour eviter une nouvelle communication
 
 ifld = -1
 do ivar = 1, nvar

@@ -80,6 +80,8 @@ integer          iclip , ii    , jj    , idim, f_dim
 integer          ifcvsl
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin, kscmax
+integer          ivar
+integer          keyvar
 
 logical          have_previous
 
@@ -109,6 +111,8 @@ double precision, dimension(:,:), pointer :: cpro_visma_v
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+call field_get_key_id("variable_id", keyvar)
 
 call field_get_val_s_by_name('dt', dt)
 
@@ -623,8 +627,20 @@ if (iale.eq.1.or.imobil.eq.1) then
   enddo
 endif
 
+!===============================================================================
+! 9 Current to previous for variables
+!===============================================================================
+
+iflid = -1
+do iflid = 0, nfld
+  call field_get_key_int(iflid, keyvar, ivar)
+  if (ivar .gt. 0) then
+    call field_current_to_previous(iflid)
+  endif
+enddo
+
 !----
-! FIN
+! End
 !----
 
 return
