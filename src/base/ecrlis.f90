@@ -80,7 +80,8 @@ double precision dt(ncelet), volume(ncelet)
 
 integer          ic, icel, f_id, c_id, f_dim
 integer          kval, nfld, f_type
-character(len=200) :: chain, chainc, flabel,fname
+integer          length, max_name_width, max_line_width, i
+character(len=400) :: chain, chainc, flabel,fname, line, title
 
 double precision dervar(9)
 double precision varres(9), varnrm(9)
@@ -99,15 +100,52 @@ call field_get_n_fields(nfld)
 
 allocate(w1(ncelet), w2(ncelet))
 
+max_name_width = 12
+do f_id = 0, nfld - 1
+
+  call field_get_type(f_id, f_type)
+
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_label(f_id, flabel)
+    call field_get_dim (f_id, f_dim)
+    length = len_trim(flabel)
+
+    if (f_dim.eq.3) length = length + 3
+    if (f_dim.eq.6.or.f_dim.eq.9) length = length + 4
+
+    if (length .gt. max_name_width) max_name_width = length
+  endif
+enddo
+
+max_line_width = 4+max_name_width+13+9+14+12+12
+do i = 1, max_line_width
+  chain = '-'
+  line(i:i+1) = chain(1:2)
+enddo
+
+title(1:15) = '   Variable    '
+ic = 16
+
+do i = ic, ic + max(0, max_name_width - 11)
+  title(i:i+1) = ' '
+enddo
+ic = ic + max(0, max_name_width - 11)
+
+#if defined(_CS_LANG_FR)
+title(ic:max_line_width) = 'Norm 2nd mb.  Nbiter  Residu norme     Derive   Residu temps'
+#else
+title(ic:max_line_width) = 'Rhs norm      N_iter  Norm. residual   Drift   Time residual'
+#endif
+
 !===============================================================================
-! 2. ECRITURE DES CRITERES DE CONVERGENCE
+! 2. Write convergence criteria
 !===============================================================================
 
 write(nfecra,1000)
-write(nfecra,1010)
-write(nfecra,1011)
-write(nfecra,1010)
-
+write(nfecra,'(a)') line(1:max_line_width)
+write(nfecra,'(a)') title(1:max_line_width)
+write(nfecra,'(a)') line(1:max_line_width)
 
 do f_id = 0, nfld - 1
 
@@ -123,8 +161,8 @@ do f_id = 0, nfld - 1
     call field_get_label(f_id, flabel)
     call field_get_name(f_id, fname)
 
-    chainc(ic:ic+12) = flabel(1:12)
-    ic=ic+12
+    chainc(ic:ic+max_name_width) = flabel(1:max_name_width)
+    ic=ic+max_name_width
     chain = ' '
     call field_get_key_struct_solving_info(f_id, sinfo)
     write(chain,3000) sinfo%rnsmbr
@@ -316,8 +354,8 @@ do f_id = 0, nfld - 1
           endif
         endif
 
-        chainc(ic:ic+12) = chain(1:12)
-        ic=ic+12
+        chainc(ic:ic+max_name_width) = chain(1:max_name_width)
+        ic=ic+max_name_width
         chainc(ic:ic+12) = ' '
         ic=ic+13
         chainc(ic:ic+7) = ' '
@@ -341,7 +379,7 @@ do f_id = 0, nfld - 1
 
 enddo
 
-write(nfecra,1010)
+write(nfecra,'(a)') line(1:max_line_width)
 write(nfecra,*) ' '
 write(nfecra,*) ' '
 
@@ -355,13 +393,9 @@ deallocate(w1, w2)
 
  1000 format (/,3X,'** INFORMATIONS SUR LA CONVERGENCE',/,        &
           3X,'   -------------------------------')
+
  1011 format ('   Variable    Norm 2nd mb.',                      &
         '  Nbiter  Residu norme        Derive Residu en temps')
- 1010 format ('---------------------------',                      &
-        '----------------------------------------------------')
-
- 3000 format (e12.5)
- 4000 format (i7)
 
 #else
 
@@ -369,12 +403,10 @@ deallocate(w1, w2)
           3X,'   --------------------------')
  1011 format ('   Variable    Rhs norm    ',                      &
         '  N_iter  Norm. residual      Drift  Time residual')
- 1010 format ('---------------------------',                      &
-        '--------------------------------------------------')
 
+#endif
  3000 format (e12.5)
  4000 format (i7)
 
-#endif
 return
 end subroutine
