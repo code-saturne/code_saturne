@@ -631,8 +631,7 @@ endif
 ! 9 Current to previous for variables
 !===============================================================================
 
-iflid = -1
-do iflid = 0, nfld
+do iflid = 0, nfld - 1
   call field_get_key_int(iflid, keyvar, ivar)
   if (ivar .gt. 0) then
     call field_current_to_previous(iflid)
