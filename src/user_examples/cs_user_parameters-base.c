@@ -83,6 +83,7 @@
 #include "cs_selector.h"
 
 #include "cs_post.h"
+#include "cs_post_util.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -209,6 +210,14 @@ cs_user_parameters(void)
 
   /*! [param_var_boundary_vals_1] */
 
+  /* Example: post-process the Q-critertion on the whole domain mesh */
+  /*-----------------------------------------------------------------*/
+
+  /*! [param_var_q_criterion] */
+
+  cs_glob_post_util_flag[CS_POST_UTIL_Q_CRITERION] = 0;
+
+  /*! [param_var_q_criterion] */
 }
 
 /*----------------------------------------------------------------------------*/

@@ -62,10 +62,13 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
+#include "cs_physical_model.h"
+#include "cs_physical_constants.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_renumber.h"
 #include "cs_rotation.h"
+#include "cs_stokes_model.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
@@ -91,6 +94,11 @@ BEGIN_C_DECLS
 /*============================================================================
  * Static global variables
  *============================================================================*/
+
+/*! Status of post utilities */
+
+int cs_glob_post_util_flag[CS_POST_UTIL_N_TYPES]
+  = { -1 };
 
 /*============================================================================
  * Private function definitions
@@ -379,6 +387,67 @@ cs_post_evm_reynolds_stresses(cs_lnum_t   n_loc_cells,
     rst[iloc][3] = -nut*(gradv[iel][1][0]+gradv[iel][0][1]);
     rst[iloc][4] = -nut*(gradv[iel][2][1]+gradv[iel][1][2]);
     rst[iloc][5] = -nut*(gradv[iel][2][0]+gradv[iel][0][2]);
+  }
+
+  BFT_FREE(gradv);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the Q criterion from Hunt et. al over a specified
+ *        volumic region.
+ *
+ * \param[in]  n_loc_cells   number of cells
+ * \param[in]  cells_list    cells list
+ * \param[out] q_crit        Q-criterion over the specified volumic region.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_q_criterion(const cs_lnum_t   n_loc_cells,
+                    const cs_lnum_t   cells_list[],
+                          cs_real_t   q_crit[])
+{
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  cs_var_cal_opt_t var_cal_opt;
+  cs_halo_type_t halo_type;
+  cs_gradient_type_t gradient_type;
+  cs_real_33_t *gradv;
+
+  if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
+      || cs_glob_stokes_model->idilat > 1
+      || cs_glob_fluid_properties->irovar > 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Q-criterion post-processing utility function is not "
+                "available for compressible or variable-density flow."));
+
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
+
+  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
+  bool use_previous_t = false;
+  int inc = 1;
+  cs_field_gradient_vector(CS_F_(u),
+                           use_previous_t,
+                           gradient_type,
+                           halo_type,
+                           inc,
+                           gradv);
+
+  for (cs_lnum_t iloc = 0; iloc < n_loc_cells ; iloc++) {
+    cs_lnum_t iel = cells_list[iloc];
+    q_crit[iloc] = -0.5 * (   pow(gradv[iel][0][0],2)
+                           +  pow(gradv[iel][1][1],2)
+                           +  pow(gradv[iel][2][2],2))
+                   - gradv[iel][0][1]*gradv[iel][1][0]
+                   - gradv[iel][0][2]*gradv[iel][2][0]
+                   - gradv[iel][1][2]*gradv[iel][2][1];
   }
 
   BFT_FREE(gradv);

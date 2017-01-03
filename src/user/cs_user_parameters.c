@@ -83,6 +83,7 @@
 #include "cs_rad_transfer.h"
 
 #include "cs_post.h"
+#include "cs_post_util.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

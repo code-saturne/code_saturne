@@ -42,9 +42,21 @@ BEGIN_C_DECLS
  * Type Definitions
  *============================================================================*/
 
+typedef enum {
+
+  CS_POST_UTIL_Q_CRITERION,        /*!< Q-criterion post-treatment */
+
+  CS_POST_UTIL_N_TYPES             /*!< Number of post utility types */
+
+} cs_post_util_type_t;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
+
+/*! Names of post utilities */
+
+extern int cs_glob_post_util_flag[];
 
 /*============================================================================
  * Public function prototypes
@@ -118,6 +130,22 @@ void
 cs_post_evm_reynolds_stresses(cs_lnum_t   n_loc_cells,
                               cs_lnum_t   cells_list[],
                               cs_real_6_t rst[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the Q criterion from Hunt et. al over a specified
+ *        volumic region.
+ *
+ * \param[in]  n_loc_cells   number of cells
+ * \param[in]  cells_list    cells list
+ * \param[out] q_crit        Q-criterion over the specified volumic region.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_q_criterion(const cs_lnum_t   n_loc_cells,
+                    const cs_lnum_t   cells_list[],
+                          cs_real_t   q_crit[]);
 
 /*----------------------------------------------------------------------------*/
 

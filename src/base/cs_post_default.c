@@ -57,6 +57,7 @@
 #include "cs_timer_stats.h"
 
 #include "cs_post.h"
+#include "cs_post_util.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -138,6 +139,7 @@ _write_additional_vars(void                  *input,
                        const cs_time_step_t  *ts)
 {
   /* Local variables */
+  CS_UNUSED(ts);
 
   cs_post_default_input_t  *_input = input;
 
@@ -193,6 +195,71 @@ _write_additional_vars(void                  *input,
                             itypps,
                             cell_list, i_face_list, b_face_list);
 
+}
+
+/*----------------------------------------------------------------------------
+ * Additional output of the Q-criterion.
+ *
+ * parameters:
+ *   input       <-> pointer to optional (untyped) value or structure;
+ *                   here, we should point to _default_input.
+ *   mesh_id     <-- id of the output mesh for the current call
+ *   cat_id      <-- category id of the output mesh for the current call
+ *   ent_flag    <-- indicate global presence of cells (ent_flag[0]), interior
+ *                   faces (ent_flag[1]), boundary faces (ent_flag[2]),
+ *                   particles (ent_flag[3]) or probes (ent_flag[4])
+ *   n_cells     <-- local number of cells of post_mesh
+ *   n_i_faces   <-- local number of interior faces of post_mesh
+ *   n_b_faces   <-- local number of boundary faces of post_mesh
+ *   cell_list   <-- list of cells (1 to n) of post-processing mesh
+ *   i_face_list <-- list of interior faces (1 to n) of post-processing mesh
+ *   b_face_list <-- list of boundary faces (1 to n) of post-processing mesh
+ *   ts          <-- time step status structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_write_q_criterion(void                  *input,
+                   int                    mesh_id,
+                   int                    cat_id,
+                   int                    ent_flag[5],
+                   cs_lnum_t              n_cells,
+                   cs_lnum_t              n_i_faces,
+                   cs_lnum_t              n_b_faces,
+                   const cs_lnum_t        cell_list[],
+                   const cs_lnum_t        i_face_list[],
+                   const cs_lnum_t        b_face_list[],
+                   const cs_time_step_t  *ts)
+{
+  CS_UNUSED(input);
+  CS_UNUSED(ent_flag);
+  CS_UNUSED(n_i_faces);
+  CS_UNUSED(n_b_faces);
+  CS_UNUSED(i_face_list);
+  CS_UNUSED(b_face_list);
+
+  if (cat_id == CS_POST_MESH_VOLUME) {
+    cs_real_t *q_crit;
+    BFT_MALLOC(q_crit, n_cells, cs_real_t);
+    cs_post_q_criterion(n_cells, cell_list, q_crit);
+
+    const char *name = "Q criterion";
+    int dim = 1;
+    bool use_parent = false;
+
+    cs_post_write_var(mesh_id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
+                      name,
+                      dim,
+                      true,   /* interlace */
+                      use_parent,
+                      CS_POST_TYPE_cs_real_t,
+                      q_crit, /* cell values */
+                      NULL,   /* internal face values */
+                      NULL,   /* boundary face values */
+                      ts);
+
+    BFT_FREE(q_crit);
+  }
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -256,6 +323,11 @@ void CS_PROCF (pstvar, PSTVAR)
 
     cs_post_add_time_mesh_dep_output(_write_additional_vars,
                                      &_default_input);
+
+    if (cs_glob_post_util_flag[CS_POST_UTIL_Q_CRITERION] >= 0) {
+      cs_post_add_time_mesh_dep_output(_write_q_criterion,
+                                       &_default_input);
+    }
 
     _default_input_is_set = true;
   }
