@@ -303,6 +303,9 @@ do ivar = 1, nvar
   endif
 enddo
 
+
+call restart_read_fields(rp, RESTART_MAIN)
+
 !===============================================================================
 ! 6. LECTURE D'INFORMATIONS COMPLEMENTAIRES LEGERES
 !===============================================================================

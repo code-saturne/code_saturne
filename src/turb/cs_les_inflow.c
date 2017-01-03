@@ -57,6 +57,7 @@
 #include "cs_timer.h"
 #include "cs_mesh_location.h"
 #include "cs_restart.h"
+#include "cs_restart_default.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1911,6 +1912,8 @@ void CS_PROCF(lecsyn, LECSYN)
 
   }
 
+  cs_restart_read_fields(suite, CS_RESTART_LES_INFLOW);
+
   /* Close the restart file and free structures */
   cs_restart_destroy(&cs_glob_inflow_suite);
 
@@ -2189,6 +2192,8 @@ void CS_PROCF(ecrsyn, ECRSYN)
     }
 
   }
+
+  cs_restart_write_fields(suite, CS_RESTART_LES_INFLOW);
 
   /* Close the restart file and free structures */
   cs_restart_destroy(&cs_glob_inflow_suite);

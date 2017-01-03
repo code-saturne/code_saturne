@@ -43,6 +43,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_1d_wall_thermal.h"
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -54,6 +55,8 @@
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_rad_transfer.h"
+#include "cs_restart_default.h"
 #include "cs_thermal_model.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
@@ -806,6 +809,7 @@ cs_parameters_check(void)
   const int kcpsyr = cs_field_key_id("syrthes_coupling");
   const int kivisl = cs_field_key_id("scalar_diffusivity_id");
   const int kvisls0 = cs_field_key_id("scalar_diffusivity_ref");
+  const int restart_file_key_id = cs_field_key_id("restart_file");
 
   cs_field_t *f_pot = NULL;
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0)
@@ -1999,6 +2003,63 @@ cs_parameters_check(void)
                                "cs_glob_physical_constants->icorio",
                                cs_glob_physical_constants->icorio,
                                0);
+  }
+
+  /* Check the consistency of the restart_file key */
+  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+    cs_field_t  *f = cs_field_by_id(f_id);
+    cs_restart_file_t r_id = cs_field_get_key_int(f, restart_file_key_id);
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("while reading input data"),
+                                  "restart_file",
+                                  r_id,
+                                  CS_RESTART_DISABLED,
+                                  CS_RESTART_N_RESTART_FILES);
+
+    if (cs_glob_lagr_time_scheme->iilagr == 0) {
+      cs_parameters_is_not_equal_int(CS_ABORT_DELAYED,
+                                   _("while reading input data,\n"
+                                     "the lagrangian checkpoint cannot "
+                                     "be used\n"
+                                     "without having the lagrangian module "
+                                     "enabled."),
+                                     "restart_file",
+                                     r_id,
+                                     CS_RESTART_LAGR_STAT);
+
+      cs_parameters_is_not_equal_int(CS_ABORT_DELAYED,
+                                   _("while reading input data,\n"
+                                     "the lagrangian checkpoint cannot "
+                                     "be used\n"
+                                     "without having the lagrangian module "
+                                     "enabled."),
+                                     "restart_file",
+                                     r_id,
+                                     CS_RESTART_LAGR);
+    }
+
+    if (cs_glob_rad_transfer_params->iirayo == 0)
+      cs_parameters_is_not_equal_int(CS_ABORT_DELAYED,
+                                   _("while reading input data,\n"
+                                     "the radiative checkpoint cannot "
+                                     "be used\n"
+                                     "without having the radiative module "
+                                     "enabled."),
+                                     "restart_file",
+                                     r_id,
+                                     CS_RESTART_RAD_TRANSFER);
+
+    if (cs_glob_1d_wall_thermal->nfpt1d == 0)
+      cs_parameters_is_not_equal_int(CS_ABORT_DELAYED,
+                                   _("while reading input data,\n"
+                                     "the 1D wall thermal checkpoint cannot "
+                                     "be used\n"
+                                     "without having the 1D wall thermal module "
+                                     "enabled."),
+                                     "restart_file",
+                                     r_id,
+                                     CS_RESTART_1D_WALL_THERMAL);
+
   }
 
   /* stop the calculation if needed once all checks have been done */

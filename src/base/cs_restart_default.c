@@ -2603,5 +2603,55 @@ cs_restart_read_time_step_info(cs_restart_t  *r)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Loop over all fields and save them in the restart file which id is
+ *        passed in argument if it matches their "restart_file" key value.
+ *
+ * \param[in, out]  r        associated restart file pointer
+ * \param[in]       r_id     value of the key "restart_file"
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_write_fields(cs_restart_t        *r,
+                        cs_restart_file_t    r_id)
+{
+  int n_fields = cs_field_n_fields();
+  const int restart_file_key_id = cs_field_key_id("restart_file");
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (cs_field_get_key_int(f, restart_file_key_id) == r_id) {
+      cs_restart_write_field_vals(r, f_id, 0);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Loop over all fields and read them in the restart file which id is
+ *        passed in argument if it matches their "restart_file" key value.
+ *
+ * \param[in, out]  r        associated restart file pointer
+ * \param[in]       r_id     value of the key "restart_file"
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_read_fields(cs_restart_t       *r,
+                       cs_restart_file_t   r_id)
+{
+  int n_fields = cs_field_n_fields();
+  const int restart_file_key_id = cs_field_key_id("restart_file");
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (cs_field_get_key_int(f, restart_file_key_id) == r_id) {
+      cs_restart_read_field_vals(r, f_id, 0);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

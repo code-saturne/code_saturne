@@ -270,6 +270,8 @@ do ivar = 1, nvar
   endif
 enddo
 
+call restart_write_fields(rp, RESTART_MAIN)
+
 !===============================================================================
 ! 4. FERMETURE FICHIER SUITE DE BASE
 !===============================================================================
@@ -1052,6 +1054,7 @@ if (iecaux.eq.1) then
     write(nfecra,1110)car54
   endif
 
+  call restart_write_fields(rp, RESTART_AUXILIARY)
 
   ! Fermeture du fichiers suite auxiliaire
   call restart_destroy(rp)

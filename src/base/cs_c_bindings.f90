@@ -42,6 +42,10 @@ module cs_c_bindings
 
   integer :: RESTART_VAL_TYPE_INT_T, RESTART_VAL_TYPE_REAL_T
 
+  integer :: RESTART_DISABLED, RESTART_MAIN, RESTART_AUXILIARY
+  integer :: RESTART_RAD_TRANSFER, RESTART_LAGR, RESTART_LAGR_STAT
+  integer :: RESTART_1D_WALL_THERMAL, RESTART_LES_INFLOW
+
   parameter (MESH_LOCATION_NONE=0)
   parameter (MESH_LOCATION_CELLS=1)
   parameter (MESH_LOCATION_INTERIOR_FACES=2)
@@ -52,6 +56,15 @@ module cs_c_bindings
 
   parameter (RESTART_VAL_TYPE_INT_T=1)
   parameter (RESTART_VAL_TYPE_REAL_T=3)
+
+  parameter (RESTART_DISABLED=-1)
+  parameter (RESTART_MAIN=0)
+  parameter (RESTART_AUXILIARY=1)
+  parameter (RESTART_RAD_TRANSFER=2)
+  parameter (RESTART_LAGR=3)
+  parameter (RESTART_LAGR_STAT=4)
+  parameter (RESTART_1D_WALL_THERMAL=5)
+  parameter (RESTART_LES_INFLOW=6)
 
   !-----------------------------------------------------------------------------
 
@@ -342,6 +355,38 @@ module cs_c_bindings
       implicit none
       type(c_ptr), value :: r
     end subroutine restart_write_bc_coeffs
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Loop over all fields and save them in the restart file which id is
+    !>        passed in argument if it matches their "restart_file" key value.
+
+    !> \param[in, out]   r       restart structure pointer
+    !> \param[in]        r_id    key value
+
+    subroutine restart_write_fields(r, r_id)  &
+      bind(C, name='cs_restart_write_fields')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      integer(c_int), value :: r_id
+    end subroutine restart_write_fields
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Loop over all fields and read them in the restart file which id is
+    !>        passed in argument if it matches their "restart_file" key value.
+
+    !> \param[in, out]   r       restart structure pointer
+    !> \param[in]        r_id    key value
+
+    subroutine restart_read_fields(r, r_id)  &
+      bind(C, name='cs_restart_read_fields')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      integer(c_int), value :: r_id
+    end subroutine restart_read_fields
 
     !---------------------------------------------------------------------------
 

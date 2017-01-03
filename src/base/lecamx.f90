@@ -1475,6 +1475,8 @@ if (ilu.ne.0) then
   write(nfecra,1110)car54
 endif
 
+call restart_read_fields(rp, RESTART_AUXILIARY)
+
 !===============================================================================
 ! 16.  FERMETURE DU FICHIER SUITE AUXILAIRE
 !===============================================================================

@@ -48,6 +48,26 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*! Restart file ids */
+/*-------------------*/
+
+typedef enum {
+
+  CS_RESTART_DISABLED = -1,       /*!< no values to save */
+  CS_RESTART_MAIN = 0,            /*!< save values in main restart file */
+  CS_RESTART_AUXILIARY = 1,       /*!< save values in auxiliary restart file */
+  CS_RESTART_RAD_TRANSFER = 2,    /*!< save values in radiative transfer
+                                       restart file */
+  CS_RESTART_LAGR = 3,            /*!< save values in lagrangian restart file */
+  CS_RESTART_LAGR_STAT = 4,       /*!< save values in restart file for
+                                       lagrangian statistics */
+  CS_RESTART_1D_WALL_THERMAL = 5, /*!< save values in 1D wall thermal restart
+                                       file */
+  CS_RESTART_LES_INFLOW = 6,      /*!< save values in LES inflow restart file */
+  CS_RESTART_N_RESTART_FILES = 7  /*!< Number of types of restart file */
+
+} cs_restart_file_t ;
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -221,6 +241,32 @@ cs_restart_write_field_vals(cs_restart_t  *r,
 
 void
 cs_restart_read_time_step_info(cs_restart_t  *r);
+
+/*----------------------------------------------------------------------------
+ * Loop over all fields and save them in the restart file which id is
+ * passed in argument if it matches their "restart_file" key value.
+ *
+ * parameters:
+ *   r      <-> associated restart file pointer
+ *   r_id   <-- value of the key "restart_file"
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_write_fields(cs_restart_t        *r,
+                        cs_restart_file_t    r_id);
+
+/*----------------------------------------------------------------------------
+ * Loop over all fields and read them in the restart file which id is
+ * passed in argument if it matches their "restart_file" key value.
+ *
+ * parameters:
+ *   r      <-> associated restart file pointer
+ *   r_id   <-- value of the key "restart_file"
+ *----------------------------------------------------------------------------*/
+
+void
+cs_restart_read_fields(cs_restart_t       *r,
+                       cs_restart_file_t   r_id);
 
 /*----------------------------------------------------------------------------*/
 

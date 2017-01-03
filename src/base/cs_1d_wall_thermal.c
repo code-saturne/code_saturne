@@ -52,6 +52,7 @@
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_restart.h"
+#include "cs_restart_default.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -989,6 +990,8 @@ cs_1d_wall_thermal_read(void)
     BFT_FREE(tabvar);
   }
 
+  cs_restart_read_fields(suite, CS_RESTART_1D_WALL_THERMAL);
+
   /* Close the restart file and free structures */
   cs_restart_destroy(&cs_glob_tpar1d_suite);
 }
@@ -1206,6 +1209,8 @@ cs_1d_wall_thermal_write(void)
 
     BFT_FREE(tabvar);
   }
+
+  cs_restart_write_fields(suite, CS_RESTART_1D_WALL_THERMAL);
 
   /* Close the restart file and free structures */
   cs_restart_destroy(&cs_glob_tpar1d_suite);

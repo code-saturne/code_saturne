@@ -59,6 +59,7 @@
 #include "cs_parameters_check.h"
 #include "cs_physical_model.h"
 #include "cs_restart.h"
+#include "cs_restart_default.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_tracking.h"
@@ -1296,6 +1297,8 @@ cs_restart_lagrangian_checkpoint_read(void)
 
     }
 
+    cs_restart_read_fields(cs_lag_stat_restart, CS_RESTART_LAGR_STAT);
+
     cs_log_printf(CS_LOG_DEFAULT,
                   _("      Fin   de la lecture\n"));
 
@@ -2040,6 +2043,8 @@ cs_lagr_restart_read_p(void)
   /* Particle data */
   cs_lagr_restart_read_particle_data(cs_lag_stat_restart);
 
+  cs_restart_read_fields(cs_lag_stat_restart, CS_RESTART_LAGR);
+
   cs_log_printf(CS_LOG_DEFAULT,
                 _("    End reading particle data restart file\n"));
 
@@ -2188,6 +2193,8 @@ cs_restart_lagrangian_checkpoint_write(void)
                              itysup, nbval, CS_TYPE_cs_int_t, tabvar);
     BFT_FREE(tabvar);
   }
+
+  cs_restart_write_fields(cs_lag_stat_restart, CS_RESTART_LAGR);
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _("      End writing info on calculation\n"));
@@ -2497,6 +2504,8 @@ cs_restart_lagrangian_checkpoint_write(void)
       }
 
     }
+
+    cs_restart_write_fields(cs_lag_stat_restart, CS_RESTART_LAGR_STAT);
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _("      End writing statistics and ST\n"));

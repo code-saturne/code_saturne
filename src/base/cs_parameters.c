@@ -945,6 +945,9 @@ cs_parameters_define_field_keys(void)
                              sizeof(cs_solving_info_t),
                              CS_FIELD_VARIABLE);
   cs_field_key_disable_setup_log(cs_field_key_id("solving_info"));
+
+  /* Restart options */
+  cs_field_define_key_int("restart_file", CS_RESTART_DISABLED, 0);
 }
 
 /*----------------------------------------------------------------------------*/
