@@ -288,10 +288,6 @@ void
 cs_f_field_get_type(int           id,
                     int          *type);
 
-void
-cs_f_field_set_type(int           id,
-                    int           type);
-
 int
 cs_f_field_have_previous(int   id);
 
@@ -912,25 +908,6 @@ cs_f_field_get_type(int           id,
   const cs_field_t *f = cs_field_by_id(id);
 
   *type = f->type;
-}
-
-/*----------------------------------------------------------------------------
- * Sets the type flag of a field defined by its id.
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   id   <-- field id
- *   type <-- field type flag
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_set_type(int           id,
-                    int           type)
-{
-  cs_field_t *f = cs_field_by_id(id);
-
-  f->type = type;
 }
 
 /*----------------------------------------------------------------------------

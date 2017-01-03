@@ -302,18 +302,6 @@ module field
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function setting a given field's type
-
-    subroutine cs_f_field_set_type(f_id, f_type)  &
-      bind(C, name='cs_f_field_set_type')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-      integer(c_int), value :: f_type
-    end subroutine cs_f_field_set_type
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function indicating if a field maintains a previous time
 
     function cs_f_field_have_previous(f_id) result(have_previous)  &
