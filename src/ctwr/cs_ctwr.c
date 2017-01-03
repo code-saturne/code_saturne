@@ -90,6 +90,68 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
+/*=============================================================================
+ * Local Type Definitions
+ *============================================================================*/
+
+/* Cooling tower exchange zone structure definition */
+/*--------------------------------------------------*/
+
+struct _cs_ctwr_zone_t {
+
+  int                  num;        /* Exchange zone number */
+  char                *criteria;   /* Exchange zone elements name */
+  cs_ctwr_model_t      model;      /* Exchange model type */
+  cs_ctwr_zone_type_t  type;       /* Zone type */
+
+  cs_real_t  hmin;               /* Minimum vertical height of exchange zone */
+  cs_real_t  hmax;               /* Maximum height of exchange zone */
+  cs_real_t  delta_t;            /* Temperature delta required for exchange zone
+                                    if positive */
+  cs_real_t  relax;              /* Relaxation of the imposed temperature */
+
+  cs_real_t  t_l_bc;             /* Water entry temperature */
+  cs_real_t  q_l_bc;             /* Water flow */
+  cs_real_t  y_l_bc;             /* Mass fraction of water */
+
+  cs_real_t  xap;                /* Exchange law lambda coefficient */
+  cs_real_t  xnp;                /* Exchange law n exponent */
+
+  cs_real_t  surface_in;         /* Water inlet surface */
+  cs_real_t  surface_out;        /* Water outlet surface */
+  cs_real_t  surface;            /* Total surface */
+
+  cs_int_t   n_cells;            /* Number of air cells belonging to the zone */
+
+  cs_int_t   up_ct_id;           /* Id of upstream exchange zone (if any) */
+
+  cs_int_t   *ze_cell_list;      /* List of cells of ct criteria */
+  cs_int_t   *mark_ze;           /* Cell marker for ct */
+
+  cs_lnum_t  n_inlet_faces;      /* Number of inlet faces */
+  cs_lnum_t  n_outlet_faces;     /* Number of outlet faces */
+  cs_lnum_t *inlet_faces_list;   /* List of inlet faces */
+  cs_lnum_t *outlet_faces_list;  /* List of outlet faces */
+
+  cs_real_t  q_l_in;          /* Water entry flow */
+  cs_real_t  q_l_out;         /* Water exit flow */
+  cs_real_t  t_l_in;          /* Mean water entry temperature */
+  cs_real_t  t_l_out;         /* Mean water exit temperature */
+  cs_real_t  h_l_in;          /* Mean water entry enthalpy */
+  cs_real_t  h_l_out;         /* Mean water exit enthalpy */
+  cs_real_t  t_h_in;          /* Mean air entry temperature */
+  cs_real_t  t_h_out;         /* Mean air exit temperature */
+  cs_real_t  xair_e;          /* Mean air entry humidity */
+  cs_real_t  xair_s;          /* Mean air exit humidity */
+  cs_real_t  h_h_in;          /* Mean air entry enthalpy */
+  cs_real_t  h_h_out;         /* Mean air exit enthalpy */
+  cs_real_t  q_h_in;          /* Air entry flow */
+  cs_real_t  q_h_out;         /* Air exit flow */
+
+  cs_real_t  droplet_diam;    /* Drop diameter for rain zones */
+
+};
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -99,16 +161,7 @@ BEGIN_C_DECLS
 cs_lnum_t            cs_glob_ct_nbr_max = 0;
 
 cs_lnum_t            cs_glob_ct_nbr     = 0;
-cs_ctwr_zone_t     ** cs_glob_ct_tab   = NULL;
-
-/* Start and end (negative) numbers associated with
-   dedicated post processing meshes */
-
-/* array containing the stacking of the exchange area*/
-cs_lnum_t  *  cs_stack_ct    = NULL;
-
-/* array containing the treatment order of the exchanges areas */
-cs_lnum_t  *  cs_chain_ct = NULL;
+cs_ctwr_zone_t     **cs_glob_ct_tab   = NULL;
 
 /* Restart file */
 
@@ -145,13 +198,9 @@ cs_ctwr_field_pointer_map(void)
 /*!
  * \brief  Define a cooling tower exchange zone
  *
- * \param[in]   zone_criterion  Zone name for selction
- * \param[in]   imctch          model : 1 Poppe
- *                                      2 Merkel
- *                                      0 None
- * \param[in]   ct_type         type  : 1 Counter current
- *                                      2 Crossed current
- *                                      3 Rain zone
+ * \param[in]   zone_criteria   Zone selection criteria
+ * \param[in]   model           model type
+ * \param[in]   zone_type       exchange zone type
  * \param[in]   delta_t         Imposed delta temperature delta between inlet
  *                              and oulet of the zone
  * \param[in]   relax           Relaxation of the imposed delta temperature
@@ -164,17 +213,18 @@ cs_ctwr_field_pointer_map(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_ctwr_define(const char       zone_criterion[],
-                    const int        imctch,
-                    const int        ct_type,
-                    const cs_real_t  delta_t,
-                    const cs_real_t  relax,
-                    const cs_real_t  t_l_bc,
-                    const cs_real_t  q_l_bc,
-                    const cs_real_t  xap,
-                    const cs_real_t  xnp,
-                    const cs_real_t  surface,
-                    const cs_real_t  droplet_diam)
+void
+cs_ctwr_define(const char           zone_criteria[],
+               cs_ctwr_model_t      model,
+               cs_ctwr_zone_type_t  zone_type,
+               cs_real_t            delta_t,
+               cs_real_t            relax,
+               cs_real_t            t_l_bc,
+               cs_real_t            q_l_bc,
+               cs_real_t            xap,
+               cs_real_t            xnp,
+               cs_real_t            surface,
+               cs_real_t            droplet_diam)
 {
   cs_ctwr_zone_t  *ct;
   int length;
@@ -185,14 +235,14 @@ void cs_ctwr_define(const char       zone_criterion[],
 
   BFT_MALLOC(ct, 1, cs_ctwr_zone_t);
 
-  ct->ze_name = NULL;
-  BFT_MALLOC(ct->ze_name, strlen(zone_criterion)+1, char);
-  strcpy(ct->ze_name, zone_criterion);
+  ct->criteria = NULL;
+  BFT_MALLOC(ct->criteria, strlen(zone_criteria)+1, char);
+  strcpy(ct->criteria, zone_criteria);
 
   ct->num = cs_glob_ct_nbr + 1;
 
-  ct->imctch = imctch;
-  ct->ct_type = ct_type;
+  ct->model = model;
+  ct->type = zone_type;
 
   ct->delta_t   = delta_t;
   ct->relax = relax;
@@ -293,7 +343,7 @@ cs_ctwr_build_all(const cs_mesh_t              *mesh,
     /* Cells selection */
     BFT_MALLOC(ct->ze_cell_list, mesh->n_cells_with_ghosts, cs_lnum_t);
 
-    cs_selector_get_cell_list(ct->ze_name, &(ct->n_cells), ct->ze_cell_list);
+    cs_selector_get_cell_list(ct->criteria, &(ct->n_cells), ct->ze_cell_list);
 
     BFT_REALLOC(ct->ze_cell_list, ct->n_cells, cs_lnum_t);
   }
@@ -313,7 +363,7 @@ cs_ctwr_all_destroy(void)
   for (int id = 0; id < cs_glob_ct_nbr; id++) {
 
     ct = cs_glob_ct_tab[id];
-    BFT_FREE(ct->ze_name);
+    BFT_FREE(ct->criteria);
     BFT_FREE(ct->ze_cell_list);
     BFT_FREE(ct->inlet_faces_list);
     BFT_FREE(ct->outlet_faces_list);
@@ -324,8 +374,6 @@ cs_ctwr_all_destroy(void)
   cs_glob_ct_nbr_max = 0;
   cs_glob_ct_nbr = 0;
 
-  BFT_FREE(cs_stack_ct);
-  BFT_FREE(cs_chain_ct);
   BFT_FREE(cs_glob_ctwr_props);
 
   BFT_FREE(cs_glob_ct_tab);
@@ -351,16 +399,13 @@ cs_ctwr_log_setup(void)
   for (int i = 0; i < cs_glob_ct_nbr; i++) {
     cs_ctwr_zone_t *ct = cs_glob_ct_tab[i];
 
-    char *model_type;
-    if (ct->imctch == 0) {
-      BFT_MALLOC(model_type, 5, char);
-      sprintf(model_type, "None");
-    } else if (ct->imctch == 1) {
-      BFT_MALLOC(model_type, 6, char);
-      sprintf(model_type, "Poppe");
-    } else if (ct->imctch == 2) {
-      BFT_MALLOC(model_type, 7, char);
-      sprintf(model_type, "Merkel");
+    char model_type[16];
+    if (ct->model == CS_CTWR_NONE) {
+      snprintf(model_type, 15, "None");
+    } else if (ct->model == CS_CTWR_POPPE) {
+      snprintf(model_type, 15, "Poppe");
+    } else if (ct->model == CS_CTWR_MERKEL) {
+      snprintf(model_type, 15, "Merkel");
     }
 
     cs_log_printf
@@ -379,11 +424,11 @@ cs_ctwr_log_setup(void)
          "      Injected mass flow rate: %f\n"
          "      Total surface of ingoing water: %f\n"),
        ct->num,
-       ct->ze_name,
+       ct->criteria,
        model_type,
        ct->xap,
        ct->xnp,
-       ct->ct_type,
+       ct->type,
        ct->droplet_diam,
        ct->delta_t,
        ct->relax,
@@ -580,42 +625,47 @@ cs_ctwr_log_balance(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialise the field variables
+ * \brief Initialize the field variables
  *
  * \param[in]     rho0        Reference density of humid air
  * \param[in]     t0          Reference temperature of humid air
  * \param[in]     p0          Reference pressure
- * \param[in]     molmassrat  Dry air to water vapour molecular mass ratio
+ * \param[in]     molmassrat  Dry air to water vapor molecular mass ratio
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_ctwr_init_field_vars(const cs_real_t rho0,
-                             const cs_real_t t0,
-                             const cs_real_t p0,
-                             const cs_real_t molmassrat)
+void
+cs_ctwr_init_field_vars(cs_real_t  rho0,
+                        cs_real_t  t0,
+                        cs_real_t  p0,
+                        cs_real_t  molmassrat)
 {
   cs_real_t cp_h;
 
   // Initialise the fields - based on map
-  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;      /* humid air (bulk) density */
+  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;   /* humid air (bulk) density */
   cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;       /* humid air temperature */
-  cs_real_t *t_h_a = (cs_real_t *)CS_F_(t)->val_pre;  /* humid air temperature */
+  cs_real_t *t_h_a = (cs_real_t *)CS_F_(t)->val_pre; /* humid air temperature */
   cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;       /* humid air enthalpy */
-  cs_real_t *y_a = (cs_real_t *)CS_F_(ym_a)->val;       /* dry air mass fraction in humid air */
+  cs_real_t *y_a = (cs_real_t *)CS_F_(ym_a)->val;    /* dry air mass fraction in
+                                                        humid air */
   cs_real_t *x_s = cs_field_by_name("x_s")->val;
   cs_real_t *x = (cs_real_t *)CS_F_(humid)->val; /* humidity in humid air (bulk) */
 
   cs_real_t *t_l = (cs_real_t *)CS_F_(t_l)->val;     /* liquid temperature */
   cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;     /* liquid enthalpy */
-  cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;       /* liquid mass per unit cell volume */
+  cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;    /* liquid mass per unit
+                                                        cell volume */
 
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
-    // Update humidity field
-    // in case users have updated the initial dry air mass fraction
-    // Note: this is a bit dubious as users could also have chosen to reset the humidity?
+    /* Update humidity field in case users have updated the initial
+       dry air mass fraction.
+       Note: this is a bit dubious as users could also have chosen
+       to reset the humidity ? */
+
     if (y_a[cell_id] > 0.0 && y_a[cell_id] <= 1.0) {
       x[cell_id] = (1.0-y_a[cell_id])/y_a[cell_id];
     } else {
@@ -672,14 +722,15 @@ void cs_ctwr_init_field_vars(const cs_real_t rho0,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialise the flow variables relevant to the cooling tower scalars
+ * \brief Initialize the flow variables relevant to the cooling tower scalars
  * inside the packing zones
  *
  * \param[in,out] liq_mass_flow Liquid mass flow rate
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
+void
+cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 {
   /* humid air (bulk) density */
   const cs_real_t  *rho_h = (cs_real_t *)CS_F_(rho)->val;
@@ -886,19 +937,20 @@ void cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update the thermo physical properties fields for the humid air and
- * the liquid
+ *        the liquid
  *
  * \param[in]     rho0        Reference density of humid air
  * \param[in]     t0          Reference temperature of humid air
  * \param[in]     p0          Reference pressure
- * \param[in]     molmassrat  Dry air to water vapour molecular mass ratio
+ * \param[in]     molmassrat  Dry air to water vapor molecular mass ratio
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_ctwr_phyvar_update(const cs_real_t rho0,
-                           const cs_real_t t0,
-                           const cs_real_t p0,
-                           const cs_real_t molmassrat)
+void
+cs_ctwr_phyvar_update(cs_real_t  rho0,
+                      cs_real_t  t0,
+                      cs_real_t  p0,
+                      cs_real_t  molmassrat)
 {
   const cs_lnum_2_t *i_face_cells =
     (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
@@ -1038,21 +1090,23 @@ void cs_ctwr_phyvar_update(const cs_real_t rho0,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Phase change source terms - Exchange terms between the injected liquid
- *        and the water vapour phase in the bulk, humid air
+ * \brief Phase change source terms - Exchange terms between the injected
+ *        liquid and the water vapor phase in the bulk, humid air
+ *
  * \param[in]     f_id          field id
-   \param[in]     p0            Reference pressure
-   \param[in]     molmassrat    dry air to water vapour molecular mass ratio
-   \param[in,out] exp_st        Explicit source term
-   \param[in,out] imp_st        Implicit source term
+ * \param[in]     p0            Reference pressure
+ * \param[in]     molmassrat    dry air to water vapor molecular mass ratio
+ * \param[in,out] exp_st        Explicit source term
+ * \param[in,out] imp_st        Implicit source term
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_ctwr_source_term(const int       f_id,
-                         const cs_real_t p0,
-                         const cs_real_t molmassrat,
-                         cs_real_t       exp_st[],
-                         cs_real_t       imp_st[])
+void
+cs_ctwr_source_term(int              f_id,
+                    const cs_real_t  p0,
+                    const cs_real_t  molmassrat,
+                    cs_real_t        exp_st[],
+                    cs_real_t        imp_st[])
 {
   cs_lnum_t  iloc = 0;
 
@@ -1088,7 +1142,6 @@ void cs_ctwr_source_term(const int       f_id,
   /* Identify the source term formulation for the required field */
 
   const cs_field_t *f = cs_field_by_id(f_id);
-  const char       *f_name = f->name;
 
   cs_real_t *f_var = f->val;  /* field variable */
 
@@ -1125,10 +1178,10 @@ void cs_ctwr_source_term(const int       f_id,
     cs_real_t drop_diam  = ct->droplet_diam;
     cs_real_t beta_x_0 = ct->xap;
     cs_real_t xnp = ct->xnp;
-    int ct_type = ct->ct_type;
-    int evap_model = ct->imctch;
+    int zone_type = ct->type;
+    int evap_model = ct->model;
 
-    if (evap_model > 0) {
+    if (evap_model > CS_CTWR_NONE) {
 
       for (cs_lnum_t j = 0; j < ct->n_cells; j++) {
 
@@ -1145,19 +1198,20 @@ void cs_ctwr_source_term(const int       f_id,
 
         cs_real_t beta_x_a, xlew;
 
-        if (evap_model == 1) {
+        if (evap_model == CS_CTWR_POPPE) {
 
           /*--------------------------------------------*
            * Poppe Model                                *
            *--------------------------------------------*/
 
-          if (ct_type == 1 || ct_type == 2) {
+          if (   zone_type == CS_CTWR_COUNTER_CURRENT
+              || zone_type == CS_CTWR_CROSS_CURRENT) {
 
             /*--------------------------------------------*
              * Counter or cross flow packing zone         *
              *--------------------------------------------*/
 
-            if (ct_type == 1) {
+            if (zone_type == CS_CTWR_COUNTER_CURRENT) {
               /* Counter flow packing */
               v_air = CS_ABS(cs_math_3_dot_product(u_air[cell_id], vertical));
             }
@@ -1185,7 +1239,7 @@ void cs_ctwr_source_term(const int       f_id,
 
           }
 
-          else if (ct_type == 3) {//FIXME
+          else if (zone_type == CS_CTWR_RAIN) {//FIXME
 
             /*--------------------------------------------*/
             /* Rain zone                                  */
@@ -1230,13 +1284,13 @@ void cs_ctwr_source_term(const int       f_id,
             }
           }
         }
-        else if (evap_model == 2) {
+        else if (evap_model == CS_CTWR_MERKEL) {
 
           /*--------------------------------------------*
            * Merkel Model                               *
            *--------------------------------------------*/
 
-          if (ct_type <= 2) {
+          if (zone_type <= 2) {
 
             /*--------------------------------------------*
              * Counter or cross flow packing zone         *
@@ -1251,7 +1305,7 @@ void cs_ctwr_source_term(const int       f_id,
             if (mass_flux_l > 1.e-6) {
 
               /* Counter flow packing */
-              if (ct_type == 1) {
+              if (zone_type == CS_CTWR_COUNTER_CURRENT) {
                 v_air = CS_ABS(cs_math_3_dot_product(u_air[cell_id], vertical));
               }
               /* Cross flow packing */
@@ -1268,7 +1322,7 @@ void cs_ctwr_source_term(const int       f_id,
             }
           }
 
-          else if (ct_type == 3) {  //FIXME
+          else if (zone_type == CS_CTWR_RAIN) {  //FIXME
 
             /*--------------------------------------------*/
             /* Rain zone                                  */
@@ -1373,14 +1427,15 @@ void cs_ctwr_source_term(const int       f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Phase change mass source term from the evaporating liquid to the bulk,
- * humid air.
- * Careful, this is different from an injection source term, which would normally
- * be handled with 'cs_user_mass_source_term'
+ * \brief Phase change mass source term from the evaporating liquid to the
+ *        bulk, humid air.
  *
- * \param[in]   iappel          Calling sequence flag
+ * Careful, this is different from an injection source term, which would
+ * normally be handled with 'cs_user_mass_source_term'
+ *
+ * \param[in]   call_id          Calling sequence flag
  * \param[in]   p0              Reference pressure
- * \param[in]   molmassrat      Dry air to water vapour molecular mass ratio
+ * \param[in]   molmassrat      Dry air to water vapor molecular mass ratio
  * \param[in]   n_tot           Pointer to the total number
  *                              of cells in the packing zones
  * \param[in]   packing_cell    Packing cell ids
@@ -1388,14 +1443,15 @@ void cs_ctwr_source_term(const int       f_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_ctwr_bulk_mass_source_term(const int       iappel,
-                                   const cs_real_t p0,
-                                   const cs_real_t molmassrat,
-                                   int             *n_tot,
-                                   cs_lnum_t       packing_cell[],
-                                   cs_real_t       mass_source[])
+void
+cs_ctwr_bulk_mass_source_term(int               call_id,
+                              const cs_real_t   p0,
+                              const cs_real_t   molmassrat,
+                              int              *n_tot,
+                              cs_lnum_t         packing_cell[],
+                              cs_real_t         mass_source[])
 {
-  if (iappel == 1) {
+  if (call_id == 1) {
     // Count the total number of cells in which the source term will be applied
     // This is the total number of cells in the packing regions
 
@@ -1409,7 +1465,7 @@ void cs_ctwr_bulk_mass_source_term(const int       iappel,
       *n_tot = *n_tot + (ct->n_cells);
     }
 
-  } else if (iappel == 2) {
+  } else if (call_id == 2) {
 
     // Fill in the array of cells in which the source term will be applied
     // These are the cells located in the packing regions
@@ -1429,7 +1485,7 @@ void cs_ctwr_bulk_mass_source_term(const int       iappel,
 
     }
 
-  } else if (iappel == 3) {
+  } else if (call_id == 3) {
 
     // Compute the mass exchange term
     cs_real_t *exp_st;
@@ -1462,7 +1518,7 @@ void cs_ctwr_bulk_mass_source_term(const int       iappel,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Convert the injected liquid scalars from and to their transported form.
+ * \brief  Convert injected liquid scalars from and to their transported form.
  *
  * \param[in]   iflag     1: Convert transported variables to physical variables
  *                        2: Convert physical variables to
@@ -1470,15 +1526,13 @@ void cs_ctwr_bulk_mass_source_term(const int       iappel,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_ctwr_transport_vars(const int iflag)
+void
+cs_ctwr_transport_vars(int  iflag)
 {
-  cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;  /* humid air (bulk) density */
-
   // Fields based on maps
-  cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val; /* liquid enthalpy */
-  cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;   /* liquid mass per unit cell volume*/
-
-  cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;   /* liquid enthalpy */
+  cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;  /* liquid mass per unit
+                                                      cell volume*/
 
   if (iflag == 1) {
 
