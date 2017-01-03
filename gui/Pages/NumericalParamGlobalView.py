@@ -116,7 +116,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.comboBoxIMRGRA.activated[str].connect(self.slotIMRGRA)
         self.lineEditSRROM.textChanged[str].connect(self.slotSRROM)
         self.comboBoxNTERUP.activated[str].connect(self.slotNTERUP)
-        self.spinBoxNTERUP.valueChanged[str].connect(self.slotNTERUP2)
+        self.spinBoxNTERUP.valueChanged[int].connect(self.slotNTERUP2)
 
         # Validators
         validatorRELAXP = DoubleValidator(self.lineEditRELAXP, min=0., max=1.)
