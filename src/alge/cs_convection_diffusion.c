@@ -1785,7 +1785,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   cs_real_3_t *grad;
   cs_real_3_t *gradup = NULL;
   cs_real_3_t *gradst = NULL;
-  cs_field_t *f;
+  cs_field_t *f = NULL;
 
   cs_field_t *f_limiter = NULL;
   cs_real_t *limiter = NULL;
@@ -5098,7 +5098,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   cs_real_3_t *grad;
   cs_real_3_t *gradup = NULL;
   cs_real_3_t *gradst = NULL;
-  cs_field_t *f;
+  cs_field_t *f = NULL;
 
   cs_field_t *f_limiter = NULL;
   cs_real_t *limiter = NULL;
