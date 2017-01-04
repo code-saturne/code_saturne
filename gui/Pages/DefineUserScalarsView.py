@@ -161,6 +161,10 @@ class GGDHDelegate(QItemDelegate):
                 self.modelCombo.addItem(self.tr("GGDH"), "GGDH")
                 self.modelCombo.addItem(self.tr("AFM"), "AFM")
                 self.modelCombo.addItem(self.tr("DFM"), "DFM")
+            if TurbulenceModel(self.case).getTurbulenceModel() == "Rij-EBRSM":
+                self.modelCombo.addItem(self.tr("EB-GGDH"), "EB-GGDH")
+                self.modelCombo.addItem(self.tr("EB-AFM"),  "EB-AFM")
+                self.modelCombo.addItem(self.tr("EB-DFM"),  "EB-DFM")
 
 
     def setModelData(self, comboBox, model, index):
@@ -337,7 +341,7 @@ class StandardItemModelScalars(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        # Label
+        # Name
         if col == 0:
             old_pname = self._data[row][col]
             new_pname = str(from_qvariant(value, to_text_string))
@@ -348,7 +352,7 @@ class StandardItemModelScalars(QStandardItemModel):
         elif col == 1:
             turbFlux = str(from_qvariant(value, to_text_string))
             self._data[row][col] = turbFlux
-            [name, var] = self._data[row]
+            name = self._data[row][0]
             self.mdl.setTurbulentFluxModel(name, turbFlux)
 
         self.dataChanged.emit(index, index)
@@ -410,6 +414,7 @@ class StandardItemModelVariance(QStandardItemModel):
 
         self.setColumnCount(len(self.headers))
 
+        # FIXME
         self.toolTipRole = [self.tr("Code_Saturne keyword: ???"),
                             self.tr("Code_Saturne keyword: ???")]
 
@@ -453,7 +458,7 @@ class StandardItemModelVariance(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        # Label
+        # name
         if col == 0:
             old_pname = self._data[row][col]
             new_pname = str(from_qvariant(value, to_text_string))
@@ -461,12 +466,12 @@ class StandardItemModelVariance(QStandardItemModel):
             self.mdl.renameScalarLabel(old_pname, new_pname)
 
 
-        # Variance
+        # Variance (associated scalar name)
         elif col == 1:
             variance = str(from_qvariant(value, to_text_string))
             self._data[row][col] = variance
-            [name, var] = self._data[row]
-            self.mdl.setScalarVariance(name,var)
+            name = self._data[row][0]
+            self.mdl.setScalarVariance(name, variance)
 
         self.dataChanged.emit(index, index)
         return True
@@ -557,7 +562,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         delegateLabel        = NameDelegate(self.tableScalars)
         delegateGGDH         = GGDHDelegate(self.tableScalars, self.case)
         delegateVarianceName = VarianceNameDelegate(self.tableVariance)
-        delegateVariance     = VarianceDelegate(self.tableVariance)
+        delegateVariance     = VarianceDelegate(self.tableScalars)
 
         self.tableScalars.setItemDelegateForColumn(0, delegateLabel)
         self.tableScalars.setItemDelegateForColumn(1, delegateGGDH)

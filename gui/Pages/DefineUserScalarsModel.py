@@ -84,10 +84,13 @@ class DefineUserScalarsModel(Variables, Model):
         else:
             default['GGDH']                  = "SGDH"
         del GroundwaterModel
-        if self.getScalarNameList():
-            default['variance']          = self.getScalarNameList()[0]
+        if self.getThermalScalarName():
+            default['variance']          = self.getThermalScalarName()[0]
         else:
-            default['variance']          = "no scalar"
+            if self.getScalarNameList():
+                default['variance']          = self.getScalarNameList()[0]
+            else:
+                default['variance']          = "no scalar"
 
         return default
 
@@ -345,7 +348,7 @@ class DefineUserScalarsModel(Variables, Model):
         l= self.__defaultVarianceName(name)
         if l not in self.getScalarsVarianceList():
             self.scalar_node.xmlInitNode('variable', name=l, type="user", label=l)
-            if self.getScalarNameList() != None:
+            if (self.getThermalScalarName() != None) or (self.getScalarNameList() != None):
                 self.setScalarVariance(l, self.defaultScalarValues()['variance'])
 
         self.__updateScalarNameAndDiffusivityName()
