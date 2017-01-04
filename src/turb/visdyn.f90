@@ -136,7 +136,7 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 ! Map field arrays
-call field_get_val_prev_v(ivarfl(iu), vel)
+call field_get_val_v(ivarfl(iu), vel)
 
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
