@@ -1877,17 +1877,6 @@ module cs_c_bindings
 
     ! Interface to C function for Cooling towers
 
-    subroutine cs_ctwr_transport_vars(iflag)                                      &
-      bind(C, name='cs_ctwr_transport_vars')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: iflag
-    end subroutine cs_ctwr_transport_vars
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function for Cooling towers
-
     subroutine cs_ctwr_bulk_mass_source_term(iappel, p0, molmassrat,         &
                                              n_tot, packing_cell,            &
                                              mass_source)                    &

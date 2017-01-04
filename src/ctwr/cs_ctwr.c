@@ -158,10 +158,9 @@ struct _cs_ctwr_zone_t {
 
 /* array of exchanges area */
 
-cs_lnum_t            cs_glob_ct_nbr_max = 0;
-
-cs_lnum_t            cs_glob_ct_nbr     = 0;
-cs_ctwr_zone_t     **cs_glob_ct_tab   = NULL;
+static int               _n_ct_zones_max = 0;
+static int               _n_ct_zones     = 0;
+static cs_ctwr_zone_t  **_ct_zone   = NULL;
 
 /* Restart file */
 
@@ -169,29 +168,106 @@ cs_ctwr_zone_t     **cs_glob_ct_tab   = NULL;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Additional output for cooling towers
+ *
+ * parameters:
+ *   input       <-> pointer to optional (untyped) value or structure;
+ *                   here, we should point to _default_input.
+ *   mesh_id     <-- id of the output mesh for the current call
+ *   cat_id      <-- category id of the output mesh for the current call
+ *   ent_flag    <-- indicate global presence of cells (ent_flag[0]), interior
+ *                   faces (ent_flag[1]), boundary faces (ent_flag[2]),
+ *                   particles (ent_flag[3]) or probes (ent_flag[4])
+ *   n_cells     <-- local number of cells of post_mesh
+ *   n_i_faces   <-- local number of interior faces of post_mesh
+ *   n_b_faces   <-- local number of boundary faces of post_mesh
+ *   cell_ids    <-- list of cells (0 to n-1) of post-processing mesh
+ *   i_face_ids  <-- list of interior faces (0 to n-1) of post-processing mesh
+ *   b_face_ids  <-- list of boundary faces (0 to n-1) of post-processing mesh
+ *   ts          <-- time step status structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_write_liquid_vars(void                  *input,
+                   int                    mesh_id,
+                   int                    cat_id,
+                   int                    ent_flag[5],
+                   cs_lnum_t              n_cells,
+                   cs_lnum_t              n_i_faces,
+                   cs_lnum_t              n_b_faces,
+                   const cs_lnum_t        cell_ids[],
+                   const cs_lnum_t        i_face_ids[],
+                   const cs_lnum_t        b_face_ids[],
+                   const cs_time_step_t  *ts)
+{
+  CS_UNUSED(input);
+  CS_UNUSED(ent_flag);
+  CS_UNUSED(n_i_faces);
+  CS_UNUSED(n_b_faces);
+  CS_UNUSED(i_face_ids);
+  CS_UNUSED(b_face_ids);
+
+  if (cat_id == CS_POST_MESH_VOLUME) {
+
+    const cs_mesh_t *mesh = cs_glob_mesh;
+
+    /* Liquid fraction enthalpy */
+
+    cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;   /* liquid enthalpy */
+    cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;  /* liquid mass per unit
+                                                        cell volume*/
+
+    cs_real_t *val;
+    BFT_MALLOC(val, mesh->n_cells, cs_real_t);
+
+    /* Value on all cells */
+
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+      val[i] = 0;
+
+    for (int ict = 0; ict < _n_ct_zones; ict++) {
+      cs_ctwr_zone_t *ct = _ct_zone[ict];
+      for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
+        cs_lnum_t cell_id = ct->ze_cell_list[i];
+        if (y_l[cell_id] > 0.)
+          val[cell_id] = h_l[cell_id]/y_l[cell_id];
+      }
+    }
+
+    /* Values may be restricted to selection */
+
+    if (cell_ids != NULL) {
+      cs_real_t *_val;
+      BFT_MALLOC(_val, n_cells, cs_real_t);
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        _val[i] = val[cell_ids[i]];
+      BFT_FREE(val);
+      val = _val;
+    }
+
+    const char name[] = "Liquid fraction enthalpy";
+
+    cs_post_write_var(mesh_id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
+                      _(name),
+                      1,      /* dim */
+                      true,   /* interlace */
+                      false,  /* use_parent */
+                      CS_POST_TYPE_cs_real_t,
+                      val,    /* cell values */
+                      NULL,   /* internal face values */
+                      NULL,   /* boundary face values */
+                      ts);
+
+    BFT_FREE(val);
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Fonctions publiques pour API Fortran
- *============================================================================*/
-
-void
-cs_ctwr_field_pointer_map(void)
-{
-  /* No need to redefine the temperature and enthalpy for humid air as they
-     have already been defined in 'cs_field_pointer_map',
-     which comes after 'ctvarp' */
-  cs_field_pointer_map(CS_ENUMF_(humid), cs_field_by_name_try("humidity"));
-  cs_field_pointer_map(CS_ENUMF_(ym_a), cs_field_by_name_try("ym_dry_air"));
-  cs_field_pointer_map(CS_ENUMF_(t_l), cs_field_by_name_try("temperature_liquid"));
-  cs_field_pointer_map(CS_ENUMF_(h_l), cs_field_by_name_try("enthalpy_liquid"));
-  cs_field_pointer_map(CS_ENUMF_(ym_l), cs_field_by_name_try("ym_liquid"));
-  cs_field_pointer_map(CS_ENUMF_(thermal_diff_h),
-      cs_field_by_name_try("thermal_conductivity"));
-}
-
-/*============================================================================
- * Fonctions publiques
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -239,7 +315,7 @@ cs_ctwr_define(const char           zone_criteria[],
   BFT_MALLOC(ct->criteria, strlen(zone_criteria)+1, char);
   strcpy(ct->criteria, zone_criteria);
 
-  ct->num = cs_glob_ct_nbr + 1;
+  ct->num = _n_ct_zones + 1;
 
   ct->model = model;
   ct->type = zone_type;
@@ -287,15 +363,15 @@ cs_ctwr_define(const char           zone_criteria[],
   /* Cells selection */
   ct->ze_cell_list = NULL;
 
-  if (cs_glob_ct_nbr == cs_glob_ct_nbr_max) {
-    cs_glob_ct_nbr_max = (cs_glob_ct_nbr_max + 1);
-    BFT_REALLOC(cs_glob_ct_tab, cs_glob_ct_nbr_max, cs_ctwr_zone_t *);
+  if (_n_ct_zones >= _n_ct_zones_max) {
+    _n_ct_zones_max = (_n_ct_zones_max + 1);
+    BFT_REALLOC(_ct_zone, _n_ct_zones_max, cs_ctwr_zone_t *);
   }
 
   /* Add it to exchange zones array */
 
-  cs_glob_ct_tab[cs_glob_ct_nbr] = ct;
-  cs_glob_ct_nbr += 1;
+  _ct_zone[_n_ct_zones] = ct;
+  _n_ct_zones += 1;
 
   if (cs_glob_rank_id <= 0) {
     length = strlen("cooling_towers_balance.") + 3;
@@ -321,6 +397,27 @@ cs_ctwr_define(const char           zone_criteria[],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Map fields used by the cooling tower module to pointers.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_field_pointer_map(void)
+{
+  /* No need to redefine the temperature and enthalpy for humid air as they
+     have already been defined in 'cs_field_pointer_map',
+     which comes after 'ctvarp' */
+  cs_field_pointer_map(CS_ENUMF_(humid), cs_field_by_name_try("humidity"));
+  cs_field_pointer_map(CS_ENUMF_(ym_a), cs_field_by_name_try("ym_dry_air"));
+  cs_field_pointer_map(CS_ENUMF_(t_l), cs_field_by_name_try("temperature_liquid"));
+  cs_field_pointer_map(CS_ENUMF_(h_l), cs_field_by_name_try("enthalpy_liquid"));
+  cs_field_pointer_map(CS_ENUMF_(ym_l), cs_field_by_name_try("ym_liquid"));
+  cs_field_pointer_map(CS_ENUMF_(thermal_diff_h),
+                       cs_field_by_name_try("thermal_conductivity"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the cells belonging to the different packing zones.
  *
  * \param[in]   mesh             associated mesh structure
@@ -337,15 +434,26 @@ cs_ctwr_build_all(const cs_mesh_t              *mesh,
 
   cs_ctwr_zone_t  *ct;
 
-  for (int id = 0; id < cs_glob_ct_nbr; id++) {
+  for (int id = 0; id < _n_ct_zones; id++) {
 
-    ct = cs_glob_ct_tab[id];
+    ct = _ct_zone[id];
     /* Cells selection */
     BFT_MALLOC(ct->ze_cell_list, mesh->n_cells_with_ghosts, cs_lnum_t);
 
     cs_selector_get_cell_list(ct->criteria, &(ct->n_cells), ct->ze_cell_list);
 
     BFT_REALLOC(ct->ze_cell_list, ct->n_cells, cs_lnum_t);
+  }
+
+  /* Postprocessing: multiply enthalpy by fraction */
+
+  cs_field_t *f = cs_field_by_name_try("enthalpy_liquid");
+  if (f != NULL) {
+    const int vis_key_id = cs_field_key_id("post_vis");
+    if (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION) {
+      cs_post_add_time_mesh_dep_output(_write_liquid_vars, NULL);
+      cs_field_clear_key_int_bits(f, vis_key_id, CS_POST_ON_LOCATION);
+    }
   }
 }
 
@@ -360,9 +468,9 @@ cs_ctwr_all_destroy(void)
 {
   cs_ctwr_zone_t  *ct;
 
-  for (int id = 0; id < cs_glob_ct_nbr; id++) {
+  for (int id = 0; id < _n_ct_zones; id++) {
 
-    ct = cs_glob_ct_tab[id];
+    ct = _ct_zone[id];
     BFT_FREE(ct->criteria);
     BFT_FREE(ct->ze_cell_list);
     BFT_FREE(ct->inlet_faces_list);
@@ -371,12 +479,12 @@ cs_ctwr_all_destroy(void)
 
   }
 
-  cs_glob_ct_nbr_max = 0;
-  cs_glob_ct_nbr = 0;
+  _n_ct_zones_max = 0;
+  _n_ct_zones = 0;
 
   BFT_FREE(cs_glob_ctwr_props);
 
-  BFT_FREE(cs_glob_ct_tab);
+  BFT_FREE(_ct_zone);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -388,7 +496,7 @@ cs_ctwr_all_destroy(void)
 void
 cs_ctwr_log_setup(void)
 {
-  if (cs_glob_ct_nbr < 1)
+  if (_n_ct_zones < 1)
     return;
 
   cs_log_printf(CS_LOG_SETUP,
@@ -396,8 +504,8 @@ cs_ctwr_log_setup(void)
                   "Cooling towers\n"
                   "--------------\n"));
 
-  for (int i = 0; i < cs_glob_ct_nbr; i++) {
-    cs_ctwr_zone_t *ct = cs_glob_ct_tab[i];
+  for (int i = 0; i < _n_ct_zones; i++) {
+    cs_ctwr_zone_t *ct = _ct_zone[i];
 
     char model_type[16];
     if (ct->model == CS_CTWR_NONE) {
@@ -447,7 +555,7 @@ cs_ctwr_log_setup(void)
 void
 cs_ctwr_log_balance(void)
 {
-  if (cs_glob_ct_nbr < 1)
+  if (_n_ct_zones < 1)
     return;
 
   const cs_lnum_2_t *i_face_cells
@@ -473,9 +581,9 @@ cs_ctwr_log_balance(void)
   cs_real_t cp_l = cs_glob_ctwr_props->cp_l;
 
   /* Loop over Cooling tower zones */
-  for (int ict=0; ict < cs_glob_ct_nbr; ict++) {
+  for (int ict=0; ict < _n_ct_zones; ict++) {
 
-    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+    cs_ctwr_zone_t *ct = _ct_zone[ict];
 
     ct->q_l_in = 0.0;
     ct->q_l_out = 0.0;
@@ -696,9 +804,9 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   }
 
   /* Loop over exchange zones */
-  for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
+  for (int ict = 0; ict < _n_ct_zones; ict++) {
 
-    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+    cs_ctwr_zone_t *ct = _ct_zone[ict];
 
     for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
       cs_lnum_t cell_id = ct->ze_cell_list[i];
@@ -780,8 +888,8 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
     packing_cell[cell_id] = -1;
 
   /* Loop over Cooling tower zones */
-  for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
-    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+  for (int ict = 0; ict < _n_ct_zones; ict++) {
+    cs_ctwr_zone_t *ct = _ct_zone[ict];
 
     BFT_MALLOC(ct->inlet_faces_list, n_i_faces, cs_lnum_t);
     BFT_MALLOC(ct->outlet_faces_list, n_i_faces, cs_lnum_t);
@@ -812,7 +920,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
     if (packing_cell[cell_id_1] != -1 || packing_cell[cell_id_2] != -1) {
 
       int ct_id = CS_MAX(packing_cell[cell_id_1], packing_cell[cell_id_2]);
-      cs_ctwr_zone_t *ct = cs_glob_ct_tab[ct_id];
+      cs_ctwr_zone_t *ct = _ct_zone[ct_id];
 
       // Vertical (align with gravity) component of the surface vector
       cs_real_t liq_surf = cs_math_3_dot_product(gravity, i_face_normal[face_id]);
@@ -878,7 +986,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
         /* cell_id_1 is an inlet for CT2, an outlet for CT1 */
         if (liq_mass_flow[face_id] > 0.0) {
           /* CT2 */
-          ct = cs_glob_ct_tab[packing_cell[cell_id_2]];
+          ct = _ct_zone[packing_cell[cell_id_2]];
 
           ct->inlet_faces_list[ct->n_inlet_faces] = face_id;
 
@@ -886,7 +994,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           ct->surface_in += liq_surf;
 
           /* CT1 */
-          ct = cs_glob_ct_tab[packing_cell[cell_id_1]];
+          ct = _ct_zone[packing_cell[cell_id_1]];
 
           ct->outlet_faces_list[ct->n_outlet_faces] = face_id;
 
@@ -897,7 +1005,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
         /* cell_id_2 is an inlet for CT1, an outlet for CT2 */
         else {
           /* CT2 */
-          ct = cs_glob_ct_tab[packing_cell[cell_id_2]];
+          ct = _ct_zone[packing_cell[cell_id_2]];
 
           ct->outlet_faces_list[ct->n_outlet_faces] = face_id;
 
@@ -905,7 +1013,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           ct->surface_out += liq_surf;
 
           /* CT1 */
-          ct = cs_glob_ct_tab[packing_cell[cell_id_1]];
+          ct = _ct_zone[packing_cell[cell_id_1]];
 
           ct->inlet_faces_list[ct->n_inlet_faces] = face_id;
 
@@ -920,8 +1028,8 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   }
 
   /* Loop over Cooling tower zones */
-  for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
-    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+  for (int ict = 0; ict < _n_ct_zones; ict++) {
+    cs_ctwr_zone_t *ct = _ct_zone[ict];
 
     BFT_REALLOC(ct->inlet_faces_list, ct->n_inlet_faces, cs_lnum_t);
     BFT_REALLOC(ct->outlet_faces_list, ct->n_outlet_faces, cs_lnum_t);
@@ -1015,8 +1123,8 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   }
 
   /* Loop over Cooling tower zones */
-  for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
-    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+  for (int ict = 0; ict < _n_ct_zones; ict++) {
+    cs_ctwr_zone_t *ct = _ct_zone[ict];
 
     for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
       cs_lnum_t cell_id = ct->ze_cell_list[i];
@@ -1170,9 +1278,9 @@ cs_ctwr_source_term(int              f_id,
 
   cs_lnum_t i = 0;
 
-  for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
+  for (int ict = 0; ict < _n_ct_zones; ict++) {
 
-    cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+    cs_ctwr_zone_t *ct = _ct_zone[ict];
 
     /* Packing zone characteristics */
     cs_real_t drop_diam  = ct->droplet_diam;
@@ -1460,8 +1568,8 @@ cs_ctwr_bulk_mass_source_term(int               call_id,
       //in use, which would be inconsistent with activating the cooling towers model
 
     }
-    for (cs_lnum_t ict = 0; ict < cs_glob_ct_nbr; ict++) {
-      cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+    for (cs_lnum_t ict = 0; ict < _n_ct_zones; ict++) {
+      cs_ctwr_zone_t *ct = _ct_zone[ict];
       *n_tot = *n_tot + (ct->n_cells);
     }
 
@@ -1472,9 +1580,9 @@ cs_ctwr_bulk_mass_source_term(int               call_id,
 
     cs_lnum_t i = 0;
 
-    for (cs_lnum_t ict = 0; ict < cs_glob_ct_nbr; ict++) {
+    for (cs_lnum_t ict = 0; ict < _n_ct_zones; ict++) {
 
-      cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
+      cs_ctwr_zone_t *ct = _ct_zone[ict];
 
       for (cs_lnum_t j = 0; j < ct->n_cells; j++) {
         cs_lnum_t cell_id = ct->ze_cell_list[j];
@@ -1516,57 +1624,6 @@ cs_ctwr_bulk_mass_source_term(int               call_id,
   }
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Convert injected liquid scalars from and to their transported form.
- *
- * \param[in]   iflag     1: Convert transported variables to physical variables
- *                        2: Convert physical variables to
- *                           transported variables
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_transport_vars(int  iflag)
-{
-  // Fields based on maps
-  cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;   /* liquid enthalpy */
-  cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;  /* liquid mass per unit
-                                                      cell volume*/
-
-  if (iflag == 1) {
-
-    //Convert the transported variables to physical variables
-    for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
-
-      cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
-
-      for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
-        cs_lnum_t cell_id = ct->ze_cell_list[i];
-
-        if (y_l[cell_id] > 0.)
-          h_l[cell_id] = h_l[cell_id]/y_l[cell_id];
-      }
-    }
-
-  } else {
-
-    // Convert the physical variables to transported variables
-    for (int ict = 0; ict < cs_glob_ct_nbr; ict++) {
-
-      cs_ctwr_zone_t *ct = cs_glob_ct_tab[ict];
-
-      for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
-        cs_lnum_t cell_id = ct->ze_cell_list[i];
-
-        h_l[cell_id] = h_l[cell_id]*y_l[cell_id];
-      }
-    }
-
-  }
-
-}
-
 /*----------------------------------------------------------------------------
  * Get pointer to exchange area.
  *
@@ -1582,8 +1639,8 @@ cs_ctwr_by_id(int ct_id)
 {
   cs_ctwr_zone_t  *retval = NULL;
 
-  if (ct_id > -1 && ct_id <  cs_glob_ct_nbr)
-    retval = cs_glob_ct_tab[ct_id];
+  if (ct_id > -1 && ct_id <  _n_ct_zones)
+    retval = _ct_zone[ct_id];
 
   return retval;
 }

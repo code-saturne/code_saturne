@@ -167,9 +167,9 @@ typedef void
  *   n_cells     <-- local number of cells of post_mesh
  *   n_i_faces   <-- local number of interior faces of post_mesh
  *   n_b_faces   <-- local number of boundary faces of post_mesh
- *   cell_list   <-- list of cells (1 to n) of post-processing mesh
- *   i_face_list <-- list of interior faces (1 to n) of post-processing mesh
- *   b_face_list <-- list of boundary faces (1 to n) of post-processing mesh
+ *   cell_ids    <-- list of cells (0 to n-1) of post-processing mesh
+ *   i_face_ids  <-- list of interior faces (0 to n-1) of post-processing mesh
+ *   b_face_ids  <-- list of boundary faces (0 to n-1) of post-processing mesh
  *   ts          <-- time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
@@ -181,9 +181,9 @@ typedef void
                                   cs_lnum_t              n_cells,
                                   cs_lnum_t              n_i_faces,
                                   cs_lnum_t              n_b_faces,
-                                  const cs_lnum_t        cell_list[],
-                                  const cs_lnum_t        i_face_list[],
-                                  const cs_lnum_t        b_face_list[],
+                                  const cs_lnum_t        cell_ids[],
+                                  const cs_lnum_t        i_face_ids[],
+                                  const cs_lnum_t        b_face_ids[],
                                   const cs_time_step_t  *ts);
 
 /*=============================================================================

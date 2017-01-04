@@ -87,7 +87,7 @@ cs_post_turbomachinery_head(const char               *criteria_in,
  *         axis and the stress on a specific boundary.
  *
  * \param[in]   n_b_faces    number of faces
- * \param[in]   b_face_list  face list
+ * \param[in]   b_face_ids   face list
  * \param[in]   axis         axis
  *
  * \return couple about the axis
@@ -104,7 +104,7 @@ cs_post_moment_of_force(cs_lnum_t     n_b_faces,
  * \brief Compute tangential stress on a specific boundary.
  *
  * \param[in]   n_b_faces    number of faces
- * \param[in]   b_face_list  face list
+ * \param[in]   b_face_ids   face list
  * \param[out]  stress       tangential stress on the specific
  *                           boundary
  */
@@ -120,7 +120,7 @@ cs_post_stress_tangential(cs_lnum_t n_b_faces,
  * \brief Compute Reynolds stresses in case of Eddy Viscosity Models
  *
  * \param[in]  n_loc_cells   number of cells
- * \param[in]  cells_list    cells list
+ * \param[in]  cell_ids      cells list
  * \param[out] rst           Reynolds stresses stored as vector
  *                           [r11,r22,r33,r12,r23,r13]
  */
@@ -136,16 +136,16 @@ cs_post_evm_reynolds_stresses(cs_lnum_t   n_loc_cells,
  * \brief Compute the Q criterion from Hunt et. al over a specified
  *        volumic region.
  *
- * \param[in]  n_loc_cells   number of cells
- * \param[in]  cells_list    cells list
- * \param[out] q_crit        Q-criterion over the specified volumic region.
+ * \param[in]  n_loc_cells  number of cells
+ * \param[in]  cell_ids     list of cell ids
+ * \param[out] q_crit       Q-criterion over the specified volume region.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_q_criterion(const cs_lnum_t   n_loc_cells,
-                    const cs_lnum_t   cells_list[],
-                          cs_real_t   q_crit[]);
+cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
+                    const cs_lnum_t  cell_ids[],
+                    cs_real_t        q_crit[]);
 
 /*----------------------------------------------------------------------------*/
 

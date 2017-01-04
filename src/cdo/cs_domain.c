@@ -2042,9 +2042,9 @@ cs_domain_postprocess(cs_domain_t  *domain)
  * \param[in]      n_cells      local number of cells of post_mesh
  * \param[in]      n_i_faces    local number of interior faces of post_mesh
  * \param[in]      n_b_faces    local number of boundary faces of post_mesh
- * \param[in]      cell_list    list of cells (1 to n)
- * \param[in]      i_face_list  list of interior faces (1 to n)
- * \param[in]      b_face_list  list of boundary faces (1 to n)
+ * \param[in]      cell_ids     list of cells (0 to n-1)
+ * \param[in]      i_face_ids   list of interior faces (0 to n-1)
+ * \param[in]      b_face_ids   list of boundary faces (0 to n-1)
  * \param[in]      time_step    pointer to a cs_time_step_t struct.
  */
 /*----------------------------------------------------------------------------*/
@@ -2057,9 +2057,9 @@ cs_domain_extra_post(void                      *input,
                      cs_lnum_t                  n_cells,
                      cs_lnum_t                  n_i_faces,
                      cs_lnum_t                  n_b_faces,
-                     const cs_lnum_t            cell_list[],
-                     const cs_lnum_t            i_face_list[],
-                     const cs_lnum_t            b_face_list[],
+                     const cs_lnum_t            cell_ids[],
+                     const cs_lnum_t            i_face_ids[],
+                     const cs_lnum_t            b_face_ids[],
                      const cs_time_step_t      *time_step)
 {
   CS_UNUSED(cat_id);
@@ -2067,9 +2067,9 @@ cs_domain_extra_post(void                      *input,
   CS_UNUSED(n_cells);
   CS_UNUSED(n_i_faces);
   CS_UNUSED(n_b_faces);
-  CS_UNUSED(cell_list);
-  CS_UNUSED(i_face_list);
-  CS_UNUSED(b_face_list);
+  CS_UNUSED(cell_ids);
+  CS_UNUSED(i_face_ids);
+  CS_UNUSED(b_face_ids);
 
   if (input == NULL)
     return;

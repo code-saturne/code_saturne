@@ -975,14 +975,10 @@ endif
 
 call timer_stats_start(post_stats_id)
 
-if (ippmod(iaeros).ge.0) call cs_ctwr_transport_vars(1)
-
 call pstvar(ntcabs, nvar, nscal)
 
-if (ippmod(iaeros).ge.0) call cs_ctwr_transport_vars(2)
-
 !===============================================================================
-! Probes
+! Structures
 !===============================================================================
 
 if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then

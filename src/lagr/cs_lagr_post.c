@@ -245,9 +245,9 @@ _write_particle_vars(cs_lagr_post_options_t  *options,
  *   n_cells     <-- local number of cells of post_mesh
  *   n_i_faces   <-- local number of interior faces of post_mesh
  *   n_b_faces   <-- local number of boundary faces of post_mesh
- *   cell_list   <-- list of cells (1 to n) of post-processing mesh
- *   i_face_list <-- list of interior faces (1 to n) of post-processing mesh
- *   b_face_list <-- list of boundary faces (1 to n) of post-processing mesh
+ *   cell_ids    <-- list of cells (0 to n-1) of post-processing mesh
+ *   i_face_ids  <-- list of interior faces (0 to n-1) of post-processing mesh
+ *   b_face_ids  <-- list of boundary faces (0 to n-1) of post-processing mesh
  *   ts          <-- time step status structure, or NULL
  *----------------------------------------------------------------------------*/
 
@@ -259,16 +259,16 @@ _cs_lagr_post(void                  *input,
               cs_lnum_t              n_cells,
               cs_lnum_t              n_i_faces,
               cs_lnum_t              n_b_faces,
-              const cs_lnum_t        cell_list[],
-              const cs_lnum_t        i_face_list[],
-              const cs_lnum_t        b_face_list[],
+              const cs_lnum_t        cell_ids[],
+              const cs_lnum_t        i_face_ids[],
+              const cs_lnum_t        b_face_ids[],
               const cs_time_step_t  *ts)
 {
   CS_UNUSED(ent_flag);
   CS_UNUSED(n_cells);
   CS_UNUSED(n_i_faces);
-  CS_UNUSED(cell_list);
-  CS_UNUSED(i_face_list);
+  CS_UNUSED(cell_ids);
+  CS_UNUSED(i_face_ids);
 
   /* Specific handling for particle meshes */
 
@@ -311,7 +311,7 @@ _cs_lagr_post(void                  *input,
           _f_count = bound_stat + nfabor*lagr_b->inbr;
 
         for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-          cs_lnum_t f_id = b_face_list[i] - 1;
+          cs_lnum_t f_id = b_face_ids[i];
           if (_f_count[f_id] > seuilf)
             val[f_id] = _b_stats[f_id] / _f_count[f_id];
           else
@@ -324,7 +324,7 @@ _cs_lagr_post(void                  *input,
         cs_real_t  tstatp = lagr_b->tstatp;
 
         for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-          cs_lnum_t f_id = b_face_list[i] - 1;
+          cs_lnum_t f_id = b_face_ids[i];
           val[f_id] = _b_stats[f_id] / tstatp;
         }
 
@@ -335,7 +335,7 @@ _cs_lagr_post(void                  *input,
         const cs_real_t *_f_count = bound_stat + nfabor*lagr_b->inbr;
 
         for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-          cs_lnum_t f_id = b_face_list[i] - 1;
+          cs_lnum_t f_id = b_face_ids[i];
           if (_f_count[f_id] > seuilf)
             val[f_id] = _b_stats[f_id];
           else

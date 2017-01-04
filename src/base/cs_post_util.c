@@ -250,7 +250,7 @@ cs_post_turbomachinery_head(const char               *criteria_in,
  *         axis and the stress on a specific boundary.
  *
  * \param[in]   n_b_faces    number of faces
- * \param[in]   b_face_list  face list
+ * \param[in]   b_face_ids  face list
  * \param[in]   axis         axis
  *
  * \return couple about the axis
@@ -289,7 +289,7 @@ cs_post_moment_of_force(cs_lnum_t     n_b_faces,
  * \brief Compute tangential stress on a specific boundary.
  *
  * \param[in]   n_b_faces    number of faces
- * \param[in]   b_face_list  face list
+ * \param[in]   b_face_ids   face list
  * \param[out]  stress       tangential stress on the specific
  *                           boundary
  */
@@ -297,7 +297,7 @@ cs_post_moment_of_force(cs_lnum_t     n_b_faces,
 
 void
 cs_post_stress_tangential(cs_lnum_t   n_b_faces,
-                          cs_lnum_t   b_face_list[],
+                          cs_lnum_t   b_face_ids[],
                           cs_real_3_t stress[])
 {
   const cs_real_3_t *surfbo =
@@ -308,8 +308,8 @@ cs_post_stress_tangential(cs_lnum_t   n_b_faces,
   cs_lnum_t ifac;
   cs_real_t srfbn, srfnor[3], fornor;
 
-  for (cs_lnum_t iloc = 0 ; iloc < n_b_faces ; iloc++) {
-    ifac = b_face_list[iloc];
+  for (cs_lnum_t iloc = 0 ; iloc < n_b_faces; iloc++) {
+    ifac = b_face_ids[iloc];
     srfbn = surfbn[ifac];
     srfnor[0] = surfbo[ifac][0] / srfbn;
     srfnor[1] = surfbo[ifac][1] / srfbn;
@@ -328,7 +328,7 @@ cs_post_stress_tangential(cs_lnum_t   n_b_faces,
  * \brief Compute Reynolds stresses in case of Eddy Viscosity Models
  *
  * \param[in]  n_loc_cells   number of cells
- * \param[in]  cells_list    cells list
+ * \param[in]  cell_ids      cells list
  * \param[out] rst           Reynolds stresses stored as vector
  *                           [r11,r22,r33,r12,r23,r13]
  */
@@ -336,7 +336,7 @@ cs_post_stress_tangential(cs_lnum_t   n_b_faces,
 
 void
 cs_post_evm_reynolds_stresses(cs_lnum_t   n_loc_cells,
-                              cs_lnum_t   cells_list[],
+                              cs_lnum_t   cell_ids[],
                               cs_real_6_t rst[])
 {
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
@@ -374,8 +374,8 @@ cs_post_evm_reynolds_stresses(cs_lnum_t   n_loc_cells,
 
   /* Compute Reynolds stresses */
   const cs_real_t d2s3 = 2./3.;
-  for (cs_lnum_t iloc = 0; iloc < n_loc_cells ; iloc++) {
-    cs_lnum_t iel = cells_list[iloc];
+  for (cs_lnum_t iloc = 0; iloc < n_loc_cells; iloc++) {
+    cs_lnum_t iel = cell_ids[iloc];
 
     cs_real_t divu = gradv[iel][0][0] + gradv[iel][1][1] + gradv[iel][2][2];
     cs_real_t nut = CS_F_(mu_t)->val[iel]/CS_F_(rho)->val[iel];
@@ -397,16 +397,16 @@ cs_post_evm_reynolds_stresses(cs_lnum_t   n_loc_cells,
  * \brief Compute the Q criterion from Hunt et. al over a specified
  *        volumic region.
  *
- * \param[in]  n_loc_cells   number of cells
- * \param[in]  cells_list    cells list
- * \param[out] q_crit        Q-criterion over the specified volumic region.
+ * \param[in]  n_loc_cells  number of cells
+ * \param[in]  cell_ids     list of cell ids
+ * \param[out] q_crit       Q-criterion over the specified volume region.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_q_criterion(const cs_lnum_t   n_loc_cells,
-                    const cs_lnum_t   cells_list[],
-                          cs_real_t   q_crit[])
+cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
+                    const cs_lnum_t  cell_ids[],
+                    cs_real_t        q_crit[])
 {
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
@@ -440,14 +440,14 @@ cs_post_q_criterion(const cs_lnum_t   n_loc_cells,
                            inc,
                            gradv);
 
-  for (cs_lnum_t iloc = 0; iloc < n_loc_cells ; iloc++) {
-    cs_lnum_t iel = cells_list[iloc];
-    q_crit[iloc] = -0.5 * (   pow(gradv[iel][0][0],2)
-                           +  pow(gradv[iel][1][1],2)
-                           +  pow(gradv[iel][2][2],2))
-                   - gradv[iel][0][1]*gradv[iel][1][0]
-                   - gradv[iel][0][2]*gradv[iel][2][0]
-                   - gradv[iel][1][2]*gradv[iel][2][1];
+  for (cs_lnum_t i = 0; i < n_loc_cells; i++) {
+    cs_lnum_t c_id = cell_ids[i];
+    q_crit[i] = -0.5 * (   cs_math_sq(gradv[c_id][0][0])
+                        +  cs_math_sq(gradv[c_id][1][1])
+                        +  cs_math_sq(gradv[c_id][2][2]))
+                - gradv[c_id][0][1]*gradv[c_id][1][0]
+                - gradv[c_id][0][2]*gradv[c_id][2][0]
+                - gradv[c_id][1][2]*gradv[c_id][2][1];
   }
 
   BFT_FREE(gradv);

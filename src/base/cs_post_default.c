@@ -45,6 +45,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_ctwr.h"
 #include "cs_field.h"
 #include "cs_lagr_tracking.h"
 #include "cs_log.h"
@@ -119,9 +120,9 @@ static bool                     _default_input_is_set = false;
  *   n_cells     <-- local number of cells of post_mesh
  *   n_i_faces   <-- local number of interior faces of post_mesh
  *   n_b_faces   <-- local number of boundary faces of post_mesh
- *   cell_list   <-- list of cells (1 to n) of post-processing mesh
- *   i_face_list <-- list of interior faces (1 to n) of post-processing mesh
- *   b_face_list <-- list of boundary faces (1 to n) of post-processing mesh
+ *   cell_ids    <-- list of cells (0 to n-1) of post-processing mesh
+ *   i_face_ids  <-- list of interior faces (0 to n-1) of post-processing mesh
+ *   b_face_ids  <-- list of boundary faces (0 to n-1) of post-processing mesh
  *   ts          <-- time step status structure
  *----------------------------------------------------------------------------*/
 
@@ -133,9 +134,9 @@ _write_additional_vars(void                  *input,
                        cs_lnum_t              n_cells,
                        cs_lnum_t              n_i_faces,
                        cs_lnum_t              n_b_faces,
-                       const cs_lnum_t        cell_list[],
-                       const cs_lnum_t        i_face_list[],
-                       const cs_lnum_t        b_face_list[],
+                       const cs_lnum_t        cell_ids[],
+                       const cs_lnum_t        i_face_ids[],
+                       const cs_lnum_t        b_face_ids[],
                        const cs_time_step_t  *ts)
 {
   /* Local variables */
@@ -176,11 +177,47 @@ _write_additional_vars(void                  *input,
 
   /* Add specific outputs for Code_Saturne */
 
+  cs_lnum_t *cell_num = NULL, *i_face_num = NULL, *b_face_num = NULL;
+
+  if (n_cells > 0) {
+    BFT_MALLOC(cell_num, n_cells, cs_lnum_t);
+    if (cell_ids != NULL) {
+      for (cs_lnum_t k = 0; k < n_cells; k++)
+        cell_num[k] = cell_ids[k] + 1;
+    }
+    else {
+      for (cs_lnum_t k = 0; k < n_cells; k++)
+        cell_num[k] = k + 1;
+    }
+  }
+  if (n_i_faces > 0) {
+    BFT_MALLOC(i_face_num, n_i_faces, cs_lnum_t);
+    if (i_face_ids != NULL) {
+      for (cs_lnum_t k = 0; k < n_i_faces; k++)
+        i_face_num[k] = i_face_ids[k] + 1;
+    }
+    else {
+      for (cs_lnum_t k = 0; k < n_i_faces; k++)
+        i_face_num[k] = k + 1;
+    }
+  }
+  if (n_b_faces > 0) {
+    BFT_MALLOC(b_face_num, n_b_faces, cs_lnum_t);
+    if (b_face_ids != NULL) {
+      for (cs_lnum_t k = 0; k < n_b_faces; k++)
+        b_face_num[k] = b_face_ids[k] + 1;
+    }
+    else {
+      for (cs_lnum_t k = 0; k < n_b_faces; k++)
+        b_face_num[k] = k + 1;
+    }
+  }
+
   if (cat_id < 0)
     CS_PROCF(dvvpst, DVVPST) (&nummai, &numtyp,
                               _input->nvar,
                               &n_cells, &n_b_faces,
-                              cell_list, b_face_list,
+                              cell_num, b_face_num,
                               cel_vals, b_face_vals);
 
   /* Free work array */
@@ -193,8 +230,11 @@ _write_additional_vars(void                  *input,
                             _input->nvar, _input->nscal, 0,
                             &n_cells, &n_i_faces, &n_b_faces,
                             itypps,
-                            cell_list, i_face_list, b_face_list);
+                            cell_num, i_face_num, b_face_num);
 
+  BFT_FREE(cell_num);
+  BFT_FREE(i_face_num);
+  BFT_FREE(b_face_num);
 }
 
 /*----------------------------------------------------------------------------
@@ -211,9 +251,9 @@ _write_additional_vars(void                  *input,
  *   n_cells     <-- local number of cells of post_mesh
  *   n_i_faces   <-- local number of interior faces of post_mesh
  *   n_b_faces   <-- local number of boundary faces of post_mesh
- *   cell_list   <-- list of cells (1 to n) of post-processing mesh
- *   i_face_list <-- list of interior faces (1 to n) of post-processing mesh
- *   b_face_list <-- list of boundary faces (1 to n) of post-processing mesh
+ *   cell_ids    <-- list of cells (0 to n-1) of post-processing mesh
+ *   i_face_ids  <-- list of interior faces (0 to n-1) of post-processing mesh
+ *   b_face_ids  <-- list of boundary faces (0 to n-1) of post-processing mesh
  *   ts          <-- time step status structure
  *----------------------------------------------------------------------------*/
 
@@ -225,22 +265,22 @@ _write_q_criterion(void                  *input,
                    cs_lnum_t              n_cells,
                    cs_lnum_t              n_i_faces,
                    cs_lnum_t              n_b_faces,
-                   const cs_lnum_t        cell_list[],
-                   const cs_lnum_t        i_face_list[],
-                   const cs_lnum_t        b_face_list[],
+                   const cs_lnum_t        cell_ids[],
+                   const cs_lnum_t        i_face_ids[],
+                   const cs_lnum_t        b_face_ids[],
                    const cs_time_step_t  *ts)
 {
   CS_UNUSED(input);
   CS_UNUSED(ent_flag);
   CS_UNUSED(n_i_faces);
   CS_UNUSED(n_b_faces);
-  CS_UNUSED(i_face_list);
-  CS_UNUSED(b_face_list);
+  CS_UNUSED(i_face_ids);
+  CS_UNUSED(b_face_ids);
 
   if (cat_id == CS_POST_MESH_VOLUME) {
     cs_real_t *q_crit;
     BFT_MALLOC(q_crit, n_cells, cs_real_t);
-    cs_post_q_criterion(n_cells, cell_list, q_crit);
+    cs_post_q_criterion(n_cells, cell_ids, q_crit);
 
     const char *name = "Q criterion";
     int dim = 1;

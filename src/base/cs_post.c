@@ -5885,9 +5885,9 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
   /* n_elts_max already initialized before and during the
      eventual modification of post-processing mesh definitions,
-     and num_ent_parent allocated if n_elts_max > 0 */
+     and parent_ids allocated if n_elts_max > 0 */
 
-  cs_lnum_t  *num_ent_parent = NULL;
+  cs_lnum_t  *parent_ids = NULL;
 
   /* Main loop on post-processing meshes */
 
@@ -5918,25 +5918,28 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
       if (n_elts > n_elts_max) {
         n_elts_max = n_elts;
-        BFT_REALLOC(num_ent_parent, n_elts_max, cs_int_t);
+        BFT_REALLOC(parent_ids, n_elts_max, cs_int_t);
       }
 
-      /* Get corresponding element lists */
+      /* Get corresponding element ids */
 
-      fvm_nodal_get_parent_num(exp_mesh, dim_ent, num_ent_parent);
+      fvm_nodal_get_parent_num(exp_mesh, dim_ent, parent_ids);
+
+      for (cs_lnum_t i = 0; i < n_elts; i++)
+        parent_ids[i] -= 1;
 
       /* We can output variables for this time step */
       /*--------------------------------------------*/
 
       cs_lnum_t  n_cells = 0, n_i_faces = 0, n_b_faces = 0;
-      cs_lnum_t  *cell_list = NULL, *i_face_list = NULL, *b_face_list = NULL;
+      cs_lnum_t  *cell_ids = NULL, *i_face_ids = NULL, *b_face_ids = NULL;
 
       /* Here list sizes are adjusted, and we point to the array filled
          by fvm_nodal_get_parent_num() if possible. */
 
       if (dim_ent == 3) {
         n_cells = n_elts;
-        cell_list = num_ent_parent;
+        cell_ids = parent_ids;
       }
 
       /* The numbers of "parent" interior faces known by FVM
@@ -5947,7 +5950,7 @@ cs_post_write_vars(const cs_time_step_t  *ts)
         b_f_num_shift = cs_glob_mesh->n_b_faces;
 
         for (ind_fac = 0; ind_fac < n_elts; ind_fac++) {
-          if (num_ent_parent[ind_fac] > b_f_num_shift)
+          if (parent_ids[ind_fac] >= b_f_num_shift)
             n_i_faces++;
           else
             n_b_faces++;
@@ -5955,30 +5958,30 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
         /* boundary faces only: parent FVM face numbers unchanged */
         if (n_i_faces == 0) {
-          b_face_list = num_ent_parent;
+          b_face_ids = parent_ids;
         }
 
         /* interior faces only: parents FVM face numbers shifted */
         else if (n_b_faces == 0) {
           for (ind_fac = 0; ind_fac < n_elts; ind_fac++)
-            num_ent_parent[ind_fac] -= b_f_num_shift;
-          i_face_list = num_ent_parent;
+            parent_ids[ind_fac] -= b_f_num_shift;
+          i_face_ids = parent_ids;
         }
 
         /* interior and boundary faces: numbers must be separated */
 
         else {
 
-          BFT_MALLOC(i_face_list, n_i_faces, cs_int_t);
-          BFT_MALLOC(b_face_list, n_b_faces, cs_int_t);
+          BFT_MALLOC(i_face_ids, n_i_faces, cs_int_t);
+          BFT_MALLOC(b_face_ids, n_b_faces, cs_int_t);
 
           n_i_faces = 0, n_b_faces = 0;
 
           for (ind_fac = 0; ind_fac < n_elts; ind_fac++) {
-            if (num_ent_parent[ind_fac] > b_f_num_shift)
-              i_face_list[n_i_faces++] = num_ent_parent[ind_fac] - b_f_num_shift;
+            if (parent_ids[ind_fac] >= b_f_num_shift)
+              i_face_ids[n_i_faces++] = parent_ids[ind_fac] - b_f_num_shift;
             else
-              b_face_list[n_b_faces++] = num_ent_parent[ind_fac];
+              b_face_ids[n_b_faces++] = parent_ids[ind_fac];
           }
 
         }
@@ -6007,9 +6010,9 @@ cs_post_write_vars(const cs_time_step_t  *ts)
                                  n_cells,
                                  n_i_faces,
                                  n_b_faces,
-                                 cell_list,
-                                 i_face_list,
-                                 b_face_list,
+                                 cell_ids,
+                                 i_face_ids,
+                                 b_face_ids,
                                  ts);
 
       /* User-defined output */
@@ -6017,19 +6020,6 @@ cs_post_write_vars(const cs_time_step_t  *ts)
       cs_lnum_t  n_vertices = cs_post_mesh_get_n_vertices(post_mesh->id);
 
       if (post_mesh->sel_input[4] == NULL) {
-
-        if (cell_list != NULL) {
-          for (cs_lnum_t k = 0; k < n_cells; k++)
-            cell_list[k] -= 1;
-        }
-        if (i_face_list != NULL) {
-          for (cs_lnum_t k = 0; k < n_i_faces; k++)
-            i_face_list[k] -= 1;
-        }
-        if (b_face_list != NULL) {
-          for (cs_lnum_t k = 0; k < n_b_faces; k++)
-            b_face_list[k] -= 1;
-        }
 
         cs_lnum_t *vertex_ids;
         BFT_MALLOC(vertex_ids, n_vertices, cs_lnum_t);
@@ -6043,9 +6033,9 @@ cs_post_write_vars(const cs_time_step_t  *ts)
                                    n_i_faces,
                                    n_b_faces,
                                    n_vertices,
-                                   cell_list,
-                                   i_face_list,
-                                   b_face_list,
+                                   cell_ids,
+                                   i_face_ids,
+                                   b_face_ids,
                                    vertex_ids,
                                    ts);
 
@@ -6054,9 +6044,9 @@ cs_post_write_vars(const cs_time_step_t  *ts)
         /* In case of mixed interior and boundary faces, free
            additional arrays */
 
-        if (i_face_list != NULL && b_face_list != NULL) {
-          BFT_FREE(i_face_list);
-          BFT_FREE(b_face_list);
+        if (i_face_ids != NULL && b_face_ids != NULL) {
+          BFT_FREE(i_face_ids);
+          BFT_FREE(b_face_ids);
         }
 
       }
@@ -6109,7 +6099,7 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
   /* Free memory */
 
-  BFT_FREE(num_ent_parent);
+  BFT_FREE(parent_ids);
 
   /* Flush writers if necessary */
 

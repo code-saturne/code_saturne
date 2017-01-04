@@ -90,19 +90,6 @@ typedef struct _cs_ctwr_zone_t cs_ctwr_zone_t;
  * Static global variables
  *============================================================================*/
 
-/* Array of exchange area */
-
-extern cs_int_t            cs_glob_ct_nbr_max;
-extern cs_int_t            cs_glob_ct_nbr;
-extern cs_ctwr_zone_t    **cs_glob_ct_tab;
-
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-void
-cs_ctwr_field_pointer_map(void);
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -138,6 +125,15 @@ cs_ctwr_define(const char           zone_criteria[],
                cs_real_t            xnp,
                cs_real_t            surface,
                cs_real_t            droplet_diam);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Map fields used by the cooling tower module to pointers.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_field_pointer_map(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
