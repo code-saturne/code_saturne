@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2016-10-07 15:31+0200\n"
+"POT-Creation-Date: 2016-12-23 13:28+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -9409,16 +9409,16 @@ msgstr ""
 "\n"
 "  Fusion de sommets et mise à jour du maillage terminées.\n"
 
+#, c-format
+msgid "    Split old faces and reconstruct new faces:      %10.3g\n"
+msgstr "    Découpage et reconstruction de faces :          %10.3g\n"
+
 msgid ""
 "\n"
 "  Joining operation is null.\n"
 msgstr ""
 "\n"
 "  L'opération de recollement est nulle.\n"
-
-#, c-format
-msgid "    Split old faces and reconstruct new faces:      %10.3g\n"
-msgstr "    Découpage et reconstruction de faces :          %10.3g\n"
 
 #, c-format
 msgid ""
