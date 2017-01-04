@@ -6189,50 +6189,6 @@ cs_gradient_scalar(const char                *var_name,
                          grad,
                          rhsv);
 
-  } else if (gradient_type == CS_GRADIENT_LSQ_ITER_OLD) {
-
-    const cs_int_t  _imlini = 1;
-    const cs_real_t _climin = 1.5;
-
-    _lsq_scalar_gradient(mesh,
-                         fvq,
-                         halo_type,
-                         cpl,
-                         recompute_cocg,
-                         n_r_sweeps,
-                         tr_dim,
-                         hyd_p_flag,
-                         w_stride,
-                         inc,
-                         extrap,
-                         (const cs_real_3_t *)f_ext,
-                         bc_coeff_a,
-                         bc_coeff_b,
-                         var,
-                         c_weight,
-                         grad,
-                         rhsv);
-
-    _scalar_gradient_clipping(halo_type, _imlini, verbosity, tr_dim, _climin,
-                              var, grad);
-
-    _iterative_scalar_gradient_old(mesh,
-                                   fvq,
-                                   var_name,
-                                   recompute_cocg,
-                                   n_r_sweeps,
-                                   tr_dim,
-                                   hyd_p_flag,
-                                   verbosity,
-                                   inc,
-                                   epsilon,
-                                   extrap,
-                                   (const cs_real_3_t *)f_ext,
-                                   bc_coeff_a,
-                                   bc_coeff_b,
-                                   grad,
-                                   rhsv);
-
   } else if (gradient_type == CS_GRADIENT_LSQ_ITER) {
 
     const cs_int_t  _imlini = 1;
@@ -6427,49 +6383,6 @@ cs_gradient_vector(const char                *var_name,
                            c_weight,
                            gradv);
 
-  } else if (gradient_type == CS_GRADIENT_LSQ_ITER_OLD) {
-
-    /* Clipping algorithm and clipping factor */
-
-    const cs_int_t  _imlini = 1;
-    const cs_real_t _climin = 1.5;
-
-    /* Initialization by the least squares method */
-
-    _lsq_vector_gradient(mesh,
-                         cs_glob_mesh_adjacencies,
-                         fvq,
-                         halo_type,
-                         inc,
-                         bc_coeff_a,
-                         bc_coeff_b,
-                         (const cs_real_3_t *)var,
-                         c_weight,
-                         gradv);
-
-    _vector_gradient_clipping(mesh,
-                              fvq,
-                              halo_type,
-                              _imlini,
-                              verbosity,
-                              _climin,
-                              (const cs_real_3_t *)var,
-                              gradv);
-
-    _iterative_vector_gradient(mesh,
-                               fvq,
-                               var_name,
-                               halo_type,
-                               inc,
-                               n_r_sweeps,
-                               verbosity,
-                               epsilon,
-                               bc_coeff_a,
-                               bc_coeff_b,
-                               (const cs_real_3_t *)var,
-                               c_weight,
-                               gradv);
-
   } else if (gradient_type == CS_GRADIENT_LSQ_ITER) {
 
     /* Clipping algorithm and clipping factor */
@@ -6649,18 +6562,10 @@ cs_gradient_type_by_imrgra(int                  imrgra,
     *halo_type = CS_HALO_EXTENDED;
     break;
   case 4:
-    *gradient_type = CS_GRADIENT_LSQ_ITER_OLD;
+    *gradient_type = CS_GRADIENT_LSQ_ITER;
     break;
   case 5:
   case 6:
-    *gradient_type = CS_GRADIENT_LSQ_ITER_OLD;
-    *halo_type = CS_HALO_EXTENDED;
-    break;
-  case 7:
-    *gradient_type = CS_GRADIENT_LSQ_ITER;
-    break;
-  case 8:
-  case 9:
     *gradient_type = CS_GRADIENT_LSQ_ITER;
     *halo_type = CS_HALO_EXTENDED;
     break;

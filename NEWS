@@ -5,6 +5,10 @@ Trunk (unreleased)
 User changes
 ------------
 
+- Add a conservative gradient reconstructed with least squares gradient for
+  vectors and scalars, in place of iterative gradient initialized by least
+  squares gradient (imrgra=4,5,6).
+
 - When inserting boundaries (shuch as thin walls), vertices are now separated
   on each side of those boundaries, for a true topological mesh modification.
 
