@@ -733,7 +733,7 @@ _fact_lu(cs_lnum_t         n_blocks,
     }
     _ad_inv[db_size*db_size -1] = _ad[db_size*db_size - 1];
     for (cs_lnum_t kk = 0; kk < db_size - 1; kk++) {
-      _ad_inv[db_size*db_size - 1] -=  _ad_inv[(db_size-1) + kk]
+      _ad_inv[db_size*db_size - 1] -=  _ad_inv[(db_size-1)*db_size + kk]
                                       *_ad_inv[kk*db_size + db_size -1];
     }
   }
