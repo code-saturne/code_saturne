@@ -476,8 +476,8 @@ _physical_property(const char       *param,
     }
   }
   else if (cs_gui_strcmp(prop_choice, "thermal_law")) {
-    cs_phys_prop_type_t property;
-    cs_field_t *c_prop;
+    cs_phys_prop_type_t property = -1;
+    cs_field_t *c_prop = NULL;
 
     if (cs_gui_strcmp(param, "density")) {
       property = CS_PHYS_PROP_DENSITY;
@@ -518,8 +518,7 @@ _physical_property(const char       *param,
     cs_real_t *thermodynamic_pressure;
     BFT_MALLOC(thermodynamic_pressure, ncelet, cs_real_t);
 
-
-    cs_field_t *_thermal_f;
+    cs_field_t *_thermal_f = NULL;
 
     if (CS_F_(t)) {
       if (CS_F_(t)->type & CS_FIELD_VARIABLE) {
@@ -4968,7 +4967,8 @@ void CS_PROCF (uiprof, UIPROF) (void)
   int i, ii, iii, idim;
   int irang1, irangv;
   cs_lnum_t npoint, iel1, iel;
-  int nvar_prop, nvar_prop4, output_frequency;
+  int output_frequency = 0;
+  int nvar_prop, nvar_prop4;
   double time_output;
   double x1 = 0., y1 = 0., z1 = 0.;
   double xx, yy, zz, xyz[3];
