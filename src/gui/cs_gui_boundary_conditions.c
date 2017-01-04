@@ -151,6 +151,91 @@ _boundary_choice(const char  *nature,
 }
 
 /*-----------------------------------------------------------------------------
+ * Get status of data for inlet or outlet information.
+ *
+ * parameters:
+ *   nature      <--  nature of the boundary
+ *   label       <--  label of the inlet or the outlet
+ *   tag         <--  name of researched data
+ *   data       -->   value associated to the data
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_status(const char  *nature,
+                 const char  *label,
+                 const char  *tag,
+                 int         *data)
+{
+  char  *path = NULL;
+  int  result = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
+  cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_elements(&path, 2, "velocity_pressure", tag);
+  cs_xpath_add_attribute(&path, "status");
+
+  if (cs_gui_get_status(path, &result))
+    *data = result;
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Check if a zone uses a mapped inlet, and return the locator from the
+ * associated mapping if this is the case.
+ *
+ * parameters:
+ *   label    <-- label of wall boundary condition
+ *   n_faces  <-- number of selected boundary faces
+ *   faces    <-- list of selected boundary faces (0 to n-1),
+ *                or NULL if no indirection is needed
+ *
+ * returns:
+ *   pointer to mapping locator, or NULL
+ *----------------------------------------------------------------------------*/
+
+static  ple_locator_t *
+_mapped_inlet(const char                *label,
+              cs_lnum_t                  n_faces,
+              const cs_lnum_t           *faces)
+{
+  ple_locator_t *bl = NULL;
+
+  int mapped_inlet = 0;
+  _boundary_status("inlet", label, "mapped_inlet", &mapped_inlet);
+
+  if (mapped_inlet) {
+    cs_real_t coord_shift[3] = {0., 0., 0.};
+    const char *tname[] = {"translation_x",
+                           "translation_y",
+                           "translation_z"};
+
+    for (int i = 0; i < 3; i++) {
+      char *path = cs_xpath_init_path();
+      double value = 0.;
+      cs_xpath_add_element(&path, "boundary_conditions");
+      cs_xpath_add_element(&path, "inlet");
+      cs_xpath_add_element(&path, "mapped_inlet");
+      cs_xpath_add_element(&path, tname[i]);
+      cs_gui_get_double(path, &value);
+      BFT_FREE(path);
+      coord_shift[i] = value;
+    }
+
+    bl = cs_boundary_conditions_map(CS_MESH_LOCATION_CELLS,
+                                    cs_glob_mesh->n_cells,
+                                    n_faces,
+                                    NULL,
+                                    faces,
+                                    &coord_shift,
+                                    0,
+                                    0.1);
+  }
+
+  return bl;
+}
+
+/*-----------------------------------------------------------------------------
  * Value of velocity for sliding wall.
  *
  * parameters:
@@ -162,10 +247,9 @@ static void
 _sliding_wall(const char  *label,
               const int    izone)
 {
+  char suf[2];
   char *path = NULL;
   double result = 0.0;
-  char *suf = NULL;
-  BFT_MALLOC(suf, 2, char);
 
   const cs_field_t  *f = cs_field_by_name("velocity");
 
@@ -188,7 +272,6 @@ _sliding_wall(const char  *label,
     }
     BFT_FREE(path);
   }
-  BFT_FREE(suf);
 }
 
 /*-----------------------------------------------------------------------------
@@ -278,36 +361,6 @@ _inlet_data(const char  *label,
   cs_xpath_add_function_text(&path);
 
   if (cs_gui_get_double(path, &result))
-    *data = result;
-  BFT_FREE(path);
-}
-
-/*-----------------------------------------------------------------------------
- * Get status of data for inlet or outlet information.
- *
- * parameters:
- *   nature      <--  nature of the boundary
- *   label       <--  label of the inlet or the outlet
- *   tag         <--  name of researched data
- *   data       -->   value associated to the data
- *----------------------------------------------------------------------------*/
-
-static void
-_boundary_status(const char  *nature,
-                 const char  *label,
-                 const char  *tag,
-                 int         *data)
-{
-  char  *path = NULL;
-  int  result = 0;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
-  cs_xpath_add_test_attribute(&path, "label", label);
-  cs_xpath_add_elements(&path, 2, "velocity_pressure", tag);
-  cs_xpath_add_attribute(&path, "status");
-
-  if (cs_gui_get_status(path, &result))
     *data = result;
   BFT_FREE(path);
 }
@@ -1744,12 +1797,22 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
   int n_fields = cs_field_n_fields();
 
   for (int izone = 0; izone < zones; izone++) {
+
     int ith_zone = izone + 1;
+
     zone_nbr = cs_gui_boundary_zone_number(ith_zone);
 
     faces_list = cs_gui_get_boundary_faces(izone,
                                            boundaries->label[izone],
                                            *nozppm, &faces);
+
+    /* Mapped inlet ? */
+
+    if (   cs_gui_strcmp(boundaries->nature[izone], "inlet")
+        && boundaries->locator[izone] == NULL)
+      boundaries->locator[izone] = _mapped_inlet(boundaries->label[izone],
+                                                 faces,
+                                                 faces_list);
 
     /* for each field */
     for (int f_id = 0; f_id < n_fields; f_id++) {
@@ -1923,7 +1986,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       const int var_key_id = cs_field_key_id("variable_id");
       ivar = cs_field_get_key_int(f, var_key_id) -1;
 
-      if (boundaries->type_code[f->id][izone] == DIRICHLET_IMPLICIT && cs_glob_elec_option->ielcor == 1)
+      if (   boundaries->type_code[f->id][izone] == DIRICHLET_IMPLICIT
+          && cs_glob_elec_option->ielcor == 1)
         for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac];
           icodcl[ivar * n_b_faces + ifbr] = 5;
@@ -2046,7 +2110,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         if (   cs_gui_strcmp(choice_v, "flow1_formula")
             || cs_gui_strcmp(choice_v, "flow2_formula")) {
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
-          mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(boundaries->velocity[izone], "dt",
+                          cs_glob_time_step_options->dtref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
@@ -2111,7 +2176,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             rcodcl[(ivarv + 2) * n_b_faces + ifbr] = boundaries->dirz[izone] * norm;
           }
         }
-        else if (   cs_gui_strcmp(choice_v, "flow1")
+        else if (cs_gui_strcmp(choice_v, "flow1")
             || cs_gui_strcmp(choice_v, "flow2")
             || cs_gui_strcmp(choice_v, "flow1_formula")
             || cs_gui_strcmp(choice_v, "flow2_formula")) {
@@ -2126,7 +2191,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           t0 = cs_timer_wtime();
 
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
-          mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(boundaries->velocity[izone], "dt",
+                          cs_glob_time_step_options->dtref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
@@ -2165,7 +2231,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           }
         }
       }
-      else if (cs_gui_strcmp(choice_d, "normal") || cs_gui_strcmp(choice_d, "translation")) {
+      else if (   cs_gui_strcmp(choice_d, "normal")
+               || cs_gui_strcmp(choice_d, "translation")) {
         if (cs_gui_strcmp(choice_v, "norm")) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac];
@@ -2197,7 +2264,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           t0 = cs_timer_wtime();
 
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
-          mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(boundaries->velocity[izone], "dt",
+                          cs_glob_time_step_options->dtref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
@@ -2233,47 +2301,13 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             }
           }
         }
-        if (cs_gui_strcmp(choice_d, "translation")) {
-          if (ts->nt_cur == ts->nt_prev + 1) {
-            int coord_stride = 0;
-            double tolerance = 0.1;
-            cs_lnum_t  ncel  = cs_glob_mesh->n_cells;
-
-            cs_lnum_t *_location_elts = NULL;
-            BFT_MALLOC(_location_elts, ncel, cs_lnum_t);
-            for (cs_lnum_t iii = 0; iii < ncel; iii++)
-              _location_elts[iii] = iii;
-
-            cs_real_3_t coord_shift;
-            coord_shift[0] = boundaries->dirx[izone];
-            coord_shift[1] = boundaries->diry[izone];
-            coord_shift[2] = boundaries->dirz[izone];
-
-            boundaries->locator[izone]
-              = cs_boundary_conditions_map(CS_MESH_LOCATION_CELLS,
-                                           ncel, faces,
-                                           _location_elts, faces_list,
-                                           &coord_shift, coord_stride,
-                                           tolerance);
-            BFT_FREE(_location_elts);
-          }
-
-          if (ts->nt_cur > 1) {
-            int interpolate = 0;
-            int normalize   = 1;
-            cs_boundary_conditions_mapped_set(fv, boundaries->locator[izone],
-                                              CS_MESH_LOCATION_CELLS,
-                                              normalize, interpolate,
-                                              faces, faces_list,
-                                              NULL, *nvarcl, rcodcl);
-          }
-        }
       }
       else if (cs_gui_strcmp(choice_d, "formula")) {
         t0 = cs_timer_wtime();
 
         mei_tree_insert(boundaries->direction[izone], "t", ts->t_cur);
-        mei_tree_insert(boundaries->direction[izone], "dt", cs_glob_time_step_options->dtref);
+        mei_tree_insert(boundaries->direction[izone], "dt",
+                        cs_glob_time_step_options->dtref);
         mei_tree_insert(boundaries->direction[izone], "iter", ts->nt_cur);
 
           /* add variable from notebook */
@@ -2323,7 +2357,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
           mei_tree_insert(boundaries->velocity[izone], "t", ts->t_cur);
-          mei_tree_insert(boundaries->velocity[izone], "dt", cs_glob_time_step_options->dtref);
+          mei_tree_insert(boundaries->velocity[izone], "dt",
+                          cs_glob_time_step_options->dtref);
           mei_tree_insert(boundaries->velocity[izone], "iter", ts->nt_cur);
 
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
@@ -2908,27 +2943,42 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           boundaries->nature[izone]);
     }
 
-    /* treatment of mapped inlet */
-    /* for each field */
-    if (boundaries->locator[izone] != NULL) {
+    /* treatment of mapped inlet for each field */
+
+    if (boundaries->locator[izone] != NULL && ts->nt_cur > 1) {
+
       for (int f_id = 0; f_id < n_fields; f_id++) {
         const cs_field_t  *f = cs_field_by_id(f_id);
         const int var_key_id = cs_field_key_id("variable_id");
         ivar = cs_field_get_key_int(f, var_key_id) -1;
 
         if (f->type & CS_FIELD_VARIABLE) {
-          /* velocity already treated */
-          if (ts->nt_cur > 1 && !cs_gui_strcmp(f->name, "velocity")) {
-            int interpolate = 0;
-            int normalize   = 0;
-            cs_boundary_conditions_mapped_set(f, boundaries->locator[izone],
-                                              CS_MESH_LOCATION_CELLS,
-                                              normalize, interpolate,
-                                              faces, faces_list,
-                                              NULL, *nvarcl, rcodcl);
+          switch (boundaries->type_code[f->id][izone]) {
+          case DIRICHLET:
+          case DIRICHLET_FORMULA:
+            {
+              int interpolate = 0;
+              int normalize = 0;
+              if (f == CS_F_(u))
+                normalize = 1;
+              else {
+                const int keysca = cs_field_key_id("scalar_id");
+                if (cs_field_get_key_int(f, keysca) > 0)
+                  normalize = 1;
+              }
+              cs_boundary_conditions_mapped_set(f, boundaries->locator[izone],
+                                                CS_MESH_LOCATION_CELLS,
+                                                normalize, interpolate,
+                                                faces, faces_list,
+                                                NULL, *nvarcl, rcodcl);
+            }
+            break;
+          default:
+            break;
           }
         }
       }
+
     }
 
     BFT_FREE(faces_list);

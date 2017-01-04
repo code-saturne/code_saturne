@@ -78,8 +78,6 @@ class Boundary(object) :
             from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
             Model().isNotInList(ThermalRadiationModel(case).getRadiativeModel(), ("off",))
             return RadiativeWallBoundary.__new__(RadiativeWallBoundary, label, case)
-        elif nature == 'mapped_inlet':
-            return MappedInletBoundary.__new__(MappedInletBoundary, label, case)
         elif nature == 'mobile_boundary':
             return MobilWallBoundary.__new__(MobilWallBoundary, label, case)
         elif nature == 'coupling_mobile_boundary':
@@ -203,6 +201,9 @@ class Boundary(object) :
         """
         self.boundNode.xmlRemoveNode()
 
+#-------------------------------------------------------------------------------
+# Inlet boundary
+#-------------------------------------------------------------------------------
 
 class InletBoundary(Boundary):
     """
@@ -247,6 +248,10 @@ class InletBoundary(Boundary):
                                     'fuel',
                                     'unburned',
                                     'burned']
+
+        self.__mappingDirectionTags = ['translation_x',
+                                       'translation_y',
+                                       'translation_z']
 
         self.th_model = ThermalScalarModel(self.case)
 
@@ -303,6 +308,7 @@ class InletBoundary(Boundary):
         dico['pressure']            = 0.0
         dico['pressure_flux']       = 0.0
         dico['hydraulicHeadChoice'] = 'dirichlet'
+        dico['mapped']              = 'off'
 
         from code_saturne.Pages.GasCombustionModel import GasCombustionModel
         model = GasCombustionModel(self.case).getGasCombustionModel()
@@ -1121,71 +1127,61 @@ omega = 0.;"""
         n = scalarNode.xmlSetData('formula', formula)
 
 
-#-------------------------------------------------------------------------------
-# mapped inlet boundary
-#-------------------------------------------------------------------------------
-
-class MappedInletBoundary(InletBoundary) :
-    """
-    """
-    def __new__(cls, label, case) :
+    @Variables.noUndo
+    def getMappedInletStatus(self):
         """
-        Constructor
+        Get the mapped inlet status
         """
-        return object.__new__(cls)
-
-
-    def _initBoundary(self):
-        """
-        Initialize the boundary, add nodes in the boundary node
-        """
-        InletBoundary._initBoundary(self)
-        self.__directionTags     = ['direction_x',
-                                    'direction_y',
-                                    'direction_z']
+        status = None
+        n = self.boundNode.xmlGetNode('mapped_inlet')
+        if n:
+            status = n['status']
+        if not status:
+            status = 'off'
+        return status
 
 
-    def __defaultValues(self):
+    @Variables.undoLocal
+    def setMappedInletStatus(self, status):
         """
-        Default values
+        Set the mapped inlet status
         """
-        dico = {}
-        dico['direction_x']         = 0.0
-        dico['direction_y']         = 0.0
-        dico['direction_z']         = 0.0
-        dico['directionChoice']     = 'translation'
+        Model().isInList(status, ('on', 'off'))
 
-        return dico
+        n = self.boundNode.xmlInitNode('mapped_inlet', status=status)
+        if status == 'off':
+            self.boundNode.xmlRemoveChild('mapped_inlet')
+        else:
+            n['status'] = status
 
 
     @Variables.noUndo
-    def getTranslation(self, component):
+    def getMappedInletTranslation(self, component):
         """
-        Get the component velocity
+        Get the translation component
         """
-        Model().isInList(component, self.__directionTags)
+        Model().isInList(component, self.__mappingDirectionTags)
 
-        XMLVelocityNode = self.boundNode.xmlGetNode('velocity_pressure')
-        Model().isInList(component, ('direction_x', 'direction_y', 'direction_z'))
-        value = XMLVelocityNode.xmlGetChildDouble(component)
-
-        if value == None :
-            value = self.__defaultValues()[component]
-            self.setTranslation(component, value)
+        value = None
+        n = self.boundNode.xmlInitNode('mapped_inlet', status='on')
+        if n:
+            value = n.xmlGetChildDouble(component)
+        if not value:
+            value = 0.0
         return value
 
 
     @Variables.undoLocal
-    def setTranslation(self, component, value):
+    def setMappedInletTranslation(self, component, value):
         """
-        Set the component velocity for fieldLabel
+        Set the transation component
         """
-        Model().isInList(component, self.__directionTags)
+        Model().isInList(component, self.__mappingDirectionTags)
         Model().isFloat(value)
 
-        XMLVelocityNode = self.boundNode.xmlInitNode('velocity_pressure')
-        XMLVelocityNode['direction'] = 'translation'
-        XMLVelocityNode.xmlSetData(component, value)
+        self.setMappedInletStatus('on')
+        n = self.boundNode.xmlInitNode('mapped_inlet', status='on')
+        n.xmlSetData(component, value)
 
 
 #-------------------------------------------------------------------------------
@@ -3767,7 +3763,7 @@ class CouplingMobilWallBoundary(Boundary) :
         """
         return self._getStringData('fluid_force_matrix', 'formula', self.setFluidForceMatrix)
 
-    # DDL
+    # DOF
     #----
 
     def _setChoice(self, nodeName, value):
