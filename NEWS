@@ -20,6 +20,9 @@ Bug fixes:
 Architectural changes
 ---------------------
 
+- Update Catalyst output to avoid deprecated function warning using ParaView
+  version 5.1 or above.
+
 - Add handling of lmod-based environment modules.
 
 - Allow detection of HDF5 libraries named libhdf5-shared and libhdf5-static as well

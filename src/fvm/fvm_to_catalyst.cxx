@@ -50,7 +50,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 /*----------------------------------------------------------------------------
  * Catalyst and VTK library headers
  *----------------------------------------------------------------------------*/
@@ -70,6 +69,7 @@
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkUnstructuredGrid.h>
+#include <vtkPVConfig.h>
 
 #include <vtkCPDataDescription.h>
 #include <vtkCPInputDataDescription.h>
@@ -107,6 +107,17 @@
  *----------------------------------------------------------------------------*/
 
 #include "fvm_to_catalyst.h"
+
+/*=============================================================================
+ * Local Macro Definitions
+ *============================================================================*/
+
+/* Macro for version test (tests are done on ParaView and not VTK version,
+   as ParaView usually includes its own VTK, and ParaView 5.0 seems to
+   indicate VTK 7.1 just like 5.1, but that version did not contain
+   SetTypedTuple or have SetTupleValue depecated for vtkTypedDataArray) */
+
+#define CS_PV_VERSION  (PARAVIEW_VERSION_MAJOR*10 + PARAVIEW_VERSION_MINOR)
 
 /*----------------------------------------------------------------------------
  * Catalyst field structure
@@ -576,7 +587,11 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
 
     for (i = 0; i < n_vertices; i++) {
       vtkIdType ii = g_vtx_num[i]-1;
+#if CS_PV_VERSION < 51
       g_vtx_id->SetTupleValue(i, &ii);
+#else
+      g_vtx_id->SetTypedTuple(i, &ii);
+#endif
     }
 
     vtk_mesh->GetPointData()->SetGlobalIds(g_vtx_id);
