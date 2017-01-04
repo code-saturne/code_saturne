@@ -799,7 +799,7 @@ call field_get_coefbf_v(ivarfl(ivar), cofbfp)
 
 call coditts &
 !==========
- ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , idftnp , iswdyp ,                            &
    iwarnp ,                                                       &

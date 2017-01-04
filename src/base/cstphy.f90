@@ -739,6 +739,10 @@ module cstphy
   double precision, save :: cthafm
   !> constant of GGDH and AFM on the thermal scalar
   double precision, save :: cthdfm
+  !> constant of EB-AFM and EB-DFM
+  double precision, save :: xclt
+  !> constant of EB-DFM
+  double precision, save :: rhebdfm
 
   !> \}
 

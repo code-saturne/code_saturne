@@ -94,7 +94,7 @@ integer          nvar
 
 integer          izfppp(nfabor)
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 

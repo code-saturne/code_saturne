@@ -227,7 +227,7 @@ ivisep = 0
 
 call coditv &
 !==========
- ( idtvar , iuma   , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , ivarfl(iuma)    , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &

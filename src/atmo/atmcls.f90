@@ -43,7 +43,7 @@
 !> \param[out]    cfnnk     non neutral correction coefficients for profiles of k
 !> \param[out]    cfnne     non neutral correction coefficients for profiles of eps
 !> \param[out]    icodcl        code for boundary conditions at boundary faces
-!>                              (nfabor,nvarcl)
+!>                              (nfabor,nvar)
 !>-                           = 1   -> dirichlet
 !>-                           = 3   -> densite de flux
 !>-                           = 4   -> glissemt et u.n=0 (vitesse)
@@ -52,7 +52,7 @@
 !>-                           = 9   -> entree/sortie libre (vitesse
 !>                                      entrante eventuelle     bloquee
 !> \param[out]    rcodcl         valeur des conditions aux limites
-!>                                    (nfabor,nvarcl) aux faces de bord
+!>                                    (nfabor,nvar) aux faces de bord
 !>-                           rcodcl(1) = valeur du dirichlet
 !>-                           rcodcl(2) = valeur du coef. d'echange
 !>                              ext. (infinie si pas d'echange)
@@ -81,6 +81,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use entsor
 use parall
 use period
@@ -99,13 +100,13 @@ implicit none
 
 integer          ifac   , iel
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 
 double precision utau, yplus, uet
 double precision gredu, rib, lmo, q0, e0
 double precision cfnnu, cfnns, cfnnk,cfnne
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 

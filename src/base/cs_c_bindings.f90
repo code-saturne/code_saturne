@@ -179,20 +179,20 @@ module cs_c_bindings
     !> param[in]       n_faces          number of selected boundary faces
     !> param[in]       faces            list of selected boundary faces (1 to n)
     !> param[in]       balance_w        optional balance weight
-    !> param[in]       nvarcl           number of variables with BC's
+    !> param[in]       nvar             number of variables with BC's
     !> param[in, out]  rcodcl           boundary condition values
 
     subroutine boundary_conditions_mapped_set(field_id, locator,               &
                                               location_type, normalize,        &
                                               interpolate, n_faces, faces,     &
-                                              balance_w, nvarcl, rcodcl)       &
+                                              balance_w, nvar, rcodcl)         &
       bind(C, name='cs_f_boundary_conditions_mapped_set')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: field_id
       type(c_ptr), value :: locator
       integer(c_int), value :: location_type, normalize, interpolate
-      integer(c_int), value :: n_faces, nvarcl
+      integer(c_int), value :: n_faces, nvar
       integer(c_int), dimension(*), intent(in) :: faces
       real(kind=c_double), dimension(*), intent(in) :: balance_w, rcodcl
     end subroutine boundary_conditions_mapped_set
@@ -1364,12 +1364,12 @@ module cs_c_bindings
     !---------------------------------------------------------------------------
     ! Interface to C user function for boundary conditions
 
-    subroutine user_boundary_conditions(nvarcl,                           &
-                                           icodcl, bc_type, izfrdp, rcodcl)  &
+    subroutine user_boundary_conditions(nvar,                             &
+                                        icodcl, bc_type, izfrdp, rcodcl)  &
       bind(C, name='cs_user_boundary_conditions')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: nvarcl
+      integer(c_int), value :: nvar
       integer(kind=c_int), dimension(*), intent(inout) :: icodcl
       integer(kind=c_int), dimension(*), intent(inout) :: bc_type
       integer(kind=c_int), dimension(*), intent(inout) :: izfrdp
@@ -3672,7 +3672,7 @@ contains
   !> Be careful, it is forbidden to modify \f$ f_s^{imp} \f$ here!
 
   !> \param[in]     idtvar        indicateur du schema temporel
-  !> \param[in]     ivar          index of the current variable
+  !> \param[in]     f_id          field id (or -1)
   !> \param[in]     iconvp        indicator
   !>                               - 1 convection,
   !>                               - 0 otherwise
@@ -3776,7 +3776,7 @@ contains
   !> \param[out]    eswork        prediction-stage error estimator
   !>                              (if iescap > 0)
 
-  subroutine codits (idtvar, ivar, iconvp, idiffp, ndircp, imrgra, nswrsp,     &
+  subroutine codits (idtvar, f_id, iconvp, idiffp, ndircp, imrgra, nswrsp,     &
                      nswrgp, imligp, ircflp, ischcp, isstpp, iescap, imucpp,   &
                      idftnp, iswdyp, iwarnp, blencp, epsilp, epsrsp, epsrgp,   &
                      climgp, extrap, relaxp, thetap, pvara, pvark, coefap,     &
@@ -3793,7 +3793,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in) :: idtvar, ivar, iconvp, idiffp, ndircp, imrgra
+    integer, intent(in) :: idtvar, f_id, iconvp, idiffp, ndircp, imrgra
     integer, intent(in) :: nswrsp, nswrgp, imligp, ircflp, ischcp, isstpp
     integer, intent(in) :: iescap, imucpp, idftnp, iswdyp, iwarnp
     double precision, intent(in) :: blencp, epsilp, epsrsp, epsrgp, climgp
@@ -3812,7 +3812,6 @@ contains
 
     ! Local variables
     character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
-    integer(c_int)              :: f_id
     type(var_cal_opt), target   :: vcopt
     type(var_cal_opt), pointer  :: p_k_value
     type(c_ptr)                 :: c_k_value
@@ -3821,12 +3820,6 @@ contains
 
     p_k_value => vcopt
     c_k_value = c_loc(p_k_value)
-
-    if (ivar.eq.0) then
-      f_id = -1
-    else
-      f_id = ivarfl(ivar)
-    endif
 
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
@@ -3911,7 +3904,7 @@ contains
   !> Be careful, it is forbidden to modify \f$ \tens{f_s}^{imp} \f$ here!
 
   !> \param[in]     idtvar        indicator of the temporal scheme
-  !> \param[in]     ivar          index of the current variable
+  !> \param[in]     f_id          field id (or -1)
   !> \param[in]     iconvp        indicator
   !>                               - 1 convection,
   !>                               - 0 otherwise
@@ -4009,7 +4002,7 @@ contains
   !> \param[out]    eswork        prediction-stage error estimator
   !>                              (if iescap > 0)
 
-  subroutine coditv (idtvar, ivar  , iconvp, idiffp, ndircp, imrgra, nswrsp,   &
+  subroutine coditv (idtvar, f_id  , iconvp, idiffp, ndircp, imrgra, nswrsp,   &
                      nswrgp, imligp, ircflp, ivisep, ischcp, isstpp, iescap,   &
                      idftnp, iswdyp, iwarnp, blencp, epsilp, epsrsp, epsrgp,   &
                      climgp, relaxp, thetap, pvara , pvark , coefav, coefbv,   &
@@ -4026,7 +4019,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in) :: idtvar, ivar, iconvp, idiffp, ndircp, imrgra
+    integer, intent(in) :: idtvar, f_id, iconvp, idiffp, ndircp, imrgra
     integer, intent(in) :: nswrsp, nswrgp, imligp, ircflp, ischcp, isstpp
     integer, intent(in) :: iescap, ivisep, idftnp, iswdyp, iwarnp
     double precision, intent(in) :: blencp, epsilp, epsrsp, epsrgp, climgp
@@ -4044,7 +4037,6 @@ contains
 
     ! Local variables
     character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
-    integer(c_int)              :: f_id
     type(var_cal_opt), target   :: vcopt
     type(var_cal_opt), pointer  :: p_k_value
     type(c_ptr)                 :: c_k_value
@@ -4053,12 +4045,6 @@ contains
 
     p_k_value => vcopt
     c_k_value = c_loc(p_k_value)
-
-    if (ivar.eq.0) then
-      f_id = -1
-    else
-      f_id = ivarfl(ivar)
-    endif
 
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
@@ -4141,7 +4127,7 @@ contains
   !> Be careful, it is forbidden to modify \f$ \tens{f_s}^{imp} \f$ here!
 
   !> \param[in]     idtvar        indicator of the temporal scheme
-  !> \param[in]     ivar          index of the current variable
+  !> \param[in]     f_id          field id (or -1)
   !> \param[in]     iconvp        indicator
   !>                               - 1 convection,
   !>                               - 0 otherwise
@@ -4234,7 +4220,7 @@ contains
   !> \param[in]     smbrp         Right hand side \f$ \vect{Rhs}^k \f$
   !> \param[in,out] pvar          current variable
 
-  subroutine coditts (idtvar, ivar  , iconvp, idiffp, ndircp, imrgra, nswrsp,  &
+  subroutine coditts (idtvar, f_id  , iconvp, idiffp, ndircp, imrgra, nswrsp,  &
                       nswrgp, imligp, ircflp, ischcp, isstpp, idftnp, iswdyp,  &
                       iwarnp, blencp, epsilp, epsrsp, epsrgp, climgp, relaxp,  &
                       thetap, pvara , pvark , coefats , coefbts , cofafts ,    &
@@ -4251,7 +4237,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in) :: idtvar, ivar, iconvp, idiffp, ndircp, imrgra
+    integer, intent(in) :: idtvar, f_id, iconvp, idiffp, ndircp, imrgra
     integer, intent(in) :: nswrsp, nswrgp, imligp, ircflp, ischcp, isstpp
     integer, intent(in) :: idftnp, iswdyp, iwarnp
     double precision, intent(in) :: blencp, epsilp, epsrsp, epsrgp, climgp
@@ -4270,7 +4256,6 @@ contains
 
     ! Local variables
     character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
-    integer(c_int)              :: f_id
     type(var_cal_opt), target   :: vcopt
     type(var_cal_opt), pointer  :: p_k_value
     type(c_ptr)                 :: c_k_value
@@ -4279,12 +4264,6 @@ contains
 
     p_k_value => vcopt
     c_k_value = c_loc(p_k_value)
-
-    if (ivar.eq.0) then
-      f_id = -1
-    else
-      f_id = ivarfl(ivar)
-    endif
 
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
@@ -4352,7 +4331,7 @@ contains
   !> - imucpp = 1: multiply the convective part by \f$ C_p \f$
 
   !> \param[in]     idtvar        indicator of the temporal scheme
-  !> \param[in]     ivar          index of the current variable
+  !> \param[in]     f_id          field id (or -1)
   !> \param[in]     iconvp        indicator
   !>                               - 1 convection,
   !>                               - 0 otherwise
@@ -4434,7 +4413,7 @@ contains
   !>                               - 1 imposed flux
   !> \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
 
-  subroutine bilsca (idtvar, ivar, iconvp, idiffp, nswrgp, imligp, ircflp,    &
+  subroutine bilsca (idtvar, f_id, iconvp, idiffp, nswrgp, imligp, ircflp,    &
                      ischcp, isstpp, inc, imrgra, iccocg, iwarnp, imucpp,     &
                      idftnp, imasac, blencp, epsrgp, climgp, extrap, relaxp,  &
                      thetap, pvar, pvara, coefap, coefbp, cofafp, cofbfp,     &
@@ -4449,7 +4428,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in) :: idtvar, ivar, iconvp, idiffp, imrgra, imucpp
+    integer, intent(in) :: idtvar, f_id, iconvp, idiffp, imrgra, imucpp
     integer, intent(in) :: imligp, ircflp, ischcp, isstpp, inc, iccocg
     integer, intent(in) :: idftnp, iwarnp, imasac, nswrgp
     double precision, intent(in) :: blencp, epsrgp, climgp
@@ -4465,19 +4444,12 @@ contains
     real(kind=c_double), dimension(*), intent(inout) :: smbrp
 
     ! Local variables
-    integer(c_int)              :: f_id
     type(var_cal_opt), target   :: vcopt
     type(var_cal_opt), pointer  :: p_k_value
     type(c_ptr)                 :: c_k_value
 
     p_k_value => vcopt
     c_k_value = c_loc(p_k_value)
-
-    if (ivar.eq.0) then
-      f_id = -1
-    else
-      f_id = ivarfl(ivar)
-    endif
 
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
@@ -4546,7 +4518,7 @@ contains
   !> - ischcp = 1: centered
 
   !> \param[in]     idtvar        indicator of the temporal scheme
-  !> \param[in]     ivar          index of the current variable
+  !> \param[in]     f_id          field id (or -1)
   !> \param[in]     iconvp        indicator
   !>                               - 1 convection,
   !>                               - 0 otherwise
@@ -4621,7 +4593,7 @@ contains
   !>                               - 1 imposed flux
   !> \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
 
-  subroutine bilscv (idtvar, ivar, iconvp, idiffp, nswrgp, imligp, ircflp,    &
+  subroutine bilscv (idtvar, f_id, iconvp, idiffp, nswrgp, imligp, ircflp,    &
                      ischcp, isstpp, inc, imrgra, ivisep, iwarnp, idftnp,     &
                      imasac, blencp, epsrgp, climgp, relaxp, thetap, pvar,    &
                      pvara, coefav, coefbv, cofafv, cofbfv, flumas, flumab,   &
@@ -4635,7 +4607,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in) :: idtvar, ivar, iconvp, idiffp, imrgra
+    integer, intent(in) :: idtvar, f_id, iconvp, idiffp, imrgra
     integer, intent(in) :: imligp, ircflp, ischcp, isstpp, inc, ivisep
     integer, intent(in) :: idftnp, iwarnp, imasac, nswrgp
     double precision, intent(in) :: blencp, epsrgp, climgp
@@ -4650,19 +4622,12 @@ contains
     real(kind=c_double), dimension(*), intent(inout) :: smbrp
 
     ! Local variables
-    integer(c_int)              :: f_id
     type(var_cal_opt), target   :: vcopt
     type(var_cal_opt), pointer  :: p_k_value
     type(c_ptr)                 :: c_k_value
 
     p_k_value => vcopt
     c_k_value = c_loc(p_k_value)
-
-    if (ivar.eq.0) then
-      f_id = -1
-    else
-      f_id = ivarfl(ivar)
-    endif
 
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp

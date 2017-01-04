@@ -164,11 +164,11 @@ implicit none
 integer          nvar   , nscal , iterns
 integer          isvhb
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 integer          isostd(nfabor+1)
 
 double precision dt(ncelet)
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 double precision visvdr(ncelet)
 double precision hbord(nfabor),theipb(nfabor)
 
@@ -184,6 +184,7 @@ integer          ifcvsl
 integer          itplus, itstar
 integer          f_id, iut, ivt, iwt, iflmab
 integer          kbfid, b_f_id
+integer          keyvar
 integer          dimrij, f_dim
 
 double precision sigma , cpp   , rkl
@@ -269,6 +270,8 @@ if (ippmod(idarcy).eq.1) then
     call field_get_val_v(f_id, tensor_permeability)
   endif
 endif
+
+call field_get_key_id("variable_id", keyvar)
 
 ! allocate temporary arrays
 allocate(velipb(nfabor,3))
@@ -2328,6 +2331,7 @@ if (nscal.ge.1) then
 
     call field_get_dim(ivarfl(isca(iscal)), f_dim)
 
+    ! Scalar transported quantity
     if (f_dim.eq.1) then
       call field_get_coefa_s(ivarfl(ivar), coefap)
       call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -2630,9 +2634,9 @@ if (nscal.ge.1) then
           hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
 
           ! Set pointer values of turbulent fluxes in icodcl
-          iut = nvar + 3*(ifltur(ii) - 1) + 1
-          ivt = nvar + 3*(ifltur(ii) - 1) + 2
-          iwt = nvar + 3*(ifltur(ii) - 1) + 3
+          call field_get_key_int(f_id, keyvar, iut)
+          ivt = iut + 1
+          iwt = iut + 2
 
           ! Dirichlet Boundary Condition
           !-----------------------------
@@ -2712,7 +2716,8 @@ if (nscal.ge.1) then
 
       enddo
 
-    else ! dim.gt.1
+    ! Vector transported quantity (dimension may be greater than 3)
+    else
 
       call field_get_coefa_v(ivarfl(ivar), coefav)
       call field_get_coefb_v(ivarfl(ivar), coefbv)
@@ -2896,11 +2901,91 @@ if (nscal.ge.1) then
 
         endif
 
-      enddo
+      enddo ! End of loop on faces
 
+    endif ! End of vector transported quantities
+
+    ! EB-GGDH/AFM/DFM alpha boundary conditions
+    if (iturt(ii).eq.11 .or. iturt(ii).eq.21 .or. iturt(ii).eq.31) then
+
+      ! Name of the scalar ivar
+      call field_get_name(ivarfl(ivar), fname)
+
+      ! Index of the corresponding turbulent flux
+      call field_get_id(trim(fname)//'_alpha', f_id)
+
+      call field_get_coefa_s (f_id, coefap)
+      call field_get_coefb_s (f_id, coefbp)
+      call field_get_coefaf_s(f_id, cofafp)
+      call field_get_coefbf_s(f_id, cofbfp)
+
+      do ifac = 1, nfabor
+
+        iel = ifabor(ifac)
+
+        distbf = distb(ifac)
+
+        hint = 1.d0/distbf
+
+        ! Dirichlet Boundary Condition
+        !-----------------------------
+
+        if (icodcl(ifac,ivar).eq.1) then
+
+          pimp = rcodcl(ifac,ivar,1)
+          hext = rcodcl(ifac,ivar,2)
+
+          call set_dirichlet_scalar &
+            ( coefap(ifac), cofafp(ifac),                        &
+              coefbp(ifac), cofbfp(ifac),                        &
+              pimp              , hint              , hext )
+
+        endif
+
+        ! Neumann Boundary Conditions
+        !----------------------------
+
+        if (icodcl(ifac,ivar).eq.3) then
+
+          qimp = rcodcl(ifac,ivar,3)
+
+          call set_neumann_scalar &
+            ( coefap(ifac), cofafp(ifac),                        &
+              coefbp(ifac), cofbfp(ifac),                        &
+              qimp              , hint )
+
+          ! Convective Boundary Conditions
+          !-------------------------------
+
+        elseif (icodcl(ifac,ivar).eq.2) then
+
+          pimp = rcodcl(ifac,ivar,1)
+          cfl = rcodcl(ifac,ivar,2)
+
+          call set_convective_outlet_scalar &
+            ( coefap(ifac), cofafp(ifac),                        &
+              coefbp(ifac), cofbfp(ifac),                        &
+              pimp              , cfl               , hint )
+
+          ! Imposed value for the convection operator, imposed flux for diffusion
+          !----------------------------------------------------------------------
+
+        elseif (icodcl(ifac,ivar).eq.13) then
+
+          pimp = rcodcl(ifac,ivar,1)
+          qimp = rcodcl(ifac,ivar,3)
+
+          call set_dirichlet_conv_neumann_diff_scalar &
+            ( coefap(ifac), cofafp(ifac),                         &
+              coefbp(ifac), cofbfp(ifac),                         &
+              pimp              , qimp )
+
+
+        endif
+      enddo! End of loop on face
     endif
 
-  enddo
+  enddo! End of loop on scalars
 
 endif
 

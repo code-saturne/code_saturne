@@ -88,6 +88,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use entsor
 use parall
 use period
@@ -105,12 +106,12 @@ implicit none
 integer          nvcp   , nvcpto
 integer          nfbcpl , nfbncp
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 integer          lfbcpl(nfbcpl)  , lfbncp(nfbncp)
 integer          itypfb(nfabor)
 
 double precision dt(ncelet)
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 double precision rvcpfb(nfbcpl,nvcpto), pndcpl(nfbcpl)
 double precision dofcpl(3,nfbcpl)
 

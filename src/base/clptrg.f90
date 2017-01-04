@@ -122,6 +122,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -145,9 +146,9 @@ implicit none
 
 integer          nscal, isvhb
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 double precision visvdr(ncelet)
 double precision hbord(nfabor),theipb(nfabor)
@@ -1510,6 +1511,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -1533,9 +1535,9 @@ implicit none
 
 integer          iscal, isvhb
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 double precision byplus(nfabor)
 double precision hbord(nfabor), theipb(nfabor)
 double precision buk(nfabor), buet(nfabor), bcfnns(nfabor)

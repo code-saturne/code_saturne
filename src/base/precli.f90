@@ -95,9 +95,9 @@ implicit none
 
 integer          nvar
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
@@ -122,7 +122,7 @@ enddo
 ! Cette valeur sera reinitialisee a zero dans typecl.F
 ! (Take also turbulent fluxes into account)
 
-do ivar = 1, nvarcl
+do ivar = 1, nvar
   do ifac = 1, nfabor
     icodcl(ifac,ivar)   = 0
     rcodcl(ifac,ivar,1) = rinfin

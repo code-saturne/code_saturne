@@ -473,7 +473,6 @@ endif
 
 if (iscal.eq.iscalt) then
   call cptssy(iscal, smbrs, rovsdt)
-  !==========
 endif
 
 ! --> Physique particulieres
@@ -878,8 +877,15 @@ if (itspdv.eq.1) then
         xk = cvara_k(iel)
         xe = cmu*xk*cvara_omg(iel)
       endif
+
+      ! Implicit term -1/Rh * Eps/k * Variance
+      !  with
+      ! Rh = R = 0.8 for SGDH
+      ! Rh = (1-alpha_T) * Pr + R * alpha_T
+      !  and R = 0.5
+
       rhovst = xcpp(iel)*crom(iel)*xe/(xk * rvarfl(iscal))       &
-             *cell_f_vol(iel)
+             *cell_f_vol(iel) ! FIXME wrong time scale for EBDFM and the others... R simeq 0.5...
 
       ! La diagonale recoit eps/Rk, (*theta eventuellement)
       rovsdt(iel) = rovsdt(iel) + rhovst*thetap
@@ -1013,6 +1019,18 @@ if (vcopt%idiff.ge.1) then
   ! AFM model or DFM models: add div(Cp*rho*T'u') to smbrs
   ! Compute T'u' for GGDH
   if (ityturt(iscal).ge.1) then
+
+
+    ! EB-GGDH/AFM/DFM: solving alpha for the scalar
+    if (iturt(iscal).eq.11.or.iturt(iscal).eq.21.or.iturt(iscal).eq.31) then
+      ! Name of the scalar
+      call field_get_name(ivarfl(isca(iscal)), fname)
+
+      ! Index of the corresponding turbulent flux
+      call field_get_id(trim(fname)//'_alpha', f_id)
+
+      call resalp(f_id, xclt)
+    endif
 
     call divrit &
     !==========
@@ -1184,7 +1202,7 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call codits &
 !==========
- ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

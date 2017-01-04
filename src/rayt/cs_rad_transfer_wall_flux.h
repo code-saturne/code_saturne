@@ -59,7 +59,7 @@ BEGIN_C_DECLS
 /*!
  * \brief Wall temperature computation with flux balance.
  *
- * \param[in]  nvarcl   number of variable BC's
+ * \param[in]  nvar     number of variable BC's
  * \param[in]  ivart    variable id of thermal variable
  * \param[in]  isothp   list of isothermal boundaries
  * \param[in]  izfrap   numbers of boundary face zones
@@ -88,7 +88,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_wall_flux(cs_lnum_t   nvarcl,
+cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
                           cs_lnum_t   ivart,
                           int         isothp[],
                           int         izfrap[],

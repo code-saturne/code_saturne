@@ -85,6 +85,7 @@ use numvar
 use optcal
 use cstnum
 use cstphy
+use dimens, only: nvar
 use entsor
 use pointe
 use field
@@ -99,8 +100,8 @@ implicit none
 ! Arguments
 
 integer          nfabor
-integer          isvtb  , icodcl(nfabor,nvarcl)
-double precision rcodcl(nfabor,nvarcl,3)
+integer          isvtb  , icodcl(nfabor,nvar)
+double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 

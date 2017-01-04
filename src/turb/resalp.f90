@@ -26,7 +26,7 @@
 ! ----------
 !> \file resalp.f90
 !> \brief Solving the equation on alpha in the framwork of the Rij-EBRSM model.
-!>        (written from the equation of \f$ \overline{f})\f$
+!>        Also called for alpha of scalars for EB-DFM.
 
 !-------------------------------------------------------------------------------
 
@@ -35,9 +35,11 @@
 !______________________________________________________________________________.
 !  mode           nom           role
 !______________________________________________________________________________!
+!> \param[in]     f_id          field id of alpha variable
+!> \param[in]     c_durbin_l    constant for the Durbin length
 !______________________________________________________________________________!
 
-subroutine resalp( )
+subroutine resalp(f_id, c_durbin_l )
 
 !===============================================================================
 ! Module files
@@ -61,10 +63,12 @@ use cs_c_bindings
 implicit none
 
 ! Arguments
+integer          f_id
+double precision c_durbin_l
 
 ! Local variables
 
-integer          ivar  , iel
+integer          iel
 integer          ii    , jj    , ifac
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
@@ -81,6 +85,8 @@ double precision xllke, xllkmg, xlldrb
 
 double precision rvoid(1)
 
+type(var_cal_opt), target   :: vcopt
+
 character(len=80) :: label
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: alpha_min
@@ -94,8 +100,6 @@ double precision, dimension(:), pointer :: cvar_al, cvara_al, cvara_ep
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:,:), pointer :: cvara_rij
-
-type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -111,8 +115,8 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(iviscl, viscl)
 call field_get_val_s(ivisct, visct)
 
-call field_get_val_s(ivarfl(ial), cvar_al)
-call field_get_val_prev_s(ivarfl(ial), cvara_al)
+call field_get_val_s(f_id, cvar_al)
+call field_get_val_prev_s(f_id, cvara_al)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 if (irijco.eq.1) then
   call field_get_val_prev_v(ivarfl(irij), cvara_rij)
@@ -131,26 +135,20 @@ d1s2 = 1.d0/2.d0
 d1s4 = 1.d0/4.d0
 d3s2 = 3.d0/2.d0
 
-call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
-
-!  test on alpha which must not be above 1
-if (vcopt%iwarni.ge.1) then
-  write(nfecra,1000)
-endif
-
 !===============================================================================
 ! 2. Resolving the equation of alpha
 !===============================================================================
 
-ivar = ial
+! Get calculation options
+call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
-call field_get_coefa_s(ivarfl(ivar), coefap)
-call field_get_coefb_s(ivarfl(ivar), coefbp)
-call field_get_coefaf_s(ivarfl(ivar), cofafp)
-call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+call field_get_coefa_s (f_id, coefap)
+call field_get_coefb_s (f_id, coefbp)
+call field_get_coefaf_s(f_id, cofafp)
+call field_get_coefbf_s(f_id, cofbfp)
 
 if(vcopt%iwarni.ge.1) then
-  call field_get_label(ivarfl(ivar), label)
+  call field_get_label(f_id, label)
   write(nfecra,1100) label
 endif
 
@@ -179,7 +177,7 @@ else
 endif
 
 !FIXME the source term extrapolation is not well done!!!!
-do iel=1,ncel
+do iel = 1, ncel
   if (irijco.eq.1) then
     xk = d1s2*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
   else
@@ -194,7 +192,7 @@ do iel=1,ncel
   xllkmg = xceta*(xnu**3/cvara_ep(iel))**d1s4
 
   ! Durbin length scale
-  xlldrb = xcl*max(xllke,xllkmg)
+  xlldrb = c_durbin_l * max(xllke,xllkmg)
 
   ! For automatic initialization, the length scale is fixed at L^+ =50
   if (ntcabs.eq.1.and.reinit_turb.eq.1) xlldrb=50.d0*viscl0/ro0/(0.05d0*uref)
@@ -226,7 +224,7 @@ call viscfa                                                       &
 
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
-ndircp = ndircl(ivar)
+ndircp = ndircl(ial) ! Diagonal reinforcement: same as dynamic Alpha
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
@@ -245,11 +243,12 @@ epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
 extrap = vcopt%extrag
 relaxp = vcopt%relaxv
+
 ! all boundary convective flux with upwind
 icvflb = 0
 
 call codits &
- ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , f_id   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &
@@ -298,7 +297,7 @@ do iel = 1, ncel
   alpha_min(iel) = rovsdt(iel)/alpha_min(iel)
 enddo
 
-call clpalp(ncelet, ncel, alpha_min)
+call clpalp(f_id, ncelet, ncel, alpha_min)
 
 ! Free memory
 deallocate(smbr, rovsdt, w1)
@@ -309,9 +308,6 @@ deallocate(dpvar)
 ! Formats
 !--------
 
- 1000    format(/,                                                &
-'   ** Solving alpha                                          ',/,&
-'      -----------------------------------------------        ',/)
  1100    format(/,'           Solving the variable ',A8,/)
 
 !----

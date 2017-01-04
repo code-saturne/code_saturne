@@ -73,7 +73,6 @@ integer       iscal , id, ityloc, itycat, ifcvsl, pflag
 integer       ii
 integer       iok
 integer       ivisph, iest
-integer       idttur
 
 double precision gravn2
 
@@ -268,8 +267,6 @@ else if (itytur.eq.2.or.iturb.eq.50.or.iturb.ne.60) then
   iok = iok + 1
 endif
 
-idttur = 0
-
 do iscal = 1, nscal
   ! Termes sources Scalaires,
   if (isso2t(iscal).eq.-999) then
@@ -299,12 +296,6 @@ do iscal = 1, nscal
     if (iturt(iscalt).gt.0.and.irovar.eq.1) then
       call add_property_field_1d('thermal_expansion', 'Beta', ibeta)
     endif
-  endif
-
-  ! Index of the turbulent flux
-  if (ityturt(iscal).eq.3) then
-    idttur = idttur + 1
-    ifltur(iscal) = idttur
   endif
 
 enddo

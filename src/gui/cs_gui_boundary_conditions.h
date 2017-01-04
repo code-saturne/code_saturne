@@ -160,7 +160,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                                double     *tkent,
                                double     *fment,
                                double     *distch,
-                               int        *nvarcl,
+                               int        *nvar,
                                double     *rcodcl);
 
 /*----------------------------------------------------------------------------

@@ -73,7 +73,7 @@ BEGIN_C_DECLS
 /*!
  * \brief User definition for electric arcs.
  *
- * \param[in]     nvarcl        total number of variable BC's
+ * \param[in]     nvar          total number of variable BC's
  * \param[in]     bc_type       boundary face types
  * \param[in]     icodcl        boundary face code
  *                                - 1  -> Dirichlet
@@ -92,7 +92,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(int         nvarcl,
+cs_user_boundary_conditions(int         nvar,
                             int         icodcl[],
                             int         bc_type[],
                             int         izfrdp[],
@@ -311,13 +311,13 @@ cs_user_boundary_conditions(int         nvarcl,
         f = CS_F_(potr);
         int ivar = cs_field_get_key_int(f, keyvar) - 1;
         icodcl[ivar * n_b_faces + face_id] = 3;
-        rcodcl[2 * n_b_faces * nvarcl + ivar * n_b_faces + face_id] = 0.;
+        rcodcl[2 * n_b_faces * nvar + ivar * n_b_faces + face_id] = 0.;
 
         if (cs_glob_elec_option->ieljou == 4) {
           f = CS_F_(poti);
           ivar = cs_field_get_key_int(f, keyvar) - 1;
           icodcl[ivar * n_b_faces + face_id] = 3;
-          rcodcl[2 * n_b_faces * nvarcl + ivar * n_b_faces + face_id] = 0.;
+          rcodcl[2 * n_b_faces * nvar + ivar * n_b_faces + face_id] = 0.;
         }
       }
     }

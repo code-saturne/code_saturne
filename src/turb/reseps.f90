@@ -456,6 +456,7 @@ endif
 ! 7. Buoyancy term
 !===============================================================================
 
+!FIXME use beta ... WARNING
 if (igrari.eq.1) then
 
   ! Allocate a work array
@@ -563,7 +564,7 @@ relaxp = vcopt%relaxv
 icvflb = 0
 
 call codits &
- ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

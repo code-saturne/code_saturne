@@ -146,7 +146,7 @@ BEGIN_C_DECLS
  *  - epap   = thickness (m)
  *  - textp  = outside temperature (K)
  *
- * \param[in]     nvarcl        total number of variable BC's
+ * \param[in]     nvar          total number of variable BC's
  * \param[in]     bc_type       boundary face types
  * \param[in]     icodcl        boundary face code
  *                                - 1  -> Dirichlet
@@ -187,7 +187,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_radiative_transfer_bcs(int               nvarcl,
+cs_user_radiative_transfer_bcs(int               nvar,
                                const int         bc_type[],
                                int               icodcl[],
                                int               izfrdp[],

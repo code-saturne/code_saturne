@@ -80,7 +80,7 @@ integer          ipp
 integer          niterf
 integer          iinvpe
 integer          iel   , ifac
-integer          inc   , iccocg, ivar, f_id
+integer          inc   , iccocg, f_id0, f_id
 integer          isweep, nittot, idtva0
 integer          ibsize, iesize, mmprpl, nswrsl
 integer          imucpp, idftnp
@@ -273,7 +273,7 @@ do isweep = 0, nswrsl
     iccocg = 1
     imucpp = 0
     idftnp = 1 ! no tensorial diffusivity
-    ivar = 0
+    f_id0= -1
     idtva0 = 0
     relaxp = 1.d0
 
@@ -282,7 +282,7 @@ do isweep = 0, nswrsl
 
     call bilsca &
     !==========
- ( idtva0 , ivar   , iconvp , idiffp , nswrgy , imligy , ircfly , &
+ ( idtva0 , f_id0  , iconvp , idiffp , nswrgy , imligy , ircfly , &
    ischcy , isstpy , inc    , imrgra , iccocg ,                   &
    iwarny , imucpp , idftnp , imasac ,                            &
    blency , epsrgy , climgy , extray , relaxp , thetap ,          &

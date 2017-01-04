@@ -74,7 +74,7 @@ subroutine d3ptcl &
 !===============================================================================
 
 use paramx
-use dimens, only : nscal
+use dimens, only : nscal, nvar
 use numvar
 use optcal
 use cstphy
@@ -98,9 +98,9 @@ implicit none
 
 integer          itypfb(nfabor)
 integer          izfppp(nfabor)
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 

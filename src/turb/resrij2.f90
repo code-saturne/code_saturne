@@ -691,7 +691,7 @@ icvflb = 0
 
 call coditts &
 !==========
- ( idtvar , irij   , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , ivarfl(irij)    , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , idftnp , iswdyp ,                            &
    iwarnp ,                                                       &

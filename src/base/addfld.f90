@@ -85,10 +85,15 @@ integer          ii
 integer          ifcvsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
-logical          iprev, inoprv, is_set
 integer          f_id, potr, poti, flag
+integer          f_vis, f_log, f_type, iut, ialpha
+integer          kturt, kfturt, kislts, keyvar
+integer          keycpl
+integer          ivar
+logical          iprev, inoprv, is_set
 
-character(len=80) :: f_name, f_label, s_label, s_name
+character(len=80) :: name, f_name, f_label, s_label, s_name
+type(var_cal_opt) :: vcopt, vcopt_dfm, vcopt_alpha
 
 !===============================================================================
 
@@ -108,14 +113,83 @@ iprev  = .true.    ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 iopchr = 1         ! Postprocessing level for variables
 
+! Keys not stored globally
+call field_get_key_id('turbulent_flux_model', kturt)
+call field_get_key_id('turbulent_flux_id', kfturt)
+call field_get_key_id('coupled', keycpl)
+
 !===============================================================================
-! 1. Initialization
+! 0. Initialization
 !===============================================================================
 
 call field_get_key_id("boundary_value_id", kbfid)
 
 call field_get_key_id('log', keylog)
 call field_get_key_id('label', keylbl)
+
+!===============================================================================
+! 1. Additional variable fields
+!===============================================================================
+
+! User variables
+!---------------
+
+do ii = 1, nscal
+
+  if (isca(ii) .gt. 0) then
+
+    ivar = isca(ii)
+    f_id = ivarfl(ivar)
+
+    call field_get_key_int(ivarfl(ivar), keyvis, f_vis)
+    call field_get_key_int(ivarfl(ivar), keylog, f_log)
+
+    if (ityturt(ii).gt.0) then
+      call field_get_name (f_id, name)
+      f_name = trim(name)//'_turbulent_flux'
+
+      if (ityturt(ii).eq.3) then
+        call add_variable_field(f_name, f_name, 3, iut)
+        iflid = ivarfl(iut)
+
+        call field_set_key_int(iflid, keycpl, 1)
+        ! Tensorial diffusivity
+        call field_get_key_struct_var_cal_opt(iflid, vcopt_dfm)
+        vcopt_dfm%idften = 6
+        call field_set_key_struct_var_cal_opt(iflid, vcopt_dfm)
+
+      else
+        itycat = FIELD_INTENSIVE + FIELD_PROPERTY  ! for properties
+
+        call field_create(f_name, itycat, ityloc, idim3, iprev, iflid)
+
+        call field_set_key_int(iflid, keyvis, f_vis)
+        call field_set_key_int(iflid, keylog, f_log)
+      endif
+
+      call field_set_key_int(ivarfl(ivar), kturt, iturt(ii))
+      call field_set_key_int(ivarfl(ivar), kfturt, iflid)
+
+      ! Elliptic Blending (AFM or DFM)
+      if (iturt(ii).eq.11 .or. iturt(ii).eq.21 .or. iturt(ii).eq.31) then
+        f_name = trim(name)//'_alpha'
+
+        call add_variable_field(f_name, f_name, 1, ialpha)
+        iflid = ivarfl(ialpha)
+
+        ! Elliptic equation (no convection, no time term)
+        call field_get_key_struct_var_cal_opt(iflid, vcopt_alpha)
+        vcopt_alpha%iconv = 0
+        vcopt_alpha%istat = 0
+        call field_set_key_struct_var_cal_opt(iflid, vcopt_alpha)
+
+      endif
+
+    endif
+
+  endif
+
+enddo
 
 !===============================================================================
 ! 2. Additional property fields

@@ -76,7 +76,7 @@ integer          nscal
 
 ! Local variables
 
-integer          ivar  , iel   , ifac  , iscal, ivar0
+integer          ivar  , iel   , ifac  , iscal, f_id0
 integer          nswrgp, imligp, iwarnp
 integer          iccocg, inc
 integer          iconvp, idiffp, ircflp
@@ -151,7 +151,7 @@ do iscal = 1, nscal
 
   call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-  ivar0  = 0
+  f_id0  = -1
   iconvp = 0
   imasac = 0
   idiffp = 1
@@ -237,7 +237,7 @@ do iscal = 1, nscal
 
   call bilsca &
   !==========
-  ( idtvar , ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
+  ( idtvar , f_id0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
     iwarnp , imucpp , idftnp , imasac ,                            &
     blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &

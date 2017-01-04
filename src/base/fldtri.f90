@@ -269,6 +269,13 @@ do ii = 1, nscal
         call field_allocate_bc_coeffs(f_id, .true., .true., .false.)
         call field_init_bc_coeffs(f_id)
       endif
+      ! Elliptic Blending (AFM or DFM)
+      if (iturt(ii).eq.11 .or. iturt(ii).eq.21 .or. iturt(ii).eq.31) then
+        call field_get_name(ivarfl(ivar), fname)
+        call field_get_id(trim(fname)//'_alpha', f_id)
+        call field_allocate_bc_coeffs(f_id, .true., .false., .false.)
+        call field_init_bc_coeffs(f_id)
+      endif
     endif
   endif
 enddo

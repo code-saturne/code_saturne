@@ -78,6 +78,7 @@ use paramx
 use numvar
 use optcal
 use cstnum
+use dimens, only: nvar
 use cstphy
 use entsor
 use parall
@@ -93,11 +94,11 @@ implicit none
 ! Arguments
 
 integer          itypfb(nfabor)
-integer          ialtyb(nfabor), icodcl(nfabor,nvarcl)
+integer          ialtyb(nfabor), icodcl(nfabor,nvar)
 integer          impale(nnod)
 
 double precision dt(ncelet)
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 double precision xyzno0(3,nnod)
 
 ! Local variables

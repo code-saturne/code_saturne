@@ -85,7 +85,7 @@ integer          nswrgp, imligp, iwarnp
 integer          itypfl
 integer          ivar , iel, ii, jj
 integer          itt
-integer          f_id, f_id0
+integer          f_id, f_id0, f_id_al
 
 double precision epsrgp, climgp, extrap
 double precision xk, xe, xtt
@@ -93,9 +93,8 @@ double precision grav(3),xrij(3,3), temp(3)
 
 character(len=80) :: fname
 
-double precision, dimension(:), pointer :: coefap, coefbp
 double precision, allocatable, dimension(:,:,:) :: gradv
-double precision, allocatable, dimension(:,:) :: gradt
+double precision, allocatable, dimension(:,:) :: gradt, grad_al
 double precision, allocatable, dimension(:,:) :: coefat
 double precision, allocatable, dimension(:,:,:) :: coefbt
 double precision, allocatable, dimension(:) :: thflxf, thflxb
@@ -110,7 +109,7 @@ double precision, dimension(:), pointer :: brom, crom, cpro_beta
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
-double precision, dimension(:), pointer :: cvara_scal, cvara_tt
+double precision, dimension(:), pointer :: cvara_tt
 
 type(var_cal_opt) :: vcopt
 
@@ -133,14 +132,20 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
 if (ibeta.ge.0) then
-  call field_get_val_s(ibeta, cpro_beta)
+  call field_get_val_s(ibeta, cpro_beta)!FIXME make it dependant on the scalar
 endif
 
 ! Compute scalar gradient
 ivar = isca(iscal)
+
+iprev = 1
 iccocg = 1
 inc = 1
-call field_get_val_prev_s(ivarfl(ivar), cvara_scal)
+
+call field_gradient_scalar( &
+  ivarfl(ivar)    , iprev, imrgra, inc    , &
+  iccocg ,                                  &
+  gradt  )
 
 ! Name of the scalar ivar
 call field_get_name(ivarfl(ivar), fname)
@@ -150,24 +155,23 @@ call field_get_id(trim(fname)//'_turbulent_flux', f_id)
 
 call field_get_val_v(f_id, xut)
 
-call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+! EB- AFM or EB-DFM: compute the gradient of alpha of the scalar
+if (iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+  ! Index of the corresponding alpha
+  call field_get_id(trim(fname)//'_alpha', f_id_al)
 
-nswrgp = vcopt%nswrgr
-imligp = vcopt%imligr
-iwarnp = vcopt%iwarni
-epsrgp = vcopt%epsrgr
-climgp = vcopt%climgr
-extrap = vcopt%extrag
+  iprev = 0
+  iccocg = 1
+  inc = 1
 
-! Boundary condition pointers for gradients and advection
-call field_get_coefa_s(ivarfl(ivar), coefap)
-call field_get_coefb_s(ivarfl(ivar), coefbp)
+  allocate(grad_al(3,ncelet))
 
-call gradient_s                                                  &
- ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-   iwarnp , epsrgp , climgp , extrap ,                           &
-   cvara_scal      , coefap , coefbp ,                           &
-   gradt  )
+  call field_gradient_scalar( &
+    f_id_al , iprev, imrgra, inc    , &
+    iccocg ,                          &
+    grad_al)
+
+endif
 
 ! Compute velocity gradient
 iprev  = 0
@@ -357,6 +361,8 @@ if (ityturt(iscal).ne.3) then
     enddo
   endif
 
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
   itypfl = 1
   iflmb0 = 1
   init   = 1
@@ -409,7 +415,9 @@ else
 ( nscal  ,                                               &
   iscal  , xcpp   , xut    , xuta   ,                    &
   dt     ,                                               &
-  gradv  , gradt  )
+  gradv  , gradt  , grad_al)
+
+  call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
   itypfl = 1
   iflmb0 = 1
@@ -421,12 +429,6 @@ else
   epsrgp = vcopt%epsrgr
   climgp = vcopt%climgr
   extrap = vcopt%extrag
-
-  do iel = 1, ncelet
-    xuta(1,iel) = xut(1,iel)
-    xuta(2,iel) = xut(2,iel)
-    xuta(3,iel) = xut(3,iel)
-  enddo
 
   allocate(w1(3, ncelet))
 
@@ -478,6 +480,7 @@ endif
 ! Free memory
 deallocate(gradv)
 deallocate(gradt)
+if (allocated(grad_al)) deallocate(grad_al)
 deallocate(thflxf)
 deallocate(thflxb)
 

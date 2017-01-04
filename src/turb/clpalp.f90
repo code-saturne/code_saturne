@@ -25,6 +25,7 @@
 ! ----------
 !> \file clpalp.f90
 !> \brief Clipping of alpha in the framwork of the Rij-EBRSM model.
+!>        Also called for alpha of scalars for EB-DFM.
 
 !-------------------------------------------------------------------------------
 
@@ -33,6 +34,7 @@
 !______________________________________________________________________________.
 !  mode           nom           role
 !______________________________________________________________________________!
+!> \param[in]     f_id          field id of alpha variable
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
 !> \param[in]     alpha_min     minimum acceptable value for alpha
@@ -40,7 +42,7 @@
 
 
 subroutine clpalp &
- ( ncelet , ncel  , alpha_min)
+ ( f_id, ncelet , ncel  , alpha_min)
 
 !===============================================================================
 
@@ -62,7 +64,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet, ncel
+integer          f_id, ncelet, ncel
 double precision alpha_min(ncelet)
 
 ! VARIABLES LOCALES
@@ -75,11 +77,11 @@ double precision, dimension(:), pointer :: cvar_al
 
 !===============================================================================
 
+call field_get_val_s(f_id, cvar_al)
+
 !===============================================================================
 !  ---> Stockage Min et Max pour listing
 !===============================================================================
-
-call field_get_val_s(ivarfl(ial), cvar_al)
 
 vmin(1) =  grand
 vmax(1) = -grand
@@ -103,7 +105,7 @@ do iel = 1, ncel
   endif
 enddo
 
-call log_iteration_clipping_field(ivarfl(ial), iclpmn(1), iclpmx(1), vmin, vmax,iclpmn(1), iclpmx(1))
+call log_iteration_clipping_field(f_id, iclpmn(1), iclpmx(1), vmin, vmax,iclpmn(1), iclpmx(1))
 
 return
 

@@ -487,15 +487,15 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     ! Warning: bilsc adds "-( grad(u) . rho u)"
     call bilscv &
-   ( idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgra , ivisep ,                   &
-     iwarnp , idftnp , imasac ,                                     &
-     blencp , epsrgp , climgp , relaxp , thetap ,                   &
-     vel    , vel    ,                                              &
-     coefav , coefbv , cofafv , cofbfv ,                            &
-     imasfl_mix , bmasfl_mix ,                                      &
-     viscf  , viscb  , rvoid  , rvoid  ,                            &
-     icvflb , ivoid  ,                                              &
+   ( idtvar , ivarfl(iu)      , iconvp , idiffp , nswrgp , imligp , ircflp , &
+     ischcp , isstpp , inc    , imrgra , ivisep ,                            &
+     iwarnp , idftnp , imasac ,                                              &
+     blencp , epsrgp , climgp , relaxp , thetap ,                            &
+     vel    , vel    ,                                                       &
+     coefav , coefbv , cofafv , cofbfv ,                                     &
+     imasfl_mix , bmasfl_mix ,                                               &
+     viscf  , viscb  , rvoid  , rvoid  ,                                     &
+     icvflb , ivoid  ,                                                       &
      dudt   )
 
     do iel = 1, ncel

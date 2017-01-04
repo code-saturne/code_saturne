@@ -503,7 +503,9 @@ if (nscal.ge.1) then
 
   ! Turbulent flux model for scalar
   if (iturt(iscal).ne. 0.and.iturt(iscal).ne.10 .and. &
-      iturt(iscal).ne.20.and.iturt(iscal).ne.30       &
+      iturt(iscal).ne.20.and.iturt(iscal).ne.30 .and. &
+      iturt(iscal).ne.11.and.iturt(iscal).ne.21 .and. &
+      iturt(iscal).ne.31                              &
                    ) then
     write(nfecra,2604) 'iturt  ',iturt(iscal)
     write(nfecra,2610)                         &

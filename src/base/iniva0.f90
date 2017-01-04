@@ -80,7 +80,7 @@ integer          iclip , ii    , jj    , idim, f_dim
 integer          ifcvsl
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin, kscmax
-integer          ivar
+integer          f_type
 integer          keyvar
 
 logical          have_previous
@@ -590,9 +590,7 @@ call field_get_n_fields(nfld)
 ifmaip = -1
 bfmaip = -1
 
-do ii = 1, nfld
-
-  iflid = ii - 1
+do iflid = 0, nfld - 1
 
   call field_get_key_int(iflid, kimasf, iflmas) ! interior mass flux
   call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
@@ -632,8 +630,9 @@ endif
 !===============================================================================
 
 do iflid = 0, nfld - 1
-  call field_get_key_int(iflid, keyvar, ivar)
-  if (ivar .gt. 0) then
+  call field_get_type(iflid, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
     call field_current_to_previous(iflid)
   endif
 enddo

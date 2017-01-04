@@ -301,7 +301,7 @@ cs_user_coupling(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(int         nvarcl,
+cs_user_boundary_conditions(int         nvar,
                             int         icodcl[],
                             int         bc_type[],
                             int         izfrdp[],
@@ -506,7 +506,7 @@ cs_user_radiative_transfer_parameters(void);
  *-------------------------------------------------------------------------------*/
 
 void
-cs_user_radiative_transfer_bcs(int               nvarcl,
+cs_user_radiative_transfer_bcs(int               nvar,
                                const int         bc_type[],
                                int               icodcl[],
                                int               izfrdp[],

@@ -85,7 +85,7 @@ BEGIN_C_DECLS
 /*!
  * \brief User definition of boundary conditions
  *
- * \param[in]     nvarcl        total number of variable BC's
+ * \param[in]     nvar          total number of variable BC's
  * \param[in]     bc_type       boundary face types
  * \param[in]     icodcl        boundary face code
  *                                - 1  -> Dirichlet
@@ -104,7 +104,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(int         nvarcl,
+cs_user_boundary_conditions(int         nvar,
                             int         icodcl[],
                             int         bc_type[],
                             int         izfrdp[],

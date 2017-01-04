@@ -114,12 +114,12 @@ module radiat
 
     ! Interface to C function handling source terms
 
-    subroutine cs_rad_transfer_bcs(nvarcl, bc_type, icodcl, izfrad,   &
+    subroutine cs_rad_transfer_bcs(nvar, bc_type, icodcl, izfrad,     &
                                    nozppm, dt, rcodcl)                &
       bind(C, name='cs_rad_transfer_bcs')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(kind=c_int), value :: nvarcl
+      integer(kind=c_int), value :: nvar
       integer(kind=c_int), dimension(*) :: bc_type, icodcl, izfrad
       integer(kind=c_int) :: nozppm
       real(kind=c_double), dimension(*) :: dt, rcodcl

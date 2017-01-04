@@ -349,14 +349,14 @@ if (itsqdm.ne.0) then
 
   call bilscv &
   !==========
-( idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
-  ischcp , isstpp , inc    , imrgra , ivisse ,                   &
-  iwarnp , idftnp , imasac ,                                     &
-  blencp , epsrgp , climgp , relaxp , thetap ,                   &
-  vela   , vela   ,                                              &
-  coefau , coefbu , cofafu , cofbfu ,                            &
-  flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
-  icvflb , icvfli ,                                              &
+( idtvar , ivarfl(iu)      , iconvp , idiffp , nswrgp , imligp , ircflp , &
+  ischcp , isstpp , inc    , imrgra , ivisse ,                            &
+  iwarnp , idftnp , imasac ,                                              &
+  blencp , epsrgp , climgp , relaxp , thetap ,                            &
+  vela   , vela   ,                                                       &
+  coefau , coefbu , cofafu , cofbfu ,                                     &
+  flumas , flumab , viscf  , viscb  , secvif , secvib ,                   &
+  icvflb , icvfli ,                                                       &
   tsexp  )
 
 endif

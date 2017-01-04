@@ -69,9 +69,6 @@ typedef struct {
                                  - 70: Spalart-Allmaras model */
   int           itytur;       /* class of turbulence model (integer value
                                  iturb/10) */
-  int           nvarcl;       /* number of variable plus number of turbulent
-                                 fluxes (used by the boundary conditions) */
-
 } cs_turb_model_t;
 
 

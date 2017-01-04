@@ -104,7 +104,7 @@ double precision, pointer, dimension(:,:) :: frcxt => null()
 logical          must_return
 
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel, n_fans
-integer          iok   , ifld  , nfld  , f_id  , f_dim  , f_type
+integer          iok   , nfld  , f_id  , f_dim  , f_type
 integer          nbccou
 integer          ntrela
 integer          icmst
@@ -666,11 +666,11 @@ endif
 ! --- Noter que exceptionnellement, on fait un calcul avec NCELET,
 !       pour eviter une nouvelle communication
 
-ifld = -1
-do ivar = 1, nvar
-  if (ivarfl(ivar) .ne. ifld) then
-    ifld = ivarfl(ivar)
-    call field_current_to_previous(ifld)
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_current_to_previous(f_id)
   endif
 enddo
 
@@ -866,16 +866,12 @@ if (nterup.gt.1.or.isno2t.gt.0) then
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 endif
 
-! Compute the number of variable plus the number of turbulent fluxes
+! Deprecated, only for compatibility reason
 nvarcl = nvar
-do iscal = 1, nscal
-  if (ityturt(iscal).eq.3) nvarcl = nvarcl + 3
-enddo
-
 ! Allocate temporary arrays for boundary conditions
 if (italim .eq. 1) then
-  allocate(icodcl(nfabor,nvarcl))
-  allocate(rcodcl(nfabor,nvarcl,3))
+  allocate(icodcl(nfabor,nvar))
+  allocate(rcodcl(nfabor,nvar,3))
 endif
 if (isvhb.gt.0) then
   allocate(hbord(nfabor))
@@ -919,7 +915,7 @@ do while (iterns.le.nterup)
     itypfb, izfppp, icodcl,                                        &
     surfbo, cdgfbo,                                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
-    timpat, timpcp, tkent ,  fment, distch, nvarcl, rcodcl)
+    timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
 
     if (ippmod(iphpar).eq.0.or.ippmod(igmix).ge.0.or.ippmod(icompf).ge.0) then
 
@@ -955,7 +951,7 @@ do while (iterns.le.nterup)
 
   ! C version
   call user_boundary_conditions &
-  ( nvarcl ,                                                       &
+  ( nvar   ,                                                       &
     icodcl ,          itypfb , izfppp ,                            &
     rcodcl )
 
@@ -1086,7 +1082,7 @@ do while (iterns.le.nterup)
 
   if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
 
-     call cs_rad_transfer_bcs(nvarcl, itypfb, icodcl,             &
+     call cs_rad_transfer_bcs(nvar, itypfb, icodcl,             &
                               izfrad, nozppm, dt, rcodcl)
 
   endif
@@ -1485,7 +1481,7 @@ if (ippmod(idarcy).eq.1) then
     itypfb, izfppp, icodcl,                                        &
     dtref,  ttcabs, surfbo, cdgfbo,                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
-    timpat, timpcp, tkent ,  fment, distch, nvarcl, rcodcl)
+    timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
 
     if (ippmod(iphpar).eq.0) then
 
@@ -1518,7 +1514,7 @@ if (ippmod(idarcy).eq.1) then
 
   ! C version
   call user_boundary_conditions &
-  ( nvarcl ,                                                       &
+  ( nvar   ,                                                       &
     icodcl ,          itypfb , izfppp ,                            &
     rcodcl )
 
@@ -1651,7 +1647,7 @@ if (iccvfg.eq.0) then
     ! Compute Alpha for EBRSM
     if (iturb.eq.32) then
 
-      call resalp()
+      call resalp(ivarfl(ial), xcl)
 
     endif
 

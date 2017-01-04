@@ -102,9 +102,6 @@ BEGIN_C_DECLS
         - 70: Spalart-Allmaras model
   \var  cs_turb_model_t::itytur
         class of turbulence model (integer value iturb/10)
-  \var  cs_turb_model_t::nvarcl
-        number of variable plus number of turbulent fluxes (used by the
-        boundary conditions)
 */
 /*----------------------------------------------------------------------------*/
 
@@ -308,7 +305,6 @@ static cs_turb_model_t  _turb_model =
 {
   .iturb  = -999,
   .itytur = -999,
-  .nvarcl = 0
 };
 
 const cs_turb_model_t  *cs_glob_turb_model = &_turb_model;
@@ -955,8 +951,7 @@ const double cs_turb_cthdfm = 0.31;
 
 void
 cs_f_turb_model_get_pointers(int     **iturb,
-                             int     **itytur,
-                             int     **nvarcl);
+                             int     **itytur);
 
 void
 cs_f_turb_rans_model_get_pointers(int     **irccor,
@@ -1005,17 +1000,14 @@ cs_f_turb_complete_constants(void);
  * parameters:
  *   iturb  --> pointer to cs_glob_turb_model->iturb
  *   itytur --> pointer to cs_glob_turb_model->itytur
- *   nvarcl --> pointer to cs_glob_turb_model->nvarcl
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_turb_model_get_pointers(int     **iturb,
-                             int     **itytur,
-                             int     **nvarcl)
+                             int     **itytur)
 {
   *iturb  = &(_turb_model.iturb);
   *itytur = &(_turb_model.itytur);
-  *nvarcl = &(_turb_model.nvarcl);
 }
 
 /*----------------------------------------------------------------------------

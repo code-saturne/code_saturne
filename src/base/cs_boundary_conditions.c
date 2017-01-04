@@ -149,7 +149,7 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
                                     cs_lnum_t                  n_faces,
                                     const cs_lnum_t           *faces,
                                     cs_real_t                 *balance_w,
-                                    int                        nvarcl,
+                                    int                        nvar,
                                     cs_real_t                 *rcodcl);
 
 void
@@ -313,7 +313,7 @@ _post_valid_faces_select(void         *input,
  *   faces           <-- list of selected boundary faces (0 to n-1),
  *                       or NULL if no indirection is needed
  *   balance_w       <-- optional balance weight, or NULL
- *   nvarcl          <-- number of variables requiring BC's
+ *   nvar            <-- number of variables requiring BC's
  *   rcodcl          <-- boundary condition values
  *   inlet_sum       --> inlet sum
  *----------------------------------------------------------------------------*/
@@ -327,7 +327,7 @@ _inlet_sum(int                          var_id,
            cs_lnum_t                    n_faces,
            const cs_lnum_t             *faces,
            cs_real_t                   *balance_w,
-           int                          nvarcl,
+           int                          nvar,
            cs_real_t                    rcodcl[],
            cs_real_t                    inlet_sum[])
 {
@@ -404,7 +404,7 @@ _inlet_sum(int                          var_id,
  *   faces           <-- list of selected boundary faces (1 to n),
  *                       or NULL if no indirection is needed
  *   balance_w       <-- optional balance weight, or NULL
- *   nvarcl          <-- number of variables requiring BC's
+ *   nvar            <-- number of variables requiring BC's
  *   rcodcl          <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
@@ -417,7 +417,7 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
                                     cs_lnum_t                  n_faces,
                                     const cs_lnum_t           *faces,
                                     cs_real_t                 *balance_w,
-                                    int                        nvarcl,
+                                    int                        nvar,
                                     cs_real_t                 *rcodcl)
 {
   cs_lnum_t *_faces = NULL;
@@ -436,7 +436,7 @@ cs_f_boundary_conditions_mapped_set(int                        field_id,
                                     n_faces,
                                     _faces,
                                     balance_w,
-                                    nvarcl,
+                                    nvar,
                                     rcodcl);
 
   BFT_FREE(_faces);
@@ -852,7 +852,7 @@ cs_boundary_conditions_map(cs_mesh_location_type_t    location_type,
  * \param[in]       faces            list of selected boundary faces (0 to n-1),
  *                                   or NULL if no indirection is needed
  * \param[in]       balance_w        optional balance weight, or NULL
- * \param[in]       nvarcl           number of variables requiring BC's
+ * \param[in]       nvar             number of variables requiring BC's
  * \param[in, out]  rcodcl           boundary condition values
  */
 /*----------------------------------------------------------------------------*/
@@ -866,7 +866,7 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
                                   cs_lnum_t                  n_faces,
                                   const cs_lnum_t           *faces,
                                   cs_real_t                 *balance_w,
-                                  int                        nvarcl,
+                                  int                        nvar,
                                   cs_real_t                  rcodcl[])
 {
   int var_id = -1;
@@ -908,7 +908,7 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
                n_faces,
                faces,
                balance_w,
-               nvarcl,
+               nvar,
                rcodcl,
                inlet_sum_0);
   }
@@ -1017,7 +1017,7 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
                n_faces,
                faces,
                balance_w,
-               nvarcl,
+               nvar,
                rcodcl,
                inlet_sum_1);
 

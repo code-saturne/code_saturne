@@ -158,7 +158,7 @@ _sync_rad_bc_err(cs_gnum_t  nerloc[],
  *
  *   2) Update BCs for the energy computation
  *
- *   \param[in]     nvarcl        total number of variable BC's
+ *   \param[in]     nvar          total number of variable BC's
  *   \param[in,out] icodcl        face boundary condition code:
  *                                 - 1 Dirichlet
  *                                 - 2 Radiative outlet
@@ -197,7 +197,7 @@ _sync_rad_bc_err(cs_gnum_t  nerloc[],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_bcs(int         nvarcl,
+cs_rad_transfer_bcs(int         nvar,
                     int         bc_type[],
                     int         icodcl[],
                     int         izfrad[],
@@ -349,7 +349,7 @@ cs_rad_transfer_bcs(int         nvarcl,
     /* User definitions */
 
     cs_gui_radiative_transfer_bcs(bc_type,
-                                  nvarcl,
+                                  nvar,
                                   ivart,
                                   izfrad,
                                   isothm,
@@ -361,7 +361,7 @@ cs_rad_transfer_bcs(int         nvarcl,
                                   f_bxlam->val,
                                   rcodcl);
 
-    cs_user_radiative_transfer_bcs(nvarcl,
+    cs_user_radiative_transfer_bcs(nvar,
                                    bc_type,
                                    icodcl,
                                    izfrad,
@@ -417,7 +417,7 @@ cs_rad_transfer_bcs(int         nvarcl,
   }
 
   cs_gui_radiative_transfer_bcs(bc_type,
-                                nvarcl,
+                                nvar,
                                 ivart,
                                 izfrad,
                                 isothm,
@@ -429,7 +429,7 @@ cs_rad_transfer_bcs(int         nvarcl,
                                 f_bxlam->val,
                                 rcodcl);
 
-  cs_user_radiative_transfer_bcs(nvarcl,
+  cs_user_radiative_transfer_bcs(nvar,
                                  bc_type,
                                  icodcl,
                                  izfrad,
@@ -1069,7 +1069,7 @@ cs_rad_transfer_bcs(int         nvarcl,
   }
 
   if (ideb == 0)
-    cs_rad_transfer_wall_flux(nvarcl,
+    cs_rad_transfer_wall_flux(nvar,
                               ivart,
                               isothm,
                               izfrad,
@@ -1097,23 +1097,23 @@ cs_rad_transfer_bcs(int         nvarcl,
       if (   isothm[ifac] == cs_glob_rad_transfer_params->itpimp
           || isothm[ifac] == cs_glob_rad_transfer_params->ipgrno
           || isothm[ifac] == cs_glob_rad_transfer_params->ifgrno) {
-        rcodcl[0*n_b_faces*nvarcl + ivart*n_b_faces + ifac] = tparo[ifac] + xmtk;
-        rcodcl[1*n_b_faces*nvarcl + ivart*n_b_faces + ifac] = cs_math_infinite_r;
-        rcodcl[2*n_b_faces*nvarcl + ivart*n_b_faces + ifac] = 0.0;
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac] = tparo[ifac] + xmtk;
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac] = cs_math_infinite_r;
+        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + ifac] = 0.0;
       }
 
       else if (isothm[ifac] == cs_glob_rad_transfer_params->iprefl) {
-        rcodcl[0*n_b_faces*nvarcl + ivart*n_b_faces + ifac]
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac]
           = text[ifac] + xmtk;
-        rcodcl[1*n_b_faces*nvarcl + ivart*n_b_faces + ifac]
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac]
           = f_bxlam->val[ifac] / f_bepa->val[ifac];
-        rcodcl[2*n_b_faces*nvarcl + ivart*n_b_faces + ifac] = 0.0;
+        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + ifac] = 0.0;
       }
 
       else if (isothm[ifac] == cs_glob_rad_transfer_params->ifrefl) {
         icodcl[ivart*n_b_faces + ifac] = 3;
-        rcodcl[0*n_b_faces*nvarcl + ivart*n_b_faces + ifac] = 0.0;
-        rcodcl[1*n_b_faces*nvarcl + ivart*n_b_faces + ifac] = cs_math_infinite_r;
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac] = 0.0;
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac] = cs_math_infinite_r;
       }
 
     }
@@ -1168,48 +1168,48 @@ cs_rad_transfer_bcs(int         nvarcl,
       if (   isothm[ifac] == cs_glob_rad_transfer_params->itpimp
           || isothm[ifac] == cs_glob_rad_transfer_params->ipgrno
           || isothm[ifac] == cs_glob_rad_transfer_params->ifgrno) {
-        rcodcl[0*n_b_faces*nvarcl + ivart*n_b_faces + ifac]
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac]
           = f_bfnet->val[ifac];
-        rcodcl[1*n_b_faces*nvarcl + ivart*n_b_faces + ifac]
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac]
           = cs_math_infinite_r;
-        rcodcl[2*n_b_faces*nvarcl + ivart*n_b_faces + ifac]
+        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + ifac]
           = 0.0;
         if (ivahg >= 0) {
-          rcodcl[0*n_b_faces*nvarcl + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
             = f_bfnet->val[ifac];
-          rcodcl[1*n_b_faces*nvarcl + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[1*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
             = cs_math_infinite_r;
-          rcodcl[2*n_b_faces*nvarcl + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[2*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
             = 0.0;
         }
       }
       else if (isothm[ifac] == cs_glob_rad_transfer_params->iprefl) {
-        rcodcl[0*n_b_faces*nvarcl + ivart*n_b_faces + ifac]
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac]
           = thwall[ifac];
         /* hext  */
-        rcodcl[1*n_b_faces*nvarcl + ivart*n_b_faces + ifac]
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac]
           = f_bxlam->val[ifac] / f_bepa->val[ifac];
-        rcodcl[2*n_b_faces*nvarcl + ivart*n_b_faces + ifac] = 0.0;
+        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + ifac] = 0.0;
         if (ivahg >= 0) {
-          rcodcl[0*n_b_faces*nvarcl + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
             = thwall[ifac];
-          rcodcl[1*n_b_faces*nvarcl + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[1*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
             = f_bxlam->val[ifac] / f_bepa->val[ifac];
-          rcodcl[2*n_b_faces*nvarcl + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[2*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
             = 0.0;
         }
       }
       else if (isothm[ifac] == cs_glob_rad_transfer_params->ifrefl) {
         icodcl[ivart*n_b_faces + ifac] = 3;
-        rcodcl[0*n_b_faces*nvarcl + ivart*n_b_faces + ifac]
+        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + ifac]
           = 0.0;
-        rcodcl[1*n_b_faces*nvarcl + ivart*n_b_faces + ifac]
+        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + ifac]
           = cs_math_infinite_r;
         if (ivahg >= 0) {
           icodcl[(ivahg - 1)*n_b_faces + ifac] = 3;
-          rcodcl[0*n_b_faces*nvarcl + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
             = 0.0;
-          rcodcl[1*n_b_faces*nvarcl + (ivahg - 1)*n_b_faces + ifac]
+          rcodcl[1*n_b_faces*nvar + (ivahg - 1)*n_b_faces + ifac]
             = cs_math_infinite_r;
         }
       }

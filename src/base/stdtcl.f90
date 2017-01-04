@@ -49,7 +49,7 @@ subroutine stdtcl &
 ! (nfabor)         !    !     !                                                !
 ! ilzfbr(nbzfmx    ! te ! <-- ! tableau de travail                             !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
+!                  !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
 !                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
 !                  !    !     !  ext. (infinie si pas d'echange)               !
@@ -78,6 +78,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use entsor
 use parall
 use mesh
@@ -98,7 +99,7 @@ integer          itypfb(nfabor)
 integer          iznfbr(nfabor), ilzfbr(nbzfmx)
 
 double precision qimp(nozfmx), dh(nozfmx), xintur(nozfmx)
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 double precision qcalc(nozfmx)
 
 ! Local variables

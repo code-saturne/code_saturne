@@ -52,6 +52,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use entsor
 use parall
 use ppppar
@@ -73,7 +74,7 @@ implicit none
 integer          itypfb(nfabor)
 integer          izfppp(nfabor)
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 

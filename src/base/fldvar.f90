@@ -236,6 +236,7 @@ else if (itytur.eq.3) then
   call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
   if (iturb.eq.32) then
     call add_variable_field('alpha', 'Alphap', 1, ial)
+    ! Elliptic equation (no convection, no time term)
     call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     vcopt%istat = 0
     vcopt%iconv = 0

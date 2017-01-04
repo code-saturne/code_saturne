@@ -172,12 +172,11 @@ type(gwf_soilwater_partition) :: sorption_scal
 
 ! --- Variable number
 ivar   = isca(iscal)
-
-call field_get_val_v(ivarfl(ivar), cvar_var)
-call field_get_val_prev_v(ivarfl(ivar), cvara_var)
-
 ! Index of the field
 iflid = ivarfl(ivar)
+
+call field_get_val_v(iflid, cvar_var)
+call field_get_val_prev_v(iflid, cvara_var)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -192,7 +191,7 @@ call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
 ! Pointer to the Boundary mass flux
 call field_get_val_s(iflmab, bmasfl)
 
-call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+call field_get_key_struct_var_cal_opt(iflid, vcopt)
 
 if (vcopt%iwgrec.eq.1) then
   ! Id weighting field for gradient
@@ -246,7 +245,7 @@ endif
 thets  = thetss(iscal)
 thetv  = vcopt%thetav
 
-call field_get_name(ivarfl(ivar), chaine)
+call field_get_name(iflid, chaine)
 
 if(vcopt%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:16)
@@ -394,7 +393,7 @@ else
 endif
 
 ! Get the the order of the diffusivity tensor of the variable
-call field_get_key_int_by_name(ivarfl(ivar), "diffusivity_tensor", idftnp)
+call field_get_key_int_by_name(iflid, "diffusivity_tensor", idftnp)
 
 ! "VITESSE" DE DIFFUSION FACETTE
 
@@ -502,7 +501,7 @@ else
 endif
 
 if (ippmod(idarcy).eq.1) then
-  call field_get_key_struct_gwf_soilwater_partition(ivarfl(ivar), sorption_scal)
+  call field_get_key_struct_gwf_soilwater_partition(iflid, sorption_scal)
   call field_get_val_s(sorption_scal%idel, cpro_delay)
   call field_get_val_prev_s(sorption_scal%idel, cproa_delay)
   call field_get_val_prev_s_by_name('saturation', cproa_sat)
@@ -622,14 +621,14 @@ icvflb = 0
 ! transposed gradient term only for NS
 ivissv = 0
 
-call field_get_coefa_v(ivarfl(ivar), coefap)
-call field_get_coefb_v(ivarfl(ivar), coefbp)
-call field_get_coefaf_v(ivarfl(ivar), cofafp)
-call field_get_coefbf_v(ivarfl(ivar), cofbfp)
+call field_get_coefa_v(iflid, coefap)
+call field_get_coefb_v(iflid, coefbp)
+call field_get_coefaf_v(iflid, cofafp)
+call field_get_coefbf_v(iflid, cofbfp)
 
 call coditv &
 !==========
- ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , iflid  , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivissv ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &

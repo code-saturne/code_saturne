@@ -101,11 +101,11 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          icodcl(ndimfb,nvarcl)
+integer          icodcl(ndimfb,nvar)
 integer          itypfb(ndimfb) , itrifb(ndimfb)
 integer          isostd(ndimfb+1)
 
-double precision rcodcl(ndimfb,nvarcl,3)
+double precision rcodcl(ndimfb,nvar,3)
 
 ! Local variables
 
@@ -116,11 +116,16 @@ integer          ityp, ii, jj, iwaru, iflmab
 integer          irangd
 integer          ifadir
 integer          iut  , ivt   , iwt, iscal
+integer          keyvar
+integer          f_id
+
 double precision pref, pipb
 double precision diipbx, diipby, diipbz
 double precision flumbf, flumty(ntypmx)
 double precision xxp0, xyp0, xzp0, d0, d0min
 double precision xyzref(4) ! xyzref(3) + PI' for broadcast
+
+character(len=80) :: fname
 
 double precision, allocatable, dimension(:) :: pripb
 double precision, allocatable, dimension(:,:) :: grad
@@ -158,6 +163,8 @@ call field_get_val_s(iflmab, bmasfl)
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+
+call field_get_key_id("variable_id", keyvar)
 
 !===============================================================================
 ! 2.  Check consistency of types given in cs_user_boundary_conditions
@@ -511,7 +518,7 @@ endif
 !     isolib, ifrent and ientre are handled later.
 !================================================================================
 
-do ivar = 1, nvarcl
+do ivar = 1, nvar
   do ifac = 1, nfabor
     if ((itypfb(ifac) .ne. isolib)            .and. &
         (itypfb(ifac) .ne. ifrent)            .and. &
@@ -1063,10 +1070,17 @@ enddo
 ! Turbulent fluxes: 0 Dirichlet if Dirichlet on the scalar
 do iscal = 1, nscal
   if (ityturt(iscal).eq.3) then
+    ! Name of the scalar ivar
+    call field_get_name(ivarfl(isca(iscal)), fname)
+
+    ! Index of the corresponding turbulent flux
+    call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+
+
     ! Set pointer values of turbulent fluxes in icodcl
-    iut = nvar + 3*(ifltur(iscal) - 1) + 1
-    ivt = nvar + 3*(ifltur(iscal) - 1) + 2
-    iwt = nvar + 3*(ifltur(iscal) - 1) + 3
+    call field_get_key_int(f_id, keyvar, iut)
+    ivt = iut + 1
+    iwt = iut + 2
 
     do ii = ideb, ifin
       ifac = itrifb(ii)
@@ -1342,7 +1356,7 @@ enddo
 ideb = idebty(ifresf)
 ifin = ifinty(ifresf)
 
-do ivar = 1, nvarcl
+do ivar = 1, nvar
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
@@ -1372,7 +1386,7 @@ enddo
 ideb = idebty(isymet)
 ifin = ifinty(isymet)
 
-do ivar = 1, nvarcl
+do ivar = 1, nvar
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
@@ -1394,7 +1408,7 @@ enddo
 ideb = idebty(iparoi)
 ifin = ifinty(iparoi)
 
-do ivar = 1, nvarcl
+do ivar = 1, nvar
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
@@ -1416,7 +1430,7 @@ enddo
 ideb = idebty(iparug)
 ifin = ifinty(iparug)
 
-do ivar = 1, nvarcl
+do ivar = 1, nvar
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then

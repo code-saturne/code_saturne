@@ -955,10 +955,16 @@ _variable_turbulent_flux_model(const char   *variable_name,
     *value = 0;
   else if (cs_gui_strcmp(result, "GGDH"))
     *value = 10;
+  else if (cs_gui_strcmp(result, "EB-GGDH"))
+    *value = 11;
   else if (cs_gui_strcmp(result, "AFM"))
     *value = 20;
+  else if (cs_gui_strcmp(result, "EB-AFM"))
+    *value = 21;
   else if (cs_gui_strcmp(result, "DFM"))
     *value = 30;
+  else if (cs_gui_strcmp(result, "EB-DFM"))
+    *value = 31;
   else
     *value = 0; /* assign default */
 

@@ -330,7 +330,7 @@ thetv  = vcopt_p%thetav
 icvflb = 0
 
 call codits                                                                    &
-( idtvar , ipr   , iconvp , idiffp , ndircp ,                                  &
+( idtvar , ivarfl(ipr)     , iconvp , idiffp , ndircp ,                        &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                                 &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                        &
   iwarnp ,                                                                     &

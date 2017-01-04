@@ -110,12 +110,12 @@ implicit none
 integer          itrale
 integer          nvar   , nscal
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 integer          itypfb(nfabor), ialtyb(nfabor)
 integer          impale(nnod)
 
 double precision dt(ncelet)
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 double precision disale(3,nnod), xyzno0(3,nnod)
 !< [arg]
 !< [loc_var]

@@ -75,7 +75,7 @@ parameter ( idim2 = 26 )
 !... declaration des variables externes
 
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 
 double precision temp(ncelet)
 double precision qv(ncelet)

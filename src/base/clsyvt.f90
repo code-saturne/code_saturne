@@ -89,6 +89,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -104,9 +105,9 @@ implicit none
 
 integer          nscal
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 
 ! Local variables
@@ -797,6 +798,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -816,7 +818,7 @@ implicit none
 
 integer          iscal
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 
 ! Local variables
 
@@ -828,6 +830,7 @@ double precision cpp, rkl, visclc
 double precision distbf, srfbnf
 double precision rnx, rny, rnz
 double precision hintt(6)
+double precision hint, qimp
 
 character(len=80) :: fname
 
@@ -835,6 +838,7 @@ double precision, dimension(:), pointer :: val_s, crom
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut, visten
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
+double precision, dimension(:), pointer :: a_al, b_al, af_al, bf_al
 
 double precision, dimension(:), pointer :: viscl, viscls, cpro_cp
 
@@ -881,6 +885,21 @@ call field_get_coefaf_v(f_id,cofafut)
 call field_get_coefbf_v(f_id,cofbfut)
 call field_get_coefad_v(f_id,cofarut)
 call field_get_coefbd_v(f_id,cofbrut)
+
+! EB-GGDH/AFM/DFM alpha boundary conditions
+if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+
+  ! Name of the scalar ivar
+  call field_get_name(ivarfl(ivar), fname)
+
+  ! Index of the corresponding turbulent flux
+  call field_get_id(trim(fname)//'_alpha', f_id)
+
+  call field_get_coefa_s (f_id, a_al)
+  call field_get_coefb_s (f_id, b_al)
+  call field_get_coefaf_s(f_id, af_al)
+  call field_get_coefbf_s(f_id, bf_al)
+endif
 
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
@@ -964,6 +983,25 @@ do ifac = 1, nfabor
       enddo
     enddo
 
+    ! EB-GGDH/AFM/DFM alpha boundary conditions
+    if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+
+      ! Dirichlet Boundary Condition
+      !-----------------------------
+
+      qimp = 0.d0
+
+      hint = 1.d0/distbf
+
+      call set_neumann_scalar &
+        !====================
+      ( a_al(ifac), af_al(ifac),             &
+        b_al(ifac), bf_al(ifac),             &
+        qimp      , hint       )
+
+    endif
+
+
   endif
   ! Test on velocity symmetry condition: end
 
@@ -1011,6 +1049,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -1031,7 +1070,7 @@ implicit none
 
 integer          iscal
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 
 ! Local variables
 

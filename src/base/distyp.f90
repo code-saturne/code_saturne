@@ -103,7 +103,7 @@ double precision disty(ncelet)
 
 ! Local variables
 
-integer          idtva0, ivar  , f_id  , iconvp, idiffp
+integer          idtva0, f_id0, f_id  , iconvp, idiffp
 integer          ndircp
 integer          iescap, iflmb0, itypfl
 integer          ifac  , iel   , init
@@ -498,7 +498,7 @@ do isweep = 1, ntcmxy
   !=========
 
   ! La variable n'est pas la vitesse ou une composante de Rij
-  ivar = 0
+  f_id0= -1
   ! Le cas est convectif, non diffusif
   iconvp = 1
   idiffp = 0
@@ -521,7 +521,7 @@ do isweep = 1, ntcmxy
 
   call codits &
   !==========
- ( idtva0 , ivar   , iconvp , idiffp , ndircp ,                   &
+ ( idtva0 , f_id0  , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
    ischcy , isstpy , iescap , imucpp , idftnp , iswdyp ,          &
    iwarny ,                                                       &

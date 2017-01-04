@@ -1282,10 +1282,12 @@ enddo
 !     Algebraic Model
 !      0  SGDH
 !      10 GGDH
+!      11 EB-GGDH (Elliptic Blending)
 !      20 AFM
+!      21 EB-AFM (Elliptic Blending)
 !     Model with transport equations
 !      30 DFM
-
+!      31 EB-DFM (Elliptic Blending)
 
 ! GGDH for thermal scalar:
 if (iscalt.gt.0) iturt(iscalt) = 10

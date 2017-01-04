@@ -63,7 +63,7 @@ BEGIN_C_DECLS
  *
  *   2) Update BCs for the energy computation
  *
- *   \param[in]     nvarcl        total number of variable BC's
+ *   \param[in]     nvar          total number of variable BC's
  *   \param[in,out] icodcl        face boundary condition code:
  *                                 - 1 Dirichlet
  *                                 - 2 Radiative outlet
@@ -101,7 +101,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_bcs(int         nvarcl,
+cs_rad_transfer_bcs(int         nvar,
                     int         bc_type[],
                     int         icodcl[],
                     int         izfrad[],

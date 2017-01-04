@@ -182,12 +182,12 @@ integer          iinvpe, indhyd
 integer          itypfl
 integer          isou  , ibsize, iesize
 integer          imucpp, idftnp, iswdyp
-integer          iescap, ircflp, ischcp, isstpp, ivar, ivar0
+integer          iescap, ircflp, ischcp, isstpp, ivar, f_id0
 integer          nswrsp
 integer          imvisp
 integer          iflid, iflwgr, f_dim, imasac
 
-integer          icvflb, f_id0
+integer          icvflb
 integer          ivoid(1)
 
 double precision residu, phydr0
@@ -2105,7 +2105,7 @@ if (idilat.eq.5) then
   enddo
 
   ivar   = ipr
-  ivar0  = 0
+  f_id0  = -1
   iconvp = 1
   imasac = 1
   idiffp = 0
@@ -2130,7 +2130,7 @@ if (idilat.eq.5) then
 
   call bilsca &
   !==========
- ( idtvar , ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
+ ( idtvar , f_id0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
@@ -2184,7 +2184,7 @@ if (idilat.eq.5) then
 
   call codits &
   !==========
-   ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
+   ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
      imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
      ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
      iwarnp ,                                                       &

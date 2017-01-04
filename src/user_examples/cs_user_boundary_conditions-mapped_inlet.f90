@@ -121,12 +121,12 @@ implicit none
 
 integer          nvar   , nscal
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 integer          itrifb(nfabor), itypfb(nfabor)
 integer          izfppp(nfabor)
 
 double precision dt(ncelet)
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
@@ -283,7 +283,7 @@ if (ntcabs.gt.1) then
       call boundary_conditions_mapped_set(f_id, inlet_l, MESH_LOCATION_CELLS, &
                                           normalize, interpolate,             &
                                           nlfac, lstfac, rvoid,               &
-                                          nvarcl, rcodcl)
+                                          nvar, rcodcl)
     endif
   enddo
 

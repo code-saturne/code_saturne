@@ -124,6 +124,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -147,9 +148,9 @@ implicit none
 
 integer          nscal, isvhb
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 double precision velipb(nfabor,ndim), rijipb(nfabor,6)
 double precision visvdr(ncelet)
 double precision hbord(nfabor),theipb(nfabor)
@@ -1949,6 +1950,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -1972,9 +1974,9 @@ implicit none
 
 integer          iscal, isvhb
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 double precision byplus(nfabor), bdplus(nfabor)
 double precision hbord(nfabor), theipb(nfabor), hbord2(nfabor), buk(nfabor)
 double precision tetmax, tetmin, tplumx, tplumn
@@ -2000,6 +2002,7 @@ double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cv
 double precision, dimension(:), pointer :: bfconv, bhconv
 double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:), pointer :: a_al, b_al, af_al, bf_al
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut, visten
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
 
@@ -2088,6 +2091,21 @@ if (ityturt(iscal).eq.3) then
   call field_get_coefad_v(f_id,cofarut)
   call field_get_coefbd_v(f_id,cofbrut)
 
+endif
+
+! EB-GGDH/AFM/DFM alpha boundary conditions
+if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+
+  ! Name of the scalar ivar
+  call field_get_name(ivarfl(ivar), fname)
+
+  ! Index of the corresponding turbulent flux
+  call field_get_id(trim(fname)//'_alpha', f_id)
+
+  call field_get_coefa_s (f_id, a_al)
+  call field_get_coefb_s (f_id, b_al)
+  call field_get_coefaf_s(f_id, af_al)
+  call field_get_coefbf_s(f_id, bf_al)
 endif
 
 ! pointers to T+ and T* if saved
@@ -2391,6 +2409,24 @@ do ifac = 1, nfabor
 
       endif
 
+      ! EB-GGDH/AFM/DFM alpha boundary conditions
+      if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
+
+        ! Dirichlet Boundary Condition
+        !-----------------------------
+
+        pimp = 0.d0
+
+        hint = 1.d0/distbf
+
+        call set_dirichlet_scalar &
+             !====================
+           ( a_al(ifac), af_al(ifac),             &
+             b_al(ifac), bf_al(ifac),             &
+             pimp      , hint       , rinfin )
+
+      endif
+
       !--> Radiative module:
 
       ! On stocke le coefficient d'echange lambda/distance
@@ -2575,6 +2611,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use pointe
 use entsor
 use albase
@@ -2599,9 +2636,9 @@ implicit none
 
 integer          iscal, isvhb
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 double precision byplus(nfabor), bdplus(nfabor)
 double precision hbord(nfabor), buk(nfabor)
 

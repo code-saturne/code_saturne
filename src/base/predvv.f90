@@ -1679,7 +1679,7 @@ if (iappel.eq.1) then
     ! Warning: in case of convergence estimators, eswork give the estimator
     ! of the predicted velocity
     call coditv &
- ( idtvar , iu     , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , ivarfl(iu)      , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &
@@ -1698,7 +1698,7 @@ if (iappel.eq.1) then
   else if(iterns.gt.1) then
 
     call coditv &
- ( idtvar , iu     , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , ivarfl(iu)      , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &
@@ -1743,7 +1743,7 @@ if (iappel.eq.1) then
     ivisep = 0
 
     call coditv &
- ( idtvar , iu     , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , ivarfl(iu)      , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &
@@ -1795,14 +1795,14 @@ else if (iappel.eq.2) then
   imasac = 0
 
   call bilscv &
- ( idtva0 , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , ivisse ,                   &
-   iwarnp , idftnp , imasac ,                                     &
-   blencp , epsrgp , climgp , relaxp , thetap ,                   &
-   vel    , vel    ,                                              &
-   coefav , coefbv , cofafv , cofbfv ,                            &
-   flumas , flumab , viscf  , viscb  , secvif , secvib ,          &
-   icvflb , icvfli ,                                              &
+ ( idtva0 , ivarfl(iu)      , iconvp , idiffp , nswrgp , imligp , ircflp , &
+   ischcp , isstpp , inc    , imrgra , ivisse ,                            &
+   iwarnp , idftnp , imasac ,                                              &
+   blencp , epsrgp , climgp , relaxp , thetap ,                            &
+   vel    , vel    ,                                                       &
+   coefav , coefbv , cofafv , cofbfv ,                                     &
+   flumas , flumab , viscf  , viscb  , secvif , secvib ,                   &
+   icvflb , icvfli ,                                                       &
    smbr   )
 
   call field_get_val_s(iestim(iestot), c_estim)

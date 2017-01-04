@@ -160,7 +160,7 @@ cs_boundary_conditions_map(cs_mesh_location_type_t    location_type,
  *   faces           <-- list of selected boundary faces (0 to n-1),
  *                       or NULL if no indirection is needed
  *   balance_w       <-- optional balance weight, or NULL
- *   nvarcl          <-- number of variables requiring BC's
+ *   nvar            <-- number of variables requiring BC's
  *   rcodcl          <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
@@ -173,7 +173,7 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
                                   cs_lnum_t                  n_faces,
                                   const cs_lnum_t           *faces,
                                   cs_real_t                 *balance_w,
-                                  int                        nvarcl,
+                                  int                        nvar,
                                   cs_real_t                  rcodcl[]);
 
 /*----------------------------------------------------------------------------

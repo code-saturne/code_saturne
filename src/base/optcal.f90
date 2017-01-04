@@ -873,23 +873,19 @@ module optcal
   !> for any scalar \f$ \varia \f$, iturt(isca)
   !>    - 0: SGDH
   !>    - 10: GGDH
+  !>    - 11: EB-GGDH (Elliptic Blending)
   !>    - 20: AFM
+  !>    - 21: EB-AFM (Elliptic Blending)
   !>    - 30: DFM (Transport equation modelized)
+  !>    - 31: EB-DFM (Elliptic Blending)
   !> GGDH, AFM and DFM are only available when a second order closure is used.
   integer, save :: iturt(nscamx)
-  !    - 11: EB-GGDH
-  !    - 21: EB-AFM
-  !    - 31: EB-DFM
 
   !> class turbulent flux model (=iturt/10)
   integer, save :: ityturt(nscamx)
 
-  !> index of the turbulent flux for the scalar iscal
-  integer, save :: ifltur(nscamx)
-
-  !> number of variable plus number of turbulent fluxes
-  !> (used by the boundary conditions)
-  integer(c_int), pointer, save :: nvarcl
+  !> number of variable (deprecated, used only for compatibility)
+  integer, save :: nvarcl
 
   !> \}
 
@@ -1496,11 +1492,11 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global turbulence model structure
 
-    subroutine cs_f_turb_model_get_pointers(iturb, itytur, nvarcl) &
+    subroutine cs_f_turb_model_get_pointers(iturb, itytur) &
       bind(C, name='cs_f_turb_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: iturb, itytur, nvarcl
+      type(c_ptr), intent(out) :: iturb, itytur
     end subroutine cs_f_turb_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1734,13 +1730,12 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_iturb, c_itytur, c_nvarcl
+    type(c_ptr) :: c_iturb, c_itytur
 
-    call cs_f_turb_model_get_pointers(c_iturb, c_itytur, c_nvarcl)
+    call cs_f_turb_model_get_pointers(c_iturb, c_itytur)
 
     call c_f_pointer(c_iturb, iturb)
     call c_f_pointer(c_itytur, itytur)
-    call c_f_pointer(c_nvarcl, nvarcl)
 
   end subroutine turb_model_init
 

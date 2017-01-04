@@ -109,7 +109,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
 integer          ibsize
-integer          iescap, ircflp, ischcp, isstpp, ivar, ivar0
+integer          iescap, ircflp, ischcp, isstpp, f_id0
 integer          nswrsp
 integer          imucpp, idftnp, iswdyp
 integer          iharmo
@@ -223,9 +223,8 @@ enddo
 ! We do not yet use the multigrid to resolve the hydrostatic pressure
 !--------------------------------------------------------------------------
 
-ivar   = ipr
-call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-ivar0  = 0
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+f_id0  = -1
 iconvp = 0
 idiffp = 1
 ndircp = 0
@@ -257,7 +256,7 @@ nomva0 = "Prhydro"
 
 call codits &
 !==========
-( idtvar , ivar0  , iconvp , idiffp , ndircp ,                   &
+( idtvar , f_id0  , iconvp , idiffp , ndircp ,                   &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
   iwarnp ,                                                       &

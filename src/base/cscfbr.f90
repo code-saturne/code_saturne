@@ -80,6 +80,7 @@ use entsor
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nvar
 use parall
 use period
 use cplsat
@@ -93,11 +94,11 @@ implicit none
 
 integer          nscal
 
-integer          icodcl(nfabor,nvarcl)
+integer          icodcl(nfabor,nvar)
 integer          itypfb(nfabor)
 
 double precision dt(ncelet)
-double precision rcodcl(nfabor,nvarcl,3)
+double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 

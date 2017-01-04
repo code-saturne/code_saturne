@@ -1027,6 +1027,10 @@ cthafm = 0.236d0
 
 ! For the DFM (tranport equation on the turbulent flux)
 cthdfm = 0.31d0
+! For the EB-DFM model (0.122*2.5d0, See F. Dehoux thesis)
+xclt   = 0.305d0
+rhebdfm = 0.5d0
+
 
 ! --- Ici tout cstphy a ete initialise
 

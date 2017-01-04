@@ -739,16 +739,16 @@ if (ikecou.eq.1) then
   icvflb = 0
 
   call bilsca &
- ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp , imasac ,                            &
-   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   cvara_k         , cvara_k         ,                            &
-   coefa_k , coefb_k , coefaf_k , coefbf_k ,                      &
-   imasfl , bmasfl ,                                              &
-   viscf  , viscb  , rvoid  , rvoid  ,                            &
-   rvoid  , rvoid  ,                                              &
-   icvflb , ivoid  ,                                              &
+ ( idtvar , ivarfl(ivar)    , iconvp , idiffp , nswrgp , imligp , ircflp , &
+   ischcp , isstpp , inc    , imrgra , iccocg ,                            &
+   iwarnp , imucpp , idftnp , imasac ,                                     &
+   blencp , epsrgp , climgp , extrap , relaxp , thetap ,                   &
+   cvara_k         , cvara_k         ,                                     &
+   coefa_k , coefb_k , coefaf_k , coefbf_k ,                               &
+   imasfl , bmasfl ,                                                       &
+   viscf  , viscb  , rvoid  , rvoid  ,                                     &
+   rvoid  , rvoid  ,                                                       &
+   icvflb , ivoid  ,                                                       &
    w5     )
 
   if (vcopt_k%iwarni.ge.2) then
@@ -807,16 +807,16 @@ if (ikecou.eq.1) then
   icvflb = 0
 
   call bilsca &
- ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-   iwarnp , imucpp , idftnp , imasac ,                            &
-   blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   cvara_omg       , cvara_omg       ,                            &
-   coefa_o , coefb_o , coefaf_o , coefbf_o ,                      &
-   imasfl , bmasfl ,                                              &
-   viscf  , viscb  , rvoid  , rvoid  ,                            &
-   rvoid  , rvoid  ,                                              &
-   icvflb , ivoid  ,                                              &
+ ( idtvar , ivarfl(ivar)    , iconvp , idiffp , nswrgp , imligp , ircflp , &
+   ischcp , isstpp , inc    , imrgra , iccocg ,                            &
+   iwarnp , imucpp , idftnp , imasac ,                                     &
+   blencp , epsrgp , climgp , extrap , relaxp , thetap ,                   &
+   cvara_omg       , cvara_omg       ,                                     &
+   coefa_o , coefb_o , coefaf_o , coefbf_o ,                               &
+   imasfl , bmasfl ,                                                       &
+   viscf  , viscb  , rvoid  , rvoid  ,                                     &
+   rvoid  , rvoid  ,                                                       &
+   icvflb , ivoid  ,                                                       &
    w6     )
 
   if (vcopt_w%iwarni.ge.2) then
@@ -961,7 +961,7 @@ thetap = vcopt_k%thetav
 icvflb = 0
 
 call codits &
- ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &
@@ -1030,7 +1030,7 @@ thetap = vcopt_w%thetav
 icvflb = 0
 
 call codits &
- ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
+ ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp ,                                                       &

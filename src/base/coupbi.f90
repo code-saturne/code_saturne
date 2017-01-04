@@ -41,14 +41,14 @@ subroutine coupbi &
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! icodcl           ! te ! --> ! boundary condition code                        !
-!  (nfabor, nvarcl)!    !     ! = 1   -> dirichlet                             !
+!  (nfabor, nvar)  !    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> flux density                          !
 !                  !    !     ! = 4   -> slip and u.n=0 (velocity)             !
 !                  !    !     ! = 5   -> friction and u.n=0 (velocity)         !
 !                  !    !     ! = 6   -> rugosity and u.n=0 (velocity)         !
 !                  !    !     ! = 9   -> free inlet/outlet (velocity)          !
 ! rcodcl           ! tr ! --> ! boundary condition values                      !
-!  (nfabor, nvarcl)!    !     ! rcodcl(1) = dirichlet value                    !
+!  (nfabor, nvar)  !    !     ! rcodcl(1) = dirichlet value                    !
 !                  !    !     ! rcodcl(2) = exchange coefficient value         !
 !                  !    !     !  (infinite if no exchange)                     !
 !                  !    !     ! rcodcl(3) = flux density value (negative       !
@@ -74,6 +74,7 @@ use numvar
 use optcal
 use cstnum
 use cstphy
+use dimens, only: nvar
 use entsor
 use ppppar
 use ppthch
@@ -88,8 +89,8 @@ implicit none
 ! Arguments
 
 integer          nfabor, nscal
-integer          icodcl(nfabor,nvarcl)
-double precision rcodcl(nfabor,nvarcl,3)
+integer          icodcl(nfabor,nvar)
+double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 

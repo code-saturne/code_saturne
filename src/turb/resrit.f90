@@ -42,14 +42,15 @@
 !>                               (at current and previous time steps)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     gradv         mean velocity gradient
-!> \param[in]     gradt         mean temperature gradient
+!> \param[in]     gradt         mean scalar gradient
+!> \param[in]     grad_al       alpha scalar gradient
 !______________________________________________________________________________!
 
 subroutine resrit &
  ( nscal  ,                                                       &
    iscal  , xcpp   , xut    , xuta   ,                            &
    dt     ,                                                       &
-   gradv  , gradt  )
+   gradv  , gradt  , grad_al)
 
 !===============================================================================
 ! Module files
@@ -80,6 +81,7 @@ double precision dt(ncelet)
 double precision xcpp(ncelet), xut(3,ncelet), xuta(3,ncelet)
 double precision gradv(3,3,ncelet)
 double precision gradt(3,ncelet)
+double precision grad_al(3,ncelet)
 
 ! Local variables
 
@@ -104,9 +106,10 @@ double precision trrij
 double precision thets , thetv , thetp1
 double precision xttke , prdtl
 double precision grav(3)
-double precision xrij(3,3),phiith(3)
-
-double precision d1s2
+double precision xrij(3,3),phiith(3), phiitw(3)
+double precision xnal(3), xnoral
+double precision alpha, xttdrbt, xttdrbw
+double precision pk, gk, xxc1, xxc2, xxc3, imp_term
 
 double precision rvoid(1)
 
@@ -122,6 +125,7 @@ double precision, dimension(:,:), pointer :: coefav, cofafv, visten
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cpro_beta
+double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:), pointer :: cvar_ep
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
@@ -141,8 +145,6 @@ allocate(viscce(6,ncelet))
 allocate(smbrut(3,ncelet))
 allocate(fimp(3,3,ncelet))
 allocate(viscf(3,3,nfac), viscb(nfabor))
-
-d1s2 = 0.5d0
 
 if ((itytur.eq.2).or.(itytur.eq.5).or.(iturb.eq.60)) then
   write(nfecra,*)'Utiliser un modele Rij avec ces modeles de thermiques'!FIXME
@@ -261,13 +263,19 @@ if (itt.gt.0) then
   call field_get_val_s(ivarfl(isca(itt)), cvar_tt)
   call field_get_val_prev_s(ivarfl(isca(itt)), cvara_tt)
 endif
+if (iturt(iscal).eq.31) then
+  ! Name of the scalar
+  call field_get_name(ivarfl(isca(iscal)), fname)
+
+  ! Index of the corresponding turbulent flux
+  call field_get_id(trim(fname)//'_alpha', f_id)
+
+  call field_get_val_s(f_id, cvar_al)
+endif
 
 do iel = 1, ncel
-  trrij  = d1s2*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-  ! --- calcul de l echelle de temps de Durbin
-  xttke  = trrij/cvar_ep(iel)
 
-  xrij(1,1) = cvar_r11(iel)
+  xrij(1,1) = cvar_r11(iel) !FIXME irijco!
   xrij(2,2) = cvar_r22(iel)
   xrij(3,3) = cvar_r33(iel)
   xrij(1,2) = cvar_r12(iel)
@@ -277,27 +285,102 @@ do iel = 1, ncel
   xrij(3,1) = xrij(1,3)
   xrij(3,2) = xrij(2,3)
 
+  if (ifcvsl.ge.0) then
+    prdtl = viscl(iel)*xcpp(iel)/viscls(iel)
+  else
+    prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
+  endif
+
+  trrij  = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+  ! --- Compute Durbin time scheme
+  xttke  = trrij/cvar_ep(iel)
+
+  if (iturt(iscal).eq.31) then
+    alpha = cvar_al(iel)
+    !FIXME Warning / rhebdfm**0.5 compared to F Dehoux
+    xttdrbt = xttke * sqrt( (1.d0-alpha)*prdtl/ rhebdfm + alpha )
+    xttdrbw = xttdrbt * sqrt(rhebdfm/prdtl) ! And so multiplied by (R/Prandt)^0.5
+
+    ! Compute the unite normal vector
+    xnoral = &
+      ( grad_al(1, iel)*grad_al(1, iel) &
+      + grad_al(2, iel)*grad_al(2, iel) &
+      + grad_al(3, iel)*grad_al(3, iel))
+    xnoral = sqrt(xnoral)
+
+    if (xnoral.le.epzero/cell_f_vol(iel)**(1.d0/3.d0)) then
+      xnal(1) = 0.d0
+      xnal(2) = 0.d0
+      xnal(3) = 0.d0
+    else
+      xnal(1) = grad_al(1, iel)/xnoral
+      xnal(2) = grad_al(2, iel)/xnoral
+      xnal(3) = grad_al(3, iel)/xnoral
+    endif
+
+    ! Production and buoyancy for TKE
+    pk = -( xrij(1,1)*gradv(1,1,iel) +&
+            xrij(1,2)*gradv(1,2,iel) +&
+            xrij(1,3)*gradv(1,3,iel) +&
+            xrij(2,1)*gradv(2,1,iel) +&
+            xrij(2,2)*gradv(2,2,iel) +&
+            xrij(2,3)*gradv(2,3,iel) +&
+            xrij(3,1)*gradv(3,1,iel) +&
+            xrij(3,2)*gradv(3,2,iel) +&
+            xrij(3,3)*gradv(3,3,iel) )
+
+    if (ibeta.ge.0) then
+      gk = cpro_beta(iel)*(xuta(1,iel)*gx + xuta(2,iel)*gy + xuta(3,iel)*gz)!FIXME make buoyant term coherent elsewhere
+    else
+      gk = 0.d0
+    endif
+    xxc1 = 1.d0+2.d0*(1.d0 - cvar_al(iel))*(pk+gk)/cvar_ep(iel)
+    xxc2 = 0.5d0*(1.d0+1.d0/prdtl)*(1.d0-0.3d0*(1.d0 - cvar_al(iel))) &
+      *(pk+gk)/cvar_ep(iel)
+    xxc3 = xxc2
+
+  else
+    xttdrbt = xttke
+    xttdrbw = xttke
+    alpha = 1.d0
+    xxc1 = 0.d0
+    xxc2 = 0.d0
+    xxc3 = 0.d0
+    xnal(1) = 0.d0
+    xnal(2) = 0.d0
+    xnal(3) = 0.d0
+  endif
+
   do isou = 1, 3
-    phiith(isou) = -c1trit/xttke*xuta(isou,iel)                     &
+    phiith(isou) = -c1trit / xttdrbt * xuta(isou,iel)               &
                  + c2trit*(xuta(1,iel)*gradv(1,isou,iel)            &
                           +xuta(2,iel)*gradv(2,isou,iel)            &
                           +xuta(3,iel)*gradv(3,isou,iel))           &
                  + c4trit*(-xrij(isou,1)*gradt(1,iel)               &
                            -xrij(isou,2)*gradt(2,iel)               &
                            -xrij(isou,3)*gradt(3,iel))
-    if (itt.gt.0) then
+    if (itt.gt.0.and.ibeta.ge.0) then
       phiith(isou) = phiith(isou)                                              &
              + c3trit*(cpro_beta(iel)*grav(isou)*cvar_tt(iel))
     endif
 
+    phiitw(isou) = -1.d0/xttdrbw * xxc1 *             & !FIXME full implicit
+                 ( xuta(1,iel)*xnal(1)*xnal(isou)     &
+                 + xuta(2,iel)*xnal(2)*xnal(isou)     &
+                 + xuta(3,iel)*xnal(3)*xnal(isou))
+
     ! Pressure/thermal fluctuation correlation term
     !----------------------------------------------
-    smbrut(isou,iel) = smbrut(isou,iel) +                           &
-                volume(iel)*crom(iel)*(phiith(isou) )
+    smbrut(isou,iel) = smbrut(isou,iel) +                                      &
+                volume(iel)*crom(iel)*(  alpha *         phiith(isou)          &
+                                      + (1.d0 - alpha) * phiitw(isou))
 
-    fimp(isou,isou,iel) = fimp(isou,isou,iel) -                     &
-                volume(iel)*crom(iel)*(                             &
-              -c1trit/xttke+c2trit*gradv(isou,isou,iel) )
+    imp_term = max(volume(iel)*crom(iel)*(                                     &
+              alpha        * (c1trit/xttdrbt-c2trit*gradv(isou,isou,iel))      &
+            + (1.d0-alpha) * (xxc1*xnal(isou)*xnal(isou) / xttdrbw) &
+            ), 0.d0)
+
+    fimp(isou,isou,iel) = fimp(isou,isou,iel) + imp_term
 
     ! Production terms
     !-----------------
@@ -314,11 +397,25 @@ do iel = 1, ncel
                         )
 
     ! Production term due to the gravity
-    if (itt.gt.0) then
+    if (itt.gt.0.and.ibeta.ge.0) then
       smbrut(isou,iel) = smbrut(isou,iel)                            &
                        + volume(iel)*crom(iel)*(            &
                -grav(isou)*cpro_beta(iel)*cvara_tt(iel))
     endif
+
+    ! Dissipation (Wall term only because "h" term is zero
+    smbrut(isou,iel) = smbrut(isou,iel) -                                      &
+                volume(iel)*crom(iel)*(1.d0 - alpha) / xttdrbw *               &
+                       ( xxc2 * xuta(isou, iel)                                &
+                       + xxc3*( xuta(1,iel)*xnal(1)*xnal(isou)                 &
+                              + xuta(2,iel)*xnal(2)*xnal(isou)                 &
+                              + xuta(3,iel)*xnal(3)*xnal(isou)))
+
+    ! TODO we can implicite more terms
+    imp_term = max(volume(iel)*crom(iel)*(1.d0 - alpha) / xttdrbw *            &
+                  ( xxc2 + xxc3 * xnal(isou)*xnal(isou)), 0.d0)
+    fimp(isou,isou,iel) = fimp(isou,isou,iel) + imp_term
+
   enddo
 enddo
 
@@ -334,9 +431,10 @@ do iel = 1, ncel
     prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
   endif
 
+  !FIXME for EB DFM
   do isou = 1, 6
     if (isou.le.3) then
-      viscce(isou,iel) = d1s2*(viscl(iel)*(1.d0+1.d0/prdtl))    &
+      viscce(isou,iel) = 0.5d0*(viscl(iel)*(1.d0+1.d0/prdtl))    &
                        + ctheta(iscal)*visten(isou,iel)/csrij
     else
       viscce(isou,iel) = ctheta(iscal)*visten(isou,iel)/csrij
@@ -400,7 +498,7 @@ ivisep = 0
 icvflb = 0
 
 call coditv &
-(idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
+(idtvar , f_id   , iconvp , idiffp , ndircp ,                   &
  imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
  ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
  iwarnp ,                                                       &

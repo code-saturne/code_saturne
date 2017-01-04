@@ -126,7 +126,7 @@ call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
 !                 Rit = Rik drom/dxk (sum on k)
 !===============================================================================
 
-
+! FIXME use beta instead and be consistant with the model chosen...
 if     (ivar.eq.ir11) then
 
   do iel = 1, ncel
@@ -308,6 +308,7 @@ elseif (ivar.eq.iep ) then
     g22p = const*2.d0*(r2t*gy)
     g33p = const*2.d0*(r3t*gz)
 
+    !FIXME for EB-DFM and EBRSM
     aa = 0.d0
     bb = 0.5d0*(g11p+g22p+g33p)
     smbr(iel) = smbr(iel) + ce1*max(aa,bb)*volume(iel)

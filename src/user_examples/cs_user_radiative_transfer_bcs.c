@@ -148,7 +148,7 @@ BEGIN_C_DECLS
  *  - epap   = thickness (m)
  *  - textp  = outside temperature (K)
  *
- * \param[in]     nvarcl        total number of variable BC's
+ * \param[in]     nvar          total number of variable BC's
  * \param[in]     bc_type       boundary face types
  * \param[in]     icodcl        boundary face code
  *                                - 1  -> Dirichlet
@@ -189,7 +189,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_radiative_transfer_bcs(int               nvarcl,
+cs_user_radiative_transfer_bcs(int               nvar,
                                const int         bc_type[],
                                int               icodcl[],
                                int               izfrdp[],
@@ -391,7 +391,7 @@ cs_user_radiative_transfer_bcs(int               nvarcl,
       epsp[face_id] = 0.9;
 
       /* Conduction flux (W/m2) */
-      rcodcl[face_id + ivart * n_b_faces + 2 * nvarcl * n_b_faces ] = 0.0;
+      rcodcl[face_id + ivart * n_b_faces + 2 * nvar * n_b_faces ] = 0.0;
 
       /* Initial inside temperature: 473.15 K */
       tintp[face_id] = 200.0 + tkelvi;
@@ -435,7 +435,7 @@ cs_user_radiative_transfer_bcs(int               nvarcl,
       isothp[face_id] = cs_glob_rad_transfer_params->ifrefl;
 
       /* Conduction flux (W/m2)*/
-      rcodcl[face_id + ivart * n_b_faces + 2 * nvarcl * n_b_faces ] = 0.0;
+      rcodcl[face_id + ivart * n_b_faces + 2 * nvar * n_b_faces ] = 0.0;
 
       /* Initial inside temperature: 473.15 K */
       tintp[face_id] = 200.0 + tkelvi;

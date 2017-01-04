@@ -42,7 +42,7 @@ subroutine cou1di &
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! isvtb            ! e  ! <-- ! numero du scalaire couple                      !
 ! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvarcl) !    !     !  de bord                                       !
+!  (nfabor,nvar)   !    !     !  de bord                                       !
 !                  !    !     ! = 1   -> dirichlet                             !
 !                  !    !     ! = 3   -> densite de flux                       !
 !                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
@@ -51,7 +51,7 @@ subroutine cou1di &
 !                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
 !                  !    !     !  entrante eventuelle     bloquee               !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvarcl) !    !     !  aux faces de bord                             !
+!  (nfabor,nvar)   !    !     !  aux faces de bord                             !
 !                  !    !     ! rcodcl(1) = valeur du dirichlet                !
 !                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
 !                  !    !     !  ext. (infinie si pas d'echange)               !
@@ -78,6 +78,7 @@ use numvar
 use optcal
 use cstnum
 use cstphy
+use dimens, only: nvar
 use entsor
 use pointe
 use field
@@ -91,8 +92,8 @@ implicit none
 ! Arguments
 
 integer          nfabor
-integer          isvtb  , icodcl(nfabor,nvarcl)
-double precision rcodcl(nfabor,nvarcl,3)
+integer          isvtb  , icodcl(nfabor,nvar)
+double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 

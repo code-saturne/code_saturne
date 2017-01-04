@@ -260,7 +260,7 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
            +   grad(2,iel)*grad(2,iel)          &
            +   grad(3,iel)*grad(3,iel) )
     xnoral = sqrt(xnoral)
-   ! Compute the unitary vector of Alpha !FIXME not homogeneous
+   ! Compute the unitary vector of Alpha
     if (xnoral.le.epzero/cell_f_vol(iel)**(1.d0/3.d0)) then
       xnal(1) = 1.d0/sqrt(3.d0)
       xnal(2) = 1.d0/sqrt(3.d0)

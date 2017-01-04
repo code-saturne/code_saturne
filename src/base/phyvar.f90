@@ -89,7 +89,7 @@ double precision dt(ncelet)
 
 character(len=80) :: chaine
 integer          ivar  , iel   , ifac  , iscal
-integer          ii    , iok   , iok1  , iok2  , iisct, idfm, iggafm
+integer          ii    , iok   , iok1  , iok2  , iisct, idfm, iggafm, iebdfm
 integer          nn    , isou
 integer          mbrom , ifcvsl
 integer          iclipc
@@ -394,9 +394,11 @@ endif
 !===============================================================================
 idfm = 0
 iggafm = 0
+iebdfm = 0
 
 do iscal = 1, nscal
   if (ityturt(iscal).eq.3) idfm = 1
+  if (iturt(iscal).eq.31) iebdfm = 1
   ! GGDH or AFM on current scalar
   ! and if DFM, GGDH on the scalar variance
   if (ityturt(iscal).gt.0) iggafm = 1
@@ -430,8 +432,21 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
           enddo
         enddo
 
-        ! No damping with Durbing scale for the scalar
-        if (iggafm.eq.1) then
+        ! Other damping for EBDFM model (see F. Dehoux thesis)
+        if (iebdfm.eq.1) then
+          call field_get_val_v(ivstes, vistes) !FIXME one by scalar
+
+          do iel = 1, ncel
+            trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
+            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
+
+            do isou = 1, 6
+              vistes(isou, iel) = rottke*cvar_rij(isou, iel)
+            enddo
+          enddo
+
+          ! No damping with Durbing scale for the scalar
+        else if (iggafm.eq.1) then
           call field_get_val_v(ivstes, vistes)
 
           do iel = 1, ncel
@@ -488,8 +503,30 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
           visten(6,iel) = rottke*cvar_r13(iel)
         enddo
 
-        ! No damping with Durbing scale for the scalar
-        if (iggafm.eq.1) then
+        ! Other damping for EBDFM model (see F. Dehoux thesis)
+        if (iebdfm.eq.1) then
+          call field_get_val_v(ivstes, vistes)
+
+          do iel = 1, ncel
+            trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+            ttke  = trrij/cvar_ep(iel)
+            ! Durbin scale
+            xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
+            xttdrb = max(ttke,xttkmg)
+            !FIXME xttdrbt = xttdrb*sqrt((1.d0-alpha3)*PR/XRH + alpha3)
+            rottke  = csrij * crom(iel) * ttke
+            !rottke  = csrij * crom(iel) * xttdrbt !FIXME see RESRIT of F Dehoux l800
+
+            vistes(1,iel) = rottke*cvar_r11(iel)
+            vistes(2,iel) = rottke*cvar_r22(iel)
+            vistes(3,iel) = rottke*cvar_r33(iel)
+            vistes(4,iel) = rottke*cvar_r12(iel)
+            vistes(5,iel) = rottke*cvar_r23(iel)
+            vistes(6,iel) = rottke*cvar_r13(iel)
+          enddo
+
+          ! No damping with Durbing scale for the scalar
+        else if (iggafm.eq.1) then
           call field_get_val_v(ivstes, vistes)
 
           do iel = 1, ncel
@@ -795,11 +832,11 @@ if (nscal.ge.1) then
       iok = iok + 1
     endif
 
-    if (iscal.eq.iscalt.and.irovar.eq.1.and.ityturt(iscal).eq.2) then
+    if (ibeta.ge.0) then
       iok1 = 0
       call field_get_val_s(ibeta, cpro_beta)
       do iel = 1, ncel
-        if (cpro_beta(iel).le.0.d0) iok1 = 1
+        if (cpro_beta(iel).lt.0.d0) iok1 = 1
       enddo
       if (iok1.eq.1) write(nfecra,9013)
     endif
