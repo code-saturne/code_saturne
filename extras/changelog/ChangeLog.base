@@ -1,3 +1,2423 @@
+2016-12-23 11:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9337] ., NEWS, po/fr.po, src/mesh/cs_join.c,
+	  src/mesh/cs_join_update.c: Merge rev. 9336 from trunk (fix
+	  allowing mesh joining when no vertices are modified).
+
+2016-12-14 18:15  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9324] NEWS, bin/autovnv/Study.py: Merge rev. 9323 from trunk
+	  (Fix autovnv compare log for english env.).
+
+2016-11-25 15:44  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9282] NEWS, src/base/clptur.f90: Merge rev. 9280 from trunk
+	  (fix Neumann BC on epsilon.)
+
+2016-11-24 17:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9274] NEWS: Misplaced entries in NEWS.
+
+2016-11-24 17:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9273] ., NEWS, config/cs_auto_flags.sh, m4/cs_hdf5.m4,
+	  m4/cs_modules.m4: Merge revs. 9261, 9264, and 9270 from trunk
+	  (build updates).
+
+2016-11-08 17:36  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9226] NEWS, src/gui/cs_gui.c: Merge rev. 9225 from trunk (use
+	  of Coolprop).
+
+2016-10-18 13:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9185] NEWS, po/fr.po, src/lagr/cs_lagr_tracking.c: Merge rev.
+	  9184 from trunk (fix particle tracking resizing issues in
+	  parallel runs).
+
+2016-10-07 12:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9153] ., NEWS, src/lagr/cs_lagr.c: Merge rev. 9145 from trunk
+	  (fix crash at end of computation due to misplaced assert).
+
+2016-10-07 07:07  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9151] NEWS, src/base/inivar.f90: Merge rev. 9150 from trunk
+	  (remove one unneeded call to cs_user_f_init.)
+
+2016-10-05 14:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9140] NEWS: Fix release date entry.
+
+2016-10-05 14:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9138] ., src/lagr/cs_lagr.c: Merge rev. 9137 from trunk (fix
+	  minor memory leak at end of Lagrangian/coal momputation).
+
+2016-10-05 13:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9135] NEWS: Prepare for version 4.3.1 release.
+
+2016-10-05 13:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9134] ., NEWS, src/apps/cs_solver.c,
+	  src/gui/cs_gui_particles.c, src/lagr/cs_lagr.c,
+	  src/lagr/cs_lagr.h, src/lagr/cs_lagr_injection.c,
+	  src/lagr/cs_lagr_log.c, src/lagr/cs_lagr_particle.c,
+	  src/lagr/lagran.f90: Merge rev. 9132 from trunk (Lagrangian
+	  memory reallocation and leak fixes).
+
+2016-10-03 16:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9127] ., NEWS, src/lagr/cs_lagr.c: Merge revs. 9121 and 9122
+	  (fixes for issue 204 and 205).
+
+2016-10-03 16:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9126] ., NEWS, po/fr.po, src/lagr/cs_lagr_injection.c: Merge
+	  rev. 9120 and cleanup from rev. 9092 (fix for issue 193).
+
+2016-10-03 16:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9125] ., src/lagr/cs_lagr_print.c: Merge rev. 9096 (Lagrangian
+	  fix for issue 203).
+
+2016-10-03 16:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9124] ., NEWS, src/lagr/cs_lagr.c, src/lagr/cs_lagr.h,
+	  src/lagr/cs_lagr_lec.c, src/lagr/cs_lagr_log.c,
+	  src/lagr/cs_lagr_new.c, src/lagr/cs_lagr_print.c,
+	  src/lagr/cs_lagr_sde.c, src/lagr/cs_lagr_stat.c,
+	  src/lagr/cs_lagr_tracking.c: Merge revs. 9079 and 9082
+	  (Lagrangian fixes for restart and logging).
+
+2016-09-30 08:39  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9116] NEWS, src/alge/cs_convection_diffusion.h: Merge rev. 9115
+	  from trunk (fix second order time stepping).
+
+2016-09-26 17:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9101] ., NEWS, gui/Pages/LagrangianBoundariesForm.ui,
+	  gui/Pages/LagrangianBoundariesView.py: Merge rev. 9100 from trunk
+	  (fix issue 194/160).
+
+2016-09-26 13:50  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9093] NEWS, gui/Base/XMLengine.py, gui/Pages/Boundary.py,
+	  gui/Pages/TurbulenceModel.py: Merge revs. 9076 and 9077 from
+	  trunk (Minor GUI Fixes).
+
+2016-09-15 16:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9072] ., gui/Pages/StartRestartForm.ui: Merge rev. 9071 from
+	  trunk (fix minor typo in GUI).
+
+2016-09-15 15:54  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9070] NEWS, src/lagr/cs_lagr_options.c: Merge revs. 9048 and
+	  9069 from trunk (Lagrangian iilagr allowed range).
+
+2016-09-14 15:22  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r9063] NEWS, src/base/condli.f90: Merge rev. 9060 from trunk
+	  (Fix Neumann BC for vectors with aniso. diff).
+
+2016-09-14 13:18  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9057] ., NEWS, gui/Pages/LagrangianBoundariesModel.py,
+	  src/lagr/cs_lagr.c: Merge revs. 9054 and 9055 from trunk
+	  (Lagrangian model fixes).
+
+2016-09-13 08:03  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9044] ., docs/user/saturne1.tex: Merge rev. 9043 from trunk
+	  (documentation fix).
+
+2016-09-12 15:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9042] NEWS: Fix typo in NEWS.
+
+2016-09-12 15:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9038] ., NEWS, bin/cs_case_domain.py,
+	  extras/code_saturne.cfg.template: Merge rev. 9037 from trunk
+	  (path computation fixes for Code_Aster coupling).
+
+2016-09-02 17:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r9019] ., NEWS, src/base/cs_fan.c: Merge rev. 9018 from trunk
+	  (fix crash in fan model due to incorrect field name).
+
+2016-08-31 08:20  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9012] NEWS, src/alge/cs_balance_by_zone.c: Merge rev. 9011 from
+	  trunk (fix in head losses computation).
+
+2016-08-31 08:13  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r9010] src/alge/cs_balance_by_zone.c: Merge rev. 9009 from trunk
+	  (fix in head loss balance by zone).
+
+2016-08-11 17:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8981] ., NEWS, po/fr.po, src/alge/cs_sles_it.c,
+	  src/rayt/cs_rad_transfer_absorption.c,
+	  src/rayt/cs_rad_transfer_solve.c,
+	  src/rayt/cs_rad_transfer_wall_flux.c: Merge rev. 8980 from trunk
+	  (fix regression with Modak absorption).
+
+2016-08-01 16:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8966] ., NEWS, src/base/fldvar.f90: Merge rev. 8965 from trunk
+	  (work around XL Fortran ISO-C bindings bug).
+
+2016-08-01 13:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8964] ., NEWS, src/fvm/fvm_to_med.c: Merge rev. 8963 from trunk
+	  (fix for build with MED and no MPI).
+
+2016-07-29 15:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8954] ., NEWS, libple/po/fr.po, po/fr.po,
+	  src/user/cs_user_boundary_conditions.c[CPY]: Merge rev. 8942 from
+	  trunk (missing file) and add missing NEWS update.
+
+2016-07-29 15:37  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8951] NEWS: Prepare for version 4.3 release.
+
+2016-07-27 14:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8950] ., src/alge/cs_matrix_building.c: Merge rev. 8948 from
+	  trunk (fix mode bits).
+
+2016-07-27 14:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8949] ., src/lagr/cs_lagr_resuspension.c,
+	  src/mesh/cs_mesh_quantities.c, src/user/cs_user_lagr_bcs.c,
+	  src/user/cs_user_lagr_particle.c,
+	  src/user_examples/cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c,
+	  src/user_examples/cs_user_lagr_particle.c: Merge rev. 8946 from
+	  trunk (whitespace and minor cleanup).
+
+2016-07-25 09:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8941] bin/cs_compile.py,
+	  examples/2-full_domain/case2/cs_user_boundary_conditions.f90,
+	  examples/2-full_domain/case3/cs_user_boundary_conditions.f90,
+	  gui/Pages/LagrangianBoundariesModel.py,
+	  gui/Pages/LagrangianBoundariesView.py,
+	  gui/Pages/LocalizationModel.py, src/base/caltri.f90,
+	  src/base/cs_c_bindings.f90, src/base/cs_preprocess.c,
+	  src/base/cs_prototypes.h, src/base/iniusi.f90,
+	  src/base/inivar.f90, src/base/paramx.f90, src/base/tridim.f90,
+	  src/elec/cs_elec_model.h, src/gui/cs_gui_particles.c,
+	  src/lagr/cs_lagr.h, src/lagr/cs_lagr_adh.c,
+	  src/lagr/cs_lagr_car.c, src/lagr/cs_lagr_injection.c,
+	  src/lagr/cs_lagr_log.c, src/lagr/cs_lagr_new.c,
+	  src/lagr/cs_lagr_prototypes.h, src/lagr/cs_lagr_resuspension.c,
+	  src/lagr/cs_lagr_tracking.c, src/lagr/lagran.f90,
+	  src/mesh/cs_mesh_extrude.c, src/mesh/cs_mesh_quantities.c,
+	  src/mesh/cs_mesh_quantities.h, src/user/Makefile.am,
+	  src/user/cs_user_boundary_conditions.f90,
+	  src/user/cs_user_lagr_bcs.c, src/user/cs_user_lagr_particle.c,
+	  src/user_examples/Makefile.am,
+	  src/user_examples/cs_user_boundary_conditions-advanced.f90,
+	  src/user_examples/cs_user_boundary_conditions-atmospheric.f90,
+	  src/user_examples/cs_user_boundary_conditions-auto_inlet_profile.f90,
+	  src/user_examples/cs_user_boundary_conditions-base.f90,
+	  src/user_examples/cs_user_boundary_conditions-compressible.f90,
+	  src/user_examples/cs_user_boundary_conditions-cooling_towers.f90,
+	  src/user_examples/cs_user_boundary_conditions-electric_arcs.f90,
+	  src/user_examples/cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c[CPY],
+	  src/user_examples/cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.f90[DEL],
+	  src/user_examples/cs_user_boundary_conditions-fuel.f90,
+	  src/user_examples/cs_user_boundary_conditions-gas_3ptchem.f90,
+	  src/user_examples/cs_user_boundary_conditions-gas_ebu.f90,
+	  src/user_examples/cs_user_boundary_conditions-gas_libby_williams.f90,
+	  src/user_examples/cs_user_boundary_conditions-mapped_inlet.f90,
+	  src/user_examples/cs_user_boundary_conditions-pulverized_coal.f90,
+	  src/user_examples/cs_user_boundary_conditions-pulverized_coal_lagrangian.f90,
+	  src/user_examples/cs_user_boundary_conditions-richards.f90,
+	  src/user_examples/cs_user_boundary_conditions_elec.c[DEL],
+	  src/user_examples/cs_user_lagr_particle.c: Merge rev. 8932 to
+	  8940 from trunk.
+
+2016-07-21 11:29  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8929] src/lagr/cs_lagr.c, src/lagr/cs_lagr.h,
+	  src/lagr/cs_lagr_car.c, src/lagr/cs_lagr_deposition_model.c,
+	  src/lagr/cs_lagr_gradients.c, src/lagr/cs_lagr_new.c,
+	  src/lagr/cs_lagr_precipitation_model.c,
+	  src/lagr/cs_lagr_resuspension.c, src/lagr/cs_lagr_sde.c,
+	  src/lagr/cs_lagr_tracking.c, src/rayt/cs_rad_transfer_solve.c,
+	  src/user_examples/cs_user_lagr_particle.c: Merge rev. 8888 to
+	  8894 from trunk.
+
+2016-07-21 10:49  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8928] src/lagr/cs_lagr_resuspension.c,
+	  src/lagr/cs_lagr_tracking.c: Merge rev. 8887 from trunk.
+
+2016-07-19 11:29  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8921] ., NEWS: Merge rev. 8919 from trunk (fix required
+	  MEDCoupling version info in NEWS).
+
+2016-07-19 11:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8920] ., src/alge/cs_sles_it.c: Merge rev. 8918 from trunk
+	  (help ensure compiler uses a local temporary for Gauss-Seidel
+	  iterations).
+
+2016-07-18 12:12  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8917] ., NEWS, gui/Pages/NumericalParamEquationModel.py,
+	  gui/Pages/NumericalParamEquationView.py, src/alge/cs_grid.c,
+	  src/alge/cs_grid.h, src/alge/cs_matrix_building.c,
+	  src/alge/cs_matrix_building.h, src/alge/cs_multigrid.c,
+	  src/alge/cs_multigrid.h, src/alge/cs_sles.c, src/alge/cs_sles.h,
+	  src/alge/cs_sles_default.c, src/alge/cs_sles_default.h,
+	  src/base/cs_equation_iterative_solve.c, src/gui/cs_gui.c: Merge
+	  rev. 8906 from trunk (add convection-diffusion multigrid solver).
+
+2016-07-18 12:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8916] ., NEWS, src/base/cs_post.c, src/base/cs_post.h: Merge
+	  rev. 8905 from trunk (allow user activation/deactivation of
+	  parallel domain visualization).
+
+2016-07-18 12:10  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8915] ., docs/install/install.tex: Merge rev. 8904 from trunk
+	  (update preferred MED version in documentation).
+
+2016-07-18 12:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8914] ., src/gui/cs_gui_boundary_conditions.c,
+	  src/lagr/cs_lagr_options.c: Merge rev. 8903 from trunk (fix minor
+	  memory leaks).
+
+2016-07-18 12:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8913] ., NEWS, src/gui/cs_gui_mesh.c,
+	  src/mesh/cs_mesh_extrude.c, src/mesh/cs_mesh_extrude.h,
+	  src/user_examples/cs_user_mesh-modify.c: Merge rev. 8902 from
+	  trunk (allow keeping the group class info of extruded faces
+	  previously on boundary).
+
+2016-07-18 12:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8912] ., NEWS, po/fr.po, src/apps/cs_solver.c,
+	  src/base/cs_file.c, src/base/cs_file.h, src/fvm/fvm_to_med.c,
+	  src/fvm/fvm_to_med.h: Merge rev. 8900 from trunk (add parallel IO
+	  for MED output).
+
+2016-07-18 12:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8911] ., docs/install/install.tex, docs/user/saturne1.tex,
+	  install_saturne.py: Merge rev. 8899 from trunk (update HDF5 and
+	  MED preferred versions).
+
+2016-07-18 12:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8910] ., po/fr.po, src/alge/cs_sles_default.c: Merge rev. 8898
+	  from trunk (allow fallback of multigrid solver to PCG).
+
+2016-07-18 12:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8909] ., src/base/cs_block_dist.c: Merge rev. 8897 from trunk
+	  (fix block distribution active ranks computation when rank_step >
+	  1).
+
+2016-07-18 12:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8908] ., gui/Base/XMLengine.py: Merge rev. 8896 from trunk (GUI
+	  fix for Python 3).
+
+2016-07-18 12:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8907] ., NEWS, m4/cs_salome.m4,
+	  src/base/cs_paramedmem_coupling.cxx,
+	  src/base/cs_paramedmem_coupling.hxx,
+	  src/fvm/fvm_to_medcoupling.cxx: Merge rev. 8895 from trunk
+	  (Update MEDCoupling and ParaMEDMEM to SALOME 7.8).
+
+2016-07-08 16:37  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8878] ., NEWS, m4/cs_salome.m4,
+	  src/base/cs_paramedmem_coupling.cxx,
+	  src/fvm/fvm_to_medcoupling.cxx: Merge rev. 8877 from trunk
+	  (SALOME 7.8 update for MEDCoupling).
+
+2016-07-08 14:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8876] .[CPY]: Branch version 4.3.
+
+2016-07-08 11:53  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8875] update plotVTK with new version
+
+2016-07-07 16:34  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8874] For autovnv on porthos
+
+2016-07-07 09:42  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8873] Call C version of cs_user_initialization after the
+	  fortran one.
+
+2016-07-06 17:18  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8872] Add some automatic computation for integral porosity
+	  modelling.
+	  
+	  The fluid sections are clipped to 0 when porosity is 0, the
+	  solid_flag is then set so that matrices are invertible.
+
+2016-07-06 16:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8871] Fixes for P1 radiation model.
+
+2016-07-06 16:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8870] Minor code cleanup.
+
+2016-07-06 13:28  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8869] add magnetic field
+
+2016-07-06 12:10  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8868] Fix bug introduced in rev. 8819 (Internal deposition
+	  model for Lagangian module)
+
+2016-07-06 12:10  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8867] Minor Clean up fully transparent.
+
+2016-07-06 12:10  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8866] Add an imposed motion user function for the Lagrangian
+	  module.
+
+2016-07-06 12:10  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8865] Clean up.
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8864] CDO: (Major) Add new convection scheme for CDO V+C
+	  schemes - Compute additional information related to CDO mesh
+	  quantities - Add new functions to cs_advection_field.h
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8863] CDO: Fix for CDO Face-based schemes when Dirichlet BCs
+	  are strongly enforced
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8862] CDO: Minor updates (comments, blanks, renaming,
+	  compilation warnings)
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8861] CDO: Remove structures related to geometrical quantities
+	  in Hodge builder
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8860] CDO: Adaptation of advection operators in order to add
+	  new schemes
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8859] CDO: Share the build of the cell --> dir faces
+	  connectivity
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8858] CDO: Add postprocessing of Courant, Fourier and Peclet
+	  numbers for all schemes
+	  
+	  - Split cs_equation.* files - Mutualize temporary buffers used
+	  for building algebraic systems - Rename cs_equation_priv.* into
+	  cs_equation_param.* - Use a flag to identify which kind of
+	  schemes are requested
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8857] Adaption of sources to handle PETSc 3.7.*
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8856] CDO: Add weak enforcement of Dirichlet BCs for CDO V+C
+	  scheme
+	  
+	  - Merge common features with CDO VB schemes
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8855] Add computation of diffusive flux and flux across a plane
+	  for CDO V+C
+	  
+	  - Adapt CDO V+C for computing groundwater flows - Rename
+	  cs_cdo_locmesh_t structure into cs_cell_mesh_t - Add a
+	  cs_face_mesh_t structure - Prepare a full openMP integration -
+	  Share source for computing fluxes between CDO-VB with WBS algo.
+	  and CDO-V+C
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8854] Minor updates: renamings, compilation warnings,
+	  optimizations
+	  
+	  - Remove blanks - Change names in cs_cdo_scheme_geometry -
+	  Improve the way cdo quantities are defined - Remove several
+	  compilation warnings
+
+2016-07-06 09:25  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8853] CDO: (major commit) Add V+C scheme for diffusion
+	  
+	  - Add a new kind of discretization scheme relying on vertex +
+	  cell DoFs - Add a new type of matrices in SLA part for hybrid
+	  discretizations - Make more general diffusion builders - Add a
+	  new type of discrete Hodge operator Remark: BCs are only enforced
+	  with a strong penalization.
+
+2016-07-06 09:22  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8852] Missing boundary conditions include in radiative transfer
+	  solve.
+
+2016-07-05 15:32  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8851] update XML for lagrangian call in NEPTUNE_CFD
+
+2016-07-05 15:12  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8850] Fix argument for closeEditor function
+
+2016-07-04 16:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8849] Fix for build without sockets support.
+
+2016-07-04 09:14  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8848] Fix self.sender in StartRestartView for pyQt4 on c7
+
+2016-07-04 08:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8847] Extend control file mechanism with Python module
+	  communicating through sockets.
+
+2016-07-01 15:12  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8846] Fix autovnv xml update for coupled cases (update subdirs
+	  only).
+
+2016-06-29 12:12  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8845] Ensure backcompatibility when version is not an official
+	  version
+
+2016-06-29 09:18  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8844] Fix hydraulic head boundary condition under calibre7
+
+2016-06-29 09:05  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8843] update documentation for electric arc
+
+2016-06-28 15:19  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8842] Fix field labels in atmo. chemistry (prov. by R.
+	  Bresson).
+
+2016-06-28 15:19  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8841] Style fix in convection diffusion.
+
+2016-06-28 11:35  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8840] Fix bug introduced in rev. 8819 (Internal deposition
+	  model for Lagangian module)
+
+2016-06-27 09:27  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8839] add field_id for boundary conditions (for lagrangian in
+	  NEPTUNE_CFD)
+
+2016-06-27 08:17  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8838] add access to restart file without fortran wrapper
+
+2016-06-27 08:16  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8837] access to conjugate heat transfer without fortran wrapper
+
+2016-06-27 08:15  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8836] prepare radiative transfer for NEPTUNE_CFD in GUI
+
+2016-06-27 08:14  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8835] Fix : Radiative boundary conditions never exist
+
+2016-06-23 14:09  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8834] Revert incorrect style change and add more style fixes.
+
+2016-06-23 13:21  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8833] Fix for lagrangian module with neptune_cfd
+
+2016-06-23 12:15  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8832] Fix output for combustion variables with lagrangian
+
+2016-06-23 12:14  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8831] Lagrangian output control is now enable for neptune_cfd
+
+2016-06-23 11:46  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8830] split lagrangian initialize statistics
+
+2016-06-23 08:05  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8829] Coding style fixes.
+
+2016-06-23 00:59  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8828] Fix bug introduced in rev. 8423 (Translation of arc
+	  electric in C).
+
+2016-06-23 00:59  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8827] Fix in rev. 8819 and 8822 (Lagrangian module deposition
+	  and cs_user_initialization.c)
+
+2016-06-23 00:59  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8826] Update comments.
+
+2016-06-21 13:31  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8825] back compatibility for lagrangian boundary conditions
+
+2016-06-21 08:28  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8824] Complete rev. 8822.
+
+2016-06-20 18:05  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8823] Correct a refence in the doc.
+
+2016-06-20 13:17  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8822] add cs_user_initialization in C for lagrangian module
+
+2016-06-20 10:03  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8821] prepare lagrangian module for NUPTUNE_CFD call
+
+2016-06-20 09:25  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8820] Complements for internal face deposition in the
+	  Lagrangian module: - Addition of a parameter "Fouling Index" in
+	  GUI and corresponding modifications/addition in other routines -
+	  Modification of several routines for particle-surface
+	  interactions to use a local debye length and to use a global
+	  retardation wavelength for VDW forces (in cs_lagr_clogging,
+	  cs_lagr_dlvo, cs_lagr_roughness) - Addition of a specific model
+	  in cs_lagr_resuspension to treat the case of resuspension for
+	  particles deposited on internal faces (CS_LAGR_IMPOSED_MOTION)
+	  Warning! Not yet general for every case - Modification to
+	  evaluate particle deposition on internal faces according to DLVO
+	  forces (condition IDEPFA on internal faces) in cs_lagr_tracking.c
+
+2016-06-20 09:25  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8819] Add deposition model on internal faces in the Lagrangian
+	  module (with specific case of particles with imposed motion) -
+	  Creation of new structures, pointers and functions in caltri.f90,
+	  pointe.f90, cs_lagr.c, cs_lagr.h, lagran.f90 - Modification of
+	  cs_lagr_sde.c to allow particles deposited on internal faces to
+	  rotate (imposed motion) - Modification of cs_lagr_tracking.c to:
+	  1) detect deposition on internal faces (function
+	  internal_treatment similar to boundary_treatment) 2) modify the
+	  fluid area of internal faces (to allow for two-way coupling)
+
+2016-06-20 09:25  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8818] Major commit in the Lagragian module (new trajectory
+	  algorithm (cs_lagr_tracking)) Corrections of bugs to calculate
+	  properly: CS_LAGR_YPLUS (distance to the wall) and
+	  CS_LAGR_MARKO_VALUE (flag related to yplus) so that particle
+	  displacements are evaluated using the appropriate models
+
+2016-06-20 09:25  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8817] Modification in the Lagrangian module (cs_lagr_injection
+	  and cs_lagr_particle): 1. Correction of a bug in the case of the
+	  injection of a particle with an imposed velocity perpendicular to
+	  the face 2. RANDOM_VALUE set with zufall (to avoid generating
+	  particles with the same value) Modifications of cs_lagr_sde: 1.
+	  Correction to modify only the fluid velocity seen in the
+	  tangential direction 2. Correction of a bug (no need of exp with
+	  a positive argument)
+
+2016-06-15 16:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8816] Fixes for MEDCoupling output.
+
+2016-06-15 16:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8815] Fix Fortran module build dependency issues.
+
+2016-06-09 16:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8814] Fix in turbomachinery extra operations example file.
+	  Provided by Benoît de Laage de Meux.
+
+2016-06-06 11:22  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8813] Fix rev. 8805 (incorrect test since
+	  cs_physical_model_flag (ippmod) is initialized to -1).
+
+2016-06-06 10:35  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8812] add dump python for GUI
+
+2016-06-06 09:03  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8811] add automatic choice for sheme order
+
+2016-06-06 08:45  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8809] Post process and add to log by default user properties.
+
+2016-06-06 08:45  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8808] Remove unused variable and update comments.
+
+2016-06-06 08:45  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8807] Fix bug in AFM and DFM model with buoyancy.
+
+2016-06-06 08:45  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8806] Remove unused variable.
+
+2016-06-01 08:41  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8805] Ensure post-processing boundary fields (stress, yplus,
+	  tplus, ...) are not created for GWF runs with the GUI.
+
+2016-05-31 13:20  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8804] Minor fix in labels in GUI (remaining 'Stresss' in GWF).
+
+2016-05-31 09:40  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8803] Minor fix in Doxygen.
+
+2016-05-30 15:28  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8802] Fix XML_DEBUG for lagrangian
+
+2016-05-26 08:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8801] Simplify MEDCoupling output by creating MEDCoupling
+	  meshes on the current partition.
+
+2016-05-25 16:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8797] Translate radiation model to C. This implies some other
+	  changes throughout the code, as some specific physics are now
+	  mapped to C for easier access, reducing the local number of
+	  arguments of some C functions.
+
+2016-05-25 16:53  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8796] Fix for Tstar postprocessing with Dirichlet BC's (rev.
+	  8780) should also apply to rough walls.
+
+2016-05-25 15:24  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8795] Fix in theory guide (intro. in rev. 8772, 1rst stage of
+	  lag. to C).
+
+2016-05-25 14:29  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8794] Fix some mistake for GroudWater Flows
+
+2016-05-23 08:19  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8793] Fix previous commit (missing arg clean up in 1 call to
+	  csenso).
+
+2016-05-20 18:02  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8792] Map ntlist to newly added cs_glob_log_frequency (Prov. by
+	  T. Moy).
+
+2016-05-20 18:02  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8791] Remove const qualifier for Smagorinsky constant
+	  (cs_turb_csmago). It is actually modified in 10_DIT Validation
+	  case (in Fortran). Prov. by T. Moy.
+
+2016-05-20 18:02  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8790] Remove test preventing from having an empty usipph (model
+	  parameters) with no GUI (in order to allow model settings in
+	  cs_user_parameters.c only and without GUI). Prov. by T. Moy.
+
+2016-05-20 13:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8789] Delay creation test for ustar field after modini.
+
+2016-05-20 13:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8788] Improve handling of Particle injection frequency.
+
+2016-05-20 13:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8787] Fix some memory leaks.
+
+2016-05-19 17:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8783] Correct a comment.
+
+2016-05-19 17:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8782] Fix when activating advanced reinitialization of Rij with
+	  EBDFM model and use another model.
+
+2016-05-19 17:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8781] Complete automatic treatment of BCs for DFM model on
+	  scalars.
+
+2016-05-19 17:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8780] Fix in the computation of the post-processing variable
+	  Tstar when imposing a Dirichlet BC.
+
+2016-05-19 17:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8779] Re add basic example on cs_user_parameters.f90
+
+2016-05-19 17:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8778] Fix bug in field initialization done in the GUI
+	  (especially problematic when have user field with other mesh
+	  location than cells).
+
+2016-05-19 17:33  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8777] Fix bug in the coupled solver of Rij (irijco=1) when AFM
+	  or DFM models are activated on scalars
+
+2016-05-19 16:16  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8776] Add Boltzmann constant (kb) to physical constants
+	  namespace in C and remove ideal gas constant (r) from physical
+	  constants structure. Both kb and r are now declared as global
+	  constants in C and in Fortran.
+
+2016-05-17 17:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8775] Fix for Lagrangian restart.
+
+2016-05-17 17:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8774] Remove empty modules.
+
+2016-05-17 08:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8773] Some fixes for Lagrangian module I/O options.
+
+2016-05-13 18:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8772] First stage of Lagrangian module conversion to C.
+	  Boundary statistics and source terms need to be rewritten, and
+	  further cleanup is required, but the code is now at a stage where
+	  other work may be merged.
+
+2016-05-13 18:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8771] Fix: fields with no previous value are not always steady.
+
+2016-05-13 18:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8770] Add translation for joining.
+
+2016-05-13 18:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8769] Add missing log info and remove other info redundant with
+	  setup.log.
+
+2016-05-13 18:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8768] Ensure build with Address Sanitizer is usable without
+	  relink.
+
+2016-05-13 13:33  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8763] Compressible: ensure ithvar is set to 10000 before
+	  initialisation even without GUI.
+
+2016-05-12 09:33  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8762] GWF: compute pressure head by taking into account a
+	  gravity direction.
+
+2016-05-06 11:31  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8760] CDO: Avoid compilation warnings
+
+2016-05-06 11:31  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8759] CDO: Modify the way advanced settings is done
+	  
+	  - Replace keywords by enum for cs_domain_t, cs_advection_field_t
+	  and cs_equation_t - Replace keywords by enum for setting
+	  groundwater flow problems - Replace weight algo. by scheme for
+	  the advection term - Improve comments in some headers - Remove
+	  blanks
+
+2016-05-06 11:31  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8758] CDO: Apply time scheme cell-wise. Simplify management of
+	  reaction term
+
+2016-05-06 11:31  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8757] CDO: Add a cleaning stage for CDO-VB schemes
+
+2016-05-06 11:31  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8756] CDO: Several minor improvements
+	  
+	  - Avoid a warning during compilation. - Fix typos in headers -
+	  Add comments - Rename variables - Make a test in a different way
+
+2016-05-06 11:31  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8755] CDO: Add a weak enforcement of Dirichlet BCs for WBS
+	  algo.
+
+2016-05-04 14:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8754] Avoid unneeded reallocations.
+
+2016-05-03 16:58  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8753] Fix in post-treatment utility functions in C
+	  (cs_post_util.c wasn't compiled).
+
+2016-05-03 12:10  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8752] Doxygen zufall (random number generation library).
+
+2016-05-03 12:10  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8751] Correct a comment.
+
+2016-04-28 12:44  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8750] Add missing prefixes to some non-static C functions.
+
+2016-04-27 14:25  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8749] Fix rev. 8743 (options for iterative tensorial transport
+	  equation solver).
+
+2016-04-27 13:27  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8748] Clean header of user mesh input examples.
+
+2016-04-26 16:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8747] Add variant coupled face BC type to avoid passing Fortran
+	  ifaccp option to lower levels.
+
+2016-04-26 12:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8746] Minor cleanup, silence some warnings.
+
+2016-04-26 10:21  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8745] Allocate bc_type in C and map Fortran array itypfb on it.
+
+2016-04-26 10:21  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8744] Fix previous rev. 8743.
+
+2016-04-25 09:41  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8743] Move codits, coditv, coditts, bilsca, bilscv, bilsct into
+	  C (prov. by T. Moy): - codits, coditv and coditts files are in
+	  cs_equation_iterative_solve.c. - Create Fortran wrappers for
+	  codits, coditv and coditts in cs_c_bindings.f90. - bilsca, bislcv
+	  and bilscts are in cs_balance.c. - Create Fortran wrappers for
+	  bilsca, bilscv and bilscts in cs_c_bindings.f90. - Delete Fortran
+	  wrappers of matrxv, matrvv, diften... in cs_matrix_building.c. -
+	  Doxygen the translated subroutine.
+
+2016-04-25 07:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8742] Add CS_UNUSED macros to silence some warnings.
+
+2016-04-25 06:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8737] Fix incorrect term in efforts computation in z direction.
+
+2016-04-22 15:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8736] P1 radiative model: warn but do not stop if optical
+	  thickness is out of model validity domain.
+
+2016-04-22 10:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8734] Fixed missing metadata update after extrusion in serial
+	  case.
+
+2016-04-21 18:05  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8733] CDO: Define a generic function for computing the
+	  diffusive flux (cellwise)
+
+2016-04-21 18:05  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8732] CDO: Improve the way discrete Hodge op. are built with
+	  the WBS algo.
+
+2016-04-21 18:05  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8731] CDO: Enable reduction of source term either on primal or
+	  dual entities
+	  
+	  - Modify the way option for source term are set - Hodge built
+	  with conforming reconstruction is now shared
+
+2016-04-21 18:05  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8730] CDO: rename variables and resolve some compilation
+	  warnings
+
+2016-04-21 18:05  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8729] CDO: (Major modification) Improve the performance of
+	  CDO-vb schemes
+	  
+	  * Add OpenMP directives * Add a structure to store local mesh
+	  attached to a cell in order to get a better cache efficiency *
+	  Simplifiy the building of stiffness matrices * Avoid
+	  allocation/free of intermediate builder structures * Rename a
+	  member of the cs_locmat_t structure
+
+2016-04-21 18:05  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8728] CDO: Fix a bug when BC are strongly enforced
+
+2016-04-21 18:05  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8727] CDO: Minor modifications (blanks, comments, renaming)
+
+2016-04-21 18:05  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8726] CDO: used shared pointers in CDO-vb and -fb scalar-valued
+	  equations
+
+2016-04-21 18:05  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8725] CDO: Add a cs_locdec_t structure for local discrete
+	  exterior derivatives
+
+2016-04-21 18:05  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8724] CDO: Optimizations
+
+2016-04-21 18:05  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8723] CDO: Fix a bug when Hodge operator is built with VORONOI
+	  algo.
+
+2016-04-21 08:55  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8722] Set max. number of probes (ncaptm) to 200 (previous max.
+	  was 100).
+
+2016-04-21 08:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8721] Use relative path for subdirectories when coupling code.
+
+2016-04-21 08:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8720] Fix for particle tracking.
+
+2016-04-20 15:54  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8719] Use cs_math_epzero for all epzero=1e-12 in C code.
+
+2016-04-15 17:32  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8718] Fix theta scheme (for scalar, vector, tensor) with mass
+	  source term. Mass source term gamma is a part of the unsteady
+	  term and should not be multiplied by theta (mass accumulation
+	  term (div(rho u)) in the matrices has already been fixed by rev.
+	  8337).
+
+2016-04-15 16:21  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8717] Fix bug introduced in rev8627 (gas combustion) (provided
+	  by B. Sapa).
+
+2016-04-13 12:16  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8716] Fix for calibre7 compatibility qt4 qt5
+
+2016-04-13 07:56  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8715] Fix : add x_c_h variable for coal combustion in GUI
+
+2016-04-12 18:25  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8714] Use field API to access to the dilation source terms
+	  (iustdy(iscal)).
+
+2016-04-12 17:33  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8713] Remove few missed propce occurences outside base
+	  directory in last commit.
+
+2016-04-12 17:22  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8712] Remove last occurences of propce outside of base
+	  directory (mainly in comments).
+
+2016-04-08 13:09  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8708] Fix xml reader for mobile mesh (replacing all unsigned
+	  ints by ints).
+
+2016-04-08 12:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8707] Fields are now all interleaved, and non-interleaved
+	  option is removed.
+
+2016-04-08 08:11  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8706] Fix missing update of boundary cells list after extrusion
+	  in serial mode.
+
+2016-04-07 17:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8705] Missing GUI update for rev. 8702.
+
+2016-04-07 16:26  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8704] Fix bad printf in electric model
+
+2016-04-07 15:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8703] Fix bug due to missing update of additional mesh
+	  adjacencies structure introduced in rev. 8517.
+
+2016-04-07 14:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8702] Interleave vector properties and some cleanup for
+	  electric model.
+
+2016-04-07 14:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8701] Remove more propce references in radiative and Lagrangian
+	  modules, and interleave some radiative properties.
+
+2016-04-07 14:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8700] Delay obtaining pointers to properties until after we are
+	  sure they exist.
+
+2016-04-07 13:48  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8699] Fix rev. 8690 (propce in rayt).
+
+2016-04-07 07:11  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8698] Fix rev. 8690 (pointer to radiative flux has to be of
+	  dimension 2).
+
+2016-04-06 14:33  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8694] Fix computation of divergence of scalar turbulent flux
+	  for irijco=1.
+
+2016-04-06 14:21  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8693] Fix typo in unused function of turbomachinery module
+	  (provided by B. de Laage de Meux).
+
+2016-04-06 12:56  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8692] Fix Reynolds tensor trace in anisotropic turb. visc.
+	  computation for irijco=1.
+
+2016-04-06 11:49  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8691] Fix arguments cleaning in rev. 8690 (remove propce in
+	  rayt dir.).
+
+2016-04-06 08:19  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8690] Remove all occurences of propce from rayt directory.
+
+2016-04-05 18:14  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8689] Remove all propce occurences from cogz directory.
+
+2016-04-04 16:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8687] Fix for Salome MEDCoupling detection.
+
+2016-03-31 14:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8686] Improve label.
+
+2016-03-30 13:15  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8685] Update News file.
+
+2016-03-30 09:04  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8684] Adapt low-Mach algorithm for pressure raise calculation
+	  in fire modelling (provided by B. Sapa).
+	  
+	  - the mass balance can be used independently through the new flag
+	  ipthrm - the mass balance deals with a global leak (surface
+	  sleak, head loss kleak=2.9 from Idelcick)
+
+2016-03-30 07:10  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8682] Fix bug in porous modelling for the integral formulation
+	  (iporos=3) and anisotropic diffusion on scalars.
+	  
+	  It was the case for the pressure when head losses are switch on
+	  (then the pseudo time step is a tensor in the correction step).
+
+2016-03-24 17:34  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8678] Fix URL for HDF5 in automatic installer.
+
+2016-03-24 17:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8677] Fix handling of MPI C++ wrapper in automatic installer.
+
+2016-03-24 17:30  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8676] Very minor transations update.
+
+2016-03-24 15:09  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8675] Fix for section resize in GUI
+
+2016-03-24 10:07  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8665] Fix bug in PT-Scotch detection on some systems.
+
+2016-03-24 09:22  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8664] Improve selection between PyQt4 and PyQt5.
+
+2016-03-24 07:43  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8663] Doxygen: add link to example of net flux specification in
+	  user subroutine description.
+
+2016-03-23 16:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8662] Remove .orig files using sbin/clean.
+
+2016-03-23 16:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8661] Fix postprocessing output of parallel rank for
+	  sub-meshes.
+
+2016-03-23 15:57  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8660] CDO: Fix computation of diffusive flux for interior faces
+
+2016-03-23 15:02  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8659] CDO: Add a new way to initialize a field
+	  
+	  Put a given quantity inside a volume spanned by a selection of
+	  cells. In case of vertex-based schemes, vertices at the frontier
+	  of this volume are set to zero.
+
+2016-03-23 15:02  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8658] CDO: Fix memory leaks
+
+2016-03-23 15:02  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8657] CDO: Add the evaluation of diffusive and advective flux
+
+2016-03-23 15:02  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8656] CDO: Improve the capability of monitoring CDO
+	  computations.
+	  
+	  - Add timer statistics for properties. - Enable switch on/off of
+	  the monitoring when the verbosity level is high.
+
+2016-03-23 15:02  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8655] Minor modifications (blanks, comments, renaming..) -
+	  Rename some members of cs_connect_info_t structure - Rename
+	  definitions by laws - Add some openMP directives for
+	  initialization
+
+2016-03-23 14:58  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8654] Fix pyqtSlot for slotFinished
+
+2016-03-23 13:04  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8653] add compatibility pyQt4 and pyQt5
+
+2016-03-23 13:03  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8652] Fix for rev. 8641 (fix for additional partitioning w/
+	  space filling curve).
+
+2016-03-23 12:57  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8651] Minor consistency fix for rev. 8641.
+
+2016-03-23 10:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8650] Some fixes for rev. 8641.
+
+2016-03-22 18:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8649] Attempt to work around apparent Intel 15 compiler bug.
+
+2016-03-22 16:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8648] Some additional Doxygen fixes.
+
+2016-03-22 16:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8647] Complete improvements to 2D mesh Hilbert partitioning.
+
+2016-03-22 15:45  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8646] Fix rev. 8637 (clean extra argument in call to
+	  cs_fuel_masstransfer).
+
+2016-03-22 15:33  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8645] Move examples from user dir. to user_examples dir. and
+	  improve Doxygen (provided by T. Moy): - several examples are set
+	  to the Doxygen format, including post-process (Fortran), user
+	  solver, condensation mass source terms, user code coupling,
+	  atmospheric models (init. and diverse settings), electric
+	  scaling, performance tuning (partioning, renumbering, ...), user
+	  module, radiative transfers parameters, 1D wall thermal transfer
+	  - add references in cs_user_tab.h to corresponding pages - fix
+	  miscellaneous Doxygen typos.
+
+2016-03-22 14:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8644] Various Doxygen fixes.
+
+2016-03-22 14:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8643] Move most postprocessing output documentation to Doxygen.
+
+2016-03-22 11:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8642] Improve handling of Hilbert partitioning for 2D meshes.
+
+2016-03-22 11:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8641] Fix for additional partitioning with space-filling curve.
+
+2016-03-21 11:05  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8640] Fix rev. 8637 (missing field_get_val for NO source term
+	  in 1 of the NOx model (imdnox=1)).
+
+2016-03-18 16:36  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8637] Remove propce occurences from comb directory (replaced by
+	  cs_field API).
+
+2016-03-18 16:16  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8635] Fix "code_saturne help submit" command output.
+
+2016-03-18 16:14  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8634] Add data settings examples for fluid structure
+	  interaction in Doxygen examples.
+
+2016-03-18 16:14  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8633] Fix header of electric scaling user function (TODO: code
+	  should be commented).
+
+2016-03-18 12:45  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8632] Fix Doxygen: add some missing ref, force Fortran code
+	  parser to free format.
+
+2016-03-18 09:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8630] Fix configure logging comment.
+
+2016-03-18 09:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8629] Turbomachinery: make sure ghost cells are built before
+	  optional cells renumbering.
+
+2016-03-17 18:53  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8628] Fire modelling: compute soot fraction from automatic
+	  equilibrium of chemical reaction (isoot=0). Provided by B. Sapa.
+
+2016-03-17 18:53  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8627] Combustion: automatic equilibrium of the chemical
+	  reaction (provided by B. Sapa)
+	  
+	  The user can specify the composition of the reactants and the
+	  product composition is calculated thanks to a atomic balance on
+	  C, H, O and N atoms. If other species than CO2, H2O or N2 are
+	  present in the products, the user have to specify the quantity.
+	  These species have to be placed after the Fuel, O2, CO2, H2O and
+	  N2. To use the model, the user set the number of known global
+	  species on 2. If the number of known global species is set at 3,
+	  the composition have to be define (previous model).
+
+2016-03-17 18:53  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8626] Fire modelling: fix in soot volumic fraction calculation
+	  for isoot=0 (provided by B. Sapa)
+
+2016-03-17 18:53  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8625] Correct some Doxygen comments.
+
+2016-03-17 10:53  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8624] CDO: Optimize the construction of Hodge operators (COST
+	  algo.)
+
+2016-03-17 10:53  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8623] CDO: Add an interface with block-jacobi preconditionning
+	  
+	  This capability needs the usage of PetsC.
+
+2016-03-16 15:34  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8622] Fix a problem in cs_post.c when activating writer with a
+	  given time frequency
+
+2016-03-16 15:34  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8621] CDO: Add a function to get the members of a probe set
+	  structure
+
+2016-03-16 15:34  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8620] CDO: Add the capability to handle variable property
+	  related to reaction term.
+
+2016-03-16 15:34  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8619] CDO: Modify the usage of timer statistics
+
+2016-03-16 15:34  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8618] CDO: Change BiCG algorithm used by default in PETSc
+
+2016-03-16 15:34  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8617] CDO: Several minor improvements and fixes > Improve the
+	  management of log information for a cs_domain_t structure >
+	  Change the way of doing the loop on time > Change comments > Add
+	  postprocessing of the advection field when using the groundwater
+	  flow module > Fix a problem related to matrix cleaning when
+	  several systems are solved > Fix a possible division by zero >
+	  Fix a typo in a keyword related to the groudwater flow module
+
+2016-03-16 15:34  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8616] CDO: Implement the Van Genuchten-Mualen model for soil
+
+2016-03-16 15:34  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8615] CDO: Fix a bug in CDO VB for unsteady computations
+
+2016-03-16 15:34  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8614] Blanks, comments and minor modifications.
+
+2016-03-16 15:34  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8613] CDO: Modification for post-processing of steady-state
+	  calculation
+
+2016-03-16 15:34  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8612] CDO: Take into account gravitation in groundwater flow
+	  module.
+
+2016-03-15 15:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8602] Fix in turbomachinery when nterup > 1. Provided by B. de
+	  Laage de Meux.
+
+2016-03-15 15:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8601] Fix in cavitation module in case of turbomachinery
+	  transient computation. Provided by B. de Laage de Meux.
+
+2016-03-15 14:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8597] Catalyst output: align name of global node ids with
+	  expected default for ghost cells generator.
+
+2016-03-15 08:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8595] Update library versions downloaded by isntaller.
+
+2016-03-15 08:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8594] Ensure turbomachinery mesh modification is done on
+	  non-renumbered mesh.
+
+2016-03-14 10:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8584] NEWS indentation changes for consistency.
+
+2016-03-14 10:46  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8583] Add basic (non-GUI) support for OAR resource manager.
+
+2016-03-14 10:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8582] Add basic (non-GUI) support for OAR resource manager.
+
+2016-03-14 09:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8577] Fix compiler warning.
+
+2016-03-14 09:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8576] Missing addition to rev. 8536 for dump function.
+
+2016-03-14 09:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8575] Fix reallocation bug for FVM selector dating back to
+	  October 2007.
+
+2016-03-14 09:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8574] Preliminary support for OAR resource manager.
+
+2016-03-14 09:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8573] Ensure mesh->n_cells_with_ghosts is nonzero for earlier
+	  stages of preprocessing.
+
+2016-03-14 09:33  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8572] Fix intel compilation broken by rev. 8571 (propce in atmo
+	  dir.).
+
+2016-03-11 18:08  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8571] Remove all occurences of propce from atmo. directory.
+
+2016-03-11 17:46  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8570] Update autovnv documentation.
+
+2016-03-11 17:21  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8569] Minor robustness fix in combustion (avoid a direct
+	  comparison to 0).
+
+2016-03-11 16:55  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8566] Fix OpenMP for loop in cressman interpolation (atmo).
+
+2016-03-11 16:48  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8565] Improve fields section in Doxygen (provided by T. Moy).
+
+2016-03-10 17:49  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8564] Autovnv: report error also when case creation fails.
+
+2016-03-07 10:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8563] Style fixes.
+
+2016-03-07 10:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8562] Minor cleanup in the handling of property fields.
+
+2016-03-07 10:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8561] Minor arguments cleanup.
+
+2016-03-07 10:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8560] Fix derefrencing of NULL pointer introduced by rev. 8423.
+
+2016-03-07 10:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8559] Various style and compiler warning fixes.
+
+2016-03-07 10:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8558] Add inline function for square of 2 real values.
+
+2016-03-07 10:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8557] Fix gradient type log names.
+
+2016-03-07 10:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8556] Allow threading for sorting of indexed sections.
+
+2016-03-07 10:39  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8555] Disable floating-point exception trapping for CoolProp.
+
+2016-03-03 12:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8550] Fix time moment weighting issue when no moment is active
+	  at the initial time step.
+
+2016-03-03 12:25  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8549] Refactor some (not yet used) code in renumbering.
+
+2016-03-02 18:08  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8548] Improve robustness in the scalar boundary conditions wall
+	  functions. Especially important for atmospheric flows with high
+	  non-orthogonlaities.
+	  
+	  The wall function should not create a boundary face value which
+	  is not in between the original wanted one and the cell value.
+
+2016-03-02 17:12  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8547] Update NEWS.
+
+2016-03-02 10:35  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8546] CDO: Simplify management of properties. Definition is
+	  always performed by subdomain(s).
+	  
+	  Simplify cs_property_t structure. Now rely on a cs_param_def_t
+	  structure which is dedicated to a definition by mesh locations
+	  (supported by cells).
+
+2016-03-02 10:35  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8545] Comments, code cleaning and blanks
+
+2016-03-02 10:35  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8544] CDO: Fix a bug when options are predefined and are in
+	  conflict with those defined by user.
+
+2016-03-02 10:35  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8543] CDO: Improve the way PETSc solvers/preconditioners are
+	  managed.
+
+2016-03-02 10:35  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8542] CDO: Avoid a warning during compilation.
+
+2016-03-02 10:35  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8541] CDO: Improve the settings of initial conditions and
+	  change flags
+	  
+	  - Update the summary of a cs_equation_t structure - move and
+	  rename flag describing a variable. - Add a new type called
+	  cs_desc_t (add new qualifiers such as potential, circulation,
+	  flux and density) - Improve the settings of initial conditions.
+	  
+	  Signed-off-by: Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+2016-03-01 13:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8540] Add script to update Git branch tags from Subversion.
+
+2016-03-01 13:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8539] Fix crash due to Intel compiler (2015) optimization bug.
+
+2016-03-01 13:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8538] First vectorization of Kahan dot product.
+
+2016-03-01 13:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8537] Fix for spurious deactivation of some BLAS tests from
+	  rev. 8523.
+
+2016-03-01 13:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8536] Fix issues detected by GCC's Undefined Behavior
+	  Sanitizer.
+
+2016-03-01 13:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8535] Fixes to avoid compiler warnings.
+
+2016-03-01 13:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8534] Fix missing initialization.
+
+2016-02-27 13:07  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8531] Fix bug in default writer format when using SALOME.
+
+2016-02-23 15:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8529] When restarting with a saved rotor/stator mesh, ensure
+	  partitioning is unchanged.
+
+2016-02-23 15:24  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8528] Ensure libasan is linked first (as required) when address
+	  sanitizer is used.
+
+2016-02-23 09:38  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8526] Compressible: fix rev. 8524.
+
+2016-02-22 18:31  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8524] Compressible: add a verification of the value of the
+	  indicator of the user initialisatised thermo. properties (ithvar)
+	  just before the initialisation.
+
+2016-02-22 18:27  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8523] Add performance tests for various 3x3 linear system
+	  solving methods in unit tests.
+
+2016-02-22 13:52  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8522] update user guide with fortran-c conversion for electric
+	  model
+
+2016-02-22 09:13  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8521] Fixes for Doxygen and update po file.
+
+2016-02-22 09:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8520] Minor coding changes to reduce warnings, including those
+	  of Clang's scan-build.
+
+2016-02-22 09:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8519] Update automatic config flags.
+
+2016-02-22 09:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8518] Change looping structure for least squares vector
+	  gradients, reducing storage.
+
+2016-02-22 09:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8517] Add global adjacencies helper structure, moving matrix
+	  line sorting functions to cs_sort.c.
+
+2016-02-22 09:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8516] Use double precision for joining intersection curvilinear
+	  coordinates. This reduces the (very small) warping induced by
+	  rounding when joining orthogonal meshes with non-power of 2
+	  refinement ratios, where faces should remain planar (for more
+	  general situations, warping due to vertices being moved within
+	  their tolerance radius is orders of magnitude larger than this,
+	  so the application scope of this modification is limited).
+
+2016-02-22 09:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8515] Debugger launcher: improve command-line handling
+	  robustness. Provided by B. Lorendeau.
+
+2016-02-22 09:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8514] Remove trailing blanks.
+
+2016-02-20 14:37  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8513] Fix bug introduced in rev. 8493.
+
+2016-02-20 14:37  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8512] Update pressure balance by zone.
+
+2016-02-19 13:06  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8511] Add missing autovnv entry to "code_saturne info" bash
+	  completion.
+
+2016-02-19 11:49  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8510] GUI: improve error reporting for overlapping zones.
+
+2016-02-18 17:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8503] Allow creation of a matrix container by copying another
+	  container. This makes it easy to share matrix structures between
+	  different matrixes.
+
+2016-02-18 12:26  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8502] Fix in GUI: - turbulent viscosity should be a property
+	  even in LES - and it shouldn't be hidden in log and
+	  post-processing - dyn. Smagorinsky constant should be a property
+	  only in dyn. LES.
+
+2016-02-18 10:41  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8501] Fix in cavitation module (erroneous mass budget); patch
+	  provided by B. de Laage de Meux.
+
+2016-02-18 08:59  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8500] For transient turbmachinery, rebuild boundary face
+	  numbering at each step. This assumes the numbering will produce
+	  the same result each time (true with the current renumbering
+	  algorithms), and fixes issues with unstable sorting leading to
+	  inconsistent saved and current numberings.
+
+2016-02-18 07:35  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8499] Change convention in automatic pressure drop calculation.
+
+2016-02-17 17:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8498] Ensure mesh numbering metadata exists even when no
+	  renumbering is present.
+
+2016-02-17 14:33  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8497] Fix in theory guide (provided by Raphael Bresson).
+
+2016-02-17 13:13  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8496] Fix usage of tags in PLE (indirection not expected).
+
+2016-02-17 09:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8495] Add missing logging of calculation options.
+
+2016-02-17 09:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8494] Cleanup code, avoid extra I/O and fix memory errors
+	  relative to rev. 8492.
+
+2016-02-16 16:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8493] Build cell selector on-the-fly if necessary.
+
+2016-02-16 16:24  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8492] add save/load mesh for turbomachinery
+
+2016-02-16 13:37  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8491] Add references to the doc.
+
+2016-02-16 13:37  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8490] Update example to choose Roe-Sweby limiters.
+
+2016-02-12 16:17  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8489] add extrude option for meshes in GUI
+
+2016-02-12 14:59  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8488] add thin wall definition in GUI
+
+2016-02-12 10:08  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8487] GUI: fix wrong variable name intro. in rev. 8484.
+
+2016-02-11 16:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8486] Some fixes and minor changes for probes and profiles.
+
+2016-02-11 14:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8485] Move some numerical constant definitions from cs_defs.*
+	  to cs_math.*.
+
+2016-02-10 10:57  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8484] GUI: fix update bug introduced by rev. 8466.
+
+2016-02-09 16:19  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8482] Fix bug in EBRSM and GGDH model on scalars introduced in
+	  rev. 7945.
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8481] Fix a bug in plot writer.
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8480] Use CS_BASE_STRING_LEN when useful.
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8479] CDO: Add functionalities to handle probe monitoring and
+	  profile in a unified way.
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8478] Minor changes: blanks, comments
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8477] CDO: adapt postprocessing in groundwater flow module and
+	  advection fields to the current capabilities.
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8476] CDO: Add the capability to set the parameters related to
+	  a tracer for all soils in one call.
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8475] Move elements previously defined in CDO module into
+	  cs_math.* and cs_defs.* files - Elementary mathematical functions
+	  from cs_cdo_toolbox.* - Numerical constants from cs_cdo.*
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8474] Add a new steady flag to fields.
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8473] CDO: Add a call to cs_log_iteration()
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8472] Minor modifications: blanks, typos, comments.
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8471] CDO: Fix a bug when setting SLES verbosity
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8470] CDO: Improve error message when an invalid key is found.
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8469] CDO: Minor modification of the treatment of the domain
+	  boundary.
+
+2016-02-09 16:16  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8468] CDO: Simplification of the management of the
+	  post-processing to fit current capabilities of Code_Saturne. -
+	  Plug cs_post* functions into the CDO kernel - cs_domain_t
+	  structure now has a verbosity and post_freq members - Minor
+	  modifications: typos, blanks, comments
+
+2016-02-08 15:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8467] Improvements to postprocessing writer handling. * add
+	  'plot' and 'time_plot' writer types; * time plot flushing
+	  behavior is now determined by the
+	  cs_time_plot_set_flush_default() function; * writers can now use
+	  the 'separate_meshes' option to create a separate format-specific
+	  writer per mesh.
+
+2016-02-08 15:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8466] GUI: update automatic version upgrades.
+
+2016-02-08 15:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8465] Remove titles from 1D profiles.
+
+2016-02-08 15:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8464] Minor coding fixes.
+
+2016-02-08 15:42  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8463] Fix incorrect usage of Crystal router in rank neighbors
+	  helper.
+
+2016-02-05 10:00  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8462] update GroundWaterLaw page in GUI
+
+2016-02-04 16:58  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8461] Fix for groundwater flow a bad index in GUI
+
+2016-02-03 21:34  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8460] Add the automatic pressure drop computation for a given
+	  zone. It computes int(p.u) and int(rho.u/rho).
+
+2016-02-03 21:34  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8459] Update exemple in the GUI for profiles.
+
+2016-02-02 11:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8458] Use more appropriate field flags for boundary_forces.
+
+2016-02-02 11:35  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8457] Added basic rank (MPI) neighbors helper structure.
+
+2016-02-02 08:59  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8456] suppress print function in groundwatermodel
+
+2016-02-01 19:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8455] Add missing diagonal dominance computation for full block
+	  matrices.
+
+2016-02-01 18:58  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8454] In turbomachinery module, stop the calculation when a
+	  rotor is undefined. Provided by B. de Laage de Meux.
+
+2016-02-01 18:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8453] Add user examples and Doxygen documentation for
+	  turbomachinery. Based on patch by B. de Laage de Meux.
+
+2016-02-01 18:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8452] Add postprocessing functions for turbomachinery. Provided
+	  by B. de Laage de Meux.
+
+2016-02-01 18:47  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8451] Fix in cavitation module in case of frozen rotor
+	  computation (provided by Benoît de Laage de Meux). MIME-Version:
+	  1.0 Content-Type: text/plain; charset=UTF-8
+	  Content-Transfer-Encoding: 8bit
+
+2016-02-01 10:47  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8450] update for Richards : suppress old pages and correction
+	  for gravity
+
+2016-01-28 19:08  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8449] Try to make detection of issues with multigrid as
+	  preconditionner more robust.
+
+2016-01-28 15:48  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8443] Fix crash in some parallel CGNS output cases (bug #165).
+
+2016-01-28 13:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8442] Fix GUI error when extracting group names from
+	  preprocessing log in some cases.
+
+2016-01-27 17:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8441] Allow coupling of radiative transfer with 1d wall thermal
+	  module. Provided by B. Sapa.
+
+2016-01-27 17:31  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8440] Fix in coupling between 1d heat transfer module and gas
+	  combustion. Provided by B. Sapa.
+	  
+	  Mass fraction at boundaries are needed when the 1d heat transfer
+	  module is activated with gas combustion models even in adiabatic
+	  conditions.
+
+2016-01-27 16:01  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8439] Fix blocking when interactive launch
+
+2016-01-27 10:34  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8438] new version for richards module in code_saturne
+
+2016-01-27 10:03  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8437] add mapping fortran-c for couimp variable for case
+	  WELDPOOL
+
+2016-01-27 09:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8436] Extend automatic postprocessing output to fields defined
+	  at vertices. Based on patch provided by J. Bonelle.
+
+2016-01-27 09:52  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8435] Fix misleading error message and translate comments.
+
+2016-01-26 17:50  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8434] update m4 for eos 1.5.0
+
+2016-01-26 11:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8432] Use mix of positive and negative values for reduction
+	  precision test.
+
+2016-01-26 11:40  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8431] Add matrix info logging function and call it for verbose
+	  iterative solvers.
+
+2016-01-26 10:01  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8430] Use more consistent field name for fan id visualization.
+
+2016-01-25 18:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8429] Switch to fallback preconditioner if possible in case of
+	  iterative solver failure.
+
+2016-01-25 18:32  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8428] Fix some Doxygen warnings and update translations file.
+
+2016-01-25 08:21  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8427] Remove unused source.
+
+2016-01-25 08:21  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8426] Fix bug in Fan computation (the flow through the fan was
+	  wrongly computed) introduced in rev. 823.
+	  
+	  The coefficient for the delta_p are also corrected. Add some
+	  information to the log. Align code to standards. Post-process
+	  fans.
+
+2016-01-25 08:21  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8425] Correct som documentation.
+
+2016-01-24 13:56  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8424] Fix compilation bug introduced in rev. 8423.
+
+2016-01-22 16:40  Cyril Baudry <cyril.baudry@edf.fr>
+
+	* [r8423] replace fortran version by c version for electric arc
+
+2016-01-21 16:37  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8422] CDO Minor modifications (typos and comments)
+
+2016-01-21 16:37  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8421] CDO: Add the capability to set parameters related to a
+	  tracer equation soil by soil
+
+2016-01-21 16:37  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8420] CDO: Fix a bug when summarizing a property
+
+2016-01-21 16:37  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8419] CDO: Fix a bug appearing when displaying a
+	  cs_sla_matrix_t structure with MSR type.
+
+2016-01-21 16:37  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8418] Fix typos in theory guide.
+
+2016-01-20 14:32  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8417] Fix missing comma in a biblio item (introduced in rev.
+	  8394).
+
+2016-01-19 14:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8416] Fix access to incorrect pointer in CSR matrix creation
+	  with split faces. Provided by B. Lorendeau.
+
+2016-01-18 08:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8415] Unify handling of default options for linear systems
+	  related to field variables.
+
+2016-01-18 08:51  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8414] Fix handling of multigrid for non-field/variable systems.
+
+2016-01-15 18:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8413] Use multigrid-preconditionned conjugate gradient by
+	  default for symmetric systems. Also, the coarse level is solved
+	  with PCG rather than smoothed with symmetric Gauss-Seidel, as
+	  this seems to lead to better performance.
+	  
+	  multigrid
+
+2016-01-15 18:14  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8412] Fix logging of iterations for symmetric Gauss-Seidel
+	  inside multigrid.
+
+2016-01-15 16:33  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8411] Fix crash introduced by rev. 8407.
+
+2016-01-15 09:45  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8408] GUI: performance tuning should be available also in
+	  preprocessor mode.
+
+2016-01-15 09:43  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8407] Split variable field creation wrappers in smaller parts,
+	  to allow use by C code.
+
+2016-01-14 16:46  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8406] CDO: Several modifications listed below - Use BiCGStab by
+	  default and not BiCGStab2 - Add the generation of a restart file
+	  specific to CDO. - Modify the way to set a computational domain.
+	  Change especially the way of setting the parameters related to
+	  time step. - Update user examples. - Used a shared pointer system
+	  to avoid global variables. - Other minor changes.
+
+2016-01-14 16:46  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8405] CDO: Improve the memory management and the accuracy.
+	  Replace cs_dp by cs_dot (in alge/cs_blas.c) which is more
+	  accurate and threaded. Use similar algorithm as in cs_dot for
+	  cs_weighted_sum_square() Optimization thanks to inlining
+
+2016-01-14 16:46  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8404] CDO: Add chaining between Richards equation and tracer
+	  equations for groundwater flows.
+
+2016-01-14 16:46  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8403] CDO: Change the way source terms are handled. Enable more
+	  general definition. Add new types of law for defining properties.
+
+2016-01-14 16:45  Jérôme Bonelle <jerome.bonelle@edf.fr>
+
+	* [r8402] Fix typos.
+
+2016-01-14 15:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8398] Fix handling of preconditionner choice by the GUI.
+
+2016-01-14 15:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8397] Fix syntax in documentation.
+
+2016-01-14 12:55  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8396] Place boundary face -> boundary cell connectivity in more
+	  consistent mesh structure section.
+
+2016-01-14 11:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8395] Style fixes.
+
+2016-01-14 11:19  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8394] Improve performance and possible precision of reduction
+	  operations. - improve OpenMP load balancing of SuperBlock
+	  reductions - add optional Kahan compensated sum-based BLAS
+	  operations
+
+2016-01-14 08:41  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8393] Add an example for new limiters for convective schemes on
+	  scalars.
+
+2016-01-13 16:53  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8391] Minor fix in Doxygen var dico page (provided by B. De
+	  Laage De Meux).
+
+2016-01-12 10:56  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8390] Fix least square gradient for vectorial fields: -
+	  dib=IpF/|IpF| is used at the boundary - all components of cocg at
+	  boundaries are now computed - as a result, cocg is an 9x9
+	  symmetric matrice at each boundary cell - components depending on
+	  boundary coefficients are recomputed at each gradient call. -
+	  only the triangular inferior part of the 9x9 symmetric cocg is
+	  stored and it is factorized using Crout algorithm.
+
+2016-01-12 10:56  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8389] Remove some private in openMP directives in gradient.
+
+2016-01-11 09:45  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8385] Add boundary mesh extrusion functions.
+
+2016-01-11 09:36  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8384] Add missing entries in mesh dump function.
+
+2016-01-11 08:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8380] Simplify usage of face selectors during user mesh
+	  modification stage.
+
+2016-01-11 08:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8379] Fix comment.
+
+2016-01-11 08:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8378] Fix possible OpenMP bugs.
+
+2016-01-11 08:26  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8377] Avoid possible memory leak in rarely called case.
+
+2016-01-08 08:34  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8376] Fix in the log of clippings for vectorial or tensorial
+	  fields.
+
+2016-01-07 19:00  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8370] Fix radiative restard bug introduced by rev. 8017.
+
+2016-01-07 14:01  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8369] Translate some files in the theory documentation.
+
+2016-01-07 13:45  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8368] Simplify convection diffusion balance for vectors and
+	  tensors to be coherent with scalar functions.
+
+2016-01-07 12:23  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8367] Missing Copyright updates.
+
+2016-01-07 10:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8366] Fix for postprocessing of unlocated Syrthes coupling face
+	  centers in 2D.
+
+2016-01-07 10:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8365] Debug wrapper robustness improvement.
+
+2016-01-06 17:28  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8364] Cleanup handling of some Valgrind options with debug
+	  wrapper.
+
+2016-01-06 15:14  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
+
+	* [r8363] Fix remaining wrong indentations of openMP directives in
+	  conv/diff.
+
+2016-01-06 14:28  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8359] Fix bug in Fire algorithm (idilat=5). Introduced in rev.
+	  5869.
+
+2016-01-06 14:28  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8358] Fix bug introduced in rev. 8337.
+
+2016-01-05 15:56  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8357] Fix for overzealous cleaup in rev. 8356.
+
+2016-01-05 15:20  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8356] Remove some warnings.
+
+2016-01-05 08:57  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8355] Fix bug introduced in rev. 8337.
+
+2016-01-04 11:15  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8354] Various style and OpenMP fixes.
+
+2016-01-04 10:01  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8353] Fix bug introduced in rev. 8337.
+	  
+	  The var_cal_opt structure should be copy after modini. Move
+	  declaration of additional field based on var_cal_opt in fldini.
+
+2016-01-04 09:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8352] Fix test in configuration.
+
+2016-01-04 09:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8351] Fix typo in comment.
+
+2016-01-04 09:38  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8350] Consider Libxml2 support is required unless explicitely
+	  deactivated.
+
+2016-01-04 09:13  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* [r8341] Update ChangeLog and Copyright notices to 2016.
+
+2016-01-04 08:34  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8340] Remove unused argument.
+
+2016-01-04 08:34  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8339] Fix bug introduced in rev. 8337.
+
+2015-12-30 16:39  Martin Ferrand <martin.ferrand@edf.fr>
+
+	* [r8338] Correct labels in the GUI.
+
 2015-12-30 16:39  Martin Ferrand <martin.ferrand@edf.fr>
 
 	* [r8338] gui/Base/XMLinitialize.py: Correct labels in the GUI.
