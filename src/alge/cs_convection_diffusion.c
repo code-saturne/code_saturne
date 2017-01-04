@@ -5233,7 +5233,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
                        coefbp,
                        pvar,
                        gweight, /* Weighted gradient */
-                       NULL, /* internal coupling */
+                       cpl, /* internal coupling */
                        grad);
 
   } else {
@@ -5308,7 +5308,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   if (n_cells_ext > n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
-    for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++)
+    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++)
       rhs[cell_id] = 0.;
   }
 

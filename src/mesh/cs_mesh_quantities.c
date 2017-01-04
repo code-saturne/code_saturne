@@ -348,8 +348,10 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
       fvq->cocgb_s_lsq = cocgb;
     }
   } else if (ce != NULL) {
-    BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
-    ce->cocgb_s_lsq = cocgb;
+    if (cocgb == NULL) {
+      BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
+      ce->cocgb_s_lsq = cocgb;
+    }
   }
 
   /* Initialization */

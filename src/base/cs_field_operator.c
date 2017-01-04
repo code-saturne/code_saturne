@@ -500,6 +500,15 @@ cs_field_gradient_scalar(const cs_field_t          *f,
           cpl = cs_internal_coupling_by_id(coupl_id);
       }
     }
+  } else if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 0) {
+    if (var_cal_opt.idiff > 0) {
+      int key_id = cs_field_key_id_try("coupling_entity");
+      if (key_id > -1) {
+        int coupl_id = cs_field_get_key_int(f, key_id);
+        if (coupl_id > -1)
+          cpl = cs_internal_coupling_by_id(coupl_id);
+      }
+    }
   }
 
 

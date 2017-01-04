@@ -66,6 +66,7 @@
 #include "cs_selector.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
+#include "cs_stokes_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -112,10 +113,8 @@ _create_locator(cs_internal_coupling_t  *cpl)
   cs_lnum_t ifac;
 
   const cs_lnum_t n_local = cpl->n_local;
-  const cs_lnum_t n_distant = n_local;//FIXME ???
   const int *c_tag = cpl->c_tag;
   cs_lnum_t *faces_local_num = NULL;
-  const cs_lnum_t *faces_distant = cpl->faces_local;//FIXME
 
   fvm_nodal_t* nm = NULL;
   int *tag_nm = NULL;
@@ -177,10 +176,10 @@ _create_locator(cs_internal_coupling_t  *cpl)
 
   /* Creation of distant group cell centers */
 
-  BFT_MALLOC(point_coords, 3*n_distant, cs_real_t);
+  BFT_MALLOC(point_coords, 3*n_local, cs_real_t);
 
-  for (i = 0; i < n_distant; i++) {
-    ifac = faces_distant[i]; /* 0..n-1 */
+  for (i = 0; i < n_local; i++) {
+    ifac = cpl->faces_local[i]; /* 0..n-1 */
     for (j = 0; j < 3; j++)
       point_coords[3*i+j] = cs_glob_mesh_quantities->b_face_cog[3*ifac+j];
   }
@@ -193,7 +192,7 @@ _create_locator(cs_internal_coupling_t  *cpl)
                        0,
                        1.1, /* TODO */
                        cs_glob_mesh->dim,
-                       n_distant,
+                       n_local,
                        NULL,
                        c_tag,
                        point_coords,
@@ -474,6 +473,46 @@ _initialize_coupled_faces(cs_internal_coupling_t *cpl)
 }
 
 /*----------------------------------------------------------------------------
+ * Initialize to 0 or NULL most of the fields in given coupling structure.
+ *
+ * parameters:
+ *   cpl               --> pointer to coupling structure to initialize
+ *----------------------------------------------------------------------------*/
+
+static void
+_cpl_initialize(cs_internal_coupling_t *cpl)
+{
+  cpl->locator = NULL;
+  cpl->c_tag = NULL;
+  cpl->cells_criteria = NULL;
+  cpl->faces_criteria = NULL;
+
+  cpl->n_local = 0;
+  cpl->faces_local = NULL; /* Coupling boundary faces, numbered 0..n-1 */
+
+  cpl->n_distant = 0;
+  cpl->faces_distant = NULL;
+
+  cpl->coupled_faces = NULL;
+
+  cpl->h_int = NULL;
+  cpl->h_ext = NULL;
+
+  cpl->g_weight = NULL;
+  cpl->ci_cj_vect = NULL;
+  cpl->offset_vect = NULL;
+
+  cpl->thetav = 0;
+  cpl->idiff = 0;
+
+  cpl->cocgb_s_lsq = NULL;
+  cpl->cocgb_s_it = NULL;
+  cpl->cocg_s_it = NULL;
+
+  cpl->namesca = NULL;
+}
+
+/*----------------------------------------------------------------------------
  * Initialize coupling criteria from strings.
  *
  * parameters:
@@ -587,9 +626,8 @@ _volume_face_initialize(cs_mesh_t               *m,
   /* Initialization */
 
   BFT_MALLOC(cell_tag, n_cells_ext, cs_lnum_t);
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
     cell_tag[cell_id] = 2;
-  }
 
   /* Tag cells */
 
@@ -797,13 +835,12 @@ cs_internal_coupling_initial_contribution(const cs_internal_coupling_t  *cpl,
       (1.0-g_weight[ii]) * (pvar_local[ii] - pvar[cell_id]) :
       (1.0-r_weight[ii]) * (pvar_local[ii] - pvar[cell_id]);
 
-    for (int j = 0; j < 3; j++) {
+    for (int j = 0; j < 3; j++)
       grad[cell_id][j] += pfaci * b_f_face_normal[face_id][j];
-    }
 
   }
   /* Free memory */
-  BFT_FREE(r_weight);
+  if (c_weight != NULL) BFT_FREE(r_weight);
   BFT_FREE(pvar_local);
 }
 
@@ -854,9 +891,8 @@ cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
     face_id = faces_distant[ii];
     cell_id = b_face_cells[face_id];
     pvar_distant[ii] = pvar[cell_id];
-    for (ll = 0; ll < 3; ll++) {
+    for (ll = 0; ll < 3; ll++)
       grad_distant[3*ii+ll] = grad[cell_id][ll];
-    }
   }
   cs_real_t *grad_local = NULL;
   BFT_MALLOC(grad_local, 3*n_local, cs_real_t);
@@ -914,19 +950,17 @@ cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
     pfaci *= offset_vect[ii][0]*(grad_local[3*ii  ]+grad[cell_id][0])
             +offset_vect[ii][1]*(grad_local[3*ii+1]+grad[cell_id][1])
             +offset_vect[ii][2]*(grad_local[3*ii+2]+grad[cell_id][2]);
-    if (c_weight != NULL) {
+    if (c_weight != NULL)
       pfaci += (1.0-r_weight[ii]) * (pvar_local[ii] - pvar[cell_id]);
-    } else {
+    else
       pfaci += (1.0-g_weight[ii]) * (pvar_local[ii] - pvar[cell_id]);
-    }
 
-    for (int j = 0; j < 3; j++) {
+    for (int j = 0; j < 3; j++)
       rhs[cell_id][j] += pfaci * b_f_face_normal[face_id][j];
-    }
 
   }
 
-  BFT_FREE(r_weight);
+  if (c_weight != NULL) BFT_FREE(r_weight);
   BFT_FREE(grad_local);
   BFT_FREE(pvar_local);
 }
@@ -970,9 +1004,8 @@ cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     face_id = faces_distant[ii];
     cell_id = b_face_cells[face_id];
-    for (ll = 0; ll < 3; ll++) {
+    for (ll = 0; ll < 3; ll++)
       r_grad_distant[3*ii+ll] = r_grad[cell_id][ll];
-    }
   }
   cs_real_t *r_grad_local = NULL;
   BFT_MALLOC(r_grad_local, 3*n_local, cs_real_t);
@@ -986,7 +1019,7 @@ cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
   /* Compute rhs */
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    face_id = faces_local[ii] - 1;
+    face_id = faces_local[ii];
     cell_id = b_face_cells[face_id];
 
     /* Reconstruction part
@@ -997,9 +1030,8 @@ cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
            +offset_vect[ii][1]*(r_grad_local[3*ii+1]+r_grad[cell_id][1])
            +offset_vect[ii][2]*(r_grad_local[3*ii+2]+r_grad[cell_id][2]);
 
-    for (int j = 0; j < 3; j++) {
-      grad[cell_id][j] += rfac * b_f_face_normal[face_id][j];
-    }
+    for (ll = 0; ll < 3; ll++)
+      grad[cell_id][ll] += rfac * b_f_face_normal[face_id][ll];
 
   }
 
@@ -1082,7 +1114,7 @@ cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
       rhsv[cell_id][ll] += fctb[ll];
   }
   /* Free memory */
-  BFT_FREE(r_weight);
+  if (c_weight != NULL) BFT_FREE(r_weight);
   BFT_FREE(pvar_local);
 }
 
@@ -1121,9 +1153,8 @@ cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
       dddij[ll] *= umdddij;
 
     for (ll = 0; ll < 3; ll++) {
-      for (mm = 0; mm < 3; mm++) {
+      for (mm = 0; mm < 3; mm++)
         cocg[cell_id][ll][mm] += dddij[ll]*dddij[mm];
-      }
     }
   }
 
@@ -1163,9 +1194,8 @@ cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
     cell_id = b_face_cells[face_id];
 
     for (ll = 0; ll < 3; ll++) {
-      for (mm = 0; mm < 3; mm++) {
+      for (mm = 0; mm < 3; mm++)
         cocg[cell_id][ll][mm] -= 0.5 * offset_vect[ii][ll] * b_f_face_normal[face_id][mm];
-      }
     }
   }
 
@@ -1173,9 +1203,8 @@ cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
   for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     dvol = 1. / cell_vol[cell_id];
     for (ll = 0; ll < 3; ll++) {
-      for (mm = 0; mm < 3; mm++) {
+      for (mm = 0; mm < 3; mm++)
          cocg[cell_id][ll][mm] *= dvol;
-      }
     }
   }
 
@@ -1224,9 +1253,8 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
   BFT_MALLOC(distant, n_distant*stride, cs_real_t);
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     face_id = faces_distant[ii];
-    for (int jj = 0; jj < stride; jj++) {
+    for (int jj = 0; jj < stride; jj++)
       distant[stride * ii + jj] = tab[stride * face_id + jj];
-    }
   }
 
   /* Exchange variable */
@@ -1273,9 +1301,8 @@ cs_internal_coupling_exchange_by_cell_id(const cs_internal_coupling_t  *cpl,
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     face_id = faces_distant[ii];
     cell_id = b_face_cells[face_id];
-    for (jj = 0; jj < stride; jj++) {
+    for (jj = 0; jj < stride; jj++)
       distant[stride * ii + jj] = tab[stride * cell_id + jj];
-    }
   }
 
   /* Exchange variable */
@@ -1331,18 +1358,14 @@ cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
                                    cs_lnum_t                     *n_distant,
                                    cs_lnum_t                     *faces_distant[])
 {
-  if (n_local != NULL) {
+  if (n_local != NULL)
     *n_local = cpl->n_local;
-  }
-  if (faces_local != NULL) {
+  if (faces_local != NULL)
     *faces_local = cpl->faces_local;
-  }
-  if (n_distant != NULL) {
+  if (n_distant != NULL)
     *n_distant = cpl->n_distant;
-  }
-  if (faces_distant != NULL) {
+  if (faces_distant != NULL)
     *faces_distant = cpl->faces_distant;
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1355,13 +1378,11 @@ cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
 cs_internal_coupling_t *
 cs_internal_coupling_by_id(int coupling_id)
 {
-  if (coupling_id > -1 && coupling_id < _n_internal_couplings) {
+  if (coupling_id > -1 && coupling_id < _n_internal_couplings)
     return _internal_coupling + coupling_id;
-  }
-  else {
+  else
     bft_error(__FILE__, __LINE__, 0,
               "coupling_id = %d provided is invalid", coupling_id);
-  }
   return (cs_internal_coupling_t*)NULL;
 }
 
@@ -1437,7 +1458,7 @@ cs_internal_coupling_initialize(void)
 {
   int field_id;
   cs_field_t* f, *f_diff;
-  int coupling_key_id = cs_field_key_id("coupling_entity");
+  const int coupling_key_id = cs_field_key_id("coupling_entity");
   int coupling_id = 0;
 
   const int diffusivity_key_id = cs_field_key_id("scalar_diffusivity_id");
@@ -1487,18 +1508,44 @@ cs_internal_coupling_initialize(void)
         cpl->thetav = var_cal_opt.thetav;
         cpl->idiff = var_cal_opt.idiff;
 
+        /* Check the case is without hydrostatis pressure */
+        cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
+        if (stokes->iphydr == 1)
+           bft_error(__FILE__, __LINE__, 0,
+                     "Hydrostatic pressure \
+                      not implemented with internal coupling.");
+
         /* Initialize coupled_faces */
         _initialize_coupled_faces(cpl);
 
         /* Initialize cocg & cocgb */
-        if (var_cal_opt.imrgra == 0) {
-          cs_compute_cell_cocg_s_it_coupling(cs_glob_mesh,
+        switch(var_cal_opt.imrgra){
+          case 0:
+            cs_compute_cell_cocg_s_it_coupling(cs_glob_mesh,
+                                               cs_glob_mesh_quantities,
+                                               cpl);
+            break;
+          case 1:
+          case 7:
+            cs_compute_cell_cocg_lsq_coupling(cs_glob_mesh,
                                               cs_glob_mesh_quantities,
                                               cpl);
-        } else if (var_cal_opt.imrgra == 1) {
-          cs_compute_cell_cocg_lsq_coupling(cs_glob_mesh,
-                                            cs_glob_mesh_quantities,
-                                            cpl);
+            break;
+          case 4:
+          case 5:
+          case 6:
+            bft_error(__FILE__, __LINE__, 0,
+                      "Iterative reconstruction with LSQ initialisation \
+                       not implemented with internal coupling.");
+            break;
+          case 2:
+          case 3:
+          case 8:
+          case 9:
+            bft_error(__FILE__, __LINE__, 0,
+                      "(Partial) extended neighbourhood \
+                       not implemented with internal coupling.");
+            break;
         }
 
         /* Update user information */
@@ -1580,34 +1627,7 @@ cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
 
   cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
 
-  cpl->locator = NULL;
-  cpl->c_tag = NULL;
-  cpl->cells_criteria = NULL;
-  cpl->faces_criteria = NULL; /* optional here */
-
-  cpl->n_local = 0;
-  cpl->faces_local = NULL; /* Coupling boundary faces, numbered 0..n-1 */
-
-  cpl->n_distant = 0;
-  cpl->faces_distant = NULL;
-
-  cpl->coupled_faces = NULL;
-
-  cpl->h_int = NULL;
-  cpl->h_ext = NULL;
-
-  cpl->g_weight = NULL;
-  cpl->ci_cj_vect = NULL;
-  cpl->offset_vect = NULL;
-
-  cpl->thetav = 0;
-  cpl->idiff = 0;
-
-  cpl->cocgb_s_lsq = NULL;
-  cpl->cocgb_s_it = NULL;
-  cpl->cocg_s_it = NULL;
-
-  cpl->namesca = NULL;
+  _cpl_initialize(cpl);
 
   _criteria_initialize(criteria_cells, NULL, cpl);
 
@@ -1659,34 +1679,7 @@ cs_internal_coupling_add(cs_mesh_t   *mesh,
 
   cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
 
-  cpl->locator = NULL;
-  cpl->c_tag = NULL;
-  cpl->cells_criteria = NULL;
-  cpl->faces_criteria = NULL;
-
-  cpl->n_local = 0;
-  cpl->faces_local = NULL; /* Coupling boundary faces, numbered 0..n-1 */
-
-  cpl->n_distant = 0;
-  cpl->faces_distant = NULL;
-
-  cpl->coupled_faces = NULL;
-
-  cpl->h_int = NULL;
-  cpl->h_ext = NULL;
-
-  cpl->g_weight = NULL;
-  cpl->ci_cj_vect = NULL;
-  cpl->offset_vect = NULL;
-
-  cpl->thetav = 0;
-  cpl->idiff = 0;
-
-  cpl->cocgb_s_lsq = NULL;
-  cpl->cocgb_s_it = NULL;
-  cpl->cocg_s_it = NULL;
-
-  cpl->namesca = NULL;//FIXME
+  _cpl_initialize(cpl);
 
   _criteria_initialize(criteria_cells, criteria_faces, cpl);
 
@@ -1716,12 +1709,11 @@ cs_internal_coupling_add_entity(int        f_id)
     var_cal_opt.icoupl = 1;
     cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
-  else {
+  else
     bft_error(__FILE__, __LINE__, 0,
               "field id = %d provided is invalid."
               " The field must be a variable.",
               f_id);
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1743,8 +1735,8 @@ cs_ic_set_exchcoeff(const int         field_id,
   const cs_real_t* b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   const cs_field_t* f = cs_field_by_id(field_id);
-  const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
-  int coupling_id = cs_field_get_key_int(f, coupling_key_id);
+  int coupling_id = cs_field_get_key_int(f,
+                                         cs_field_key_id("coupling_entity"));
   const cs_internal_coupling_t  *cpl
     = cs_internal_coupling_by_id(coupling_id);
 

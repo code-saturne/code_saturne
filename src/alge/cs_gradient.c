@@ -2137,6 +2137,7 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
  *                        or there is no periodicity of rotation
  *                      1 for velocity, 2 for Reynolds stress
  *   hyd_p_flag     <-- flag for hydrostatic pressure
+ *   w_stride       <-- stride for weighting coefficient
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   extrap         <-- gradient extrapolation coefficient
  *   fextx          <-- x component of exterior force generating pressure
@@ -6062,26 +6063,6 @@ cs_gradient_scalar(const char                *var_name,
 
   if (update_stats == true)
     gradient_info = _find_or_add_system(var_name, gradient_type);
-
-  /* Check internal coupling parameters */
-
-  if (cpl != NULL) {
-    /* This case already handled in fldini */
-    if (halo_type == CS_HALO_EXTENDED)
-      bft_error(__FILE__, __LINE__, 0,
-               "Extended least-squares gradient reconstruction \
-                is not supported with internal coupling");
-    /* Case with hydrostatic pressure */
-    if (hyd_p_flag != 0 && hyd_p_flag != 2)
-      bft_error(__FILE__, __LINE__, 0,
-                "Hydrostatic pressure not implemented with internal coupling.");
-    /* This case already handled in fldini */
-    if (  gradient_type != CS_GRADIENT_LSQ
-       && gradient_type != CS_GRADIENT_ITER )
-      bft_error(__FILE__, __LINE__, 0,
-                "Only ITER / LSQ gradient approximation is implemented \
-                 with internal coupling.");
-  }
 
   /* Synchronize variable */
 
