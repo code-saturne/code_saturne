@@ -162,9 +162,8 @@ nwsgg  = 1
 !     ======================
 
 if (iihmpr.eq.1) then
-
-  call uiray1(iirayo, isuird, i_quadrature, ndirec, nfreqr, idiver, iimpar, iimlum)
-
+   call uiray1(iirayo, isuird, i_quadrature, ndirec, nfreqr, &
+               idiver, iimpar, iimlum, imodak)
 endif
 
 ! User paramters

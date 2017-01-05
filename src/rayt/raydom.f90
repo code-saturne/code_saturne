@@ -363,7 +363,7 @@ else
 
   if (iihmpr.eq.1) then
 
-    call uiray3(propce(1,ipproc(icak(1))), ncel, imodak) !FIXME for ADF
+    call uiray3(propce(1,ipproc(icak(1)))) !FIXME for ADF
 
     if (iirayo.eq.2 .and. ippmod(iphpar).le.1 .and. ipadom.le.3) then
       sf = 0.d0

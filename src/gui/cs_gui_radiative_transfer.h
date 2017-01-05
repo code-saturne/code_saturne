@@ -52,7 +52,8 @@ void CS_PROCF (uiray1, UIRAY1) (int  *iirayo,
                                 int  *nfreqr,
                                 int  *idiver,
                                 int  *iimpar,
-                                int  *iimlum);
+                                int  *iimlum,
+				int  *imodak);
 
 /*----------------------------------------------------------------------------
  *
@@ -83,10 +84,8 @@ void CS_PROCF (uiray2, UIRAY2) (const    int  *itypfb,
  *
  *----------------------------------------------------------------------------*/
 
+void CS_PROCF (uiray3, UIRAY3) (double  *ck);
 
-void CS_PROCF (uiray3, UIRAY3) (      double  *ck,
-                                const    int  *ncel,
-                                         int  *imodak);
 /*----------------------------------------------------------------------------
  *
  *----------------------------------------------------------------------------*/
