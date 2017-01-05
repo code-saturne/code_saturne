@@ -617,7 +617,6 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
 
     enddo
 
-
     ! External forces containing bouyancy force ONLY
     do iel = 1, ncel
       dronm1 = (croma(iel)-ro0)

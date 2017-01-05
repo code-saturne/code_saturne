@@ -439,6 +439,31 @@ if (itrale.gt.0) then
   call schtmp(nscal, iappel)
 endif
 
+!===============================================================================
+! 5.bis Current to previous for density
+!===============================================================================
+
+! --- Noter que exceptionnellement, on fait un calcul avec ncelet,
+!     pour eviter une nouvelle communication
+
+! If required, the density at time step n-2 is updated
+if (icavit.ge.0.or.idilat.gt.1) then
+  call field_get_val_prev_s(icrom, crom_prev)
+  call field_get_val_s(icroaa, crom_prev2)
+  do iel = 1, ncelet
+    crom_prev2(iel) = crom_prev(iel)
+  enddo
+endif
+
+! If required, the density at time step n-1 is updated
+if (icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0.or.ipthrm.eq.1) then
+  call field_get_val_s(icrom, crom)
+  call field_get_val_prev_s(icrom, crom_prev)
+  do iel = 1, ncelet
+    crom_prev(iel) = crom(iel)
+  enddo
+endif
+
 
 !===============================================================================
 ! 6.  MISE A JOUR DU MAILLAGE POUR UN COUPLAGE ROTOR/STATOR
@@ -660,11 +685,8 @@ if (icondv.eq.0) then
 endif
 
 !===============================================================================
-! 7.bis Current to previous
+! 7.bis Current to previous for variables and GWF module
 !===============================================================================
-
-! --- Noter que exceptionnellement, on fait un calcul avec NCELET,
-!       pour eviter une nouvelle communication
 
 do f_id = 0, nfld - 1
   call field_get_type(f_id, f_type)
@@ -673,25 +695,6 @@ do f_id = 0, nfld - 1
     call field_current_to_previous(f_id)
   endif
 enddo
-
-! If required, the density at time step n-2 is updated
-if (icavit.ge.0.or.idilat.gt.1) then
-  call field_get_val_prev_s(icrom, crom_prev)
-  call field_get_val_s(icroaa, crom_prev2)
-  do iel = 1, ncelet
-    crom_prev2(iel) = crom_prev(iel)
-  enddo
-endif
-
-! If required, the density at time step n-1 is updated
-if (icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0.or.ipthrm.eq.1) then
-  call field_get_val_s(icrom, crom)
-  call field_get_val_prev_s(icrom, crom_prev)
-  do iel = 1, ncelet
-    crom_prev(iel) = crom(iel)
-  enddo
-endif
-
 
 if (ippmod(idarcy).eq.1) then
 
