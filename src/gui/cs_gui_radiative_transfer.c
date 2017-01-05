@@ -434,9 +434,11 @@ void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
                                 int *const nfreqr,
                                 int *const idiver,
                                 int *const iimpar,
-                                int *const iimlum)
+                                int *const iimlum,
+                                int *const imodak)
 {
     char *model = NULL;
+    int ac_type = 0;
 
     model = cs_gui_get_thermophysical_model("radiative_transfer");
 
@@ -456,6 +458,12 @@ void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
         _radiative_transfer_int("thermal_radiative_source_term", idiver);
         _radiative_transfer_int("temperature_listing_printing", iimpar);
         _radiative_transfer_int("intensity_resolution_listing_printing", iimlum);
+        if (!cs_gui_get_activ_thermophysical_model()) {
+            _radiative_transfer_type("absorption_coefficient", &ac_type);
+            if (ac_type == 3) {
+                *imodak = 1;
+            }
+         }
     }
 #if _XML_DEBUG_
     bft_printf("==>UIRAY1\n");
@@ -469,6 +477,8 @@ void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
         bft_printf("--idiver = %d\n", *idiver);
         bft_printf("--iimpar = %d\n", *iimpar);
         bft_printf("--iimlum = %d\n", *iimlum);
+        bft_printf("--absorption coefficient type: %d\n", ac_type);
+        bft_printf("--absorption coefficient by modak: %i\n", *imodak);
     }
 #endif
     BFT_FREE(model);
@@ -754,33 +764,28 @@ void CS_PROCF (uiray2, UIRAY2)
  *----------------------------------------------------------------------------*/
 
 
-void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
-                                const    int *const ncel,
-                                         int *const imodak)
+void CS_PROCF (uiray3, UIRAY3) (double   *ck)
 {
+    int ac_type = 0;
     double value = 0.;
-    int i, type = 0;
 
     if (!cs_gui_get_activ_thermophysical_model())
     {
-        _radiative_transfer_type("absorption_coefficient", &type);
-        _radiative_transfer_double("absorption_coefficient", &value);
+        _radiative_transfer_type("absorption_coefficient", &ac_type);
 
-        if (type == 0)
+        if (ac_type == 0)
         {
-            for(i = 0; i < *ncel; i++)
+            cs_lnum_t i;
+            cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+            _radiative_transfer_double("absorption_coefficient", &value);
+            for(i = 0; i < n_cells; i++)
                 ck[i] = value;
-        }
-        else if (type == 3)
-        {
-            *imodak = 1;
         }
 #if _XML_DEBUG_
     bft_printf("==>UIRAY3\n");
-    bft_printf("--absorption coefficient type: %d\n", type);
-    bft_printf("--absorption coefficient by modak: %i\n", imodak);
-    if (type == 0)
-        bft_printf("--absorption coefficient value = %f\n", value);
+    bft_printf("--absorption coefficient type: %d\n", ac_type);
+    if (ac_type == 0)
+      bft_printf("--absorption coefficient value = %f\n", value);
 #endif
     }
 }

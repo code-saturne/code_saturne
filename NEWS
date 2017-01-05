@@ -5,6 +5,9 @@ Release 4.0.7 (unreleased)
 Bug fixes:
 ----------
 
+- Radiative model: GUI setting for imodak should not overwrite settings
+  from the cs_user_radiative_transfer_param subroutine.
+
 - Allow mesh joining when no vertices are modified.
 
 - Fix several face weight indices in scalar balance by zone.
