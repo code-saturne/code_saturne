@@ -294,13 +294,11 @@ do f_id = 0, nfld - 1
   call field_get_type(f_id, f_type)
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
-    if (f_id.eq.ivarfl(ipr)) cycle
     call field_get_key_struct_var_cal_opt(f_id, vcopt)
     if (abs(vcopt%thetav+999.d0).gt.epzero) then
 
       call field_get_name(f_id, name)
-      write(nfecra,1031) trim(name),'THETAV'
-      iok = iok + 1
+      write(nfecra,1131) trim(name),'THETAV'
     elseif (ischtp.eq.1) then
       vcopt%thetav = 1.d0
     elseif (ischtp.eq.2) then
@@ -1151,22 +1149,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 1031 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========,'                                               /,&
-'@    ',a17,                                                    /,&
-'@    ',a6,' SERA INITIALISE AUTOMATIQUEMENT.,'                 /,&
-'@    NE PAS LE MODIFIER.,'                                     /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  Verifier cs_user_parameters.f90,'                           /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  1131 format( &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1353,22 +1335,6 @@ endif
 '@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
 '@    ========',                                                /,&
 '@    SCALAR ',   i10,' ',a6,' = ',   i10,                      /,&
-'@    ',a6,' WILL BE INITIALIZED AUTOMATICALLY',                /,&
-'@    DO NOT MODIFY IT.,'                                       /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@  Check cs_user_parameters.f90',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1031 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
-'@    ========',                                                /,&
-'@    ',a17,                                                    /,&
 '@    ',a6,' WILL BE INITIALIZED AUTOMATICALLY',                /,&
 '@    DO NOT MODIFY IT.,'                                       /,&
 '@',                                                            /,&
