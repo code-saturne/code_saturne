@@ -435,7 +435,7 @@ void CS_PROCF (uiray1, UIRAY1) (int  *iirayo,
                                 int  *idiver,
                                 int  *iimpar,
                                 int  *iimlum,
-				int  *imodak)
+                                int  *imodak)
 {
   char *model = NULL;
   int ac_type = 0;
@@ -460,7 +460,7 @@ void CS_PROCF (uiray1, UIRAY1) (int  *iirayo,
     if (!cs_gui_get_activ_thermophysical_model()) {
       _radiative_transfer_type("absorption_coefficient", &ac_type);
       if (ac_type == 3) {
-	*imodak = 1;
+        *imodak = 1;
       }
     }
   }
@@ -770,7 +770,7 @@ void CS_PROCF (uiray3, UIRAY3) (double   *ck)
       cs_lnum_t n_cells = cs_glob_mesh->n_cells;
       _radiative_transfer_double("absorption_coefficient", &value);
       for(i = 0; i < n_cells; i++)
-	ck[i] = value;
+        ck[i] = value;
     }
 #if _XML_DEBUG_
     bft_printf("==>UIRAY3\n");

@@ -53,7 +53,7 @@ void CS_PROCF (uiray1, UIRAY1) (int  *iirayo,
                                 int  *idiver,
                                 int  *iimpar,
                                 int  *iimlum,
-				int  *imodak);
+                                int  *imodak);
 
 /*----------------------------------------------------------------------------
  *
