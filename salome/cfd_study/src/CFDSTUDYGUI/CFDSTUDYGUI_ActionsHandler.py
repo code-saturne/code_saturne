@@ -1116,7 +1116,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                     subprocess.Popen([viewerName, path])
                 except:
                     mess = cfdstudyMess.trMessage(self.tr("VERIFY_EDITOR_NAME_PREFERENCE"),[str(self.tr("EXTERNAL_EDITOR"))])
-                    cfdstudyMess.about(mess)
+                    cfdstudyMess.aboutMessage(mess)
         else :
             mess = cfdstudyMess.trMessage(self.tr("ADD_VIEWER_NAME_PREFERENCE"),[str(self.tr("EXTERNAL_EDITOR"))])
             cfdstudyMess.aboutMessage(mess)
