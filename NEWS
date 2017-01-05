@@ -1,18 +1,15 @@
 
-Release 4.3.3 (unreleased)
-==========================
-
-Bug fixes:
-----------
-
-- Fix indices in LU factorisation for diagonal blocks.
-  Last diagonal element of each block LU factorisation was wrong.
-
-Release 4.3.2 (January 4 2017)
+Release 4.3.2 (January 5 2017)
 ==============================
 
 Bug fixes:
 ----------
+
+- Radiative model: GUI setting for imodak should not overwrite settings
+  from the cs_user_radiative_transfer_param subroutine.
+
+- Fix indices in LU factorisation for diagonal blocks.
+  Last diagonal element of each block LU factorisation was wrong.
 
 - Allow mesh joining when no vertices are modified.
 
