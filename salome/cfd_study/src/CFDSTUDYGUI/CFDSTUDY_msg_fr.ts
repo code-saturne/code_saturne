@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS>
+<!DOCTYPE TS><TS version="2.0" language="fr">
     <context>
         <name>@default</name>
         <message>
             <source>CFDSTUDY_INVALID_ENV</source>
-            <translation>Code CFD non trouvé!</translation>
+            <translation>Code CFD non trouvé !</translation>
         </message>
         <message>
             <source>CFDSTUDY_INVALID_SOLVER_NAME</source>
@@ -115,7 +115,7 @@
         </message>
         <message>
             <source>RUN_SCRIPT_ACTION_ACCESS_ERROR</source>
-            <translation>Vous n'avez pas les droits d'accès pour le script d'exécution!</translation>
+            <translation>Vous n'avez pas les droits d'accès pour le script d'exécution !</translation>
         </message>
         <message>
             <source>SOLVER_FILE_MENU_TEXT</source>
@@ -191,7 +191,11 @@
         </message>
         <message>
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
-            <translation>Voulez-vous vraiment supprimer le répertoire de cas: %s, de cette étude sur le disque?</translation>
+            <translation>Voulez-vous vraiment supprimer le répertoire de cas : %s, de cette étude sur le disque?</translation>
+        </message>
+        <message>
+            <source>REMOVE_FILE_ACTION_CONFIRM_MESS</source>
+            <translation>Voulez-vous vraiment supprimer le fichier : %s, de cette étude sur le disque ?</translation>
         </message>
         <message>
             <source>CLOSE_ACTION_TEXT</source>
@@ -259,7 +263,7 @@
         </message>
         <message>
             <source>OVERWRITE_CONFIRM_MESS</source>
-            <translation>Le fichier cible existe deja. Voulez vous l'écraser?</translation>
+            <translation>Le fichier cible existe déjà. Voulez vous l'écraser ?</translation>
         </message>
         <message>
             <source>COPY_IN_DATA_ACTION_TEXT</source>
@@ -323,7 +327,7 @@
         </message>
         <message>
             <source>EXPORT_IN_SMESH_ACTION_WARNING</source>
-            <translation>Erreur durant l'operation EXPORT!</translation>
+            <translation>Erreur durant l'operation EXPORT !</translation>
         </message>
         <message>
             <source>ECS_CONVERT_ACTION_TEXT</source>
@@ -407,19 +411,19 @@
         </message>
         <message>
             <source>ENV_DLG_INVALID_DIRECTORY</source>
-            <translation>Le répertoire %s n'existe pas!!! </translation>
+            <translation>Le répertoire %s n'existe pas !!! </translation>
         </message>
         <message>
             <source>ENV_DLG_INVALID_FILE</source>
-            <translation>%s : le fichier %s  n'existe pas!!! </translation>
+            <translation>%s : le fichier %s  n'existe pas !!! </translation>
         </message>
         <message>
             <source>ENV_DLG_INVALID_FILE_XML</source>
-            <translation>%s: le fichier %s n'est pas un fichier de données de type Code_Saturne ou NEPTUNE_CFD !!! </translation>
+            <translation>%s : le fichier %s n'est pas un fichier de données de type Code_Saturne ou NEPTUNE_CFD !!! </translation>
         </message>
         <message>
             <source>ENV_INVALID_DATA_FILE_XML</source>
-            <translation>%s: Le fichier %s n'est pas dans un répertoire DATA requis pour un cas CFD !!! </translation>
+            <translation>%s : Le fichier %s n'est pas dans un répertoire DATA requis pour un cas CFD !!! </translation>
         </message>
         <message>
             <source>ENV_DLG_CASE_FILE</source>
@@ -427,11 +431,11 @@
         </message>
         <message>
             <source>INFO_DLG_NO_CASE_INTO_OB</source>
-            <translation>Erreur: le fichier %s n'a pas d'objet père de type cas CFD dans l'Object browser de Salome</translation>
+            <translation>Erreur : le fichier %s n'a pas d'objet de type cas CFD dans l'Object browser de Salome</translation>
         </message>
         <message>
             <source>INFO_DLG_NO_CFD_STUDY_INTO_OB</source>
-            <translation>Erreur: le fichier %s n'a pas d'objet père de type étude CFD dans l'Object browser de Salome</translation>
+            <translation>Erreur : le fichier %s n'a pas d'objet père de type étude CFD dans l'Object browser de Salome</translation>
         </message>
         <message>
             <source>INFO_DLG_INVALID_ENV</source>
@@ -439,7 +443,7 @@
         </message>
         <message>
             <source>STMSG_UPDATE_STUDY_INCOMING</source>
-            <translation> ...Mise à jour de la structure de l'etude MAINTENANT ! </translation>
+            <translation> ...Mise à jour de la structure de l'étude MAINTENANT !</translation>
         </message>
         <message>
             <source>CASE_ALREADY_EXISTS</source>
@@ -447,7 +451,63 @@
         </message>
         <message>
             <source>DEFAULT_CASE_ALREADY_EXISTS</source>
-            <translation>Le cas par défaut: %s existe déjà dans l'étude CFD %s</translation>
+            <translation>Le cas par défaut : %s existe déjà dans l'étude CFD %s</translation>
+        </message>
+        <message>
+            <source>NO_FILE_CFD_GUI_FOUND</source>
+            <translation>Le fichier : %s, n'existe pas dans le répertoire DATA du cas : %s</translation>
+        </message>
+        <message>
+            <source>MESH_NO_OBJECT_SELECTED_INTO_OBJECT_BROWSER</source>
+            <translation>Vue MESH : Aucun objet sélectionné dans l'Object Browser</translation>
+        </message>
+        <message>
+            <source>MESH_NO_OBJECT_UNDER_MESH_INTO_OBJECT_BROWSER</source>
+            <translation>Vue MESH : Aucun maillage de nom: %s, sous le module Mesh dans l'Object Browser</translation>
+        </message>
+        <message>
+            <source>MESH_NO_ENTRY_ID_MESH</source>
+            <translation>Vue MESH : Aucune Entry dans l'Object Browser pour le maillage : %s</translation>
+        </message>
+        <message>
+            <source>MESH_GROUP_NO_OBJECT_SELECTED_INTO_OBJECT_BROWSER</source>
+            <translation>Vue des groupes de mailles : Aucun objet sélectionné dans l'Object Browser</translation>
+        </message>
+        <message>
+            <source>MESH_GROUP_NO_GROUP_WITH_FATHER</source>
+            <translation>Pas de groupe %s pour le maillage : %s</translation>
+        </message>
+        <message>
+            <source>MESH_GROUP_NO_ENTRY_ID</source>
+            <translation>Pas d'Entry pour le groupe %s du maillage : %s</translation>
+        </message>
+        <message>
+            <source>HIDE_MESH_GROUP_NO_OBJECT_SELECTED</source>
+            <translation>Cacher les groupes de mailles : Pas d'objets sélectionnés dans l'Object Browser</translation>
+        </message>
+        <message>
+            <source>HIDE_MESH_NO_OBJECT_SELECTED</source>
+            <translation>Cacher un maillage : Pas d'objets sélectionnés dans l'Object Browser</translation>
+        </message>
+        <message>
+            <source>ALREADY_OPEN</source>
+            <translation>%s %s : %s est déjà ouvert</translation>
+        </message>
+        <message>
+            <source>DIR_MESH_NOT_EXIST</source>
+            <translation>Le répertoire MESH n'existe pas !</translation>
+        </message>
+        <message>
+            <source>DATA_DIR_NOT_FOUND</source>
+            <translation>Le répertoire DATA non trouvé dans L'Object Browser pour le cas %s et l'étude %s</translation>
+        </message>
+        <message>
+            <source>CHECK_CODE_PACKAGE</source>
+            <translation> ; Vérifier le fichier %s dans le package python de %s.</translation>
+        </message>
+        <message>
+            <source>CHECK_PYTHON_PATH</source>
+            <translation>  ; Vérifier le PYTHONPATH puis votre installation.</translation>
         </message>
     </context>
     <context>
@@ -458,7 +518,7 @@
         </message>
         <message>
             <source>INFO_DLG_INVALID_ENV</source>
-            <translation>Invalid environment! Please, correct required or non-existent variables:</translation>
+            <translation>Invalid environment ! Please, correct required or non-existent variables :</translation>
         </message>
         <message>
             <source>DLG_OK_BUTTON_TEXT</source>
@@ -520,23 +580,23 @@
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_OPEN_MESS</source>
-            <translation>Le répertoire %s est deja chargé dans l'Object Browser de SALOME! Choisissez un autre répertoire d'étude.</translation>
+            <translation>Le répertoire %s est déjà chargé dans l'Object Browser de SALOME ! Choisissez un autre répertoire d'étude.</translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS</source>
-            <translation>Le répertoire %s existe deja. Choisissez un autre nom d'étude.</translation>
+            <translation>Le répertoire %s existe déjà. Choisissez un autre nom d'étude.</translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS1</source>
-            <translation>Le répertoire %s existe deja. Voulez-vous creer une autre etude?</translation>
+            <translation>Le répertoire %s existe déjà. Voulez-vous creer une autre etude?</translation>
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_MESS</source>
-            <translation>Le nom de l'étude n'est pas renseigné! Indiquez un nom d'étude.</translation>
+            <translation>Le nom de l'étude n'est pas renseigné ! Indiquez un nom d'étude.</translation>
         </message>
         <message>
             <source>CASE_DLG_ERROR_MESS</source>
-            <translation>Le répertoire sélectionné : %s n'est pas un répertoire cas CFD, Choisir un autre répertoire</translation>
+            <translation>Le répertoire sélectionné : %s n'est pas un répertoire cas CFD, Choisir un autre répertoire !</translation>
         </message>
         <message>
             <source>Select an existing CFD Study</source>
@@ -590,7 +650,7 @@
         </message>
         <message>
             <source>COPY_DLG_EXISTS_ERROR_TEXT</source>
-            <translation>Le fichier destination existe deja!</translation>
+            <translation>Le fichier destination existe déjà !</translation>
         </message>
     </context>
     <context>
@@ -613,7 +673,7 @@
         </message>
         <message>
             <source>ICSACTIVATE_DLG_CASE_LABEL</source>
-            <translation>Selection du cas:</translation>
+            <translation>Selection du cas :</translation>
         </message>
         <message>
             <source>IPBACTIVATE_DLG_CAPTION</source>
@@ -621,15 +681,15 @@
         </message>
         <message>
             <source>IPBACTIVATE_DLG_CASE_LABEL</source>
-            <translation>Selection du cas:</translation>
+            <translation>Selection du cas :</translation>
         </message>
         <message>
             <source>ICSACTIVATE_DLG_BAD_CASE_MESS</source>
-            <translation>Le fichier SaturneGUI est absent. Vous ne pouvez pas activater le GUI!</translation>
+            <translation>Le fichier SaturneGUI est absent. Vous ne pouvez pas activater le GUI !</translation>
         </message>
         <message>
             <source>IPBACTIVATE_DLG_BAD_CASE_MESS</source>
-            <translation>Le fichier NeptuneGUI est absent. Vous ne pouvez pas activater le GUI!</translation>
+            <translation>Le fichier NeptuneGUI est absent. Vous ne pouvez pas activater le GUI !</translation>
         </message>
     </context>
 </TS>

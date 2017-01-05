@@ -104,17 +104,16 @@ class InfoDialogHandler(InfoDialog):
 
 
     def accept(self):
-        iok, mess = CheckCFD_CodeEnv(CFD_Code())
+        iok, mess = CheckCFD_CodeEnv("toto")#CFD_Code())
         if iok:
             if mess != "" :
-                Error = "Error : "+ self.tr("CFDSTUDY_INVALID_ENV")
-                QMessageBox.critical(ActionHandler.dskAgent().workspace(),
-                                 Error, mess, QMessageBox.Ok, 0)
+                mess = cfdstudyMess.trMessage(self.tr("CFDSTUDY_INVALID_ENV"),[]) + mess
+                cfdstudyMess.criticalMessage(mess)
             else :
                 InfoDialog.accept(self)
         else:
-            Error = "Error : " + self.tr("INFO_DLG_INVALID_ENV")
-            QMessageBox.critical(None, Error, mess, QMessageBox.Ok, QMessageBox.NoButton)
+            mess = cfdstudyMess.trMessage(self.tr("INFO_DLG_INVALID_ENV"),[]) + mess
+            cfdstudyMess.criticalMessage(mess)
 
 
     def setCode(self, env_saturne, env_neptune):
@@ -271,7 +270,7 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
         if str(new_path) == "" :
             self.reinit()
             return
-        new_path, self.StudyName = os.path.split(new_path)
+        new_path, self.StudyName = os.path.split(str(new_path))
         self.findChild(QLineEdit,"StudyDirName").setText(new_path)
         self.findChild(QLineEdit, "StudyLineEdit").setText(self.StudyName)
         self.findChild(QPushButton,"OKButton").setEnabled(True)
@@ -314,10 +313,8 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
         # check if it is a case directory
         if not self.isCfdCaseDir(self.CaseRefName):
 
-            mess = str(self.tr("CASE_DLG_ERROR_MESS"))
-            mess = mess%(self.CaseRefName)
-
-            QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
+            mess = cfdstudyMess.trMessage(self.tr("CASE_DLG_ERROR_MESS"),[self.CaseRefName])
+            cfdstudyMess.aboutMessage(mess)
             self.findChild(QCheckBox,"checkBoxCopyFrom").setChecked(False)
             return
         else :
@@ -368,8 +365,8 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
         self.CaseNames = str(self.findChild(QLineEdit,"CaseLineEdit").text())
         self.CopyFromOption = self.findChild(QCheckBox, "checkBoxCopyFrom").isChecked()
         if  aNameLE.text() == "" :
-            mess = str(self.tr("LOCATION_DLG_ERROR_MESS"))
-            QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
+            mess = cfdstudyMess.trMessage(self.tr("LOCATION_DLG_ERROR_MESS"),[])
+            cfdstudyMess.criticalMessage(mess)
             return False
 
         # check study directory
@@ -390,22 +387,20 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
         if self.checkBoxLoad.isChecked():
             studyObj = CFDSTUDYGUI_DataModel.FindStudyByPath(self.StudyPath)
             if studyObj != None:
-                mess = str(self.tr("LOCATION_DLG_ERROR_OPEN_MESS"))
-                mess = mess%(self.StudyPath)
-                QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
+                mess = cfdstudyMess.trMessage(self.tr("LOCATION_DLG_ERROR_OPEN_MESS"),[self.StudyPath])
+                cfdstudyMess.aboutMessage(mess)
                 return False
 
             if self.StudyName == '':
-                mess = str(self.tr("LOCATION_DLG_ERROR_MESS"))
-                QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
+                mess = cfdstudyMess.trMessage(self.tr("LOCATION_DLG_ERROR_MESS"),[])
+                cfdstudyMess.criticalMessage(mess)
                 return False
 
         # ckeck case name
         if self.checkBoxCreate.isChecked() :
             if self.StudyName == '':
-                mess = str(self.tr("LOCATION_DLG_ERROR_MESS"))
-                mess = mess%(aStudyDir)
-                QMessageBox.critical(None, "Error", mess, QMessageBox.Ok, QMessageBox.NoButton)
+                mess = cfdstudyMess.trMessage(self.tr("LOCATION_DLG_ERROR_MESS"),[aStudyDir])
+                cfdstudyMess.criticalMessage(mess)
                 return False
             self.CaseNames = str(aCaseLE.text())
             self.CreateOption = True
@@ -552,7 +547,7 @@ class CopyDialogHandler(CopyDialog):
 
     def onBrowsePath(self):
         new_path = self.DestDirLE.text()
-        new_path = QFileDialog.getExistingDirectory(None, str(self.tr("DATA directory")),new_path)
+        new_path = QFileDialog.getExistingDirectory(None, self.tr("DATA directory"),new_path)
         if not new_path or new_path == "":
             return
         self.DestDirLE.setText(os.path.abspath(str(new_path)))
@@ -599,7 +594,8 @@ class CopyDialogHandler(CopyDialog):
         aDestFileName   = str(self.DestFileLE.text())
         aDestFilePath = os.path.join(aDestDirName, aDestFileName)
         if os.path.exists(aDestFilePath) and os.path.isfile(aDestFilePath):
-            QMessageBox.critical(None, self.tr("COPY_DLG_EXISTS_ERROR_CAPTION"), self.tr("COPY_DLG_EXISTS_ERROR_TEXT"), QMessageBox.Ok, QMessageBox.NoButton)
+            mess = cfdstudyMess.trMessage(self.tr("COPY_DLG_EXISTS_ERROR_TEXT"),[])
+            cfdstudyMess.criticalMessage(mess)
             return False
 
         aSourceFilePath = CFDSTUDYGUI_DataModel._GetPath(self.Object)
@@ -733,10 +729,10 @@ class GUIActivationDialogHandler(GUIActivationDialog):
             if not CFDSTUDYGUI_DataModel.checkCaseLaunchGUI(aCase):
                 #Warning message
                 if CFD_Code() == CFD_Saturne:
-                    mess = self.tr("ICSACTIVATE_DLG_BAD_CASE_MESS")
+                    mess = cfdstudyMess.trMessage(self.tr("ICSACTIVATE_DLG_BAD_CASE_MESS"),[])
                 elif CFD_Code() == CFD_Neptune:
-                    mess = self.tr("IPBACTIVATE_DLG_BAD_CASE_MESS")
-                QMessageBox.warning(None, "Warning", mess, QMessageBox.Ok, 0)
+                    mess = cfdstudyMess.trMessage(self.tr("IPBACTIVATE_DLG_BAD_CASE_MESS"),[])
+                cfdstudyMess.warningMessage(mess)
                 self.ActivateBtn.setEnabled(False)
 
 

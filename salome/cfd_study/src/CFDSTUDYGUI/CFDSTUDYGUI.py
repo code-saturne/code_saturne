@@ -67,7 +67,7 @@ import CFDSTUDYGUI_SolverGUI
 from CFDSTUDYGUI_Commons import sg, sgPyQt
 from CFDSTUDYGUI_Commons import CFD_Saturne, CFD_Neptune
 from CFDSTUDYGUI_Commons import CheckCFD_CodeEnv
-
+from CFDSTUDYGUI_Message import cfdstudyMess
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -233,9 +233,8 @@ def activate():
 
         if env_neptune:
             if mess2 != "":
-                Error = "Error: "+ ObjectTR.tr("CFDSTUDY_INVALID_ENV")
-                QMessageBox.critical(ActionHandler.dskAgent().workspace(),
-                                     Error, mess2, QMessageBox.Ok, 0)
+                mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
+                cfdstudyMess.aboutMessage(mess)
                 d_activation[studyId] = 1
                 return False
             else:
@@ -243,9 +242,8 @@ def activate():
 
         elif env_saturne:
             if mess1 != "":
-                Error = "Error: "+ ObjectTR.tr("CFDSTUDY_INVALID_ENV")
-                QMessageBox.critical(ActionHandler.dskAgent().workspace(),
-                                     Error, mess1, QMessageBox.Ok, 0)
+                mess = cfdstudyMess.trMessage(ObjectTR.tr("CFDSTUDY_INVALID_ENV"),[]) + " ; "+ mess2
+                cfdstudyMess.aboutMessage(mess)
                 d_activation[studyId] = 1
                 return False
             else:

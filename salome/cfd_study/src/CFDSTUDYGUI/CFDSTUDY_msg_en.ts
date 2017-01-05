@@ -1,4 +1,4 @@
-<!DOCTYPE TS><TS>
+<!DOCTYPE TS><TS version="2.0" language="en">
     <context>
         <name>@default</name>
         <message>
@@ -187,7 +187,11 @@
         </message>
         <message>
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
-            <translation>Do You really want to delete the study case directory: %s, on your disk ?</translation>
+            <translation>Do You really want to delete the study case directory: %s, on your disk?</translation>
+        </message>
+        <message>
+            <source>REMOVE_FILE_ACTION_CONFIRM_MESS</source>
+            <translation>Do You really want to delete the file: %s, on your disk?</translation>
         </message>
         <message>
             <source>CLOSE_ACTION_TEXT</source>
@@ -320,7 +324,7 @@
         </message>
         <message>
             <source>EXPORT_IN_SMESH_ACTION_WARNING</source>
-            <translation>Some errors occored during EXPORT operation!</translation>
+            <translation>Some errors occured during EXPORT operation!</translation>
         </message>
         <message>
             <source>ECS_CONVERT_ACTION_TEXT</source>
@@ -447,6 +451,62 @@
             <source>DEFAULT_CASE_ALREADY_EXISTS</source>
             <translation>Default case name: %s already exists in the CFD Study %s</translation>
         </message>
+        <message>
+            <source>NO_FILE_CFD_GUI_FOUND</source>
+            <translation>No %s file found into DATA directory case name: %s</translation>
+        </message>
+        <message>
+            <source>MESH_NO_OBJECT_SELECTED_INTO_OBJECT_BROWSER</source>
+            <translation>Display MESH: No object selected into Object Browser</translation>
+        </message>
+        <message>
+            <source>MESH_NO_OBJECT_UNDER_MESH_INTO_OBJECT_BROWSER</source>
+            <translation>Display MESH: No mesh with the Name: %s, under Mesh into Object Browser</translation>
+        </message>
+        <message>
+            <source>MESH_NO_ENTRY_ID_MESH</source>
+            <translation>Display MESH: Entry Id not stored for the mesh: %s</translation>
+        </message>
+        <message>
+            <source>MESH_GROUP_NO_OBJECT_SELECTED_INTO_OBJECT_BROWSER</source>
+            <translation>Display MESH GROUP: No object selected into Object Browser</translation>
+        </message>
+        <message>
+            <source>MESH_GROUP_NO_GROUP_WITH_FATHER</source>
+            <translation>No group %s whose mesh father name is: %s</translation>
+        </message>
+        <message>
+            <source>MESH_GROUP_NO_ENTRY_ID</source>
+            <translation>No Entry Id for group %s whose mesh Name is: %s</translation>
+        </message>
+        <message>
+            <source>HIDE_MESH_GROUP_NO_OBJECT_SELECTED</source>
+            <translation>Hide MESH Groups: No object selected into Object Browser</translation>
+        </message>
+        <message>
+            <source>HIDE_MESH_NO_OBJECT_SELECTED</source>
+            <translation>Hide MESH: No object selected into Object Browser</translation>
+        </message>
+        <message>
+            <source>ALREADY_OPEN</source>
+            <translation>%s %s: %s is already opened</translation>
+        </message>
+        <message>
+            <source>DIR_MESH_NOT_EXIST</source>
+            <translation>Directory MESH does not exist !</translation>
+        </message>
+        <message>
+            <source>DATA_DIR_NOT_FOUND</source>
+            <translation>DATA directory is not found into Object Browser for case %s and study %s</translation>
+        </message>
+        <message>
+            <source>CHECK_CODE_PACKAGE</source>
+            <translation>; Check for %s file in %s python package.</translation>
+        </message>
+        <message>
+            <source>CHECK_PYTHON_PATH</source>
+            <translation>; Check PYTHONPATH then your installation.</translation>
+        </message>
     </context>
     <context>
         <name>InfoDialogHandler</name>
@@ -534,7 +594,7 @@
         </message>
         <message>
             <source>CASE_DLG_ERROR_MESS</source>
-            <translation>Directory chosen: %s is not a CFD case directory, choose another one</translation>
+            <translation>Directory chosen: %s is not a CFD case directory, choose another one!</translation>
         </message>
         <message>
             <source>Select an existing CFD Study</source>

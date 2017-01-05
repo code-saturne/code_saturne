@@ -511,7 +511,7 @@ cs_gui_radiative_transfer_parameters(void)
     if (!cs_gui_get_activ_thermophysical_model()) {
       _radiative_transfer_type("absorption_coefficient", &ac_type);
       if (ac_type == 3)
-	cs_glob_rad_transfer_params->imodak = 1;
+        cs_glob_rad_transfer_params->imodak = 1;
     }
   }
 #if _XML_DEBUG_
@@ -527,7 +527,7 @@ cs_gui_radiative_transfer_parameters(void)
     bft_printf("--iimlum = %d\n", cs_glob_rad_transfer_params->iimlum);
     bft_printf("--absorption coefficient type: %d\n", ac_type);
     bft_printf("--absorption coefficient by modak: %i\n",
-	       cs_glob_rad_transfer_params->imodak);
+               cs_glob_rad_transfer_params->imodak);
   }
 #endif
   BFT_FREE(model);

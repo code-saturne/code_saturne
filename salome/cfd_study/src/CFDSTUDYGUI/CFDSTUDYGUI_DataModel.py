@@ -99,7 +99,7 @@ from CFDSTUDYGUI_Commons import CaseInProcessStart, CaseInProcessEnd
 from CFDSTUDYGUI_Commons import CFD_Saturne, CFD_Neptune
 import CFDSTUDYGUI_SolverGUI
 from CFDSTUDYGUI_CommandMgr import runCommand
-
+from CFDSTUDYGUI_Message import cfdstudyMess
 from cs_exec_environment import separate_args
 
 #-------------------------------------------------------------------------------
@@ -487,8 +487,7 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
         runCommand(args, start_dir, "")
 
     else:
-        QMessageBox.critical(None,
-                            "Error", mess, QMessageBox.Ok,QMessageBox.NoButton)
+        cfdstudyMess.criticalMessage(mess)
     return mess == ""
 
 
@@ -734,11 +733,11 @@ def getNameCodeFromXmlCasePath(XMLCasePath) :
                 elif "NEPTUNE_CFD" in l2 :
                     code = "NEPTUNE_CFD"
             else :
-                mess = str(ObjectTR.tr("XML_DATA_FILE"))%(XMLCasePath)
-                QMessageBox.warning(None, "File Error: ",mess)
+                mess = cfdstudyMess.trMessage(ObjectTR.tr("XML_DATA_FILE"),[XMLCasePath])
+                cfdstudyMess.warningMessage(mess)
         else :
-            mess = str(ObjectTR.tr("XML_DATA_FILE"))%(XMLCasePath)
-            QMessageBox.warning(None, "File Error: ",mess)
+            mess = cfdstudyMess.trMessage(ObjectTR.tr("XML_DATA_FILE"),[XMLCasePath])
+            cfdstudyMess.warningMessage(mess)
         f.close()
     return code
 
