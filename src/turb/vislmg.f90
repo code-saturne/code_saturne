@@ -96,7 +96,7 @@ call field_get_val_s(icrom, crom)
 !===============================================================================
 
 inc = 1
-iprev = 1
+iprev = 0
 
 call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
                            gradv)

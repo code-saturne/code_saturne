@@ -112,7 +112,7 @@ radeux = sqrt(deux)
 !===============================================================================
 
 inc = 1
-iprev = 1
+iprev = 0
 
 call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
                            gradv)
@@ -147,8 +147,7 @@ coef = csmago**2 * radeux
 do iel = 1, ncel
   delta  = xfil* (xa*volume(iel))**xb
   delta  = coef * delta**2
-  visct(iel) =                                            &
-    crom(iel) * delta * sqrt(visct(iel))
+  visct(iel) = crom(iel) * delta * sqrt(visct(iel))
 enddo
 
 !----

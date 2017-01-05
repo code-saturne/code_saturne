@@ -170,7 +170,7 @@ allocate(xmij(6,ncelet))
 allocate(gradv(3,3,ncelet), gradvf(3,3,ncelet))
 
 inc = 1
-iprev = 1
+iprev = 0
 
 call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc, gradv)
 
