@@ -886,16 +886,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function Initializing GUI reader structures.
-
-    subroutine cs_gui_init()  &
-      bind(C, name='cs_gui_init')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_gui_init
-
-    !---------------------------------------------------------------------------
-
     !> Interface to C function defining user variables through the GUI.
 
     subroutine cs_gui_user_variables()  &

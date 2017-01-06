@@ -5716,7 +5716,6 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
 void CS_PROCF (memui1, MEMUI1) (const int *ncharb)
 {
   cs_gui_boundary_conditions_free_memory(ncharb);
-  cs_gui_finalize();
 }
 
 /*----------------------------------------------------------------------------
@@ -5764,6 +5763,9 @@ void CS_PROCF (uieres, UIERES) (int *iescal,
 void
 cs_gui_init(void)
 {
+  if (!cs_gui_file_is_loaded())
+    return;
+
   assert(cs_glob_var == NULL);
 
   BFT_MALLOC(cs_glob_var, 1, cs_var_t);
@@ -5779,10 +5781,16 @@ cs_gui_init(void)
 void
 cs_gui_finalize(void)
 {
+  if (!cs_gui_file_is_loaded())
+    return;
+
   /* clean memory for global private structure vars */
-  BFT_FREE(cs_glob_var->model);
-  BFT_FREE(cs_glob_var->model_value);
-  BFT_FREE(cs_glob_var);
+
+  if (cs_glob_var != NULL) {
+    BFT_FREE(cs_glob_var->model);
+    BFT_FREE(cs_glob_var->model_value);
+    BFT_FREE(cs_glob_var);
+  }
 
   mei_data_free();
 

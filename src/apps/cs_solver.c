@@ -230,6 +230,8 @@ cs_run(void)
 
     cs_base_fortran_bft_printf_to_f();
 
+    cs_gui_init();
+
     CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
 
     CS_PROCF(initi1, INITI1)();
@@ -459,6 +461,8 @@ cs_run(void)
   cs_time_moment_destroy_all();
 
   /* Free field info */
+
+  cs_gui_finalize();
 
   cs_field_pointer_destroy_all();
   cs_field_destroy_all();

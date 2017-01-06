@@ -75,10 +75,10 @@ extern "C" {
  * Local static variable definitions
  *-----------------------------------------------------------------------------*/
 
-static mei_user_data_t **data;  /* array of pointers on structures that content
-                                   user data set                               */
+static mei_user_data_t **data = NULL;  /* array of pointers on structures
+                                          that contains user data sets */
 
-static int data_length = 0;     /* number of user data set                     */
+static int data_length = 0;            /* number of user data sets */
 
 /*============================================================================
  * Private function definitions

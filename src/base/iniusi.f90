@@ -124,10 +124,6 @@ call parameters_read_restart_info
 
 call csihmp(iihmpr)
 
-if (iihmpr.eq.1) then
-  call cs_gui_init
-endif
-
 !===============================================================================
 ! 1. INITIALISATION DE PARAMETRES POUR LA PHASE CONTINUE
 !===============================================================================
