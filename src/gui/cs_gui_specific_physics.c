@@ -2575,6 +2575,9 @@ cs_gui_get_activ_thermophysical_model(void)
 {
   int i, isactiv = 0;
 
+  if (cs_glob_var == NULL)
+    cs_gui_init();
+
   cs_var_t  *vars = cs_glob_var;
 
   const char *name[] = { "solid_fuels",
