@@ -101,13 +101,13 @@ typedef struct {
   double   *external_temp;
   double   *internal_temp;
   double   *conduction_flux;
-} cs_rad_transferive_boundary_t;
+} cs_radiative_transfer_boundary_t;
 
 /*----------------------------------------------------------------------------
  * Private global variables for boundary conditions
  *----------------------------------------------------------------------------*/
 
-static cs_rad_transferive_boundary_t *boundary = NULL;
+static cs_radiative_transfer_boundary_t *boundary = NULL;
 
 /*----------------------------------------------------------------------------
  * Private global variables for the treatment
@@ -672,7 +672,7 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
   if (boundary == NULL) {
 
-    BFT_MALLOC(boundary, 1, cs_rad_transferive_boundary_t);
+    BFT_MALLOC(boundary, 1, cs_radiative_transfer_boundary_t);
     BFT_MALLOC(boundary->label,                zones, char *);
     BFT_MALLOC(boundary->nature,               zones, char *);
     BFT_MALLOC(boundary->output_zone,          zones, int);
