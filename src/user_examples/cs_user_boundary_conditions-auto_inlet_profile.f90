@@ -397,7 +397,7 @@ else
     if (nscal.gt.0) then
       do ii = 1, nscal
         call field_get_val_s(ivarfl(isca(ii)), cvar_scal)
-        rcodcl(ifac,isca(ii),1) = cvar_scal(ii)
+        rcodcl(ifac,isca(ii),1) = cvar_scal(iel)
       enddo
     endif
 
