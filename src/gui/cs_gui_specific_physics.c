@@ -2736,6 +2736,12 @@ cs_gui_get_activ_thermophysical_model(void)
 {
   int i, isactiv = 0;
 
+  if (cs_glob_var == NULL) {
+    BFT_MALLOC(cs_glob_var, 1, cs_var_t);
+    cs_glob_var->model            = NULL;
+    cs_glob_var->model_value      = NULL;
+  }
+
   cs_var_t  *vars = cs_glob_var;
 
   const char *name[] = { "solid_fuels",
