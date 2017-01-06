@@ -1902,6 +1902,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   /* Free memory */
 
+  BFT_FREE(iqpato);
   BFT_FREE(viscf);
   BFT_FREE(viscb);
   BFT_FREE(smbrs);
