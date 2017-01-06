@@ -371,6 +371,7 @@ use cstphy
 use cstnum
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -494,9 +495,8 @@ if (nument.eq.1) then
     xkent = epzero
     xeent = epzero
 
-    call keenin &
-    !==========
-  ( uref2, xitur, xdh, cmu, xkappa, xkent, xeent )
+    call turbulence_bc_ke_turb_intensity&
+  ( uref2, xitur, xdh, xkent, xeent )
 
     rijent(1,ii) = d2s3*xkent
     rijent(2,ii) = d2s3*xkent

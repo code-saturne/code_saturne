@@ -221,11 +221,6 @@ do ilelt = 1, nlelt
     xkent  = epzero
     xeent  = epzero
 
-    call keenin                                                   &
-    !==========
-      ( uref2, xintur(izone), dh(izone), cmu, xkappa,             &
-        xkent, xeent )
-
 !     (ITYTUR est un indicateur qui vaut ITURB/10)
     if    (itytur.eq.2) then
 

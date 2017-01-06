@@ -199,7 +199,7 @@ do ilelt = 1, nlelt
 !    - If ICALKE = 0 the boundary conditions of turbulence at
 !      the inlet are calculated as follows:
 
-  if(icalke(izone).eq.0) then
+  if (icalke(izone).eq.0) then
 
     uref2 = rcodcl(ifac,iu,1)**2                           &
            +rcodcl(ifac,iv,1)**2                           &
@@ -207,11 +207,6 @@ do ilelt = 1, nlelt
     uref2 = max(uref2,1.d-12)
     xkent  = epzero
     xeent  = epzero
-
-    call keenin                                                   &
-    !==========
-      ( uref2, xintur(izone), dh(izone), cmu, xkappa,             &
-        xkent, xeent )
 
     if    (itytur.eq.2) then
 
@@ -243,8 +238,6 @@ do ilelt = 1, nlelt
     endif
 
   endif
-!
-!    - If ICALKE = 1 the boundary conditions of turbulence at
 !      the inlet refer to both, a hydraulic diameter and a
 !      reference velocity.
 !
@@ -329,11 +322,6 @@ do ilelt = 1, nlelt
     uref2 = max(uref2,1.d-12)
     xkent  = epzero
     xeent  = epzero
-
-    call keenin                                                   &
-    !==========
-      ( uref2, xintur(izone), dh(izone), cmu, xkappa,             &
-        xkent, xeent )
 
     if    (itytur.eq.2) then
 

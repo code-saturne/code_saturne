@@ -202,11 +202,6 @@ do ilelt = 1, nlelt
     xkent  = epzero
     xeent  = epzero
 
-    call keenin                                                   &
-    !==========
-      ( uref2, xintur(izone), dh(izone), cmu, xkappa,             &
-        xkent, xeent )
-
     if    (itytur.eq.2) then
 
       rcodcl(ifac,ik,1)  = xkent
@@ -307,11 +302,6 @@ do ilelt = 1, nlelt
     uref2 = max(uref2,1.d-12)
     xkent  = epzero
     xeent  = epzero
-
-    call keenin                                                   &
-    !==========
-      ( uref2, xintur(izone), dh(izone), cmu, xkappa,             &
-        xkent, xeent )
 
     if    (itytur.eq.2) then
 
@@ -510,11 +500,6 @@ do ilelt = 1, nlelt
     uref2 = max(uref2,1.d-12)
     xkent  = epzero
     xeent  = epzero
-
-    call keenin                                                   &
-    !==========
-      ( uref2, xintur(izone), dh(izone), cmu, xkappa,             &
-        xkent, xeent )
 
     if    (itytur.eq.2) then
 

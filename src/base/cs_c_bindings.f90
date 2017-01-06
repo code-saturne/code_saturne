@@ -627,7 +627,7 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
       real(c_double), value :: uref2, t_intensity, dh
-      real(c_double) :: k, eps
+      real(kind=c_double), intent(inout) :: k, eps
     end subroutine turbulence_bc_ke_turb_intensity
 
     !---------------------------------------------------------------------------
