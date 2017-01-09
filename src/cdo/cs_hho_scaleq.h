@@ -121,19 +121,6 @@ cs_hho_scaleq_free(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_sla_matrix_t related to the system to solve
- *
- * \param[in, out]  builder   pointer to a builder structure
- * \param[in, out]  matrix    pointer to a cs_sla_matrix_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hho_scaleq_free_sysmat(void              *builder,
-                          cs_sla_matrix_t   *matrix);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Compute the contributions of source terms (store inside builder)
  *
  * \param[in, out] builder     pointer to a cs_hho_scaleq_t structure
@@ -145,26 +132,51 @@ cs_hho_scaleq_compute_source(void            *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Allocate the matrix related to the algebraic system to solve
+ *
+ * \return  a pointer to a new allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_hho_allocate_matrix(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize the right-hand side associated to the given
+ *         builder structure
+ *
+ * \param[in, out] builder    pointer to generic builder structure
+ *
+ * \return an initialized array
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_hho_initialize_rhs(void       *builder);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build the linear system arising from a scalar convection/diffusion
  *         equation with a HHO scheme.
- *         One works cellwise and then process to the assembly
+ *         One works cellwise and then process to the assembly.
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      dt_cur     current value of the time step
  * \param[in, out] builder    pointer to cs_hho_scaleq_t structure
  * \param[in, out] rhs        right-hand side
- * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
+ * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_build_system(const cs_mesh_t             *mesh,
-                              const cs_real_t             *field_val,
-                              double                       dt_cur,
-                              void                        *builder,
-                              cs_real_t                  **rhs,
-                              cs_sla_matrix_t            **sla_mat);
+cs_hho_scaleq_build_system(const cs_mesh_t         *mesh,
+                           const cs_real_t         *field_val,
+                           double                   dt_cur,
+                           void                    *builder,
+                           cs_real_t               *rhs,
+                           cs_matrix_t             *matrix);
 
 /*----------------------------------------------------------------------------*/
 /*!

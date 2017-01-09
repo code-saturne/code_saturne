@@ -44,6 +44,26 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/*!
+ * @defgroup cdo_bc_flags Flags specifying the type of boundary conditions
+ *  associated to an element
+ *
+ * @{
+ */
+
+/*!  1: (non-homogeneous) Dirichlet boundary conditions */
+#define CS_CDO_BC_DIRICHLET      (1 << 0)
+/*!  2: Homogeneous Dirichlet boundary conditions */
+#define CS_CDO_BC_HMG_DIRICHLET  (1 << 1)
+/*!  4: (non-homogeneous) Neumann boundary conditions */
+#define CS_CDO_BC_NEUMANN        (1 << 2)
+/*!  8: Homogeneous Neumann boundary conditions */
+#define CS_CDO_BC_HMG_NEUMANN    (1 << 3)
+/*! 16: Robin boundary conditions */
+#define CS_CDO_BC_ROBIN          (1 << 4)
+
+/*! @} */
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -52,7 +72,6 @@ BEGIN_C_DECLS
    Two categories are considered
    First, the entities attached to a non-homogeneous BC, then those attached
    to a homogeneous BC.
-   Only entities with a non-homogeneous used stride and values items
 */
 
 typedef struct {
@@ -60,8 +79,12 @@ typedef struct {
   cs_lnum_t   n_elts;
   cs_lnum_t   n_nhmg_elts; /* number of non-homogeneous elements */
 
-  cs_lnum_t  *elt_ids;    /* size = n_elts */
-  short int  *def_ids;    /* size = n_nhmg_elts */
+  cs_lnum_t  *elt_ids;     /* size = n_elts (first elements are those associated
+                              to non-homogeneous BC then the homogeneous one */
+  short int  *def_ids;     /* id related to the associated BC definition
+                              Only for non homogeneous BCs (i.e. size is equal
+                              to the number elements associated to a
+                              non-homogeneous BC */
 
 } cs_cdo_bc_list_t;
 
@@ -70,15 +93,19 @@ typedef struct {
 
 typedef struct {
 
-  cs_lnum_t   n_b_faces;
+  cs_lnum_t          n_elts;    // Number of elements
+  cs_flag_t         *flag;      /* Type of boundary conditions associated to
+                                   an element. For a face, one (and only one)
+                                   type is set. For an edge and a vertex,
+                                   several BCs can be set.
+                                   size = n_elts */
 
-  // Selection of faces
+  // List of faces by type of boundary conditions
   cs_cdo_bc_list_t  *dir;
   cs_cdo_bc_list_t  *neu;
   cs_cdo_bc_list_t  *rob;
 
 } cs_cdo_bc_t;
-
 
 /*============================================================================
  * Public function prototypes
@@ -118,10 +145,10 @@ cs_cdo_bc_list_free(cs_cdo_bc_list_t   *bcl);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Prepare the treatment of the boundary conditions.
- *         Compile the information detailed in a cs_param_bc_t structure
- *         into the structure cs_cdo_bc_t (based on border faces).
- *         This is a primilary step to be ready to set the values of the BC
+ * \brief  Define the structure which translates the BC definition from the
+ *         user viewpoint into a ready-to-use structure
+ *         - Prepare the treatment of the boundary conditions.
+ *         - Compile the information detailed in a cs_param_bc_t structure
  *
  * \param[in] param_bc    pointer to the parameters related to BCs of an eq.
  * \param[in] n_b_faces   number of border faces
@@ -131,8 +158,8 @@ cs_cdo_bc_list_free(cs_cdo_bc_list_t   *bcl);
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_bc_t *
-cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
-               cs_lnum_t             n_b_faces);
+cs_cdo_bc_define(const cs_param_bc_t  *param_bc,
+                 cs_lnum_t             n_b_faces);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -146,45 +173,6 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
 
 cs_cdo_bc_t *
 cs_cdo_bc_free(cs_cdo_bc_t   *face_bc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Build cs_cdo_bc_list_t structures for Dirichlet BC on primal
- *         vertices.
- *         When there is a choice between homogeneous or non homogeneous BCs,
- *         we always set the homogeneous condition for Dirichlet BCs.
- *
- * \param[in] m         pointer to a cs_mesh_t structure
- * \param[in] face_bc   pointer to a cs_cdo_bc_t structure
- *
- * \return a pointer to a new allocated cs_cdo_bc_list_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cdo_bc_list_t *
-cs_cdo_bc_vtx_dir_create(const cs_mesh_t    *m,
-                         const cs_cdo_bc_t  *face_bc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the Dirichlet values to enforce on the corresponding entities
- *
- * \param[in]      dof_flag  information about the corresponding DoF to treat
- * \param[in]      time_step  pointer to a time step structure
- * \param[in]      geom      structure storing geometric information
- * \param[in]      bc        pointer to a cs_param_bc_t structure
- * \param[in]      ent_dir   pointer to a cs_cdo_bc_list_t
- * \param[in, out] dir_val   array used to store Dirichlet values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_bc_dirichlet_set(cs_flag_t                dof_flag,
-                        const cs_time_step_t    *time_step,
-                        const void              *geom,
-                        const cs_param_bc_t     *bc,
-                        const cs_cdo_bc_list_t  *ent_dir,
-                        double                  *dir_val);
 
 /*----------------------------------------------------------------------------*/
 

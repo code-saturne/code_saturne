@@ -32,12 +32,12 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_time_step.h"
-
 #include "cs_cdo.h"
+#include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
-#include "cs_quadrature.h"
 #include "cs_param.h"
+#include "cs_quadrature.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -72,6 +72,27 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate the quantity defined by an analytic expression in the case
+ *         of a density field for all the DoFs of a cell
+ *         The value is by unity of volume
+ *
+ * \param[in]      dof_flag    indicate where the evaluation has to be done
+ * \param[in]      ana         accessor to values thanks to a function pointer
+ * \param[in]      quad_type   type of quadrature (not always used)
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in, out] retval      pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_cellwise_density_by_analytic(cs_flag_t              dof_flag,
+                                         cs_analytic_func_t    *ana,
+                                         cs_quadra_type_t       quad_type,
+                                         const cs_cell_mesh_t  *cm,
+                                         double                 retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the value related to each DoF in the case of a density field
  *         The value defined by the analytic function is by unity of volume
  *
@@ -84,15 +105,35 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_density_from_analytic(cs_flag_t              dof_flag,
+cs_evaluate_density_by_analytic(cs_flag_t              dof_flag,
                                   int                    ml_id,
                                   cs_analytic_func_t    *ana,
                                   cs_quadra_type_t       quad_type,
-                                  double                 retval[]);
+                                double                 retval[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value related to each DoF in the case of a density field
+ * \brief  Evaluate the quantity defined by a value in the case of a density
+ *         field for all the DoFs of a cell
+ *         Accessor to the value is by unit of volume
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      get       accessor to the constant value to set
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_cellwise_density_by_value(cs_flag_t               dof_flag,
+                                      cs_get_t                get,
+                                      const cs_cell_mesh_t   *cm,
+                                      double                  retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the quantity defined by a value in the case of a density
+ *         field for all the degrees of freedom
  *         Accessor to the value is by unit of volume
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
@@ -103,15 +144,33 @@ cs_evaluate_density_from_analytic(cs_flag_t              dof_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_density_from_value(cs_flag_t       dof_flag,
-                               int             ml_id,
-                               cs_get_t        get,
-                               double          retval[]);
+cs_evaluate_density_by_value(cs_flag_t       dof_flag,
+                             int             ml_id,
+                             cs_get_t        get,
+                             double          retval[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the contribution related to a quantity defined by analytic
- *         function for all the degrees of freedom
+ * \brief  Evaluate the quantity defined by an analytic function for all the
+ *         degrees of freedom of a cell
+ *
+ * \param[in]      dof_flag   indicate where the evaluation has to be done
+ * \param[in]      ana        accessor to values thanks to a function pointer
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] retval     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_cellwise_potential_by_analytic(cs_flag_t              dof_flag,
+                                           cs_analytic_func_t    *ana,
+                                           const cs_cell_mesh_t  *cm,
+                                           double                 retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the quantity attached to a potential field for all the DoFs
+ *         when the definition relies on an analytic expression
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
  * \param[in]      ml_id       id related to a cs_mesh_location_t structure
@@ -121,10 +180,10 @@ cs_evaluate_density_from_value(cs_flag_t       dof_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
-                                    int                    ml_id,
-                                    cs_analytic_func_t    *ana,
-                                    double                 retval[]);
+cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
+                                  int                    ml_id,
+                                  cs_analytic_func_t    *ana,
+                                  double                 retval[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -140,14 +199,32 @@ cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_from_qov(cs_flag_t       dof_flag,
-                               int             ml_id,
-                               cs_get_t        get,
-                               double          retval[]);
+cs_evaluate_potential_by_qov(cs_flag_t       dof_flag,
+                             int             ml_id,
+                             cs_get_t        get,
+                             double          retval[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Store the value related to each DoF in the case of a potential field
+ * \brief  Evaluate the quantity attached to a potential field for all the DoFs
+ *         of a cell
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      get       accessor to the constant value to set
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_cellwise_potential_by_value(cs_flag_t              dof_flag,
+                                        cs_get_t               get,
+                                        const cs_cell_mesh_t  *cm,
+                                        double                 retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the quantity attached to a potential field for all the DoFs
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      ml_id     id related to a cs_mesh_location_t structure
@@ -157,10 +234,10 @@ cs_evaluate_potential_from_qov(cs_flag_t       dof_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_from_value(cs_flag_t       dof_flag,
-                                 int             ml_id,
-                                 cs_get_t        get,
-                                 double          retval[]);
+cs_evaluate_potential_by_value(cs_flag_t       dof_flag,
+                               int             ml_id,
+                               cs_get_t        get,
+                               double          retval[]);
 
 /*----------------------------------------------------------------------------*/
 

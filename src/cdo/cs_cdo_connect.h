@@ -35,6 +35,7 @@
 #include "cs_cdo.h"
 #include "cs_cdo_toolbox.h"
 #include "cs_mesh.h"
+#include "cs_range_set.h"
 #include "cs_sla.h"
 
 #include "fvm_defs.h"
@@ -55,6 +56,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* Additional information for each type of entity (vertex, edge, face, cell) */
 typedef struct {
 
   cs_flag_t  *flag;   // CS_CDO_CONNECT_IN/BD
@@ -65,33 +67,32 @@ typedef struct {
 
 } cs_connect_info_t;
 
-typedef struct { /* Connectivity structure */
-
-  /* Upward oriented connectivity */
-  cs_sla_matrix_t   *v2e;  // vertex --> edges connectivity
-  cs_sla_matrix_t   *e2f;  // edge --> faces connectivity
-  cs_sla_matrix_t   *f2c;  // face --> cells connectivity
-
-  /* Downward oriented connectivity */
-  cs_sla_matrix_t   *e2v;  // edge --> vertices connectivity
-  cs_sla_matrix_t   *f2e;  // face --> edges connectivity
-  cs_sla_matrix_t   *c2f;  // cell --> faces connectivity
+/* Connectivity structure */
+typedef struct {
 
   /* Specific CDO connect : not oriented (same spirit as Code_Saturne
      historical connectivity).
      Use this connectivity to scan dual quantities */
-  fvm_element_t       *cell_type;
+  fvm_element_t     *cell_type;
+
+  /* Upward oriented connectivity */
+  cs_sla_matrix_t   *v2e;    // vertex --> edges connectivity
+  cs_sla_matrix_t   *e2f;    // edge --> faces connectivity
+  cs_sla_matrix_t   *f2c;    // face --> cells connectivity
+
+  /* Downward oriented connectivity */
+  cs_sla_matrix_t   *e2v;    // edge --> vertices connectivity
+  cs_sla_matrix_t   *f2e;    // face --> edges connectivity
+  cs_sla_matrix_t   *c2f;    // cell --> faces connectivity
 
   cs_connect_index_t  *c2e;  // cell -> edges connectivity
   cs_connect_index_t  *c2v;  // cell -> vertices connectivity
-  cs_connect_index_t  *v2v;  // vertex --> vertices through cell connectivity
-  cs_connect_index_t  *f2f;  // face --> faces through cell connectivity
 
   /* Max. connectitivy size for cells */
-  cs_lnum_t  n_max_vbyc;    // max. number of vertices in a cell
-  cs_lnum_t  n_max_ebyc;    // max. number of edges in a cell
-  cs_lnum_t  n_max_fbyc;    // max. number of faces in a cell
-  cs_lnum_t  n_max_vbyf;    // max. number of vertices in a face
+  cs_lnum_t  n_max_vbyc;     // max. number of vertices in a cell
+  cs_lnum_t  n_max_ebyc;     // max. number of edges in a cell
+  cs_lnum_t  n_max_fbyc;     // max. number of faces in a cell
+  cs_lnum_t  n_max_vbyf;     // max. number of vertices in a face
 
   /* Status internal or border entity */
   cs_connect_info_t  *v_info;  // count of interior/border vertices
@@ -99,6 +100,10 @@ typedef struct { /* Connectivity structure */
   cs_connect_info_t  *f_info;  // count of interior/border faces
   cs_connect_info_t  *c_info;  /* count of interior/border cells
                                   a border cell has at least one border face */
+
+  /* Structures to handle parallelism */
+  cs_range_set_t     *v_rs;  // range set related to vertices
+  cs_range_set_t     *f_rs;  // range set related to faces
 
 } cs_cdo_connect_t;
 
@@ -146,20 +151,6 @@ cs_cdo_connect_init(const cs_mesh_t      *m);
 
 cs_cdo_connect_t *
 cs_cdo_connect_free(cs_cdo_connect_t   *connect);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Update a cs_cdo_connect_t structure with respect to the requested
- *        space scheme
- *
- * \param[in, out]  connect      pointer to a cs_cdo_connect_t structure
- * \param[in]       scheme_flag  type of numerical schemes requested
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_connect_update(cs_cdo_connect_t       *connect,
-                      cs_flag_t               scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

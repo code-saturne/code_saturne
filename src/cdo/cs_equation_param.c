@@ -346,6 +346,8 @@ cs_equation_param_create(cs_equation_type_t     type,
 
   /* Vertex-based schemes imply the two following discrete Hodge operators
      Default initialization is made in accordance with this choice */
+  eqp->time_hodge.is_unity = true;
+  eqp->time_hodge.is_iso = true;
   eqp->time_hodge.inv_pty = false; // inverse property ?
   eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
   eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
@@ -362,6 +364,8 @@ cs_equation_param_create(cs_equation_type_t     type,
 
   /* Diffusion term */
   eqp->diffusion_property = NULL;
+  eqp->diffusion_hodge.is_unity = false;
+  eqp->diffusion_hodge.is_iso = true;
   eqp->diffusion_hodge.inv_pty = false; // inverse property ?
   eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
   eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_AUTO;
@@ -375,9 +379,12 @@ cs_equation_param_create(cs_equation_type_t     type,
   eqp->advection_field = NULL;
 
   /* No reaction term by default */
+  eqp->reaction_hodge.is_unity = false;
+  eqp->reaction_hodge.is_iso = true;
   eqp->reaction_hodge.inv_pty = false;
   eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
   eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
+
   eqp->n_reaction_terms = 0;
   eqp->reaction_info = NULL;
   eqp->reaction_properties = NULL;
@@ -414,9 +421,14 @@ cs_equation_param_free(cs_equation_param_t     *eqp)
     return NULL;
 
   if (eqp->bc != NULL) { // Boundary conditions
-    if (eqp->bc->n_defs > 0)
-      BFT_FREE(eqp->bc->defs);
-    BFT_FREE(eqp->bc);
+    cs_param_bc_t  *bc = eqp->bc;
+
+    BFT_FREE(bc->ml_ids);
+    BFT_FREE(bc->def_types);
+    BFT_FREE(bc->types);
+    BFT_FREE(bc->defs);
+
+    BFT_FREE(bc);
     eqp->bc = NULL;
   }
 
@@ -432,22 +444,13 @@ cs_equation_param_free(cs_equation_param_t     *eqp)
        freed thanks to a call to cs_property_free() */
   }
 
-  if (eqp->n_source_terms > 0) { // Source terms
-
-    for (int i = 0; i< eqp->n_source_terms; i++)
-      eqp->source_terms[i] = cs_source_term_free(eqp->source_terms[i]);
-    BFT_FREE(eqp->source_terms);
-
-  }
+  if (eqp->n_source_terms > 0)
+    eqp->source_terms = cs_source_term_destroy(eqp->n_source_terms,
+                                               eqp->source_terms);
 
   cs_param_time_t  t_info = eqp->time_info;
-  if (t_info.n_ic_definitions > 0) {
-    for (int i = 0; i < t_info.n_ic_definitions; i++) {
-      cs_param_def_t  *ic = t_info.ic_definitions + i;
-      BFT_FREE(ic->ml_name);
-    }
+  if (t_info.n_ic_definitions > 0)
     BFT_FREE(t_info.ic_definitions);
-  }
 
   BFT_FREE(eqp);
 
@@ -531,9 +534,9 @@ cs_equation_param_summary(const char                  *eqname,
       for (int id = 0; id < bcp->n_defs; id++)
         cs_log_printf(CS_LOG_SETUP, "      <%s/BC.Def> Location: %s; Type: %s;"
                       " Definition type: %s\n",
-                      eqname, cs_mesh_location_get_name(bcp->defs[id].loc_id),
-                      cs_param_get_bc_name(bcp->defs[id].bc_type),
-                      cs_param_get_def_type_name(bcp->defs[id].def_type));
+                      eqname, cs_mesh_location_get_name(bcp->ml_ids[id]),
+                      cs_param_get_bc_name(bcp->types[id]),
+                      cs_param_get_def_type_name(bcp->def_types[id]));
     }
   }
 
@@ -549,8 +552,9 @@ cs_equation_param_summary(const char                  *eqname,
     for (int i = 0; i < t_info.n_ic_definitions; i++) {
       const cs_param_def_t  *ic = t_info.ic_definitions + i;
       cs_log_printf(CS_LOG_SETUP,
-                    "    <%s/Initial.Condition.Def> Location %s; Definition %s\n",
-                    eqname, ic->ml_name, cs_param_get_def_type_name(ic->def_type));
+                    "    <%s/Initial.Condition> Location %s; Definition %s\n",
+                    eqname, cs_mesh_location_get_name(ic->ml_id),
+                    cs_param_get_def_type_name(ic->def_type));
     }
     cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Scheme> ", eqname);
     switch (t_info.scheme) {
@@ -577,11 +581,11 @@ cs_equation_param_summary(const char                  *eqname,
 
     if (eqp->verbosity > 0) {
       cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Hodge> %s - %s\n",
-                    cs_param_hodge_get_type_name(h_info),
+		    eqname, cs_param_hodge_get_type_name(h_info),
                     cs_param_hodge_get_algo_name(h_info));
-      cs_log_printf(CS_LOG_SETUP, "    <%s/Time.Hodge.Inv>"
-                    " Inversion of property", eqname);
-      cs_log_printf(CS_LOG_SETUP, " %s\n", cs_base_strtf(h_info.inv_pty));
+      cs_log_printf(CS_LOG_SETUP,
+		    "    <%s/Time.Hodge.Inv> Inversion of property  %s\n",
+		    eqname, cs_base_strtf(h_info.inv_pty));
       if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
         cs_log_printf(CS_LOG_SETUP, "    <%s/Time.Hodge.Coef> %.3e\n",
                       eqname, h_info.coef);
@@ -629,9 +633,6 @@ cs_equation_param_summary(const char                  *eqname,
         break;
       case CS_PARAM_ADVECTION_FORM_NONCONS:
         cs_log_printf(CS_LOG_SETUP, " Non-conservative\n");
-        break;
-      case CS_PARAM_ADVECTION_FORM_MIXED:
-        cs_log_printf(CS_LOG_SETUP, " Mixed\n");
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
@@ -700,7 +701,7 @@ cs_equation_param_summary(const char                  *eqname,
 
     cs_log_printf(CS_LOG_SETUP, "\n  <%s/Source terms>\n", eqname);
     for (int s_id = 0; s_id < eqp->n_source_terms; s_id++)
-      cs_source_term_summary(eqname, eqp->source_terms[s_id]);
+      cs_source_term_summary(eqname, eqp->source_terms + s_id);
 
   } // Source terms
 

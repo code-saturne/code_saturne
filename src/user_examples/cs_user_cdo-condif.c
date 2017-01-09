@@ -463,9 +463,13 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
 
   cs_advection_field_def_by_analytic(adv, _define_adv_field);
 
-  /* Activate the post-processing of the advection field
-     and the related Courant number */
+  /* Enable also the defintion of the advection field at mesh vertices */
+  cs_advection_field_set_option(adv, CS_ADVKEY_DEFINE_AT, "vertices");
+
+  /* Activate the post-processing of the advection field */
   cs_advection_field_set_option(adv, CS_ADVKEY_POST, "field");
+
+  /* Activate the post-processing of the related Courant number */
   cs_advection_field_set_option(adv, CS_ADVKEY_POST, "courant");
 
   /* ======================
@@ -479,25 +483,28 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
   cs_equation_t  *eq = cs_domain_get_equation(domain, "AdvDiff");
 
   /* Define the boundary conditions
-     >> cs_equation_add_bc(eq,
-                           "mesh_location_name",
-                           "bc_type_keyword",
-                           "definition_type_keyword",
-                           pointer to the definition);
+     >> cs_equation_add_bc_by_analytic(eq,
+                                       bc_type,
+                                       "mesh_location_name",
+                                       analytic_function);
 
-     - eq is the structure related to the equation to set
-     - Keyword related to the boundary condition type is a choice among:
-       >> "dirichlet", "neumann" or "robin"
-     - Keyword related to the type of definition is a choice among:
-       >> "value", "analytic"
+     -> eq is the structure related to the equation to set
+     -> type of boundary condition:
+        CS_PARAM_BC_DIRICHLET, CS_PARAM_BC_HMG_DIRICHLET,
+        CS_PARAM_BC_NEUMANN, CS_PARAM_BC_HMG_NEUMANN, CS_PARAM_BC_ROBIN
 
+     >> cs_equation_add_bc_by_value(eq,
+                                    bc_type,
+                                    "mesh_location_name",
+                                    get);
+
+     -> get : accessor to the value
   */
 
-  cs_equation_add_bc(eq,                // equation
-                     "boundary_faces",  // name of the mesh location
-                     "dirichlet",       // BC type
-                     "analytic",        // type of definition
-                     _define_bcs);      // pointer to the analytic function
+  cs_equation_add_bc_by_analytic(eq,
+                                 CS_PARAM_BC_DIRICHLET,
+                                 "boundary_faces",  // name of the mesh location
+                                 _define_bcs);      // pointer to the function
 
   /* Link properties to different terms of this equation
      >> cs_equation_link(eq,
@@ -541,23 +548,21 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
      or where analytic_func is the name of the analytical function
    */
 
-  cs_equation_add_source_term_by_analytic(eq,
-                                          "SourceTerm",    // label
-                                          "cells",         // ml_name
-                                          _define_source); // analytic function
+  cs_source_term_t  *st =
+    cs_equation_add_source_term_by_analytic(eq,
+                                            "SourceTerm",    // label
+                                            "cells",         // ml_name
+                                            _define_source); // function
 
   /* Optional: specify the quadrature used for computing a source term
 
-     cs_equation_set_source_term_quadrature(eq,
-                                            label,
-                                            key);
      >> key takes value among
      CS_QUADRATURE_BARY     used the barycenter approximation
      CS_QUADRATURE_HIGHER   used 4 Gauss points for approximating the integral
      CS_QUADRATURE_HIGHEST  used 5 Gauss points for approximating the integral
   */
 
-  cs_equation_set_source_term_quadrature(eq, "SourceTerm", CS_QUADRATURE_BARY);
+  cs_source_term_set_quadrature(st, CS_QUADRATURE_BARY);
 
 }
 

@@ -80,7 +80,7 @@ BEGIN_C_DECLS
  * Local constant and enum definitions
  *============================================================================*/
 
-static const char cs_cdoversion[] = "0.7";
+static const char cs_cdoversion[] = "0.8.1";
 
 /*============================================================================
  * Private function prototypes
@@ -101,6 +101,8 @@ static cs_domain_t *
 _setup_domain(cs_mesh_t             *m,
               cs_mesh_quantities_t  *mq)
 {
+  cs_timer_t t0 = cs_timer_time();
+
   /* Initialization of several modules */
   cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
   cs_quadrature_setup();         /* Compute constant used in quadrature rules */
@@ -171,6 +173,13 @@ _setup_domain(cs_mesh_t             *m,
   cs_cdo_quantities_summary(domain->cdo_quantities);
   cs_domain_summary(domain);
 
+  /* Monitoring */
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "<CDO/Setup> Runtime                    %12.3f s\n",
+                time_count.wall_nsec*1e-9);
+
   return domain;
 }
 
@@ -216,11 +225,6 @@ cs_cdo_main(cs_mesh_t             *m,
   /* Timer statistics */
   const int  cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
 
-  /* Sanity check (TO BE REMOVED) */
-  if (cs_glob_n_ranks > 1)
-    bft_error(__FILE__, __LINE__, 0,
-              " CDO schemes are not yet implemented for parallel computing");
-
   /* Output information */
   cs_log_printf(CS_LOG_DEFAULT, "\n");
   cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
@@ -260,6 +264,10 @@ cs_cdo_main(cs_mesh_t             *m,
 
   }
 
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "<CDO/Post> Runtime                     %12.3f s\n",
+                domain->tcp.wall_nsec*1e-9);
+
   /* Free main CDO structures */
   _finalize(domain);
 
@@ -272,10 +280,11 @@ cs_cdo_main(cs_mesh_t             *m,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
   cs_log_printf(CS_LOG_PERFORMANCE,
-                "t--> CDO total runtime                 %12.3f s\n",
+                "<CDO> Total runtime                    %12.3f s\n",
                 time_count.wall_nsec*1e-9);
 
-  printf("\n  --> Exit CDO module: simulation completed.\n\n");
+  if (cs_glob_rank_id <= 0)
+    printf("\n  --> Exit CDO module: simulation completed.\n\n");
 
   return;
 }

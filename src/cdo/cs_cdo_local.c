@@ -33,6 +33,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <float.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -75,57 +76,270 @@ static int  cs_cdo_local_n_structures = 0;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a cs_cdo_locsys_t structure
+ * \brief  Allocate a cs_cell_sys_t structure
  *
  * \param[in]   n_max_ent    max number of entries
  *
- * \return a pointer to a new allocated cs_cdo_locsys_t structure
+ * \return a pointer to a new allocated cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdo_locsys_t *
-cs_cdo_locsys_create(int    n_max_ent)
+cs_cell_sys_t *
+cs_cell_sys_create(int    n_max_ent)
 {
-  cs_cdo_locsys_t  *ls = NULL;
+  cs_cell_sys_t  *csys = NULL;
 
-  BFT_MALLOC(ls, 1, cs_cdo_locsys_t);
+  BFT_MALLOC(csys, 1, cs_cell_sys_t);
 
-  ls->mat = cs_locmat_create(n_max_ent);
+  csys->n_dofs = 0;
+  csys->mat = NULL;
+  csys->rhs = NULL;
+  csys->source = NULL;
+  csys->val_n = NULL;
 
   if (n_max_ent > 0) {
-    BFT_MALLOC(ls->rhs, n_max_ent, double);
-    BFT_MALLOC(ls->dir_bc, n_max_ent, double);
-  }
-  else {
-    ls->rhs = NULL;
-    ls->dir_bc = NULL;
+    csys->mat = cs_locmat_create(n_max_ent);
+    BFT_MALLOC(csys->rhs, n_max_ent, double);
+    BFT_MALLOC(csys->source, n_max_ent, double);
+    BFT_MALLOC(csys->val_n, n_max_ent, double);
   }
 
-  return ls;
+  return csys;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_cdo_locsys_t structure
+ * \brief  Free a cs_cell_sys_t structure
  *
- * \param[in, out]  p_ls   pointer of pointer to a cs_cdo_locsys_t structure
+ * \param[in, out]  p_csys   pointer of pointer to a cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_locsys_free(cs_cdo_locsys_t     **p_ls)
+cs_cell_sys_free(cs_cell_sys_t     **p_csys)
 {
-  cs_cdo_locsys_t  *ls = *p_ls;
+  cs_cell_sys_t  *csys = *p_csys;
 
-  if (ls == NULL)
+  if (csys == NULL)
     return;
 
-  ls->mat = cs_locmat_free(ls->mat);
-  BFT_FREE(ls->rhs);
-  BFT_FREE(ls->dir_bc);
+  csys->mat = cs_locmat_free(csys->mat);
+  BFT_FREE(csys->rhs);
+  BFT_FREE(csys->source);
+  BFT_FREE(csys->val_n);
 
-  BFT_FREE(ls);
-  *p_ls= NULL;
+  BFT_FREE(csys);
+  *p_csys= NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate a cs_cell_bc_t structure
+ *
+ * \param[in]   n_max_dofbyc    max. number of entries in a cell
+ * \param[in]   n_max_fbyc      max. number of faces in a cell
+ *
+ * \return a pointer to a new allocated cs_cell_bc_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cell_bc_t *
+cs_cell_bc_create(int    n_max_dofbyc,
+                  int    n_max_fbyc)
+{
+  cs_cell_bc_t  *cbc = NULL;
+
+  BFT_MALLOC(cbc, 1, cs_cell_bc_t);
+
+  cbc->n_bc_faces = 0;
+  cbc->bf_ids = NULL;
+  cbc->face_flag = NULL;
+  if (n_max_fbyc > 0) {
+    BFT_MALLOC(cbc->bf_ids, n_max_fbyc, short int);
+    BFT_MALLOC(cbc->face_flag, n_max_fbyc, cs_flag_t);
+  }
+
+  cbc->n_dofs = 0;
+  cbc->n_dirichlet = 0;
+  cbc->n_nhmg_neuman = 0;
+  cbc->n_robin = 0;
+
+  if (n_max_dofbyc > 0) { // Max. number of DoFs in a cell
+
+    BFT_MALLOC(cbc->dof_flag, n_max_dofbyc, cs_flag_t);
+    BFT_MALLOC(cbc->dir_values, n_max_dofbyc, double);
+    BFT_MALLOC(cbc->neu_values, n_max_dofbyc, double);
+    BFT_MALLOC(cbc->rob_values, 2*n_max_dofbyc, double);
+
+    for (short int i = 0; i < n_max_dofbyc; i++) {
+      cbc->dof_flag[i] = 0;
+      cbc->dir_values[i] = 0;
+      cbc->neu_values[i] = 0;
+      cbc->rob_values[2*i] = cbc->rob_values[2*i+1] = 0;
+    }
+
+  }
+
+  return cbc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_cell_bc_t structure
+ *
+ * \param[in, out]  p_cbc   pointer of pointer to a cs_cell_bc_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_bc_free(cs_cell_bc_t     **p_cbc)
+{
+  cs_cell_bc_t  *cbc = *p_cbc;
+
+  if (cbc == NULL)
+    return;
+
+  BFT_FREE(cbc->bf_ids);
+  BFT_FREE(cbc->face_flag);
+  BFT_FREE(cbc->dof_flag);
+  BFT_FREE(cbc->dir_values);
+  BFT_FREE(cbc->neu_values);
+  BFT_FREE(cbc->rob_values);
+
+  BFT_FREE(cbc);
+  *p_cbc = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a cs_cell_builder_t structure according to
+ *         to the type of discretization which is requested.
+ *
+ * \param[in]  scheme    type of discretization
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ *
+ * \return a pointer to the new allocated cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cell_builder_t *
+cs_cell_builder_create(cs_space_scheme_t         scheme,
+                       const cs_cdo_connect_t   *connect)
+{
+  int  size;
+
+  cs_cell_builder_t  *cb = NULL;
+
+  /* Common part to all discretization */
+  BFT_MALLOC(cb, 1, cs_cell_builder_t);
+
+  cb->eig_ratio = -DBL_MAX;
+  cb->eig_max = -DBL_MAX;
+
+  cb->pty_mat[0][0] = cb->pty_mat[1][1] = cb->pty_mat[2][2] = 1;
+  cb->pty_mat[0][1] = cb->pty_mat[1][0] = cb->pty_mat[2][0] = 0;
+  cb->pty_mat[0][2] = cb->pty_mat[1][2] = cb->pty_mat[2][1] = 0;
+  cb->pty_val = 1;
+
+  cb->ids = NULL;
+  cb->values = NULL;
+  cb->vectors = NULL;
+
+  cb->hdg = cb->loc = cb->aux = NULL;
+
+  /* Max number of entities in a cell */
+  const int  n_vc = connect->n_max_vbyc;
+  const int  n_ec = connect->n_max_ebyc;
+  const int  n_fc = connect->n_max_fbyc;
+
+  switch (scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    {
+      /* Temporary buffers used during the cellwise construction of operators.
+         The size of the allocation corresponds to the max. possible size
+         according to any numerical options. This means that one could optimize
+         the following allocation if one takes into account the numerical
+         settings */
+
+      BFT_MALLOC(cb->ids, n_vc, short int);
+      for (int i = 0; i < n_vc; i++) cb->ids[i] = 0;
+
+      size = n_ec*(n_ec+1);
+      size = CS_MAX(4*n_ec + 2*n_vc, size);
+      BFT_MALLOC(cb->values, size, double);
+      for (int i = 0; i < size; i++) cb->values[i] = 0;
+
+      size = 2*n_ec;
+      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      for (int i = 0; i < size; i++)
+        cb->vectors[i][0] = cb->vectors[i][1] = cb->vectors[i][2] = 0;
+
+      /* Local square dense matrices used during the construction of
+         operators */
+      cb->hdg = cs_locmat_create(n_ec);
+      cb->loc = cs_locmat_create(n_vc);
+      cb->aux = cs_locmat_create(n_vc);
+    }
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    {
+      BFT_MALLOC(cb->ids, n_vc + 1, short int);
+      for (int i = 0; i < n_vc + 1; i++) cb->ids[i] = 0;
+
+      size = 2*(n_vc + n_ec) + n_fc;
+      BFT_MALLOC(cb->values, size, double);
+      for (int i = 0; i < size; i++) cb->values[i] = 0;
+
+      size = 2*n_ec + n_vc;
+      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      for (int i = 0; i < size; i++)
+        cb->vectors[i][0] = cb->vectors[i][1] = cb->vectors[i][2] = 0;
+
+      /* Local square dense matrices used during the construction of
+         operators */
+      cb->hdg = cs_locmat_create(n_vc + 1);
+      cb->loc = cs_locmat_create(n_vc + 1);
+      cb->aux = cs_locmat_create(n_vc + 1);
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _("Invalid space scheme."));
+
+  } // End of switch on space scheme
+
+  return cb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_cell_builder_t structure
+ *
+ * \param[in, out]  p_cb   pointer of pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_builder_free(cs_cell_builder_t     **p_cb)
+{
+  cs_cell_builder_t  *cb = *p_cb;
+
+  if (cb == NULL)
+    return;
+
+  BFT_FREE(cb->ids);
+  BFT_FREE(cb->values);
+  BFT_FREE(cb->vectors);
+
+  cb->hdg = cs_locmat_free(cb->hdg);
+  cb->loc = cs_locmat_free(cb->loc);
+  cb->aux = cs_locmat_free(cb->aux);
+
+  BFT_FREE(cb);
+  *p_cb = NULL;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -50,7 +50,53 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct _cs_cdo_diff_t  cs_cdo_diff_t;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the diffusion flux operator which corresponds to the normal
+ *          trace operator for a given border face.
+ *          Different algorithm can be used to reconstruct this flux.
+ *
+ * \param[in]      fm      pointer to a cs_face_mesh_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      mnu     property tensor times the face normal
+ * \param[in]      beta    value of the stabilization coef. or zero if not used
+ * \param[in, out] cb      pointer to a cell builder structure
+ * \param[in, out] ntrgrd  local matrix related to the normal trace op. i.e.
+ *                         the flux operator
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdo_diffusion_flux_op_t)(const cs_face_mesh_t     *fm,
+                             const cs_cell_mesh_t     *cm,
+                             const cs_real_3_t         mnu,
+                             double                    beta,
+                             cs_cell_builder_t        *cb,
+                             cs_locmat_t              *ntrgrd);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique (symmetrized or not) or penalization
+ *
+ * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       cbc       pointer to a cs_cell_bc_t structure
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux operator
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdo_diffusion_enforce_dir_t)(const cs_param_hodge_t       h_info,
+                                 const cs_cell_bc_t          *cbc,
+                                 const cs_cell_mesh_t        *cm,
+                                 cs_cdo_diffusion_flux_op_t  *flux_op,
+                                 cs_face_mesh_t              *fm,
+                                 cs_cell_builder_t           *cb,
+                                 cs_cell_sys_t               *csys);
 
 /*============================================================================
  * Public function prototypes
@@ -58,149 +104,188 @@ typedef struct _cs_cdo_diff_t  cs_cdo_diff_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize a builder structure used to build the stiffness matrix
+ * \brief   Compute the normal trace operator for a given border face when a
+ *          WBS algo. is used for reconstructing the degrees of freedom
+ *          Specific to CDO-V+C schemes
  *
- * \param[in] connect      pointer to a cs_cdo_connect_t structure
- * \param[in] space_scheme  scheme used for discretizing in space
- * \param[in] is_uniform   diffusion tensor is uniform ? (true or false)
- * \param[in] is_isotropic  diffusion is isotropic ? (true or false)
- * \param[in] h_info       cs_param_hodge_t structure
- * \param[in] bc_enforce   type of boundary enforcement for Dirichlet values
- *
- * \return a pointer to a new allocated cs_cdo_diff_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cdo_diff_t *
-cs_cdo_diffusion_builder_init(const cs_cdo_connect_t       *connect,
-                              cs_space_scheme_t             space_scheme,
-                              bool                          is_uniform,
-                              bool                          is_isotropic,
-                              const cs_param_hodge_t        h_info,
-                              const cs_param_bc_enforce_t   bc_enforce);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Free a cs_cdo_diff_t structure
- *
- * \param[in, out ] diff   pointer to a cs_cdo_diff_t struc.
- *
- * \return  NULL
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cdo_diff_t *
-cs_cdo_diffusion_builder_free(cs_cdo_diff_t   *diff);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the related Hodge builder structure
- *
- * \param[in]  diff   pointer to a cs_cdo_diff_t structure
- *
- * \return  a pointer to a cs_hodge_builder_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_hodge_builder_t *
-cs_cdo_diffusion_get_hodge_builder(cs_cdo_diff_t   *diff);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get temporary buffers attached to a cs_cdo_diff_t structure
- *
- * \param[in]       diff     pointer to a cs_cdo_diff_t structure
- * \param[in, out]  tmp_vec  pointer to a buffer of cs_real_3_t
- * \param[in, out]  tmp_sca  pointer to a buffer of cs_real_t
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      pty_nuf   property tensor times the face normal
+ * \param[in]      beta      not useful here (prototype of function pointer)
+ * \param[in, out] cb        pointer to a cell builder structure
+ * \param[in, out] ntrgrd    local matrix related to the normal trace op. i.e.
+ *                           the flux operator
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_get_tmp_buffers(const cs_cdo_diff_t   *diff,
-                                 cs_real_3_t          **tmp_vec,
-                                 cs_real_t            **tmp_sca);
+cs_cdovcb_diffusion_flux_op(const cs_face_mesh_t     *fm,
+                            const cs_cell_mesh_t     *cm,
+                            const cs_real_3_t         pty_nuf,
+                            double                    beta,
+                            cs_cell_builder_t        *cb,
+                            cs_locmat_t              *ntrgrd);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define a cell --> Dirichlet boundary faces connectivity
+ * \brief   Compute the normal trace operator for a given border face when a
+ *          WBS algo. is used for reconstructing the degrees of freedom
  *
- * \param[in]      connect      pointer to a cs_cdo_connect_t structure
- * \param[in]      dir_face     pointer to a cs_cdo_bc_list_t structure
- * \param[in, out] c2bcbf_idx   pointer to the index to build
- * \param[in, out] c2bcbf_ids   pointer to the list of ids to build
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      pty_nuf   property tensor times the face normal
+ * \param[in]      beta      not useful here (prototype of function pointer)
+ * \param[in, out] cb        pointer to a cell builder structure
+ * \param[in, out] ntrgrd    local matrix related to the normal trace op. i.e.
+ *                           the flux operator
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_build_c2bcbf(const cs_cdo_connect_t    *connect,
-                              const cs_cdo_bc_list_t    *dir_face,
-                              cs_lnum_t                 *p_c2bcbf_idx[],
-                              cs_lnum_t                 *p_c2bcbf_ids[]);
+cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
+                               const cs_cell_mesh_t     *cm,
+                               const cs_real_3_t         pty_nuf,
+                               double                    beta,
+                               cs_cell_builder_t        *cb,
+                               cs_locmat_t              *ntrgrd);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define the local (cellwise) stiffness matrix
+ * \brief   Compute the normal trace operator for a given border face when a
+ *          COST algo. is used for reconstructing the degrees of freedom
  *
- * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
- * \param[in]      lm          cell-wise connectivity and quantitites
- * \param[in]      tensor      3x3 matrix attached to the diffusion property
- * \param[in, out] diff        auxiliary structure used to build the diff. term
- *
- * \return a pointer to a local stiffness matrix
+ * \param[in]      fm      pointer to a cs_face_mesh_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      mnu     property tensor times the face normal
+ * \param[in]      beta    value of the stabilizarion coef. related to reco.
+ * \param[in, out] cb      pointer to a cell builder structure
+ * \param[in, out] ntrgrd  local matrix related to the normal trace op. i.e.
+ *                         the flux operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
-cs_cdo_diffusion_build_local(const cs_cdo_quantities_t   *quant,
-                             const cs_cell_mesh_t        *lm,
-                             const cs_real_3_t           *tensor,
-                             cs_cdo_diff_t               *diff);
+void
+cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
+                                const cs_cell_mesh_t     *cm,
+                                const cs_real_3_t         mnu,
+                                double                    beta,
+                                cs_cell_builder_t        *cb,
+                                cs_locmat_t              *ntrgrd);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define the local (cellwise) "normal trace gradient" matrix taking
- *          into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique (symmetrized or not)
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique (symmetrized or not) or penalization
  *
- * \param[in]       f_id      face id (a border face attached to a Dir. BC)
- * \param[in]       cm        pointer to a cs_cell_mesh_t struct.
- * \param[in]       matpty    3x3 matrix related to the diffusion property
- * \param[in, out]  diff      auxiliary structure used to build the diff. term
+ * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       cbc       pointer to a cs_cell_bc_t structure
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux operator
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_weak_bc(cs_lnum_t                    f_id,
-                         const cs_cell_mesh_t        *cm,
-                         const cs_real_t              matpty[3][3],
-                         cs_cdo_diff_t               *diff,
-                         cs_cdo_locsys_t             *csys);
+cs_cdovb_diffusion_pena_dirichlet(const cs_param_hodge_t        h_info,
+                                  const cs_cell_bc_t           *cbc,
+                                  const cs_cell_mesh_t         *cm,
+                                  cs_cdo_diffusion_flux_op_t   *flux_op,
+                                  cs_face_mesh_t               *fm,
+                                  cs_cell_builder_t            *cb,
+                                  cs_cell_sys_t                *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the diffusive flux across dual faces for a given cell
- *          The computation takes into account a subdivision into tetrahedra of
- *          the current cell based on p_{ef,c}
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique plus a symmetric treatment
  *
- * \param[in]       cm        pointer to a cs_face_mesh_t structure
- * \param[in]       dfaces    pointer to the dual faces related to cell edges
- * \param[in]       pty_tens  3x3 matrix related to the diffusion property
- * \param[in]       p_v       array of values attached to face vertices
- * \param[in]       p_c       value attached to the cell
- * \param[in, out]  diff      auxiliary structure dedicated to diffusion
- * \param[in, out]  c_flux    flux across dual faces inside this cell
+ * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       cbc       pointer to a cs_cell_bc_t structure
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux operator
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_cellwise_flux(const cs_cell_mesh_t      *cm,
-                               const cs_dface_t          *dfaces,
-                               const cs_real_t            pty_tens[3][3],
-                               const double              *p_v,
-                               const double               p_c,
-                               cs_cdo_diff_t             *diff,
-                               double                    *c_flux);
+cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t        h_info,
+                                  const cs_cell_bc_t           *cbc,
+                                  const cs_cell_mesh_t         *cm,
+                                  cs_cdo_diffusion_flux_op_t   *flux_op,
+                                  cs_face_mesh_t               *fm,
+                                  cs_cell_builder_t            *cb,
+                                  cs_cell_sys_t                *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique
+ *
+ * \param[in]       h_info    cs_param_hodge_t structure for diffusion
+ * \param[in]       cbc       pointer to a cs_cell_bc_t structure
+ * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       flux_op   function pointer to the flux operator
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t       h_info,
+                                  const cs_cell_bc_t          *cbc,
+                                  const cs_cell_mesh_t        *cm,
+                                  cs_cdo_diffusion_flux_op_t  *flux_op,
+                                  cs_face_mesh_t              *fm,
+                                  cs_cell_builder_t           *cb,
+                                  cs_cell_sys_t               *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the diffusive flux across dual faces for a given cell
+ *          Use the COST algo. for computing the discrete Hodge op.
+ *          Flux = -Hdg * GRAD(pot)
+ *
+ * \param[in]      cm      pointer to a cs_face_mesh_t structure
+ * \param[in]      pot     values of the potential fields at specific locations
+ * \param[in, out] cb      auxiliary structure for computing the flux
+ * \param[in, out] flx     values of the flux across specific entities (primal
+ *                         faces, dual faces...)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_diffusion_get_hodge_flux(const cs_cell_mesh_t      *cm,
+                                  const double              *pot,
+                                  cs_cell_builder_t         *cb,
+                                  double                    *flx);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the diffusive flux across dual faces for a given cell
+ *          Use the WBS algo. for approximating the gradient
+ *          The computation takes into account a subdivision into tetrahedra of
+ *          the current cell based on p_{ef,c}
+ *
+ * \param[in]      h_info   pointer to a cs_param_hodge_t structure
+ * \param[in]      geom     pointer to a structure storing geom. quantities
+ * \param[in]      cm       pointer to a cs_face_mesh_t structure
+ * \param[in]      pot      values of the potential fields at vertices
+ * \param[in, out] cb       auxiliary structure for computing the flux
+ * \param[in, out] flx      flux across dual faces inside this cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
+                              const cs_cell_mesh_t      *cm,
+                              const double              *pot,
+                              cs_cell_builder_t         *cb,
+                              double                    *flx);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -224,7 +309,7 @@ cs_cdo_diffusion_face_flux(const cs_face_mesh_t      *fm,
                            const double              *p_v,
                            const double               p_f,
                            const double               p_c,
-                           cs_cdo_diff_t             *diff);
+                           cs_cell_builder_t         *cb);
 
 /*----------------------------------------------------------------------------*/
 

@@ -469,6 +469,18 @@ cs_locdec_t *
 cs_locdec_free(cs_locdec_t  *m);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Dump an array in the listing (For DEBUG)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dump_array_to_listing(const char        *header,
+                         const cs_lnum_t    size,
+                         const cs_real_t    array[],
+                         int                n_cols);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

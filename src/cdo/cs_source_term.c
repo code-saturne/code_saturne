@@ -40,9 +40,10 @@
 
 #include <bft_mem.h>
 
-#include "cs_log.h"
-#include "cs_mesh_location.h"
 #include "cs_evaluate.h"
+#include "cs_log.h"
+#include "cs_math.h"
+#include "cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -60,26 +61,6 @@ BEGIN_C_DECLS
 
 #define CS_SOURCE_TERM_DBG 0
 
-struct _cs_source_term_t {
-
-  char *restrict name;      // short description of the source term
-  int            ml_id;     // id of the related mesh location structure
-
-  /* Specification related to the way of computing the source term */
-  cs_source_term_reduction_t  reduc;      // where reduction is done
-  cs_source_term_type_t       type;       // mass, head loss...
-  cs_quadra_type_t            quad_type;  // barycentric, higher, highest
-  cs_param_var_type_t         var_type;   // scalar, vector...
-  cs_param_def_type_t         def_type;   // by value, by function...
-  cs_def_t                    def;
-
-  /* Useful buffers to deal with more complex definitions */
-  cs_desc_t    array_desc;  // short description of the related array
-  cs_real_t   *array;       // if the source term hinges on an array
-  const void  *struc;       // if one needs a structure. Only shared
-
-};
-
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -96,6 +77,78 @@ static const cs_time_step_t  *cs_time_step;
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a name (copy or generic name)
+ *
+ * \param[in] name       input name
+ * \param[in] basename   generic name by default if input name is NULL
+ * \param[in] id         id related to this name
+ *
+ * \return a pointer to a new allocated string
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline char *
+_get_name(const char   *name,
+          const char   *base_name,
+          int           id)
+{
+  char *n = NULL;
+
+  if (name == NULL) { /* Define a name by default */
+    assert(id < 100);
+    int len = strlen(base_name) + 4; // 1 + 3 = "_00\n"
+    BFT_MALLOC(n, len, char);
+    sprintf(n, "%s_%2d", base_name, id);
+  }
+  else {  /* Copy name */
+    int  len = strlen(name) + 1;
+    BFT_MALLOC(n, len, char);
+    strncpy(n, name, len);
+  }
+
+  return n;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the mask associated to each cell from the mask related to
+ *         the given source term structure
+ *
+ * \param[in]      st          pointer to a cs_source_term_t structure
+ * \param[in]      st_mask     id related to this source term
+ * \param[in, out] cell_mask   mask related to each cell to be updated
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_mask(const cs_source_term_t     *st,
+          int                         st_id,
+          cs_mask_t                  *cell_mask)
+{
+  if (st == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
+
+  const cs_mask_t  mask = (1 << st_id); // value of the mask for the source term
+
+  if (st->flag & CS_FLAG_FULL_LOC) // All cells are selected
+# pragma omp parallel for if (cs_cdo_quant->n_cells > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < cs_cdo_quant->n_cells; i++) cell_mask[i] |= mask;
+
+  else {
+
+    /* Retrieve information from mesh location structures */
+    const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(st->ml_id);
+    const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(st->ml_id);
+
+    assert(elt_ids != NULL); /* Sanity check */
+    for (cs_lnum_t i = 0; i < n_elts[0]; i++) cell_mask[elt_ids[i]] |= mask;
+
+  }
+
+}
 
 /*============================================================================
  * Public function prototypes
@@ -124,81 +177,243 @@ cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a cs_source_term_t structure
+ * \brief  Destroy an array of cs_source_term_t structures
  *
- * \param[in] st_name     name of the related source term
- * \param[in] ml_id       id of the related mesh location
- * \param[in] st_type     type of source term to create
- * \param[in] red_type    type of reduction to apply
- * \param[in] var_type    type of variables (scalar, vector, tensor...)
- *
- * \return a pointer to a new allocated source term structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_source_term_t *
-cs_source_term_create(const char                  *name,
-                      int                          ml_id,
-                      cs_source_term_type_t        st_type,
-                      cs_source_term_reduction_t   red_type,
-                      cs_param_var_type_t          var_type)
-{
-  cs_source_term_t  *st = NULL;
-
-  BFT_MALLOC(st, 1, cs_source_term_t);
-
-  /* Copy name */
-  int  len = strlen(name) + 1;
-  BFT_MALLOC(st->name, len, char);
-  strncpy(st->name, name, len);
-
-  st->type = st_type;
-  st->var_type = var_type;
-  st->ml_id = ml_id;
-
-  /* Default initialization */
-  st->reduc = red_type;
-  st->def_type = CS_PARAM_N_DEF_TYPES;
-  st->quad_type = CS_QUADRATURE_BARY;
-  st->def.get.val = 0.;
-
-  st->array_desc.location = 0;
-  st->array_desc.state = 0;
-  st->array = NULL;
-
-  // st->struc is only shared when used
-
-  return st;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Destroy a cs_source_term_t structure
- *
- * \param[in] st      pointer to a cs_source_term_t structure
+ * \param[in]      n_source_terms   number of source terms
+ * \param[in, out] source_terms     pointer to a cs_source_term_t structure
  *
  * \return NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 cs_source_term_t *
-cs_source_term_free(cs_source_term_t   *st)
+cs_source_term_destroy(int                 n_source_terms,
+                       cs_source_term_t   *source_terms)
 {
-  if (st == NULL)
-    return st;
+  if (source_terms == NULL)
+    return source_terms;
 
-  BFT_FREE(st->name);
+  for (int st_id = 0; st_id < n_source_terms; st_id++) {
 
-  if (st->array_desc.state & CS_FLAG_STATE_OWNER) {
-    if (st->array != NULL)
-      BFT_FREE(st->array);
+    cs_source_term_t *st = source_terms + st_id;
+
+    BFT_FREE(st->name);
+
+    if (st->array_desc.state & CS_FLAG_STATE_OWNER) {
+      if (st->array != NULL)
+        BFT_FREE(st->array);
+    }
+
   }
-
-  BFT_FREE(st);
+  BFT_FREE(source_terms);
 
   return NULL;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Generic way to define a cs_source_term_t structure by value
+ *
+ * \param[in, out] st        pointer to the cs_source_term_t structure to set
+ * \param[in]      st_id     id related to source term to define
+ * \param[in]      name      name of the source term
+ * \param[in]      var_type  type of variable (scalar, vector...)
+ * \param[in]      ml_id     id related to the mesh location
+ * \param[in]      flag      metadata related to this source term
+ * \param[in]      val       accessor to the value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_def_by_value(cs_source_term_t    *st,
+                            int                  st_id,
+                            const char          *name,
+                            cs_param_var_type_t  var_type,
+                            int                  ml_id,
+                            cs_flag_t            flag,
+                            const char          *val)
+{
+  /* Sanity checks */
+  if (st == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
+
+  assert(ml_id != -1);
+  assert(cs_mesh_location_get_type(ml_id) == CS_MESH_LOCATION_CELLS);
+
+  st->name = _get_name(name, "sourceterm", st_id);
+  st->ml_id = ml_id;
+
+  st->flag = flag;
+  if (cs_mesh_location_get_elt_list(ml_id) == NULL)
+    st->flag |= CS_FLAG_FULL_LOC;
+
+  st->def_type = CS_PARAM_DEF_BY_VALUE;
+  st->def.get.val = 0.0;
+  st->quad_type = CS_QUADRATURE_BARY;
+  st->array_desc.location = 0;
+  st->array_desc.state = 0;
+  st->array = NULL;
+  // st->struc is only shared when used
+
+  switch (var_type) {
+
+  case CS_PARAM_VAR_SCAL:
+    st->flag |= CS_FLAG_SCALAR;
+    cs_param_set_get(CS_PARAM_VAR_SCAL, (const void *)val, &(st->def.get));
+    break;
+
+  case CS_PARAM_VAR_VECT:
+    st->flag |= CS_FLAG_VECTOR;
+    cs_param_set_get(CS_PARAM_VAR_VECT, (const void *)val, &(st->def.get));
+    break;
+
+  case CS_PARAM_VAR_TENS:
+    st->flag |= CS_FLAG_TENSOR;
+    cs_param_set_get(CS_PARAM_VAR_TENS, (const void *)val, &(st->def.get));
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _(" Invalid type of source term."));
+    break;
+
+  } /* switch on variable type */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_source_term_t structure thanks to an analytic function
+ *
+ * \param[in, out] st        pointer to the cs_source_term_t structure to set
+ * \param[in]      st_id     id related to source term to define
+ * \param[in]      name      name of the source term
+ * \param[in]      var_type  type of variable (scalar, vector...)
+ * \param[in]      ml_id     id related to the mesh location
+ * \param[in]      flag      metadata related to this source term
+ * \param[in]      func      pointer to a function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_def_by_analytic(cs_source_term_t     *st,
+                               int                   st_id,
+                               const char           *name,
+                               cs_param_var_type_t   var_type,
+                               int                   ml_id,
+                               cs_flag_t             flag,
+                               cs_analytic_func_t   *func)
+{
+  /* Sanity checks */
+  if (st == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
+
+  assert(ml_id != -1);
+  assert(cs_mesh_location_get_type(ml_id) == CS_MESH_LOCATION_CELLS);
+
+  st->name = _get_name(name, "sourceterm", st_id);
+  st->ml_id = ml_id;
+
+  st->flag = flag;
+  if (cs_mesh_location_get_elt_list(ml_id) == NULL)
+    st->flag |= CS_FLAG_FULL_LOC;
+
+  st->def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
+  st->def.analytic = func;
+  st->quad_type = CS_QUADRATURE_BARY;
+  st->array_desc.location = 0;
+  st->array_desc.state = 0;
+  st->array = NULL;
+  // st->struc is only shared when used
+
+  switch (var_type) {
+
+  case CS_PARAM_VAR_SCAL:
+    st->flag |= CS_FLAG_SCALAR;
+    break;
+
+  case CS_PARAM_VAR_VECT:
+    st->flag |= CS_FLAG_VECTOR;
+    break;
+
+  case CS_PARAM_VAR_TENS:
+    st->flag |= CS_FLAG_TENSOR;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _(" Invalid type of source term."));
+    break;
+
+  } /* switch on variable type */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_source_term_t structure thanks to an array of values
+ *
+ * \param[in, out] st        pointer to the cs_source_term_t structure to set
+ * \param[in]      st_id     id related to source term to define
+ * \param[in]      name      name of the source term
+ * \param[in]      var_type  type of variable (scalar, vector...)
+ * \param[in]      ml_id     id related to the mesh location
+ * \param[in]      flag      metadata related to this source term
+ * \param[in]      desc      description of the main feature of this array
+ * \param[in]      array     pointer to an array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_def_by_array(cs_source_term_t     *st,
+                            int                   st_id,
+                            const char           *name,
+                            cs_param_var_type_t   var_type,
+                            int                   ml_id,
+                            cs_flag_t             flag,
+                            cs_desc_t             desc,
+                            cs_real_t            *array)
+{
+  /* Sanity checks */
+  if (st == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
+
+  assert(ml_id != -1);
+  assert(cs_mesh_location_get_type(ml_id) == CS_MESH_LOCATION_CELLS);
+
+  st->name = _get_name(name, "sourceterm", st_id);
+  st->ml_id = ml_id;
+
+  st->flag = flag;
+  if (cs_mesh_location_get_elt_list(ml_id) == NULL)
+    st->flag |= CS_FLAG_FULL_LOC;
+
+  st->def_type = CS_PARAM_DEF_BY_ARRAY;
+  st->def.get.val = 0.0; // Avoid a warning but not useful in this context
+  st->quad_type = CS_QUADRATURE_BARY;
+  st->array_desc.location = desc.location;
+  st->array_desc.state = desc.state;
+  st->array = array;
+  // st->struc is only shared when used
+
+  switch (var_type) {
+
+  case CS_PARAM_VAR_SCAL:
+    st->flag |= CS_FLAG_SCALAR;
+    break;
+
+  case CS_PARAM_VAR_VECT:
+    st->flag |= CS_FLAG_VECTOR;
+    break;
+
+  case CS_PARAM_VAR_TENS:
+    st->flag |= CS_FLAG_TENSOR;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _(" Invalid type of source term."));
+    break;
+
+  } /* switch on variable type */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -222,22 +437,115 @@ cs_source_term_set_quadrature(cs_source_term_t  *st,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the default flag related to a source term according to the
+ *         numerical scheme chosen for discretizing an equation
+ *
+ * \param[in]       scheme    numerical scheme used for the discretization
+ *
+ * \return a default flag
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_source_term_set_default_flag(cs_space_scheme_t   scheme)
+{
+  cs_flag_t  st_flag = 0;
+
+  switch (scheme) {
+  case CS_SPACE_SCHEME_CDOVB:
+    st_flag = CS_FLAG_DUAL | CS_FLAG_CELL; // Default
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    st_flag = CS_FLAG_PRIMAL | CS_FLAG_CELL; // Default
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+  case CS_SPACE_SCHEME_HHO:
+    st_flag = CS_FLAG_PRIMAL;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid numerical scheme to set a source term."));
+
+  }
+
+  return st_flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set advanced parameters which are defined by default in a
  *         source term structure.
  *
  * \param[in, out]  st        pointer to a cs_source_term_t structure
- * \param[in]       red_type  type of reduction to apply
+ * \param[in]       flag      CS_FLAG_DUAL or CS_FLAG_PRIMAL
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_set_reduction(cs_source_term_t             *st,
-                             cs_source_term_reduction_t    red_type)
+cs_source_term_set_reduction(cs_source_term_t     *st,
+                             cs_flag_t             flag)
 {
   if (st == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
 
-  st->reduc = red_type;
+  if (st->flag & flag)
+    return; // Nothing to do
+
+  cs_flag_t  save_flag = st->flag;
+
+  st->flag = 0;
+  /* Set unchanged parts of the existing flag */
+  if (save_flag & CS_FLAG_SCALAR) st->flag |= CS_FLAG_SCALAR;
+  if (save_flag & CS_FLAG_VECTOR) st->flag |= CS_FLAG_VECTOR;
+  if (save_flag & CS_FLAG_TENSOR) st->flag |= CS_FLAG_TENSOR;
+  if (save_flag & CS_FLAG_BORDER) st->flag |= CS_FLAG_BORDER;
+  if (save_flag & CS_FLAG_BY_CELL) st->flag |= CS_FLAG_BY_CELL;
+  if (save_flag & CS_FLAG_FULL_LOC) st->flag |= CS_FLAG_FULL_LOC;
+
+  if (flag & CS_FLAG_DUAL) {
+    assert(save_flag & CS_FLAG_PRIMAL);
+    if (save_flag & CS_FLAG_VERTEX)
+      st->flag |= CS_FLAG_DUAL | CS_FLAG_CELL;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                " Stop modifying the source term flag.\n"
+                " This case is not handled.");
+  }
+  else if (flag & CS_FLAG_PRIMAL) {
+    assert(save_flag & CS_FLAG_DUAL);
+    if (save_flag & CS_FLAG_CELL)
+      st->flag |= CS_FLAG_PRIMAL | CS_FLAG_VERTEX;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                " Stop modifying the source term flag.\n"
+                " This case is not handled.");
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " Stop modifying the source term flag.\n"
+              " This case is not handled.");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get metadata related to the given source term structure
+ *
+ * \param[in, out]  st          pointer to a cs_source_term_t structure
+ *
+ * \return the value of the flag related to this source term
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_flag_t
+cs_source_term_get_flag(const cs_source_term_t  *st)
+{
+  if (st == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
+
+  return st->flag;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -257,25 +565,6 @@ cs_source_term_get_name(const cs_source_term_t   *st)
     return NULL;
 
   return st->name;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the type of reduction applied to a cs_source_term_t structure
- *
- * \param[in] st      pointer to a cs_source_term_t structure
- *
- * \return the type of reduction
- */
-/*----------------------------------------------------------------------------*/
-
-cs_source_term_reduction_t
-cs_source_term_get_reduction(const cs_source_term_t   *st)
-{
-  if (st == NULL)
-    return CS_N_SOURCE_TERM_REDUCTIONS;
-
-  return st->reduc;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -304,21 +593,6 @@ cs_source_term_summary(const char               *eqname,
   }
 
   cs_log_printf(CS_LOG_SETUP, "  <%s/%s> type: ", eqn, st->name);
-  switch (st->type) {
-
-  case CS_SOURCE_TERM_GRAVITY:
-    cs_log_printf(CS_LOG_SETUP, " Gravity");
-    break;
-
-  case CS_SOURCE_TERM_USER:
-    cs_log_printf(CS_LOG_SETUP, " User-defined");
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, " Invalid type of source term.");
-    break;
-
-  }
   cs_log_printf(CS_LOG_SETUP,
                 " mesh_location: %s\n", cs_mesh_location_get_name(st->ml_id));
 
@@ -332,86 +606,241 @@ cs_source_term_summary(const char               *eqname,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generic way to define the value of a cs_source_term_t structure
+ * \brief   Initialize data to build the source terms
  *
- * \param[in, out]  pty     pointer to a cs_source_term_t structure
- * \param[in]       val     accessor to the value to set
+ * \param[in]      space_scheme    scheme used to discretize in space
+ * \param[in]      n_source_terms  number of source terms
+ * \param[in]      source_terms    pointer to the definitions of source terms
+ * \param[in, out] compute_source  array of function pointers
+ * \param[in, out] sys_flag        metadata about the algebraic system
+ * \param[in, out] source_mask     pointer to an array storing in a compact way
+ *                                 which source term is defined in a given cell
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_def_by_value(cs_source_term_t    *st,
-                            const char          *val)
+cs_source_term_init(cs_space_scheme_t            space_scheme,
+                    const int                    n_source_terms,
+                    const cs_source_term_t      *source_terms,
+                    cs_source_term_cellwise_t   *compute_source[],
+                    cs_flag_t                   *sys_flag,
+                    cs_mask_t                   *source_mask[])
 {
-  if (st == NULL)
-    bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
+  if (n_source_terms > CS_N_MAX_SOURCE_TERMS)
+    bft_error(__FILE__, __LINE__, 0,
+              " Limitation to %d source terms has been reached!",
+              CS_N_MAX_SOURCE_TERMS);
 
-  st->def_type = CS_PARAM_DEF_BY_VALUE;
+  *source_mask = NULL;
+  for (short int i = 0; i < CS_N_MAX_SOURCE_TERMS; i++)
+    compute_source[i] = NULL;
 
-  switch (st->var_type) {
+  if (n_source_terms == 0)
+    return;
 
-  case CS_PARAM_VAR_SCAL:
-    cs_param_set_get(CS_PARAM_VAR_SCAL, (const void *)val, &(st->def.get));
-    break;
+  bool  need_mask = false;
 
-  case CS_PARAM_VAR_VECT:
-    cs_param_set_get(CS_PARAM_VAR_VECT, (const void *)val, &(st->def.get));
-    break;
+  for (int st_id = 0; st_id < n_source_terms; st_id++) {
 
-  case CS_PARAM_VAR_TENS:
-    cs_param_set_get(CS_PARAM_VAR_TENS, (const void *)val, &(st->def.get));
-    break;
+    const cs_source_term_t  *st = source_terms + st_id;
 
-  default:
-    bft_error(__FILE__, __LINE__, 0, _(" Invalid type of source term."));
-    break;
+    if (st->flag & CS_FLAG_PRIMAL)
+      *sys_flag |= CS_FLAG_SYS_HLOC_CONF | CS_FLAG_SYS_SOURCES_HLOC;
 
-  } /* switch on variable type */
+    if ((st->flag & CS_FLAG_FULL_LOC) == 0) // Not defined on the whole mesh
+      need_mask = true;
+
+    switch (space_scheme) {
+
+    case CS_SPACE_SCHEME_CDOVB:
+
+      if (st->flag & CS_FLAG_DUAL) {
+
+        switch (st->def_type) {
+
+        case CS_PARAM_DEF_BY_VALUE:
+          compute_source[st_id] = cs_source_term_dcsd_by_value;
+          break;
+
+        case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+
+          switch (st->quad_type) {
+          case CS_QUADRATURE_BARY:
+            compute_source[st_id] = cs_source_term_dcsd_q1o1_by_analytic;
+            break;
+          case CS_QUADRATURE_HIGHER:
+            compute_source[st_id] = cs_source_term_dcsd_q10o2_by_analytic;
+            break;
+          case CS_QUADRATURE_HIGHEST:
+            compute_source[st_id] = cs_source_term_dcsd_q5o3_by_analytic;
+            break;
+          default:
+            bft_error(__FILE__, __LINE__, 0,
+                      " Invalid type of quadrature for computing a source term"
+                      " with CDOVB schemes");
+          } // quad_type
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " Invalid type of definition for a source term in CDOVB");
+          break;
+        } // switch def_type
+
+      }
+      else {
+        assert(st->flag & CS_FLAG_PRIMAL);
+
+        switch (st->def_type) {
+
+        case CS_PARAM_DEF_BY_VALUE:
+          compute_source[st_id] = cs_source_term_pvsp_by_value;
+          break;
+
+        case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+          compute_source[st_id] = cs_source_term_pvsp_by_analytic;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " Invalid type of definition for a source term in CDOVB");
+          break;
+
+        } // switch def_type
+
+      } // flag PRIMAL or DUAL
+      break; // CDOVB
+
+    case CS_SPACE_SCHEME_CDOVCB:
+      if (st->flag & CS_FLAG_DUAL) {
+
+        bft_error(__FILE__, __LINE__, 0,
+                  " Invalid type of definition for a source term in CDOVB");
+
+        /* TODO
+           case CS_PARAM_DEF_BY_VALUE:
+           cs_source_term_vcsd_by_value; --> case CS_QUADRATURE_BARY:
+
+           case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+           cs_source_term_vcsd_q1o1_by_analytic; --> case CS_QUADRATURE_BARY:
+           cs_source_term_vcsd_q10o2_by_analytic; --> case CS_QUADRATURE_HIGHER:
+           cs_source_term_vcsd_q5o3_by_analytic; --> case CS_QUADRATURE_HIGHEST:
+        */
+
+      }
+      else {
+        assert(st->flag & CS_FLAG_PRIMAL);
+
+        switch (st->def_type) {
+
+        case CS_PARAM_DEF_BY_VALUE:
+          compute_source[st_id] = cs_source_term_vcsp_by_value;
+          break;
+
+        case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+          compute_source[st_id] = cs_source_term_vcsp_by_analytic;
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " Invalid type of definition for a source term in CDOVB");
+          break;
+
+        } // switch def_type
+
+      }
+      break; // CDOVCB
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "Invalid space scheme for setting the source term.");
+      break;
+
+    } // Switch on space scheme
+
+  } // Loop on source terms
+
+  if (need_mask) {
+
+    const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
+
+    /* Initialize mask buffer */
+    cs_mask_t  *mask = NULL;
+    BFT_MALLOC(mask, n_cells, cs_mask_t);
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (int i = 0; i < n_cells; i++) mask[i] = 0;
+
+    for (int st_id = 0; st_id < n_source_terms; st_id++)
+      _set_mask(source_terms + st_id, st_id, mask);
+
+    *source_mask = mask;
+
+  } /* Build a tag related to the source terms defined in each cell */
 
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_source_term_t structure thanks to an analytic function
+ * \brief   Compute the local contributions of source terms in a cell
  *
- * \param[in, out]  st      pointer to a cs_source_term_t structure
- * \param[in]       func    pointer to a function
+ * \param[in]      n_source_terms  number of source terms
+ * \param[in]      source_terms    pointer to the definitions of source terms
+ * \param[in]      cm              pointer to a cs_cell_mesh_t structure
+ * \param[in]      sys_flag        metadata about the algebraic system
+ * \param[in]      source_mask     array storing in a compact way which source
+ *                                 term is defined in a given cell
+ * \param[in]      compute_source  array of function pointers
+ * \param[in, out] cb              pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys            cellwise algebraic system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_def_by_analytic(cs_source_term_t      *st,
-                               cs_analytic_func_t    *func)
+cs_source_term_compute_cellwise(const int                    n_source_terms,
+                                const cs_source_term_t      *source_terms,
+                                const cs_cell_mesh_t        *cm,
+                                const cs_flag_t              sys_flag,
+                                const cs_mask_t             *source_mask,
+                                cs_source_term_cellwise_t   *compute_source[],
+                                cs_cell_builder_t           *cb,
+                                cs_cell_sys_t               *csys)
 {
-  if (st == NULL)
-    bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
+  /* Reset local contributions */
+  for (short int i = 0; i < csys->n_dofs; i++) csys->source[i] = 0;
 
-  st->def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
-  st->def.analytic = func;
-}
+  if ((sys_flag & CS_FLAG_SYS_SOURCETERM) == 0)
+    return;
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a cs_source_term_t structure thanks to an array of values
- *
- * \param[in, out]  st       pointer to a cs_source_term_t structure
- * \param[in]       desc     description of the main feature of this array
- * \param[in]       array    pointer to an array
- */
-/*----------------------------------------------------------------------------*/
+  if (source_mask == NULL) { // All source terms are defined on the whole mesh
 
-void
-cs_source_term_def_by_array(cs_source_term_t    *st,
-                            cs_desc_t            desc,
-                            cs_real_t           *array)
-{
-  if (st == NULL)
-    bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
+    for (short int st_id = 0; st_id < n_source_terms; st_id++) {
 
-  st->def_type = CS_PARAM_DEF_BY_ARRAY;
-  st->array_desc.location = desc.location;
-  st->array_desc.state = desc.state;
-  st->array = array;
+      cs_source_term_cellwise_t  *compute = compute_source[st_id];
+
+      /* Contrib is updated inside */
+      compute(source_terms + st_id, cm, cb, csys->source);
+
+    } // Loop on source terms
+
+  }
+  else { /* Some source terms are only defined on a selection of cells */
+
+    for (short int st_id = 0; st_id < n_source_terms; st_id++) {
+
+      const cs_mask_t  st_mask = (1 << st_id);
+      if (source_mask[cm->c_id] & st_mask) {
+
+        cs_source_term_cellwise_t  *compute = compute_source[st_id];
+
+        /* Contrib is updated inside */
+        compute(source_terms + st_id, cm, cb, csys->source);
+
+      } // Compute the source term on this cell
+
+    } // Loop on source terms
+
+  } // Source terms are defined on the whole domain or not ?
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -458,14 +887,14 @@ cs_source_term_compute(cs_desc_t                     dof_desc,
     switch (source->def_type) {
 
     case CS_PARAM_DEF_BY_VALUE:
-      cs_evaluate_potential_from_value(dof_desc.location,
+      cs_evaluate_potential_by_value(dof_desc.location,
                                        source->ml_id,
                                        source->def.get,
                                        values);
       break;
 
     case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-      cs_evaluate_potential_from_analytic(dof_desc.location,
+      cs_evaluate_potential_by_analytic(dof_desc.location,
                                           source->ml_id,
                                           source->def.analytic,
                                           values);
@@ -482,14 +911,14 @@ cs_source_term_compute(cs_desc_t                     dof_desc,
     switch (source->def_type) {
 
     case CS_PARAM_DEF_BY_VALUE:
-      cs_evaluate_density_from_value(dof_desc.location,
+      cs_evaluate_density_by_value(dof_desc.location,
                                      source->ml_id,
                                      source->def.get,
                                      values);
       break;
 
     case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-      cs_evaluate_density_from_analytic(dof_desc.location,
+      cs_evaluate_density_by_analytic(dof_desc.location,
                                         source->ml_id,
                                         source->def.analytic,
                                         source->quad_type,
@@ -505,6 +934,530 @@ cs_source_term_compute(cs_desc_t                     dof_desc,
 
   /* Return values */
   *p_values = values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar potential defined at primal vertices by a constant
+ *         value.
+ *         A discrete Hodge operator has to be computed before this call and
+ *         stored inside a cs_cell_builder_t structure
+ *
+ * \param[in]      source     pointer to a cs_source_term_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_pvsp_by_value(const cs_source_term_t    *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_cell_builder_t         *cb,
+                             double                    *values)
+{
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cb != NULL && cb->hdg != NULL);
+
+  const double  pot_value = source->def.get.val;
+
+  /* Retrieve the values of the potential at each cell vertices */
+  double  *eval = cb->values;
+  for (short int v = 0; v < cm->n_vc; v++)
+    eval[v] = pot_value;
+
+  /* Multiply these values by a cellwise Hodge operator previously computed */
+  double  *hdg_eval = cb->values + cm->n_vc;
+  cs_locmat_matvec(cb->hdg, eval, hdg_eval);
+
+  for (short int v = 0; v < cm->n_vc; v++)
+    values[v] += hdg_eval[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar potential defined at primal vertices by an
+ *         analytical function.
+ *         A discrete Hodge operator has to be computed before this call and
+ *         stored inside a cs_cell_builder_t structure
+ *
+ * \param[in]      source     pointer to a cs_source_term_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_pvsp_by_analytic(const cs_source_term_t    *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_cell_builder_t         *cb,
+                                double                    *values)
+{
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cb != NULL && cb->hdg != NULL);
+
+  const double  tcur = cs_time_step->t_cur;
+
+  cs_analytic_func_t  *ana = source->def.analytic;
+  cs_get_t  result;
+
+  /* Retrieve the values of the potential at each cell vertices */
+  double  *eval = cb->values;
+  for (short int v = 0; v < cm->n_vc; v++) {
+    ana(tcur, cm->xv + 3*v, &result);
+    eval[v] = result.val;
+  }
+
+  /* Multiply these values by a cellwise Hodge operator previously computed */
+  double  *hdg_eval = cb->values + cm->n_vc;
+  cs_locmat_matvec(cb->hdg, eval, hdg_eval);
+
+  for (short int v = 0; v < cm->n_vc; v++)
+    values[v] += hdg_eval[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar density defined at dual cells by a value.
+ *
+ * \param[in]      source     pointer to a cs_source_term_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcsd_by_value(const cs_source_term_t    *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_cell_builder_t         *cb,
+                             double                    *values)
+{
+  CS_UNUSED(cb);
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+
+  const double  density_value = source->def.get.val;
+  for (int v = 0; v < cm->n_vc; v++)
+    values[v] += density_value * cm->wvc[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar density defined at dual cells by an analytical
+ *         function.
+ *         Use a the barycentric approximation as quadrature to evaluate the
+ *         integral. Exact for linear function.
+ *
+ * \param[in]      source     pointer to a cs_source_term_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcsd_q1o1_by_analytic(const cs_source_term_t    *source,
+                                     const cs_cell_mesh_t      *cm,
+                                     cs_cell_builder_t         *cb,
+                                     double                    *values)
+{
+  CS_UNUSED(cb);
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+
+  const double  tcur = cs_time_step->t_cur;
+
+  cs_analytic_func_t  *ana = source->def.analytic;
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    cs_real_3_t  xg, xfc;
+    cs_get_t  result;
+
+    const double  *xf = cm->face[f].center;
+
+    for (int k = 0; k < 3; k++) xfc[k] = 0.25*(xf[k] + cm->xc[k]);
+
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const short int  e = cm->f2e_ids[i];
+      const short int  v1 = cm->e2v_ids[2*e];
+      const short int  v2 = cm->e2v_ids[2*e+1];
+      const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
+      const double  tet_vol = 0.5*cs_math_voltet(xv1, xv2, xf, cm->xc);
+
+      // xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
+      for (int k = 0; k < 3; k++)  xg[k] = xfc[k] + 0.375*xv1[k] + 0.125*xv2[k];
+      ana(tcur, xg, &result);
+      values[v1] += tet_vol * result.val;
+
+      // xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
+      for (int k = 0; k < 3; k++)  xg[k] += 0.25*(xv2[k] - xv1[k]);
+      ana(tcur, xg, &result);
+      values[v2] += tet_vol * result.val;
+
+    } // Loop on face edges
+
+  } // Loop on cell faces
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar density defined at dual cells by an analytical
+ *         function.
+ *         Use a ten-point quadrature rule to evaluate the integral.
+ *         Exact for quadratic function.
+ *
+ * \param[in]      source     pointer to a cs_source_term_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcsd_q10o2_by_analytic(const cs_source_term_t    *source,
+                                      const cs_cell_mesh_t      *cm,
+                                      cs_cell_builder_t         *cb,
+                                      double                    *values)
+{
+  cs_get_t  result;
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cb != NULL);
+
+  const double  tcur = cs_time_step->t_cur;
+  cs_analytic_func_t  *ana = source->def.analytic;
+
+  /* Temporary buffers */
+  double  *contrib = cb->values;              // size n_vc
+  double  *pfv_vol = cb->values + cm->n_vc;   // size n_vc
+  double  *pec_vol = cb->values + 2*cm->n_vc; // size n_ec
+  for (short int e = 0; e < cm->n_ec; e++) pec_vol[e] = 0;
+
+  /* Cell evaluation */
+  ana(tcur, cm->xc, &result);
+  const double  val_c = result.val;
+
+  /* Contributions related to vertices */
+  for (short int v = 0; v < cm->n_vc; v++) {
+
+    const cs_real_t  *xv = cm->xv + 3*v;
+    ana(tcur, xv, &result);
+    double  val_v = -0.05*(val_c + result.val); // -1/20
+
+    cs_real_3_t  xvc;
+    for (int k = 0; k < 3; k++) xvc[k] = 0.5*(cm->xc[k] + xv[k]);
+    ana(tcur, xvc, &result);
+    val_v += 0.2*result.val; // 1/5
+
+    /* Set the initial values */
+    contrib[v] = cm->wvc[v]*cm->vol_c*val_v;
+
+  } // Loop on vertices
+
+  /* Main loop on faces */
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    const double  *xf = cm->face[f].center;
+
+    /* Reset volume of the face related to a vertex */
+    for (short int v = 0; v < cm->n_vc; v++) pfv_vol[v] = 0;
+
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const short int  e = cm->f2e_ids[i];
+      const short int  v1 = cm->e2v_ids[2*e];
+      const short int  v2 = cm->e2v_ids[2*e+1];
+      const double  pef_vol = cs_math_voltet(cm->xv + 3*v1,
+                                             cm->xv + 3*v2,
+                                             xf,
+                                             cm->xc);
+
+      pec_vol[e] += pef_vol;
+      pfv_vol[v1] += 0.5*pef_vol;
+      pfv_vol[v2] += 0.5*pef_vol;
+
+      cs_real_3_t  xef;
+      for (int k = 0; k < 3; k++) xef[k] = 0.5*(cm->edge[e].center[k] + xf[k]);
+      ana(tcur, xef, &result);
+
+      const double  ef_contrib = 0.1*pef_vol*result.val;
+      contrib[v1] += ef_contrib;
+      contrib[v2] += ef_contrib;
+
+    } // Loop on face edges
+
+    /* Contributions related to this face */
+    ana(tcur, xf, &result);
+    double  val_f = -0.05*result.val; // -1/20
+
+    cs_real_3_t  xfc;
+    for (int k = 0; k < 3; k++) xfc[k] = 0.5*(xf[k] + cm->xc[k]);
+    ana(tcur, xfc, &result);
+    val_f += 0.2*result.val; // 1/5
+
+    for (short int v = 0; v < cm->n_vc; v++) {
+      if (pfv_vol[v] > 0) {
+        cs_real_3_t  xfv;
+        for (int k = 0; k < 3; k++) xfv[k] = 0.5*(xf[k] + cm->xv[3*v+k]);
+        ana(tcur, xfv, &result);
+        contrib[v] += pfv_vol[v]*(val_f + 0.2*result.val); // 1/5
+      }
+    }
+
+  } // Loop on cell faces
+
+  /* Contributions related to edges */
+  cs_real_3_t  xev;
+  for (short int e = 0; e < cm->n_ec; e++) {
+
+    const cs_real_t  *xe = cm->edge[e].center;
+    ana(tcur, xe, &result);
+    double val_e = -0.05*result.val; // -1/20
+
+    cs_real_3_t xec;
+    for (int k = 0; k < 3; k++) xec[k] = 0.5*(cm->xc[k] + xe[k]);
+    ana(tcur, xec, &result);
+    val_e += 0.2*result.val;
+
+    const short int  v1 = cm->e2v_ids[2*e];
+    const double  *xv1 = cm->xv + 3*v1;
+    for (int k = 0; k < 3; k++) xev[k] = 0.5*(xv1[k] + xe[k]);
+    ana(tcur, xev, &result);
+    contrib[v1] += 0.5*pec_vol[e]*(val_e + 0.2*result.val);
+
+    const short int  v2 = cm->e2v_ids[2*e+1];
+    const double  *xv2 = cm->xv + 3*v2;
+    for (int k = 0; k < 3; k++) xev[k] = 0.5*(xv2[k] + xe[k]);
+    ana(tcur, xev, &result);
+    contrib[v2] += 0.5*pec_vol[e]*(val_e + 0.2*result.val);
+
+  } // Loop on edges
+
+  /* Add the computed contributions to the return values */
+  for (short int v = 0; v < cm->n_vc; v++)
+    values[v] += contrib[v];
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar density defined at dual cells by an analytical
+ *         function.
+ *         Use a five-point quadrature rule to evaluate the integral.
+ *         Exact for cubic function.
+ *         This function may be expensive since many evaluations are needed.
+ *         Please use it with care.
+ *
+ * \param[in]      source     pointer to a cs_source_term_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcsd_q5o3_by_analytic(const cs_source_term_t    *source,
+                                     const cs_cell_mesh_t      *cm,
+                                     cs_cell_builder_t         *cb,
+                                     double                    *values)
+{
+  double  weights[5], result;
+  cs_real_3_t  gauss_pts[5];
+  cs_get_t  evaluation;
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cb != NULL);
+
+  const double  tcur = cs_time_step->t_cur;
+  cs_analytic_func_t  *ana = source->def.analytic;
+
+  /* Temporary buffers */
+  double  *contrib = cb->values;
+  for (short int v = 0; v < cm->n_vc; v++) contrib[v] = 0;
+
+  /* Main loop on faces */
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    const double  *xf = cm->face[f].center;
+
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const short int  e = cm->f2e_ids[i];
+      const short int  v1 = cm->e2v_ids[2*e];
+      const short int  v2 = cm->e2v_ids[2*e+1];
+      const double  tet_vol = 0.5*cs_math_voltet(cm->xv + 3*v1,
+                                                 cm->xv + 3*v2,
+                                                 xf,
+                                                 cm->xc);
+
+      /* Compute Gauss points and its weights */
+      cs_quadrature_tet_5pts(cm->xv + 3*v1, cm->edge[e].center, xf, cm->xc,
+                             tet_vol,
+                             gauss_pts, weights);
+
+      result = 0.;
+      for (int p = 0; p < 5; p++) {
+        ana(tcur, gauss_pts[p], &evaluation);
+        result += evaluation.val*weights[p];
+      }
+      contrib[v1] += result;
+
+      /* Compute Gauss points and its weights */
+      cs_quadrature_tet_5pts(cm->xv + 3*v2, cm->edge[e].center, xf, cm->xc,
+                             tet_vol,
+                             gauss_pts, weights);
+
+      result = 0.;
+      for (int p = 0; p < 5; p++) {
+        ana(tcur, gauss_pts[p], &evaluation);
+        result += evaluation.val*weights[p];
+      }
+      contrib[v2] += result;
+
+    } // Loop on face edges
+
+  } // Loop on cell faces
+
+  /* Add the computed contributions to the return values */
+  for (short int v = 0; v < cm->n_vc; v++)
+    values[v] += contrib[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar potential defined at primal vertices and cells
+ *         by a constant value.
+ *         A discrete Hodge operator has to be computed before this call and
+ *         stored inside a cs_cell_builder_t structure
+ *
+ * \param[in]      source     pointer to a cs_source_term_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_vcsp_by_value(const cs_source_term_t    *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_cell_builder_t         *cb,
+                             double                    *values)
+{
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cb != NULL && cb->hdg != NULL);
+
+  const double  pot_value = source->def.get.val;
+
+  /* Retrieve the values of the potential at each cell vertices */
+  double  *eval = cb->values;
+  for (short int v = 0; v < cm->n_vc; v++)
+    eval[v] = pot_value;
+  eval[cm->n_vc] = pot_value;
+
+  /* Multiply these values by a cellwise Hodge operator previously computed */
+  double  *hdg_eval = cb->values + cm->n_vc + 1;
+  cs_locmat_matvec(cb->hdg, eval, hdg_eval);
+
+  for (short int v = 0; v < cm->n_vc + 1; v++)
+    values[v] += hdg_eval[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar potential defined at primal vertices and cells by
+ *         an analytical function.
+ *         A discrete Hodge operator has to be computed before this call and
+ *         stored inside a cs_cell_builder_t structure
+ *
+ * \param[in]      source     pointer to a cs_source_term_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_vcsp_by_analytic(const cs_source_term_t    *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_cell_builder_t         *cb,
+                                double                    *values)
+{
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cb != NULL && cb->hdg != NULL);
+
+  const double  tcur = cs_time_step->t_cur;
+
+  cs_analytic_func_t  *ana = source->def.analytic;
+  cs_get_t  result;
+
+  /* Retrieve the values of the potential at each cell vertices */
+  double  *eval = cb->values;
+  for (short int v = 0; v < cm->n_vc; v++) {
+    ana(tcur, cm->xv + 3*v, &result);
+    eval[v] = result.val;
+  }
+  ana(tcur, cm->xc, &result);
+  eval[cm->n_vc] = result.val;
+
+  /* Multiply these values by a cellwise Hodge operator previously computed */
+  double  *hdg_eval = cb->values + cm->n_vc + 1;
+  cs_locmat_matvec(cb->hdg, eval, hdg_eval);
+
+  for (short int v = 0; v < cm->n_vc + 1; v++)
+    values[v] += hdg_eval[v];
 }
 
 /*----------------------------------------------------------------------------*/

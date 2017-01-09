@@ -44,6 +44,7 @@
 
 #include "cs_log.h"
 #include "cs_math.h"
+#include "cs_parall.h"
 #include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
@@ -845,7 +846,6 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
            fabs(quant->cell_centers[3*i+1]-mq->cell_cen[3*i+1]),
            fabs(quant->cell_centers[3*i+2]-mq->cell_cen[3*i+2]));
 #endif
-
   }
 
 }
@@ -1093,20 +1093,34 @@ cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
   cs_log_printf(CS_LOG_DEFAULT, "\n CDO mesh quantities information:\n");
 
   /* Information about activated flags */
-  cs_lnum_t  n_ortho_cells = 0;
+  cs_gnum_t  n_ortho_cells = 0;
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
     if (quant->cell_flag[c_id] & CS_CDO_ORTHO)
       n_ortho_cells += 1;
-  cs_log_printf(CS_LOG_DEFAULT, " --cdo-- n_ortho_cells  %9d\n",
-                n_ortho_cells);
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(1, CS_GNUM_TYPE, &n_ortho_cells);
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --cdo-- n_ortho_cells  %9lu\n", n_ortho_cells);
 
   /* Output */
-  cs_log_printf(CS_LOG_DEFAULT, " --cdo-- h_cell  %6.4e %6.4e (min/max)\n",
-                quant->cell_info.h_min, quant->cell_info.h_max);
-  cs_log_printf(CS_LOG_DEFAULT, " --cdo-- h_face  %6.4e %6.4e (min/max)\n",
-                quant->face_info.h_min, quant->face_info.h_max);
-  cs_log_printf(CS_LOG_DEFAULT, " --cdo-- h_edge  %6.4e %6.4e (min/max)\n\n",
-                quant->edge_info.h_min, quant->edge_info.h_max);
+  double  h_min[3] = {quant->cell_info.h_min,
+                      quant->face_info.h_min,
+                      quant->edge_info.h_min};
+  double  h_max[3] = {quant->cell_info.h_max,
+                      quant->face_info.h_max,
+                      quant->edge_info.h_max};
+
+  if (cs_glob_n_ranks > 1) {
+    cs_parall_min(3, CS_DOUBLE, h_min);
+    cs_parall_max(3, CS_DOUBLE, h_max);
+  }
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --cdo-- h_cell  %6.4e %6.4e (min/max)\n"
+                " --cdo-- h_face  %6.4e %6.4e (min/max)\n"
+                " --cdo-- h_edge  %6.4e %6.4e (min/max)\n\n",
+                h_min[0], h_max[0], h_min[1], h_max[1], h_min[2], h_max[2]);
 
 #if CS_CDO_QUANTITIES_DBG > 0 && defined(DEBUG) && !defined(NDEBUG)
   cs_cdo_quantities_dump(quant);
@@ -1125,10 +1139,20 @@ cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
 void
 cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
 {
+  int  lname = strlen("DumpQuantities.dat") + 1;
 
-  FILE  *fdump = NULL;
-
-  fdump = fopen("cdo_quantities_dump.dat", "w");
+  /* Define the name of the dump file */
+  char *fname = NULL;
+  if (cs_glob_n_ranks > 1) {
+    lname += 6;
+    BFT_MALLOC(fname, lname, char);
+    sprintf(fname, "DumpQuantities.%05d.dat", cs_glob_rank_id);
+  }
+  else {
+    BFT_MALLOC(fname, lname, char);
+    sprintf(fname, "DumpQuantities.dat");
+  }
+  FILE  *fdump = fopen(fname, "w");
 
   if (cdoq == NULL) {
     fprintf(fdump, "Empty structure.\n");
@@ -1164,6 +1188,7 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
     cs_quant_dump(fdump, i+1, cdoq->edge[i]);
 
   fclose(fdump);
+  BFT_FREE(fname);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1209,8 +1234,6 @@ cs_compute_pvol_vtx(const cs_cdo_connect_t     *connect,
                     const cs_cdo_quantities_t  *quant,
                     double                     *p_pvol[])
 {
-  cs_lnum_t  i, j;
-
   double  *pvol = *p_pvol;
 
   const cs_connect_index_t  *c2v = connect->c2v;
@@ -1218,15 +1241,18 @@ cs_compute_pvol_vtx(const cs_cdo_connect_t     *connect,
   /* Allocate if needed and initialize */
   if (pvol == NULL)
     BFT_MALLOC(pvol, quant->n_vertices, double);
-  for (i = 0; i < quant->n_vertices; i++)
+
+# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
     pvol[i] = 0;
 
-  for (i = 0; i < quant->n_cells; i++)
-    for (j = c2v->idx[i]; j < c2v->idx[i+1]; j++)
+  for (cs_lnum_t i = 0; i < quant->n_cells; i++)
+    for (cs_lnum_t j = c2v->idx[i]; j < c2v->idx[i+1]; j++)
       pvol[c2v->ids[j]] += quant->dcell_vol[j];
 
-  /* Return pointer */
+  /* TODO: PARALL => useful ? */
 
+  /* Return pointer */
   *p_pvol = pvol;
 }
 
@@ -1246,7 +1272,6 @@ cs_compute_pvol_edge(const cs_cdo_connect_t      *connect,
                      const cs_cdo_quantities_t   *quant,
                      double                      *p_pvol[])
 {
-  cs_lnum_t  i, j;
   double  dvol;
 
   double  *pvol = *p_pvol;
@@ -1254,11 +1279,13 @@ cs_compute_pvol_edge(const cs_cdo_connect_t      *connect,
   /* Allocate if needed and initialize */
   if (pvol == NULL)
     BFT_MALLOC(pvol, quant->n_edges, double);
-  for (i = 0; i < quant->n_edges; i++)
+
+# pragma omp parallel for if (quant->n_edges > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < quant->n_edges; i++)
     pvol[i] = 0;
 
-  for (i = 0; i < quant->n_cells; i++) {
-    for (j = connect->c2e->idx[i]; j < connect->c2e->idx[i+1]; j++) {
+  for (cs_lnum_t i = 0; i < quant->n_cells; i++) {
+    for (cs_lnum_t j = connect->c2e->idx[i]; j < connect->c2e->idx[i+1]; j++) {
 
       const cs_lnum_t  e_id = connect->c2e->ids[j];
       const cs_quant_t  peq = quant->edge[e_id];
@@ -1272,6 +1299,7 @@ cs_compute_pvol_edge(const cs_cdo_connect_t      *connect,
     }
   }
 
+  /* TODO: PARALL */
   /* Return pointer */
   *p_pvol = pvol;
 }
@@ -1299,7 +1327,9 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
   /* Allocate if needed */
   if (pvol == NULL)
     BFT_MALLOC(pvol, quant->n_faces, double);
+
   /* Initialize */
+# pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < quant->n_faces; i++)
     pvol[i] = 0;
 
@@ -1317,6 +1347,7 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
     }
   }
 
+  /* TODO: PARALL */
   /* Return pointer */
   *p_pvol = pvol;
 }

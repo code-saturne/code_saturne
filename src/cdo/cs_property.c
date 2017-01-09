@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_PROPERTY_DBG  1
+#define CS_PROPERTY_DBG  0
 
 #define CS_PROPERTY_POST_FOURIER (1 << 1)  // postprocess Fourier number
 
@@ -93,7 +93,7 @@ struct _cs_property_t {
   int               n_max_subdomains; // requested number of subdomains
   int               n_subdomains;     // current number of subddomains defined
   cs_param_def_t   *defs;             // list of definitions for each subdomain
-  short int        *def_ids;          /* id in of the definition related to each
+  short int        *def_ids;          /* id of the definition related to each
                                          cell.
                                          NULL is only one definition is set */
 
@@ -187,6 +187,12 @@ _init_new_def(cs_property_t     *pty,
               _(" Invalid type of mesh location for mesh location  %s.\n"
                 " The expected type is CS_MESH_LOCATION_CELLS.\n"), ml_name);
 
+  pty->n_subdomains += 1;
+
+  cs_param_def_t  *new_def = pty->defs + new_id;
+
+  new_def->ml_id = ml_id;
+
   if (pty->n_max_subdomains > 1) { /* Assign new id to the selected cells */
 
     const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
@@ -211,15 +217,6 @@ _init_new_def(cs_property_t     *pty,
 
   } // n_max_subdomains > 1
 
-  pty->n_subdomains += 1;
-
-  cs_param_def_t  *new_def = pty->defs + new_id;
-
-  /* Copy mesh location name */
-  int  len = strlen(ml_name) + 1;
-  BFT_MALLOC(new_def->ml_name, len, char);
-  strncpy(new_def->ml_name, ml_name, len);
-
   return new_def;
 }
 
@@ -238,8 +235,6 @@ _get_tensor_by_value(const cs_property_t      *pty,
                      cs_get_t                  get,
                      cs_real_3_t              *tensor)
 {
-  int  k, l;
-
   switch (pty->type) {
 
   case CS_PROPERTY_ISO:
@@ -247,13 +242,13 @@ _get_tensor_by_value(const cs_property_t      *pty,
     break;
 
   case CS_PROPERTY_ORTHO:
-    for (k = 0; k < 3; k++)
+    for (int k = 0; k < 3; k++)
       tensor[k][k] = get.vect[k];
     break;
 
   case CS_PROPERTY_ANISO:
-    for (k = 0; k < 3; k++)
-      for (l = 0; l < 3; l++)
+    for (int k = 0; k < 3; k++)
+      for (int l = 0; l < 3; l++)
         tensor[k][l] = get.tens[k][l];
     break;
 
@@ -281,7 +276,7 @@ _get_cell_value_from_array(cs_lnum_t         c_id,
 {
   double  cell_val = 0.;
 
-  if ((desc.location & CS_FLAG_SCAL) != CS_FLAG_SCAL)
+  if ((desc.location & CS_FLAG_SCALAR) != CS_FLAG_SCALAR)
     bft_error(__FILE__, __LINE__, 0,
               " Invalid type of variable. Stop computing the cell value.");
 
@@ -560,8 +555,6 @@ cs_property_free(cs_property_t   *pty)
 
   BFT_FREE(pty->name);
   BFT_FREE(pty->def_ids);
-  for (int i = 0; i < pty->n_subdomains; i++)
-    BFT_FREE(pty->defs[i].ml_name);
   BFT_FREE(pty->defs);
 
   if (pty->desc1.state & CS_FLAG_STATE_OWNER)
@@ -715,7 +708,8 @@ cs_property_summary(const cs_property_t   *pty)
     cs_param_def_t  *pdef  = pty->defs + i;
 
     cs_log_printf(CS_LOG_SETUP,
-                  "  %s >> location  %s,", pty->name, pdef->ml_name);
+                  "  %s >> location  %s,", pty->name,
+                  cs_mesh_location_get_name(pdef->ml_id));
 
     switch (pdef->def_type) {
 
@@ -1174,9 +1168,8 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
     cs_timer_stats_start(property_ts_id);
 
   /* Initialize extra-diag. values of the tensor */
-  for (int k = 0; k < 3; k++)
-    for (int l = k+1; l < 3; l++)
-      tensor[k][l] = 0;
+  tensor[0][1] = tensor[1][0] = tensor[2][0] = 0;
+  tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
 
   int  def_id = -1;
   if (pty->n_max_subdomains == 1)

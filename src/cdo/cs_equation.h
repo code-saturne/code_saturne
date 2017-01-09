@@ -212,12 +212,14 @@ cs_equation_set_timer_stats(cs_equation_t  *eq);
  * \brief  Assign a set of pointer functions for managing the cs_equation_t
  *         structure during the computation
  *
+ * \param[in]       connect  pointer to a cs_cdo_connect_t structure
  * \param[in, out]  eq       pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_last_setup(cs_equation_t  *eq);
+cs_equation_last_setup(const cs_cdo_connect_t   *connect,
+                       cs_equation_t            *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -252,45 +254,101 @@ cs_equation_link(cs_equation_t       *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition of the unknown related to this equation
- *         This definition can be done by mesh location
- *         Available types of definition are: "value" and "analytic"
+ * \brief  Define the initial condition for the unknown related to this equation
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here a constant value is set to all the entities belonging to the
+ *         given mesh location
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
  * \param[in]       ml_name   name of the associated mesh location (if NULL or
- *                            "" all entities are considered)
- * \param[in]       def_key   way of defining the value of the BC
+ *                            "" all cells are considered)
  * \param[in]       val       pointer to the value
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_ic(cs_equation_t    *eq,
-                   const char       *ml_name,
-                   const char       *def_key,
-                   void             *val);
+cs_equation_set_ic_by_value(cs_equation_t    *eq,
+                            const char       *ml_name,
+                            cs_get_t          get);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to an equation
- *         bc_key among "dirichlet", "neumann" or "robin"
- *         def_key among "value", "analytic", "user"
+ * \brief  Define the initial condition for the unknown related to this equation
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the value related to all the entities belonging to the
+ *         given mesh location is such that the integral over these cells
+ *         returns the requested quantity
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       bc_key    type of boundary condition to add
- * \param[in]       def_key   way of defining the value of the bc
- * \param[in]       val       pointer to the value
+ * \param[in]       ml_name   name of the associated mesh location (if NULL or
+ *                            "" all cells are considered)
+ * \param[in]       quantity  quantity to distribute over the mesh location
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_bc(cs_equation_t    *eq,
-                   const char       *ml_name,
-                   const char       *bc_key,
-                   const char       *def_key,
-                   const void       *val);
+cs_equation_set_ic_by_qov(cs_equation_t    *eq,
+                          const char       *ml_name,
+                          double            quantity);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the initial condition for the unknown related to this equation
+ *         This definition can be done on a specified mesh location.
+ *         By default, the unknown is set to zero everywhere.
+ *         Here the initial value is set according to an analytical function
+ *
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       ml_name   name of the associated mesh location (if NULL or
+ *                            "" all cells are considered)
+ * \param[in]       analytic  pointer to an analytic function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_ic_by_analytic(cs_equation_t        *eq,
+                               const char           *ml_name,
+                               cs_analytic_func_t   *analytic);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the givan equation structure
+ *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ *
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       bc_type   type of boundary condition to add
+ * \param[in]       ml_name   name of the related mesh location
+ * \param[in]       get       pointer to a cs_get_t structure storing the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_bc_by_value(cs_equation_t              *eq,
+                            const cs_param_bc_type_t    bc_type,
+                            const char                 *ml_name,
+                            const cs_get_t              get);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the givan equation structure
+ *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ *
+ * \param[in, out] eq        pointer to a cs_equation_t structure
+ * \param[in]      bc_type   type of boundary condition to add
+ * \param[in]      ml_name   name of the related mesh location
+ * \param[in]      analytic  pointer to an analytic function defining the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
+                               const cs_param_bc_type_t    bc_type,
+                               const char                 *ml_name,
+                               cs_analytic_func_t         *analytic);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -310,25 +368,6 @@ cs_equation_add_linear_reaction(cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to a source term
- *         def_key among "value", "analytic", "user"...
- *
- * \param[in, out] eq            pointer to a cs_equation_t structure
- * \param[in]      ml_id         id related to a mesh location
- * \param[in]      array_desc    short description of this array (mask of bits)
- * \param[in]      array_values  pointer to the array values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_add_gravity_source_term(cs_equation_t   *eq,
-                                    int              ml_id,
-                                    cs_desc_t        array_desc,
-                                    cs_real_t       *array_values);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Define and initialize by value a new structure to store parameters
  *         related to a source term defined by a user
  *
@@ -336,10 +375,12 @@ cs_equation_add_gravity_source_term(cs_equation_t   *eq,
  * \param[in]       st_name   name of the source term or NULL
  * \param[in]       ml_name   name of the related mesh location
  * \param[in]       val       pointer to the value
+ *
+ * \return a pointer to the new cs_source_term_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_source_term_t *
 cs_equation_add_source_term_by_val(cs_equation_t   *eq,
                                    const char      *st_name,
                                    const char      *ml_name,
@@ -354,47 +395,16 @@ cs_equation_add_source_term_by_val(cs_equation_t   *eq,
  * \param[in]       st_name   name of the source term or NULL
  * \param[in]       ml_name   name of the related mesh location
  * \param[in]       ana       pointer to an analytical function
+ *
+ * \return a pointer to the new cs_source_term_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_source_term_t *
 cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
                                         const char           *st_name,
                                         const char           *ml_name,
                                         cs_analytic_func_t   *ana);
-
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the type of quadrature to use for computing a source term
- *         If st_name is NULL, all source terms of the given equation are set
- *
- * \param[in, out]  eq         pointer to a cs_equation_t structure
- * \param[in]       st_name    name of the source term
- * \param[in]       quad_type  type of quadrature to use
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_source_term_quadrature(cs_equation_t      *eq,
-                                       const char         *st_name,
-                                       cs_quadra_type_t    quad_type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the type of quadrature to use for computing a source term
- *         If st_name is NULL, all source terms of the given equation are set
- *
- * \param[in, out]  eq         pointer to a cs_equation_t structure
- * \param[in]       st_name    name of the source term
- * \param[in]       type       type of reduction to apply
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_source_term_reduction(cs_equation_t               *eq,
-                                      const char                  *st_name,
-                                      cs_source_term_reduction_t   type);
 
 /*----------------------------------------------------------------------------*/
 /*!

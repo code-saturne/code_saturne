@@ -1718,7 +1718,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
     case CS_GROUNDWATER_MODEL_GENUCHTEN:
       {
-        cs_desc_t  desc = {.location = CS_FLAG_SCAL | cs_cdo_primal_cell,
+        cs_desc_t  desc = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
                            .state = CS_FLAG_STATE_POTENTIAL};
 
         /* Set permeability tensor behavior */
@@ -1754,7 +1754,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
     case CS_GROUNDWATER_MODEL_TRACY:
       {
-        cs_desc_t  desc = {.location = CS_FLAG_SCAL | cs_cdo_primal_cell,
+        cs_desc_t  desc = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
                            .state = CS_FLAG_STATE_POTENTIAL};
 
         /* Set permeability tensor behavior */
@@ -1828,7 +1828,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
   } // Loop on the different type of soils
 
   { /* Define and then link the advection field to each tracer equations */
-    cs_desc_t  desc = {.location = CS_FLAG_SCAL | cs_cdo_dual_face_byc,
+    cs_desc_t  desc = {.location = CS_FLAG_SCALAR | cs_cdo_dual_face_byc,
                        .state = CS_FLAG_STATE_FLUX};
 
     cs_advection_field_def_by_array(gw->adv_field, desc, gw->darcian_flux);
@@ -1911,7 +1911,7 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
                             cs_groundwater_t    *gw)
 {
   const cs_flag_t  eq_flag = cs_equation_get_flag(eq);
-  const cs_desc_t  desc1 = {.location = CS_FLAG_SCAL | cs_cdo_primal_cell,
+  const cs_desc_t  desc1 = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
                             .state = CS_FLAG_STATE_DENSITY};
 
   /* Sanity check */
@@ -1954,7 +1954,7 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
 
     cs_property_set_array(diff_pty, desc1, gw->moisture_content->val);
 
-    cs_desc_t  desc2 = {.location = CS_FLAG_SCAL | cs_cdo_dual_face_byc,
+    cs_desc_t  desc2 = {.location = CS_FLAG_SCALAR | cs_cdo_dual_face_byc,
                         .state = CS_FLAG_STATE_FLUX};
     cs_property_set_second_array(diff_pty, desc2, gw->darcian_flux);
 

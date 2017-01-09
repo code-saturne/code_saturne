@@ -284,11 +284,11 @@ cs_walldistance_setup(cs_equation_t   *eq,
   cs_equation_link(eq, "diffusion", diff_pty);
 
   /* Add boundary conditions */
-  cs_equation_add_bc(eq,
-                     cs_mesh_location_get_name(wall_ml_id),
-                     "dirichlet",  // type of boundary condition
-                     "value",      // type of definition
-                     "0.0");       // value to set
+  cs_get_t  get_bc_val = {.val = 0.};
+  cs_equation_add_bc_by_value(eq,
+                              CS_PARAM_BC_HMG_DIRICHLET,
+                              cs_mesh_location_get_name(wall_ml_id),
+                              get_bc_val);
 
   /* Add source term */
   cs_equation_add_source_term_by_val(eq,

@@ -52,7 +52,45 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct _cs_cdo_adv_t  cs_cdo_adv_t;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex-based scheme.
+ *          The local matrix related ti this operator is stored in cb->loc
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdo_advection_t)(const cs_equation_param_t   *eqp,
+                     const cs_cell_mesh_t        *cm,
+                     cs_face_mesh_t              *fm,
+                     cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the BC contribution for the advection operator
+ *
+ * \param[in]      cbc     pointer to a cs_cell_bc_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in, out] fm      pointer to a cs_face_mesh_t structure
+ * \param[in, out] b       pointer to a convection builder structure
+ * \param[in, out] csys    cell-wise structure storing the local system
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdo_advection_bc_t)(const cs_cell_bc_t         *cbc,
+                        const cs_cell_mesh_t       *cm,
+                        const cs_equation_param_t  *eqp,
+                        cs_face_mesh_t             *fm,
+                        cs_cell_builder_t          *cb,
+                        cs_cell_sys_t              *csys);
 
 /*============================================================================
  * Global variables
@@ -86,106 +124,249 @@ cs_cdo_advection_get_cip_coef(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize a builder structure for the convection operator
+ * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex-based scheme when diffusion is activated and an upwind
+ *          scheme and a conservative formulation is used
+ *          The local matrix related to this operator is stored in cb->loc
  *
- * \param[in]  connect       pointer to the connectivity structure
- * \param[in]  eqp           pointer to a cs_equation_param_t structure
- * \param[in]  do_diffusion  true is diffusion is activated
- *
- * \return a pointer to a new allocated builder structure
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdo_adv_t *
-cs_cdo_advection_builder_init(const cs_cdo_connect_t      *connect,
-                              const cs_equation_param_t   *eqp,
-                              bool                         do_diffusion);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Destroy a builder structure for the convection operator
- *
- * \param[in, out] b   pointer to a cs_cdo_adv_t struct. to free
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_cdo_adv_t *
-cs_cdo_advection_builder_free(cs_cdo_adv_t  *b);
+void
+cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
+                                 const cs_cell_mesh_t        *cm,
+                                 cs_face_mesh_t              *fm,
+                                 cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the convection operator attached to a cell with a CDO
- *          vertex-based scheme
+ *          vertex-based scheme without diffusion and an upwind scheme and a
+ *          conservative formulation is used.
+ *          The local matrix related to this operator is stored in cb->loc
  *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      diffmat   tensor related to the diffusion property
- * \param[in, out] b         pointer to a convection builder structure
- *
- * \return a pointer to a local dense matrix structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
-cs_cdovb_advection_build(const cs_cell_mesh_t       *cm,
-                         const cs_equation_param_t  *eqp,
-                         const cs_real_33_t          diffmat,
-                         cs_cdo_adv_t               *b);
+void
+cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
+                               const cs_cell_mesh_t        *cm,
+                               cs_face_mesh_t              *fm,
+                               cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex-based scheme when a centered scheme and a conservative
+ *          formulation is used.
+ *          The local matrix related to this operator is stored in cb->loc
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
+                               const cs_cell_mesh_t        *cm,
+                               cs_face_mesh_t              *fm,
+                               cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex-based scheme when diffusion is activated and an upwind
+ *          scheme and a conservative formulation is used
+ *          The local matrix related to this operator is stored in cb->loc
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
+                                 const cs_cell_mesh_t        *cm,
+                                 cs_face_mesh_t              *fm,
+                                 cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex-based scheme without diffusion when an upwind scheme and a
+ *          conservative formulation is used.
+ *          The local matrix related to this operator is stored in cb->loc
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
+                               const cs_cell_mesh_t        *cm,
+                               cs_face_mesh_t              *fm,
+                               cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex-based scheme when a centered scheme and a non-conservative
+ *          formulation is used.
+ *          The local matrix related to this operator is stored in cb->loc
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
+                               const cs_cell_mesh_t         *cm,
+                               cs_face_mesh_t               *fm,
+                               cs_cell_builder_t            *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the convection operator attached to a cell with a CDO
+ *          vertex+cell-based scheme when the advection field is cellwise
+ *          constant
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
+                            const cs_cell_mesh_t        *cm,
+                            cs_face_mesh_t              *fm,
+                            cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex+cell-based scheme
  *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in, out] b         pointer to a convection builder structure
- *
- * \return a pointer to a local dense matrix structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_locmat_t *
-cs_cdovcb_advection_build(const cs_cell_mesh_t       *cm,
-                          const cs_equation_param_t  *eqp,
-                          cs_cdo_adv_t               *b);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the BC contribution for the convection operator
- *
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in, out] b         pointer to a convection builder structure
- * \param[in, out] ls        cell-wise structure sotring the local system
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_advection_add_bc(const cs_cell_mesh_t       *cm,
-                          const cs_equation_param_t  *eqp,
-                          cs_cdo_adv_t               *b,
-                          cs_cdo_locsys_t            *ls);
+cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
+                         const cs_cell_mesh_t        *cm,
+                         cs_face_mesh_t              *fm,
+                         cs_cell_builder_t           *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the BC contribution for the convection operator when the
+ *          advection field is approximated in each cell by a constant vector
+ *          field
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cbc     pointer to a cs_cell_bc_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] fm      pointer to a cs_face_mesh_t structure
+ * \param[in, out] b       pointer to a convection builder structure
+ * \param[in, out] csys    cell-wise structure storing the local system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_add_vb_bc_cw(const cs_cell_bc_t         *cbc,
+                              const cs_cell_mesh_t       *cm,
+                              const cs_equation_param_t  *eqp,
+                              cs_face_mesh_t             *fm,
+                              cs_cell_builder_t          *cb,
+                              cs_cell_sys_t              *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the BC contribution for the convection operator when the
+ *          convection field is not uniform inside a cell
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cbc     pointer to a cs_cell_bc_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] fm      pointer to a cs_face_mesh_t structure
+ * \param[in, out] b       pointer to a convection builder structure
+ * \param[in, out] csys    cell-wise structure storing the local system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_add_vb_bc(const cs_cell_bc_t         *cbc,
+                           const cs_cell_mesh_t       *cm,
+                           const cs_equation_param_t  *eqp,
+                           cs_face_mesh_t             *fm,
+                           cs_cell_builder_t          *cb,
+                           cs_cell_sys_t              *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the BC contribution for the convection operator with CDO
+ *          V+C schemes when the advection field is cellwise constant
+ *
+ * \param[in]      cbc     pointer to a cs_cell_bc_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in, out] fm      pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys    cell-wise structure storing the local system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_add_vcb_bc_cw(const cs_cell_bc_t         *cbc,
+                               const cs_cell_mesh_t       *cm,
+                               const cs_equation_param_t  *eqp,
+                               cs_face_mesh_t             *fm,
+                               cs_cell_builder_t          *cb,
+                               cs_cell_sys_t              *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the BC contribution for the convection operator with CDO
  *          V+C schemes
  *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in, out] b         pointer to a convection builder structure
- * \param[in, out] ls        cell-wise structure sotring the local system
+ * \param[in]      cbc     pointer to a cs_cell_bc_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in, out] fm      pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys    cell-wise structure storing the local system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_advection_add_bc(const cs_cell_mesh_t       *cm,
-                           const cs_equation_param_t  *eqp,
-                           cs_cdo_adv_t               *b,
-                           cs_cdo_locsys_t            *ls);
+cs_cdo_advection_add_vcb_bc(const cs_cell_bc_t          *cbc,
+                            const cs_cell_mesh_t        *cm,
+                            const cs_equation_param_t   *eqp,
+                            cs_face_mesh_t              *fm,
+                            cs_cell_builder_t           *cb,
+                            cs_cell_sys_t               *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -155,6 +155,58 @@ cs_param_get_def_type_name(const cs_param_def_type_t   type)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a definition by value
+ *
+ * \param[in]      var_type   type of variables (scalar, vector, tensor...)
+ * \param[in]      get        value to set
+ * \param[in, out] def        pointer to a cs_def_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_set_def_by_value(cs_param_var_type_t      var_type,
+                          const cs_get_t           get,
+                          cs_def_t                *def)
+{
+  assert(def != NULL); // Sanity check
+
+  switch (var_type) {
+
+  case CS_PARAM_VAR_SCAL:
+    def->get.val = get.val;
+    break;
+
+  case CS_PARAM_VAR_VECT:
+    def->get.vect[0] = get.vect[0];
+    def->get.vect[1] = get.vect[1];
+    def->get.vect[2] = get.vect[2];
+    break;
+
+  case CS_PARAM_VAR_SYMTENS:
+    def->get.twovects[0] = get.twovects[0];
+    def->get.twovects[1] = get.twovects[1];
+    def->get.twovects[2] = get.twovects[2];
+    def->get.twovects[3] = get.twovects[3];
+    def->get.twovects[4] = get.twovects[4];
+    def->get.twovects[5] = get.twovects[5];
+    break;
+
+  case CS_PARAM_VAR_TENS:
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++)
+        def->get.tens[i][j] = get.tens[i][j];
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid type of variable for setting a definition.");
+
+  } // switch var_type
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set a cs_def_t structure
  *
  * \param[in]      def_type   type of definition (by value, function...)
@@ -323,7 +375,7 @@ cs_param_set_get(cs_param_var_type_t      var_type,
  *
  * \param[in]  default_bc     default boundary condition
  *
- * \return a pointer to the new structure (free with cs_equation_param_t)
+ * \return a pointer to the new structure (free within cs_equation_param_t)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -335,54 +387,19 @@ cs_param_bc_create(cs_param_bc_type_t  default_bc)
   BFT_MALLOC(bc, 1, cs_param_bc_t);
 
   bc->default_bc = default_bc;
+  bc->n_defs = 0;
+  bc->n_max_defs = 3;
+
+  BFT_MALLOC(bc->def_types, bc->n_max_defs, cs_param_def_type_t);
+  BFT_MALLOC(bc->defs, bc->n_max_defs, cs_def_t);
+  BFT_MALLOC(bc->types, bc->n_max_defs, cs_param_bc_type_t);
+  BFT_MALLOC(bc->ml_ids, bc->n_max_defs, int);
+
   /* Initialization by default */
   bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
   bc->quad_type = CS_QUADRATURE_BARY;
-  bc->use_subdiv = false;
-
-  bc->n_defs = 0;
-  bc->defs = NULL;
 
   return bc;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set a cs_param_bc_def_t structure
- *
- * \param[in, out] bcpd       pointer to cs_param_bc_def_t struct. to set
- * \param[in]      loc_id     id related to a cs_mesh_location_t
- * \param[in]      bc_type    generic type of admissible boundary conditions
- * \param[in]      var_type   type of variables (scalar, vector, tensor...)
- * \param[in]      def_type   by value, function...
- * \param[in]      coef1      access to the value of the first coef
- * \param[in]      coef2      access to the value of the second coef (optional)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_bc_def_set(cs_param_bc_def_t      *bcpd,
-                    int                     loc_id,
-                    cs_param_bc_type_t      bc_type,
-                    cs_param_var_type_t     var_type,
-                    cs_param_def_type_t     def_type,
-                    const void             *coef1,
-                    const void             *coef2)
-{
-  if (bcpd == NULL)
-    return;
-
-  /* Sanity checks */
-  assert(def_type != CS_PARAM_N_DEF_TYPES);
-  assert(bc_type != CS_PARAM_N_BC_TYPES);
-
-  bcpd->loc_id = loc_id;
-  bcpd->var_type = var_type;
-  bcpd->bc_type = bc_type;
-  bcpd->def_type = def_type;
-
-  cs_param_set_def(def_type, var_type, coef1, &(bcpd->def_coef1));
-  cs_param_set_def(def_type, var_type, coef2, &(bcpd->def_coef2));
 }
 
 /*----------------------------------------------------------------------------*/

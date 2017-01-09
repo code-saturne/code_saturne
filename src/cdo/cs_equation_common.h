@@ -32,7 +32,10 @@
 
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
+#include "cs_cdo_time.h"
+#include "cs_matrix.h"
 #include "cs_time_step.h"
+#include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -90,6 +93,78 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
 void
 cs_equation_free_common_structures(cs_flag_t   scheme_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assemble a cellwise system related to cell vertices into the global
+ *         algebraic system
+ *
+ * \param[in]       csys      cellwise view of the algebraic system
+ * \param[in]       rset      pointer to a cs_range_set_t structure on vertices
+ * \param[in]       sys_flag  flag associated to the current system builder
+ * \param[in, out]  rhs       array storing the right-hand side
+ * \param[in, out]  sources   array storing the contribution of source terms
+ * \param[in, out]  mav       pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_assemble_v(const cs_cell_sys_t            *csys,
+                       const cs_range_set_t           *rset,
+                       cs_flag_t                       sys_flag,
+                       cs_real_t                      *rhs,
+                       cs_real_t                      *sources,
+                       cs_matrix_assembler_values_t   *mav);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to the associated cs_matrix_structure_t according
+ *         to the space scheme
+ *
+ * \param[in]  scheme       enum on the discretization scheme used
+ *
+ * \return  a pointer on a cs_matrix_structure_t *
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_matrix_structure_t *
+cs_equation_get_matrix_structure(cs_space_scheme_t   scheme);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a pointer to the associated cs_matrix_assembler_t according
+ *         to the space scheme
+ *
+ * \param[in]  scheme       enum on the discretization scheme used
+ *
+ * \return  a pointer on a cs_matrix_assembler_t *
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_matrix_assembler_t *
+cs_equation_get_matrix_assembler(cs_space_scheme_t   scheme);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the connectivity vertex->vertices for the local rank
+ *
+ * \return  a pointer to a cs_connect_index_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_connect_index_t *
+cs_equation_get_v2v_index(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the connectivity face->faces for the local rank
+ *
+ * \return  a pointer to a cs_connect_index_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_connect_index_t *
+cs_equation_get_f2f_index(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

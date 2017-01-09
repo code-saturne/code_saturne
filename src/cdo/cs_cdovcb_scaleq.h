@@ -122,16 +122,16 @@ cs_cdovcb_scaleq_free(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_sla_matrix_t related to the system to solve
+ * \brief  Display information related to the monitoring of the current system
  *
- * \param[in, out]  builder   pointer to a builder structure
- * \param[in, out]  matrix    pointer to a cs_sla_matrix_t structure
+ * \param[in]  eqname    name of the related equation
+ * \param[in]  builder   pointer to a cs_cdovcb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_free_sysmat(void              *builder,
-                             cs_sla_matrix_t   *matrix);
+cs_cdovcb_scaleq_monitor(const char   *eqname,
+                         const void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -146,26 +146,51 @@ cs_cdovcb_scaleq_compute_source(void            *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Allocate the matrix related to the algebraic system to solve
+ *
+ * \return  a pointer to a new allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_cdovcb_allocate_matrix(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize the right-hand side associated to the given
+ *         builder structure
+ *
+ * \param[in, out] builder    pointer to generic builder structure
+ *
+ * \return an initialized array
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdovcb_initialize_rhs(void       *builder);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build the linear system arising from a scalar convection/diffusion
- *         equation with a CDO vertex-based scheme.
+ *         equation with a CDO vertex+cell-based scheme.
  *         One works cellwise and then process to the assembly
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      field_val  pointer to the current value of the field
+ * \param[in]      field_val  pointer to the current value of the vertex field
  * \param[in]      dt_cur     current value of the time step
  * \param[in, out] builder    pointer to cs_cdovcb_scaleq_t structure
  * \param[in, out] rhs        right-hand side
- * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
+ * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_build_system(const cs_mesh_t             *mesh,
-                              const cs_real_t             *field_val,
-                              double                       dt_cur,
-                              void                        *builder,
-                              cs_real_t                  **rhs,
-                              cs_sla_matrix_t            **sla_mat);
+cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
+                              const cs_real_t       *field_val,
+                              double                 dt_cur,
+                              void                  *builder,
+                              cs_real_t             *rhs,
+                              cs_matrix_t           *matrix);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -204,22 +229,22 @@ cs_cdovcb_scaleq_get_cell_values(const void          *builder);
 /*!
  * \brief  Compute the diffusive and convective flux across a list of faces
  *
- * \param[in]       builder    pointer to a builder structure
+ * \param[in]       direction  indicate in which direction flux is > 0
  * \param[in]       pdi        pointer to an array of field values
  * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
- * \param[in]       direction  indicate in which direction flux is > 0
+ * \param[in, out]  builder    pointer to a builder structure
  * \param[in, out]  diff_flux  pointer to the value of the diffusive flux
  * \param[in, out]  conv_flux  pointer to the value of the convective flux
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_compute_flux_across_plane(const void          *builder,
-                                           const cs_real_t     *pdi,
-                                           int                  ml_id,
-                                           const cs_real_t      direction[],
-                                           double              *diff_flux,
-                                           double              *conv_flux);
+cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
+                                           const cs_real_t    *pdi,
+                                           int                 ml_id,
+                                           void               *builder,
+                                           double             *diff_flux,
+                                           double             *conv_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!

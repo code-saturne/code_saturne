@@ -570,6 +570,9 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->n_adv_fields = 0;
   domain->adv_fields = NULL;
 
+  /* Monitoring */
+  CS_TIMER_COUNTER_INIT(domain->tcp); // build system
+
   /* User-defined settings for this domain
       - time step
       - boundary of the domain  */
@@ -919,10 +922,6 @@ cs_domain_last_setup(cs_domain_t    *domain)
 
   } // Loop on equations
 
-  /* Build additionnal connectivity according to the type of numerical
-     schemes requested for solving the current computional domain */
-  cs_cdo_connect_update(domain->connect, domain->scheme_flag);
-
   /* Allocate common structures for solving equations */
   cs_equation_allocate_common_structures(domain->connect,
                                          domain->cdo_quantities,
@@ -944,7 +943,7 @@ cs_domain_last_setup(cs_domain_t    *domain)
     if (domain->profiling)
       cs_equation_set_timer_stats(eq);
 
-    cs_equation_last_setup(eq);
+    cs_equation_last_setup(domain->connect, eq);
 
     if (!cs_equation_is_steady(eq))
       domain->only_steady = false;
@@ -1991,6 +1990,8 @@ cs_domain_write_restart(const cs_domain_t  *domain)
 void
 cs_domain_postprocess(cs_domain_t  *domain)
 {
+  cs_timer_t  t0 = cs_timer_time();
+
   /* Extra-operations */
   /* ================ */
 
@@ -2025,6 +2026,8 @@ cs_domain_postprocess(cs_domain_t  *domain)
   */
   cs_post_write_vars(domain->time_step);
 
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(domain->tcp), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -321,14 +321,16 @@ cs_quadrature_tet_4pts(const cs_real_3_t  xv,
                        cs_real_3_t        gpts[],
                        double            *w)
 {
-  int  k;
-
   /* Compute Gauss points */
-  for (k = 0; k < 3; k++) {
-    gpts[0][k] = _tetr_quad4c1*(xv[k] + xe[k] + xf[k]) + _tetr_quad4c2*xc[k];
-    gpts[1][k] = _tetr_quad4c1*(xe[k] + xf[k] + xc[k]) + _tetr_quad4c2*xv[k];
-    gpts[2][k] = _tetr_quad4c1*(xf[k] + xc[k] + xv[k]) + _tetr_quad4c2*xe[k];
-    gpts[3][k] = _tetr_quad4c1*(xc[k] + xv[k] + xe[k]) + _tetr_quad4c2*xf[k];
+  for (int k = 0; k < 3; k++) {
+
+    const double xve = xv[k] + xe[k], xfc = xf[k] + xc[k];
+
+    gpts[0][k] = _tetr_quad4c1*(xf[k] + xve) + _tetr_quad4c2*xc[k];
+    gpts[1][k] = _tetr_quad4c1*(xe[k] + xfc) + _tetr_quad4c2*xv[k];
+    gpts[2][k] = _tetr_quad4c1*(xv[k] + xfc) + _tetr_quad4c2*xe[k];
+    gpts[3][k] = _tetr_quad4c1*(xc[k] + xve) + _tetr_quad4c2*xf[k];
+
   }
 
   /* Compute weights (multiplicity 4) */
@@ -359,22 +361,23 @@ cs_quadrature_tet_5pts(const cs_real_3_t  xv,
                        cs_real_3_t        gpts[],
                        double             weights[])
 {
-  int  k;
-
   const double  wv1 = -0.8*vol;  /* multiplicity 1 */
   const double  wv2 = 0.45*vol;  /* multiplicity 4 */
 
   /* compute Gauss points */
-  for (k = 0; k < 3; k++) {
-    gpts[0][k] = _quad_over6*(xv[k] + xe[k] + xf[k]) + 0.5*xc[k];
-    gpts[1][k] = _quad_over6*(xe[k] + xf[k] + xc[k]) + 0.5*xv[k];
-    gpts[2][k] = _quad_over6*(xf[k] + xc[k] + xv[k]) + 0.5*xe[k];
-    gpts[3][k] = _quad_over6*(xc[k] + xv[k] + xe[k]) + 0.5*xf[k];
-    gpts[4][k] = 0.25*(xv[k] + xe[k] + xf[k] + xc[k]);
+  for (int k = 0; k < 3; k++) {
+
+    const double xve = xv[k] + xe[k], xfc = xf[k] + xc[k];
+
+    gpts[0][k] = _quad_over6*(xve + xf[k]) + 0.5*xc[k];
+    gpts[1][k] = _quad_over6*(xfc + xe[k]) + 0.5*xv[k];
+    gpts[2][k] = _quad_over6*(xfc + xv[k]) + 0.5*xe[k];
+    gpts[3][k] = _quad_over6*(xve + xc[k]) + 0.5*xf[k];
+    gpts[4][k] = 0.25*(xve + xfc);
   }
 
   /* Compute weights */
-  for (k = 0; k < 4; k++)
+  for (int k = 0; k < 4; k++)
     weights[k] = wv2;
   weights[4] = wv1;
 }

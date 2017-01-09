@@ -42,6 +42,8 @@
 
 #include "cs_math.h"
 #include "cs_mesh_location.h"
+#include "cs_parall.h"
+#include "cs_range_set.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -183,7 +185,7 @@ _analytic_quad_tet5(double                tcur,
   double  result = 0.0;
   const double  vol_tet = cs_math_voltet(xv, xe, xf, xc);
 
-  /* Compute Gauss points and its unique weight */
+  /* Compute Gauss points and its weights */
   cs_quadrature_tet_5pts(xv, xe, xf, xc, vol_tet, gauss_pts, weights);
 
   for (int p = 0; p < 5; p++) {
@@ -192,6 +194,70 @@ _analytic_quad_tet5(double                tcur,
   }
 
   return result;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over dual cells of a scalar density field
+ *         defined by an analytical function on a cell
+ *
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      ana         pointer to the analytic function
+ * \param[in]      quad_type   type of quadrature to use
+ * \param[in, out] values      pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cellwise_dcsd_by_analytic(const cs_cell_mesh_t    *cm,
+                           cs_analytic_func_t      *ana,
+                           cs_quadra_type_t         quad_type,
+                           double                   values[])
+{
+  const double  tcur = cs_time_step->t_cur;
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    const double  *xf = cm->face[f].center;
+    const short int  n_ef = cm->f2e_idx[f+1] - cm->f2e_idx[f];
+    const short int  *e_ids = cm->f2e_ids + cm->f2e_idx[f];
+
+    for (short int i = 0; i < n_ef; i++) {
+
+      const short int  e = e_ids[i];
+      const short int  v1 = cm->e2v_ids[2*e];
+      const short int  v2 = cm->e2v_ids[2*e+1];
+      const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
+      const double  *xe = cm->edge[e].center;
+
+      double  add1 = 0, add2 = 0;
+
+      switch(quad_type) {
+
+      case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+        add1  = _analytic_quad_tet1(tcur, xv1, xe, xf, cm->xc, ana);
+        add2  = _analytic_quad_tet1(tcur, xv2, xe, xf, cm->xc, ana);
+        break;
+      case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+        add1 = _analytic_quad_tet4(tcur, xv1, xe, xf, cm->xc, ana);
+        add2 = _analytic_quad_tet4(tcur, xv2, xe, xf, cm->xc, ana);
+        break;
+      case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+        add1 = _analytic_quad_tet5(tcur, xv1, xe, xf, cm->xc, ana);
+        add2 = _analytic_quad_tet5(tcur, xv2, xe, xf, cm->xc, ana);
+        break;
+      default:
+        bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+
+      } /* Quad rule */
+
+      values[v1] += add1;
+      values[v2] += add2;
+
+    } // Loop on face edges
+
+  } // Loop on cell faces
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -270,6 +336,143 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
 
   } // Loop on cells
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over primal cells of a scalar density field
+ *         defined by an analytical function on a cell
+ *
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      ana         pointer to the analytic function
+ * \param[in]      quad_type   type of quadrature to use
+ *
+ * \return the value of the corresponding integral
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
+                           cs_analytic_func_t      *ana,
+                           cs_quadra_type_t         quad_type)
+{
+  const double  tcur = cs_time_step->t_cur;
+
+  double  retval = 0.;
+
+  if (cm->type == FVM_CELL_TETRA) {
+
+    switch(quad_type) {
+
+    case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+      retval = _analytic_quad_tet1(tcur,
+                                   cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
+                                   ana);
+      break;
+    case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+      retval = _analytic_quad_tet4(tcur,
+                                   cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
+                                   ana);
+      break;
+    case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+      retval = _analytic_quad_tet5(tcur,
+                                   cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
+                                   ana);
+      break;
+    default:
+      bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+
+    } /* Quad rule */
+
+  }
+  else {
+
+    for (short int f = 0; f < cm->n_fc; f++) {
+
+      const short int  n_ef = cm->f2e_idx[f+1] - cm->f2e_idx[f];
+      const short int  *e_ids = cm->f2e_ids + cm->f2e_idx[f];
+
+      if (n_ef == 3) { // Current face is a triangle --> simpler
+
+        const short int  v0 = cm->e2v_ids[2*e_ids[0]];
+        const short int  v1 = cm->e2v_ids[2*e_ids[0]+1];
+        short int  v2;
+
+        short int _v = cm->e2v_ids[2*e_ids[1]+1];
+        if (v0 != _v && v1 != _v)
+          v2 = _v;
+        else {
+          _v = cm->e2v_ids[2*e_ids[1]];
+          if (v0 != _v && v1 != _v)
+            v2 = _v;
+          else
+            bft_error(__FILE__, __LINE__, 0,
+                      " Do not find the triangle vertices...");
+        }
+
+        const double  *xv0 = cm->xv + 3*v0, *xv1 = cm->xv + 3*v1;
+        const double  *xv2 = cm->xv + 3*v2;
+
+        double  add = 0.0;
+
+        switch(quad_type) {
+
+        case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+          add  = _analytic_quad_tet1(tcur, xv0, xv1, xv2, cm->xc, ana);
+          break;
+        case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+          add = _analytic_quad_tet4(tcur, xv0, xv1, xv2, cm->xc, ana);
+          break;
+        case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+          add = _analytic_quad_tet5(tcur, xv0, xv1, xv2, cm->xc, ana);
+          break;
+        default:
+          bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+
+        } /* Quad rule */
+
+        retval += add;
+
+      }
+      else {
+
+        const double  *xf = cm->face[f].center;
+
+        for (short int i = 0; i < n_ef; i++) {
+
+          const short int  e = e_ids[i];
+          const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e];
+          const double  *xv2 = cm->xv + 3*cm->e2v_ids[2*e+1];
+
+          double  add = 0.0;
+
+          switch(quad_type) {
+
+          case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+            add  = _analytic_quad_tet1(tcur, xv1, xv2, xf, cm->xc, ana);
+            break;
+          case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+            add = _analytic_quad_tet4(tcur, xv1, xv2, xf, cm->xc, ana);
+            break;
+          case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+            add = _analytic_quad_tet5(tcur, xv1, xv2, xf, cm->xc, ana);
+            break;
+          default:
+            bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+
+          } /* Quad rule */
+
+          retval += add;
+
+        } // Loop on face edges
+
+      } // Current face is triangle or not ?
+
+    } // Loop on cell faces
+
+  } // Not a tetrahedron
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -601,14 +804,15 @@ _pvsp_by_qov(const double       quantity_val,
   const cs_sla_matrix_t  *e2v = cs_cdo_connect->e2v;
 
   /* Initialize todo array */
-  bool  *cell_tag = NULL, *vtx_tag = NULL;
+  bool  *cell_tag = NULL;
+  int  *vtx_tag = NULL;
 
   BFT_MALLOC(cell_tag, quant->n_cells, bool);
-  BFT_MALLOC(vtx_tag, quant->n_vertices, bool);
+  BFT_MALLOC(vtx_tag, quant->n_vertices, int);
 
 # pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
   for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
-    vtx_tag[v_id] = false;
+    vtx_tag[v_id] = 0;
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
     cell_tag[c_id] = false;
@@ -621,7 +825,7 @@ _pvsp_by_qov(const double       quantity_val,
 
     cell_tag[c_id] = true;
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-      vtx_tag[c2v->ids[j]] = true;
+      vtx_tag[c2v->ids[j]] = -1; // activated
 
   } // Loop on selected cells
 
@@ -645,8 +849,8 @@ _pvsp_by_qov(const double       quantity_val,
           const cs_lnum_t  e_id = f2e->col_id[l];
           const cs_lnum_t  shift_e = 2*e_id;
 
-          vtx_tag[e2v->col_id[shift_e]] = false;
-          vtx_tag[e2v->col_id[shift_e+1]] = false;
+          vtx_tag[e2v->col_id[shift_e]] = 0;
+          vtx_tag[e2v->col_id[shift_e+1]] = 0;
 
         } // Loop on face edges
       } // This face belongs to the frontier of the selection (only interior)
@@ -654,6 +858,15 @@ _pvsp_by_qov(const double       quantity_val,
     } // Loop on cell faces
 
   } // Loop on selected cells
+
+  /* Handle parallelism */
+  if (cs_glob_n_ranks > 1)
+    cs_interface_set_max(cs_cdo_connect->v_rs->ifs,
+                         quant->n_vertices,
+                         1,           // stride
+                         true,        // interlace, not useful here
+                         CS_INT32,
+                         (void *)vtx_tag);
 
   /* Third pass: compute the (really) available volume */
   double  volume = 0.;
@@ -663,10 +876,14 @@ _pvsp_by_qov(const double       quantity_val,
     const cs_lnum_t  c_id = elt_ids[i];
 
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-      if (vtx_tag[c2v->ids[j]])
-        volume += dc_vol[j];
+      if (vtx_tag[c2v->ids[j]] == -1) // activated
+        volume += dc_vol[j]; // | dual_cell cap cell |
 
   } // Loop on selected cells
+
+  /* Handle parallelism */
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(1, CS_DOUBLE, &volume);
 
   double val_to_set = quantity_val;
   if (volume > 0)
@@ -766,11 +983,11 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_density_from_analytic(cs_flag_t              dof_flag,
-                                  int                    ml_id,
-                                  cs_analytic_func_t    *ana,
-                                  cs_quadra_type_t       quad_type,
-                                  double                 retval[])
+cs_evaluate_density_by_analytic(cs_flag_t              dof_flag,
+                                int                    ml_id,
+                                cs_analytic_func_t    *ana,
+                                cs_quadra_type_t       quad_type,
+                                double                 retval[])
 {
   /* Sanity check */
   if (retval == NULL)
@@ -787,7 +1004,7 @@ cs_evaluate_density_from_analytic(cs_flag_t              dof_flag,
     bft_error(__FILE__, __LINE__, 0, _err_not_handled);
 
   /* Perform the evaluation */
-  if (dof_flag & CS_FLAG_SCAL) { /* DoF is scalar-valued */
+  if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     if (cs_cdo_same_support(dof_flag, cs_cdo_primal_cell))
       _pcsd_by_analytic(ana, n_elts[0], elt_ids, quad_type, retval);
@@ -801,12 +1018,12 @@ cs_evaluate_density_from_analytic(cs_flag_t              dof_flag,
   }
   else
     bft_error(__FILE__, __LINE__, 0, _err_not_handled);
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value related to each DoF in the case of a density field
+ * \brief  Evaluate the quantity defined by a value in the case of a density
+ *         field for all the degrees of freedom
  *         Accessor to the value is by unit of volume
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
@@ -817,10 +1034,10 @@ cs_evaluate_density_from_analytic(cs_flag_t              dof_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_density_from_value(cs_flag_t       dof_flag,
-                               int             ml_id,
-                               cs_get_t        get,
-                               double          retval[])
+cs_evaluate_density_by_value(cs_flag_t       dof_flag,
+                             int             ml_id,
+                             cs_get_t        get,
+                             double          retval[])
 {
   /* Sanity check */
   if (retval == NULL)
@@ -837,7 +1054,7 @@ cs_evaluate_density_from_value(cs_flag_t       dof_flag,
     bft_error(__FILE__, __LINE__, 0, _err_not_handled);
 
   /* Perform the evaluation */
-  if (dof_flag & CS_FLAG_SCAL) { /* DoF is scalar-valued */
+  if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     if (cs_cdo_same_support(dof_flag, cs_cdo_primal_cell))
       _pcsd_by_value(get.val, n_elts[0], elt_ids, retval);
@@ -856,8 +1073,8 @@ cs_evaluate_density_from_value(cs_flag_t       dof_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the contribution related to a quantity defined by analytic
- *         function for all the degrees of freedom
+ * \brief  Evaluate the quantity attached to a potential field for all the DoFs
+ *         when the definition relies on an analytic expression
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
  * \param[in]      ml_id       id related to a cs_mesh_location_t structure
@@ -867,10 +1084,10 @@ cs_evaluate_density_from_value(cs_flag_t       dof_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
-                                    int                    ml_id,
-                                    cs_analytic_func_t    *ana,
-                                    double                 retval[])
+cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
+                                  int                    ml_id,
+                                  cs_analytic_func_t    *ana,
+                                  double                 retval[])
 {
   cs_get_t  result;
 
@@ -879,6 +1096,7 @@ cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
     bft_error(__FILE__, __LINE__, 0, _err_empty_array);
 
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const double  tcur = cs_time_step->t_cur;
 
   /* Retrieve information from mesh location structures */
@@ -892,7 +1110,7 @@ cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
     bft_error(__FILE__, __LINE__, 0, _err_not_handled);
 
   /* Perform the evaluation */
-  if (dof_flag & CS_FLAG_SCAL) { /* DoF is scalar-valued */
+  if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     if (cs_cdo_same_support(dof_flag, cs_cdo_primal_vtx)) {
 
@@ -905,6 +1123,12 @@ cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
       }
       else
         _pvsp_by_analytic(ana, n_elts[0], elt_ids, retval);
+
+      if (cs_glob_n_ranks > 1)
+        cs_range_set_sync(connect->v_rs,
+                          CS_DOUBLE,
+                          1, // stride = 1 => scalar-valued equation
+                          (void *)retval);
 
     } /* Located at primal vertices */
 
@@ -919,6 +1143,12 @@ cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
       }
       else
         _pfsp_by_analytic(ana, n_elts[0], elt_ids, retval);
+
+      if (cs_glob_n_ranks > 1)
+        cs_range_set_sync(connect->f_rs,
+                          CS_DOUBLE,
+                          1, // stride = 1 => scalar-valued equation
+                          (void *)retval);
 
     } /* Located at primal faces */
 
@@ -939,8 +1169,9 @@ cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
           retval[c_id] = result.val;
         }
 
-    } /* Located at primal cells or dual vertices */
+      /* No sync since this value is computed by only one rank */
 
+    } /* Located at primal cells or dual vertices */
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled);
 
@@ -964,10 +1195,10 @@ cs_evaluate_potential_from_analytic(cs_flag_t              dof_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_from_qov(cs_flag_t       dof_flag,
-                               int             ml_id,
-                               cs_get_t        get,
-                               double          retval[])
+cs_evaluate_potential_by_qov(cs_flag_t       dof_flag,
+                             int             ml_id,
+                             cs_get_t        get,
+                             double          retval[])
 {
   /* Sanity check */
   if (retval == NULL)
@@ -985,7 +1216,7 @@ cs_evaluate_potential_from_qov(cs_flag_t       dof_flag,
 
   /* Perform the evaluation */
   bool check = false;
-  if (dof_flag & CS_FLAG_SCAL) { /* DoF is scalar-valued */
+  if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     if (cs_cdo_same_support(dof_flag, cs_cdo_primal_vtx))
       if (elt_ids != NULL) {
@@ -1003,7 +1234,7 @@ cs_evaluate_potential_from_qov(cs_flag_t       dof_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Store the value related to each DoF in the case of a potential field
+ * \brief  Evaluate the quantity attached to a potential field for all the DoFs
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
  * \param[in]      ml_id     id related to a cs_mesh_location_t structure
@@ -1013,10 +1244,10 @@ cs_evaluate_potential_from_qov(cs_flag_t       dof_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_from_value(cs_flag_t       dof_flag,
-                                 int             ml_id,
-                                 cs_get_t        get,
-                                 double          retval[])
+cs_evaluate_potential_by_value(cs_flag_t       dof_flag,
+                               int             ml_id,
+                               cs_get_t        get,
+                               double          retval[])
 {
   /* Sanity check */
   if (retval == NULL)
@@ -1035,7 +1266,7 @@ cs_evaluate_potential_from_value(cs_flag_t       dof_flag,
     bft_error(__FILE__, __LINE__, 0, _err_not_handled);
 
   /* Perform the evaluation */
-  if (dof_flag & CS_FLAG_SCAL) { /* DoF is scalar-valued */
+  if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     if (cs_cdo_same_support(dof_flag, cs_cdo_primal_vtx)) {
 

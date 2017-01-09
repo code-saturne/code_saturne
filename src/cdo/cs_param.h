@@ -96,7 +96,7 @@ typedef enum {
 
 typedef struct {
 
-  char                  *ml_name;   /* name of the related mesh location */
+  int                    ml_id;     /* id related to a mesh location */
   cs_param_def_type_t    def_type;  /* type of definition */
   cs_def_t               def;       /* definition */
 
@@ -144,8 +144,9 @@ typedef enum {
 
 typedef struct {
 
-  bool                    inv_pty; /* Definition based on the property
-                                      or its inverse */
+  bool   is_unity; /* No associated property. Property is equalt to the unity */
+  bool   is_iso;   /* Associated property is isotroopic ? */
+  bool   inv_pty;  /* Definition based on the property or its inverse */
 
   cs_param_hodge_type_t   type;  /* type of discrete Hodge operator */
   cs_param_hodge_algo_t   algo;  /* type of algorithm used to build this op. */
@@ -189,7 +190,6 @@ typedef enum {
 
   CS_PARAM_ADVECTION_FORM_CONSERV,
   CS_PARAM_ADVECTION_FORM_NONCONS,
-  CS_PARAM_ADVECTION_FORM_MIXED,
   CS_PARAM_N_ADVECTION_FORMULATIONS
 
 } cs_param_advection_form_t;
@@ -283,38 +283,34 @@ typedef enum {
 
 } cs_param_bc_enforce_t;
 
-/* Definition of the value of a boundary condition (BC)
-   One or two values may be needed according to the type of BC.
-   That's why two coefficients are used in the definition.
-   For Dirichlet or Neumann BC for instance, only one coefficient is used.
-*/
-
+/* Main structure to handle boundary condition */
 typedef struct {
 
-  int                    loc_id;   // Id related to the list of border faces
+  cs_param_bc_type_t       default_bc;   // BC used by default
 
-  cs_param_bc_type_t     bc_type;  // type of mathematical BC
-  cs_param_var_type_t    var_type; // type of variable
-  cs_param_def_type_t    def_type; // Type of definition for a and b
+  /* How is defined the BC value (arrays are allocated to n_max_defs) */
+  int                      n_max_defs;
+  int                      n_defs;
 
+  cs_param_def_type_t     *def_types;
+  cs_def_t                *defs;
 
-  /* Access to the value related to the first coefficient and possibly
-     the second one */
-  cs_def_t               def_coef1;
-  cs_def_t               def_coef2;
+  /* Store the related mesh location (always on boundary faces) */
+  int                     *ml_ids;
 
-} cs_param_bc_def_t;
+  /* What is the type of BC associated to this definition: Dirichlet, Neumann,
+     Robin... (from the mathematical viewpoint, the "physical" BCs are handled
+     in the cs_domain_t structure (wall, symmetry, inlet, outlet...)) */
+  cs_param_bc_type_t      *types;
 
-typedef struct {
+  /* Advanced parametrization */
+  /* ------------------------ */
 
-  cs_param_bc_type_t     default_bc;   // BC used by default
-  cs_param_bc_enforce_t  enforcement;  // type of boundary enforcement
-  cs_quadra_type_t       quad_type;    // barycentric, higher, highest...
-  bool                   use_subdiv;   /* subdivide or not into tetrahedra for
-                                          evaluating BC values */
-
-  int                    n_defs;
-  cs_param_bc_def_t     *defs;
+  /* Type of boundary enforcement (only useful for essential BCs) */
+  cs_param_bc_enforce_t    enforcement;
+  /* Which algorithm to compute the evaluation
+     (barycentric, higher, highest...) */
+  cs_quadra_type_t         quad_type;
 
 } cs_param_bc_t;
 
@@ -399,6 +395,21 @@ cs_param_get_def_type_name(const cs_param_def_type_t   type);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a definition by value
+ *
+ * \param[in]      var_type   type of variables (scalar, vector, tensor...)
+ * \param[in]      get        value to set
+ * \param[in, out] def        pointer to a cs_def_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_set_def_by_value(cs_param_var_type_t      var_type,
+                          const cs_get_t           get,
+                          cs_def_t                *def);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set a cs_def_t structure
  *
  * \param[in]      def_type   type of definition (by value, function...)
@@ -441,29 +452,6 @@ cs_param_set_get(cs_param_var_type_t      var_type,
 
 cs_param_bc_t *
 cs_param_bc_create(cs_param_bc_type_t  default_bc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set a cs_param_bc_def_t structure
- *
- * \param[in, out] bcpd       pointer to cs_param_bc_def_t struct. to set
- * \param[in]      loc_id     id related to a cs_mesh_location_t
- * \param[in]      bc_type    generic type of admissible boundary conditions
- * \param[in]      var_type   type of variables (scalar, vector, tensor...)
- * \param[in]      def_type   by value, function...
- * \param[in]      coef1      access to the value of the first coef
- * \param[in]      coef2      access to the value of the second coef (optional)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_bc_def_set(cs_param_bc_def_t      *bcpd,
-                    int                     loc_id,
-                    cs_param_bc_type_t      bc_type,
-                    cs_param_var_type_t     var_type,
-                    cs_param_def_type_t     def_type,
-                    const void             *coef1,
-                    const void             *coef2);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -58,6 +58,7 @@ cs_cdo_local.h \
 cs_cdo_main.h \
 cs_cdo_quantities.h \
 cs_cdo_scheme_geometry.h \
+cs_cdo_time.h \
 cs_cdo_toolbox.h \
 cs_cdofb_scaleq.h \
 cs_cdovb_scaleq.h \
@@ -92,6 +93,7 @@ cs_cdo_local.c \
 cs_cdo_main.c \
 cs_cdo_quantities.c \
 cs_cdo_scheme_geometry.c \
+cs_cdo_time.c \
 cs_cdo_toolbox.c \
 cs_cdofb_scaleq.c \
 cs_cdovb_scaleq.c \

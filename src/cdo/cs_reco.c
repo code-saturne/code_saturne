@@ -487,29 +487,27 @@ cs_reco_ccen_edge_dof(cs_lnum_t                    cid,
                       const double                *dof,
                       double                       reco[])
 {
-  int  i, k;
-
-  const double  invvol = 1/quant->cell_vol[cid];
-
   if (dof == NULL)
     return;
 
+  const double  invvol = 1/quant->cell_vol[cid];
+
   /* Initialize value */
-  for (k = 0; k < 3; k++)
+  for (int k = 0; k < 3; k++)
     reco[k] = 0.0;
 
-  for (i = c2e->idx[cid]; i < c2e->idx[cid+1]; i++) {
+  for (int i = c2e->idx[cid]; i < c2e->idx[cid+1]; i++) {
 
     const cs_dface_t  dfq = quant->dface[i];  /* Dual face quantities */
     const double  val = dof[c2e->ids[i]];     /* Edge value */
 
-    for (k = 0; k < 3; k++)
+    for (int k = 0; k < 3; k++)
       reco[k] += val*dfq.vect[k];
 
   } /* End of loop on cell edges */
 
   /* Divide by cell volume */
-  for (k = 0; k < 3; k++)
+  for (int k = 0; k < 3; k++)
     reco[k] *= invvol;
 
 }
@@ -531,12 +529,9 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
                        const double               *dof,
                        double                     *p_ccrec[])
 {
-  int  c_id;
+  assert(connect->c2e != NULL); /* Sanity check */
 
   double  *ccrec = *p_ccrec;
-
-  /* Sanity check */
-  assert(connect->c2e != NULL);
 
   if (dof == NULL)
     return;
@@ -545,7 +540,8 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
   if (ccrec == NULL)
     BFT_MALLOC(ccrec, 3*quant->n_cells, double);
 
-  for (c_id = 0; c_id < quant->n_cells; c_id++)
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+  for (int c_id = 0; c_id < quant->n_cells; c_id++)
     cs_reco_ccen_edge_dof(c_id,
                           connect->c2e,
                           quant,

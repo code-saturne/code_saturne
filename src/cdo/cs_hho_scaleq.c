@@ -93,7 +93,7 @@ struct _cs_hho_scaleq_t {
   int        n_max_fcbyc;  // n_max_fbyc + 1
 
   /* Shortcut to know what to build */
-  bool       has[N_CDO_TERMS];
+  bool       has[6]; //TODO: REMOVE
   cs_flag_t  flag;
 
   /* Store the matrix to invert after assembling and static condensation for
@@ -144,11 +144,8 @@ struct _cs_hho_scaleq_t {
  * Private variables
  *============================================================================*/
 
-static double  cs_hho_threshold = 1e-12; // Set during initialization
-static cs_locmat_t  *cs_cell_condmat = NULL;
-
 /* Size = 1 if openMP is not used */
-static cs_cdo_locsys_t  **cs_hho_cell_systems = NULL;
+static cs_cell_sys_t  **cs_hho_cell_systems = NULL;
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_shared_quant;
@@ -256,11 +253,11 @@ cs_hho_scaleq_init(const cs_equation_param_t   *eqp,
   b->n_max_fcbyc = connect->n_max_fbyc + 1;
 
   /* Store a direct access to which term one has to compute */
-  b->has[CDO_DIFFUSION] = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
-  b->has[CDO_ADVECTION] = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
-  b->has[CDO_REACTION] = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
-  b->has[CDO_TIME] = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
-  b->has[CDO_SOURCETERM] = (eqp->n_source_terms > 0) ? true : false;
+  b->has[CS_FLAG_SYS_DIFFUSION] = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
+  b->has[CS_FLAG_SYS_ADVECTION] = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
+  b->has[CS_FLAG_SYS_REACTION] = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
+  b->has[CS_FLAG_SYS_TIME] = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
+  b->has[CS_FLAG_SYS_SOURCETERM] = (eqp->n_source_terms > 0) ? true : false;
 
   return b;
 }
@@ -292,31 +289,6 @@ cs_hho_scaleq_free(void   *builder)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_sla_matrix_t related to the system to solve
- *
- * \param[in, out]  builder   pointer to a builder structure
- * \param[in, out]  matrix    pointer to a cs_sla_matrix_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hho_scaleq_free_sysmat(void              *builder,
-                          cs_sla_matrix_t   *matrix)
-{
-  cs_hho_scaleq_t  *b = (cs_hho_scaleq_t *)builder;
-
-  if (b == NULL)
-    bft_error(__FILE__, __LINE__, 0, " builder structure is empty");
-
-  assert(b->hybrid_storage->xx_block == matrix);
-
-  /* Free matrix */
-  matrix = cs_sla_matrix_free(matrix);
-  b->hybrid_storage->xx_block = NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Compute the contributions of source terms (store inside builder)
  *
  * \param[in, out] builder     pointer to a cs_hho_scaleq_t structure
@@ -326,8 +298,6 @@ cs_hho_scaleq_free_sysmat(void              *builder,
 void
 cs_hho_scaleq_compute_source(void            *builder)
 {
-  cs_desc_t  desc;
-
   cs_hho_scaleq_t  *b = (cs_hho_scaleq_t *)builder;
 
   const cs_equation_param_t  *eqp = b->eqp;
@@ -348,17 +318,17 @@ cs_hho_scaleq_compute_source(void            *builder)
  * \param[in]      dt_cur     current value of the time step
  * \param[in, out] builder    pointer to cs_hho_scaleq_t structure
  * \param[in, out] rhs        right-hand side
- * \param[in, out] sla_mat    pointer to cs_sla_matrix_t structure pointer
+ * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_build_system(const cs_mesh_t             *mesh,
-                              const cs_real_t             *field_val,
-                              double                       dt_cur,
-                              void                        *builder,
-                              cs_real_t                  **rhs,
-                              cs_sla_matrix_t            **sla_mat)
+cs_hho_scaleq_build_system(const cs_mesh_t         *mesh,
+                           const cs_real_t         *field_val,
+                           double                   dt_cur,
+                           void                    *builder,
+                           cs_real_t               *rhs,
+                           cs_matrix_t             *matrix)
 {
   cs_hho_scaleq_t  *b = (cs_hho_scaleq_t *)builder;
 
@@ -366,12 +336,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t             *mesh,
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
-  cs_sla_matrix_t  *sys_mat = NULL;
-  cs_real_t  *full_rhs = *rhs;
 
-  /* Return pointers */
-  *rhs = full_rhs;
-  *sla_mat = sys_mat;
 }
 
 /*----------------------------------------------------------------------------*/

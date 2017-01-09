@@ -143,7 +143,7 @@ typedef struct {
 
   /* Parametrization of source terms (Belong to the right-hand side) */
   int                         n_source_terms;
-  cs_source_term_t          **source_terms;
+  cs_source_term_t           *source_terms;
 
 } cs_equation_param_t;
 

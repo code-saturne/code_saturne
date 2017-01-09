@@ -50,7 +50,41 @@ BEGIN_C_DECLS
  * Macro and type definitions
  *============================================================================*/
 
-typedef struct _hodge_builder_t cs_hodge_builder_t;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local Hodge operator for a given cell
+ *
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ *
+ * \return a pointer to a cs_locmat_t structure storing the local Hodge op.
+ *         Notice that this structure is in fact stored cb->hdg.
+ *         So do not free the returned local matrix.
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef cs_locmat_t *
+(cs_hodge_t)(const cs_param_hodge_t    h_info,
+             const cs_cell_mesh_t     *cm,
+             cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the stiffness matrix thanks to a cellwise process
+ *         The computed matrix is stored in cb->loc
+ *
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_hodge_stiffness_t)(const cs_param_hodge_t    h_info,
+                       const cs_cell_mesh_t     *cm,
+                       cs_cell_builder_t        *cb);
+
 
 /*============================================================================
  * Public function definitions
@@ -69,153 +103,177 @@ cs_hodge_set_timer_stats(int   level);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate and initialize a cs_hodge_builder_t structure
+ * \brief   Build a local stiffness matrix using the generic COST algo.
+ *          The computed matrix is stored in cb->loc
  *
- * \param[in]  connect       pointer to a cs_cdo_connect_t struct.
- * \param[in]  is_isotropic  indicate if the related property is isotropic
- * \param[in]  h_info        algorithm used to build the discrete Hodge op.
- *
- * \return  a new allocated cs_hodge_builder_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_hodge_builder_t *
-cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
-                      bool                      is_isotropic,
-                      cs_param_hodge_t          h_info);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Free a cs_hodge_builder_t structure
- *
- * \param[in]  hb    pointer to the cs_hodge_builder_t struct. to free
- *
- * \return  a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_hodge_builder_t *
-cs_hodge_builder_free(cs_hodge_builder_t  *hb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the flag indicating the status of the property
- *
- * \param[in, out]  hb       pointer to a cs_hodge_builder_t structure
- *
- * \return true or flase
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_hodge_builder_get_setting_flag(cs_hodge_builder_t    *hb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Set the flag indicating the status of the property to false
- *
- * \param[in, out]  hb       pointer to a cs_hodge_builder_t structure
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_builder_unset(cs_hodge_builder_t    *hb);
+cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
+                               const cs_cell_mesh_t     *cm,
+                               cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the value of the property attached to a hodge builder
+ * \brief   Build a local stiffness matrix using the Voronoi algorithm
+ *          The computed matrix is stored in cb->loc
  *
- * \param[in, out]  hb       pointer to a cs_hodge_builder_t structure
- * \param[in]       ptyval   value of the property
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_builder_set_val(cs_hodge_builder_t    *hb,
-                         cs_real_t              ptyval);
+cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
+                               const cs_cell_mesh_t     *cm,
+                               cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the value of the property attached to a hodge builder
+ * \brief   Build a local stiffness matrix using the generic WBS algo.
+ *          WBS standing for Whitney Barycentric Subdivision (WBS) algo.
  *
- * \param[in, out]  hb       pointer to a cs_hodge_builder_t structure
- * \param[in]       ptymat   values of the tensor related to a property
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_builder_set_tensor(cs_hodge_builder_t     *hb,
-                            const cs_real_33_t      ptymat);
+cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
+                              const cs_cell_mesh_t     *cm,
+                              cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix from a local discrete Hodge H and
- *          the local discrete gradient and divergence
- *          S = Gloc^t * H * Gloc
+ * \brief   Build a local stiffness matrix using the generic WBS algo.
+ *          WBS standing for Whitney Barycentric Subdivision (WBS) algo.
+ *          The computed matrix is stored in cb->loc
  *
- * \param[in]      lm         pointer to a cs_cell_mesh_t struct.
- * \param[in, out] hb         pointer to a cs_hodge_builder_t struct.
- * \param[in, out] sloc       pointer to a local stiffness matrix struct.
+ * \param[in]      h_info     pointer to a cs_param_hodge_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_build_local_stiffness(const cs_cell_mesh_t     *lm,
-                               cs_hodge_builder_t       *hb,
-                               cs_locmat_t              *sloc);
+cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
+                           const cs_cell_mesh_t     *cm,
+                           cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local discrete Hodge using a cell-wise view of the mesh
+ * \brief   Build a local Hodge operator for a given cell using the WBS algo.
+ *          This function is specific for vertex+cell-based schemes
  *
- * \param[in]      lm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] hb         pointer to a cs_hodge_builder_t structure
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  *
- * \return a pointer to a cs_locmat_t struct. (local dense matrix)
+ * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_hodge_build_cellwise(const cs_cell_mesh_t      *lm,
-                        cs_hodge_builder_t        *hb);
+cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
+                     const cs_cell_mesh_t     *cm,
+                     cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local discrete Hodge
+ * \brief   Build a local Hodge operator for a given cell using WBS algo.
+ *          This function is specific for vertex-based schemes
  *
- * \param[in]      c_id       cell id
- * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
- * \param[in, out] hb         pointer to a cs_hodge_builder_t struct.
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  *
- * \return a pointer to a cs_locmat_t struct. (local dense matrix)
+ * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_hodge_build_local(int                         c_id,
-                     const cs_cdo_connect_t     *connect,
-                     const cs_cdo_quantities_t  *quant,
-                     cs_hodge_builder_t         *hb);
+cs_hodge_vb_wbs_get(const cs_param_hodge_t    h_info,
+                    const cs_cell_mesh_t     *cm,
+                    cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build the full matrix related to a discrete Hodge operator
+ * \brief   Build a local Hodge operator for a given cell using WBS algo.
+ *          This function is specific for vertex-based schemes
  *
- * \param[in]  connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]  quant      pointer to a cs_cdo_quantities_t struct.
- * \param[in]  pty        pointer to a cs_property_t struct.
- * \param[in]  h_info     pointer to a cs_param_hodge_t struct.
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  *
- * \return a pointer to a cs_sla_matrix_t structure
+ * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sla_matrix_t *
-cs_hodge_compute(const cs_cdo_connect_t      *connect,
-                 const cs_cdo_quantities_t   *quant,
-                 const cs_property_t         *pty,
-                 const cs_param_hodge_t       h_info);
+cs_locmat_t *
+cs_hodge_vb_voro_get(const cs_param_hodge_t    h_info,
+                     const cs_cell_mesh_t     *cm,
+                     cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local Hodge operator for a given cell using the COST algo.
+ *          This function is specific for vertex-based schemes
+ *
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ *
+ * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locmat_t *
+cs_hodge_vb_cost_get(const cs_param_hodge_t    h_info,
+                     const cs_cell_mesh_t     *cm,
+                     cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute cellwise a discrete hodge operator and multiple it with
+ *          a vector
+ *
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]      h_info    cs_param_hodge_t structure
+ * \param[in]      pty       pointer to a cs_property_t structure or NULL
+ * \param[in]      in_vals   vector to multiply with the discrete Hodge op.
+ * \param[in, out] result    array storing the resulting matrix-vector product
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_matvec(const cs_cdo_connect_t       *connect,
+                const cs_cdo_quantities_t    *quant,
+                const cs_param_hodge_t        h_info,
+                const cs_property_t          *pty,
+                const double                  in_vals[],
+                double                        result[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the hodge operator related to a face (i.e. a mass matrix
+ *          with unity property) using a Whitney Barycentric Subdivision (WBS)
+ *          algorithm
+ *
+ * \param[in]      fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out] hf        pointer to a cs_locmat_t structure to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
+                              cs_locmat_t             *hf);
 
 /*----------------------------------------------------------------------------*/
 

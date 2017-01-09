@@ -56,14 +56,65 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* Structure which belongs to one thread */
+typedef struct {
+
+  /* Temporary buffers */
+  short int     *ids;     // local ids
+  double        *values;  // local values
+  cs_real_3_t   *vectors; // local 3-dimensional vectors
+
+  /* Structures used to build specific terms composing the algebraic system */
+  cs_locmat_t   *hdg;   // local hodge matrix for diffusion (may be NULL)
+  cs_locmat_t   *loc;   // local square matrix of size n_cell_dofs;
+  cs_locmat_t   *aux;   // auxiliary local square matrix of size n_cell_dofs;
+
+  /* Specific members for the weakly enforcement of Dirichlet BCs (diffusion) */
+  double         eig_ratio; // ratio of the eigenvalues of the diffusion tensor
+  double         eig_max;   // max. value among eigenvalues
+
+  /* Store the cellwise value for the diffusion, time and reaction properties */
+  cs_real_33_t   pty_mat; // If not isotropic
+  double         pty_val; // If isotropic
+
+} cs_cell_builder_t;
+
 /* Structure used to store a local system (cell-wise for instance) */
 typedef struct {
 
-  cs_locmat_t  *mat;      // cell-wise view of the system matrix
-  double       *rhs;      // cell-wise view of the right-hand side
-  double       *dir_bc;   // Dirichlet values for boundary degrees of freedom
+  int            n_dofs;   // Number of Degrees of Freedom (DoFs) in this cell
+  cs_locmat_t   *mat;      // cellwise view of the system matrix
+  double        *rhs;      // cellwise view of the right-hand side
+  double        *source;   // cellwise view of the source term array
+  double        *val_n;    /* values of the unkown at the time t_n (the
+                              last computed) */
 
-} cs_cdo_locsys_t;
+} cs_cell_sys_t;
+
+/* Structure used to store local information about the boundary conditions */
+typedef struct {
+
+  short int   n_bc_faces;    // Number of border faces associated to a cell
+  short int  *bf_ids;        // List of face ids in the cell numbering
+  cs_flag_t  *face_flag;     // size n_bc_faces
+
+  short int   n_dofs;        // Number of Degrees of Freedom (DoFs) in this cell
+  cs_flag_t  *dof_flag;      // size = number of DoFs
+
+  /* Dirichlet BCs */
+  short int   n_dirichlet;   // Number of DoFs attached to a Dirichlet BC
+  double     *dir_values;    // Values of the Dirichlet BCs (size = n_dofs)
+
+  /* Neumann BCs */
+  short int   n_nhmg_neuman; /* Number of DoFs related to a non-homogeneous
+                                Neumann boundary (BC) */
+  double     *neu_values;    // Values of the Neumnn BCs (size = n_dofs)
+
+  /* Robin BCs */
+  short int   n_robin;       // Number of DoFs attached to a Robin BC
+  double     *rob_values;    // Values of the Robin BCs (size = 2*n_dofs)
+
+} cs_cell_bc_t;
 
 /* Structure used to get a better memory locality. Map existing structure
    into a more compact one dedicated to a cell.
@@ -84,16 +135,16 @@ typedef struct {
   double         vol_c;   // volume of the current cell
 
   /* Vertex information */
+  short int   *vtag;   // link between mesh and cell-wise numbering (-1 not set)
   short int    n_vc;   // local number of vertices in a cell
   cs_lnum_t   *v_ids;  // vertex ids on this rank
   double      *xv;     // local vertex coordinates (copy)
-  short int   *vtag;   // link between mesh and cell-wise numbering (-1 not set)
   double      *wvc;    // weight |vol_dc(v) cap vol_c|/|vol_c for each cell vtx
 
   /* Edge information */
+  short int   *etag;   // link between mesh and cell-wise numbering (-1 not set)
   short int    n_ec;   // local number of edges in a cell
   cs_lnum_t   *e_ids;  // edge ids on this rank
-  short int   *etag;   // link between mesh and cell-wise numbering (-1 not set)
   cs_quant_t  *edge;   // local edge quantities (xe, length and unit vector)
   cs_nvec3_t  *dface;  // local dual face quantities (area and unit normal)
 
@@ -167,27 +218,80 @@ extern cs_face_mesh_t  **cs_cdo_local_face_meshes;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a cs_cdo_locsys_t structure
+ * \brief  Allocate a cs_cell_sys_t structure
  *
  * \param[in]   n_max_ent    max number of entries
  *
- * \return a pointer to a new allocated cs_cdo_locsys_t structure
+ * \return a pointer to a new allocated cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdo_locsys_t *
-cs_cdo_locsys_create(int    n_max_ent);
+cs_cell_sys_t *
+cs_cell_sys_create(int    n_max_ent);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_cdo_locsys_t structure
+ * \brief  Free a cs_cell_sys_t structure
  *
- * \param[in, out]  p_ls   pointer of pointer to a cs_cdo_locsys_t structure
+ * \param[in, out]  p_ls   pointer of pointer to a cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_locsys_free(cs_cdo_locsys_t     **p_ls);
+cs_cell_sys_free(cs_cell_sys_t     **p_ls);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate a cs_cell_bc_t structure
+ *
+ * \param[in]   n_max_dofbyc    max. number of entries in a cell
+ * \param[in]   n_max_fbyc      max. number of faces in a cell
+ *
+ * \return a pointer to a new allocated cs_cell_bc_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cell_bc_t *
+cs_cell_bc_create(int    n_max_dofbyc,
+                  int    n_max_fbyc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_cell_bc_t structure
+ *
+ * \param[in, out]  p_cbc   pointer of pointer to a cs_cell_bc_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_bc_free(cs_cell_bc_t     **p_cbc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a cs_cell_builder_t structure according to
+ *         to the type of discretization which is requested.
+ *
+ * \param[in]  scheme    type of discretization
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ *
+ * \return a pointer to the new allocated cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cell_builder_t *
+cs_cell_builder_create(cs_space_scheme_t         scheme,
+                       const cs_cdo_connect_t   *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_cell_builder_t structure
+ *
+ * \param[in, out]  p_cb   pointer of pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_builder_free(cs_cell_builder_t     **p_cb);
 
 /*----------------------------------------------------------------------------*/
 /*!

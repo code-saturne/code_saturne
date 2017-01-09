@@ -195,7 +195,6 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
 
      CS_EQKEY_BC_QUADRATURE
      Set the quadrature algorithm used for evaluating boundary conditions
-     "subdiv"  used a subdivision into tetrahedra
      "bary"    used the barycenter approximation
      "higher"  used 4 Gauss points for approximating the integral
      "highest" used 5 Gauss points for approximating the integral

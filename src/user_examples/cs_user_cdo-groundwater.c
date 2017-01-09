@@ -423,37 +423,41 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
   eq = cs_domain_get_equation(domain, "Richards");
 
   /* Define the boundary conditions
-     >> cs_equation_add_bc(eq,
-                           "mesh_location_name",
-                           "bc_type_keyword",
-                           "definition_type_keyword",
-                           pointer to the definition);
+     >> cs_equation_add_bc_by_analytic(eq,
+                                       bc_type,
+                                       "mesh_location_name",
+                                       analytic_function);
 
-     -- eq is the structure related to the equation to set
-     -- Keyword related to the boundary condition type is a choice among:
-        >> "dirichlet", "neumann" or "robin"
-     -- Keyword related to the type of definition is a choice among:
-        >> "value", "analytic"
+     -> eq is the structure related to the equation to set
+     -> type of boundary condition:
+        CS_PARAM_BC_DIRICHLET, CS_PARAM_BC_HMG_DIRICHLET,
+        CS_PARAM_BC_NEUMANN, CS_PARAM_BC_HMG_NEUMANN, CS_PARAM_BC_ROBIN
 
+     >> cs_equation_add_bc_by_value(eq,
+                                    bc_type,
+                                    "mesh_location_name",
+                                    get);
+
+     -> get : accessor to the value
   */
 
-  cs_equation_add_bc(eq,           // equation
-                     "left",       // name of the mesh location
-                     "dirichlet",  // BC type
-                     "analytic",   // type of definition
-                     get_sol);     // pointer to the analytic function
+  cs_equation_add_bc_by_analytic(eq,
+                                 CS_PARAM_BC_DIRICHLET,
+                                 "left",    // name of the mesh location
+                                 get_sol);  // analytic function
 
-  cs_equation_add_bc(eq,           // equation
-                     "right",      // name of the mesh location
-                     "dirichlet",  // BC type
-                     "value",      // type of definition
-                     "-100");      // value to set
+  /* Value to set */
+  cs_get_t  get = {.val = -100};
+  cs_equation_add_bc_by_value(eq,
+                              CS_PARAM_BC_DIRICHLET,
+                              "right",  // name of the related mesh location
+                              get);     // value to set
 
-  /* Define the initial condition (By default: zero is set) */
-  cs_equation_set_ic(eq,         // equation
-                     NULL,       // name of the related mesh location
-                     "analytic", // type of definition
-                     get_ic);    // pointer to the analytic function
+  /* Define the initial condition by an analytical function
+     (By default: zero is set) */
+  cs_equation_set_ic_by_analytic(eq,       // equation
+                                 NULL,     // NULL --> all cells
+                                 get_ic);  // pointer to the analytic function
 
 }
 

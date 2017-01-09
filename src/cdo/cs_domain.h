@@ -31,16 +31,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_time_step.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
+#include "cs_advection_field.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
-#include "cs_param.h"
 #include "cs_equation.h"
-#include "cs_property.h"
-#include "cs_advection_field.h"
 #include "cs_groundwater.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
+#include "cs_param.h"
+#include "cs_property.h"
+#include "cs_time_step.h"
+#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -129,6 +130,10 @@ typedef struct {
   int        verbosity;  /* Level of details given in log */
   bool       profiling;  /* Activate a set of timer statistics (details differ
                             according to the verbosity level) */
+
+  /* Monitoring */
+  cs_timer_counter_t    tcp; /* Cumulated elapsed time for extra-operations
+                                and post-processing */
 
 } cs_domain_t;
 
