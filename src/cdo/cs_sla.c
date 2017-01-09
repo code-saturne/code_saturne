@@ -1756,6 +1756,8 @@ cs_sla_matrix_clean_zeros(cs_sla_matrix_t   *m,
                   " -msg- cs_sla_matrix_clean_zeros >>"
                   " type: %s; n_rows: %6d; threshold: %6.3e; cleaned: %d\n",
                   _sla_matrix_type[m->type], m->n_rows, threshold, counter);
+#else
+  CS_UNUSED(verbosity);
 #endif
 }
 
@@ -1804,12 +1806,15 @@ cs_sla_matrix_clean(int                verbosity,
 
   } // Loop on matrix rows
 
+#if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
   if (counter > 0 && verbosity > 2)
     cs_log_printf(CS_LOG_DEFAULT,
                   " -msg- Matrix cleaning >>"
                   " n_rows: %6d; threshold: %6.3e; %d entries set to zero\n",
                   m->n_rows, threshold, counter);
-
+#else
+  CS_UNUSED(verbosity);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

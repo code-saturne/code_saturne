@@ -63,6 +63,7 @@ typedef struct _cs_cdo_diff_t  cs_cdo_diff_t;
  * \param[in] connect      pointer to a cs_cdo_connect_t structure
  * \param[in] space_scheme  scheme used for discretizing in space
  * \param[in] is_uniform   diffusion tensor is uniform ? (true or false)
+ * \param[in] is_isotropic  diffusion is isotropic ? (true or false)
  * \param[in] h_info       cs_param_hodge_t structure
  * \param[in] bc_enforce   type of boundary enforcement for Dirichlet values
  *
@@ -74,6 +75,7 @@ cs_cdo_diff_t *
 cs_cdo_diffusion_builder_init(const cs_cdo_connect_t       *connect,
                               cs_space_scheme_t             space_scheme,
                               bool                          is_uniform,
+                              bool                          is_isotropic,
                               const cs_param_hodge_t        h_info,
                               const cs_param_bc_enforce_t   bc_enforce);
 

@@ -60,7 +60,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define  CDO_QUANTITIES_DBG 0  /* Switch off/on debug information */
+#define  CS_CDO_QUANTITIES_DBG  0  /* Switch off/on debug information */
 
 /* Redefined names of function from cs_math to get shorter names */
 #define _n3  cs_math_3_norm
@@ -205,7 +205,7 @@ _get_fspec(cs_lnum_t                    f_id,
   fspec.XYZ[X] = (fspec.XYZ[Z] + 1) % 3;
   fspec.XYZ[Y] = (fspec.XYZ[X] + 1) % 3;
 
-#if CDO_QUANTITIES_DBG > 1
+#if CS_CDO_QUANTITIES_DBG > 1 && defined(DEBUG) && !defined(NDEBUG)
   printf("\n F: (%d, %d) >> surf: %e; omega: %e; XYZ: %d%d%d; [%e, %e, %e]\n",
          f_id, f, fspec.q.meas, fspec.omega,
          fspec.XYZ[0], fspec.XYZ[1], fspec.XYZ[2],
@@ -311,7 +311,7 @@ _get_fsub_quantities(cs_lnum_t                 f_id,
   /* Compute projected quantities */
   _cdo_projq_t  projq = _get_proj_quantities(f_id, connect, coord, fspec.XYZ);
 
-#if CDO_QUANTITIES_DBG > 1
+#if CS_CDO_QUANTITIES_DBG > 1 && defined(DEBUG) && !defined(NDEBUG)
   printf(" F: %d >> p1: %.4e, pa: %.4e, pb: %.4e, pc: %.4e,"
          " pab: %.4e, pa2: %.4e, pb2: %.4e\n",
          f_id, projq.p1, projq.pa, projq.pb, projq.pc,
@@ -832,7 +832,7 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
     for (k = 0; k < 3; k++)
       quant->cell_centers[3*i+k] *= inv_vol2;
 
-#if CDO_QUANTITIES_DBG > 1
+#if CS_CDO_QUANTITIES_DBG > 1 && defined(DEBUG) && !defined(NDEBUG)
     printf("\n (%4d) volINNOV: % -12.5e | volSAT % -12.5e | %-12.5e\n",
            i+1, quant->cell_vol[i], mq->cell_vol[i],
            fabs(quant->cell_vol[i] - mq->cell_vol[i]));
@@ -847,6 +847,52 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
 #endif
 
   }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Compute dual face normals (face crossed by primal edges).
+ * Given a cell and an edge, there are two faces attached to the
+ * couple (cell, edge)
+ * The triplet (edge, face, cell) induces an elementary triangle s(e,f,c)
+ * The dual face is the union of these two triangles.
+ * Storage based on c2e connectivity
+ * ---------------------------------------------------------------------------*/
+
+static void
+_define_cell_flag(const cs_cdo_connect_t  *topo,
+                  cs_cdo_quantities_t     *cdoq)
+{
+  assert(topo->cell_type != NULL); /* Sanity check */
+
+  const double  ortho_threshold = 1e-10;
+
+  /* Allocate flag related to each cell */
+  BFT_MALLOC(cdoq->cell_flag, cdoq->n_cells, cs_flag_t);
+  for (cs_lnum_t i = 0; i < cdoq->n_cells; i++)
+    cdoq->cell_flag[i] = 0;
+
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+    if (topo->cell_type[c_id] == FVM_CELL_HEXA) { // Check if orthogonal
+
+      double  ortho_crit = 0.;
+      for (cs_lnum_t i = topo->c2f->idx[c_id]; i < topo->c2f->idx[c_id+1];
+           i++) {
+
+        cs_lnum_t  f_id = topo->c2f->col_id[i];
+        double  tenf = _dp3(cdoq->dedge[i].unitv, cdoq->face[f_id].unitv);
+
+        ortho_crit += fabs(1 - tenf);
+
+      } // Loop on cell faces
+
+      if (ortho_crit < ortho_threshold)
+        cdoq->cell_flag[c_id] |= CS_CDO_ORTHO;
+
+    } // Hexahedron
+
+  } // Loop on cells
 
 }
 
@@ -987,6 +1033,9 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   /* Define cs_quant_info_t structure */
   _compute_quant_info(cdoq);
 
+  /* Define a flag for each cell */
+  _define_cell_flag(topo, cdoq);
+
   return cdoq;
 }
 
@@ -1006,15 +1055,20 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *q)
   if (q == NULL)
     return q;
 
+  /* Cell-related quantities */
   BFT_FREE(q->cell_centers);
   BFT_FREE(q->cell_vol);
+  BFT_FREE(q->cell_flag);
 
+  /* Face-related quantities */
   BFT_FREE(q->face);
   BFT_FREE(q->dedge);
 
+  /* Edge-related quantities */
   BFT_FREE(q->edge);
   BFT_FREE(q->dface);
 
+  /* Vertex-related quantities */
   BFT_FREE(q->dcell_vol);
 
   /* vtx_coord is free when the structure cs_mesh_t is destroyed */
@@ -1036,15 +1090,27 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *q)
 void
 cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
 {
-  /* Output */
   cs_log_printf(CS_LOG_DEFAULT, "\n CDO mesh quantities information:\n");
+
+  /* Information about activated flags */
+  cs_lnum_t  n_ortho_cells = 0;
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+    if (quant->cell_flag[c_id] & CS_CDO_ORTHO)
+      n_ortho_cells += 1;
+  cs_log_printf(CS_LOG_DEFAULT, " --cdo-- n_ortho_cells  %9d\n",
+                n_ortho_cells);
+
+  /* Output */
   cs_log_printf(CS_LOG_DEFAULT, " --cdo-- h_cell  %6.4e %6.4e (min/max)\n",
                 quant->cell_info.h_min, quant->cell_info.h_max);
   cs_log_printf(CS_LOG_DEFAULT, " --cdo-- h_face  %6.4e %6.4e (min/max)\n",
                 quant->face_info.h_min, quant->face_info.h_max);
-  cs_log_printf(CS_LOG_DEFAULT, " --cdo-- h_edge  %6.4e %6.4e (min/max)\n",
+  cs_log_printf(CS_LOG_DEFAULT, " --cdo-- h_edge  %6.4e %6.4e (min/max)\n\n",
                 quant->edge_info.h_min, quant->edge_info.h_max);
-  cs_log_printf(CS_LOG_DEFAULT, "\n");
+
+#if CS_CDO_QUANTITIES_DBG > 0 && defined(DEBUG) && !defined(NDEBUG)
+  cs_cdo_quantities_dump(quant);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1059,7 +1125,6 @@ cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
 void
 cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
 {
-  cs_lnum_t  i, p;
 
   FILE  *fdump = NULL;
 
@@ -1081,8 +1146,8 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
 
   fprintf(fdump, "\n *** Cell Quantities ***\n");
   fprintf(fdump, "-msg- num.; volume ; center (3)\n");
-  for (i = 0; i < cdoq->n_cells; i++) {
-    p = 3*i;
+  for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
+    cs_lnum_t  p = 3*i;
     fprintf(fdump, " [%6d] | %12.8e | % -12.8e | % -12.8e |% -12.8e\n",
             i+1, cdoq->cell_vol[i], cdoq->cell_centers[p],
             cdoq->cell_centers[p+1], cdoq->cell_centers[p+2]);
@@ -1090,12 +1155,12 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
 
   fprintf(fdump, "\n\n *** Face Quantities ***\n");
   fprintf(fdump, "-msg- num. ; measure ; unitary vector (3) ; center (3)\n");
-  for (i = 0; i < cdoq->n_faces; i++)
+  for (cs_lnum_t i = 0; i < cdoq->n_faces; i++)
     cs_quant_dump(fdump, i+1, cdoq->face[i]);
 
   fprintf(fdump, "\n\n *** Edge Quantities ***\n");
   fprintf(fdump, "-msg- num. ; measure ; unitary vector (3) ; center (3)\n");
-  for (i = 0; i < cdoq->n_edges; i++)
+  for (cs_lnum_t i = 0; i < cdoq->n_edges; i++)
     cs_quant_dump(fdump, i+1, cdoq->edge[i]);
 
   fclose(fdump);

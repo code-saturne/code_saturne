@@ -999,6 +999,41 @@ cs_locmat_add_transpose(cs_locmat_t  *loc,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Set the given matrix into its anti-symmetric part
+ *
+ * \param[in, out] loc   local matrix to transform
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_locmat_asymm(cs_locmat_t  *loc)
+{
+  /* Sanity check */
+  assert(loc != NULL);
+
+  if (loc->n_ent < 1)
+    return;
+
+  for (int i = 0; i < loc->n_ent; i++) {
+
+    double  *mi = loc->val + i*loc->n_ent;
+
+    mi[i] = 0;
+
+    for (int j = i+1; j < loc->n_ent; j++) {
+
+      int  ji = j*loc->n_ent + i;
+
+      mi[j] = 0.5*(mi[j] - loc->val[ji]);
+      loc->val[ji] = mi[j];
+
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Dump a local discrete Hodge operator
  *
  * \param[in]    parent_id  id of the related parent entity

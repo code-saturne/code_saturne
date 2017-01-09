@@ -238,7 +238,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field strufcture
+ * \param[in]       field      pointer to a field structure
  * \param[in, out]  builder    pointer to builder structure
  */
 /*----------------------------------------------------------------------------*/

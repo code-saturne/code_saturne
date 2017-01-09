@@ -43,6 +43,7 @@
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
+#include "cs_hho_scaleq.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -99,14 +100,14 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 {
   assert(connect != NULL); // Sanity check
 
-  /* Allocate cell-wise and face_wise view of a mesh */
+  /* Allocate cell-wise and face-wise view of a mesh */
   cs_cdo_local_initialize(connect);
 
   const cs_lnum_t  n_cells = connect->c_info->n_elts;
   const cs_lnum_t  n_faces = connect->f_info->n_elts;
   const cs_lnum_t  n_vertices = connect->v_info->n_elts;
 
-  size_t  cwb_size = 2*n_cells;
+  size_t  cwb_size = 2*n_cells; // initial cell-wise buffer size
 
   if (scheme_flag & CS_SCHEME_FLAG_CDOVB &&
       scheme_flag & CS_SCHEME_FLAG_SCALAR) {
@@ -136,6 +137,18 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
     cs_cdofb_scaleq_set_shared_pointers(quant, connect, time_step);
     cs_cdofb_scaleq_initialize();
 
+    cwb_size = CS_MAX(cwb_size, (size_t)3*n_faces);
+
+  }
+
+  if (scheme_flag & CS_SCHEME_FLAG_HHO &&
+      scheme_flag & CS_SCHEME_FLAG_SCALAR) {
+
+    /* Initialize additional structures */
+    cs_hho_scaleq_set_shared_pointers(quant, connect, time_step);
+    cs_hho_scaleq_initialize();
+
+    // TODO: Update this value accordingly to HHO needs
     cwb_size = CS_MAX(cwb_size, (size_t)3*n_faces);
 
   }
@@ -176,6 +189,10 @@ cs_equation_free_common_structures(cs_flag_t   scheme_flag)
   if ((scheme_flag & CS_SCHEME_FLAG_CDOFB) &&
       (scheme_flag & CS_SCHEME_FLAG_SCALAR))
     cs_cdofb_scaleq_finalize();
+
+  if ((scheme_flag & CS_SCHEME_FLAG_HHO) &&
+      (scheme_flag & CS_SCHEME_FLAG_SCALAR))
+    cs_hho_scaleq_finalize();
 
   BFT_FREE(cs_equation_common_work_buffer);
 }

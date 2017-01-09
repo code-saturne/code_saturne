@@ -32,11 +32,12 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_mesh.h"
-
 #include "cs_cdo.h"
 #include "cs_cdo_toolbox.h"
+#include "cs_mesh.h"
 #include "cs_sla.h"
+
+#include "fvm_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -79,9 +80,12 @@ typedef struct { /* Connectivity structure */
   /* Specific CDO connect : not oriented (same spirit as Code_Saturne
      historical connectivity).
      Use this connectivity to scan dual quantities */
+  fvm_element_t       *cell_type;
+
   cs_connect_index_t  *c2e;  // cell -> edges connectivity
   cs_connect_index_t  *c2v;  // cell -> vertices connectivity
   cs_connect_index_t  *v2v;  // vertex --> vertices through cell connectivity
+  cs_connect_index_t  *f2f;  // face --> faces through cell connectivity
 
   /* Max. connectitivy size for cells */
   cs_lnum_t  n_max_vbyc;    // max. number of vertices in a cell

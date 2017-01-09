@@ -155,8 +155,8 @@ _dump_info(const cs_cdo_quantities_t   *cdoq,
         fprintf(resume, " -hdg- Hodge.Op         EDFP:VORONOI\n");
         break;
       default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Invalid algorithm to define a discrete Hodge operator."));
+        fprintf(resume, " -hdg- Hodge.Op         EDFP:Unknown\n");
+        break;
       } // end of switch
     }
     else if (space_scheme == CS_SPACE_SCHEME_CDOVB) {
@@ -171,8 +171,9 @@ _dump_info(const cs_cdo_quantities_t   *cdoq,
         fprintf(resume, " -hdg- Hodge.Op         EPFD:WHITNEY_BARY\n");
         break;
       default:
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Invalid algorithm to define a discrete Hodge operator."));
+        fprintf(resume, " -hdg- Hodge.Op         EPFD:Unkown\n");
+        break;
+
       } // end of switch
     }
 
@@ -217,7 +218,7 @@ _compute_fb_errgrd(const cs_cdo_connect_t      *topo,
 
   double  num_l2d = 0, denum_l2d = 0, num_end = 0, denum_end = 0;
   double  *gexc = NULL, *dgc = NULL;
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(topo, h_info);
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(topo, false, h_info);
 
   /* Initialize local buffers */
   BFT_MALLOC(gexc, 2*topo->n_max_fbyc, double);

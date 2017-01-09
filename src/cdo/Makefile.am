@@ -68,6 +68,7 @@ cs_equation_common.h \
 cs_equation_param.h \
 cs_evaluate.h \
 cs_groundwater.h \
+cs_hho_scaleq.h \
 cs_hodge.h \
 cs_param.h \
 cs_property.h \
@@ -101,6 +102,7 @@ cs_equation_common.c \
 cs_equation_param.c \
 cs_evaluate.c \
 cs_groundwater.c \
+cs_hho_scaleq.c \
 cs_hodge.c \
 cs_param.c \
 cs_property.c \

@@ -110,7 +110,8 @@ static const char
 cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_BASE_STRING_LEN] =
   { "Voronoi",
     "Whitney on the Barycentric Subdivision (WBS)",
-    "COnsistency-STabilization splitting (COST)" };
+    "COnsistency-STabilization splitting (COST)",
+    "Automatic switch"};
 
 /*============================================================================
  * Private function prototypes

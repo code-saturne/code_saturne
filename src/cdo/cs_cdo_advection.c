@@ -393,6 +393,7 @@ _build_local_vpfd(const cs_cell_mesh_t         *cm,
 
 }
 
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the consistent part of the convection operator attached to
@@ -1052,6 +1053,11 @@ cs_cdovb_advection_build(const cs_cell_mesh_t       *cm,
     _build_local_vpfd(cm, eqp->advection_info, b);
     break;
 
+  case CS_PARAM_ADVECTION_FORM_MIXED:
+    _build_local_vpfd(cm, eqp->advection_info, b);
+    cs_locmat_asymm(b->loc);
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " Invalid type of advection operation.\n"
@@ -1242,6 +1248,10 @@ cs_cdovb_advection_add_bc(const cs_cell_mesh_t       *cm,
                 m->val[v1] -= flx;
                 m->val[v2] -= flx;
               }
+              else if (a_info.formulation == CS_PARAM_ADVECTION_FORM_MIXED) {
+                m->val[v1] -= 0.5*flx;
+                m->val[v2] -= 0.5*flx;
+              }
 
             }
             else { // advection is oriented outward
@@ -1249,6 +1259,10 @@ cs_cdovb_advection_add_bc(const cs_cell_mesh_t       *cm,
               if (a_info.formulation == CS_PARAM_ADVECTION_FORM_CONSERV) {
                 m->val[v1] += flx;
                 m->val[v2] += flx;
+              }
+              else if (a_info.formulation == CS_PARAM_ADVECTION_FORM_MIXED) {
+                m->val[v1] += 0.5*flx;
+                m->val[v2] += 0.5*flx;
               }
 
             }
@@ -1291,6 +1305,10 @@ cs_cdovb_advection_add_bc(const cs_cell_mesh_t       *cm,
               m->val[v1] -= flx;
               m->val[v2] -= flx;
             }
+            else if (a_info.formulation == CS_PARAM_ADVECTION_FORM_MIXED) {
+              m->val[v1] -= 0.5*flx;
+              m->val[v2] -= 0.5*flx;
+            }
 
           }
           else { // advection is oriented outward
@@ -1298,7 +1316,10 @@ cs_cdovb_advection_add_bc(const cs_cell_mesh_t       *cm,
             if (a_info.formulation == CS_PARAM_ADVECTION_FORM_CONSERV) {
               m->val[v1] += flx;
               m->val[v1] += flx;
-
+            }
+            else if (a_info.formulation == CS_PARAM_ADVECTION_FORM_MIXED) {
+              m->val[v1] += 0.5*flx;
+              m->val[v2] += 0.5*flx;
             }
 
           } // outward
@@ -1369,7 +1390,7 @@ cs_cdovcb_advection_add_bc(const cs_cell_mesh_t       *cm,
         const double  dp = _dp3(adv_vec.unitv, pfq.unitv);
         const double  beta_nf = adv_vec.meas * 0.5 * (fabs(dp) - dp);
 
-        if (beta_nf > 0) {
+        if (beta_nf > 0) { // Inflow
 
           cs_face_mesh_build_from_cell_mesh(cm, f, fm);
           b->f_loc->n_ent = fm->n_vf;
@@ -1543,7 +1564,7 @@ cs_cdovcb_advection_add_bc(const cs_cell_mesh_t       *cm,
         const double  dp = _dp3(adv_vec.unitv, pfq.unitv);
         const double  beta_nf = adv_vec.meas * 0.5 * (fabs(dp) - dp);
 
-        if (beta_nf > 0) {
+        if (beta_nf > 0) { // Inflow
 
           b->f_loc->n_ent = fm->n_vf;
 

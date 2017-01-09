@@ -389,7 +389,7 @@ _apply_time_scheme(double                   tpty_val,
   cs_locmat_t  *loc_mat = loc_sys->mat; // square matrix of size n_vc + 1
   double  *loc_rhs = loc_sys->rhs;      // vector of size n_vc + 1
 
-  /* Temporary buffers of size equal to the number of cell vertices */
+  /* Temporary buffers of size equal to the number of cell vertices + 1 */
   double  *fval = b->loc_vals;
   double  *adr_pn = b->loc_vals + n_sys;
 
@@ -477,7 +477,6 @@ _apply_time_scheme(double                   tpty_val,
           loc_rhs[vi] += tcoef * adr_pn[vi] + dval_v * fval[vi];
 
           double  *mi = loc_mat->val + vi*n_sys;
-          mi[n_vc] *= t_info.theta; // cell column
           for (short int vj = 0; vj < n_vc; vj++) {
 
             mi[vj] *= t_info.theta;
@@ -485,20 +484,20 @@ _apply_time_scheme(double                   tpty_val,
               mi[vj] += dval_v;
 
           } // Loop on cell vertices (vj)
+          mi[n_vc] *= t_info.theta; // cell column
 
         } // Loop on cell vertices (vi)
-
 
         /* Cell row and cell_rhs entries are updated */
         const double  dval_c = 0.25*tpty_val;
 
-        double  *mc = loc_mat->val + n_vc*n_sys;
-
         loc_rhs[n_vc] += tcoef * adr_pn[n_vc] + dval_c * fval[n_vc];
-        mc[n_vc] *= t_info.theta;
-        mc[n_vc] += dval_c;
+
+        double  *mc = loc_mat->val + n_vc*n_sys;
         for (short int vj = 0; vj < n_vc; vj++)
           mc[vj] *= t_info.theta;
+        mc[n_vc] *= t_info.theta;
+        mc[n_vc] += dval_c;
 
       }
       break;
@@ -552,7 +551,7 @@ _apply_time_scheme(double                   tpty_val,
       for (short int vc = 0; vc < n_sys; vc++)
         loc_rhs[vc] += tpty_val * adr_pn[vc];
 
-      /* Update the local system with the time diagonal matrix */
+      /* Update the local system with the time matrix */
       for (short int vi = 0; vi < n_sys; vi++) {
 
         double  *mi = loc_mat->val + vi*n_sys;
@@ -664,16 +663,12 @@ _condense_and_store(cs_cdovcb_scaleq_t        *b,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Update the value of stabilization coefficient in given situation
- *
- * \param[in] adv     pointer to a cs_adv_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_cip_coef(const cs_adv_field_t     *adv)
+_set_cip_coef(void)
 {
-  assert(adv != NULL); // Sanity check
-
   const double  gseed = 1e-2;  /* Default value to multiply according to the
                                   problem and the ratio of diameters */
 
@@ -852,11 +847,16 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   if (b->has[CDO_DIFFUSION]) {
 
     bool is_uniform = cs_property_is_uniform(eqp->diffusion_property);
-
     b->diff_pty_uniform = is_uniform;
+
+    bool is_isotropic = false;
+    if (cs_property_get_type(eqp->diffusion_property) == CS_PROPERTY_ISO)
+      is_isotropic = true;
+
     b->diff = cs_cdo_diffusion_builder_init(connect,
                                             CS_SPACE_SCHEME_CDOVCB,
                                             is_uniform,
+                                            is_isotropic,
                                             eqp->diffusion_hodge,
                                             b->enforce);
 
@@ -932,7 +932,9 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
                                    .algo = CS_PARAM_HODGE_ALGO_WBS,
                                    .coef = 1.0}; // not useful in this case
 
-    b->hb = cs_hodge_builder_init(connect, hwbs_info);
+    /* In case of scalar equation, properties associated to this hodge operator
+       is always isotropic */
+    b->hb = cs_hodge_builder_init(connect, true, hwbs_info);
 
     if ((b->flag & CS_CDO_BUILD_HCONF) && cs_cdovcb_hconf == NULL)
       _build_hvc_conf(b);
@@ -1172,9 +1174,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
   cs_flag_t  cmflag = cs_cdovcb_cmflag;
 
   /* Allocate and initialize a matrix with the larger stencil (that related
-     to diffusion => all vertices of a cell are potentially in interaction)
-     "adr" means Advection/Diffusion/Reaction
-  */
+     to diffusion => all vertices of a cell are potentially in interaction) */
   cs_sla_matrix_t  *sys_mat = b->hybrid_storage->xx_block;
   if (sys_mat == NULL) {
     sys_mat = cs_sla_matrix_create_msr_from_index(connect->v2v,
@@ -1200,10 +1200,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t        *mesh,
   } // DIFFUSION
 
   if (b->has[CDO_ADVECTION]) {
-
     cmflag |= CS_CDO_LOCAL_EF;
-    _set_cip_coef(eqp->advection_field);
-
+    _set_cip_coef();
   }
 
   /* Preparatory step for unsteady term */
@@ -1781,7 +1779,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field strufcture
+ * \param[in]       field      pointer to a field structure
  * \param[in, out]  builder    pointer to builder structure
  */
 /*----------------------------------------------------------------------------*/
@@ -1796,6 +1794,9 @@ cs_cdovcb_scaleq_extra_op(const char            *eqname,
   const cs_equation_param_t  *eqp = b->eqp;
 
   // TODO
+  CS_UNUSED(eqp);
+  CS_UNUSED(field);
+  CS_UNUSED(eqname);
 }
 
 /*----------------------------------------------------------------------------*/

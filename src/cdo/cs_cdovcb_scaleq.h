@@ -94,18 +94,6 @@ cs_cdovcb_scaleq_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve a pointer to a temporary buffer related to scalar equations
- *         discretized with CDO vertex-based schemes
- *
- * \return  a pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdovcb_scaleq_get_tmpbuf(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Initialize a cs_cdovcb_scaleq_t structure
  *
  * \param[in] eqp       pointer to a cs_equation_param_t structure
@@ -253,7 +241,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field strufcture
+ * \param[in]       field      pointer to a field structure
  * \param[in, out]  builder    pointer to builder structure
  */
 /*----------------------------------------------------------------------------*/

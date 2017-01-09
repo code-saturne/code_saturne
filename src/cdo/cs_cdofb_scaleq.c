@@ -239,7 +239,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
   cs_locmat_t  *_a = cs_locmat_create(connect->n_max_fbyc);
 
   /* Define a builder for the related discrete Hodge operator */
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, h_info);
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, false, h_info);
 
   /* Sanity check */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
@@ -768,7 +768,7 @@ cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
         = b->dir_val[i];
 
   /* Compute now the value at each cell center */
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, h_info);
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, false, h_info);
 
   /* Build the remaining discrete operators */
   for (c_id = 0; c_id < b->n_cells; c_id++) {
@@ -803,7 +803,7 @@ cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field strufcture
+ * \param[in]       field      pointer to a field structure
  * \param[in, out]  builder    pointer to builder structure
  */
 /*----------------------------------------------------------------------------*/

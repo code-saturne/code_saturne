@@ -92,7 +92,7 @@ struct _cs_cdo_diff_t {
 
   /* Data related to the discrete Hodge operator attached to the
      diffusion property */
-  bool                  is_uniform;  // Diffusion tensor is uniform ?
+  bool                  is_uniform;   // Diffusion tensor is uniform ?
   cs_param_hodge_t      h_info;      // Parameters defining a discrete Hodge op.
   cs_hodge_builder_t   *hb;          // Helper for building a discrete Hodge op.
 
@@ -712,6 +712,7 @@ _ntrgrd_vcb_algo(const cs_face_mesh_t     *fm,
  * \param[in] connect       pointer to a cs_cdo_connect_t structure
  * \param[in] space_scheme  scheme used for discretizing in space
  * \param[in] is_uniform    diffusion tensor is uniform ? (true or false)
+ * \param[in] is_isotropic  diffusion is isotropic ? (true or false)
  * \param[in] h_info        cs_param_hodge_t structure
  * \param[in] bc_enforce    type of boundary enforcement for Dirichlet values
  *
@@ -723,6 +724,7 @@ cs_cdo_diff_t *
 cs_cdo_diffusion_builder_init(const cs_cdo_connect_t       *connect,
                               cs_space_scheme_t             space_scheme,
                               bool                          is_uniform,
+                              bool                          is_isotropic,
                               const cs_param_hodge_t        h_info,
                               const cs_param_bc_enforce_t   bc_enforce)
 {
@@ -754,7 +756,7 @@ cs_cdo_diffusion_builder_init(const cs_cdo_connect_t       *connect,
   /* Define a builder for the related discrete Hodge operator */
   diff->hb = NULL;
   if (!hwbs)
-    diff->hb = cs_hodge_builder_init(connect, h_info);
+    diff->hb = cs_hodge_builder_init(connect, is_isotropic, h_info);
 
   /* Specific members for weakly enforced BCs */
   diff->eig_ratio = -1;
@@ -988,6 +990,23 @@ cs_cdo_diffusion_build_local(const cs_cdo_quantities_t   *quant,
                   " Please check your settings."));
     break;
 
+  case CS_PARAM_HODGE_ALGO_AUTO:
+    if (diff->scheme == CS_SPACE_SCHEME_CDOVB) {
+
+      /* Set the diffusion tensor if needed */
+      if (cs_hodge_builder_get_setting_flag(diff->hb) == false ||
+          diff->is_uniform == false)
+        cs_hodge_builder_set_tensor(diff->hb, tensor);
+
+      /* Build a local discrete Hodge op. and return a local dense matrix */
+      cs_hodge_build_local_stiffness(cm, diff->hb, sloc);
+
+    }
+    else if (diff->scheme == CS_SPACE_SCHEME_CDOVCB)
+      sloc = _compute_vcb_stiffness(quant, cm, tensor, diff);
+
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " Invalid algorithm for building the local stiffness matrix.");
@@ -1058,6 +1077,7 @@ cs_cdo_diffusion_weak_bc(cs_lnum_t                    f_id,
 
   case CS_PARAM_HODGE_ALGO_COST:
   case CS_PARAM_HODGE_ALGO_VORONOI:
+  case CS_PARAM_HODGE_ALGO_AUTO:
     /* Compute v_area which is stored in diff->tmp_* for a future use */
     _ntrgrd_cost_algo(f, cm, pty_nuf, h_info.coef, diff, ntrgrd);
     break;
@@ -1117,6 +1137,7 @@ cs_cdo_diffusion_weak_bc(cs_lnum_t                    f_id,
 
   case CS_PARAM_HODGE_ALGO_COST:
   case CS_PARAM_HODGE_ALGO_VORONOI:
+  case CS_PARAM_HODGE_ALGO_AUTO:
     { // v_area is computed inside subroutine _ntrgrd_cost_algo
       const cs_real_t  *v_area = diff->tmp_real;
 

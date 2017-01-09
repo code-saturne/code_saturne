@@ -910,6 +910,8 @@ cs_domain_last_setup(cs_domain_t    *domain)
       domain->scheme_flag |= CS_SCHEME_FLAG_CDOVCB;
     else if (scheme == CS_SPACE_SCHEME_CDOFB)
       domain->scheme_flag |= CS_SCHEME_FLAG_CDOFB;
+    else if (scheme == CS_SPACE_SCHEME_HHO)
+      domain->scheme_flag |= CS_SCHEME_FLAG_HHO;
     else
       bft_error(__FILE__, __LINE__, 0,
                 _(" Undefined type of equation to solve for eq. %s."
@@ -1013,10 +1015,10 @@ cs_domain_add_boundary(cs_domain_t               *domain,
   const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
 
   if (elt_ids == NULL)
-    for (int i = 0; i < n_elts[0]; i++)
+    for (cs_lnum_t i = 0; i < n_elts[0]; i++)
       dby->b_face_types[i] = type;
   else
-    for (int i = 0; i < n_elts[0]; i++)
+    for (cs_lnum_t i = 0; i < n_elts[0]; i++)
       dby->b_face_types[elt_ids[i]] = type;
 }
 

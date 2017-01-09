@@ -364,7 +364,7 @@ cs_equation_param_create(cs_equation_type_t     type,
   eqp->diffusion_property = NULL;
   eqp->diffusion_hodge.inv_pty = false; // inverse property ?
   eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
-  eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
+  eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_AUTO;
   eqp->diffusion_hodge.coef = 1./3.; // DGA algo.
 
   /* Advection term */
@@ -495,6 +495,12 @@ cs_equation_param_summary(const char                  *eqname,
   else if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB)
     cs_log_printf(CS_LOG_SETUP,
                   "  <%s/space scheme>  CDO face-based\n", eqname);
+  else if (eqp->space_scheme == CS_SPACE_SCHEME_HHO)
+    cs_log_printf(CS_LOG_SETUP,
+                  "  <%s/space scheme>  HHO\n", eqname);
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " Undefined space scheme for eq. %s", eqname);
 
   bool  unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
   bool  convection = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
@@ -514,17 +520,18 @@ cs_equation_param_summary(const char                  *eqname,
     cs_param_bc_t  *bcp = eqp->bc;
 
     cs_log_printf(CS_LOG_SETUP, "  <%s/Boundary Conditions>\n", eqname);
-    cs_log_printf(CS_LOG_SETUP,
-                  "\t<BC/Default> %s\n", cs_param_get_bc_name(bcp->default_bc));
+    cs_log_printf(CS_LOG_SETUP, "    <%s/Default.BC> %s\n",
+                  eqname, cs_param_get_bc_name(bcp->default_bc));
     if (eqp->verbosity > 1)
-      cs_log_printf(CS_LOG_SETUP, "\t<BC/Enforcement> %s\n",
-                    cs_param_get_bc_enforcement_name(bcp->enforcement));
-    cs_log_printf(CS_LOG_SETUP, "\t<BC/N_Definitions> %d\n", bcp->n_defs);
+      cs_log_printf(CS_LOG_SETUP, "    <%s/BC.Enforcement> %s\n",
+                    eqname, cs_param_get_bc_enforcement_name(bcp->enforcement));
+    cs_log_printf(CS_LOG_SETUP, "    <%s/n_bc_definitions> %d\n",
+                  eqname, bcp->n_defs);
     if (eqp->verbosity > 1) {
       for (int id = 0; id < bcp->n_defs; id++)
-        cs_log_printf(CS_LOG_SETUP,
-                      "\t\t<BC> Location: %s; Type: %s; Definition type: %s\n",
-                      cs_mesh_location_get_name(bcp->defs[id].loc_id),
+        cs_log_printf(CS_LOG_SETUP, "      <%s/BC.Def> Location: %s; Type: %s;"
+                      " Definition type: %s\n",
+                      eqname, cs_mesh_location_get_name(bcp->defs[id].loc_id),
                       cs_param_get_bc_name(bcp->defs[id].bc_type),
                       cs_param_get_def_type_name(bcp->defs[id].def_type));
     }
@@ -537,15 +544,15 @@ cs_equation_param_summary(const char                  *eqname,
 
     cs_log_printf(CS_LOG_SETUP, "\n  <%s/Unsteady term>\n", eqname);
     cs_log_printf(CS_LOG_SETUP,
-                  "  <Time/Initial condition> number of definitions %d\n",
-                  t_info.n_ic_definitions);
+                  "  <%s/Initial.Condition> number of definitions %d\n",
+                  eqname, t_info.n_ic_definitions);
     for (int i = 0; i < t_info.n_ic_definitions; i++) {
       const cs_param_def_t  *ic = t_info.ic_definitions + i;
       cs_log_printf(CS_LOG_SETUP,
-                    "\t<Time/Initial condition> Location %s; Definition %s\n",
-                    ic->ml_name, cs_param_get_def_type_name(ic->def_type));
+                    "    <%s/Initial.Condition.Def> Location %s; Definition %s\n",
+                    eqname, ic->ml_name, cs_param_get_def_type_name(ic->def_type));
     }
-    cs_log_printf(CS_LOG_SETUP, "  <Time/Scheme> ");
+    cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Scheme> ", eqname);
     switch (t_info.scheme) {
     case CS_TIME_SCHEME_IMPLICIT:
       cs_log_printf(CS_LOG_SETUP, "implicit\n");
@@ -563,21 +570,21 @@ cs_equation_param_summary(const char                  *eqname,
       bft_error(__FILE__, __LINE__, 0, " Invalid time scheme.");
       break;
     }
-    cs_log_printf(CS_LOG_SETUP, "  <Time/Mass lumping> %s\n",
-                  cs_base_strtf(t_info.do_lumping));
-    cs_log_printf(CS_LOG_SETUP, "  <Time/Property> %s\n",
-                  cs_property_get_name(eqp->time_property));
+    cs_log_printf(CS_LOG_SETUP, "  <%s/Mass.Lumping> %s\n",
+                  eqname, cs_base_strtf(t_info.do_lumping));
+    cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Property> %s\n",
+                  eqname, cs_property_get_name(eqp->time_property));
 
     if (eqp->verbosity > 0) {
-      cs_log_printf(CS_LOG_SETUP, "  <Time/Hodge> %s - %s\n",
+      cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Hodge> %s - %s\n",
                     cs_param_hodge_get_type_name(h_info),
                     cs_param_hodge_get_algo_name(h_info));
-      cs_log_printf(CS_LOG_SETUP, "\t<Time/Hodge> Inversion of property: %s\n",
-                    cs_base_strtf(h_info.inv_pty));
+      cs_log_printf(CS_LOG_SETUP, "    <%s/Time.Hodge.Inv>"
+                    " Inversion of property", eqname);
+      cs_log_printf(CS_LOG_SETUP, " %s\n", cs_base_strtf(h_info.inv_pty));
       if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
-        cs_log_printf(CS_LOG_SETUP,
-                      "\t<Time/Hodge> Value of the coercivity coef.: %.3e\n",
-                      h_info.coef);
+        cs_log_printf(CS_LOG_SETUP, "    <%s/Time.Hodge.Coef> %.3e\n",
+                      eqname, h_info.coef);
     }
 
   } /* Unsteady term */
@@ -587,20 +594,21 @@ cs_equation_param_summary(const char                  *eqname,
     const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
 
     cs_log_printf(CS_LOG_SETUP, "\n  <%s/Diffusion term>\n", eqname);
-    cs_log_printf(CS_LOG_SETUP, "  <Diffusion> Property: %s\n",
-                  cs_property_get_name(eqp->diffusion_property));
+    cs_log_printf(CS_LOG_SETUP, "  <%s/Diffusion.Property: %s\n",
+                  eqname, cs_property_get_name(eqp->diffusion_property));
 
     if (eqp->verbosity > 0) {
-      cs_log_printf(CS_LOG_SETUP, "  <Diffusion/Hodge> %s - %s\n",
-                    cs_param_hodge_get_type_name(h_info),
+      cs_log_printf(CS_LOG_SETUP, "  <%s/Diffusion.Hodge> %s - %s\n",
+                    eqname, cs_param_hodge_get_type_name(h_info),
                     cs_param_hodge_get_algo_name(h_info));
-      cs_log_printf(CS_LOG_SETUP,
-                    "\t<Diffusion/Hodge> Inversion of property: %s\n",
+      cs_log_printf(CS_LOG_SETUP, "    <%s/Diffusion.Hodge.Inv>", eqname);
+      cs_log_printf(CS_LOG_SETUP, " Inversion of property: %s\n",
                     cs_base_strtf(h_info.inv_pty));
-      if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
-        cs_log_printf(CS_LOG_SETUP,
-                      "\t<Diffusion/Hodge> Coercivity coef.: %.3e\n",
-                      h_info.coef);
+      if (h_info.algo == CS_PARAM_HODGE_ALGO_COST ||
+          h_info.algo == CS_PARAM_HODGE_ALGO_AUTO) {
+        cs_log_printf(CS_LOG_SETUP, "    <%s/Diffusion.Hodge.Coef> %.3e\n",
+                      eqname, h_info.coef);
+      }
     }
 
   } /* Diffusion term */
@@ -614,7 +622,7 @@ cs_equation_param_summary(const char                  *eqname,
                   cs_advection_field_get_name(eqp->advection_field));
 
     if (eqp->verbosity > 0) {
-      cs_log_printf(CS_LOG_SETUP, "  <Advection/Formulation>");
+      cs_log_printf(CS_LOG_SETUP, "  <%s/Advection.Formulation>", eqname);
       switch(a_info.formulation) {
       case CS_PARAM_ADVECTION_FORM_CONSERV:
         cs_log_printf(CS_LOG_SETUP, " Conservative\n");
@@ -622,12 +630,15 @@ cs_equation_param_summary(const char                  *eqname,
       case CS_PARAM_ADVECTION_FORM_NONCONS:
         cs_log_printf(CS_LOG_SETUP, " Non-conservative\n");
         break;
+      case CS_PARAM_ADVECTION_FORM_MIXED:
+        cs_log_printf(CS_LOG_SETUP, " Mixed\n");
+        break;
       default:
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid operator type for advection.");
       }
 
-      cs_log_printf(CS_LOG_SETUP, "  <Advection/Scheme> ");
+      cs_log_printf(CS_LOG_SETUP, "  <%s/Advection.Scheme> ", eqname);
       switch(a_info.scheme) {
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
         cs_log_printf(CS_LOG_SETUP, " centered\n");
@@ -664,21 +675,22 @@ cs_equation_param_summary(const char                  *eqname,
 
       const cs_param_hodge_t  h_info = eqp->reaction_hodge;
 
-      cs_log_printf(CS_LOG_SETUP, "  <Reaction/Hodge> %s - %s\n",
-                    cs_param_hodge_get_type_name(h_info),
+      cs_log_printf(CS_LOG_SETUP, "  <%s/Reaction.Hodge> %s - %s\n",
+                    eqname, cs_param_hodge_get_type_name(h_info),
                     cs_param_hodge_get_algo_name(h_info));
       if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
         cs_log_printf(CS_LOG_SETUP,
-                      "\t<Reaction/Hodge> Coercivity coef.: %.3e\n",
-                      h_info.coef);
+                      "    <%s/Reaction.Hodge.Coefficient> %.3e\n",
+                      eqname, h_info.coef);
 
     }
 
     for (int r_id = 0; r_id < eqp->n_reaction_terms; r_id++) {
       cs_param_reaction_t  r_info = eqp->reaction_info[r_id];
       cs_log_printf(CS_LOG_SETUP,
-                    "  <Reaction tem %02d> Property: %s; Operator type: %s\n",
-                    r_id, cs_property_get_name(eqp->reaction_properties[r_id]),
+                    "    <%s/Reaction.%02d> Property: %s; Operator type: %s\n",
+                    eqname, r_id,
+                    cs_property_get_name(eqp->reaction_properties[r_id]),
                     cs_param_reaction_get_type_name(r_info.type));
     }
 
@@ -695,21 +707,21 @@ cs_equation_param_summary(const char                  *eqname,
   /* Iterative solver information */
   const cs_param_itsol_t   itsol = eqp->itsol_info;
 
-  cs_log_printf(CS_LOG_SETUP, "\n  <%s/Sparse Linear Algebra>", eqname);
+  cs_log_printf(CS_LOG_SETUP, "\n  <%s/Sparse.Linear.Algebra>", eqname);
   if (eqp->algo_info.type == CS_EQUATION_ALGO_CS_ITSOL)
     cs_log_printf(CS_LOG_SETUP, " Code_Saturne iterative solvers\n");
   else if (eqp->algo_info.type == CS_EQUATION_ALGO_PETSC_ITSOL)
     cs_log_printf(CS_LOG_SETUP, " PETSc iterative solvers\n");
-  cs_log_printf(CS_LOG_SETUP,
-                "\t<sla> Solver.MaxIter     %d\n", itsol.n_max_iter);
-  cs_log_printf(CS_LOG_SETUP, "\t<sla> Solver.Name        %s\n",
-                cs_param_get_solver_name(itsol.solver));
-  cs_log_printf(CS_LOG_SETUP, "\t<sla> Solver.Precond     %s\n",
-                cs_param_get_precond_name(itsol.precond));
-  cs_log_printf(CS_LOG_SETUP,
-                "\t<sla> Solver.Eps        % -10.6e\n", itsol.eps);
-  cs_log_printf(CS_LOG_SETUP, "\t<sla> Solver.Normalized  %s\n",
-                cs_base_strtf(itsol.resid_normalized));
+  cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.MaxIter     %d\n",
+                eqname, itsol.n_max_iter);
+  cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Name        %s\n",
+                eqname, cs_param_get_solver_name(itsol.solver));
+  cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Precond     %s\n",
+                eqname, cs_param_get_precond_name(itsol.precond));
+  cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Eps        % -10.6e\n",
+                eqname, itsol.eps);
+  cs_log_printf(CS_LOG_SETUP, "    <%s/sla> Solver.Normalized  %s\n",
+                eqname, cs_base_strtf(itsol.resid_normalized));
 
 }
 

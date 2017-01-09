@@ -53,6 +53,7 @@
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_evaluate.h"
+#include "cs_hho_scaleq.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
 #include "cs_post.h"
@@ -374,21 +375,36 @@ _initialize_field_from_ic(cs_equation_t     *eq)
       else
         ml_id = cs_mesh_location_get_id_by_name(N_("vertices"));
 
-      if (ic->def_type == CS_PARAM_DEF_BY_VALUE)
+      switch(ic->def_type) {
+
+      case CS_PARAM_DEF_BY_VALUE:
         cs_evaluate_potential_from_value(vtx_flag, ml_id, ic->def.get,
                                          field->val);
-      else if (ic->def_type == CS_PARAM_DEF_BY_QOV)
+        break;
+
+      case CS_PARAM_DEF_BY_QOV:
         cs_evaluate_potential_from_qov(vtx_flag, ml_id, ic->def.get,
                                        field->val);
-      else if (ic->def_type == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
+        break;
+
+      case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
         cs_evaluate_potential_from_analytic(vtx_flag, ml_id, ic->def.analytic,
                                             field->val);
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Incompatible way to initialize the field %s.\n"),
+                  field->name);
+                    
+      } // Switch on possible type of definition
 
     } // Loop on definitions
 
   } // VB or VCB schemes --> initialize on vertices
 
-  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
+  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB ||
+      eqp->space_scheme == CS_SPACE_SCHEME_HHO) {
 
     cs_flag_t  face_flag = dof_flag | cs_cdo_primal_face;
     cs_real_t  *face_values = eq->get_extra_values(eq->builder);
@@ -404,20 +420,35 @@ _initialize_field_from_ic(cs_equation_t     *eq)
       else
         ml_id = cs_mesh_location_get_id_by_name(N_("cells"));
 
-      /* Initialize cell-based array */
-      if (ic->def_type == CS_PARAM_DEF_BY_VALUE)
+      /* Initialize face-based array */
+      switch(ic->def_type) {
+
+      case CS_PARAM_DEF_BY_VALUE:
         cs_evaluate_potential_from_value(face_flag, ml_id, ic->def.get,
                                          face_values);
-      else if (ic->def_type == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
+        break;
+
+      case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
         cs_evaluate_potential_from_analytic(face_flag, ml_id, ic->def.analytic,
                                             face_values);
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Incompatible way to initialize the field %s.\n"),
+                  field->name);
+                    
+      } // Switch on possible type of definition
 
     } // Loop on definitions
 
   } // FB schemes --> initialize on faces
 
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB ||
-      eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB) {
+      eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB ||
+      eqp->space_scheme == CS_SPACE_SCHEME_HHO) {
+
+    /* TODO: HHO */
 
     /* Initialize cell-based array */
     cs_flag_t  cell_flag = dof_flag | cs_cdo_primal_cell;
@@ -437,13 +468,25 @@ _initialize_field_from_ic(cs_equation_t     *eq)
       else
         ml_id = cs_mesh_location_get_id_by_name(N_("cells"));
 
-      if (ic->def_type == CS_PARAM_DEF_BY_VALUE)
+      /* Initialize cell-based array */
+      switch(ic->def_type) {
+
+      case CS_PARAM_DEF_BY_VALUE:
         cs_evaluate_potential_from_value(cell_flag, ml_id, ic->def.get,
                                          cell_values);
+        break;
 
-      else if (ic->def_type == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
+      case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
         cs_evaluate_potential_from_analytic(cell_flag, ml_id, ic->def.analytic,
                                             cell_values);
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Incompatible way to initialize the field %s.\n"),
+                  field->name);
+                    
+      } // Switch on possible type of definition
 
     } // Loop on definitions
 
@@ -702,6 +745,19 @@ cs_equation_last_setup(cs_equation_t  *eq)
     eq->compute_cellwise_diff_flux = NULL;
     break;
 
+  case CS_SPACE_SCHEME_HHO:
+    eq->init_builder = cs_hho_scaleq_init;
+    eq->free_builder = cs_hho_scaleq_free;
+    eq->build_system = cs_hho_scaleq_build_system;
+    eq->free_system_matrix = cs_hho_scaleq_free_sysmat;
+    eq->compute_source = cs_hho_scaleq_compute_source;
+    eq->update_field = cs_hho_scaleq_update_field;
+    eq->postprocess = cs_hho_scaleq_extra_op;
+    eq->get_extra_values = cs_hho_scaleq_get_face_values;
+    eq->compute_flux_across_plane = NULL;
+    eq->compute_cellwise_diff_flux = NULL;
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid scheme for the space discretization.\n"
@@ -775,6 +831,12 @@ cs_equation_set_param(cs_equation_t       *eq,
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
       eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
     }
+    else if (strcmp(val, "hho") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_HHO;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+    }
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -790,11 +852,13 @@ cs_equation_set_param(cs_equation_t       *eq,
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
     else if (strcmp(val, "wbs") == 0)
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+    else if (strcmp(val, "auto") == 0)
+      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_AUTO;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid val %s related to key CS_EQKEY_HODGE_DIFF_ALGO\n"
-                  " Choice between cost, wbs or voronoi"), _val);
+                  " Choice between cost, wbs, auto or voronoi"), _val);
     }
     break;
 
@@ -809,7 +873,7 @@ cs_equation_set_param(cs_equation_t       *eq,
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid val %s related to key CS_EQKEY_HODGE_TIME_ALGO\n"
-                  " Choice between cost, wbs or voronoi"), _val);
+                  " Choice between cost, wbs, voronoi"), _val);
     }
     break;
 
@@ -973,6 +1037,8 @@ cs_equation_set_param(cs_equation_t       *eq,
       eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
     else if (strcmp(val, "non_conservative") == 0)
       eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
+    else if (strcmp(val, "mixed") == 0)
+      eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_MIXED;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -1365,6 +1431,7 @@ cs_equation_add_gravity_source_term(cs_equation_t   *eq,
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
+  case CS_SPACE_SCHEME_HHO:
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid numerical scheme to set a source term."));
@@ -1443,6 +1510,7 @@ cs_equation_add_source_term_by_val(cs_equation_t   *eq,
     break;
 
   case CS_SPACE_SCHEME_CDOVCB: // TODO
+  case CS_SPACE_SCHEME_HHO: // TODO
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid numerical scheme to set a source term."));
@@ -1676,6 +1744,7 @@ cs_equation_create_field(cs_equation_t     *eq)
     location_id = cs_mesh_location_get_id_by_name(N_("vertices"));
     break;
   case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO:
     location_id = cs_mesh_location_get_id_by_name(N_("cells"));
     break;
   default:
@@ -2244,7 +2313,8 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
               _(" No function defined for getting the face values in eq. %s"),
               eq->name);
 
-  if (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB)
+  if (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB ||
+      eq->param->space_scheme == CS_SPACE_SCHEME_HHO)
     return eq->get_extra_values(eq->builder);
   else
     return NULL; // Not implemented
@@ -2273,6 +2343,7 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
 
   switch (eq->param->space_scheme) {
   case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO:
     {
       cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
@@ -2378,6 +2449,8 @@ cs_equation_extra_post(const cs_equation_t     *eq,
 {
   if (eq == NULL)
     return;
+
+  CS_UNUSED(dt);
 
   int  len;
   char *postlabel = NULL;

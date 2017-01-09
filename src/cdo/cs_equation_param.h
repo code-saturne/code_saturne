@@ -133,7 +133,9 @@ typedef struct {
   cs_param_advection_t        advection_info;
   cs_adv_field_t             *advection_field;
 
-  /* Reaction term parametrization (Belong to the left-hand side) */
+  /* Reaction term parametrization
+     Belong to the left-hand and/or right-hand side according to the time scheme
+  */
   cs_param_hodge_t            reaction_hodge;
   int                         n_reaction_terms;
   cs_property_t             **reaction_properties;

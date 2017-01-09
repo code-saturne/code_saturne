@@ -77,7 +77,7 @@ struct _cs_property_t {
 
   /* Short descriptor to know where is defined the property and what kind of
      property one considers (mask of bits) */
-  cs_desc_t   flag;
+  cs_desc_t        flag;
 
   /* The number of values to set depends on the type of property
      - isotropic   = 1 => CS_PARAM_VAR_SCAL
@@ -196,8 +196,8 @@ _init_new_def(cs_property_t     *pty,
     if (elt_ids == NULL) {
 
       assert(n_elts[0] == n_cells); // Sanity check. Only this case is handled
-# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < n_elts[0]; i++)
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_cells; i++)
         pty->def_ids[i] = new_id;
 
     }

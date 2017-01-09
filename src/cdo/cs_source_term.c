@@ -445,7 +445,7 @@ cs_source_term_compute(cs_desc_t                     dof_desc,
     n_ent = quant->n_cells;
   else
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid case. Not able to compute an evaluation.\n"));
+              _(" Invalid case. Not able to compute the source term.\n"));
 
   /* Initialize values */
   if (values == NULL)

@@ -250,11 +250,11 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
           break;
         case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
           add1 = _analytic_quad_tet4(tcur, xv1, e.center, f.center, xc, ana);
-          add2 = _analytic_quad_tet4(tcur, xv1, e.center, f.center, xc, ana);
+          add2 = _analytic_quad_tet4(tcur, xv2, e.center, f.center, xc, ana);
           break;
         case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
           add1 = _analytic_quad_tet5(tcur, xv1, e.center, f.center, xc, ana);
-          add2 = _analytic_quad_tet5(tcur, xv1, e.center, f.center, xc, ana);
+          add2 = _analytic_quad_tet5(tcur, xv2, e.center, f.center, xc, ana);
           break;
         default:
           bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
@@ -449,7 +449,7 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
   /* Initialize todo array */
   bool  *todo = NULL;
 
-  BFT_MALLOC(todo, quant->n_vertices, bool);
+  BFT_MALLOC(todo, quant->n_faces, bool);
 
 # pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)

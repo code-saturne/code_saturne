@@ -95,6 +95,8 @@ struct _hodge_builder_t {
 
   bool              pty_is_set; /* Indicate if the value of the property
                                    is up-to-date */
+  bool              pty_is_iso; /* Indicate if the property is isotropic */
+
   cs_real_33_t      ptymat;     /* Tensor related to the material property.
                                    for EpFd, FpEd, EdFp Hodge op.
                                    Set by default to identity */
@@ -422,6 +424,68 @@ _init_hodge_face(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute quantities used for defining the entries of the discrete
+ *          Hodge for COST algo. when the property is isotropic
+ *          Initialize the local discrete Hodge op. with the consistency part
+ *
+ * \param[in]      n_ent      number of local entities
+ * \param[in]      invcvol    1/|c|
+ * \param[in]      ptyval     values of property inside this cell
+ * \param[in]      pq         pointer to the first set of quantities
+ * \param[in]      dq         pointer to the second set of quantities
+ * \param[in, out] alpha      geometrical quantity
+ * \param[in, out] kappa      geometrical quantity
+ * \param[in, out] hloc       pointer to a cs_locmat_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_cost_quant_iso(const int               n_ent,
+                        const double            invcvol,
+                        const double            ptyval,
+                        const cs_real_3_t      *pq,
+                        const cs_real_3_t      *dq,
+                        double                 *alpha,
+                        double                 *kappa,
+                        cs_locmat_t            *hloc)
+{
+  /* Compute several useful quantities
+     alpha_ij = delta_ij - pq_j.Consist_i where Consist_i = 1/|c| dq_i
+     qmq_ii = dq_i.ptyval.dq_i
+     kappa_i = qmq_ii / |subvol_i|
+  */
+
+  for (int i = 0; i < n_ent; i++) {
+
+    const double  dsvol_i = _dp3(dq[i], pq[i]);
+
+    double  *alpha_i = alpha + i*n_ent;
+    double  *mi = hloc->val + i*n_ent;
+
+    alpha_i[i] = 1 - invcvol * dsvol_i;
+
+    const double  qmq_ii = ptyval * _dp3(dq[i], dq[i]);
+
+    mi[i] = invcvol * qmq_ii;
+    kappa[i] = 3. * qmq_ii / dsvol_i;
+
+    for (int j = i+1; j < n_ent; j++) {
+
+      /* Initialize the lower left part of hloc with the consistency part */
+      mi[j] = invcvol * ptyval * _dp3(dq[j], dq[i]);
+
+      /* Compute the alpha matrix (not symmetric) */
+      alpha_i[j] = -invcvol * _dp3(pq[j], dq[i]);
+      alpha[j*n_ent + i] = -invcvol * _dp3(pq[i], dq[j]);
+
+    } /* Loop on entities (J) */
+
+  } /* Loop on entities (I) */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute quantities used for defining the entries of the discrete
  *          Hodge for COST algo.
  *          Initialize the local discrete Hodge op. with the consistency part
  *
@@ -474,7 +538,7 @@ _compute_cost_quant(const int               n_ent,
       /* Initialize the lower left part of hloc with the consistency part */
       mi[j] = invcvol * _dp3(dq[j], mdq_i);
 
-      /* Compute T (not symmetric) */
+      /* Compute the alpha matrix (not symmetric) */
       alpha_i[j] = -invcvol * _dp3(pq[j], dq[i]);
       alpha[j*n_ent + i] = -invcvol * _dp3(pq[i], dq[j]);
 
@@ -582,22 +646,37 @@ _cellwise_build_with_cost(const cs_cell_mesh_t      *cm,
   const double  invcvol = 1 / cm->vol_c;
   const double  beta2 = h_info.coef * h_info.coef;
 
-  /* PRIMAL --> DUAL */
   if (h_info.type == CS_PARAM_HODGE_TYPE_FPED ||
-      h_info.type == CS_PARAM_HODGE_TYPE_EPFD)
-    _compute_cost_quant(n_ent, invcvol,
-                        (const cs_real_3_t *)hb->ptymat,
-                        (const cs_real_t (*)[3])pq,
-                        (const cs_real_t (*)[3])dq,
-                        alpha, kappa, hloc);
+      h_info.type == CS_PARAM_HODGE_TYPE_EPFD) { /* PRIMAL --> DUAL */
 
-  /* DUAL --> PRIMAL */
-  else if (h_info.type == CS_PARAM_HODGE_TYPE_EDFP)
-    _compute_cost_quant(n_ent, invcvol,
-                        (const cs_real_3_t *)hb->ptymat,
-                        (const cs_real_t (*)[3])dq,
-                        (const cs_real_t (*)[3])pq,
-                        alpha, kappa, hloc);
+    if (hb->pty_is_iso)
+      _compute_cost_quant_iso(n_ent, invcvol, hb->ptyval,
+                              (const cs_real_t (*)[3])pq,
+                              (const cs_real_t (*)[3])dq,
+                              alpha, kappa, hloc);
+    else
+      _compute_cost_quant(n_ent, invcvol,
+                          (const cs_real_3_t *)hb->ptymat,
+                          (const cs_real_t (*)[3])pq,
+                          (const cs_real_t (*)[3])dq,
+                          alpha, kappa, hloc);
+
+  }
+  else if (h_info.type == CS_PARAM_HODGE_TYPE_EDFP) { /* DUAL --> PRIMAL */
+
+    if (hb->pty_is_iso)
+      _compute_cost_quant_iso(n_ent, invcvol, hb->ptyval,
+                              (const cs_real_t (*)[3])dq,
+                              (const cs_real_t (*)[3])pq,
+                              alpha, kappa, hloc);
+    else
+      _compute_cost_quant(n_ent, invcvol,
+                          (const cs_real_3_t *)hb->ptymat,
+                          (const cs_real_t (*)[3])dq,
+                          (const cs_real_t (*)[3])pq,
+                          alpha, kappa, hloc);
+
+  }
 
   for (int i = 0; i < n_ent; i++) { /* Loop on cell entities I */
 
@@ -763,22 +842,37 @@ _build_using_cost(int                          cid,
   const double  invcvol = 1 / quant->cell_vol[cid];
   const double  beta2 = h_info.coef * h_info.coef;
 
-  /* PRIMAL --> DUAL */
   if (h_info.type == CS_PARAM_HODGE_TYPE_FPED ||
-      h_info.type == CS_PARAM_HODGE_TYPE_EPFD)
-    _compute_cost_quant(n_ent, invcvol,
-                        (const cs_real_3_t *)hb->ptymat,
-                        (const cs_real_t (*)[3])pq,
-                        (const cs_real_t (*)[3])dq,
-                        alpha, kappa, hloc);
+      h_info.type == CS_PARAM_HODGE_TYPE_EPFD) { /* PRIMAL --> DUAL */
 
-  /* DUAL --> PRIMAL */
-  else if (h_info.type == CS_PARAM_HODGE_TYPE_EDFP)
-    _compute_cost_quant(n_ent, invcvol,
-                        (const cs_real_3_t *)hb->ptymat,
-                        (const cs_real_t (*)[3])dq,
-                        (const cs_real_t (*)[3])pq,
-                        alpha, kappa, hloc);
+    if (hb->pty_is_iso)
+      _compute_cost_quant_iso(n_ent, invcvol, hb->ptyval,
+                              (const cs_real_t (*)[3])pq,
+                              (const cs_real_t (*)[3])dq,
+                              alpha, kappa, hloc);
+    else
+      _compute_cost_quant(n_ent, invcvol,
+                          (const cs_real_3_t *)hb->ptymat,
+                          (const cs_real_t (*)[3])pq,
+                          (const cs_real_t (*)[3])dq,
+                          alpha, kappa, hloc);
+
+  }
+  else if (h_info.type == CS_PARAM_HODGE_TYPE_EDFP) { /* DUAL --> PRIMAL */
+
+    if (hb->pty_is_iso)
+      _compute_cost_quant_iso(n_ent, invcvol, hb->ptyval,
+                              (const cs_real_t (*)[3])dq,
+                              (const cs_real_t (*)[3])pq,
+                              alpha, kappa, hloc);
+    else
+      _compute_cost_quant(n_ent, invcvol,
+                          (const cs_real_3_t *)hb->ptymat,
+                          (const cs_real_t (*)[3])dq,
+                          (const cs_real_t (*)[3])pq,
+                          alpha, kappa, hloc);
+
+  }
 
   for (i = 0; i < n_ent; i++) { /* Loop on cell entities I */
 
@@ -881,11 +975,17 @@ _build_stiffness_using_cost(const cs_cell_mesh_t     *cm,
   const double  invcvol = 1 / cm->vol_c;
   const double  beta2 = h_info.coef * h_info.coef;
 
-  _compute_cost_quant(n_ent, invcvol,
-                      (const cs_real_3_t *)hb->ptymat,
-                      (const cs_real_t (*)[3])pq,
-                      (const cs_real_t (*)[3])dq,
-                      alpha, kappa, hloc);
+  if (hb->pty_is_iso)
+    _compute_cost_quant_iso(n_ent, invcvol, hb->ptyval,
+                            (const cs_real_t (*)[3])pq,
+                            (const cs_real_t (*)[3])dq,
+                            alpha, kappa, hloc);
+  else
+    _compute_cost_quant(n_ent, invcvol,
+                        (const cs_real_3_t *)hb->ptymat,
+                        (const cs_real_t (*)[3])pq,
+                        (const cs_real_t (*)[3])dq,
+                        alpha, kappa, hloc);
 
   for (int ei = 0; ei < n_ent; ei++) { /* Loop on cell entities I */
 
@@ -1222,30 +1322,60 @@ _build_stiffness_using_voronoi(const cs_cell_mesh_t    *cm,
 
   case CS_PARAM_HODGE_TYPE_EPFD:
     {
-      /* Loop on cell edges */
-      for (int ii = 0; ii < cm->n_ec; ii++) {
+      if (hb->pty_is_iso) {
 
-        cs_nvec3_t  dfq = cm->dface[ii];
-        cs_quant_t  peq = cm->edge[ii];
+        /* Loop on cell edges */
+        for (int ii = 0; ii < cm->n_ec; ii++) {
 
-        cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, dfq.unitv, mv);
+          cs_nvec3_t  dfq = cm->dface[ii];
+          cs_quant_t  peq = cm->edge[ii];
 
-        /* Only a diagonal term */
-        const double  dval = _dp3(mv, dfq.unitv) * dfq.meas/peq.meas;
-        const short int  _2ii = 2*ii;
-        const short int  vi = cm->e2v_ids[_2ii];
-        const short int  vj = cm->e2v_ids[_2ii+1];
-        const short int  sgn_i = cm->e2v_sgn[_2ii];
-        const short int  sgn_j = cm->e2v_sgn[_2ii+1];
+          /* Only a diagonal term */
+          const double  dval = hb->ptyval * dfq.meas/peq.meas;
+          const short int  _2ii = 2*ii;
+          const short int  vi = cm->e2v_ids[_2ii];
+          const short int  vj = cm->e2v_ids[_2ii+1];
+          const short int  sgn_i = cm->e2v_sgn[_2ii];
+          const short int  sgn_j = cm->e2v_sgn[_2ii+1];
 
-        double  *si = sloc->val + vi*sloc->n_ent;
-        double  *sj = sloc->val + vj*sloc->n_ent;
+          double  *si = sloc->val + vi*sloc->n_ent;
+          double  *sj = sloc->val + vj*sloc->n_ent;
 
-        si[vi] += dval;
-        sj[vj] += dval;
-        si[vj] = sj[vi] = dval * sgn_j * sgn_i;
+          si[vi] += dval;
+          sj[vj] += dval;
+          si[vj] = sj[vi] = dval * sgn_j * sgn_i;
 
-      } /* End of loop on cell edges */
+        } /* End of loop on cell edges */
+
+      }
+      else {
+
+        /* Loop on cell edges */
+        for (int ii = 0; ii < cm->n_ec; ii++) {
+
+          cs_nvec3_t  dfq = cm->dface[ii];
+          cs_quant_t  peq = cm->edge[ii];
+
+          cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, dfq.unitv, mv);
+
+          /* Only a diagonal term */
+          const double  dval = _dp3(mv, dfq.unitv) * dfq.meas/peq.meas;
+          const short int  _2ii = 2*ii;
+          const short int  vi = cm->e2v_ids[_2ii];
+          const short int  vj = cm->e2v_ids[_2ii+1];
+          const short int  sgn_i = cm->e2v_sgn[_2ii];
+          const short int  sgn_j = cm->e2v_sgn[_2ii+1];
+
+          double  *si = sloc->val + vi*sloc->n_ent;
+          double  *sj = sloc->val + vj*sloc->n_ent;
+
+          si[vi] += dval;
+          sj[vj] += dval;
+          si[vj] = sj[vi] = dval * sgn_j * sgn_i;
+
+        } /* End of loop on cell edges */
+
+      } /* Tensor-valued property */
 
     } /* EpFd */
     break;
@@ -1283,28 +1413,62 @@ _cellwise_build_with_voronoi(const cs_cell_mesh_t    *cm,
 
   case CS_PARAM_HODGE_TYPE_EPFD:
 
-    for (int e = 0; e < cm->n_ec; e++) { /* Loop on cell edges */
+    if (hb->pty_is_iso) {
 
-      cs_nvec3_t  dfq = cm->dface[e];
-      cs_quant_t  peq = cm->edge[e];
+      for (int e = 0; e < cm->n_ec; e++) { /* Loop on cell edges */
 
-      hmat->ids[e] = cm->e_ids[e];
-      cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, dfq.unitv, mv);
-      hmat->val[e*cm->n_ec+e] = _dp3(mv, dfq.unitv) * dfq.meas/peq.meas;
+        cs_nvec3_t  dfq = cm->dface[e];
+        cs_quant_t  peq = cm->edge[e];
+
+        hmat->ids[e] = cm->e_ids[e];
+        hmat->val[e*cm->n_ec+e] = hb->ptyval * dfq.meas/peq.meas;
+
+      }
+
+    }
+    else {
+
+      for (int e = 0; e < cm->n_ec; e++) { /* Loop on cell edges */
+
+        cs_nvec3_t  dfq = cm->dface[e];
+        cs_quant_t  peq = cm->edge[e];
+
+        hmat->ids[e] = cm->e_ids[e];
+        cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, dfq.unitv, mv);
+        hmat->val[e*cm->n_ec+e] = _dp3(mv, dfq.unitv) * dfq.meas/peq.meas;
+
+      }
 
     }
     break;
 
   case CS_PARAM_HODGE_TYPE_FPED:
 
-    for (int f = 0; f < cm->n_fc; f++) { /* Loop on cell faces */
+    if (hb->pty_is_iso) {
 
-      cs_nvec3_t  deq = cm->dedge[f];
-      cs_quant_t  pfq = cm->face[f];
+      for (int f = 0; f < cm->n_fc; f++) { /* Loop on cell faces */
 
-      hmat->ids[f] = cm->f_ids[f];
-      cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, deq.unitv, mv);
-      hmat->val[f*cm->n_fc+f] = _dp3(mv, deq.unitv) * deq.meas/pfq.meas;
+        cs_nvec3_t  deq = cm->dedge[f];
+        cs_quant_t  pfq = cm->face[f];
+
+        hmat->ids[f] = cm->f_ids[f];
+        hmat->val[f*cm->n_fc+f] = hb->ptyval * deq.meas/pfq.meas;
+
+      }
+
+    }
+    else {
+
+      for (int f = 0; f < cm->n_fc; f++) { /* Loop on cell faces */
+
+        cs_nvec3_t  deq = cm->dedge[f];
+        cs_quant_t  pfq = cm->face[f];
+
+        hmat->ids[f] = cm->f_ids[f];
+        cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, deq.unitv, mv);
+        hmat->val[f*cm->n_fc+f] = _dp3(mv, deq.unitv) * deq.meas/pfq.meas;
+
+      }
 
     }
     break;
@@ -1365,27 +1529,49 @@ _build_using_voronoi(cs_lnum_t                    c_id,
     {
       const cs_connect_index_t  *c2e = connect->c2e;
 
-      /* Loop on cell edges */
-      for (i = c2e->idx[c_id], ii = 0; i < c2e->idx[c_id+1]; i++, ii++) {
+      if (hb->pty_is_iso) {
 
-        cs_dface_t  dfq = quant->dface[i];
-        cs_nvec3_t  df0q = dfq.sface[0], df1q = dfq.sface[1];
-        cs_lnum_t  e_id = c2e->ids[i];
-        cs_real_t  len = quant->edge[e_id].meas;
+        /* Loop on cell edges */
+        for (i = c2e->idx[c_id], ii = 0; i < c2e->idx[c_id+1]; i++, ii++) {
 
-        hl->ids[ii] = e_id;
+          cs_dface_t  dfq = quant->dface[i];
+          cs_nvec3_t  df0q = dfq.sface[0], df1q = dfq.sface[1];
+          cs_lnum_t  e_id = c2e->ids[i];
+          cs_real_t  len = quant->edge[e_id].meas;
 
-        /* First sub-triangle contribution */
-        cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, df0q.unitv, mv);
-        contrib = df0q.meas * _dp3(mv, df0q.unitv);
-        /* Second sub-triangle contribution */
-        cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, df1q.unitv, mv);
-        contrib += df1q.meas * _dp3(mv, df1q.unitv);
+          hl->ids[ii] = e_id;
 
-        /* Only a diagonal term */
-        hl->val[ii*hl->n_ent+ii] = contrib/len;
+          /* Only a diagonal term */
+          hl->val[ii*hl->n_ent+ii] = hb->ptyval*(df0q.meas + df1q.meas)/len;
 
-      } /* End of loop on cell edges */
+        } /* End of loop on cell edges */
+
+      }
+      else {
+
+        /* Loop on cell edges */
+        for (i = c2e->idx[c_id], ii = 0; i < c2e->idx[c_id+1]; i++, ii++) {
+
+          cs_dface_t  dfq = quant->dface[i];
+          cs_nvec3_t  df0q = dfq.sface[0], df1q = dfq.sface[1];
+          cs_lnum_t  e_id = c2e->ids[i];
+          cs_real_t  len = quant->edge[e_id].meas;
+
+          hl->ids[ii] = e_id;
+
+          /* First sub-triangle contribution */
+          cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, df0q.unitv, mv);
+          contrib = df0q.meas * _dp3(mv, df0q.unitv);
+          /* Second sub-triangle contribution */
+          cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, df1q.unitv, mv);
+          contrib += df1q.meas * _dp3(mv, df1q.unitv);
+
+          /* Only a diagonal term */
+          hl->val[ii*hl->n_ent+ii] = contrib/len;
+
+        } /* End of loop on cell edges */
+
+      } // Tensor-valued property
 
     } /* EpFd */
     break;
@@ -1394,18 +1580,37 @@ _build_using_voronoi(cs_lnum_t                    c_id,
     {
       const cs_sla_matrix_t *c2f = connect->c2f;
 
-      for (i = c2f->idx[c_id], ii = 0; i < c2f->idx[c_id+1]; i++, ii++) {
+      if (hb->pty_is_iso) {
 
-        cs_nvec3_t  deq = quant->dedge[i];
-        cs_lnum_t  f_id = c2f->col_id[i];
-        cs_real_t  surf = quant->face[f_id].meas;
+        for (i = c2f->idx[c_id], ii = 0; i < c2f->idx[c_id+1]; i++, ii++) {
 
-        hl->ids[ii] = f_id;
-        /* Only a diagonal term */
-        cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, deq.unitv, mv);
-        hl->val[ii*hl->n_ent+ii] = deq.meas * _dp3(mv, deq.unitv) / surf;
+          cs_nvec3_t  deq = quant->dedge[i];
+          cs_lnum_t  f_id = c2f->col_id[i];
+          cs_real_t  surf = quant->face[f_id].meas;
 
-      } /* End of loop on cell faces */
+          hl->ids[ii] = f_id;
+          /* Only a diagonal term */
+          hl->val[ii*hl->n_ent+ii] = hb->ptyval * deq.meas / surf;
+
+        }
+
+      }
+      else {
+
+        for (i = c2f->idx[c_id], ii = 0; i < c2f->idx[c_id+1]; i++, ii++) {
+
+          cs_nvec3_t  deq = quant->dedge[i];
+          cs_lnum_t  f_id = c2f->col_id[i];
+          cs_real_t  surf = quant->face[f_id].meas;
+
+          hl->ids[ii] = f_id;
+          /* Only a diagonal term */
+          cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, deq.unitv, mv);
+          hl->val[ii*hl->n_ent+ii] = deq.meas * _dp3(mv, deq.unitv) / surf;
+
+        } /* End of loop on cell faces */
+
+      } // Tensor-valued property
 
     } /* FpEd */
     break;
@@ -1467,6 +1672,7 @@ cs_hodge_set_timer_stats(int   level)
  * \brief   Allocate and initialize a cs_hodge_builder_t structure
  *
  * \param[in]  connect       pointer to a cs_cdo_connect_t struct.
+ * \param[in]  is_isotropic  indicate if the related property is isotropic
  * \param[in]  h_info        algorithm used to build the discrete Hodge op.
  *
  * \return  a new allocated cs_hodge_builder_t structure
@@ -1475,6 +1681,7 @@ cs_hodge_set_timer_stats(int   level)
 
 cs_hodge_builder_t *
 cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
+                      bool                      is_isotropic,
                       cs_param_hodge_t          h_info)
 {
   cs_hodge_builder_t  *hb = NULL;
@@ -1490,6 +1697,7 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
   hb->h_info.algo    = h_info.algo;
   hb->h_info.coef    = h_info.coef;
 
+  hb->pty_is_iso = is_isotropic;
   hb->pty_is_set = true;
 
   /* Initialize by default the property values */
@@ -1534,6 +1742,7 @@ cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
   switch (h_info.algo) {
 
   case CS_PARAM_HODGE_ALGO_COST:
+  case CS_PARAM_HODGE_ALGO_AUTO:
     v_size = 2*hb->n_maxent_byc;
     s_size = hb->n_maxent_byc * (1 + hb->n_maxent_byc);
     break;
@@ -1650,6 +1859,8 @@ cs_hodge_builder_set_val(cs_hodge_builder_t    *hb,
   if (hb == NULL)
     return;
 
+  assert(hb->pty_is_iso);
+
   hb->pty_is_set = true;
   hb->ptyval = ptyval;
 }
@@ -1673,6 +1884,11 @@ cs_hodge_builder_set_tensor(cs_hodge_builder_t     *hb,
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
       hb->ptymat[i][j] = ptymat[i][j];
+
+  hb->pty_is_set = true;
+
+  if (hb->pty_is_iso)
+    hb->ptyval = ptymat[0][0];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1726,6 +1942,13 @@ cs_hodge_build_local_stiffness(const cs_cell_mesh_t     *cm,
 
   case CS_PARAM_HODGE_ALGO_VORONOI:
     _build_stiffness_using_voronoi(cm, hb, sloc);
+    break;
+
+  case CS_PARAM_HODGE_ALGO_AUTO:
+    if (cm->flag & CS_CDO_LOCAL_ORTHO && hb->pty_is_iso)
+      _build_stiffness_using_voronoi(cm, hb, sloc);
+    else
+      _build_stiffness_using_cost(cm, hb, sloc);
     break;
 
   default:
@@ -1813,6 +2036,14 @@ cs_hodge_build_cellwise(const cs_cell_mesh_t      *cm,
                 _(" Invalid type of discrete Hodge op. for WBS algorithm."));
     break;
 
+  case CS_PARAM_HODGE_ALGO_AUTO:
+    /* Set the hodge algo. used for this cell */
+    if (cm->flag & CS_CDO_LOCAL_ORTHO && hb->pty_is_iso)
+      _cellwise_build_with_voronoi(cm, hb);
+    else
+      _cellwise_build_with_cost(cm, hb);
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid type of algorithm to build a discrete Hodge"
@@ -1897,6 +2128,7 @@ cs_hodge_build_local(int                         c_id,
     break;
 
   case CS_PARAM_HODGE_ALGO_WBS:
+  case CS_PARAM_HODGE_ALGO_AUTO:
     bft_error(__FILE__, __LINE__, 0,
               _(" Please change your function call with the following one:\n"
                 " cs_hodge_build_cellwise(cell_mesh, hodge_builder)"));
@@ -1947,16 +2179,22 @@ cs_hodge_compute(const cs_cdo_connect_t      *connect,
   if (hodge_ts_id > -1)
     cs_timer_stats_start(hodge_ts_id);
 
-  /* Allocate and initialize a cs_hodge_builder_t structure */
-  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, h_info);
-
-  bool  update_pty = true;
   bool  pty_is_uniform = true;
+  bool  pty_is_isotropic = true;
 
-  if (pty == NULL)
-    update_pty = false;
-  else
+  if (pty != NULL) {
     pty_is_uniform = cs_property_is_uniform(pty);
+    if (cs_property_get_type(pty) != CS_PROPERTY_ISO)
+      pty_is_isotropic = false;
+  }
+
+  /* Allocate and initialize a cs_hodge_builder_t structure */
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect,
+                                                  pty_is_isotropic,
+                                                  h_info);
+
+  if (pty != NULL)
+    cs_hodge_builder_unset(hb);
 
   switch (h_info.type) {
 
@@ -2003,19 +2241,25 @@ cs_hodge_compute(const cs_cdo_connect_t      *connect,
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     /* Update the value of the property if needed */
-    if (update_pty) {
-      if (h_info.type == CS_PARAM_HODGE_TYPE_VPCD)
-        hb->ptyval = cs_property_get_cell_value(c_id, pty);
-      else
-        cs_property_get_cell_tensor(c_id, pty, h_info.inv_pty, hb->ptymat);
+    if (cs_hodge_builder_get_setting_flag(hb) == false) {
 
-      if (pty_is_uniform)
-        update_pty = false;
+      if (h_info.type == CS_PARAM_HODGE_TYPE_VPCD || hb->pty_is_iso)
+        cs_hodge_builder_set_val(hb, cs_property_get_cell_value(c_id, pty));
+
+      else {
+
+        cs_real_33_t  tensor = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+        cs_property_get_cell_tensor(c_id, pty, h_info.inv_pty, tensor);
+        cs_hodge_builder_set_tensor(hb, (const cs_real_3_t *)tensor);
+
+      }
+
     }
 
     /* The local (dense) matrix is stored inside hloc
        n_ent = number of entities related to the current cell */
-    if (h_info.algo == CS_PARAM_HODGE_ALGO_WBS) {
+    if (h_info.algo == CS_PARAM_HODGE_ALGO_WBS ||
+        h_info.algo == CS_PARAM_HODGE_ALGO_AUTO) {
 
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, cm_flag, connect, quant, c_mesh);
@@ -2027,6 +2271,9 @@ cs_hodge_compute(const cs_cdo_connect_t      *connect,
 
     /* Assemble the local matrix into the system matrix */
     cs_sla_assemble_msr_sym(hb->hloc, h_mat, only_diag);
+
+    if (!pty_is_uniform)
+      cs_hodge_builder_unset(hb);
 
   } /* End of loop on cells */
 

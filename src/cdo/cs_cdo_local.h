@@ -44,12 +44,13 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#define CS_CDO_LOCAL_V   (1 << 0) //  1: local information related to vertices
-#define CS_CDO_LOCAL_E   (1 << 1) //  2: local information related to edges
-#define CS_CDO_LOCAL_F   (1 << 2) //  4: local information related to faces
-#define CS_CDO_LOCAL_EV  (1 << 3) //  8: cell-wise edge --> vertices connect.
-#define CS_CDO_LOCAL_FE  (1 << 4) // 16: cell-wise face --> edges connect.
-#define CS_CDO_LOCAL_EF  (1 << 5) // 32: cell-wise edge --> faces connect.
+#define CS_CDO_LOCAL_V     (1 << 0) //  1: local info. related to vertices
+#define CS_CDO_LOCAL_E     (1 << 1) //  2: local info. related to edges
+#define CS_CDO_LOCAL_F     (1 << 2) //  4: local info. related to faces
+#define CS_CDO_LOCAL_EV    (1 << 3) //  8: cellwise edge --> vertices connect.
+#define CS_CDO_LOCAL_FE    (1 << 4) // 16: cellwise face --> edges connect.
+#define CS_CDO_LOCAL_EF    (1 << 5) // 32: cellwise edge --> faces connect.
+#define CS_CDO_LOCAL_ORTHO (1 << 6) // 64: orthogonality cond. is fullfilled
 
 /*============================================================================
  * Type definitions
@@ -76,10 +77,11 @@ typedef struct {
   short int    n_max_ebyc;
   short int    n_max_fbyc;
 
-  cs_flag_t    flag;   // indicate which quantities are defined
-  cs_lnum_t    c_id;   // id of related cell
-  cs_real_t   *xc;     // pointer to the coordinates of the cell center
-  double       vol_c;  // volume of the current cell
+  cs_lnum_t      c_id;    // id of related cell
+  fvm_element_t  type;    // type of element related to this cell
+  cs_flag_t      flag;    // indicate which quantities are defined
+  cs_real_t     *xc;      // pointer to the coordinates of the cell center
+  double         vol_c;   // volume of the current cell
 
   /* Vertex information */
   short int    n_vc;   // local number of vertices in a cell
@@ -156,7 +158,7 @@ typedef struct {
  *  Global variables
  *============================================================================*/
 
-extern cs_cell_mesh_t  **cs_cdo_local_cell_meshes       ;
+extern cs_cell_mesh_t  **cs_cdo_local_cell_meshes;
 extern cs_face_mesh_t  **cs_cdo_local_face_meshes;
 
 /*============================================================================

@@ -160,7 +160,7 @@ MPI_Datatype  cs_datatype_to_mpi[] = {MPI_DATATYPE_NULL,
                                       MPI_CHAR,
                                       MPI_FLOAT,
                                       MPI_DOUBLE,
-                                      MPI_UNSIGNED_SHORT, 
+                                      MPI_UNSIGNED_SHORT,
                                       MPI_INT,            /* CS_INT32 */
                                       MPI_LONG_INT,       /* CS_INT64 */
                                       MPI_UNSIGNED,       /* CS_UINT32 */

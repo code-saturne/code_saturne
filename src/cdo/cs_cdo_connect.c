@@ -610,10 +610,6 @@ _build_additional_connect(cs_cdo_connect_t  *connect)
   cs_index_free(&f2e);
   cs_index_free(&e2v);
 
-#if CS_CDO_CONNECT_DBG /* Dump for debugging purposes */
-  cs_index_dump("Connect-c2e.log", NULL, connect->c2e);
-  cs_index_dump("Connect-c2v.log", NULL, connect->c2v);
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -821,6 +817,107 @@ _define_connect_info(const cs_mesh_t    *m,
   connect->c_info = ci;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate to each cell a type of element (fvm_element_t)
+ *
+ * \param[in]  c_id      cell id
+ * \param[in]  connect   pointer to a cs_cdo_connect_t struct.
+ *
+ * \return  type of element for this cell
+ */
+/*----------------------------------------------------------------------------*/
+
+static fvm_element_t
+_get_cell_type(cs_lnum_t                 c_id,
+               const cs_cdo_connect_t   *connect)
+{
+  fvm_element_t  ret_type = FVM_CELL_POLY; // Default value
+
+  int  n_vc = connect->c2v->idx[c_id+1] - connect->c2v->idx[c_id];
+  int  n_ec = connect->c2e->idx[c_id+1] - connect->c2e->idx[c_id];
+  int  n_fc = connect->c2f->idx[c_id+1] - connect->c2f->idx[c_id];
+
+  /* Tetrahedron */
+  if (n_vc == 4 && n_ec == 6 && n_fc == 4)
+    ret_type = FVM_CELL_TETRA;
+
+  /* Pyramid */
+  else if (n_vc == 5 && n_ec == 8 && n_fc == 5)
+    ret_type = FVM_CELL_PYRAM;
+
+  /* Prism ? */
+  else if (n_vc == 6 && n_ec == 9 && n_fc == 5) { // Potentially a prism
+
+    int  count[2] = {0, 0};
+
+    /* Loop on cell faces */
+    for (cs_lnum_t i = connect->c2f->idx[c_id]; i < connect->c2f->idx[c_id+1];
+         i++) {
+
+      cs_lnum_t  f_id = connect->c2f->col_id[i];
+
+      if (connect->f2e->idx[f_id+1] - connect->f2e->idx[f_id] == 4) // Quad
+        count[1] += 1;
+      if (connect->f2e->idx[f_id+1] - connect->f2e->idx[f_id] == 3) // Tria
+        count[0] += 1;
+
+      if (count[0] == 2 && count[1] == 3)
+        ret_type = FVM_CELL_PRISM;
+    }
+
+  }
+
+  /* Hexahedron ? */
+  else if (n_vc == 8 && n_ec == 12 && n_fc == 6) { // Potentially a hexahedron
+
+    _Bool  is_hexa = true;
+
+    /* Loop on cell faces */
+    for (cs_lnum_t i = connect->c2f->idx[c_id]; i < connect->c2f->idx[c_id+1];
+         i++) {
+
+      cs_lnum_t  f_id = connect->c2f->col_id[i];
+
+      if (connect->f2e->idx[f_id+1] - connect->f2e->idx[f_id] != 4) {
+        is_hexa = false;
+        break;
+      }
+
+    }
+
+    if (is_hexa)
+      ret_type = FVM_CELL_HEXA;
+
+  }
+
+  return ret_type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate to each cell a type of element (fvm_element_t)
+ *
+ * \param[in, out]  connect  pointer to a cs_cdo_connect_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_define_cell_type(cs_cdo_connect_t   *connect)
+{
+  /* Sanity check */
+  assert(connect->c2f != NULL);
+  assert(connect->c2v != NULL);
+  assert(connect->c2e != NULL);
+
+  const cs_lnum_t  n_cells = connect->c_info->n_elts;
+
+  /* Allocate and define each cell type (by default to polyhedron) */
+  BFT_MALLOC(connect->cell_type, n_cells, fvm_element_t);
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    connect->cell_type[c_id] = _get_cell_type(c_id, connect);
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -896,6 +993,7 @@ cs_cdo_connect_init(const cs_mesh_t      *m)
 
   connect->v2v = NULL; /* Only defined if CDO-VB or CDO-VCB schemes are
                           requested */
+  connect->f2f = NULL; /* Only defined if CDO-FB schemes are requested */
 
   /* Build a flag indicated if an element belongs to the interior or border of
      the computatinoal domain. Indicate also the related number of interior and
@@ -904,6 +1002,9 @@ cs_cdo_connect_init(const cs_mesh_t      *m)
 
   /* Max number of entities (vertices, edges and faces) by cell */
   _compute_max_ent(connect);
+
+  /* Associate to each cell a predefined type (tetra, prism, hexa...) */
+  _define_cell_type(connect);
 
   return connect;
 }
@@ -936,11 +1037,15 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   cs_index_free(&(connect->c2v));
   if (connect->v2v != NULL)
     cs_index_free(&(connect->v2v));
+  if (connect->f2f != NULL)
+    cs_index_free(&(connect->f2f));
 
   connect->v_info = _connect_info_free(connect->v_info);
   connect->e_info = _connect_info_free(connect->e_info);
   connect->f_info = _connect_info_free(connect->f_info);
   connect->c_info = _connect_info_free(connect->c_info);
+
+  BFT_FREE(connect->cell_type);
 
   BFT_FREE(connect);
 
@@ -998,6 +1103,47 @@ cs_cdo_connect_update(cs_cdo_connect_t       *connect,
 
   } // VB or VCB schemes
 
+  if (scheme_flag & CS_SCHEME_FLAG_CDOFB ||
+      scheme_flag & CS_SCHEME_FLAG_HHO) {
+
+    cs_connect_index_t  *c2f = NULL, *f2c = NULL;
+
+    const cs_lnum_t  n_faces = connect->f_info->n_elts;
+    const cs_sla_matrix_t *mc2f = connect->c2f;
+    const cs_sla_matrix_t *mf2c = connect->f2c;
+
+    /* Build a face -> face connectivity */
+    f2c = cs_index_map(mf2c->n_rows, mf2c->idx, mf2c->col_id);
+    c2f = cs_index_map(mc2f->n_rows, mc2f->idx, mc2f->col_id);
+    connect->f2f = cs_index_compose(n_faces, f2c, c2f);
+    cs_index_sort(connect->f2f);
+
+    /* Free temporary memory */
+    cs_index_free(&f2c);
+    cs_index_free(&c2f);
+
+    /* Update index (v2v has a diagonal entry. We remove it since we have in
+       mind an index structure for a  matrix stored using the MSR format */
+    cs_lnum_t  shift = 0;
+    cs_lnum_t  prev_start = connect->f2f->idx[0];
+    cs_lnum_t  prev_end = connect->f2f->idx[1];
+
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+
+      for (cs_lnum_t j = prev_start; j < prev_end; j++)
+        if (connect->f2f->ids[j] != i)
+          connect->f2f->ids[shift++] = connect->f2f->ids[j];
+
+      if (i != n_faces - 1) { // Update prev_start and prev_end
+        prev_start = connect->f2f->idx[i+1];
+        prev_end = connect->f2f->idx[i+2];
+      }
+      connect->f2f->idx[i+1] = shift;
+
+    } // Loop on faces
+
+  } // FB schemes
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1011,8 +1157,6 @@ cs_cdo_connect_update(cs_cdo_connect_t       *connect,
 void
 cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
 {
-  cs_connect_info_t  *i = NULL;
-
   /* Output */
   cs_log_printf(CS_LOG_DEFAULT, "\n Connectivity information:\n");
   cs_log_printf(CS_LOG_DEFAULT,
@@ -1022,35 +1166,60 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
                 " --dim-- max. number of edges by cell:    %4d\n",
                 connect->n_max_ebyc);
   cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- max. number of vertices by cell: %4d\n",
+                " --dim-- max. number of vertices by cell: %4d\n\n",
                 connect->n_max_vbyc);
 
+  /* Information about the element types */
+  cs_lnum_t  n_type_cells[FVM_N_ELEMENT_TYPES];
+  for (int i = 0; i < FVM_N_ELEMENT_TYPES; i++)
+    n_type_cells[i] = 0;
+
+  for (cs_lnum_t i = 0; i < connect->c_info->n_elts; i++)
+    n_type_cells[connect->cell_type[i]] += 1;
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- number of tetrahedra: %8d\n",
+                n_type_cells[FVM_CELL_TETRA]);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- number of pyramids:   %8d\n",
+                n_type_cells[FVM_CELL_PYRAM]);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- number of prisms:     %8d\n",
+                n_type_cells[FVM_CELL_PRISM]);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- number of hexahedra:  %8d\n",
+                n_type_cells[FVM_CELL_HEXA]);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- number of polyhedra:  %8d\n\n",
+                n_type_cells[FVM_CELL_POLY]);
+
+
+  /* Information about the distribution between interior and border entities */
   if (connect->v_info != NULL) {
-    i = connect->v_info;
-    cs_log_printf(CS_LOG_DEFAULT, "\n");
+    cs_connect_info_t  *v = connect->v_info;
     cs_log_printf(CS_LOG_DEFAULT,
-                  "                    |    full    |   intern   |   border   |");
+                  "                    |   full    |   intern  |   border  |\n");
     cs_log_printf(CS_LOG_DEFAULT,
-                  "\n --dim-- n_vertices | %10d | %10d | %10d |\n",
-                  i->n_elts, i->n_i_elts, i->n_b_elts);
+                  " --dim-- n_vertices | %9d | %9d | %9d |\n",
+                  v->n_elts, v->n_i_elts, v->n_b_elts);
   }
   if (connect->e_info != NULL) {
-    i = connect->e_info;
+    cs_connect_info_t  *e = connect->e_info;
     cs_log_printf(CS_LOG_DEFAULT,
-                  " --dim-- n_edges    | %10d | %10d | %10d |\n",
-                  i->n_elts, i->n_i_elts, i->n_b_elts);
+                  " --dim-- n_edges    | %9d | %9d | %9d |\n",
+                  e->n_elts, e->n_i_elts, e->n_b_elts);
   }
   if (connect->f_info != NULL) {
-    i = connect->f_info;
+    cs_connect_info_t  *f = connect->f_info;
     cs_log_printf(CS_LOG_DEFAULT,
-                  " --dim-- n_faces    | %10d | %10d | %10d |\n",
-                  i->n_elts, i->n_i_elts, i->n_b_elts);
+                  " --dim-- n_faces    | %9d | %9d | %9d |\n",
+                  f->n_elts, f->n_i_elts, f->n_b_elts);
   }
   if (connect->c_info != NULL) {
-    i = connect->c_info;
+    cs_connect_info_t  *c = connect->c_info;
     cs_log_printf(CS_LOG_DEFAULT,
-                  " --dim-- n_cells    | %10d | %10d | %10d |\n",
-                  i->n_elts, i->n_i_elts, i->n_b_elts);
+                  " --dim-- n_cells    | %9d | %9d | %9d |\n",
+                  c->n_elts, c->n_i_elts, c->n_b_elts);
   }
 
 }

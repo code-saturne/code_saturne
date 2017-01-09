@@ -54,9 +54,6 @@
 
 /* CDO module */
 #include "cs_cdo.h"
-#include "cs_cdofb_scaleq.h"
-#include "cs_cdovb_scaleq.h"
-#include "cs_cdovcb_scaleq.h"
 #include "cs_domain.h"
 #include "cs_equation.h"
 #include "cs_groundwater.h"
@@ -83,7 +80,7 @@ BEGIN_C_DECLS
  * Local constant and enum definitions
  *============================================================================*/
 
-static const char cs_cdoversion[] = "0.6";
+static const char cs_cdoversion[] = "0.7";
 
 /*============================================================================
  * Private function prototypes
@@ -104,6 +101,10 @@ static cs_domain_t *
 _setup_domain(cs_mesh_t             *m,
               cs_mesh_quantities_t  *mq)
 {
+  /* Initialization of several modules */
+  cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
+  cs_quadrature_setup();         /* Compute constant used in quadrature rules */
+
   /* User-defined settings and default initializations
      WARNING: Change the order of call to the following routines with care
               This may incur bugs */
@@ -220,17 +221,13 @@ cs_cdo_main(cs_mesh_t             *m,
     bft_error(__FILE__, __LINE__, 0,
               " CDO schemes are not yet implemented for parallel computing");
 
-  /* Initialization of several modules */
-  cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
-  cs_quadrature_setup();         /* Compute constant used in quadrature rules */
-
   /* Output information */
   cs_log_printf(CS_LOG_DEFAULT, "\n");
   cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
   cs_log_printf(CS_LOG_DEFAULT, "\tStart CDO Module  *** Experimental ***\n");
   cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
   cs_log_printf(CS_LOG_DEFAULT, "\n -msg- Version.Tag  %s\n", cs_cdoversion);
-  cs_log_printf(CS_LOG_SETUP,"\n -cdo-settings-begin\n");
+  cs_log_printf(CS_LOG_SETUP,"\n <cdo-settings-begin>\n");
 
   cs_timer_t t0 = cs_timer_time();
   cs_timer_stats_start(cdo_ts_id);
@@ -266,7 +263,7 @@ cs_cdo_main(cs_mesh_t             *m,
   /* Free main CDO structures */
   _finalize(domain);
 
-  cs_log_printf(CS_LOG_SETUP,"\n -cdo-settings-end\n");
+  cs_log_printf(CS_LOG_SETUP,"\n <cdo-settings-end>\n");
   cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
   cs_log_printf(CS_LOG_DEFAULT, "\tExit CDO Module\n");
   cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);

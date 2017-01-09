@@ -824,11 +824,16 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   if (b->has[CDO_DIFFUSION]) {
 
     bool is_uniform = cs_property_is_uniform(eqp->diffusion_property);
-
     b->diff_pty_uniform = is_uniform;
+
+    bool is_isotropic = false;
+    if (cs_property_get_type(eqp->diffusion_property) == CS_PROPERTY_ISO)
+      is_isotropic = true;
+
     b->diff = cs_cdo_diffusion_builder_init(connect,
                                             CS_SPACE_SCHEME_CDOVB,
                                             is_uniform,
+                                            is_isotropic,
                                             eqp->diffusion_hodge,
                                             b->enforce);
 
@@ -902,7 +907,9 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
                                    .algo = CS_PARAM_HODGE_ALGO_WBS,
                                    .coef = 1.0}; // not useful in this case
 
-    b->hb = cs_hodge_builder_init(connect, hwbs_info);
+    /* In case of scalar equation, properties associated to this hodge operator
+       is always isotropic */
+    b->hb = cs_hodge_builder_init(connect, true, hwbs_info);
 
     if ((b->flag & CS_CDO_BUILD_HCONF) && cs_cdovb_hconf == NULL)
       _build_hvpcd_conf(b);
@@ -1738,6 +1745,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
 
     case CS_PARAM_HODGE_ALGO_COST:
     case CS_PARAM_HODGE_ALGO_VORONOI:
+    case CS_PARAM_HODGE_ALGO_AUTO:
       {
         double  *vec = work + cm->n_vc;
 
@@ -1802,7 +1810,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field strufcture
+ * \param[in]       field      pointer to a field structure
  * \param[in, out]  builder    pointer to builder structure
  */
 /*----------------------------------------------------------------------------*/

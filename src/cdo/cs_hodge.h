@@ -72,7 +72,7 @@ cs_hodge_set_timer_stats(int   level);
  * \brief   Allocate and initialize a cs_hodge_builder_t structure
  *
  * \param[in]  connect       pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step     pointer to a time step structure
+ * \param[in]  is_isotropic  indicate if the related property is isotropic
  * \param[in]  h_info        algorithm used to build the discrete Hodge op.
  *
  * \return  a new allocated cs_hodge_builder_t structure
@@ -81,6 +81,7 @@ cs_hodge_set_timer_stats(int   level);
 
 cs_hodge_builder_t *
 cs_hodge_builder_init(const cs_cdo_connect_t   *connect,
+                      bool                      is_isotropic,
                       cs_param_hodge_t          h_info);
 
 /*----------------------------------------------------------------------------*/

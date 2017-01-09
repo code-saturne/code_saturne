@@ -384,9 +384,13 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   cm->c_id = c_id;
   cm->xc = quant->cell_centers + 3*c_id;
   cm->vol_c = quant->cell_vol[c_id];
+  cm->type = connect->cell_type[c_id];
 
   if (flag == 0)
     return;
+
+  if (quant->cell_flag[c_id] & CS_CDO_ORTHO)
+    cm->flag |= CS_CDO_LOCAL_ORTHO;
 
   if (flag & CS_CDO_LOCAL_V) {
 
