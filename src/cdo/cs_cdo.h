@@ -142,21 +142,6 @@ typedef enum {
 
 } cs_space_scheme_t;
 
-/* Values associated to the different ways to retrieve data */
-typedef union {
-
-  cs_flag_t           flag;       // flag
-  int                 id;         // identification number
-  cs_lnum_t           num;        // local number
-  cs_real_t           val;        // value
-  cs_real_2_t         couple;     // two values
-  cs_real_3_t         vect;       // vector: 3 values
-  cs_nvec3_t          nvec3;      // meas + unit vector
-  cs_real_6_t         twovects;   // two vectors
-  cs_real_33_t        tens;       // tensor: 9 values
-
-} cs_get_t;
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Generic analytic function
@@ -197,16 +182,20 @@ typedef cs_real_t
  *         This law is described by a set of parameters stored in a structure.
  *         result = law(var_value)
  *
- * \param[in]      var_value  value of the variable attached to this law
- * \param[in]      law_param  set of paramters related to the current law
- * \param[in, out] retval     result of the function
+ * \param[in]      n_elts      number of elements to treat
+ * \param[in]      elt_ids     list of element ids (NULL if no indirection)
+ * \param[in]      var_values  values of the variable attached to this law
+ * \param[in]      law_param   set of parameters related to the current law
+ * \param[in, out] res_array   result of the function
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_onevar_law_func_t) (double         var_value,
-                        const void    *law_param,
-                        cs_get_t      *retval);
+(cs_onevar_law_func_t) (cs_lnum_t          n_elts,
+                        const cs_lnum_t    elt_ids[],
+                        const cs_real_t    var_values[],
+                        const void        *law_param,
+                        cs_real_t          res_array[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -215,39 +204,22 @@ typedef void
  *         This law is described by a set of parameters stored in a structure.
  *         result = law(var1_value, var2_value)
  *
- * \param[in]      var1_value  value of the first variable attached to this law
- * \param[in]      var2_value  value of the second variable attached to this law
- * \param[in]      law_param   set of paramters related to the current law
- * \param[in, out] retval      result of the function
+ * \param[in]      n_elts       number of elements to treat
+ * \param[in]      elt_ids      list of element ids (NULL if no indirection)
+ * \param[in]      var1_values  values attached to the first variable
+ * \param[in]      var2_values  values attached to the second variable
+ * \param[in]      law_param    set of parameters related to the current law
+ * \param[in, out] res_array    result of the function
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_twovar_law_func_t) (double         var1_value,
-                        double         var2_value,
-                        const void    *law_param,
-                        cs_get_t      *retval);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value of a quantity according to a law depending only
- *         on two variables (the first one is a scalar and the second one a
- *         vector)
- *         This law is described by a set of parameters stored in a structure.
- *         result = law(var1_value, var2_value)
- *
- * \param[in]      var1_value  value of the first variable attached to this law
- * \param[in]      var2_value  value of the second variable attached to this law
- * \param[in]      law_param   set of paramters related to the current law
- * \param[in, out] retval      result of the function
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_scavec_law_func_t) (double          var1_value,
-                        const double    var2_vect[],
-                        const void     *law_param,
-                        cs_get_t       *retval);
+(cs_twovar_law_func_t) (cs_lnum_t          n_elts,
+                        const cs_lnum_t    elt_ids[],
+                        const double       var1_values[],
+                        const double       var2_values[],
+                        const void        *law_param,
+                        cs_real_t          res_array[]);
 
 /*============================================================================
  * Global variables

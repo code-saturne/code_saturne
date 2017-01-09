@@ -81,31 +81,28 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Set of parameters related to a tracer equation */
+/* ---------------------------------------------- */
+
 typedef struct {
 
-  /* Bulk density times the distribution coefficient for each soil */
-  double           rho_kd;
-
-  /* Longitudinal and transversal dispersivity for each soil */
-  double           alpha_l;
-  double           alpha_t;
-
-  /* Water molecular diffusivity */
-  double           wmd;
-
-  /* First order decay coefficient (related to the reaction term) */
-  double           reaction_rate;
+  double     rho_kd;        // Bulk density times the distribution coefficient
+  double     alpha_l;       // Longitudinal dispersivity
+  double     alpha_t;       // Transversal dispersivity
+  double     wmd;           // Water molecular diffusivity
+  double     reaction_rate; /* First order decay coefficient (related to the
+                               reaction term) */
 
 } cs_gwf_tracer_t;
 
 /* Set of parameters describing a type of soil */
+/* ------------------------------------------- */
 typedef struct {
 
-  int          ml_id;    /* id associated to a mesh location structure
-                            The support entities are cells */
+  int                       ml_id;    /* id related to a mesh location structure
+                                         The support entities are cells */
 
   /* Set of parameters for each tracer equation */
-  cs_gwf_tracer_t         *tracer_param;
+  cs_gwf_tracer_t          *tracer_param;
 
   /* Physical modelling adopted for this soil */
   cs_gwf_hydraulic_model_t  model;
@@ -115,15 +112,16 @@ typedef struct {
   cs_gwf_tracy_t            tracy_param;     /* Tracy law */
 
   /* Main soil properties */
-  double         bulk_density;
-  double         residual_moisture;       /* theta_r */
-  double         saturated_moisture;      /* theta_s */
-  double         delta_moisture;          /* theta_s - theta_r */
-  cs_get_t       saturated_permeability;  /* k_s [m.s^-1] */
+  double                    bulk_density;
+  double                    residual_moisture;       /* theta_r */
+  double                    saturated_moisture;      /* theta_s */
+  double                    delta_moisture;          /* theta_s - theta_r */
+  cs_get_t                  saturated_permeability;  /* k_s [m.s^-1] */
 
 } cs_gwf_soil_t;
 
 /* Set of parameters related to the groundwater module */
+/* --------------------------------------------------- */
 struct _gwf_t {
 
   cs_flag_t                  flag;         /* Compact information */
@@ -135,26 +133,29 @@ struct _gwf_t {
   int             n_soils;
   int             n_max_soils;
   cs_gwf_soil_t  *soil_param;
-  cs_lnum_t       n_cells;     /* Number of cells (useful to get soil_id) */
-  short int      *soil_id;     /* NULL or allocated to n_cells */
+
+  cs_lnum_t       n_cells;     // Number of cells (useful to get soil_id)
+  short int      *soil_id;     // NULL if only one soil or allocated to n_cells
 
   /* Gravity effect */
   bool            with_gravitation;
   cs_real_3_t     gravity;
 
-  /* Fields located at cells */
-  cs_field_t     *hydraulic_head;  /* H (shared or owner according to the
-                                      discretization space scheme) */
-  cs_field_t     *pressure_head;   /* h = H - gravity_potential */
+  /* Related fields */
+  cs_field_t     *moisture_content; /* Always located at cells */
+  cs_field_t     *pressure_head;    /* Allocated only if gravitation is on.
+                                       Location depends on the discretization
+                                       scheme used to solve Richards eq.
+                                       pressure head is denoted by h
+                                       hydraulic head (solved in Richards eq.)
+                                       is denoted by H.
+                                       h = H - gravity_potential */
 
   /* Set of equations associated to this module */
   int             richards_eq_id;
   int             n_tracers;
   int             n_max_tracers;
   int            *tracer_eq_ids;
-
-  /* Moisture content variable and attached quantities */
-  cs_field_t     *moisture_content;
 
   /* Permeability is the diffusion property related to Richards equation but
      this property plays also a role in the diffusion of tracer equations */
@@ -193,7 +194,7 @@ static const char _err_empty_gw[] =
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static inline void
 _set_tracer_param(cs_gwf_tracer_t    *tp,
                   double              wmd,
                   double              alpha_l,
@@ -209,6 +210,765 @@ _set_tracer_param(cs_gwf_tracer_t    *tp,
   tp->reaction_rate = reaction_rate;
   tp->alpha_l = alpha_l;
   tp->alpha_t = alpha_t;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the id in a cs_gwf_t structure from the tracer
+ *         equation id
+ *
+ * \param[in]   gw             pointer to a cs_gwf_t structure
+ * \param[in]   tracer_eq_id   tracer equation id
+ *
+ * \returns an id related to this tracer equation id
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline int
+_get_tracer_id(const cs_gwf_t   *gw,
+               int               tracer_eq_id)
+{
+  int  tracer_id = -1;
+
+  for (int id = 0; id < gw->n_tracers; id++) {
+    if (gw->tracer_eq_ids[id] == tracer_eq_id) {
+      tracer_id = id;
+      break;
+    }
+  }
+
+  if (tracer_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              " Stop setting a tracer equation. Its identification number has"
+              " not been found in the groundwater flow module.\n"
+              " Please check your settings.");
+
+  return tracer_id;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the coefficient appearing in time-dependent term of the
+ *         simulation of tracer equations
+ *         This function fits the generic prototype of cs_onevar_law_func_t
+ *
+ * \param[in]      n_elts         number of elements to treat
+ * \param[in]      elt_ids        list of element ids (NULL if no indirection)
+ * \param[in]      theta          values of the moisture content
+ * \param[in]      tracer_struc   pointer to a soil structure
+ * \param[in, out] result         array storing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_get_tracer_time_coeff(cs_lnum_t          n_elts,
+                       const cs_lnum_t    elt_ids[],
+                       const cs_real_t    theta[],
+                       const void        *tracer_struc,
+                       cs_real_t         *result)
+{
+  const cs_gwf_tracer_t  *tracer = (const cs_gwf_tracer_t  *)tracer_struc;
+
+  if (elt_ids != NULL) {
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      const cs_lnum_t  id = elt_ids[i];
+      result[id] = theta[id] + tracer->rho_kd;
+    } // Loop on cells
+
+  }
+  else {
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      result[i] = theta[i] + tracer->rho_kd;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the coefficient appearing in reaction term for the simulation
+ *         of tracer equations
+ *         This function fits the generic prototype of cs_onevar_law_func_t
+ *
+ * \param[in]      n_elts         number of elements to treat
+ * \param[in]      elt_ids        list of element ids (NULL if no indirection)
+ * \param[in]      theta          values of the moisture content
+ * \param[in]      tracer_struc   pointer to a soil structure
+ * \param[in, out] result         array storing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_get_tracer_reaction_coeff(cs_lnum_t          n_elts,
+                           const cs_lnum_t    elt_ids[],
+                           const cs_real_t    theta[],
+                           const void        *tracer_struc,
+                           cs_real_t         *result)
+{
+  const cs_gwf_tracer_t  *tracer = (const cs_gwf_tracer_t  *)tracer_struc;
+
+  if (elt_ids != NULL) {
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      const cs_lnum_t  id = elt_ids[i];
+      result[id] = tracer->reaction_rate * (theta[id] + tracer->rho_kd);
+    } // Loop on cells
+
+  }
+  else {
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      result[i] = tracer->reaction_rate * (theta[i] + tracer->rho_kd);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the coefficient appearing in the diffusion term of the
+ *         tracer equation
+ *         This function fits the generic prototype of cs_twovar_law_func_t
+ *
+ * \param[in]      n_elts         number of elements to treat
+ * \param[in]      elt_ids        list of element ids (NULL if no indirection)
+ * \param[in]      theta          values of the moisture content
+ * \param[in]      velocity       values of the local velocity
+ * \param[in]      tracer_struc   pointer to a soil structure
+ * \param[in, out] result         array storing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_get_tracer_diffusion_tensor(cs_lnum_t          n_elts,
+                             const cs_lnum_t    elt_ids[],
+                             const cs_real_t    theta[],
+                             const double       velocity[],
+                             const void        *tracer_struc,
+                             cs_real_t         *result)
+{
+  const cs_gwf_tracer_t  *tp = (const cs_gwf_tracer_t *)tracer_struc;
+
+  if (elt_ids != NULL) {
+# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none)     \
+  shared(n_elts, elt_ids, theta, velocity, tp, result)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_lnum_t  id = elt_ids[i]; // cell_id
+      const cs_real_t  *v = velocity + 3*id;
+      const double  v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
+      const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
+      const double  coef1 = tp->wmd * theta[id] + tp->alpha_t*vnorm;
+
+      double  delta = 0.;
+      if (vnorm > cs_math_zero_threshold)
+        delta = (tp->alpha_l - tp->alpha_t)/vnorm;
+
+      const double  dcv[3] = {delta*v[0], delta*v[1], delta*v[2]};
+
+      cs_real_t  *_r = result + 9*id;
+      for (int ki = 0; ki < 3; ki++) {
+
+        /* Diagonal terms */
+        _r[3*ki+ki] = coef1 + delta*v2[ki];
+
+        /* Extra-diagonal terms */
+        for (int kj = ki + 1; kj < 3; kj++) {
+          _r[3*ki+kj] = dcv[ki]*v[kj];
+          _r[3*kj+ki] = _r[3*ki+kj]; /* tensor is symmetric by construction */
+        }
+      }
+
+    } // Loop on cells
+
+  }
+  else {
+# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none)     \
+  shared(n_elts, elt_ids, theta, velocity, tp, result)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_real_t  *v = velocity + 3*i;
+      const double  v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
+      const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
+      const double  coef1 = tp->wmd * theta[i] + tp->alpha_t*vnorm;
+
+      double  delta = 0.;
+      if (vnorm > cs_math_zero_threshold)
+        delta = (tp->alpha_l - tp->alpha_t)/vnorm;
+
+      const double  dcv[3] = {delta*v[0], delta*v[1], delta*v[2]};
+
+      cs_real_t  *_r = result + 9*i;
+      for (int ki = 0; ki < 3; ki++) {
+
+        /* Diagonal terms */
+        _r[3*ki+ki] = coef1 + delta*v2[ki];
+
+        /* Extra-diagonal terms */
+        for (int kj = ki + 1; kj < 3; kj++) {
+          _r[3*ki+kj] = dcv[ki]*v[kj];
+          _r[3*kj+ki] = _r[3*ki+kj]; /* tensor is symmetric by construction */
+        }
+      }
+
+    } // Loop on all cells
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the permeability (or hydraulic conductivity) using the
+ *         van Genuchten-Mualen law
+ *         This function fits the generic prototype of cs_onevar_law_func_t
+ *
+ * \param[in]      n_elts         number of elements to treat
+ * \param[in]      elt_ids        list of element ids (NULL if no indirection)
+ * \param[in]      h_vals         values of the pressure head
+ * \param[in]      soil_struc     pointer to a soil structure
+ * \param[in, out] result         array storing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_genuchten_permeability_from_c_head(cs_lnum_t          n_elts,
+                                    const cs_lnum_t    elt_ids[],
+                                    const cs_real_t    h_vals[],
+                                    const void        *soil_struc,
+                                    cs_real_t         *result)
+{
+  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
+  const cs_gwf_genuchten_t  law = soil->genuchten_param;
+
+  /* Up to now, only isotropic values are considered */
+  const  double  iso_satval = soil->saturated_permeability.val;
+
+  if (elt_ids != NULL) {
+# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none)        \
+  shared(n_elts, elt_ids, h_vals, soil, result)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_lnum_t  id = elt_ids[i]; // cell_id
+      const cs_real_t  h = h_vals[id];
+      double  isoval = iso_satval;
+
+      if (h < 0) { /* S_e(h) = [1 + |alpha*h|^n]^(-m) */
+        const double  one_alpha_hn = 1 + pow(fabs(law.scale*h), law.n);
+        const double  se = pow(one_alpha_hn, -law.m);
+        const double  se_pow_L = pow(se, law.tortuosity);
+        const double  se_pow_overm = pow(se, 1/law.m);
+        const double  coef_base = 1 - pow(1 - se_pow_overm, law.m);
+
+        isoval *= se_pow_L * coef_base*coef_base;
+      }
+
+      /* Build the permeability which is always defined as a tensor */
+      cs_real_t  *_r = result + 9*id;
+      for (int k = 0; k < 3; k++) {
+        _r[3*k+k] = isoval;
+        for (int l = k+1; l < 3; l++)
+          _r[3*k+l] = _r[3*l+k] = 0;
+      }
+
+    } // Loop on selected cells
+
+  }
+  else {
+# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none)        \
+  shared(n_elts, elt_ids, h_vals, soil, result)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_real_t  h = h_vals[i];
+      double  isoval = iso_satval;
+
+      if (h < 0) { /* S_e(h) = [1 + |alpha*h|^n]^(-m) */
+        const double  one_alpha_hn = 1 + pow(fabs(law.scale*h), law.n);
+        const double  se = pow(one_alpha_hn, -law.m);
+        const double  se_pow_L = pow(se, law.tortuosity);
+        const double  se_pow_overm = pow(se, 1/law.m);
+        const double  coef_base = 1 - pow(1 - se_pow_overm, law.m);
+
+        isoval *= se_pow_L * coef_base*coef_base;
+      }
+
+      /* Build the permeability which is always defined as a tensor */
+      cs_real_t  *_r = result + 9*i;
+      for (int k = 0; k < 3; k++) {
+        _r[3*k+k] = isoval;
+        for (int l = k+1; l < 3; l++)
+          _r[3*k+l] = _r[3*l+k] = 0;
+      }
+
+    } // Loop on all cells
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the moisture content using the Van Genuchten law
+ *         This function fits the generic prototype of cs_onevar_law_func_t
+ *
+ * \param[in]      n_elts        number of elements to treat
+ * \param[in]      elt_ids       list of element ids (NULL if no indirection)
+ * \param[in]      h_vals        values of the pressure head
+ * \param[in]      soil_struc    pointer to a soil structure
+ * \param[in, out] result        array storing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_genuchten_moisture_from_c_head(cs_lnum_t          n_elts,
+                                const cs_lnum_t    elt_ids[],
+                                const cs_real_t    h_vals[],
+                                const void        *soil_struc,
+                                cs_real_t          result[])
+{
+  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
+  const cs_gwf_genuchten_t  law = soil->genuchten_param;
+
+  if (elt_ids != NULL) {
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_lnum_t  id = elt_ids[i];
+      const cs_real_t  h = h_vals[id];
+      double  Se = 1; // dimensionless moisture
+
+      if (h < 0) {
+        const double  coef = pow(fabs(law.scale * h), law.n);
+        Se = pow(1 + coef, -law.m);
+      }
+
+      /* Computed moisture content */
+      result[id] = Se*soil->delta_moisture + soil->residual_moisture;
+
+    } // Loop on selected cells
+
+  }
+  else {
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_real_t  h = h_vals[i];
+      double  Se = 1; // dimensionless moisture
+
+      if (h < 0) {
+        const double  coef = pow(fabs(law.scale * h), law.n);
+        Se = pow(1 + coef, -law.m);
+      }
+
+      /* Computed moisture content */
+      result[i] = Se*soil->delta_moisture + soil->residual_moisture;
+
+    } // Loop on all cells
+
+  } // elt_ids == NULL
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the moisture content using the Van Genuchten law
+ *         This function fits the generic prototype of cs_onevar_law_func_t
+ *
+ * \param[in]      n_elts         number of elements to treat
+ * \param[in]      elt_ids        list of element ids (NULL if no indirection)
+ * \param[in]      h_vals         values of the pressure head
+ * \param[in]      soil_struc     pointer to a soil structure
+ * \param[in, out] result         array storing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_genuchten_capacity_from_c_head(cs_lnum_t          n_elts,
+                                const cs_lnum_t    elt_ids[],
+                                const cs_real_t    h_vals[],
+                                const void        *soil_struc,
+                                cs_real_t          result[])
+{
+  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
+  const cs_gwf_genuchten_t  law = soil->genuchten_param;
+
+  if (elt_ids != NULL) {
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_lnum_t  id = elt_ids[i];
+      const cs_real_t  h = h_vals[id];
+
+      if (h >= 0)
+        result[id] = 0.; // default initialization for saturated soil
+      else {
+
+        const double  mult_coef = -law.n * law.m * soil->delta_moisture;
+        const double  alpha_h_pow_n = pow(fabs(law.scale * h), law.n);
+        const double  se_m1 = pow(1 + alpha_h_pow_n, -law.m-1);
+
+        result[id] = mult_coef * alpha_h_pow_n/h * se_m1;
+
+      }
+
+    } // Loop on selected cells
+
+  }
+  else {
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_real_t  h = h_vals[i];
+
+      if (h >= 0)
+        result[i] = 0.; // default initialization for saturated soil
+      else {
+
+        const double  mult_coef = -law.n * law.m * soil->delta_moisture;
+        const double  alpha_h_pow_n = pow(fabs(law.scale * h), law.n);
+        const double  se_m1 = pow(1 + alpha_h_pow_n, -law.m-1);
+
+        result[i] = mult_coef * alpha_h_pow_n/h * se_m1;
+
+      }
+
+    } // Loop on all cells
+
+  } // elt_ids == NULL
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the permeability (or hydraulic conductivity) using the
+ *         Tracy law
+ *         This function fits the generic prototype of cs_onevar_law_func_t
+ *
+ * \param[in]      n_elts        number of elements to treat
+ * \param[in]      elt_ids       list of element ids (NULL if no indirection)
+ * \param[in]      h_vals        values of the hydralic head
+ * \param[in]      soil_struc    pointer to a soil structure
+ * \param[in, out] result        array storing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_tracy_permeability_from_c_head(cs_lnum_t          n_elts,
+                                const cs_lnum_t    elt_ids[],
+                                const cs_real_t    h_vals[],
+                                const void        *soil_struc,
+                                cs_real_t          result[])
+{
+  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
+  const cs_gwf_tracy_t  law = soil->tracy_param;
+
+  /* Up to now, only isotropic values are considered */
+  const double  ks = soil->saturated_permeability.val;
+
+  if (elt_ids != NULL) {
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_lnum_t  id = elt_ids[i];
+      const cs_real_t  h = h_vals[id];
+      const double  isoval = ks * (h - law.h_r)/(law.h_s - law.h_r);
+
+      /* Permeability is always defined as a tensor */
+      cs_real_t  *_r = result + 9*id;
+      for (int k = 0; k < 3; k++) {
+        _r[3*k+k] = isoval;
+        for (int l = k+1; l < 3; l++)
+          _r[3*k+l] = _r[3*l+k] = 0;
+      }
+
+    } // Loop on selected cells
+
+  }
+  else {
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_real_t  h = h_vals[i];
+      const double  isoval = ks * (h - law.h_r)/(law.h_s - law.h_r);
+
+      /* Permeability is always defined as a tensor */
+      cs_real_t  *_r = result + 9*i;
+      for (int k = 0; k < 3; k++) {
+        _r[3*k+k] = isoval;
+        for (int l = k+1; l < 3; l++)
+          _r[3*k+l] = _r[3*l+k] = 0;
+      }
+
+    } // Loop on all cells
+
+  } // elt_ids == NULL
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the moisture content using the Tracy law
+ *         This function fits the generic prototype of cs_onevar_law_func_t
+ *
+ * \param[in]      n_elts        number of elements to treat
+ * \param[in]      elt_ids       list of element ids (NULL if no indirection)
+ * \param[in]      h_vals        values of the pressure head
+ * \param[in]      soil_struc    pointer to a soil structure
+ * \param[in, out] result        array storing the result
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_tracy_moisture_from_c_head(cs_lnum_t         n_elts,
+                            const cs_lnum_t   elt_ids[],
+                            const cs_real_t   h_vals[],
+                            const void       *soil_struc,
+                            cs_real_t         result[])
+{
+  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
+  const cs_gwf_tracy_t  law = soil->tracy_param;
+
+  if (elt_ids != NULL) {
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_lnum_t  id = elt_ids[i];
+      const cs_real_t  h = h_vals[id];
+      const double  k_r = (h - law.h_r)/(law.h_s - law.h_r);
+
+      result[id] = k_r * soil->delta_moisture + soil->residual_moisture;
+
+    } // Loop on selected cells
+
+  }
+  else {
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      const cs_real_t  h = h_vals[i];
+      const double  k_r = (h - law.h_r)/(law.h_s - law.h_r);
+
+      result[i] = k_r * soil->delta_moisture + soil->residual_moisture;
+
+    } // Loop on all cells
+
+  } // elt_ids == NULL
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the pressure head from the value of the hydraulic head
+ *
+ * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      richards    pointer to the Richards equation structure
+ * \param[in, out] gw          pointer to a cs_gwf_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_pressure_head(const cs_cdo_quantities_t   *cdoq,
+                      const cs_equation_t         *richards,
+                      cs_gwf_t                    *gw)
+{
+  /* Sanity checks */
+  if (richards == NULL || gw == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Groundwater module or Richards eq. is not allocated.");
+
+  cs_field_t  *pressure_head = gw->pressure_head;
+
+  /* Sanity checks */
+  if (pressure_head == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " The field related to the pressure head is not allocated.");
+
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(pressure_head);
+
+  const cs_field_t  *hydraulic_head = cs_equation_get_field(richards);
+
+  switch (cs_equation_get_space_scheme(richards)) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+  case CS_SPACE_SCHEME_CDOVCB:
+    assert(hydraulic_head->location_id ==
+           cs_mesh_location_get_id_by_name(N_("vertices")));
+
+# pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
+
+      const cs_real_t  gpot = cs_math_3_dot_product(cdoq->vtx_coord + 3*i,
+                                                    gw->gravity);
+
+      pressure_head->val[i] = hydraulic_head->val[i] - gpot;
+
+    }
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO:
+    assert(hydraulic_head->location_id ==
+           cs_mesh_location_get_id_by_name(N_("cells")));
+
+# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
+
+      const cs_real_t  gpot = cs_math_3_dot_product(cdoq->cell_centers + 3*i,
+                                                    gw->gravity);
+
+      pressure_head->val[i] = hydraulic_head->val[i] - gpot;
+
+    }
+    break; // Nothing to do (h_head is a pointer to richards field
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
+
+  } // Switch on space scheme
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the moisture content from the value of the hydraulic head
+ *
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      richards    pointer to the Richards equation structure
+ * \param[in, out] gw          pointer to a cs_gwf_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_moisture_content(const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *cdoq,
+                         const cs_equation_t         *richards,
+                         cs_gwf_t                    *gw)
+{
+  CS_UNUSED(richards);
+
+  const cs_real_t  *h_vals;
+  cs_real_t  *c_head = NULL;
+  cs_field_t  *moisture = gw->moisture_content;
+
+  if (moisture == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " The field related to the moisture content is not allocated.");
+
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(moisture);
+
+  /* Moisture content is define in each cell along with the hydraulic (or
+     pressure head */
+
+  const cs_field_t  *h;
+  if (gw->with_gravitation)
+    h = gw->pressure_head;
+  else
+    h = cs_equation_get_field(richards);
+
+  cs_mesh_location_type_t  ml_type = cs_mesh_location_get_type(h->location_id);
+  if (ml_type == CS_MESH_LOCATION_VERTICES) {
+    BFT_MALLOC(c_head, cdoq->n_cells, cs_real_t);
+    cs_reco_pv_at_cell_centers(connect->c2v, cdoq, h->val, c_head);
+    h_vals = c_head;
+  }
+  else {
+    h_vals = h->val;
+  }
+
+  for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
+
+    const cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
+    const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(soil->ml_id);
+    const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(soil->ml_id);
+
+    switch (soil->model) {
+
+    case CS_GWF_HYDRAULIC_GENUCHTEN:
+      _genuchten_moisture_from_c_head(n_elts[0], elt_ids, h_vals,
+                                      (const void *)soil,
+                                      moisture->val);
+      break;
+
+    case CS_GWF_HYDRAULIC_TRACY:
+      _tracy_moisture_from_c_head(n_elts[0], elt_ids, h_vals,
+                                  (const void *)soil,
+                                  moisture->val);
+      break;
+
+    case CS_GWF_HYDRAULIC_SATURATED:
+      if (elt_ids == NULL) {
+
+# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+        for (cs_lnum_t c_id = 0; c_id <  cdoq->n_cells; c_id++)
+          moisture->val[c_id] = soil->saturated_moisture;
+
+      }
+      else {
+
+# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts[0]; i++)
+          moisture->val[elt_ids[i]] = soil->saturated_moisture;
+
+      } // cell selection is a part of all cells
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid type of model for estimating the moisture"
+                  " content."));
+      break; // Nothing to do
+
+    } // Switch on the type of soil modelling
+
+  } // Loop on soils
+
+  if (ml_type == CS_MESH_LOCATION_VERTICES)
+    BFT_FREE(c_head);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if the setting is correct
+ *
+ * \param[in]  gw     pointer to a cs_gwf_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_settings(const cs_gwf_t  *gw)
+{
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  for (int i = 0; i < gw->n_max_tracers; i++)
+    if (gw->tracer_eq_ids[i] == -1)
+      bft_error(__FILE__, __LINE__, 0,
+                " At least one tracer equation has not been set.\n"
+                " %d tracer equations have heen initialy requested.\n"
+                " Please check your settings.", gw->n_max_tracers);
+
+
+  if (gw->n_soils < gw->n_max_soils)
+    bft_error(__FILE__, __LINE__, 0,
+              " %d soils are defined but %d have been initially requested."
+              " Please check your settings.", gw->n_soils, gw->n_max_soils);
+
+  if (gw->n_soils > 1) {
+
+    cs_lnum_t  n_unset_cells = 0;
+    int  cell_ml_id = cs_mesh_location_get_id_by_name(N_("cells"));
+    const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(cell_ml_id);
+
+# pragma omp parallel reduction(+:n_unset_cells) if (n_elts[0] > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts[0]; i++)
+      if (gw->soil_id[i] == gw->n_max_soils) n_unset_cells++;
+
+    if (n_unset_cells > 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %d cells are not associated to any soil.\n"
+                " Please check your settings.", n_unset_cells);
+
+  } // n_soils > 1
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -308,556 +1068,6 @@ _init_soil(cs_gwf_t                   *gw,
   return soil;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the id in a cs_gwf_t structure from the tracer
- *         equation id
- *
- * \param[in]   gw             pointer to a cs_gwf_t structure
- * \param[in]   tracer_eq_id   tracer equation id
- *
- * \returns an id related to this tracer equation id
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-_get_tracer_id(const cs_gwf_t   *gw,
-               int               tracer_eq_id)
-{
-  int  tracer_id = -1;
-
-  for (int id = 0; id < gw->n_tracers; id++) {
-    if (gw->tracer_eq_ids[id] == tracer_eq_id) {
-      tracer_id = id;
-      break;
-    }
-  }
-
-  if (tracer_id == -1)
-    bft_error(__FILE__, __LINE__, 0,
-              " Stop setting a tracer equation. Its identification number has"
-              " not been found in the groundwater flow module.\n"
-              " Please check your settings.");
-
-  return tracer_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the coefficient appearing in the diffusion term of the
- *         tracer equation
- *
- * \param[in]      theta          value of the moisture content
- * \param[in]      v              value of the local velocity
- * \param[in]      tracer_struc   pointer to a soil structure
- * \param[in, out] result         pointer to a cs_get_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_get_tracer_diffusion_tensor(double          theta,
-                             const double    v[],
-                             const void     *tracer_struc,
-                             cs_get_t       *result)
-{
-  const cs_gwf_tracer_t  *tp = (const cs_gwf_tracer_t *)tracer_struc;
-
-  const double v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
-  const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
-  const double  coef1 = tp->wmd * theta + tp->alpha_t*vnorm;
-
-  double  delta_coef = 0.;
-  if (vnorm > cs_math_zero_threshold)
-    delta_coef = (tp->alpha_l - tp->alpha_t)/vnorm;
-
-  const double  dcv[3] = {delta_coef*v[0], delta_coef*v[1], delta_coef*v[2]};
-
-  for (int ki = 0; ki < 3; ki++) {
-
-    /* Diagonal terms */
-    result->tens[ki][ki] = coef1 + delta_coef*v2[ki];
-
-    /* Extra-diagonal terms */
-    for (int kj = ki + 1; kj < 3; kj++)
-      result->tens[ki][kj] = dcv[ki]*v[kj];
-  }
-
-  /* Diffusion tensor is symmetric by construction */
-  result->tens[1][0] = result->tens[0][1];
-  result->tens[2][0] = result->tens[0][2];
-  result->tens[2][1] = result->tens[1][2];
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the coefficient appearing in time-dependent term of the
- *         simulation of tracer equations
- *
- * \param[in]      theta          value of the moisture content
- * \param[in]      tracer_struc   pointer to a soil structure
- * \param[in, out] result         pointer to a cs_get_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_get_tracer_time_coeff(double        theta,
-                       const void   *tracer_struc,
-                       cs_get_t     *result)
-{
-  const cs_gwf_tracer_t  *tracer = (const cs_gwf_tracer_t  *)tracer_struc;
-
-  result->val = theta + tracer->rho_kd;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the coefficient appearing in reaction term for the simulation
- *         of tracer equations
- *
- * \param[in]      theta          value of the moisture content
- * \param[in]      tracer_struc   pointer to a soil structure
- * \param[in, out] result         pointer to a cs_get_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_get_tracer_reaction_coeff(double        theta,
-                           const void   *tracer_struc,
-                           cs_get_t     *result)
-{
-  const cs_gwf_tracer_t  *tracer = (const cs_gwf_tracer_t  *)tracer_struc;
-
-  result->val = tracer->reaction_rate * (theta + tracer->rho_kd);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the permeability (or hydraulic conductivity) using the
- *         van Genuchten-Mualen law
- *
- * \param[in]      h             value of the hydralic head
- * \param[in]      soil_struc    pointer to a soil structure
- * \param[in, out] result        pointer to a cs_get_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_permeability_by_genuchten_law(double        h,
-                               const void   *soil_struc,
-                               cs_get_t     *result)
-{
-  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
-  const cs_gwf_genuchten_t  law = soil->genuchten_param;
-
-  /* Up to now, only isotropic values are considered */
-  double  isoval = soil->saturated_permeability.val;
-
-  if (h < 0) {
-
-    /* S_e(h) = [1 + |alpha*h|^n]^(-m) */
-    const double  one_alpha_hn = 1 + pow(fabs(law.scale*h), law.n);
-    const double  se = pow(one_alpha_hn, -law.m);
-    const double  se_pow_L = pow(se, law.tortuosity);
-    const double  se_pow_overm = pow(se, 1/law.m);
-    const double  coef_base = 1 - pow(1 - se_pow_overm, law.m);
-
-    isoval *= se_pow_L * coef_base*coef_base;
-
-  }
-
-  /* Build the related tensor (permeability is always defined as a tensor) */
-  for (int k = 0; k < 3; k++) {
-    result->tens[k][k] = isoval;
-    for (int l = k+1; l < 3; l++) {
-      result->tens[k][l] = result->tens[l][k] = 0;
-    }
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the moisture content using the Van Genuchten law
- *
- * \param[in]      h             value of the hydralic head
- * \param[in]      soil_struc    pointer to a soil structure
- * \param[in, out] result        pointer to a cs_get_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_moisture_by_genuchten_law(double        h,
-                           const void   *soil_struc,
-                           cs_get_t     *result)
-{
-  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
-  const cs_gwf_genuchten_t  law = soil->genuchten_param;
-
-  double  Se = 1; // dimensionless moisture
-
-  if (h < 0) {
-    double  tmp_coef = pow(fabs(law.scale * h), law.n);
-    Se = pow(1 + tmp_coef, -law.m);
-  }
-
-  /* Return the computed moisture content */
-  result->val = Se*soil->delta_moisture + soil->residual_moisture;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the moisture content using the Van Genuchten law
- *
- * \param[in]      h             value of the hydralic head
- * \param[in]      soil_struc    pointer to a soil structure
- * \param[in, out] result        pointer to a cs_get_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_capacity_by_genuchten_law(double        h,
-                           const void   *soil_struc,
-                           cs_get_t     *result)
-{
-  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
-  const cs_gwf_genuchten_t  law = soil->genuchten_param;
-
-  result->val = 0.; // default initialization for saturated soil
-
-  if (h >= 0)
-    return;
-
-  const double  mult_coef = -law.n * law.m * soil->delta_moisture;
-  const double  alpha_h_pow_n = pow(fabs(law.scale * h), law.n);
-  const double  se_m1 = pow(1 + alpha_h_pow_n, -law.m-1);
-
-  result->val = mult_coef * alpha_h_pow_n/h * se_m1;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the permeability (or hydraulic conductivity) using the
- *         Tracy law
- *
- * \param[in]      h             value of the hydralic head
- * \param[in]      soil_struc    pointer to a soil structure
- * \param[in, out] result        pointer to a cs_get_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_permeability_by_tracy_law(double        h,
-                           const void   *soil_struc,
-                           cs_get_t     *result)
-{
-  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
-  const cs_gwf_tracy_t  law = soil->tracy_param;
-
-  /* Up to now, only isotropic values are considered */
-  const double  ks = soil->saturated_permeability.val;
-  const double  isoval = ks * (h - law.h_r)/(law.h_s - law.h_r);
-
-  /* Build the related tensor (in bottom laywer permeability is always defined
-     as a tensor) */
-  for (int k = 0; k < 3; k++) {
-    result->tens[k][k] = isoval;
-    for (int l = k+1; l < 3; l++) {
-      result->tens[k][l] = result->tens[l][k] = 0;
-    }
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the moisture content using the Tracy law
- *
- * \param[in]      h             value of the hydralic head
- * \param[in]      soil_struc    pointer to a soil structure
- * \param[in, out] result        pointer to a cs_get_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_moisture_by_tracy_law(double        h,
-                       const void   *soil_struc,
-                       cs_get_t     *result)
-{
-  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
-  const cs_gwf_tracy_t  law = soil->tracy_param;
-
-  double  k_r = (h - law.h_r)/(law.h_s - law.h_r);
-  double  moisture = k_r * soil->delta_moisture + soil->residual_moisture;
-
-  result->val = moisture;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the pressure head from the value of the hydraulic head
- *
- * \param[in]      connect     pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
- * \param[in]      richards    pointer to the Richards equation structure
- * \param[in, out] gw          pointer to a cs_gwf_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_update_head(const cs_cdo_connect_t      *connect,
-             const cs_cdo_quantities_t   *cdoq,
-             const cs_equation_t         *richards,
-             cs_gwf_t                    *gw)
-{
-  cs_field_t  *h_head = gw->hydraulic_head;
-
-  /* Sanity check */
-  assert(h_head->location_id == cs_mesh_location_get_id_by_name(N_("cells")));
-
-  /* Copy current field values to previous values */
-  cs_field_current_to_previous(h_head);
-
-  switch (cs_equation_get_space_scheme(richards)) {
-  case CS_SPACE_SCHEME_CDOVB:
-    {
-      cs_field_t  *h_head_vtx = cs_equation_get_field(richards);
-
-      /* Sanity check */
-      assert(h_head_vtx->location_id ==
-             cs_mesh_location_get_id_by_name(N_("vertices")));
-
-      /* Reconstruct (or interpolate) values at the cell centers */
-# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++)
-        cs_reco_pv_at_cell_center(c_id, connect->c2v, cdoq, h_head_vtx->val,
-                                  h_head->val + c_id);
-
-    }
-    break;
-
-  case CS_SPACE_SCHEME_CDOVCB:
-    {
-      const cs_real_t  *hh_vals = cs_equation_get_cell_values(richards);
-
-      /* Copy values at cells center into this field */
-      memcpy(h_head->val, hh_vals, sizeof(cs_real_t)*cdoq->n_cells);
-    }
-    break;
-
-  case CS_SPACE_SCHEME_CDOFB:
-    break; // Nothing to do (h_head is a pointer to richards field
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
-
-  } // Switch on space scheme
-
-  if (gw->with_gravitation) {
-
-    cs_field_t  *p_head = gw->pressure_head;
-
-    /* Sanity checks */
-    if (p_head == NULL)
-      bft_error(__FILE__, __LINE__, 0,
-                " The field related to the pressure head is not allocated.");
-
-    /* Copy current field values to previous values */
-    cs_field_current_to_previous(p_head);
-
-# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
-
-      const cs_real_t  gpot = cs_math_3_dot_product(cdoq->cell_centers + 3*c_id,
-                                                    gw->gravity);
-
-      p_head->val[c_id] = h_head->val[c_id] - gpot;
-
-    }
-
-  } // Gravitation effect is activated
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the moisture content from the value of the hydraulic head
- *
- * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
- * \param[in]      richards    pointer to the Richards equation structure
- * \param[in, out] gw          pointer to a cs_gwf_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_update_moisture_content(const cs_cdo_quantities_t   *cdoq,
-                         const cs_equation_t         *richards,
-                         cs_gwf_t                    *gw)
-{
-  CS_UNUSED(richards);
-  cs_field_t  *moisture = gw->moisture_content;
-
-  if (moisture == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              " The field related to the moisture content is not allocated.");
-
-  /* Copy current field values to previous values */
-  cs_field_current_to_previous(moisture);
-
-  /* Moisture content is define in each cell along with the hydraulic (or
-     pressure head */
-
-  const cs_field_t  *h;
-  if (gw->with_gravitation)
-    h = gw->pressure_head;
-  else
-    h = gw->hydraulic_head;
-
-  for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
-
-    const cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
-    const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(soil->ml_id);
-
-    switch (soil->model) {
-
-    case CS_GWF_HYDRAULIC_GENUCHTEN:
-
-      if (elt_ids == NULL) {
-# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
-
-          cs_get_t  get; // should remain in the openMP loop
-          _moisture_by_genuchten_law(h->val[c_id], (const void *)soil, &get);
-          moisture->val[c_id] = get.val;
-
-        } // Loop on cells
-
-      }
-      else {
-
-        const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(soil->ml_id);
-
-# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
-        for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
-
-          const cs_lnum_t  c_id = elt_ids[i];
-
-          cs_get_t  get; // should remain in the openMP loop
-          _moisture_by_genuchten_law(h->val[c_id], (const void *)soil, &get);
-          moisture->val[c_id] = get.val;
-
-        } // Loop on cells
-
-      } // cell selection is a part of all cells
-      break;
-
-    case CS_GWF_HYDRAULIC_TRACY:
-      if (elt_ids == NULL) {
-
-# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
-
-          cs_get_t  get; // should remain in the openMP loop
-          _moisture_by_tracy_law(h->val[c_id], (const void *)soil, &get);
-          moisture->val[c_id] = get.val;
-
-        } // Loop on all cells
-
-      }
-      else {
-
-        const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(soil->ml_id);
-
-# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
-        for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
-
-          const cs_lnum_t  c_id = elt_ids[i];
-
-          cs_get_t  get;
-          _moisture_by_tracy_law(h->val[c_id], (const void *)soil, &get);
-          moisture->val[c_id] = get.val;
-
-        } // Loop on cells
-
-      } // cell selection is a part of all cells
-      break;
-
-    case CS_GWF_HYDRAULIC_SATURATED:
-      if (elt_ids == NULL) {
-
-# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id <  cdoq->n_cells; c_id++)
-          moisture->val[c_id] = soil->saturated_moisture;
-
-      }
-      else {
-
-        const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(soil->ml_id);
-
-# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
-        for (cs_lnum_t i = 0; i < n_elts[0]; i++)
-          moisture->val[elt_ids[i]] = soil->saturated_moisture;
-
-      } // cell selection is a part of all cells
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid type of model for estimating the moisture"
-                  " content."));
-      break; // Nothing to do
-
-    } // Switch on the type of soil modelling
-
-  } // Loop on soils
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Check if the setting is correct
- *
- * \param[in]  gw     pointer to a cs_gwf_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_check_settings(const cs_gwf_t  *gw)
-{
-  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
-
-  for (int i = 0; i < gw->n_max_tracers; i++)
-    if (gw->tracer_eq_ids[i] == -1)
-      bft_error(__FILE__, __LINE__, 0,
-                " At least one tracer equation has not been set.\n"
-                " %d tracer equations have heen initialy requested.\n"
-                " Please check your settings.", gw->n_max_tracers);
-
-
-  if (gw->n_soils < gw->n_max_soils)
-    bft_error(__FILE__, __LINE__, 0,
-              " %d soils are defined but %d have been initially requested."
-              " Please check your settings.", gw->n_soils, gw->n_max_soils);
-
-  if (gw->n_soils > 1) {
-
-    cs_lnum_t  n_unset_cells = 0;
-    int  cell_ml_id = cs_mesh_location_get_id_by_name(N_("cells"));
-    const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(cell_ml_id);
-
-# pragma omp parallel reduction(+:n_unset_cells) if (n_elts[0] > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_elts[0]; i++)
-      if (gw->soil_id[i] == gw->n_max_soils) n_unset_cells++;
-
-    if (n_unset_cells > 0)
-      bft_error(__FILE__, __LINE__, 0,
-                " %d cells are not associated to any soil.\n"
-                " Please check your settings.", n_unset_cells);
-
-  } // n_soils > 1
-
-}
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -889,7 +1099,6 @@ cs_gwf_create(void)
 
   gw->with_gravitation = false;
   gw->gravity[0] = 0, gw->gravity[1] = 0, gw->gravity[2] = 0;
-  gw->hydraulic_head = NULL;
   gw->pressure_head = NULL;
 
   gw->richards_eq_id = -1;
@@ -1332,9 +1541,9 @@ cs_gwf_add_aniso_soil_by_value(cs_gwf_t                  *gw,
 
 void
 cs_gwf_set_soil_param(cs_gwf_t          *gw,
-                              const char                *ml_name,
-                              cs_gwf_soilkey_t   key,
-                              const cs_real_t            val)
+                      const char        *ml_name,
+                      cs_gwf_soilkey_t   key,
+                      const cs_real_t    val)
 {
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
@@ -1629,56 +1838,60 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
               _(" Groundwater module is activated but no soil is defined."));
 
   const cs_space_scheme_t  cdo_scheme = cs_equation_get_space_scheme(richards);
-  if (cdo_scheme == CS_SPACE_SCHEME_CDOFB)
+  if (cdo_scheme == CS_SPACE_SCHEME_CDOFB ||
+      cdo_scheme == CS_SPACE_SCHEME_HHO)
     bft_error(__FILE__, __LINE__, 0,
               _(" Richards eq. is only available for vertex-based schemes."));
+
+  const cs_field_t  *hydraulic_head = cs_equation_get_field(richards);
 
   cs_property_t  *permeability = gw->permeability;
   bool has_previous = cs_equation_is_steady(richards) ? false:true;
   int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
-  int  cell_loc_id = cs_mesh_location_get_id_by_name(N_("cells"));
+  int  c_loc_id = cs_mesh_location_get_id_by_name(N_("cells"));
+  int  v_loc_id = cs_mesh_location_get_id_by_name(N_("vertices"));
+  cs_desc_t  head_desc = {.location = CS_FLAG_SCALAR,
+                          .state = CS_FLAG_STATE_POTENTIAL};
 
   /* Create a moisture field attached to cells */
   gw->moisture_content = cs_field_create("moisture_content",
                                          field_mask,
-                                         cell_loc_id,
+                                         c_loc_id,
                                          1,        // dimension
                                          has_previous);
 
   /* Allocate and initialize values */
   cs_field_allocate_values(gw->moisture_content);
 
-  /* Create or shared a field attached to cell for the hydraulic head */
-  if (cdo_scheme == CS_SPACE_SCHEME_CDOFB) // For a future usage
-    gw->hydraulic_head = cs_equation_get_field(richards);
+  switch (cdo_scheme) {
+  case CS_SPACE_SCHEME_CDOVB:
+  case CS_SPACE_SCHEME_CDOVCB:
+    head_desc.location |= cs_cdo_primal_vtx;
+    if (gw->with_gravitation)
+      gw->pressure_head = cs_field_create("pressure_head",
+                                          field_mask,
+                                          v_loc_id,
+                                          1,
+                                          has_previous);
+    break;
 
-  else { // Create a new field
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO:
+    head_desc.location |= cs_cdo_primal_cell;
+    if (gw->with_gravitation)
+      gw->pressure_head = cs_field_create("pressure_head",
+                                          field_mask,
+                                          c_loc_id,
+                                          1,
+                                          has_previous);
 
-    /* Create a hydraulic head field attached to cells (field on vertices
-       are already defined thanks to the Richards equation in this case) */
-    gw->hydraulic_head = cs_field_create("hydraulic_head_cell",
-                                         field_mask,
-                                         cell_loc_id,
-                                         1,        // dimension
-                                         has_previous);
-
-    /* Allocate and initialize values */
-    cs_field_allocate_values(gw->hydraulic_head);
+  default:
+    bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
 
   }
 
-  if (gw->with_gravitation) { /* Gravitation effect */
-
-    gw->pressure_head = cs_field_create("pressure_head",
-                                        field_mask,
-                                        cell_loc_id,
-                                        1,
-                                        has_previous);
-
-    /* Allocate and initialize values */
+  if (gw->with_gravitation) /* Allocate and init. values for pressure head */
     cs_field_allocate_values(gw->pressure_head);
-
-  }
 
   /* Set the values for the permeability and the moisture content
      and if needed set also the value of the soil capacity */
@@ -1725,69 +1938,59 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
     switch (soil->model) {
 
     case CS_GWF_HYDRAULIC_GENUCHTEN:
-      {
-        cs_desc_t  desc = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
-                           .state = CS_FLAG_STATE_POTENTIAL};
 
-        /* Set permeability tensor behavior */
-        cs_property_def_by_law(permeability,
-                               ml_name,
-                               (const void *)soil,
-                               _permeability_by_genuchten_law);
+      /* Set permeability tensor behavior */
+      cs_property_def_by_onevar_law(permeability,
+                                    ml_name,
+                                    (const void *)soil,
+                                    _genuchten_permeability_from_c_head);
+
+      if (gw->with_gravitation)
+        cs_property_set_array(permeability, head_desc, gw->pressure_head->val);
+      else
+        cs_property_set_array(permeability, head_desc, hydraulic_head->val);
+
+      /* Soil capacity settings (related to unsteady term) */
+      if (has_previous) {
+
+        cs_property_t *capacity = cs_equation_get_time_property(richards);
+
+        cs_property_def_by_onevar_law(cs_equation_get_time_property(richards),
+                                      ml_name,
+                                      (const void *)soil,
+                                      _genuchten_capacity_from_c_head);
 
         if (gw->with_gravitation)
-          cs_property_set_array(permeability, desc, gw->pressure_head->val);
+          cs_property_set_array(capacity, head_desc, gw->pressure_head->val);
         else
-          cs_property_set_array(permeability, desc, gw->hydraulic_head->val);
-
-        /* Soil capacity settings (related to unsteady term) */
-        if (has_previous) {
-
-          cs_property_t *capacity = cs_equation_get_time_property(richards);
-
-          cs_property_def_by_law(cs_equation_get_time_property(richards),
-                                 ml_name,
-                                 (const void *)soil,
-                                 _capacity_by_genuchten_law);
-
-          if (gw->with_gravitation)
-            cs_property_set_array(capacity, desc, gw->pressure_head->val);
-          else
-            cs_property_set_array(capacity, desc, gw->hydraulic_head->val);
-
-        }
+          cs_property_set_array(capacity, head_desc, hydraulic_head->val);
 
       }
       break;
 
     case CS_GWF_HYDRAULIC_TRACY:
-      {
-        cs_desc_t  desc = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
-                           .state = CS_FLAG_STATE_POTENTIAL};
 
-        /* Set permeability tensor behavior */
-        cs_property_def_by_law(permeability,
-                               ml_name,
-                               (const void *)soil,
-                               _permeability_by_tracy_law);
+      /* Set permeability tensor behavior */
+      cs_property_def_by_onevar_law(permeability,
+                                    ml_name,
+                                    (const void *)soil,
+                                    _tracy_permeability_from_c_head);
 
-        if (gw->with_gravitation)
-          cs_property_set_array(permeability, desc, gw->pressure_head->val);
-        else
-          cs_property_set_array(permeability, desc, gw->hydraulic_head->val);
+      if (gw->with_gravitation)
+        cs_property_set_array(permeability, head_desc, gw->pressure_head->val);
+      else
+        cs_property_set_array(permeability, head_desc, hydraulic_head->val);
 
-        /* Soil capacity settings (related to unsteady term) */
-        if (has_previous) {
+      /* Soil capacity settings (related to unsteady term) */
+      if (has_previous) {
 
-          cs_property_t  *capacity = cs_equation_get_time_property(richards);
+        cs_property_t  *capacity = cs_equation_get_time_property(richards);
 
-          const cs_gwf_tracy_t  law = soil->tracy_param;
-          const double  dh = law.h_s - law.h_r;
-          const double  dtheta = soil->delta_moisture;
+        const cs_gwf_tracy_t  law = soil->tracy_param;
+        const double  dh = law.h_s - law.h_r;
+        const double  dtheta = soil->delta_moisture;
 
-          cs_property_iso_def_by_value(capacity, ml_name, dtheta/dh);
-
-        } /* Set the soil capacity */
+        cs_property_iso_def_by_value(capacity, ml_name, dtheta/dh);
 
       }
       break; // Tracy model
@@ -1835,14 +2038,12 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
 
   } // Loop on the different type of soils
 
-  { /* Define and then link the advection field to each tracer equations
-       TODO: Adapt the definition for face-based schemes
-     */
-    cs_desc_t  desc = {.location = CS_FLAG_SCALAR | cs_cdo_dual_face_byc,
-                       .state = CS_FLAG_STATE_FLUX};
+  /* Define and then link the advection field to each tracer equations
+     TODO: Adapt the definition for face-based schemes  */
+  cs_desc_t  flux_desc = {.location = CS_FLAG_SCALAR | cs_cdo_dual_face_byc,
+                          .state = CS_FLAG_STATE_FLUX};
 
-    cs_advection_field_def_by_array(gw->adv_field, desc, gw->darcian_flux);
-  }
+  cs_advection_field_def_by_array(gw->adv_field, flux_desc, gw->darcian_flux);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1858,7 +2059,7 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
 
 bool
 cs_gwf_tracer_needs_reaction(const cs_gwf_t    *gw,
-                                     int                        eq_id)
+                             int                eq_id)
 {
   int  tracer_id = _get_tracer_id(gw, eq_id);
   bool  is_needed = false;
@@ -1921,8 +2122,8 @@ cs_gwf_tracer_setup(int                tracer_eq_id,
                     cs_gwf_t          *gw)
 {
   const cs_flag_t  eq_flag = cs_equation_get_flag(eq);
-  const cs_desc_t  desc1 = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
-                            .state = CS_FLAG_STATE_DENSITY};
+  const cs_desc_t  c_desc = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
+                             .state = CS_FLAG_STATE_DENSITY};
 
   /* Sanity check */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
@@ -1936,14 +2137,14 @@ cs_gwf_tracer_setup(int                tracer_eq_id,
     cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
     cs_gwf_tracer_t  *tp = soil->tracer_param + tracer_id;
 
-    cs_property_def_by_law(time_pty,
-                           cs_mesh_location_get_name(soil->ml_id),
-                           (const void *)tp,
-                           _get_tracer_time_coeff);
+    cs_property_def_by_onevar_law(time_pty,
+                                  cs_mesh_location_get_name(soil->ml_id),
+                                  (const void *)tp,
+                                  _get_tracer_time_coeff);
 
   } // Loop on soils
 
-  cs_property_set_array(time_pty, desc1, gw->moisture_content->val);
+  cs_property_set_array(time_pty, c_desc, gw->moisture_content->val);
 
   /* Add a diffusion property */
   if (eq_flag & CS_EQUATION_DIFFUSION) {
@@ -1955,18 +2156,18 @@ cs_gwf_tracer_setup(int                tracer_eq_id,
       cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
       cs_gwf_tracer_t  *tp = soil->tracer_param + tracer_id;
 
-      cs_property_def_by_scavec_law(diff_pty,
+      cs_property_def_by_twovar_law(diff_pty,
                                     cs_mesh_location_get_name(soil->ml_id),
                                     (const void *)tp,
                                     _get_tracer_diffusion_tensor);
 
     } // Loop on soils
 
-    cs_property_set_array(diff_pty, desc1, gw->moisture_content->val);
+    cs_property_set_array(diff_pty, c_desc, gw->moisture_content->val);
 
-    cs_desc_t  desc2 = {.location = CS_FLAG_SCALAR | cs_cdo_dual_face_byc,
-                        .state = CS_FLAG_STATE_FLUX};
-    cs_property_set_second_array(diff_pty, desc2, gw->darcian_flux);
+    cs_desc_t  df_desc = {.location = CS_FLAG_SCALAR | cs_cdo_dual_face_byc,
+                          .state = CS_FLAG_STATE_FLUX};
+    cs_property_set_second_array(diff_pty, df_desc, gw->darcian_flux);
 
   } /* Diffusion term has to be set */
 
@@ -1980,14 +2181,14 @@ cs_gwf_tracer_setup(int                tracer_eq_id,
       cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
       cs_gwf_tracer_t  *tp = soil->tracer_param + tracer_id;
 
-      cs_property_def_by_law(reac_pty,
-                             cs_mesh_location_get_name(soil->ml_id),
-                             (const void *)tp,
-                             _get_tracer_reaction_coeff);
+      cs_property_def_by_onevar_law(reac_pty,
+                                    cs_mesh_location_get_name(soil->ml_id),
+                                    (const void *)tp,
+                                    _get_tracer_reaction_coeff);
 
     } // Loop on soils
 
-    cs_property_set_array(reac_pty, desc1, gw->moisture_content->val);
+    cs_property_set_array(reac_pty, c_desc, gw->moisture_content->val);
 
   } /* Reaction term has to be set */
 
@@ -2013,13 +2214,13 @@ cs_gwf_tracer_setup(int                tracer_eq_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_compute(const cs_mesh_t              *mesh,
+cs_gwf_compute(const cs_mesh_t                      *mesh,
                        const cs_time_step_t         *time_step,
                        double                        dt_cur,
                        const cs_cdo_connect_t       *connect,
                        const cs_cdo_quantities_t    *cdoq,
                        cs_equation_t                *eqs[],
-                       cs_gwf_t             *gw)
+                       cs_gwf_t                     *gw)
 {
   if (gw == NULL)
     return;
@@ -2041,8 +2242,8 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
        - initialize source term */
     cs_equation_init_system(mesh, richards);
 
-    /* Initialize hydraulic/pressure head */
-    _update_head(connect, cdoq, richards, gw);
+    if (gw->with_gravitation) /* Initialize pressure head */
+      _update_pressure_head(cdoq, richards, gw);
 
     /* Build and solve the linear system related to the Richards equations */
     if (cs_equation_is_steady(richards)) {
@@ -2053,14 +2254,15 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
       /* Solve the algebraic system */
       cs_equation_solve(richards);
 
-      /* Update hydraulic/pressure head */
-      _update_head(connect, cdoq, richards, gw);
+      /* Update pressure head */
+      if (gw->with_gravitation)
+      _update_pressure_head(cdoq, richards, gw);
 
       /* Compute the darcian flux */
       cs_equation_compute_diff_flux(richards, gw->darcian_flux);
 
       /* Update the moisture content */
-      _update_moisture_content(cdoq, richards, gw);
+      _update_moisture_content(connect, cdoq, richards, gw);
 
     }
 
@@ -2095,14 +2297,15 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
       /* Solve the algebraic system */
       cs_equation_solve(richards);
 
-      /* Update hydraulic/pressure head */
-      _update_head(connect, cdoq, richards, gw);
+      /* Update pressure head */
+      if (gw->with_gravitation)
+        _update_pressure_head(cdoq, richards, gw);
 
       /* Compute the darcian flux */
       cs_equation_compute_diff_flux(richards, gw->darcian_flux);
 
       /* Update the moisture content */
-      _update_moisture_content(cdoq, richards, gw);
+      _update_moisture_content(connect, cdoq, richards, gw);
 
     }
 

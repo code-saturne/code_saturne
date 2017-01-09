@@ -74,6 +74,24 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the value at all cell centers from an array of values
+ *         defined on primal vertices.
+ *
+ *  \param[in]      c2v      cell -> vertices connectivity
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      array    pointer to the array of values
+ *  \param[in, out] val_xc   values of the reconstruction at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_pv_at_cell_centers(const cs_connect_index_t    *c2v,
+                           const cs_cdo_quantities_t   *quant,
+                           const double                *array,
+                           cs_real_t                   *val_xc);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct the value at the cell center from an array of values
  *         defined on primal vertices.
  *

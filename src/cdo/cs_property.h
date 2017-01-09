@@ -333,10 +333,10 @@ cs_property_def_by_analytic(cs_property_t        *pty,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_def_by_law(cs_property_t             *pty,
-                       const char                *ml_name,
-                       const void                *context,
-                       cs_onevar_law_func_t      *func);
+cs_property_def_by_onevar_law(cs_property_t             *pty,
+                              const char                *ml_name,
+                              const void                *context,
+                              cs_onevar_law_func_t      *func);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -356,25 +356,6 @@ cs_property_def_by_twovar_law(cs_property_t          *pty,
                               const char             *ml_name,
                               const void             *context,
                               cs_twovar_law_func_t   *func);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a cs_property_t structure by a law (using as arguments a
- *         scalar and a vector) for entities attached to the mesh location
- *         named ml_name
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       context   pointer to a structure (may be NULL)
- * \param[in]       func      pointer to a law function defined by subdomain
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_def_by_scavec_law(cs_property_t             *pty,
-                              const char                *ml_name,
-                              const void                *context,
-                              cs_scavec_law_func_t      *func);
 
 /*----------------------------------------------------------------------------*/
 /*!

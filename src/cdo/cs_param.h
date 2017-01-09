@@ -47,6 +47,21 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* Values associated to the different ways to retrieve data */
+typedef union {
+
+  cs_flag_t           flag;       // flag
+  int                 id;         // identification number
+  cs_lnum_t           num;        // local number
+  cs_real_t           val;        // value
+  cs_real_2_t         couple;     // two values
+  cs_real_3_t         vect;       // vector: 3 values
+  cs_nvec3_t          nvec3;      // meas + unit vector
+  cs_real_6_t         twovects;   // two vectors
+  cs_real_33_t        tens;       // tensor: 9 values
+
+} cs_get_t;
+
 /* User-defined function */
 typedef void (cs_user_func_t) (const void         *input1,
                                const void         *input2,
@@ -74,18 +89,14 @@ typedef union {
   /* For a definition by law depending on two scalar variables */
   cs_twovar_law_func_t            *law2_func;
 
-  /* For a definition by law depending on two variables (scalar + vector) */
-  cs_scavec_law_func_t            *law_scavec_func;
-
 } cs_def_t;
 
 typedef enum {
 
   CS_PARAM_DEF_BY_ANALYTIC_FUNCTION,
   CS_PARAM_DEF_BY_ARRAY,
-  CS_PARAM_DEF_BY_LAW_ONESCA,
-  CS_PARAM_DEF_BY_LAW_TWOSCA,
-  CS_PARAM_DEF_BY_LAW_SCAVEC,
+  CS_PARAM_DEF_BY_ONEVAR_LAW,
+  CS_PARAM_DEF_BY_TWOVAR_LAW,
   CS_PARAM_DEF_BY_QOV,
   CS_PARAM_DEF_BY_TIME_FUNCTION,
   CS_PARAM_DEF_BY_USER_FUNCTION,

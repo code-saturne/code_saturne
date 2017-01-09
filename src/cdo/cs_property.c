@@ -217,22 +217,22 @@ _get_tensor_by_value(const cs_property_t      *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the value at the cell center of cell c_id from an array
+ * \brief  Retrieve the value at the cell center for cell c_id from an array
  *
- * \param[in]  c_id      if of the cell to treat
+ * \param[in]  c_id      id of the cell to treat
  * \param[in]  desc      information about the array to handle
  * \param[in]  array     values
  */
 /*----------------------------------------------------------------------------*/
 
 static double
-_get_cell_value_from_array(cs_lnum_t         c_id,
-                           const cs_desc_t   desc,
-                           const cs_real_t   array[])
+_get_cell_val_from_array(cs_lnum_t         c_id,
+                         const cs_desc_t   desc,
+                         const cs_real_t   array[])
 {
   double  cell_val = 0.;
 
-  if ((desc.location & CS_FLAG_SCALAR) != CS_FLAG_SCALAR)
+  if (!(desc.location & CS_FLAG_SCALAR))
     bft_error(__FILE__, __LINE__, 0,
               " Invalid type of variable. Stop computing the cell value.");
 
@@ -258,7 +258,7 @@ _get_cell_value_from_array(cs_lnum_t         c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the vector at the cell center of cell c_id from an array
+ * \brief  Retrieve the vector at the cell center for cell c_id from an array
  *
  * \param[in]       c_id      if of the cell to treat
  * \param[in]       desc      information about the array to handle
@@ -268,10 +268,10 @@ _get_cell_value_from_array(cs_lnum_t         c_id,
 /*----------------------------------------------------------------------------*/
 
 static void
-_get_cell_vector_from_array(cs_lnum_t         c_id,
-                            const cs_desc_t   desc,
-                            const cs_real_t   array[],
-                            cs_real_3_t       vect_val)
+_get_cell_vec_from_array(cs_lnum_t         c_id,
+                         const cs_desc_t   desc,
+                         const cs_real_t   array[],
+                         cs_real_3_t       vect_val)
 {
   /* Test if flag has the pattern of a reference support */
   if ((desc.location & cs_cdo_primal_cell) == cs_cdo_primal_cell)
@@ -292,28 +292,28 @@ _get_cell_vector_from_array(cs_lnum_t         c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value using a law with one scalar variable
+ * \brief  Compute the value using a law with one variable
  *
  * \param[in]       c_id     cell id
  * \param[in]       pty      pointer to a cs_property_t structure
  * \param[in]       law      function pointer to the law
  * \param[in]       context  pointer to a structure
- * \param[in, out]  get      pointer to a union used to retrieve the result
+ * \param[in, out]  result   array storing the result
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_get_result_by_onevar_law(cs_lnum_t                 c_id,
-                          const cs_property_t      *pty,
-                          cs_onevar_law_func_t     *law,
-                          const void               *context,
-                          cs_get_t                 *get)
+_get_cell_val_from_onevar_law(cs_lnum_t                 c_id,
+                              const cs_property_t      *pty,
+                              cs_onevar_law_func_t     *law,
+                              const void               *context,
+                              cs_real_t                *result)
 {
   assert(pty->array1 != NULL); /* Sanity check */
 
-  cs_real_t  val_xc = _get_cell_value_from_array(c_id, pty->desc1, pty->array1);
+  cs_real_t  val_xc = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
 
-  law(val_xc, context, get);
+  law(1, NULL, &val_xc, context, result);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -324,56 +324,43 @@ _get_result_by_onevar_law(cs_lnum_t                 c_id,
  * \param[in]       pty      pointer to a cs_property_t structure
  * \param[in]       law      function pointer to the law
  * \param[in]       context  pointer to a structure
- * \param[in, out]  get      pointer to a union used to retrieve the result
+ * \param[in, out]  result   array storing the result
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_get_result_by_twovar_law(cs_lnum_t                 c_id,
-                          const cs_property_t      *pty,
-                          cs_twovar_law_func_t     *law,
-                          const void               *context,
-                          cs_get_t                 *get)
+_get_cell_val_from_twovar_law(cs_lnum_t                 c_id,
+                              const cs_property_t      *pty,
+                              cs_twovar_law_func_t     *law,
+                              const void               *context,
+                              cs_real_t                *result)
 {
   assert(pty->array1 != NULL && pty->array2 != NULL); /* Sanity check */
 
-  cs_real_t  val1 = _get_cell_value_from_array(c_id, pty->desc1, pty->array1);
-  cs_real_t  val2 = _get_cell_value_from_array(c_id, pty->desc2, pty->array2);
+  cs_real_t  val1 = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
 
-  /* Compute the value of the law for this cell */
-  law(val1, val2, context, get);
-}
+  if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
+      (pty->desc2.location & CS_FLAG_SCALAR)) {
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value using a law with two arguments: one scalar and
- *         one vector-valued
- *
- * \param[in]       c_id    cell id
- * \param[in]       pty     pointer to a cs_property_t structure
- * \param[in]       law     function pointer to the law
- * \param[in]       context   pointer to a structure
- * \param[in, out]  get     pointer to a union used to retrieve the result
- */
-/*----------------------------------------------------------------------------*/
+    cs_real_t  val2 = _get_cell_val_from_array(c_id, pty->desc2, pty->array2);
 
-static void
-_get_result_by_scavec_law(cs_lnum_t                 c_id,
-                          const cs_property_t      *pty,
-                          cs_scavec_law_func_t     *law,
-                          const void               *context,
-                          cs_get_t                 *get)
-{
-  /* Sanity checks */
-  assert(pty->array1 != NULL && pty->array2 != NULL);
+    /* Compute the value of the law for this cell */
+    law(1, NULL, &val1, &val2, context, result);
 
-  cs_real_t  scal_val = _get_cell_value_from_array(c_id,
-                                                   pty->desc1, pty->array1);
-  cs_real_t  vect_val[3] = {0, 0, 0};
-  _get_cell_vector_from_array(c_id, pty->desc2, pty->array2, vect_val);
+  }
+  else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
+           (pty->desc2.location & CS_FLAG_VECTOR)) {
 
-  /* Retrieve the result of the law function */
-  law(scal_val, vect_val, context, get);
+    cs_real_t  vect_val[3] = {0, 0, 0};
+    _get_cell_vec_from_array(c_id, pty->desc2, pty->array2, vect_val);
+
+    /* Retrieve the result of the law function for this cell */
+    law(1, NULL, &val1, vect_val, context, result);
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid case. Stop evaluating the property %s\n", pty->name);
 }
 
 /*============================================================================
@@ -685,14 +672,14 @@ cs_property_summary(const cs_property_t   *pty)
       cs_log_printf(CS_LOG_SETUP, "  definition by an analytical function\n");
       break;
 
-    case CS_PARAM_DEF_BY_LAW_ONESCA:
+    case CS_PARAM_DEF_BY_ONEVAR_LAW:
       cs_log_printf(CS_LOG_SETUP,
-                    "  definition by a law based on one scalar\n");
+                    "  definition by a law based on one variable\n");
       break;
 
-    case CS_PARAM_DEF_BY_LAW_SCAVEC:
+    case CS_PARAM_DEF_BY_TWOVAR_LAW:
       cs_log_printf(CS_LOG_SETUP,
-                    "  definition by law based on one scalar + one vector\n");
+                    "  definition by law based on two variables\n");
       break;
 
     default:
@@ -937,14 +924,14 @@ cs_property_def_by_analytic(cs_property_t        *pty,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_def_by_law(cs_property_t             *pty,
-                       const char                *ml_name,
-                       const void                *context,
-                       cs_onevar_law_func_t      *func)
+cs_property_def_by_onevar_law(cs_property_t             *pty,
+                              const char                *ml_name,
+                              const void                *context,
+                              cs_onevar_law_func_t      *func)
 {
   cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
 
-  new_def->def_type = CS_PARAM_DEF_BY_LAW_ONESCA;
+  new_def->def_type = CS_PARAM_DEF_BY_ONEVAR_LAW;
   new_def->def.law1_func = func;
   new_def->context = context;
 }
@@ -970,34 +957,8 @@ cs_property_def_by_twovar_law(cs_property_t          *pty,
 {
   cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
 
-  new_def->def_type = CS_PARAM_DEF_BY_LAW_TWOSCA;
+  new_def->def_type = CS_PARAM_DEF_BY_TWOVAR_LAW;
   new_def->def.law2_func = func;
-  new_def->context = context;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a cs_property_t structure thanks to a law depending on
- *         a scalar and a vector variables in a subdomain attached to the mesh
- *         location named ml_name
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       context   pointer to a structure (may be NULL)
- * \param[in]       func      pointer to a law function defined by subdomain
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_def_by_scavec_law(cs_property_t             *pty,
-                              const char                *ml_name,
-                              const void                *context,
-                              cs_scavec_law_func_t      *func)
-{
-  cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
-
-  new_def->def_type = CS_PARAM_DEF_BY_LAW_SCAVEC;
-  new_def->def.law_scavec_func = func;
   new_def->context = context;
 }
 
@@ -1096,8 +1057,6 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
                             bool                  do_inversion,
                             cs_real_3_t          *tensor)
 {
-  cs_get_t  get;
-
   if (pty == NULL)
     return;
 
@@ -1159,22 +1118,14 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
     }
     break;
 
-  case CS_PARAM_DEF_BY_LAW_ONESCA:
-    _get_result_by_onevar_law(c_id, pty, sub->def.law1_func, sub->context,
-                              &get);
-    _get_tensor_by_value(pty, get, tensor);
+  case CS_PARAM_DEF_BY_ONEVAR_LAW:
+    _get_cell_val_from_onevar_law(c_id, pty, sub->def.law1_func, sub->context,
+                                (cs_real_t *)tensor);
     break;
 
-  case CS_PARAM_DEF_BY_LAW_TWOSCA:
-    _get_result_by_twovar_law(c_id, pty, sub->def.law2_func, sub->context,
-                              &get);
-    _get_tensor_by_value(pty, get, tensor);
-    break;
-
-  case CS_PARAM_DEF_BY_LAW_SCAVEC:
-    _get_result_by_scavec_law(c_id, pty, sub->def.law_scavec_func, sub->context,
-                              &get);
-    _get_tensor_by_value(pty, get, tensor);
+  case CS_PARAM_DEF_BY_TWOVAR_LAW:
+    _get_cell_val_from_twovar_law(c_id, pty, sub->def.law2_func, sub->context,
+                                (cs_real_t *)tensor);
     break;
 
   default:
@@ -1242,7 +1193,6 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
                            const cs_property_t   *pty)
 {
   cs_real_t  result = 0;
-  cs_get_t  get;
 
   if (pty == NULL)
     return result;
@@ -1273,27 +1223,18 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
                       &result);
     break;
 
-  case CS_PARAM_DEF_BY_LAW_ONESCA:
-    _get_result_by_onevar_law(c_id, pty, sub->def.law1_func, sub->context,
-                              &get);
-    result = get.val;
+  case CS_PARAM_DEF_BY_ONEVAR_LAW:
+    _get_cell_val_from_onevar_law(c_id, pty, sub->def.law1_func, sub->context,
+                                  &result);
     break;
 
-  case CS_PARAM_DEF_BY_LAW_TWOSCA:
-    _get_result_by_twovar_law(c_id, pty, sub->def.law2_func, sub->context,
-                              &get);
-    result = get.val;
+  case CS_PARAM_DEF_BY_TWOVAR_LAW:
+    _get_cell_val_from_twovar_law(c_id, pty, sub->def.law2_func, sub->context,
+                                  &result);
     break;
 
   case CS_PARAM_DEF_BY_ARRAY:
-    result = _get_cell_value_from_array(c_id, pty->desc1, pty->array1);
-    break;
-
-  case CS_PARAM_DEF_BY_LAW_SCAVEC:
-    _get_result_by_scavec_law(c_id,
-                              pty, sub->def.law_scavec_func, sub->context,
-                              &get);
-    result = get.val;
+    result = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
     break;
 
   default:

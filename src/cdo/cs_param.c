@@ -69,9 +69,8 @@ static const char
 cs_param_def_type_name[CS_PARAM_N_DEF_TYPES][CS_BASE_STRING_LEN]=
   { N_("by analytic function"),
     N_("by array"),
-    N_("by law (one argument)"),
-    N_("by law (two arguments)"),
-    N_("by law (two arguments: scalar+vector)"),
+    N_("by one variable law"),
+    N_("by two variables law"),
     N_("quantity over a volume"),
     N_("by time function"),
     N_("by user function"),
@@ -285,7 +284,7 @@ cs_param_set_def(cs_param_def_type_t      def_type,
       def->time_func = (cs_timestep_func_t *)val;
     break;
 
-  case CS_PARAM_DEF_BY_LAW_ONESCA:
+  case CS_PARAM_DEF_BY_ONEVAR_LAW:
     if (val == NULL)
       def->law1_func = NULL;
     else

@@ -216,6 +216,51 @@ cs_reco_cost_edge_dof(cs_lnum_t                    cid,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the value at all cell centers from an array of values
+ *         defined on primal vertices.
+ *
+ *  \param[in]      c2v      cell -> vertices connectivity
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      array    pointer to the array of values
+ *  \param[in, out] val_xc   values of the reconstruction at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_pv_at_cell_centers(const cs_connect_index_t    *c2v,
+                           const cs_cdo_quantities_t   *quant,
+                           const double                *array,
+                           cs_real_t                   *val_xc)
+{
+  if (array == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(c2v != NULL && quant != NULL);
+
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    const double  invvol = 1/quant->cell_vol[c_id];
+    const cs_real_t  *dcvol = quant->dcell_vol;
+
+    cs_real_t  reco_val = 0;
+    for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++) {
+
+      const cs_lnum_t  v_id = c2v->ids[jv];
+
+      reco_val += dcvol[jv] * array[v_id];
+
+    } // Loop on cell vertices;
+
+    val_xc[c_id] = invvol * reco_val;
+
+  } // Loop on cells
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct the value at the cell center from an array of values
  *         defined on primal vertices.
  *
@@ -489,13 +534,10 @@ cs_reco_ccen_edge_dof(cs_lnum_t                    cid,
   if (dof == NULL)
     return;
 
-  const double  invvol = 1/quant->cell_vol[cid];
-
   /* Initialize value */
-  for (int k = 0; k < 3; k++)
-    reco[k] = 0.0;
+  reco[0] = reco[1] = reco[2] = 0.0;
 
-  for (int i = c2e->idx[cid]; i < c2e->idx[cid+1]; i++) {
+  for (cs_lnum_t i = c2e->idx[cid]; i < c2e->idx[cid+1]; i++) {
 
     const cs_dface_t  dfq = quant->dface[i];  /* Dual face quantities */
     const double  val = dof[c2e->ids[i]];     /* Edge value */
@@ -506,6 +548,7 @@ cs_reco_ccen_edge_dof(cs_lnum_t                    cid,
   } /* End of loop on cell edges */
 
   /* Divide by cell volume */
+  const double  invvol = 1/quant->cell_vol[cid];
   for (int k = 0; k < 3; k++)
     reco[k] *= invvol;
 
@@ -545,7 +588,7 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
                           connect->c2e,
                           quant,
                           dof,
-                          &(ccrec[3*c_id]));
+                          ccrec + 3*c_id);
 
   /* Return pointer */
   *p_ccrec = ccrec;
