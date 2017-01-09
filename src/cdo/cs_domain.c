@@ -928,7 +928,7 @@ cs_domain_summary(const cs_domain_t   *domain)
       cs_log_printf(CS_LOG_SETUP, "%-30s %5.3e\n",
                     "  >> Final simulation time:", domain->time_step->t_max);
     if (domain->time_step->nt_max > 0)
-      cs_log_printf(CS_LOG_SETUP, "%-30s %5.3e\n",
+      cs_log_printf(CS_LOG_SETUP, "%-30s %9d\n",
                     "  >> Final time step:", domain->time_step->nt_max);
 
   }

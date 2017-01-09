@@ -1090,13 +1090,14 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
 
     case CS_PARAM_DEF_BY_ARRAY:
       {
-        const cs_real_t  *flux = adv->array + c2e_idx[0];
-
         /* Test if location has at least the pattern of the reference support */
         if (cs_cdo_same_support(adv->array_desc.location,
                                 cs_cdo_dual_face_byc)) {
+
+          const cs_real_t  *flux_array = adv->array + c2e_idx[0];
           for (short int e = 0; e < c2e_idx[1] - c2e_idx[0]; e++)
-            fluxes[e] = flux[e];
+            fluxes[e] = flux_array[e];
+
         }
         else
           bft_error(__FILE__, __LINE__, 0,

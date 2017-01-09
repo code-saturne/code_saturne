@@ -727,7 +727,7 @@ _test_cdovb_schemes(FILE             *out,
                                  .type = CS_PARAM_HODGE_TYPE_VPCD,
                                  .algo = CS_PARAM_HODGE_ALGO_WBS,
                                  .coef = 1.0};
-  cs_hodge_vb_wbs_get(hwbs_info, cm, cb);
+  cs_hodge_vpcd_wbs_get(hwbs_info, cm, cb);
   _locmat_dump(out, "\nCDO.VB; HDG.VPCD.WBS; PERMEABILITY.ISO",
                cb->hdg);
   _test_hodge_vb(out, cm, cb->hdg);
@@ -749,7 +749,7 @@ _test_cdovb_schemes(FILE             *out,
                                  .type = CS_PARAM_HODGE_TYPE_VPCD,
                                  .algo = CS_PARAM_HODGE_ALGO_VORONOI,
                                  .coef = 1.0};
-  cs_hodge_vb_voro_get(hvor_info, cm, cb);
+  cs_hodge_vpcd_voro_get(hvor_info, cm, cb);
   _locmat_dump(out, "\nCDO.VB; HDG.VPCD.VORONOI; PERMEABILITY.ISO",
                cb->hdg);
   _test_hodge_vb(out, cm, cb->hdg);
@@ -1079,8 +1079,11 @@ _test_cdovb_schemes(FILE             *out,
 int
 main (int argc, char *argv[])
 {
-  hexa = fopen("CDO.Test.Hexa.log", "w");
-  tetra = fopen("CDO.Test.Tetra.log", "w");
+  CS_UNUSED(argc);
+  CS8UNUSED(argv);
+
+  hexa = fopen("CDO_Test_Hexa.log", "w");
+  tetra = fopen("CDO_Test_Tetra.log", "w");
 
   /* connectivity */
   BFT_MALLOC(connect, 1, cs_cdo_connect_t);

@@ -817,18 +817,17 @@ cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
        - the gradient of the Lagrange function related xc in p_{f,c} */
     cs_compute_grdfc(cm->f_sgn[f], pfq, deq, grd_c);
 
-    const short int  *f2e_idx = cm->f2e_idx + f;
-    const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
-    const double  *tef = cm->tef + f2e_idx[0];
-
     /* Compute the reconstructed value of the potential at p_f */
     double  p_f = 0.;
-    for (short int e = 0; e < f2e_idx[1]-f2e_idx[0]; e++) {
 
-      const short int  ee = 2*f2e_ids[e];
+    /* Loop on face edges */
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      p_f += tef[e]*(  p_v[cm->e2v_ids[ee]]      // p_v1
-                     + p_v[cm->e2v_ids[ee+1]] ); // p_v2
+      const short int  e = cm->f2e_ids[i];
+      const short int  ee = 2*e;
+
+      p_f += cm->tef[i]*(  p_v[cm->e2v_ids[ee]]      // p_v1
+                         + p_v[cm->e2v_ids[ee+1]] ); // p_v2
     }
     p_f *= 0.5/pfq.meas;
 
@@ -836,9 +835,10 @@ cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
     const cs_lnum_t  f_id = cm->f_ids[f];
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
-    for (short int e = 0; e < f2e_idx[1]-f2e_idx[0]; e++) {
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      const short int  ee = 2*f2e_ids[e];
+      const short int  e = cm->f2e_ids[i];
+      const short int  ee = 2*e;
       const short int  v1 = cm->e2v_ids[ee];
       const short int  v2 = cm->e2v_ids[ee+1];
 
@@ -866,7 +866,7 @@ cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
 
     } // Loop on face edges
 
-  } // Loop on cell face
+  } // Loop on cell faces
 
 }
 

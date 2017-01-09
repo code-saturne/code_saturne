@@ -1917,13 +1917,6 @@ cs_cdo_advection_add_vb_bc(const cs_cell_bc_t         *cbc,
     csys->mat->val[v*cm->n_vc + v] += mat_diag[v];
     csys->rhs[v] += tmp_rhs[v];
   }
-  if (cm->c_id == 0) {
-    bft_printf("\nBCADV DIAG>>");
-    for (short int v = 0; v < cm->n_vc; v++) bft_printf("% 5.3e", mat_diag[v]);
-    bft_printf("\nBCADV RHS>>");
-    for (short int v = 0; v < cm->n_vc; v++) bft_printf("% 5.3e", tmp_rhs[v]);
-    bft_printf("\n");
-  }
 }
 
 /*----------------------------------------------------------------------------*/

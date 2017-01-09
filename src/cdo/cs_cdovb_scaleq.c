@@ -515,19 +515,19 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
     case CS_PARAM_HODGE_ALGO_COST:
       b->get_stiffness_matrix = cs_hodge_vb_cost_get_stiffness;
       b->boundary_flux_op = cs_cdovb_diffusion_cost_flux_op;
-      b->get_diffusion_hodge = cs_hodge_vb_cost_get;
+      b->get_diffusion_hodge = cs_hodge_epfd_cost_get;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
       b->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
       b->boundary_flux_op = cs_cdovb_diffusion_cost_flux_op;
-      b->get_diffusion_hodge = cs_hodge_vb_voro_get;
+      b->get_diffusion_hodge = cs_hodge_epfd_voro_get;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
       b->get_stiffness_matrix = cs_hodge_vb_wbs_get_stiffness;
       b->boundary_flux_op = cs_cdovb_diffusion_wbs_flux_op;
-      b->get_diffusion_hodge = cs_hodge_vb_wbs_get;
+      b->get_diffusion_hodge = cs_hodge_vpcd_wbs_get;
       break;
 
     default:
@@ -699,7 +699,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   b->hdg_wbs.algo = CS_PARAM_HODGE_ALGO_WBS;
   b->hdg_wbs.coef = 1.0; // not useful in this case
 
-  b->get_mass_matrix = cs_hodge_vb_wbs_get;
+  b->get_mass_matrix = cs_hodge_vpcd_wbs_get;
 
   /* Monitoring */
   b->monitor = cs_equation_init_monitoring();
@@ -1214,7 +1214,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
   cs_matrix_assembler_values_finalize(&mav);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-  cs_dump_array_to_listing("EQ.BUILD >> TS", b->n_dofs, b->source_terms, 8);
+  if (b->source_terms != NULL)
+    cs_dump_array_to_listing("EQ.BUILD >> TS", b->n_dofs, b->source_terms, 8);
 #endif
 
   cs_timer_t  t1 = cs_timer_time();

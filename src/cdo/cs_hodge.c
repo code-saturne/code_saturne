@@ -964,6 +964,7 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local Hodge operator for a given cell using WBS algo.
+ *          Hodge op. from primal vertices to dual cells.
  *          This function is specific for vertex-based schemes
  *
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
@@ -975,9 +976,9 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_hodge_vb_wbs_get(const cs_param_hodge_t    h_info,
-                    const cs_cell_mesh_t     *cm,
-                    cs_cell_builder_t        *cb)
+cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
+                      const cs_cell_mesh_t     *cm,
+                      cs_cell_builder_t        *cb)
 {
   /* Sanity check */
   assert(cb != NULL && cb->hdg != NULL);
@@ -1071,7 +1072,8 @@ cs_hodge_vb_wbs_get(const cs_param_hodge_t    h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using WBS algo.
+ * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
+ *          Hodge op. from primal vertices to dual cells.
  *          This function is specific for vertex-based schemes
  *
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
@@ -1083,9 +1085,9 @@ cs_hodge_vb_wbs_get(const cs_param_hodge_t    h_info,
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_hodge_vb_voro_get(const cs_param_hodge_t    h_info,
-                     const cs_cell_mesh_t     *cm,
-                     cs_cell_builder_t        *cb)
+cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
+                       const cs_cell_mesh_t     *cm,
+                       cs_cell_builder_t        *cb)
 {
   /* Sanity check */
   assert(cb != NULL && cb->hdg != NULL);
@@ -1119,7 +1121,8 @@ cs_hodge_vb_voro_get(const cs_param_hodge_t    h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using the COST algo.
+ * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
+ *          Hodge op. from primal edges to dual faces.
  *          This function is specific for vertex-based schemes
  *
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
@@ -1131,9 +1134,72 @@ cs_hodge_vb_voro_get(const cs_param_hodge_t    h_info,
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_hodge_vb_cost_get(const cs_param_hodge_t    h_info,
-                     const cs_cell_mesh_t     *cm,
-                     cs_cell_builder_t        *cb)
+cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
+                       const cs_cell_mesh_t     *cm,
+                       cs_cell_builder_t        *cb)
+{
+  /* Sanity check */
+  assert(cb != NULL && cb->hdg != NULL);
+  assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
+  assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
+
+  cs_locmat_t  *hdg = cb->hdg;
+  /* Initialize the local matrix related to this discrete Hodge operator */
+  hdg->n_ent = cm->n_ec;
+  for (short int e = 0; e < cm->n_ec; e++)    hdg->ids[e] = cm->e_ids[e];
+  for (int i = 0; i < cm->n_ec*cm->n_ec; i++) hdg->val[i] = 0;
+
+  for (short int e = 0; e < cm->n_ec; e++) {
+
+    if (h_info.is_iso) {
+      hdg->val[e*cm->n_ec+e] = cb->pty_val*cm->dface[e].meas/cm->edge[e].meas;
+    }
+    else {
+
+      const int  ee = 2*e;
+      const cs_nvec3_t  sef0c = cm->sefc[ee], sef1c = cm->sefc[ee+1];
+      const cs_real_3_t *tens = cb->pty_mat;
+
+      cs_real_3_t  mv;
+
+      /* First sub-triangle contribution */
+      cs_math_33_3_product(tens, sef0c.unitv, mv);
+      hdg->val[e*cm->n_ec+e] = sef0c.meas * _dp3(mv, sef0c.unitv);
+      /* Second sub-triangle contribution */
+      cs_math_33_3_product(tens, sef1c.unitv, mv);
+      hdg->val[e*cm->n_ec+e] += sef1c.meas * _dp3(mv, sef1c.unitv);
+
+      hdg->val[e*cm->n_ec+e] /= cm->edge[e].meas;
+
+    }
+
+  } // Loop on cell edges
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+  cs_locmat_dump(cm->c_id, hdg);
+#endif
+
+  return hdg;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local Hodge operator for a given cell using the COST algo.
+ *          Hodge op. from primal edges to dual faces.
+ *          This function is specific for vertex-based schemes
+ *
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ *
+ * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locmat_t *
+cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
+                       const cs_cell_mesh_t     *cm,
+                       cs_cell_builder_t        *cb)
 {
   /* Sanity check */
   assert(cb != NULL && cb->hdg != NULL);
@@ -1258,13 +1324,11 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
       switch (h_info.algo) {
       case CS_PARAM_HODGE_ALGO_COST:
-        compute = cs_hodge_vb_cost_get;
-        break;
       case CS_PARAM_HODGE_ALGO_VORONOI:
-        compute = cs_hodge_vb_voro_get;
+        compute = cs_hodge_vpcd_voro_get;
         break;
       case CS_PARAM_HODGE_ALGO_WBS:
-        compute = cs_hodge_vb_wbs_get;
+        compute = cs_hodge_vpcd_wbs_get;
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,
@@ -1285,10 +1349,10 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
       switch (h_info.algo) {
       case CS_PARAM_HODGE_ALGO_COST:
-        compute = cs_hodge_vb_cost_get;
+        compute = cs_hodge_epfd_cost_get;
         break;
       case CS_PARAM_HODGE_ALGO_VORONOI:
-        compute = cs_hodge_vb_voro_get;
+        compute = cs_hodge_epfd_voro_get;
         break;
       default:
         bft_error(__FILE__, __LINE__, 0,

@@ -131,7 +131,6 @@ static cs_analytic_func_t *get_sol = _get_sol;
  * \brief  Post-process the solution of a scalar convection/diffusion equation
  *         solved with a CDO vertex-based scheme.
  *
- * \param[in]  m          pointer to a cs_mesh_t structure
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  cdoq       pointer to a cs_cdo_quantities_t structure
  * \param[in]  time_step  pointer to a time step structure
@@ -141,8 +140,7 @@ static cs_analytic_func_t *get_sol = _get_sol;
 /*----------------------------------------------------------------------------*/
 
 static void
-_cdovb_post(const cs_mesh_t            *m,
-            const cs_cdo_connect_t     *connect,
+_cdovb_post(const cs_cdo_connect_t     *connect,
             const cs_cdo_quantities_t  *cdoq,
             const cs_time_step_t       *time_step,
             const cs_equation_t        *eq,
@@ -152,7 +150,6 @@ _cdovb_post(const cs_mesh_t            *m,
 
   cs_data_info_t  dinfo;
   int  i, len;
-  cs_get_t  get;
 
   char  *postlabel = NULL;
   double  *ddip = NULL, *rpex = NULL;
@@ -254,7 +251,6 @@ cs_user_cdo_extra_op(const cs_domain_t          *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  const cs_mesh_t  *m = domain->mesh;
   const cs_cdo_connect_t  *connect = domain->connect;
   const cs_cdo_quantities_t  *cdoq = domain->cdo_quantities;
   const cs_time_step_t  *time_step = domain->time_step;
@@ -300,7 +296,7 @@ cs_user_cdo_extra_op(const cs_domain_t          *domain)
 
   switch (space_scheme) {
   case CS_SPACE_SCHEME_CDOVB:
-    _cdovb_post(m, connect, cdoq, time_step, eq, true);
+    _cdovb_post(connect, cdoq, time_step, eq, true);
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,

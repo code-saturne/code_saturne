@@ -174,6 +174,7 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local Hodge operator for a given cell using WBS algo.
+ *          Hodge op. from primal vertices to dual cells.
  *          This function is specific for vertex-based schemes
  *
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
@@ -185,13 +186,14 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_hodge_vb_wbs_get(const cs_param_hodge_t    h_info,
-                    const cs_cell_mesh_t     *cm,
-                    cs_cell_builder_t        *cb);
+cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
+                      const cs_cell_mesh_t     *cm,
+                      cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using WBS algo.
+ * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
+ *          Hodge op. from primal vertices to dual cells.
  *          This function is specific for vertex-based schemes
  *
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
@@ -203,13 +205,33 @@ cs_hodge_vb_wbs_get(const cs_param_hodge_t    h_info,
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_hodge_vb_voro_get(const cs_param_hodge_t    h_info,
-                     const cs_cell_mesh_t     *cm,
-                     cs_cell_builder_t        *cb);
+cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
+                       const cs_cell_mesh_t     *cm,
+                       cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
+ *          Hodge op. from primal edges to dual faces.
+ *          This function is specific for vertex-based schemes
+ *
+ * \param[in]      h_info    pointer to a cs_param_hodge_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ *
+ * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_locmat_t *
+cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
+                       const cs_cell_mesh_t     *cm,
+                       cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local Hodge operator for a given cell using the COST algo.
+ *          Hodge op. from primal edges to dual faces.
  *          This function is specific for vertex-based schemes
  *
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
@@ -221,9 +243,9 @@ cs_hodge_vb_voro_get(const cs_param_hodge_t    h_info,
 /*----------------------------------------------------------------------------*/
 
 cs_locmat_t *
-cs_hodge_vb_cost_get(const cs_param_hodge_t    h_info,
-                     const cs_cell_mesh_t     *cm,
-                     cs_cell_builder_t        *cb);
+cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
+                       const cs_cell_mesh_t     *cm,
+                       cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -267,4 +289,3 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
 END_C_DECLS
 
 #endif /* __CS_HODGE_H__ */
-

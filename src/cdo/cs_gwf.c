@@ -2264,6 +2264,14 @@ cs_gwf_compute(const cs_mesh_t                      *mesh,
       /* Update the moisture content */
       _update_moisture_content(connect, cdoq, richards, gw);
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
+      cs_dump_array_to_listing("DARCIAN_FLUX",
+                               connect->c2e->idx[cdoq->n_cells],
+                               gw->darcian_flux, 8);
+      cs_dump_array_to_listing("MOISTURE_CONTENT",
+                               cdoq->n_cells,
+                               gw->moisture_content->val, 8);
+#endif
     }
 
     for (int i = 0; i < gw->n_tracers; i++) {
@@ -2307,6 +2315,14 @@ cs_gwf_compute(const cs_mesh_t                      *mesh,
       /* Update the moisture content */
       _update_moisture_content(connect, cdoq, richards, gw);
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 0
+      cs_dump_array_to_listing("DARCIAN_FLUX",
+                               connect->c2e->idx[cdoq->n_cells],
+                               gw->darcian_flux, 8);
+      cs_dump_array_to_listing("MOISTURE_CONTENT",
+                               cdoq->n_cells,
+                               gw->moisture_content->val, 8);
+#endif
     }
 
     for (int i = 0; i < gw->n_tracers; i++) {
