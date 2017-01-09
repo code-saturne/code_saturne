@@ -133,8 +133,16 @@ cs_post_evm_reynolds_stresses(cs_lnum_t   n_loc_cells,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the Q criterion from Hunt et. al over a specified
- *        volumic region.
+ * \brief Compute the Q-criterion from Hunt et. al over each cell of a specified
+ *        volume region.
+ *
+ * \f[
+ *    Q = \tens{\Omega}:\tens{\Omega} -
+ *    \deviator{ \left(\tens{S} \right)}:\deviator{ \left(\tens{S} \right)}
+ * \f]
+ * where \f$\tens{\Omega}\f$ is the vorticity tensor and
+ * \f$\deviator{ \left(\tens{S} \right)}\f$ the deviatoric of the rate of strain
+ * tensor.
  *
  * \param[in]  n_loc_cells  number of cells
  * \param[in]  cell_ids     list of cell ids

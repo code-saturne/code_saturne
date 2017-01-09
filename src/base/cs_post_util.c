@@ -394,8 +394,16 @@ cs_post_evm_reynolds_stresses(cs_lnum_t   n_loc_cells,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the Q criterion from Hunt et. al over a specified
- *        volumic region.
+ * \brief Compute the Q-criterion from Hunt et. al over each cell of a specified
+ *        volume region.
+ *
+ * \f[
+ *    Q = \tens{\Omega}:\tens{\Omega} -
+ *    \deviator{ \left(\tens{S} \right)}:\deviator{ \left(\tens{S} \right)}
+ * \f]
+ * where \f$\tens{\Omega}\f$ is the vorticity tensor and
+ * \f$\deviator{ \left(\tens{S} \right)}\f$ the deviatoric of the rate of strain
+ * tensor.
  *
  * \param[in]  n_loc_cells  number of cells
  * \param[in]  cell_ids     list of cell ids
@@ -414,13 +422,6 @@ cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
   cs_halo_type_t halo_type;
   cs_gradient_type_t gradient_type;
   cs_real_33_t *gradv;
-
-  if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
-      || cs_glob_stokes_model->idilat > 1
-      || cs_glob_fluid_properties->irovar > 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Q-criterion post-processing utility function is not "
-                "available for compressible or variable-density flow."));
 
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_field_get_key_struct(CS_F_(u), key_cal_opt_id, &var_cal_opt);
@@ -442,9 +443,9 @@ cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
 
   for (cs_lnum_t i = 0; i < n_loc_cells; i++) {
     cs_lnum_t c_id = cell_ids[i];
-    q_crit[i] = -0.5 * (   cs_math_sq(gradv[c_id][0][0])
-                        +  cs_math_sq(gradv[c_id][1][1])
-                        +  cs_math_sq(gradv[c_id][2][2]))
+    q_crit[i] = -1./6. * (   cs_math_sq(gradv[c_id][0][0])
+                          +  cs_math_sq(gradv[c_id][1][1])
+                          +  cs_math_sq(gradv[c_id][2][2]))
                 - gradv[c_id][0][1]*gradv[c_id][1][0]
                 - gradv[c_id][0][2]*gradv[c_id][2][0]
                 - gradv[c_id][1][2]*gradv[c_id][2][1];
