@@ -926,7 +926,7 @@ _manage_error(cs_lnum_t                       failsafe_mode,
   cs_lagr_particle_set_real(particle, attr_map, CS_LAGR_TR_TRUNCATE, d1/d0);
 
   if (error_type == CS_LAGR_TRACKING_ERR_LOST_PIC)
-    cs_lagr_particle_set_lnum(particle, attr_map, CS_LAGR_TR_TRUNCATE, 2.0);
+    cs_lagr_particle_set_real(particle, attr_map, CS_LAGR_TR_TRUNCATE, 2.0);
 
   if (failsafe_mode == 1) {
     switch (error_type) {
@@ -3371,7 +3371,7 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
     cs_lnum_t cur_part_cell_num
       = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM);
     cs_real_t r_truncate
-      = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_TR_TRUNCATE);
+      = cs_lagr_particles_get_real(particles, i, CS_LAGR_TR_TRUNCATE);
 
     if (cur_part_cell_num < 0)
       _tracking_info(particles, i)->state = CS_LAGR_PART_STUCK;

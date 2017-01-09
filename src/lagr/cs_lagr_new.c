@@ -518,6 +518,8 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
     cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, -1);
 
+    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TR_TRUNCATE, 0);
+
   }
 
   for (int i = 0; i < 3; i++)
