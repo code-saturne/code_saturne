@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_cdo.h"
@@ -103,7 +104,7 @@ typedef struct { /* TODO: remove what is the less necessary in order to
 typedef struct { /* Specific mesh quantities */
 
   /* Global mesh quantities */
-  double        vol_tot;
+  double           vol_tot;
 
   /* Cell-based quantities */
   cs_lnum_t        n_cells;
@@ -143,6 +144,44 @@ typedef struct { /* Specific mesh quantities */
 /*============================================================================
  * Global variables
  *============================================================================*/
+
+/*=============================================================================
+ * Inline static function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the area of the triangle of base given by q (related to a
+ *         segment) with apex located at xa
+ *
+ * \param[in]  q    pointer to a cs_quant_t structure related to a segment
+ * \param[in]  xa   coordinates of the apex to consider
+ *
+ * \return the value the area of the triangle
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static double
+cs_compute_area_from_quant(const cs_quant_t   q,
+			   const cs_real_t   *xa)
+{
+  double  xef[3], xef_un[3], cp[3];
+  xef[0] = xa[0] - q.center[0];
+  xef[1] = xa[1] - q.center[1];
+  xef[2] = xa[2] - q.center[2];
+
+  const double  xef_len = cs_math_3_norm(xef);
+  const double  inv_len = 1/xef_len;
+
+  xef_un[0] = inv_len * xef[0];
+  xef_un[1] = inv_len * xef[1];
+  xef_un[2] = inv_len * xef[2];
+
+  cs_math_3_cross_product(xef_un, q.unitv, cp);
+
+  /* tef = ||(center -xa) x e||/2 */
+  return 0.5 * xef_len * q.meas * cs_math_3_norm(cp);
+}
 
 /*============================================================================
  * Public function prototypes

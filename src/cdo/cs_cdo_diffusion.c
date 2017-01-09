@@ -237,18 +237,18 @@ cs_cdovcb_diffusion_flux_op(const cs_face_mesh_t     *fm,
   cs_real_3_t  *mng_ef = cb->vectors;
   cs_real_3_t  *u_vc = cb->vectors + fm->n_vf;
 
+  const cs_quant_t  pfq = fm->face;
+  const cs_nvec3_t  deq = fm->dedge;
+
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
-  cs_compute_grdc(fm, grd_c);
+  cs_compute_grdfc(fm->f_sgn, pfq, deq, grd_c);
 
   const cs_real_t  mng_cf = _dp3(pty_nuf, grd_c); // (pty_tensor * nu_f).grd_c
 
   /* Compute xc --> xv length and unit vector for all face vertices */
   for (short int v = 0; v < fm->n_vf; v++)
     cs_math_3_length_unitv(fm->xc, fm->xv + 3*v, l_vc + v, u_vc[v]);
-
-  const cs_quant_t  pfq = fm->face;
-  const cs_nvec3_t  deq = fm->dedge;
 
   /* Compute a weight for each vertex of the current face */
   for (short int e = 0; e < fm->n_ef; e++) {
@@ -339,8 +339,7 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
   cs_real_3_t  grd_f, grd_v1, grd_v2, grd_c;
 
   /* Useful quantities are stored in cb->values and cb->vectors */
-  cs_real_t  *wtef = cb->values;
-  cs_real_t  *l_vc = cb->values + fm->n_vf;
+  cs_real_t  *l_vc = cb->values;
   cs_real_3_t  *mng_ef = cb->vectors;
   cs_real_3_t  *u_vc = cb->vectors + fm->n_vf;
 
@@ -351,7 +350,10 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
 
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
-  cs_compute_grdc(fm, grd_c);
+  const cs_quant_t  pfq = fm->face;
+  const cs_nvec3_t  deq = fm->dedge;
+
+  cs_compute_grdfc(fm->f_sgn, pfq, deq, grd_c);
 
   const cs_real_t  mng_cf = _dp3(pty_nuf, grd_c); // (pty_tensor * nu_f).grd_c
 
@@ -359,20 +361,14 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
   for (short int v = 0; v < fm->n_vf; v++)
     cs_math_3_length_unitv(fm->xc, fm->xv + 3*v, l_vc + v, u_vc[v]);
 
-  const cs_quant_t  pfq = fm->face;
-  const cs_nvec3_t  deq = fm->dedge;
-
   /* Compute a weight for each vertex of the current face */
   for (short int e = 0; e < fm->n_ef; e++) {
 
-    const short int  v1 = fm->e2v_ids[2*e];
-    const short int  v2 = fm->e2v_ids[2*e+1];
-    const double  tef = fm->tef[e];
-
-    wtef[e] = tef * cs_math_onetwelve;
-
     /* Gradient of the Lagrange function related to v1 and v2 */
-    cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])u_vc, l_vc,
+    cs_compute_grd_ve(fm->e2v_ids[2*e],
+		      fm->e2v_ids[2*e+1],
+		      deq,
+		      (const cs_real_t (*)[3])u_vc, l_vc,
                       grd_v1, grd_v2);
 
     /* Gradient of the Lagrange function related to a face.
@@ -380,7 +376,7 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
     for (int k = 0; k < 3; k++)
       grd_f[k] = -(grd_c[k] + grd_v1[k] + grd_v2[k]);
 
-    const double  tef_coef = tef * cs_math_onethird;
+    const double  tef_coef = fm->tef[e] * cs_math_onethird;
     mng_ef[e][0] = _dp3(pty_nuf, grd_v1) * tef_coef;
     mng_ef[e][1] = _dp3(pty_nuf, grd_v2) * tef_coef;
     mng_ef[e][2] = _dp3(pty_nuf, grd_f)  * tef_coef;
@@ -556,18 +552,13 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t       h_info,
     if (cbc->face_flag[i] & CS_CDO_BC_DIRICHLET ||
         cbc->face_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
 
-      const short int  f = cbc->bf_ids[i];
-
       /* Compute the face-view of the mesh */
-      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
-
-      /* Geometrical quantities related to this face */
-      const cs_quant_t  pfq = fm->face;
+      cs_face_mesh_build_from_cell_mesh(cm, cbc->bf_ids[i], fm);
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
       cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat,
-                           pfq.unitv,
+                           fm->face.unitv,
                            pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
@@ -575,7 +566,7 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t       h_info,
       flux_op(fm, cm, pty_nuf, h_info.coef, cb, cb->loc);
 
       /* Update the RHS and the local system matrix */
-      _enforce_nitsche(chi * pow(pfq.meas,-0.5), // Penalization coeff.
+      _enforce_nitsche(chi * pow(fm->face.meas,-0.5), // Penalization coeff.
                        h_info,
                        fm, cbc,
                        cb->loc, cb, csys);
@@ -624,18 +615,13 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t        h_info,
     if (cbc->face_flag[i] & CS_CDO_BC_DIRICHLET ||
         cbc->face_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
 
-      const short int  f = cbc->bf_ids[i];
-
       /* Compute the face-view of the mesh */
-      cs_face_mesh_build_from_cell_mesh(cm, f, fm);
-
-      /* Geometrical quantities related to this face */
-      const cs_quant_t  pfq = fm->face;
+      cs_face_mesh_build_from_cell_mesh(cm, cbc->bf_ids[i], fm);
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
       cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat,
-                           pfq.unitv,
+                           fm->face.unitv,
                            pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
@@ -652,7 +638,7 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t        h_info,
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
-      _enforce_nitsche(chi * pow(pfq.meas,-0.5), // Penalization coeff.
+      _enforce_nitsche(chi * pow(fm->face.meas,-0.5), // Penalization coeff.
                        h_info,
                        fm, cbc,
                        cb->loc, cb, csys);
@@ -739,8 +725,9 @@ cs_cdovb_diffusion_get_hodge_flux(const cs_cell_mesh_t      *cm,
   double  *gec = cb->values;
   for (short int e = 0; e < cm->n_ec; e++) {
 
-    const short int  sgn_v1 = cm->e2v_sgn[2*e]; // sgn_v2 = -sgn_v1
-    gec[e] = sgn_v1*(pot[cm->e2v_ids[2*e+1]] - pot[cm->e2v_ids[2*e]]);
+    const short int  *v_ids = cm->e2v_ids + 2*e;
+    // sgn_v2 = -sgn_v1
+    gec[e] = cm->e2v_sgn[2*e]*(pot[v_ids[1]] - pot[v_ids[0]]);
 
   } // Loop on cell edges
 
@@ -777,14 +764,12 @@ cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
   /* Temporary buffers */
   cs_real_3_t  *u_vc = cb->vectors;
   double  *l_vc = cb->values;
-  double  *tef = cb->values + cm->n_vc;
 
   const double  *p_v = pot;
   const double  p_c = pot[cm->n_vc];
 
   /* Reset local fluxes */
-  for (short int e = 0; e < cm->n_ec; e++)
-    flx[e] = 0.;
+  for (short int e = 0; e < cm->n_ec; e++) flx[e] = 0.;
 
   /* Store segments xv --> xc for this cell */
   for (short int v = 0; v < cm->n_vc; v++)
@@ -793,54 +778,58 @@ cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
   /* Loop on cell faces */
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    cs_nvec3_t  deq = cm->dedge[f];
+    const cs_quant_t  pfq = cm->face[f];
+    const cs_nvec3_t  deq = cm->dedge[f];
 
     /* Compute for the current face:
        - the area of each triangle defined by a base e and an apex f
        - the gradient of the Lagrange function related xc in p_{f,c} */
-    cs_compute_tef_grdc(f, cm, tef, grd_c);
+    cs_compute_grdfc(cm->f_sgn[f], pfq, deq, grd_c);
+
+    const short int  *f2e_idx = cm->f2e_idx + f;
+    const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
+    const double  *tef = cm->tef + f2e_idx[0];
 
     /* Compute the reconstructed value of the potential at p_f */
     double  p_f = 0.;
-    for (int i = cm->f2e_idx[f], ii = 0; i < cm->f2e_idx[f+1]; i++, ii++) {
+    for (short int e = 0; e < f2e_idx[1]-f2e_idx[0]; e++) {
 
-      const short int  eshft = 2*cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[eshft];
-      const short int  v2 = cm->e2v_ids[eshft+1];
+      const short int  ee = 2*f2e_ids[e];
 
-      p_f += tef[ii]*(p_v[v1] + p_v[v2]);
+      p_f += tef[e]*(  p_v[cm->e2v_ids[ee]]      // p_v1
+		     + p_v[cm->e2v_ids[ee+1]] ); // p_v2
     }
-    p_f *= 0.5/cm->face[f].meas;
+    p_f *= 0.5/pfq.meas;
 
     const double  dp_cf = p_c - p_f;
+    const cs_lnum_t  f_id = cm->f_ids[f];
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
-    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+    for (short int e = 0; e < f2e_idx[1]-f2e_idx[0]; e++) {
 
-      const short int  e = cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[2*e];
-      const short int  v2 = cm->e2v_ids[2*e+1];
+      const short int  ee = 2*f2e_ids[e];
+      const short int  v1 = cm->e2v_ids[ee];
+      const short int  v2 = cm->e2v_ids[ee+1];
 
       cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])u_vc, l_vc,
                         grd_v1, grd_v2);
-
-      const double  dp_v1f = p_v[v1] - p_f;
-      const double  dp_v2f = p_v[v2] - p_f;
 
       /* Gradient of the lagrange function related to a face.
          grd_f = -(grd_c + grd_v1 + grd_v2)
          This formula is a consequence of the Partition of the Unity.
          This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
       for (int k = 0; k < 3; k++)
-        grd_pef[k] = dp_cf*grd_c[k] + dp_v1f*grd_v1[k] + dp_v2f*grd_v2[k];
+        grd_pef[k] = dp_cf          *grd_c[k]  +
+	             (p_v[v1] - p_f)*grd_v1[k] +
+	             (p_v[v2] - p_f)*grd_v2[k];
 
       cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, grd_pef, mgrd);
 
       const cs_dface_t  dfq = dface[e];
-      if (cm->f_ids[f] == dfq.parent_id[0])
+      if (f_id == dfq.parent_id[0])
         flx[e] -= dfq.sface[0].meas * _dp3(dfq.sface[0].unitv, mgrd);
       else {
-        assert(cm->f_ids[f] == dfq.parent_id[1]);
+        assert(f_id == dfq.parent_id[1]);
         flx[e] -= dfq.sface[1].meas * _dp3(dfq.sface[1].unitv, mgrd);
       }
 
@@ -891,12 +880,11 @@ cs_cdo_diffusion_face_flux(const cs_face_mesh_t      *fm,
 
   /* Compute for the current face, the gradient of the Lagrange function
      related xc in p_{f,c} */
-  cs_compute_grdc(fm, grd_c);
+  cs_compute_grdfc(fm->f_sgn, fm->face, fm->dedge, grd_c);
 
   /* Compute p_c - p_f (where p_c is the reconstructed values at the
      cell center */
   const double  dp_cf = p_c - p_f;
-  const cs_nvec3_t  deq = fm->dedge;
 
   /* Loop on face edges to scan p_{ef,c} subvolumes */
   for (int e = 0; e < fm->n_ef; e++) {
@@ -906,22 +894,20 @@ cs_cdo_diffusion_face_flux(const cs_face_mesh_t      *fm,
 
     /* Compute the gradient of the Lagrange function related xv1, xv2
        in each p_{ef,c} for e in E_f */
-    cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])u_vc, l_vc,
+    cs_compute_grd_ve(v1, v2, fm->dedge, (const cs_real_t (*)[3])u_vc, l_vc,
                       grd_v1, grd_v2);
-
-    const double  dp_v1f = p_v[v1] - p_f;
-    const double  dp_v2f = p_v[v2] - p_f;
 
     /* Gradient of the lagrange function related to a face.
        grd_f = -(grd_c + grd_v1 + grd_v2)
        This formula is a consequence of the Partition of the Unity.
-       This yields the following formula for grd(Lv^conf)|_p_{ef,c}
-    */
+       This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
     for (int k = 0; k < 3; k++)
-      grd_pef[k] = dp_cf*grd_c[k] + dp_v1f*grd_v1[k] + dp_v2f*grd_v2[k];
+      grd_pef[k] =  dp_cf          *grd_c[k]  +
+	           (p_v[v1] - p_f) *grd_v1[k] +
+                   (p_v[v2] - p_f) *grd_v2[k];
 
     /* Area of the triangle defined by the base e and the apex f */
-    f_flux -= cs_compute_tef(e, fm) * _dp3(mnuf, grd_pef);
+    f_flux -= fm->tef[e] * _dp3(mnuf, grd_pef);
 
   } // Loop on face edges
 

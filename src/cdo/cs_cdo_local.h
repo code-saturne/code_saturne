@@ -124,25 +124,23 @@ typedef struct {
 
 typedef struct {
 
-  short int    n_max_vbyc;
-  short int    n_max_ebyc;
-  short int    n_max_fbyc;
+  short int      n_max_vbyc;
+  short int      n_max_ebyc;
+  short int      n_max_fbyc;
 
   cs_lnum_t      c_id;    // id of related cell
   fvm_element_t  type;    // type of element related to this cell
   cs_flag_t      flag;    // indicate which quantities are defined
-  cs_real_t     *xc;      // pointer to the coordinates of the cell center
+  cs_real_3_t    xc;      // coordinates of the cell center
   double         vol_c;   // volume of the current cell
 
   /* Vertex information */
-  short int   *vtag;   // link between mesh and cell-wise numbering (-1 not set)
   short int    n_vc;   // local number of vertices in a cell
   cs_lnum_t   *v_ids;  // vertex ids on this rank
   double      *xv;     // local vertex coordinates (copy)
   double      *wvc;    // weight |vol_dc(v) cap vol_c|/|vol_c for each cell vtx
 
   /* Edge information */
-  short int   *etag;   // link between mesh and cell-wise numbering (-1 not set)
   short int    n_ec;   // local number of edges in a cell
   cs_lnum_t   *e_ids;  // edge ids on this rank
   cs_quant_t  *edge;   // local edge quantities (xe, length and unit vector)
@@ -159,13 +157,13 @@ typedef struct {
   short int   *e2v_ids;  // cell-wise edge -> vertices connectivity
   short int   *e2v_sgn;  // cell-wise edge -> vertices orientation (-1 or +1)
 
-  /* Local f2e connectivity: size = n_fc*n_max_ebyf */
+  /* Local f2e connectivity: size = 2*n_max_ebyc */
   short int   *f2e_idx;  // size n_fc + 1
-  short int   *f2e_ids;  // size f2e_idx[n_fc]
+  short int   *f2e_ids;  // size 2*n_max_ebyc
+  double      *tef;      // |tef| area of the triangle of base |e| and apex xf
 
   /* Local e2f connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
   short int   *e2f_ids;  // cell-wise edge -> faces connectivity
-  short int   *e2f_sgn;  // cell-wise edge -> faces orientation (-1 or +1)
 
 } cs_cell_mesh_t;
 
@@ -180,7 +178,7 @@ typedef struct {
   short int    n_max_vbyf; // = n_max_ebyf
 
   cs_lnum_t    c_id;    // id of related cell
-  cs_real_t   *xc;      // pointer to the coordinates of the cell center
+  cs_real_3_t  xc;      // pointer to the coordinates of the cell center
 
   /* Face information */
   cs_lnum_t    f_id;    // local mesh face id

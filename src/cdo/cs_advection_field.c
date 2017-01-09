@@ -1001,26 +1001,21 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
     bft_error(__FILE__, __LINE__, 0,
               " fluxes array should be allocated before the call.");
 
-  cs_lnum_t  _i, jf, je, k;
-  cs_nvec3_t  adv_vect;
-
   const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
-  const cs_connect_index_t  *c2e = connect->c2e;
+  const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
 
   if (adv->desc.state & CS_FLAG_STATE_UNIFORM ||
       adv->desc.state & CS_FLAG_STATE_CELLWISE) {
 
+    cs_nvec3_t  adv_vect;
+    const cs_dface_t  *qdf = cdoq->dface + c2e_idx[0];
+
     cs_advection_field_get_cell_vector(c_id, adv, &adv_vect);
 
     /* Loop on cell edges */
-    for (je = c2e->idx[c_id], _i = 0; je < c2e->idx[c_id+1]; je++, _i++) {
-
-      const cs_dface_t  qdf = cdoq->dface[je];
-
-      fluxes[_i] = adv_vect.meas * _dp3(adv_vect.unitv, qdf.vect);
-
-    } // Loop on cell edges
+    for (short int e = 0; e < c2e_idx[1] - c2e_idx[0]; e++)
+      fluxes[e] = adv_vect.meas * _dp3(adv_vect.unitv, qdf[e].vect);
 
   } /* Uniform in this cell */
   else {
@@ -1029,56 +1024,82 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
 
     case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
       {
-
         const double  t_cur = cs_time_step->t_cur;
         const cs_real_t  *xc = cdoq->cell_centers + 3*c_id;
+	const cs_dface_t  *qdf = cdoq->dface + c2e_idx[0];
+	const cs_lnum_t  *c2e_ids = connect->c2e->ids + c2e_idx[0];
 
         /* Loop on cell edges */
-        for (je = c2e->idx[c_id], _i = 0; je < c2e->idx[c_id+1]; je++, _i++) {
+        for (short int e = 0; e < c2e_idx[1] - c2e_idx[0]; e++) {
 
-          const cs_dface_t  qdf = cdoq->dface[je];
-          const cs_lnum_t  e_id = c2e->ids[je];
-          const cs_quant_t  qe = cdoq->edge[e_id];
+          const cs_quant_t  qe = cdoq->edge[c2e_ids[e]];
 
-          fluxes[_i] = 0.;
+          fluxes[e] = 0.;
+	  switch (a_info.quad_type) {
 
-          for (jf = 0; jf < 2; jf++) {
+	  case CS_QUADRATURE_BARY:
+	  case CS_QUADRATURE_BARY_SUBDIV:
+	    {
+	      cs_real_3_t  xg[2], adv_xg[2];
 
-            const cs_nvec3_t  tef = qdf.sface[jf];
-            const cs_lnum_t  f_id = qdf.parent_id[jf];
-            const cs_quant_t  qf = cdoq->face[f_id];
+	      // Two triangles composing the dual face inside a cell
+	      const cs_nvec3_t  sef0 = qdf[e].sface[0];
+	      const cs_quant_t  qf0 = cdoq->face[qdf[e].parent_id[0]];
+	      const cs_nvec3_t  sef1 = qdf[e].sface[1];
+	      const cs_quant_t  qf1 = cdoq->face[qdf[e].parent_id[1]];
 
-            switch (a_info.quad_type) {
+	      for (int k = 0; k < 3; k++) {
+		const double  xec = xc[k] + qe.center[k];
+		xg[0][k] = xec + qf0.center[k];
+		xg[0][k] *= cs_math_onethird;
+		xg[1][k] = xec + qf1.center[k];
+		xg[1][k] *= cs_math_onethird;
+	      }
 
-            case CS_QUADRATURE_BARY:
-            case CS_QUADRATURE_BARY_SUBDIV:
-              {
-                cs_real_3_t  xg, adv_cell;
+	      adv->def.analytic(t_cur, 2, (const cs_real_t *)xg,
+				(cs_real_t *)adv_xg);
+	      fluxes[e] = sef0.meas * _dp3(adv_xg[0], sef0.unitv)
+		        + sef1.meas * _dp3(adv_xg[1], sef1.unitv);
+	    }
+	    break;
 
-                for (k = 0; k < 3; k++)
-                  xg[k] = cs_math_onethird *(xc[k]+qe.center[k]+qf.center[k]);
-                adv->def.analytic(t_cur, 1, (const cs_real_t *)xg, adv_cell);
-                fluxes[_i] += tef.meas * _dp3(adv_cell, tef.unitv);
-              }
-              break;
+	  case CS_QUADRATURE_HIGHER:
+	    {
+	      cs_real_t  w;
+	      cs_real_3_t  gpts[3], eval[3];
+	      cs_nvec3_t  sef;
+	      cs_quant_t  qf;
 
-            case CS_QUADRATURE_HIGHER:
-              {
-                cs_real_t  w;
-                cs_real_3_t  gpts[3], eval[3];
+	      // Two triangles composing the dual face inside a cell
+	      sef = qdf[e].sface[0];
+	      qf = cdoq->face[qdf[e].parent_id[0]];
+	      cs_quadrature_tria_3pts(qe.center, qf.center, xc, sef.meas,
+				      gpts, &w);
 
-                cs_quadrature_tria_3pts(qe.center, qf.center, xc, tef.meas,
-                                        gpts, &w);
+	      /* Evaluate the field at the three quadrature points */
+	      adv->def.analytic(t_cur, 3, (const cs_real_t *)gpts,
+				(cs_real_t *)eval);
 
-                /* Evaluate the field at the three quadrature points */
-                adv->def.analytic(t_cur, 3, (const cs_real_t *)gpts,
-                                  (cs_real_t *)eval);
+	      cs_real_t  add0 = 0;
+	      for (int p = 0; p < 3; p++) add0 += _dp3(eval[p], sef.unitv);
+	      add0 *= w;
 
-                cs_real_t  add = 0;
-                for (int p = 0; p < 3; p++) add += _dp3(eval[p], tef.unitv);
-                fluxes[_i] += add * w;
-              }
-              break;
+	      sef = qdf[e].sface[1];
+	      qf = cdoq->face[qdf[e].parent_id[1]];
+	      cs_quadrature_tria_3pts(qe.center, qf.center, xc, sef.meas,
+				      gpts, &w);
+
+	      /* Evaluate the field at the three quadrature points */
+	      adv->def.analytic(t_cur, 3, (const cs_real_t *)gpts,
+				(cs_real_t *)eval);
+
+	      cs_real_t  add1 = 0;
+	      for (int p = 0; p < 3; p++) add1 += _dp3(eval[p], sef.unitv);
+	      add1 *= w;
+
+	      fluxes[e] = add0 + add1;
+	    }
+	    break;
 
             case CS_QUADRATURE_HIGHEST: // Not yet implemented
             default:
@@ -1087,8 +1108,6 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
 
             } // switch type of quadrature
 
-          } // Loop on the two triangles composing the dual face inside a cell
-
         } // Loop on cell edges
 
       } // definition by analytic function
@@ -1096,11 +1115,15 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
 
     case CS_PARAM_DEF_BY_ARRAY:
       {
+	const cs_real_t  *flux = adv->array + c2e_idx[0];
+
         /* Test if location has at least the pattern of the reference support */
-        if (cs_cdo_same_support(adv->array_desc.location, cs_cdo_dual_face_byc))
-          for (je = c2e->idx[c_id], _i = 0; je < c2e->idx[c_id+1]; je++, _i++)
-            fluxes[_i] = adv->array[je];
-        else
+        if (cs_cdo_same_support(adv->array_desc.location,
+				cs_cdo_dual_face_byc)) {
+	  for (short int e = 0; e < c2e_idx[1] - c2e_idx[0]; e++)
+            fluxes[e] = flux[e];
+	}
+	else
           bft_error(__FILE__, __LINE__, 0,
                     " Invalid support for evaluating the advection field %s"
                     " at the cell center of cell %d.", adv->name, c_id);
@@ -1152,8 +1175,7 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
   const cs_real_t  *xv1 = cm->xv + 3*v1;
   const cs_real_t  *xv2 = cm->xv + 3*v2;
   const cs_quant_t  pfq = cm->face[f];
-
-  cs_real_t  tef = cs_math_surftri(xv1, xv2, pfq.center);
+  const cs_real_t  tef = cm->tef[cm->f2e_idx[f] + e];
 
   /* Compute the flux accros the portion of primal face */
   switch (adv->def_type) {

@@ -728,7 +728,7 @@ _vcb_cellwise_consistent_part(const cs_nvec3_t            adv_cell,
 
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
-  cs_compute_grdc(fm, grd_c);
+  cs_compute_grdfc(fm->f_sgn, pfq, deq, grd_c);
 
   const double  bgc = _dp3(grd_c, adv_cell.unitv);
   const double  pfc_bgc = adv_cell.meas * pfc_vol * bgc;
@@ -845,7 +845,8 @@ _vcb_consistent_part(const cs_adv_field_t     *adv_field,
   const int  n_sysf = fm->n_vf + 1;
   const cs_nvec3_t  deq = fm->dedge;
   const cs_quant_t  pfq = fm->face;
-  const double  hf_coef = cs_math_onethird * _dp3(pfq.unitv,deq.unitv)*deq.meas;
+  const double  hfc = _dp3(pfq.unitv,deq.unitv)*deq.meas;
+  const double  hf_coef = cs_math_onethird * hfc;
 
   /* Useful quantities are stored in cb->values and cb->vectors */
   cs_locmat_t  *af = cb->aux;
@@ -861,7 +862,8 @@ _vcb_consistent_part(const cs_adv_field_t     *adv_field,
 
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
-  cs_compute_grdc(fm, grd_c);
+  const cs_real_t ohf = -fm->f_sgn/hfc;
+  for (int k = 0; k < 3; k++) grd_c[k] = ohf * pfq.unitv[k];
 
   const double  bgcc = _dp3(grd_c, adv_cell.unitv);
 
@@ -1075,7 +1077,8 @@ _vcb_stabilization_part2(const cs_cell_mesh_t        *cm,
 
   for (short int e = 0; e < cm->n_ec; e++) {
 
-    const double  tec = stab_coef * cs_compute_tec(e, cm);
+    const double  tec = stab_coef * cs_compute_area_from_quant(cm->edge[e],
+							       cm->xc);
     const short int  eshift = 2*e;
     const short int  v1 = cm->e2v_ids[eshift];
     const short int  v2 = cm->e2v_ids[eshift+1];

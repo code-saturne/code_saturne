@@ -43,7 +43,6 @@
 #include <bft_mem.h>
 
 #include "cs_log.h"
-#include "cs_math.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 
