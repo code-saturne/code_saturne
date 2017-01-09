@@ -319,7 +319,7 @@ cs_source_term_def_by_analytic(cs_source_term_t     *st,
 
   st->def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
   st->def.analytic = func;
-  st->quad_type = CS_QUADRATURE_BARY;
+  st->quad_type = CS_QUADRATURE_BARY_SUBDIV;
   st->array_desc.location = 0;
   st->array_desc.state = 0;
   st->array = NULL;
@@ -1401,7 +1401,6 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_source_term_t    *source,
 {
   double  sum, weights[5], results[5];
   cs_real_3_t  gauss_pts[5];
-
   if (source == NULL)
     return;
 
