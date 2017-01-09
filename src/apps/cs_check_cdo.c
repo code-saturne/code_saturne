@@ -884,7 +884,6 @@ _test_cdovb_schemes(FILE             *out,
   /* ADVECTION: BOUNDARY FLUX OPERATOR */
   /* ================================= */
 
-
   /* SOURCE TERM */
   /* =========== */
 
@@ -1077,10 +1076,11 @@ _test_cdovb_schemes(FILE             *out,
 /*----------------------------------------------------------------------------*/
 
 int
-main (int argc, char *argv[])
+main(int    argc,
+     char  *argv[])
 {
   CS_UNUSED(argc);
-  CS8UNUSED(argv);
+  CS_UNUSED(argv);
 
   hexa = fopen("CDO_Test_Hexa.log", "w");
   tetra = fopen("CDO_Test_Tetra.log", "w");
@@ -1178,3 +1178,7 @@ main (int argc, char *argv[])
   printf(" --> CDO Tests (Done)\n");
   exit (EXIT_SUCCESS);
 }
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS

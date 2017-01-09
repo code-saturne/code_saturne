@@ -1158,7 +1158,7 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
 
       const int  ee = 2*e;
       const cs_nvec3_t  sef0c = cm->sefc[ee], sef1c = cm->sefc[ee+1];
-      const cs_real_3_t *tens = cb->pty_mat;
+      const cs_real_3_t *tens = (const cs_real_3_t *)cb->pty_mat;
 
       cs_real_3_t  mv;
 
@@ -1445,7 +1445,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
         /* Assemble the resulting vector */
         for (short int v = 0; v < cm->n_vc; v++)
-#pragma omp atomic update
+#pragma   omp atomic
           result[cm->v_ids[v]] += cb->values[v];
         break;
 
@@ -1458,7 +1458,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
         /* Assemble the resulting vector */
         for (short int e = 0; e < cm->n_vc; e++)
-#pragma omp atomic update
+#pragma omp atomic
           result[cm->e_ids[e]] += cb->values[e];
         break;
 
