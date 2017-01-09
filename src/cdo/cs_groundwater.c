@@ -70,6 +70,8 @@ BEGIN_C_DECLS
  * Local macro definitions
  *============================================================================*/
 
+#define CS_GROUNDWATER_DBG 1
+
 /* Tag dedicated to build a flag for the groundwater module */
 /*   1: post the moisture content */
 #define CS_GROUNDWATER_POST_MOISTURE  (1 <<  0)
@@ -168,6 +170,7 @@ struct _groundwater_t {
   cs_real_t  *work;
 
 };
+
 
 /*============================================================================
  * Static global variables
@@ -605,22 +608,17 @@ _update_head(const cs_cdo_connect_t      *connect,
              const cs_equation_t         *richards,
              cs_groundwater_t            *gw)
 {
-  /* Sanity checks */
-  if (gw == NULL) bft_error(__FILE__, __LINE__, 0,  _err_empty_gw);
-  if (richards == NULL)
-    bft_error(__FILE__, __LINE__, 0," Richards eq. is not allocated.");
-
   cs_field_t  *h_head = gw->hydraulic_head;
 
   /* Sanity check */
   assert(h_head->location_id == cs_mesh_location_get_id_by_name(N_("cells")));
 
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(h_head);
+
   switch (cs_equation_get_space_scheme(richards)) {
   case CS_SPACE_SCHEME_CDOVB:
     {
-      /* Copy current field values to previous values */
-      cs_field_current_to_previous(h_head);
-
       cs_field_t  *h_head_vtx = cs_equation_get_field(richards);
 
       /* Sanity check */
@@ -639,9 +637,6 @@ _update_head(const cs_cdo_connect_t      *connect,
   case CS_SPACE_SCHEME_CDOVCB:
     {
       const cs_real_t  *hh_vals = cs_equation_get_cell_values(richards);
-
-      /* Copy current field values to previous values */
-      cs_field_current_to_previous(h_head);
 
       /* Copy values at cells center into this field */
       memcpy(h_head->val, hh_vals, sizeof(cs_real_t)*cdoq->n_cells);
@@ -697,14 +692,9 @@ _update_moisture_content(const cs_cdo_quantities_t   *cdoq,
                          const cs_equation_t         *richards,
                          cs_groundwater_t            *gw)
 {
-  /* Sanity checks */
-  if (richards == NULL || gw == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              " Groundwater module or Richards eq. is not allocated.");
-
+  CS_UNUSED(richards);
   cs_field_t  *moisture = gw->moisture_content;
 
-  /* Sanity checks */
   if (moisture == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " The field related to the moisture content is not allocated.");
@@ -734,8 +724,7 @@ _update_moisture_content(const cs_cdo_quantities_t   *cdoq,
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-          cs_get_t  get;
-
+          cs_get_t  get; // should remain in the openMP loop
           _moisture_by_genuchten_law(h->val[c_id], (const void *)soil, &get);
           moisture->val[c_id] = get.val;
 
@@ -749,9 +738,9 @@ _update_moisture_content(const cs_cdo_quantities_t   *cdoq,
 # pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
 
-          cs_get_t  get;
           const cs_lnum_t  c_id = elt_ids[i];
 
+          cs_get_t  get; // should remain in the openMP loop
           _moisture_by_genuchten_law(h->val[c_id], (const void *)soil, &get);
           moisture->val[c_id] = get.val;
 
@@ -766,12 +755,11 @@ _update_moisture_content(const cs_cdo_quantities_t   *cdoq,
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-          cs_get_t  get;
-
+          cs_get_t  get; // should remain in the openMP loop
           _moisture_by_tracy_law(h->val[c_id], (const void *)soil, &get);
           moisture->val[c_id] = get.val;
 
-        } // Loop on cells
+        } // Loop on all cells
 
       }
       else {
@@ -781,9 +769,9 @@ _update_moisture_content(const cs_cdo_quantities_t   *cdoq,
 # pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
 
-          cs_get_t  get;
           const cs_lnum_t  c_id = elt_ids[i];
 
+          cs_get_t  get;
           _moisture_by_tracy_law(h->val[c_id], (const void *)soil, &get);
           moisture->val[c_id] = get.val;
 
@@ -1214,7 +1202,8 @@ cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
   /* Advection field induced by the hydraulic head */
   gw->adv_field = adv_field;
 
-  /* Up to now Richards equation is only set with vertex-based schemes */
+  /* Up to now Richards equation is only set with vertex-based schemes
+     TODO: Face-based schemes */
   BFT_MALLOC(gw->darcian_flux, c2e->idx[n_cells], cs_real_t);
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < c2e->idx[n_cells]; i++)
@@ -1827,7 +1816,9 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
   } // Loop on the different type of soils
 
-  { /* Define and then link the advection field to each tracer equations */
+  { /* Define and then link the advection field to each tracer equations
+       TODO: Adapt the definition for face-based schemes
+     */
     cs_desc_t  desc = {.location = CS_FLAG_SCALAR | cs_cdo_dual_face_byc,
                        .state = CS_FLAG_STATE_FLUX};
 
@@ -1997,7 +1988,6 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]      do_logcvg  output information on convergence or not
  * \param[in, out] eqs        array of pointers to cs_equation_t structures
  * \param[in, out] gw         pointer to a cs_groundwater_t structure
  */
@@ -2009,7 +1999,6 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
                        double                        dt_cur,
                        const cs_cdo_connect_t       *connect,
                        const cs_cdo_quantities_t    *cdoq,
-                       bool                          do_logcvg,
                        cs_equation_t                *eqs[],
                        cs_groundwater_t             *gw)
 {
@@ -2022,6 +2011,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
   cs_equation_t  *richards = eqs[gw->richards_eq_id];
 
   /* Sanity check */
+  assert(richards != NULL);
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
 
   if (nt_cur == 0) {
@@ -2032,7 +2022,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
        - initialize source term */
     cs_equation_init_system(mesh, richards);
 
-    /* Update hydraulic/pressure head */
+    /* Initialize hydraulic/pressure head */
     _update_head(connect, cdoq, richards, gw);
 
     /* Build and solve the linear system related to the Richards equations */
@@ -2042,7 +2032,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
       cs_equation_build_system(mesh, time_step, dt_cur, richards);
 
       /* Solve the algebraic system */
-      cs_equation_solve(richards, do_logcvg);
+      cs_equation_solve(richards);
 
       /* Update hydraulic/pressure head */
       _update_head(connect, cdoq, richards, gw);
@@ -2067,7 +2057,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
         cs_equation_build_system(mesh, time_step, dt_cur, eq);
 
         /* Solve the algebraic system */
-        cs_equation_solve(eq, do_logcvg);
+        cs_equation_solve(eq);
 
       } /* Solve this equation which is steady */
 
@@ -2084,7 +2074,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
         cs_equation_build_system(mesh, time_step, dt_cur, richards);
 
       /* Solve the algebraic system */
-      cs_equation_solve(richards, do_logcvg);
+      cs_equation_solve(richards);
 
       /* Update hydraulic/pressure head */
       _update_head(connect, cdoq, richards, gw);
@@ -2108,7 +2098,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
           cs_equation_build_system(mesh, time_step, dt_cur, eq);
 
         /* Solve the algebraic system */
-        cs_equation_solve(eq, do_logcvg);
+        cs_equation_solve(eq);
 
       } /* Solve this equation which is steady */
 

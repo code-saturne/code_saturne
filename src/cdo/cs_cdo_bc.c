@@ -168,7 +168,7 @@ _add_def_to_bc(const short int    def_id,
     for (cs_lnum_t i = 0; i < n_faces; i++) {
       const cs_lnum_t  f_id = elt_ids[i];
       ids[i] = f_id;
-      defs[f_id] = def_id;
+      defs[i] = def_id;
     }
 
   } /* elt_ids != NULL */

@@ -41,6 +41,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_log.h"
 #include "cs_math.h"
 
 /*----------------------------------------------------------------------------
@@ -130,6 +131,36 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
 
   BFT_FREE(csys);
   *p_csys= NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Dump a local system for debugging purpose
+ *
+ * \param[in]       msg     associated message to print
+ * \param[in]       c_id    id related to the cell
+ * \param[in]       csys    pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_sys_dump(const char             msg[],
+                 const cs_lnum_t        c_id,
+                 const cs_cell_sys_t   *csys)
+{
+#pragma omp critical
+  {
+    cs_log_printf(CS_LOG_DEFAULT, "%s", msg);
+
+    cs_locmat_dump(c_id, csys->mat);
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> RHS    ");
+    for (int i = 0; i < csys->n_dofs; i++)
+      cs_log_printf(CS_LOG_DEFAULT, " %5.3e", csys->rhs[i]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> SOURCE ");
+    for (int i = 0; i < csys->n_dofs; i++)
+      cs_log_printf(CS_LOG_DEFAULT, " %5.3e", csys->source[i]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_EQUATION_DBG  2
+#define CS_EQUATION_DBG  0
 
 /*============================================================================
  * Type definitions
@@ -1039,7 +1039,9 @@ cs_equation_set_param(cs_equation_t       *eq,
     break;
 
   case CS_EQKEY_PRECOND:
-    if (strcmp(val, "jacobi") == 0)
+    if (strcmp(val, "none") == 0)
+      eqp->itsol_info.precond = CS_PARAM_PRECOND_NONE;
+    else if (strcmp(val, "jacobi") == 0)
       eqp->itsol_info.precond = CS_PARAM_PRECOND_DIAG;
     else if (strcmp(val, "block_jacobi") == 0)
       eqp->itsol_info.precond = CS_PARAM_PRECOND_BJACOB;
@@ -1065,7 +1067,10 @@ cs_equation_set_param(cs_equation_t       *eq,
     break;
 
   case CS_EQKEY_ITSOL:
-    if (strcmp(val, "cg") == 0)
+
+    if (strcmp(val, "jacobi") == 0)
+      eqp->itsol_info.solver = CS_PARAM_ITSOL_JACOBI;
+    else if (strcmp(val, "cg") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_CG;
     else if (strcmp(val, "bicg") == 0)
       eqp->itsol_info.solver = CS_PARAM_ITSOL_BICG;
@@ -1130,6 +1135,8 @@ cs_equation_set_param(cs_equation_t       *eq,
   case CS_EQKEY_BC_QUADRATURE:
     if (strcmp(val, "bary") == 0)
       eqp->bc->quad_type = CS_QUADRATURE_BARY;
+    else if (strcmp(val, "bary_subdiv") == 0)
+      eqp->bc->quad_type = CS_QUADRATURE_BARY_SUBDIV;
     else if (strcmp(val, "higher") == 0)
       eqp->bc->quad_type = CS_QUADRATURE_HIGHER;
     else if (strcmp(val, "highest") == 0)
@@ -1193,6 +1200,8 @@ cs_equation_set_param(cs_equation_t       *eq,
   case CS_EQKEY_ADV_FLUX_QUADRA:
     if (strcmp(val, "bary") == 0)
       eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
+    else if (strcmp(val, "bary_subdiv") == 0)
+      eqp->advection_info.quad_type = CS_QUADRATURE_BARY_SUBDIV;
     else if (strcmp(val, "higher") == 0)
       eqp->advection_info.quad_type = CS_QUADRATURE_HIGHER;
     else if (strcmp(val, "highest") == 0)
@@ -1838,13 +1847,11 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
  * \brief  Solve the linear system for this equation
  *
  * \param[in, out]  eq          pointer to a cs_equation_t structure
- * \param[in]       do_logcvg   output information on convergence or not
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(cs_equation_t   *eq,
-                  bool             do_logcvg)
+cs_equation_solve(cs_equation_t   *eq)
 {
   int  n_iters = 0;
   double  residual = DBL_MAX;
@@ -1858,7 +1865,7 @@ cs_equation_solve(cs_equation_t   *eq,
   const double r_norm = 1.0; // No renormalization by default (TODO)
   const cs_param_itsol_t  itsol_info = eqp->itsol_info;
 
-  if (eqp->sles_verbosity > 0)
+  if (eqp->sles_verbosity > 1)
     printf("\n# %s >> Solve Ax = b with %s as solver and %s as precond.\n"
            "# System size: %d ; eps: % -8.5e ;\n",
            eq->name, cs_param_get_solver_name(itsol_info.solver),
@@ -1911,10 +1918,6 @@ cs_equation_solve(cs_equation_t   *eq,
 
   }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
-  cs_dump_array_to_listing("RHS", eq->rhs_size, b, 8);
-#endif
-
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
                                                    eq->matrix,
                                                    CS_HALO_ROTATION_IGNORE,
@@ -1927,15 +1930,27 @@ cs_equation_solve(cs_equation_t   *eq,
                                                    0,      // aux. size
                                                    NULL);  // aux. buffers
 
-  if (do_logcvg)
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
+  cs_dump_array_to_listing("EQ.AFTER.SOLVE >> X", eq->rhs_size, x, 8);
+  cs_dump_array_to_listing("EQ.SOLVE >> RHS", eq->rhs_size, b, 8);
+
+#if CS_EQUATION_DBG > 2
+  const cs_lnum_t  *row_index, *col_id;
+  const cs_real_t  *d_val, *x_val;
+
+  cs_matrix_get_msr_arrays(eq->matrix, &row_index, &col_id, &d_val, &x_val);
+
+  cs_dump_integer_to_listing("ROW_INDEX", eq->rhs_size + 1, row_index, 8);
+  cs_dump_integer_to_listing("COLUMN_ID", row_index[eq->rhs_size], col_id, 8);
+  cs_dump_array_to_listing("D_VAL", eq->rhs_size, d_val, 8);
+  cs_dump_array_to_listing("X_VAL", row_index[eq->rhs_size], x_val, 8);
+#endif
+#endif
+
+  if (eq->param->sles_verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   "  <%s/sles_cvg> code  %d n_iters  %d residual  % -8.4e\n",
                   eq->name, code, n_iters, residual);
-
-  if (eq->param->sles_verbosity > 1)
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  "<CDO/%s> n_iters %d residual_norm %8.5e\n",
-                  eq->name, n_iters, residual);
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 

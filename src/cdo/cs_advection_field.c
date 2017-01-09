@@ -1072,6 +1072,7 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
             switch (a_info.quad_type) {
 
             case CS_QUADRATURE_BARY:
+            case CS_QUADRATURE_BARY_SUBDIV:
               for (k = 0; k < 3; k++)
                 xg[k] = cs_math_onethird *(xc[k] + qe.center[k] + qf.center[k]);
               adv->def.analytic(t_cur, xg, &get);
@@ -1184,6 +1185,7 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
       switch (a_info.quad_type) {
 
       case CS_QUADRATURE_BARY:
+      case CS_QUADRATURE_BARY_SUBDIV:
         {
           cs_real_3_t  xg;
 
@@ -1316,6 +1318,7 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
       switch (a_info.quad_type) {
 
       case CS_QUADRATURE_BARY:
+      case CS_QUADRATURE_BARY_SUBDIV:
         for (k = 0; k < 3; k++)
           xg[k] = cs_math_onethird * (xv[k] + peq.center[k] + pfq.center[k]);
 

@@ -235,6 +235,7 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t    *cm,
       switch(quad_type) {
 
       case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+      case CS_QUADRATURE_BARY_SUBDIV:
         add1  = _analytic_quad_tet1(tcur, xv1, xe, xf, cm->xc, ana);
         add2  = _analytic_quad_tet1(tcur, xv2, xe, xf, cm->xc, ana);
         break;
@@ -311,6 +312,7 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
         switch(quad_type) {
 
         case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+        case CS_QUADRATURE_BARY_SUBDIV:
           add1 = _analytic_quad_tet1(tcur, xv1, e.center, f.center, xc, ana);
           add2 = _analytic_quad_tet1(tcur, xv2, e.center, f.center, xc, ana);
           break;
@@ -365,6 +367,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
     switch(quad_type) {
 
     case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+    case CS_QUADRATURE_BARY_SUBDIV:
       retval = _analytic_quad_tet1(tcur,
                                    cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
                                    ana);
@@ -418,6 +421,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
         switch(quad_type) {
 
         case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+        case CS_QUADRATURE_BARY_SUBDIV:
           add  = _analytic_quad_tet1(tcur, xv0, xv1, xv2, cm->xc, ana);
           break;
         case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
@@ -449,6 +453,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
           switch(quad_type) {
 
           case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+          case CS_QUADRATURE_BARY_SUBDIV:
             add  = _analytic_quad_tet1(tcur, xv1, xv2, xf, cm->xc, ana);
             break;
           case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
@@ -524,6 +529,7 @@ _pcsd_by_analytic(cs_analytic_func_t       *ana,
         switch(quad_type) {
 
         case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+        case CS_QUADRATURE_BARY_SUBDIV:
           add  = _analytic_quad_tet1(tcur, xv1, xv2, f.center, xc, ana);
           break;
         case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */

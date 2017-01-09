@@ -544,6 +544,10 @@ const char *
 cs_param_get_solver_name(cs_param_itsol_type_t  solver)
 {
   switch (solver) {
+
+  case CS_PARAM_ITSOL_JACOBI:
+    return  "Jacobi";
+    break;
   case CS_PARAM_ITSOL_CG:
     return  "CG";
     break;
@@ -584,6 +588,10 @@ const char *
 cs_param_get_precond_name(cs_param_precond_type_t  precond)
 {
   switch (precond) {
+
+  case CS_PARAM_PRECOND_NONE:
+    return  "None";
+    break;
   case CS_PARAM_PRECOND_DIAG:
     return  "Diagonal";
     break;

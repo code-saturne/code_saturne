@@ -41,6 +41,7 @@ typedef enum {
 
   CS_QUADRATURE_NONE,
   CS_QUADRATURE_BARY,        /* Value at the barycenter * meas */
+  CS_QUADRATURE_BARY_SUBDIV, /* Value at the barycenter * meas on a sub-mesh */
   CS_QUADRATURE_HIGHER,      /* Unique weight but several Gauss points */
   CS_QUADRATURE_HIGHEST,     /* Specific weight for each Gauss points */
   CS_QUADRATURE_N_TYPES

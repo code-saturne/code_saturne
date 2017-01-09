@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_HODGE_DBG 2
+#define CS_HODGE_DBG 0
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
@@ -1687,7 +1687,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         cb->pty_val = cb->pty_mat[0][0];
     }
 
-#pragma omp for //schedule(dynamic, 128)
+#pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Retrieve the value of the property inside the current cell */

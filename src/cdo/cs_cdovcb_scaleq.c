@@ -74,7 +74,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDOVCB_SCALEQ_DBG  3
+#define CS_CDOVCB_SCALEQ_DBG  0
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
@@ -142,7 +142,6 @@ struct _cs_cdovcb_scaleq_t {
 
   /* Pointer of function to build the diffusion term */
   cs_hodge_stiffness_t            *get_stiffness_matrix;
-  cs_hodge_t                      *get_diffusion_hodge;
   cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
   cs_cdo_diffusion_flux_op_t      *boundary_flux_op;
 
@@ -401,7 +400,7 @@ _compute_dir_values(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < dir->n_nhmg_elts; i++) {
 
     const cs_lnum_t  f_id = dir->elt_ids[i];
-    const short int  def_id = dir->def_ids[f_id];
+    const short int  def_id = dir->def_ids[i];
     const cs_param_def_type_t  def_type = bc_param->def_types[def_id];
     const cs_def_t  def = bc_param->defs[def_id];
 
@@ -498,7 +497,7 @@ _compute_dir_values(const cs_mesh_t            *mesh,
   BFT_FREE(flag);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
-  cs_dump_array_to_listing("DIRICHLET_VTX", quant->n_vertices, dir_val, 8);
+  cs_dump_array_to_listing("DIRICHLET_VALUES", quant->n_vertices, dir_val, 8);
 #endif
 
   return dir_val;
@@ -587,8 +586,8 @@ _set_cip_coef(cs_flag_t   sys_flag)
   double  gamma = gseed * hc_max * hc_max * rho_fc;
 
   if ((sys_flag & (CS_FLAG_SYS_DIFFUSION | CS_FLAG_SYS_REACTION)) == 0)
-      if (sys_flag & CS_FLAG_SYS_TIME)
-	gamma *= 10; // If steady pure advection 
+    if ((sys_flag & CS_FLAG_SYS_TIME) == 0) // If steady pure advection
+      gamma *= 10;
 
   cs_cdo_advection_set_cip_coef(gamma);
 }
@@ -779,35 +778,33 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   /* Diffusion part */
   b->diff_pty_uniform = cs_property_is_uniform(eqp->diffusion_property);
 
+  b->enforce_dirichlet = NULL;
+  switch (bc_param->enforcement) {
+
+  case CS_PARAM_BC_ENFORCE_WEAK_PENA:
+    b->enforce_dirichlet = cs_cdovb_diffusion_pena_dirichlet;
+    break;
+
+  case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    b->enforce_dirichlet = cs_cdovb_diffusion_weak_dirichlet;
+    break;
+
+  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+    b->enforce_dirichlet = cs_cdovb_diffusion_wsym_dirichlet;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              (" Invalid type of algorithm to enforce Dirichlet BC."));
+
+  }
+
   b->get_stiffness_matrix = NULL;
   b->boundary_flux_op = NULL;
-  b->get_diffusion_hodge = NULL;
-  b->enforce_dirichlet = NULL;
-
   if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
 
     b->get_stiffness_matrix = cs_hodge_vcb_get_stiffness;
     b->boundary_flux_op = cs_cdovcb_diffusion_flux_op;
-
-    switch (bc_param->enforcement) {
-
-    case CS_PARAM_BC_ENFORCE_WEAK_PENA:
-      b->enforce_dirichlet = cs_cdovb_diffusion_pena_dirichlet;
-      break;
-
-    case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-      b->enforce_dirichlet = cs_cdovb_diffusion_weak_dirichlet;
-      break;
-
-    case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-      b->enforce_dirichlet = cs_cdovb_diffusion_wsym_dirichlet;
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                (" Invalid type of algorithm to enforce Dirichlet BC."));
-
-    }
 
   }
 
@@ -831,7 +828,12 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
       }
       else {
         b->get_advection_matrix = cs_cdo_advection_get_vcb;
-        b->add_advection_bc = cs_cdo_advection_add_vcb_bc;
+        if (cs_advection_field_get_deftype(eqp->advection_field)
+         == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
+          b->add_advection_bc = cs_cdo_advection_add_vcb_bc_analytic;
+        else
+          b->add_advection_bc = cs_cdo_advection_add_vcb_bc;
+
       }
       break;
 
@@ -1041,7 +1043,7 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
 
     cs_real_t  *cell_sources = b->source_terms + quant->n_vertices;
 
-#pragma omp for //schedule(dynamic, 128)
+#pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */
@@ -1075,10 +1077,10 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
 
   } // OpenMP block
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-  cs_dump_array_to_listing("Initial SOURCE_TERM_VTX", quant->n_vertices,
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
+  cs_dump_array_to_listing("INIT_SOURCE_TERM_VTX", quant->n_vertices,
                            b->source_terms, 8);
-  cs_dump_array_to_listing("Initial SOURCE_TERM_CELL", quant->n_cells,
+  cs_dump_array_to_listing("INIT_SOURCE_TERM_CELL", quant->n_cells,
                            b->source_terms + quant->n_vertices, 8);
 #endif
 
@@ -1134,10 +1136,10 @@ cs_cdovcb_initialize_rhs(void       *builder)
 #pragma omp parallel if (n_v > CS_THR_MIN) default(none) \
   shared(b, eqp, rhs)
   {
-    double  *cell_st = b->source_terms + n_v;
-
     /* Initiale the rhs according to the evaluation of the source term */
     if (b->sys_flag & CS_FLAG_SYS_SOURCETERM) {
+
+      double  *cell_st = b->source_terms + n_v;
 
       /* Take into account the scheme used for the discretization */
       if (b->sys_flag & CS_FLAG_SYS_TIME) {
@@ -1188,9 +1190,10 @@ cs_cdovcb_initialize_rhs(void       *builder)
     else { // No source term
 
 # pragma omp for
-          for (cs_lnum_t i = 0; i < n_v; i++) rhs[i] = 0.0;
+      for (cs_lnum_t i = 0; i < n_v; i++) rhs[i] = 0.0;
 # pragma omp for
-          for (cs_lnum_t i = 0; i < n_c; i++) b->cell_rhs[i] = 0.0;
+      for (cs_lnum_t i = 0; i < n_c; i++) b->cell_rhs[i] = 0.0;
+
     }
 
   } // OMP Section
@@ -1239,6 +1242,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
   /* Compute the values of the Dirichlet BC.
      TODO: do the analogy for Neumann BC */
   cs_cdovcb_scaleq_t  *b = (cs_cdovcb_scaleq_t *)builder;
+
   cs_real_t  *dir_values = _compute_dir_values(mesh, field_val, b);
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \
@@ -1307,7 +1311,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
 
     } // Reaction properties
 
-#pragma omp for //schedule(dynamic, 128)
+#pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -1348,7 +1352,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
             cs_math_33_eigen((const cs_real_t (*)[3])cb->pty_mat,
                              &(cb->eig_ratio),
                              &(cb->eig_max));
-        
+
             b->enforce_dirichlet(eqp->diffusion_hodge, cbc, cm, // in
                                  b->boundary_flux_op,           // function (in)
                                  fm, cb, csys);                 // in/out
@@ -1357,8 +1361,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
         } // Border cell
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-        cs_log_printf(CS_LOG_DEFAULT, "\n>> Local system after diffusion");
-        cs_locmat_dump(c_id, csys->mat);
+        cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
       } /* END OF DIFFUSION */
 
@@ -1378,8 +1381,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
           b->add_advection_bc(cbc, cm, eqp, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-        cs_log_printf(CS_LOG_DEFAULT, "\n>> Local system after advection");
-        cs_locmat_dump(c_id, csys->mat);
+        cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
 #endif
       } /* END OF ADVECTION */
 
@@ -1414,24 +1416,24 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
-	if (b->sys_flag & CS_FLAG_SYS_SOURCETERM) {
+        if (b->sys_flag & CS_FLAG_SYS_SOURCETERM) {
 
-	  /* Compute the contribution of all source terms in each cell */
-	  cs_source_term_compute_cellwise(eqp->n_source_terms,
-					  eqp->source_terms,
-					  cm,
-					  b->sys_flag,
-					  b->source_mask,
-					  b->compute_source,
-					  cb,    // mass matrix is cb->hdg
-					  csys); // Fill csys->source
+          /* Compute the contribution of all source terms in each cell */
+          cs_source_term_compute_cellwise(eqp->n_source_terms,
+                                          eqp->source_terms,
+                                          cm,
+                                          b->sys_flag,
+                                          b->source_mask,
+                                          b->compute_source,
+                                          cb,    // mass matrix is cb->hdg
+                                          csys); // Fill csys->source
 
-	  /* Reset the value of the source term for the cell DoF */
-	  cell_sources[c_id] = csys->source[cm->n_vc];
+          /* Reset the value of the source term for the cell DoF */
+          cell_sources[c_id] = csys->source[cm->n_vc];
 
-	}
+        }
 
-	/* Get the value of the time property */
+        /* Get the value of the time property */
         double  tpty_val = 1/dt_cur;
         if (b->time_pty_uniform)
           tpty_val *= time_pty_val;
@@ -1460,15 +1462,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
       } /* END OF TIME CONTRIBUTION */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT, ">> (Before condensation) Local system matrix");
-      cs_locmat_dump(c_id, csys->mat);
-      cs_log_printf(CS_LOG_DEFAULT, "\n>> RHS    ");
-      for (int i = 0; i < csys->n_dofs; i++)
-        cs_log_printf(CS_LOG_DEFAULT, " %5.3e", csys->rhs[i]);
-      cs_log_printf(CS_LOG_DEFAULT, "\n>> SOURCE ");
-      for (int i = 0; i < csys->n_dofs; i++)
-        cs_log_printf(CS_LOG_DEFAULT, " %5.3e", csys->source[i]);
-      cs_log_printf(CS_LOG_DEFAULT, "\n");
+      cs_cell_sys_dump(">> Local system matrix before condensation", c_id, csys);
 #endif
 
       /* Static condensation of the local system matrix of size n_vc + 1 into
@@ -1479,8 +1473,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
       /* ======================================================= */
 
-      if ((b->sys_flag & CS_FLAG_SYS_DIFFUSION) &&
-          eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_PENA) {
+      if (eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_PENA) {
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs) */
@@ -1492,19 +1485,12 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
-      cs_log_printf(CS_LOG_DEFAULT, ">> (FINAL) Local system matrix");
-      cs_locmat_dump(c_id, csys->mat);
-      cs_log_printf(CS_LOG_DEFAULT, "\n>> RHS    ");
-      for (int i = 0; i < csys->n_dofs; i++)
-        cs_log_printf(CS_LOG_DEFAULT, " %5.3e", csys->rhs[i]);
-      cs_log_printf(CS_LOG_DEFAULT, "\n>> SOURCE ");
-      for (int i = 0; i < csys->n_dofs; i++)
-        cs_log_printf(CS_LOG_DEFAULT, " %5.3e", csys->source[i]);
-      cs_log_printf(CS_LOG_DEFAULT, "\n");
+      cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
       /* Assemble the local system (related to vertices only since one applies
          a static condensation) to the global system */
+#pragma omp critical
       cs_equation_assemble_v(csys, connect->v_rs, b->sys_flag, // in
                              rhs, b->source_terms, mav);       // out
 
@@ -1513,6 +1499,11 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
   } // OPENMP Block
 
   cs_matrix_assembler_values_done(mav); // optional
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
+  cs_dump_array_to_listing("FINAL RHS_VTX", quant->n_vertices, rhs, 8);
+  cs_dump_array_to_listing("FINAL RHS_CELL",quant->n_cells, b->cell_rhs, 8);
+#endif
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
@@ -1561,7 +1552,7 @@ cs_cdovcb_scaleq_update_field(const cs_real_t     *solu,
     const cs_lnum_t  shift_c = c2v->idx[c_id];
     const cs_lnum_t  *v_ids = c2v->ids + shift_c;
     const double  *acv = b->acv + shift_c;
-    const int  n_vc = c2v->idx[c_id] - shift_c;
+    const int  n_vc = c2v->idx[c_id+1] - shift_c;
 
     double  acv_pv = 0.;
     for (int v = 0; v < n_vc; v++) acv_pv += acv[v]*field_val[v_ids[v]];
@@ -1852,7 +1843,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
     }
 
     /* Define the flux by cellwise contributions */
-#pragma omp for
+#pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */

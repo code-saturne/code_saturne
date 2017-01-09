@@ -300,8 +300,7 @@ _check_boundary_setup(cs_domain_t   *domain)
 {
   int  error_count = 0;
 
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   cs_domain_boundary_t  *dby = domain->boundaries;
 
@@ -329,13 +328,11 @@ _check_boundary_setup(cs_domain_t   *domain)
  * \brief  Compute equations which user-defined and steady-state
  *
  * \param[in, out]  domain     pointer to a cs_domain_t structure
- * \param[in]       do_logcvg  output information on convergence or not
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_steady_user_equations(cs_domain_t   *domain,
-                               bool           do_logcvg)
+_compute_steady_user_equations(cs_domain_t   *domain)
 {
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
 
@@ -360,7 +357,7 @@ _compute_steady_user_equations(cs_domain_t   *domain,
                                  eq);
 
         /* Solve the algebraic system */
-        cs_equation_solve(eq, do_logcvg);
+        cs_equation_solve(eq);
 
       } /* User-defined equation */
 
@@ -376,14 +373,12 @@ _compute_steady_user_equations(cs_domain_t   *domain,
  *
  * \param[in, out]  domain     pointer to a cs_domain_t structure
  * \param[in]       nt_cur     current number of iteration done
- * \param[in]       do_logcvg  output information on convergence or not
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _compute_unsteady_user_equations(cs_domain_t   *domain,
-                                 int            nt_cur,
-                                 bool           do_logcvg)
+                                 int            nt_cur)
 {
   if (nt_cur == 0) { /* Initialization */
 
@@ -430,7 +425,7 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
                                      eq);
 
           /* Solve domain */
-          cs_equation_solve(eq, do_logcvg);
+          cs_equation_solve(eq);
 
         } /* User-defined equation */
 
@@ -562,8 +557,7 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->properties = NULL;
 
   /* Add predefined properties */
-  cs_domain_add_property(domain, "unity", "isotropic", 1);
-  cs_property_t  *pty = cs_domain_get_property(domain, "unity");
+  cs_property_t  *pty = cs_domain_add_property(domain, "unity", "isotropic", 1);
   cs_property_iso_def_by_value(pty, N_("cells"), 1.0);
 
   /* Advection fields */
@@ -661,11 +655,10 @@ cs_domain_free(cs_domain_t   *domain)
 
 void
 cs_domain_set_double_param(cs_domain_t       *domain,
-			   cs_domain_key_t    key,
-			   double             value)
+                           cs_domain_key_t    key,
+                           double             value)
 {
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain == NULL)  bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   /* Switch on keys related to a parameter associated to a double */
   switch(key) {
@@ -681,7 +674,7 @@ cs_domain_set_double_param(cs_domain_t       *domain,
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid key for setting a cs_domain_t structure."
-		" This key is not associated to a \"double\" type."));
+                " This key is not associated to a \"double\" type."));
 
   } /* Switch on keys */
 
@@ -699,11 +692,10 @@ cs_domain_set_double_param(cs_domain_t       *domain,
 
 void
 cs_domain_set_int_param(cs_domain_t       *domain,
-			cs_domain_key_t    key,
-			int                value)
+                        cs_domain_key_t    key,
+                        int                value)
 {
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   /* Switch on keys related to a parameter associated to a double */
   switch(key) {
@@ -726,7 +718,7 @@ cs_domain_set_int_param(cs_domain_t       *domain,
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid key for setting a cs_domain_t structure."
-		" This key is not associated to a \"int\" type."));
+                " This key is not associated to a \"int\" type."));
 
   } /* Switch on keys */
 
@@ -747,8 +739,7 @@ cs_domain_set_param(cs_domain_t       *domain,
                     cs_domain_key_t    key,
                     const char        *keyval)
 {
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   /* Conversion of the string to lower case */
   char val[CS_BASE_STRING_LEN];
@@ -968,8 +959,7 @@ cs_domain_summary(const cs_domain_t   *domain)
 void
 cs_domain_last_setup(cs_domain_t    *domain)
 {
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   /* Set pointers of function if additional postprocessing is requested */
   cs_post_add_time_mesh_dep_output(cs_domain_extra_post,
@@ -1052,8 +1042,7 @@ cs_domain_add_boundary(cs_domain_t               *domain,
                        const char                *ml_name,
                        const char                *bdy_name)
 {
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   int  ml_id = cs_mesh_location_get_id_by_name(ml_name);
 
@@ -1117,8 +1106,7 @@ void
 cs_domain_def_time_step_by_function(cs_domain_t          *domain,
                                     cs_timestep_func_t   *func)
 {
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   domain->time_step->is_variable = 1; // not constant time step
   domain->time_options.idtvar = 1;    /* uniform in space but can change
@@ -1149,8 +1137,7 @@ void
 cs_domain_def_time_step_by_value(cs_domain_t   *domain,
                                  double         dt)
 {
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   domain->time_step_def_type = CS_PARAM_DEF_BY_VALUE;
   domain->time_step->is_variable = 0; // constant time step
@@ -1208,8 +1195,7 @@ cs_domain_needs_iterate(cs_domain_t  *domain)
 void
 cs_domain_define_current_time_step(cs_domain_t   *domain)
 {
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   if (domain->only_steady)
     return;
@@ -1287,25 +1273,28 @@ cs_domain_increment_time(cs_domain_t  *domain)
  * \param[in]       pty_name      name of the property to add
  * \param[in]       type_name     key name related to the type of property
  * \param[in]       n_subdomains  specify a definition in n_subdomains
+ *
+ * \return a pointer to the new cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_property_t *
 cs_domain_add_property(cs_domain_t     *domain,
                        const char      *pty_name,
                        const char      *type_name,
                        int              n_subdomains)
 {
   if (domain == NULL)
-    return;
+    return NULL;
 
   cs_property_t  *pty = cs_domain_get_property(domain, pty_name);
 
   if (pty != NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    cs_log_printf(CS_LOG_DEFAULT, _(" An existing property has already the name %s.\n"
-                 " Stop adding this property.\n"), pty_name);
-    return;
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _(" An existing property has already the name %s.\n"
+                    " Stop adding this property.\n"), pty_name);
+    return NULL;
   }
 
   int  pty_id = domain->n_properties;
@@ -1313,9 +1302,10 @@ cs_domain_add_property(cs_domain_t     *domain,
   domain->n_properties += 1;
   BFT_REALLOC(domain->properties, domain->n_properties, cs_property_t *);
 
-  domain->properties[pty_id] = cs_property_create(pty_name,
-                                                  type_name,
-                                                  n_subdomains);
+  pty = cs_property_create(pty_name, type_name, n_subdomains);
+  domain->properties[pty_id] = pty;
+
+  return pty;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1366,8 +1356,9 @@ cs_domain_add_advection_field(cs_domain_t     *domain,
 
   if (adv != NULL) {
     cs_base_warn(__FILE__, __LINE__);
-    cs_log_printf(CS_LOG_DEFAULT, _(" An existing advection field has already the name %s.\n"
-                 " Stop adding this advection field.\n"), adv_name);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _(" An existing advection field has already the name %s.\n"
+                    " Stop adding this advection field.\n"), adv_name);
     return adv;
   }
 
@@ -1450,9 +1441,7 @@ cs_domain_get_equation(const cs_domain_t  *domain,
 void
 cs_domain_activate_wall_distance(cs_domain_t   *domain)
 {
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" cs_domain_t structure is not allocated."));
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   domain->wall_distance_eq_id = domain->n_equations;
 
@@ -1488,9 +1477,7 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
                                int            n_soils,
                                int            n_tracers)
 {
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" cs_domain_t structure is not allocated."));
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   int  richards_eq_id = domain->n_equations;
 
@@ -1498,30 +1485,28 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   domain->gw = cs_groundwater_create();
 
   /* Add a property related to the diffusion term of the Richards eq. */
-  cs_domain_add_property(domain, "permeability", kw_type, n_soils);
-
-  cs_property_t  *permeability = cs_domain_get_property(domain,
-                                                        "permeability");
+  cs_property_t  *permeability = cs_domain_add_property(domain,
+                                                        "permeability",
+                                                        kw_type,
+                                                        n_soils);
 
   /* Add a property related to the unsteady term of the Richards eq. */
   cs_property_t  *soil_capacity = NULL;
-
-  if (strcmp(kw_time, "unsteady") == 0) {
-    cs_domain_add_property(domain, "soil_capacity", "isotropic", n_soils);
-    soil_capacity = cs_domain_get_property(domain, "soil_capacity");
-  }
+  if (strcmp(kw_time, "unsteady") == 0)
+    soil_capacity = cs_domain_add_property(domain,
+                                           "soil_capacity",
+                                           "isotropic",
+                                           n_soils);
 
   /* Add an advection field related to the darcian flux stemming from the
      Richards equation */
-  cs_domain_add_advection_field(domain, "darcian_flux");
-
-  cs_adv_field_t  *adv_field = cs_domain_get_advection_field(domain,
+  cs_adv_field_t  *adv_field = cs_domain_add_advection_field(domain,
                                                              "darcian_flux");
 
   cs_advection_field_set_option(adv_field, CS_ADVKEY_DEFINE_AT, "cells");
   cs_advection_field_set_option(adv_field, CS_ADVKEY_POST, "field");
 
-  /* Create a new equation */
+  /* Create a new equation for solving the Richards equation */
   cs_equation_t  *richards_eq = cs_groundwater_initialize(domain->connect,
                                                           richards_eq_id,
                                                           n_soils,
@@ -1534,7 +1519,8 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   if (richards_eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " The module dedicated to groundwater flows is activated but"
-              " the Richards' equation is not set.");
+              " the Richards' equation is not set.\n"
+              " Please check your settings.");
 
   /* Update cs_domain_t structure */
   domain->richards_eq_id = richards_eq_id;
@@ -1544,8 +1530,7 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   domain->equations[richards_eq_id] = richards_eq;
 
   /* Add default post-processing related to groundwater flow module */
-  cs_post_add_time_mesh_dep_output(cs_groundwater_extra_post,
-                                   domain->gw);
+  cs_post_add_time_mesh_dep_output(cs_groundwater_extra_post, domain->gw);
 
 }
 
@@ -1588,14 +1573,8 @@ cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
                                  const char    *eq_name,
                                  const char    *var_name)
 {
-  int  len = 0;
-  char  *pty_name = NULL;
-
   /* Sanity checks */
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" cs_domain_t structure is not allocated."));
-
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
   if (domain->gw == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" Groundwater module is requested but is not activated.\n"
@@ -1615,16 +1594,16 @@ cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
               " the groundwater module.", eq_name);
 
   /* Add a new property related to the time-depedent term */
-  len = strlen(eq_name) + strlen("_time") + 1;
+  char  *pty_name = NULL;
+  int  len = strlen(eq_name) + strlen("_time") + 1;
   BFT_MALLOC(pty_name, len, char);
   sprintf(pty_name, "%s_time", eq_name);
 
-  cs_domain_add_property(domain,
-                         pty_name,
-                         "isotropic",
-                         cs_groundwater_get_n_soils(domain->gw));
-
-  cs_property_t  *time_pty = cs_domain_get_property(domain, pty_name);
+  const int  n_soils = cs_groundwater_get_n_soils(domain->gw);
+  cs_property_t  *time_pty = cs_domain_add_property(domain,
+                                                    pty_name,
+                                                    "isotropic",
+                                                    n_soils);
 
   cs_equation_link(tracer_eq, "time", time_pty);
 
@@ -1664,10 +1643,7 @@ cs_domain_set_groundwater_tracer(cs_domain_t   *domain,
                                  double         reaction_rate)
 {
   /* Sanity checks */
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" cs_domain_t structure is not allocated."));
-
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
   if (domain->gw == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" Groundwater module is requested but is not activated.\n"
@@ -1747,7 +1723,7 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 
         if (cs_equation_get_type(eq) == CS_EQUATION_TYPE_GROUNDWATER) {
 
-          int  n_soils = cs_groundwater_get_n_soils(domain->gw);
+          const int  n_soils = cs_groundwater_get_n_soils(domain->gw);
 
           if (cs_groundwater_tracer_needs_diffusion(domain->gw, eq_id)) {
 
@@ -1759,9 +1735,10 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
               max_len = len, BFT_REALLOC(pty_name, len, char);
             sprintf(pty_name, "%s_diffusivity", eq_name);
 
-            cs_domain_add_property(domain, pty_name, "anisotropic", n_soils);
-
-            cs_property_t *diff_pty = cs_domain_get_property(domain, pty_name);
+            cs_property_t *diff_pty = cs_domain_add_property(domain,
+                                                             pty_name,
+                                                             "anisotropic",
+                                                             n_soils);
 
             cs_equation_link(eq, "diffusion", diff_pty);
 
@@ -1777,9 +1754,10 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
               max_len = len, BFT_REALLOC(pty_name, len, char);
             sprintf(pty_name, "%s_reaction", eq_name);
 
-            cs_domain_add_property(domain, pty_name, "isotropic", n_soils);
-
-            cs_property_t *r_pty = cs_domain_get_property(domain, pty_name);
+            cs_property_t *r_pty = cs_domain_add_property(domain,
+                                                          pty_name,
+                                                          "isotropic",
+                                                          n_soils);
 
             cs_equation_add_linear_reaction(eq, r_pty, "decay");
 
@@ -1820,12 +1798,11 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
                             const char          *key_type,
                             const char          *key_bc)
 {
+  /* Sanity checks */
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+
   cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
   cs_param_bc_type_t  default_bc = CS_PARAM_N_BC_TYPES;
-
-  if (domain == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" cs_domain_t structure is not allocated."));
 
   BFT_REALLOC(domain->equations, domain->n_equations + 1, cs_equation_t *);
 
@@ -1896,10 +1873,6 @@ cs_domain_solve(cs_domain_t  *domain)
 {
   int  nt_cur = domain->time_step->nt_cur;
   bool  do_output = cs_domain_needs_log(domain);
-  bool  do_logcvg = false;
-
-  if (domain->verbosity > 1 && do_output)
-    do_logcvg = true;
 
   /* Setup step for all equations */
   if (nt_cur == 0) {
@@ -1913,8 +1886,8 @@ cs_domain_solve(cs_domain_t  *domain)
     else if (do_output) {
       cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
       cs_log_printf(CS_LOG_DEFAULT,
-		    "-ite- %5d; time = %5.3e s >> Solve domain\n",
-		    nt_cur, domain->time_step->t_cur);
+                    "-ite- %5d; time = %5.3e s >> Solve domain\n",
+                    nt_cur, domain->time_step->t_cur);
       cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
     }
     /* Predefined equation for the computation of the wall distance */
@@ -1928,7 +1901,6 @@ cs_domain_solve(cs_domain_t  *domain)
                               domain->dt_cur,
                               domain->connect,
                               domain->cdo_quantities,
-                              do_logcvg,
                               walld_eq);
 
     } // wall distance
@@ -1941,15 +1913,14 @@ cs_domain_solve(cs_domain_t  *domain)
                              domain->dt_cur,
                              domain->connect,
                              domain->cdo_quantities,
-                             do_logcvg,
                              domain->equations,
                              domain->gw);
 
     /* User-defined equations */
-    _compute_steady_user_equations(domain, do_logcvg);
+    _compute_steady_user_equations(domain);
 
     /* Only initialization is done */
-    _compute_unsteady_user_equations(domain, nt_cur, do_logcvg);
+    _compute_unsteady_user_equations(domain, nt_cur);
 
   }
   else { /* nt_cur > 0: solve unsteady problems */
@@ -1958,8 +1929,8 @@ cs_domain_solve(cs_domain_t  *domain)
     if (do_output) {
       cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
       cs_log_printf(CS_LOG_DEFAULT,
-		    "-ite- %5d; time = %5.3e s >> Solve domain\n",
-		    nt_cur, domain->time_step->t_cur);
+                    "-ite- %5d; time = %5.3e s >> Solve domain\n",
+                    nt_cur, domain->time_step->t_cur);
       cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
     }
 
@@ -1969,12 +1940,11 @@ cs_domain_solve(cs_domain_t  *domain)
                              domain->dt_cur,
                              domain->connect,
                              domain->cdo_quantities,
-                             do_logcvg,
                              domain->equations,
                              domain->gw);
 
     /* User-defined equations */
-    _compute_unsteady_user_equations(domain, nt_cur, do_logcvg);
+    _compute_unsteady_user_equations(domain, nt_cur);
 
   }
 

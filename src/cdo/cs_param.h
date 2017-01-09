@@ -319,6 +319,7 @@ typedef struct {
 
 typedef enum {
 
+  CS_PARAM_PRECOND_NONE,    // No preconditioning
   CS_PARAM_PRECOND_DIAG,    // Diagonal preconditioning (also called Jacobi)
   CS_PARAM_PRECOND_BJACOB,  // Block Jacobi
   CS_PARAM_PRECOND_POLY1,   // Neumann polynomial preconditioning (Order 1)
@@ -334,6 +335,7 @@ typedef enum {
 /* Type of iterative solver to use to inverse the linear system */
 typedef enum {
 
+  CS_PARAM_ITSOL_JACOBI,    // Jacobi
   CS_PARAM_ITSOL_CG,        // Conjuguate Gradient
   CS_PARAM_ITSOL_BICG,      // Bi-Conjuguate gradient
   CS_PARAM_ITSOL_BICGSTAB2, // Stabilized Bi-Conjuguate gradient

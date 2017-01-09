@@ -480,6 +480,12 @@ cs_dump_array_to_listing(const char        *header,
                          const cs_real_t    array[],
                          int                n_cols);
 
+void
+cs_dump_integer_to_listing(const char        *header,
+                           const cs_lnum_t    size,
+                           const cs_lnum_t    array[],
+                           int                n_cols);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

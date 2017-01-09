@@ -199,8 +199,8 @@ cs_domain_free(cs_domain_t   *domain);
 
 void
 cs_domain_set_double_param(cs_domain_t       *domain,
-			   cs_domain_key_t    key,
-			   double             value);
+                           cs_domain_key_t    key,
+                           double             value);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -214,8 +214,8 @@ cs_domain_set_double_param(cs_domain_t       *domain,
 
 void
 cs_domain_set_int_param(cs_domain_t       *domain,
-			cs_domain_key_t    key,
-			int                value);
+                        cs_domain_key_t    key,
+                        int                value);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -351,10 +351,12 @@ cs_domain_increment_time(cs_domain_t  *domain);
  * \param[in]       pty_name      name of the property to add
  * \param[in]       type_name     key name related to the type of property
  * \param[in]       n_subdomains  specify a definition in n_subdomains
+ *
+ * \return a pointer to the new cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_property_t *
 cs_domain_add_property(cs_domain_t     *domain,
                        const char      *pty_name,
                        const char      *type_name,

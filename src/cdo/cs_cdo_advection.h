@@ -370,6 +370,28 @@ cs_cdo_advection_add_vcb_bc(const cs_cell_bc_t          *cbc,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the BC contribution for the convection operator with CDO
+ *          V+C schemes when the advection is defined by an analytic function
+ *
+ * \param[in]      cbc     pointer to a cs_cell_bc_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in, out] fm      pointer to a cs_face_mesh_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys    cell-wise structure storing the local system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_advection_add_vcb_bc_analytic(const cs_cell_bc_t          *cbc,
+                                     const cs_cell_mesh_t        *cm,
+                                     const cs_equation_param_t   *eqp,
+                                     cs_face_mesh_t              *fm,
+                                     cs_cell_builder_t           *cb,
+                                     cs_cell_sys_t               *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the value in each cell of the upwinding coefficient given
  *          a related Peclet number
  *

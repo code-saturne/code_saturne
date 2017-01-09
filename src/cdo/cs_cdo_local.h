@@ -242,6 +242,21 @@ cs_cell_sys_free(cs_cell_sys_t     **p_ls);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Dump a local system for debugging purpose
+ *
+ * \param[in]       msg     associated message to print
+ * \param[in]       c_id    id related to the cell
+ * \param[in]       csys    pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_sys_dump(const char              msg[],
+                 const cs_lnum_t         c_id,
+                 const cs_cell_sys_t    *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate a cs_cell_bc_t structure
  *
  * \param[in]   n_max_dofbyc    max. number of entries in a cell

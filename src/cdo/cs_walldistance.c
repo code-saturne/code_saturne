@@ -143,19 +143,6 @@ _compute_cdofb(const cs_cdo_connect_t     *connect,
                     NULL,            // values at border faces
                     NULL);           // time step management structure
 
-  cs_data_info_t  dinfo = cs_analysis_data(cdoq->n_cells, // n_elts
-                                           1,             // stride
-                                           CS_DOUBLE,     // cs_datatype_t
-                                           dist,          // data
-                                           false);        // absolute values ?
-
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\n -bnd- WallDistance.Max   % 10.6e\n", dinfo.max.value);
-  cs_log_printf(CS_LOG_DEFAULT,
-                " -bnd- WallDistance.Mean  % 10.6e\n", dinfo.mean);
-  cs_log_printf(CS_LOG_DEFAULT,
-                " -bnd- WallDistance.Sigma % 10.6e\n\n", dinfo.sigma);
-  cs_log_printf(CS_LOG_DEFAULT, "%s", msepline);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -238,19 +225,6 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
                            dist,            // values on vertices
                            NULL);           // time step management structure
 
-  cs_data_info_t  dinfo = cs_analysis_data(cdoq->n_vertices, // n_elts
-                                           1,                // stride
-                                           CS_DOUBLE,        // cs_datatype_t
-                                           dist,             // data
-                                           false);           // abs. values ?
-
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\n -bnd- WallDistance.Max   % 10.6e\n", dinfo.max.value);
-  cs_log_printf(CS_LOG_DEFAULT,
-                " -bnd- WallDistance.Mean  % 10.6e\n", dinfo.mean);
-  cs_log_printf(CS_LOG_DEFAULT,
-                " -bnd- WallDistance.Sigma % 10.6e\n", dinfo.sigma);
-
   /* Free memory */
   BFT_FREE(gdi);
   BFT_FREE(dualcell_vol);
@@ -320,7 +294,6 @@ cs_walldistance_setup(cs_equation_t   *eq,
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]      do_logcvg  output information on convergence or not
  * \param[in, out] eq         pointer to the related cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -331,7 +304,6 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
                         double                        dt_cur,
                         const cs_cdo_connect_t       *connect,
                         const cs_cdo_quantities_t    *cdoq,
-                        bool                          do_logcvg,
                         cs_equation_t                *eq)
 {
   /* First step:
@@ -350,7 +322,7 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
   cs_equation_build_system(mesh, time_step, dt_cur, eq);
 
   /* Solve the algebraic system */
-  cs_equation_solve(eq, do_logcvg);
+  cs_equation_solve(eq);
 
   /* Second step:
      Compute the wall distance. */

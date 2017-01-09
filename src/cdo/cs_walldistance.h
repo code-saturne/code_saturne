@@ -74,7 +74,6 @@ cs_walldistance_setup(cs_equation_t   *eq,
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]      do_logcvg  output information on convergence or not
  * \param[in, out] eq         pointer to the related cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -85,7 +84,6 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
                         double                        dt_cur,
                         const cs_cdo_connect_t       *connect,
                         const cs_cdo_quantities_t    *cdoq,
-                        bool                          do_logcvg,
                         cs_equation_t                *eq);
 
 /*----------------------------------------------------------------------------*/

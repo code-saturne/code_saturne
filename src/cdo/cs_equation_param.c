@@ -581,11 +581,11 @@ cs_equation_param_summary(const char                  *eqname,
 
     if (eqp->verbosity > 0) {
       cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Hodge> %s - %s\n",
-		    eqname, cs_param_hodge_get_type_name(h_info),
+                    eqname, cs_param_hodge_get_type_name(h_info),
                     cs_param_hodge_get_algo_name(h_info));
       cs_log_printf(CS_LOG_SETUP,
-		    "    <%s/Time.Hodge.Inv> Inversion of property  %s\n",
-		    eqname, cs_base_strtf(h_info.inv_pty));
+                    "    <%s/Time.Hodge.Inv> Inversion of property  %s\n",
+                    eqname, cs_base_strtf(h_info.inv_pty));
       if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
         cs_log_printf(CS_LOG_SETUP, "    <%s/Time.Hodge.Coef> %.3e\n",
                       eqname, h_info.coef);
@@ -753,14 +753,26 @@ cs_equation_param_init_sles(const char                 *eqname,
 
       if (itsol.precond == CS_PARAM_PRECOND_POLY1)
         poly_degree = 1;
+      if (itsol.precond == CS_PARAM_PRECOND_NONE)
+        poly_degree = -1;
 
       if (itsol.precond != CS_PARAM_PRECOND_POLY1 &&
-          itsol.precond != CS_PARAM_PRECOND_DIAG)
+          itsol.precond != CS_PARAM_PRECOND_DIAG &&
+          itsol.precond != CS_PARAM_PRECOND_NONE)
         bft_error(__FILE__, __LINE__, 0,
                   " Incompatible preconditioner with Code_Saturne solvers.\n"
                   " Please change your settings (try PETSc ?)");
 
       switch (itsol.solver) { // Type of iterative solver
+
+      case CS_PARAM_ITSOL_JACOBI:
+        assert(poly_degree == -1);
+        cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_JACOBI,
+                          poly_degree,
+                          itsol.n_max_iter);
+        break;
       case CS_PARAM_ITSOL_CG:
         cs_sles_it_define(field_id,  // give the field id (future: eq_id ?)
                           NULL,

@@ -351,7 +351,6 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in]      do_logcvg  output information on convergence or not
  * \param[in, out] eqs        array of pointers to cs_equation_t structures
  * \param[in, out] gw         pointer to a cs_groundwater_t structure
  */
@@ -363,7 +362,6 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
                        double                        dt_cur,
                        const cs_cdo_connect_t       *connect,
                        const cs_cdo_quantities_t    *cdoq,
-                       bool                          do_logcvg,
                        cs_equation_t                *eqs[],
                        cs_groundwater_t             *gw);
 

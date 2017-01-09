@@ -666,6 +666,9 @@ cs_source_term_init(cs_space_scheme_t            space_scheme,
 
           switch (st->quad_type) {
           case CS_QUADRATURE_BARY:
+            compute_source[st_id] = cs_source_term_dcsd_bary_by_analytic;
+            break;
+          case CS_QUADRATURE_BARY_SUBDIV:
             compute_source[st_id] = cs_source_term_dcsd_q1o1_by_analytic;
             break;
           case CS_QUADRATURE_HIGHER:
@@ -1059,6 +1062,82 @@ cs_source_term_dcsd_by_value(const cs_source_term_t    *source,
   const double  density_value = source->def.get.val;
   for (int v = 0; v < cm->n_vc; v++)
     values[v] += density_value * cm->wvc[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar density defined at dual cells by an analytical
+ *         function.
+ *         Use a the barycentric approximation as quadrature to evaluate the
+ *         integral. Exact for linear function.
+ *
+ * \param[in]      source     pointer to a cs_source_term_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcsd_bary_by_analytic(const cs_source_term_t    *source,
+                                     const cs_cell_mesh_t      *cm,
+                                     cs_cell_builder_t         *cb,
+                                     double                    *values)
+{
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+
+  /* Compute the barycenter of each portion of dual cells */
+  cs_real_3_t  *xgv = cb->vectors;
+  for (short int v = 0; v < cm->n_vc; v++)
+    xgv[v][0] = xgv[v][1] = xgv[v][2] = 0.;
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    cs_real_3_t  xfc;
+
+    const double  *xf = cm->face[f].center;
+
+    for (int k = 0; k < 3; k++) xfc[k] = 0.25*(xf[k] + cm->xc[k]);
+
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const short int  e = cm->f2e_ids[i];
+      const short int  v1 = cm->e2v_ids[2*e];
+      const short int  v2 = cm->e2v_ids[2*e+1];
+      const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
+      const double  tet_vol = 0.5*cs_math_voltet(xv1, xv2, xf, cm->xc);
+
+      // xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
+      for (int k = 0; k < 3; k++)
+        xgv[v1][k] += tet_vol*(xfc[k] + 0.375*xv1[k] + 0.125*xv2[k]);
+
+      // xg = 0.25(xv2 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
+      for (int k = 0; k < 3; k++)
+        xgv[v2][k] += tet_vol*(xfc[k] + 0.375*xv2[k] + 0.125*xv1[k]);
+
+    } // Loop on face edges
+
+  } // Loop on cell faces
+
+  /* Compute the source term contribution for each vertex */
+  const double  tcur = cs_time_step->t_cur;
+  cs_get_t  result;
+  cs_analytic_func_t  *ana = source->def.analytic;
+
+  for (short int v = 0; v < cm->n_vc; v++) {
+    const double  vol_vc = cm->vol_c * cm->wvc[v];
+    const double  invvol = 1/vol_vc;
+    for (int k = 0; k < 3; k++) xgv[v][k] *= invvol;
+    ana(tcur, xgv[v], &result);
+    values[v] = vol_vc * result.val;
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/

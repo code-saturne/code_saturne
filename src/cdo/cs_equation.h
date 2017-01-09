@@ -467,13 +467,11 @@ cs_equation_build_system(const cs_mesh_t            *m,
  * \brief  Solve the linear system for this equation
  *
  * \param[in, out]  eq          pointer to a cs_equation_t structure
- * \param[in]       do_logcvg   output information on convergence or not
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(cs_equation_t   *eq,
-                  bool             do_logcvg);
+cs_equation_solve(cs_equation_t   *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

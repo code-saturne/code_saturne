@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDOVB_SCALEQ_DBG  2
+#define CS_CDOVB_SCALEQ_DBG  0
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
@@ -379,7 +379,7 @@ _compute_dir_values(const cs_mesh_t            *mesh,
   for (cs_lnum_t i = 0; i < dir->n_nhmg_elts; i++) {
 
     const cs_lnum_t  f_id = dir->elt_ids[i];
-    const short int  def_id = dir->def_ids[f_id];
+    const short int  def_id = dir->def_ids[i];
     const cs_param_def_type_t  def_type = bc_param->def_types[def_id];
     const cs_def_t  def = bc_param->defs[def_id];
 
@@ -970,7 +970,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
     for (cs_lnum_t i = 0; i < b->n_dofs; i++)
       b->source_terms[i] = 0;
 
-#pragma omp for //schedule(dynamic, 128)
+#pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */
@@ -1215,7 +1215,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
 
-#pragma omp for //schedule(dynamic, 128)
+#pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -1266,8 +1266,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT, "\n>> Local system after diffusion");
-      cs_locmat_dump(c_id, csys->mat);
+      cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
     } /* END OF DIFFUSION */
 
@@ -1287,8 +1286,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
         b->add_advection_bc(cbc, cm, eqp, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT, "\n>> Local system after advection");
-      cs_locmat_dump(c_id, csys->mat);
+      cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
 #endif
     } /* END OF ADVECTION */
 
@@ -1321,18 +1319,18 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
     if (b->sys_flag & CS_FLAG_SYS_TIME) {
 
       if (b->sys_flag & CS_FLAG_SYS_SOURCETERM) {
-	
-	/* Source term contribution to the algebraic system
-	   If the equation is steady, the source term has already been computed
-	   and is added to the right-hand side during its initialization. */
-	cs_source_term_compute_cellwise(eqp->n_source_terms,
-					eqp->source_terms,
-					cm,
-					b->sys_flag,
-					b->source_mask,
-					b->compute_source,
-					cb,    // mass matrix is cb->hdg
-					csys); // Fill csys->source
+
+        /* Source term contribution to the algebraic system
+           If the equation is steady, the source term has already been computed
+           and is added to the right-hand side during its initialization. */
+        cs_source_term_compute_cellwise(eqp->n_source_terms,
+                                        eqp->source_terms,
+                                        cm,
+                                        b->sys_flag,
+                                        b->source_mask,
+                                        b->compute_source,
+                                        cb,    // mass matrix is cb->hdg
+                                        csys); // Fill csys->source
 
       }
 
@@ -1362,18 +1360,11 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
     } /* END OF TIME CONTRIBUTION */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-    cs_log_printf(CS_LOG_DEFAULT, "\n>> (FINAL) Local system matrix");
-    cs_locmat_dump(c_id, csys->mat);
-    cs_log_printf(CS_LOG_DEFAULT, "\n>> RHS    ");
-    for (int i = 0; i < csys->n_dofs; i++)
-      cs_log_printf(CS_LOG_DEFAULT, " %5.3e", csys->rhs[i]);
-    cs_log_printf(CS_LOG_DEFAULT, "\n>> SOURCE ");
-    for (int i = 0; i < csys->n_dofs; i++)
-      cs_log_printf(CS_LOG_DEFAULT, " %5.3e", csys->source[i]);
-    cs_log_printf(CS_LOG_DEFAULT, "\n");
+    cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
     /* Assemble the local system to the global system */
+#pragma omp critical
     cs_equation_assemble_v(csys, connect->v_rs, b->sys_flag, // in
                            rhs, b->source_terms, mav);       // out
 
@@ -1652,7 +1643,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
     case CS_PARAM_HODGE_ALGO_COST:
     case CS_PARAM_HODGE_ALGO_VORONOI:
 
-#pragma omp for //schedule(dynamic, 128)
+#pragma omp for CS_CDO_OMP_SCHEDULE
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
         /* Set the local mesh structure for the current cell */
@@ -1686,7 +1677,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
 
     case CS_PARAM_HODGE_ALGO_WBS:
 
-#pragma omp for //schedule(dynamic, 128)
+#pragma omp for CS_CDO_OMP_SCHEDULE
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
         /* Set the local mesh structure for the current cell */

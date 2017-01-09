@@ -418,6 +418,28 @@ cs_source_term_dcsd_by_value(const cs_source_term_t    *source,
 /*----------------------------------------------------------------------------*/
 
 void
+cs_source_term_dcsd_bary_by_analytic(const cs_source_term_t    *source,
+                                     const cs_cell_mesh_t      *cm,
+                                     cs_cell_builder_t         *cb,
+                                     double                    *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar density defined at dual cells by an analytical
+ *         function.
+ *         Use a the barycentric approximation as quadrature to evaluate the
+ *         integral. Exact for linear function.
+ *
+ * \param[in]      source     pointer to a cs_source_term_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
 cs_source_term_dcsd_q1o1_by_analytic(const cs_source_term_t    *source,
                                      const cs_cell_mesh_t      *cm,
                                      cs_cell_builder_t         *cb,

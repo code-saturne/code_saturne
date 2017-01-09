@@ -105,45 +105,45 @@ typedef struct {
   int                   sles_verbosity; /* Level of detail to output for SLES */
 
   /* Unsteady-Diffusion-Convection-Source term activated or not */
-  cs_flag_t              flag;
+  cs_flag_t             flag;
 
   /* Post-treatment */
-  cs_flag_t              process_flag;  /* Type of post-treatment to do */
+  cs_flag_t             process_flag;  /* Type of post-treatment to do */
 
   /* Numerical settings */
-  cs_space_scheme_t           space_scheme;
+  cs_space_scheme_t     space_scheme;
 
   /* Boundary conditions */
-  cs_param_bc_t              *bc;
+  cs_param_bc_t        *bc;
 
   /* High-level structure to manage/monitor the resolution of this equation */
-  cs_equation_algo_t          algo_info;
-  cs_param_itsol_t            itsol_info;
+  cs_equation_algo_t    algo_info;
+  cs_param_itsol_t      itsol_info;
 
   /* Unsteady term parametrization */
-  cs_param_time_t             time_info;
-  cs_param_hodge_t            time_hodge;
-  cs_property_t              *time_property;
+  cs_param_time_t       time_info;
+  cs_param_hodge_t      time_hodge;
+  cs_property_t        *time_property;
 
   /* Diffusion term parametrization */
-  cs_param_hodge_t            diffusion_hodge;
-  cs_property_t              *diffusion_property;
+  cs_param_hodge_t      diffusion_hodge;
+  cs_property_t        *diffusion_property;
 
   /* Advection term parametrization */
-  cs_param_advection_t        advection_info;
-  cs_adv_field_t             *advection_field;
+  cs_param_advection_t  advection_info;
+  cs_adv_field_t       *advection_field;
 
   /* Reaction term parametrization
      Belong to the left-hand and/or right-hand side according to the time scheme
   */
-  cs_param_hodge_t            reaction_hodge;
-  int                         n_reaction_terms;
-  cs_property_t             **reaction_properties;
-  cs_param_reaction_t        *reaction_info;
+  cs_param_hodge_t      reaction_hodge;
+  int                   n_reaction_terms;
+  cs_property_t       **reaction_properties;
+  cs_param_reaction_t  *reaction_info;
 
   /* Parametrization of source terms (Belong to the right-hand side) */
-  int                         n_source_terms;
-  cs_source_term_t           *source_terms;
+  int                   n_source_terms;
+  cs_source_term_t     *source_terms;
 
 } cs_equation_param_t;
 

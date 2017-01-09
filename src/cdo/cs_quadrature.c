@@ -77,6 +77,7 @@ static const char
 cs_quadrature_type_name[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
   { N_("none"),
     N_("barycentric"),
+    N_("barycentric on a tetrahedral submesh"),
     N_("higher (single weight)"),
     N_("highest") };
 
