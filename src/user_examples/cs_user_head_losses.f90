@@ -265,7 +265,7 @@ if (iappel.eq.1.or.iappel.eq.2) then
   !     Example of head losses in direction x
 
 !< [example_3]
-if (iappel.eq.3) then
+else if (iappel.eq.3) then
 
   do ielpdc = 1, ncepdp
     iel=icepdc(ielpdc)
