@@ -56,6 +56,8 @@ class NotebookModel(Model):
         self.case = case
 
         self.node_pp   = self.case.xmlGetNode('physical_properties')
+        if not self.node_pp:
+            self.node_pp = self.case.root().xmlInitNode('physical_properties')
         self.node_note = self.node_pp.xmlInitNode('notebook')
 
 
