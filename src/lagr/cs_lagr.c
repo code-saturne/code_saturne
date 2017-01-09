@@ -1714,16 +1714,6 @@ cs_lagr_get_bdy_conditions(void)
     cs_glob_lagr_bdy_conditions
       = _create_bdy_cond_struct(cs_glob_lagr_const_dim->nflagm);
 
-  if (cs_glob_lagr_bdy_conditions->b_face_zone_id == NULL) {
-    BFT_MALLOC(cs_glob_lagr_bdy_conditions->b_face_zone_id,
-               cs_glob_mesh->n_b_faces,
-               int);
-
-    for (cs_lnum_t i = 0; i < cs_glob_mesh->n_b_faces; i++)
-      cs_glob_lagr_bdy_conditions->b_face_zone_id[i] = -1;
-
-  }
-
   return cs_glob_lagr_bdy_conditions;
 }
 
@@ -1788,6 +1778,56 @@ cs_get_lagr_extra_module(void)
 }
 
 /*----------------------------------------------------------------------------
+ * Prepare for execution of the Lagrangian model.
+ *
+ * This should be called before the fist call to cs_lagr_solve_time_step.
+ *
+ *  parameters:
+ *    dt     <-- time step (per cell)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_solve_initialize(const cs_real_t  *dt)
+{
+  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+
+  /* For frozen field:
+     values at previous time step = values at current time step */
+
+  if (cs_glob_lagr_time_scheme->iilagr == 3) {
+
+    int n_fields = cs_field_n_fields();
+
+    for (int f_id = 0; f_id < n_fields; f_id++){
+
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (f->type & CS_FIELD_VARIABLE)
+        cs_field_current_to_previous(f);
+
+    }
+
+  }
+
+  /* First call (initializations)
+     ---------------------------- */
+
+  _lagr_map_fields_default();
+
+  cs_lagr_tracking_initialize();
+
+  cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
+
+  /* first initializations */
+
+  cs_lagr_post_init();
+
+  /* Read particle restart data */
+
+  if (cs_glob_lagr_time_scheme->iilagr > 0)
+    cs_lagr_restart_read_p();
+}
+
+/*----------------------------------------------------------------------------
  * Execute one time step of the Lagrangian model.
  *
  * This is the main function for that model.
@@ -1826,11 +1866,11 @@ cs_lagr_solve_time_step(const int         itypfb[],
   BFT_MALLOC(w2, ncelet, cs_real_t);
 
   /* Allocate other arrays depending on user options    */
-  cs_real_33_t *gradvf;
+  cs_real_33_t *gradvf = NULL;
   if (cs_glob_lagr_time_scheme->modcpl > 0)
     BFT_MALLOC(gradvf, ncelet, cs_real_33_t);
 
-    cs_real_t *tempp;
+  cs_real_t *tempp = NULL;
   if (   lagr_model->clogging == 1
       || lagr_model->roughness == 1
       || lagr_model->dlvo == 1)
@@ -1874,21 +1914,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
      ---------------------------- */
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1) {
-
-    _lagr_map_fields_default();
-
-    cs_lagr_tracking_initialize();
-
-    p_set = cs_glob_lagr_particle_set;
-
-    /* first initializations */
-
-    cs_lagr_post_init();
-
-    /* Read particle restart data */
-
-    if (cs_glob_lagr_time_scheme->iilagr > 0)
-      cs_lagr_restart_read_p();
 
     /* --> if the deposition model is activated */
 

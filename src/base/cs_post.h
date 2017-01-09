@@ -260,23 +260,24 @@ typedef void
  * Note that the white-spaces in the beginning or in the end of the
  * character strings given as arguments here are suppressed automatically.
  *
- * \param[in]  writer_id      id of writer to create. (< 0 reserved,
- *                            > 0 for user); eveb for reserved ids,
- *                            the matching writer's options
- *                            may be redifined by calls to this function
- * \param[in]  case_name      associated case name
- * \param[in]  dir_name       associated directory name
- * \param[in]  fmt_name       associated format name
- * \param[in]  fmt_opts       associated format options string
- * \param[in]  time_dep       \ref FVM_WRITER_FIXED_MESH if mesh definitions
- *                            are fixed, \ref FVM_WRITER_TRANSIENT_COORDS if
- *                            coordinates change,
- *                            \ref FVM_WRITER_TRANSIENT_CONNECT if
- *                            connectivity changes
- * \param[in]  output_at_end  force output at calculation end if not 0
- * \param[in]  frequency_n    default output frequency in time-steps, or < 0
- * \param[in]  frequency_t    default output frequency in seconds, or < 0
- *                            (has priority over frequency_n)
+ * \param[in]  writer_id        id of writer to create. (< 0 reserved,
+ *                              > 0 for user); eveb for reserved ids,
+ *                              the matching writer's options
+ *                              may be redifined by calls to this function
+ * \param[in]  case_name        associated case name
+ * \param[in]  dir_name         associated directory name
+ * \param[in]  fmt_name         associated format name
+ * \param[in]  fmt_opts         associated format options string
+ * \param[in]  time_dep         \ref FVM_WRITER_FIXED_MESH if mesh definitions
+ *                              are fixed, \ref FVM_WRITER_TRANSIENT_COORDS if
+ *                              coordinates change,
+ *                              \ref FVM_WRITER_TRANSIENT_CONNECT if
+ *                              connectivity changes
+ * \param[in]  output_at_start  force output at calculation start if true
+ * \param[in]  output_at_end    force output at calculation end if true
+ * \param[in]  frequency_n      default output frequency in time-steps, or < 0
+ * \param[in]  frequency_t      default output frequency in seconds, or < 0
+ *                              (has priority over frequency_n)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -287,6 +288,7 @@ cs_post_define_writer(int                     writer_id,
                       const char             *fmt_name,
                       const char             *fmt_opts,
                       fvm_writer_time_dep_t   time_dep,
+                      bool                    output_at_start,
                       bool                    output_at_end,
                       int                     frequency_n,
                       double                  frequency_t);

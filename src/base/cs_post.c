@@ -3169,23 +3169,24 @@ cs_f_post_write_var(int               mesh_id,
  * Note that the white-spaces in the beginning or in the end of the
  * character strings given as arguments here are suppressed automatically.
  *
- * \param[in]  writer_id      id of writer to create. (< 0 reserved,
- *                            > 0 for user); eveb for reserved ids,
- *                            the matching writer's options
- *                            may be redifined by calls to this function
- * \param[in]  case_name      associated case name
- * \param[in]  dir_name       associated directory name
- * \param[in]  fmt_name       associated format name
- * \param[in]  fmt_opts       associated format options string
- * \param[in]  time_dep       \ref FVM_WRITER_FIXED_MESH if mesh definitions
- *                            are fixed, \ref FVM_WRITER_TRANSIENT_COORDS if
- *                            coordinates change,
- *                            \ref FVM_WRITER_TRANSIENT_CONNECT if
- *                            connectivity changes
- * \param[in]  output_at_end  force output at calculation end if not 0
- * \param[in]  frequency_n    default output frequency in time-steps, or < 0
- * \param[in]  frequency_t    default output frequency in seconds, or < 0
- *                            (has priority over frequency_n)
+ * \param[in]  writer_id        id of writer to create. (< 0 reserved,
+ *                              > 0 for user); eveb for reserved ids,
+ *                              the matching writer's options
+ *                              may be redifined by calls to this function
+ * \param[in]  case_name        associated case name
+ * \param[in]  dir_name         associated directory name
+ * \param[in]  fmt_name         associated format name
+ * \param[in]  fmt_opts         associated format options string
+ * \param[in]  time_dep         \ref FVM_WRITER_FIXED_MESH if mesh definitions
+ *                              are fixed, \ref FVM_WRITER_TRANSIENT_COORDS if
+ *                              coordinates change,
+ *                              \ref FVM_WRITER_TRANSIENT_CONNECT if
+ *                              connectivity changes
+ * \param[in]  output_at_start  force output at calculation start if true
+ * \param[in]  output_at_end    force output at calculation end if true
+ * \param[in]  frequency_n      default output frequency in time-steps, or < 0
+ * \param[in]  frequency_t      default output frequency in seconds, or < 0
+ *                              (has priority over frequency_n)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3196,6 +3197,7 @@ cs_post_define_writer(int                     writer_id,
                       const char             *fmt_name,
                       const char             *fmt_opts,
                       fvm_writer_time_dep_t   time_dep,
+                      bool                    output_at_start,
                       bool                    output_at_end,
                       int                     frequency_n,
                       double                  frequency_t)
@@ -3260,12 +3262,13 @@ cs_post_define_writer(int                     writer_id,
 
   w->id = writer_id;
   w->output_start = false;
+  w->output_start = output_at_start;
   w->output_end = output_at_end;
   w->frequency_n = frequency_n;
   w->frequency_t = frequency_t;
   w->active = 0;
   w->n_last = -2;
-  w->t_last = 0.0;
+  w->t_last = cs_glob_time_step->t_prev;
   w->ot = NULL;
 
   wd->time_dep = time_dep;
@@ -4360,25 +4363,22 @@ cs_post_activate_by_time_step(const cs_time_step_t  *ts)
 
     /* Activation based on frequency */
 
+    writer->active = 0;
+
     if (writer->frequency_t > 0) {
       double  delta_t = ts->t_cur - writer->t_last;
       if (delta_t >= writer->frequency_t*(1-1e-6))
         writer->active = 1;
-      else
-        writer->active = 0;
       /* delta_t = ts->t_cur - ts->t_prev; */
       /* if (delta_t < writer->frequency_t*(1-1e-6)) */
       /*   writer->active = 0; */
     }
     else if (writer->frequency_n > 0) {
       if (   ts->nt_cur % (writer->frequency_n) == 0
+          && ts->nt_cur > 0
           && ts->nt_cur != ts->nt_prev)
         writer->active = 1;
-      else
-        writer->active = 0;
     }
-    else
-      writer->active = 0;
 
     if (ts->nt_cur == ts->nt_prev && writer->output_start)
       writer->active = 1;
@@ -5565,6 +5565,7 @@ cs_post_init_writers(void)
                           "EnSight Gold",           /* format name */
                           "",                       /* format options */
                           FVM_WRITER_FIXED_MESH,
+                          false,                    /* output_at_start */
                           true,                     /* output at end */
                           -1,                       /* time step frequency */
                           -1.0);                    /* time value frequency */
@@ -5578,6 +5579,7 @@ cs_post_init_writers(void)
                           "time_plot",              /* format name */
                           "",                       /* format options */
                           FVM_WRITER_FIXED_MESH,
+                          false,                    /* output_at_start */
                           false,                    /* output at end */
                           1,                        /* time step frequency */
                           -1.0);                    /* time value frequency */
@@ -5595,6 +5597,7 @@ cs_post_init_writers(void)
                             "EnSight Gold",         /* format name */
                             "",                     /* format options */
                             FVM_WRITER_TRANSIENT_CONNECT,
+                            false,                  /* output_at_start */
                             true,                   /* output at end */
                             -1,                     /* time step frequency */
                             -1.0);                  /* time value frequency */
@@ -5606,6 +5609,7 @@ cs_post_init_writers(void)
                             "EnSight Gold",         /* format name */
                             "",                     /* format options */
                             FVM_WRITER_FIXED_MESH,
+                            false,                  /* output_at_start */
                             true,                   /* output at end */
                             1,                      /* time step frequency */
                             -1.0);                  /* time value frequency */
@@ -5925,8 +5929,8 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
       fvm_nodal_get_parent_num(exp_mesh, dim_ent, parent_ids);
 
-      for (cs_lnum_t i = 0; i < n_elts; i++)
-        parent_ids[i] -= 1;
+      for (cs_lnum_t k = 0; k < n_elts; k++)
+        parent_ids[k] -= 1;
 
       /* We can output variables for this time step */
       /*--------------------------------------------*/
@@ -6054,7 +6058,8 @@ cs_post_write_vars(const cs_time_step_t  *ts)
       else { /* if (post_mesh->sel_input[4] != NULL) */
 
         bool on_boundary = false;
-        const cs_lnum_t *cell_ids = NULL, *b_face_ids = NULL, *vertex_ids = NULL;
+        const cs_lnum_t *_cell_ids = NULL, *_b_face_ids = NULL;
+        const cs_lnum_t *vertex_ids = NULL;
         cs_probe_set_t  *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
         const char *mesh_name = cs_probe_set_get_name(pset);
         cs_probe_set_get_post_info(pset,
@@ -6066,13 +6071,13 @@ cs_post_write_vars(const cs_time_step_t  *ts)
                                    NULL);
         if (on_boundary) {
           n_b_faces = n_vertices; /* n_probes */
-          b_face_ids = cs_probe_set_get_elt_ids(pset,
-                                                CS_MESH_LOCATION_BOUNDARY_FACES);
+          _b_face_ids = cs_probe_set_get_elt_ids(pset,
+                                                 CS_MESH_LOCATION_BOUNDARY_FACES);
         }
         else {
           n_cells = n_vertices; /* n_probes */
-          cell_ids = cs_probe_set_get_elt_ids(pset,
-                                              CS_MESH_LOCATION_CELLS);
+          _cell_ids = cs_probe_set_get_elt_ids(pset,
+                                               CS_MESH_LOCATION_CELLS);
         }
         vertex_ids = cs_probe_set_get_elt_ids(pset,
                                               CS_MESH_LOCATION_VERTICES);
@@ -6085,9 +6090,9 @@ cs_post_write_vars(const cs_time_step_t  *ts)
                                    0,
                                    n_b_faces,
                                    n_vertices,
-                                   cell_ids,
+                                   _cell_ids,
                                    NULL,
-                                   b_face_ids,
+                                   _b_face_ids,
                                    vertex_ids,
                                    ts);
 
@@ -6482,6 +6487,7 @@ cs_post_init_error_writer(void)
                         fvm_writer_format_name(default_format_id),
                         default_format_options,
                         FVM_WRITER_FIXED_MESH, /* No time dependency here */
+                        false,
                         true,
                         -1,
                         -1.0);

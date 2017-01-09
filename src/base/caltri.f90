@@ -735,6 +735,18 @@ endif
 
 call cscini(nvar)
 
+! Lagrangian initialization
+
+if (iilagr.gt.0) then
+
+  call timer_stats_start(lagr_stats_id)
+
+  call cs_lagr_solve_initialize(dt)
+
+  call timer_stats_stop(lagr_stats_id)
+
+endif
+
 !===============================================================================
 ! Start of time loop
 !===============================================================================
@@ -781,6 +793,19 @@ if (itrale.gt.0) then
   endif
 
 endif
+
+! Possible postprocessing of initialization values
+
+call timer_stats_start(post_stats_id)
+
+call post_activate_by_time_step
+call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
+
+call pstvar(ntcabs, nvar, nscal)
+
+call timer_stats_stop(post_stats_id)
+
+! Start time loop
 
  100  continue
 
@@ -955,6 +980,8 @@ endif ! iisuit = 1
 ! Test to determine if a visualization output is generated
 !===============================================================================
 
+call timer_stats_start(post_stats_id)
+
 call post_activate_by_time_step
 
 if (iihmpr.eq.1) then
@@ -963,17 +990,15 @@ endif
 
 call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
 
-!===============================================================================
-! Standard visualization output
-!===============================================================================
-
 ! If ITRALE=0, deactivate all writers, as geometry has not
 !              been output yet.
 if (itrale.eq.0) then
   call post_activate_writer(0, .false.)
 endif
 
-call timer_stats_start(post_stats_id)
+!===============================================================================
+! Standard visualization output
+!===============================================================================
 
 call pstvar(ntcabs, nvar, nscal)
 

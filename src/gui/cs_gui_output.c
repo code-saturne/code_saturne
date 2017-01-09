@@ -1109,6 +1109,7 @@ cs_gui_postprocess_meshes(void)
                           "time_plot",
                           fmt_opts,
                           FVM_WRITER_FIXED_MESH,
+                          false,                   /* output_at_start */
                           false,                   /* output_at_end */
                           frequency_n,
                           frequency_t);
@@ -1129,6 +1130,7 @@ cs_gui_postprocess_writers(void)
   char *format_options = NULL;
   char *time_dependency = NULL;
   char *frequency_choice = NULL;
+  char *output_start_s = NULL;
   char *output_end_s = NULL;
   char *id_s = NULL;
 
@@ -1143,6 +1145,7 @@ cs_gui_postprocess_writers(void)
 
     int id = 0;
     fvm_writer_time_dep_t  time_dep = FVM_WRITER_FIXED_MESH;
+    bool output_at_start = false;
     bool output_at_end = true;
     cs_int_t time_step = -1;
     cs_real_t time_value = -1.0;
@@ -1152,6 +1155,7 @@ cs_gui_postprocess_writers(void)
     label = _output_type_choice("writer", "label", i);
     directory = _output_type_options("writer", "name", "directory", i);
     frequency_choice = _output_type_options("writer", "period", "frequency", i);
+    output_start_s = _output_type_options("writer", "status", "output_at_start", i);
     output_end_s = _output_type_options("writer", "status", "output_at_end", i);
     if (cs_gui_strcmp(frequency_choice, "none")) {
       time_step = -1;
@@ -1166,6 +1170,8 @@ cs_gui_postprocess_writers(void)
       time_step = -1;
       time_value = -1.;
     }
+    if (cs_gui_strcmp(output_start_s, "on"))
+      output_at_start = true;
     if (cs_gui_strcmp(output_end_s, "off"))
       output_at_end = false;
     format_name = _output_type_options("writer", "name", "format",i);
@@ -1184,6 +1190,7 @@ cs_gui_postprocess_writers(void)
                           format_name,
                           format_options,
                           time_dep,
+                          output_at_start,
                           output_at_end,
                           time_step,
                           time_value);
@@ -1192,6 +1199,7 @@ cs_gui_postprocess_writers(void)
     BFT_FREE(format_name);
     BFT_FREE(format_options);
     BFT_FREE(time_dependency);
+    BFT_FREE(output_start_s);
     BFT_FREE(output_end_s);
     BFT_FREE(frequency_choice);
     BFT_FREE(directory);

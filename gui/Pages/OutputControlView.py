@@ -1375,6 +1375,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewMesh.clicked.connect(self.slotSelectMesh)
         self.tableViewLagrangianMesh.clicked.connect(self.slotSelectLagrangianMesh)
         self.tableViewWriter.clicked.connect(self.slotSelectWriter)
+        self.checkBoxOutputStart.clicked.connect(self.slotWriterOutputStart)
         self.checkBoxOutputEnd.clicked.connect(self.slotWriterOutputEnd)
         self.checkBoxAllVariables.clicked.connect(self.slotAllVariables)
         self.checkBoxAllLagrangianVariables.clicked.connect(self.slotAllLagrangianVariables)
@@ -1804,6 +1805,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 else:
                     self.pushButtonFrequency.setStyleSheet("background-color: red")
 
+            if self.mdl.getWriterOutputStartStatus(writer_id) == 'on':
+                self.checkBoxOutputStart.setChecked(True)
+            else:
+                self.checkBoxOutputStart.setChecked(False)
+
             if self.mdl.getWriterOutputEndStatus(writer_id) == 'on':
                 self.checkBoxOutputEnd.setChecked(True)
             else:
@@ -1941,6 +1947,21 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             writer_id = self.modelWriter.getItem(row)['id']
             self.mdl.setWriterTimeDependency(writer_id,
                                              self.modelTimeDependency.dicoV2M[str(text)])
+
+
+    @pyqtSlot()
+    def slotWriterOutputStart(self):
+        """
+        Input output start flag
+        """
+        cindex = self.tableViewWriter.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            writer_id = self.modelWriter.getItem(row)['id']
+            st = 'on'
+            if not self.checkBoxOutputStart.isChecked():
+              st = 'off'
+            self.mdl.setWriterOutputStartStatus(writer_id, st)
 
 
     @pyqtSlot()

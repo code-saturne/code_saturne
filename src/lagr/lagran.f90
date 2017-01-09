@@ -267,6 +267,17 @@ module lagran
 
     !---------------------------------------------------------------------------
 
+    !> Prepare for execution of the Lagrangian model.
+
+    subroutine cs_lagr_solve_initialize(dt)  &
+      bind(C, name='cs_lagr_solve_initialize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(in) :: dt
+    end subroutine cs_lagr_solve_initialize
+
+    !---------------------------------------------------------------------------
+
     !> Execute one time step of the Lagrangian model.
 
     subroutine cs_lagr_solve_time_step(itypfb, dt)  &

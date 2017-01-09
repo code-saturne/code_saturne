@@ -1452,6 +1452,18 @@ cs_get_lagr_boundary_interactions(void);
 cs_lagr_extra_module_t *
 cs_get_lagr_extra_module(void);
 
+/*----------------------------------------------------------------------------
+ * Prepare for execution of the Lagrangian model.
+ *
+ * This should be called before the fist call to cs_lagr_solve_time_step.
+ *
+ *  parameters:
+ *    dt     <-- time step (per cell)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_solve_initialize(const cs_real_t  *dt);
+
 /*--------------------------------------------------------------------
  * Execute one time step of the Lagrangian model.
  *

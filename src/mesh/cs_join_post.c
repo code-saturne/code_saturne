@@ -126,6 +126,7 @@ _init_join_writer(void)
                         cs_post_get_default_format_options(),
                         FVM_WRITER_FIXED_MESH,
                         false,
+                        false,
                         -1,
                         -1.0);
 

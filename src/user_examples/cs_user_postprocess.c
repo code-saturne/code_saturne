@@ -86,6 +86,8 @@ _i_faces_select_example(void         *input,
                         cs_lnum_t    *n_faces,
                         cs_lnum_t   **face_ids)
 {
+  CS_UNUSED(input);
+
   cs_lnum_t i, face_id;
   cs_lnum_t n_families = 0;
   cs_int_t *family_list = NULL;
@@ -170,6 +172,8 @@ _b_faces_select_example(void         *input,
                         cs_lnum_t    *n_faces,
                         cs_lnum_t   **face_ids)
 {
+  CS_UNUSED(input);
+
   cs_lnum_t n_b_faces = 0;
   cs_lnum_t *b_face_ids = NULL;
 
@@ -213,6 +217,8 @@ _he_fraction_05_select(void        *input,
                        cs_lnum_t   *n_cells,
                        cs_lnum_t  **cell_ids)
 {
+  CS_UNUSED(input);
+
   cs_lnum_t _n_cells = 0;
   cs_lnum_t *_cell_ids = NULL;
 
@@ -287,6 +293,7 @@ cs_user_postprocess_writers(void)
                         "EnSight Gold",               /* format_name */
                         "",                           /* format_options */
                         FVM_WRITER_FIXED_MESH,
+                        false,                        /* output_at_start */
                         true,                         /* output_at_end */
                         -1,                           /* frequency_n */
                         -1.0);                        /* frequency_t */
@@ -309,6 +316,7 @@ cs_user_postprocess_writers(void)
                         "MED",                        /* format name */
                         "divide_polyhedra",
                         FVM_WRITER_FIXED_MESH,
+                        false,                        /* output_at_start */
                         true,                         /* output_at_end */
                         -1,                           /* frequency_n */
                         -1.0);                        /* frequency_t */
@@ -321,7 +329,8 @@ cs_user_postprocess_writers(void)
                         "ensight",                    /* format name */
                         "text",
                         FVM_WRITER_TRANSIENT_CONNECT,
-                        false,
+                        false,                        /* output_at_start */
+                        false,                        /* output_at_end */
                         3,
                         frequency_t);
   /*! [post_define_writer_2] */
@@ -333,9 +342,10 @@ cs_user_postprocess_writers(void)
                         "plot",           /* format name */
                         "",               /* format options */
                         FVM_WRITER_FIXED_MESH,
-                        false,            // output_at_end
-                        100,              // nt_freq
-                        -1.0);            // dt_freq
+                        false,            /* output_at_start */
+                        false,            /* output_at_end */
+                        100,              /* nt_freq */
+                        -1.0);            /* dt_freq */
   /*! [post_define_writer_3] */
 }
 

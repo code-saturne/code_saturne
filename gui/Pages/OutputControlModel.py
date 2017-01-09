@@ -149,6 +149,7 @@ class OutputControlModel(Model):
         default['frequency_choice']          = 'none'
         default['frequency']                 = 1
         default['frequency_time']            = 1.
+        default['output_at_start']           = 'off'
         default['output_at_end']             = 'on'
         default['format']                    = 'ensight'
         default['time_dependency']           = 'fixed_mesh'
@@ -408,17 +409,49 @@ class OutputControlModel(Model):
 
 
     @Variables.noUndo
+    def getWriterOutputStartStatus(self, writer_id):
+        """
+        Return the output_at_start status of a mesh
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        n = node.xmlGetNode('output_at_start')
+        status = None
+        if n:
+            status = n['status']
+        if status == None:
+            status = self.defaultWriterValues()['output_at_start']
+        return status
+
+
+    @Variables.undoLocal
+    def setWriterOutputStartStatus(self, writer_id, status):
+        """
+        Set the output_at_start status of a mesh
+        """
+        self.isInList(writer_id, self.getWriterIdList())
+        self.isOnOff(status)
+        node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
+        if status == self.defaultWriterValues()['output_at_start']:
+            node.xmlRemoveChild('output_at_start')
+        else:
+            n = node.xmlInitNode('output_at_start')
+            n['status'] = status
+
+
+    @Variables.noUndo
     def getWriterOutputEndStatus(self, writer_id):
         """
         Return the output_at_end status of a mesh
         """
         self.isInList(writer_id, self.getWriterIdList())
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        n = node.xmlInitNode('output_at_end')
-        status = n['status']
+        n = node.xmlGetNode('output_at_end')
+        status = None
+        if n:
+            status = n['status']
         if status == None:
             status = self.defaultWriterValues()['output_at_end']
-            self.setWriterOutputEndStatus(writer_id, status)
         return status
 
 
@@ -430,8 +463,11 @@ class OutputControlModel(Model):
         self.isInList(writer_id, self.getWriterIdList())
         self.isOnOff(status)
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
-        n = node.xmlInitNode('output_at_end')
-        n['status'] = status
+        if status == self.defaultWriterValues()['output_at_end']:
+            node.xmlRemoveChild('output_at_end')
+        else:
+            n = node.xmlInitNode('output_at_end')
+            n['status'] = status
 
 
     @Variables.noUndo
