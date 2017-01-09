@@ -1014,15 +1014,9 @@ cs_source_term_pvsp_by_analytic(const cs_source_term_t    *source,
 
   const double  tcur = cs_time_step->t_cur;
 
-  cs_analytic_func_t  *ana = source->def.analytic;
-  cs_get_t  result;
-
   /* Retrieve the values of the potential at each cell vertices */
   double  *eval = cb->values;
-  for (short int v = 0; v < cm->n_vc; v++) {
-    ana(tcur, cm->xv + 3*v, &result);
-    eval[v] = result.val;
-  }
+  source->def.analytic(tcur, cm->n_vc, cm->xv, eval);
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc;
@@ -1127,16 +1121,18 @@ cs_source_term_dcsd_bary_by_analytic(const cs_source_term_t    *source,
 
   /* Compute the source term contribution for each vertex */
   const double  tcur = cs_time_step->t_cur;
-  cs_get_t  result;
-  cs_analytic_func_t  *ana = source->def.analytic;
+  double  *result = cb->values;
 
   for (short int v = 0; v < cm->n_vc; v++) {
     const double  vol_vc = cm->vol_c * cm->wvc[v];
     const double  invvol = 1/vol_vc;
     for (int k = 0; k < 3; k++) xgv[v][k] *= invvol;
-    ana(tcur, xgv[v], &result);
-    values[v] = vol_vc * result.val;
   }
+
+  source->def.analytic(tcur, cm->n_vc, (const cs_real_t *)xgv, result);
+
+  for (short int v = 0; v < cm->n_vc; v++)
+    values[v] = cm->vol_c * cm->wvc[v] * result[v];
 
 }
 
@@ -1176,8 +1172,8 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_source_term_t    *source,
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    cs_real_3_t  xg, xfc;
-    cs_get_t  result;
+    cs_real_3_t  xg[2], xfc;
+    cs_real_t  result[2];
 
     const double  *xf = cm->face[f].center;
 
@@ -1192,14 +1188,16 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_source_term_t    *source,
       const double  tet_vol = 0.5*cs_math_voltet(xv1, xv2, xf, cm->xc);
 
       // xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
-      for (int k = 0; k < 3; k++)  xg[k] = xfc[k] + 0.375*xv1[k] + 0.125*xv2[k];
-      ana(tcur, xg, &result);
-      values[v1] += tet_vol * result.val;
+      for (int k = 0; k < 3; k++)
+        xg[0][k] = xfc[k] + 0.375*xv1[k] + 0.125*xv2[k];
 
       // xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
-      for (int k = 0; k < 3; k++)  xg[k] += 0.25*(xv2[k] - xv1[k]);
-      ana(tcur, xg, &result);
-      values[v2] += tet_vol * result.val;
+      for (int k = 0; k < 3; k++)
+        xg[1][k] = xfc[k] + 0.375*xv2[k] + 0.125*xv1[k];
+
+      ana(tcur, 2, (const cs_real_t *)xg, result);
+      values[v1] += tet_vol * result[0];
+      values[v2] += tet_vol * result[1];
 
     } // Loop on face edges
 
@@ -1229,8 +1227,6 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_source_term_t    *source,
                                       cs_cell_builder_t         *cb,
                                       double                    *values)
 {
-  cs_get_t  result;
-
   if (source == NULL)
     return;
 
@@ -1243,30 +1239,38 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_source_term_t    *source,
 
   /* Temporary buffers */
   double  *contrib = cb->values;              // size n_vc
-  double  *pfv_vol = cb->values + cm->n_vc;   // size n_vc
-  double  *pec_vol = cb->values + 2*cm->n_vc; // size n_ec
-  for (short int e = 0; e < cm->n_ec; e++) pec_vol[e] = 0;
 
   /* Cell evaluation */
-  ana(tcur, cm->xc, &result);
-  const double  val_c = result.val;
+  double  val_c;
+  ana(tcur, 1, cm->xc, &val_c);
 
   /* Contributions related to vertices */
+  double  *result_v = cb->values + cm->n_vc; // size n_vc
+  ana(tcur, cm->n_vc, cm->xv, result_v);
+
+  cs_real_3_t  *xvc = cb->vectors;
+  for (short int v = 0; v < cm->n_vc; v++) {
+    const double  *xv = cm->xv + 3*v;
+    for (int k = 0; k < 3; k++) xvc[v][k] = 0.5*(cm->xc[k] + xv[k]);
+  }
+
+  double  *result_vc = cb->values + 2*cm->n_vc; // size n_vc
+  ana(tcur, cm->n_vc, (const cs_real_t *)xvc, result_vc);
+
   for (short int v = 0; v < cm->n_vc; v++) {
 
-    const cs_real_t  *xv = cm->xv + 3*v;
-    ana(tcur, xv, &result);
-    double  val_v = -0.05*(val_c + result.val); // -1/20
-
-    cs_real_3_t  xvc;
-    for (int k = 0; k < 3; k++) xvc[k] = 0.5*(cm->xc[k] + xv[k]);
-    ana(tcur, xvc, &result);
-    val_v += 0.2*result.val; // 1/5
+    // -1/20 on extrimity points and 1/5 on midpoints
+    const double  val_v = -0.05*(val_c + result_v[v]) + 0.2*result_vc[v];
 
     /* Set the initial values */
     contrib[v] = cm->wvc[v]*cm->vol_c*val_v;
 
   } // Loop on vertices
+
+  /* Overwrite result_v and result_vc */
+  double  *pec_vol = cb->values + cm->n_vc;   // size n_vc
+  double  *pfv_vol = cb->values + 2*cm->n_vc; // size n_ec
+  for (short int e = 0; e < cm->n_ec; e++) pec_vol[e] = 0;
 
   /* Main loop on faces */
   for (short int f = 0; f < cm->n_fc; f++) {
@@ -1291,59 +1295,93 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_source_term_t    *source,
       pfv_vol[v2] += 0.5*pef_vol;
 
       cs_real_3_t  xef;
+      cs_real_t  result_ef;
       for (int k = 0; k < 3; k++) xef[k] = 0.5*(cm->edge[e].center[k] + xf[k]);
-      ana(tcur, xef, &result);
+      ana(tcur, 1, xef, &result_ef);
 
-      const double  ef_contrib = 0.1*pef_vol*result.val;
+      const double  ef_contrib = 0.1*pef_vol*result_ef;
       contrib[v1] += ef_contrib;
       contrib[v2] += ef_contrib;
 
     } // Loop on face edges
 
     /* Contributions related to this face */
-    ana(tcur, xf, &result);
-    double  val_f = -0.05*result.val; // -1/20
+    double  val_f = 0.0, val_fc = 0.0;
+    ana(tcur, 1, xf, &val_f);
+    val_f *= -0.05; // -1/20
 
     cs_real_3_t  xfc;
     for (int k = 0; k < 3; k++) xfc[k] = 0.5*(xf[k] + cm->xc[k]);
-    ana(tcur, xfc, &result);
-    val_f += 0.2*result.val; // 1/5
+    ana(tcur, 1, xfc, &val_fc);
+    val_f += 0.2*val_fc; // 1/5
 
     for (short int v = 0; v < cm->n_vc; v++) {
       if (pfv_vol[v] > 0) {
+        double  val_fv = 0;
         cs_real_3_t  xfv;
         for (int k = 0; k < 3; k++) xfv[k] = 0.5*(xf[k] + cm->xv[3*v+k]);
-        ana(tcur, xfv, &result);
-        contrib[v] += pfv_vol[v]*(val_f + 0.2*result.val); // 1/5
+        ana(tcur, 1, xfv, &val_fv);
+        contrib[v] += pfv_vol[v]*(val_f + 0.2*val_fv); // 1/5
       }
     }
 
   } // Loop on cell faces
 
   /* Contributions related to edges */
-  cs_real_3_t  xev;
+  cs_real_3_t  *xev = cb->vectors;              // overwrite xvc
   for (short int e = 0; e < cm->n_ec; e++) {
 
     const cs_real_t  *xe = cm->edge[e].center;
-    ana(tcur, xe, &result);
-    double val_e = -0.05*result.val; // -1/20
-
-    cs_real_3_t xec;
-    for (int k = 0; k < 3; k++) xec[k] = 0.5*(cm->xc[k] + xe[k]);
-    ana(tcur, xec, &result);
-    val_e += 0.2*result.val;
 
     const short int  v1 = cm->e2v_ids[2*e];
     const double  *xv1 = cm->xv + 3*v1;
-    for (int k = 0; k < 3; k++) xev[k] = 0.5*(xv1[k] + xe[k]);
-    ana(tcur, xev, &result);
-    contrib[v1] += 0.5*pec_vol[e]*(val_e + 0.2*result.val);
-
     const short int  v2 = cm->e2v_ids[2*e+1];
     const double  *xv2 = cm->xv + 3*v2;
-    for (int k = 0; k < 3; k++) xev[k] = 0.5*(xv2[k] + xe[k]);
-    ana(tcur, xev, &result);
-    contrib[v2] += 0.5*pec_vol[e]*(val_e + 0.2*result.val);
+
+    for (int k = 0; k < 3; k++) {
+      xev[2*e][k] = 0.5*(xv1[k] + xe[k]);
+      xev[2*e+1][k] = 0.5*(xv2[k] + xe[k]);
+    }
+
+  } // Loop on edges
+
+  cs_real_t  *val_ev = cb->values + 2*cm->n_vc; // overwrite pfv_vol
+  ana(tcur, 2*cm->n_ec, (const cs_real_t *)xev, val_ev);
+
+  cs_real_3_t  *xe = cb->vectors;               // overwrite xev
+  cs_real_3_t  *xec = cb->vectors + cm->n_ec;
+  for (short int e = 0; e < cm->n_ec; e++) {
+
+    /* Update contrib */
+    const double  vol_e = 0.1*pec_vol[e];
+    const short int  v1 = cm->e2v_ids[2*e];
+    const short int  v2 = cm->e2v_ids[2*e+1];
+
+    contrib[v1] += vol_e * val_ev[2*e];
+    contrib[v2] += vol_e * val_ev[2*e+1];
+
+    /* Prepare the second call related to edges */
+    for (int k = 0; k < 3; k++) {
+      const double  coord = cm->edge[e].center[k];
+      xe[e][k] = coord;
+      xec[e][k] = 0.5*(cm->xc[k] + coord);
+    }
+
+  } // Loop on edges
+
+  cs_real_t  *val_ec = cb->values + 2*cm->n_vc; // overwrite vel_ev
+  ana(tcur, 2*cm->n_ec, (const cs_real_t *)xe, val_ec);
+
+  /* Last update of contrib related to edges */
+  for (short int e = 0; e < cm->n_ec; e++) {
+
+    // -1/20 * val_e + 1/5*val_ec
+    const double val_e = -0.05*val_ec[2*e] + 0.2*val_ec[2*e+1];
+    const double e_contrib = 0.5 * pec_vol[e] * val_e;
+    const short int  v1 = cm->e2v_ids[2*e], v2 = cm->e2v_ids[2*e+1];
+
+    contrib[v1] += e_contrib;
+    contrib[v2] += e_contrib;
 
   } // Loop on edges
 
@@ -1377,9 +1415,8 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_source_term_t    *source,
                                      cs_cell_builder_t         *cb,
                                      double                    *values)
 {
-  double  weights[5], result;
+  double  sum, weights[5], results[5];
   cs_real_3_t  gauss_pts[5];
-  cs_get_t  evaluation;
 
   if (source == NULL)
     return;
@@ -1415,24 +1452,20 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_source_term_t    *source,
                              tet_vol,
                              gauss_pts, weights);
 
-      result = 0.;
-      for (int p = 0; p < 5; p++) {
-        ana(tcur, gauss_pts[p], &evaluation);
-        result += evaluation.val*weights[p];
-      }
-      contrib[v1] += result;
+      ana(tcur, 5, (const cs_real_t *)gauss_pts, results);
+      sum = 0.;
+      for (int p = 0; p < 5; p++) sum += results[p] * weights[p];
+      contrib[v1] += sum;
 
       /* Compute Gauss points and its weights */
       cs_quadrature_tet_5pts(cm->xv + 3*v2, cm->edge[e].center, xf, cm->xc,
                              tet_vol,
                              gauss_pts, weights);
 
-      result = 0.;
-      for (int p = 0; p < 5; p++) {
-        ana(tcur, gauss_pts[p], &evaluation);
-        result += evaluation.val*weights[p];
-      }
-      contrib[v2] += result;
+      ana(tcur, 5, (const cs_real_t *)gauss_pts, results);
+      sum = 0.;
+      for (int p = 0; p < 5; p++) sum += results[p] * weights[p];
+      contrib[v2] += sum;
 
     } // Loop on face edges
 
@@ -1520,16 +1553,11 @@ cs_source_term_vcsp_by_analytic(const cs_source_term_t    *source,
   const double  tcur = cs_time_step->t_cur;
 
   cs_analytic_func_t  *ana = source->def.analytic;
-  cs_get_t  result;
 
   /* Retrieve the values of the potential at each cell vertices */
   double  *eval = cb->values;
-  for (short int v = 0; v < cm->n_vc; v++) {
-    ana(tcur, cm->xv + 3*v, &result);
-    eval[v] = result.val;
-  }
-  ana(tcur, cm->xc, &result);
-  eval[cm->n_vc] = result.val;
+  ana(tcur, cm->n_vc, cm->xv, eval);
+  ana(tcur, 1, cm->xc, eval + cm->n_vc);
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc + 1;

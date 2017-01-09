@@ -99,16 +99,16 @@ _analytic_quad_tet1(double                 tcur,
 {
   int  k;
   cs_real_3_t  xg;
-  cs_get_t  evaluation;
+  double  evaluation;
 
   const double  vol_tet = cs_math_voltet(xv, xe, xf, xc);
 
   for (k = 0; k < 3; k++)
     xg[k] = 0.25*(xv[k] + xe[k] + xf[k] + xc[k]);
 
-  ana(tcur, xg, &evaluation);
+  ana(tcur, 1, xg, &evaluation);
 
-  return vol_tet * evaluation.val;
+  return vol_tet * evaluation;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -137,18 +137,17 @@ _analytic_quad_tet4(double                tcur,
 {
   double  weight;
   cs_real_3_t  gauss_pts[4];
-  cs_get_t  evaluation;
+  double  evaluation[4];
 
-  double  result = 0.0;
   const double  vol_tet = cs_math_voltet(xv, xe, xf, xc);
 
   /* Compute Gauss points and its unique weight */
   cs_quadrature_tet_4pts(xv, xe, xf, xc, vol_tet, gauss_pts, &weight);
 
-  for (int p = 0; p < 4; p++) {
-    ana(tcur, gauss_pts[p], &evaluation);
-    result += evaluation.val;
-  }
+  ana(tcur, 4, (const cs_real_t *)gauss_pts, evaluation);
+
+  double  result = 0.0;
+  for (int p = 0; p < 4; p++) result += evaluation[p];
   result *= weight;
 
   return result;
@@ -178,20 +177,18 @@ _analytic_quad_tet5(double                tcur,
                     const cs_real_3_t     xc,
                     cs_analytic_func_t   *ana)
 {
-  double  weights[5];
+  cs_real_t  weights[5], evaluation[5];
   cs_real_3_t  gauss_pts[5];
-  cs_get_t  evaluation;
 
-  double  result = 0.0;
   const double  vol_tet = cs_math_voltet(xv, xe, xf, xc);
 
   /* Compute Gauss points and its weights */
   cs_quadrature_tet_5pts(xv, xe, xf, xc, vol_tet, gauss_pts, weights);
 
-  for (int p = 0; p < 5; p++) {
-    ana(tcur, gauss_pts[p], &evaluation);
-    result += evaluation.val*weights[p];
-  }
+  ana(tcur, 5, (const cs_real_t *)gauss_pts, evaluation);
+
+  double  result = 0.0;
+  for (int p = 0; p < 5; p++) result += evaluation[p] * weights[p];
 
   return result;
 }
@@ -649,8 +646,6 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
                   const cs_lnum_t       *elt_ids,
                   double                 values[])
 {
-  cs_get_t  result;
-
   const double  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_sla_matrix_t  *c2f = cs_cdo_connect->c2f;
@@ -672,8 +667,7 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
 
       cs_lnum_t  f_id = c2f->col_id[j];
       if (todo[f_id]) {
-        ana(tcur, quant->face[f_id].center, &result);
-        values[f_id] = result.val;
+        ana(tcur, 1, quant->face[f_id].center, values + f_id);
         todo[f_id] = false;
       }
 
@@ -702,8 +696,6 @@ _pvsp_by_analytic(cs_analytic_func_t    *ana,
                   const cs_lnum_t       *elt_ids,
                   double                 values[])
 {
-  cs_get_t  result;
-
   const double  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
@@ -719,14 +711,13 @@ _pvsp_by_analytic(cs_analytic_func_t    *ana,
 
   for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
 
-    cs_lnum_t  c_id = elt_ids[i];
+    const cs_lnum_t  c_id = elt_ids[i];
 
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
       cs_lnum_t  v_id = c2v->ids[j];
       if (todo[v_id]) {
-        ana(tcur, quant->vtx_coord + 3*v_id, &result);
-        values[v_id] = result.val;
+        ana(tcur, 1, quant->vtx_coord + 3*v_id, values + v_id);
         todo[v_id] = false;
       }
 
@@ -1095,8 +1086,6 @@ cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
                                   cs_analytic_func_t    *ana,
                                   double                 retval[])
 {
-  cs_get_t  result;
-
   /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array);
@@ -1121,11 +1110,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
     if (cs_cdo_same_support(dof_flag, cs_cdo_primal_vtx)) {
 
       if (elt_ids == NULL) { /* All the support entities are selected */
-# pragma omp parallel for private(result) if(quant->n_vertices > CS_THR_MIN)
-        for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
-          ana(tcur, quant->vtx_coord + 3*v_id, &result);
-          retval[v_id] = result.val;
-        }
+        ana(tcur, quant->n_vertices, quant->vtx_coord, retval);
       }
       else
         _pvsp_by_analytic(ana, n_elts[0], elt_ids, retval);
@@ -1141,11 +1126,10 @@ cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
     else if (cs_cdo_same_support(dof_flag, cs_cdo_primal_face)) {
 
       if (elt_ids == NULL) { /* All the support entities are selected */
-# pragma omp parallel for  private(result) if(quant->n_faces > CS_THR_MIN)
-        for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
-          ana(tcur, quant->face[f_id].center, &result);
-          retval[f_id] = result.val;
-        }
+# pragma omp parallel for if(quant->n_faces > CS_THR_MIN)
+        for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
+          ana(tcur, 1, quant->face[f_id].center, retval + f_id);
+
       }
       else
         _pfsp_by_analytic(ana, n_elts[0], elt_ids, retval);
@@ -1162,18 +1146,14 @@ cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
              cs_cdo_same_support(dof_flag, cs_cdo_dual_vtx)) {
 
       if (elt_ids == NULL) { /* All the support entities are selected */
-# pragma omp parallel for  private(result) if(quant->n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-          ana(tcur, quant->cell_centers + 3*c_id, &result);
-          retval[c_id] = result.val;
+        ana(tcur, quant->n_cells, quant->cell_centers, retval);
+      }
+      else {
+        for (cs_lnum_t i = 0; i < n_elts[0]; i++) { // Loop on selected cells
+          const cs_lnum_t  c_id = elt_ids[i];
+          ana(tcur, 1, quant->cell_centers + 3*c_id, retval + c_id);
         }
       }
-      else
-        for (cs_lnum_t i = 0; i < n_elts[0]; i++) { // Loop on selected cells
-          cs_lnum_t  c_id = elt_ids[i];
-          ana(tcur, quant->cell_centers + 3*c_id, &result);
-          retval[c_id] = result.val;
-        }
 
       /* No sync since this value is computed by only one rank */
 

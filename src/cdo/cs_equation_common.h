@@ -30,6 +30,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_cdo_bc.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_cdo_time.h"
@@ -93,6 +94,26 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
 void
 cs_equation_free_common_structures(cs_flag_t   scheme_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Dirichlet BCs when DoFs are scalar_valued
+ *          and attached to vertices
+ *
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      bc_param    pointer to a cs_param_bc_t structure
+ * \param[in]      dir         pointer to a cs_cdo_bc_list_t structure
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ *
+ * \return a pointer to a new allocated array storing the dirichlet values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_equation_compute_dirichlet_sv(const cs_mesh_t          *mesh,
+                                 const cs_param_bc_t      *bc_param,
+                                 const cs_cdo_bc_list_t   *dir,
+                                 cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!

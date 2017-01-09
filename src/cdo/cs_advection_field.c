@@ -589,16 +589,15 @@ cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
 
   case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
     {
-      cs_get_t  get;
+      cs_real_3_t  v_c;
 
-      const cs_real_t  *xc = cs_cdo_quant->cell_centers + 3*c_id;
-      const double  t_cur = cs_time_step->t_cur;
+      cs_real_t  *xc = cs_cdo_quant->cell_centers + 3*c_id;
 
       /* Call the analytic function. result is stored in get */
-      adv->def.analytic(t_cur, xc, &get);
+      adv->def.analytic(cs_time_step->t_cur, 1, xc, v_c);
 
       /* Switch to a cs_nvec3_t representation */
-      cs_nvec3(get.vect, vect);
+      cs_nvec3(v_c, vect);
     }
     break;
 
@@ -672,13 +671,13 @@ cs_advection_field_get_at_xyz(const cs_adv_field_t   *adv,
 
   case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
     {
-      cs_get_t  get;
+      cs_real_3_t  v_xyz;
 
       /* Call the analytic function. result is stored in get */
-      adv->def.analytic(cs_time_step->t_cur, xyz, &get);
+      adv->def.analytic(cs_time_step->t_cur, 1, xyz, (cs_real_t *)v_xyz);
 
       /* Switch to a cs_nvec3_t representation */
-      cs_nvec3(get.vect, vect);
+      cs_nvec3(v_xyz, vect);
     }
     break;
 
@@ -719,11 +718,8 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
 
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-        const cs_lnum_t  shift_c = 3*c_id;
-
-        cell_values[shift_c]    = get.vect[0];
-        cell_values[shift_c +1] = get.vect[1];
-        cell_values[shift_c +2] = get.vect[2];
+        cs_real_t  *cell_val = cell_values + 3*c_id;
+        for (int k = 0; k < 3; k++) cell_val[k] = get.vect[k];
 
       } // Loop on cells
 
@@ -732,23 +728,11 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
 
   case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
     {
-      cs_get_t  get;
-
       const double  t_cur = cs_time_step->t_cur;
 
-      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-        const cs_lnum_t  shift_c = 3*c_id;
-        const cs_real_t  *xc = quant->cell_centers + shift_c;
-
-        /* Call the analytic function. result is stored in get */
-        adv->def.analytic(t_cur, xc, &get);
-
-        cell_values[shift_c]    = get.vect[0];
-        cell_values[shift_c +1] = get.vect[1];
-        cell_values[shift_c +2] = get.vect[2];
-
-      } // Loop on cells
+      /* Call the analytic function. result is stored in get */
+      adv->def.analytic(t_cur, quant->n_cells, quant->cell_centers,
+                        cell_values);
 
     }
     break;
@@ -760,18 +744,16 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
       /* Test if location has at least the pattern of the reference support */
       if (cs_cdo_same_support(adv->array_desc.location, cs_cdo_dual_face_byc)) {
 
+#pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-          const cs_lnum_t  shift_c = 3*c_id;
 
           cs_reco_dfbyc_at_cell_center(c_id,
                                        cs_cdo_connect->c2e,
-                                       quant,
-                                       adv->array, recoval);
+                                       quant, adv->array,
+                                       recoval);
 
-          cell_values[shift_c]    = recoval[0];
-          cell_values[shift_c +1] = recoval[1];
-          cell_values[shift_c +2] = recoval[2];
+          cs_real_t  *cell_val = cell_values + 3*c_id;
+          for (int k = 0; k < 3; k++) cell_val[k] = recoval[k];
 
         } // Loop on cells
 
@@ -821,11 +803,8 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
 
       for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
 
-        const cs_lnum_t  shift_v = 3*v_id;
-
-        vtx_values[shift_v]     = get.vect[0];
-        vtx_values[shift_v + 1] = get.vect[1];
-        vtx_values[shift_v + 2] = get.vect[2];
+        cs_real_t  *v_val = vtx_values + 3*v_id;
+        for (int k = 0; k < 3; k++) v_val[k] = get.vect[k];
 
       } // Loop on vertices
 
@@ -834,36 +813,27 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
 
   case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
     {
-      cs_get_t  get;
-
       const double  t_cur = cs_time_step->t_cur;
 
-      for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
-
-        const cs_lnum_t  shift = 3*v_id;
-        const cs_real_t  *xv = quant->vtx_coord + shift;
-
-        /* Call the analytic function. result is stored in get */
-        adv->def.analytic(t_cur, xv, &get);
-
-        /* Store computed values */
-        for (int k = 0; k < 3; k++)
-          vtx_values[shift+k] = get.vect[k];
-
-      } // Loop on vertices
+      /* Call the analytic function. result is stored in get */
+      adv->def.analytic(t_cur, quant->n_vertices, quant->vtx_coord,
+                        vtx_values);
 
     }
     break;
 
   case CS_PARAM_DEF_BY_ARRAY:
     {
-      cs_real_3_t  val;
       double  *dc_vol = NULL;
-
       BFT_MALLOC(dc_vol, quant->n_vertices, double);
+
+#pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
       for (cs_lnum_t j = 0; j < quant->n_vertices; j++) {
+
         dc_vol[j] = 0;
-        vtx_values[3*j] = vtx_values[3*j+1] = vtx_values[3*j+2] = 0.0;
+        cs_real_t  *v_val = vtx_values + 3*j;
+        v_val[0] = v_val[1] = v_val[2] = 0.;
+
       }
 
       const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
@@ -873,20 +843,25 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
 
         for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
+          cs_real_3_t  cell_vector;
+
           cs_reco_dfbyc_at_cell_center(c_id,
                                        cs_cdo_connect->c2e,
-                                       quant,
-                                       adv->array, val);
+                                       quant, adv->array,
+                                       cell_vector);
 
-          for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+          const cs_lnum_t  *c2v_idx = c2v->idx + c_id;
+          const cs_lnum_t  *c2v_ids = c2v->ids + c2v_idx[0];
+          const double  *vol_vc = quant->dcell_vol + c2v_idx[0];
 
-            const cs_lnum_t  v_id = c2v->ids[j];
-            const cs_lnum_t  shift_v = 3*v_id;
-            const double  dcc_vol = quant->dcell_vol[j];
+          for (short int v = 0; v < c2v_idx[1]-c2v_idx[0]; v++) {
 
-            dc_vol[v_id] += dcc_vol;
-            for (int k = 0; k < 3; k++)
-              vtx_values[shift_v + k] += dcc_vol * val[k];
+            const cs_lnum_t  v_id = c2v_ids[v];
+
+            dc_vol[v_id] += vol_vc[v];
+
+            cs_real_t *v_val = vtx_values + 3*v_id;
+            for (int k = 0; k < 3; k++) v_val[k] += vol_vc[v] * cell_vector[k];
 
           } // Loop on cell vertices
 
@@ -897,17 +872,23 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
                                    cs_cdo_primal_cell)) {
 
         for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-          for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-            const cs_lnum_t  v_id = c2v->ids[j];
-            const cs_lnum_t  shift_v = 3*v_id;
-            const double  dcc_vol = quant->dcell_vol[j];
+          const cs_real_t  *adv_cell = adv->array + 3*c_id;
+          const cs_lnum_t  *c2v_idx = c2v->idx + c_id;
+          const cs_lnum_t  *c2v_ids = c2v->ids + c2v_idx[0];
+          const double  *vol_vc = quant->dcell_vol + c2v_idx[0];
 
-            dc_vol[v_id] += dcc_vol;
-            for (int k = 0; k < 3; k++)
-              vtx_values[shift_v + k] += dcc_vol * adv->array[3*c_id+k];
+          for (short int v = 0; v < c2v_idx[1]-c2v_idx[0]; v++) {
+
+            const cs_lnum_t  v_id = c2v_ids[v];
+
+            dc_vol[v_id] += vol_vc[v];
+
+            cs_real_t *v_val = vtx_values + 3*v_id;
+            for (int k = 0; k < 3; k++) v_val[k] += vol_vc[v] * adv_cell[k];
 
           } // Loop on cell vertices
+
         } // Loop on cells
 
       }
@@ -916,18 +897,19 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
                   " Invalid support for evaluating the advection field %s"
                   " at vertices.", adv->name);
 
-      for (cs_lnum_t j = 0; j < quant->n_vertices; j++) {
+#pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+      for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
 
-        const double  inv_dcvol = 1/dc_vol[j];
-        const cs_lnum_t  shift_v = 3*j;
+        const double  inv_dcvol = 1/dc_vol[v_id];
 
-        for (int k = 0; k < 3; k++)
-          vtx_values[shift_v+k] *= inv_dcvol;
+        cs_real_t *v_val = vtx_values + 3*v_id;
+        for (int k = 0; k < 3; k++) v_val[k] *= inv_dcvol;
 
       } // Loop on vertices
 
       /* Free temporary buffer */
       BFT_FREE(dc_vol);
+
     }
     break;
 
@@ -1047,9 +1029,6 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
 
     case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
       {
-        cs_real_t  w;
-        cs_real_3_t  gpts[3], xg;
-        cs_get_t  get;
 
         const double  t_cur = cs_time_step->t_cur;
         const cs_real_t  *xc = cdoq->cell_centers + 3*c_id;
@@ -1073,24 +1052,31 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
 
             case CS_QUADRATURE_BARY:
             case CS_QUADRATURE_BARY_SUBDIV:
-              for (k = 0; k < 3; k++)
-                xg[k] = cs_math_onethird *(xc[k] + qe.center[k] + qf.center[k]);
-              adv->def.analytic(t_cur, xg, &get);
-              fluxes[_i] += tef.meas * _dp3(get.vect, tef.unitv);
+              {
+                cs_real_3_t  xg, adv_cell;
+
+                for (k = 0; k < 3; k++)
+                  xg[k] = cs_math_onethird *(xc[k]+qe.center[k]+qf.center[k]);
+                adv->def.analytic(t_cur, 1, (const cs_real_t *)xg, adv_cell);
+                fluxes[_i] += tef.meas * _dp3(adv_cell, tef.unitv);
+              }
               break;
 
             case CS_QUADRATURE_HIGHER:
               {
+                cs_real_t  w;
+                cs_real_3_t  gpts[3], eval[3];
+
                 cs_quadrature_tria_3pts(qe.center, qf.center, xc, tef.meas,
                                         gpts, &w);
 
-                cs_real_t  add = 0;
-                for (int p = 0; p < 3; p++) {
-                  adv->def.analytic(t_cur, gpts[p], &get);
-                  add += _dp3(get.vect, tef.unitv);
-                }
-                fluxes[_i] += add * w;
+                /* Evaluate the field at the three quadrature points */
+                adv->def.analytic(t_cur, 3, (const cs_real_t *)gpts,
+                                  (cs_real_t *)eval);
 
+                cs_real_t  add = 0;
+                for (int p = 0; p < 3; p++) add += _dp3(eval[p], tef.unitv);
+                fluxes[_i] += add * w;
               }
               break;
 
@@ -1178,7 +1164,7 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
 
   case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
     {
-      cs_get_t  get;
+      cs_real_t  eval[9];
 
       const double  t_cur = cs_time_step->t_cur;
 
@@ -1192,9 +1178,9 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
           for (int k = 0; k < 3; k++)
             xg[k] = cs_math_onethird * (xv1[k] + xv2[k] + pfq.center[k]);
 
-          /* Call the analytic function. result is stored in get */
-          adv->def.analytic(t_cur, xg, &get);
-          adv_flx = tef * _dp3(get.vect, pfq.unitv);
+          /* Call the analytic function. result is stored in eval */
+          adv->def.analytic(t_cur, 1, (const cs_real_t *)xg, eval);
+          adv_flx = tef * _dp3(eval, pfq.unitv);
         }
         break;
 
@@ -1205,11 +1191,13 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
 
           cs_quadrature_tria_3pts(xv1, xv2, pfq.center, tef, gpts, &w);
 
-          for (int p = 0; p < 3; p++) {
-            adv->def.analytic(t_cur, gpts[p], &get);
-            add += _dp3(get.vect, pfq.unitv);
-          }
+          /* Call the analytic function. result is stored in eval for the three
+             quadrature points */
+          adv->def.analytic(t_cur, 3, (const cs_real_t *)gpts, eval);
+
+          for (int p = 0; p < 3; p++) add += _dp3(eval + 3*p, pfq.unitv);
           adv_flx += add * w;
+
         }
         break;
 
@@ -1311,7 +1299,7 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
     {
       cs_real_t  w;
       cs_real_3_t  gpts[3], xg;
-      cs_get_t  get;
+      cs_real_t  eval[9];
 
       const double  t_cur = cs_time_step->t_cur;
 
@@ -1323,20 +1311,20 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
           xg[k] = cs_math_onethird * (xv[k] + peq.center[k] + pfq.center[k]);
 
         /* Call the analytic function. result is stored in get */
-        adv->def.analytic(t_cur, xg, &get);
-        adv_flx = surf * _dp3(get.vect, pfq.unitv);
+        adv->def.analytic(t_cur, 1, (const cs_real_t *)xg, eval);
+        adv_flx = surf * _dp3(eval, pfq.unitv);
         break;
 
       case CS_QUADRATURE_HIGHER:
         {
           cs_quadrature_tria_3pts(peq.center, pfq.center, xv, surf, gpts, &w);
 
+          adv->def.analytic(t_cur, 3, (const cs_real_t *)gpts, eval);
+
           cs_real_t  add = 0;
-          for (int p = 0; p < 3; p++) {
-            adv->def.analytic(t_cur, gpts[p], &get);
-            add += _dp3(get.vect, pfq.unitv);
-          }
+          for (int p = 0; p < 3; p++) add += _dp3(eval + 3*p, pfq.unitv);
           adv_flx += add * w;
+
         }
         break;
 

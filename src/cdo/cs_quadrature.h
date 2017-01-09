@@ -25,6 +25,13 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_base.h"
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -183,13 +190,13 @@ cs_quadrature_tria_7pts(const cs_real_3_t   v1,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_quadrature_tet_4pts(const cs_real_3_t  xv,
-                       const cs_real_3_t  xe,
-                       const cs_real_3_t  xf,
-                       const cs_real_3_t  xc,
-                       double             vol,
-                       cs_real_3_t        gpts[],
-                       double            *w);
+cs_quadrature_tet_4pts(const cs_real_3_t   xv,
+                       const cs_real_3_t   xe,
+                       const cs_real_3_t   xf,
+                       const cs_real_3_t   xc,
+                       double              vol,
+                       cs_real_3_t         gpts[],
+                       double             *w);
 
 /*----------------------------------------------------------------------------*/
 /*!

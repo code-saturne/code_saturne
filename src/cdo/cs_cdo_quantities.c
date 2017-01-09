@@ -500,7 +500,7 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int t_id = omp_get_thread_num();
 #else
-    int  t_id = 0;
+    int t_id = 0;
 #endif
 
     short int  *parent = parent_thread_array[t_id];
@@ -958,10 +958,13 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *mq,
                         const cs_cdo_connect_t      *topo)
 {
-  cs_cdo_quantities_t  *cdoq = NULL;
-  cs_cdo_cc_algo_t  cc_algo = CS_CDO_CC_SATURNE; // default value
+  cs_timer_t t0 = cs_timer_time();
 
-  /* Sanity check */
+  cs_cdo_quantities_t  *cdoq = NULL;
+  /* Default = CS_CDO_CC_SATURNE but can be modify by the user */
+  cs_cdo_cc_algo_t  cc_algo = cs_user_cdo_geometric_settings();
+
+  /* Sanity checks */
   assert(topo != NULL);
   assert(topo->c2f != NULL);
 
@@ -986,10 +989,8 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   cdoq->dface = NULL;
   cdoq->dedge = NULL;
 
-  /* User can modify the default value */
-  cc_algo = cs_user_cdo_geometric_settings();
-
-  switch (cc_algo) { /* Compute face/cell centers and cell volumes */
+  /* Compute face/cell centers and cell volumes */
+  switch (cc_algo) {
 
   case CS_CDO_CC_BARYC:
     cs_log_printf(CS_LOG_SETUP,
@@ -1076,6 +1077,12 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
 
   /* Define a flag for each cell */
   _define_cell_flag(topo, cdoq);
+
+  /* Monitoring */
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
+  cs_log_printf(CS_LOG_PERFORMANCE, "%-40s %10.3f s\n",
+                "<CDO/Quantities> Runtime", time_count.wall_nsec*1e-9);
 
   return cdoq;
 }

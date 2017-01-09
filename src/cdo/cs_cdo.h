@@ -25,8 +25,6 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -105,7 +103,8 @@ BEGIN_C_DECLS
 #define CS_MASK_TIME   (1 << 7)
 
 /* Specifications for open mp loops */
-#define CS_CDO_OMP_SCHEDULE  schedule(dynamic, 128)
+#define CS_CDO_OMP_CHUNK_SIZE  128
+#define CS_CDO_OMP_SCHEDULE  schedule(static, CS_CDO_OMP_CHUNK_SIZE)
 
 /*============================================================================
  * Type definitions
@@ -143,7 +142,6 @@ typedef enum {
 
 } cs_space_scheme_t;
 
-
 /* Values associated to the different ways to retrieve data */
 typedef union {
 
@@ -164,15 +162,17 @@ typedef union {
  * \brief  Generic analytic function
  *
  * \param[in]      time       when ?
+ * \param[in]      n_points   number of coordinates to consider
  * \param[in]      xyz        where ?
  * \param[in, out] retval     result of the function
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_analytic_func_t) (cs_real_t           time,
-                      const cs_real_3_t   xyz,
-                      cs_get_t           *retval);
+(cs_analytic_func_t) (cs_real_t            time,
+                      cs_lnum_t            n_points,
+                      const cs_real_t     *xyz,
+                      cs_real_t           *retval);
 
 /*----------------------------------------------------------------------------*/
 /*!

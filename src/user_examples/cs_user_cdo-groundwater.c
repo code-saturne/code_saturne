@@ -93,8 +93,9 @@ static const double  L = 200;
 */
 static void
 get_sol(cs_real_t           time,
-        const cs_real_3_t   xyz,
-        cs_get_t           *get)
+	cs_lnum_t           n_pts,
+        const cs_real_t    *xyz,
+        cs_real_t          *retval)
 {
   /* Physical parameters */
   const double  ks = 1.15741e-4;
@@ -102,27 +103,38 @@ get_sol(cs_real_t           time,
   const double  hr = -100;
   const double  td = -5*L*L*dtheta/(6*hr*ks);
 
-  /* Space-dependent part */
-  const double  xll = (xyz[0] - L)/L, beta = xll*xll;
   /* Time-dependent part */
   const double  alpha = 6 - 5*time/td;
 
-  (*get).val = hr*(1 - beta/alpha);
+  for (cs_lnum_t p = 0; p < n_pts; p++) {
+    
+    /* Space-dependent part */
+    const double  xll = (xyz[3*p] - L)/L, beta = xll*xll;
+
+    retval[p] = hr*(1 - beta/alpha);
+
+  }
 }
 
 /* Same as get_sol but optimize for time=0 */
 static void
 get_ic(cs_real_t           time,
-       const cs_real_3_t   xyz,
-       cs_get_t           *get)
+       cs_lnum_t           n_pts,
+       const cs_real_t    *xyz,
+       cs_real_t          *retval)
 {
   CS_UNUSED(time);
 
-  const double  x = xyz[0], xll = (x - L)/L;
   const double  hr = -100;
 
-  (*get).val = 1-one6*xll*xll;
-  (*get).val *= hr;
+  for (cs_lnum_t p = 0; p < n_pts; p++) {
+
+    const double  x = xyz[3*p], xll = (x - L)/L;
+
+    retval[p] = 1-one6*xll*xll;
+    retval[p] *= hr;
+
+  }
 }
 
 /*============================================================================

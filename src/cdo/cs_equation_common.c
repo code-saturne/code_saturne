@@ -63,6 +63,8 @@ BEGIN_C_DECLS
  * Type definitions and macros
  *============================================================================*/
 
+#define CS_EQUATION_COMMON_DBG  0
+
 /* Main categories to consider for high-level matrix structures */
 #define CS_EQ_COMMON_VERTEX   0
 #define CS_EQ_COMMON_FACE     1
@@ -83,11 +85,16 @@ static cs_matrix_structure_t  **cs_equation_common_ms = NULL;
 
 /* Structure related to the index of a matrix for vertex-based schemes
    vertex --> vertices through cell connectivity */
-cs_connect_index_t  *cs_connect_v2v = NULL;
+static cs_connect_index_t  *cs_connect_v2v = NULL;
 
 /* Structure related to the index of a matrix for face-based schemes
    face --> faces through cell connectivity */
-cs_connect_index_t  *cs_connect_f2f = NULL;
+static cs_connect_index_t  *cs_connect_f2f = NULL;
+
+/* Pointer to shared structures (owned by a cs_domain_t structure) */
+static const cs_cdo_quantities_t  *cs_shared_quant;
+static const cs_cdo_connect_t  *cs_shared_connect;
+static const cs_time_step_t  *cs_shared_time_step;
 
 /*============================================================================
  * Private function prototypes
@@ -378,6 +385,12 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
   }
 
+  /* Assign static const pointers: shared pointers with a cs_domain_t */
+  cs_shared_quant = quant;
+  cs_shared_connect = connect;
+  cs_shared_time_step = time_step;
+
+  /* Common buffer for temporary usage */
   cs_equation_common_work_buffer_size = cwb_size;
   BFT_MALLOC(cs_equation_common_work_buffer, cwb_size, double);
 }
@@ -434,6 +447,176 @@ cs_equation_free_common_structures(cs_flag_t   scheme_flag)
   }
   BFT_FREE(cs_equation_common_ms);
   BFT_FREE(cs_equation_common_ma);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Dirichlet BCs when DoFs are scalar-valued
+ *          and attached to vertices
+ *
+ * \param[in]      mesh         pointer to a cs_mesh_t structure
+ * \param[in]      bc_param     pointer to a cs_param_bc_t structure
+ * \param[in]      dir          pointer to a cs_cdo_bc_list_t structure
+ * \param[in, out] cb           pointer to a cs_cell_builder_t structure
+ *
+ * \return a pointer to a new allocated array storing the dirichlet values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_equation_compute_dirichlet_sv(const cs_mesh_t          *mesh,
+                                 const cs_param_bc_t      *bc_param,
+                                 const cs_cdo_bc_list_t   *dir,
+                                 cs_cell_builder_t        *cb)
+{
+  cs_flag_t  *flag = NULL, *counter = NULL;
+  cs_real_t  *dir_val = NULL;
+
+  const cs_lnum_t  *face_vtx_idx = mesh->b_face_vtx_idx;
+  const cs_lnum_t  *face_vtx_lst = mesh->b_face_vtx_lst;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+
+  /* Initialization */
+  BFT_MALLOC(dir_val, quant->n_vertices, cs_real_t);
+  BFT_MALLOC(counter, quant->n_vertices, cs_flag_t);
+  BFT_MALLOC(flag, quant->n_vertices, cs_flag_t);
+
+# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
+
+    dir_val[v_id] = 0;
+    flag[v_id] = 0;    // No flag by default
+    counter[v_id] = 0; // Number of faces with a Dir. related to a vertex
+
+  }
+
+  /* Define array storing the Dirichlet values */
+  for (cs_lnum_t i = 0; i < dir->n_nhmg_elts; i++) {
+
+    const cs_lnum_t  f_id = dir->elt_ids[i];
+    const cs_lnum_t  *f2v_idx = face_vtx_idx + f_id;
+    const int  n_vf = f2v_idx[1] - f2v_idx[0];
+    const cs_lnum_t  *f2v_lst = face_vtx_lst + f2v_idx[0];
+
+    const short int  def_id = dir->def_ids[i];
+    const cs_param_def_type_t  def_type = bc_param->def_types[def_id];
+    const cs_def_t  def = bc_param->defs[def_id];
+
+    switch(def_type) {
+
+    case CS_PARAM_DEF_BY_VALUE:
+      {
+        const double  val = def.get.val;
+
+        for (short int v = 0; v < n_vf; v++) {
+
+          const cs_lnum_t  v_id = f2v_lst[v];
+          dir_val[v_id] += val;
+          flag[v_id] |= CS_CDO_BC_DIRICHLET;
+          counter[v_id] += 1;
+
+        }
+
+      }
+      break;
+
+    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+      {
+        cs_real_t  *eval = cb->values;
+        cs_real_3_t  *xyz = cb->vectors;
+
+        /* Evaluate the boundary condition at each boundary vertex */
+        for (short int v = 0; v < n_vf; v++) {
+          const cs_real_t  *v_xyz = quant->vtx_coord + 3*f2v_lst[v];
+          for (int k = 0; k < 3; k++) xyz[v][k] = v_xyz[k];
+        }
+
+        def.analytic(cs_shared_time_step->t_cur, n_vf, (const cs_real_t *)xyz,
+                     eval);
+
+        for (short int v = 0; v < n_vf; v++) {
+
+          const cs_lnum_t  v_id = f2v_lst[v];
+          dir_val[v_id] += eval[v];
+          flag[v_id] |= CS_CDO_BC_DIRICHLET;
+          counter[v_id] += 1;
+
+        }
+
+      }
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid type of definition.\n"
+                  " Stop computing the Dirichlet value.\n"));
+
+    } // switch def_type
+
+  } // Loop on faces with a non-homogeneous Dirichlet BC
+
+  /* Define array storing the Dirichlet values */
+  for (cs_lnum_t i = dir->n_nhmg_elts; i < dir->n_elts; i++) {
+
+    const cs_lnum_t  f_id = dir->elt_ids[i];
+    const cs_lnum_t  *f2v_idx = face_vtx_idx + f_id;
+    const int  n_vf = f2v_idx[1] - f2v_idx[0];
+    const cs_lnum_t  *f2v_lst = face_vtx_lst + f2v_idx[0];
+
+    for (short int v = 0; v < n_vf; v++)
+      flag[f2v_lst[v]] |= CS_CDO_BC_HMG_DIRICHLET;
+
+  } // Loop on faces with a non-homogeneous Dirichlet BC
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+
+    cs_interface_set_max(cs_shared_connect->v_rs->ifs,
+                         quant->n_vertices,
+                         1,          // stride
+                         false,      // interlace (not useful here)
+                         CS_FLAG,    // unsigned short int
+                         flag);
+
+    cs_interface_set_sum(cs_shared_connect->v_rs->ifs,
+                         quant->n_vertices,
+                         1,          // stride
+                         false,      // interlace (not useful here)
+                         CS_FLAG,    // unsigned short int
+                         counter);
+
+    cs_interface_set_sum(cs_shared_connect->v_rs->ifs,
+                         quant->n_vertices,
+                         1,          // stride
+                         false,      // interlace (not useful here)
+                         CS_DOUBLE,
+                         dir_val);
+
+  }
+
+  /* Homogeneous Dirichlet are always enforced (even in case of multiple BCs).
+     If multiple Dirichlet BCs are set, a weighted sum is used to set the
+     Dirichlet value at each corresponding vertex */
+#pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
+
+    if (flag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
+      dir_val[v_id] = 0.;
+    else if (flag[v_id] & CS_CDO_BC_DIRICHLET) {
+      if (counter[v_id] > 1)
+        dir_val[v_id] /= counter[v_id];
+    }
+
+  } // Loop on vertices
+
+  /* Free temporary buffers */
+  BFT_FREE(counter);
+  BFT_FREE(flag);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 1
+  cs_dump_array_to_listing("DIRICHLET_VALUES", quant->n_vertices, dir_val, 8);
+#endif
+
+  return dir_val;
 }
 
 /*----------------------------------------------------------------------------*/

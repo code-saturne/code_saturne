@@ -1192,8 +1192,35 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
 
       /* Call the analytic function. result is stored in get and then converted
          into a 3x3 tensor */
-      sub->def.analytic(t_cur, xc, &get);
-      _get_tensor_by_value(pty, get, tensor);
+      switch (pty->type) {
+
+      case CS_PROPERTY_ISO:
+        {
+          double  eval;
+
+          sub->def.analytic(t_cur, 1, xc, &eval);
+          tensor[0][0] = tensor[1][1] = tensor[2][2] = eval;
+        }
+        break;
+
+      case CS_PROPERTY_ORTHO:
+        {
+          double  eval[3];
+
+          sub->def.analytic(t_cur, 1, xc, eval);
+          for (int k = 0; k < 3; k++)
+            tensor[k][k] = eval[k];
+        }
+        break;
+
+      case CS_PROPERTY_ANISO:
+        sub->def.analytic(t_cur, 1, xc, (cs_real_t *)tensor);
+        break;
+
+      default:
+        assert(0);
+        break;
+      }
 
     }
     break;
@@ -1312,14 +1339,10 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
     break;
 
   case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-    {
-      const cs_real_t  *xc = cs_cdo_quant->cell_centers + 3*c_id;
-      const double  t_cur = cs_time_step->t_cur;
-
-      /* Call the analytic function. result is stored in get */
-      sub->def.analytic(t_cur, xc, &get);
-      result = get.val;
-    }
+    sub->def.analytic(cs_time_step->t_cur,
+                      1,
+                      cs_cdo_quant->cell_centers + 3*c_id,
+                      &result);
     break;
 
   case CS_PARAM_DEF_BY_LAW_ONESCA:

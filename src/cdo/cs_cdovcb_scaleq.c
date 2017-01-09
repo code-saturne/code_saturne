@@ -357,154 +357,6 @@ _init_cell_structures(cs_lnum_t                  c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Dirichlet BCs
- *
- * \param[in]      mesh         pointer to a cs_mesh_t structure
- * \param[in]      field_val    pointer to the current value of the field
- * \param[in, out] b            pointer to a cs_cdovcb_scaleq_t structure
- *
- * \return a pointer to a new allocated array storing the dirichlet values
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_real_t *
-_compute_dir_values(const cs_mesh_t            *mesh,
-                    const cs_real_t            *field_val,
-                    const cs_cdovcb_scaleq_t   *b)
-{
-  CS_UNUSED(field_val);
-
-  cs_flag_t  *flag = NULL, *counter = NULL;
-  cs_real_t  *dir_val = NULL;
-
-  const cs_equation_param_t  *eqp = b->eqp;
-  const cs_param_bc_t  *bc_param = eqp->bc;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  *f2v_idx = mesh->b_face_vtx_idx;
-  const cs_lnum_t  *f2v_lst = mesh->b_face_vtx_lst;
-  const cs_cdo_bc_list_t  *dir = b->face_bc->dir;
-
-  /* Initialization */
-  BFT_MALLOC(counter, quant->n_vertices, cs_flag_t);
-  BFT_MALLOC(flag, quant->n_vertices, cs_flag_t);
-  BFT_MALLOC(dir_val, quant->n_vertices, cs_real_t);
-
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
-    dir_val[v_id] = 0;
-    flag[v_id] = 0; // No flag by default
-    counter[v_id] = 0; // Number of faces with a Dir. related to a vertex
-  }
-
-  /* Define array storing the Dirichlet values */
-  for (cs_lnum_t i = 0; i < dir->n_nhmg_elts; i++) {
-
-    const cs_lnum_t  f_id = dir->elt_ids[i];
-    const short int  def_id = dir->def_ids[i];
-    const cs_param_def_type_t  def_type = bc_param->def_types[def_id];
-    const cs_def_t  def = bc_param->defs[def_id];
-
-    switch(def_type) {
-
-    case CS_PARAM_DEF_BY_VALUE:
-      {
-        const double  val = def.get.val;
-
-        for (cs_lnum_t j = f2v_idx[f_id]; j < f2v_idx[f_id+1]; j++) {
-          const cs_lnum_t  v_id = f2v_lst[j];
-          dir_val[v_id] += val;
-          flag[v_id] |= CS_CDO_BC_DIRICHLET;
-          counter[v_id] += 1;
-        }
-      }
-      break;
-
-    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-      {
-        cs_get_t  get;
-
-        for (cs_lnum_t j = f2v_idx[f_id]; j < f2v_idx[f_id+1]; j++) {
-          const cs_lnum_t  v_id = f2v_lst[j];
-          def.analytic(cs_shared_time_step->t_cur, quant->vtx_coord + 3*v_id,
-                       &get);
-          dir_val[v_id] += get.val;
-          flag[v_id] |= CS_CDO_BC_DIRICHLET;
-          counter[v_id] += 1;
-        }
-
-      }
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid type of definition.\n"
-                  " Stop computing the Dirichlet value.\n"));
-
-    } // switch def_type
-
-  } // Loop on faces with a non-homogeneous Dirichlet BC
-
-  /* Define array storing the Dirichlet values */
-  for (cs_lnum_t i = dir->n_nhmg_elts; i < dir->n_elts; i++) {
-
-    const cs_lnum_t  f_id = dir->elt_ids[i];
-    for (cs_lnum_t j = f2v_idx[f_id]; j < f2v_idx[f_id+1]; j++)
-      flag[f2v_lst[j]] |= CS_CDO_BC_HMG_DIRICHLET;
-
-  } // Loop on faces with a non-homogeneous Dirichlet BC
-
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    cs_interface_set_max(cs_shared_connect->v_rs->ifs,
-                         quant->n_vertices,
-                         1,          // stride
-                         false,      // interlace (not useful here)
-                         CS_FLAG,    // unsigned short int
-                         flag);
-
-    cs_interface_set_sum(cs_shared_connect->v_rs->ifs,
-                         quant->n_vertices,
-                         1,          // stride
-                         false,      // interlace (not useful here)
-                         CS_FLAG,    // unsigned short int
-                         counter);
-
-    cs_interface_set_sum(cs_shared_connect->v_rs->ifs,
-                         quant->n_vertices,
-                         1,          // stride
-                         false,      // interlace (not useful here)
-                         CS_DOUBLE,
-                         dir_val);
-
-  }
-
-  /* Homogeneous Dirichlet are always enforced (even in case of multiple BCs).
-     If multiple Dirichlet BCs are set, a weighted sum is used to set the
-     Dirichlet value at each corresponding vertex */
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
-
-    if (flag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
-      dir_val[v_id] = 0.;
-    else if (flag[v_id] & CS_CDO_BC_DIRICHLET)
-      if (counter[v_id] > 1)
-        dir_val[v_id] /= counter[v_id];
-
-  } // Loop on vertices
-
-  /* Free temporary buffers */
-  BFT_FREE(counter);
-  BFT_FREE(flag);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
-  cs_dump_array_to_listing("DIRICHLET_VALUES", quant->n_vertices, dir_val, 8);
-#endif
-
-  return dir_val;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Proceed to a static condensation of the local system and keep
  *          information inside the builder to be able to compute the values
  *          at cell centers
@@ -1242,8 +1094,11 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
   /* Compute the values of the Dirichlet BC.
      TODO: do the analogy for Neumann BC */
   cs_cdovcb_scaleq_t  *b = (cs_cdovcb_scaleq_t *)builder;
-
-  cs_real_t  *dir_values = _compute_dir_values(mesh, field_val, b);
+  cs_real_t  *dir_values =
+    cs_equation_compute_dirichlet_sv(mesh,
+                                     b->eqp->bc,
+                                     b->face_bc->dir,
+                                     cs_cdovcb_cell_bld[0]);
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \
   shared(dt_cur, quant, connect, b, rhs, matrix, mav, dir_values, field_val, \

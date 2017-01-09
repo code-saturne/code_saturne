@@ -105,17 +105,23 @@ static FILE  *resume = NULL;
 
 static inline void
 _get_sol(cs_real_t          time,
-         const cs_real_3_t  xyz,
-         cs_get_t          *retval)
+         cs_lnum_t          n_pts,
+         const cs_real_t   *xyz,
+         cs_real_t         *retval)
 {
   CS_UNUSED(time);
 
-  const double  x = xyz[0], y = xyz[1], z = xyz[2];
   const double  pi = 4.0*atan(1.0);
 
-  double  solution = 1+sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+  for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-  (*retval).val = solution;
+    const cs_real_t  *_xyz = xyz + 3*p;
+    const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
+
+    retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+
+  }
+
 }
 
 static cs_analytic_func_t *get_sol = _get_sol;
@@ -179,11 +185,9 @@ _cdovb_post(const cs_mesh_t            *m,
 
     BFT_MALLOC(rpex, n_vertices, double);
     BFT_MALLOC(ddip, n_vertices, double);
-    for (i = 0; i < n_vertices; i++) {
-      get_sol(tcur, &(m->vtx_coord[3*i]), &get);
-      rpex[i] = get.val;
+    get_sol(tcur, n_vertices, cdoq->vtx_coord, rpex);
+    for (i = 0; i < n_vertices; i++)
       ddip[i] = rpex[i] - pdi[i];
-    }
 
     len = strlen(field->name) + 7 + 1;
     BFT_MALLOC(postlabel, len, char);

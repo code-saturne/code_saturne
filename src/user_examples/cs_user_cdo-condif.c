@@ -72,6 +72,7 @@ BEGIN_C_DECLS
  * \file cs_user_cdo-condif.c
  *
  * \brief Main user subroutine for setting of a calculation with CDO.
+
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -92,16 +93,22 @@ static const double  one_third = 1./3.;
 
 static void
 _define_adv_field(cs_real_t           time,
-                  const cs_real_3_t   xyz,
-                  cs_get_t           *get)
+		  cs_lnum_t           n_pts,
+                  const cs_real_t    *xyz,
+                  cs_real_t          *res)
 {
   CS_UNUSED(time);
 
-  const double  x = xyz[0], y = xyz[1], z = xyz[2];
+  for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-  (*get).vect[0] = y - 0.5;
-  (*get).vect[1] = 0.5 - x;
-  (*get).vect[2] = z;
+    const cs_real_t  *pxyz = xyz + 3*p;
+    cs_real_t  *pres = res + 3*p;
+
+    pres[0] = pxyz[1] - 0.5;
+    pres[1] = 0.5 - pxyz[0];
+    pres[2] = pxyz[2];
+
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -110,19 +117,21 @@ _define_adv_field(cs_real_t           time,
 
 static void
 _define_bcs(cs_real_t           time,
-            const cs_real_3_t   xyz,
-            cs_get_t           *get)
+	    cs_lnum_t           n_pts,
+            const cs_real_t    *xyz,
+            cs_real_t          *res)
 {
   CS_UNUSED(time);
 
-  double  bcval = 0.0;
-
-  const double  x = xyz[0], y = xyz[1], z = xyz[2];
   const double  pi = 4.0*atan(1.0);
+  for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-  bcval = 1 + sin(pi*x) * sin(pi*(y + 0.5)) * sin(pi*(z + one_third));
+    const cs_real_t  *pxyz = xyz + 3*p;
 
-  (*get).val = bcval;
+    res[p] = 1 +
+      sin(pi*pxyz[0]) * sin(pi*(pxyz[1]+0.5)) * sin(pi*(pxyz[2]+one_third));
+
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -131,39 +140,45 @@ _define_bcs(cs_real_t           time,
 
 static void
 _define_source(cs_real_t           time,
-               const cs_real_3_t   xyz,
-               cs_get_t           *get)
+	       cs_lnum_t           n_pts,
+               const cs_real_t    *xyz,
+               cs_real_t          *res)
 {
   CS_UNUSED(time);
-
-  cs_real_t  gx, gy, gz, gxx, gyy, gzz, gxy, gxz, gyz;
-  cs_real_33_t  cond;
-
-  const double  x = xyz[0], y = xyz[1], z = xyz[2];
   const double  pi = 4.0*atan(1.0), pi2 = pi*pi;
-  const double  cpx = cos(pi*x), spx = sin(pi*x);
-  const double  cpy = cos(pi*(y+0.5)), spy = sin(pi*(y+0.5));
-  const double  cpz = cos(pi*(z+one_third)), spz = sin(pi*(z+one_third));
 
-  /* first derivatives */
-  gx = pi*cpx*spy*spz, gy = pi*spx*cpy*spz, gz = pi*spx*spy*cpz;
+  for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-  /* second derivatives */
-  gxx = gyy = gzz = -pi2*spx*spy*spz;
-  gxy = pi2*cpx*cpy*spz, gxz = pi2*cpx*spy*cpz, gyz = pi2*spx*cpy*cpz;
+    const double  x = xyz[3*p], y = xyz[3*p+1], z = xyz[3*p+2];
+    const double  cpx = cos(pi*x), spx = sin(pi*x);
+    const double  cpy = cos(pi*(y+0.5)), spy = sin(pi*(y+0.5));
+    const double  cpz = cos(pi*(z+one_third)), spz = sin(pi*(z+one_third));
 
-  /* Material property */
-  cond[0][0] = 1.0, cond[0][1] = 0.5, cond[0][2] = 0.0;
-  cond[1][0] = 0.5, cond[1][1] = 1.0, cond[1][2] = 0.5;
-  cond[2][0] = 0.0, cond[2][1] = 0.5, cond[2][2] = 1.0;
+    /* first derivatives */
+    cs_real_t gx = pi*cpx*spy*spz;
+    cs_real_t gy = pi*spx*cpy*spz;
+    cs_real_t gz = pi*spx*spy*cpz;
 
-  /* Contribution of the diffusive part */
-  (*get).val = cond[0][0]*gxx + cond[1][1]*gyy + cond[2][2]*gzz +
-    2*( cond[0][1]*gxy + cond[0][2]*gxz + cond[1][2]*gyz);
-  (*get).val *= -1;
+    /* second derivatives */
+    cs_real_t gxx, gyy, gzz, gxy, gxz, gyz;
+    gxx = gyy = gzz = -pi2*spx*spy*spz;
+    gxy = pi2*cpx*cpy*spz, gxz = pi2*cpx*spy*cpz, gyz = pi2*spx*cpy*cpz;
 
-  /* Contribution of the advection term */
-  (*get).val += (y - 0.5)*gx + (0.5 - x)*gy + z*gz + 1 + spx*spy*spz;
+    /* Material property */
+    cs_real_33_t  cond;
+    cond[0][0] = 1.0, cond[0][1] = 0.5, cond[0][2] = 0.0;
+    cond[1][0] = 0.5, cond[1][1] = 1.0, cond[1][2] = 0.5;
+    cond[2][0] = 0.0, cond[2][1] = 0.5, cond[2][2] = 1.0;
+    
+    /* Contribution of the diffusive part */
+    res[p] = cond[0][0]*gxx + cond[1][1]*gyy + cond[2][2]*gzz +
+      2*( cond[0][1]*gxy + cond[0][2]*gxz + cond[1][2]*gyz);
+    res[p] *= -1;
+    
+    /* Contribution of the advection term */
+    res[p] += (y - 0.5)*gx + (0.5 - x)*gy + z*gz + 1 + spx*spy*spz;
+
+  } // Loop on evaluation points
 }
 
 /*============================================================================
