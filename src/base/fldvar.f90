@@ -71,7 +71,7 @@ integer       nmodpp
 ! Local variables
 
 integer       ipp
-integer       iok   , ippok,  keycpl
+integer       iok   , keycpl, nmodpp_compatibility
 
 type(var_cal_opt) :: vcopt
 
@@ -95,9 +95,6 @@ end interface
 !===============================================================================
 ! 0. INITIALISATIONS
 !===============================================================================
-
-! Initialize variables to avoid compiler warnings
-ippok = 0
 
 call field_get_key_id('coupled', keycpl)
 
@@ -123,10 +120,21 @@ nmodpp = 0
 do ipp = 2, nmodmx
   if (ippmod(ipp).ne.-1) then
     nmodpp = nmodpp+1
-    ippok = ipp
+    if (ippmod(ipp).lt.0 .or. ippmod(ipp).gt.5) then
+      write(nfecra,6001)
+      iok = iok + 1
+    endif
   endif
 enddo
-if (nmodpp.gt.1.and.(ippmod(igmix).eq.-1.or.ippmod(icompf).eq.-1)) then
+
+nmodpp_compatibility = nmodpp
+
+! Compressible module and gas mix are compatible
+if (ippmod(igmix).ne.-1 .and. ippmod(icompf) .ne. -1) then
+  nmodpp_compatibility = nmodpp_compatibility - 1
+endif
+
+if (nmodpp_compatibility.gt.1) then
   write(nfecra,6000)
   iok = iok + 1
 endif
@@ -138,13 +146,6 @@ endif
 if (ippmod(igmix).ge.0.and.ippmod(icompf).ge.0.and.ieos.ne.3) then
   ieos = 3
   write(nfecra,6002)
-endif
-
-if (nmodpp.eq.1) then
-  if (ippmod(ippok).lt.0 .or. ippmod(ippok).gt.5) then
-    write(nfecra,6001)
-    iok = iok + 1
-  endif
 endif
 
 if (iok.ne.0) then
