@@ -350,12 +350,12 @@ if (icavit.ge.0.or.idilat.eq.4) then
   elseif (vcopt_p%idften.eq.6) then
     allocate(tpusro(6,ncelet))
     do iel = 1, ncelet
-      tpusro(1,iel) = tpucou(1,iel)*xunsro(iel)
-      tpusro(2,iel) = tpucou(2,iel)*xunsro(iel)
-      tpusro(3,iel) = tpucou(3,iel)*xunsro(iel)
-      tpusro(4,iel) = tpucou(4,iel)*xunsro(iel)
-      tpusro(5,iel) = tpucou(5,iel)*xunsro(iel)
-      tpusro(6,iel) = tpucou(6,iel)*xunsro(iel)
+      tpusro(1,iel) = vitenp(1,iel)*xunsro(iel)
+      tpusro(2,iel) = vitenp(2,iel)*xunsro(iel)
+      tpusro(3,iel) = vitenp(3,iel)*xunsro(iel)
+      tpusro(4,iel) = vitenp(4,iel)*xunsro(iel)
+      tpusro(5,iel) = vitenp(5,iel)*xunsro(iel)
+      tpusro(6,iel) = vitenp(6,iel)*xunsro(iel)
     enddo
   endif
 
@@ -559,15 +559,15 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
       ! Symmetric tensor diffusivity
       elseif (vcopt_p%idften.eq.6) then
 
-        visci(1,1) = tpucou(1,iel)
-        visci(2,2) = tpucou(2,iel)
-        visci(3,3) = tpucou(3,iel)
-        visci(1,2) = tpucou(4,iel)
-        visci(2,1) = tpucou(4,iel)
-        visci(2,3) = tpucou(5,iel)
-        visci(3,2) = tpucou(5,iel)
-        visci(1,3) = tpucou(6,iel)
-        visci(3,1) = tpucou(6,iel)
+        visci(1,1) = vitenp(1,iel)
+        visci(2,2) = vitenp(2,iel)
+        visci(3,3) = vitenp(3,iel)
+        visci(1,2) = vitenp(4,iel)
+        visci(2,1) = vitenp(4,iel)
+        visci(2,3) = vitenp(5,iel)
+        visci(3,2) = vitenp(5,iel)
+        visci(1,3) = vitenp(6,iel)
+        visci(3,1) = vitenp(6,iel)
 
         ! ||Ki.S||^2
         viscis = ( visci(1,1)*surfbo(1,ifac)       &
@@ -705,15 +705,15 @@ if (iphydr.eq.1.or.iifren.eq.1) then
         ! Symmetric tensor diffusivity
         elseif (vcopt_p%idften.eq.6) then
 
-          visci(1,1) = tpucou(1,iel)
-          visci(2,2) = tpucou(2,iel)
-          visci(3,3) = tpucou(3,iel)
-          visci(1,2) = tpucou(4,iel)
-          visci(2,1) = tpucou(4,iel)
-          visci(2,3) = tpucou(5,iel)
-          visci(3,2) = tpucou(5,iel)
-          visci(1,3) = tpucou(6,iel)
-          visci(3,1) = tpucou(6,iel)
+          visci(1,1) = vitenp(1,iel)
+          visci(2,2) = vitenp(2,iel)
+          visci(3,3) = vitenp(3,iel)
+          visci(1,2) = vitenp(4,iel)
+          visci(2,1) = vitenp(4,iel)
+          visci(2,3) = vitenp(5,iel)
+          visci(3,2) = vitenp(5,iel)
+          visci(1,3) = vitenp(6,iel)
+          visci(3,1) = vitenp(6,iel)
 
           ! ||Ki.S||^2
           viscis = ( visci(1,1)*surfbo(1,ifac)       &
@@ -960,19 +960,19 @@ if (idilat.ge.4) then
       arsr  = arak/crom(iel)
 
       trav(1,iel) = arsr*(                                 &
-                           tpucou(1,iel)*(trav(1,iel))     &
-                         + tpucou(4,iel)*(trav(2,iel))     &
-                         + tpucou(6,iel)*(trav(3,iel))     &
+                           vitenp(1,iel)*(trav(1,iel))     &
+                         + vitenp(4,iel)*(trav(2,iel))     &
+                         + vitenp(6,iel)*(trav(3,iel))     &
                          )
       trav(2,iel) = arsr*(                                 &
-                           tpucou(4,iel)*(trav(1,iel))     &
-                         + tpucou(2,iel)*(trav(2,iel))     &
-                         + tpucou(5,iel)*(trav(3,iel))     &
+                           vitenp(4,iel)*(trav(1,iel))     &
+                         + vitenp(2,iel)*(trav(2,iel))     &
+                         + vitenp(5,iel)*(trav(3,iel))     &
                          )
       trav(3,iel) = arsr*(                                 &
-                           tpucou(6,iel)*(trav(1,iel))     &
-                         + tpucou(5,iel)*(trav(2,iel))     &
-                         + tpucou(3,iel)*(trav(3,iel))     &
+                           vitenp(6,iel)*(trav(1,iel))     &
+                         + vitenp(5,iel)*(trav(2,iel))     &
+                         + vitenp(3,iel)*(trav(3,iel))     &
                          )
 
     enddo
@@ -993,21 +993,21 @@ else
 
       trav(1,iel) = vel(1,iel)                             &
                   + arsr*(                                 &
-                           tpucou(1,iel)*(trav(1,iel))     &
-                         + tpucou(4,iel)*(trav(2,iel))     &
-                         + tpucou(6,iel)*(trav(3,iel))     &
+                           vitenp(1,iel)*(trav(1,iel))     &
+                         + vitenp(4,iel)*(trav(2,iel))     &
+                         + vitenp(6,iel)*(trav(3,iel))     &
                          )
       trav(2,iel) = vel(2,iel)                             &
                   + arsr*(                                 &
-                           tpucou(4,iel)*(trav(1,iel))     &
-                         + tpucou(2,iel)*(trav(2,iel))     &
-                         + tpucou(5,iel)*(trav(3,iel))     &
+                           vitenp(4,iel)*(trav(1,iel))     &
+                         + vitenp(2,iel)*(trav(2,iel))     &
+                         + vitenp(5,iel)*(trav(3,iel))     &
                          )
       trav(3,iel) = vel(3,iel)                             &
                   + arsr*(                                 &
-                           tpucou(6,iel)*(trav(1,iel))     &
-                         + tpucou(5,iel)*(trav(2,iel))     &
-                         + tpucou(3,iel)*(trav(3,iel))     &
+                           vitenp(6,iel)*(trav(1,iel))     &
+                         + vitenp(5,iel)*(trav(2,iel))     &
+                         + vitenp(3,iel)*(trav(3,iel))     &
                          )
 
     enddo
@@ -1079,7 +1079,7 @@ if (iphydr.eq.1) then
     dfrcxt ,                                                       &
     coefbf_p ,                                                     &
     viscf  , viscb  ,                                              &
-    tpucou ,                                                       &
+    vitenp ,                                                       &
     weighf ,                                                       &
     imasfl , bmasfl )
 
@@ -1234,7 +1234,7 @@ if (arak.gt.0.d0) then
      frcxt  ,                                                       &
      cofbfp ,                                                       &
      viscf  , viscb  ,                                              &
-     tpucou ,                                                       &
+     vitenp ,                                                       &
      weighf ,                                                       &
      imasfl, bmasfl )
 
@@ -2025,15 +2025,15 @@ if (idilat.eq.5) then
     ! Symmetric tensor diffusivity
     elseif (vcopt_p%idften.eq.6) then
 
-      visci(1,1) = tpucou(1,iel)
-      visci(2,2) = tpucou(2,iel)
-      visci(3,3) = tpucou(3,iel)
-      visci(1,2) = tpucou(4,iel)
-      visci(2,1) = tpucou(4,iel)
-      visci(2,3) = tpucou(5,iel)
-      visci(3,2) = tpucou(5,iel)
-      visci(1,3) = tpucou(6,iel)
-      visci(3,1) = tpucou(6,iel)
+      visci(1,1) = vitenp(1,iel)
+      visci(2,2) = vitenp(2,iel)
+      visci(3,3) = vitenp(3,iel)
+      visci(1,2) = vitenp(4,iel)
+      visci(2,1) = vitenp(4,iel)
+      visci(2,3) = vitenp(5,iel)
+      visci(3,2) = vitenp(5,iel)
+      visci(1,3) = vitenp(6,iel)
+      visci(3,1) = vitenp(6,iel)
 
       ! ||Ki.S||^2
       viscis = ( visci(1,1)*surfbo(1,ifac)       &
@@ -2259,7 +2259,7 @@ if (idilat.eq.5) then
      dpvar  ,                                                                &
      coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,                   &
      viscf  , viscb  ,                                                       &
-     tpucou ,                                                                &
+     vitenp ,                                                                &
      weighf , weighb ,                                                       &
      imasfl , bmasfl )
 
@@ -2277,7 +2277,7 @@ if (idilat.eq.5) then
      ddpvar ,                                                                &
      coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,                   &
      viscf  , viscb  ,                                                       &
-     tpucou ,                                                                &
+     vitenp ,                                                                &
      weighf , weighb ,                                                       &
      imasfl , bmasfl )
 
