@@ -49,8 +49,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* First level of information */
-#define CS_CDO_CONNECT_IN    (1 << 0)  /* Interior entity */
-#define CS_CDO_CONNECT_BD    (1 << 1)  /* Border entity */
+#define CS_CDO_CONNECT_IN     (1 << 0)  /* Interior entity */
+#define CS_CDO_CONNECT_BD     (1 << 1)  /* Border entity */
+#define CS_CDO_CONNECT_SHARED (1 << 2)  /* Shared with several openMP threads */
 
 /*============================================================================
  * Type definitions
@@ -89,10 +90,12 @@ typedef struct {
   cs_connect_index_t  *c2v;  // cell -> vertices connectivity
 
   /* Max. connectitivy size for cells */
-  cs_lnum_t  n_max_vbyc;     // max. number of vertices in a cell
-  cs_lnum_t  n_max_ebyc;     // max. number of edges in a cell
-  cs_lnum_t  n_max_fbyc;     // max. number of faces in a cell
-  cs_lnum_t  n_max_vbyf;     // max. number of vertices in a face
+  int  n_max_vbyc;   // max. number of vertices in a cell
+  int  n_max_ebyc;   // max. number of edges in a cell
+  int  n_max_fbyc;   // max. number of faces in a cell
+  int  n_max_vbyf;   // max. number of vertices in a face
+  int  n_max_v2fc;   // max. number of faces connected to a vertex in a cell
+  int  n_max_v2ec;   // max. number of edges connected to a vertex in a cell
 
   /* Status internal or border entity */
   cs_connect_info_t  *v_info;  // count of interior/border vertices

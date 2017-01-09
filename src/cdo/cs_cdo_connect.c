@@ -617,48 +617,126 @@ _build_additional_connect(cs_cdo_connect_t  *connect)
 /*!
  * \brief Compute max number of entities by cell
  *
- * \param[in]  connect     pointer to the cs_cdo_connect_t struct.
+ * \param[in]       m         pointer to a cs_mesh_t structure
+ * \param[in, out]  connect   pointer to the cs_cdo_connect_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_max_ent(cs_cdo_connect_t  *connect)
+_compute_max_ent(const cs_mesh_t             *m,
+                 cs_cdo_connect_t  *connect)
 {
-  /* Max number of faces for a cell */
-  connect->n_max_fbyc = 0;
-  if (connect->c2f != NULL) {
-    for (int i = 0; i < connect->c2f->n_rows; i++) {
-      int n_ent = connect->c2f->idx[i+1] - connect->c2f->idx[i];
-      if (n_ent > connect->n_max_fbyc)
-        connect->n_max_fbyc = n_ent;
+  assert(connect != NULL && m != NULL);
+  assert(connect->c2v != NULL && connect->c2e != NULL && connect->f2c != NULL);
+  assert(connect->f2e != NULL);
+
+  const cs_lnum_t  n_cells = connect->c2f->n_rows;
+  const cs_lnum_t  n_vertices = connect->v_info->n_elts;
+
+  short int  *v_count = NULL;
+  BFT_MALLOC(v_count, n_vertices, short int);
+#pragma omp parallel for if (n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_vertices; i++) v_count[i] = 0;
+
+  const cs_connect_index_t  *c2v = connect->c2v;
+  const cs_connect_index_t  *c2e = connect->c2e;
+  const cs_sla_matrix_t  *e2v = connect->e2v;
+
+  assert(c2e->n == n_cells);
+  assert(c2v->n == n_cells);
+
+  int  n_max_vc = 0, n_max_ec = 0, n_max_fc = 0;
+  int  n_max_v2ec = 0, n_max_v2fc = 0, n_max_vf = 0;
+
+#pragma omp parallel for if (n_cells > CS_THR_MIN)			\
+  reduction(max:n_max_vc) reduction(max:n_max_ec) reduction(max:n_max_v2ec) \
+  reduction(max:n_max_fc) reduction(max:n_max_vf) reduction(max:n_max_v2fc)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_lnum_t  *c2v_idx = c2v->idx + c_id;
+    const cs_lnum_t  *c2v_ids = c2v->ids + c2v_idx[0];
+    const int n_vc = c2v_idx[1] - c2v_idx[0];
+
+    if (n_vc > n_max_vc) n_max_vc = n_vc;
+
+    const cs_lnum_t  *c2e_idx = c2e->idx + c_id;
+    const cs_lnum_t  *c2e_ids = c2e->ids + c2e_idx[0];
+    const int n_ec = c2e_idx[1] - c2e_idx[0];
+
+    if (n_ec > n_max_ec) n_max_ec = n_ec;
+
+    for (short int e = 0; e < n_ec; e++) {
+
+      const cs_lnum_t  *e2v_ids = e2v->col_id + 2*c2e_ids[e];
+
+      v_count[e2v_ids[0]] += 1;
+      v_count[e2v_ids[1]] += 1;
+
     }
-  }
 
-  /* Max number of edges for a cell */
-  connect->n_max_ebyc = 0;
-  if (connect->c2e != NULL) {
-    for (int i = 0; i < connect->c2e->n; i++) {
-      int n_ent = connect->c2e->idx[i+1] - connect->c2e->idx[i];
-      if (n_ent > connect->n_max_ebyc)
-        connect->n_max_ebyc = n_ent;
+    /* Update n_max_v2ec and reset v_count */
+    for (short int v = 0; v < n_vc; v++) {
+
+      const cs_lnum_t  v_id = c2v_ids[v];
+      if (v_count[v_id] > n_max_v2ec) n_max_v2ec = v_count[v_id];
+      v_count[v_id] = 0; // reset
+
     }
-  }
 
-  /* Max number of vertices for a cell */
-  connect->n_max_vbyc = 0;
-  if (connect->c2v != NULL) {
-    for (int i = 0; i < connect->c2v->n; i++) {
-      int n_ent = connect->c2v->idx[i+1] - connect->c2v->idx[i];
-      if (n_ent > connect->n_max_vbyc)
-        connect->n_max_vbyc = n_ent;
+    const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
+    const cs_lnum_t  *c2f_ids = connect->c2f->col_id + c2f_idx[0];
+    const int  n_fc = c2f_idx[1] - c2f_idx[0];
+
+    if (n_fc > n_max_fc) n_max_fc = n_fc;
+
+    for (short int f = 0; f < n_fc; f++) {
+
+      if (c2f_ids[f] < m->n_i_faces) { // Interior face
+
+        const cs_lnum_t  *f2v_idx = m->i_face_vtx_idx + f;
+        const cs_lnum_t  *f2v_ids = m->i_face_vtx_lst + f2v_idx[0];
+        const int  n_vf = f2v_idx[1] - f2v_idx[0];
+
+        if (n_vf > n_max_vf) n_max_vf = n_vf;
+        for (short int v = 0; v < n_vf; v++)
+          v_count[f2v_ids[v]] += 1;
+
+      }
+      else { // Border face
+
+        const cs_lnum_t  *f2v_idx =
+	  m->b_face_vtx_idx + c2f_ids[f] - m->n_i_faces;
+        const cs_lnum_t  *f2v_ids = m->b_face_vtx_lst + f2v_idx[0];
+        const int  n_vf = f2v_idx[1] - f2v_idx[0];
+
+        if (n_vf > n_max_vf) n_max_vf = n_vf;
+        for (short int v = 0; v < n_vf; v++)
+          v_count[f2v_ids[v]] += 1;
+
+      }
+
+    } // Loop on cell faces
+
+    /* Update n_max_v2fc and reset  v_count */
+    for (short int v = 0; v < n_vc; v++) {
+
+      const cs_lnum_t  v_id = c2v_ids[v];
+      if (v_count[v_id] > n_max_v2ec) n_max_v2fc = v_count[v_id];
+      v_count[v_id] = 0; // reset
+
     }
-  }
 
-  /* Max number of vertices (or edges) in a face */
-  connect->n_max_vbyf = 0;
-  if (connect->f2e != NULL)
-    connect->n_max_vbyf = connect->f2e->info.stencil_max;
+  } // Loop on cells
 
+  BFT_FREE(v_count);
+
+  /* Store computed values */
+  connect->n_max_vbyc = n_max_vc;   // Max number of vertices for a cell
+  connect->n_max_ebyc = n_max_ec;   // Max number of edges for a cell
+  connect->n_max_fbyc = n_max_fc;   // Max number of faces for a cell
+  connect->n_max_v2ec = n_max_v2ec;
+  connect->n_max_v2fc = n_max_v2fc;
+  connect->n_max_vbyf = n_max_vf;   // Max number of vertices in a face
 }
 
 /*----------------------------------------------------------------------------*/
@@ -961,6 +1039,8 @@ cs_cdo_connect_flagname(short int  flag)
 cs_cdo_connect_t *
 cs_cdo_connect_init(const cs_mesh_t      *m)
 {
+  cs_timer_t t0 = cs_timer_time();
+
   _edge_builder_t  *builder = _create_edge_builder(m);
 
   cs_cdo_connect_t  *connect = NULL;
@@ -998,7 +1078,7 @@ cs_cdo_connect_init(const cs_mesh_t      *m)
   _define_connect_info(m, connect);
 
   /* Max number of entities (vertices, edges and faces) by cell */
-  _compute_max_ent(connect);
+  _compute_max_ent(m, connect);
 
   /* Associate to each cell a predefined type (tetra, prism, hexa...) */
   _define_cell_type(connect);
@@ -1011,6 +1091,12 @@ cs_cdo_connect_init(const cs_mesh_t      *m)
                                       0);      // g_id_base
 
   connect->f_rs = NULL; // TODO
+
+  /* Monitoring */
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
+  cs_log_printf(CS_LOG_PERFORMANCE, "%-40s %10.3f s\n",
+                "<CDO/Connectivity> Runtime", time_count.wall_nsec*1e-9);
 
   return connect;
 }
@@ -1220,12 +1306,13 @@ cs_cdo_connect_dump(const cs_cdo_connect_t  *connect)
 
   fprintf(fdump, "\n Connect structure: %p\n", (const void *)connect);
 
-  /* Dump CONNECT matrices */
   cs_sla_matrix_dump("Connect c2f mat", fdump, connect->c2f);
-  cs_sla_matrix_dump("Connect f2c mat", fdump, connect->f2c);
   cs_sla_matrix_dump("Connect f2e mat", fdump, connect->f2e);
-  cs_sla_matrix_dump("Connect e2f mat", fdump, connect->e2f);
   cs_sla_matrix_dump("Connect e2v mat", fdump, connect->e2v);
+
+  cs_sla_matrix_dump("Connect f2c mat", fdump, connect->f2c);
+
+  cs_sla_matrix_dump("Connect e2f mat", fdump, connect->e2f);
   cs_sla_matrix_dump("Connect v2e mat", fdump, connect->v2e);
 
   /* Dump specific CDO connectivity */
