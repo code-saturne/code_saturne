@@ -1267,15 +1267,17 @@ cs_domain_get_property(const cs_domain_t    *domain,
  *
  * \param[in, out]   domain       pointer to a cs_domain_t structure
  * \param[in]        adv_name     name of the advection field to add
+ *
+ * \return a pointer to the new cs_adv_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_adv_field_t *
 cs_domain_add_advection_field(cs_domain_t     *domain,
                               const char      *adv_name)
 {
   if (domain == NULL)
-    return;
+    return NULL;
 
   cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, adv_name);
 
@@ -1283,7 +1285,7 @@ cs_domain_add_advection_field(cs_domain_t     *domain,
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_DEFAULT, _(" An existing advection field has already the name %s.\n"
                  " Stop adding this advection field.\n"), adv_name);
-    return;
+    return adv;
   }
 
   int  adv_id = domain->n_adv_fields;
@@ -1291,8 +1293,10 @@ cs_domain_add_advection_field(cs_domain_t     *domain,
   domain->n_adv_fields += 1;
   BFT_REALLOC(domain->adv_fields, domain->n_adv_fields, cs_adv_field_t *);
 
-  domain->adv_fields[adv_id] = cs_advection_field_create(adv_name);
+  adv = cs_advection_field_create(adv_name);
+  domain->adv_fields[adv_id] = adv;
 
+  return adv;
 }
 
 /*----------------------------------------------------------------------------*/

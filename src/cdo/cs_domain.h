@@ -351,10 +351,12 @@ cs_domain_get_property(const cs_domain_t    *domain,
  *
  * \param[in, out]   domain       pointer to a cs_domain_t structure
  * \param[in]        adv_name     name of the advection field to add
+ *
+ * \return a pointer to the new cs_adv_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_adv_field_t *
 cs_domain_add_advection_field(cs_domain_t     *domain,
                               const char      *adv_name);
 
