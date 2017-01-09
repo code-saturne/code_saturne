@@ -870,48 +870,41 @@ cs_cdofb_scaleq_compute_source(void            *builder)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the matrix related to the algebraic system to solve
- *
- * \return  a pointer to a new allocated structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_t *
-cs_cdofb_allocate_matrix(void)
-{
-  cs_matrix_t  *matrix = NULL;
-
-  return matrix;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize the right-hand side associated to the given
+ * \brief  Create the matrix of the current algebraic system.
+ *         Allocate and initialize the right-hand side associated to the given
  *         builder structure
  *
- * \param[in, out] builder    pointer to generic builder structure
- *
- * \return an initialized array
+ * \param[in, out] builder        pointer to generic builder structure
+ * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
+ * \param[in, out] system_rhs     pointer of pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_cdofb_initialize_rhs(void       *builder)
+void
+cs_cdofb_scaleq_initialize_system(void           *builder,
+                                  cs_matrix_t   **system_matrix,
+                                  cs_real_t     **system_rhs)
 {
   if (builder == NULL)
-    return NULL;
+    return;
+  assert(*system_matrix == NULL && *system_rhs == NULL);
 
   cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t *)builder;
-  cs_real_t  *rhs = NULL;
+  cs_timer_t  t0 = cs_timer_time();
 
-  const cs_lnum_t  n_elts = b->n_faces;
+  /* Create the matrix related to the current algebraic system */
+  const cs_matrix_structure_t  *ms =
+    cs_equation_get_matrix_structure(CS_SPACE_SCHEME_CDOFB);
 
-  BFT_MALLOC(rhs, n_elts, cs_real_t);
-# pragma omp parallel for if (n_elts > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_elts  ; i++)
-    rhs[i] = 0.0;
+  *system_matrix = cs_matrix_create(ms);
 
-  return rhs;
+  /* Allocate and initialize the related right-hand side */
+  BFT_MALLOC(*system_rhs, b->n_faces, cs_real_t);
+#pragma omp parallel for if  (b->n_faces > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < b->n_faces; i++) (*system_rhs)[i] = 0.0;
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(b->tcb), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/

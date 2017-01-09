@@ -87,30 +87,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a new cs_matrix_t structure related to the algebraic sytem
- *
- * \return a pointer to a new allocated structure
- */
-/*----------------------------------------------------------------------------*/
-
-typedef cs_matrix_t *
-(cs_equation_allocate_matrix_t)(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize the right-hand side
- *
- * \param[in, out]  builder   pointer to a builder structure
- *
- * \return a pointer to a new array
- */
-/*----------------------------------------------------------------------------*/
-
-typedef cs_real_t *
-(cs_equation_initialize_rhs_t)(void    *builder);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Initialize a builder structure
  *
  * \param[in] eq         pointer to a cs_equation_param_t structure
@@ -136,6 +112,24 @@ typedef void *
 
 typedef void *
 (cs_equation_free_builder_t)(void  *builder);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create the matrix of the current algebraic system.
+ *         Allocate and initialize the right-hand side associated to the given
+ *         builder structure
+ *
+ * \param[in, out] builder        pointer to generic builder structure
+ * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
+ * \param[in, out] system_rhs     pointer of pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_initialize_system_t)(void           *builder,
+                                  cs_matrix_t   **system_matrix,
+                                  cs_real_t     **system_rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -311,18 +305,17 @@ struct _cs_equation_t {
   void                     *builder;
 
   /* Pointer to functions (see prototypes just above) */
-  cs_equation_allocate_matrix_t   *allocate_matrix;
-  cs_equation_initialize_rhs_t    *initialize_rhs;
-  cs_equation_init_builder_t      *init_builder;
-  cs_equation_free_builder_t      *free_builder;
-  cs_equation_build_system_t      *build_system;
-  cs_equation_update_field_t      *update_field;
-  cs_equation_compute_source_t    *compute_source;
-  cs_equation_flux_plane_t        *compute_flux_across_plane;
-  cs_equation_cell_difflux_t      *compute_cellwise_diff_flux;
-  cs_equation_extra_op_t          *postprocess;
-  cs_equation_get_extra_values_t  *get_extra_values;
-  cs_equation_monitor_t           *display_monitoring;
+  cs_equation_init_builder_t       *init_builder;
+  cs_equation_free_builder_t       *free_builder;
+  cs_equation_initialize_system_t  *initialize_system;
+  cs_equation_build_system_t       *build_system;
+  cs_equation_update_field_t       *update_field;
+  cs_equation_compute_source_t     *compute_source;
+  cs_equation_flux_plane_t         *compute_flux_across_plane;
+  cs_equation_cell_difflux_t       *compute_cellwise_diff_flux;
+  cs_equation_extra_op_t           *postprocess;
+  cs_equation_get_extra_values_t   *get_extra_values;
+  cs_equation_monitor_t            *display_monitoring;
 
 };
 
@@ -653,10 +646,9 @@ cs_equation_create(const char            *eqname,
   eq->builder = NULL;
 
   /* Pointers of function */
-  eq->allocate_matrix = NULL;
-  eq->initialize_rhs = NULL;
   eq->init_builder = NULL;
   eq->free_builder = NULL;
+  eq->initialize_system = NULL;
   eq->build_system = NULL;
   eq->update_field = NULL;
   eq->compute_source = NULL;
@@ -802,10 +794,9 @@ cs_equation_last_setup(const cs_cdo_connect_t   *connect,
   switch(eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
-    eq->allocate_matrix = cs_cdovb_allocate_matrix;
-    eq->initialize_rhs = cs_cdovb_initialize_rhs;
     eq->init_builder = cs_cdovb_scaleq_init;
     eq->free_builder = cs_cdovb_scaleq_free;
+    eq->initialize_system = cs_cdovb_scaleq_initialize_system;
     eq->build_system = cs_cdovb_scaleq_build_system;
     eq->update_field = cs_cdovb_scaleq_update_field;
     eq->compute_source = cs_cdovb_scaleq_compute_source;
@@ -823,10 +814,9 @@ cs_equation_last_setup(const cs_cdo_connect_t   *connect,
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
-    eq->allocate_matrix = cs_cdovcb_allocate_matrix;
-    eq->initialize_rhs = cs_cdovcb_initialize_rhs;
     eq->init_builder = cs_cdovcb_scaleq_init;
     eq->free_builder = cs_cdovcb_scaleq_free;
+    eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
     eq->build_system = cs_cdovcb_scaleq_build_system;
     eq->update_field = cs_cdovcb_scaleq_update_field;
     eq->compute_source = cs_cdovcb_scaleq_compute_source;
@@ -844,10 +834,9 @@ cs_equation_last_setup(const cs_cdo_connect_t   *connect,
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
-    eq->allocate_matrix = cs_cdofb_allocate_matrix;
-    eq->initialize_rhs = cs_cdofb_initialize_rhs;
     eq->init_builder = cs_cdofb_scaleq_init;
     eq->free_builder = cs_cdofb_scaleq_free;
+    eq->initialize_system = cs_cdofb_scaleq_initialize_system;
     eq->build_system = cs_cdofb_scaleq_build_system;
     eq->update_field = cs_cdofb_scaleq_update_field;
     eq->compute_source = cs_cdofb_scaleq_compute_source;
@@ -867,6 +856,7 @@ cs_equation_last_setup(const cs_cdo_connect_t   *connect,
   case CS_SPACE_SCHEME_HHO:
     eq->init_builder = cs_hho_scaleq_init;
     eq->free_builder = cs_hho_scaleq_free;
+    eq->initialize_system = NULL; //cs_hho_initialize_system;
     eq->build_system = cs_hho_scaleq_build_system;
     eq->update_field = cs_hho_scaleq_update_field;
     eq->compute_source = cs_hho_scaleq_compute_source;
@@ -1766,11 +1756,11 @@ cs_equation_init_system(const cs_mesh_t        *mesh,
   /* Allocate and initialize a system builder */
   eq->builder = eq->init_builder(eqp, mesh);
 
-  /* Compute the (initial) source term */
-  eq->compute_source(eq->builder);
-
   /* Initialize the associated field to the initial condition if unsteady */
   if (eqp->flag & CS_EQUATION_UNSTEADY) {
+
+    /* Compute the (initial) source term */
+    eq->compute_source(eq->builder);
 
     cs_param_time_t  t_info = eqp->time_info;
 
@@ -1827,8 +1817,10 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
   /* Sanity checks */
   assert(eq->matrix == NULL && eq->rhs == NULL);
 
-  eq->matrix = eq->allocate_matrix();
-  eq->rhs = eq->initialize_rhs(eq->builder);
+  /* Initialize the algebraic system to build */
+  eq->initialize_system(eq->builder,
+                        &(eq->matrix),
+                        &(eq->rhs));
 
   /* Build the algebraic system to solve */
   eq->build_system(mesh, fld->val, dt_cur,

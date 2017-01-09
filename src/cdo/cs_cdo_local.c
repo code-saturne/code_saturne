@@ -155,13 +155,13 @@ cs_cell_sys_dump(const char             msg[],
     cs_log_printf(CS_LOG_DEFAULT, "%s", msg);
 
     cs_locmat_dump(c_id, csys->mat);
-    cs_log_printf(CS_LOG_DEFAULT, "\n>> RHS    ");
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "\n>> %-10s | %-10s | %-10s\n",
+                  "RHS", "TS", "VAL_PREV");
     for (int i = 0; i < csys->n_dofs; i++)
-      cs_log_printf(CS_LOG_DEFAULT, " %5.3e", csys->rhs[i]);
-    cs_log_printf(CS_LOG_DEFAULT, "\n>> SOURCE ");
-    for (int i = 0; i < csys->n_dofs; i++)
-      cs_log_printf(CS_LOG_DEFAULT, " %5.3e", csys->source[i]);
-    cs_log_printf(CS_LOG_DEFAULT, "\n");
+      cs_log_printf(CS_LOG_DEFAULT,
+                    ">> % .3e | % .3e | % .3e\n",
+                    csys->rhs[i], csys->source[i], csys->val_n[i]);
   }
 }
 
@@ -571,11 +571,11 @@ cs_cell_mesh_dump(cs_cell_mesh_t     *cm)
     return;
   }
 
-  cs_log_printf(CS_LOG_DEFAULT, " cs_cell_mesh_t %p; id:%d;; vol: %9.6e\n",
+  cs_log_printf(CS_LOG_DEFAULT, " cs_cell_mesh_t %p; id:%d; vol: %9.6e\n",
                 (void *)cm, cm->c_id, cm->vol_c);
   cs_log_printf(CS_LOG_DEFAULT, "%-10s %-37s %-10s\n", "id", "coord", "wvc");
   for (short int v = 0; v < cm->n_vc; v++)
-    cs_log_printf(CS_LOG_DEFAULT, "%8d |% 9.5e % 9.5e % 9.5e| %9.5e\n",
+    cs_log_printf(CS_LOG_DEFAULT, "%8d |% .5e % .5e % .5e| %.5e\n",
                   cm->v_ids[v], cm->xv[3*v], cm->xv[3*v+1], cm->xv[3*v+2],
                   cm->wvc[v]);
 
@@ -583,8 +583,8 @@ cs_cell_mesh_dump(cs_cell_mesh_t     *cm)
                 "id", "surf", "unit", "coords", "hfc");
   for (short int f = 0; f < cm->n_fc; f++) {
     cs_quant_t  fq = cm->face[f];
-    cs_log_printf(CS_LOG_DEFAULT, "%8d |%6.3e|% 9.5e % 9.5e % 9.5e|"
-                  "% 9.5e % 9.5e % 9.5e|%9.5e\n",
+    cs_log_printf(CS_LOG_DEFAULT, "%8d |%.3e|% .5e % .5e % .5e|"
+                  "% .5e % .5e % .5e|%.5e\n",
                   cm->f_ids[f], fq.meas, fq.unitv[0], fq.unitv[1], fq.unitv[2],
                   fq.center[0], fq.center[1], fq.center[2], cm->hfc[f]);
   }

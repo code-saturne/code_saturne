@@ -95,6 +95,26 @@ cs_cdo_time_get_scheme_function(const cs_flag_t         sys_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the RHS with the previously computed array values (for
+ *         instance the source term)
+ *
+ * \param[in]     sys_flag    metadata about how is set the algebraic system
+ * \param[in]     t_info      metadata about the time discretization
+ * \param[in]     n_dofs      size of the array of values
+ * \param[in]     values      array of values
+ * \param[in,out] rhs         right-hand side to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_time_update_rhs_with_array(const cs_flag_t         sys_flag,
+                                  const cs_param_time_t   t_info,
+                                  const cs_lnum_t         n_dofs,
+                                  const cs_real_t        *values,
+                                  cs_real_t              *rhs);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Apply to the local system an implicit time discretization when
  *          a CDO scheme is used and the mass matrix related to the time
  *          discretization is diagonal (lumping or Voronoi Hodge)

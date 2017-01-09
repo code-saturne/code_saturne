@@ -123,6 +123,57 @@ cs_cdo_time_get_scheme_function(const cs_flag_t         sys_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the RHS with the previously computed array values (for
+ *         instance the source term)
+ *
+ * \param[in]     sys_flag    metadata about how is set the algebraic system
+ * \param[in]     t_info      metadata about the time discretization
+ * \param[in]     n_dofs      size of the array of values
+ * \param[in]     values      array of values
+ * \param[in,out] rhs         right-hand side to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_time_update_rhs_with_array(const cs_flag_t         sys_flag,
+                                  const cs_param_time_t   t_info,
+                                  const cs_lnum_t         n_dofs,
+                                  const cs_real_t        *values,
+                                  cs_real_t              *rhs)
+{
+  if ((sys_flag & CS_FLAG_SYS_TIME) == 0)
+    return; /* Nothing todo */
+  if ((sys_flag & CS_FLAG_SYS_SOURCETERM) == 0)
+    return; /* Nothing todo */
+
+  /* Previous values are stored inside values */
+  switch (t_info.scheme) {
+
+  case CS_TIME_SCHEME_EXPLICIT:
+# pragma omp parallel for if (n_dofs > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_dofs; i++) rhs[i] += values[i];
+    break;
+
+  case CS_TIME_SCHEME_CRANKNICO:
+  case CS_TIME_SCHEME_THETA:
+    {
+      const double  tcoef = 1 - t_info.theta;
+
+# pragma omp parallel for if (n_dofs > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_dofs; i++) rhs[i] = tcoef * values[i];
+    }
+    break;
+
+  case CS_TIME_SCHEME_IMPLICIT:
+  default: // Nothing todo
+    break;
+
+  } // End of switch
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Apply to the local system an implicit time discretization when
  *          a CDO scheme is used and the mass matrix related to the time
  *          discretization is diagonal (lumping or Voronoi Hodge)
@@ -401,14 +452,14 @@ cs_cdo_time_diag_theta(const cs_param_time_t      t_info,
 
   /* STEP1 >> Treatment of the source term */
   if (system_flag & CS_FLAG_SYS_SOURCETERM)
-    for (short int v = 0; v < csys->n_dofs; v++)
-      csys->rhs[v] += tcoef*csys->source[v];
+    for (short int i = 0; i < csys->n_dofs; i++)
+      csys->rhs[i] += t_info.theta * csys->source[i];
 
   /* STEP2 >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
   double  *adr_pn = cb->values;
   cs_locmat_matvec(adr, csys->val_n, adr_pn);
-  for (short int v = 0; v < csys->n_dofs; v++)
-    adr_pn[v] *= tcoef; // (1 - theta)
+  for (short int i = 0; i < csys->n_dofs; i++)
+    adr_pn[i] *= tcoef; // (1 - theta)
 
   /* STEP3 >> Compute the time contribution to the RHS: Mtime*pn
            >> Update the cellwise system with the time matrix */
@@ -431,8 +482,8 @@ cs_cdo_time_diag_theta(const cs_param_time_t      t_info,
   }
 
   /* STEP4 >> Apply other contributions to the RHS */
-  for (short int v = 0; v < csys->n_dofs; v++)
-    csys->rhs[v] += time_pn[v] - adr_pn[v];
+  for (short int i = 0; i < csys->n_dofs; i++)
+    csys->rhs[i] += time_pn[i] - adr_pn[i];
 
 }
 
@@ -471,14 +522,14 @@ cs_cdo_time_theta(const cs_param_time_t      t_info,
 
   /* STEP1 >> Treatment of the source term */
   if (system_flag & CS_FLAG_SYS_SOURCETERM)
-    for (short int v = 0; v < csys->n_dofs; v++)
-      csys->rhs[v] += tcoef*csys->source[v];
+    for (short int i = 0; i < csys->n_dofs; i++)
+      csys->rhs[i] += t_info.theta * csys->source[i];
 
   /* STEP2 >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
   double  *adr_pn = cb->values;
   cs_locmat_matvec(adr, csys->val_n, adr_pn);
-  for (short int v = 0; v < csys->n_dofs; v++)
-    adr_pn[v] *= tcoef; // (1 - theta)
+  for (short int i = 0; i < csys->n_dofs; i++)
+    adr_pn[i] *= tcoef; // (1 - theta)
 
   /* STEP3 >> Update the cellwise system with the time matrix */
   for (short int i = 0; i < csys->n_dofs; i++) {
@@ -499,8 +550,8 @@ cs_cdo_time_theta(const cs_param_time_t      t_info,
            >> Apply other contributions to the RHS */
   double  *time_pn = cb->values + csys->n_dofs;
   cs_locmat_matvec(mass_mat, csys->val_n, time_pn);
-  for (short int v = 0; v < csys->n_dofs; v++)
-    csys->rhs[v] += tpty_val*time_pn[v] - adr_pn[v];
+  for (short int i = 0; i < csys->n_dofs; i++)
+    csys->rhs[i] += tpty_val*time_pn[i] - adr_pn[i];
 
 }
 

@@ -156,28 +156,20 @@ cs_cdofb_scaleq_compute_source(void     *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the matrix related to the algebraic system to solve
- *
- * \return  a pointer to a new allocated structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_t *
-cs_cdofb_allocate_matrix(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize the right-hand side associated to the given
+ * \brief  Create the matrix of the current algebraic system.
+ *         Allocate and initialize the right-hand side associated to the given
  *         builder structure
  *
- * \param[in, out] builder    pointer to generic builder structure
- *
- * \return an initialized array
+ * \param[in, out] builder        pointer to generic builder structure
+ * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
+ * \param[in, out] system_rhs     pointer of pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_cdofb_initialize_rhs(void       *builder);
+void
+cs_cdofb_scaleq_initialize_system(void           *builder,
+                                  cs_matrix_t   **system_matrix,
+                                  cs_real_t     **system_rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!
