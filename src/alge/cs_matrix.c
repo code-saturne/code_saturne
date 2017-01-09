@@ -4027,8 +4027,10 @@ _msr_assembler_values_add(void             *matrix_p,
         if (r_id < 0)
           continue;
         if (col_idx[ii] < 0)
+# pragma omp atomic
           mc->_d_val[r_id] += vals[ii];
         else
+# pragma omp atomic
           mc->_x_val[ms->row_index[r_id] + col_idx[ii]] += vals[ii];
       }
     }
@@ -4040,9 +4042,11 @@ _msr_assembler_values_add(void             *matrix_p,
         if (r_id < 0)
           continue;
         if (col_idx[ii] < 0)
+# pragma omp atomic
           mc->_d_val[r_id] += vals[ii];
         else
-          mc->_x_val[ms->row_index[r_id] + col_idx[ii]] += vals[ii];
+# pragma omp atomic
+         mc->_x_val[ms->row_index[r_id] + col_idx[ii]] += vals[ii];
       }
     }
   }

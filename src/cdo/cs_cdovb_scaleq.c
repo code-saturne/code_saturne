@@ -822,7 +822,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
       msh_flag |=  CS_CDO_LOCAL_FE;
 
     /* Reset source term array */
-#pragma omp for
+#pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t i = 0; i < b->n_dofs; i++)
       b->source_terms[i] = 0;
 
@@ -851,8 +851,9 @@ cs_cdovb_scaleq_compute_source(void   *builder)
                                       csys); // Fill csys->source
 
       /* Assemble the cellwise contribution to the rank contribution */
-#pragma omp critical
+#pragma omp for CS_CDO_OMP_SCHEDULE
       for (short int v = 0; v < cm->n_vc; v++)
+# pragma omp atomic
         b->source_terms[cm->v_ids[v]] += csys->source[v];
 
     } // Loop on cells
@@ -1224,7 +1225,6 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
 #endif
 
     /* Assemble the local system to the global system */
-#pragma omp critical
     cs_equation_assemble_v(csys, connect->v_rs, b->sys_flag, // in
                            rhs, b->source_terms, mav);       // out
 

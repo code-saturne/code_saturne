@@ -1715,8 +1715,8 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         cs_locmat_matvec(cb->hdg, _in, cb->values);
 
         /* Assemble the resulting vector */
-#pragma omp critical
         for (short int v = 0; v < cm->n_vc; v++)
+#pragma omp atomic update
           result[cm->v_ids[v]] += cb->values[v];
         break;
 
@@ -1728,8 +1728,8 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         cs_locmat_matvec(cb->hdg, _in, cb->values);
 
         /* Assemble the resulting vector */
-#pragma omp critical
         for (short int e = 0; e < cm->n_vc; e++)
+#pragma omp atomic update
           result[cm->e_ids[e]] += cb->values[e];
         break;
 

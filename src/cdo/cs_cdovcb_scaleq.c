@@ -920,8 +920,9 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
                                       csys); // Fill csys->source
 
       /* Assemble the cellwise contribution to the rank contribution */
-#pragma omp critical
+#pragma omp for
       for (short int v = 0; v < cm->n_vc; v++)
+#pragma omp atomic
         b->source_terms[cm->v_ids[v]] += csys->source[v];
       cell_sources[c_id] = csys->source[cm->n_vc]; // Not critical
 
@@ -1345,7 +1346,6 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
 
       /* Assemble the local system (related to vertices only since one applies
          a static condensation) to the global system */
-#pragma omp critical
       cs_equation_assemble_v(csys, connect->v_rs, b->sys_flag, // in
                              rhs, b->source_terms, mav);       // out
 

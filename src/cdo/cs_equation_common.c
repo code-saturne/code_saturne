@@ -657,8 +657,11 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
     const double  *mval_i = csys->mat->val + i*n_vc;
     const cs_lnum_t  vi_id = v_ids[i];
 
+# pragma omp atomic
     rhs[vi_id] += csys->rhs[i];
+
     if (sys_flag & CS_FLAG_SYS_SOURCETERM)
+# pragma omp atomic
       sources[vi_id] += csys->source[i];
 
     cs_gnum_t  grow_id = rset->g_id[vi_id];
