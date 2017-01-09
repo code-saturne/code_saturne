@@ -218,56 +218,6 @@ cs_quant_dump(FILE             *f,
               const cs_quant_t  q);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute for each vertex the dual cell volume which is also
- *
- *                sum    |celld(v) cap c| = pvol_v
- *              c in C_v
- *
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      quant     pointer to a cs_cdo_quantites_t structure
- * \param[in, out] p_pvol    pvol (if NULL, allocated in this routine)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_compute_pvol_vtx(const cs_cdo_connect_t     *connect,
-                    const cs_cdo_quantities_t  *quant,
-                    double                     *p_pvol[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute for each edge a related volume pvol_e which constitutes
- *         a partition of unity
- *
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      quant     pointer to a cs_cdo_quantites_t structure
- * \param[in, out] p_pvol    pvol (if NULL, allocated in this routine)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_compute_pvol_edge(const cs_cdo_connect_t      *connect,
-                     const cs_cdo_quantities_t   *quant,
-                     double                      *p_pvol[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute for each face a related volume pvol_f which constitutes
- *         a partition of unity
- *
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
- * \param[in]      quant     pointer to a cs_cdo_quantites_t structure
- * \param[in, out] p_pvol    pvol (if NULL, allocated in this routine)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
-                     const cs_cdo_quantities_t  *quant,
-                     double                     *p_pvol[]);
-
-/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
