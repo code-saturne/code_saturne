@@ -254,8 +254,10 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
   } /* diagonal or not */
 
   /* Return values */
-  assert(fabs(e1) > 0);
-  *eig_ratio = e3/e1;
+  if (fabs(e1) > 0)
+    *eig_ratio = e3/e1;
+  else
+    *eig_ratio = 1;
   *eig_max = e3;
 }
 
