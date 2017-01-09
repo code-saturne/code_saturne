@@ -58,14 +58,12 @@ implicit none
 ! Local variables
 
 integer          n_fields, f_id, n_moments
-integer          ii, jj, ivar, imom, iok, ikw
+integer          ii, jj, imom, iok, ikw
 integer          nbccou, keyvar, flag
 integer          nscacp, iscal
 integer          imrgrp
 integer          kcpsyr, icpsyr
 integer          nfld, f_type
-
-integer          ilog
 
 logical          is_set
 
@@ -74,7 +72,7 @@ double precision relxsp, omgnrm
 character(len=80) :: name
 
 type(var_cal_opt) :: vcopt , vcopt1, vcopt2, vcopt3, vcopt4
-type(var_cal_opt) :: vcopt5, vcopt6, vcopt7
+type(var_cal_opt) :: vcopt5, vcopt6
 
 !===============================================================================
 
@@ -1160,33 +1158,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 1032 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========,'                                               /,&
-'@    VITESSE DE MAILLAGE EN ALE',                              /,&
-'@    ',a6,' SERA INITIALISE AUTOMATIQUEMENT.,'                 /,&
-'@    NE PAS LE MODIFIER.,'                                     /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  Verifier cs_user_parameters.f90,'                           /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1041 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : MODIFICATION AVANCEE DE ',                    /,&
-'@    =========,'                                               /,&
-'@    ',a8,' ',i10,                                             /,&
-'@    ',a6,'.'                                                  /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  1061 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1356,33 +1327,6 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
 
- 1032 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
-'@    ========',                                                /,&
-'@    MESH VELOCITY IN ALE',                                    /,&
-'@    ',a6,' WILL BE INITIALIZED AUTOMATICALLY',                /,&
-'@    DO NOT MODIFY IT.,'                                       /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@  Check cs_user_parameters.f90',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 1041 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ WARNING: ADVANCED MODIFICATION OF',                       /,&
-'@    ========',                                                /,&
-'@    ',a8,' ',i10,                                             /,&
-'@    ',a6,'.',                                                 /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  1061 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
