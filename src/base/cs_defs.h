@@ -258,6 +258,7 @@ typedef enum {
   CS_CHAR,               /* character values */
   CS_FLOAT,              /* 4-byte floating point values */
   CS_DOUBLE,             /* 8-byte floating point values */
+  CS_FLAG,               /* unsigned short integer values */
   CS_INT32,              /* 4-byte signed integer values */
   CS_INT64,              /* 8-byte signed integer values */
   CS_UINT32,             /* 4-byte unsigned integer values */
@@ -358,8 +359,9 @@ typedef struct {
 #    define CS_MPI_GNUM       MPI_UNSIGNED
 #  endif
 
-#  define CS_MPI_LNUM     MPI_INT         /* MPI type for cs_lnum_t type */
-#  define CS_MPI_COORD    MPI_DOUBLE      /* MPI type for cs_coord_t type */
+#  define CS_MPI_FLAG     MPI_UNSIGNED_SHORT /* MPI type for cs_flag_t type */
+#  define CS_MPI_LNUM     MPI_INT            /* MPI type for cs_lnum_t type */
+#  define CS_MPI_COORD    MPI_DOUBLE         /* MPI type for cs_coord_t type */
 
 #endif /* defined(HAVE_MPI) && !defined(CS_IGNORE_MPI) */
 
