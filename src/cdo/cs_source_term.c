@@ -1241,13 +1241,15 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_source_term_t    *source,
   /* Temporary buffers */
   double  *contrib = cb->values;              // size n_vc
 
+  /* 1) Compute the contributions seen by the whole portion of dual cell */
+
   /* Cell evaluation */
-  double  val_c;
-  ana(tcur, 1, cm->xc, &val_c);
+  double  eval_c;
+  ana(tcur, 1, cm->xc, &eval_c);
 
   /* Contributions related to vertices */
-  double  *result_v = cb->values + cm->n_vc; // size n_vc
-  ana(tcur, cm->n_vc, cm->xv, result_v);
+  double  *eval_v = cb->values + cm->n_vc; // size n_vc
+  ana(tcur, cm->n_vc, cm->xv, eval_v);
 
   cs_real_3_t  *xvc = cb->vectors;
   for (short int v = 0; v < cm->n_vc; v++) {
@@ -1255,136 +1257,117 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_source_term_t    *source,
     for (int k = 0; k < 3; k++) xvc[v][k] = 0.5*(cm->xc[k] + xv[k]);
   }
 
-  double  *result_vc = cb->values + 2*cm->n_vc; // size n_vc
-  ana(tcur, cm->n_vc, (const cs_real_t *)xvc, result_vc);
+  double  *eval_vc = cb->values + 2*cm->n_vc; // size n_vc
+  ana(tcur, cm->n_vc, (const cs_real_t *)xvc, eval_vc);
 
   for (short int v = 0; v < cm->n_vc; v++) {
 
-    // -1/20 on extrimity points and 1/5 on midpoints
-    const double  val_v = -0.05*(val_c + result_v[v]) + 0.2*result_vc[v];
-
-    /* Set the initial values */
-    contrib[v] = cm->wvc[v]*cm->vol_c*val_v;
+    /* Set the initial values
+       -1/20 on extremity points and 1/5 on midpoints */
+      contrib[v] = cm->wvc[v]*cm->vol_c
+      * (-0.05*(eval_c + eval_v[v]) + 0.2*eval_vc[v]);
 
   } // Loop on vertices
 
-  /* Overwrite result_v and result_vc */
-  double  *pec_vol = cb->values + cm->n_vc;   // size n_vc
-  double  *pfv_vol = cb->values + 2*cm->n_vc; // size n_ec
-  for (short int e = 0; e < cm->n_ec; e++) pec_vol[e] = 0;
+  /* 2) Compute the contribution related to edge
+     The portion of dual cell seen by each vertex is 1/2 |pec| */
+  cs_real_3_t  *x_e = cb->vectors;
+  cs_real_3_t  *xec = cb->vectors + cm->n_ec; // size = n_ec (overwrite xvc)
 
-  /* Main loop on faces */
-  for (short int f = 0; f < cm->n_fc; f++) {
-
-    const double  *xf = cm->face[f].center;
-
-    /* Reset volume of the face related to a vertex */
-    for (short int v = 0; v < cm->n_vc; v++) pfv_vol[v] = 0;
-
-    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
-
-      const short int  e = cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[2*e];
-      const short int  v2 = cm->e2v_ids[2*e+1];
-      const double  pef_vol = cs_math_voltet(cm->xv + 3*v1,
-                                             cm->xv + 3*v2,
-                                             xf,
-                                             cm->xc);
-
-      pec_vol[e] += pef_vol;
-      pfv_vol[v1] += 0.5*pef_vol;
-      pfv_vol[v2] += 0.5*pef_vol;
-
-      cs_real_3_t  xef;
-      cs_real_t  result_ef;
-      for (int k = 0; k < 3; k++) xef[k] = 0.5*(cm->edge[e].center[k] + xf[k]);
-      ana(tcur, 1, xef, &result_ef);
-
-      const double  ef_contrib = 0.1*pef_vol*result_ef;
-      contrib[v1] += ef_contrib;
-      contrib[v2] += ef_contrib;
-
-    } // Loop on face edges
-
-    /* Contributions related to this face */
-    double  val_f = 0.0, val_fc = 0.0;
-    ana(tcur, 1, xf, &val_f);
-    val_f *= -0.05; // -1/20
-
-    cs_real_3_t  xfc;
-    for (int k = 0; k < 3; k++) xfc[k] = 0.5*(xf[k] + cm->xc[k]);
-    ana(tcur, 1, xfc, &val_fc);
-    val_f += 0.2*val_fc; // 1/5
-
-    for (short int v = 0; v < cm->n_vc; v++) {
-      if (pfv_vol[v] > 0) {
-        double  val_fv = 0;
-        cs_real_3_t  xfv;
-        for (int k = 0; k < 3; k++) xfv[k] = 0.5*(xf[k] + cm->xv[3*v+k]);
-        ana(tcur, 1, xfv, &val_fv);
-        contrib[v] += pfv_vol[v]*(val_f + 0.2*val_fv); // 1/5
-      }
+  for (short int e = 0; e < cm->n_ec; e++) {
+    for (int k = 0; k < 3; k++) {
+      x_e[e][k] = cm->edge[e].center[k];
+      xec[e][k] = 0.5*(cm->xc[k] + x_e[e][k]);
     }
+  }
 
-  } // Loop on cell faces
+  // Evaluate the analytic function at xe and xec
+  double  *eval_e = cb->values + cm->n_vc; // size=n_ec (overwrite eval_v)
+  double  *eval_ec = eval_e + cm->n_ec;    // size=n_ec (overwrite eval_vc)
+  ana(tcur, 2*cm->n_ec, (const cs_real_t *)cb->vectors, eval_e);
 
-  /* Contributions related to edges */
-  cs_real_3_t  *xev = cb->vectors;              // overwrite xvc
+  // xev (size = 2*n_ec)
+  cs_real_3_t  *xve = cb->vectors;         // size=2*n_ec (overwrite xe and xec)
   for (short int e = 0; e < cm->n_ec; e++) {
 
     const cs_real_t  *xe = cm->edge[e].center;
-
     const short int  v1 = cm->e2v_ids[2*e];
     const double  *xv1 = cm->xv + 3*v1;
     const short int  v2 = cm->e2v_ids[2*e+1];
     const double  *xv2 = cm->xv + 3*v2;
 
     for (int k = 0; k < 3; k++) {
-      xev[2*e][k] = 0.5*(xv1[k] + xe[k]);
-      xev[2*e+1][k] = 0.5*(xv2[k] + xe[k]);
+      xve[2*e  ][k] = 0.5*(xv1[k] + xe[k]);
+      xve[2*e+1][k] = 0.5*(xv2[k] + xe[k]);
     }
 
   } // Loop on edges
 
-  cs_real_t  *val_ev = cb->values + 2*cm->n_vc; // overwrite pfv_vol
-  ana(tcur, 2*cm->n_ec, (const cs_real_t *)xev, val_ev);
+  double  *eval_ve = eval_ec + cm->n_ec; // size = 2*n_ec
+  ana(tcur, 2*cm->n_ec, (const cs_real_t *)cb->vectors, eval_ve);
 
-  cs_real_3_t  *xe = cb->vectors;               // overwrite xev
-  cs_real_3_t  *xec = cb->vectors + cm->n_ec;
-  for (short int e = 0; e < cm->n_ec; e++) {
+  /* 3) Main loop on faces */
+  double  *pvf_vol = eval_ve + 2*cm->n_ec;  // size n_vc
 
-    /* Update contrib */
-    const double  vol_e = 0.1*pec_vol[e];
-    const short int  v1 = cm->e2v_ids[2*e];
-    const short int  v2 = cm->e2v_ids[2*e+1];
+  for (short int f = 0; f < cm->n_fc; f++) {
 
-    contrib[v1] += vol_e * val_ev[2*e];
-    contrib[v2] += vol_e * val_ev[2*e+1];
+    const double  *xf = cm->face[f].center;
+    const double  hfc = cm->hfc[f];
 
-    /* Prepare the second call related to edges */
+    /* Reset volume of the face related to a vertex */
+    for (short int v = 0; v < cm->n_vc; v++) pvf_vol[v] = 0;
+
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const short int  e = cm->f2e_ids[i];
+      const short int  v1 = cm->e2v_ids[2*e];
+      const short int  v2 = cm->e2v_ids[2*e+1];
+      const double  half_pef_vol = cs_math_onesix * cm->tef[i] * hfc;
+
+      pvf_vol[v1] += half_pef_vol;
+      pvf_vol[v2] += half_pef_vol;
+
+      cs_real_3_t  xef;
+      cs_real_t  eval_ef;
+      for (int k = 0; k < 3; k++) xef[k] = 0.5*(cm->edge[e].center[k] + xf[k]);
+      ana(tcur, 1, xef, &eval_ef);
+
+      // 1/5 (EF + EC) -1/20 * (E)
+      const double  common_ef_contrib =
+        0.2*(eval_ef + eval_ec[e]) -0.05*eval_e[e];
+
+      contrib[v1] += half_pef_vol*(common_ef_contrib + 0.2*eval_ve[2*e]);
+      contrib[v2] += half_pef_vol*(common_ef_contrib + 0.2*eval_ve[2*e+1]);
+
+    } // Loop on face edges
+
+    /* Contributions related to this face */
+    cs_real_3_t  *xvfc = cb->vectors;  // size=2+n_vc (overwrite xev)
     for (int k = 0; k < 3; k++) {
-      const double  coord = cm->edge[e].center[k];
-      xe[e][k] = coord;
-      xec[e][k] = 0.5*(cm->xc[k] + coord);
+      xvfc[0][k] = xf[k];                    // xf
+      xvfc[1][k] = 0.5*(xf[k] + cm->xc[k]);  // xfc
     }
 
-  } // Loop on edges
+    short int  n_vf = 0;
+    for (short int v = 0; v < cm->n_vc; v++) {
+      if (pvf_vol[v] > 0) {
+        cb->ids[n_vf] = v;
+        for (int k = 0; k < 3; k++)
+          xvfc[2+n_vf][k] = 0.5*(xf[k] + cm->xv[3*v+k]);
+        n_vf++;
+      }
+    }
 
-  cs_real_t  *val_ec = cb->values + 2*cm->n_vc; // overwrite vel_ev
-  ana(tcur, 2*cm->n_ec, (const cs_real_t *)xe, val_ec);
+    double  *eval_vfc = pvf_vol + cm->n_vc; // size=n_vf + 2
+    ana(tcur, 2+n_vf, (const cs_real_t *)xvfc, eval_vfc);
 
-  /* Last update of contrib related to edges */
-  for (short int e = 0; e < cm->n_ec; e++) {
+    for (short int i = 0; i < n_vf; i++) {
+      short int  v = cb->ids[i];
+      const double  val_vfc = -0.05*eval_vfc[0] + 0.2*eval_vfc[1];
+      contrib[v] += pvf_vol[v] * (val_vfc + 0.2*eval_vfc[2+i]);
+    }
 
-    // -1/20 * val_e + 1/5*val_ec
-    const double val_e = -0.05*val_ec[2*e] + 0.2*val_ec[2*e+1];
-    const double e_contrib = 0.5 * pec_vol[e] * val_e;
-    const short int  v1 = cm->e2v_ids[2*e], v2 = cm->e2v_ids[2*e+1];
-
-    contrib[v1] += e_contrib;
-    contrib[v2] += e_contrib;
-
-  } // Loop on edges
+  } // Loop on cell faces
 
   /* Add the computed contributions to the return values */
   for (short int v = 0; v < cm->n_vc; v++)

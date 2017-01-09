@@ -147,6 +147,15 @@ libsaturne_la_LDFLAGS = -no-undefined -version 1:0:0
 #pkglibexecdir = $(libexecdir)/$(PACKAGE)
 pkglibexec_PROGRAMS =
 
+pkglibexec_PROGRAMS += cs_check_cdo
+cs_check_cdo_SOURCES  = cs_check_cdo.c
+cs_check_cdo_CPPFLAGS = $(AM_CPPFLAGS)$(PETSC_CPPFLAGS)
+cs_check_cdo_LDADD = $(top_builddir)/src/apps/libsaturne.la 
+if HAVE_PETSC
+cs_check_cdo_LDADD += $(PETSC_LDFLAGS) $(PETSC_LIBS)
+endif
+cs_check_cdo_LDFLAGS = -no-undefined
+
 # Code_Saturne IO utility program
 
 if HAVE_FRONTEND

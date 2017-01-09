@@ -415,8 +415,7 @@ cs_advection_field_def_by_value(cs_adv_field_t    *adv,
   adv->def_type = CS_PARAM_DEF_BY_VALUE;
   adv->desc.state |= CS_FLAG_STATE_UNIFORM;
 
-  cs_param_set_def(adv->def_type, CS_PARAM_VAR_VECT, (const void *)val,
-                   &(adv->def));
+  cs_param_set_get(CS_PARAM_VAR_VECT, (const void *)val, &(adv->def.get));
 }
 
 /*----------------------------------------------------------------------------*/

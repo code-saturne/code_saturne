@@ -135,36 +135,37 @@ typedef struct {
   double         vol_c;   // volume of the current cell
 
   /* Vertex information */
-  short int    n_vc;   // local number of vertices in a cell
-  cs_lnum_t   *v_ids;  // vertex ids on this rank
-  double      *xv;     // local vertex coordinates (copy)
-  double      *wvc;    // weight |vol_dc(v) cap vol_c|/|vol_c for each cell vtx
+  short int    n_vc;    // local number of vertices in a cell
+  cs_lnum_t   *v_ids;   // vertex ids on this rank
+  double      *xv;      // local vertex coordinates (copy)
+  double      *wvc;     // weight |vol_dc(v) cap vol_c|/|vol_c for each cell vtx
 
   /* Edge information */
-  short int    n_ec;   // local number of edges in a cell
-  cs_lnum_t   *e_ids;  // edge ids on this rank
-  cs_quant_t  *edge;   // local edge quantities (xe, length and unit vector)
-  cs_nvec3_t  *dface;  // local dual face quantities (area and unit normal)
+  short int    n_ec;    // local number of edges in a cell
+  cs_lnum_t   *e_ids;   // edge ids on this rank
+  cs_quant_t  *edge;    // local edge quantities (xe, length and unit vector)
+  cs_nvec3_t  *dface;   // local dual face quantities (area and unit normal)
 
   /* Face information */
-  short int    n_fc;   // local number of faces in a cell
-  cs_lnum_t   *f_ids;  // face ids on this rank
-  short int   *f_sgn;  // incidence number between f and c
-  double      *hfc;    // height of the pyramid of basis f and apex c
-  cs_quant_t  *face;   // local face quantities (xf, area and unit normal)
-  cs_nvec3_t  *dedge;  // local dual edge quantities (length and unit vector)
+  short int    n_fc;    // local number of faces in a cell
+  cs_lnum_t   *f_ids;   // face ids on this rank
+  short int   *f_sgn;   // incidence number between f and c
+  double      *hfc;     // height of the pyramid of basis f and apex c
+  cs_quant_t  *face;    // local face quantities (xf, area and unit normal)
+  cs_nvec3_t  *dedge;   // local dual edge quantities (length and unit vector)
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
-  short int   *e2v_ids;  // cell-wise edge -> vertices connectivity
-  short int   *e2v_sgn;  // cell-wise edge -> vertices orientation (-1 or +1)
+  short int   *e2v_ids; // cell-wise edge -> vertices connectivity
+  short int   *e2v_sgn; // cell-wise edge -> vertices orientation (-1 or +1)
 
   /* Local f2e connectivity: size = 2*n_max_ebyc */
-  short int   *f2e_idx;  // size n_fc + 1
-  short int   *f2e_ids;  // size 2*n_max_ebyc
-  double      *tef;      // |tef| area of the triangle of base |e| and apex xf
+  short int   *f2e_idx; // size n_fc + 1
+  short int   *f2e_ids; // size 2*n_max_ebyc
+  double      *tef;     // |tef| area of the triangle of base |e| and apex xf
 
   /* Local e2f connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
-  short int   *e2f_ids;  // cell-wise edge -> faces connectivity
+  short int   *e2f_ids; // cell-wise edge -> faces connectivity
+  cs_nvec3_t  *sefc;    // portion of dual faces (2 triangles by edge)
 
 } cs_cell_mesh_t;
 
@@ -359,14 +360,18 @@ cs_cdo_local_get_face_mesh(int    mesh_id);
 /*!
  * \brief  Allocate a cs_cell_mesh_t structure
  *
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  n_max_vbyc      max. number of vertices in a cell
+ * \param[in]  n_max_ebyc      max. number of edges in a cell
+ * \param[in]  n_max_fbyc      max. number of faces in a cell
  *
  * \return a pointer to a new allocated cs_cell_mesh_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_mesh_t *
-cs_cell_mesh_create(const cs_cdo_connect_t     *connect);
+cs_cell_mesh_create(short int   n_max_vbyc,
+                    short int   n_max_ebyc,
+                    short int   n_max_fbyc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -403,14 +408,14 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 /*!
  * \brief  Allocate a cs_face_mesh_t structure
  *
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  n_max_vbyf    max. number of vertices fir a face
  *
  * \return a pointer to a new allocated cs_face_mesh_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_face_mesh_t *
-cs_face_mesh_create(const cs_cdo_connect_t     *connect);
+cs_face_mesh_create(short int   n_max_vbyf);
 
 /*----------------------------------------------------------------------------*/
 /*!

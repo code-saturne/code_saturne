@@ -103,6 +103,8 @@ cs_cell_sys_create(int    n_max_ent)
     BFT_MALLOC(csys->rhs, n_max_ent, double);
     BFT_MALLOC(csys->source, n_max_ent, double);
     BFT_MALLOC(csys->val_n, n_max_ent, double);
+    for (int i = 0; i < n_max_ent; i++)
+      csys->rhs[i] = csys->source[i] = csys->val_n[i] = 0.0;
   }
 
   return csys;
@@ -297,7 +299,7 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
       for (int i = 0; i < n_vc; i++) cb->ids[i] = 0;
 
       size = n_ec*(n_ec+1);
-      size = CS_MAX(4*n_ec + 2*n_vc, size);
+      size = CS_MAX(4*n_ec + 3*n_vc, size);
       BFT_MALLOC(cb->values, size, double);
       for (int i = 0; i < size; i++) cb->values[i] = 0;
 
@@ -319,7 +321,7 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
       BFT_MALLOC(cb->ids, n_vc + 1, short int);
       for (int i = 0; i < n_vc + 1; i++) cb->ids[i] = 0;
 
-      size = 2*(n_vc + n_ec) + n_fc;
+      size = 2*n_vc + 3*n_ec + n_fc;
       BFT_MALLOC(cb->values, size, double);
       for (int i = 0; i < size; i++) cb->values[i] = 0;
 
@@ -399,13 +401,17 @@ cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
     int t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
 
-    cs_cdo_local_cell_meshes[t_id] = cs_cell_mesh_create(connect);
-    cs_cdo_local_face_meshes[t_id] = cs_face_mesh_create(connect);
+    cs_cdo_local_cell_meshes[t_id] = cs_cell_mesh_create(connect->n_max_vbyc,
+                                                         connect->n_max_ebyc,
+                                                         connect->n_max_fbyc);
+    cs_cdo_local_face_meshes[t_id] = cs_face_mesh_create(connect->n_max_vbyf);
   }
 #else
   assert(cs_glob_n_threads == 1);
-  cs_cdo_local_cell_meshes[0] = cs_cell_mesh_create(connect);
-  cs_cdo_local_face_meshes[0] = cs_face_mesh_create(connect);
+  cs_cdo_local_cell_meshes[0] = cs_cell_mesh_create(connect->n_max_vbyc,
+                                                    connect->n_max_ebyc,
+                                                    connect->n_max_fbyc);
+  cs_cdo_local_face_meshes[0] = cs_face_mesh_create(connect->n_max_vbyf);
 #endif /* openMP */
 
 }
@@ -486,25 +492,26 @@ cs_cdo_local_get_face_mesh(int    mesh_id)
 /*!
  * \brief  Allocate a cs_cell_mesh_t structure
  *
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  n_max_vbyc      max. number of vertices in a cell
+ * \param[in]  n_max_ebyc      max. number of edges in a cell
+ * \param[in]  n_max_fbyc      max. number of faces in a cell
  *
  * \return a pointer to a new allocated cs_cell_mesh_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_mesh_t *
-cs_cell_mesh_create(const cs_cdo_connect_t     *connect)
+cs_cell_mesh_create(short int   n_max_vbyc,
+                    short int   n_max_ebyc,
+                    short int   n_max_fbyc)
 {
   cs_cell_mesh_t  *cm = NULL;
 
-  if (connect == NULL)
-    return cm;
-
   BFT_MALLOC(cm, 1, cs_cell_mesh_t);
 
-  cm->n_max_vbyc = connect->n_max_vbyc;
-  cm->n_max_ebyc = connect->n_max_ebyc;
-  cm->n_max_fbyc = connect->n_max_fbyc;
+  cm->n_max_vbyc = n_max_vbyc;
+  cm->n_max_ebyc = n_max_ebyc;
+  cm->n_max_fbyc = n_max_fbyc;
 
   cm->flag = 0;
   cm->n_vc = 0;
@@ -543,6 +550,7 @@ cs_cell_mesh_create(const cs_cdo_connect_t     *connect)
 
   /* edge --> face connectivity */
   BFT_MALLOC(cm->e2f_ids, 2*cm->n_max_ebyc, short int);
+  BFT_MALLOC(cm->sefc, 2*cm->n_max_ebyc, cs_nvec3_t);
 
   return cm;
 }
@@ -585,6 +593,7 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
   BFT_FREE(cm->tef);
 
   BFT_FREE(cm->e2f_ids);
+  BFT_FREE(cm->sefc);
 
   BFT_FREE(cm);
   *p_cm = NULL;
@@ -775,18 +784,37 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     assert(flag & (CS_CDO_LOCAL_E | CS_CDO_LOCAL_F | CS_CDO_LOCAL_FE));
 
+    cs_dface_t  *qdf = quant->dface + connect->c2e->idx[c_id];
+
     for (short int i = 0; i < 2*cm->n_ec; i++) cm->e2f_ids[i] = -1;
 
     for (short int f = 0; f < cm->n_fc; f++) {
       for (short int j = cm->f2e_idx[f]; j < cm->f2e_idx[f+1]; j++) {
 
-        short int  eshft = 2*cm->f2e_ids[j];
+        short int  e = cm->f2e_ids[j], eshft = 2*e;
 
-        if (cm->e2f_ids[eshft] == -1)
+        if (cm->e2f_ids[eshft] == -1) {
+          assert(cm->f_ids[f] == qdf[e].parent_id[0]);
           cm->e2f_ids[eshft] = f;
+          cm->sefc[eshft].meas = qdf[e].sface[0].meas;
+          cm->sefc[eshft].unitv[0] = qdf[e].sface[0].unitv[0];
+          cm->sefc[eshft].unitv[1] = qdf[e].sface[0].unitv[1];
+          cm->sefc[eshft].unitv[2] = qdf[e].sface[0].unitv[2];
+          // tmp
+          if (cm->f_ids[f] == qdf[e].parent_id[1])
+            bft_error(__FILE__, __LINE__, 0, " Case not possible");
+        }
         else {
           assert(cm->e2f_ids[eshft+1] == -1);
+          assert(cm->f_ids[f] == qdf[e].parent_id[1]);
           cm->e2f_ids[eshft+1] = f;
+          cm->sefc[eshft+1].meas = qdf[e].sface[1].meas;
+          cm->sefc[eshft+1].unitv[0] = qdf[e].sface[1].unitv[0];
+          cm->sefc[eshft+1].unitv[1] = qdf[e].sface[1].unitv[1];
+          cm->sefc[eshft+1].unitv[2] = qdf[e].sface[1].unitv[2];
+          // tmp
+          if (cm->f_ids[f] == qdf[e].parent_id[0])
+            bft_error(__FILE__, __LINE__, 0, " Case not possible");
         }
 
       } /* Loop on face edges */
@@ -801,23 +829,20 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 /*!
  * \brief  Allocate a cs_face_mesh_t structure
  *
- * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  n_max_vbyf    max. number of vertices fir a face
  *
  * \return a pointer to a new allocated cs_face_mesh_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_face_mesh_t *
-cs_face_mesh_create(const cs_cdo_connect_t     *connect)
+cs_face_mesh_create(short int   n_max_vbyf)
 {
   cs_face_mesh_t  *fm = NULL;
 
-  if (connect == NULL)
-    return fm;
-
   BFT_MALLOC(fm, 1, cs_face_mesh_t);
 
-  fm->n_max_vbyf = connect->n_max_vbyf;
+  fm->n_max_vbyf = n_max_vbyf;
 
   fm->c_id = -1;
   fm->xc[0] = fm->xc[1] = fm->xc[2] = 0.;

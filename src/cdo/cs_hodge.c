@@ -1432,8 +1432,8 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
 
   /* Reset values */
   hf->n_ent = fm->n_vf;
-  for (short int i = 0; i < fm->n_vf*fm->n_vf; i++)
-    hf->val[i] = 0;
+  for (short int i = 0; i < fm->n_vf; i++) hf->ids[i] = fm->v_ids[i];
+  for (short int i = 0; i < fm->n_vf*fm->n_vf; i++) hf->val[i] = 0;
 
   for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
 
