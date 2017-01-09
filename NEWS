@@ -1,4 +1,12 @@
 
+Release 4.3.3 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- Fix syntax error in autovnv study code.
+
 Release 4.3.2 (January 6 2017)
 ==============================
 
