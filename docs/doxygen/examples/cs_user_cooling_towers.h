@@ -25,16 +25,23 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page us_ctdz Cooling tower parameters definition (usctdz.f90)
+  \page cs_user_cooling_towers Cooling tower parameters definition
 
-  \section usctdz_h_intro Introduction
+  \section cs_user_cooling_towers_h_fluid Define fluid parameters
 
-  The \ref usctdz function allows one to define parameters for cooling towers.
+  Fluid properties are defined in \ref cs_user_parameters.f90 in routine
+  \ref cs_user_cooling_towers:
 
-  \section usctdz_h_usctdz Example
+  \snippet cs_user_parameters.f90 cs_user_cooling_towers
 
-  The following code block shows an example of definition of a cooling tower.
+  \section cs_user_cooling_towers_h_ex Define an evaporation zone
 
-  \snippet usctdz.f90 usctdz
+  The \ref cs_user_paramters.c function allows one to define parameters
+  for cooling towers.
+
+  The following code block shows an example of definition of a cooling tower
+  exchange zone.
+
+  \snippet cs_user_parameters-ctwr.c ctwr_user_1
 
 */

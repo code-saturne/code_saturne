@@ -213,12 +213,9 @@ module ppincl
   !> - ippmod(iatmos) = 2 humid atmosphere
   integer ::  iatmos
 
-  ! TODO : commentaire neutralise
-  ! pointer to specify cooling towers module with indicator ippmod(iaeros)
-  ! - ippmod(iaeros) =-1 module not activated
-  ! - ippmod(iaeros) = 0 no model (NOT functional)
-  ! - ippmod(iaeros) = 1 Poppe's model
-  ! - ippmod(iaeros) = 2 Merkel's model
+  !> pointer to specify cooling towers module with indicator ippmod(iaeros)
+  !> - ippmod(iaeros) =-1 module not activated
+  !> - ippmod(iaeros) >= 0  activated
   integer ::  iaeros
 
   !> pointer to specify gas mixture module with indicator ippmod(igmix)
@@ -658,9 +655,6 @@ module ppincl
 
   !> \addtogroup cool_transported
   !> \{
-
-  !> pointer to define the bulk (mixture), humid air temperature in array isca(itempm)
-  integer, save :: itempm
 
   !> pointer to define the mass fraction of the dry air in array isca(iyma)
   integer, save :: iyma

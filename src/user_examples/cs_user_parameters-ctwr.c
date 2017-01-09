@@ -111,6 +111,7 @@ BEGIN_C_DECLS
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
  * fields may be set here.
+ * See \subpage cs_user_cooling_towers for examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -124,27 +125,21 @@ cs_user_parameters(void)
   /*! [ctwr_user_1] */
   {
 
-    const int imzech = 1; /* Evaporation model (None,
-                             Poppe or Merkel (deprecated)) */
-    const int ntypze = 1; /* */
-    const cs_real_t qeaueze = 33737.0;
-    const cs_real_t xap     = 0.20;
-    const cs_real_t xnp     = 0.50;
-    const cs_real_t surface = 5183.6;
-    const cs_real_t dgout   = 0.005;
+    cs_real_t surface = 0.48 * 6540.; /* 48% of the total disc */
+    cs_real_t qw = surface *  2.64; /* Water flow rate (kg/s) */
 
     cs_ctwr_define(
-        "2 or 3",
-        imzech,
-        ntypze,
+        "2 or 3", /* selction criterion */
+        1, /*Evaporation model: 0 None, 1 Poppe, 2 Merkel*/
+        1, /*Type: 1 cunter current, 2 cross, 3 rain zone */
         -1., /* Imposed delta temperature if positive */
         0.1, /* Associated relaxation time */
         36., /* Liquid injected water temperature */
-        qeaueze,
-        xap,
-        xnp,
+        qw,
+        0.2, /* Evaportaion law constant A */
+        0.5, /* Evaportaion law constant n */
         surface,
-        dgout);
+        0.005); /* Droplet diameter if rain zone */
 
   }
   /*! [ctwr_user_1] */

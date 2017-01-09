@@ -94,14 +94,12 @@ icp = 0     ! Cp is variable (>=0 means variable, -1 means constant)
             ! (unlike the cell arrays for density and viscosity which are initialised
             ! irrespective of the values of irovar and ivivar)
 
-call add_model_scalar_field('temperature', 'Temperature humid air', itempm)
-
-! The thermal transported scalar is the temperature.
-iscalt = itempm
+! The thermal transported scalar is the temperature of the bulk.
+call add_model_scalar_field('temperature', 'Temperature humid air', iscalt)
 
 ifcvsl = 0 ! Set variable diffusivity for the humid air enthalpy
            ! The diffusivity used in the transport equation will be
-           ! the cell value of the viscls array for ivarfl(isca(itempm)).
+           ! the cell value of the viscls array for ivarfl(isca(iscalt)).
            ! This value is updated at the top of each time step in 'ctphyv'
            ! along with the other variable properties
 call field_set_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)

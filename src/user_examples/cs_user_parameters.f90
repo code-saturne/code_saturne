@@ -2110,13 +2110,12 @@ implicit none
 
 !===============================================================================
 
-!< [cs_user_cooling_towers]
-
 !===============================================================================
 ! 1. Parameters for prescibed temperature difference
 !===============================================================================
 
 ! Air and liquid properties
+!< [cs_user_cooling_towers]
 cp_a    = 1006.0d0
 cp_v    = 1831.0d0
 cp_l    = 4179.0d0
@@ -2125,7 +2124,6 @@ rho_l   = 997.85615d0
 viscl0 = 1.765d-5
 lambda_l = 0.02493d0
 humidity0 = 0.d0
-
 !< [cs_user_cooling_towers]
 
 !----

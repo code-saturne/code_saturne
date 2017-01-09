@@ -123,11 +123,10 @@ call field_get_val_v(ivarfl(iu), vel)
 
 if (isuite.eq.0) then
 
-!   --- Initialisation de la temperature de l'air a 11 deg Celsius
-!                      de l'humidite de l'air a 0.0063
-!       pour toutes les cellules
+!   --- Initialize tmperature of humid air at 11 deg Celsius
+!       and of humidity at 0.0063
 
-  call field_get_val_s(ivarfl(isca(itempm)), cvar_temp)
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_temp)
   call field_get_val_s(ihumid, cpro_humid)!FIXME
 
   do iel = 1, ncel
@@ -137,13 +136,12 @@ if (isuite.eq.0) then
 
   enddo
 
-!   --- Initialisation de la temperature de l'air a 20 deg Celsius
-!                      de l'humidite de l'air a 0.012
-!                      de la vitesse
-!       uniquement pour les cellules de couleur 6
+!   --- Initialize tmperature of humid air at 20 deg Celsius
+!       and of humidity at 0.012
+!       and of velocity at 0.5 m/s
+!       for cells of color 6
 
   call getcel('6', nlelt, lstelt)
-  !==========
 
   do ilelt = 1, nlelt
 

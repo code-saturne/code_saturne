@@ -30,20 +30,40 @@ module ctincl
 
   !=============================================================================
 
+  !> \defgroup ctincl Module for cooling towers constants
 
-  ! cp_a     : Cp of dry air
-  ! cp_v     : Cp of water vapour
-  ! cp_l     : Cp of liquid water
-  ! hv0      : enthalpy of vapourisation of water
-  ! rho_l    : density of liquid water
-  ! lambda_l : conductivity of liquid water
-  ! lambda_h : conductivity of humid air
+  !> \addtogroup ctincl
+  !> \{
 
-  double precision, save :: cp_a, cp_v, cp_l, hv0, rho_l, lambda_l, lambda_h
 
-  ! humidity0 : initial absolute humidity in the cooling tower
+  !=============================================================================
 
+
+  !> Cp of dry air
+  double precision, save :: cp_a
+
+  !> Cp of water vapour
+  double precision, save :: cp_v
+
+  !> Cp of liquid water
+  double precision, save :: cp_l
+
+  !> Enthalpy of vapourisation of water
+  double precision, save :: hv0
+
+  !> Density of liquid water
+  double precision, save :: rho_l
+
+  !> Conductivity of liquid water
+  double precision, save :: lambda_l
+
+  !> Conductivity of humid air
+  double precision, save :: lambda_h
+
+  !> Initial absolute humidity in the cooling tower
   double precision, save :: humidity0
+
+  !> \}
 
   !=============================================================================
 
