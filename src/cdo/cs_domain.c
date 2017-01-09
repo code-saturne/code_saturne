@@ -53,7 +53,7 @@
 
 #include "cs_evaluate.h"
 #include "cs_equation_common.h"
-#include "cs_groundwater.h"
+#include "cs_gwf.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
@@ -546,7 +546,7 @@ cs_domain_init(const cs_mesh_t             *mesh,
   /* Predefined equations or modules */
   domain->richards_eq_id = -1;
   domain->wall_distance_eq_id = -1;
-  domain->gw = NULL;
+  domain->gwf = NULL;
 
   /* Specify the "physical" domain boundaries. Define a mesh location for
      each boundary type */
@@ -610,8 +610,8 @@ cs_domain_free(cs_domain_t   *domain)
 
   BFT_FREE(domain->time_step);
 
-  if (domain->gw != NULL)
-    domain->gw = cs_groundwater_finalize(domain->gw);
+  if (domain->gwf != NULL)
+    domain->gwf = cs_gwf_finalize(domain->gwf);
 
   /* Free properties */
   for (int i = 0; i < domain->n_properties; i++)
@@ -938,7 +938,7 @@ cs_domain_summary(const cs_domain_t   *domain)
     }
 
     /* Summary of the groundwater module */
-    cs_groundwater_summary(domain->gw);
+    cs_gwf_summary(domain->gwf);
 
     /* Summary for each equation */
     for (int  eq_id = 0; eq_id < domain->n_equations; eq_id++)
@@ -1433,56 +1433,75 @@ cs_domain_get_equation(const cs_domain_t  *domain,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Activate the computation of the wall distance
+ *         Define a new equation called "WallDistance" and its related field
+ *         named "WallDistance"
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
+ *
+ * \return a pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_equation_t *
 cs_domain_activate_wall_distance(cs_domain_t   *domain)
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   domain->wall_distance_eq_id = domain->n_equations;
-
   domain->n_predef_equations += 1;
   domain->n_equations += 1;
   BFT_REALLOC(domain->equations, domain->n_equations, cs_equation_t *);
 
-  domain->equations[domain->wall_distance_eq_id] =
+  cs_equation_t  *eq =
     cs_equation_create("WallDistance",              // equation name
                        "WallDistance",              // variable name
                        CS_EQUATION_TYPE_PREDEFINED, // type of equation
                        CS_PARAM_VAR_SCAL,           // type of variable
                        CS_PARAM_BC_HMG_NEUMANN);    // default BC
 
+  domain->equations[domain->wall_distance_eq_id] = eq;
+
+  return eq;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Activate the computation of the Richards' equation
+ *         This activation yields severals consequences:
+ *         * Add a new equation named "Richards" along with an associated field
+ *           named "hydraulic_head". Default boundary condition is set to
+ *          "zero_flux".
+ *         * Define a new advection field named "darcian_flux"
+ *         * Define a new property called "permeability".
+ *         * Define a new property called "soil_capacity" if "unsteady" is
+ *           chosen
  *
  * \param[in, out]  domain     pointer to a cs_domain_t structure
  * \param[in]       kw_type    "isotropic", "orthotropic or "anisotropic"
  * \param[in]       kw_time    Richards equation is "steady" or "unsteady"
  * \param[in]       n_soils    number of soils to consider
  * \param[in]       n_tracers  number of tracer equations
+ *
+ * \return a pointer to a cs_grounwater_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_domain_activate_groundwater(cs_domain_t   *domain,
-                               const char    *kw_type,
-                               const char    *kw_time,
-                               int            n_soils,
-                               int            n_tracers)
+cs_gwf_t *
+cs_domain_activate_gwf(cs_domain_t   *domain,
+                       const char    *kw_type,
+                       const char    *kw_time,
+                       int            n_soils,
+                       int            n_tracers)
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
   int  richards_eq_id = domain->n_equations;
 
   /* Allocate a new structure for managing groundwater module */
-  domain->gw = cs_groundwater_create();
+  cs_gwf_t  *gwf = cs_gwf_create();
+
+  /* Associate this structure to the domain structure */
+  domain->gwf = gwf;
 
   /* Add a property related to the diffusion term of the Richards eq. */
   cs_property_t  *permeability = cs_domain_add_property(domain,
@@ -1507,20 +1526,22 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   cs_advection_field_set_option(adv_field, CS_ADVKEY_POST, "field");
 
   /* Create a new equation for solving the Richards equation */
-  cs_equation_t  *richards_eq = cs_groundwater_initialize(domain->connect,
-                                                          richards_eq_id,
-                                                          n_soils,
-                                                          n_tracers,
-                                                          permeability,
-                                                          soil_capacity,
-                                                          adv_field,
-                                                          domain->gw);
+  cs_equation_t  *richards_eq = cs_gwf_initialize(domain->connect,
+                                                  richards_eq_id,
+                                                  n_soils,
+                                                  n_tracers,
+                                                  permeability,
+                                                  soil_capacity,
+                                                  adv_field,
+                                                  domain->gwf);
 
-  if (richards_eq == NULL)
+  if (richards_eq == NULL) {
     bft_error(__FILE__, __LINE__, 0,
               " The module dedicated to groundwater flows is activated but"
               " the Richards' equation is not set.\n"
               " Please check your settings.");
+    return NULL; // Avoid a warning
+  }
 
   /* Update cs_domain_t structure */
   domain->richards_eq_id = richards_eq_id;
@@ -1530,28 +1551,29 @@ cs_domain_activate_groundwater(cs_domain_t   *domain,
   domain->equations[richards_eq_id] = richards_eq;
 
   /* Add default post-processing related to groundwater flow module */
-  cs_post_add_time_mesh_dep_output(cs_groundwater_extra_post, domain->gw);
+  cs_post_add_time_mesh_dep_output(cs_gwf_extra_post, domain->gwf);
 
+  return gwf;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to a cs_groundwater_t structure related to this
+ * \brief  Retrieve the pointer to a cs_gwf_t structure related to this
  *         domain
  *
  * \param[in]   domain         pointer to a cs_domain_t structure
  *
- * \return a pointer to a cs_groundwater_t structure
+ * \return a pointer to a cs_gwf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_groundwater_t *
-cs_domain_get_groundwater(const cs_domain_t    *domain)
+cs_gwf_t *
+cs_domain_get_gwf_struct(const cs_domain_t    *domain)
 {
   if (domain == NULL)
     return NULL;
 
-  return domain->gw;
+  return domain->gwf;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1569,13 +1591,13 @@ cs_domain_get_groundwater(const cs_domain_t    *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
-                                 const char    *eq_name,
-                                 const char    *var_name)
+cs_domain_add_gwf_tracer_eq(cs_domain_t   *domain,
+                            const char    *eq_name,
+                            const char    *var_name)
 {
   /* Sanity checks */
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-  if (domain->gw == NULL)
+  if (domain->gwf == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" Groundwater module is requested but is not activated.\n"
                 " Please first activate this module."));
@@ -1583,10 +1605,10 @@ cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
   /* Add a new equation */
   BFT_REALLOC(domain->equations, domain->n_equations + 1, cs_equation_t *);
 
-  cs_equation_t  *tracer_eq = cs_groundwater_add_tracer(domain->gw,
-                                                        domain->n_equations,
-                                                        eq_name,
-                                                        var_name);
+  cs_equation_t  *tracer_eq = cs_gwf_add_tracer(domain->gwf,
+                                                domain->n_equations,
+                                                eq_name,
+                                                var_name);
 
   if (tracer_eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -1599,7 +1621,7 @@ cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
   BFT_MALLOC(pty_name, len, char);
   sprintf(pty_name, "%s_time", eq_name);
 
-  const int  n_soils = cs_groundwater_get_n_soils(domain->gw);
+  const int  n_soils = cs_gwf_get_n_soils(domain->gwf);
   cs_property_t  *time_pty = cs_domain_add_property(domain,
                                                     pty_name,
                                                     "isotropic",
@@ -1625,26 +1647,24 @@ cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
  * \param[in]       wmd            value of the water molecular diffusivity
  * \param[in]       alpha_l        value of the longitudinal dispersivity
  * \param[in]       alpha_t        value of the transversal dispersivity
- * \param[in]       bulk_density   value of the bulk density
  * \param[in]       distrib_coef   value of the distribution coefficient
  * \param[in]       reaction_rate  value of the first order rate of reaction
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_groundwater_tracer(cs_domain_t   *domain,
-                                 const char    *eq_name,
-                                 const char    *ml_name,
-                                 double         wmd,
-                                 double         alpha_l,
-                                 double         alpha_t,
-                                 double         bulk_density,
-                                 double         distrib_coef,
-                                 double         reaction_rate)
+cs_domain_set_gwf_tracer_eq(cs_domain_t   *domain,
+                            const char    *eq_name,
+                            const char    *ml_name,
+                            double         wmd,
+                            double         alpha_l,
+                            double         alpha_t,
+                            double         distrib_coef,
+                            double         reaction_rate)
 {
   /* Sanity checks */
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-  if (domain->gw == NULL)
+  if (domain->gwf == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" Groundwater module is requested but is not activated.\n"
                 " Please first activate this module."));
@@ -1663,12 +1683,11 @@ cs_domain_set_groundwater_tracer(cs_domain_t   *domain,
                 " No equation with this name has been found.\n"
                 " Please check your settings."), eq_name);
 
-  cs_groundwater_set_tracer_param(domain->gw, eq_id, ml_name,
-                                  wmd,
-                                  alpha_l, alpha_t,
-                                  bulk_density,
-                                  distrib_coef,
-                                  reaction_rate);
+  cs_gwf_set_tracer_param(domain->gwf, eq_id, ml_name,
+                          wmd,
+                          alpha_l, alpha_t,
+                          distrib_coef,
+                          reaction_rate);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1712,7 +1731,7 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 
     /* Automatic settings for the Richards equation */
     eq = domain->equations[domain->richards_eq_id];
-    cs_groundwater_richards_setup(domain->gw, eq);
+    cs_gwf_richards_setup(domain->gwf, eq);
 
     /* Automatic settings for the tracer equations */
     for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
@@ -1723,9 +1742,9 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 
         if (cs_equation_get_type(eq) == CS_EQUATION_TYPE_GROUNDWATER) {
 
-          const int  n_soils = cs_groundwater_get_n_soils(domain->gw);
+          const int  n_soils = cs_gwf_get_n_soils(domain->gwf);
 
-          if (cs_groundwater_tracer_needs_diffusion(domain->gw, eq_id)) {
+          if (cs_gwf_tracer_needs_diffusion(domain->gwf, eq_id)) {
 
             /* Add a new property related to the diffusion property */
             const char *eq_name = cs_equation_get_name(eq);
@@ -1744,7 +1763,7 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 
           } /* Add a diffusion property for this equation ? */
 
-          if (cs_groundwater_tracer_needs_reaction(domain->gw, eq_id)) {
+          if (cs_gwf_tracer_needs_reaction(domain->gwf, eq_id)) {
 
             /* Add a new property related to the reaction property */
             const char *eq_name = cs_equation_get_name(eq);
@@ -1764,7 +1783,7 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
           } /* Add a reaction property for this equation ? */
 
           /* Automatic settings for this tracer equation */
-          cs_groundwater_tracer_setup(eq_id, eq, domain->gw);
+          cs_gwf_tracer_setup(eq_id, eq, domain->gwf);
 
         } /* Tracer equation related to the groundwater flow module */
 
@@ -1908,13 +1927,13 @@ cs_domain_solve(cs_domain_t  *domain)
     /* If unsteady, only initialization is done, otherwise one makes the whole
        computation */
     if (domain->richards_eq_id > -1)
-      cs_groundwater_compute(domain->mesh,
-                             domain->time_step,
-                             domain->dt_cur,
-                             domain->connect,
-                             domain->cdo_quantities,
-                             domain->equations,
-                             domain->gw);
+      cs_gwf_compute(domain->mesh,
+                     domain->time_step,
+                     domain->dt_cur,
+                     domain->connect,
+                     domain->cdo_quantities,
+                     domain->equations,
+                     domain->gwf);
 
     /* User-defined equations */
     _compute_steady_user_equations(domain);
@@ -1935,13 +1954,13 @@ cs_domain_solve(cs_domain_t  *domain)
     }
 
     if (domain->richards_eq_id > -1)
-      cs_groundwater_compute(domain->mesh,
-                             domain->time_step,
-                             domain->dt_cur,
-                             domain->connect,
-                             domain->cdo_quantities,
-                             domain->equations,
-                             domain->gw);
+      cs_gwf_compute(domain->mesh,
+                     domain->time_step,
+                     domain->dt_cur,
+                     domain->connect,
+                     domain->cdo_quantities,
+                     domain->equations,
+                     domain->gwf);
 
     /* User-defined equations */
     _compute_unsteady_user_equations(domain, nt_cur);
@@ -2002,7 +2021,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            &(domain->n_adv_fields));
 
   /* Write a new section: activation or not of the groundwater flow module */
-  int  igwf = (domain->gw != NULL) ? 1 : 0;
+  int  igwf = (domain->gwf != NULL) ? 1 : 0;
   cs_restart_write_section(restart,
                            "groundwater_flow_module",
                            CS_MESH_LOCATION_NONE,
@@ -2091,12 +2110,12 @@ cs_domain_postprocess(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined post-processing output for the groundwater flow module
- *         prototype of this function is fixed since it is a function pointer
- *         defined in cs_post.h (cs_post_time_mesh_dep_output_t)
+ * \brief  Predefined post-processing output for the computational domain
+ *         The prototype of this function is fixed since it is a function
+ *         pointer defined in cs_post.h (cs_post_time_mesh_dep_output_t)
  *
  * \param[in, out] input        pointer to a optional structure (here a
- *                              cs_groundwater_t structure)
+ *                              cs_gwf_t structure)
  * \param[in]      mesh_id      id of the output mesh for the current call
  * \param[in]      cat_id       category id of the output mesh for this call
  * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),

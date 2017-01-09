@@ -1078,7 +1078,7 @@ _vcb_stabilization_part2(const cs_cell_mesh_t        *cm,
   for (short int e = 0; e < cm->n_ec; e++) {
 
     const double  tec = stab_coef * cs_compute_area_from_quant(cm->edge[e],
-							       cm->xc);
+                                                               cm->xc);
     const short int  eshift = 2*e;
     const short int  v1 = cm->e2v_ids[eshift];
     const short int  v2 = cm->e2v_ids[eshift+1];

@@ -163,7 +163,7 @@ typedef struct { /* Specific mesh quantities */
 
 inline static double
 cs_compute_area_from_quant(const cs_quant_t   q,
-			   const cs_real_t   *xa)
+                           const cs_real_t   *xa)
 {
   double  xef[3], xef_un[3], cp[3];
   xef[0] = xa[0] - q.center[0];

@@ -35,7 +35,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_equation.h"
-#include "cs_groundwater.h"
+#include "cs_gwf.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_param.h"
@@ -115,9 +115,8 @@ typedef struct {
      If xxxxx_eq_id = -1, then this equation is not activated */
 
   /* GROUNDWATER FLOW MODULE */
-
-  int   richards_eq_id;   // Main equation of the groundwater module
-  cs_groundwater_t  *gw;  // NULL is not activated
+  int        richards_eq_id;   // Main equation of the groundwater flow module
+  cs_gwf_t  *gwf;              // NULL is not activated
 
   /* WALL DISTANCE */
   int   wall_distance_eq_id;  // Wall distance computation
@@ -423,49 +422,64 @@ cs_equation_t *
 cs_domain_get_equation(const cs_domain_t  *domain,
                        const char         *eqname);
 
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Activate the computation of the wall distance
+ *         Define a new equation called "WallDistance" and its related field
+ *         named "WallDistance"
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
+ *
+ * \return a pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_equation_t *
 cs_domain_activate_wall_distance(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Activate the computation of the Richards' equation
+ *         This activation yields severals consequences:
+ *         * Add a new equation named "Richards" along with an associated field
+ *           named "hydraulic_head". Default boundary condition is set to
+ *          "zero_flux".
+ *         * Define a new advection field named "darcian_flux"
+ *         * Define a new property called "permeability".
+ *         * Define a new property called "soil_capacity" if "unsteady" is
+ *           chosen
  *
  * \param[in, out]  domain     pointer to a cs_domain_t structure
  * \param[in]       kw_type    "isotropic", "orthotropic or "anisotropic"
  * \param[in]       kw_time    Richards equation is "steady" or "unsteady"
  * \param[in]       n_soils    number of soils to consider
  * \param[in]       n_tracers  number of tracer equations
+ *
+ * \return a pointer to a cs_grounwater_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_domain_activate_groundwater(cs_domain_t   *domain,
-                               const char    *kw_type,
-                               const char    *kw_time,
-                               int            n_soils,
-                               int            n_tracers);
+cs_gwf_t *
+cs_domain_activate_gwf(cs_domain_t   *domain,
+                       const char    *kw_type,
+                       const char    *kw_time,
+                       int            n_soils,
+                       int            n_tracers);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to a cs_groundwater_t structure related to this
+ * \brief  Retrieve the pointer to a cs_gwf_t structure related to this
  *         domain
  *
  * \param[in]   domain         pointer to a cs_domain_t structure
  *
- * \return a pointer to a cs_groundwater_t structure
+ * \return a pointer to a cs_gwf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_groundwater_t *
-cs_domain_get_groundwater(const cs_domain_t    *domain);
+cs_gwf_t *
+cs_domain_get_gwf_struct(const cs_domain_t    *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -482,9 +496,9 @@ cs_domain_get_groundwater(const cs_domain_t    *domain);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
-                                 const char    *eq_name,
-                                 const char    *var_name);
+cs_domain_add_gwf_tracer_eq(cs_domain_t   *domain,
+                            const char    *eq_name,
+                            const char    *var_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -497,22 +511,20 @@ cs_domain_add_groundwater_tracer(cs_domain_t   *domain,
  * \param[in]       wmd            value of the water molecular diffusivity
  * \param[in]       alpha_l        value of the longitudinal dispersivity
  * \param[in]       alpha_t        value of the transversal dispersivity
- * \param[in]       bulk_density   value of the bulk density
  * \param[in]       distrib_coef   value of the distribution coefficient
  * \param[in]       reaction_rate  value of the first order rate of reaction
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_groundwater_tracer(cs_domain_t   *domain,
-                                 const char    *eq_name,
-                                 const char    *ml_name,
-                                 double         wmd,
-                                 double         alpha_l,
-                                 double         alpha_t,
-                                 double         bulk_density,
-                                 double         distrib_coef,
-                                 double         reaction_rate);
+cs_domain_set_gwf_tracer_eq(cs_domain_t   *domain,
+                            const char    *eq_name,
+                            const char    *ml_name,
+                            double         wmd,
+                            double         alpha_l,
+                            double         alpha_t,
+                            double         distrib_coef,
+                            double         reaction_rate);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -592,12 +604,12 @@ cs_domain_postprocess(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined post-processing output for the groundwater flow module
- *         prototype of this function is fixed since it is a function pointer
- *         defined in cs_post.h (cs_post_time_mesh_dep_output_t)
+ * \brief  Predefined post-processing output for the computational domain
+ *         The prototype of this function is fixed since it is a function
+ *         pointer defined in cs_post.h (cs_post_time_mesh_dep_output_t)
  *
  * \param[in, out] input        pointer to a optional structure (here a
- *                              cs_groundwater_t structure)
+ *                              cs_gwf_t structure)
  * \param[in]      mesh_id      id of the output mesh for the current call
  * \param[in]      cat_id       category id of the output mesh for this call
  * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),

@@ -89,7 +89,7 @@ _get_wvf_pefcvol(short int                 f,
   const short int  f2e_start = cm->f2e_idx[f];
   const short int  *f2e_ids = cm->f2e_ids + f2e_start;
   const double  *tef_vals = cm->tef + f2e_start;
-  
+
   /* Compute a weight for each vertex of the current face */
   for (short int e = 0; e < cm->f2e_idx[f+1] - f2e_start; e++) {
 

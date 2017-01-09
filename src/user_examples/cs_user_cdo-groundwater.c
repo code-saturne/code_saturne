@@ -93,7 +93,7 @@ static const double  L = 200;
 */
 static void
 get_sol(cs_real_t           time,
-	cs_lnum_t           n_pts,
+        cs_lnum_t           n_pts,
         const cs_real_t    *xyz,
         cs_real_t          *retval)
 {
@@ -107,7 +107,7 @@ get_sol(cs_real_t           time,
   const double  alpha = 6 - 5*time/td;
 
   for (cs_lnum_t p = 0; p < n_pts; p++) {
-    
+
     /* Space-dependent part */
     const double  xll = (xyz[3*p] - L)/L, beta = xll*xll;
 
@@ -293,11 +293,11 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      ================================
 
      For the groundwater flow module:
-     >> cs_domain_activate_groundwater(domain,
-                                       permeability_type,
-                                       Richards_time,
-                                       n_soils,
-                                       n_tracers);
+     >> cs_domain_activate_gwf(domain,
+                               permeability_type,
+                               Richards_time,
+                               n_soils,
+                               n_tracers);
 
      * permeability_type is one of the following keywords:
        "isotropic", "orthotropic" or "anisotropic"
@@ -313,54 +313,34 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      - define a new property called "soil_capacity" if "unsteady" is chosen
   */
 
-  cs_domain_activate_groundwater(domain,
-                                 "isotropic", // type of permeability
-                                 "unsteady",  // steady or unsteady
-                                 1,           // number of soils
-                                 0);          // number of tracers
-
-  /* Retrieve the groundwater flow module */
-  cs_groundwater_t  *gw = cs_domain_get_groundwater(domain);
+  cs_gwf_t  *gwf = cs_domain_activate_gwf(domain,
+                                          "isotropic", // type of permeability
+                                          "unsteady",  // steady or unsteady
+                                          1,           // number of soils
+                                          0);          // number of tracers
 
   /* Set additional parameters related to the groundwater flow module
-     >> cs_groundwater_set_param(gw, key, keyval);
+     >> cs_gwf_set_param(gw, key, keyval);
 
-     CS_GWKEY_GRAVITATION with "x", "-x", "z", "-z"...
-     CS_GWKEY_OUTPUT_MOISTURE with "true" or "false" (default)
-   */
+     CS_GWFKEY_GRAVITATION with "x", "-x", "z", "-z"...
+     CS_GWFKEY_OUTPUT_MOISTURE with "true" or "false" (default)
+  */
 
-  cs_groundwater_set_param(gw, CS_GWKEY_OUTPUT_MOISTURE, "true");
+  cs_gwf_set_param(gwf, CS_GWFKEY_OUTPUT_MOISTURE, "true");
 
   /* =========
      Add soils
-     =========
+     ========= */
 
-     >> cs_groundwater_add_soil_by_value(gw,
-                                         mesh_location_name,
-                                         model_keyword,
-                                         saturated_permeability);
-
-     - mesh_location_name is the name of the mesh location where this soil is
-     defined. The mesh location is related to cells. By default, "cells"
-     corresponds to all the cells of the mesh. Otherwise, one needs to define
-     new mesh locations.
-     - model_keyword is one of the following choices:
-       "saturated", "tracy" or "genutchen"
-     - saturated_permeability depends on the type of permeability chosen.
-       1 value if isotropic, 3 values if orthtropic or 9 values if anisotropic.
-
-  */
-
-  cs_groundwater_add_soil_by_value(gw,
-                                   "cells",       /* mesh location name */
-                                   "tracy",       /* soil model */
-                                   "1.15741e-4"); /* saturated permeability */
+  cs_gwf_add_iso_soil_by_value(gwf,
+                               CS_GWF_HYDRAULIC_TRACY, // Hydraulic model to use
+                               "cells",                // mesh location
+                               1.15741e-4,             // saturated permeability
+                               0.45,                   // saturated moisture
+                               1.0);                   // bulk density (useless)
 
   /* Set additional parameters defining this soil
-     >> cs_groundwater_set_soil_param(gw,
-                                      mesh_location_name,
-                                      key,
-                                      keyval);
+     >> cs_gwf_set_soil_param(gw, mesh_location_name, key, keyval);
 
      If mesh_location_name is set to NULL, all soils are set.
 
@@ -373,39 +353,35 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      CS_SOILKEY_TRACY_RES_H,   // Head related to the residual moisture content
   */
 
-  cs_groundwater_set_soil_param(gw, "cells", CS_SOILKEY_TRACY_RES_H, "-100");
-  cs_groundwater_set_soil_param(gw, NULL, CS_SOILKEY_SAT_MOISTURE, "0.45");
-  cs_groundwater_set_soil_param(gw, NULL, CS_SOILKEY_RES_MOISTURE, "0.15");
+  cs_gwf_set_soil_param(gwf, "cells", CS_SOILKEY_TRACY_RES_H, -100);
+  cs_gwf_set_soil_param(gwf, NULL, CS_SOILKEY_RES_MOISTURE, 0.15);
 
   /* ====================
      Add tracer equations
      ====================
 
      Add a tracer equation which is unsteady and convected by the darcean flux
-     >> cs_domain_add_groundwater_tracer(domain,
-                                         eqname,
-                                         varname);
+     >> cs_domain_add_gwf_tracer_eq(domain, eqname, varname);
 
      This implies the creation of a new equation called eqname and a new
      field called varname.
   */
 
   /* Set parameters related to each tracer equation in each soil
-     >> cs_domain_set_groundwater_tracer(domain,
-                                         eqname,
-                                         mesh_location_name,
-                                         water_diff,
-                                         alpha_l,
-                                         alpha_t,
-                                         rho,
-                                         kd,
-                                         lambda);
+     >> cs_domain_set_gwf_tracer_eq(domain,
+                                    eqname,
+                                    mesh_location_name,
+                                    water_diff,
+                                    alpha_l,
+                                    alpha_t,
+                                    kd,
+                                    lambda);
 
      According to the setting, additional properties can be created which are
      associated to the diffusion and/or reaction terms.
 
      If mesh_location_name is set to NULL, all soils are set.
-   */
+  */
 
 }
 
@@ -459,11 +435,11 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
                                  get_sol);  // analytic function
 
   /* Value to set */
-  cs_get_t  get = {.val = -100};
+  cs_get_t  get_bc = {.val = -100};
   cs_equation_add_bc_by_value(eq,
                               CS_PARAM_BC_DIRICHLET,
                               "right",  // name of the related mesh location
-                              get);     // value to set
+                              get_bc);     // value to set
 
   /* Define the initial condition by an analytical function
      (By default: zero is set) */

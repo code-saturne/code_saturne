@@ -648,7 +648,7 @@ _compute_max_ent(const cs_mesh_t             *m,
   int  n_max_vc = 0, n_max_ec = 0, n_max_fc = 0;
   int  n_max_v2ec = 0, n_max_v2fc = 0, n_max_vf = 0;
 
-#pragma omp parallel for if (n_cells > CS_THR_MIN)			\
+#pragma omp parallel for if (n_cells > CS_THR_MIN)                        \
   reduction(max:n_max_vc) reduction(max:n_max_ec) reduction(max:n_max_v2ec) \
   reduction(max:n_max_fc) reduction(max:n_max_vf) reduction(max:n_max_v2fc)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -705,7 +705,7 @@ _compute_max_ent(const cs_mesh_t             *m,
       else { // Border face
 
         const cs_lnum_t  *f2v_idx =
-	  m->b_face_vtx_idx + c2f_ids[f] - m->n_i_faces;
+          m->b_face_vtx_idx + c2f_ids[f] - m->n_i_faces;
         const cs_lnum_t  *f2v_ids = m->b_face_vtx_lst + f2v_idx[0];
         const int  n_vf = f2v_idx[1] - f2v_idx[0];
 

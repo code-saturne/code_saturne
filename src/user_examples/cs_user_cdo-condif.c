@@ -93,7 +93,7 @@ static const double  one_third = 1./3.;
 
 static void
 _define_adv_field(cs_real_t           time,
-		  cs_lnum_t           n_pts,
+                  cs_lnum_t           n_pts,
                   const cs_real_t    *xyz,
                   cs_real_t          *res)
 {
@@ -117,7 +117,7 @@ _define_adv_field(cs_real_t           time,
 
 static void
 _define_bcs(cs_real_t           time,
-	    cs_lnum_t           n_pts,
+            cs_lnum_t           n_pts,
             const cs_real_t    *xyz,
             cs_real_t          *res)
 {
@@ -140,7 +140,7 @@ _define_bcs(cs_real_t           time,
 
 static void
 _define_source(cs_real_t           time,
-	       cs_lnum_t           n_pts,
+               cs_lnum_t           n_pts,
                const cs_real_t    *xyz,
                cs_real_t          *res)
 {
@@ -169,12 +169,12 @@ _define_source(cs_real_t           time,
     cond[0][0] = 1.0, cond[0][1] = 0.5, cond[0][2] = 0.0;
     cond[1][0] = 0.5, cond[1][1] = 1.0, cond[1][2] = 0.5;
     cond[2][0] = 0.0, cond[2][1] = 0.5, cond[2][2] = 1.0;
-    
+
     /* Contribution of the diffusive part */
     res[p] = cond[0][0]*gxx + cond[1][1]*gyy + cond[2][2]*gzz +
       2*( cond[0][1]*gxy + cond[0][2]*gxz + cond[1][2]*gyz);
     res[p] *= -1;
-    
+
     /* Contribution of the advection term */
     res[p] += (y - 0.5)*gx + (0.5 - x)*gy + z*gz + 1 + spx*spy*spz;
 

@@ -366,9 +366,9 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
 
     /* Gradient of the Lagrange function related to v1 and v2 */
     cs_compute_grd_ve(fm->e2v_ids[2*e],
-		      fm->e2v_ids[2*e+1],
-		      deq,
-		      (const cs_real_t (*)[3])u_vc, l_vc,
+                      fm->e2v_ids[2*e+1],
+                      deq,
+                      (const cs_real_t (*)[3])u_vc, l_vc,
                       grd_v1, grd_v2);
 
     /* Gradient of the Lagrange function related to a face.
@@ -797,7 +797,7 @@ cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
       const short int  ee = 2*f2e_ids[e];
 
       p_f += tef[e]*(  p_v[cm->e2v_ids[ee]]      // p_v1
-		     + p_v[cm->e2v_ids[ee+1]] ); // p_v2
+                     + p_v[cm->e2v_ids[ee+1]] ); // p_v2
     }
     p_f *= 0.5/pfq.meas;
 
@@ -820,8 +820,8 @@ cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
          This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
       for (int k = 0; k < 3; k++)
         grd_pef[k] = dp_cf          *grd_c[k]  +
-	             (p_v[v1] - p_f)*grd_v1[k] +
-	             (p_v[v2] - p_f)*grd_v2[k];
+                     (p_v[v1] - p_f)*grd_v1[k] +
+                     (p_v[v2] - p_f)*grd_v2[k];
 
       cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, grd_pef, mgrd);
 
@@ -903,7 +903,7 @@ cs_cdo_diffusion_face_flux(const cs_face_mesh_t      *fm,
        This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
     for (int k = 0; k < 3; k++)
       grd_pef[k] =  dp_cf          *grd_c[k]  +
-	           (p_v[v1] - p_f) *grd_v1[k] +
+                   (p_v[v1] - p_f) *grd_v1[k] +
                    (p_v[v2] - p_f) *grd_v2[k];
 
     /* Area of the triangle defined by the base e and the apex f */

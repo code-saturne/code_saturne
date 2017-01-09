@@ -60,7 +60,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_groundwater.h"
+#include "cs_gwf.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -70,11 +70,11 @@ BEGIN_C_DECLS
  * Local macro definitions
  *============================================================================*/
 
-#define CS_GROUNDWATER_DBG 1
+#define CS_GWF_DBG 1
 
 /* Tag dedicated to build a flag for the groundwater module */
 /*   1: post the moisture content */
-#define CS_GROUNDWATER_POST_MOISTURE  (1 <<  0)
+#define CS_GWF_POST_MOISTURE  (1 <<  0)
 
 /*============================================================================
  * Structure definitions
@@ -96,7 +96,7 @@ typedef struct {
   /* First order decay coefficient (related to the reaction term) */
   double           reaction_rate;
 
-} cs_gw_tracer_t;
+} cs_gwf_tracer_t;
 
 /* Set of parameters describing a type of soil */
 typedef struct {
@@ -105,72 +105,70 @@ typedef struct {
                             The support entities are cells */
 
   /* Set of parameters for each tracer equation */
-  cs_gw_tracer_t         *tracer_param;
+  cs_gwf_tracer_t         *tracer_param;
 
   /* Physical modelling adopted for this soil */
-  cs_groundwater_model_t  model;
+  cs_gwf_hydraulic_model_t  model;
 
-  /* Parameters for predefined models */
-  cs_gw_genuchten_t       genuchten_param; /* Van-Genuchten-Mualen law */
-  cs_gw_tracy_t           tracy_param;     /* Tracy law */
+  /* Parameters for predefined hydraulic models */
+  cs_gwf_genuchten_t        genuchten_param; /* Van-Genuchten-Mualen law */
+  cs_gwf_tracy_t            tracy_param;     /* Tracy law */
 
   /* Main soil properties */
-  double                  residual_moisture;       /* theta_r */
-  double                  saturated_moisture;      /* theta_s */
-  double                  delta_moisture;          /* theta_s - theta_r */
-  cs_get_t                saturated_permeability;  /* k_s [m.s^-1] */
+  double         bulk_density;
+  double         residual_moisture;       /* theta_r */
+  double         saturated_moisture;      /* theta_s */
+  double         delta_moisture;          /* theta_s - theta_r */
+  cs_get_t       saturated_permeability;  /* k_s [m.s^-1] */
 
-} cs_gw_soil_t;
+} cs_gwf_soil_t;
 
 /* Set of parameters related to the groundwater module */
-struct _groundwater_t {
+struct _gwf_t {
 
-  cs_flag_t                flag;       /* Compact information */
-
-  cs_groundwater_model_t   global_model;
+  cs_flag_t                  flag;         /* Compact information */
+  cs_gwf_hydraulic_model_t   global_model;
 
   /* Physical parameters related to each kind of soil considered.
      If n_soils > 1, soil_id array stores the id giving access to the soil
      parameters related to each cell of the mesh */
-  int            n_soils;
-  int            n_max_soils;
-  cs_gw_soil_t  *soil_param;
-  cs_lnum_t      n_cells;     /* Number of cells (useful to get soil_id) */
-  short int     *soil_id;     /* NULL or allocated to n_cells */
+  int             n_soils;
+  int             n_max_soils;
+  cs_gwf_soil_t  *soil_param;
+  cs_lnum_t       n_cells;     /* Number of cells (useful to get soil_id) */
+  short int      *soil_id;     /* NULL or allocated to n_cells */
 
   /* Gravity effect */
-  bool           with_gravitation;
-  cs_real_3_t    gravity;
+  bool            with_gravitation;
+  cs_real_3_t     gravity;
 
   /* Fields located at cells */
-  cs_field_t    *hydraulic_head;  /* H (shared or owner according to the
-                                     discretization space scheme) */
-  cs_field_t    *pressure_head;   /* h = H - gravity_potential */
+  cs_field_t     *hydraulic_head;  /* H (shared or owner according to the
+                                      discretization space scheme) */
+  cs_field_t     *pressure_head;   /* h = H - gravity_potential */
 
   /* Set of equations associated to this module */
-  int            richards_eq_id;
-
-  int            n_tracers;
-  int            n_max_tracers;
-  int           *tracer_eq_ids;
+  int             richards_eq_id;
+  int             n_tracers;
+  int             n_max_tracers;
+  int            *tracer_eq_ids;
 
   /* Moisture content variable and attached quantities */
-  cs_field_t          *moisture_content;
+  cs_field_t     *moisture_content;
 
   /* Permeability is the diffusion property related to Richards equation but
      this property plays also a role in the diffusion of tracer equations */
-  cs_property_t       *permeability;  /* shared with a cs_domain_t structure */
+  cs_property_t  *permeability;  /* shared with a cs_domain_t structure */
 
   /* Scan the c2e connectivity index to get the darcian flux related to
      each dual face when CDO vertex-based scheme is activated */
-  cs_real_t           *darcian_flux;
-  cs_adv_field_t      *adv_field;    /* shared with a cs_domain_t structure */
+  cs_real_t      *darcian_flux;
+  cs_adv_field_t *adv_field;    /* shared with a cs_domain_t structure */
 
   /* Work buffer (allocated to n_max_ebyc) */
-  cs_real_t  *work;
+  cs_real_t      *work;
 
 };
-
 
 /*============================================================================
  * Static global variables
@@ -186,9 +184,9 @@ static const char _err_empty_gw[] =
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a cs_gw_tracer_t structure
+ * \brief  Set a cs_gwf_tracer_t structure
  *
- * \param[in, out] tp              pointer to a cs_gw_tracer_t structure
+ * \param[in, out] tp              pointer to a cs_gwf_tracer_t structure
  * \param[in]      wmd             value of the water molecular diffusivity
  * \param[in]      alpha_l         value of the longitudinal dispersivity
  * \param[in]      alpha_t         value of the transversal dispersivity
@@ -199,7 +197,7 @@ static const char _err_empty_gw[] =
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_tracer_param(cs_gw_tracer_t     *tp,
+_set_tracer_param(cs_gwf_tracer_t    *tp,
                   double              wmd,
                   double              alpha_l,
                   double              alpha_t,
@@ -218,26 +216,40 @@ _set_tracer_param(cs_gw_tracer_t     *tp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_gw_soil_t structure (already allocated)
+ * \brief  Initialize a cs_gwf_soil_t structure (already allocated)
  *
- * \param[in]      ml_name         name of the mesh location
- * \param[in]      model_kw        keyword related to the modelling
- * \param[in]      n_tracers       number of related tracer eqs
- * \param[in, out] soil            pointer to a cs_gw_soil_t structure
+ * \param[in, out] gw         pointer to a cs_gwf_t structure
+ * \param[in]      ml_name    name of the mesh location
+ * \param[in]      model      hydraulic modelling for this soil
+ * \param[in]      tetha_s    saturated moisture
+ * \param[in]      rho        bulk density
+ *
+ * \return a pointer to an initialized cs_gwf_soil_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_init_soil(const char     *ml_name,
-           const char     *model_kw,
-           int             n_tracers,
-           cs_gw_soil_t   *soil)
+static cs_gwf_soil_t *
+_init_soil(cs_gwf_t                   *gw,
+           const char                 *ml_name,
+           cs_gwf_hydraulic_model_t    model,
+           double                      theta_s,
+           double                      rho)
 {
-  if (soil == NULL)
-    return;
+  if (gw == NULL)
+    return  NULL;
+
+  int  soil_id = gw->n_soils;
+
+  gw->n_soils += 1;
+  if (gw->n_soils > gw->n_max_soils)
+    bft_error(__FILE__, __LINE__, 0,
+              " Maximum number of soils is reached.\n"
+              " Stop adding a new soil by value (mesh location: %s).\n"
+              " Please modify your settings.", ml_name);
+
+  cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
 
   int  ml_id = cs_mesh_location_get_id_by_name(ml_name);
-
   if (ml_id == -1)
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid mesh location name %s.\n"
@@ -249,69 +261,62 @@ _init_soil(const char     *ml_name,
                 " The expected type is CS_MESH_LOCATION_CELLS.\n"), ml_name);
 
   soil->ml_id = ml_id;
+  soil->model = model;
+  soil->saturated_moisture = theta_s;
+  soil->bulk_density = rho;
+  soil->residual_moisture = 0.15; // Default value
 
-  /* Set the model associated to this soil */
-  if (strcmp(model_kw, "saturated") == 0) {
+  /* Additionnal default initialization */
+  switch (model) {
 
-    soil->model = CS_GROUNDWATER_MODEL_SATURATED;
-    soil->saturated_moisture = 1.0;
-    soil->residual_moisture = 0.0;
+  case CS_GWF_HYDRAULIC_SATURATED: // Nothing to do
+    break;
 
-  }
-  else if (strcmp(model_kw, "genuchten") == 0) {
+  case CS_GWF_HYDRAULIC_GENUCHTEN:
+    {
+      const double  n = 1.56;
+      soil->genuchten_param.n = n;
+      soil->genuchten_param.m = 1 - 1/n;
+      soil->genuchten_param.scale = 0.036;
+      soil->genuchten_param.tortuosity = 0.5;
+    }
+    break;
 
-    soil->model = CS_GROUNDWATER_MODEL_GENUCHTEN;
-
-    /* Default initialization */
-    soil->saturated_moisture = 0.75;
-    soil->residual_moisture = 0.15;
-
-    const double  n = 1.56;
-    soil->genuchten_param.n = n;
-    soil->genuchten_param.m = 1 - 1/n;
-    soil->genuchten_param.scale = 0.036;
-    soil->genuchten_param.tortuosity = 0.5;
-
-  }
-  else if (strcmp(model_kw, "tracy") == 0) {
-
-    soil->model = CS_GROUNDWATER_MODEL_TRACY;
-
-    /* Default initialization */
-    soil->saturated_moisture = 0.75;
-    soil->residual_moisture = 0.15;
+  case CS_GWF_HYDRAULIC_TRACY:
     soil->tracy_param.h_r = -100;
     soil->tracy_param.h_s = 0;
+    break;
 
-  }
-  else
+  default:
     bft_error(__FILE__, __LINE__, 0,
               " Incompatible model for a soil in the groundwater module.\n"
-              " Value given: %s\n"
-              " Availaible models: saturated, genuchten, tracy", model_kw);
+              " Availaible models: saturated, genuchten, tracy");
+
+  } // Switch on soil modeling
 
   soil->delta_moisture = soil->saturated_moisture - soil->residual_moisture;
 
   /* Set of parameters for each tracer which are related to this soil */
-  BFT_MALLOC(soil->tracer_param, n_tracers, cs_gw_tracer_t);
+  BFT_MALLOC(soil->tracer_param, gw->n_max_tracers, cs_gwf_tracer_t);
 
-  for (int i = 0; i < n_tracers; i++) /* default initialization */
+  for (int i = 0; i < gw->n_max_tracers; i++) /* default initialization */
     _set_tracer_param(soil->tracer_param + i,
                       0.0,  /* water molecular diffusivity */
                       0.0,  /* alpha_l */
                       0.0,  /* alpha_t */
-                      1.0,  /* bulk density */
+                      1.0,  /* bulk density (not useful here since Kd = 0 */
                       0.0,  /* Kd (distribution coef.) */
                       0.0); /* reaction rate */
 
+  return soil;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the id in a cs_groundwater_t structure from the tracer
+ * \brief  Get the id in a cs_gwf_t structure from the tracer
  *         equation id
  *
- * \param[in]   gw             pointer to a cs_groundwater_t structure
+ * \param[in]   gw             pointer to a cs_gwf_t structure
  * \param[in]   tracer_eq_id   tracer equation id
  *
  * \returns an id related to this tracer equation id
@@ -319,8 +324,8 @@ _init_soil(const char     *ml_name,
 /*----------------------------------------------------------------------------*/
 
 static inline int
-_get_tracer_id(const cs_groundwater_t   *gw,
-               int                       tracer_eq_id)
+_get_tracer_id(const cs_gwf_t   *gw,
+               int               tracer_eq_id)
 {
   int  tracer_id = -1;
 
@@ -358,7 +363,7 @@ _get_tracer_diffusion_tensor(double          theta,
                              const void     *tracer_struc,
                              cs_get_t       *result)
 {
-  const cs_gw_tracer_t  *tp = (const cs_gw_tracer_t *)tracer_struc;
+  const cs_gwf_tracer_t  *tp = (const cs_gwf_tracer_t *)tracer_struc;
 
   const double v2[3] = {v[0]*v[0], v[1]*v[1], v[2]*v[2]};
   const double  vnorm = sqrt(v2[0] + v2[1] + v2[2]);
@@ -403,7 +408,7 @@ _get_tracer_time_coeff(double        theta,
                        const void   *tracer_struc,
                        cs_get_t     *result)
 {
-  const cs_gw_tracer_t  *tracer = (const cs_gw_tracer_t  *)tracer_struc;
+  const cs_gwf_tracer_t  *tracer = (const cs_gwf_tracer_t  *)tracer_struc;
 
   result->val = theta + tracer->rho_kd;
 }
@@ -424,7 +429,7 @@ _get_tracer_reaction_coeff(double        theta,
                            const void   *tracer_struc,
                            cs_get_t     *result)
 {
-  const cs_gw_tracer_t  *tracer = (const cs_gw_tracer_t  *)tracer_struc;
+  const cs_gwf_tracer_t  *tracer = (const cs_gwf_tracer_t  *)tracer_struc;
 
   result->val = tracer->reaction_rate * (theta + tracer->rho_kd);
 }
@@ -445,8 +450,8 @@ _permeability_by_genuchten_law(double        h,
                                const void   *soil_struc,
                                cs_get_t     *result)
 {
-  const cs_gw_soil_t  *soil = (const cs_gw_soil_t  *)soil_struc;
-  const cs_gw_genuchten_t  law = soil->genuchten_param;
+  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
+  const cs_gwf_genuchten_t  law = soil->genuchten_param;
 
   /* Up to now, only isotropic values are considered */
   double  isoval = soil->saturated_permeability.val;
@@ -489,8 +494,8 @@ _moisture_by_genuchten_law(double        h,
                            const void   *soil_struc,
                            cs_get_t     *result)
 {
-  const cs_gw_soil_t  *soil = (const cs_gw_soil_t  *)soil_struc;
-  const cs_gw_genuchten_t  law = soil->genuchten_param;
+  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
+  const cs_gwf_genuchten_t  law = soil->genuchten_param;
 
   double  Se = 1; // dimensionless moisture
 
@@ -518,8 +523,8 @@ _capacity_by_genuchten_law(double        h,
                            const void   *soil_struc,
                            cs_get_t     *result)
 {
-  const cs_gw_soil_t  *soil = (const cs_gw_soil_t  *)soil_struc;
-  const cs_gw_genuchten_t  law = soil->genuchten_param;
+  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
+  const cs_gwf_genuchten_t  law = soil->genuchten_param;
 
   result->val = 0.; // default initialization for saturated soil
 
@@ -549,8 +554,8 @@ _permeability_by_tracy_law(double        h,
                            const void   *soil_struc,
                            cs_get_t     *result)
 {
-  const cs_gw_soil_t  *soil = (const cs_gw_soil_t  *)soil_struc;
-  const cs_gw_tracy_t  law = soil->tracy_param;
+  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
+  const cs_gwf_tracy_t  law = soil->tracy_param;
 
   /* Up to now, only isotropic values are considered */
   const double  ks = soil->saturated_permeability.val;
@@ -582,8 +587,8 @@ _moisture_by_tracy_law(double        h,
                        const void   *soil_struc,
                        cs_get_t     *result)
 {
-  const cs_gw_soil_t  *soil = (const cs_gw_soil_t  *)soil_struc;
-  const cs_gw_tracy_t  law = soil->tracy_param;
+  const cs_gwf_soil_t  *soil = (const cs_gwf_soil_t  *)soil_struc;
+  const cs_gwf_tracy_t  law = soil->tracy_param;
 
   double  k_r = (h - law.h_r)/(law.h_s - law.h_r);
   double  moisture = k_r * soil->delta_moisture + soil->residual_moisture;
@@ -598,7 +603,7 @@ _moisture_by_tracy_law(double        h,
  * \param[in]      connect     pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
  * \param[in]      richards    pointer to the Richards equation structure
- * \param[in, out] gw          pointer to a cs_groundwater_t structure
+ * \param[in, out] gw          pointer to a cs_gwf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -606,7 +611,7 @@ static void
 _update_head(const cs_cdo_connect_t      *connect,
              const cs_cdo_quantities_t   *cdoq,
              const cs_equation_t         *richards,
-             cs_groundwater_t            *gw)
+             cs_gwf_t                    *gw)
 {
   cs_field_t  *h_head = gw->hydraulic_head;
 
@@ -683,14 +688,14 @@ _update_head(const cs_cdo_connect_t      *connect,
  *
  * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
  * \param[in]      richards    pointer to the Richards equation structure
- * \param[in, out] gw          pointer to a cs_groundwater_t structure
+ * \param[in, out] gw          pointer to a cs_gwf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _update_moisture_content(const cs_cdo_quantities_t   *cdoq,
                          const cs_equation_t         *richards,
-                         cs_groundwater_t            *gw)
+                         cs_gwf_t                    *gw)
 {
   CS_UNUSED(richards);
   cs_field_t  *moisture = gw->moisture_content;
@@ -713,12 +718,12 @@ _update_moisture_content(const cs_cdo_quantities_t   *cdoq,
 
   for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
-    const cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+    const cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
     const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(soil->ml_id);
 
     switch (soil->model) {
 
-    case CS_GROUNDWATER_MODEL_GENUCHTEN:
+    case CS_GWF_HYDRAULIC_GENUCHTEN:
 
       if (elt_ids == NULL) {
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
@@ -749,7 +754,7 @@ _update_moisture_content(const cs_cdo_quantities_t   *cdoq,
       } // cell selection is a part of all cells
       break;
 
-    case CS_GROUNDWATER_MODEL_TRACY:
+    case CS_GWF_HYDRAULIC_TRACY:
       if (elt_ids == NULL) {
 
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
@@ -780,7 +785,7 @@ _update_moisture_content(const cs_cdo_quantities_t   *cdoq,
       } // cell selection is a part of all cells
       break;
 
-    case CS_GROUNDWATER_MODEL_SATURATED:
+    case CS_GWF_HYDRAULIC_SATURATED:
       if (elt_ids == NULL) {
 
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
@@ -815,12 +820,12 @@ _update_moisture_content(const cs_cdo_quantities_t   *cdoq,
 /*!
  * \brief  Check if the setting is correct
  *
- * \param[in]  gw     pointer to a cs_groundwater_t struct.
+ * \param[in]  gw     pointer to a cs_gwf_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_check_settings(const cs_groundwater_t  *gw)
+_check_settings(const cs_gwf_t  *gw)
 {
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
@@ -864,16 +869,16 @@ _check_settings(const cs_groundwater_t  *gw)
 /*!
  * \brief  Create a structure dedicated to manage groundwater flows
  *
- * \return a pointer to a new allocated cs_groundwater_t structure
+ * \return a pointer to a new allocated cs_gwf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_groundwater_t *
-cs_groundwater_create(void)
+cs_gwf_t *
+cs_gwf_create(void)
 {
-  cs_groundwater_t  *gw = NULL;
+  cs_gwf_t  *gw = NULL;
 
-  BFT_MALLOC(gw, 1, cs_groundwater_t);
+  BFT_MALLOC(gw, 1, cs_gwf_t);
 
   /* Default initialization */
   gw->flag = 0;
@@ -883,7 +888,7 @@ cs_groundwater_create(void)
   gw->soil_param = NULL;
   gw->soil_id = NULL;
 
-  gw->global_model = CS_GROUNDWATER_N_MODELS;
+  gw->global_model = CS_GWF_N_HYDRAULIC_MODELS;
 
   gw->with_gravitation = false;
   gw->gravity[0] = 0, gw->gravity[1] = 0, gw->gravity[2] = 0;
@@ -906,14 +911,14 @@ cs_groundwater_create(void)
 /*!
  * \brief  Free the main structure related to groundwater flows
  *
- * \param[in, out]  gw     pointer to a cs_groundwater_t struct. to free
+ * \param[in, out]  gw     pointer to a cs_gwf_t struct. to free
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
-cs_groundwater_t *
-cs_groundwater_finalize(cs_groundwater_t   *gw)
+cs_gwf_t *
+cs_gwf_finalize(cs_gwf_t   *gw)
 {
   if (gw == NULL)
     return NULL;
@@ -923,7 +928,7 @@ cs_groundwater_finalize(cs_groundwater_t   *gw)
   BFT_FREE(gw->work);
 
   for (int i = 0; i < gw->n_soils; i++) {
-    cs_gw_soil_t *soil = gw->soil_param + i;
+    cs_gwf_soil_t *soil = gw->soil_param + i;
     BFT_FREE(soil->tracer_param);
   }
 
@@ -943,14 +948,14 @@ cs_groundwater_finalize(cs_groundwater_t   *gw)
 /*!
  * \brief  Get the number of requested soils
  *
- * \param[in]  gw        pointer to a cs_groundwater_t structure
+ * \param[in]  gw        pointer to a cs_gwf_t structure
  *
  * \return the number of requested soils
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_groundwater_get_n_soils(const cs_groundwater_t    *gw)
+cs_gwf_get_n_soils(const cs_gwf_t    *gw)
 {
   if (gw == NULL)
     return 0;
@@ -960,18 +965,18 @@ cs_groundwater_get_n_soils(const cs_groundwater_t    *gw)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set parameters related to a cs_groundwater_t structure
+ * \brief  Set parameters related to a cs_gwf_t structure
  *
- * \param[in, out]  gw        pointer to a cs_groundwater_t structure
+ * \param[in, out]  gw        pointer to a cs_gwf_t structure
  * \param[in]       key       key related to the member of gw to set
  * \param[in]       keyval    accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_set_param(cs_groundwater_t      *gw,
-                         cs_groundwater_key_t   key,
-                         const char            *keyval)
+cs_gwf_set_param(cs_gwf_t       *gw,
+                 cs_gwf_key_t    key,
+                 const char     *keyval)
 {
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
@@ -983,7 +988,7 @@ cs_groundwater_set_param(cs_groundwater_t      *gw,
 
   switch(key) {
 
-  case CS_GWKEY_GRAVITATION:
+  case CS_GWFKEY_GRAVITATION:
     gw->with_gravitation = true;
     gw->gravity[0] = gw->gravity[1] = gw->gravity[2] = 0.;
     if (strcmp(val, "x") == 0)       gw->gravity[0] =  1.;
@@ -999,9 +1004,9 @@ cs_groundwater_set_param(cs_groundwater_t      *gw,
                   " Please check your settings."), val);
     break;
 
-  case CS_GWKEY_OUTPUT_MOISTURE:
+  case CS_GWFKEY_OUTPUT_MOISTURE:
     if (strcmp(val, "false")) // not "false"
-      gw->flag |= CS_GROUNDWATER_POST_MOISTURE;
+      gw->flag |= CS_GWF_POST_MOISTURE;
     break;
 
   default:
@@ -1013,14 +1018,14 @@ cs_groundwater_set_param(cs_groundwater_t      *gw,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary of a cs_groundwater_t structure
+ * \brief  Summary of a cs_gwf_t structure
  *
- * \param[in]  gw     pointer to a cs_groundwater_t struct. to summarize
+ * \param[in]  gw     pointer to a cs_gwf_t struct. to summarize
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_summary(const cs_groundwater_t   *gw)
+cs_gwf_summary(const cs_gwf_t   *gw)
 {
   if (gw == NULL)
     return;
@@ -1048,7 +1053,7 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
 
   for (int i = 0; i < gw->n_soils; i++) {
 
-    const cs_gw_soil_t  soil = gw->soil_param[i];
+    const cs_gwf_soil_t  soil = gw->soil_param[i];
     const char *ml_name = cs_mesh_location_get_name(soil.ml_id);
     const cs_get_t  sat_perm = soil.saturated_permeability;
 
@@ -1094,16 +1099,16 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
 
     cs_log_printf(CS_LOG_SETUP, "  <GW/Soil %s>", ml_name);
     switch (soil.model) {
-    case CS_GROUNDWATER_MODEL_GENUCHTEN:
+    case CS_GWF_HYDRAULIC_GENUCHTEN:
       cs_log_printf(CS_LOG_SETUP, " model VanGenuchten-Mualen\n");
       break;
-    case CS_GROUNDWATER_MODEL_SATURATED:
+    case CS_GWF_HYDRAULIC_SATURATED:
       cs_log_printf(CS_LOG_SETUP, " model saturated\n");
       break;
-    case CS_GROUNDWATER_MODEL_TRACY:
+    case CS_GWF_HYDRAULIC_TRACY:
       cs_log_printf(CS_LOG_SETUP, " model Tracy\n");
       break;
-    case CS_GROUNDWATER_MODEL_USER:
+    case CS_GWF_HYDRAULIC_USER:
       cs_log_printf(CS_LOG_SETUP, " model User-defined\n");
       break;
 
@@ -1118,21 +1123,20 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
   if (gw->n_soils > 1) {
 
     switch (gw->global_model) {
-    case CS_GROUNDWATER_MODEL_COMPOSITE:
+    case CS_GWF_HYDRAULIC_COMPOSITE:
       cs_log_printf(CS_LOG_SETUP, "  <GW/Global model> composite model\n");
       break;
-    case CS_GROUNDWATER_MODEL_GENUCHTEN:
-      cs_log_printf(CS_LOG_SETUP,
-                    "  <GW/Global model> model VanGenuchten-Mualen\n");
+    case CS_GWF_HYDRAULIC_GENUCHTEN:
+      cs_log_printf(CS_LOG_SETUP, "%s VanGenuchten-Mualen\n", meta);
       break;
-    case CS_GROUNDWATER_MODEL_SATURATED:
-      cs_log_printf(CS_LOG_SETUP, "  <GW/Global model> model saturated\n");
+    case CS_GWF_HYDRAULIC_SATURATED:
+      cs_log_printf(CS_LOG_SETUP, "%s saturated\n", meta);
       break;
-    case CS_GROUNDWATER_MODEL_TRACY:
-      cs_log_printf(CS_LOG_SETUP, "  <GW/Global model> model Tracy\n");
+    case CS_GWF_HYDRAULIC_TRACY:
+      cs_log_printf(CS_LOG_SETUP, "%s Tracy\n", meta);
       break;
-    case CS_GROUNDWATER_MODEL_USER:
-      cs_log_printf(CS_LOG_SETUP, "  <GW/Global model> model User-defined\n");
+    case CS_GWF_HYDRAULIC_USER:
+      cs_log_printf(CS_LOG_SETUP, "%s User-defined\n", meta);
       break;
 
     default:
@@ -1156,21 +1160,21 @@ cs_groundwater_summary(const cs_groundwater_t   *gw)
  * \param[in, out] permeability     pointer to a property structure
  * \param[in, out] soil_capacity    pointer to a property structure
  * \param[in, out] adv_field        pointer to a cs_adv_field_t structure
- * \param[in, out] gw               pointer to a cs_groundwater_t structure
+ * \param[in, out] gw               pointer to a cs_gwf_t structure
  *
  * \return a pointer to a new allocated equation structure (Richards eq.)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
-                          int                      richards_eq_id,
-                          int                      n_soils,
-                          int                      n_tracer_eqs,
-                          cs_property_t           *permeability,
-                          cs_property_t           *soil_capacity,
-                          cs_adv_field_t          *adv_field,
-                          cs_groundwater_t        *gw)
+cs_gwf_initialize(const cs_cdo_connect_t    *connect,
+                  int                        richards_eq_id,
+                  int                        n_soils,
+                  int                        n_tracer_eqs,
+                  cs_property_t             *permeability,
+                  cs_property_t             *soil_capacity,
+                  cs_adv_field_t            *adv_field,
+                  cs_gwf_t                  *gw)
 {
   cs_equation_t  *eq = NULL;
 
@@ -1215,7 +1219,7 @@ cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
   /* Quantities related to soils */
   gw->n_soils = 0;           /* No soil is set at the beginning */
   gw->n_max_soils = n_soils; /* Max. number of soils allocated */
-  BFT_MALLOC(gw->soil_param, n_soils, cs_gw_soil_t);
+  BFT_MALLOC(gw->soil_param, n_soils, cs_gwf_soil_t);
 
   if (n_soils > 1) {
     BFT_MALLOC(gw->soil_id, n_cells, short int);
@@ -1236,80 +1240,107 @@ cs_groundwater_initialize(const cs_cdo_connect_t  *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new type of soil to consider in the groundwater module
+ * \brief  Add a new soil attached to an isotropic permeability
  *
- * \param[in, out] gw         pointer to a cs_groundwater_t structure
+ * \param[in, out] gw         pointer to a cs_gwf_t structure
+ * \param[in]      model      type of modeling for the hydraulic behavior
  * \param[in]      ml_name    name of the mesh location related to this soil
- * \param[in]      model_kw   keyword related to the model used
- * \param[in]      ks         value(s) of the saturated permeability
+ * \param[in]      k_s        value of the saturated permeability
+ * \param[in]      theta_s    saturated moisture
+ * \param[in]      rho        bulk density
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_add_soil_by_value(cs_groundwater_t   *gw,
-                                 const char         *ml_name,
-                                 const char         *model_kw,
-                                 const char         *pty_val)
+cs_gwf_add_iso_soil_by_value(cs_gwf_t                   *gw,
+                             cs_gwf_hydraulic_model_t    model,
+                             const char                 *ml_name,
+                             double                      k_s,
+                             double                      theta_s,
+                             double                      rho)
 {
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
-  int  soil_id = gw->n_soils;
+  cs_gwf_soil_t  *soil = _init_soil(gw, ml_name, model, theta_s, rho);
 
-  gw->n_soils += 1;
-  if (gw->n_soils > gw->n_max_soils)
-    bft_error(__FILE__, __LINE__, 0,
-              " Maximum number of soils is reached.\n"
-              " Stop adding a new soil by value (mesh location: %s).\n"
-              " Please modify your settings.", ml_name);
-
-  cs_gw_soil_t  *soil = gw->soil_param + soil_id;
-
-  _init_soil(ml_name, model_kw, gw->n_max_tracers, soil);
-
-  /* Set the saturated permeability */
-  switch (cs_property_get_type(gw->permeability)) {
-
-  case CS_PROPERTY_ISO:
-    cs_param_set_get(CS_PARAM_VAR_SCAL, (const void *)pty_val,
-                     &(soil->saturated_permeability));
-    break;
-
-  case CS_PROPERTY_ORTHO:
-    cs_param_set_get(CS_PARAM_VAR_VECT, (const void *)pty_val,
-                     &(soil->saturated_permeability));
-    break;
-
-  case CS_PROPERTY_ANISO:
-    cs_param_set_get(CS_PARAM_VAR_TENS, (const void *)pty_val,
-                     &(soil->saturated_permeability));
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of property for %s."),
-              cs_property_get_name(gw->permeability));
-    break;
-
-  } /* End of switch */
-
+  soil->saturated_permeability.val = k_s;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set parameters related to a cs_groundwater_t structure
+ * \brief  Add a new soil attached to an orthotropic permeability
  *
- * \param[in, out]  gw        pointer to a cs_groundwater_t structure
- * \param[in]       ml_name   name of the mesh location associated to this soil
- * \param[in]       key       key related to a member of the soil to set
- * \param[in]       keyval    accessor to the value to set
+ * \param[in, out] gw         pointer to a cs_gwf_t structure
+ * \param[in]      model      type of modeling for the hydraulic behavior
+ * \param[in]      ml_name    name of the mesh location related to this soil
+ * \param[in]      ks         value of the saturated permeability
+ * \param[in]      theta_s    saturated moisture
+ * \param[in]      rho        bulk density
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_set_soil_param(cs_groundwater_t          *gw,
+cs_gwf_add_ortho_soil_by_value(cs_gwf_t                  *gw,
+                               cs_gwf_hydraulic_model_t   model,
+                               const char                *ml_name,
+                               cs_real_t                 *ks,
+                               double                     theta_s,
+                               double                     rho)
+{
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  cs_gwf_soil_t  *soil = _init_soil(gw, ml_name, model, theta_s, rho);
+
+  for (int k = 0; k < 3; k++)
+    soil->saturated_permeability.vect[k] = ks[k];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new soil attached to an orthotropic permeability
+ *
+ * \param[in, out] gw         pointer to a cs_gwf_t structure
+ * \param[in]      model      type of modeling for the hydraulic behavior
+ * \param[in]      ml_name    name of the mesh location related to this soil
+ * \param[in]      k_s        value of the saturated permeability
+ * \param[in]      theta_s    saturated moisture
+ * \param[in]      rho        bulk density
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_add_aniso_soil_by_value(cs_gwf_t                  *gw,
+                               cs_gwf_hydraulic_model_t   model,
+                               const char                *ml_name,
+                               cs_real_t                 *ks,
+                               double                     theta_s,
+                               double                     rho)
+{
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  cs_gwf_soil_t  *soil = _init_soil(gw, ml_name, model, theta_s, rho);
+
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 3; j++)
+      soil->saturated_permeability.tens[i][j] = ks[3*i+j];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set parameters related to a cs_gwf_t structure
+ *
+ * \param[in, out]  gw        pointer to a cs_gwf_t structure
+ * \param[in]       ml_name   name of the mesh location associated to this soil
+ * \param[in]       key       key related to a member of the soil to set
+ * \param[in]       val       value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_set_soil_param(cs_gwf_t          *gw,
                               const char                *ml_name,
-                              cs_groundwater_soilkey_t   key,
-                              const char                *keyval)
+                              cs_gwf_soilkey_t   key,
+                              const cs_real_t            val)
 {
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
@@ -1322,18 +1353,12 @@ cs_groundwater_set_soil_param(cs_groundwater_t          *gw,
                   " This mesh location is not already defined.\n"), ml_name);
   }
 
-  /* Conversion of the string to lower case */
-  char val[CS_BASE_STRING_LEN];
-  for (size_t i = 0; i < strlen(keyval); i++)
-    val[i] = tolower(keyval[i]);
-  val[strlen(keyval)] = '\0';
-
   /* Set different available keys */
   switch(key) {
 
   case CS_SOILKEY_SAT_MOISTURE:
     {
-      double  theta_s = atof(val);
+      const double  theta_s = val;
 
       if (ml_id == -1) {
 
@@ -1362,7 +1387,7 @@ cs_groundwater_set_soil_param(cs_groundwater_t          *gw,
 
   case CS_SOILKEY_RES_MOISTURE:
     {
-      double  theta_r = atof(val);
+      const double  theta_r = val;
 
       if (ml_id == -1) {
 
@@ -1391,11 +1416,11 @@ cs_groundwater_set_soil_param(cs_groundwater_t          *gw,
 
   case CS_SOILKEY_TRACY_SAT_H:
     {
-      double  h_s = atof(val);
+      const double  h_s = val;
 
       if (ml_id == -1) {
         for (int i = 0; i < gw->n_soils; i++)
-          if (gw->soil_param[i].model == CS_GROUNDWATER_MODEL_TRACY)
+          if (gw->soil_param[i].model == CS_GWF_HYDRAULIC_TRACY)
             gw->soil_param[i].tracy_param.h_s = h_s;
       }
       else {
@@ -1409,12 +1434,12 @@ cs_groundwater_set_soil_param(cs_groundwater_t          *gw,
 
   case CS_SOILKEY_TRACY_RES_H:
     {
-      double  h_r = atof(val);
+      const double  h_r = val;
 
       if (ml_id == -1) {
 
         for (int i = 0; i < gw->n_soils; i++)
-          if (gw->soil_param[i].model == CS_GROUNDWATER_MODEL_TRACY)
+          if (gw->soil_param[i].model == CS_GWF_HYDRAULIC_TRACY)
             gw->soil_param[i].tracy_param.h_r = h_r;
 
       }
@@ -1443,7 +1468,7 @@ cs_groundwater_set_soil_param(cs_groundwater_t          *gw,
  *         by the resolution of the Richards equation.
  *         Diffusion and reaction parameters result from a physical modelling.
  *
- * \param[in, out] gw              pointer to a cs_groundwater_t structure
+ * \param[in, out] gw              pointer to a cs_gwf_t structure
  * \param[in]      tracer_eq_id    id related to the tracer equation
  * \param[in]      eqname          name of the equation
  * \param[in]      varname         name of the related variable
@@ -1453,7 +1478,7 @@ cs_groundwater_set_soil_param(cs_groundwater_t          *gw,
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_groundwater_add_tracer(cs_groundwater_t    *gw,
+cs_gwf_add_tracer(cs_gwf_t    *gw,
                           int                  tracer_eq_id,
                           const char          *eqname,
                           const char          *varname)
@@ -1507,28 +1532,26 @@ cs_groundwater_add_tracer(cs_groundwater_t    *gw,
  *         by the resolution of the Richards equation.
  *         Diffusion/reaction parameters result from a physical modelling.
  *
- * \param[in, out] gw              pointer to a cs_groundwater_t structure
+ * \param[in, out] gw              pointer to a cs_gwf_t structure
  * \param[in]      tracer_eq_id    id related to the tracer equation
  * \param[in]      ml_name         name of the related mesh location
  * \param[in]      wmd             value of the water molecular diffusivity
  * \param[in]      alpha_l         value of the longitudinal dispersivity
  * \param[in]      alpha_t         value of the transversal dispersivity
- * \param[in]      bulk_density    value of the bulk density
  * \param[in]      distrib_coef    value of the distribution coefficient
  * \param[in]      reaction_rate   value of the first order rate of reaction
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_set_tracer_param(cs_groundwater_t    *gw,
-                                int                  tracer_eq_id,
-                                const char          *ml_name,
-                                double               wmd,
-                                double               alpha_l,
-                                double               alpha_t,
-                                double               bulk_density,
-                                double               distrib_coef,
-                                double               reaction_rate)
+cs_gwf_set_tracer_param(cs_gwf_t        *gw,
+                        int              tracer_eq_id,
+                        const char      *ml_name,
+                        double           wmd,
+                        double           alpha_l,
+                        double           alpha_t,
+                        double           distrib_coef,
+                        double           reaction_rate)
 {
   /* Sanity check */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
@@ -1540,13 +1563,14 @@ cs_groundwater_set_tracer_param(cs_groundwater_t    *gw,
 
     for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
-      cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+      cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
 
       /* Set tracer parameters */
       _set_tracer_param(soil->tracer_param + tracer_id,
                         wmd,
                         alpha_l, alpha_t,
-                        bulk_density, distrib_coef,
+                        soil->bulk_density,
+                        distrib_coef,
                         reaction_rate);
 
     } // Loop on soils
@@ -1575,13 +1599,14 @@ cs_groundwater_set_tracer_param(cs_groundwater_t    *gw,
                   " No soil related to mesh location %s has been found.\n"
                   " Please check your settings."), ml_name);
 
-    cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+    cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
 
     /* Set tracer parameters */
     _set_tracer_param(soil->tracer_param + tracer_id,
                       wmd,
                       alpha_l, alpha_t,
-                      bulk_density, distrib_coef,
+                      soil->bulk_density,
+                      distrib_coef,
                       reaction_rate);
 
   } /* Set a specific couple (tracer,soil) */
@@ -1592,14 +1617,14 @@ cs_groundwater_set_tracer_param(cs_groundwater_t    *gw,
 /*!
  * \brief  Predefined settings for the Richards equation
  *
- * \param[in, out] gw        pointer to a cs_groundwater_t structure
+ * \param[in, out] gw        pointer to a cs_gwf_t structure
  * \param[in, out] richards  pointer to the related cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_richards_setup(cs_groundwater_t    *gw,
-                              cs_equation_t       *richards)
+cs_gwf_richards_setup(cs_gwf_t            *gw,
+                      cs_equation_t       *richards)
 {
   /* Sanity checks */
   assert(richards != NULL);
@@ -1668,12 +1693,12 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
   for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
-    const cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+    const cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
     const double  theta_s = soil->saturated_moisture;
 
     /* Is there a unique model ? */
     if (soil->model != gw->global_model)
-      gw->global_model = CS_GROUNDWATER_MODEL_COMPOSITE;
+      gw->global_model = CS_GWF_HYDRAULIC_COMPOSITE;
 
     const char  *ml_name = cs_mesh_location_get_name(soil->ml_id);
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(soil->ml_id);
@@ -1705,7 +1730,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
     switch (soil->model) {
 
-    case CS_GROUNDWATER_MODEL_GENUCHTEN:
+    case CS_GWF_HYDRAULIC_GENUCHTEN:
       {
         cs_desc_t  desc = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
                            .state = CS_FLAG_STATE_POTENTIAL};
@@ -1741,7 +1766,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
       }
       break;
 
-    case CS_GROUNDWATER_MODEL_TRACY:
+    case CS_GWF_HYDRAULIC_TRACY:
       {
         cs_desc_t  desc = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
                            .state = CS_FLAG_STATE_POTENTIAL};
@@ -1762,7 +1787,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 
           cs_property_t  *capacity = cs_equation_get_time_property(richards);
 
-          const cs_gw_tracy_t  law = soil->tracy_param;
+          const cs_gwf_tracy_t  law = soil->tracy_param;
           const double  dh = law.h_s - law.h_r;
           const double  dtheta = soil->delta_moisture;
 
@@ -1773,7 +1798,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
       }
       break; // Tracy model
 
-    case CS_GROUNDWATER_MODEL_SATURATED:
+    case CS_GWF_HYDRAULIC_SATURATED:
 
       switch (cs_property_get_type(permeability)) {
 
@@ -1830,7 +1855,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 /*!
  * \brief  Check if one needs to add a reaction term for a given tracer
  *
- * \param[in] gw         pointer to a cs_groundwater_t structure
+ * \param[in] gw         pointer to a cs_gwf_t structure
  * \param[in] eq_id      id of the equation related to this tracer
  *
  * \returns true or false
@@ -1838,7 +1863,7 @@ cs_groundwater_richards_setup(cs_groundwater_t    *gw,
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_groundwater_tracer_needs_reaction(const cs_groundwater_t    *gw,
+cs_gwf_tracer_needs_reaction(const cs_gwf_t    *gw,
                                      int                        eq_id)
 {
   int  tracer_id = _get_tracer_id(gw, eq_id);
@@ -1847,7 +1872,7 @@ cs_groundwater_tracer_needs_reaction(const cs_groundwater_t    *gw,
   /* Loop on soils to check in a reaction term is needed */
   for (int soil_id = 0; soil_id < gw->n_soils && is_needed == false; soil_id++)
     {
-      cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+      cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
 
       if (soil->tracer_param[tracer_id].reaction_rate > 0) is_needed = true;
     }
@@ -1859,7 +1884,7 @@ cs_groundwater_tracer_needs_reaction(const cs_groundwater_t    *gw,
 /*!
  * \brief  Check if one needs to add a diffusion term for a given tracer
  *
- * \param[in] gw         pointer to a cs_groundwater_t structure
+ * \param[in] gw         pointer to a cs_gwf_t structure
  * \param[in] eq_id      id of the equation related to this tracer
  *
  * \returns true or false
@@ -1867,7 +1892,7 @@ cs_groundwater_tracer_needs_reaction(const cs_groundwater_t    *gw,
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_groundwater_tracer_needs_diffusion(const cs_groundwater_t    *gw,
+cs_gwf_tracer_needs_diffusion(const cs_gwf_t    *gw,
                                       int                        eq_id)
 {
   int  tracer_id = _get_tracer_id(gw, eq_id);
@@ -1876,7 +1901,7 @@ cs_groundwater_tracer_needs_diffusion(const cs_groundwater_t    *gw,
   /* Loop on soils to check in a reaction term is needed */
   for (int soil_id = 0; soil_id < gw->n_soils && is_needed == false; soil_id++)
     {
-      cs_gw_soil_t  *soil = gw->soil_param + soil_id;
+      cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
 
       if (soil->tracer_param[tracer_id].alpha_t > 0) is_needed = true;
       if (soil->tracer_param[tracer_id].alpha_l > 0) is_needed = true;
@@ -1892,14 +1917,14 @@ cs_groundwater_tracer_needs_diffusion(const cs_groundwater_t    *gw,
  *
  * \param[in]      tracer_eq_id  id of the equation related to this tracer
  * \param[in, out] eq            pointer to the related cs_equation_t structure
- * \param[in, out] gw            pointer to a cs_groundwater_t structure
+ * \param[in, out] gw            pointer to a cs_gwf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_tracer_setup(int                  tracer_eq_id,
-                            cs_equation_t       *eq,
-                            cs_groundwater_t    *gw)
+cs_gwf_tracer_setup(int                tracer_eq_id,
+                    cs_equation_t     *eq,
+                    cs_gwf_t          *gw)
 {
   const cs_flag_t  eq_flag = cs_equation_get_flag(eq);
   const cs_desc_t  desc1 = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
@@ -1914,8 +1939,8 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
 
   for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
-    cs_gw_soil_t  *soil = gw->soil_param + soil_id;
-    cs_gw_tracer_t  *tp = soil->tracer_param + tracer_id;
+    cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
+    cs_gwf_tracer_t  *tp = soil->tracer_param + tracer_id;
 
     cs_property_def_by_law(time_pty,
                            cs_mesh_location_get_name(soil->ml_id),
@@ -1933,8 +1958,8 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
 
     for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
-      cs_gw_soil_t  *soil = gw->soil_param + soil_id;
-      cs_gw_tracer_t  *tp = soil->tracer_param + tracer_id;
+      cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
+      cs_gwf_tracer_t  *tp = soil->tracer_param + tracer_id;
 
       cs_property_def_by_scavec_law(diff_pty,
                                     cs_mesh_location_get_name(soil->ml_id),
@@ -1958,8 +1983,8 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
 
     for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
-      cs_gw_soil_t  *soil = gw->soil_param + soil_id;
-      cs_gw_tracer_t  *tp = soil->tracer_param + tracer_id;
+      cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
+      cs_gwf_tracer_t  *tp = soil->tracer_param + tracer_id;
 
       cs_property_def_by_law(reac_pty,
                              cs_mesh_location_get_name(soil->ml_id),
@@ -1989,18 +2014,18 @@ cs_groundwater_tracer_setup(int                  tracer_eq_id,
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
  * \param[in, out] eqs        array of pointers to cs_equation_t structures
- * \param[in, out] gw         pointer to a cs_groundwater_t structure
+ * \param[in, out] gw         pointer to a cs_gwf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_compute(const cs_mesh_t              *mesh,
+cs_gwf_compute(const cs_mesh_t              *mesh,
                        const cs_time_step_t         *time_step,
                        double                        dt_cur,
                        const cs_cdo_connect_t       *connect,
                        const cs_cdo_quantities_t    *cdoq,
                        cs_equation_t                *eqs[],
-                       cs_groundwater_t             *gw)
+                       cs_gwf_t             *gw)
 {
   if (gw == NULL)
     return;
@@ -2115,7 +2140,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
  *         defined in cs_post.h (cs_post_time_mesh_dep_output_t)
  *
  * \param[in, out] input        pointer to a optional structure (here a
- *                              cs_groundwater_t structure)
+ *                              cs_gwf_t structure)
  * \param[in]      mesh_id      id of the output mesh for the current call
  * \param[in]      cat_id       category id of the output mesh for this call
  * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),
@@ -2133,7 +2158,7 @@ cs_groundwater_compute(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_groundwater_extra_post(void                      *input,
+cs_gwf_extra_post(void                      *input,
                           int                        mesh_id,
                           int                        cat_id,
                           int                        ent_flag[5],
@@ -2160,9 +2185,9 @@ cs_groundwater_extra_post(void                      *input,
   if (mesh_id != -1) /* Post-processing only on the generic volume mesh */
     return;
 
-  const cs_groundwater_t  *gw = (const cs_groundwater_t *)input;
+  const cs_gwf_t  *gw = (const cs_gwf_t *)input;
 
-  if (gw->flag & CS_GROUNDWATER_POST_MOISTURE) {
+  if (gw->flag & CS_GWF_POST_MOISTURE) {
     cs_field_t  *f = gw->moisture_content;
     cs_post_write_var(CS_POST_MESH_VOLUME,
                       CS_POST_WRITER_ALL_ASSOCIATED,

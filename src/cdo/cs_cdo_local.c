@@ -674,24 +674,24 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       const double  inv_meas = 1/meas;
       cm->dface[e].meas = meas;
       for (int k = 0; k < 3; k++)
-	cm->dface[e].unitv[k] = inv_meas*qdf[e].vect[k];
+        cm->dface[e].unitv[k] = inv_meas*qdf[e].vect[k];
 
       if (flag & CS_CDO_LOCAL_EV) {
 
-	short int  *e2v_sgn = cm->e2v_sgn + 2*e;
+        short int  *e2v_sgn = cm->e2v_sgn + 2*e;
         const short int  *sgn = connect->e2v->sgn + 2*e_id;
         e2v_sgn[0] = sgn[0];
         e2v_sgn[1] = sgn[1];
 
-	short int _v1, _v2;
-	short int  *e2v_ids = cm->e2v_ids + 2*e;
+        short int _v1, _v2;
+        short int  *e2v_ids = cm->e2v_ids + 2*e;
         const cs_lnum_t  *ids = connect->e2v->col_id + 2*e_id;
-	for (_v1 = 0; _v1 < cm->n_vc && cm->v_ids[_v1] != ids[0]; _v1++);
+        for (_v1 = 0; _v1 < cm->n_vc && cm->v_ids[_v1] != ids[0]; _v1++);
         e2v_ids[0] = _v1;
-	assert(_v1 != cm->n_vc); // Check _v has been found
-	for (_v2 = 0; _v2 < cm->n_vc && cm->v_ids[_v2] != ids[1]; _v2++);
+        assert(_v1 != cm->n_vc); // Check _v has been found
+        for (_v2 = 0; _v2 < cm->n_vc && cm->v_ids[_v2] != ids[1]; _v2++);
         e2v_ids[1] = _v2;
-	assert(_v2 != cm->n_vc); // Check _v has been found
+        assert(_v2 != cm->n_vc); // Check _v has been found
 
       } // edge --> vertices connectivity
 
@@ -735,29 +735,29 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       for (int f = 0; f < cm->n_fc; f++) {
 
         const cs_lnum_t  f_id = cm->f_ids[f];
-	const cs_quant_t  pfq = cm->face[f];
-	const cs_lnum_t  *f2e_idx = f2e->idx + f_id;
-	const cs_lnum_t  *f2e_lst = f2e->col_id + f2e_idx[0];
-	const short int  n_ef = f2e_idx[1] - f2e_idx[0];
-	const int  shift_f = cm->f2e_idx[f];
+        const cs_quant_t  pfq = cm->face[f];
+        const cs_lnum_t  *f2e_idx = f2e->idx + f_id;
+        const cs_lnum_t  *f2e_lst = f2e->col_id + f2e_idx[0];
+        const short int  n_ef = f2e_idx[1] - f2e_idx[0];
+        const int  shift_f = cm->f2e_idx[f];
 
-	/* Update index */
+        /* Update index */
         cm->f2e_idx[f+1] = shift_f + n_ef;
 
-	/* Update list of edges and compute tef */
+        /* Update list of edges and compute tef */
         short int  *f2e_ids = cm->f2e_ids + shift_f;
-	double  *tef = cm->tef + shift_f;
+        double  *tef = cm->tef + shift_f;
         for (short int e = 0; e < n_ef; e++) {
 
-	  const cs_lnum_t  e_id = f2e_lst[e];
-	  short int  _e;
-	  for (_e = 0; _e < cm->n_ec && cm->e_ids[_e] != e_id; _e++);
-	  assert(_e != cm->n_ec);
+          const cs_lnum_t  e_id = f2e_lst[e];
+          short int  _e;
+          for (_e = 0; _e < cm->n_ec && cm->e_ids[_e] != e_id; _e++);
+          assert(_e != cm->n_ec);
           f2e_ids[e] = _e;
-	  
-	  tef[e] = cs_compute_area_from_quant(cm->edge[_e], pfq.center);
+        
+          tef[e] = cs_compute_area_from_quant(cm->edge[_e], pfq.center);
 
-	} // Loop on face edges 
+        } // Loop on face edges
 
       } // Loop on cell faces
 
@@ -776,12 +776,12 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
         short int  eshft = 2*cm->f2e_ids[j];
 
-	if (cm->e2f_ids[eshft] == -1)
-	  cm->e2f_ids[eshft] = f;
-	else {
-	  assert(cm->e2f_ids[eshft+1] == -1);
-	  cm->e2f_ids[eshft+1] = f;
-	}
+        if (cm->e2f_ids[eshft] == -1)
+          cm->e2f_ids[eshft] = f;
+        else {
+          assert(cm->e2f_ids[eshft+1] == -1);
+          cm->e2f_ids[eshft+1] = f;
+        }
 
       } /* Loop on face edges */
 
@@ -952,9 +952,9 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     short int  v1 = -1, v2 = -1;
     for (int v = 0; v < fm->n_vf && fm->v_ids[v] != -1; v++) {
       if (fm->v_ids[v] == e2v_ids[0])
-	v1 = v;
+        v1 = v;
       else if (fm->v_ids[v] == e2v_ids[1])
-	v2 = v;
+        v2 = v;
     }
 
     /* Add vertices if not already identified */
@@ -1071,9 +1071,9 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
     short int  v1 = -1, v2 = -1;
     for (int v = 0; v < fm->n_vf && fm->v_ids[v] != -1; v++) {
       if (fm->v_ids[v] == v1c_id)
-	v1 = v;
+        v1 = v;
       else if (fm->v_ids[v] == v2c_id)
-	v2 = v;
+        v2 = v;
     }
 
     /* Add vertices if not already identified */
@@ -1108,11 +1108,11 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
     const short int  v1 = fm->e2v_ids[2*e];
     const short int  v2 = fm->e2v_ids[2*e+1];
     const double  tef = cm->tef[fm->e_ids[e]];
-    
+
     fm->wvf[v1] += tef;
     fm->wvf[v2] += tef;
     fm->tef[e] = tef;
-    
+
   }
 
   const double  invf = 0.5/pfq.meas;

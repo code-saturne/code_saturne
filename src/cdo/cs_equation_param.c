@@ -368,7 +368,7 @@ cs_equation_param_create(cs_equation_type_t     type,
   eqp->diffusion_hodge.is_iso = true;
   eqp->diffusion_hodge.inv_pty = false; // inverse property ?
   eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
-  eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_AUTO;
+  eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
   eqp->diffusion_hodge.coef = 1./3.; // DGA algo.
 
   /* Advection term */

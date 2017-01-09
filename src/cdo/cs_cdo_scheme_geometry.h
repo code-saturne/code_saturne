@@ -67,9 +67,9 @@ BEGIN_C_DECLS
 
 inline static void
 cs_compute_grdfc(const short int     f_sgn,
-		 const cs_quant_t    pfq,
-		 const cs_nvec3_t    deq,
-		 cs_real_t          *grd_c)
+                 const cs_quant_t    pfq,
+                 const cs_nvec3_t    deq,
+                 cs_real_t          *grd_c)
 {
   const double  hfc = cs_math_3_dot_product(pfq.unitv, deq.unitv) * deq.meas;
   const cs_real_t  ohf = -f_sgn/hfc;
