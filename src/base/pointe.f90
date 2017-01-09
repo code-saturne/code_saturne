@@ -362,6 +362,21 @@ contains
       allocate(idfstr(nfabor))
     endif
 
+    ! Also tensorial diffusion for the velocity in case of tensorial porosity
+    if (iporos.eq.2) then
+      ! Tensorial diffusivity
+      call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+      vcopt%idften = 6
+      call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+    endif
+
+    ! Diagonal cell tensor for the pressure solving when needed
+    if (ncpdct.gt.0.or.ipucou.eq.1.or.iporos.eq.2) then
+      call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+      vcopt%idften = 6
+      call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+    endif
+
     ! Wall-distance calculation
 
     if (ineedy.eq.1) then
