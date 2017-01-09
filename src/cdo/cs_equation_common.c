@@ -487,8 +487,9 @@ cs_equation_free_common_structures(cs_flag_t   scheme_flag)
   /* Monitoring */
   cs_timer_t t2 = cs_timer_time();
   cs_timer_counter_add_diff(&tca, &t1, &t2);
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f s in Connectivity"
-                "/Assembly\n",
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %10s %10s\n",
+                " ", "Connectivity", "Assembly");
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f seconds\n",
                 "<CDO/CommonEq> Runtime",
                 tcc.wall_nsec*1e-9, tca.wall_nsec*1e-9);
 }
@@ -867,37 +868,64 @@ cs_equation_get_tmpbuf_size(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Initialize a monitoring structure
+ *
+ * \return a cs_equation_monitor_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_monitor_t *
+cs_equation_init_monitoring(void)
+{
+  cs_equation_monitor_t  *m = NULL;
+
+  BFT_MALLOC(m, 1, cs_equation_monitor_t);
+
+  /* Monitoring */
+  CS_TIMER_COUNTER_INIT(m->tcb); // build system
+
+  CS_TIMER_COUNTER_INIT(m->tcd); // build diffusion terms
+  CS_TIMER_COUNTER_INIT(m->tca); // build advection terms
+  CS_TIMER_COUNTER_INIT(m->tcr); // build reaction terms
+  CS_TIMER_COUNTER_INIT(m->tcs); // build source terms
+
+  CS_TIMER_COUNTER_INIT(m->tce); // extra operations
+
+  return m;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Print a message in the performance output file related to the
  *          monitoring of equation
  *
  * \param[in]  eqname    pointer to the name of the current equation
- * \param[in]  tcb       timer counter for the build of the system
- * \param[in]  tcs       timer counter for the evaluation of source terms
- * \param[in]  tce       timer counter for doing extra operations
+ * \param[in]  monitor   monitoring structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_print_monitoring(const char                 *eqname,
-                             const cs_timer_counter_t    tcb,
-                             const cs_timer_counter_t    tcs,
-                             const cs_timer_counter_t    tce)
+cs_equation_write_monitoring(const char                    *eqname,
+                             const cs_equation_monitor_t   *monitor)
 {
-  double t[3] = {tcb.wall_nsec, tcs.wall_nsec, tce.wall_nsec};
-  for (int i = 0; i < 3; i++) t[i] *= 1e-9;
+  double t[6] = {monitor->tcb.wall_nsec, monitor->tcd.wall_nsec,
+                 monitor->tca.wall_nsec, monitor->tcr.wall_nsec,
+                 monitor->tcs.wall_nsec, monitor->tce.wall_nsec};
+  for (int i = 0; i < 6; i++) t[i] *= 1e-9;
 
   if (eqname == NULL)
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  " %-35s %9.3f %9.3f %9.3f seconds in build/source/extra\n",
-                  "<CDO/Equation> Monitoring", t[0], t[1], t[2]);
+                  " %-35s %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f seconds\n",
+                  "<CDO/Equation> Monitoring",
+                  t[0], t[1], t[2], t[3], t[4], t[5]);
   else {
     char *msg = NULL;
     int len = 1 + strlen("<CDO/> Monitoring") + strlen(eqname);
     BFT_MALLOC(msg, len, char);
     sprintf(msg, "<CDO/%s> Monitoring", eqname);
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  " %-35s %9.3f %9.3f %9.3f seconds in build/source/extra\n",
-                  msg, t[0], t[1], t[2]);
+                  " %-35s %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f seconds\n",
+                  msg, t[0], t[1], t[2], t[3], t[4], t[5]);
     BFT_FREE(msg);
   }
 }

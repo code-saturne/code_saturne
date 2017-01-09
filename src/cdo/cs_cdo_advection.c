@@ -1236,8 +1236,10 @@ cs_cdo_advection_get_vb_upwcsvdi(const cs_equation_param_t   *eqp,
   _build_cell_vpfd_upw(a_info, cm, get_weight, fluxes, upwcoef, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
-  cs_locmat_dump(cm->c_id, cb->loc);
+  if (cm->c_id % 100 == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
+    cs_locmat_dump(cm->c_id, cb->loc);
+  }
 #endif
 }
 
@@ -1290,8 +1292,10 @@ cs_cdo_advection_get_vb_upwcsv(const cs_equation_param_t   *eqp,
   _build_cell_vpfd_upw(a_info, cm, get_weight, fluxes, upwcoef, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
-  cs_locmat_dump(cm->c_id, cb->loc);
+  if (cm->c_id % 100 == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
+    cs_locmat_dump(cm->c_id, cb->loc);
+  }
 #endif
 }
 
@@ -1335,8 +1339,10 @@ cs_cdo_advection_get_vb_cencsv(const cs_equation_param_t   *eqp,
   _build_cell_vpfd_cen(eqp->advection_info, cm, fluxes, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
-  cs_locmat_dump(cm->c_id, cb->loc);
+  if (cm->c_id % 100 == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
+    cs_locmat_dump(cm->c_id, cb->loc);
+  }
 #endif
 }
 
@@ -1404,8 +1410,10 @@ cs_cdo_advection_get_vb_upwnocdi(const cs_equation_param_t   *eqp,
   _build_cell_epcd_upw(a_info, cm, get_weight, fluxes, upwcoef,        adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
-  cs_locmat_dump(cm->c_id, cb->loc);
+  if (cm->c_id % 100 == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
+    cs_locmat_dump(cm->c_id, cb->loc);
+  }
 #endif
 }
 
@@ -1458,8 +1466,10 @@ cs_cdo_advection_get_vb_upwnoc(const cs_equation_param_t   *eqp,
   _build_cell_epcd_upw(a_info, cm, get_weight, fluxes, upwcoef, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
-  cs_locmat_dump(cm->c_id, cb->loc);
+  if (cm->c_id % 100 == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
+    cs_locmat_dump(cm->c_id, cb->loc);
+  }
 #endif
 }
 
@@ -1503,8 +1513,10 @@ cs_cdo_advection_get_vb_cennoc(const cs_equation_param_t    *eqp,
   _build_cell_epcd_cen(eqp->advection_info, cm, fluxes, adv);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
-  cs_locmat_dump(cm->c_id, cb->loc);
+  if (cm->c_id % 100 == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
+    cs_locmat_dump(cm->c_id, cb->loc);
+  }
 #endif
 }
 
@@ -1627,9 +1639,10 @@ cs_cdo_advection_get_vcb_cw(const cs_equation_param_t   *eqp,
   _vcb_stabilization_part2(cm, stab_coef, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix (CW version)");
-  cs_locmat_dump(cm->c_id, cb->loc);
-
+  if (cm->c_id % 100 == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix (CW version)");
+    cs_locmat_dump(cm->c_id, cb->loc);
+  }
 #if CS_CDO_ADVECTION_DBG > 2
   cons = cs_locmat_free(cons);
 #endif
@@ -1743,9 +1756,10 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
   _vcb_stabilization_part2(cm, stab_coef, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
-  cs_locmat_dump(cm->c_id, cb->loc);
-
+  if (cm->c_id % 100 == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> Local advection matrix");
+    cs_locmat_dump(cm->c_id, cb->loc);
+  }
 #if CS_CDO_ADVECTION_DBG > 2
   cs_log_printf(CS_LOG_DEFAULT, "\n>> Advection matrix (CONSISTENCY PART)");
   cs_locmat_dump(cm->c_id, cons);
@@ -1887,7 +1901,8 @@ cs_cdo_advection_add_vb_bc(const cs_cell_bc_t         *cbc,
       const short int  v2 = cm->e2v_ids[2*e+1];
       const double  flx_tef = cs_advection_field_get_flux_tef(adv_field,
                                                               a_info,
-                                                              cm, f, e, v1, v2);
+                                                              cm,
+                                                              f, e, v1, v2);
 
       /* Assume that flx_tef has the same level of contribution for the two
          vertices */
@@ -1902,7 +1917,13 @@ cs_cdo_advection_add_vb_bc(const cs_cell_bc_t         *cbc,
     csys->mat->val[v*cm->n_vc + v] += mat_diag[v];
     csys->rhs[v] += tmp_rhs[v];
   }
-
+  if (cm->c_id == 0) {
+    bft_printf("\nBCADV DIAG>>");
+    for (short int v = 0; v < cm->n_vc; v++) bft_printf("% 5.3e", mat_diag[v]);
+    bft_printf("\nBCADV RHS>>");
+    for (short int v = 0; v < cm->n_vc; v++) bft_printf("% 5.3e", tmp_rhs[v]);
+    bft_printf("\n");
+  }
 }
 
 /*----------------------------------------------------------------------------*/

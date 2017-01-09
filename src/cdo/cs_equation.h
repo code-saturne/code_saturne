@@ -187,6 +187,18 @@ cs_equation_free(cs_equation_t  *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Print a synthesis of the monitoring information in the performance
+ *         file
+ *
+ * \param[in] eq    pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_print_monitoring(const cs_equation_t  *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Summary of a cs_equation_t structure
  *
  * \param[in]  eq       pointer to a cs_equation_t structure

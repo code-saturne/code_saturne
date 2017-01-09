@@ -598,7 +598,7 @@ cs_equation_param_summary(const char                  *eqname,
     const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
 
     cs_log_printf(CS_LOG_SETUP, "\n  <%s/Diffusion term>\n", eqname);
-    cs_log_printf(CS_LOG_SETUP, "  <%s/Diffusion.Property: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  <%s/Diffusion.Property> %s\n",
                   eqname, cs_property_get_name(eqp->diffusion_property));
 
     if (eqp->verbosity > 0) {

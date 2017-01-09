@@ -166,13 +166,8 @@ struct  _cs_cdofb_scaleq_t {
   cs_hodge_t                      *get_mass_matrix;
 
   /* Monitoring the efficiency */
-  cs_timer_counter_t               tcb; /* Cumulated elapsed time for building
-                                           the current system */
-  cs_timer_counter_t               tcs; /* Cumulated elapsed time for computing
-                                           all the source terms */
-  cs_timer_counter_t               tce; /* Cumulated elapsed time for computing
-                                           all extra operations (post, balance,
-                                           fluxes...) */
+  cs_equation_monitor_t           *monitor;
+
 };
 
 /*============================================================================
@@ -758,6 +753,9 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
   for (cs_lnum_t i = 0; i < b->n_faces; i++)
     b->face_values[i] = 0;
 
+  /* Monitoring */
+  b->monitor = cs_equation_init_monitoring();
+
   return b;
 }
 
@@ -793,6 +791,9 @@ cs_cdofb_scaleq_free(void   *builder)
     BFT_FREE(_builder->f_i2z_ids);
   }
 
+  /* Monitoring structure */
+  BFT_FREE(_builder->monitor);
+
   /* Free temporary buffers */
   BFT_FREE(_builder->source_terms);
   BFT_FREE(_builder->face_values);
@@ -820,7 +821,7 @@ cs_cdofb_scaleq_monitor(const char   *eqname,
   if (b == NULL)
     return;
 
-  cs_equation_print_monitoring(eqname, b->tcb, b->tcs, b->tce);
+  cs_equation_write_monitoring(eqname, b->monitor);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -904,7 +905,7 @@ cs_cdofb_scaleq_initialize_system(void           *builder,
   for (cs_lnum_t i = 0; i < b->n_faces; i++) (*system_rhs)[i] = 0.0;
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tcb), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tcb), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -934,6 +935,8 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
   CS_UNUSED(field_val);
   CS_UNUSED(dt_cur);
 
+  cs_timer_t  t0 = cs_timer_time();
+
   cs_sla_matrix_t  *diffusion_mat = NULL;
   cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t *)builder;
 
@@ -954,6 +957,8 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
   /* Build convection system */
   // TODO
 
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(b->monitor->tcb), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/

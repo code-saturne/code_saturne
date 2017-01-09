@@ -686,10 +686,6 @@ cs_equation_free(cs_equation_t  *eq)
   assert(eq->matrix == NULL && eq->rhs == NULL);
   /* Since eq->rset is only shared, no free is done at this stage */
 
-  /* Display high-level timer counter related to the current equation
-     before deleting the structure */
-  eq->display_monitoring(eq->name, eq->builder);
-
   /* Free the associated builder structure */
   eq->builder = eq->free_builder(eq->builder);
 
@@ -701,6 +697,23 @@ cs_equation_free(cs_equation_t  *eq)
   BFT_FREE(eq);
 
   return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print a synthesis of the monitoring information in the performance
+ *         file
+ *
+ * \param[in] eq    pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_print_monitoring(const cs_equation_t  *eq)
+{
+  /* Display high-level timer counter related to the current equation
+     before deleting the structure */
+  eq->display_monitoring(eq->name, eq->builder);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1135,8 +1148,8 @@ cs_equation_set_param(cs_equation_t       *eq,
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid value \"%s\" for key CS_EQKEY_BC_QUADRATURE\n"
-                  " Valid choices are \"subdiv\", \"bary\", \"higher\" and"
-                  " \"highest\"."), _val);
+                  " Valid choices are \"bary\", \"bary_subdiv\", \"higher\""
+                  " and \"highest\"."), _val);
     }
     break;
 

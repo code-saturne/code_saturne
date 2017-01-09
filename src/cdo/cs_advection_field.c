@@ -1000,13 +1000,14 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
       {
         const double  t_cur = cs_time_step->t_cur;
         const cs_real_t  *xc = cdoq->cell_centers + 3*c_id;
-        const cs_dface_t  *qdf = cdoq->dface + c2e_idx[0];
+        const cs_dface_t  *qdf_array = cdoq->dface + c2e_idx[0];
         const cs_lnum_t  *c2e_ids = connect->c2e->ids + c2e_idx[0];
 
         /* Loop on cell edges */
         for (short int e = 0; e < c2e_idx[1] - c2e_idx[0]; e++) {
 
           const cs_quant_t  qe = cdoq->edge[c2e_ids[e]];
+          const cs_dface_t  qdf = qdf_array[e];
 
           fluxes[e] = 0.;
           switch (a_info.quad_type) {
@@ -1017,10 +1018,10 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
               cs_real_3_t  xg[2], adv_xg[2];
 
               // Two triangles composing the dual face inside a cell
-              const cs_nvec3_t  sef0 = qdf[e].sface[0];
-              const cs_quant_t  qf0 = cdoq->face[qdf[e].parent_id[0]];
-              const cs_nvec3_t  sef1 = qdf[e].sface[1];
-              const cs_quant_t  qf1 = cdoq->face[qdf[e].parent_id[1]];
+              const cs_nvec3_t  sef0 = qdf.sface[0];
+              const cs_quant_t  qf0 = cdoq->face[qdf.parent_id[0]];
+              const cs_nvec3_t  sef1 = qdf.sface[1];
+              const cs_quant_t  qf1 = cdoq->face[qdf.parent_id[1]];
 
               for (int k = 0; k < 3; k++) {
                 const double  xec = xc[k] + qe.center[k];
@@ -1045,8 +1046,8 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
               cs_quant_t  qf;
 
               // Two triangles composing the dual face inside a cell
-              sef = qdf[e].sface[0];
-              qf = cdoq->face[qdf[e].parent_id[0]];
+              sef = qdf.sface[0];
+              qf = cdoq->face[qdf.parent_id[0]];
               cs_quadrature_tria_3pts(qe.center, qf.center, xc, sef.meas,
                                       gpts, &w);
 
@@ -1058,8 +1059,8 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
               for (int p = 0; p < 3; p++) add0 += _dp3(eval[p], sef.unitv);
               add0 *= w;
 
-              sef = qdf[e].sface[1];
-              qf = cdoq->face[qdf[e].parent_id[1]];
+              sef = qdf.sface[1];
+              qf = cdoq->face[qdf.parent_id[1]];
               cs_quadrature_tria_3pts(qe.center, qf.center, xc, sef.meas,
                                       gpts, &w);
 
@@ -1149,7 +1150,13 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
   const cs_real_t  *xv1 = cm->xv + 3*v1;
   const cs_real_t  *xv2 = cm->xv + 3*v2;
   const cs_quant_t  pfq = cm->face[f];
-  const cs_real_t  tef = cm->tef[cm->f2e_idx[f] + e];
+
+  short int shft_e = -1;
+  for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++)
+    if (cm->f2e_ids[i] == e)
+      shft_e = i;
+  assert(shft_e != -1);
+  const cs_real_t  tef = cm->tef[shft_e];
 
   /* Compute the flux accros the portion of primal face */
   switch (adv->def_type) {

@@ -632,6 +632,14 @@ cs_domain_free(cs_domain_t   *domain)
     BFT_FREE(domain->adv_fields);
   }
 
+  /* Print monitoring information */
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "%-36s %9s %9s %9s %9s %9s %9s\n",
+                " ", "SysBuild", "Diffusion", "Advection", "Reaction",
+                "Source", "Extra");
+  for (int i = 0; i < domain->n_equations; i++)
+    cs_equation_print_monitoring(domain->equations[i]);
+
   /* Free memory related to equations */
   for (int i = 0; i < domain->n_equations; i++)
     domain->equations[i] = cs_equation_free(domain->equations[i]);
@@ -916,9 +924,13 @@ cs_domain_summary(const cs_domain_t   *domain)
     else
       cs_log_printf(CS_LOG_SETUP, "\n");
 
-    cs_log_printf(CS_LOG_SETUP,
-                  "  >> Final simulation time: %5.3e (nt_max: %d)\n",
-                  domain->time_step->t_max, domain->time_step->nt_max);
+    if (domain->time_step->t_max > 0.)
+      cs_log_printf(CS_LOG_SETUP, "%-30s %5.3e\n",
+                    "  >> Final simulation time:", domain->time_step->t_max);
+    if (domain->time_step->nt_max > 0)
+      cs_log_printf(CS_LOG_SETUP, "%-30s %5.3e\n",
+                    "  >> Final time step:", domain->time_step->nt_max);
+
   }
   cs_log_printf(CS_LOG_SETUP, "\n");
 

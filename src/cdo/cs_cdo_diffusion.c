@@ -573,7 +573,7 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t       h_info,
   if (cbc->n_dirichlet == 0)
     return; // Nothing to do
 
-  const double chi = cs_nitsche_pena_coef * cb->eig_ratio * cb->eig_max;
+  const double chi = cs_nitsche_pena_coef * fabs(cb->eig_ratio) * cb->eig_max;
 
   for (short int i = 0; i < cbc->n_bc_faces; i++) {
     if (cbc->face_flag[i] & CS_CDO_BC_DIRICHLET ||

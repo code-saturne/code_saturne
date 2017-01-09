@@ -51,6 +51,28 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+typedef struct {
+
+  /* Monitoring the efficiency of the algorithm used to manipulate/build
+     an equation builder. */
+  cs_timer_counter_t               tcb; /* Cumulated elapsed time for building
+                                           the current system */
+  /* tcb >= tcd + tca + tcr + tcs */
+  cs_timer_counter_t               tcd; /* Cumulated elapsed time for building
+                                           diffusion terms */
+  cs_timer_counter_t               tca; /* Cumulated elapsed time for building
+                                           advection terms */
+  cs_timer_counter_t               tcr; /* Cumulated elapsed time for building
+                                           reaction terms */
+  cs_timer_counter_t               tcs; /* Cumulated elapsed time for building
+                                           source terms */
+
+  cs_timer_counter_t               tce; /* Cumulated elapsed time for computing
+                                           all extra operations (post, balance,
+                                           fluxes...) */
+
+} cs_equation_monitor_t;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -214,21 +236,28 @@ cs_equation_get_tmpbuf_size(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Initialize a monitoring structure
+ *
+ * \return a cs_equation_monitor_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_monitor_t *
+cs_equation_init_monitoring(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Print a message in the performance output file related to the
  *          monitoring of equation
  *
  * \param[in]  eqname    pointer to the name of the current equation
- * \param[in]  tcb       timer counter for the build of the system
- * \param[in]  tcs       timer counter for the evaluation of source terms
- * \param[in]  tce       timer counter for doing extra operations
+ * \param[in]  monitor   monitoring structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_print_monitoring(const char                 *eqname,
-                             const cs_timer_counter_t    tcb,
-                             const cs_timer_counter_t    tcs,
-                             const cs_timer_counter_t    tce);
+cs_equation_write_monitoring(const char                    *eqname,
+                             const cs_equation_monitor_t   *monitor);
 
 /*----------------------------------------------------------------------------*/
 

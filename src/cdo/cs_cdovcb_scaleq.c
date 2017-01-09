@@ -159,14 +159,9 @@ struct _cs_cdovcb_scaleq_t {
   cs_param_hodge_t                 hdg_wbs;
   cs_hodge_t                      *get_mass_matrix;
 
-  /* Monitoring the efficiency */
-  cs_timer_counter_t               tcb; /* Cumulated elapsed time for building
-                                           the current system */
-  cs_timer_counter_t               tcs; /* Cumulated elapsed time for computing
-                                           all the source terms */
-  cs_timer_counter_t               tce; /* Cumulated elapsed time for computing
-                                           all extra operations (post, balance,
-                                           fluxes...) */
+  /* Monitoring */
+  cs_equation_monitor_t           *monitor;
+
 };
 
 /*============================================================================
@@ -778,9 +773,7 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   b->get_mass_matrix = cs_hodge_vcb_wbs_get;
 
   /* Monitoring */
-  CS_TIMER_COUNTER_INIT(b->tcb); // build system
-  CS_TIMER_COUNTER_INIT(b->tcs); // compute sources
-  CS_TIMER_COUNTER_INIT(b->tce); // extra operations
+  b->monitor = cs_equation_init_monitoring();
 
   return b;
 }
@@ -819,6 +812,9 @@ cs_cdovcb_scaleq_free(void   *builder)
   /* Free BC structure */
   b->face_bc = cs_cdo_bc_free(b->face_bc);
 
+  /* Monitoring structure */
+  BFT_FREE(b->monitor);
+
   /* Last free */
   BFT_FREE(b);
 
@@ -843,7 +839,7 @@ cs_cdovcb_scaleq_monitor(const char   *eqname,
   if (b == NULL)
     return;
 
-  cs_equation_print_monitoring(eqname, b->tcb, b->tcs, b->tce);
+  cs_equation_write_monitoring(eqname, b->monitor);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -935,7 +931,7 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
 #endif
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tcs), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tcs), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -979,7 +975,7 @@ cs_cdovcb_scaleq_initialize_system(void           *builder,
   for (cs_lnum_t i = 0; i < n_c; i++) b->cell_rhs[i] = 0.0;
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tcb), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tcb), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1336,7 +1332,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
   cs_matrix_assembler_values_finalize(&mav);
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tcb), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tcb), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1596,7 +1592,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
   BFT_FREE(p_v);
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tce), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1702,7 +1698,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
   } // OMP Section
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tce), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/

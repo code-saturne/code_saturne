@@ -139,14 +139,9 @@ struct _cs_cdovb_scaleq_t {
   cs_param_hodge_t                 hdg_wbs;
   cs_hodge_t                      *get_mass_matrix;
 
-  /* Monitoring the efficiency */
-  cs_timer_counter_t               tcb; /* Cumulated elapsed time for building
-                                           the current system */
-  cs_timer_counter_t               tcs; /* Cumulated elapsed time for computing
-                                           all the source terms */
-  cs_timer_counter_t               tce; /* Cumulated elapsed time for computing
-                                           all extra operations (post, balance,
-                                           fluxes...) */
+  /* Monitoring */
+  cs_equation_monitor_t           *monitor;
+
 };
 
 /*============================================================================
@@ -707,9 +702,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   b->get_mass_matrix = cs_hodge_vb_wbs_get;
 
   /* Monitoring */
-  CS_TIMER_COUNTER_INIT(b->tcb); // build system
-  CS_TIMER_COUNTER_INIT(b->tcs); // compute sources
-  CS_TIMER_COUNTER_INIT(b->tce); // extra operations
+  b->monitor = cs_equation_init_monitoring();
 
   return b;
 }
@@ -742,6 +735,9 @@ cs_cdovb_scaleq_free(void   *builder)
   /* Free BC structure */
   b->face_bc = cs_cdo_bc_free(b->face_bc);
 
+  /* Monitoring structure */
+  BFT_FREE(b->monitor);
+
   /* Last free */
   BFT_FREE(b);
 
@@ -766,7 +762,7 @@ cs_cdovb_scaleq_monitor(const char   *eqname,
   if (b == NULL)
     return;
 
-  cs_equation_print_monitoring(eqname, b->tcb, b->tcs, b->tce);
+  cs_equation_write_monitoring(eqname, b->monitor);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -852,13 +848,13 @@ cs_cdovb_scaleq_compute_source(void   *builder)
 
   } // OpenMP block
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
   cs_dump_array_to_listing("INIT_SOURCE_TERM_VTX", quant->n_vertices,
                            b->source_terms, 8);
 #endif
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tcs), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tcs), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -897,7 +893,7 @@ cs_cdovb_scaleq_initialize_system(void           *builder,
   for (cs_lnum_t i = 0; i < b->n_dofs; i++) (*system_rhs)[i] = 0.0;
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tcb), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tcb), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -945,14 +941,19 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
                                      cs_cdovb_cell_bld[0]);
 
   /* Update rhs with the previous computation of source term if needed */
-  if (b->sys_flag & (CS_FLAG_SYS_TIME | CS_FLAG_SYS_SOURCETERM))
+  if (b->sys_flag & (CS_FLAG_SYS_TIME | CS_FLAG_SYS_SOURCETERM)) {
+    cs_timer_t  ta = cs_timer_time();
     cs_cdo_time_update_rhs_with_array(b->sys_flag,
                                       b->eqp->time_info,
                                       b->n_dofs,
                                       b->source_terms,
                                       rhs);
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)          \
+    cs_timer_t  tb = cs_timer_time();
+    cs_timer_counter_add_diff(&(b->monitor->tcs), &ta, &tb);
+  }
+
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, b, rhs, matrix, mav, dir_values, field_val, \
          cs_cdovb_cell_sys, cs_cdovb_cell_bld, cs_cdovb_cell_bc)
   {
@@ -961,6 +962,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
 #else
     int  t_id = 0;
 #endif
+
     const cs_equation_param_t  *eqp = b->eqp;
     const cs_flag_t  *cell_flag = connect->c_info->flag;
 
@@ -982,6 +984,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
     /* Initialize members of the builder related to the current system
        Preparatory step for diffusion term */
     if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
+
       if (b->diff_pty_uniform) {
 
         cs_property_get_cell_tensor(0, // cell_id
@@ -999,6 +1002,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
                            &(cb->eig_max));
 
       } /* Diffusion property is uniform */
+
     } /* Diffusion */
 
     /* Preparatory step for unsteady term */
@@ -1031,8 +1035,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
                             cm, csys, cbc, cb);       // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-      if (c_id % 100 == 0)
-        cs_cell_mesh_dump(cm);
+      if (c_id % 100 == 0) cs_cell_mesh_dump(cm);
 #endif
 
       /* DIFFUSION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
@@ -1102,10 +1105,19 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
         if (c_id % 100 == 0)
           cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
 #endif
+
       } /* END OF ADVECTION */
 
-      if (b->sys_flag & CS_FLAG_SYS_HLOC_CONF)
+      if (b->sys_flag & CS_FLAG_SYS_HLOC_CONF) {
         cb->hdg = b->get_mass_matrix(b->hdg_wbs, cm, cb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
+        if (c_id % 100 == 0) {
+          cs_log_printf(CS_LOG_DEFAULT, ">> Local mass matrix");
+          cs_locmat_dump(c_id, cb->hdg);
+        }
+#endif
+      }
 
       /* REACTION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
       /* ============================================= */
@@ -1201,8 +1213,12 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
   BFT_FREE(dir_values);
   cs_matrix_assembler_values_finalize(&mav);
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+  cs_dump_array_to_listing("EQ.BUILD >> TS", b->n_dofs, b->source_terms, 8);
+#endif
+
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tcb), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tcb), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1234,7 +1250,7 @@ cs_cdovb_scaleq_update_field(const cs_real_t     *solu,
     field_val[i] = solu[i];
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tce), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1348,7 +1364,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
       const cs_lnum_t  c2_id = f2c->col_id[shift_f+1];
       const cs_quant_t  f = quant->face[f_id];
       const short int  sgn = (_dp3(f.unitv, direction) < 0) ? -1 : 1;
-      const double  coef = 0.5 * sgn * f.meas;
+      const double  coef = 0.5 * sgn * f.meas; // mean value at the face
 
       if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
 
@@ -1393,7 +1409,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
   } // Set of interior or border faces
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tce), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1542,7 +1558,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
   } // OMP Section
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tce), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1599,7 +1615,7 @@ cs_cdovb_scaleq_extra_op(const char            *eqname,
   } // Post a Peclet attached to cells
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(b->tce), &t0, &t1);
+  cs_timer_counter_add_diff(&(b->monitor->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
