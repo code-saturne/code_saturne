@@ -32,15 +32,20 @@ transport in continuous porous media,
 based on the Darcy law for flow calculation, and on the classical
 convection-diffusion equation for transport.
 It allows to simulate steady or unsteady flows, saturated or not, with scalar or
-tensorial permeabilities, and transport with dispersion, sorption and radioactive decay.
+tensorial permeabilities, and transport with dispersion, sorption,
+precipitation and radioactive decay.
 Any law, even unlinear, is acceptable for dependances between moisture content,
 permeability and hydraulic head.
 
-For the solving of the flow, the Richards equation is used, derived from the Darcy law and the conservation of mass.
-In the general case, this equation is non-linear and must be solved by a Newton scheme.
+For the solving of the flow, the Richards equation is used, derived from the
+Darcy law and the conservation of mass.
+In the general case, this equation is non-linear and must be solved by a Newton
+scheme.
 
-From this flow, the transport equation is solved, taking into account convection and diffusion,
-both slightly modified due to the specificities of underground transport.
+From this flow, the transport equation is solved, taking into account convection
+and diffusion, both slightly modified to take into account the specificities of
+underground transport (especially partition between liquid phase and soil
+matrix).
 
 Physical concepts and equations developed in this module are detailed hereafter.
 
@@ -110,7 +115,7 @@ Notice that the constant $A$ has no importance in the Darcy equation, neither in
 %===============================================
 
 Richards equation is obtained by substitution of the velocity expression given in equation \eqref{eq:groundwater:darcy_3d} directly into
-the continuity equation \ref{eq:groundwater:mass_cons}:
+the continuity equation \eqref{eq:groundwater:mass_cons}:
 \begin{equation}
 \label{eq:groundwater:richards}
 \frac{\partial{\theta(h)}}{\partial{t}} = \dive \left( K(h) \grad H \right) + Q_s
@@ -168,7 +173,7 @@ which can be derived from the soil law linking $\theta$ and $h$.
 A classical way to solve Richard's equation \eqref{eq:groundwater:richards} is
 to first transform it with the approximation:
 \begin{equation}
-\label{approximation}
+\label{eq:groundwater:approximation}
 \frac{\partial \theta}{\partial t} \simeq C(h) \frac{\partial h}{\partial t},
 \end{equation}
 so that it becomes:
@@ -177,7 +182,7 @@ so that it becomes:
  C(h) \ \dfrac{\partial{h}}{\partial{t}} \simeq \dive \left( K(h) \ \grad(h + z) \right) + Q_s,
 \end{equation}
 this last formulation being called the \textit{h-based} formulation.
-The equation (\ref{eq:groundwater:richards_bis}) can be written (recalling that $H = h + z$):
+The equation (\eqref{eq:groundwater:richards_bis}) can be written (recalling that $H = h + z$):
 \begin{equation}
 \label{eq:groundwater:richards_ter}
  C(H-z) \ \der{H}{t} \simeq \dive \left( K(H-z) \grad(H) \right) + Q_s,
@@ -189,24 +194,24 @@ and then discretized in time:
 \end{equation}
 The complete implicitation of the right hand term is made for ensuring stability. The explicitation of the capacity $C$
 is chosen after testing different options and noticing that implicitation does not improve the results.
-We will now linearize the equation (\ref{eq:groundwater:richards_discretized}) and define sub-iterations to solve it.
+We will now linearize the equation (\eqref{eq:groundwater:richards_discretized}) and define sub-iterations to solve it.
 Suppose that we seek unknown variable $H^{n+1}$ at the sub-iteration $k+1$ from its value at sub-iteration $k$.
 We write:
 \begin{equation}
 \label{eq:groundwater:richards_linearized}
  C(H^{n}-z) \ \frac{H^{n+1, \ k+1} - H^n}{\Delta t} \simeq \dive \left( K(H^{n+1, \ k} - z) \ \grad(H^{n+1, \ k+1}) \right) + Q_s.
 \end{equation}
-The equation (\ref{eq:groundwater:richards_linearized}), whose unknown is $H^{n+1, k+1}$,
+The equation (\eqref{eq:groundwater:richards_linearized}), whose unknown is $H^{n+1, k+1}$,
 is a transport equation without convection, which can be solved by the usual routines of \CS.
 
-But the approximation (\ref{approximation}) does not ensure a rigorous conservation of mass after discretization, because we do \textbf{not} have:
+But the approximation (\eqref{eq:groundwater:approximation}) does not ensure a rigorous conservation of mass after discretization, because we do \textbf{not} have:
 $$C(h^{n}) \ \frac{h^{n+1} - h^n}{\Delta t} = \frac{\theta(h^{n+1}) - \theta(h^n)}{\Delta t}.$$
 Anyway, it is still possible to define the exact residual:
 \begin{equation}
-\label{residual}
+\label{eq:groundwater:residual}
   R(h^n, \ h^{n+1}) = C(h^{n}) \ \frac{h^{n+1} - h^n}{\Delta t} - \frac{\theta(h^{n+1}) - \theta(h^n)}{\Delta t}
 \end{equation}
-and to mix it into the discretized and linearized formulation (\ref{eq:groundwater:richards_linearized}) at the sub-iteration $k$, to obtain:
+and to mix it into the discretized and linearized formulation (\eqref{eq:groundwater:richards_linearized}) at the sub-iteration $k$, to obtain:
 \begin{multline}
 \label{eq:groundwater:richards_final}
  C(H^{n}-z) \ \frac{H^{ n+1, \ k+1} - H^n}{\Delta t} \simeq \\ \dive \left( K(H^{ n+1, \ k} - z) \grad(H^{ n+1, \ k+1}) \right) + Q_s + R(H^n - z, \ H^{ n+1, \ k} - z).
@@ -228,7 +233,7 @@ where $D$ denotes the entire domain, is conserved in a discrete sense (provided 
 
 In \CS, the integral on a cell $\Omega$ of the term $\dive \left( K \grad \varia \right)$ is discretized this way:
 \begin{equation}
- \label{discrete_diffusive}
+ \label{eq:groundwater:discrete_diffusive}
 \int_{\Omega} \dive \left( K \grad \varia \right) \dd \Omega \simeq \sum_{\face \in \Face{\celli}} K_\face \grad_\face \varia \cdot \vect{S}_\face,
 \end{equation}
 where $\Face{\celli}$ is the set of the faces of cell $\celli$. For each face $\face$,
@@ -257,11 +262,11 @@ The less the vector $\vect{\centi\centj}$ is orthogonal to the face $\fij$, the 
 to deduce from the variables at cell centers, with a linear relation, and to depend only on the variables of the adjacent cells.
 The face gradient with reconstruction is calculated following the relation \eqref{eq:groundwater:101}, thanks to the relations:
 \begin{equation}
- \label{103}
+ \label{eq:groundwater:103}
 \varia_{\centip} = \varia_{\centi} + \grad \varia_\centi  \cdot \vect{\centi\centip}.
 \end{equation}
 \begin{equation}
- \label{104}
+ \label{eq:groundwater:104}
 \varia_{\centjp} = \varia_{\centj} + \grad \varia_\centj \cdot \vect{\centj\centjp}.
 \end{equation}
 Thus, the calculation of the face gradient with reconstruction requires a calculation of the gradients of $\varia$ at cell centers, which can be done
@@ -285,13 +290,13 @@ where:
 \end{itemize}
 We have:
 \begin{equation}
-\label{qh}
+\label{eq:groundwater:qh}
 Q_H = Q_s + R(H^n - z, \ H^{ n+1, \ k} - z) - \dive \left( K(H^{ n+1, \ k} - z) \
 \grad(H^{ n+1, \ k}) \right).
 \end{equation}
 Now, let us denote $E_n$ the following operator, that applies on any discrete field $x$:
 \begin{equation}
-\label{epsilon}
+\label{eq:groundwater:epsilon}
 E_n(x) = f_s \ x - \left[ \dive \left( \mu \grad x \right) \right]^D,
 \end{equation}
 where exponent $D$ represents the spatial discretization of gradient - divergent operator in \CS. This operator is linear but, when using
@@ -317,7 +322,7 @@ See documentation on routine \textit{codits}, for example, for further details.
 
 \subsection{Determination of the velocity field}
 %===============================================
-\label{velocity_field}
+\label{sec:groundwater:velocity_field}
 Theoretically, the darcy velocity field $\vect{q}$ of the flow just has to be calculated from the pressure head field, thanks to the Darcy relation
 \eqref{eq:groundwater:darcy_3d}. This can be done with the routine of \CS that calculates the gradient of a variable at cell centers from the values of this
 variable at cell centers.
@@ -327,7 +332,7 @@ and not used in the transport equation, for the reasons given below.
 In \CS, the integral on a cell $\Omega$ of the convection term $\dive \left( \varia \vect{q} \right)$, where $\vect{q}$ is a velocity field
 and $\varia$ a transported variable, is discretized this way:
 \begin{equation}
- \label{discrete_convective}
+ \label{eq:groundwater:discrete_convective}
 \int_{\Omega} \dive \left( \varia \ \vect{q} \right) \dd \Omega \simeq \sum_{\face \in \Face{\celli}} \varia_\face \ \vect{q}_\face \cdot \vect{S}_\face,
 \end{equation}
 where $\Face{\celli}$ is the set of faces for cell $\celli$. For each face $\face$,
@@ -346,13 +351,13 @@ To ensure this coherence, let us write the discrete contnuity equation:
 where exponent $D$ corresponds to the discrete operator for convection, described above.
 Mixing the discrete Richards equation \eqref{eq:groundwater:richards_final_bis} and the discrete continuity equation \eqref{eq:groundwater:mass_cons_discrete}, we want to have:
 \begin{equation}
- \label{discrete_egality}
+ \label{eq:groundwater:discrete_egality}
 \left[ \dive \left( K(h^{n+1}) \grad(H^{n+1}) \right) \right]^D = \left[ \dive \left( \vect{q} \right) \right]^D.
 \end{equation}
 Exponent $D$ still represents discretisation of operators.
-Taking into account equation (\ref{discrete_diffusive}) and equation (\ref{discrete_convective}), this leads for each face $\face$ of the domain to:
+Taking into account equation (\eqref{eq:groundwater:discrete_diffusive}) and equation (\eqref{eq:groundwater:discrete_convective}), this leads for each face $\face$ of the domain to:
 \begin{equation}
- \label{verification}
+ \label{eq:groundwater:verification}
 K(h^{n+1})_\face \grad_f H^{n+1}\cdot \vect{S}_\face = \vect{q}_\face \cdot \vect{S}_\face.
 \end{equation}
 This gives the good value for $\vect{q}_\face\cdot \vect{S}_\face$, available from the solving of Richards equation.
@@ -379,7 +384,7 @@ Both of these options are available in the module.
 %===============================================
 If we don't want to take into account the gravity, then the Darcy law writes:
 \begin{equation}
-\label{darcy_without_gravity}
+\label{eq:groundwater:darcy_without_gravity}
  \vect{u} = - K \grad h,
 \end{equation}
 and the Richards equation becomes:
@@ -390,31 +395,68 @@ which is solved exactly the same way, except that the solved variable is $h$ ins
 must be careful to adapt the initial conditions, boundary conditions and soil-laws accordingly.
 
 %===============================================
-\section{Groundwater Transferts}
+\section{Groundwater Transfers}
 %===============================================
 
 \subsection{Introduction}
 %===============================================
-The transport of
-a contaminant in variably saturated porous media is treated by the Hydrogeology module, based on the transport solver already present in \CS, with few
+The transport of a solute in porous media with variable saturation is treated by
+the Hydrogeology module, based on \CS transport equation solver with only few
 specific developments.
+
+\subsection{Partition between liquid and solid phases}
+%===============================================
+Solutes are present in soils and aquifers in liquid phase and can be sorbed
+in solid matrix.
+\begin{equation}
+\label{eq:groundwater:partition_liquid_solid}
+  C_{tot} = \theta c + \rho C_S
+\end{equation}
+where:
+\begin{itemize}
+  \item $C_{tot}$ is the total concentration of the solute [$M.L^{-3}_{soil}$];
+  \item $c$ is the solute concentration in liquid phase [$M.L^{-3}_{water}$];
+  \item $C_S$ is the solute mass fraction in solid phase (so called sorbed
+        concentration [$M.M^{-1}_{soil}$]);
+  \item $\rho$ is the soil \textit{bulk} density [$M_{soil}.L^{-3}_{soil}$].
+\end{itemize}
+
+In most of non reactive transport models, an equilibrium between liquid and
+solid phases is considered. This is modeled by a soil-water partition
+coefficient, referred as $K_d$ [$L^3_{water}.M^{-1}_{soil}$]:
+\begin{equation}
+  \label{eq:groundwater:Kd}
+  C_S = K_d \times c.
+\end{equation}
+
+Then the total concentration may be written as:
+\begin{equation}
+  C_{tot} = \theta R c
+\end{equation}
+where $R$ [.] is a retardation factor representing the delay of solute transport
+due to its sorption in solid matrix:
+\begin{equation}
+  R = 1 + \frac{\rho K_d}{\theta}
+\end{equation}
+
 
 \subsection{Advection/dispersion/diffusion/decay equation}
 %===============================================
 \hypertarget{gwf_sp_transp}{}
-We assume hereafter that the contaminant only exists in the liquid phase and is potentially sorbed on the solid matrix.
+We assume hereafter that the solute only exists in the liquid phase and is
+potentially sorbed on the solid matrix.
 We also assume that the transport phenomena in the liquid phase are advection, kinematic dispersion and molecular diffusion.
 The classical transport equation in variably saturated flow is:
 \begin{equation}
-\label{sec:groundwater:edv_disp_diff_ini}
+\label{eq:groundwater:edv_disp_diff_ini}
 \frac{\partial(R \theta c)}{\partial{t}}=\frac{\partial}{\partial x_j}(D_{ij} \frac{\partial c}{\partial x_i})-\frac{\partial \vect{q}_i c}{\partial x_i} + Q_s c_r - \lambda R \theta c
 \end{equation}
 where:
 \begin {itemize}
  \item[$\bullet$] $R$ is the delay factor, representing sorption phenomena [-];
  \item[$\bullet$] $\theta$ is the moisture content [$L^3.L^{-3}$];
- \item[$\bullet$] $c$ is the contaminant concentration in the liquid phase [$M.L^{-3}$];
- \item[$\bullet$] $\vect{q}$ refers to the darcian velocity, which is a result of the solving of the Richards equation (see section \ref{velocity_field}) [$L.T^{-1}$];
+ \item[$\bullet$] $c$ is the solute concentration in the liquid phase [$M.L^{-3}$];
+ \item[$\bullet$] $\vect{q}$ refers to the darcian velocity, which is a result of the solving of the Richards equation (see section \ref{sec:groundwater:velocity_field}) [$L.T^{-1}$];
  \item[$\bullet$] $\lambda$ is a first-order decay coefficient [$M.L^{-3}.T^{-1}$];
  \item[$\bullet$] $Q_s$ refers to the volumetric flow source/sink, from the Richards equation (\ref{eq:groundwater:richards}) [$M^3.T^{-1}$];
  \item[$\bullet$] $c_r$ is the source/sink concentration [$M.L^{-3}$];
@@ -427,15 +469,6 @@ We note the following differences with the standard formulation of the transport
 \end{itemize}
 % Moreover, in the unsaturated case, the water velocity has a non-zero divergence, which cannot be the case in the standard transport algorithm of \CS.
 % This constrains to artificially cancel a term of the equation solved by \CS.
-The delay factor $R$ is given by:
-\begin{equation}\label{k_d}
-R = 1 + \frac{\rho k_d}{\theta}
-\end{equation}
-\begin {itemize}
- \item[$\bullet$] $\theta$ is the moisture content [$L^3.L^{-3}$];
- \item[$\bullet$] $\rho$ is the \textit{bulk} density [$M.L^{-3}$]
- \item[$\bullet$] $K_d$ is the contaminant distribution coefficient [$L^3.M^{-1}$]
-\end{itemize}
 
 \subsection{Kinematic dispersion}
 %===============================================
@@ -471,7 +504,7 @@ is, in the general case, proportional to the moisture content $\theta$. It is de
 %===============================================
 Finally, the dispersion tensor $D_{ij}$ is the cumulation of the kimematic dispersion tensor $D_k$ and the molecular diffusion scalar.
 In a frame independant of the flow, it can be written:
-\begin{equation}\label{formul_disp}
+\begin{equation}\label{eq:groundwater:formul_disp}
  D_{ij}= \alpha_t \mid \vect{q} \mid \delta_{ij} + (\alpha_l - \alpha_t) \frac{\vect{q}_i \vect{q}_j}{\mid \vect{q} \mid} + d_m \delta_{ij},
 \end{equation}
 where:
@@ -502,7 +535,86 @@ and to give to the user the opportunity to define a dispersion tensor.
 More specifically, as values at iterations $n$ and $n+1$ of moisture content and delay are available for the transport calculation at iteration $n$,
 we can discretize the unsteady term this way:
 \begin{equation}
-\label{unsteady}
+\label{eq:groundwater:unsteady}
 \frac{\partial(R \theta c)}{\partial{t}} \simeq \frac{R^{n+1} \ \theta^{n+1} \ c^{n+1} - R^{n} \ \theta^{n} \ c^{n}}{\Delta t},
 \end{equation}
 which ensures global discrete mass conservation of the tracer.
+
+\section{Alternative models to treat the soil-water partition of solutes}
+
+\subsection{EK model}
+
+In the previous section, an equilibrium between liquid and solid phases is
+considered. This assumption is valid if this equilibrium is instantaneous,
+linear and reversible.
+Hoewever, these properties are rarely verified. Indeed, sorption and desorption
+processes often follow different kinetics laws.
+EK model (equilibrium-kinetic) is an alternative, semi-empirical approach
+which considers two types of sorption sites
+(see figure \ref{fig:groundwater:EK_model}):
+\begin{itemize}
+\item Sites denoted 1 are at equilibrium with liquid phase. As in the Kd
+  approach, mass fraction ${C_S}_1$ is proportional to the liquid
+  concentration:
+  \begin{equation}
+    \label{eq:groundwater:sites_equilibrium}
+    {C_S}_1 = Kd \times c.
+  \end{equation}
+\item Sites denoted 2 interact with liquid phase with kinetic. The time
+  evolution of mass fraction ${C_S}_2$ is described by a partial differential
+  equation:
+  \begin{equation}
+    \label{eq:groundwater:sites_kinetic}
+    \frac{\partial{{C_S}_2}}{\partial{t}} = k^+ c - k^- {C_S}_2
+  \end{equation}
+  where $k^+$ [$L^3_{water}.M^{-1}_{soil}.T^{-1}$] and $k^-$ [$T^{-1}$] are
+  experimental parameters, depending on soil properties and on the solute
+  under consideration.
+\end{itemize}
+
+\begin{figure}[h]
+\label{fig:groundwater:EK_model}
+\centering
+\includegraphics[scale=0.6]{EK_model.png}
+\caption{Two-site sorption model: solid 1 at equilibrium with water phase and
+         solid 2 with partially reversible sorption}
+\end{figure}
+
+In this case the total concentration can be written as follows:
+\begin{equation}
+  C_{tot} = (\theta + \rho Kd) \times c + \rho \times {C_S}_2
+\end{equation}
+
+Global transport equation \eqref{eq:groundwater:edv_disp_diff_ini} then becomes:
+\begin{equation}
+\label{eq:groundwater:transport_EK}
+\frac{\partial(R \theta c)}{\partial{t}} + \rho\frac{\partial(Cs_2)}{\partial{t}}=\frac{\partial}{\partial x_j}(D_{ij} \frac{\partial c}{\partial x_i})-\frac{\partial \vect{q}_i c}{\partial x_i} + Q_s c_r - \lambda (R \theta c + \rho Cs_2).
+\end{equation}
+
+To treat the kinetic sorption term, c is approximated by a constant and
+equation \eqref{eq:groundwater:sites_kinetic} is analytically solved :
+\begin{equation}
+  \label{eq:groundwater:kinetic_resolution}
+  {C_S}_2^{n+1} = e^{-k^-\Delta t} {C_S}_2^n - \frac{k^+}{k^-} (e^{-k^- \Delta t - 1}) c^n.
+\end{equation}
+
+Note that this approximation is valid only if the time step is not too high.
+
+\subsection{Precipitation}
+
+For some solutes, the concentration in liquid phase is physically bounded
+by a maximum value, called solubility index (or $c_{sat}$). When the
+concentration exceeds this value, the solute precipitates and a solid phase is
+formed. When the concentration decreases below the solubility index, the solid
+phase can dissolute.
+
+This process is assumed instantaneous and is treated at the end of each
+time step as follows:
+\begin{equation}
+  \label{eq:groundwater:c_precip}
+  \begin{split}
+  c  & =  \min(c + c_{precip}, c_{sat})\\
+  c_{precip}  & = \max(0, c + c_{precip} - c_{sat})
+  \end{split}
+\end{equation}
+where $c_{precip}$ [$M^3.L^{-3}$] is the concentration of precipitate phase.

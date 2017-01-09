@@ -98,7 +98,7 @@ void cs_gwf_physical_properties(void)
   sat = cs_field_by_name("saturation");
   rosoil = cs_field_by_name("soil_density");
 
-  int key_sorbed_c_id = cs_field_key_id("sorbed_concentration_id");
+  int key_sorbed_c_id = cs_field_key_id("gwf_sorbed_concentration_id");
   int key_kinet_soilwater_partition_id =
     cs_field_key_id("gwf_soilwater_partition");
 

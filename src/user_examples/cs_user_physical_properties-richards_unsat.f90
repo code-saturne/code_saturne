@@ -84,7 +84,8 @@ character*80     fname
 integer, allocatable, dimension(:) :: lstcel
 double precision, dimension(:), pointer :: capacity, permeability
 double precision, dimension(:), pointer :: saturation, soil_density
-double precision, dimension(:), pointer :: kd, kplus, kminus
+double precision, dimension(:), pointer :: cpro_kd, cpro_kplus, cpro_kminus
+double precision, dimension(:), pointer :: cpro_mxsol
 double precision, dimension(:,:), pointer :: tensor_permeability, visten
 double precision, dimension(:), pointer :: cpro_vscalt
 double precision, dimension(:,:), pointer :: vel
@@ -249,7 +250,7 @@ enddo
 !< [richards_unsat_aniso_disp]
 
 !< [richards_unsat_soilwater_partition]
-! Set soil density (bulk density!) for computation of delay (delay = 1 + soil_density * K_d / theta
+! Set soil density (bulk density!) for delay computation (delay = 1 + soil_density * K_d / saturation)
 do iel = 1, ncel
   soil_density(iel) = 1.5d0
 enddo
@@ -259,19 +260,27 @@ call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
                                                   sorption_scal)
 
 ! Index field for kd
-call field_get_val_s(sorption_scal%ikd, kd)
+call field_get_val_s(sorption_scal%ikd, cpro_kd)
 
 ! Index field for EK model parameters (kplus and kminus)
-call field_get_val_s(sorption_scal%ikp, kplus)
-call field_get_val_s(sorption_scal%ikm, kminus)
+call field_get_val_s(sorption_scal%ikp, cpro_kplus)
+call field_get_val_s(sorption_scal%ikm, cpro_kminus)
 
 ! Set sorption parameters
 do iel=1, ncel
-  kd(iel) = 5.d0
+  cpro_kd(iel) = 5.d0
   ! if EK model is chosen, set specific parameters
-  kplus(iel) =  1.d-3
-  kminus(iel) = 1.d-4
+  cpro_kplus(iel) =  1.d-3
+  cpro_kminus(iel) = 1.d-4
 enddo
+
+!Index field for cpro_mxsol index (if precipitation option is activated)
+call field_get_val_s(sorption_scal%imxsol, cpro_mxsol)
+
+do iel=1, ncel
+  cpro_mxsol(iel) = 10.d0
+enddo
+
 !< [richards_unsat_soilwater_partition]
 
 !===============================================================================

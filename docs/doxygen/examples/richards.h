@@ -40,8 +40,10 @@
   unsteady, with scalar or tensorial permeabilities and allows any type of soil
   water retention model, such as the van Genuchten model. The transport part
   considers dispersion, sorption and radioactive decay. The partition between
-  soil and water phases can be modeled by a classical Kd approach or
-  alternative EK (equilibrium-kinetic) model.
+  soil and water phases can be modeled by a classical Kd approach or an
+  alternative EK (equilibrium-kinetic) model. Additionaly solutes
+  precipitation/dissolution phenomena can also be taken into account by an
+  instantaneous model.
 
   Physical concepts and equations are presented in the \ref theory guide.
 
@@ -100,7 +102,9 @@
   \snippet cs_user_parameters-richards.f90 richards_steady
 
   The partition between solid and liquid phases can be modelled by a classical
-  Kd approach or alternative EK (equilibrium-kinetic) model.
+  Kd approach or an alternative EK (equilibrium-kinetic) model.
+  Additionally solutes precipitation/dissolution phenomena can also be taken
+  into account by an instantaneous model.
 
   \snippet cs_user_parameters-richards.f90 richards_partition
 
@@ -231,8 +235,9 @@
 
   \snippet cs_user_physical_properties-richards_unsat.f90 richards_unsat_aniso_disp
 
-  Sorption models need some parameters. Note that it is necessary to set soil
-  density to compute the delay in both Kd and EK sorption approaches.
+  Sorption parameters: Kd, kplus/kminus in case of EK model, soil density can
+  be set as follows. If precipitation is taken into account,
+  the solubility index needs to be set as well.
 
   \snippet cs_user_physical_properties-richards_unsat.f90 richards_unsat_soilwater_partition
 
@@ -268,6 +273,11 @@
   If EK model is considered, sorbed concentration must be initialized.
 
   \snippet cs_user_initialization-richards.f90 richards_init_sorb
+
+  If precipitation phenomenon is taken into account, precipitated concentration
+  has to be initialized.
+
+  \snippet cs_user_initialization-richards.f90 richards_init_precip
 
   \section richards_bound_cond Boundary conditions
 

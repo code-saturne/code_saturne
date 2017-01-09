@@ -71,7 +71,7 @@ implicit none
 ! Local variables
 
 character(len=80) :: f_label, f_name, s_name, s_label
-integer           :: ii, ivar, isorb, keysrb
+integer           :: ii, ivar, isorb, keysrb, igwfpr, keypre
 integer           :: idim1, idim3, idim6, iflid
 integer           :: type_flag, post_flag, location_id
 logical           :: has_previous
@@ -211,7 +211,8 @@ if (ippmod(idarcy).eq.1) then
   f_label = 'Soil density'
   call add_property_field(f_name, f_label, idim1, has_previous, iflid)
 
-  call field_get_key_id("sorbed_concentration_id", keysrb)
+  call field_get_key_id("gwf_sorbed_concentration_id", keysrb)
+  call field_get_key_id("gwf_precip_concentration_id", keypre)
 
   do ii = 1, nscal
     ivar = isca(ii)
@@ -246,6 +247,19 @@ if (ippmod(idarcy).eq.1) then
       call add_property_field(f_name, f_label, idim1, has_previous, &
                               sorption_scal%ikm)
       call hide_property(sorption_scal%ikm)
+    endif
+
+    if (sorption_scal%imxsol.ge.0) then
+      f_name = trim(s_name)//'_precip_conc'
+      f_label = trim(s_label)//' precip conc'
+      call add_property_field(f_name, f_label, idim1, has_previous, igwfpr)
+      call field_set_key_int(ivarfl(ivar), keypre, igwfpr)
+
+      f_name = trim(s_name)//'_solubility_index'
+      f_label = trim(s_label)//' solubility index'
+      call add_property_field(f_name, f_label, idim1, has_previous, &
+                              sorption_scal%imxsol)
+      call hide_property(sorption_scal%imxsol)
     endif
 
     call field_set_key_struct_gwf_soilwater_partition(ivarfl(ivar), &

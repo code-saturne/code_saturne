@@ -1,3 +1,4 @@
+
 !-------------------------------------------------------------------------------
 
 !VERS
@@ -288,13 +289,19 @@ darcy_unsteady = 0
 !---------------
 
 !< [richards_partition]
-! Get soil-water partition structure
+! Get soil-water partition structure.
 call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
                                                   sorption_sca1)
 
-! Set the sorption model to Kd approach (0) or EK model (1).
-! (Kd approach is set by default).
+! Set the sorption model to Kd approach (0) or EK model (1),
+! Kd approach is set by default.
 sorption_sca1%kinetic = 1
+
+! Enable precipitation model,
+! by default, there is no precipitation.
+sorption_sca1%imxsol = 0 ! imxsol will hold the solubility index field id
+
+! Set the modifications in the soil-water partition structure.
 call field_set_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
                                                   sorption_sca1)
 !< [richards_partition]

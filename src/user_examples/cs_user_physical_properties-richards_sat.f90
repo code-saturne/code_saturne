@@ -88,13 +88,6 @@ type(gwf_soilwater_partition) :: sorption_scal
 ! Initialisation
 !===============================================================================
 
-! Index field for soilwater_partition structure
-call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
-                                                  sorption_scal)
-
-! Index field for kd
-call field_get_val_s(sorption_scal%ikd, kd)
-
 ! Index field for the capacity table (C = grad(theta)/grad(h))
 call field_get_val_s_by_name('capacity', capacity)
 
@@ -187,6 +180,12 @@ do ii = 1, nscal
   else
     cpro_vscalt => NULL()
   endif
+
+  ! Index field for soilwater_partition structure
+  call field_get_key_struct_gwf_soilwater_partition(ivarfl(isca(ii)), &
+                                                  sorption_scal)
+  ! Index field for kd
+  call field_get_val_s(sorption_scal%ikd, kd)
 
   !< [richards_flow_solut]
   ! Definition of the isotropic diffusion (dispersion and moleculer diffusion)

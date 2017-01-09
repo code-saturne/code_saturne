@@ -114,6 +114,7 @@ module cs_c_bindings
     integer(c_int) :: idel
     integer(c_int) :: ikp
     integer(c_int) :: ikm
+    integer(c_int) :: imxsol
   end type gwf_soilwater_partition
 
   !---------------------------------------------------------------------------

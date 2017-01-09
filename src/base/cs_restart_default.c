@@ -1691,8 +1691,13 @@ cs_restart_read_variables(cs_restart_t               *r,
 
   cs_restart_read_linked_fields(r,
                                 old_field_map,
-                                "sorbed_concentration_id",
+                                "gwf_sorbed_concentration_id",
                                 _read_flag);
+
+    cs_restart_read_linked_fields(r,
+                                  old_field_map,
+                                  "gwf_precip_concentration_id",
+                                  _read_flag);
 
   /* Read and convert turbulence variables in case of model change */
 
@@ -1877,7 +1882,11 @@ cs_restart_write_variables(cs_restart_t  *r,
                                    _write_flag);
 
   cs_restart_write_linked_fields(r,
-                                 "sorbed_concentration_id",
+                                 "gwf_sorbed_concentration_id",
+                                 _write_flag);
+
+  cs_restart_write_linked_fields(r,
+                                 "gwf_precip_concentration_id",
                                  _write_flag);
 
   /* Cleanup */

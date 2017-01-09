@@ -90,12 +90,12 @@ double precision :: dt(ncelet)
 ! Local variables
 
 !< [loc_var_dec]
-integer :: iel, icelt, ncelt, isorb, keysrb
+integer :: iel, icelt, ncelt, isorb, keysrb, igwfpr, keypre
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: cvar_scal_1, cvar_scal_2
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:,:), pointer :: cvar_vel
-double precision, dimension(:), pointer :: csorb
+double precision, dimension(:), pointer :: cpro_sorb, cpro_precip
 !< [loc_var_dec]
 
 !===============================================================================
@@ -121,9 +121,6 @@ if (isuite.eq.0) then
   call field_get_val_s(ivarfl(isca(1)), cvar_scal_1)
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_v(ivarfl(iu), cvar_vel)
-
-  call field_get_key_id("sorbed_concentration_id", keysrb)
-  call field_get_key_int(ivarfl(isca(1)), keysrb, isorb)
 
 !< [richards_init_cell]
 ! Global initialisation
@@ -153,13 +150,28 @@ if (isuite.eq.0) then
 !< [richards_init_grp]
 
 !< [richards_init_sorb]
-! Index field of sorbed concentration
-  call field_get_val_s(isorb, csorb)
+  ! Index field of sorbed concentration
+  call field_get_key_id("gwf_sorbed_concentration_id", keysrb)
+  call field_get_key_int(ivarfl(isca(1)), keysrb, isorb)
+  call field_get_val_s(isorb, cpro_sorb)
+
   do iel = 1, ncel
     ! no initial contamination of sorbed phase
-    csorb(iel) = 0.d0
+    cpro_sorb(iel) = 0.d0
   enddo
 !< [richards_init_sorb]
+
+!< [richards_init_precip]
+  ! Index field of precipitated concentration
+  call field_get_key_id("gwf_precip_concentration_id", keypre)
+  call field_get_key_int(ivarfl(isca(1)), keypre, igwfpr)
+  call field_get_val_s(igwfpr, cpro_precip)
+
+  do iel = 1, ncel
+    ! no initial precipitation phase
+    cpro_precip(iel) = 0.d0
+  enddo
+!< [richards_init_precip]
 
 endif
 

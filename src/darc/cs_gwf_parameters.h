@@ -59,12 +59,13 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 typedef struct {
-  int     kinetic;  /* 0 : sorption at equilibirum
-                       1 : sorption with kinetic   */
-  int     ikd;      /* id for kd */
-  int     idel;     /* id for delay */
-  int     ikp;      /* id for kplus */
-  int     ikm;      /* id for kminus */
+  int     kinetic;       /* 0 : sorption at equilibirum
+                            1 : sorption with kinetic   */
+  int     ikd;           /* id for kd */
+  int     idel;          /* id for delay */
+  int     ikp;           /* id for kplus */
+  int     ikm;           /* id for kminus */
+  int     imxsol;        /* id for solubility index */
 } cs_gwf_soilwater_partition_t;
 
 /*============================================================================
