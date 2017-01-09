@@ -791,9 +791,6 @@ cs_parameters_error_barrier(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Check computation parameters after user modification.
- *
- * \param[in,out] iok  number of errors detected
- *
  */
 /*----------------------------------------------------------------------------*/
 

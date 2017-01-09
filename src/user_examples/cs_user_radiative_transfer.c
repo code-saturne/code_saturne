@@ -255,16 +255,16 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
  *                        of the luminance (implicit part)
  * \param[in]   twall     inside current wall temperature (K)
  * \param[in]   qincid    radiative incident flux  (W/m2)
- * \param[in]   xlamp     conductivity (W/m/K)
- * \param[in]   epap      thickness (m)
- * \param[in]   epsp      emissivity (>0)
+ * \param[in]   xlam      conductivity (W/m/K)
+ * \param[in]   epa       thickness (m)
+ * \param[in]   eps       emissivity (>0)
  * \param[in]   ck        absorption coefficient
  * \param[out]  net_flux  net flux (W/m2)
  */
 /*-------------------------------------------------------------------------------*/
 
 void
-cs_user_rad_transfer_net_flux(const int        itypfb[],
+cs_user_rad_transfer_net_flux(const int        bc_type[],
                               const int        izfrdp[],
                               const cs_real_t  dt[],
                               const cs_real_t  coefap[],
@@ -305,19 +305,19 @@ cs_user_rad_transfer_net_flux(const int        itypfb[],
   for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
 
     /* Wall faces */
-    if (   itypfb[ifac] == CS_SMOOTHWALL
-        || itypfb[ifac] == CS_ROUGHWALL)
+    if (   bc_type[ifac] == CS_SMOOTHWALL
+        || bc_type[ifac] == CS_ROUGHWALL)
       net_flux[ifac] = eps[ifac] * (qincid[ifac] - stephn * pow(twall[ifac], 4));
 
     /* Symmetry   */
-    else if (itypfb[ifac] == CS_SYMMETRY)
+    else if (bc_type[ifac] == CS_SYMMETRY)
       net_flux[ifac] = 0.0;
 
     /* Inlet/Outlet    */
-    else if (   itypfb[ifac] == CS_INLET
-             || itypfb[ifac] == CS_CONVECTIVE_INLET
-             || itypfb[ifac] == CS_OUTLET
-             || itypfb[ifac] == CS_FREE_INLET) {
+    else if (   bc_type[ifac] == CS_INLET
+             || bc_type[ifac] == CS_CONVECTIVE_INLET
+             || bc_type[ifac] == CS_OUTLET
+             || bc_type[ifac] == CS_FREE_INLET) {
       if (cs_glob_rad_transfer_params->iirayo == 1)
         net_flux[ifac] = qincid[ifac] - cs_math_pi * coefap[ifac];
       else if (cs_glob_rad_transfer_params->iirayo == 2)
@@ -333,7 +333,7 @@ cs_user_rad_transfer_net_flux(const int        itypfb[],
          __func__,
          ifac,
          izfrdp[ifac],
-         itypfb[ifac]);
+         bc_type[ifac]);
 
   }
   /*< [net_flux]*/

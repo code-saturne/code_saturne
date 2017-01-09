@@ -122,11 +122,17 @@ BEGIN_C_DECLS
         - 1: based on cell center mesh velocity
         - 0: based on nodes displacement
 
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*!
   \struct cs_var_cal_opt_t
 
-  \brief Keys structure containing the variable calculation options.
+  \brief structure containing the variable calculation options.
 
   \var  cs_var_cal_opt_t::iwarni
+        \anchor iwarni
         \ref iwarni characterises the level of detail of the outputs for a
         variable. The quantity of information increases with its value.
         Impose the value 0 or 1 for a reasonable listing size. Impose the
@@ -134,33 +140,39 @@ BEGIN_C_DECLS
         during the execution.
 
  \var  cs_var_cal_opt_t::iconv
+        \anchor iconv
         For each unknown variable to calculate, indicates if the convection is taken
         into account (1) or not (0). By default, \ref cs_var_cal_opt_t::iconv "iconv" is set
         to 0 for the pressure (variable \ref ipr) or f in v2f modelling (variable \ref ifb)
         and set to 1 for the other unknowns.
 
   \var  cs_var_cal_opt_t::istat
+        \anchor istat
         For each unknown variable to calculate, indicates whether unsteady terms
         are present (1) or not (0) in the matrices. By default, \ref cs_var_cal_opt_t::istat "istat"
         is set to 0 for the pressure (variable \ref ipr) or f in v2f modelling
         (variable \ref ifb) and set to 1 for the other unknowns.
 
   \var  cs_var_cal_opt_t::idiff
+        \anchor idiff
         For each unknown variable to calculate, indicates whether the diffusion
         is taken into account (1) or not (0).
 
   \var  cs_var_cal_opt_t::idifft
+        \anchor idifft
         For each unknown variable to calculate, when diffusion is taken into
         account (\ref idiff = 1), \ref idifft indicates if the turbulent diffusion
         is taken into account (\ref idifft = 1) or not (0).
 
   \var  cs_var_cal_opt_t::idften
+        \anchor idften
         Type of diffusivity:
         - 1: scalar diffusivity
         - 3: orthotropic diffusivity
         - 6: symmetric tensor diffusivity
 
   \var  cs_var_cal_opt_t::iswdyn
+        \anchor iswdyn
         Dynamic relaxation type:
         - 0 no dynamic relaxation
         - 1 dynamic relaxation depending on \f$ \delta \varia^k \f$
@@ -168,6 +180,7 @@ BEGIN_C_DECLS
         \f$ \delta \varia^{k-1} \f$.
 
   \var  cs_var_cal_opt_t::ischcv
+        \anchor ischcv
         For each unknown variable to calculate, \ref ischcv indicates the type of
         second-order convective scheme
         - 0: Second Order Linear Upwind
@@ -176,9 +189,11 @@ BEGIN_C_DECLS
         and for which a second-order scheme is used (\ref blencv > 0).
 
   \var  cs_var_cal_opt_t::ibdtso
+        \anchor ibdtso
         Backward differential scheme in time order.
 
   \var  cs_var_cal_opt_t::isstpc
+        \anchor isstpc
         For each unknown variable to calculate, isstpc indicates whether a slope
         test should be used to switch from a second-order to an upwind convective
         scheme under certain conditions, to ensure stability.
@@ -190,6 +205,7 @@ BEGIN_C_DECLS
         the order in space to decrease quickly.
 
   \var  cs_var_cal_opt_t::nswrgr
+        \anchor nswrgr
         For each unknown variable, \ref nswrgr <= 1 indicates that the gradients
         are not reconstructed
          - if \ref imrgra = 0 or 4, \ref nswrgr is the number of iterations for
@@ -199,6 +215,7 @@ BEGIN_C_DECLS
          than 1 for \ref nswrgr yields the same result).\n
 
   \var  cs_var_cal_opt_t::nswrsm
+        \anchor nswrsm
         For each unknown variable, nswrsm indicates the number of iterations for the
         reconstruction of the right-hand sides of the equations with a first-order
         scheme in time (standard case), the default values are 2 for pressure
@@ -207,6 +224,7 @@ BEGIN_C_DECLS
         pressure and 10 for the other variables.
 
   \var  cs_var_cal_opt_t::imrgra
+        \anchor imrgra
         Indicates the type of gradient reconstruction (one method for all the
         variables)
            - 0: iterative reconstruction of the non-orthogonalities
@@ -237,6 +255,7 @@ BEGIN_C_DECLS
         of the keyword will be used.
 
   \var  cs_var_cal_opt_t::imligr
+        \anchor imligr
         For each unknown variable, indicates the type of gradient limitation
            - -1: no limitation
            - 0: based on the neighbours
@@ -245,6 +264,7 @@ BEGIN_C_DECLS
         = 0 or 4 and to 1 if \ref imrgra = 1, 2 or 3.
 
   \var  cs_var_cal_opt_t::ircflu
+        \anchor ircflu
         For each unknown variable, \ref ircflu indicates whether the convective
         and diffusive fluxes at the faces should be reconstructed:
            - 0: no reconstruction
@@ -258,11 +278,13 @@ BEGIN_C_DECLS
         and \f$ \epsilon \f$ might also help in that case).
 
   \var  cs_var_cal_opt_t::iwgrec
+        \anchor iwgrec
         Gradient calculation
           - 0: standard
           - 1: weighted
 
   \var  cs_var_cal_opt_t::thetav
+        \anchor thetav
         For each variable variable, thetav is the value of \f$ \theta \f$ used to
         express at the second-order the terms of convection, diffusion and the
         source terms which are linear functions of the solved variable (according
@@ -277,6 +299,7 @@ BEGIN_C_DECLS
         otherwise \ref thetav is set to 1.
 
   \var  cs_var_cal_opt_t::blencv
+        \anchor blencv
         For each unknown variable to calculate, blencv indicates the proportion of
         second-order convective scheme (0 corresponds to an upwind first-order scheme);
         in case of LES calculation, a second-order scheme is recommended and activated
@@ -284,6 +307,7 @@ BEGIN_C_DECLS
         Useful for all the unknowns variable for which \ref iconv = 1.
 
   \var  cs_var_cal_opt_t::epsilo
+        \anchor epsilo
         <a name="epsilo"></a>
         For each unknown variable, relative precision for the solution of the linear
         system. The default value is \ref epsilo = \f$ 10^-8 \f$ . This value is set
@@ -293,6 +317,7 @@ BEGIN_C_DECLS
         to \f$ 10^-5 \f$.
 
   \var  cs_var_cal_opt_t::epsrsm
+        \anchor epsrsm
         For each unknown variable, relative precision on the reconstruction of the right
         hand-side. The default value is \ref epsrsm = \f$ 10^-8 \f$. This value is set
         low on purpose. When there are not enough iterations on the reconstruction of the
@@ -301,15 +326,18 @@ BEGIN_C_DECLS
         \f$ 10^-5 \f$ ).
 
   \var  cs_var_cal_opt_t::epsrgr
+        \anchor epsrgr
         For each unknown variable, relative precision for the iterative gradient
         reconstruction.\n Useful for all the unknowns when \ref imrgra = 0 or 4.
 
   \var  cs_var_cal_opt_t::climgr
+        \anchor climgr
         For each unknown variable, factor of gradient limitation (high value means
         little limitation). \n
         Useful for all the unknowns variables for which \ref imligr = -1.
 
   \var  cs_var_cal_opt_t::extrag
+        \anchor extrag
         For the variable pressure \ref ipr, extrapolation coefficient of the
         gradients at the boundaries. It affects only the Neumann conditions.
         The only possible values of \ref extrag are:
@@ -327,6 +355,7 @@ BEGIN_C_DECLS
         can be overridden if necessary, contact the development team).
 
   \var  cs_var_cal_opt_t::relaxv
+        \anchor relaxv
         For each variable ivar, relaxation coefficient of the variable. This relaxation
         parameter is only useful for the pressure with the unsteady algorithm (so as to
         improve the convergence in case of meshes of insufficient quality or and for some
@@ -364,110 +393,6 @@ BEGIN_C_DECLS
 */
 
 /*----------------------------------------------------------------------------*/
-
-/*!
-  \struct cs_var_cal_opt_t
-
-  \brief Structure of variable calculation options.
-
-  \var cs_var_cal_opt_t::iwarni
-       characterizes the level of detail of the outputs for the
-       variable \c ivar (from 1 to \ref dimens::nvar "nvar").
-       The quantity of information increases with its value.
-       Impose the value 0 or 1 for a reasonable listing size. Impose the value 2
-       to get a maximum quantity of information, in case of problem during the
-       execution.  Always useful.
-  \var cs_var_cal_opt_t::iconv
-       take convection into account:
-          - 1 account for convection
-          - 0 ignore convection
-  \var cs_var_cal_opt_t::istat
-       take unsteady term into account:
-          - 1 account for unsteady term
-          - 0 ignore unsteady term
-  \var cs_var_cal_opt_t::idiff
-       take diffusion into account:
-          - 1: true
-          - 0: false
-  \var cs_var_cal_opt_t::idifft
-       take turbulent diffusion into account:
-          - 1: true
-          - 0: false
-  \var cs_var_cal_opt_t::idften
-       type of diffusivity:
-          - 1: scalar diffusivity
-          - 3: orthotropic diffusivity
-          - 6: symmetric tensor diffusivity
-  \var cs_var_cal_opt_t::iswdyn
-       dynamic relaxation type:
-          - 0 no dynamic relaxation
-          - 1 dynamic relaxation depending on \f$ \delta \varia^k \f$
-          - 2 dynamic relaxation depending on \f$ \delta \varia^k \f$ and
-            \f$ \delta \varia^{k-1} \f$
-  \var cs_var_cal_opt_t::ischcv
-       type of convective scheme
-          - 1: centered
-          - 0: second order
-  \var cs_var_cal_opt_t::ibdtso
-       ibdtso : backward differential scheme in time order
-  \var cs_var_cal_opt_t::isstpc
-       switch off the slope test:
-          - 1: swich off the slope test
-          - 0: swich on the slope test
-  \var cs_var_cal_opt_t::nswrgr
-       max number of iterations for the iterative gradient
-  \var cs_var_cal_opt_t::nswrsm
-       max number of iteration for the iterative process used to solved
-       the convection diffusion equations
-  \var cs_var_cal_opt_t::imrgra
-       type of gradient reconstruction
-          - 0: iterative process
-          - 1: standard least squares method
-          - 2: least squares method with extended neighborhood
-          - 3: least squares method with reduced extended neighborhood
-          - 4: iterative precess initialized by the least squares method
-  \var cs_var_cal_opt_t::imligr
-       type of gradient clipping
-          - < 0: no clipping
-          -   0: first order
-          -   1: second order
-  \var cs_var_cal_opt_t::ircflu
-       face flux reconstruction:
-          - 0: false
-          - 1: true
-  \var cs_var_cal_opt_t::iwgrec
-       gradient calculation
-          - 1: standard
-          - 0: weighted
-  \var cs_var_cal_opt_t::icoupl
-       Internel coupling
-          - -1: not coupled (default)
-          -  1: coupled
-  \var cs_var_cal_opt_t::thetav
-       \f$ \theta \f$-scheme for the main variables
-          -  0 : explicit
-          - 1/2: extrapolated in n+1/2
-          -  1 : extrapolated in n+1
-  \var cs_var_cal_opt_t::blencv
-       percentage of upwind:
-          - 1: no upwind (except if the slope test is activated)
-          - 0: total upwind
-  \var cs_var_cal_opt_t::epsilo
-       relative precision of the linear solver
-  \var cs_var_cal_opt_t::epsrsm
-       relative precision of the iterative process used to solved
-       the convection diffusion equations
-  \var cs_var_cal_opt_t::epsrgr
-       relative precision of the iterative gradient calculation
-  \var cs_var_cal_opt_t::climgr
-       climgr : facteur de limitation (>=1, =1 : forte limitation)
-  \var cs_var_cal_opt_t::extrag
-       gradient extrapolation at the boundary
-          - 0: false
-          - 1: true
-  \var cs_var_cal_opt_t::relaxv
-       relaxation of variables (1 stands fo no relaxation)
-*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

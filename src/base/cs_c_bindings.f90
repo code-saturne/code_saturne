@@ -3742,12 +3742,14 @@ contains
   !>                               at interior faces for the matrix
   !> \param[in]     viscbm        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
   !>                               at boundary faces for the matrix
-  !> \param[in]     visccm        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+  !> \param[in]     visccm        symmetric cell tensor
+  !>                              \f$ \tens{\mu}_\celli \f$
   !> \param[in]     viscfs        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
   !>                               at interior faces for the r.h.s.
   !> \param[in]     viscbs        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
   !>                               at boundary faces for the r.h.s.
-  !> \param[in]     visccs        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+  !> \param[in]     visccs        symmetric cell tensor
+  !>                              \f$ \tens{\mu}_\celli \f$
   !> \param[in]     weighf        internal face weight between cells i j in case
   !>                               of tensor diffusion
   !> \param[in]     weighb        boundary face weight for cells i in case
@@ -3755,7 +3757,8 @@ contains
   !> \param[in]     icvflb        global indicator of boundary convection flux
   !>                               - 0 upwind scheme at all boundary faces
   !>                               - 1 imposed flux at some boundary faces
-  !> \param[in]     icvfli        boundary face indicator array of convection flux
+  !> \param[in]     icvfli        boundary face indicator array of convection
+  !>                              flux
   !>                               - 0 upwind scheme
   !>                               - 1 imposed flux
   !> \param[in]     rovsdt        \f$ f_s^{imp} \f$

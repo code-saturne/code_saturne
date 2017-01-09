@@ -145,6 +145,7 @@ BEGIN_C_DECLS
  *
  * \param[in]     idtvar        indicateur du schema temporel
  * \param[in]     f_id          field id (or -1)
+ * \param[in]     name          associated name if f_id < 0, or NULL
  * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
  * \param[in]     iescap        compute the predictor indicator if 1
  * \param[in]     imucpp        indicator
@@ -1009,6 +1010,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
+ * \param[in]     name          associated name if f_id < 0, or NULL
  * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
  * \param[in]     ivisep        indicator to take \f$ \divv
  *                               \left(\mu \gradt \transpose{\vect{a}} \right)
@@ -1804,6 +1806,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
+ * \param[in]     name          associated name if f_id < 0, or NULL
  * \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options

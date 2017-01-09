@@ -1061,10 +1061,10 @@ cs_post_write_particle_values(int                    mesh_id,
  * \param[in]  var_type             variable's data type
  * \param[in]  parent_location_id   asociated values mesh location, or 0
  *                                  if values are passed directly
- * \param[in]  interpolation_func   pointer to interpolation function,
+ * \param[in]  interpolate_func     pointer to interpolation function,
  *                                  or NULL for default
- * \param[in]  interpolation_input  pointer to optional interpolation input data,
- *                                  or NULL for default
+ * \param[in]  interpolate_input    pointer to optional interpolation input
+ *                                  data, or NULL for default
  * \param[in]  vals                 variable's values
  * \param[in]  ts                   time step status structure, or NULL
  */

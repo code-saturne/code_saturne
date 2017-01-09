@@ -169,16 +169,16 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
  *                        of the luminance (implicit part)
  * \param[in]   twall     inside current wall temperature (K)
  * \param[in]   qincid    radiative incident flux  (W/m2)
- * \param[in]   xlamp     conductivity (W/m/K)
- * \param[in]   epap      thickness (m)
- * \param[in]   epsp      emissivity (>0)
+ * \param[in]   xlam      conductivity (W/m/K)
+ * \param[in]   epa       thickness (m)
+ * \param[in]   eps       emissivity (>0)
  * \param[in]   ck        absorption coefficient
  * \param[out]  net_flux  net flux (W/m2)
  */
 /*-------------------------------------------------------------------------------*/
 
 void
-cs_user_rad_transfer_net_flux(const int        itypfb[],
+cs_user_rad_transfer_net_flux(const int        bc_type[],
                               const int        izfrdp[],
                               const cs_real_t  dt[],
                               const cs_real_t  coefap[],

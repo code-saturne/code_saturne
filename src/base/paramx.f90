@@ -171,7 +171,7 @@ module paramx
   !> code/code coupling condition
   integer   icscpl
 
-  !> \anchor icscpl
+  !> \anchor icscpd
   !> code/code coupling condition with decentered flux
   integer   icscpd
 

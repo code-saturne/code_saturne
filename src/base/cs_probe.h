@@ -80,7 +80,8 @@ typedef enum {
  * \param[out]      n_elts  number of selected coordinates
  * \param[out]      coords  coordinates of selected elements.
  * \param[out]      s       curvilinear coordinates of selected elements
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_probe_set_define_local_t) (void          *input,

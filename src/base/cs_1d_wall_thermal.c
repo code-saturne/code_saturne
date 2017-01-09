@@ -136,7 +136,7 @@ BEGIN_C_DECLS
         (i.e ifpt1d[ii]\f$>\f$ifpt1d[jj] if ii\f$>\f$jj.
         This will be the case if the coupled faces are defined
         starting from the unique loop on the boundary faces (as
-        in the example, see \subpage us_pt1d). If this is not
+        in the example, see \ref us_pt1d). If this is not
         the case, contact the development team to short circuit
         the test.
   \var  cs_1d_wall_thermal_t::tppt1d

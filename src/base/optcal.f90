@@ -102,7 +102,6 @@ module optcal
   !> is second-order (\ref ischtp = 2), otherwise to 0.
   integer, save ::          isno2t
 
-
   !> \ref isto2t specifies the time scheme activated for
   !> the source terms of the turbulence equations i.e. related
   !> to \f$k\f$, \f$R_{ij}\f$, \f$\varepsilon\f$, \f$\omega\f$, \f$\varphi\f$,
@@ -1420,6 +1419,8 @@ module optcal
 
   !> ntdcla : start iteration for restrike
   integer(c_int), pointer, save :: ntdcla
+
+  !> \}
 
   !> \}
 

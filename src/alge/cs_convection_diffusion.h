@@ -86,6 +86,11 @@ cs_real_t cs_limiter_function(const int   limiter,
  * \param[in]     thetap       weighting coefficient for the theta-schema
  * \param[in]     imasac       take mass accumulation into account?
  * \param[in]     limiter      choice of the limiter function
+ * \param[in]     lambdaij
+ * \param[in]     rij          rij downstream_slope/face_slope
+ *                             in a structured 1D mesh, for face "i+1/2" and
+ *                             for positive mass flux, it could represent:
+ *                             (Y_{i+2}-Y_{i+1})/(Y_{i+1}-Y_{i})
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
  * \param[in]     pifri        contribution of i to flux from i to j
