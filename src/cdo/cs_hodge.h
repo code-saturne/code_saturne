@@ -34,8 +34,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_time_step.h"
-#include "cs_sla.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
@@ -89,17 +87,6 @@ typedef void
 /*============================================================================
  * Public function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Initialize cs_timer_stats_t structure for monitoring purpose
- *
- * \param[in]  level      level of details requested
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hodge_set_timer_stats(int   level);
 
 /*----------------------------------------------------------------------------*/
 /*!

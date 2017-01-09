@@ -64,7 +64,6 @@ BEGIN_C_DECLS
  *         Compute also the volume pefc attached to each edge of the face
  *
  * \param[in]       f          id of the face in the cell-wise numbering
- * \param[in]       pfq        primal face quantities
  * \param[in]       cm         pointer to a cs_cell_mesh_t structure
  * \param[in]       hf_coef    coefficient related to the height of p_{f,c}
  * \param[in]       f_coef     coefficient related to the area of f
@@ -76,7 +75,6 @@ BEGIN_C_DECLS
 
 inline static void
 _get_wvf_pefcvol(short int                 f,
-                 const cs_quant_t          pfq,
                  const cs_cell_mesh_t     *cm,
                  const double              hf_coef,
                  const double              f_coef,
@@ -182,12 +180,11 @@ cs_compute_fwbs_q1(short int                 f,
                    cs_real_t                *pefc_vol)
 {
   const cs_quant_t  pfq = cm->face[f];
-  const cs_nvec3_t  deq = cm->dedge[f];
-  const double  h_coef = cs_math_onethird * _dp3(pfq.unitv, deq.unitv)*deq.meas;
+  const double  h_coef = cs_math_onethird * cm->hfc[f];
   const double  f_coef = 0.5/pfq.meas;
 
   /* Compute geometric quantities */
-  _get_wvf_pefcvol(f, pfq, cm, h_coef, f_coef, wvf, pefc_vol);
+  _get_wvf_pefcvol(f, cm, h_coef, f_coef, wvf, pefc_vol);
 
   return  h_coef * pfq.meas; // volume of p_{f,c}
 }
@@ -216,18 +213,14 @@ cs_compute_fwbs_q2(short int                f,
                    cs_real_t               *pefc_vol)
 {
   const cs_quant_t  pfq = cm->face[f];
-  const cs_nvec3_t  deq = cm->dedge[f];
-  const double  hf = _dp3(pfq.unitv, deq.unitv) * deq.meas;
   const double  f_coef = 0.5/pfq.meas;
 
-  assert(hf > 0);
-
   /* Compute geometric quantities */
-  _get_wvf_pefcvol(f, pfq, cm, cs_math_onethird * hf, f_coef, wvf, pefc_vol);
+  _get_wvf_pefcvol(f, cm, cs_math_onethird * cm->hfc[f], f_coef, wvf, pefc_vol);
 
   /* Compute the gradient of the Lagrange function related to xc
      which is constant inside p_{f,c} */
-  const cs_real_t  ohf = -cm->f_sgn[f]/hf;
+  const cs_real_t  ohf = -cm->f_sgn[f]/cm->hfc[f];
   for (int k = 0; k < 3; k++)
     grd_c[k] = ohf * pfq.unitv[k];
 }
@@ -258,13 +251,12 @@ cs_compute_fwbs_q3(short int                 f,
                    cs_real_t                *pefc_vol)
 {
   const cs_quant_t  pfq = cm->face[f];
-  const cs_nvec3_t  deq = cm->dedge[f];
-  const double  hf = _dp3(pfq.unitv, deq.unitv)*deq.meas;
+  const double  hf = cm->hfc[f];
   const double  h_coef = cs_math_onethird * hf;
   const double  f_coef = 0.5/pfq.meas;
 
   /* Compute geometric quantities */
-  _get_wvf_pefcvol(f, pfq, cm, h_coef, f_coef, wvf, pefc_vol);
+  _get_wvf_pefcvol(f, cm, h_coef, f_coef, wvf, pefc_vol);
 
   /* Compute the gradient of the Lagrange function related to xc
      which is constant inside p_{f,c} */

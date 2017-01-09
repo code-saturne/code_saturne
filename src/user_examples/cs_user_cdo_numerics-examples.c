@@ -87,19 +87,19 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdo_cc_algo_t
+cs_cdo_cell_center_algo_t
 cs_user_cdo_geometric_settings(void)
 {
   /* Algorithm for computing cell centers */
   /* ==================================== */
 
   /* Choice between:
-     CS_CDO_CC_MEANV:   Cell center is computed as the mean of cell vertices
-     CS_CDO_CC_BARYC:   Cell center is computed as the real cell barycenter
-     CS_CDO_CC_SATURNE: Cell center is given by Code_Saturne
+     CS_CDO_CCENTER_MEANV: Cell center is computed as the mean of cell vertices
+     CS_CDO_CCENTER_BARYC: Cell center is computed as the real cell barycenter
+     CS_CDO_CCENTER_SATURNE: Cell center is given by Code_Saturne
    */
 
-  return CS_CDO_CC_BARYC;
+  return CS_CDO_CCENTER_BARYC;
 }
 
 /*----------------------------------------------------------------------------*/

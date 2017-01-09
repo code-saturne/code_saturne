@@ -51,6 +51,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_domain_post.h"
 #include "cs_evaluate.h"
 #include "cs_equation_common.h"
 #include "cs_gwf.h"
@@ -58,7 +59,6 @@
 #include "cs_log.h"
 #include "cs_log_iteration.h"
 #include "cs_mesh_location.h"
-#include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
@@ -489,8 +489,13 @@ cs_domain_init(const cs_mesh_t             *mesh,
   /* Build additional connectivity structures */
   domain->connect = cs_cdo_connect_init(mesh);
 
+  /* Default = CS_CDO_CC_SATURNE but can be modify by the user */
+  cs_cdo_cell_center_algo_t  cc_algo =
+    cs_user_cdo_geometric_settings();
+
   /* Build additional mesh quantities in a seperate structure */
-  domain->cdo_quantities =  cs_cdo_quantities_build(mesh,
+  domain->cdo_quantities =  cs_cdo_quantities_build(cc_algo,
+                                                    mesh,
                                                     mesh_quantities,
                                                     domain->connect);
 
@@ -600,6 +605,8 @@ cs_domain_free(cs_domain_t   *domain)
 {
   if (domain == NULL)
     return domain;
+
+  cs_domain_post_finalize();
 
   /* cs_mesh_t and cs_mesh_quantities_t structure are not freed since they
      are only shared */
@@ -961,14 +968,12 @@ cs_domain_last_setup(cs_domain_t    *domain)
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
-  /* Set pointers of function if additional postprocessing is requested */
-  cs_post_add_time_mesh_dep_output(cs_domain_extra_post,
-                                   domain);
-
-  if (domain->verbosity > 0 && domain->profiling) {
-    cs_hodge_set_timer_stats(domain->verbosity);
-    cs_property_set_timer_stats(domain->verbosity);
-  }
+  /* Initialization default post-processing for the computational domain */
+  cs_domain_post_init(domain->dt_cur,
+                      domain->cdo_quantities,
+                      domain->n_adv_fields, domain->adv_fields,
+                      domain->n_properties, domain->properties,
+                      domain->n_equations, domain->equations);
 
   /* Define a scheme flag for the current domain */
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
@@ -1229,6 +1234,7 @@ cs_domain_define_current_time_step(cs_domain_t   *domain)
                 " Invalid way of defining the current time step.\n"
                 " Please modify your settings.");
 
+    cs_domain_post_update(domain->dt_cur);
   }
 
   /* Check if this is the last iteration */
@@ -1498,10 +1504,7 @@ cs_domain_activate_gwf(cs_domain_t   *domain,
   int  richards_eq_id = domain->n_equations;
 
   /* Allocate a new structure for managing groundwater module */
-  cs_gwf_t  *gwf = cs_gwf_create();
-
-  /* Associate this structure to the domain structure */
-  domain->gwf = gwf;
+  domain->gwf = cs_gwf_create();
 
   /* Add a property related to the diffusion term of the Richards eq. */
   cs_property_t  *permeability = cs_domain_add_property(domain,
@@ -1550,10 +1553,7 @@ cs_domain_activate_gwf(cs_domain_t   *domain,
   BFT_REALLOC(domain->equations, domain->n_equations, cs_equation_t *);
   domain->equations[richards_eq_id] = richards_eq;
 
-  /* Add default post-processing related to groundwater flow module */
-  cs_post_add_time_mesh_dep_output(cs_gwf_extra_post, domain->gwf);
-
-  return gwf;
+  return domain->gwf;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1905,8 +1905,8 @@ cs_domain_solve(cs_domain_t  *domain)
     else if (do_output) {
       cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
       cs_log_printf(CS_LOG_DEFAULT,
-                    "-ite- %5d; time = %5.3e s >> Solve domain\n",
-                    nt_cur, domain->time_step->t_cur);
+                    "-ite- %5d; time= %5.3e s; dt= %5.3e >> Solve domain\n",
+                    nt_cur, domain->time_step->t_cur, domain->dt_cur);
       cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
     }
     /* Predefined equation for the computation of the wall distance */
@@ -2059,14 +2059,14 @@ cs_domain_write_restart(const cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Process the computed solution
+ * \brief  Process the computational domain after the resolution
  *
  * \param[in]  domain     pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_postprocess(cs_domain_t  *domain)
+cs_domain_process_after_solve(cs_domain_t  *domain)
 {
   cs_timer_t  t0 = cs_timer_time();
 
@@ -2087,99 +2087,10 @@ cs_domain_postprocess(cs_domain_t  *domain)
   /* Post-processing */
   /* =============== */
 
-  /* Activation or not of each writer according to the time step */
-  cs_post_activate_by_time_step(domain->time_step);
-
-  /* User-defined activation of writers for a fine-grained control */
-  cs_user_postprocess_activate(domain->time_step->nt_max,
-                               domain->time_step->nt_cur,
-                               domain->time_step->t_cur);
-
-  /* Predefined extra-operations related to
-      - the domain (advection fields and properties),
-      - equations
-      - groundwater flows
-     are also handled during the call of this function thanks to
-     cs_post_add_time_mesh_dep_output() function pointer
-  */
-  cs_post_write_vars(domain->time_step);
+  cs_domain_post(domain->time_step);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(domain->tcp), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined post-processing output for the computational domain
- *         The prototype of this function is fixed since it is a function
- *         pointer defined in cs_post.h (cs_post_time_mesh_dep_output_t)
- *
- * \param[in, out] input        pointer to a optional structure (here a
- *                              cs_gwf_t structure)
- * \param[in]      mesh_id      id of the output mesh for the current call
- * \param[in]      cat_id       category id of the output mesh for this call
- * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),
- *                              interior faces (ent_flag[1]), boundary faces
- *                              (ent_flag[2]), particles (ent_flag[3]) or probes
- *                              (ent_flag[4])
- * \param[in]      n_cells      local number of cells of post_mesh
- * \param[in]      n_i_faces    local number of interior faces of post_mesh
- * \param[in]      n_b_faces    local number of boundary faces of post_mesh
- * \param[in]      cell_ids     list of cells (0 to n-1)
- * \param[in]      i_face_ids   list of interior faces (0 to n-1)
- * \param[in]      b_face_ids   list of boundary faces (0 to n-1)
- * \param[in]      time_step    pointer to a cs_time_step_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_extra_post(void                      *input,
-                     int                        mesh_id,
-                     int                        cat_id,
-                     int                        ent_flag[5],
-                     cs_lnum_t                  n_cells,
-                     cs_lnum_t                  n_i_faces,
-                     cs_lnum_t                  n_b_faces,
-                     const cs_lnum_t            cell_ids[],
-                     const cs_lnum_t            i_face_ids[],
-                     const cs_lnum_t            b_face_ids[],
-                     const cs_time_step_t      *time_step)
-{
-  CS_UNUSED(cat_id);
-  CS_UNUSED(ent_flag);
-  CS_UNUSED(n_cells);
-  CS_UNUSED(n_i_faces);
-  CS_UNUSED(n_b_faces);
-  CS_UNUSED(cell_ids);
-  CS_UNUSED(i_face_ids);
-  CS_UNUSED(b_face_ids);
-
-  if (input == NULL)
-    return;
-
-  if (mesh_id != -1) /* Post-processing only on the generic volume mesh */
-    return;
-
-  cs_domain_t  *domain = (cs_domain_t *)input;
-
-  /* Post-processing related to advection fields */
-  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
-    cs_advection_field_extra_post(domain->adv_fields[adv_id],
-                                  time_step,
-                                  domain->dt_cur);
-
-  /* Post-processing related to properties */
-  for (int pty_id = 0; pty_id < domain->n_properties; pty_id++)
-    cs_property_extra_post(domain->properties[pty_id],
-                           time_step,
-                           domain->dt_cur);
-
-  /* Post-processing related to equations */
-  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
-    cs_equation_extra_post(domain->equations[eq_id],
-                           time_step,
-                           domain->dt_cur);
-
 }
 
 /*----------------------------------------------------------------------------*/

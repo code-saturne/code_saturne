@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -44,6 +45,7 @@
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_hho_scaleq.h"
+#include "cs_log.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -95,6 +97,10 @@ static cs_connect_index_t  *cs_connect_f2f = NULL;
 static const cs_cdo_quantities_t  *cs_shared_quant;
 static const cs_cdo_connect_t  *cs_shared_connect;
 static const cs_time_step_t  *cs_shared_time_step;
+
+/* Monitoring */
+static cs_timer_counter_t  tca; // assembling process
+static cs_timer_counter_t  tcc; // connectivity building
 
 /*============================================================================
  * Private function prototypes
@@ -281,6 +287,10 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 {
   assert(connect != NULL); // Sanity check
 
+  /* Monitoring */
+  CS_TIMER_COUNTER_INIT(tca); // assembling system
+  CS_TIMER_COUNTER_INIT(tcc); // connectivity
+
   /* Two types of mat. ass. are considered:
      - The one related to matrix based on vertices
      - The one related to matrix based on faces
@@ -304,8 +314,14 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
   if (scheme_flag & CS_SCHEME_FLAG_CDOVB ||
       scheme_flag & CS_SCHEME_FLAG_CDOVCB) {
 
+    cs_timer_t t0 = cs_timer_time();
+
     /* Build the "v2v" connectivity index */
     cs_connect_v2v = _get_v2v(connect);
+
+    /* Monitoring */
+    cs_timer_t t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&tcc, &t0, &t1);
 
     cs_matrix_assembler_t  *ma =
       cs_matrix_assembler_create(connect->v_rs->l_range, true); // sep_diag
@@ -315,6 +331,10 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
     cs_matrix_structure_t  *ms =
       cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
+    /* Monitoring */
+    cs_timer_t t2 = cs_timer_time();
+    cs_timer_counter_add_diff(&tca, &t1, &t2);
+
     cs_equation_common_ma[CS_EQ_COMMON_VERTEX] = ma;
     cs_equation_common_ms[CS_EQ_COMMON_VERTEX] = ms;
 
@@ -322,8 +342,14 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
   if (scheme_flag & CS_SCHEME_FLAG_CDOFB || scheme_flag & CS_SCHEME_FLAG_HHO) {
 
+    cs_timer_t t0 = cs_timer_time();
+
     /* Build the "f2f" connectivity index */
     cs_connect_f2f = _get_f2f(connect);
+
+    /* Monitoring */
+    cs_timer_t t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&tcc, &t0, &t1);
 
     cs_matrix_assembler_t  *ma =
       cs_matrix_assembler_create(connect->f_rs->l_range, true); // sep_diag
@@ -332,6 +358,10 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
     cs_matrix_structure_t  *ms =
       cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+
+    /* Monitoring */
+    cs_timer_t t2 = cs_timer_time();
+    cs_timer_counter_add_diff(&tca, &t1, &t2);
 
     cs_equation_common_ma[CS_EQ_COMMON_FACE] = ma;
     cs_equation_common_ms[CS_EQ_COMMON_FACE] = ms;
@@ -415,13 +445,15 @@ cs_equation_free_common_structures(cs_flag_t   scheme_flag)
   /* Free cell-wise and face-wise view of a mesh */
   cs_cdo_local_finalize();
 
+  cs_timer_t t0 = cs_timer_time();
+
   if (scheme_flag & CS_SCHEME_FLAG_CDOVB || scheme_flag & CS_SCHEME_FLAG_CDOVCB)
     cs_index_free(&(cs_connect_v2v));
 
   if (scheme_flag & CS_SCHEME_FLAG_CDOFB || scheme_flag & CS_SCHEME_FLAG_HHO)
     cs_index_free(&(cs_connect_f2f));
 
-  /* Free common structures specific to a numerical scheme */
+    /* Free common structures specific to a numerical scheme */
   if ((scheme_flag & CS_SCHEME_FLAG_CDOVB) &&
       (scheme_flag & CS_SCHEME_FLAG_SCALAR))
     cs_cdovb_scaleq_finalize();
@@ -440,6 +472,10 @@ cs_equation_free_common_structures(cs_flag_t   scheme_flag)
 
   BFT_FREE(cs_equation_common_work_buffer);
 
+  /* Monitoring */
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&tcc, &t0, &t1);
+
   /* matrix assemblers and structures */
   for (int i = 0; i < CS_EQ_N_COMMONS; i++) {
     cs_matrix_structure_destroy(&(cs_equation_common_ms[i]));
@@ -447,6 +483,14 @@ cs_equation_free_common_structures(cs_flag_t   scheme_flag)
   }
   BFT_FREE(cs_equation_common_ms);
   BFT_FREE(cs_equation_common_ma);
+
+  /* Monitoring */
+  cs_timer_t t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&tca, &t1, &t2);
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f s in Connectivity"
+                "/Assembly\n",
+                "<CDO/CommonEq> Runtime",
+                tcc.wall_nsec*1e-9, tca.wall_nsec*1e-9);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -819,6 +863,43 @@ size_t
 cs_equation_get_tmpbuf_size(void)
 {
   return cs_equation_common_work_buffer_size;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Print a message in the performance output file related to the
+ *          monitoring of equation
+ *
+ * \param[in]  eqname    pointer to the name of the current equation
+ * \param[in]  tcb       timer counter for the build of the system
+ * \param[in]  tcs       timer counter for the evaluation of source terms
+ * \param[in]  tce       timer counter for doing extra operations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_print_monitoring(const char                 *eqname,
+                             const cs_timer_counter_t    tcb,
+                             const cs_timer_counter_t    tcs,
+                             const cs_timer_counter_t    tce)
+{
+  double t[3] = {tcb.wall_nsec, tcs.wall_nsec, tce.wall_nsec};
+  for (int i = 0; i < 3; i++) t[i] *= 1e-9;
+
+  if (eqname == NULL)
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  " %-35s %9.3f %9.3f %9.3f seconds in build/source/extra\n",
+                  "<CDO/Equation> Monitoring", t[0], t[1], t[2]);
+  else {
+    char *msg = NULL;
+    int len = 1 + strlen("<CDO/> Monitoring") + strlen(eqname);
+    BFT_MALLOC(msg, len, char);
+    sprintf(msg, "<CDO/%s> Monitoring", eqname);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  " %-35s %9.3f %9.3f %9.3f seconds in build/source/extra\n",
+                  msg, t[0], t[1], t[2]);
+    BFT_FREE(msg);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

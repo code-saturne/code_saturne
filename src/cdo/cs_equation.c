@@ -2246,10 +2246,12 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
 {
   if (eq == NULL)
     return NULL;
-  if (eq->get_extra_values == NULL)
+  if (eq->get_extra_values == NULL) {
     bft_error(__FILE__, __LINE__, 0,
               _(" No function defined for getting the face values in eq. %s"),
               eq->name);
+    return NULL; // Avoid a warning
+  }
 
   if (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB ||
       eq->param->space_scheme == CS_SPACE_SCHEME_HHO)
@@ -2274,10 +2276,12 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
 {
   if (eq == NULL)
     return NULL;
-  if (eq->get_extra_values == NULL)
+  if (eq->get_extra_values == NULL) {
     bft_error(__FILE__, __LINE__, 0,
               _(" No function defined for getting the cell values in eq. %s"),
               eq->name);
+    return NULL; // Avoid a warning
+  }
 
   switch (eq->param->space_scheme) {
   case CS_SPACE_SCHEME_CDOFB:
@@ -2320,10 +2324,12 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
-  if (eq->compute_flux_across_plane == NULL)
+  if (eq->compute_flux_across_plane == NULL) {
     bft_error(__FILE__, __LINE__, 0,
               _(" Computation of the diffusive and convective flux across\n"
                 " a plane is not available for equation %s\n"), eq->name);
+    return; // Avoid a warning
+  }
 
   /* Get the mesh location id from its name */
   const int  ml_id = _check_ml_name(ml_name, N_("none"));
@@ -2356,10 +2362,12 @@ cs_equation_compute_diff_flux(const cs_equation_t   *eq,
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
-  if (eq->compute_cellwise_diff_flux == NULL)
+  if (eq->compute_cellwise_diff_flux == NULL) {
     bft_error(__FILE__, __LINE__, 0,
               _(" Cellwise computation of the diffusive flux is not\n"
                 " available for equation %s\n"), eq->name);
+    return; // Avoid a warning
+  }
 
   /* Retrieve the field from its id */
   cs_field_t  *fld = cs_field_by_id(eq->field_id);

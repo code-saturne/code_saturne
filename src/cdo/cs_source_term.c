@@ -1096,6 +1096,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_source_term_t    *source,
     cs_real_3_t  xfc;
 
     const double  *xf = cm->face[f].center;
+    const double  hf_coef = cs_math_onesix * cm->hfc[f];
 
     for (int k = 0; k < 3; k++) xfc[k] = 0.25*(xf[k] + cm->xc[k]);
 
@@ -1105,7 +1106,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_source_term_t    *source,
       const short int  v1 = cm->e2v_ids[2*e];
       const short int  v2 = cm->e2v_ids[2*e+1];
       const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
-      const double  tet_vol = 0.5*cs_math_voltet(xv1, xv2, xf, cm->xc);
+      const double  tet_vol = cm->tef[i]*hf_coef;
 
       // xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
       for (int k = 0; k < 3; k++)
@@ -1120,20 +1121,20 @@ cs_source_term_dcsd_bary_by_analytic(const cs_source_term_t    *source,
   } // Loop on cell faces
 
   /* Compute the source term contribution for each vertex */
-  const double  tcur = cs_time_step->t_cur;
-  double  *result = cb->values;
-
+  double  *vol_vc = cb->values;
   for (short int v = 0; v < cm->n_vc; v++) {
-    const double  vol_vc = cm->vol_c * cm->wvc[v];
-    const double  invvol = 1/vol_vc;
+    vol_vc[v] = cm->vol_c * cm->wvc[v];
+    const double  invvol = 1/vol_vc[v];
     for (int k = 0; k < 3; k++) xgv[v][k] *= invvol;
   }
 
-  source->def.analytic(tcur, cm->n_vc, (const cs_real_t *)xgv, result);
+  /* Call the analytic function to evaluate the function at xgv */
+  const double  tcur = cs_time_step->t_cur;
+  double  *eval_xgv = vol_vc + cm->n_vc;
+  source->def.analytic(tcur, cm->n_vc, (const cs_real_t *)xgv, eval_xgv);
 
   for (short int v = 0; v < cm->n_vc; v++)
-    values[v] = cm->vol_c * cm->wvc[v] * result[v];
-
+    values[v] = cm->vol_c * cm->wvc[v] * eval_xgv[v];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1159,7 +1160,6 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_source_term_t    *source,
                                      double                    *values)
 {
   CS_UNUSED(cb);
-
   if (source == NULL)
     return;
 
@@ -1173,9 +1173,10 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_source_term_t    *source,
   for (short int f = 0; f < cm->n_fc; f++) {
 
     cs_real_3_t  xg[2], xfc;
-    cs_real_t  result[2];
+    cs_real_t  eval_xg[2];
 
     const double  *xf = cm->face[f].center;
+    const double  hf_coef = cs_math_onesix * cm->hfc[f];
 
     for (int k = 0; k < 3; k++) xfc[k] = 0.25*(xf[k] + cm->xc[k]);
 
@@ -1185,7 +1186,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_source_term_t    *source,
       const short int  v1 = cm->e2v_ids[2*e];
       const short int  v2 = cm->e2v_ids[2*e+1];
       const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
-      const double  tet_vol = 0.5*cs_math_voltet(xv1, xv2, xf, cm->xc);
+      const double  half_pef_vol = cm->tef[i]*hf_coef;
 
       // xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2)
       for (int k = 0; k < 3; k++)
@@ -1195,9 +1196,9 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_source_term_t    *source,
       for (int k = 0; k < 3; k++)
         xg[1][k] = xfc[k] + 0.375*xv2[k] + 0.125*xv1[k];
 
-      ana(tcur, 2, (const cs_real_t *)xg, result);
-      values[v1] += tet_vol * result[0];
-      values[v2] += tet_vol * result[1];
+      ana(tcur, 2, (const cs_real_t *)xg, eval_xg);
+      values[v1] += half_pef_vol * eval_xg[0];
+      values[v2] += half_pef_vol * eval_xg[1];
 
     } // Loop on face edges
 

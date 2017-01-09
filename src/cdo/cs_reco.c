@@ -95,7 +95,6 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
   const double  *dcv = quant->dcell_vol;
   const cs_sla_matrix_t  *f2e = connect->f2e;
   const cs_sla_matrix_t  *e2v = connect->e2v;
-  const cs_mesh_t  *m = cs_glob_mesh;
 
   if (dof == NULL)
     return;
@@ -131,7 +130,7 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
       for (l = e2v->idx[eid]; l < e2v->idx[eid+1]; l++) {
 
         vid = e2v->col_id[l];
-        cs_math_3_length_unitv(&(m->vtx_coord[3*vid]), eq.center, &lve, uve);
+        cs_math_3_length_unitv(quant->vtx_coord + 3*vid, eq.center, &lve, uve);
         cs_math_3_cross_product(uve, uef, cp);
         frec[i] += 0.5 * lve * lef * cs_math_3_norm(cp) * dof[vid];
 

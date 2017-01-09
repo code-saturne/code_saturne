@@ -47,9 +47,7 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
-#include "cs_post.h"
 #include "cs_reco.h"
-#include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -67,45 +65,6 @@ BEGIN_C_DECLS
 
 #define CS_PROPERTY_DBG  0
 
-#define CS_PROPERTY_POST_FOURIER (1 << 1)  // postprocess Fourier number
-
-/* Set of parameters attached to a property */
-struct _cs_property_t {
-
-  char  *restrict  name;
-  cs_flag_t        post_flag; // Indicate what to postprocess
-
-  /* Short descriptor to know where is defined the property and what kind of
-     property one considers (mask of bits) */
-  cs_desc_t        flag;
-
-  /* The number of values to set depends on the type of property
-     - isotropic   = 1 => CS_PARAM_VAR_SCAL
-     - orthotropic = 3 => CS_PARAM_VAR_VECT
-     - anisotropic = 9 => CS_PARAM_VAR_TENS
-  */
-
-  cs_property_type_t   type;  // isotropic, anistotropic...
-
-  /* Members to define the value of the property by subdomains (up to now,
-     only subdomains built from an union of cells are considered) */
-
-  int               n_max_subdomains; // requested number of subdomains
-  int               n_subdomains;     // current number of subddomains defined
-  cs_param_def_t   *defs;             // list of definitions for each subdomain
-  short int        *def_ids;          /* id of the definition related to each
-                                         cell.
-                                         NULL is only one definition is set */
-
-  /* Useful buffers to deal with more complex definitions */
-
-  cs_real_t   *array1;   // if the property hinges on an array
-  cs_desc_t    desc1;    // short description of the related array
-  cs_real_t   *array2;   // if the property hinges on a second array
-  cs_desc_t    desc2;    // short description of the related array
-
-};
-
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -118,9 +77,6 @@ static const char _err_empty_pty[] =
 static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
 static const cs_time_step_t  *cs_time_step;
-
-/* Id related to cs_timer_stats structure used for monitoring */
-static int  property_ts_id = -1;
 
 /*============================================================================
  * Private function prototypes
@@ -443,25 +399,6 @@ cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
   cs_time_step = time_step;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Initialize cs_timer_stats_t structure for monitoring purpose
- *
- * \param[in]  level      level of details requested
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_set_timer_stats(int   level)
-{
-  if (level < 1)
-    return;
-
-  /* Timer statistics */
-  property_ts_id = cs_timer_stats_create("operations", "property", "property");
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1164,9 +1101,6 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
   if (pty == NULL)
     return;
 
-  if (property_ts_id > -1)
-    cs_timer_stats_start(property_ts_id);
-
   /* Initialize extra-diag. values of the tensor */
   tensor[0][1] = tensor[1][0] = tensor[2][0] = 0;
   tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
@@ -1290,9 +1224,6 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
                 tensor[1][0], tensor[1][1], tensor[1][2],
                 tensor[2][0], tensor[2][1], tensor[2][2]);
 #endif
-
-  if (property_ts_id > -1)
-    cs_timer_stats_stop(property_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1315,9 +1246,6 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
 
   if (pty == NULL)
     return result;
-
-  if (property_ts_id > -1)
-    cs_timer_stats_start(property_ts_id);
 
   if (pty->type != CS_PROPERTY_ISO)
     bft_error(__FILE__, __LINE__, 0,
@@ -1375,9 +1303,6 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
     break;
 
   } /* type of definition */
-
-  if (property_ts_id > -1)
-    cs_timer_stats_stop(property_ts_id);
 
   return result;
 }
@@ -1447,60 +1372,6 @@ cs_property_get_fourier(const cs_property_t     *pty,
     } // Loop on cells
 
   } // Type of property
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined post-processing output for property structures
- *
- * \param[in]  pty         pointer to the property structure
- * \param[in]  time_step   pointer to a cs_time_step_t structure
- * \param[in]  dt_cur      value of the current time step
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_extra_post(const cs_property_t       *pty,
-                       const cs_time_step_t      *time_step,
-                       double                     dt_cur)
-{
-  if (pty == NULL)
-    return;
-  if (pty->post_flag == 0)
-    return;
-
-  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
-
-  if (pty->post_flag & CS_PROPERTY_POST_FOURIER) {
-
-    char  *label = NULL;
-    double  *fourier = NULL;
-    int len = strlen(pty->name) + 8 + 1;
-
-    BFT_MALLOC(fourier, cdoq->n_cells, double);
-    BFT_MALLOC(label, len, char);
-    sprintf(label, "%s.Fourier", pty->name);
-
-    /* Compute Fourier number */
-    cs_property_get_fourier(pty, dt_cur, fourier);
-
-    cs_post_write_var(CS_POST_MESH_VOLUME,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      label,
-                      1,
-                      true,           // interlace
-                      true,           // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      fourier,        // values on cells
-                      NULL,           // values at internal faces
-                      NULL,           // values at border faces
-                      time_step);     // time step management struct.
-
-    BFT_FREE(label);
-    BFT_FREE(fourier);
-
-  } // Post Fourier number
 
 }
 

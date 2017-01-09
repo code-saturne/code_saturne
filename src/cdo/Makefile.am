@@ -64,6 +64,7 @@ cs_cdofb_scaleq.h \
 cs_cdovb_scaleq.h \
 cs_cdovcb_scaleq.h \
 cs_domain.h \
+cs_domain_post.h \
 cs_equation.h \
 cs_equation_common.h \
 cs_equation_param.h \
@@ -99,6 +100,7 @@ cs_cdofb_scaleq.c \
 cs_cdovb_scaleq.c \
 cs_cdovcb_scaleq.c \
 cs_domain.c \
+cs_domain_post.c \
 cs_equation.c \
 cs_equation_common.c \
 cs_equation_param.c \

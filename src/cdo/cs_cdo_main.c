@@ -176,9 +176,8 @@ _setup_domain(cs_mesh_t             *m,
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                "<CDO/Setup> Runtime                    %12.3f s\n",
-                time_count.wall_nsec*1e-9);
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
+                "<CDO/Setup> Runtime", time_count.wall_nsec*1e-9);
 
   return domain;
 }
@@ -256,7 +255,7 @@ cs_cdo_main(cs_mesh_t             *m,
     cs_domain_solve(domain);
 
     /* Extra operations and post-processing of the computed solutions */
-    cs_domain_postprocess(domain);
+    cs_domain_process_after_solve(domain);
 
     /* Increment time */
     cs_domain_increment_time(domain);
@@ -264,9 +263,8 @@ cs_cdo_main(cs_mesh_t             *m,
 
   }
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                "<CDO/Post> Runtime                     %12.3f s\n",
-                domain->tcp.wall_nsec*1e-9);
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
+                "<CDO/Post> Runtime", domain->tcp.wall_nsec*1e-9);
 
   /* Free main CDO structures */
   _finalize(domain);
@@ -279,9 +277,8 @@ cs_cdo_main(cs_mesh_t             *m,
   cs_timer_stats_stop(cdo_ts_id);
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                "<CDO> Total runtime                    %12.3f s\n",
-                time_count.wall_nsec*1e-9);
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
+                "<CDO> Total runtime", time_count.wall_nsec*1e-9);
 
   if (cs_glob_rank_id <= 0)
     printf("\n  --> Exit CDO module: simulation completed.\n\n");

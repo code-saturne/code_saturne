@@ -46,8 +46,6 @@
 #include "cs_cdo_scheme_geometry.h"
 #include "cs_log.h"
 #include "cs_math.h"
-#include "cs_sort.h"
-#include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -92,12 +90,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private constant variables
  *============================================================================*/
-
-/* Id related to cs_timer_stats structure used for monitoring */
-static int  hodge_ts_id = -1;
-static int  hodge_cost_ts_id = -1;
-static int  hodge_wbs_ts_id = -1;
-static int  hodge_vor_ts_id = -1;
 
 /*! \endcond (end ignore by Doxygen) */
 
@@ -293,284 +285,9 @@ _compute_hodge_cost(const int       n_ent,
 
 }
 
-/* /\*----------------------------------------------------------------------------*\/ */
-/* /\*! */
-/*  * \brief   Build a local discrete Hodge operator using the generic COST algo. */
-/*  *          and cellwise view of the mesh */
-/*  *          COST means COnsistency + STabilization */
-/*  * */
-/*  * \param[in]      h_info     pointer to a cs_param_hodge_t structure */
-/*  * \param[in]      cm         pointer to a cs_cell_mesh_t structure */
-/*  * \param[in, out] hloc       pointer to a cs_locmat_t structure */
-/*  * \param[in, out] cb         pointer to a cs_cell_builder_t structure */
-/*  *\/ */
-/* /\*----------------------------------------------------------------------------*\/ */
-
-/* static void */
-/* _cellwise_build_with_cost(const cs_param_hodge_t     h_info, */
-/*                           const cs_cell_mesh_t      *cm, */
-/*                           cs_locmat_t               *hloc, */
-/*                           cs_cell_builder_t         *cb) */
-/* { */
-/*   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST); */
-
-/*   if (hodge_cost_ts_id > -1) */
-/*     cs_timer_stats_start(hodge_cost_ts_id); */
-
-/*   const int  n_ent = hloc->n_ent; */
-
-/*   double  *kappa = cb->values; */
-/*   double  *alpha = cb->values + n_ent; */
-/*   cs_real_3_t  *pq = cb->vectors; */
-/*   cs_real_3_t  *dq = cb->vectors + n_ent; */
-
-/*   /\* Set numbering and geometrical quantities Hodge builder *\/ */
-/*   switch (h_info.type) { */
-
-/*   case CS_PARAM_HODGE_TYPE_EPFD: */
-
-/*     for (short int e = 0; e < cm->n_ec; e++) { */
-
-/*       const cs_nvec3_t  dfq = cm->dface[e]; */
-/*       const cs_quant_t  peq = cm->edge[e]; */
-
-/*       hloc->ids[e] = cm->e_ids[e]; */
-/*       for (int k = 0; k < 3; k++) { */
-/*         dq[e][k] = dfq.meas * dfq.unitv[k]; */
-/*         pq[e][k] = peq.meas * peq.unitv[k]; */
-/*       } */
-
-/*     } /\* Loop on cell edges *\/ */
-/*     break; */
-
-/*   case CS_PARAM_HODGE_TYPE_FPED: */
-
-/*     for (short int f = 0; f < cm->n_fc; f++) { */
-
-/*       const cs_nvec3_t  deq = cm->dedge[f]; */
-/*       const cs_quant_t  pfq = cm->face[f]; */
-
-/*       hloc->ids[f] = cm->f_ids[f]; */
-/*       for (int k = 0; k < 3; k++) { */
-/*         pq[f][k] = pfq.meas * pfq.unitv[k]; */
-/*         dq[f][k] = deq.meas * deq.unitv[k]; */
-/*       } */
-
-/*     } /\* Loop on cell faces *\/ */
-/*     break; */
-
-/*   case CS_PARAM_HODGE_TYPE_EDFP: */
-
-/*     for (short int f = 0; f < cm->n_fc; f++) { */
-
-/*       const short int  sgn = cm->f_sgn[f]; */
-/*       const cs_nvec3_t  deq = cm->dedge[f]; */
-/*       const cs_quant_t  pfq = cm->face[f]; */
-
-/*       hloc->ids[f] = cm->f_ids[f]; */
-/*       for (int k = 0; k < 3; k++) { */
-/*         pq[f][k] = sgn * deq.meas * deq.unitv[k]; */
-/*         dq[f][k] = sgn * pfq.meas * pfq.unitv[k]; */
-/*       } */
-
-/*     } /\* Loop on cell faces *\/ */
-/*     break; */
-
-/*   default: */
-/*     bft_error(__FILE__, __LINE__, 0, */
-/*               _(" This type of discrete Hodge operator is not covered.\n")); */
-
-/*   } /\* End of switch *\/ */
-
-/*   /\* Sanity checks *\/ */
-/*   assert(n_ent < hloc->n_max_ent + 1); */
-
-/*   /\* Compute additional geometrical quantities: qmq and T */
-/*      Initial the local Hodge matrix with the consistency part which is */
-/*      constant over a cell. */
-/*      Switch arguments between discrete Hodge operator from PRIMAL->DUAL space */
-/*      and discrete Hodge operator from DUAL->PRIMAL space *\/ */
-/*   if (h_info.type == CS_PARAM_HODGE_TYPE_FPED || */
-/*       h_info.type == CS_PARAM_HODGE_TYPE_EPFD) { /\* PRIMAL --> DUAL *\/ */
-
-/*     if (h_info.is_unity) */
-/*       _compute_cost_quant_iso(n_ent, 1/cm->vol_c, 1.0, */
-/*                               (const cs_real_t (*)[3])pq, */
-/*                               (const cs_real_t (*)[3])dq, */
-/*                               alpha, kappa, hloc); */
-/*     else if (h_info.is_iso) */
-/*       _compute_cost_quant_iso(n_ent, 1/cm->vol_c, cb->pty_val, */
-/*                               (const cs_real_t (*)[3])pq, */
-/*                               (const cs_real_t (*)[3])dq, */
-/*                               alpha, kappa, hloc); */
-/*     else */
-/*       _compute_cost_quant(n_ent, 1/cm->vol_c, */
-/*                           (const cs_real_3_t *)cb->pty_mat, */
-/*                           (const cs_real_t (*)[3])pq, */
-/*                           (const cs_real_t (*)[3])dq, */
-/*                           alpha, kappa, hloc); */
-
-/*   } */
-/*   else if (h_info.type == CS_PARAM_HODGE_TYPE_EDFP) { /\* DUAL --> PRIMAL *\/ */
-
-/*     if (h_info.is_unity) */
-/*       _compute_cost_quant_iso(n_ent, 1/cm->vol_c, 1.0, */
-/*                               (const cs_real_t (*)[3])dq, */
-/*                               (const cs_real_t (*)[3])pq, */
-/*                               alpha, kappa, hloc); */
-/*     else if (h_info.is_iso) */
-/*       _compute_cost_quant_iso(n_ent, 1/cm->vol_c, cb->pty_val, */
-/*                               (const cs_real_t (*)[3])dq, */
-/*                               (const cs_real_t (*)[3])pq, */
-/*                               alpha, kappa, hloc); */
-/*     else */
-/*       _compute_cost_quant(n_ent, 1/cm->vol_c, */
-/*                           (const cs_real_3_t *)cb->pty_mat, */
-/*                           (const cs_real_t (*)[3])dq, */
-/*                           (const cs_real_t (*)[3])pq, */
-/*                           alpha, kappa, hloc); */
-
-/*   } */
-
-/*   _compute_hodge_cost(n_ent, h_info.coef*h_info.coef, alpha, kappa, */
-/*                       hloc->val); */
-
-/*   if (hodge_cost_ts_id > -1) */
-/*     cs_timer_stats_stop(hodge_cost_ts_id); */
-/* } */
-
-/* /\*----------------------------------------------------------------------------*\/ */
-/* /\*! */
-/*  * \brief   Build a local discrete Hodge op. using the Voronoi algo. */
-/*  * */
-/*  * \param[in]       cm     pointer to a cs_cell_mesh_t structure */
-/*  * \param[in, out]  hb     pointer to a cs_hodge_builder_t struct. */
-/*  *\/ */
-/* /\*----------------------------------------------------------------------------*\/ */
-
-/* static void */
-/* _cellwise_build_with_voronoi(const cs_cell_mesh_t    *cm, */
-/*                              cs_hodge_builder_t      *hb) */
-/* { */
-/*   cs_real_3_t  mv; */
-/*   cs_locmat_t  *hmat = hb->hloc; */
-
-/*   if (hodge_vor_ts_id > -1) */
-/*     cs_timer_stats_start(hodge_vor_ts_id); */
-
-/*   /\* Only a diagonal term by entity to compute *\/ */
-/*   switch (hb->h_info.type) { */
-
-/*   case CS_PARAM_HODGE_TYPE_EPFD: */
-
-/*     if (hb->pty_is_iso) { */
-
-/*       for (int e = 0; e < cm->n_ec; e++) { /\* Loop on cell edges *\/ */
-
-/*         cs_nvec3_t  dfq = cm->dface[e]; */
-/*         cs_quant_t  peq = cm->edge[e]; */
-
-/*         hmat->ids[e] = cm->e_ids[e]; */
-/*         hmat->val[e*cm->n_ec+e] = hb->ptyval * dfq.meas/peq.meas; */
-
-/*       } */
-
-/*     } */
-/*     else { */
-
-/*       for (int e = 0; e < cm->n_ec; e++) { /\* Loop on cell edges *\/ */
-
-/*         cs_nvec3_t  dfq = cm->dface[e]; */
-/*         cs_quant_t  peq = cm->edge[e]; */
-
-/*         hmat->ids[e] = cm->e_ids[e]; */
-/*         cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, dfq.unitv, mv); */
-/*         hmat->val[e*cm->n_ec+e] = _dp3(mv, dfq.unitv) * dfq.meas/peq.meas; */
-
-/*       } */
-
-/*     } */
-/*     break; */
-
-/*   case CS_PARAM_HODGE_TYPE_FPED: */
-
-/*     if (hb->pty_is_iso) { */
-
-/*       for (int f = 0; f < cm->n_fc; f++) { /\* Loop on cell faces *\/ */
-
-/*         cs_nvec3_t  deq = cm->dedge[f]; */
-/*         cs_quant_t  pfq = cm->face[f]; */
-
-/*         hmat->ids[f] = cm->f_ids[f]; */
-/*         hmat->val[f*cm->n_fc+f] = hb->ptyval * deq.meas/pfq.meas; */
-
-/*       } */
-
-/*     } */
-/*     else { */
-
-/*       for (int f = 0; f < cm->n_fc; f++) { /\* Loop on cell faces *\/ */
-
-/*         cs_nvec3_t  deq = cm->dedge[f]; */
-/*         cs_quant_t  pfq = cm->face[f]; */
-
-/*         hmat->ids[f] = cm->f_ids[f]; */
-/*         cs_math_33_3_product((const cs_real_3_t *)hb->ptymat, deq.unitv, mv); */
-/*         hmat->val[f*cm->n_fc+f] = _dp3(mv, deq.unitv) * deq.meas/pfq.meas; */
-
-/*       } */
-
-/*     } */
-/*     break; */
-
-/*   case CS_PARAM_HODGE_TYPE_VPCD: */
-
-/*     for (int v = 0; v < cm->n_vc; v++) { /\* Loop on cell vertices *\/ */
-
-/*       hmat->ids[v] = cm->v_ids[v]; */
-/*       hmat->val[v*cm->n_vc+v] = hb->ptyval * cm->wvc[v] * cm->vol_c; */
-
-/*     } */
-/*     break; */
-
-/*   default: */
-/*     bft_error(__FILE__, __LINE__, 0, */
-/*               " Invalid type of discrete Hodge operator for the Voronoi algo."); */
-/*     break; */
-
-/*   } // End of switch */
-
-/*   if (hodge_vor_ts_id > -1) */
-/*     cs_timer_stats_stop(hodge_vor_ts_id); */
-/* } */
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Initialize cs_timer_stats_t structure for monitoring purpose
- *
- * \param[in]  level      level of details requested
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hodge_set_timer_stats(int   level)
-{
-  if (level < 1)
-    return;
-
-  /* Timer statistics */
-  hodge_ts_id = cs_timer_stats_create("operations", "hodge", "hodge");
-
-  if (level > 1) {
-    hodge_cost_ts_id = cs_timer_stats_create("hodge", "hodgeC", "hodgeC");
-    hodge_wbs_ts_id = cs_timer_stats_create("hodge", "hodgeW", "hodgeW");
-    hodge_vor_ts_id = cs_timer_stats_create("hodge", "hodgeV", "hodgeV");
-  }
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -590,9 +307,6 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
   /* Sanity checks */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
-
-  if (hodge_cost_ts_id > -1)
-    cs_timer_stats_start(hodge_cost_ts_id);
 
   double  *kappa = cb->values;
   double  *alpha = cb->values + cm->n_ec;
@@ -636,7 +350,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
 
   if (h_info.is_iso || h_info.is_unity) {
 
-    double  pty_val;
+    double  pty_val = 0.;
     if (h_info.is_unity)
       pty_val = 1.0;
     else if (h_info.is_iso)
@@ -756,8 +470,6 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
       cs_locmat_dump(cm->c_id, sloc);
 #endif
 
-  if (hodge_cost_ts_id > -1)
-    cs_timer_stats_stop(hodge_cost_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -779,9 +491,6 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   /* Sanity checks */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
-
-  if (hodge_vor_ts_id > -1)
-    cs_timer_stats_start(hodge_vor_ts_id);
 
   /* Initialize the local stiffness matrix */
   cs_locmat_t  *sloc = cb->loc;
@@ -858,14 +567,13 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   cs_locmat_dump(cm->c_id, sloc);
 #endif
 
-  if (hodge_vor_ts_id > -1)
-    cs_timer_stats_stop(hodge_vor_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local stiffness matrix using the generic WBS algo.
- *          WBS standing for Whitney Barycentric Subdivision (WBS) algo.
+ *          WBS standing for Whitney Barycentric Subdivision (WBS)
+ *          algo.
  *
  * \param[in]      h_info     pointer to a cs_param_hodge_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -881,9 +589,6 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
   /* Sanity checks */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
-
-  if (hodge_wbs_ts_id > -1)
-    cs_timer_stats_start(hodge_wbs_ts_id);
 
   cs_real_3_t  grd_c, grd_f, grd_v1, grd_v2, matg;
 
@@ -994,8 +699,6 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
   cs_locmat_dump(cm->c_id, sloc);
 #endif
 
-  if (hodge_wbs_ts_id > -1)
-    cs_timer_stats_stop(hodge_wbs_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1158,11 +861,6 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
                      const cs_cell_mesh_t     *cm,
                      cs_cell_builder_t        *cb)
 {
-  if (hodge_ts_id > -1)
-    cs_timer_stats_start(hodge_ts_id);
-  if (hodge_wbs_ts_id > -1)
-    cs_timer_stats_start(hodge_wbs_ts_id);
-
   /* Sanity check */
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_VC);
@@ -1260,11 +958,6 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
   cs_locmat_dump(cm->c_id, hdg);
 #endif
 
-  if (hodge_wbs_ts_id > -1)
-    cs_timer_stats_stop(hodge_wbs_ts_id);
-  if (hodge_ts_id > -1)
-    cs_timer_stats_stop(hodge_ts_id);
-
   return hdg;
 }
 
@@ -1286,11 +979,6 @@ cs_hodge_vb_wbs_get(const cs_param_hodge_t    h_info,
                     const cs_cell_mesh_t     *cm,
                     cs_cell_builder_t        *cb)
 {
-  if (hodge_ts_id > -1)
-    cs_timer_stats_start(hodge_ts_id);
-  if (hodge_wbs_ts_id > -1)
-    cs_timer_stats_start(hodge_wbs_ts_id);
-
   /* Sanity check */
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD);
@@ -1374,11 +1062,6 @@ cs_hodge_vb_wbs_get(const cs_param_hodge_t    h_info,
       hdg->val[vi*cm->n_vc + vj] = mj[vi];
   }
 
-  if (hodge_wbs_ts_id > -1)
-    cs_timer_stats_stop(hodge_wbs_ts_id);
-  if (hodge_ts_id > -1)
-    cs_timer_stats_stop(hodge_ts_id);
-
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   cs_locmat_dump(cm->c_id, hdg);
 #endif
@@ -1404,11 +1087,6 @@ cs_hodge_vb_voro_get(const cs_param_hodge_t    h_info,
                      const cs_cell_mesh_t     *cm,
                      cs_cell_builder_t        *cb)
 {
-  if (hodge_ts_id > -1)
-    cs_timer_stats_start(hodge_ts_id);
-  if (hodge_vor_ts_id > -1)
-    cs_timer_stats_start(hodge_vor_ts_id);
-
   /* Sanity check */
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD);
@@ -1431,11 +1109,6 @@ cs_hodge_vb_voro_get(const cs_param_hodge_t    h_info,
       hdg->val[v*cm->n_vc+v] = cb->pty_val * cm->wvc[v] * cm->vol_c;
 
   }
-
-  if (hodge_vor_ts_id > -1)
-    cs_timer_stats_stop(hodge_vor_ts_id);
-  if (hodge_ts_id > -1)
-    cs_timer_stats_stop(hodge_ts_id);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   cs_locmat_dump(cm->c_id, hdg);
@@ -1462,11 +1135,6 @@ cs_hodge_vb_cost_get(const cs_param_hodge_t    h_info,
                      const cs_cell_mesh_t     *cm,
                      cs_cell_builder_t        *cb)
 {
-  if (hodge_ts_id > -1)
-    cs_timer_stats_start(hodge_ts_id);
-  if (hodge_cost_ts_id > -1)
-    cs_timer_stats_start(hodge_cost_ts_id);
-
   /* Sanity check */
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
@@ -1526,11 +1194,6 @@ cs_hodge_vb_cost_get(const cs_param_hodge_t    h_info,
   cs_locmat_dump(cm->c_id, hdg);
 #endif
 
-  if (hodge_cost_ts_id > -1)
-    cs_timer_stats_stop(hodge_cost_ts_id);
-  if (hodge_ts_id > -1)
-    cs_timer_stats_stop(hodge_ts_id);
-
   return hdg;
 }
 
@@ -1558,8 +1221,10 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 {
   if (in_vals == NULL)
     return;
-  if (result == NULL)
+  if (result == NULL) {
     bft_error(__FILE__, __LINE__, 0, "Resulting vector must be allocated");
+    return; // Avoid a warning
+  }
   assert(connect != NULL && quant != NULL); // Sanity checks
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \

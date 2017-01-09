@@ -45,6 +45,8 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+#define CS_PROPERTY_POST_FOURIER (1 << 1)  // postprocess Fourier number
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -59,7 +61,42 @@ typedef enum {
 
 } cs_property_type_t;
 
-typedef struct _cs_property_t cs_property_t;
+/* Set of parameters attached to a property */
+typedef struct {
+
+  char  *restrict  name;
+  cs_flag_t        post_flag; // Indicate what to postprocess
+
+  /* Short descriptor to know where is defined the property and what kind of
+     property one considers (mask of bits) */
+  cs_desc_t        flag;
+
+  /* The number of values to set depends on the type of property
+     - isotropic   = 1 => CS_PARAM_VAR_SCAL
+     - orthotropic = 3 => CS_PARAM_VAR_VECT
+     - anisotropic = 9 => CS_PARAM_VAR_TENS
+  */
+
+  cs_property_type_t   type;  // isotropic, anistotropic...
+
+  /* Members to define the value of the property by subdomains (up to now,
+     only subdomains built from an union of cells are considered) */
+
+  int               n_max_subdomains; // requested number of subdomains
+  int               n_subdomains;     // current number of subddomains defined
+  cs_param_def_t   *defs;             // list of definitions for each subdomain
+  short int        *def_ids;          /* id of the definition related to each
+                                         cell.
+                                         NULL is only one definition is set */
+
+  /* Useful buffers to deal with more complex definitions */
+
+  cs_real_t   *array1;   // if the property hinges on an array
+  cs_desc_t    desc1;    // short description of the related array
+  cs_real_t   *array2;   // if the property hinges on a second array
+  cs_desc_t    desc2;    // short description of the related array
+
+} cs_property_t;
 
 /* List of available keys for setting an advection field */
 typedef enum {
@@ -91,17 +128,6 @@ void
 cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
                                 const cs_cdo_connect_t       *connect,
                                 const cs_time_step_t         *time_step);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Initialize cs_timer_stats_t structure for monitoring purpose
- *
- * \param[in]  level      level of details requested
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_set_timer_stats(int   level);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -442,21 +468,6 @@ void
 cs_property_get_fourier(const cs_property_t     *pty,
                         double                   dt,
                         cs_real_t                fourier[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined post-processing output for property structures
- *
- * \param[in]  pty         pointer to the property structure
- * \param[in]  time_step   pointer to a cs_time_step_t structure
- * \param[in]  dt_cur      value of the current time step
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_extra_post(const cs_property_t       *pty,
-                       const cs_time_step_t      *time_step,
-                       double                     dt_cur);
 
 /*----------------------------------------------------------------------------*/
 

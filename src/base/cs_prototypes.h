@@ -712,7 +712,7 @@ cs_user_cdo_set_domain(cs_domain_t   *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cdo_cc_algo_t
+cs_cdo_cell_center_algo_t
 cs_user_cdo_geometric_settings(void);
 
 /*----------------------------------------------------------------------------*/

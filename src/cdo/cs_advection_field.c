@@ -47,7 +47,6 @@
 #include "cs_mesh_location.h"
 #include "cs_field.h"
 #include "cs_log.h"
-#include "cs_post.h"
 #include "cs_reco.h"
 
 /*----------------------------------------------------------------------------
@@ -64,34 +63,10 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_ADVECTION_FIELD_DBG  0
-
 /* Redefined names of function from cs_math to get shorter names */
 #define _dp3 cs_math_3_dot_product
 
-#define CS_ADVECTION_FIELD_POST_FIELD   (1 << 0)  // postprocess adv. field
-#define CS_ADVECTION_FIELD_POST_COURANT (1 << 1)  // postprocess Courant number
-
-struct _cs_adv_field_t {
-
-  char  *restrict name;
-
-  cs_desc_t  desc;          // Short descriptor (mask of bits)
-  cs_flag_t  post_flag;     // Short descriptor dedicated to postprocessing
-  int        vtx_field_id;  // id among cs_field_t structures (-1 if not used)
-  int        cell_field_id; // id among cs_field_t structures (-1 if not used)
-
-  cs_param_def_type_t  def_type;  // type of definition used
-  cs_def_t             def;       // structure used for simple definition
-
-  /* Useful buffers to deal with more complex definitions
-     N.B.: array and struc are not owned by this structure.  */
-  cs_desc_t    array_desc;  // short description of the related array
-
-  const cs_real_t  *array;  // if the advection field hinges on an array
-  const void       *struc;  // if the advection field hinges on a structure
-
-};
+#define CS_ADVECTION_FIELD_DBG  0
 
 /*============================================================================
  * Private variables
@@ -1487,118 +1462,6 @@ cs_advection_get_peclet(const cs_adv_field_t        *adv,
     peclet[c_id] = hc * adv_c.meas / _dp3(adv_c.unitv, ptydir);
 
   } // Loop on cells
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined post-processing output for advection fields.
- *
- * \param[in]  adv         pointer to a cs_adv_field_t structure
- * \param[in]  time_step   pointer to a cs_time_step_t struct.
- * \param[in]  dt_cur      value of the current time step
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_advection_field_extra_post(const cs_adv_field_t      *adv,
-                              const cs_time_step_t      *time_step,
-                              double                     dt_cur)
-{
-  if (adv == NULL)
-    return;
-  if (adv->post_flag == 0)
-    return;
-
-  const bool post_field =
-    (adv->post_flag & CS_ADVECTION_FIELD_POST_FIELD) ? true : false;
-  const bool post_courant =
-    (adv->post_flag & CS_ADVECTION_FIELD_POST_COURANT) ? true : false;
-
-  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
-
-#if CS_ADVECTION_FIELD_DBG && defined(DEBUG) && !defined(NDEBUG)
-  cs_log_printf(CS_LOG_SETUP,
-                " <post/advection_field %s> iter: %d\n",
-                adv->name, time_step->nt_cur);
-#endif
-
-  /* Field is defined at vertices ? */
-  cs_field_t  *fld = NULL;
-  if (adv->vtx_field_id > -1)
-    fld = cs_field_by_id(adv->vtx_field_id);
-
-  if (fld != NULL && post_field)
-    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                             CS_POST_WRITER_ALL_ASSOCIATED,
-                             fld->name,
-                             3,               // dim
-                             true,            // interlace
-                             true,            // true = original mesh
-                             CS_POST_TYPE_cs_real_t,
-                             fld->val,        // values on vertices
-                             time_step);      // time step structure
-
-  /* Field is defined at cells ? */
-  fld = NULL;
-  if (adv->cell_field_id > -1)
-    fld = cs_field_by_id(adv->cell_field_id);
-
-  if (fld != NULL && post_field)
-    cs_post_write_var(CS_POST_MESH_VOLUME,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      fld->name,
-                      3,               // dim
-                      true,            // interlace
-                      true,            // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      fld->val,        // values in cells
-                      NULL, NULL,      // values at internal/border faces
-                      time_step);      // time step structure
-
-  if (post_courant) { /* Compute and postprocess the Courant number */
-
-    double  hc;
-    cs_nvec3_t  adv_c;
-
-    char  *label = NULL;
-    double  *courant = NULL;
-    int  len = strlen(adv->name) + 8 + 1;
-
-    BFT_MALLOC(courant, cdoq->n_cells, double);
-    BFT_MALLOC(label, len, char);
-    sprintf(label, "%s.Courant", adv->name);
-
-    if (fld != NULL) { /* field is defined at cell centers */
-      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
-        cs_nvec3(fld->val + 3*c_id, &adv_c);
-        hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
-        courant[c_id] = dt_cur * adv_c.meas / hc;
-      }
-    }
-    else {
-      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
-        cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
-        hc = pow(cdoq->cell_vol[c_id], cs_math_onethird);
-        courant[c_id] = dt_cur * adv_c.meas / hc;
-      }
-    }
-
-    cs_post_write_var(CS_POST_MESH_VOLUME,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      label,
-                      1,
-                      true,           // interlace
-                      true,           // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      courant,        // values on cells
-                      NULL,           // values at internal faces
-                      NULL,           // values at border faces
-                      time_step);     // time step management struct.
-
-    BFT_FREE(label);
-    BFT_FREE(courant);
-  }
 
 }
 

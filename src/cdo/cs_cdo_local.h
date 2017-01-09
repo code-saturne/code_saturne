@@ -150,6 +150,7 @@ typedef struct {
   short int    n_fc;   // local number of faces in a cell
   cs_lnum_t   *f_ids;  // face ids on this rank
   short int   *f_sgn;  // incidence number between f and c
+  double      *hfc;    // height of the pyramid of basis f and apex c
   cs_quant_t  *face;   // local face quantities (xf, area and unit normal)
   cs_nvec3_t  *dedge;  // local dual edge quantities (length and unit vector)
 

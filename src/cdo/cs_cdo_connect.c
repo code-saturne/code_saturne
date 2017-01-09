@@ -1095,7 +1095,7 @@ cs_cdo_connect_init(const cs_mesh_t      *m)
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
-  cs_log_printf(CS_LOG_PERFORMANCE, "%-40s %10.3f s\n",
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
                 "<CDO/Connectivity> Runtime", time_count.wall_nsec*1e-9);
 
   return connect;

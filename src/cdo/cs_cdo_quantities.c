@@ -942,8 +942,43 @@ _define_cell_flag(const cs_cdo_connect_t  *topo,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the area of the triangle of base given by q (related to a
+ *         segment) with apex located at xa
+ *
+ * \param[in]  qa   pointer to a cs_quant_t structure related to a segment
+ * \param[in]  xb   coordinates of the apex to consider
+ *
+ * \return the value the area of the triangle
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_compute_area_from_quant(const cs_quant_t   qa,
+                           const cs_real_t   *xb)
+{
+  double  xab[3], xab_un[3], cp[3];
+  xab[0] = xb[0] - qa.center[0];
+  xab[1] = xb[1] - qa.center[1];
+  xab[2] = xb[2] - qa.center[2];
+
+  const double  xab_len = cs_math_3_norm(xab);
+  const double  inv_len = 1/xab_len;
+
+  xab_un[0] = inv_len * xab[0];
+  xab_un[1] = inv_len * xab[1];
+  xab_un[2] = inv_len * xab[2];
+
+  cs_math_3_cross_product(xab_un, qa.unitv, cp);
+
+  /* tab = ||(qb.center -xa) x qb||/2 */
+  return 0.5 * xab_len * qa.meas * cs_math_3_norm(cp);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Build a cs_cdo_quantities_t structure
  *
+ * \param[in]  cc_algo     type of algorithm used for building the cell center
  * \param[in]  m           pointer to a cs_mesh_t structure
  * \param[in]  mq          pointer to a cs_mesh_quantities_t structure
  * \param[in]  topo        pointer to a cs_cdo_connect_t structure
@@ -953,15 +988,14 @@ _define_cell_flag(const cs_cdo_connect_t  *topo,
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_quantities_t *
-cs_cdo_quantities_build(const cs_mesh_t             *m,
+cs_cdo_quantities_build(cs_cdo_cell_center_algo_t    cc_algo,
+                        const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *mq,
                         const cs_cdo_connect_t      *topo)
 {
   cs_timer_t t0 = cs_timer_time();
 
   cs_cdo_quantities_t  *cdoq = NULL;
-  /* Default = CS_CDO_CC_SATURNE but can be modify by the user */
-  cs_cdo_cc_algo_t  cc_algo = cs_user_cdo_geometric_settings();
 
   /* Sanity checks */
   assert(topo != NULL);
@@ -970,6 +1004,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   /* Build cs_cdo_quantities_t structure */
   BFT_MALLOC(cdoq, 1, cs_cdo_quantities_t);
 
+  /* Dimension of each type of entities */
   cdoq->n_cells = m->n_cells;
   cdoq->n_i_faces = m->n_i_faces;
   cdoq->n_b_faces = m->n_b_faces;
@@ -991,21 +1026,21 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   /* Compute face/cell centers and cell volumes */
   switch (cc_algo) {
 
-  case CS_CDO_CC_BARYC:
+  case CS_CDO_CCENTER_BARYC:
     cs_log_printf(CS_LOG_SETUP,
                   " -cdo- Cell.Center.Algo >> Mirtich\n");
     /* Compute (real) barycentric centers, face centers and cell volumes */
     _mirtich_algorithm(m, mq, topo, cdoq);
     break;
 
-  case CS_CDO_CC_MEANV:
+  case CS_CDO_CCENTER_MEANV:
     cs_log_printf(CS_LOG_SETUP,
                   " -cdo- Cell.Center.Algo >> Vertices.MeanValue\n");
     /* Compute cell centers, face centers and cell volumes and total volume */
     _vtx_algorithm(m, mq, topo, cdoq);
     break;
 
-  case CS_CDO_CC_SATURNE:
+  case CS_CDO_CCENTER_SATURNE:
     cs_log_printf(CS_LOG_SETUP,
                   " -cdo- Cell.Center.Algo >> Original\n");
     _saturn_algorithm(m, mq, cdoq);
@@ -1015,7 +1050,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
     bft_error(__FILE__, __LINE__, 0,
               _("Unkwown algorithm for cell center computation\n"));
 
-  } /* switch cc_algo */
+  } /* switch according to cc_algo */
 
   /* Finalize definition of cs_quant_t struct. for faces.
      Define face normal with unitary norm and face area */
@@ -1080,7 +1115,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
-  cs_log_printf(CS_LOG_PERFORMANCE, "%-40s %10.3f s\n",
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
                 "<CDO/Quantities> Runtime", time_count.wall_nsec*1e-9);
 
   return cdoq;

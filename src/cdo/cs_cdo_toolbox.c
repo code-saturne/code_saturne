@@ -1169,6 +1169,12 @@ cs_dump_array_to_listing(const char        *header,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Dump an array in the listing (For DEBUG)
+ */
+/*----------------------------------------------------------------------------*/
+
 void
 cs_dump_integer_to_listing(const char        *header,
                            const cs_lnum_t    size,

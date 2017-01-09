@@ -51,7 +51,30 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct _cs_adv_field_t cs_adv_field_t;
+
+#define CS_ADVECTION_FIELD_POST_FIELD   (1 << 0)  // postprocess adv. field
+#define CS_ADVECTION_FIELD_POST_COURANT (1 << 1)  // postprocess Courant number
+
+typedef struct {
+
+  char  *restrict name;
+
+  cs_desc_t  desc;          // Short descriptor (mask of bits)
+  cs_flag_t  post_flag;     // Short descriptor dedicated to postprocessing
+  int        vtx_field_id;  // id among cs_field_t structures (-1 if not used)
+  int        cell_field_id; // id among cs_field_t structures (-1 if not used)
+
+  cs_param_def_type_t  def_type;  // type of definition used
+  cs_def_t             def;       // structure used for simple definition
+
+  /* Useful buffers to deal with more complex definitions
+     N.B.: array and struc are not owned by this structure.  */
+  cs_desc_t    array_desc;  // short description of the related array
+
+  const cs_real_t  *array;  // if the advection field hinges on an array
+  const void       *struc;  // if the advection field hinges on a structure
+
+} cs_adv_field_t;
 
 /* List of available keys for setting an advection field */
 typedef enum {
@@ -419,21 +442,6 @@ void
 cs_advection_get_peclet(const cs_adv_field_t        *adv,
                         const cs_property_t         *diff,
                         double                       peclet[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined post-processing output for advection fields.
- *
- * \param[in]  adv         pointer to a cs_adv_field_t structure
- * \param[in]  time_step   pointer to a cs_time_step_t struct.
- * \param[in]  dt_cur      value of the current time step
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_advection_field_extra_post(const cs_adv_field_t      *adv,
-                              const cs_time_step_t      *time_step,
-                              double                     dt_cur);
 
 /*----------------------------------------------------------------------------*/
 

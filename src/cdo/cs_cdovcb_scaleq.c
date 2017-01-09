@@ -840,12 +840,7 @@ cs_cdovcb_scaleq_monitor(const char   *eqname,
   if (b == NULL)
     return;
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                "<CDO/%s> Monitoring            %12.3f  %12.3f  %12.3f"
-                " in seconds (build, source, extra)\n", eqname,
-                b->tcb.wall_nsec*1e-9,
-                b->tcs.wall_nsec*1e-9,
-                b->tce.wall_nsec*1e-9);
+  cs_equation_print_monitoring(eqname, b->tcb, b->tcs, b->tce);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -920,7 +915,6 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
                                       csys); // Fill csys->source
 
       /* Assemble the cellwise contribution to the rank contribution */
-#pragma omp for
       for (short int v = 0; v < cm->n_vc; v++)
 #pragma omp atomic
         b->source_terms[cm->v_ids[v]] += csys->source[v];

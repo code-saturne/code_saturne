@@ -165,9 +165,6 @@ struct _gwf_t {
   cs_real_t      *darcian_flux;
   cs_adv_field_t *adv_field;    /* shared with a cs_domain_t structure */
 
-  /* Work buffer (allocated to n_max_ebyc) */
-  cs_real_t      *work;
-
 };
 
 /*============================================================================
@@ -902,7 +899,6 @@ cs_gwf_create(void)
 
   gw->darcian_flux = NULL;
   gw->adv_field = NULL;
-  gw->work = NULL;
 
   return gw;
 }
@@ -925,7 +921,6 @@ cs_gwf_finalize(cs_gwf_t   *gw)
 
   BFT_FREE(gw->tracer_eq_ids);
   BFT_FREE(gw->darcian_flux);
-  BFT_FREE(gw->work);
 
   for (int i = 0; i < gw->n_soils; i++) {
     cs_gwf_soil_t *soil = gw->soil_param + i;
@@ -936,7 +931,6 @@ cs_gwf_finalize(cs_gwf_t   *gw)
     BFT_FREE(gw->soil_id);
 
   BFT_FREE(gw->soil_param);
-
   BFT_FREE(gw);
 
   /* Fields, advection fields and properties are freed elsewhere */
@@ -1097,19 +1091,19 @@ cs_gwf_summary(const cs_gwf_t   *gw)
 
     } // Switch on property type
 
-    cs_log_printf(CS_LOG_SETUP, "  <GW/Soil %s>", ml_name);
+    cs_log_printf(CS_LOG_SETUP, "  <GW/Soil %s> Hydraulic model", ml_name);
     switch (soil.model) {
     case CS_GWF_HYDRAULIC_GENUCHTEN:
-      cs_log_printf(CS_LOG_SETUP, " model VanGenuchten-Mualen\n");
+      cs_log_printf(CS_LOG_SETUP, " VanGenuchten-Mualen\n");
       break;
     case CS_GWF_HYDRAULIC_SATURATED:
-      cs_log_printf(CS_LOG_SETUP, " model saturated\n");
+      cs_log_printf(CS_LOG_SETUP, " saturated\n");
       break;
     case CS_GWF_HYDRAULIC_TRACY:
-      cs_log_printf(CS_LOG_SETUP, " model Tracy\n");
+      cs_log_printf(CS_LOG_SETUP, " Tracy\n");
       break;
     case CS_GWF_HYDRAULIC_USER:
-      cs_log_printf(CS_LOG_SETUP, " model User-defined\n");
+      cs_log_printf(CS_LOG_SETUP, " User-defined\n");
       break;
 
     default:
@@ -1121,10 +1115,10 @@ cs_gwf_summary(const cs_gwf_t   *gw)
   } // Loop on soils
 
   if (gw->n_soils > 1) {
-
+    const char *meta = "  <GW/Global Hydraulic Model>";
     switch (gw->global_model) {
     case CS_GWF_HYDRAULIC_COMPOSITE:
-      cs_log_printf(CS_LOG_SETUP, "  <GW/Global model> composite model\n");
+    cs_log_printf(CS_LOG_SETUP, "%s composite model\n", meta);
       break;
     case CS_GWF_HYDRAULIC_GENUCHTEN:
       cs_log_printf(CS_LOG_SETUP, "%s VanGenuchten-Mualen\n", meta);
@@ -1213,9 +1207,6 @@ cs_gwf_initialize(const cs_cdo_connect_t    *connect,
   for (cs_lnum_t i = 0; i < c2e->idx[n_cells]; i++)
     gw->darcian_flux[i] = 0;
 
-  /* Work (temporary) buffer */
-  BFT_MALLOC(gw->work, connect->n_max_ebyc, cs_real_t);
-
   /* Quantities related to soils */
   gw->n_soils = 0;           /* No soil is set at the beginning */
   gw->n_max_soils = n_soils; /* Max. number of soils allocated */
@@ -1234,6 +1225,9 @@ cs_gwf_initialize(const cs_cdo_connect_t    *connect,
   BFT_MALLOC(gw->tracer_eq_ids, n_tracer_eqs, int);
   for (int i = 0; i < n_tracer_eqs; i++)
     gw->tracer_eq_ids[i] = -1; /* Default initialization = not set */
+
+  /* Add default post-processing related to groundwater flow module */
+  cs_post_add_time_mesh_dep_output(cs_gwf_extra_post, gw);
 
   return eq;
 }
@@ -2159,16 +2153,16 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
 
 void
 cs_gwf_extra_post(void                      *input,
-                          int                        mesh_id,
-                          int                        cat_id,
-                          int                        ent_flag[5],
-                          cs_lnum_t                  n_cells,
-                          cs_lnum_t                  n_i_faces,
-                          cs_lnum_t                  n_b_faces,
-                          const cs_lnum_t            cell_ids[],
-                          const cs_lnum_t            i_face_ids[],
-                          const cs_lnum_t            b_face_ids[],
-                          const cs_time_step_t      *time_step)
+                  int                        mesh_id,
+                  int                        cat_id,
+                  int                        ent_flag[5],
+                  cs_lnum_t                  n_cells,
+                  cs_lnum_t                  n_i_faces,
+                  cs_lnum_t                  n_b_faces,
+                  const cs_lnum_t            cell_ids[],
+                  const cs_lnum_t            i_face_ids[],
+                  const cs_lnum_t            b_face_ids[],
+                  const cs_time_step_t      *time_step)
 {
   CS_UNUSED(cat_id);
   CS_UNUSED(ent_flag);

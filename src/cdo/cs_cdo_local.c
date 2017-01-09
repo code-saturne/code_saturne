@@ -528,6 +528,7 @@ cs_cell_mesh_create(const cs_cdo_connect_t     *connect)
   /* Face information */
   BFT_MALLOC(cm->f_ids, cm->n_max_fbyc, cs_lnum_t);
   BFT_MALLOC(cm->f_sgn, cm->n_max_fbyc, short int);
+  BFT_MALLOC(cm->hfc, cm->n_max_fbyc, double);
   BFT_MALLOC(cm->face, cm->n_max_fbyc, cs_quant_t);
   BFT_MALLOC(cm->dedge, cm->n_max_fbyc, cs_nvec3_t);
 
@@ -572,6 +573,7 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
 
   BFT_FREE(cm->f_ids);
   BFT_FREE(cm->f_sgn);
+  BFT_FREE(cm->hfc);
   BFT_FREE(cm->face);
   BFT_FREE(cm->dedge);
 
@@ -724,6 +726,10 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
         cm->dedge[f].unitv[k] = deq[f].unitv[k];
       }
 
+      /* Compute height of the pyramid of base f with apex the cell center */
+      cm->hfc[f] = cs_math_3_dot_product(pfq.unitv, deq[f].unitv)*deq[f].meas;
+      assert(cm->hfc[f] > 0);
+
     } // Loop on cell faces
 
     if (flag & CS_CDO_LOCAL_FE) {
@@ -754,7 +760,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
           for (_e = 0; _e < cm->n_ec && cm->e_ids[_e] != e_id; _e++);
           assert(_e != cm->n_ec);
           f2e_ids[e] = _e;
-        
+
           tef[e] = cs_compute_area_from_quant(cm->edge[_e], pfq.center);
 
         } // Loop on face edges

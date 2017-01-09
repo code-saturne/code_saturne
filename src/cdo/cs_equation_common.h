@@ -36,6 +36,7 @@
 #include "cs_cdo_time.h"
 #include "cs_matrix.h"
 #include "cs_time_step.h"
+#include "cs_timer.h"
 #include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
@@ -210,6 +211,24 @@ cs_equation_get_tmpbuf(void);
 
 size_t
 cs_equation_get_tmpbuf_size(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Print a message in the performance output file related to the
+ *          monitoring of equation
+ *
+ * \param[in]  eqname    pointer to the name of the current equation
+ * \param[in]  tcb       timer counter for the build of the system
+ * \param[in]  tcs       timer counter for the evaluation of source terms
+ * \param[in]  tce       timer counter for doing extra operations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_print_monitoring(const char                 *eqname,
+                             const cs_timer_counter_t    tcb,
+                             const cs_timer_counter_t    tcs,
+                             const cs_timer_counter_t    tce);
 
 /*----------------------------------------------------------------------------*/
 

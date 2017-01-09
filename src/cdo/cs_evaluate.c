@@ -396,7 +396,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
 
         const short int  v0 = cm->e2v_ids[2*e_ids[0]];
         const short int  v1 = cm->e2v_ids[2*e_ids[0]+1];
-        short int  v2;
+        short int  v2 = -1; // Avoid a compilation warning
 
         short int _v = cm->e2v_ids[2*e_ids[1]+1];
         if (v0 != _v && v1 != _v)

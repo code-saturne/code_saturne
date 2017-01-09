@@ -53,17 +53,17 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Type of algorithm to compute geometrical quantities */
+/* Type of algorithm used to compute the cell center */
 typedef enum {
 
-  CS_CDO_CC_MEANV,   // Cell center is computed as the mean of cell vertices
-  CS_CDO_CC_BARYC,   // Cell center is computed as the real cell barycenter
-  CS_CDO_CC_SATURNE, // Cell center is given by Code_Saturne
-  CS_CDO_CC_ORTHO,   /* Cell center is optimized to enforce orthogonality
-                        between cell-face edge and face plane */
-  CS_CDO_N_CC_ALGOS
+  CS_CDO_CCENTER_MEANV,   // Cell center is computed as the mean of cell vertices
+  CS_CDO_CCENTER_BARYC,   // Cell center is computed as the real cell barycenter
+  CS_CDO_CCENTER_SATURNE, // Cell center is given by Code_Saturne
+  CS_CDO_CCENTER_ORTHO,   /* Cell center is optimized to enforce orthogonality
+                             between cell-face edge and face plane */
+  CS_CDO_N_CCENTER_ALGOS
 
-} cs_cdo_cc_algo_t;
+} cs_cdo_cell_center_algo_t;
 
 /* Structure storing information about variation of entities accros the
    mesh for a given type of entity (cell, face and edge) */
@@ -145,8 +145,8 @@ typedef struct { /* Specific mesh quantities */
  * Global variables
  *============================================================================*/
 
-/*=============================================================================
- * Inline static function prototypes
+/*============================================================================
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -154,43 +154,22 @@ typedef struct { /* Specific mesh quantities */
  * \brief  Compute the area of the triangle of base given by q (related to a
  *         segment) with apex located at xa
  *
- * \param[in]  q    pointer to a cs_quant_t structure related to a segment
- * \param[in]  xa   coordinates of the apex to consider
+ * \param[in]  qa   pointer to a cs_quant_t structure related to a segment
+ * \param[in]  xb   coordinates of the apex to consider
  *
  * \return the value the area of the triangle
  */
 /*----------------------------------------------------------------------------*/
 
-inline static double
-cs_compute_area_from_quant(const cs_quant_t   q,
-                           const cs_real_t   *xa)
-{
-  double  xef[3], xef_un[3], cp[3];
-  xef[0] = xa[0] - q.center[0];
-  xef[1] = xa[1] - q.center[1];
-  xef[2] = xa[2] - q.center[2];
-
-  const double  xef_len = cs_math_3_norm(xef);
-  const double  inv_len = 1/xef_len;
-
-  xef_un[0] = inv_len * xef[0];
-  xef_un[1] = inv_len * xef[1];
-  xef_un[2] = inv_len * xef[2];
-
-  cs_math_3_cross_product(xef_un, q.unitv, cp);
-
-  /* tef = ||(center -xa) x e||/2 */
-  return 0.5 * xef_len * q.meas * cs_math_3_norm(cp);
-}
-
-/*============================================================================
- * Public function prototypes
- *============================================================================*/
+double
+cs_compute_area_from_quant(const cs_quant_t   qa,
+                           const cs_real_t   *xb);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Build a cs_cdo_quantities_t structure
  *
+ * \param[in]  cc_algo     type of algorithm used for building the cell center
  * \param[in]  m           pointer to a cs_mesh_t structure
  * \param[in]  mq          pointer to a cs_mesh_quantities_t structure
  * \param[in]  topo        pointer to a cs_cdo_connect_t structure
@@ -200,7 +179,8 @@ cs_compute_area_from_quant(const cs_quant_t   q,
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_quantities_t *
-cs_cdo_quantities_build(const cs_mesh_t             *m,
+cs_cdo_quantities_build(cs_cdo_cell_center_algo_t    cc_algo,
+                        const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *mq,
                         const cs_cdo_connect_t      *topo);
 
