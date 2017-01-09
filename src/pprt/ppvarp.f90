@@ -178,7 +178,7 @@ endif
 !------------------------
 
 if (ippmod(iaeros).ge.0) then
-  call ctvarp
+  call ctvarp(ippmod(iatmos))
 endif
 
 ! 8. Gas mixtures modelling

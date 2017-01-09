@@ -430,18 +430,18 @@ cs_ctwr_enthair(const cs_real_t  xair,
 /*!
  * \brief Calculation water mass enthalpy
  *
- * \return water mass enthalpy
+ * \return Liquid water mass enthalpy
  *
- * \param[in]     teau          water temperature in Celsius degree
+ * \param[in]     t_l          water temperature in Celsius degree
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_ctwr_heau(const cs_real_t  teau)
+cs_ctwr_h_l(const cs_real_t  t_l)
 {
-  cs_real_t heau = (cs_glob_ctwr_props->cp_l) * teau;
+  cs_real_t h_l = (cs_glob_ctwr_props->cp_l) * t_l;
 
-  return  heau;
+  return  h_l;
 }
 
 /*----------------------------------------------------------------------------*/

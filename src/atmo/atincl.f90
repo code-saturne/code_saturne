@@ -133,7 +133,7 @@ double precision, save:: ps
 double precision, save:: rvsra
 !> cpvcpa --> ratio Cp h2o/ dry air: 1.866d0
 double precision, save:: cpvcpa
-!> clatev --> latent heat of evaporation: 2.501d+6
+!> latent heat of evaporation: 2.501d+6
 double precision, save:: clatev
 !> gammat --> temperature gradient for the standard atmosphere (-6.5d-03 K/m)
 double precision, save:: gammat
