@@ -655,6 +655,89 @@ cs_domain_free(cs_domain_t   *domain)
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure
  * \param[in]       key       key related to the parameter to set
+ * \param[in]       value     value related to the parameter to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_double_param(cs_domain_t       *domain,
+			   cs_domain_key_t    key,
+			   double             value)
+{
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+
+  /* Switch on keys related to a parameter associated to a double */
+  switch(key) {
+
+  case CS_DOMAIN_OUTPUT_DT:
+    domain->output_dt = value;
+    break;
+
+  case CS_DOMAIN_TMAX:
+    domain->time_step->t_max = value;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid key for setting a cs_domain_t structure."
+		" This key is not associated to a \"double\" type."));
+
+  } /* Switch on keys */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set auxiliary parameters related to a cs_domain_t structure
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in]       key       key related to the parameter to set
+ * \param[in]       value     value related to the parameter to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_int_param(cs_domain_t       *domain,
+			cs_domain_key_t    key,
+			int                value)
+{
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+
+  /* Switch on keys related to a parameter associated to a double */
+  switch(key) {
+
+  case CS_DOMAIN_OUTPUT_NT:
+    if (value == 0)
+      domain->output_nt = -1;
+    else
+      domain->output_nt = value;
+    break;
+
+  case CS_DOMAIN_NTMAX:
+    domain->time_step->nt_max = value;
+    break;
+
+  case CS_DOMAIN_VERBOSITY:
+    domain->verbosity = value;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid key for setting a cs_domain_t structure."
+		" This key is not associated to a \"int\" type."));
+
+  } /* Switch on keys */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set auxiliary parameters related to a cs_domain_t structure
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in]       key       key related to the parameter to set
  * \param[in]       keyval    value related to the parameter to set
  */
 /*----------------------------------------------------------------------------*/
@@ -1829,8 +1912,9 @@ cs_domain_solve(cs_domain_t  *domain)
     }
     else if (do_output) {
       cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
-      cs_log_printf(CS_LOG_DEFAULT, "-ite- %5d; time = %5.3e s >> Solve domain\n",
-                 nt_cur, domain->time_step->t_cur);
+      cs_log_printf(CS_LOG_DEFAULT,
+		    "-ite- %5d; time = %5.3e s >> Solve domain\n",
+		    nt_cur, domain->time_step->t_cur);
       cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
     }
     /* Predefined equation for the computation of the wall distance */
@@ -1873,8 +1957,9 @@ cs_domain_solve(cs_domain_t  *domain)
     /* Output information */
     if (do_output) {
       cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
-      cs_log_printf(CS_LOG_DEFAULT, "-ite- %5d; time = %5.3e s >> Solve domain\n",
-                 nt_cur, domain->time_step->t_cur);
+      cs_log_printf(CS_LOG_DEFAULT,
+		    "-ite- %5d; time = %5.3e s >> Solve domain\n",
+		    nt_cur, domain->time_step->t_cur);
       cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
     }
 

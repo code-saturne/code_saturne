@@ -193,6 +193,36 @@ cs_domain_free(cs_domain_t   *domain);
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure
  * \param[in]       key       key related to the parameter to set
+ * \param[in]       value     value related to the parameter to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_double_param(cs_domain_t       *domain,
+			   cs_domain_key_t    key,
+			   double             value);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set auxiliary parameters related to a cs_domain_t structure
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in]       key       key related to the parameter to set
+ * \param[in]       value     value related to the parameter to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_int_param(cs_domain_t       *domain,
+			cs_domain_key_t    key,
+			int                value);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set auxiliary parameters related to a cs_domain_t structure
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in]       key       key related to the parameter to set
  * \param[in]       keyval    value related to the parameter to set
  */
 /*----------------------------------------------------------------------------*/
