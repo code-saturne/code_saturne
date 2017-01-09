@@ -721,7 +721,8 @@ cs_index_sort(cs_connect_index_t   *x)
   if (x == NULL)
     return;
 
-  for (int i = 0; i < x->n; i++)
+# pragma omp parallel for CS_CDO_OMP_SCHEDULE
+  for (cs_lnum_t i = 0; i < x->n; i++)
     cs_sort_shell(x->idx[i], x->idx[i+1], x->ids);
 }
 

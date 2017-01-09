@@ -390,42 +390,41 @@ _compute_edge_quantities(const cs_mesh_t         *mesh,
 
 }
 
-/*----------------------------------------------------------------------------
- * Compute dual cell volumes related to primal vertices
- * Storage based on c2v connectivity
- * ---------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute dual cell volumes related to primal vertices
+ *         Storage is based on the c2v connectivity
+ *
+ * \param[in]      topo     pointer to a cs_cdo_connect_t structure
+ * \param[in, out] quant    pointer to cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
                           cs_cdo_quantities_t     *quant)    /* In/out */
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_connect_index_t  *c2v = topo->c2v;
-  const cs_sla_matrix_t  *c2f = topo->c2f;
-  const cs_sla_matrix_t  *f2e = topo->f2e;
+  /* Sanity checks */
+  assert(topo->f2e != NULL && topo->f2c != NULL && topo->c2v != NULL);
 
-  /* Compute part of dual volume related to each primal cell */
-  const cs_lnum_t  c2v_idx_size = c2v->idx[quant->n_cells];
-  BFT_MALLOC(quant->dcell_vol, c2v_idx_size, double);
-# pragma omp parallel for if (c2v_idx_size > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < c2v_idx_size; i++)
-    quant->dcell_vol[i] = 0.0;
+  const cs_sla_matrix_t  *c2f = topo->c2f, *f2e = topo->f2e;
 
-  /* Link between the mesh numbering and the cellwise numbering */
-  short int  *vtag = NULL;
-  BFT_MALLOC(vtag, quant->n_vertices, short int);
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
-    vtag[i] = 0;
+  /* Allocate and initialize arrays */
+  BFT_MALLOC(quant->dcell_vol, topo->c2v->idx[quant->n_cells], double);
 
+#pragma omp parallel for default(none) shared(quant, topo, c2f, f2e)        \
+  CS_CDO_OMP_SCHEDULE
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
+    /* Compute part of dual volume related to each primal cell */
+    const cs_lnum_t  *c2v_idx = topo->c2v->idx + c_id;
+    const cs_lnum_t  *c2v_ids = topo->c2v->ids + c2v_idx[0];
+    const short int  n_vc = c2v_idx[1] - c2v_idx[0];
     const cs_real_t  *xc = quant->cell_centers + 3*c_id;
-    double  *v_vol = quant->dcell_vol + c2v->idx[c_id];
 
-    /* Define vtag */
-    for (cs_lnum_t i = c2v->idx[c_id], ii = 0; i < c2v->idx[c_id+1]; i++, ii++)
-      vtag[c2v->ids[i]] = ii;
+    /* Initialize */
+    double  *vol_vc = quant->dcell_vol + c2v_idx[0];
+    for (short int v = 0; v < n_vc; v++) vol_vc[v] = 0.0;
 
     for (cs_lnum_t jf = c2f->idx[c_id]; jf < c2f->idx[c_id+1]; jf++) {
 
@@ -435,17 +434,22 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
       for (cs_lnum_t je = f2e->idx[f_id]; je < f2e->idx[f_id+1]; je++) {
 
         const cs_lnum_t  e_id = f2e->col_id[je];
-        const cs_lnum_t  eshft = 2*e_id;
-        const cs_lnum_t  v1_id = topo->e2v->col_id[eshft];
-        const cs_lnum_t  v2_id = topo->e2v->col_id[eshft+1];
-
-        const double pvol = 0.5 * cs_math_voltet(m->vtx_coord + 3*v1_id,
-                                                 m->vtx_coord + 3*v2_id,
+        const cs_lnum_t *v_ids = topo->e2v->col_id + 2*e_id;
+        const cs_lnum_t  v1_id = v_ids[0], v2_id = v_ids[1];
+        const double pvol = 0.5 * cs_math_voltet(quant->vtx_coord + 3*v1_id,
+                                                 quant->vtx_coord + 3*v2_id,
                                                  pfq.center,
                                                  xc);
 
-        v_vol[vtag[v1_id]] += pvol;
-        v_vol[vtag[v2_id]] += pvol;
+        /* Find the corresponding local cell edge */
+        short int _v1 = n_vc, _v2 = n_vc;
+        for (short int _v = 0; _v < n_vc; _v++) {
+          if (c2v_ids[_v] == v1_id) _v1 = _v;
+          if (c2v_ids[_v] == v2_id) _v2 = _v;
+        }
+        assert(_v1 < n_vc && _v2 < n_vc);
+        vol_vc[_v1] += pvol;
+        vol_vc[_v2] += pvol;
 
       } // Loop on face edges
 
@@ -453,111 +457,148 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
 
   }  // Loop on cells
 
-  /* Free buffer */
-  BFT_FREE(vtag);
 }
 
-/*----------------------------------------------------------------------------
- * Compute dual face normals (face crossed by primal edges).
- * Given a cell and an edge, there are two faces attached to the
- * couple (cell, edge)
- * The triplet (edge, face, cell) induces an elementary triangle s(e,f,c)
- * The dual face is the union of these two triangles.
- * Storage based on c2e connectivity
- * ---------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute dual face normals (face crossed by primal edges).
+ *         Given a cell c and an edge e, there are two faces attached to the
+ *         couple (c, e)
+ *         For a face f in c, the triplet (e, f, c) induces a triangle s(e,f,c)
+ *         The dual face is the union of these two triangles.
+ *         Storage is based on the c2e connectivity
+ *
+ * \param[in]      topo     pointer to a cs_cdo_connect_t structure
+ * \param[in, out] quant    pointer to cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _compute_dface_quantities(const cs_cdo_connect_t  *topo,
-                          cs_cdo_quantities_t     *iq)  /* In/out */
+                          cs_cdo_quantities_t     *quant)  /* In/out */
 {
-  cs_lnum_t  c_id, i, j, k, size, shift, parent;
-  cs_nvec3_t  nvec;
-  cs_real_3_t  trinorm, xexf, xexc;
-
-  cs_lnum_t  *tag_shift = NULL;
-
-  /* Sanity check */
-  assert(topo->e2f != NULL);
-  assert(topo->f2c != NULL);
-  assert(topo->c2e != NULL);
-
-  const cs_connect_index_t  *c2e = topo->c2e;
+  /* Sanity checks */
+  assert(topo->e2f != NULL && topo->f2c != NULL && topo->c2e != NULL);
 
   /* Allocate and initialize arrays */
-  size = c2e->idx[iq->n_cells];
-  BFT_MALLOC(iq->dface, size, cs_dface_t);
+  BFT_MALLOC(quant->dface, topo->c2e->idx[quant->n_cells], cs_dface_t);
 
-  BFT_MALLOC(tag_shift, iq->n_edges, cs_lnum_t);
-  for (i = 0; i < iq->n_edges; i++)
-    tag_shift[i] = 0;
+  /* Manage openMP cache */
+  short int  **parent_thread_array = NULL;
+  BFT_MALLOC(parent_thread_array, cs_glob_n_threads, short int *);
+  for (int i = 0; i < cs_glob_n_threads; i++)
+    parent_thread_array[i] = NULL;
 
-  for (c_id = 0; c_id < iq->n_cells; c_id++) {
+#pragma omp parallel default(none) \
+  shared(quant, topo, parent_thread_array, cs_glob_n_threads)
+  { // OMP Block
+    const cs_sla_matrix_t  *c2f = topo->c2f, *f2e = topo->f2e;
 
-    /* Tag cell edges */
-    for (i = c2e->idx[c_id]; i < c2e->idx[c_id+1]; i++)
-      tag_shift[c2e->ids[i]] = i+1;
+    cs_nvec3_t  nvec;
+    cs_real_3_t  trinorm, xexf, xexc;
 
-    /* Get cell center */
-    const cs_real_t  *xc = iq->cell_centers + 3*c_id;
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
 
-    for (i = topo->c2f->idx[c_id]; i < topo->c2f->idx[c_id+1]; i++) {
+    short int  *parent = parent_thread_array[t_id];
+    BFT_MALLOC(parent, topo->n_max_ebyc, short int);
 
-      const cs_lnum_t  f_id = topo->c2f->col_id[i];
-      const cs_quant_t  f_q = iq->face[f_id]; /* Face quantities */
+# pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-      for (j = topo->f2e->idx[f_id]; j < topo->f2e->idx[f_id+1]; j++) {
+      const cs_lnum_t  *c2e_idx = topo->c2e->idx + c_id;
+      const cs_lnum_t  *c2e_ids = topo->c2e->ids + c2e_idx[0];
+      const short int  n_ec = c2e_idx[1] - c2e_idx[0];
 
-        const cs_lnum_t  e_id = topo->f2e->col_id[j];
-        const cs_quant_t  e_q = iq->edge[e_id]; /* Edge quantities */
+      /* Get cell center */
+      const cs_real_t  *xc = quant->cell_centers + 3*c_id;
 
-        /* Compute the vectorial area for the triangle : xc, xf, xe */
-        for (k = 0; k < 3; k++) {
-          xexf[k] = f_q.center[k] - e_q.center[k];
-          xexc[k] = xc[k] - e_q.center[k];
-        }
-        cs_math_3_cross_product(xexf, xexc, trinorm);
-        cs_nvec3(trinorm, &nvec);
+      /* Portion of dual faces to consider */
+      cs_dface_t  *qdf = quant->dface + c2e_idx[0];
 
-        /* One should have (trinorm, te) > 0 */
-        const double  orient = _dp3(nvec.unitv, e_q.unitv);
-        assert(fabs(orient) > 0);
+      /* Initialize parent array */
+      for (short int e = 0; e < n_ec; e++) parent[e] = 0;
 
-        if (tag_shift[e_id] > 0) /* First time */
-          shift = tag_shift[e_id]-1, tag_shift[e_id] *= -1, parent = 0;
-        else /* Second time (<0) */
-          tag_shift[e_id] *= -1, shift = tag_shift[e_id]-1, parent = 1;
+      for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
-        /* Store the computed data */
-        iq->dface[shift].parent_id[parent] = f_id;
-        iq->dface[shift].sface[parent].meas = 0.5*nvec.meas;
-        if (orient < 0)
-          for (k = 0; k < 3; k++)
-            iq->dface[shift].sface[parent].unitv[k] = -nvec.unitv[k];
-        else
-          for (k = 0; k < 3; k++)
-            iq->dface[shift].sface[parent].unitv[k] =  nvec.unitv[k];
+        const cs_lnum_t  f_id = c2f->col_id[i];
 
-      } /* Loop on face edges */
+        for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
-    } /* Loop on cell faces */
+          const cs_lnum_t  e_id = topo->f2e->col_id[j];
 
-  } /* Loop on cells */
+          /* Find the corresponding local cell edge */
+          short int e = n_ec;
+          for (short int _e = 0; _e < n_ec; _e++) {
+            if (c2e_ids[_e] == e_id) {
+              e = _e;
+              break;
+            }
+          }
+          assert(e < n_ec);
 
-  BFT_FREE(tag_shift);
+          const cs_quant_t  peq = quant->edge[e_id]; /* Edge quantities */
 
-  /* Compute the dual face normal from the two elementary contributions */
-  for (c_id = 0; c_id < iq->n_cells; c_id++) {
-    for (i = c2e->idx[c_id]; i < c2e->idx[c_id+1]; i++) {
+          /* Compute the vectorial area for the triangle : xc, xf, xe */
+          for (int k = 0; k < 3; k++) {
+            xexf[k] = quant->face[f_id].center[k] - peq.center[k];
+            xexc[k] = xc[k] - peq.center[k];
+          }
+          cs_math_3_cross_product(xexf, xexc, trinorm);
+          cs_nvec3(trinorm, &nvec);
 
-      cs_nvec3_t  t1 = iq->dface[i].sface[0];
-      cs_nvec3_t  t2 = iq->dface[i].sface[1];
+          /* One should have (trinorm, te) > 0 */
+          const double  orient = _dp3(nvec.unitv, peq.unitv);
+          assert(fabs(orient) > 0);
 
-      for (k = 0; k < 3; k++)
-        iq->dface[i].vect[k] = t1.meas*t1.unitv[k] + t2.meas*t2.unitv[k];
+          /* Store the computed data */
+          qdf[e].parent_id[parent[e]] = f_id;
+          qdf[e].sface[parent[e]].meas = 0.5*nvec.meas;
+          if (orient < 0) {
+            for (int k = 0; k < 3; k++)
+              qdf[e].sface[parent[e]].unitv[k] = -nvec.unitv[k];
+          }
+          else {
+            for (int k = 0; k < 3; k++)
+              qdf[e].sface[parent[e]].unitv[k] =  nvec.unitv[k];
+          }
 
-    }
-  } /* End of loop on cells */
+          parent[e] += 1;
 
+        } /* Loop on face edges */
+
+      } /* Loop on cell faces */
+
+#if defined(DEBUG) && !defined(NDEBUG)
+      for (short int e = 0; e < n_ec; e++)
+        if (parent[e] != 2)
+          bft_error(__FILE__, __LINE__, 0,
+                    " Connectivity error detected while building dual face"
+                    " quantity for cell %d\n"
+                    " Each edge should have 2 adjacent faces in a cell.\n"
+                    " Here, there is (are) %d face(s).", c_id, parent[e]);
+#endif
+
+      for (short int e = 0; e < n_ec; e++) {
+
+        const cs_nvec3_t  t1 = qdf[e].sface[0];
+        const cs_nvec3_t  t2 = qdf[e].sface[1];
+
+        for (int k = 0; k < 3; k++)
+          qdf[e].vect[k] = t1.meas*t1.unitv[k] + t2.meas*t2.unitv[k];
+
+      } // Loop on cell edges
+
+    } /* End of loop on cells */
+
+    BFT_FREE(parent);
+
+  } // End of OpenMP block
+
+  BFT_FREE(parent_thread_array);
 }
 
 /*----------------------------------------------------------------------------
