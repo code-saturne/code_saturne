@@ -610,8 +610,10 @@ cs_range_set_destroy(cs_range_set_t  **rs)
 {
   if (rs != NULL) {
     cs_range_set_t  *_rs = *rs;
-    BFT_FREE(_rs->_g_id);
-    BFT_FREE(*rs);
+    if (_rs != NULL) {
+      BFT_FREE(_rs->_g_id);
+      BFT_FREE(*rs);
+    }
   }
 }
 

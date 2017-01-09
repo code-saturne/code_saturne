@@ -2350,7 +2350,7 @@ cs_matrix_assembler_create_from_shared(cs_lnum_t         n_rows,
 void
 cs_matrix_assembler_destroy(cs_matrix_assembler_t  **ma)
 {
-  if (ma != NULL) {
+  if (ma != NULL && *ma != NULL) {
     cs_matrix_assembler_t *_ma = *ma;
 
     BFT_FREE(_ma->e_g_id);
