@@ -80,7 +80,7 @@ BEGIN_C_DECLS
  * Local constant and enum definitions
  *============================================================================*/
 
-static const char cs_cdoversion[] = "0.8.1";
+static const char cs_cdoversion[] = "0.8.3";
 
 /*============================================================================
  * Private function prototypes

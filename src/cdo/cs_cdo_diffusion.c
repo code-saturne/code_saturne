@@ -240,6 +240,12 @@ cs_cdovcb_diffusion_flux_op(const cs_face_mesh_t     *fm,
   const cs_quant_t  pfq = fm->face;
   const cs_nvec3_t  deq = fm->dedge;
 
+  /* Initialize the local operator */
+  ntrgrd->n_ent = cm->n_vc + 1;
+  for (short int v = 0; v < cm->n_vc; v++)  ntrgrd->ids[v] = cm->v_ids[v];
+  ntrgrd->ids[cm->n_vc] = cm->c_id;
+  for (int i = 0; i < ntrgrd->n_ent*ntrgrd->n_ent; i++) ntrgrd->val[i] = 0;
+
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
   cs_compute_grdfc(fm->f_sgn, pfq, deq, grd_c);
@@ -362,6 +368,7 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
     cs_math_3_length_unitv(fm->xc, fm->xv + 3*v, l_vc + v, u_vc[v]);
 
   /* Compute a weight for each vertex of the current face */
+  double  sum_ef = 0.;
   for (short int e = 0; e < fm->n_ef; e++) {
 
     /* Gradient of the Lagrange function related to v1 and v2 */
@@ -381,6 +388,8 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
     mng_ef[e][1] = _dp3(pty_nuf, grd_v2) * tef_coef;
     mng_ef[e][2] = _dp3(pty_nuf, grd_f)  * tef_coef;
 
+    sum_ef += mng_ef[e][2];
+
   } /* End of loop on face edges */
 
   for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
@@ -391,10 +400,13 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
     /* Default contribution for this line */
     const double  default_coef = pfq.meas * fm->wvf[vfi] * mng_cf;
     for (short int vj = 0; vj < cm->n_vc; vj++)
-      ntrgrd_i[vj] = default_coef * cm->wvc[vj];
+      ntrgrd_i[vj] = default_coef * cm->wvc[vj]; // two contributions
 
     /* Block Vf x Vf */
     for (short int vfj = 0; vfj < fm->n_vf; vfj++) {
+
+      short int vj = fm->v_ids[vfj];
+      ntrgrd_i[vj] += sum_ef * fm->wvf[vfi] * fm->wvf[vfj];
 
       double  entry_ij = 0.;
       for (short int e = 0; e < fm->n_ef; e++) {
@@ -402,26 +414,33 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
         const short int  v1 = fm->e2v_ids[2*e];
         const short int  v2 = fm->e2v_ids[2*e+1];
 
-        double  coef_i = fm->wvf[vfi];
-        if (vfi == v1 || vfi == v2)
-          coef_i += 1;
-
-        double  coef_j = fm->wvf[vfj] * mng_ef[e][2];
         if (vfj == v1)
-          coef_j += mng_ef[e][0];
-        else if (vfj == v2)
-          coef_j += mng_ef[e][1];
+          entry_ij += mng_ef[e][0] * fm->wvf[vfi];
+        if (vfj == v2)
+          entry_ij += mng_ef[e][1] * fm->wvf[vfi];
 
-        entry_ij += coef_i * coef_j;
+        if (vfi == v1 || vfi == v2) { /* i in e */
+          entry_ij += fm->wvf[vfj] * mng_ef[e][2];
+          if (vfj == v1) /* j is also in e */
+            entry_ij += mng_ef[e][0];
+          if (vfj == v2)
+            entry_ij += mng_ef[e][1];
+        }
 
       } // Loop on face edges
 
-      ntrgrd_i[fm->v_ids[vfj]] += entry_ij;
+      ntrgrd_i[vj] += entry_ij;
 
     } // Loop on face vertices (vj)
 
   } // Loop on face vertices (vi)
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
+  cs_log_printf(CS_LOG_DEFAULT,
+                ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)",
+                cm->c_id, cm->f_ids[fm->f_id]);
+  cs_locmat_dump(cm->c_id, ntrgrd);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -511,6 +530,12 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
 
   } // Loop on face edges
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
+  cs_log_printf(CS_LOG_DEFAULT,
+                ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)",
+                cm->c_id, cm->f_ids[fm->f_id]);
+  cs_locmat_dump(cm->c_id, ntrgrd);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -540,7 +565,9 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t       h_info,
   /* Sanity checks */
   assert(cbc != NULL && cm != NULL);
   assert(cb != NULL && csys != NULL);
-  assert(cbc->n_dofs == csys->mat->n_ent);
+
+  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_ent = cm->n_vc + 1
+     For VB schemes  cbc->n_dofs = csys->mat->n_ent = cm->n_vc */
 
   /* Enforcement of the Dirichlet BCs */
   if (cbc->n_dirichlet == 0)
@@ -603,7 +630,8 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t        h_info,
   /* Sanity checks */
   assert(cbc != NULL && cm != NULL);
   assert(cb != NULL && csys != NULL);
-  assert(cbc->n_dofs == csys->mat->n_ent);
+  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_ent = cm->n_vc + 1
+     For VB schemes  cbc->n_dofs = csys->mat->n_ent = cm->n_vc */
 
   /* Enforcement of the Dirichlet BCs */
   if (cbc->n_dirichlet == 0)
@@ -628,8 +656,8 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t        h_info,
          of the normal gradient */
       flux_op(fm, cm, pty_nuf, h_info.coef, cb, cb->loc);
 
-      /* Update ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd)
-         cb->loc plays the role of the flux operator */
+      /* Update ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) cb->loc
+         plays the role of the flux operator */
       cs_locmat_add_transpose(cb->loc, cb->aux);
 
       /* Update RHS according to the add of transp (cb->aux) */
@@ -681,21 +709,24 @@ cs_cdovb_diffusion_pena_dirichlet(const cs_param_hodge_t        h_info,
   /* Sanity checks */
   assert(cbc != NULL && cm != NULL);
   assert(csys != NULL);
-  assert(cbc->n_dofs == csys->mat->n_ent);
+  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_ent = cm->n_vc + 1
+     For VB schemes  cbc->n_dofs = csys->mat->n_ent = cm->n_vc */
 
   /* Enforcement of the Dirichlet BCs */
   if (cbc->n_dirichlet == 0)
     return; // Nothing to do
 
+  const short int n_dofs = csys->mat->n_ent;
+
   // Penalize diagonal entry (and its rhs if needed)
   for (short int v = 0; v < cbc->n_dofs; v++) {
 
     if (cbc->dof_flag[v] & CS_CDO_BC_DIRICHLET) {
-      csys->mat->val[v + cbc->n_dofs*v] += cs_big_pena_coef;
+      csys->mat->val[v + n_dofs*v] += cs_big_pena_coef;
       csys->rhs[v] += cbc->dir_values[v] * cs_big_pena_coef;
     }
     else if (cbc->dof_flag[v] & CS_CDO_BC_HMG_DIRICHLET)
-      csys->mat->val[v + cbc->n_dofs*v] += cs_big_pena_coef;
+      csys->mat->val[v + n_dofs*v] += cs_big_pena_coef;
 
   } /* Loop on degrees of freedom */
 

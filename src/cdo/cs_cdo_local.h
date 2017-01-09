@@ -299,6 +299,17 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Dump a cs_cell_mesh_t structure
+ *
+ * \param[in]    cm    pointer to a cs_cell_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_mesh_dump(cs_cell_mesh_t     *cm);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free a cs_cell_builder_t structure
  *
  * \param[in, out]  p_cb   pointer of pointer to a cs_cell_builder_t structure

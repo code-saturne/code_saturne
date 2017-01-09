@@ -1078,6 +1078,11 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
                             b, dir_values, field_val, // in
                             cm, csys, cbc, cb);       // out
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+      if (c_id % 100 == 0)
+        cs_cell_mesh_dump(cm);
+#endif
+
     /* DIFFUSION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
     /* ============================================== */
 
@@ -1121,7 +1126,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
+      if (c_id % 100 == 0)
+        cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
     } /* END OF DIFFUSION */
 
@@ -1141,7 +1147,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
         b->add_advection_bc(cbc, cm, eqp, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-      cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
+      if (c_id % 100 == 0)
+        cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
 #endif
     } /* END OF ADVECTION */
 
@@ -1215,7 +1222,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
     } /* END OF TIME CONTRIBUTION */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-    cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
+    if (c_id % 100 == 0)
+      cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
     /* Assemble the local system to the global system */

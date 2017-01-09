@@ -557,6 +557,51 @@ cs_cell_mesh_create(short int   n_max_vbyc,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Dump a cs_cell_mesh_t structure
+ *
+ * \param[in]    cm    pointer to a cs_cell_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_mesh_dump(cs_cell_mesh_t     *cm)
+{
+  if (cm == NULL) {
+    cs_log_printf(CS_LOG_DEFAULT, " cs_cell_mesh_t %p\n", (void *)cm);
+    return;
+  }
+
+  cs_log_printf(CS_LOG_DEFAULT, " cs_cell_mesh_t %p; id:%d;; vol: %9.6e\n",
+                (void *)cm, cm->c_id, cm->vol_c);
+  cs_log_printf(CS_LOG_DEFAULT, "%-10s %-37s %-10s\n", "id", "coord", "wvc");
+  for (short int v = 0; v < cm->n_vc; v++)
+    cs_log_printf(CS_LOG_DEFAULT, "%8d |% 9.5e % 9.5e % 9.5e| %9.5e\n",
+                  cm->v_ids[v], cm->xv[3*v], cm->xv[3*v+1], cm->xv[3*v+2],
+                  cm->wvc[v]);
+
+  cs_log_printf(CS_LOG_DEFAULT, "%-10s %-8s %-37s %-37s %-10s\n",
+                "id", "surf", "unit", "coords", "hfc");
+  for (short int f = 0; f < cm->n_fc; f++) {
+    cs_quant_t  fq = cm->face[f];
+    cs_log_printf(CS_LOG_DEFAULT, "%8d |%6.3e|% 9.5e % 9.5e % 9.5e|"
+                  "% 9.5e % 9.5e % 9.5e|%9.5e\n",
+                  cm->f_ids[f], fq.meas, fq.unitv[0], fq.unitv[1], fq.unitv[2],
+                  fq.center[0], fq.center[1], fq.center[2], cm->hfc[f]);
+  }
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+    cs_log_printf(CS_LOG_DEFAULT, " n_ef: %02d |",
+                  cm->f2e_idx[f+1] - cm->f2e_idx[f]);
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++)
+      cs_log_printf(CS_LOG_DEFAULT, "%3d (%9.6e)|",
+                    cm->f2e_ids[i], cm->tef[i]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free a cs_cell_mesh_t structure
  *
  * \param[in, out]  p_cm   pointer of pointer to a cs_cell_mesh_t structure
@@ -1076,6 +1121,7 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
 
   const short int  *f2e_idx = cm->f2e_idx + f;
   const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
+  const double *_tef = cm->tef + f2e_idx[0];
 
   fm->n_vf = fm->n_ef = f2e_idx[1] - f2e_idx[0];
   short int nv = 0;
@@ -1086,6 +1132,7 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
     const short int  ec = f2e_ids[ef];
 
     fm->e_ids[ef] = ec;
+    fm->tef[ef] = _tef[ef];
 
     const cs_quant_t  peq = cm->edge[ec];
     fm->edge[ef].meas = peq.meas;
@@ -1138,11 +1185,9 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
 
     const short int  v1 = fm->e2v_ids[2*e];
     const short int  v2 = fm->e2v_ids[2*e+1];
-    const double  tef = cm->tef[fm->e_ids[e]];
 
-    fm->wvf[v1] += tef;
-    fm->wvf[v2] += tef;
-    fm->tef[e] = tef;
+    fm->wvf[v1] += _tef[e];
+    fm->wvf[v2] += _tef[e];
 
   }
 
