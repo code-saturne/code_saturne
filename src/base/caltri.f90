@@ -438,7 +438,7 @@ call iniva0(nscal)
 if (iporos.ge.1) then
 
   if (iihmpr.eq.1) then
-    call uiporo(iporos)
+    call uiporo
   endif
   call usporo
 

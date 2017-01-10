@@ -263,12 +263,9 @@ void CS_PROCF (uiipsu, UIIPSU) (int *iporos);
  * Fortran Interface:
  *
  * SUBROUTINE UIPORO
- * *****************
- *
- * INTEGER          IPOROS     <--   porosity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiporo, UIPORO) (const int *iporos);
+void CS_PROCF (uiporo, UIPORO) (void);
 
 /*----------------------------------------------------------------------------
  * User momentum source terms.

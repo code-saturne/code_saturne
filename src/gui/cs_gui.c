@@ -83,6 +83,7 @@
 #include "cs_prototypes.h"
 #include "cs_physical_model.h"
 #include "cs_rotation.h"
+#include "cs_selector.h"
 #include "cs_timer.h"
 #include "cs_time_moment.h"
 #include "cs_thermal_model.h"
@@ -1676,45 +1677,30 @@ _variable_initial_value(const char  *variable_name,
 #endif /* (_XML_DEBUG_ > 0) */
 
 /*-----------------------------------------------------------------------------
- * Return the list of cells describing a given zone.
+ * Return the list of cells (0 to n-1 numbering) describing a given zone.
  *
  * parameters:
  *   zone_id             <--  volume zone id
- *   n_cells_with_ghosts <--  number of cells with halo
- *   cells               -->  number of selected cells
+ *   n_selected_cells    -->  number of selected cells
  *----------------------------------------------------------------------------*/
 
-static int *
-_get_cells_list(const char  *zone_id,
-                cs_lnum_t    n_cells_with_ghosts,
-                cs_lnum_t   *cells )
+static cs_lnum_t *
+_get_cells_list_by_zone_id(const char  *zone_id,
+                           cs_lnum_t   *n_selected_cells)
 {
-  cs_lnum_t  c_id         = 0;
   cs_lnum_t  *cells_list  = NULL;
   char *description = NULL;
 
   description = _volumic_zone_localization(zone_id);
 
-  /* build list of cells */
-  BFT_MALLOC(cells_list, n_cells_with_ghosts, cs_lnum_t);
+  /* Allocate list of cells */
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  BFT_MALLOC(cells_list, n_cells_ext, cs_lnum_t);
 
-  c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
-                               description,
-                               0,
-                               cells,
-                               cells_list);
+  cs_selector_get_cell_list(description, n_selected_cells, cells_list);
 
-  if (fvm_selector_n_missing(cs_glob_mesh->select_cells, c_id) > 0) {
-    const char *missing
-      = fvm_selector_get_missing(cs_glob_mesh->select_cells, c_id, 0);
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                 "criteria:\n"
-                 "\"%s\"\n"
-                 " does not correspond to any cell.\n"),
-                 missing, description);
-  }
   BFT_FREE(description);
+
   return cells_list;
 }
 
@@ -3302,12 +3288,9 @@ void CS_PROCF (uiipsu, UIIPSU) (int *iporos)
  * Fortran Interface:
  *
  * SUBROUTINE UIPORO
- * *****************
- *
- * integer          iporos   <--  porosity model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiporo, UIPORO) (const int        *iporos)
+void CS_PROCF(uiporo, UIPORO)(void)
 {
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_real_3_t *restrict cell_cen
@@ -3320,8 +3303,6 @@ void CS_PROCF (uiporo, UIPORO) (const int        *iporos)
   cs_lnum_t cells = 0;
 
   mei_tree_t *ev_formula  = NULL;
-
-  assert(*iporos == 1 || *iporos == 2 || *iporos == 3);
 
   /* number of volumic zone */
   int zones = cs_gui_get_tag_count("/solution_domain/volumic_conditions/zone\n", 1);
@@ -3362,7 +3343,7 @@ void CS_PROCF (uiporo, UIPORO) (const int        *iporos)
 
     if (cs_gui_strcmp(status, "on")) {
       char *zone_id = _volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list_by_zone_id(zone_id, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3469,7 +3450,6 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
                                     cs_real_3_t  *restrict tsexp,
                                     cs_real_33_t *restrict tsimp)
 {
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
@@ -3508,7 +3488,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = _volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list_by_zone_id(zone_id, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 1, "thermophysical_models");
@@ -3625,8 +3605,6 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
                               cs_real_t         *restrict tsexp,
                               cs_real_t         *restrict tsimp)
 {
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-
   const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
@@ -3664,7 +3642,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = _volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list_by_zone_id(zone_id, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3776,8 +3754,6 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
                               cs_real_t         *restrict tsexp,
                               cs_real_t         *restrict tsimp)
 {
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-
   const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
@@ -3815,7 +3791,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = _volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list_by_zone_id(zone_id, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3888,7 +3864,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                               int                *iccfth)
 {
   /* Coal combustion: the initialization of the model scalar are not given */
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
@@ -3925,7 +3900,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
     if (cs_gui_strcmp(status, "on")) {
 
       zone_id = _volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list_by_zone_id(zone_id, &cells);
 
       if (*isuite == 0) {
         char *path_velocity = cs_xpath_init_path();
@@ -4529,7 +4504,6 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
                                     int    icepdc[],
                                     double ckupdc[])
 {
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t i, j, iel, ielpdc, ikpdc;
   int zones = 0;
   cs_lnum_t cells = 0;
@@ -4564,7 +4538,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       if (cs_gui_strcmp(status, "on"))
       {
         zone_id = _volumic_zone_id(i);
-        cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+        cells_list = _get_cells_list_by_zone_id(zone_id, &cells);
 
         for (j=0; j < cells; j++)
         {
@@ -4604,7 +4578,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       if (cs_gui_strcmp(status, "on")) {
 
         zone_id = _volumic_zone_id(i);
-        cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+        cells_list = _get_cells_list_by_zone_id(zone_id, &cells);
 
         k11 = _c_head_losses(zone_id, "kxx");
         k22 = _c_head_losses(zone_id, "kyy");
@@ -5284,7 +5258,6 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
   cs_lnum_t cells = 0;
   mei_tree_t *ev_formula  = NULL;
 
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
@@ -5325,7 +5298,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
 
     if (cs_gui_strcmp(status, "on")) {
       char *zone_id = _volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = _get_cells_list_by_zone_id(zone_id, &cells);
 
       /* get ground properties for each zone */
 
