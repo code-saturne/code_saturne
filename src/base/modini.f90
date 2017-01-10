@@ -274,17 +274,6 @@ do iscal = 1, nscal
   endif
 enddo
 
-! Pressure (thetav for the pressure is taken without worring)
-call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-
-if (abs(vcopt%thetav+999.d0).gt.epzero) then
-  write(nfecra,1131) ' pressure        ','THETAV'
-else
-  vcopt%thetav = 1.d0
-endif
-
-call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-
 ! Loop on on field variables
 call field_get_n_fields(nfld)
 
@@ -297,10 +286,14 @@ do f_id = 0, nfld - 1
 
       call field_get_name(f_id, name)
       write(nfecra,1131) trim(name),'THETAV'
-    elseif (ischtp.eq.1) then
-      vcopt%thetav = 1.d0
-    elseif (ischtp.eq.2) then
-      vcopt%thetav = 0.5d0
+    else
+      if (vcopt%istat.eq.0) then
+        vcopt%thetav = 1.d0
+      else if (ischtp.eq.1) then
+        vcopt%thetav = 1.d0
+      else if (ischtp.eq.2) then
+        vcopt%thetav = 0.5d0
+      endif
     endif
     call field_set_key_struct_var_cal_opt(f_id, vcopt)
 
