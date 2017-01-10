@@ -3712,7 +3712,10 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
             tsexp[iel] *= cell_f_vol[iel];
           }
         }
-        else {  // groundwater flow
+        else {  /* groundwater flow */
+          /* only radioactive decay can be set with the GUI source terms view */
+          /* TODO: handle it by zone in the ground water law view
+             as done for diffusivity */
           ev_formula = mei_tree_new(formula);
           mei_tree_insert(ev_formula,"x",0.);
           mei_tree_insert(ev_formula,"y",0.);
@@ -3728,10 +3731,10 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
                       _("Error: can not interpret expression: %s\n %i"),
                       ev_formula->string, mei_tree_builder(ev_formula));
 
-          const char *symbols[] = {"Q","lambda"};
-          if (mei_tree_find_symbols(ev_formula, 2, symbols))
+          const char *symbols[] = {"lambda"};
+          if (mei_tree_find_symbols(ev_formula, 1, symbols))
             bft_error(__FILE__, __LINE__, 0,
-                      _("Error: can not find the required symbol: %s\n"), "Q or lambda");
+                      _("Error: can not find the required symbol: %s\n"), "lambda");
 
           for (icel = 0; icel < cells; icel++) {
             iel = cells_list[icel];
@@ -3740,10 +3743,9 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
             mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
             mei_tree_insert(ev_formula, "t", cs_glob_time_step->t_cur);
             mei_evaluate(ev_formula);
-            dS = mei_tree_lookup(ev_formula,"lambda");
-            tsimp[iel] = cell_f_vol[iel]*dS;
-            tsexp[iel] = mei_tree_lookup(ev_formula,"Q");
-            tsexp[iel] *= cell_f_vol[iel];
+            /* first order decay coefficient - lambda [kg.m3.s-1] positive */
+            cs_real_t lambda = mei_tree_lookup(ev_formula,"lambda");
+            tsimp[iel] = -cell_f_vol[iel]*lambda;
           }
         }
         mei_tree_destroy(ev_formula);
