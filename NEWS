@@ -1,4 +1,12 @@
 
+Release 3.10 (unreleased)
+=========================
+
+Bug fixes:
+----------
+
+- Fix for some environment module variants.
+
 Release 3.0.9 (04 Jan 2017)
 ===========================
 

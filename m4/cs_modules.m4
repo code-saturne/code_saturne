@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2016 EDF S.A.
+dnl Copyright (C) 1998-2017 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -94,7 +94,7 @@ fi
 if test "x$LMOD_CMD" != "x" ; then
   MODULECMD=$LMOD_CMD
   AC_SUBST(MODULECMD)
-elif test "x$MODULE_VERSION" != "x" ; then
+elif test "x$MODULESHOME" != "x" ; then
   AC_PATH_PROG([MODULECMD], [modulecmd], [], [${MODULESHOME}/bin:$PATH])
 else
   AC_MSG_WARN([no supported environment module commmand detected])
