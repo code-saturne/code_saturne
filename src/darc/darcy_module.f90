@@ -86,6 +86,10 @@ module darcy_module
   !> Gravity direction must be a unit vector.
   double precision :: darcy_gravity_z
 
+  !> \anchor darcy_unsaturated
+  !> Take into account unsaturated zone (1) or not (0).
+  integer :: darcy_unsaturated
+
   !> \}
 
 end module darcy_module

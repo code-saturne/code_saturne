@@ -2100,12 +2100,14 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
  * integer         dispersion      <--   dispersion type
  * integer         unsteady        <--   steady flow
  * integer         gravity         <--   check if gravity is taken into account
+ * integer         unsaturated     <--   take into account unsaturated zone
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
                                 int    *const dispersion,
                                 int    *const unsteady,
-                                int    *const gravity)
+                                int    *const gravity,
+                                int    *const unsaturated)
 {
   char *path   = NULL;
   char *mdl    = NULL;
@@ -2170,11 +2172,29 @@ void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
 
   BFT_FREE(path);
 
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                  "groundwater_model",
+                                  "unsaturatedZone");
+
+  cs_xpath_add_attribute(&path, "model");
+  mdl = cs_gui_get_attribute_value(path);
+  BFT_FREE(path);
+  if (cs_gui_strcmp(mdl, "true"))
+    *unsaturated = 1;
+  else
+    *unsaturated = 0;
+
+  BFT_FREE(mdl);
+  BFT_FREE(path);
+
 #if _XML_DEBUG_
   bft_printf("==>UIDAI1\n");
   bft_printf("--groundwater_anisotropic_permeability  = %i\n", *permeability);
   bft_printf("--groundwater_anisotropic_dispersion    = %f\n", *dispersion);
   bft_printf("--groundwater_unsteady                  = %f\n", *unsteady);
+  bft_printf("--groundwater_gravity                   = %f\n", *gravity);
+  bft_printf("--groundwater_unsaturated               = %f\n", *unsaturated);
 #endif
 }
 

@@ -181,13 +181,14 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
  * integer         dispersion      <--   dispersion type
  * integer         unsteady        <--   steady flow
  * integer         gravity         <--   check if gravity is taken into account
+ * integer         unsaturated     <--   take into account unsaturated zone
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uidai1, UIDAI1) (int    *const permeability,
                                 int    *const dispersion,
                                 int    *const unsteady,
-                                int    *const gravity);
-
+                                int    *const gravity,
+                                int    *const unsaturated);
 
 /*=============================================================================
  * Public function prototypes

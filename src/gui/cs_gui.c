@@ -5242,14 +5242,16 @@ void CS_PROCF (uiexop, UIEXOP)(void)
  * double          gravity_x       <--  gravity direction
  * double          gravity_y       <--  gravity direction
  * double          gravity_z       <--  gravity direction
+ * integer         unsaturated     <--  unsaturated zone taken into account
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
-                                const cs_int_t   *diffusion,
-                                const cs_int_t   *gravity,
-                                const cs_real_t  *gravity_x,
-                                const cs_real_t  *gravity_y,
-                                const cs_real_t  *gravity_z)
+void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
+                                const int       *diffusion,
+                                const int       *gravity,
+                                const cs_real_t *gravity_x,
+                                const cs_real_t *gravity_y,
+                                const cs_real_t *gravity_z,
+                                const int       *unsaturated)
 {
   char *path = NULL;
   char *status = NULL;
@@ -5336,13 +5338,17 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
         cs_real_t alpha_param, ks_param, l_param, n_param, thetas_param, thetar_param;
         cs_real_t ks_xx, ks_yy, ks_zz, ks_xy, ks_xz, ks_yz;
         cs_real_t molecular_diffusion;
-        _van_genuchten_parameter_value(zone_id, "alpha",  &alpha_param);
-        _van_genuchten_parameter_value(zone_id, "l",      &l_param);
-        _van_genuchten_parameter_value(zone_id, "n",      &n_param);
-        _van_genuchten_parameter_value(zone_id, "thetar", &thetar_param);
+
+        if (*unsaturated) {
+          _van_genuchten_parameter_value(zone_id, "alpha",  &alpha_param);
+          _van_genuchten_parameter_value(zone_id, "l",      &l_param);
+          _van_genuchten_parameter_value(zone_id, "n",      &n_param);
+          _van_genuchten_parameter_value(zone_id, "thetar", &thetar_param);
+          _van_genuchten_parameter_value(zone_id, "molecularDiff",
+                                         &molecular_diffusion);
+        }
         _van_genuchten_parameter_value(zone_id, "thetas", &thetas_param);
-        _van_genuchten_parameter_value(zone_id, "molecularDiff",
-                                       &molecular_diffusion);
+
 
         if (*permeability == 0)
           _van_genuchten_parameter_value(zone_id, "ks",     &ks_param);
@@ -5355,16 +5361,61 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
           _van_genuchten_parameter_value(zone_id, "ks_yz",     &ks_yz);
         }
 
-        for (cs_lnum_t icel = 0; icel < cells; icel++) {
-          cs_lnum_t iel = cells_list[icel];
-          cs_real_t head = h_head_field[iel];
+        /* unsaturated zone considered */
+        if (*unsaturated) {
+          for (cs_lnum_t icel = 0; icel < cells; icel++) {
+            cs_lnum_t iel = cells_list[icel];
+            cs_real_t head = h_head_field[iel];
 
-          if (*gravity == 1)
-            head -= (cell_cen[iel][0] * *gravity_x +
-                     cell_cen[iel][1] * *gravity_y +
-                     cell_cen[iel][2] * *gravity_z );
+            if (*gravity == 1)
+              head -= (cell_cen[iel][0] * *gravity_x +
+                       cell_cen[iel][1] * *gravity_y +
+                       cell_cen[iel][2] * *gravity_z );
 
-          if (head >= 0) {
+            if (head >= 0) {
+              capacity_field[iel] = 0.;
+              saturation_field[iel] = thetas_param;
+
+              if (*permeability == 0)
+                permeability_field[iel] = ks_param;
+              else {
+                permeability_field_v[iel][0] = ks_xx;
+                permeability_field_v[iel][1] = ks_yy;
+                permeability_field_v[iel][2] = ks_zz;
+                permeability_field_v[iel][3] = ks_xy;
+                permeability_field_v[iel][4] = ks_xz;
+                permeability_field_v[iel][5] = ks_yz;
+              }
+            }
+            else {
+              cs_real_t m_param = 1 - 1 / n_param;
+              cs_real_t tmp1 = pow(fabs(alpha_param * head), n_param);
+              cs_real_t tmp2 = 1. / (1. + tmp1);
+              cs_real_t se_param = pow(tmp2, m_param);
+              cs_real_t perm = pow(se_param, l_param) *
+                               pow((1. - pow((1. - tmp2), m_param)), 2);
+
+              capacity_field[iel] = -m_param * n_param * tmp1 *
+                                    (thetas_param - thetar_param) *
+                                     se_param * tmp2 / head;
+              saturation_field[iel] = thetar_param +
+                                      se_param * (thetas_param - thetar_param);
+
+              if (*permeability == 0)
+                permeability_field[iel] = perm * ks_param;
+              else {
+                permeability_field_v[iel][0] = perm * ks_xx;
+                permeability_field_v[iel][1] = perm * ks_yy;
+                permeability_field_v[iel][2] = perm * ks_zz;
+                permeability_field_v[iel][3] = perm * ks_xy;
+                permeability_field_v[iel][4] = perm * ks_xz;
+                permeability_field_v[iel][5] = perm * ks_yz;
+              }
+            }
+          }
+        } else { /* saturated */
+          for (cs_lnum_t icel = 0; icel < cells; icel++) {
+            cs_lnum_t iel = cells_list[icel];
             capacity_field[iel] = 0.;
             saturation_field[iel] = thetas_param;
 
@@ -5377,31 +5428,6 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t   *permeability,
               permeability_field_v[iel][3] = ks_xy;
               permeability_field_v[iel][4] = ks_xz;
               permeability_field_v[iel][5] = ks_yz;
-            }
-          }
-          else {
-            cs_real_t m_param = 1 - 1 / n_param;
-            cs_real_t tmp1 = pow(fabs(alpha_param * head), n_param);
-            cs_real_t tmp2 = 1. / (1. + tmp1);
-            cs_real_t se_param = pow(tmp2, m_param);
-            cs_real_t perm = pow(se_param, l_param) *
-                             pow((1. - pow((1. - tmp2), m_param)), 2);
-
-            capacity_field[iel] = -m_param * n_param * tmp1 *
-                                  (thetas_param - thetar_param) *
-                                   se_param * tmp2 / head;
-            saturation_field[iel] = thetar_param +
-                                    se_param * (thetas_param - thetar_param);
-
-            if (*permeability == 0)
-              permeability_field[iel] = perm * ks_param;
-            else {
-              permeability_field_v[iel][0] = perm * ks_xx;
-              permeability_field_v[iel][1] = perm * ks_yy;
-              permeability_field_v[iel][2] = perm * ks_zz;
-              permeability_field_v[iel][3] = perm * ks_xy;
-              permeability_field_v[iel][4] = perm * ks_xz;
-              permeability_field_v[iel][5] = perm * ks_yz;
             }
           }
         }

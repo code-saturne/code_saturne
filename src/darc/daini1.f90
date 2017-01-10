@@ -129,6 +129,9 @@ darcy_gravity_x = 0.d0
 darcy_gravity_y = 0.d0
 darcy_gravity_z = 1.d0
 
+! Unsaturated zone is taken into account by default
+darcy_unsaturated = 0
+
 ! Definition of sorption parameters
 call cs_gwf_parameters_define_field_keys
 
@@ -136,7 +139,8 @@ if (iihmpr.eq.1) then
   call uidai1(darcy_anisotropic_permeability,     &
               darcy_anisotropic_dispersion,       &
               darcy_unsteady,                     &
-              darcy_gravity)
+              darcy_gravity,                      &
+              darcy_unsaturated)
 endif
 
 !===============================================================================
