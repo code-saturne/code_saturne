@@ -57,6 +57,7 @@
 #include "cs_rotation.h"
 #include "cs_turbulence_model.h"
 #include "cs_lagr_log.h"
+#include "cs_ctwr.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

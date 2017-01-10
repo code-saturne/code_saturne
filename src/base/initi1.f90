@@ -40,7 +40,6 @@ use post
 use cs_c_bindings
 use field
 use lagran
-use ppincl
 use cpincl
 use dimens
 use radiat

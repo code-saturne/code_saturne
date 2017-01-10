@@ -58,6 +58,7 @@
 #include "cs_time_step.h"
 #include "cs_lagr_stat.h"
 #include "cs_lagr_log.h"
+#include "cs_ctwr.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

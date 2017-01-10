@@ -568,10 +568,6 @@ _volume_initialize_insert_boundary(cs_mesh_t               *m,
                             &n_selected_cells,
                             selected_cells);
 
-  /* Store number of boundary faces before thin wall, the additional
-   * boundary faces will be added at the end of the list */
-  cs_lnum_t n_b_faces_prev = m->n_b_faces;
-
   int coupling_id = _n_internal_couplings;
 
   char group_name[64];

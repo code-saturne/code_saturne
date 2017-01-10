@@ -61,7 +61,6 @@ use optcal
 use cstphy
 use cstnum
 use parall
-use pointe
 use entsor
 use ppppar
 use ppthch
