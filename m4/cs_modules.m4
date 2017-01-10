@@ -94,7 +94,7 @@ fi
 if test "x$LMOD_CMD" != "x" ; then
   MODULECMD=$LMOD_CMD
   AC_SUBST(MODULECMD)
-elif test "x$MODULE_VERSION" != "x" ; then
+elif test "x$MODULESHOME" != "x" ; then
   AC_PATH_PROG([MODULECMD], [modulecmd], [], [${MODULESHOME}/bin:$PATH])
 else
   AC_MSG_WARN([no supported environment module commmand detected])
