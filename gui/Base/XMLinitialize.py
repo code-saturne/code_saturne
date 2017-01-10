@@ -1184,7 +1184,7 @@ class XMLinit(Variables):
                     XMLLagrangianNode['model'] = node['model']
                     node.xmlRemoveNode()
         XMLBoundaryNode = self.case.xmlInitNode('boundary_conditions')
-        for nature in ('inlet', 'outlet', 'wall', 'symmetry'):
+        for nature in ('inlet', 'outlet', 'wall', 'symmetry', 'free_inlet_outlet', 'groundwater'):
             for node in XMLBoundaryNode.xmlGetNodeList(nature):
                 node['field_id'] = 'none'
 
