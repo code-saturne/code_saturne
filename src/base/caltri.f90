@@ -239,11 +239,13 @@ if (ncpdct.gt.0) then
   ! Add matching field if not already done
   if (idtten.lt.0) then
     call field_create('dttens', FIELD_INTENSIVE, 1, 6, .false., idtten)
+    call field_set_key_int(ivarfl(ipr), kwgrec, idtten)
   endif
 else if (iporos.eq.2) then
   ! Add matching field if not already done
   if (idtten.lt.0) then
     call field_create('dttens', FIELD_INTENSIVE, 1, 6, .false., idtten)
+    call field_set_key_int(ivarfl(ipr), kwgrec, idtten)
   endif
 endif
 
