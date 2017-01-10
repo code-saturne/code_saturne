@@ -5,6 +5,8 @@ Release 4.2.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for some environment module variants.
+
 - Radiative model: GUI setting for imodak should not overwrite settings
   from the cs_user_radiative_transfer_param subroutine.
 
