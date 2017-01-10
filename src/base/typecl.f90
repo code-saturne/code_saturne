@@ -110,9 +110,9 @@ double precision rcodcl(ndimfb,nvar,3)
 ! Local variables
 
 integer          ifac, ivar, iel
-integer          iok, inc, iccocg, iprev, ideb, ifin, inb, isum, iwrnp
+integer          iok, inc, iccocg, iprev, ideb, ifin, inb, isum
 integer          ifrslb, itbslb
-integer          ityp, ii, jj, iwaru, iflmab
+integer          ityp, ii, jj, iflmab
 integer          irangd
 integer          ifadir
 integer          iut  , ivt   , iwt, iscal
@@ -1479,22 +1479,14 @@ enddo
 
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 
-iwaru = -1
-iwaru = max(vcopt%iwarni,iwaru)
-if (irangp.ge.0) call parcmx(iwaru)
-
-if(iwaru.ge.1 .or. mod(ntcabs,ntlist).eq.0                        &
+if(vcopt%iwarni.ge.1 .or. mod(ntcabs,ntlist).eq.0                        &
        .or.(ntcabs.le.ntpabs+2).or.(ntcabs.ge.ntmabs-1)) then
   write(nfecra,7010)
 endif
 
-iwrnp = vcopt%iwarni
-if (irangp.ge.0) call parcmx (iwrnp)
-!==========
-
 !     On ecrit le flux de masse si IWARNI>0, a la periodicite NTLIST
 !     et au deux premiers et deux derniers pas de temps.
-if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
+if(vcopt%iwarni.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
      .or.(ntcabs.le.ntpabs+2).or.(ntcabs.ge.ntmabs-1)) then
 
   do ii = 1, ntypmx

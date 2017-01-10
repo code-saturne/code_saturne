@@ -2413,7 +2413,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
       if (cs_gui_strcmp(vars->model, "groundwater_model")) {
         for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-          ifbr = faces_list[ifac] -1;
+          ifbr = faces_list[ifac];
           for (i = 0; i < 3; i++)
           {
             icodcl[(ivarv + i)* n_b_faces + ifbr] = 3;
@@ -2433,14 +2433,14 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
         if (cs_gui_strcmp(_choice_d, "dirichlet")) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = faces_list[ifac] -1;
+            ifbr = faces_list[ifac];
             icodcl[ivar1 * n_b_faces + ifbr] = 1;
             rcodcl[ivar1 * n_b_faces + ifbr] = boundaries->preout[izone];
           }
         }
         else if (cs_gui_strcmp(_choice_d, "neumann")) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = faces_list[ifac] -1;
+            ifbr = faces_list[ifac];
             icodcl[ivar1 * n_b_faces + ifbr] = 3;
             rcodcl[2 * n_b_faces * (*nvar) + ivar1 * n_b_faces + ifbr]
               = boundaries->preout[izone];
@@ -2448,7 +2448,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
         else if (cs_gui_strcmp(_choice_d, "dirichlet_formula")) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = faces_list[ifac] -1;
+            ifbr = faces_list[ifac];
             icodcl[ivar1 * n_b_faces + ifbr] = 1;
 
             mei_tree_t *ev_formula = boundaries->groundwat[izone];
@@ -2777,14 +2777,14 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
         if (cs_gui_strcmp(choice_d, "dirichlet")) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = faces_list[ifac] -1;
+            ifbr = faces_list[ifac];
             icodcl[ivar1 * n_b_faces + ifbr] = 1;
             rcodcl[ivar1 * n_b_faces + ifbr] = boundaries->preout[izone];
           }
         }
         else if (cs_gui_strcmp(choice_d, "neumann")) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = faces_list[ifac] -1;
+            ifbr = faces_list[ifac];
             icodcl[ivar1 * n_b_faces + ifbr] = 3;
             rcodcl[2 * n_b_faces * (*nvar) + ivar1 * n_b_faces + ifbr]
               = boundaries->preout[izone];
@@ -2792,7 +2792,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
         else if (cs_gui_strcmp(choice_d, "dirichlet_formula")) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = faces_list[ifac] -1;
+            ifbr = faces_list[ifac];
             icodcl[ivar1 * n_b_faces + ifbr] = 1;
 
             mei_tree_t *ev_formula = boundaries->groundwat[izone];
