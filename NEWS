@@ -5,6 +5,8 @@ Release 4.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for some environment module variants.
+
 - Fix syntax error in autovnv study code.
 
 Release 4.3.2 (January 6 2017)
