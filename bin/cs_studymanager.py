@@ -154,7 +154,7 @@ def sendmail(code_name, report, labels, to, files):
 
     SERVER  = "localhost"
     TO      = to
-    SUBJECT = "%s. Auto V&V %s: %s " % (code_name, date.today(), labels)
+    SUBJECT = "%s. Study Manager %s: %s " % (code_name, date.today(), labels)
     TEXT    = report
     RETOUR  = "An error occurs during the sending of the log mail"
     FILES   = files
@@ -260,9 +260,9 @@ def run_studymanager(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c
 
     # Print header
 
-    studies.reporting(" ----------")
-    studies.reporting(" Auto V & V")
-    studies.reporting(" ----------\n")
+    studies.reporting(" -------------")
+    studies.reporting(" Study Manager")
+    studies.reporting(" -------------\n")
     studies.reporting(" Code name:         " + pkg.name)
     studies.reporting(" Kernel version:    " + pkg.version)
     studies.reporting(" Install directory: " + pkg.get_dir('exec_prefix'))
@@ -329,9 +329,9 @@ def run_studymanager(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c
         studies.postpro()
         studies.plot()
 
-    studies.reporting("\n -----------------")
-    studies.reporting(" End of Auto V & V")
-    studies.reporting(" -----------------")
+    studies.reporting("\n --------------------")
+    studies.reporting(" End of Study Manager")
+    studies.reporting(" --------------------")
 
     # Reporting
 
