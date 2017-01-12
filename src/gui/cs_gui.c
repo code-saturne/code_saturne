@@ -1606,8 +1606,8 @@ _volumic_zone_localization(const char *zone_id)
 
 static void
 _gwf_parameter_value(const char  *zone_id,
-                               const char  *parameter,
-                               double      *value)
+                     const char  *parameter,
+                     double      *value)
 {
   char   *path = NULL;
   double  result;
