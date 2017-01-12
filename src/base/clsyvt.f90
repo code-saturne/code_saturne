@@ -1082,6 +1082,7 @@ double precision rkl, visclc
 double precision distbf, srfbnf
 double precision rnx, rny, rnz, temp
 double precision hintt(6)
+double precision turb_schmidt
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: coefav, cofafv
@@ -1122,6 +1123,9 @@ if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
 endif
 
+! retrieve turbulent Schmidt value for current scalar
+call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 
@@ -1148,7 +1152,7 @@ do ifac = 1, nfabor
 
     ! Isotropic diffusivity
     if (vcopt%idften.eq.1) then
-      hintt(1) = (vcopt%idifft*max(visct(iel),zero)/sigmas(iscal) + rkl)/distbf
+      hintt(1) = (vcopt%idifft*max(visct(iel),zero)/turb_schmidt + rkl)/distbf
       hintt(2) = hintt(1)
       hintt(3) = hintt(1)
       hintt(4) = hintt(1)

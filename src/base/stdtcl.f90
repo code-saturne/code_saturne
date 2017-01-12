@@ -59,7 +59,7 @@ subroutine stdtcl &
 !                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
+!                  !    !     !        cp*(viscls+visct/turb_schmidt)*gradt    !
 ! qcalc(nozfmx)    ! tr ! --- ! tab de travail (debit par zone)                !
 !__________________!____!_____!________________________________________________!
 

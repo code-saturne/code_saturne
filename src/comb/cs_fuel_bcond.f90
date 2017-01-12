@@ -62,7 +62,7 @@
 !>                               for velocity  \f$(vistl+visct)\cdot\grad{u}\f$
 !>                               for pressure  \f$dt \cdot \grad{p}\f$
 !>                               for scalar
-!>                                      \f$C_p(viscls+visct/sigmas) \grad{t}\f$
+!>                                      \f$C_p(viscls+visct/turb_schmidt) \grad{t}\f$
 !______________________________________________________________________________!
 
 subroutine cs_fuel_bcond &

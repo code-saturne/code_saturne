@@ -59,7 +59,7 @@ subroutine cpltcl &
 !                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
+!                  !    !     !        cp*(viscls+visct/turb_schmidt)*gradt    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)

@@ -116,6 +116,7 @@ integer          ii
 
 double precision sum, epsi
 double precision tsgrad, tschim, tsdiss
+double precision turb_schmidt
 
 double precision, allocatable, dimension(:,:) :: gradf, grady
 double precision, allocatable, dimension(:) :: w10, w11
@@ -302,6 +303,8 @@ if (ivar.eq.isca(icoyfp)) then
 
   endif
 
+  call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+
   do iel=1,ncel
 
 !  A confirmer :
@@ -320,7 +323,7 @@ if (ivar.eq.isca(icoyfp)) then
 ! terme de gradient
 
     tsgrad =  (2.0d0                                              &
-         * visct(iel)/(sigmas(iscal))                             &
+         * visct(iel)/(turb_schmidt)                              &
          * (  gradf(1,iel)*grady(1,iel)                           &
             + gradf(2,iel)*grady(2,iel)                           &
             + gradf(3,iel)*grady(3,iel) ))                        &

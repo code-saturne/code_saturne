@@ -84,6 +84,7 @@ integer          indest, iiidef, istop
 integer          kscmin, kscmax, ifcvsl
 integer          keyvar, keysca
 double precision scmaxp, scminp
+double precision turb_schmidt
 
 character(len=3), dimension(3) :: nomext3
 character(len=4), dimension(3) :: nomext63
@@ -711,11 +712,12 @@ if (nscal.gt.0) then
     endif
   enddo
 
-!     Valeur du sigma positif
+!     Valeur du Schmidt turbulent positif
   do ii = 1, nscal
-    if (sigmas(ii).le.0d0) then
+    call field_get_key_double(ivarfl(isca(ii)), ksigmas, turb_schmidt)
+    if (turb_schmidt.le.0d0) then
       call field_get_label(ivarfl(isca(ii)), chaine)
-      write(nfecra,4350)chaine(1:16),ii,sigmas(ii)
+      write(nfecra,4350)chaine(1:16),ii,turb_schmidt
       iok = iok + 1
     endif
   enddo

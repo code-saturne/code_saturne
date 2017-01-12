@@ -102,7 +102,7 @@ BEGIN_C_DECLS
  *                                    - for velocities, (vistl+visct)*gradu
  *                                    - for pressure, dt*gradp,
  *                                    - for scalars,
- *                                      cp*(viscls+visct/sigmas)*gradt
+ *                                      cp*(viscls+visct/turb_schmidt)*gradt
  * \param[out] tparop   wall temperature in Kelvin
  * \param[in]  qincip   dradiative flux density at boundaries
  * \param[in]  textp    exterior boundary temperature in degrees C

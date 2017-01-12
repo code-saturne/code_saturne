@@ -111,6 +111,7 @@ integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision sclnor, thetap, epsrsp, relaxp
+double precision turb_schmidt
 
 integer          inc    , iccocg , imucpp , idftnp , iswdyp
 integer          f_id0  , ii, jj
@@ -415,9 +416,9 @@ do iel = 1, ncel
                             + gz*vel(3,iel) )
 enddo
 
-!                                  Kij*Sij           LAMBDA   Cp   MUT
-!     FACE DIFFUSION "VELOCITY" : --------- avec K = ------ + -- .------
-!     =========================    IJ.nij              Cv     Cv  SIGMAS
+!                                  Kij*Sij           LAMBDA   Cp      MUT
+!     FACE DIFFUSION "VELOCITY" : --------- avec K = ------ + -- .------------
+!     =========================    IJ.nij              Cv     Cv  TURB_SCHMIDT
 
 ! Only SGDH available
 
@@ -427,11 +428,13 @@ allocate(viscb(nfabor))
 
 if( vcopt_e%idiff.ge. 1 ) then
 
-!     MUT/SIGMAS
+  call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+
+!     MUT/TURB_SCHMIDT
   do iel = 1, ncel
-    w1(iel) = visct(iel)/sigmas(iscal)
+    w1(iel) = visct(iel)/turb_schmidt
   enddo
-!     CP*MUT/SIGMAS
+!     CP*MUT/TURB_SCHMIDT
   if(icp.ge.0) then
     do iel = 1, ncel
       w1(iel) = w1(iel)*cpro_cp(iel)
@@ -441,7 +444,7 @@ if( vcopt_e%idiff.ge. 1 ) then
       w1(iel) = w1(iel)*cp0
     enddo
   endif
-!     (CP/CV)*MUT/SIGMAS
+!     (CP/CV)*MUT/TURB_SCHMIDT
   if(icv.ge.0) then
     do iel = 1, ncel
       w1(iel) = w1(iel)/cpro_cv(iel)
@@ -451,7 +454,7 @@ if( vcopt_e%idiff.ge. 1 ) then
       w1(iel) = w1(iel)/cv0
     enddo
   endif
-!     (CP/CV)*MUT/SIGMAS+LAMBDA/CV
+!     (CP/CV)*MUT/TURB_SCHMIDT+LAMBDA/CV
   if(ifcvsl.lt.0)then
     do iel = 1, ncel
       w1(iel) = w1(iel) + visls0(iscal)

@@ -136,6 +136,7 @@ double precision sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp(3)
 double precision temp, idifftp
+double precision turb_schmidt
 
 double precision rvoid(1)
 
@@ -250,6 +251,9 @@ call field_get_name(iflid, chaine)
 if(vcopt%iwarni.ge.1) then
   write(nfecra,1000) chaine(1:16)
 endif
+
+! Retrieve turbulent Schmidt value for current vector
+call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
 
 !===============================================================================
 ! 2. Source terms
@@ -410,12 +414,12 @@ if (vcopt%idiff.ge.1) then
     if (ifcvsl.lt.0) then
       do iel = 1, ncel
         w1(iel) = visls0(iscal)                                     &
-           + idifftp*max(visct(iel),zero)/sigmas(iscal)
+           + idifftp*max(visct(iel),zero)/turb_schmidt
       enddo
     else
       do iel = 1, ncel
         w1(iel) = cpro_viscls(iel)                                &
-           + idifftp*max(visct(iel),zero)/sigmas(iscal)
+           + idifftp*max(visct(iel),zero)/turb_schmidt
       enddo
     endif
 

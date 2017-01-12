@@ -136,8 +136,7 @@ void
 CS_PROCF (elini1, ELINI1) (cs_real_t       *visls0,
                            cs_real_t       *diftl0,
                            cs_int_t        *idircl,
-                           cs_int_t        *isca,
-                           cs_real_t       *sigmas);
+                           cs_int_t        *isca);
 
 void
 CS_PROCF (elflux, ELFLUX) (cs_int_t *iappel);
@@ -219,8 +218,7 @@ void
 cs_electrical_model_specific_initialization(cs_real_t    *visls0,
                                             cs_real_t    *diftl0,
                                             int          *idircl,
-                                            int          *isca,
-                                            cs_real_t    *sigmas);
+                                            int          *isca);
 
 /*----------------------------------------------------------------------------
  * Read properties file

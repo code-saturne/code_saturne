@@ -104,6 +104,7 @@ integer          inc , iccocg , nswrgp , imligp , iwarnp
 
 double precision xk , xe , rhovst
 double precision epsrgp , climgp , extrap
+double precision turb_schmidt
 
 double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: grad
@@ -253,6 +254,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
   deallocate(coefap, coefbp)
 
   call field_get_val_prev_s(ivarfl(ivarsc), cvara_varsc)
+  call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
 
   do iel = 1, ncel
     if ( itytur.eq.2 .or. iturb.eq.50 ) then
@@ -270,7 +272,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
              (xk * rvarfl(iscal))*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel) +                                        &
-                2.d0*visct(iel)*volume(iel)/sigmas(iscal)            &
+                2.d0*visct(iel)*volume(iel)/turb_schmidt             &
                 * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2) &
                 - rhovst*cvara_varsc(iel)
   enddo

@@ -57,7 +57,7 @@ subroutine coupbi &
 !                  !    !     ! for velocities (vistl+visct)*gradu             !
 !                  !    !     ! for pressure              dt*gradp             !
 !                  !    !     ! for scalars                                    !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
+!                  !    !     !        cp*(viscls+visct/turb_schmidt)*gradt    !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),

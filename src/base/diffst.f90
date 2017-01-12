@@ -85,6 +85,7 @@ integer          ifcvsl, iflmas, iflmab
 integer          imucpp, idftnp, imasac
 double precision epsrgp, climgp, extrap
 double precision blencp, relaxp, thetex
+double precision turb_schmidt
 
 integer          icvflb
 integer          ivoid(1)
@@ -197,15 +198,17 @@ do iscal = 1, nscal
     ! The positive part of (K+K_t) would have been considered
     ! but should allow negative K_t that is considered non physical here
 
+    call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+
     if(ifcvsl.lt.0)then
       do iel = 1, ncel
         vistot(iel) = visls0(iscal)                                     &
-           + vcopt%idifft*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
+           + vcopt%idifft*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
       enddo
     else
       do iel = 1, ncel
         vistot(iel) = cpro_viscls(iel)                                  &
-           + vcopt%idifft*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
+           + vcopt%idifft*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
       enddo
     endif
 

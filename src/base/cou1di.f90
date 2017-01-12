@@ -61,7 +61,7 @@ subroutine cou1di &
 !                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
 !                  !    !     ! pour la pression             dt*gradp          !
 !                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
+!                  !    !     !        cp*(viscls+visct/turb_schmidt)*gradt    !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),

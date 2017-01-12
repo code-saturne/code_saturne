@@ -695,6 +695,8 @@ call field_set_key_int(id, keyvar, ivar)
 
 call init_var_cal_opt(id)
 
+call field_set_key_double(id, ksigmas, 1.d0)
+
 if (dim .gt. 1) then
   do ii = 2, dim
     ivarfl(ivar + ii - 1) = id
@@ -794,7 +796,7 @@ do id = nfld1, nfld2 - 1
 
   call field_set_key_int(id, keyvar, nvar)
   call field_set_key_int(id, keysca, iscal)
-
+  call field_set_key_double(id, ksigmas, 1.d0)
   call init_var_cal_opt(id)
 
 enddo
@@ -992,7 +994,7 @@ enddo
 
 call field_set_key_int(f_id, keyvar, ivar)
 call field_set_key_int(f_id, keysca, iscal)
-
+call field_set_key_double(f_id, ksigmas, 1.d0)
 call init_var_cal_opt(f_id)
 
 return

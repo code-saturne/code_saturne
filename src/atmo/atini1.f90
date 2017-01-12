@@ -56,6 +56,7 @@ implicit none
 ! Local variables
 
 integer          ii, isc, jj
+double precision turb_schmidt
 
 type(var_cal_opt) :: vcopt
 
@@ -163,7 +164,8 @@ endif
 
 if (nscal.gt.0) then
   do ii = 1, nscal
-    sigmas(ii) = 0.7d0
+    turb_schmidt = 0.7d0
+    call field_set_key_double(ivarfl(isca(ii)), ksigmas, turb_schmidt)
   enddo
 endif
 

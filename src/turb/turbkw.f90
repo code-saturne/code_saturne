@@ -120,6 +120,7 @@ double precision tuexpk, tuexpw
 double precision cdkw, xarg1, xxf1, xgamma, xbeta, sigma, produc
 double precision var, vrmin(2), vrmax(2)
 double precision utaurf,ut2,ypa,ya,xunorm, limiter, nu0
+double precision turb_schmidt
 
 double precision rvoid(1)
 
@@ -401,7 +402,8 @@ if (igrake.eq.1) then
   !   prodk=min(P,c1*eps)+G
   !   prodw=P+(1-ce3)*G
   if (iscalt.gt.0.and.nscal.ge.iscalt) then
-    prdtur = sigmas(iscalt)
+    call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
+    prdtur = turb_schmidt
   else
     prdtur = 1.d0
   endif

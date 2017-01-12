@@ -71,7 +71,7 @@ implicit none
 integer          ii , jj , iok , icla
 integer          isc
 integer          kscmin
-double precision wmolme
+double precision wmolme, turb_schmidt
 
 type(var_cal_opt) :: vcopt
 
@@ -109,7 +109,8 @@ do isc = 1, nscapp
 
 ! ------ Schmidt ou Prandtl turbulent
 
-  sigmas(jj) = 0.7d0
+  turb_schmidt = 0.7d0
+  call field_set_key_double(ivarfl(isca(jj)), ksigmas, turb_schmidt)
 
 ! ------ Coeff dissipation des fluctuations
 

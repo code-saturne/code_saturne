@@ -214,11 +214,11 @@
 !>     - For the pressure P,              in  s/m:
 !>        \c rcodcl(ifac, ivar, 2) =                     dt / d
 !>     - For temperatures T,              in Watt/(m2 degres):
-!>        \c rcodcl(ifac, ivar, 2) = Cp*(viscls+visct/sigmas) / d
+!>        \c rcodcl(ifac, ivar, 2) = Cp*(viscls+visct/turb_schmidt) / d
 !>     - For enthalpies H,                in kg /(m2 s):
-!>        \c rcodcl(ifac, ivar, 2) =    (viscls+visct/sigmas) / d
+!>        \c rcodcl(ifac, ivar, 2) =    (viscls+visct/turb_schmidt) / d
 !>     - For other scalars F              in:
-!>        \c rcodcl(ifac, ivar, 2) =    (viscls+visct/sigmas) / d
+!>        \c rcodcl(ifac, ivar, 2) =    (viscls+visct/turb_schmidt) / d
 !>            (d has the dimension of a distance in m)
 !>
 !>  - \c rcodcl(ifac, ivar, 3) if \c icodcl(ifac, ivar) = 3 or 13:
@@ -228,11 +228,11 @@
 !>     - For pressure P,                  in kg/(m2 s):
 !>        \c rcodcl(ifac, ivar, 3) =                    -dt * (grad P).n
 !>     - For temperatures T,              in Watt/m2:
-!>        \c rcodcl(ifac, ivar, 3) = -Cp*(viscls+visct/sigmas) * (grad T).n
+!>        \c rcodcl(ifac, ivar, 3) = -Cp*(viscls+visct/turb_schmidt) * (grad T).n
 !>     - For enthalpies H,                in Watt/m2:
-!>        \c rcodcl(ifac, ivar, 3) = -(viscls+visct/sigmas) * (grad H).n
+!>        \c rcodcl(ifac, ivar, 3) = -(viscls+visct/turb_schmidt) * (grad H).n
 !>     - For other scalars F              in:
-!>        \c rcodcl(ifac, ivar, 3) = -(viscls+visct/sigmas) * (grad F).n
+!>        \c rcodcl(ifac, ivar, 3) = -(viscls+visct/turb_schmidt) * (grad F).n
 !>
 !>  - \c rcodcl(ifac, ivar, 3) if \c icodcl(ifac, ivar) = 6:
 !>      Roughness for the rough wall law

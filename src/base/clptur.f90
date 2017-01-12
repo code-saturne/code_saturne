@@ -1993,6 +1993,7 @@ double precision yplus, dplus, phit, pimp, rcprod, temp, tet, uk
 double precision viscis, visctc, xmutlm, ypth, xnuii
 double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
+double precision turb_schmidt
 
 character(len=80) :: fname
 
@@ -2149,6 +2150,9 @@ else
   endif
 endif
 
+! retrieve turbulent Schmidt value for current scalar
+call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 
@@ -2211,7 +2215,7 @@ do ifac = 1, nfabor
 
     ! Scalar diffusivity
     if (vcopt%idften.eq.1) then
-      ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
+      ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/TURB_SCHMIDT)
       if (iscal.eq.iscalt .and. itherm.eq.3) then
         if (icp.ge.0) then
           cpscv = cpro_cp(iel)
@@ -2223,9 +2227,9 @@ do ifac = 1, nfabor
         else
           cpscv = cpscv/cv0
         endif
-        hint = (rkl+vcopt%idifft*cpscv*visctc/sigmas(iscal))/distbf
+        hint = (rkl+vcopt%idifft*cpscv*visctc/turb_schmidt)/distbf
       else
-        hint = (rkl+vcopt%idifft*cpp*visctc/sigmas(iscal))/distbf
+        hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
       endif
 
       ! Symmetric tensor diffusivity (GGDH or AFM)
@@ -2292,8 +2296,7 @@ do ifac = 1, nfabor
 
     ! Dirichlet on the scalar, with wall function
     if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5) then
-
-      call hturbp(iwalfs,prdtl,sigmas(iscal),yplus,dplus,hflui,ypth)
+      call hturbp(iwalfs,prdtl,turb_schmidt,yplus,dplus,hflui,ypth)
 
       ! Compute (y+-d+)/T+ *PrT
       yptp = hflui/prdtl
@@ -2303,7 +2306,7 @@ do ifac = 1, nfabor
 
       ! Neumann on the scalar, with wall function (for post-processing)
     elseif (iturb.ne.0.and.icodcl(ifac,ivar).eq.3) then
-      call hturbp(iwalfs,prdtl,sigmas(iscal),yplus,dplus,hflui,ypth)
+      call hturbp(iwalfs,prdtl,turb_schmidt,yplus,dplus,hflui,ypth)
       hbord2(ifac) = rkl/distbf * hflui
       ! y+/T+ *PrT
       yptp = hflui/prdtl
@@ -2339,7 +2342,7 @@ do ifac = 1, nfabor
           xmutlm = xkappa*visclc*yplus
           rcprod = min(xkappa , max(1.0d0,sqrt(xmutlm/visctc))/yplus)
 
-          cofimp = 1.d0 - yptp*sigmas(iscal)/xkappa*                        &
+          cofimp = 1.d0 - yptp*turb_schmidt/xkappa*                        &
                           (2.0d0*rcprod - 1.0d0/(2.0d0*yplus-dplus))
 
           ! In the viscous sub-layer
@@ -2654,6 +2657,7 @@ double precision yplus, dplus, rcprod, temp, uk
 double precision visctc, xmutlm, ypth, xnuii, srfbnf
 double precision rcodcx, rcodcy, rcodcz, rcodcn, rnx, rny, rnz
 double precision upx, upy, upz, usn, tx, ty, tz, txn, txn0, utau
+double precision turb_schmidt
 
 double precision, allocatable, dimension(:,:) :: vecipb
 double precision, allocatable, dimension(:,:,:) :: gradv
@@ -2703,6 +2707,9 @@ call field_get_val_s(icrom, crom)
 if (icp.ge.0) then
   call field_get_val_s(icp, cpro_cp)
 endif
+
+! retrieve turbulent Schmidt value for current vector
+call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
 
 isvhbl = 0
 if (iscal.eq.isvhb) then
@@ -2834,14 +2841,13 @@ do ifac = 1, nfabor
 
     ! Scalar diffusivity
     if (vcopt%idften.eq.1) then
-      hint = (rkl+vcopt%idifft*cpp*visctc/sigmas(iscal))/distbf
+      hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
     endif
     ! TODO if (vcopt%idften.eq.6)
 
     ! Dirichlet on the scalar, with wall function
     if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5) then
-
-      call hturbp(iwalfs,prdtl,sigmas(iscal),yplus,dplus,hflui,ypth)
+      call hturbp(iwalfs,prdtl,turb_schmidt,yplus,dplus,hflui,ypth)
 
       ! Compute (y+-d+)/T+ *PrT
       yptp = hflui/prdtl
@@ -2850,7 +2856,7 @@ do ifac = 1, nfabor
 
     ! Neumann on the scalar, with wall function (for post-processing)
     elseif (iturb.ne.0.and.icodcl(ifac,ivar).eq.3) then
-      call hturbp(iwalfs,prdtl,sigmas(iscal),yplus,dplus,hflui,ypth)
+      call hturbp(iwalfs,prdtl,turb_schmidt,yplus,dplus,hflui,ypth)
       ! y+/T+ *PrT
       yptp = hflui/prdtl
       hflui = hint
@@ -2883,7 +2889,7 @@ do ifac = 1, nfabor
           xmutlm = xkappa*visclc*yplus
           rcprod = min(xkappa , max(1.0d0,sqrt(xmutlm/visctc))/yplus)
 
-          cofimp = 1.d0 - yptp*sigmas(iscal)/xkappa*                        &
+          cofimp = 1.d0 - yptp*turb_schmidt/xkappa*                        &
                   (2.0d0*rcprod - 1.0d0/(2.0d0*yplus-dplus))
 
           ! In the viscous sub-layer

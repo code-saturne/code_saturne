@@ -78,6 +78,7 @@ double precision gravke, prdtur
 double precision theta_virt
 double precision qldia,qw
 double precision xk, xeps, visct, ttke, rho
+double precision turb_schmidt
 
 double precision dum
 double precision, allocatable, dimension(:,:) :: grad
@@ -156,7 +157,7 @@ inc = 1
 iivar = itpp
 
 ! computes the turbulent production/destruction terms:
-! dry atmo: (1/sigmas*theta)*(dtheta/dz)*gz
+! dry atmo: (1/turb_schmidt*theta)*(dtheta/dz)*gz
 
 call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
                            iccocg,                                  &
@@ -166,7 +167,8 @@ call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
 ! TINSTK=P+G et TINSTE = P + (1-CE3)*G
 
 if (iscalt.gt.0.and.nscal.ge.iscalt) then
-  prdtur = sigmas(iscalt)
+  call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
+  prdtur = turb_schmidt
 else
   prdtur = 1.d0
 endif
@@ -252,7 +254,7 @@ inc = 1
 iivar = itpp
 
 ! computes the turbulent production/destruction terms:
-! humid atmo: (1/sigmas*theta_v)*(dtheta_l/dz)*gz
+! humid atmo: (1/turb_schmidt*theta_v)*(dtheta_l/dz)*gz
 
 call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
                            iccocg,                                  &
@@ -262,7 +264,8 @@ call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
 ! TINSTK = P + G et TINSTE = P + (1-CE3)*G
 
 if(iscalt.gt.0.and.nscal.ge.iscalt) then
-  prdtur = sigmas(iscalt)
+  call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
+  prdtur = turb_schmidt
 else
   prdtur = 1.d0
 endif
@@ -286,7 +289,7 @@ endif
 iivar = iqw
 
 ! computes the turbulent production/destruction terms:
-! humid atmo: (1/sigmas*theta_v)*(dtheta_l/dz)*gz
+! humid atmo: (1/turb_schmidt*theta_v)*(dtheta_l/dz)*gz
 
 call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
                            iccocg,                                  &
@@ -296,7 +299,8 @@ call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
 ! TINSTK = P + G et TINSTE = P + (1-CE3)*G
 
 if (iscalt.gt.0.and.nscal.ge.iscalt) then
-  prdtur = sigmas(iscalt)
+  call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
+  prdtur = turb_schmidt
 else
   prdtur = 1.d0
 endif

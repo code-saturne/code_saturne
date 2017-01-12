@@ -39,7 +39,7 @@
 !> hauteur de rugosite (m) si icodcl=6  \n
 !>    pour les vitesses (vistl+visct)*gradu \n
 !>    pour la pression             dt*gradp \n
-!>    pour les scalaires cp*(viscls+visct/sigmas)*gradt
+!>    pour les scalaires cp*(viscls+visct/turb_schmidt)*gradt
 !-------------------------------------------------------------------------------
 subroutine attycl ( itypfb, izfppp, rcodcl )
 

@@ -92,6 +92,7 @@ double precision xk     , xe     , rhovst
 double precision epsrgp , climgp , extrap
 double precision aux
 double precision gvap , t2mt1
+double precision turb_schmidt
 !
 integer           iok1,iok2
 double precision, dimension(:), allocatable :: x1,f1f2
@@ -211,6 +212,8 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
    f1f2   , coefap , coefbp ,                                     &
    grad   )
 
+  call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+
   do iel = 1, ncel
     if ( itytur.eq.2 .or. iturb.eq.50 ) then
       xk = cvara_k(iel)
@@ -226,7 +229,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
     rhovst = cpro_rom1(iel)*xe/(xk*rvarfl(iscal))*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel)                                                   &
-                +2.d0*visct(iel)*volume(iel)/sigmas(iscal)                    &
+                +2.d0*visct(iel)*volume(iel)/turb_schmidt                     &
                  *(grad(1,iel)**2.d0 + grad(2,iel)**2.d0 + grad(3,iel)**2.d0) &
                  -rhovst*cvara_scal(iel)
   enddo

@@ -82,6 +82,7 @@ double precision g11, g22, g33, g12, g13, g23, gkks3
 double precision g11p, g22p, g33p
 double precision phit11, phit22, phit33, phit12, phit13, phit23
 double precision aa, bb
+double precision turb_schmidt
 
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
@@ -101,7 +102,8 @@ else
 endif
 
 if(iscalt.gt.0.and.nscal.ge.iscalt) then
-  prdtur = sigmas(iscalt)
+  call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
+  prdtur = turb_schmidt
 else
   prdtur = 1.d0
 endif

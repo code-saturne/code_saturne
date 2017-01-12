@@ -736,6 +736,9 @@ cs_balance_by_zone(const char *selection_crit,
     return;
   }
 
+  const int ksigmas = cs_field_key_id("turbulent_schmidt");
+  cs_real_t turb_schmidt;
+
   /* Internal coupling variables */
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
@@ -991,8 +994,9 @@ cs_balance_by_zone(const char *selection_crit,
   cs_real_t *c_visct = cs_field_by_name("turbulent_viscosity")->val;
 
   if (var_cal_opt.idifft == 1) {
+    turb_schmidt = cs_field_get_key_double(f, ksigmas);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-      c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/1.; //FIXME sigmas Turbulent prandlt
+      c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/turb_schmidt;
 
   }
   cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
@@ -2192,6 +2196,9 @@ cs_surface_balance(const char *selection_crit,
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
+  const int ksigmas = cs_field_key_id("turbulent_schmidt");
+  cs_real_t turb_schmidt;
+
   /* all boundary convective fluxes are upwind */
   int icvflb = 0; // TODO handle total energy balance
   int icvflf = 0;
@@ -2280,8 +2287,9 @@ cs_surface_balance(const char *selection_crit,
   cs_real_t *c_visct = cs_field_by_name("turbulent_viscosity")->val;
 
   if (var_cal_opt.idifft == 1) {
+    turb_schmidt = cs_field_get_key_double(f, ksigmas);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-      c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/1.; //FIXME sigmas Turbulent prandlt
+      c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/turb_schmidt;
 
   }
   cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
@@ -2769,6 +2777,9 @@ cs_flux_through_surface(const char *selection_crit,
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
+  const int ksigmas = cs_field_key_id("turbulent_schmidt");
+  cs_real_t turb_schmidt;
+
   /* all boundary convective fluxes are upwind */
   int icvflb = 0; // TODO handle total energy balance
   int icvflf = 0;
@@ -2857,8 +2868,9 @@ cs_flux_through_surface(const char *selection_crit,
   cs_real_t *c_visct = cs_field_by_name("turbulent_viscosity")->val;
 
   if (var_cal_opt.idifft == 1) {
+    turb_schmidt = cs_field_get_key_double(f, ksigmas);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
-      c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/1.; //FIXME sigmas Turbulent prandlt
+      c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/turb_schmidt;
 
   }
   cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);

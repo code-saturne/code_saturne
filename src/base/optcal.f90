@@ -1334,10 +1334,6 @@ module optcal
   !> thermochemical data file.
   double precision, save :: visls0(nscamx)
 
-  !> sigmas : turbulent Prandtl (or Schmidt) number for scalars.\n
-  !> Useful if and only if  1\f$\leqslant\f$ iscal \f$\leqslant\f$\ref nscaus
-  double precision, save :: sigmas(nscamx)
-
   !> When iscavr(iscal)>0, \ref rvarfl is the coefficient \f$R_f\f$ in
   !> the dissipation term \f$\-\frac{\rho}{R_f}\frac{\varepsilon}{k}\f$
   !> of the equation concerning the scalar,

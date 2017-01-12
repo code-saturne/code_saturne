@@ -167,6 +167,7 @@ double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp, dvar, cprovol, prod, expkdt
 double precision temp, idifftp, roskpl, kplskm, ctot_tmp
+double precision turb_schmidt
 
 double precision rvoid(1)
 
@@ -352,6 +353,9 @@ endif
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(xcpp)
 endif
+
+! Retrieve turbulent Schmidt value for current scalar
+call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
 
 !===============================================================================
 ! 2. Source terms
@@ -772,7 +776,7 @@ if (itspdv.eq.1) then
         do iel = 1, ncel
           cproa_scal_st(iel) = cproa_scal_st(iel)                             &
                + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                     &
-               *cell_f_vol(iel)/sigmas(iscal)                                 &
+               *cell_f_vol(iel)/turb_schmidt                                 &
                *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
@@ -818,7 +822,7 @@ if (itspdv.eq.1) then
         do iel = 1, ncel
           smbrs(iel) = smbrs(iel)                                            &
                      + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)           &
-                     * cell_f_vol(iel)/sigmas(iscal)                             &
+                     * cell_f_vol(iel)/turb_schmidt                       &
                      * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
@@ -828,7 +832,7 @@ if (itspdv.eq.1) then
         do iel = 1, ncel
           cpro_tsscal(iel) = cpro_tsscal(iel) +                   &
                2.d0*xcpp(iel)*max(cpro_visct(iel),zero)        &
-             *cell_f_vol(iel)/sigmas(iscal)                       &
+             *cell_f_vol(iel)/turb_schmidt                     &
              *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
@@ -927,15 +931,16 @@ if (vcopt%idiff.ge.1) then
     if (ityturt(iscal).eq.3) then
       idifftp = 0
     endif
+
     if (ifcvsl.lt.0) then
       do iel = 1, ncel
         w1(iel) = visls0(iscal)                                     &
-           + idifftp*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
+           + idifftp*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
       enddo
     else
       do iel = 1, ncel
         w1(iel) = cpro_viscls(iel)                                &
-           + idifftp*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
+           + idifftp*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
       enddo
     endif
 

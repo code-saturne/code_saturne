@@ -197,6 +197,7 @@ double precision srfbnf, normal(3)
 double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision temp
+double precision turb_schmidt
 double precision, allocatable, dimension(:) :: pimpts, hextts, qimpts, cflts
 double precision, allocatable, dimension(:) :: tb_save
 
@@ -2370,7 +2371,8 @@ if (nscal.ge.1) then
         ! Scalar diffusivity
         if (vcopt%idften.eq.1) then
           if (ippmod(idarcy).eq.-1) then !FIXME
-            hint = (rkl+vcopt%idifft*cpp*visctc/sigmas(ii))/distbf
+            call field_get_key_double(ivarfl(isca(ii)), ksigmas, turb_schmidt)
+            hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
           else ! idarcy = 1
             hint = rkl/distbf
           endif
@@ -2756,7 +2758,8 @@ if (nscal.ge.1) then
         ! Scalar diffusivity
         if (vcopt%idften.eq.1) then
           if (ippmod(idarcy).eq.-1) then !FIXME
-            hint = (rkl+vcopt%idifft*cpp*visctc/sigmas(ii))/distbf
+            call field_get_key_double(ivarfl(isca(ii)), ksigmas, turb_schmidt)
+            hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
           else ! idarcy = 1
             hint = rkl/distbf
           endif

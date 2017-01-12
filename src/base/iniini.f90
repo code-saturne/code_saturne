@@ -124,6 +124,8 @@ call field_get_key_id("gradient_weighting_id", kwgrec)
 call field_get_key_id("source_term_prev_id", kstprv)
 call field_get_key_id("source_term_id", kst)
 
+call field_get_key_id("turbulent_schmidt", ksigmas)
+
 icrom = -1
 ibrom = -1
 
@@ -1005,7 +1007,6 @@ do iscal = 1, nscamx
   iscacp(iscal) =-10
   iclvfl(iscal) = -1
   visls0(iscal) =-grand*10.d0
-  sigmas(iscal) = 1.0d0
   rvarfl(iscal) = 0.8d0
 enddo
 

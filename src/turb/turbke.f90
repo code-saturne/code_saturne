@@ -128,6 +128,7 @@ double precision thetp1, thetak, thetae, thets, thetap
 double precision tuexpk, tuexpe
 double precision cmueta, sqrcmu, xs
 double precision hint
+double precision turb_schmidt
 
 double precision rvoid(1)
 
@@ -413,7 +414,8 @@ else if (igrake.eq.1) then
   !   smbrk = P+G
   !   smbre = P+(1-ce3)*G
   if (iscalt.gt.0.and.nscal.ge.iscalt) then
-    prdtur = sigmas(iscalt)
+    call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
+    prdtur = turb_schmidt
   else
     prdtur = 1.d0
   endif

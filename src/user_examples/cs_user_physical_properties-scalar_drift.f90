@@ -90,6 +90,7 @@ integer          f_id, keydri, nfld, keysca
 double precision rho, viscl
 double precision diamp, rhop, cuning
 double precision xvart, xk, xeps, beta1
+double precision turb_schmidt
 
 character*80     fname
 
@@ -225,10 +226,11 @@ do iflid = 0, nfld-1
       if (itytur.eq.2 .or. itytur.eq.5) then
         call field_get_val_s(ivarfl(ik), cvar_k)
         call field_get_val_s(ivarfl(iep), cvar_ep)
+        call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
         do iel = 1, ncel
           xk = cvar_k(iel)
           xeps = cvar_ep(iel)
-          cpro_taufpt(iel) = (3.d0/2.d0)*(cmu/sigmas(iscal))*xk/xeps
+          cpro_taufpt(iel) = (3.d0/2.d0)*(cmu/turb_schmidt)*xk/xeps
         enddo
 
       ! Rij-epsilon models
@@ -250,10 +252,11 @@ do iflid = 0, nfld-1
       else if (iturb.eq.60) then
         call field_get_val_s(ivarfl(ik), cvar_k)
         call field_get_val_s(ivarfl(iomg), cvar_omg)
+        call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
         do iel = 1, ncel
           xk = cvar_k(iel)
           xeps = cmu*xk*cvar_omg(iel)
-          cpro_taufpt(iel) = (3.d0/2.d0)*(cmu/sigmas(iscal))*xk/xeps
+          cpro_taufpt(iel) = (3.d0/2.d0)*(cmu/turb_schmidt)*xk/xeps
         enddo
       endif
 

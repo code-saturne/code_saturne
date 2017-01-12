@@ -204,6 +204,9 @@ module numvar
   !> source terms at the current time step (used for limiters)
   integer, save :: kst
 
+  !> turbulent schmidt key for scalars
+  integer, save :: ksigmas
+
   !> convective mass flux of the variables at the previous time-step
   integer, save :: ifluaa(nvarmx)
 

@@ -1556,6 +1556,7 @@ double precision viscis, visctc, cofimp
 double precision act, rugt
 double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
+double precision turb_schmidt
 
 character(len=80) :: fname
 
@@ -1686,6 +1687,9 @@ else
   endif
 endif
 
+! retrieve turbulent Schmidt value for current scalar
+call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 
@@ -1745,7 +1749,7 @@ do ifac = 1, nfabor
 
     ! Scalar diffusivity
     if (vcopt%idften.eq.1) then
-      ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/SIGMAS)
+      ! En compressible, pour l'energie LAMBDA/CV+CP/CV*(MUT/TURB_SCHMIDT)
       if (ippmod(icompf) .ge. 0) then
         if (icp.ge.0) then
           cpscv = cpro_cp(iel)
@@ -1757,9 +1761,9 @@ do ifac = 1, nfabor
         else
           cpscv = cpscv/cv0
         endif
-        hint = (rkl+vcopt%idifft*cpp*cpscv*visctc/sigmas(iscal))/distbf
+        hint = (rkl+vcopt%idifft*cpp*cpscv*visctc/turb_schmidt)/distbf
       else
-        hint = (rkl+vcopt%idifft*cpp*visctc/sigmas(iscal))/distbf
+        hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
       endif
 
       ! Symmetric tensor diffusivity (GGDH or AFM)

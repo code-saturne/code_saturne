@@ -60,7 +60,7 @@
 !>           flux (negatif si gain) w/m2 ou hauteur de rugosite (m) si icodcl=6
 !>--                   pour les vitesses      (vistl+visct)*gradu
 !>--                   pour la pression       dt*gradp
-!>--                   pour les scalaires     cp*(viscls+visct/sigmas)*gradt
+!>--                   pour les scalaires     cp*(viscls+visct/turb_schmidt)*gradt
 ! ______________________________________________________________________________!
 subroutine atmcls &
  ( ifac   , iel    ,                                              &

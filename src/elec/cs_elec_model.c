@@ -484,12 +484,11 @@ void
 CS_PROCF (elini1, ELINI1) (      cs_real_t *visls0,
                                  cs_real_t *diftl0,
                                  cs_int_t  *idircl,
-                                 cs_int_t  *isca,
-                                 cs_real_t *sigmas)
+                                 cs_int_t  *isca)
 {
   /* initialization */
   cs_electrical_model_specific_initialization(visls0, diftl0, idircl,
-                                              isca, sigmas);
+                                              isca);
 }
 
 void
@@ -695,12 +694,12 @@ void
 cs_electrical_model_specific_initialization(cs_real_t  *visls0,
                                             cs_real_t  *diftl0,
                                             int        *idircl,
-                                            int        *isca,
-                                            cs_real_t  *sigmas)
+                                            int        *isca)
 {
   cs_field_t *f = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   const int keysca = cs_field_key_id("scalar_id");
+  const int ksigmas = cs_field_key_id("turbulent_schmidt");
   cs_var_cal_opt_t var_cal_opt;
 
   /* specific initialization for field */
@@ -746,14 +745,14 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
   id = cs_field_get_key_int(f, keysca) - 1;
   var_cal_opt.blencv = 1.;
-  sigmas[id] = 0.7;
+  cs_field_set_key_double(f, ksigmas, 0.7);
   cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   f = CS_F_(potr);
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
   id = cs_field_get_key_int(f, keysca) - 1;
   var_cal_opt.blencv = 1.;
-  sigmas[id] = 0.7;
+  cs_field_set_key_double(f, ksigmas, 0.7);
   cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   if (cs_glob_elec_option->ieljou == 2 ||
@@ -762,7 +761,7 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(f, keysca) - 1;
     var_cal_opt.blencv = 1.;
-    sigmas[id] = 0.7;
+    cs_field_set_key_double(f, ksigmas, 0.7);
     cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
   }
 
@@ -771,7 +770,7 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     cs_field_get_key_struct(fp, key_cal_opt_id, &var_cal_opt);
     id = cs_field_get_key_int(fp, keysca) - 1;
     var_cal_opt.blencv = 1.;
-    sigmas[id] = 0.7;
+    cs_field_set_key_double(f, ksigmas, 0.7);
     cs_field_set_key_struct(fp, key_cal_opt_id, &var_cal_opt);
   }
 
@@ -781,7 +780,7 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       id = cs_field_get_key_int(f, keysca) - 1;
       var_cal_opt.blencv = 1.;
-      sigmas[id] = 0.7;
+      cs_field_set_key_double(f, ksigmas, 0.7);
       cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
     }
   }
