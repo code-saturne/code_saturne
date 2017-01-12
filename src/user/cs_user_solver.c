@@ -105,6 +105,7 @@ void
 cs_user_solver(const cs_mesh_t             *mesh,
                const cs_mesh_quantities_t  *mesh_quantities)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/

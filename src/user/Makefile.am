@@ -109,7 +109,7 @@ cs_user_boundary_conditions_ale.f90 \
 usatch.f90 \
 usctdz.f90 \
 cs_user_lagr_model.c \
-cs_user_lagr_bcs.c \
+cs_user_lagr_boundary_conditions.c \
 cs_user_lagr_particle.c \
 usthht.f90 \
 usvort.f90 \

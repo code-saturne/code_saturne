@@ -88,6 +88,7 @@ BEGIN_C_DECLS
 void
 cs_user_turbomachinery(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -99,6 +100,7 @@ cs_user_turbomachinery(void)
 void
 cs_user_turbomachinery_rotor(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1,5 +1,5 @@
 /*============================================================================
- * User subroutines for input of calculation parameters.
+ * User functions for input of calculation parameters.
  *============================================================================*/
 
 /* VERS */
@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -58,9 +59,11 @@
 #include "cs_base.h"
 #include "cs_fan.h"
 #include "cs_field.h"
-#include "cs_gui_util.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
+#include "cs_gui_util.h"
+#include "cs_grid.h"
+#include "cs_internal_coupling.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
@@ -68,16 +71,20 @@
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
+#include "cs_multigrid.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
+#include "cs_post.h"
+#include "cs_post_util.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
+#include "cs_sles.h"
+#include "cs_sles_it.h"
 #include "cs_time_moment.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
 #include "cs_selector.h"
-
-#include "cs_post.h"
+#include "cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -96,7 +103,6 @@ BEGIN_C_DECLS
  * \brief Fans parameters example
  *
  * See \subpage parameters for examples.
- *
  */
 /*----------------------------------------------------------------------------*/
 

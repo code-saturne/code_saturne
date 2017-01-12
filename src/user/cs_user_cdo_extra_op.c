@@ -45,10 +45,24 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_blas.h"
+#include "cs_domain.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_mesh_location.h"
 #include "cs_post.h"
-#include "cs_domain.h"
+#include "cs_field.h"
+#include "cs_cdo.h"
+#include "cs_cdo_toolbox.h"
+#include "cs_cdofb_scaleq.h"
+#include "cs_equation.h"
+#include "cs_equation_param.h"
+#include "cs_evaluate.h"
+#include "cs_hodge.h"
+#include "cs_param.h"
+#include "cs_quadrature.h"
+#include "cs_reco.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -101,8 +115,6 @@ void
 cs_user_cdo_start_extra_op(const cs_domain_t     *domain)
 {
   CS_UNUSED(domain);
-
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -118,8 +130,6 @@ void
 cs_user_cdo_extra_op(const cs_domain_t           *domain)
 {
   CS_UNUSED(domain);
-
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -135,8 +145,6 @@ void
 cs_user_cdo_end_extra_op(const cs_domain_t     *domain)
 {
   CS_UNUSED(domain);
-
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
 
 /*----------------------------------------------------------------------------*/

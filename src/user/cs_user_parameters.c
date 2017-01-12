@@ -1,5 +1,5 @@
 /*============================================================================
- * User subroutines for input of calculation parameters.
+ * User functions for input of calculation parameters.
  *============================================================================*/
 
 /* VERS */
@@ -59,9 +59,11 @@
 #include "cs_base.h"
 #include "cs_fan.h"
 #include "cs_field.h"
-#include "cs_gui_util.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
+#include "cs_gui_util.h"
+#include "cs_grid.h"
+#include "cs_internal_coupling.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
@@ -72,6 +74,8 @@
 #include "cs_multigrid.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
+#include "cs_post.h"
+#include "cs_post_util.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_sles.h"
@@ -81,9 +85,6 @@
 #include "cs_turbomachinery.h"
 #include "cs_selector.h"
 #include "cs_rad_transfer.h"
-
-#include "cs_post.h"
-#include "cs_post_util.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -99,10 +100,9 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_parameters.c
  *
- * \brief User subroutines for input of calculation parameters.
+ * \brief User functions for input of calculation parameters.
  *
  * See \subpage parameters for examples.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -122,12 +122,7 @@ BEGIN_C_DECLS
 void
 cs_user_model(void)
 {
-  /* If the GUI is used, user fields should preferably be defined with the GUI,
-     so that associated numerical options, boundary conditions, initializations,
-     and such may also be defined using the GUI. */
 
-  if (cs_gui_file_is_loaded())
-    return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -143,6 +138,7 @@ cs_user_model(void)
 void
 cs_user_parameters(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -154,11 +150,8 @@ cs_user_parameters(void)
 void
 cs_user_output(void)
 {
-}
 
-/*============================================================================
- * User function definitions
- *============================================================================*/
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -179,6 +172,7 @@ cs_user_output(void)
 void
 cs_user_linear_solvers(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -194,6 +188,7 @@ cs_user_linear_solvers(void)
 void
 cs_user_time_moments(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -207,6 +202,7 @@ cs_user_time_moments(void)
 void
 cs_user_internal_coupling(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -223,6 +219,7 @@ cs_user_internal_coupling(void)
 void
 cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -238,6 +235,7 @@ cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh)
 void
 cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t  *mesh)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/

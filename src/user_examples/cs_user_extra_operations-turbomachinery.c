@@ -1,7 +1,7 @@
 /*============================================================================
  * This function is called at the end of each time step, and has a very
  *  general purpose
- *  (i.e. anything that does not have another dedicated user subroutine)
+ *  (i.e. anything that does not have another dedicated user function)
  *============================================================================*/
 
 /* VERS */
@@ -97,7 +97,7 @@ BEGIN_C_DECLS
  *
  * \brief This function is called at the end of each time step, and has a very
  * general purpose (i.e. anything that does not have another dedicated
- * user subroutine)
+ * user function).
  *
  * This example is a part of the \subpage turbomachinery example.
  */

@@ -188,11 +188,6 @@ void CS_PROCF (usvpst, USVPST)
  const cs_int_t   lstfbr[]   /* <-- list of post-processed boundary faces */
 );
 
-extern void CS_PROCF (usipes, USIPES)
-(
- cs_int_t *nmodpp
-);
-
 /*-------------------------------------------------------------------------------
  * Absorption coefficient for radiative module
  *-------------------------------------------------------------------------------*/
@@ -234,7 +229,7 @@ void CS_PROCF (b_t_to_h, b_t_to_h)
                                     conversion is requested */
  const cs_real_t *t_b,           /* --> temperature at boundary */
  cs_real_t       *h_b            /* --> enthalpy at boundary */
- );
+);
 
 /*----------------------------------------------------------------------------
  * Convert enthalpy to temperature at cells
@@ -244,7 +239,7 @@ void CS_PROCF (c_h_to_t, c_h_to_t)
 (
  const cs_real_t *h,           /* --> enthalpy */
  cs_real_t       *t            /* --> temperature */
- );
+);
 
 /*----------------------------------------------------------------------------
  * Add field indexes associated with a new non-user solved variable,

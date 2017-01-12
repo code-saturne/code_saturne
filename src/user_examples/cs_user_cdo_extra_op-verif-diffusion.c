@@ -46,6 +46,7 @@
 #include <bft_printf.h>
 
 #include "cs_blas.h"
+#include "cs_domain.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -249,8 +250,6 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 void
 cs_user_cdo_extra_op(const cs_domain_t          *domain)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   const cs_cdo_connect_t  *connect = domain->connect;
   const cs_cdo_quantities_t  *cdoq = domain->cdo_quantities;
   const cs_time_step_t  *time_step = domain->time_step;

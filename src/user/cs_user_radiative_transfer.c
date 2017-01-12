@@ -89,8 +89,8 @@ BEGIN_C_DECLS
 
 /*! \file cs_user_radiative_transfer.c
  *
- * \brief User subroutine for input of radiative transfer parameters : absorption
- *  coefficient and net radiation flux.
+ * \brief User function for input of radiative transfer parameters:
+ *        absorption coefficient and net radiation flux.
  *
  *  See \subpage cs_user_radiative_transfer for examples.
  */
@@ -112,6 +112,7 @@ BEGIN_C_DECLS
 void
 cs_user_radiative_transfer_parameters(void)
 {
+
 }
 
 /*-------------------------------------------------------------------------------*/

@@ -85,6 +85,8 @@ cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
+cs_user_lagr_boundary_conditions.c \
+cs_user_lagr_model.c \
 cs_user_lagr_particle.c \
 cs_user_mesh-groups_from_free_faces.c \
 cs_user_mesh-input-save.c \
@@ -150,6 +152,7 @@ cs_user_initialization-pulverized_coal.f90 \
 cs_user_initialization-richards.f90 \
 cs_user_initialization-time_step.f90 \
 cs_user_initialization-unified_combustion_coal.f90 \
+cs_user_lagr_boundary_conditions.c \
 cs_user_les_inflow-base.f90 \
 cs_user_mass_source_terms.f90 \
 cs_user_metal_structures_source_terms-condensation.f90 \

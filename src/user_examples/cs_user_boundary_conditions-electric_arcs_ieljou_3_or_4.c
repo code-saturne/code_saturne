@@ -1,5 +1,5 @@
 /*============================================================================
- * Boundary condition for transformers.
+ * User definition of boundary conditions.
  *============================================================================*/
 
 /* VERS */
@@ -46,20 +46,25 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_base.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
+#include "cs_field_operator.h"
+#include "cs_elec_model.h"
+#include "cs_log.h"
+#include "cs_mesh.h"
 #include "cs_mesh_location.h"
+#include "cs_mesh_quantities.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
 #include "cs_time_step.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
 #include "cs_selector.h"
-#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_elec_model.h"
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -71,7 +76,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User definition for electric arcs.
+ * \brief User definition of boundary conditions
  *
  * \param[in]     nvar          total number of variable BC's
  * \param[in]     bc_type       boundary face types

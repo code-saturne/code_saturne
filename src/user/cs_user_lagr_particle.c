@@ -65,6 +65,7 @@
 #include "cs_prototypes.h"
 #include "cs_random.h"
 #include "cs_search.h"
+#include "cs_time_step.h"
 #include "cs_timer_stats.h"
 #include "cs_thermal_model.h"
 
@@ -133,6 +134,7 @@ cs_user_lagr_ef(cs_real_t            dt_p,
                 cs_real_t            rho_p[],
                 cs_real_3_t          fextla[])
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -181,6 +183,7 @@ cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
                             cs_real_t        dt,
                             cs_real_t        disp[3])
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -209,6 +212,7 @@ cs_user_lagr_in(int                         time_id,
                 cs_lagr_zone_class_data_t  *local_userdata,
                 cs_real_t                   vislen[])
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -304,6 +308,7 @@ cs_user_lagr_rt(cs_lnum_t        id_p,
                 cs_real_t        taup[],
                 const cs_real_t  dt[])
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -341,6 +346,7 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
                   cs_real_t        tauc[],
                   const cs_real_t  dt[])
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -381,6 +387,7 @@ cs_user_lagr_sde(const cs_real_t  dt[],
                  cs_real_3_t      tlag[],
                  cs_real_t        tempct[])
 {
+
 }
 
 /*----------------------------------------------------------------------------*/

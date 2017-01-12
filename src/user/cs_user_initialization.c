@@ -1,6 +1,5 @@
 /*============================================================================
- * This subroutine is called at beginning of the computation
- * (restart or not) before the loop time step.
+ * User initialization prior to solving time steps.
  *============================================================================*/
 
 /* VERS */
@@ -90,8 +89,7 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_initialization.c
  *
- * \brief Function is called each time step to define initialization.
- *
+ * \brief Initialization prior to solving time steps.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -103,20 +101,20 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_initialization.c
  *
- * \brief Initialize variables
+ * \brief Initialize variables.
  *
- * This subroutine is called at beginning of the computation
- * (restart or not) before the loop time step.
+ * This function is called at beginning of the computation
+ * (restart or not) before the time step loop.
  *
- * This subroutine enables to initialize or modify (for restart)
- * unkown variables and time step values.
- *
+ * This is intended to initialize or modify (when restarted)
+ * variable and time step values.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_initialization(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -114,8 +114,6 @@ cs_user_cdo_geometric_settings(void)
 void
 cs_user_cdo_numeric_settings(cs_domain_t   *domain)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* Modify the setting of an equation using a generic process
 
      ***********  cs_equation_set_param(eq, key, "val")   ************
@@ -253,3 +251,7 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
   cs_equation_set_param(eq, CS_EQKEY_ITSOL_RESNORM, "false");
   cs_equation_set_param(eq, CS_EQKEY_ITSOL_VERBOSITY, "1");
 }
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS

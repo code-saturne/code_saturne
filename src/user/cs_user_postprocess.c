@@ -50,6 +50,10 @@
 #include "cs_probe.h"
 #include "cs_time_plot.h"
 
+#include "cs_field_pointer.h"
+#include "cs_parameters.h"
+#include "cs_turbulence_model.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -156,6 +160,7 @@ cs_user_postprocess_values(const char            *mesh_name,
                            const cs_lnum_t        vertex_list[],
                            const cs_time_step_t  *ts)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/

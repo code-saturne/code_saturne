@@ -33,6 +33,9 @@
 
 #include "cs_defs.h"
 
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS

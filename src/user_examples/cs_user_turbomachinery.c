@@ -67,9 +67,9 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_turbomachinery
+ * \file cs_user_turbomachinery.c
  *
- * \brief Turbomachinery example.
+ * \brief Definition of turbomachinery related options.
  *
  * See \subpage turbomachinery for examples.
 */

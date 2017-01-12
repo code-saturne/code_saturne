@@ -71,7 +71,7 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_cdo-groundwater.c
  *
- * \brief Main user subroutine for setting of a calculation with CDO for the
+ * \brief Main user function for setting of a calculation with CDO for the
  *        groundwater flow module
  */
 /*----------------------------------------------------------------------------*/
@@ -162,8 +162,6 @@ cs_user_cdo_activated(void)
 void
 cs_user_cdo_add_mesh_locations(void)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* ===========================
      Define mesh locations
      ===========================
@@ -183,8 +181,6 @@ cs_user_cdo_add_mesh_locations(void)
 
   sprintf(cmd, "x > %10.7e", L-tol);
   cs_mesh_location_add("right", CS_MESH_LOCATION_BOUNDARY_FACES, cmd);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -203,8 +199,6 @@ cs_user_cdo_add_mesh_locations(void)
 void
 cs_user_cdo_init_domain(cs_domain_t   *domain)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* ======================
      Boundary of the domain
      ====================== */
@@ -382,7 +376,6 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
 
      If mesh_location_name is set to NULL, all soils are set.
   */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -446,7 +439,6 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
   cs_equation_set_ic_by_analytic(eq,       // equation
                                  NULL,     // NULL --> all cells
                                  get_ic);  // pointer to the analytic function
-
 }
 
 /*----------------------------------------------------------------------------*/

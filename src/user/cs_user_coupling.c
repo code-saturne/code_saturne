@@ -86,6 +86,7 @@ BEGIN_C_DECLS
 void
 cs_user_coupling(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -100,6 +101,7 @@ cs_user_coupling(void)
 void
 cs_user_syrthes_coupling(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -114,6 +116,9 @@ cs_user_syrthes_coupling(void)
 void
 cs_user_saturne_coupling(void)
 {
+
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

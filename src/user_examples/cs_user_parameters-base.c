@@ -1,5 +1,5 @@
 /*============================================================================
- * User subroutines for input of calculation parameters.
+ * User functions for input of calculation parameters.
  *============================================================================*/
 
 /* VERS */
@@ -59,9 +59,10 @@
 #include "cs_base.h"
 #include "cs_fan.h"
 #include "cs_field.h"
-#include "cs_gui_util.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
+#include "cs_gui_util.h"
+#include "cs_grid.h"
 #include "cs_internal_coupling.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -73,6 +74,8 @@
 #include "cs_multigrid.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
+#include "cs_post.h"
+#include "cs_post_util.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_sles.h"
@@ -81,9 +84,7 @@
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
 #include "cs_selector.h"
-
-#include "cs_post.h"
-#include "cs_post_util.h"
+#include "cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -99,10 +100,9 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_parameters-base.c
  *
- * \brief User subroutines for input of calculation parameters.
+ * \brief User functions for input of calculation parameters.
  *
  * See \subpage parameters for examples.
- *
  */
 /*----------------------------------------------------------------------------*/
 

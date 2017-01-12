@@ -50,6 +50,7 @@
 
 #include "fvm_writer.h"
 
+#include "cs_1d_wall_thermal.h"
 #include "cs_base.h"
 #include "cs_fan.h"
 #include "cs_field.h"
@@ -66,6 +67,7 @@
 #include "cs_multigrid.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
+#include "cs_physical_properties.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_sles.h"
@@ -117,10 +119,10 @@ BEGIN_C_DECLS
  *     This allows to apply the boundary conditions and realize
  *     balance sheets by treating them separately for each zone.
  *   For each boundary face face_id (not just wall faces) a zone number
- *     IZFRDP(face_id) must be assigned.
+ *     izfrdp[face_id]) must be assigned.
  *   Warning: it is essential that ALL boundary faces
  *     have been assigned to a zone.
- *   The number of zones (the value of IZFRDP(face_id)) is
+ *   The number of zones (the value of izfrdp[face_id]) is
  *     arbitrarily chosen by the user, but must be a positive integer
  *     less than or equal to cs_glob_rad_transfer_params->nbzrdm
  *     (value set in parameter cs_user_radiation_parameters.h).
@@ -213,4 +215,3 @@ cs_user_radiative_transfer_bcs(int               nvar,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-

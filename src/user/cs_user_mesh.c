@@ -106,6 +106,7 @@ BEGIN_C_DECLS
 void
 cs_user_mesh_input(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -117,6 +118,7 @@ cs_user_mesh_input(void)
 void
 cs_user_join(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -128,6 +130,7 @@ cs_user_join(void)
 void
 cs_user_periodicity(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -139,6 +142,7 @@ cs_user_periodicity(void)
 void
 cs_user_mesh_warping(void)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -152,6 +156,7 @@ cs_user_mesh_warping(void)
 void
 cs_user_mesh_thinwall(cs_mesh_t  *mesh)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -165,6 +170,7 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
 void
 cs_user_mesh_modify(cs_mesh_t  *mesh)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -178,6 +184,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 void
 cs_user_mesh_smoothe(cs_mesh_t  *mesh)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -193,6 +200,7 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh)
 void
 cs_user_mesh_save(cs_mesh_t  *mesh)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -208,6 +216,7 @@ void
 cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
                            cs_mesh_quantities_t  *mesh_quantities)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1,5 +1,5 @@
 /*============================================================================
- * Boundary condition.
+ * User definition of boundary conditions.
  *============================================================================*/
 
 /* VERS */
@@ -46,32 +46,25 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "fvm_writer.h"
-
-#include "cs_mesh_location.h"
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_parameters.h"
-#include "cs_prototypes.h"
-#include "cs_rotation.h"
-#include "cs_time_moment.h"
-#include "cs_time_step.h"
-#include "cs_turbomachinery.h"
 #include "cs_elec_model.h"
+#include "cs_log.h"
+#include "cs_mesh.h"
+#include "cs_mesh_location.h"
+#include "cs_mesh_quantities.h"
+#include "cs_mesh_quantities.h"
+#include "cs_parameters.h"
+#include "cs_time_step.h"
 #include "cs_selector.h"
-
-#include "cs_post.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
+
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -110,7 +103,9 @@ cs_user_boundary_conditions(int         nvar,
                             int         izfrdp[],
                             cs_real_t   rcodcl[])
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

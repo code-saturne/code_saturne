@@ -39,6 +39,7 @@
 
 #include "cs_base.h"
 #include "cs_mesh.h"
+#include "cs_math.h"
 #include "cs_mesh_quantities.h"
 #include "cs_elec_model.h"
 #include "bft_mem.h"
@@ -72,8 +73,8 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Rescale all electro-magnetic physical fields (electric potential,
- * current density and Joule effect).
+ * \brief Rescale all electro-magnetic physical fields
+ *        (electric potential, current density and Joule effect).
  *
  * \param[in] mesh pointer to a cs_mesh_t structure
  * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure
@@ -89,6 +90,9 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
                      const cs_mesh_quantities_t  *mesh_quantities,
                            cs_real_t             *dt)
 {
+
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

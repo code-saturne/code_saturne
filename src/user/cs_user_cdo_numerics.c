@@ -108,6 +108,8 @@ void
 cs_user_cdo_numeric_settings(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
-
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS

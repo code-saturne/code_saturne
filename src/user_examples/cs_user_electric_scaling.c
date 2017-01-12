@@ -73,7 +73,8 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define scaling parameter for electric model.
+ * \brief Rescale all electro-magnetic physical fields
+ *        (electric potential, current density and Joule effect).
  *
  * \param[in] mesh pointer to a cs_mesh_t structure
  * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure

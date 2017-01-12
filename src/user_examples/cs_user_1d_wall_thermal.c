@@ -285,7 +285,7 @@ cs_user_1d_wall_thermal(int iappel,
 /*! [iappel_3] */
 
   /*----------------------------------------------------------------------------*
-   * End of the cs_user_1d_wall_thermal subroutine
+   * End of the cs_user_1d_wall_thermal function
    *----------------------------------------------------------------------------*/
 
 /*! [deallocate] */
@@ -295,5 +295,7 @@ cs_user_1d_wall_thermal(int iappel,
 /*! [deallocate] */
 
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

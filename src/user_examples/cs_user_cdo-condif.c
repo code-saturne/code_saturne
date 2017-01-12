@@ -71,8 +71,7 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_cdo-condif.c
  *
- * \brief Main user subroutine for setting of a calculation with CDO.
-
+ * \brief Main user function for setting of a calculation with CDO.
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -206,8 +205,6 @@ cs_user_cdo_activated(void)
 void
 cs_user_cdo_add_mesh_locations(void)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* ===========================
      Define mesh locations
      ===========================
@@ -222,8 +219,6 @@ cs_user_cdo_add_mesh_locations(void)
 
   cs_mesh_location_add("in", CS_MESH_LOCATION_BOUNDARY_FACES, "x < 1e-5");
   cs_mesh_location_add("out", CS_MESH_LOCATION_BOUNDARY_FACES, "x > 0.9999");
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -242,8 +237,6 @@ cs_user_cdo_add_mesh_locations(void)
 void
 cs_user_cdo_init_domain(cs_domain_t   *domain)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* ======================
      Boundary of the domain
      ====================== */
@@ -400,7 +393,6 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
 
   cs_domain_add_advection_field(domain,
                                 "adv_field");
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -416,8 +408,6 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
 void
 cs_user_cdo_set_domain(cs_domain_t   *domain)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* =======================
      User-defined properties
      =======================
@@ -563,11 +553,11 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
      or where analytic_func is the name of the analytical function
    */
 
-  cs_source_term_t  *st =
-    cs_equation_add_source_term_by_analytic(eq,
-                                            "SourceTerm",    // label
-                                            "cells",         // ml_name
-                                            _define_source); // function
+  cs_source_term_t  *st
+    = cs_equation_add_source_term_by_analytic(eq,
+                                              "SourceTerm",    // label
+                                              "cells",         // ml_name
+                                              _define_source); // function
 
   /* Optional: specify the quadrature used for computing a source term
 
@@ -578,7 +568,6 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
   */
 
   cs_source_term_set_quadrature(st, CS_QUADRATURE_BARY);
-
 }
 
 /*----------------------------------------------------------------------------*/
