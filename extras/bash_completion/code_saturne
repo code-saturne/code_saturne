@@ -34,7 +34,7 @@ _code_saturne() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Possible commands except "help", as given by "code_saturne help"
-    cmds="studymanager smgr studymanagergui smgrgui bdiff bdump compile config create gui info run salome"
+    cmds="studymanager smgr studymanagergui smgrgui bdiff bdump compile config create gui info run salome trackcvg"
 
     # Help and Case options
     local helpOpts="-h --help"
@@ -172,6 +172,12 @@ _code_saturne() {
             ;;
         submit)
             _filedir; return 0
+            ;;
+        trackcvg)
+            case ${prev} in
+                -r|--resu)               _filedir -d; return 0;;
+                *) cmdOpts="-r --resu"
+            esac
             ;;
         *)
             cmdOpts=""
