@@ -39,12 +39,12 @@ includes = ["sip"]
 
 # Specific modules to be excluded
 m_script = ["cs_user_scripts"]
-m_autovnv = ["matplotlib", "vtk", "numpy"]
+m_studymanager = ["matplotlib", "vtk", "numpy"]
 m_neptune = ["nc_package", "core.XMLinitialize", "core.MainView"]
 m_syrthes = ["syrthes"]
 m_salome = ["Pages.SalomeHandler"]
 m_win32 = ["win32api", "win32con", "win32pipe"]
-excludes = m_autovnv + m_script + m_neptune + m_syrthes + m_salome + m_win32
+excludes = m_studymanager + m_script + m_neptune + m_syrthes + m_salome + m_win32
 
 # Specific packages
 packages = []

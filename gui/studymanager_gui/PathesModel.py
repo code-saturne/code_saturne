@@ -64,7 +64,7 @@ class PathesModel(Model):
         """
         Get repository directory name
         """
-        node = self.case.xmlGetNode("autovnv")
+        node = self.case.xmlGetNode("studymanager")
         path = node.xmlGetString('repository')
         return path
 
@@ -73,7 +73,7 @@ class PathesModel(Model):
         """
         Put repository directory name
         """
-        node = self.case.xmlGetNode("autovnv")
+        node = self.case.xmlGetNode("studymanager")
         node.xmlSetData('repository', dirname)
 
 
@@ -88,7 +88,7 @@ class PathesModel(Model):
         automatic load
         """
         # add study and case in xml
-        node = self.case.xmlGetNode("autovnv")
+        node = self.case.xmlGetNode("studymanager")
         for tt in os.listdir(dirname):
             directory = os.path.abspath(os.path.join(dirname, tt))
             if os.path.isdir(directory) and "POST" in os.listdir(directory) \
@@ -108,7 +108,7 @@ class PathesModel(Model):
         """
         Get repository directory name
         """
-        node = self.case.xmlGetNode("autovnv")
+        node = self.case.xmlGetNode("studymanager")
         path = node.xmlGetString('destination')
         return path
 
@@ -117,6 +117,5 @@ class PathesModel(Model):
         """
         Put repository directory name
         """
-        node = self.case.xmlGetNode("autovnv")
+        node = self.case.xmlGetNode("studymanager")
         node.xmlSetData('destination', dirname)
-

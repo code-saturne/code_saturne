@@ -100,7 +100,7 @@ clean-local:
 
 # Install Python library
 
-basedir = $(pkgpythondir)/Autovnv
+basedir = $(pkgpythondir)/studymanager_gui
 dist_base_PYTHON = \
 __init__.py \
 $(PYFILES)

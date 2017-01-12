@@ -26,7 +26,7 @@
 # Library modules import
 #-------------------------------------------------------------------------------
 
-__all__ = ["autovnv","Base", "Pages", "Autovnv", "trackcvg"]
+__all__ = ["studymanager","Base", "Pages", "studymanager_gui", "trackcvg"]
 
 #-------------------------------------------------------------------------------
 # End

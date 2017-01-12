@@ -34,7 +34,7 @@ _code_saturne() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Possible commands except "help", as given by "code_saturne help"
-    cmds="autovnv bdiff bdump compile config create gui info run salome"
+    cmds="studymanager smgr studymanagergui smgrgui bdiff bdump compile config create gui info run salome"
 
     # Help and Case options
     local helpOpts="-h --help"
@@ -42,7 +42,7 @@ _code_saturne() {
 
     # Readers and guides
     local readers="okular evince kpdf gpdf xpdf acroread"
-    local guides="refcard user theory tutorial developer autovnv Doxygen"
+    local guides="refcard user theory tutorial developer studymanager Doxygen"
 
     # Boolean values
     local isCmd=0
@@ -77,7 +77,7 @@ _code_saturne() {
                 *) return 0;;
             esac
             ;;
-        autovnv)
+        studymanager)
             case ${prev} in
                 -f|--file) _filedir; return 0;;
                 -m|--mail) COMPREPLY=( ); return 0;;

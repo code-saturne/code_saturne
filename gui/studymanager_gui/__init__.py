@@ -23,8 +23,8 @@
 #-------------------------------------------------------------------------------
 
 """
-This file makes this directory Autovnv a Python package.
-                               =======
+This file makes this directory studymanager_gui a Python package.
+                               ================
 """
 
 

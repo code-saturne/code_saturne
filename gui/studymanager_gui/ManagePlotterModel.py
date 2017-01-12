@@ -56,7 +56,7 @@ class ManagePlotterModel(Model):
         Constructor
         """
         self.case = case
-        self.repo = self.case.xmlGetNode("autovnv").xmlGetString('repository')
+        self.repo = self.case.xmlGetNode("studymanager").xmlGetString('repository')
 
 
     def defaultInitialValues(self):

@@ -1097,7 +1097,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
                  src/turb/Makefile src/alge/Makefile src/mesh/Makefile
                  src/user/Makefile src/user_examples/Makefile
-                 gui/Makefile gui/Base/Makefile gui/Pages/Makefile gui/Autovnv/Makefile gui/trackcvg/Makefile
+                 gui/Makefile gui/Base/Makefile gui/Pages/Makefile gui/studymanager_gui/Makefile gui/trackcvg/Makefile
                  salome/fsi_coupling/Makefile
                  salome/fsi_coupling/idl/Makefile
                  salome/fsi_coupling/libmilieu/Makefile
@@ -1114,7 +1114,7 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  salome/cfd_study/src/CFDSTUDY/Makefile
                  salome/cfd_study/src/CFDSTUDYGUI/Makefile
                  docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
-                 docs/autovnv/Makefile docs/autovnv/graphics/Makefile
+                 docs/studymanager/Makefile docs/studymanager/graphics/Makefile
                  docs/developer/Makefile docs/developer/graphics/Makefile
                  docs/install/Makefile
                  docs/refcard/Makefile docs/refcard/graphics/Makefile

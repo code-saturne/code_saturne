@@ -1348,7 +1348,8 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         self.displayCSManualAction.triggered.connect(self.displayCSManual)
         self.displayCSTutorialAction.triggered.connect(self.displayCSTutorial)
-        self.displayCSKernelAction.triggered.connect(self.displayCSKernel)
+        self.displayCSTheoryAction.triggered.connect(self.displayCSTheory)
+        self.displayCSSmgrAction.triggered.connect(self.displayCSSmgr)
         self.displayCSRefcardAction.triggered.connect(self.displayCSRefcard)
         self.displayCSDoxygenAction.triggered.connect(self.displayCSDoxygen)
         self.actionUndo.triggered.connect(self.slotUndo)
@@ -1365,7 +1366,9 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         if 'user.pdf' not in liste:
             self.displayCSManualAction.setEnabled(False)
         if 'theory.pdf' not in liste:
-            self.displayCSKernelAction.setEnabled(False)
+            self.displayCSTheoryAction.setEnabled(False)
+        if 'studymanager.pdf' not in liste:
+            self.displayCSSmgrAction.setEnabled(False)
         if 'refcard.pdf' not in liste:
             self.displayCSRefcardAction.setEnabled(False)
         if 'doxygen' not in liste:
@@ -1422,7 +1425,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         QMessageBox.about(self, self.package.name + ' Interface', msg)
 
 
-    def displayCSKernel(self):
+    def displayCSTheory(self):
         """
         public slot
 
@@ -1430,6 +1433,13 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         self.displayManual(self.package, 'theory')
 
+    def displayCSSmgr(self):
+        """
+        public slot
+
+        open the studymanager guide
+        """
+        self.displayManual(self.package, 'studymanager')
 
     def displayCSRefcard(self):
         """

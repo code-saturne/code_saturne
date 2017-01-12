@@ -53,15 +53,15 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
     # 'page_name' is the name of the page
     #
     if page_name == tr("Paths"):
-        import code_saturne.Autovnv.PathesView as Page
+        import code_saturne.studymanager_gui.PathesView as Page
         thisPage = Page.PathesView(root, case)
 
     elif page_name == tr("Manage cases"):
-        import code_saturne.Autovnv.ManageCasesView as Page
+        import code_saturne.studymanager_gui.ManageCasesView as Page
         thisPage = Page.ManageCasesView(root, case)
 
     elif page_name == tr("Define plotter"):
-        import code_saturne.Autovnv.ManagePlotterView as Page
+        import code_saturne.studymanager_gui.ManagePlotterView as Page
         thisPage = Page.ManagePlotterView(root, case)
 
     else:
@@ -84,4 +84,3 @@ def tr(text):
 #-------------------------------------------------------------------------------
 # End of Toolbox
 #-------------------------------------------------------------------------------
-

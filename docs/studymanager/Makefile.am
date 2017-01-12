@@ -24,7 +24,7 @@
 
 # Main LaTeX document
 
-TEXMAIN = autovnv.tex
+TEXMAIN = studymanager.tex
 
 # Other LaTex documents
 

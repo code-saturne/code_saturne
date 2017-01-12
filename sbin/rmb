@@ -10,7 +10,7 @@ mkdir -p $RMBDIR || exit 1
 cd $PREFIX
 
 for file in src/*/*.[ch] src/*/*.f90 src/*/*.[ch]xx tests/*.c build-aux/*.py \
-            gui/*/*.py bin/*.py bin/autovnv/*py bin/*.in bin/runcase* \
+            gui/*/*.py bin/*.py bin/studymanager/*py bin/*.in bin/runcase* \
             libple/*/*.[ch] preprocessor/*/*.[ch] \
             salome/fsi_coupling/libmilieu/*.[ch] \
             salome/fsi_coupling/src/*/*.[ch]xx \

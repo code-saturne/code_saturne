@@ -51,14 +51,14 @@ log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
 
-def run_autovnv_command(_c, _log, pythondir = None):
+def run_studymanager_command(_c, _log, pythondir = None):
     """
     Run command with arguments.
     Redirection of the stdout or stderr of the command.
     """
     assert type(_c) == str or type(_c) == unicode
 
-    log.debug("run_autovnv_command: %s" % _c)
+    log.debug("run_studymanager_command: %s" % _c)
 
     try:
         _log.seek(0, os.SEEK_END)

@@ -34,14 +34,16 @@ class master_script:
         self.command = argv
         self.package = package
 
-        self.commands = {'autovnv':self.autovnv,
+        self.commands = {'studymanager':self.studymanager,
+                         'smgr':self.studymanager,
                          'bdiff':self.bdiff,
                          'bdump':self.bdump,
                          'compile':self.compile,
                          'config':self.config,
                          'create':self.create,
                          'gui':self.gui,
-                         'autovnvgui':self.autovnvgui,
+                         'studymanagergui':self.studymanager_gui,
+                         'smgrgui':self.studymanager_gui,
                          'trackcvg':self.trackcvg,
                          'info':self.info,
                          'run':self.run,
@@ -100,14 +102,16 @@ class master_script:
 
 Topics:
   help
-  autovnv
+  studymanager
+  smgr
   bdiff
   bdump
   compile
   config
   create
   gui
-  autovnvgui
+  studymanagergui
+  smgrgui
   trackcvg
   info
   run
@@ -119,9 +123,9 @@ Options:
 
         print(usage % {'prog':sys.argv[0]})
 
-    def autovnv(self, options = None):
-        import cs_autovnv
-        return cs_autovnv.main(options, self.package)
+    def studymanager(self, options = None):
+        import cs_studymanager
+        return cs_studymanager.main(options, self.package)
 
     def bdiff(self, options = None):
         import cs_bdiff
@@ -147,9 +151,9 @@ Options:
         import cs_gui
         return cs_gui.main(options, self.package)
 
-    def autovnvgui(self, options = None):
-        import cs_autovnvgui
-        return cs_autovnvgui.main(options, self.package)
+    def studymanager_gui(self, options = None):
+        import cs_studymanager_gui
+        return cs_studymanager_gui.main(options, self.package)
 
     def trackcvg(self, options = None):
         import cs_trackcvg

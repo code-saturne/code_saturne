@@ -22,7 +22,7 @@
 
 #-------------------------------------------------------------------------------
 
-LATEX_SUBDIRS = refcard theory user install developer autovnv
+LATEX_SUBDIRS = refcard theory user install developer studymanager
 
 DOXYGEN_SUBDIRS = doxygen
 

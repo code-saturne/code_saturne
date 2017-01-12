@@ -187,7 +187,8 @@
      <addaction name="displayCSManualAction"/>
      <addaction name="displayNCManualAction"/>
      <addaction name="displayCSTutorialAction"/>
-     <addaction name="displayCSKernelAction"/>
+     <addaction name="displayCSTheoryAction"/>
+     <addaction name="displayCSSmgrAction"/>
      <addaction name="displayCSRefcardAction"/>
      <addaction name="displayCSDoxygenAction"/>
     </widget>
@@ -394,15 +395,26 @@
     <string>F2</string>
    </property>
   </action>
-  <action name="displayCSKernelAction">
+  <action name="displayCSTheoryAction">
    <property name="text">
-    <string>&amp;Code_Saturne Kernel</string>
+    <string>&amp;Code_Saturne theory</string>
    </property>
    <property name="statusTip">
-    <string>Code_Saturne theory and programmer's guide.</string>
+    <string>Code_Saturne theory guide.</string>
    </property>
    <property name="shortcut">
     <string>F3</string>
+   </property>
+  </action>
+  <action name="displayCSSmgrAction">
+   <property name="text">
+    <string>&amp;Code_Saturne studymanager</string>
+   </property>
+   <property name="statusTip">
+    <string>Code_Saturne studymanager guide.</string>
+   </property>
+   <property name="shortcut">
+    <string>F4</string>
    </property>
   </action>
   <action name="displayCSRefcardAction">
@@ -413,7 +425,7 @@
     <string>Code_Saturne quick reference card.</string>
    </property>
    <property name="shortcut">
-    <string>F4</string>
+    <string>F5</string>
    </property>
   </action>
   <action name="displayCSDoxygenAction">
@@ -424,7 +436,7 @@
     <string>Code_Saturne quick doxygen.</string>
    </property>
    <property name="shortcut">
-    <string>F5</string>
+    <string>F6</string>
    </property>
   </action>
   <action name="IdentityAction">

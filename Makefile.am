@@ -232,7 +232,7 @@ bin/cs_package.py
 
 dist_pkgpython_PYTHON = \
 bin/__init__.py \
-bin/cs_autovnv.py \
+bin/cs_studymanager.py \
 bin/cs_batch.py \
 bin/cs_bdiff.py \
 bin/cs_bdump.py \
@@ -244,7 +244,7 @@ bin/cs_control.py \
 bin/cs_create.py \
 bin/cs_debug_wrapper.py \
 bin/cs_exec_environment.py \
-bin/cs_autovnvgui.py \
+bin/cs_studymanager_gui.py \
 bin/cs_trackcvg.py \
 bin/cs_gui.py \
 bin/cs_info.py \
@@ -255,15 +255,15 @@ bin/cs_script.py \
 bin/cs_submit.py \
 bin/cs_xml_reader.py
 
-autovnvdir = $(pkgpythondir)/autovnv
-autovnv_PYTHON = \
-bin/autovnv/Command.py \
-bin/autovnv/Drawing.py \
-bin/autovnv/__init__.py \
-bin/autovnv/Parser.py \
-bin/autovnv/PlotVTK.py \
-bin/autovnv/Study.py \
-bin/autovnv/TexMaker.py
+studymanagerdir = $(pkgpythondir)/studymanager
+studymanager_PYTHON = \
+bin/studymanager/Command.py \
+bin/studymanager/Drawing.py \
+bin/studymanager/__init__.py \
+bin/studymanager/Parser.py \
+bin/studymanager/PlotVTK.py \
+bin/studymanager/Study.py \
+bin/studymanager/TexMaker.py
 
 # Install user scripts
 

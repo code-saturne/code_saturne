@@ -46,8 +46,8 @@ from code_saturne.Base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Autovnv.PathesForm import Ui_PathesForm
-from code_saturne.Autovnv.PathesModel import PathesModel
+from code_saturne.studymanager_gui.PathesForm import Ui_PathesForm
+from code_saturne.studymanager_gui.PathesModel import PathesModel
 
 #-------------------------------------------------------------------------------
 # log config

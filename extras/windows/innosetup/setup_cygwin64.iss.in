@@ -290,7 +290,7 @@ Source: "{#Install}\libexec\code_saturne\cs_preprocess.exe"; DestDir: "{app}\lib
 Source: "{#Install}\libexec\code_saturne\cs_solver.exe"; DestDir: "{app}\libexec\code_saturne"; Flags: ignoreversion; Components: core
 Source: "{#Install}\share\code_saturne\*"; DestDir: "{app}\share\code_saturne"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: core
 #if HAVE_PDF == "yes"
-Source: "{#Install}\share\doc\code_saturne\autovnv.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
+Source: "{#Install}\share\doc\code_saturne\studymanager.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
 Source: "{#Install}\share\doc\code_saturne\developer.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
 Source: "{#Install}\share\doc\code_saturne\install.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
 Source: "{#Install}\share\doc\code_saturne\refcard.pdf"; DestDir: "{app}\share\doc\code_saturne"; Flags: ignoreversion; Components: help\pdf
@@ -341,7 +341,7 @@ Name: "{group}\{cm:ProgramOnTheWeb,{#MyAppName}}"; Filename: "{#MyAppURL}"
 Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\bin\{#MyAppExeName}"; WorkingDir: "{userdesktop}"; Tasks: desktopicon
 #if HAVE_PDF == "yes"
 Name: "{group}\theory.pdf"; Filename: "{app}\share\doc\code_saturne\theory.pdf"
-Name: "{group}\autovnv.pdf"; Filename: "{app}\share\doc\code_saturne\autovnv.pdf"
+Name: "{group}\studymanager.pdf"; Filename: "{app}\share\doc\code_saturne\studymanager.pdf"
 Name: "{group}\refcard.pdf"; Filename: "{app}\share\doc\code_saturne\refcard.pdf"
 Name: "{group}\theory.pdf"; Filename: "{app}\share\doc\code_saturne\theory.pdf"
 Name: "{group}\user.pdf"; Filename: "{app}\share\doc\code_saturne\user.pdf"

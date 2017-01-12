@@ -22,7 +22,7 @@
 
 #-------------------------------------------------------------------------------
 
-SUBDIRS = Base Pages Autovnv trackcvg
+SUBDIRS = Base Pages studymanager_gui trackcvg
 
 EXTRA_DIST = Base/icons/code_saturne.ico
 

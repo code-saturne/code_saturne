@@ -66,19 +66,19 @@ from cs_exec_environment import \
 import cs_runcase
 
 try:
-    from code_saturne.Autovnv.MainForm import Ui_MainForm
+    from code_saturne.studymanager_gui.MainForm import Ui_MainForm
 except:
     sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Base"))
-    from code_saturne.Autovnv.MainForm import Ui_MainForm
+    from code_saturne.studymanager_gui.MainForm import Ui_MainForm
 
 from code_saturne.Base.IdView import IdView
 from code_saturne.Base import XMLengine
 from code_saturne.Base.XMLmodel import *
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.Common import XML_DOC_VERSION
-from code_saturne.Autovnv.Toolbox import displaySelectedPage
-from code_saturne.Autovnv.BrowserView import BrowserView
-from code_saturne.Autovnv.XMLinitialize import *
+from code_saturne.studymanager_gui.Toolbox import displaySelectedPage
+from code_saturne.studymanager_gui.BrowserView import BrowserView
+from code_saturne.studymanager_gui.XMLinitialize import *
 
 try:
     import code_saturne.Pages
@@ -132,7 +132,7 @@ class MainView(object):
         self.setAttribute(Qt.WA_DeleteOnClose)
         MainView.Instances.add(self)
 
-        self.setWindowTitle(self.package.code_name + " AUTOVNV GUI" + " - " + self.package.version)
+        self.setWindowTitle(self.package.code_name + " STUDYMANAGER GUI" + " - " + self.package.version)
 
         self.Id = IdView()
 
@@ -404,11 +404,11 @@ class MainView(object):
         create new Code_Saturne case
         """
         if not hasattr(self, 'case'):
-            self.case = XMLengine.Case(package=self.package, autovnv=True)
+            self.case = XMLengine.Case(package=self.package, studymanager=True)
             self.case.root()['version'] = self.XML_DOC_VERSION
             self.initCase()
             title = self.tr("New parameters set") + \
-                     " - " + self.tr(self.package.code_name) + self.tr(" AUTOVNV GUI") \
+                     " - " + self.tr(self.package.code_name) + self.tr(" STUDYMANAGER GUI") \
                      + " - " + self.package.version
             self.setWindowTitle(title)
 
@@ -509,7 +509,7 @@ class MainView(object):
         # Instantiate a new case
 
         try:
-            self.case = XMLengine.Case(package=self.package, file_name=file_name, autovnv=True)
+            self.case = XMLengine.Case(package=self.package, file_name=file_name, studymanager=True)
         except:
             msg = self.tr("This file is not in accordance with XML specifications.")
             self.loadingAborted(msg, fn)
@@ -532,7 +532,7 @@ class MainView(object):
 
         # Update the case and the StudyIdBar
         self.case['xmlfile'] = file_name
-        title = fn + " - " + self.tr(self.package.code_name) + self.tr(" AUTOVNV GUI") \
+        title = fn + " - " + self.tr(self.package.code_name) + self.tr(" STUDYMANAGER GUI") \
                    + " - " + self.package.version
         self.setWindowTitle(title)
 
@@ -859,7 +859,8 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         self.displayCSManualAction.triggered.connect(self.displayCSManual)
         self.displayCSTutorialAction.triggered.connect(self.displayCSTutorial)
-        self.displayCSKernelAction.triggered.connect(self.displayCSKernel)
+        self.displayCSTheoryAction.triggered.connect(self.displayCSTheory)
+        self.displayCSSmgrAction.triggered.connect(self.displayCSSmgr)
         self.displayCSRefcardAction.triggered.connect(self.displayCSRefcard)
         self.displayCSDoxygenAction.triggered.connect(self.displayCSDoxygen)
 
@@ -872,7 +873,9 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         if 'user.pdf' not in liste:
             self.displayCSManualAction.setEnabled(False)
         if 'theory.pdf' not in liste:
-            self.displayCSKernelAction.setEnabled(False)
+            self.displayCSTheoryAction.setEnabled(False)
+        if 'studymanager.pdf' not in liste:
+            self.displayCSSmgrAction.setEnabled(False)
         if 'refcard.pdf' not in liste:
             self.displayCSRefcardAction.setEnabled(False)
         if 'doxygen' not in liste:
@@ -907,7 +910,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         QMessageBox.about(self, self.package.name + ' Interface', msg)
 
 
-    def displayCSKernel(self):
+    def displayCSTheory(self):
         """
         public slot
 
@@ -915,6 +918,13 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         self.displayManual(self.package, 'theory')
 
+    def displayCSSmgr(self):
+        """
+        public slot
+
+        open the studymanager guide
+        """
+        self.displayManual(self.package, 'studymanager')
 
     def displayCSRefcard(self):
         """

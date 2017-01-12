@@ -40,17 +40,17 @@ import fnmatch
 #-------------------------------------------------------------------------------
 
 from cs_exec_environment import get_shell_type, enquote_arg
-from autovnv.Parser import Parser
-from autovnv.TexMaker import Report1, Report2
+from studymanager.Parser import Parser
+from studymanager.TexMaker import Report1, Report2
 try:
-    from autovnv.Drawing import Plotter
+    from studymanager.Drawing import Plotter
 except Exception:
     pass
 try:
-    from autovnv.PlotVTK import PlotVTK
+    from studymanager.PlotVTK import PlotVTK
 except Exception:
     pass
-from autovnv.Command import run_autovnv_command
+from studymanager.Command import run_studymanager_command
 import cs_runcase
 
 #-------------------------------------------------------------------------------
@@ -481,9 +481,9 @@ class Case(object):
         self.__updateRuncase(run_id)
 
         if sys.platform.startswith('win'):
-            error, self.is_time = run_autovnv_command("runcase.bat", self.__log)
+            error, self.is_time = run_studymanager_command("runcase.bat", self.__log)
         else:
-            error, self.is_time = run_autovnv_command("./runcase", self.__log)
+            error, self.is_time = run_studymanager_command("./runcase", self.__log)
 
         if not error:
             self.is_run = "OK"
@@ -536,7 +536,7 @@ class Case(object):
 
         tab = []
 
-        # autovnv compare log only for field of real values
+        # studymanager compare log only for field of real values
         for i in range(len(lines)):
             # only select section with "Type" (english and french) on first line
             if lines[i].find("Type") != -1:
@@ -722,7 +722,7 @@ class Study(object):
         # Create study if necessary
         if not os.path.isdir(self.__dest):
             cmd = self.__main_exe + " create --quiet --study " + self.__dest
-            retval, t = run_autovnv_command(cmd, self.__log)
+            retval, t = run_studymanager_command(cmd, self.__log)
             shutil.rmtree(os.path.join(self.__dest, "CASE1"))
 
             # Link meshes and copy other files
@@ -778,7 +778,7 @@ class Study(object):
                             cmd = e + " create --case " + node \
                                   + " --quiet --noref --copy-from " \
                                   + ref
-                            node_retval, t = run_autovnv_command(cmd, self.__log)
+                            node_retval, t = run_studymanager_command(cmd, self.__log)
                             # negative retcode is kept
                             retval = min(node_retval,retval)
                         elif os.path.isdir(ref):
@@ -791,7 +791,7 @@ class Study(object):
                     cmd = e + " create --case " + c.label  \
                           + " --quiet --noref --copy-from "    \
                           + os.path.join(self.__repo, c.label)
-                    retval, t = run_autovnv_command(cmd, self.__log)
+                    retval, t = run_studymanager_command(cmd, self.__log)
                 if retval == 0:
                     log_lines += ['    - create case: ' + c.label]
                 else:
@@ -1051,7 +1051,7 @@ class Studies(object):
                         sdir = case.pkg.get_cs_dir('pythondir')
                         sdir = sdir + ":" + case.pkg.get_cs_dir('pkgpythondir')
                         pdir = pdir + ":" + sdir
-                    retcode, t = run_autovnv_command(cmd, self.__log, pythondir = pdir)
+                    retcode, t = run_studymanager_command(cmd, self.__log, pythondir = pdir)
                     os.chdir(repbase)
                     self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
                 else:
@@ -1118,7 +1118,7 @@ class Studies(object):
         Stop if you try to make a comparison with a file which does not exist.
         """
         for l, s in self.studies:
-            # reference directory passed in autovnv command line overwrites
+            # reference directory passed in studymanager command line overwrites
             # destination in all cases (even if compare is defined by a compare
             # markup with a non empty destination)
             ref = None
@@ -1151,7 +1151,7 @@ class Studies(object):
         if self.__compare:
             for l, s in self.studies:
                 self.reporting('  o Compare study: ' + l)
-                # reference directory passed in autovnv command line overwrites
+                # reference directory passed in studymanager command line overwrites
                 # destination in all cases (even if compare is defined by a
                 # compare markup with a non empty destination)
                 ref = None
@@ -1218,7 +1218,7 @@ class Studies(object):
                             if dest[i]:
                                 d = os.path.join(self.dest, l, case.label, "RESU", dest[i])
                                 cmd += " -d " + d
-                            retcode, t = run_autovnv_command(cmd, self.__log)
+                            retcode, t = run_studymanager_command(cmd, self.__log)
                             self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
                         else:
                             self.reporting('    - script %s not found' % cmd)
@@ -1230,7 +1230,7 @@ class Studies(object):
         """
         for l, s in self.studies:
             # fill results directories and ids for the cases of the current study
-            # that were not run by the current autovnv command
+            # that were not run by the current studymanager command
             for case in s.Cases:
                 if case.is_run != "KO":
                     if case.run_dir == "":
@@ -1247,7 +1247,7 @@ class Studies(object):
                     if os.path.isfile(cmd):
                         list_cases, list_dir = s.getRunDirectories()
                         cmd += ' ' + args[i] + ' -c "' + list_cases + '" -d "' + list_dir + '" -s ' + l
-                        retcode, t = run_autovnv_command(cmd, self.__log)
+                        retcode, t = run_studymanager_command(cmd, self.__log)
                         self.reporting('    - postpro %s --> OK (%s s)' % (cmd, t))
                     else:
                         self.reporting('    - postpro %s not found' % cmd)

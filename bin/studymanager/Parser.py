@@ -90,8 +90,8 @@ class Parser(object):
 
         self.root = self.doc.firstChild
 
-        if self.root.nodeName != "autovnv":
-            print(XMLFileName + ": Wrong XML file. The Root markup is not autovnv.\n")
+        if self.root.nodeName != "studymanager":
+            print(XMLFileName + ": Wrong XML file. The Root markup is not studymanager.\n")
             sys.exit(1)
 
 

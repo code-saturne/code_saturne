@@ -66,7 +66,7 @@
     - a <a href="../../user.pdf"><b>user guide</b></a>,
     - a <a href="../../theory.pdf"><b>theory guide</b></a>,
     - a <a href="../../developer.pdf"><b>developer guide</b></a>,
-    - an <a href="../../autovnv.pdf"><b>autovnv guide</b></a>,
+    - a <a href="../../studymanager.pdf"><b>guide of studymanager</b></a>,
     - an <a href="../../install.pdf"><b>installation guide</b></a>,
     - a <a href="../../refcard.pdf"><b>refcard</b></a>.
 

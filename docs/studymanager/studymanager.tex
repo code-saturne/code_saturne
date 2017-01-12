@@ -33,7 +33,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PACKAGES ET COMMANDES POUR LE DOCUMENTS PDF ET LES HYPERLIENS
 \hypersetup{%
-  pdftitle = {CodeSaturne autovnv},
+  pdftitle = {CodeSaturne studymanager},
   pdfauthor = {MFEE},
   pdfpagemode = UseOutlines
 }
@@ -46,10 +46,10 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFO POUR PAGES DE GARDES
-\titreCS{\CS version~\verscs: autovnv tool}
+\titreCS{\CS version~\verscs: studymanager}
 
 \docassociesCS{}
-\resumeCS{This document presents the autovnv tool. The aim of this script
+\resumeCS{This document presents the tool studymanager. The aim of this script
 is to drive \CS's cases automatically, to compare checkpoint files and
 to display results.
 
@@ -82,20 +82,21 @@ contents}{contents}}
 %
 \section{Introduction}
 
-\textsc{Autovnv} is a small framework to automate the launch of \CS computations
-and do some operations on new results.
+\textsc{studymanager} is a small framework to automate the launch of \CS
+computations and do some operations on new results.
 
 The script needs a directory of previous \CS cases which are candidates to be
 duplicated. This directory is called \textbf{repository}. The duplication is
 done in a new directory which is called the \textbf{destination}.
 
-For each duplicated case, \textsc{Autovnv} is able to compile the user files, to
-run the case, to compare the obtained checkpoint file with the previous one from
-the \textbf{repository}, and to plot curves in order to illustrate the
-computations.
+For each duplicated case, \textsc{studymanager} is able to compile the user
+files, to run the case, to compare the obtained checkpoint file with the
+previous one from the \textbf{repository}, and to plot curves in order to
+illustrate the computations.
 
-For all these steps, \textsc{Autovnv} generate two reports, a global report
-which summarizes the status of each case, and a detailed report which gives the
+For all these steps, \textsc{studymanager} generate two reports,
+a global report which summarizes the status of each case, and a detailed report 
+which gives the
 differences between the new results and the previous ones in the
 \textbf{repository}, and display the defined plots.
 
@@ -105,8 +106,8 @@ needs to run specific scripts.
 
 \section{Installation and prerequisites}
 
-\textsc{Autovnv} does not need a specific installation: the related files are
-installed with the other Python scripts of \CS. Nevertheless, additional
+\textsc{studymanager} does not need a specific installation: the related files
+are installed with the other Python scripts of \CS. Nevertheless, additional
 prerequisites required are:
 \begin{list}{$\bullet$}{}
 \item \texttt{numpy},
@@ -117,12 +118,12 @@ prerequisites required are:
 \section{Command line options}
 
 The command line options can be found with the command: \texttt{code\_saturne
-autovnv -h}.
+studymanager -h}.
 
 \begin{list}{$\bullet$}{}
 \item \texttt{-h, --help}: show the help message and exit;
 \item \texttt{-f FILE, --file=FILE}: give the file of parameters for
-\textsc{Autovnv}. This file is mandatory, and therefore this option must be
+\textsc{studymanager}. This file is mandatory, and therefore this option must be
 completed;
 \item \texttt{-q, --quiet}: do not print status messages to stdout;
 \item \texttt{-u, --update}: update installation pathes in scripts (i.e. \texttt{SaturneGUI} and
@@ -137,27 +138,27 @@ completed;
 \item \texttt{-p, --post}: postprocess results of computations;
 \item \texttt{-m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...}: addresses
   for sending the reports.
-\item \texttt{-l LOG\_FILE, --log=LOG\_FILE}: name of autovnv log file (default value is 'auto\_vnv.log';
+\item \texttt{-l LOG\_FILE, --log=LOG\_FILE}: name of studymanager log file (default value is 'auto\_vnv.log';
 \item \texttt{-z, --disable-tex}: disable text rendering with LaTex in Matplotlib (use Mathtext);
 \end{list}
 
 \underline{Examples:}
 
 \begin{list}{$\bullet$}{}
-\item \texttt{code\_saturne autovnv -f sample.xml}: duplicates all cases from
+\item \texttt{code\_saturne studymanager -f sample.xml}: duplicates all cases from
 the \textbf{repository} in the \textbf{destination}, compile all user files
 and exits;
-\item \texttt{code\_saturne autovnv -f sample.xml -r}: as above, and run all
+\item \texttt{code\_saturne studymanager -f sample.xml -r}: as above, and run all
 cases if defined in \texttt{sample.xml};
-\item \texttt{code\_saturne autovnv -f sample.xml -r -c}: as above, and compares
+\item \texttt{code\_saturne studymanager -f sample.xml -r -c}: as above, and compares
 all new checkpoint files with those from the \textbf{repository} if defined
 in \texttt{sample.xml};
-\item \texttt{code\_saturne autovnv -f sample.xml -rcp}: as above, and plots
+\item \texttt{code\_saturne studymanager -f sample.xml -rcp}: as above, and plots
 results if defined in \texttt{sample.xml};
-\item \texttt{code\_saturne autovnv -f sample.xml -r -c -p -m
+\item \texttt{code\_saturne studymanager -f sample.xml -r -c -p -m
 "dt@moulinsart.be dd@moulinsart.be"}: as above, and send the two
 reports.
-\item \texttt{code\_saturne autovnv -f sample.xml -c -p}: compares and plots
+\item \texttt{code\_saturne studymanager -f sample.xml -c -p}: compares and plots
 results in the \textbf{destination} already computed.
 \end{list}
 
@@ -177,7 +178,7 @@ This example shows the four mandatory first lines of the file of parameters.
 \small
 \begin{verbatim}
 <?xml version="1.0"?>
-<autovnv>
+<studymanager>
     <repository>/home/dupond/codesaturne/MyRepository</repository>
     <destination>/home/dupond/codesaturne/MyDestination</destination>
 \end{verbatim}
@@ -193,13 +194,13 @@ The last line of the file of parameters must be:
 
 \small
 \begin{verbatim}
-</autovnv>
+</studymanager>
 \end{verbatim}
 \normalsize
 
 \subsection{Case creation and compilation fo the user files}
 
-When \textsc{Autovnv} is launched, the file of parameters is parsed in order to
+When \textsc{studymanager} is launched, the file of parameters is parsed in order to
 known which studies and cases from the \textbf{repository} should be duplicated
 in the \textbf{destination}. The selection is done with the markups
 \texttt{<study>} and \texttt{<case>} as the following example:
@@ -207,7 +208,7 @@ in the \textbf{destination}. The selection is done with the markups
 \small
 \begin{verbatim}
 <?xml version="1.0"?>
-<autovnv>
+<studymanager>
     <repository>/home/dupond/codesaturne/MyRepository</repository>
     <destination>/home/dupond/codesaturne/MyDestination</destination>
 
@@ -219,7 +220,7 @@ in the \textbf{destination}. The selection is done with the markups
         <case label="k-eps" status="on" compute="on" post="off"/>
         <case label="Rij-eps" status="on" compute="on" post="off"/>
     </study>
-</autovnv>
+</studymanager>
 \end{verbatim}
 \normalsize
 
@@ -250,7 +251,7 @@ switched off. In the above example, only the case \texttt{Grid1} of the study
 \texttt{MyStudy1} is going to be created.
 
 After the creation of the directories in the \textbf{destination}, for each
-case, all user files are compiled. The \textsc{Autovnv} stops if a compilation
+case, all user files are compiled. The \textsc{studymanager} stops if a compilation
 error occurs: neither computation nor comparison nor plot will be performed,
 even if they are switched on.
 
@@ -260,7 +261,7 @@ even if they are switched on.
 \item During the duplication, every files are copied, except mesh files, for
 which a symbolic link is used.
 \item During the duplication, if a file already exists in the
-\textbf{destination}, this file is not overwritten by \textsc{Autovnv}.
+\textbf{destination}, this file is not overwritten by \textsc{studymanager}.
 \end{list}
 
 
@@ -275,7 +276,7 @@ All cases described in the file of parameters with the attribute
 \small
 \begin{verbatim}
 <?xml version="1.0"?>
-<autovnv>
+<studymanager>
     <repository>/home/dupond/codesaturne/MyRepository</repository>
     <destination>/home/dupond/codesaturne/MyDestination</destination>
 
@@ -287,13 +288,13 @@ All cases described in the file of parameters with the attribute
         <case label="k-eps" status="on" compute="on" post="off"/>
         <case label="Rij-eps" status="on" compute="on" post="off"/>
     </study>
-</autovnv>
+</studymanager>
 \end{verbatim}
 \normalsize
 
 After the computation, if no error occurs, the attribute \texttt{compute} is set
 to \texttt{"off"} in the copy of the file of parameters in the
-\textbf{destination}. It is allow to restart \textsc{Autovnv} without re-run
+\textbf{destination}. It is allow to restart \textsc{studymanager} without re-run
 successfull previous computations.
 
 Note that it is allowed to run several times the same case in a given study.
@@ -302,7 +303,7 @@ The case has to be repeated in the file of parameters:
 \small
 \begin{verbatim}
 <?xml version="1.0"?>
-<autovnv>
+<studymanager>
     <repository>/home/dupond/codesaturne/MyRepository</repository>
     <destination>/home/dupond/codesaturne/MyDestination</destination>
 
@@ -314,7 +315,7 @@ The case has to be repeated in the file of parameters:
             <prepro label="grid.py" args="-m grid2.med -p cas.xml" status="on"/>
         </case>
     </study>
-</autovnv>
+</studymanager>
 \end{verbatim}
 \normalsize
 
@@ -359,8 +360,8 @@ in the \texttt{RESU} directory of the case, the id can be ommitted:
 \item if the id is not known already because the case has not yet run, just let
 the attribute empty \texttt{dest=""}, the value will be updated after the run
 step in the \textbf{destination} directory (see section \ref{sec:restart});
-\item if \textsc{Autovnv} is restarted without the run step (with the command
-line \texttt{code\_saturne autovnv -f sample.xml -c} for example), the id of
+\item if \textsc{studymanager} is restarted without the run step (with the command
+line \texttt{code\_saturne studymanager -f sample.xml -c} for example), the id of
 the results directory in the \textbf{destination} must be given (for example
 \texttt{dest="20110706-1523"}), but if there is a single results directory in
 the \texttt{RESU} directory of the case, the id can be ommitted:
@@ -410,10 +411,10 @@ VelocityY &0.364351 &0.00764912 &1.0e-3 \\
 \end{center}
 
 Alternatively, in order to compare all activated cases (status at on) listed
-in an \textsc{Autovnv} parameter file, a reference directory can be provided
+in a \textsc{studymanager} parameter file, a reference directory can be provided
 directly in the command line, as follows:
 
-\texttt{code\_saturne autovnv -f sample.xml -c -d /scratch/***/reference\_destination\_directory}.
+\texttt{code\_saturne studymanager -f sample.xml -c -d /scratch/***/reference\_destination\_directory}.
 
 \subsection{Run external additional preprocessing scripts with options}\label{sec:prepro}
 
@@ -904,8 +905,8 @@ where the current curve should be plotted;
 \item if the id is not known already because the case has not yet run, just let
 the attribute empty \texttt{dest=""}, the value will be updated after the run
 step in the \textbf{destination} directory (see section \ref{sec:restart});
-\item if \textsc{Autovnv} is restarted without the run step (with the command
-line \texttt{code\_saturne autovnv -f sample.xml -c} for example), the id of
+\item if \textsc{studymanager} is restarted without the run step (with the command
+line \texttt{code\_saturne studymanager -f sample.xml -c} for example), the id of
 the results directory in the \textbf{destination} must be given (for example
 \texttt{dest="20110706-1523"}), but if there is a single results directory in
 the \texttt{RESU} directory of the case, the id can be ommitted:
@@ -942,7 +943,7 @@ should be used as a child of a markup \texttt{<case>} as illustrated below:
 
 The file of parameters allows to execute additional matplotlib commands (i.e
 Python commands), for curves (2D lines), or subplot, or figure. For every object
-drawn, \texttt{Autovnv} associate a name to this object that can be reused in
+drawn, \texttt{studymanager} associate a name to this object that can be reused in
 standard matplotlib commands. Therefore, childs markup \texttt{<plt\_command>}
 could be added to \texttt{<plot>}, \texttt{<subplot>} or \texttt{<figure>}.
 
@@ -993,7 +994,7 @@ are \texttt{line} and \texttt{lines} (with \texttt{line = lines[0]}).
 The post-processing is activated if the option \texttt{-p, --post} is present
 in the command line.
 
-\textsc{Autovnv} is able to draw colored maps, with optional contours, based on
+\textsc{studymanager} is able to draw colored maps, with optional contours, based on
 results on cut planes of the computational domain. The results have to be a set of
 ensight files. The following example shows the drawing of a scalar map using the
 master file of result \texttt{RESULTS.case}. The figure will be saved on the
@@ -1219,7 +1220,7 @@ No attribute is mandatory.
 
 The file of parameters allows to execute additional vtk commands (i.e Python
 commands). This possibility is mainly useful for interaction with actors and the
-camera. For each actor drawn, \texttt{Autovnv} associate a name to this object
+camera. For each actor drawn, \texttt{studymanager} associate a name to this object
 that can be reused in standard vtk commands. Therefore, childs markup
 \texttt{<vtk\_command>} could be added to \texttt{<scalar>}.
 
@@ -1254,7 +1255,7 @@ associated to the zoom to display correctly the scalar map.
 The post-processing is activated if the option \texttt{-p, --post} is present
 in the command line.
 
-\textsc{Autovnv} is able to include files into the final detailed report. These
+\textsc{studymanager} is able to include files into the final detailed report. These
 files must be in the directory of results either in the \textbf{destination} or
 in the \textbf{repository}. The following example shows the inclusion of three
 files: \texttt{performance.log} and \texttt{setup.log} from the
@@ -1292,7 +1293,7 @@ The attribute \texttt{file} is mandatory, and either \texttt{repo} or
 
 \section{Output and restart}\label{sec:restart}
 
-\textsc{Autovnv} produces several files in the \textbf{destination} directory:
+\textsc{studymanager} produces several files in the \textbf{destination} directory:
 \begin{list}{$\bullet$}{}
 \item \texttt{report.txt}: standard output of the script;
 \item \texttt{auto\_vnv.log}: log of the code and the \texttt{pdflatex}
@@ -1307,7 +1308,7 @@ script if an error occurs.
 
 After the computation of a case, if no error occurs, the attribute
 \texttt{compute} is set to \texttt{"off"} in the copy of the file of parameters
-in the \textbf{destination}. It is allow a restart of \textsc{Autovnv} without
+in the \textbf{destination}. It is allow a restart of \textsc{studymanager} without
 re-run successfull previous computations.
 In the same manner, all empty attributes \texttt{repo=""} and \texttt{dest=""}
 are completed in the udpated file of parameters.
@@ -1322,7 +1323,7 @@ The opening and closing signs for commantaries are \texttt{<!--} and
 \small
 \begin{verbatim}
 <?xml version="1.0"?>
-<autovnv>
+<studymanager>
     <repository>/home/dupond/codesaturne/MyRepository</repository>
     <destination>/home/dupond/codesaturne/MyDestination</destination>
 
@@ -1336,7 +1337,7 @@ The opening and closing signs for commantaries are \texttt{<!--} and
         <case label="Rij-eps" status="on" compute="on" post="on"/>
     </study>
     -->
-</autovnv>
+</studymanager>
 \end{verbatim}
 \normalsize
 
@@ -1368,7 +1369,7 @@ You have to use the raw command \texttt{subplots\_adjust}:
 \item How to find a syntax error in the XML file ?
 
 When there is a misprint in the file of parameters,
-\textsc{Autovnv} indicates the location of the error
+\textsc{studymanager} indicates the location of the error
 with the line and the column of the file:
 \small
 \begin{verbatim}

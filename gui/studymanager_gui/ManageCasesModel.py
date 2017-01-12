@@ -52,7 +52,7 @@ class ManageCasesModel(Model):
         self.case = case
         self.list_study = self.case.xmlGetNodeList("study")
         self.list_case = self.case.xmlGetNodeList("case")
-        self.repo = self.case.xmlGetNode("autovnv").xmlGetString('repository')
+        self.repo = self.case.xmlGetNode("studymanager").xmlGetString('repository')
 
         self.StudyList = []
         for node in self.list_study:
@@ -100,7 +100,7 @@ class ManageCasesModel(Model):
         """
         Add study name from node with index
         """
-        node = self.case.xmlGetNode("autovnv")
+        node = self.case.xmlGetNode("studymanager")
 
         study_node = node.xmlInitChildNode('study', label = name)
         self.StudyList.append(name)
@@ -111,7 +111,7 @@ class ManageCasesModel(Model):
         """
         load cases
         """
-        node = self.case.xmlGetNode("autovnv")
+        node = self.case.xmlGetNode("studymanager")
         idx = 0
         directory = os.path.abspath(os.path.join(self.repo, study))
         study_node = node.xmlGetNode('study', label = study)
@@ -620,4 +620,3 @@ class ManageCasesModel(Model):
         node = study_node.xmlGetNode("case", id = idx)
         nn = node.xmlInitChildNode("compare")
         nn['args'] = args
-

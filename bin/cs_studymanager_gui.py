@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 """
-Parse command line arguments and launch the autovnv GUI.
+Parse command line arguments and launch studymanager GUI.
 """
 
 #-------------------------------------------------------------------------------
@@ -141,9 +141,11 @@ def main(argv, pkg):
     case = process_cmd_line(argv)
 
     app = QApplication(argv)
-    app.setOrganizationName(pkg.code_name) # Defines the name of subdirectory under .config
+    # Defines the name of subdirectory under .config
+    app.setOrganizationName(pkg.code_name)
     app.setOrganizationDomain(pkg.url)
-    app.setApplicationName("autovnv gui") # Defines the name of the configuration file
+    # Defines the name of the configuration file
+    app.setApplicationName("studymanagergui")
     app.lastWindowClosed.connect(app.quit)
 
     # Locale detection
@@ -153,7 +155,7 @@ def main(argv, pkg):
                        QLibraryInfo.location(QLibraryInfo.TranslationsPath)):
         app.installTranslator(translator)
 
-    from code_saturne.Autovnv.MainView import MainView
+    from code_saturne.studymanager_gui.MainView import MainView
     mv = MainView(cmd_package = pkg, cmd_case = case)
 
     try:

@@ -54,7 +54,7 @@ except Exception: # email version 4.0 (Python2 from Python 2.5)
 # Application modules import
 #-------------------------------------------------------------------------------
 
-# Do not import Autovnv yet, as it pulls Python packages such as
+# Do not import studymanager yet, as it pulls Python packages such as
 # matplotlib or vtk which may not be in the standard path, and may need
 # sourcing of a specific environment (which itself is delayed in case
 # the main and coputation packages are not the same).
@@ -70,7 +70,7 @@ def process_cmd_line(argv, pkg):
     if sys.argv[0][-3:] == '.py':
         usage = "usage: %prog [options]"
     else:
-        usage = "usage: %prog autovnv [options]"
+        usage = "usage: %prog studymanager [options]"
 
     parser = OptionParser(usage=usage)
 
@@ -115,9 +115,9 @@ def process_cmd_line(argv, pkg):
                       type="string", metavar="ADDRESS1 ADDRESS2 ...",
                       help="addresses for sending the reports")
 
-    parser.add_option("-l", "--log", dest="log_file", default="auto_vnv.log",
+    parser.add_option("-l", "--log", dest="log_file", default="studymanager.log",
                       type="string",
-                      help="name of autovnv log file (default value is 'auto_vnv.log'")
+                      help="name of studymanager log file (default value is 'studymanager.log'")
 
     parser.add_option("-z", "--disable-tex",
                       action="store_true", dest="disable_tex", default=False,
@@ -208,10 +208,10 @@ def release():
     return issue
 
 #-------------------------------------------------------------------------------
-# Start point of Auto V & V script
+# Start point of studymanager script
 #-------------------------------------------------------------------------------
 
-def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to, opt_z):
+def run_studymanager(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to, opt_z):
     """
     Main function
       1. parse the command line,
@@ -224,14 +224,14 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, op
       8. reporting by mail
     """
 
-    # Source environment if required before importing Autovnv modules, as it
-    # pulls Python packages such as matplotlib or vtk which may not be in the
-    # standard path.
+    # Source environment if required before importing studymanager modules, as
+    # it pulls Python packages such as matplotlib or vtk which may not be in
+    # the standard path.
     from cs_exec_environment import set_modules, source_rcfile, enquote_arg
     set_modules(pkg)
     source_rcfile(pkg)
 
-    from autovnv.Study import Studies
+    from studymanager.Study import Studies
 
     # Scripts
 
@@ -353,7 +353,7 @@ def main(argv, pkg):
     opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, addresses, opt_z = process_cmd_line(argv, pkg)
     opt_to  = addresses.split()
 
-    retcode = runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to, opt_z)
+    retcode = run_studymanager(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to, opt_z)
     sys.exit(retcode)
 
 #-------------------------------------------------------------------------------

@@ -52,10 +52,10 @@ from code_saturne.Base.Common import LABEL_LENGTH_MAX
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, IntValidator
 from code_saturne.Base.QtPage import RegExpValidator, to_qvariant
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
-from code_saturne.Autovnv.ManagePlotForm import Ui_ManagePlotForm
-from code_saturne.Autovnv.ManagePlotterForm import Ui_ManagePlotterForm
-from code_saturne.Autovnv.ManagePlotterSubplotForm import Ui_ManagePlotterSubplotForm
-from code_saturne.Autovnv.ManagePlotterModel import ManagePlotterModel
+from code_saturne.studymanager_gui.ManagePlotForm import Ui_ManagePlotForm
+from code_saturne.studymanager_gui.ManagePlotterForm import Ui_ManagePlotterForm
+from code_saturne.studymanager_gui.ManagePlotterSubplotForm import Ui_ManagePlotterSubplotForm
+from code_saturne.studymanager_gui.ManagePlotterModel import ManagePlotterModel
 
 #-------------------------------------------------------------------------------
 # log config

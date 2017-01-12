@@ -42,7 +42,7 @@ import sys, unittest, re
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.XMLvariables import Variables
-from code_saturne.Autovnv import Toolbox
+from code_saturne.studymanager_gui import Toolbox
 
 #-------------------------------------------------------------------------------
 # class XMLinit
