@@ -1605,7 +1605,7 @@ _volumic_zone_localization(const char *zone_id)
  *----------------------------------------------------------------------------*/
 
 static void
-_van_genuchten_parameter_value(const char  *zone_id,
+_gwf_parameter_value(const char  *zone_id,
                                const char  *parameter,
                                double      *value)
 {
@@ -5307,32 +5307,36 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
       char *mdl = cs_gui_get_attribute_value(path);
       BFT_FREE(path);
 
-      /* Van Genuchten law for permeability */
+      /* law for permeability */
+      /* TODO: rename it in GUI, it is not Van Genuchten if saturated */
       if (cs_gui_strcmp(mdl, "VanGenuchten")) {
-        cs_real_t alpha_param, ks_param, l_param, n_param, thetas_param, thetar_param;
+        cs_real_t alpha_param, ks_param, l_param, n_param;
+        cs_real_t thetas_param, thetar_param;
         cs_real_t ks_xx, ks_yy, ks_zz, ks_xy, ks_xz, ks_yz;
         cs_real_t molecular_diffusion;
 
+        /* Van Genuchten parameters */
         if (*unsaturated) {
-          _van_genuchten_parameter_value(zone_id, "alpha",  &alpha_param);
-          _van_genuchten_parameter_value(zone_id, "l",      &l_param);
-          _van_genuchten_parameter_value(zone_id, "n",      &n_param);
-          _van_genuchten_parameter_value(zone_id, "thetar", &thetar_param);
-          _van_genuchten_parameter_value(zone_id, "molecularDiff",
-                                         &molecular_diffusion);
+          _gwf_parameter_value(zone_id, "alpha",  &alpha_param);
+          _gwf_parameter_value(zone_id, "l",      &l_param);
+          _gwf_parameter_value(zone_id, "n",      &n_param);
+          _gwf_parameter_value(zone_id, "thetar", &thetar_param);
         }
-        _van_genuchten_parameter_value(zone_id, "thetas", &thetas_param);
+
+        _gwf_parameter_value(zone_id, "molecularDiff",
+                                       &molecular_diffusion);
+        _gwf_parameter_value(zone_id, "thetas", &thetas_param);
 
 
         if (*permeability == 0)
-          _van_genuchten_parameter_value(zone_id, "ks",     &ks_param);
+          _gwf_parameter_value(zone_id, "ks",     &ks_param);
         else {
-          _van_genuchten_parameter_value(zone_id, "ks_xx",     &ks_xx);
-          _van_genuchten_parameter_value(zone_id, "ks_yy",     &ks_yy);
-          _van_genuchten_parameter_value(zone_id, "ks_zz",     &ks_zz);
-          _van_genuchten_parameter_value(zone_id, "ks_xy",     &ks_xy);
-          _van_genuchten_parameter_value(zone_id, "ks_xz",     &ks_xz);
-          _van_genuchten_parameter_value(zone_id, "ks_yz",     &ks_yz);
+          _gwf_parameter_value(zone_id, "ks_xx",     &ks_xx);
+          _gwf_parameter_value(zone_id, "ks_yy",     &ks_yy);
+          _gwf_parameter_value(zone_id, "ks_zz",     &ks_zz);
+          _gwf_parameter_value(zone_id, "ks_xy",     &ks_xy);
+          _gwf_parameter_value(zone_id, "ks_xz",     &ks_xz);
+          _gwf_parameter_value(zone_id, "ks_yz",     &ks_yz);
         }
 
         /* unsaturated zone considered */
