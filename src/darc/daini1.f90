@@ -130,7 +130,7 @@ darcy_gravity_y = 0.d0
 darcy_gravity_z = 1.d0
 
 ! Unsaturated zone is taken into account by default
-darcy_unsaturated = 0
+darcy_unsaturated = 1
 
 ! Definition of sorption parameters
 call cs_gwf_parameters_define_field_keys
