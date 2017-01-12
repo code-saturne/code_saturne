@@ -758,7 +758,7 @@ cs_balance_by_zone(const char *selection_crit,
   bool itemperature = false;
   const int scal_id = cs_field_get_key_int(f, cs_field_key_id("scalar_id"));
   if (scal_id == cs_glob_thermal_model->iscalt) {
-    if (cs_glob_thermal_model->itherm == 1)
+    if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
       itemperature = true;
   }
 
@@ -2217,7 +2217,7 @@ cs_surface_balance(const char *selection_crit,
   bool itemperature = false;
   const int scal_id = cs_field_get_key_int(f, cs_field_key_id("scalar_id"));
   if (scal_id == cs_glob_thermal_model->iscalt) {
-    if (cs_glob_thermal_model->itherm == 1)
+    if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
       itemperature = true;
   }
 
@@ -2794,7 +2794,7 @@ cs_flux_through_surface(const char *selection_crit,
   bool itemperature = false;
   const int scal_id = cs_field_get_key_int(f, cs_field_key_id("scalar_id"));
   if (scal_id == cs_glob_thermal_model->iscalt) {
-    if (cs_glob_thermal_model->itherm == 1)
+    if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
       itemperature = true;
   }
 

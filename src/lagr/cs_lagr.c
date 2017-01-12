@@ -2008,16 +2008,18 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       if (extra->scal_t != NULL) {
 
-        if (   cs_glob_thermal_model->itherm == 1
-            && cs_glob_thermal_model->itpscl == 2)
+        if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
+            && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
           tempp[iel] = extra->scal_t->val[iel]
             + cs_physical_constants_celsius_to_kelvin;
 
-        else if (   cs_glob_thermal_model->itherm == 1
-                 && cs_glob_thermal_model->itpscl == 1)
+        else if (   cs_glob_thermal_model->itherm ==
+                            CS_THERMAL_MODEL_TEMPERATURE
+                 && cs_glob_thermal_model->itpscl ==
+                            CS_TEMPERATURE_SCALE_KELVIN)
           tempp[iel] = extra->scal_t->val[iel];
 
-        else if (cs_glob_thermal_model->itherm == 2) {
+        else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
           mode = 1;
           CS_PROCF(usthht,USTHHT)(&mode, &extra->scal_t->val[iel], &tempp[iel]);

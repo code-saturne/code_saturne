@@ -45,6 +45,8 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_parall.h"
@@ -190,6 +192,35 @@ cs_f_thermal_model_get_pointers(int     **itherm,
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Return thermal field (temperature, enthalpy, total energy according to
+ *        thermal model).
+ *
+ * \return   pointer to thermal field
+ *----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_thermal_model_field(void)
+{
+  cs_field_t *th_f;
+  switch (_thermal_model.itherm) {
+  case CS_THERMAL_MODEL_TEMPERATURE:
+    th_f = CS_F_(t);
+    break;
+  case CS_THERMAL_MODEL_ENTHALPY:
+    th_f = CS_F_(h);
+    break;
+  case CS_THERMAL_MODEL_TOTAL_ENERGY:
+    th_f = CS_F_(energy);
+    break;
+  default:
+    th_f = NULL;
+  }
+
+  return th_f;
+}
 
 /*----------------------------------------------------------------------------
  *!

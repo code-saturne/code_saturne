@@ -893,22 +893,26 @@ _lagitf(cs_lagr_attribute_t  *iattr)
       tempf[cell_id]  = extra->temperature->val[cell_id] - _tkelvi;
 
   }
-  else if (cs_glob_thermal_model->itherm == 1 && cs_glob_thermal_model->itpscl == 2) {
+  else if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
+           && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
       tempf[cell_id]  = extra->scal_t->val[cell_id];
 
   }
-  else if (cs_glob_thermal_model->itherm == 1 && cs_glob_thermal_model->itpscl == 1) {
+  else if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
+           && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN) {
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
       tempf[cell_id]  = extra->scal_t->val[cell_id] - _tkelvi;
 
   }
-  else if (cs_glob_thermal_model->itherm == 2) {
+  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
-      CS_PROCF(usthht,USTHHT) (&mode, &extra->scal_t->val[cell_id], &tempf[cell_id]);
+      CS_PROCF(usthht,USTHHT) (&mode,
+                               &extra->scal_t->val[cell_id],
+                               &tempf[cell_id]);
 
   }
 

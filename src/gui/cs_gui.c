@@ -385,7 +385,7 @@ _physical_property(const char       *param,
       }
       else if (cs_gui_strcmp(param, "thermal_conductivity")) {
         /* for the Temperature, the diffusivity factor is not divided by Cp */
-        if (itherm != 1)
+        if (itherm != CS_THERMAL_MODEL_TEMPERATURE)
           mei_tree_insert(ev_law, "lambda0", visls0[iscalt-1]*(cp0));
         else
           mei_tree_insert(ev_law, "lambda0", visls0[iscalt-1]);
@@ -400,21 +400,8 @@ _physical_property(const char       *param,
           mei_tree_insert(ev_law, f2->name, 0.0);
       }
 
-      cs_field_t *fth;
+      cs_field_t *fth = cs_thermal_model_field();
 
-      switch (itherm) {
-      case 1:
-        fth = CS_F_(t);
-        break;
-      case 2:
-        fth = CS_F_(h);
-        break;
-      case 3:
-        fth = CS_F_(energy);
-        break;
-      default:
-        fth = NULL;
-      }
       if (fth != NULL)
         mei_tree_insert(ev_law, fth->name, 0.0);
 
@@ -459,7 +446,7 @@ _physical_property(const char       *param,
 
         if (cs_gui_strcmp(param, "thermal_conductivity")) {
           const cs_thermal_model_t  *tm = cs_glob_thermal_model;
-          if (tm->itherm == 1)
+          if (tm->itherm == CS_THERMAL_MODEL_TEMPERATURE)
             values[iel] = mei_tree_lookup(ev_law, symbol);
           else if (icp > 0)
             values[iel] = mei_tree_lookup(ev_law, symbol) / c_cp->val[iel];
@@ -650,7 +637,7 @@ _compressible_physical_property(const char       *param,
 
       const int itherm = cs_glob_thermal_model->itherm;
 
-      assert(itherm == 3);
+      assert(itherm == CS_THERMAL_MODEL_TOTAL_ENERGY);
 
       cs_field_t *f = CS_F_(energy);
 
@@ -2272,32 +2259,32 @@ void CS_PROCF (csther, CSTHER) (void)
 
   switch(cs_gui_thermal_model()) {
   case 10:
-    thermal->itherm = 1;
-    thermal->itpscl = 2;
+    thermal->itherm = CS_THERMAL_MODEL_TEMPERATURE;
+    thermal->itpscl = CS_TEMPERATURE_SCALE_CELSIUS;
     break;
   case 11:
-    thermal->itherm = 1;
-    thermal->itpscl = 1;
+    thermal->itherm = CS_THERMAL_MODEL_TEMPERATURE;
+    thermal->itpscl = CS_TEMPERATURE_SCALE_KELVIN;
     break;
   case 12:
-    thermal->itherm = 1;
-    thermal->itpscl = 2;
+    thermal->itherm = CS_THERMAL_MODEL_TEMPERATURE;
+    thermal->itpscl = CS_TEMPERATURE_SCALE_CELSIUS;
     break;
   case 13:
-    thermal->itherm = 1;
-    thermal->itpscl = 2;
+    thermal->itherm = CS_THERMAL_MODEL_TEMPERATURE;
+    thermal->itpscl = CS_TEMPERATURE_SCALE_CELSIUS;
     break;
   case 20:
-    thermal->itherm = 2;
-    thermal->itpscl = 1;
+    thermal->itherm = CS_THERMAL_MODEL_ENTHALPY;
+    thermal->itpscl = CS_TEMPERATURE_SCALE_KELVIN;
     break;
   case 30:
-    thermal->itherm = 3;
-    thermal->itpscl = 1;
+    thermal->itherm = CS_THERMAL_MODEL_TOTAL_ENERGY;
+    thermal->itpscl = CS_TEMPERATURE_SCALE_KELVIN;
     break;
   default:
-    thermal->itherm = 0;
-    thermal->itpscl = 0;
+    thermal->itherm = CS_THERMAL_MODEL_NONE;
+    thermal->itpscl = CS_TEMPERATURE_SCALE_NONE;
     break;
   }
 }
@@ -2509,7 +2496,7 @@ void CS_PROCF (csivis, CSIVIS) (void)
   const int itherm = cs_glob_thermal_model->itherm;
   const int iscalt = cs_glob_thermal_model->iscalt;
 
-  if (vars->model != NULL && itherm) {
+  if (vars->model != NULL && itherm != CS_THERMAL_MODEL_NONE) {
     test1 = _properties_choice_id("thermal_conductivity", &choice1);
     test2 = _properties_choice_id("specific_heat", &choice2);
 
@@ -2963,9 +2950,9 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
       }
 
       cs_phys_prop_thermo_plane_type_t thermal_plane = CS_PHYS_PROP_PLANE_PH;
-      if (itherm <= 1)
+      if (itherm <= CS_THERMAL_MODEL_TEMPERATURE)
         thermal_plane = CS_PHYS_PROP_PLANE_PT;
-      //else if (itherm == 3)
+      //else if (itherm == CS_THERMAL_MODEL_TOTAL_ENERGY)
       //  // TODO compressible
       //  thermal_plane = CS_PHYS_PROP_PLANE_PS;
 
@@ -3094,7 +3081,7 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
     /* thermal model with no specific physics */
 
     const int itherm = cs_glob_thermal_model->itherm;
-    assert(itherm > 0);
+    assert(itherm > CS_THERMAL_MODEL_NONE);
 
     const char *t_names[] = {"temperature", "enthalpy", "total_energy"};
 
@@ -3138,7 +3125,7 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
 
   if (vars->model != NULL) {
 
-    if (itherm != 0) {
+    if (itherm != CS_THERMAL_MODEL_NONE) {
       int i = iscalt-1;
 
       if (_thermal_table_needed("thermal_conductivity") == 0)
@@ -3149,7 +3136,7 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
                              &(cs_glob_fluid_properties->t0), &visls0[i]);
 
       /* for the Temperature, the diffusivity factor is not divided by Cp */
-      if (itherm != 1)
+      if (itherm != CS_THERMAL_MODEL_TEMPERATURE)
         visls0[i] = visls0[i] / cs_glob_fluid_properties->cp0;
     }
   }
@@ -4216,21 +4203,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
         /* For non-specific physics defined with the GUI,
            itherm can only be 1 or 2 here (as the thermal model is on) */
 
-        cs_field_t *c;
-        switch (itherm) {
-        case 1:
-          c = CS_F_(t);
-          break;
-        case 2:
-          c = CS_F_(h);
-        break;
-        case 3:
-          c = CS_F_(energy);
-          break;
-        default:
-          assert(0);
-          c = NULL;
-        }
+        cs_field_t *c = cs_thermal_model_field();
+        assert(c != NULL);
 
         if (formula_sca != NULL) {
           ev_formula_sca = mei_tree_new(formula_sca);
@@ -6594,7 +6568,7 @@ cs_gui_user_variables(void)
   int n_user_scalars = cs_gui_get_tag_count("/additional_scalars/variable", 1);
 
   const int itherm = cs_glob_thermal_model->itherm;
-  const int var_start_id = (itherm != 0) ? 0 : 1;
+  const int var_start_id = (itherm != CS_THERMAL_MODEL_NONE) ? 0 : 1;
   const int var_end_id = n_user_scalars+1;
 
 #if _XML_DEBUG_

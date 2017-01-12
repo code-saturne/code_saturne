@@ -223,19 +223,7 @@ cs_user_radiative_transfer_bcs(int               nvar,
   /*< [allocate]*/
 
   /*< [ivar]*/
-  cs_field_t *fth;
-
-  switch (cs_glob_thermal_model->itherm) {
-  case 1:
-    fth = CS_F_(t);
-    break;
-  case 2:
-    fth = CS_F_(h);
-    break;
-  default:
-    fth = NULL;
-  }
-
+  cs_field_t *fth = cs_thermal_model_field();
   const cs_lnum_t ivart
     = cs_field_get_key_int(fth, cs_field_key_id("variable_id")) - 1;
   /*< [ivar]*/

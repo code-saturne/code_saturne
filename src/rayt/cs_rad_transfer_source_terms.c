@@ -107,8 +107,8 @@ void
 cs_rad_transfer_source_terms(cs_real_t  smbrs[],
                              cs_real_t  rovsdt[])
 {
-  if (   cs_glob_thermal_model->itherm == 1
-      || cs_glob_thermal_model->itherm == 2) {
+  if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
+      || cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
     /* Implicit part   */
     cs_field_t *f_tsri = cs_field_by_name("rad_st_implicit");

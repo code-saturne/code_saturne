@@ -227,7 +227,7 @@ cs_rad_transfer_options(void)
        _("in Radiative module"),
        _("Thermal model option (cs_glob_thermal model->itherm)"),
        cs_glob_thermal_model->itherm,
-       1, 3);
+       CS_THERMAL_MODEL_TEMPERATURE, CS_THERMAL_MODEL_TOTAL_ENERGY);
 
   cs_parameters_error_barrier();
 

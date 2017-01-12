@@ -283,17 +283,7 @@ cs_rad_transfer_bcs(int         nvar,
 
   /* Index of the thermal variable */
 
-  cs_field_t *fth;
-  switch (cs_glob_thermal_model->itherm) {
-  case 1:
-    fth = CS_F_(t);
-    break;
-  case 2:
-    fth = CS_F_(h);
-    break;
-  default:
-    fth = NULL;
-  }
+  cs_field_t *fth = cs_thermal_model_field();
   const cs_lnum_t ivart
     = cs_field_get_key_int(fth, cs_field_key_id("variable_id")) - 1;
 
@@ -1010,11 +1000,11 @@ cs_rad_transfer_bcs(int         nvar,
 
   /* Save temperature (in Kelvin) in tempk */
 
-  if (cs_glob_thermal_model->itherm == 1) {
+  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
 
     cs_field_t *f_temp = CS_F_(t);
 
-    if (cs_glob_thermal_model->itpscl == 2) {
+    if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
 
       for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
         tempk[iel] = f_temp->vals[1][iel] + tkelvi;
@@ -1028,7 +1018,7 @@ cs_rad_transfer_bcs(int         nvar,
     }
 
   }
-  else if (cs_glob_thermal_model->itherm == 2) {
+  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
     cs_field_t *f_enthalpy = CS_F_(h);
 
@@ -1090,7 +1080,7 @@ cs_rad_transfer_bcs(int         nvar,
 
   /* Change user boundary conditions */
 
-  if (cs_glob_thermal_model->itherm == 1) {
+  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
 
@@ -1119,7 +1109,7 @@ cs_rad_transfer_bcs(int         nvar,
     }
 
   }
-  else if (cs_glob_thermal_model->itherm == 2) {
+  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
     /* Read user data;
      * convert tparoi to enthalpy at boundary, saved in flunet,

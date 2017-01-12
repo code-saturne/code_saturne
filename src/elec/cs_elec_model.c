@@ -1844,9 +1844,9 @@ cs_elec_add_variable_fields(const int  *ielarc,
     cs_field_set_key_int(f, kivisl, 0);
     int isca = cs_add_model_field_indexes(f->id);
 
-    // set thermal model
+    /* set thermal model */
     cs_thermal_model_t *thermal = cs_get_glob_thermal_model();
-    thermal->itherm = 2;
+    thermal->itherm = CS_THERMAL_MODEL_ENTHALPY;
     thermal->iscalt = isca;
   }
 

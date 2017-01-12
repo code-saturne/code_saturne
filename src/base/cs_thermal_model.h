@@ -54,7 +54,8 @@ typedef enum {
   CS_THERMAL_MODEL_NONE,
   CS_THERMAL_MODEL_TEMPERATURE,
   CS_THERMAL_MODEL_ENTHALPY,
-  CS_THERMAL_MODEL_TOTAL_ENERGY
+  CS_THERMAL_MODEL_TOTAL_ENERGY,
+  CS_THERMAL_MODEL_N_TYPES
 
 } cs_thermal_model_variable_t;
 
@@ -100,13 +101,24 @@ extern const cs_thermal_model_t  *cs_glob_thermal_model;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Provide acces to cs_glob_thermal_model
+ * Provide access to cs_glob_thermal_model
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/
 
 cs_thermal_model_t *
 cs_get_glob_thermal_model(void);
+
+/*----------------------------------------------------------------------------
+ * Return thermal field (temperature, enthalpy, total energy according to
+ * thermal model).
+ *
+ * returns:
+ *   pointer to thermal field
+ *----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_thermal_model_field(void);
 
 /*----------------------------------------------------------------------------
  * Print the thermal model structure to setup.log.

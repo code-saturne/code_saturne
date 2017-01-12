@@ -835,7 +835,7 @@ cs_parameters_check(void)
                                 _("while reading input data"),
                                 "cs_glob_thermal_model->itherm",
                                 cs_glob_thermal_model->itherm,
-                                0, 4);
+                                CS_THERMAL_MODEL_NONE, CS_THERMAL_MODEL_N_TYPES);
 
   /* Constant or variable rho and viscosity */
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,

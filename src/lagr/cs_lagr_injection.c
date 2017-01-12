@@ -142,8 +142,8 @@ cs_lagr_injection(int        time_id,
   cs_lagr_particle_counter_t *pc = cs_lagr_get_particle_counter();
   const cs_time_step_t *ts = cs_glob_time_step;
 
-  if (   cs_glob_thermal_model->itherm == 1
-      || cs_glob_thermal_model->itherm == 2)
+  if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
+      || cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY)
     cscalt = extra->scal_t->vals[time_id];
 
   if (extra->temperature != NULL)
@@ -1204,7 +1204,8 @@ cs_lagr_injection(int        time_id,
                                           CS_LAGR_FLUID_TEMPERATURE,
                                           temp[cell_id] - tkelvi);
 
-              else if (cs_glob_thermal_model->itherm == 1) {
+              else if (cs_glob_thermal_model->itherm ==
+                               CS_THERMAL_MODEL_TEMPERATURE) {
 
                 /* Kelvin */
                 if (cs_glob_thermal_model->itpscl == 1)
@@ -1220,7 +1221,8 @@ cs_lagr_injection(int        time_id,
 
               }
 
-              else if (cs_glob_thermal_model->itherm == 2) {
+              else if (cs_glob_thermal_model->itherm ==
+                               CS_THERMAL_MODEL_ENTHALPY) {
 
                 int mode = 1;
                 temp[0] = cs_lagr_particle_get_real(particle, p_am,

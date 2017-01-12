@@ -1511,22 +1511,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
 
       /* Thermal scalar */
 
-      cs_field_t *f;
-      const int itherm = cs_glob_thermal_model->itherm;
-
-      switch (itherm) {
-      case 1:
-        f = CS_F_(t);
-        break;
-      case 2:
-        f = CS_F_(h);
-        break;
-      case 3:
-        f = CS_F_(energy);
-        break;
-      default:
-        f = NULL;
-      }
+      cs_field_t *f = cs_thermal_model_field();
 
       if (f != NULL) {
         if (boundaries->meteo == NULL)

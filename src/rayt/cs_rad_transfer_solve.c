@@ -950,7 +950,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   /* --> Temperature transport */
 
-  if (cs_glob_thermal_model->itherm == 1) {
+  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
 
     cs_real_t *cvara_scalt = CS_F_(t)->vals[1];
 
@@ -969,7 +969,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   /* Enthalpy transport (flurdb is a temporary array) */
 
-  else if (cs_glob_thermal_model->itherm == 2) {
+  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
     const cs_real_t *cvara_scalt = CS_F_(h)->vals[1];
 

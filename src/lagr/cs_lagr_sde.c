@@ -303,15 +303,19 @@ _lages1(cs_real_t           dtp,
                    || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
             tempf = extra->temperature->val[cell_id];
 
-          else if (   cs_glob_thermal_model->itherm == 1
-                   && cs_glob_thermal_model->itpscl == 2)
+          else if (   cs_glob_thermal_model->itherm ==
+                              CS_THERMAL_MODEL_TEMPERATURE
+                   && cs_glob_thermal_model->itpscl ==
+                              CS_TEMPERATURE_SCALE_CELSIUS)
             tempf = extra->scal_t->val[cell_id] + tkelvi;
 
-          else if (   cs_glob_thermal_model->itherm == 1
-                   && cs_glob_thermal_model->itpscl == 1)
+          else if (   cs_glob_thermal_model->itherm ==
+                              CS_THERMAL_MODEL_TEMPERATURE
+                   && cs_glob_thermal_model->itpscl ==
+                              CS_TEMPERATURE_SCALE_KELVIN)
             tempf = extra->scal_t->val[cell_id];
 
-          else if (cs_glob_thermal_model->itherm == 2){
+          else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY){
 
             cs_lnum_t mode  = 1;
             CS_PROCF (usthht,USTHHT) (&mode, &(extra->scal_t->val[cell_id]), &tempf);
@@ -2139,15 +2143,15 @@ _lagdep(cs_real_t           dtp,
                || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
         tempf = extra->temperature->val[cell_id];
 
-      else if (   cs_glob_thermal_model->itherm == 1
-                  && cs_glob_thermal_model->itpscl == 2)
+      else if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
+               && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
         tempf = extra->scal_t->val[cell_id] + tkelvi;
 
-      else if (   cs_glob_thermal_model->itherm == 1
-                  && cs_glob_thermal_model->itpscl == 1)
+      else if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
+               && cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
         tempf = extra->scal_t->val[cell_id];
 
-      else if (cs_glob_thermal_model->itherm == 2){
+      else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY){
 
         cs_lnum_t mode  = 1;
         CS_PROCF (usthht,USTHHT) (&mode, &(extra->scal_t->val[cell_id]), &tempf);
@@ -2721,4 +2725,3 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-
