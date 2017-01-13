@@ -267,7 +267,7 @@ def activate():
 def setSettings():
     """
     Stores the selected CFD code and updates action according with current
-    selection and study states in the dekstop manager.
+    selection and study states in the desktop manager.
     """
     log.debug("setSettings")
 

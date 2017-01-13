@@ -847,11 +847,29 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         log.debug("customPopup")
         if id == CFDSTUDYGUI_DataModel.dict_object["Study"]:
             popup.addAction(self.commonAction(AddCaseAction))
-            popup.addAction(self.commonAction(UpdateObjBrowserAction))
             popup.addAction(self.commonAction(CloseStudyAction))
+            popup.addAction(self.commonAction(UpdateObjBrowserAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["Case"]:
             popup.addAction(self.commonAction(LaunchGUIAction))
             popup.addAction(self.commonAction(RemoveAction))
+            popup.addAction(self.commonAction(UpdateObjBrowserAction))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["DATAFolder"]           or \
+             id == CFDSTUDYGUI_DataModel.dict_object["REFERENCEDATAFolder"]  or \
+             id == CFDSTUDYGUI_DataModel.dict_object["DRAFTFolder"]          or \
+             id == CFDSTUDYGUI_DataModel.dict_object["SRCFolder"]            or \
+             id == CFDSTUDYGUI_DataModel.dict_object["USERSFolder"]          or \
+             id == CFDSTUDYGUI_DataModel.dict_object["RESUFolder"]           or \
+             id == CFDSTUDYGUI_DataModel.dict_object["RESUSubErrFolder"]     or \
+             id == CFDSTUDYGUI_DataModel.dict_object["RESSRCFolder"]         or \
+             id == CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]        or \
+             id == CFDSTUDYGUI_DataModel.dict_object["HISTFolder"]           or \
+             id == CFDSTUDYGUI_DataModel.dict_object["PRETFolder"]           or \
+             id == CFDSTUDYGUI_DataModel.dict_object["SUITEFolder"]          or \
+             id == CFDSTUDYGUI_DataModel.dict_object["POSTPROFolder"]        or \
+             id == CFDSTUDYGUI_DataModel.dict_object["SCRPTFolder"]          or \
+             id == CFDSTUDYGUI_DataModel.dict_object["MESHFolder"]           or \
+             id == CFDSTUDYGUI_DataModel.dict_object["POSTFolder"] :
+            popup.addAction(self.commonAction(UpdateObjBrowserAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAFile"]:
             popup.addAction(self.commonAction(EditAction))
             popup.addAction(self.commonAction(MoveToDRAFTAction))
@@ -889,6 +907,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]:
             popup.addAction(self.commonAction(RemoveAction))
+            popup.addAction(self.commonAction(UpdateObjBrowserAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESUSubErrFolder"]:
             popup.addAction(self.commonAction(RemoveAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESSRCFile"]:
@@ -1058,7 +1077,11 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         Re-reads the unix folders and updates the complete representation
         of the CFD studies in the Object Browser.
         """
-        self.updateObjBrowser()
+        sobj = self._singleSelectedObject()
+        if sobj != None:
+            self.updateObjBrowser(sobj)
+        else:
+            self.updateObjBrowser()
 
 
     def updateObjBrowser(self, Object=None):
