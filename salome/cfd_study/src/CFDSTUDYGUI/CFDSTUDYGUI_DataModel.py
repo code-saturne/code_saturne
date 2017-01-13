@@ -1719,53 +1719,6 @@ def setCaseInProcess(theCasePath, isInProcess):
         attr.SetPixMap(str(ObjectTR.tr(icon_collection[dict_object["Case"]])))
 
 
-def checkPathUnderObject(theObject, thePath):
-    """
-    Checks if I{thePath} is under the path of I{theObject}
-    and returns parent object for future update, else nothing.
-
-    @type theObject: C{SObject}
-    @param theObject: object (usually a study) from the Object Browser.
-    @type thePath: C{String}
-    @param thePath: absolute unix path of a file.
-    @return: parent a the object designed by the I{thePath}
-    @rtype: C{SObject}
-    """
-    if not os.path.exists(thePath):
-        return None
-
-    if os.path.isfile(thePath):
-        aPath = os.path.dirname(thePath)
-    else:
-        aPath = thePath
-
-    # check that object and path intersects
-    objectPath = _GetPath(theObject)
-    commonPath = os.path.commonprefix([objectPath, aPath])
-
-    if commonPath != objectPath:
-        #thePath not lie under theObject
-        return None
-
-    aParent = theObject
-    study   = _getStudy()
-    builder = study.NewBuilder()
-
-    while aPath != _GetPath(aParent):
-        it  = study.NewChildIterator(aParent)
-        found = False
-        while it.More():
-            anItemPath = _GetPath(it.Value())
-            if os.path.commonprefix([anItemPath, aPath]) == anItemPath:
-                found = True
-                aParent = it.Value()
-                break
-            it.Next()
-        if not found:
-            return None
-
-    return aParent
-
 def getSObject(theParent,Name) :
     Sobjlist = ScanChildren(theParent,  ".*")
     SObj = None
