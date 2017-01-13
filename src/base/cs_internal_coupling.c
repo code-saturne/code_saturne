@@ -100,6 +100,134 @@ static int                      _n_internal_couplings = 0;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Update direction vector for lsq gradient taking into account the weight
+ * coefficients.
+ * At this step we recompute inv_kf to avoid to store kf at the internal faces
+ *
+ * parameters:
+ *   wi   <-- Weight coefficient of cell i
+ *   wj   <-- Weight coefficient of cell j
+ *   w    <-> direction vector
+ *   a    <-- J'F/I'J'
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_compute_ani_dc(double wi[],
+                double wj[],
+                double w[],
+                double a)
+{
+  int ii;
+  cs_real_6_t sum;
+  cs_real_6_t inv_wi;
+  cs_real_6_t inv_wj;
+  cs_real_33_t inv_kf;
+  double _w[3];
+
+  for (ii = 0; ii < 6; ii++)
+    sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
+
+  cs_math_sym_33_inv_cramer(wi,
+                            inv_wi);
+  cs_math_sym_33_inv_cramer(wj,
+                            inv_wj);
+
+  cs_math_sym_33_double_product(inv_wi,
+                                sum,
+                                inv_wj,
+                                inv_kf);
+  for (ii = 0; ii < 3; ii++)
+    _w[ii] = w[0]*inv_kf[ii][0]
+           + w[1]*inv_kf[ii][1]
+           + w[2]*inv_kf[ii][2];
+
+  for (ii = 0; ii < 3; ii++)
+    w[ii] = _w[ii];
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the inverse of the face viscosity tensor and anisotropic vector
+ * taking into account the weight coefficients to update cocg for lsq gradient.
+ *
+ * parameters:
+ *   wi     <-- Weight coefficient of cell i
+ *   wj     <-- Weight coefficient of cell j
+ *   w      <-> R.H.S.
+ *   a      <-- J'F/I'J'
+ *   resi   --> Updated vector for cell i
+ *   inv_kf --> Inverse of the face viscosity
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_compute_ani_weighting_cocg(double wi[],
+                            double wj[],
+                            double w[],
+                            double a,
+                            double resi[],
+                            cs_real_33_t inv_kf)
+{
+  int ii;
+  double _resi[3] = {0., 0., 0.};
+  cs_real_6_t sum;
+  cs_real_6_t inv_wi;
+  cs_real_6_t inv_wj;
+  double _w[3];
+
+  for (ii = 0; ii < 6; ii++)
+    sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
+
+  cs_math_sym_33_inv_cramer(wi,
+                            inv_wi);
+  cs_math_sym_33_inv_cramer(wj,
+                            inv_wj);
+
+  cs_math_sym_33_double_product(inv_wi,
+                                sum,
+                                inv_wj,
+                                inv_kf);
+  for (ii = 0; ii < 3; ii++)
+    _w[ii] = w[0]*inv_kf[ii][0]
+           + w[1]*inv_kf[ii][1]
+           + w[2]*inv_kf[ii][2];
+
+  for (ii = 0; ii < 3; ii++)
+    w[ii] = _w[ii];
+
+  cs_math_sym_33_3_product(wi,
+                           w,
+                           _resi);
+
+  for (ii = 0; ii < 3; ii++)
+    resi[ii] += _resi[ii];
+}
+
+
+/*----------------------------------------------------------------------------
+ * Update R.H.S. for lsq gradient taking into account the weight coefficients.
+ *
+ * parameters:
+ *   wi   <-- Weight coefficient of cell i
+ *   w    <-- R.H.S.
+ *   resi --> Updated R.H.S. for cell i
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_compute_ani_weighting(double wi[],
+                       double w[],
+                       double resi[])
+{
+  int ii;
+  double _resi[3] = {0., 0., 0.};
+
+  cs_math_sym_33_3_product(wi,
+                           w,
+                           _resi);
+
+  for (ii = 0; ii < 3; ii++)
+    resi[ii] += _resi[ii];
+}
+
+/*----------------------------------------------------------------------------
  * Return the locator associated with given coupling entity and group number
  *
  * parameters:
@@ -783,22 +911,12 @@ cs_internal_coupling_initial_contribution(const cs_internal_coupling_t  *cpl,
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
 
   /* Exchange pvar */
-
-  cs_real_t *pvar_distant = NULL;
-  BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
-  for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-    face_id = faces_distant[ii];
-    cell_id = b_face_cells[face_id];
-    pvar_distant[ii] = pvar[cell_id];
-  }
   cs_real_t *pvar_local = NULL;
   BFT_MALLOC(pvar_local, n_local, cs_real_t);
-  cs_internal_coupling_exchange_var(cpl,
-                                    1,
-                                    pvar_distant,
-                                    pvar_local);
-  /* Free memory */
-  BFT_FREE(pvar_distant);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           1,
+                                           pvar,
+                                           pvar_local);
 
   /* Preliminary step in case of heterogenous diffusivity */
 
@@ -878,33 +996,18 @@ cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
 
   /* Exchange grad and pvar */
-
-  cs_real_t *grad_distant = NULL;
-  BFT_MALLOC(grad_distant, 3*n_distant, cs_real_t);
-  cs_real_t *pvar_distant = NULL;
-  BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
-  for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-    face_id = faces_distant[ii];
-    cell_id = b_face_cells[face_id];
-    pvar_distant[ii] = pvar[cell_id];
-    for (ll = 0; ll < 3; ll++)
-      grad_distant[3*ii+ll] = grad[cell_id][ll];
-  }
   cs_real_t *grad_local = NULL;
   BFT_MALLOC(grad_local, 3*n_local, cs_real_t);
   cs_real_t *pvar_local = NULL;
   BFT_MALLOC(pvar_local, n_local, cs_real_t);
-  cs_internal_coupling_exchange_var(cpl,
-                                    3,
-                                    grad_distant,
-                                    grad_local);
-  cs_internal_coupling_exchange_var(cpl,
-                                    1,
-                                    pvar_distant,
-                                    pvar_local);
-  /* Free memory */
-  BFT_FREE(grad_distant);
-  BFT_FREE(pvar_distant);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           3,
+                                           grad,
+                                           grad_local);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           1,
+                                           pvar,
+                                           pvar_local);
 
   /* Preliminary step in case of heterogenous diffusivity */
 
@@ -995,22 +1098,12 @@ cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
 
   /* Exchange r_grad */
 
-  cs_real_t *r_grad_distant = NULL;
-  BFT_MALLOC(r_grad_distant, 3*n_distant, cs_real_t);
-  for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-    face_id = faces_distant[ii];
-    cell_id = b_face_cells[face_id];
-    for (ll = 0; ll < 3; ll++)
-      r_grad_distant[3*ii+ll] = r_grad[cell_id][ll];
-  }
   cs_real_t *r_grad_local = NULL;
   BFT_MALLOC(r_grad_local, 3*n_local, cs_real_t);
-  cs_internal_coupling_exchange_var(cpl,
-                                    3,
-                                    r_grad_distant,
-                                    r_grad_local);
-  /* Free memory */
-  BFT_FREE(r_grad_distant);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           3,
+                                           r_grad,
+                                           r_grad_local);
 
   /* Compute rhs */
 
@@ -1040,12 +1133,14 @@ cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
  * parameters:
  *   cpl      <-- pointer to coupling entity
  *   c_weight <-- weighted gradient coefficient variable, or NULL
+ *   w_stride <-- stride of weighting coefficient
  *   rhsv     <-> rhs contribution modified
  *----------------------------------------------------------------------------*/
 
 void
 cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
                              const cs_real_t                c_weight[],
+                             const int                      w_stride,
                              cs_real_4_t                    rhsv[])
 {
   int ll;
@@ -1057,12 +1152,17 @@ cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
   const cs_lnum_t *faces_local = cpl->faces_local;
   const cs_lnum_t n_distant = cpl->n_distant;
   const cs_lnum_t *faces_distant = cpl->faces_distant;
+  const cs_real_t* g_weight = cpl->g_weight;
   const cs_real_3_t *ci_cj_vect = (const cs_real_3_t *)cpl->ci_cj_vect;
-  cs_real_t *r_weight;
 
   const cs_mesh_t* m = cs_glob_mesh;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  /* Variables for cases w_stride = 1 or 6 */
+  const bool scalar_diff = (c_weight != NULL && w_stride == 1);
+  const bool tensor_diff = (c_weight != NULL && w_stride == 6);
+  cs_real_t *weight = NULL;
 
   /* Exchange pvar stored in rhsv[][3] */
 
@@ -1085,10 +1185,18 @@ cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
   /* Preliminary step in case of heterogenous diffusivity */
 
   if (c_weight != NULL) { /* Heterogenous diffusivity */
-    BFT_MALLOC(r_weight, n_local, cs_real_t);
-    _compute_physical_face_weight(cpl,
-                                  c_weight, /* diffusivity */
-                                  r_weight); /* physical face weight */
+    if (tensor_diff) {
+      BFT_MALLOC(weight, 6*n_local, cs_real_t);
+      cs_internal_coupling_exchange_by_cell_id(cpl,
+                                               6,
+                                               c_weight,
+                                               weight);
+    } else {
+      BFT_MALLOC(weight, n_local, cs_real_t);
+      _compute_physical_face_weight(cpl,
+                                    c_weight, /* diffusivity */
+                                    weight); /* physical face weight */
+    }
   }
 
   /* Compute rhs */
@@ -1099,18 +1207,32 @@ cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
     for (ll = 0; ll < 3; ll++)
       dc[ll] = ci_cj_vect[ii][ll];
 
+    /* Reproduce _compute_ani_dc */
+    if (tensor_diff)
+      _compute_ani_dc(&c_weight[6*cell_id],
+                      &weight[6*ii],
+                      dc,
+                      g_weight[ii]);
+
     pfac = (pvar_local[ii] - rhsv[cell_id][3])
          / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-    if (c_weight != NULL) pfac *= r_weight[ii];
+    if (scalar_diff) pfac *= weight[ii];
 
     for (ll = 0; ll < 3; ll++)
       fctb[ll] = dc[ll] * pfac;
 
-    for (ll = 0; ll < 3; ll++)
-      rhsv[cell_id][ll] += fctb[ll];
+    /* Reproduce _compute_ani_weighting */
+    if (tensor_diff)
+      _compute_ani_weighting(&c_weight[6*cell_id],
+                             fctb,
+                             &rhsv[cell_id][0]);
+    else {
+      for (ll = 0; ll < 3; ll++)
+        rhsv[cell_id][ll] += fctb[ll];
+    }
   }
   /* Free memory */
-  if (c_weight != NULL) BFT_FREE(r_weight);
+  if (c_weight != NULL) BFT_FREE(weight);
   BFT_FREE(pvar_local);
 }
 
@@ -1154,6 +1276,74 @@ cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
     }
   }
 
+}
+
+/*----------------------------------------------------------------------------
+ * Modify LSQ COCG matrix to include internal coupling
+ * when diffusivity is a tensor
+ *
+ * parameters:
+ *   cpl       <-- pointer to coupling entity
+ *   c_weight  <-- weigthing coefficients
+ *   cocg      <-> cocg matrix modified
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_lsq_cocg_weighted(const cs_internal_coupling_t  *cpl,
+                                       cs_real_t                     *c_weight,
+                                       cs_real_33_t                   cocg[])
+{
+  int ll, mm;
+  cs_lnum_t face_id, cell_id;
+  cs_real_t dc[3];
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+  const cs_lnum_t n_distant = cpl->n_distant;
+  const cs_lnum_t *faces_distant = cpl->faces_distant;
+  const cs_real_t* g_weight = cpl->g_weight;
+  const cs_real_3_t *ci_cj_vect = (const cs_real_3_t *)cpl->ci_cj_vect;
+
+  const cs_mesh_t* m = cs_glob_mesh;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  /* Exchange c_weight */
+  cs_real_t *cwgt_local = NULL;
+  BFT_MALLOC(cwgt_local, 6*n_local, cs_real_t);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           6,
+                                           c_weight,
+                                           cwgt_local);
+
+  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+    face_id = faces_local[ii];
+    cell_id = b_face_cells[face_id];
+    for (ll = 0; ll < 3; ll++)
+      dc[ll] = ci_cj_vect[ii][ll];
+
+    /* Reproduce _compute_ani_weighting_cocg */
+    cs_real_t pond = g_weight[ii];
+    cs_real_t dc_i[3] = {0., 0., 0.};
+    cs_real_t inv_kf[3][3];
+    _compute_ani_weighting_cocg(&c_weight[cell_id*6],
+                                &cwgt_local[ii*6],
+                                dc,
+                                pond,
+                                dc_i,
+                                inv_kf);
+
+    cs_real_t umdddij = 1./ cs_math_3_norm(dc);
+    for (ll = 0; ll < 3; ll++)
+      dc_i[ll] *= umdddij;
+
+    for (ll = 0; ll < 3; ll++) {
+      for (mm = 0; mm < 3; mm++)
+        cocg[cell_id][ll][mm] += dc_i[ll]*dc_i[mm];
+    }
+  }
+
+  BFT_FREE(cwgt_local);
 }
 
 /*----------------------------------------------------------------------------

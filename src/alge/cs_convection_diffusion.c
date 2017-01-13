@@ -6178,6 +6178,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   const int imligp = var_cal_opt.imligr;
   const int ircflp = var_cal_opt.ircflu;
   const int iwarnp = var_cal_opt.iwarni;
+  const int icoupl = var_cal_opt.icoupl;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
   const double extrap = var_cal_opt.extrag;
@@ -6229,6 +6230,16 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   cs_field_t *f;
 
   cs_real_t *gweight = NULL;
+
+  /* Internal coupling variables */
+  cs_real_t *pvar_local = NULL;
+  cs_real_3_t *grad_local = NULL;
+  cs_real_6_t *viscce_local = NULL;
+  cs_real_t *weighb_local = NULL;
+  cs_lnum_t *faces_local = NULL;
+  cs_int_t n_local;
+  int coupling_id;
+  cs_internal_coupling_t *cpl = NULL;
 
   /* 1. Initialization */
 
@@ -6300,6 +6311,18 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
       cs_halo_perio_sync_var_sym_tens(halo, halo_type, (cs_real_t *)viscce);
   }
 
+  if (icoupl > 0) {
+    assert(f_id != -1);
+    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    coupling_id = cs_field_get_key_int(f, coupling_key_id);
+    cpl = cs_internal_coupling_by_id(coupling_id);
+    cs_internal_coupling_coupled_faces(cpl,
+                                       &n_local,
+                                       &faces_local,
+                                       NULL,
+                                       NULL);
+  }
+
   /* 2. Compute the diffusive part with reconstruction technics */
 
   /* ======================================================================
@@ -6342,7 +6365,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                        coefbp,
                        pvar,
                        gweight, /* Weighted gradient */
-                       NULL, /* internal coupling */
+                       cpl, /* internal coupling */
                        grad);
 
   } else {
@@ -6670,6 +6693,116 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
         }
       }
+    }
+
+    /* The scalar is internal_coupled and an implicit contribution
+     * is required */
+    if (icoupl > 0) {
+
+      /* Exchange pvar */
+      BFT_MALLOC(pvar_local, n_local, cs_real_t);
+      cs_internal_coupling_exchange_by_cell_id(cpl,
+                                               1, /* Dimension */
+                                               pvar,
+                                               pvar_local);
+
+      /* Exchange grad */
+      BFT_MALLOC(grad_local, n_local, cs_real_3_t);
+      cs_internal_coupling_exchange_by_cell_id(cpl,
+                                               3, /* Dimension */
+                                               grad,
+                                               grad_local);
+
+      /* Exchange viscce */
+      BFT_MALLOC(viscce_local, n_local, cs_real_6_t);
+      cs_internal_coupling_exchange_by_cell_id(cpl,
+                                               6, /* Dimension */
+                                               viscce,
+                                               viscce_local);
+
+      /* Exchange weighb */
+      BFT_MALLOC(weighb_local, n_local, cs_real_t);
+      cs_internal_coupling_exchange_by_face_id(cpl,
+                                               1, /* Dimension */
+                                               weighb,
+                                               weighb_local);
+
+      /* Flux contribution */
+      for (cs_lnum_t jj = 0; jj < n_local; jj++) {
+        cs_lnum_t face_id = faces_local[jj];
+        cs_lnum_t ii = b_face_cells[face_id];
+
+        cs_real_t pi = pvar[ii];
+        cs_real_t pj = pvar_local[jj];
+
+        /* Recompute II" and JJ" */
+        cs_real_t visci[3][3], viscj[3][3];
+        cs_real_t diippf[3], djjppf[3];
+
+        visci[0][0] = viscce[ii][0];
+        visci[1][1] = viscce[ii][1];
+        visci[2][2] = viscce[ii][2];
+        visci[1][0] = viscce[ii][3];
+        visci[0][1] = viscce[ii][3];
+        visci[2][1] = viscce[ii][4];
+        visci[1][2] = viscce[ii][4];
+        visci[2][0] = viscce[ii][5];
+        visci[0][2] = viscce[ii][5];
+
+        /* IF.Ki.S / ||Ki.S||^2 */
+        cs_real_t fikdvi = weighb[face_id];
+
+        /* II" = IF + FI" */
+        for (int i = 0; i < 3; i++) {
+          diippf[i] = b_face_cog[face_id][i]-cell_cen[ii][i]
+                    - fikdvi*( visci[0][i]*b_face_normal[face_id][0]
+                             + visci[1][i]*b_face_normal[face_id][1]
+                             + visci[2][i]*b_face_normal[face_id][2] );
+        }
+
+        viscj[0][0] = viscce_local[jj][0];
+        viscj[1][1] = viscce_local[jj][1];
+        viscj[2][2] = viscce_local[jj][2];
+        viscj[1][0] = viscce_local[jj][3];
+        viscj[0][1] = viscce_local[jj][3];
+        viscj[2][1] = viscce_local[jj][4];
+        viscj[1][2] = viscce_local[jj][4];
+        viscj[2][0] = viscce_local[jj][5];
+        viscj[0][2] = viscce_local[jj][5];
+
+        /* FJ.Kj.S / ||Kj.S||^2
+         * weighb_local defined with vector JF and surface -S */
+        cs_real_t fjkdvi = weighb_local[jj];
+
+        /* JJ" = JF + FJ"
+         *   */
+        for (int i = 0; i < 3; i++) {
+          djjppf[i] = b_face_cog[face_id][i]-cell_cen[ii][i]-cpl->ci_cj_vect[jj][i]
+                    + fjkdvi*( viscj[0][i]*b_face_normal[face_id][0]
+                             + viscj[1][i]*b_face_normal[face_id][1]
+                             + viscj[2][i]*b_face_normal[face_id][2] );
+        }
+
+        /* p in I" and J" */
+        cs_real_t pipp = pi + ircflp*(  grad[ii][0]*diippf[0]
+                                      + grad[ii][1]*diippf[1]
+                                      + grad[ii][2]*diippf[2]);
+        cs_real_t pjpp = pj + ircflp*(  grad_local[jj][0]*djjppf[0]
+                                      + grad_local[jj][1]*djjppf[1]
+                                      + grad_local[jj][2]*djjppf[2]);
+
+        /* Reproduce multiplication by i_visc[face_id] */
+        cs_real_t flux = (pipp - pjpp) / (weighb[face_id] + weighb_local[jj]);
+
+        rhs[ii] -= thetap*flux;
+
+      }
+
+      /* Remote data no longer needed */
+      BFT_FREE(pvar_local);
+      BFT_FREE(grad_local);
+      BFT_FREE(viscce_local);
+      BFT_FREE(weighb_local);
     }
 
   }
