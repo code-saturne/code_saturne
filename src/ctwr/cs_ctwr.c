@@ -114,7 +114,7 @@ struct _cs_ctwr_zone_t {
   cs_real_t  q_l_bc;             /* Water flow */
   cs_real_t  y_l_bc;             /* Mass fraction of water */
 
-  cs_real_t  xap;                /* Exchange law lambda coefficient */
+  cs_real_t  xap;                /* Exchange law a_0 coefficient */
   cs_real_t  xnp;                /* Exchange law n exponent */
 
   cs_real_t  surface_in;         /* Water inlet surface */
@@ -282,7 +282,7 @@ _write_liquid_vars(void                  *input,
  * \param[in]   relax           Relaxation of the imposed delta temperature
  * \param[in]   t_l_bc          Liquid water temperature at the inlet
  * \param[in]   q_l_bc          Mass flow rate at the inlet
- * \param[in]   xap             Beta_x_0 of the exchange law
+ * \param[in]   xap             Lambda of the exchange law
  * \param[in]   xnp             Exponent n of the exchange law
  * \param[in]   surface         Total Surface of ingoing water
  * \param[in]   droplet_diam    Droplet diameter in rain zones
@@ -522,7 +522,7 @@ cs_ctwr_log_setup(void)
          "    criterion: ""%s""\n"
          "    Parameters:\n"
          "      Model: %s\n"
-         "      Beta_x_0 of the exchange law: %f\n"
+         "      Lambda of the exchange law: %f\n"
          "      Exponent n of the exchange law: %f\n"
          "      Type: %d\n"
          "        Droplet diameter: %f\n"
@@ -748,8 +748,6 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
                         cs_real_t  p0,
                         cs_real_t  molmassrat)
 {
-  cs_real_t cp_h;
-
   // Initialise the fields - based on map
   cs_real_t *rho_h = (cs_real_t *)CS_F_(rho)->val;   /* humid air (bulk) density */
   cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;       /* humid air temperature */
@@ -794,7 +792,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 
     // Update the humid air enthalpy
     x_s[cell_id] = cs_ctwr_xsath(t_h[cell_id],p0);
-    cp_h = cs_ctwr_cp_humidair(x[cell_id], x_s[cell_id]);
+    cs_real_t cp_h = cs_ctwr_cp_humidair(x[cell_id], x_s[cell_id]);
 
     h_h[cell_id] = cs_ctwr_h_humidair(cp_h,
                                       x[cell_id],
@@ -1109,7 +1107,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     h_h[cell_id] += (t_h[cell_id] - t_h_a[cell_id]) * cp_h[cell_id];
 
     // Udate the umid air enthalpy diffusivity lambda_h if solve for T_h?
-    // Need to update since lambda is variable as a function of T and humidity
+    // Need to update since a_0 is variable as a function of T and humidity
     therm_diff_h[cell_id] = lambda_h;
 
     /* Update the humid air density */
@@ -1284,7 +1282,7 @@ cs_ctwr_source_term(int              f_id,
 
     /* Packing zone characteristics */
     cs_real_t drop_diam  = ct->droplet_diam;
-    cs_real_t beta_x_0 = ct->xap;
+    cs_real_t a_0 = ct->xap;
     cs_real_t xnp = ct->xnp;
     int zone_type = ct->type;
     int evap_model = ct->model;
@@ -1329,13 +1327,13 @@ cs_ctwr_source_term(int              f_id,
             }
 
             /* Dry air flux */
-            mass_flux_h = rho_h[cell_id] * v_air;
+            mass_flux_h = rho_h[cell_id] * v_air * y_a[cell_id];
 
             /* Liquid mass flux */
             mass_flux_l = rho_h[cell_id] * y_l[cell_id] * vel_l[cell_id];
 
             /* Evaporation coefficient 'Beta_x' times exchange surface 'a' */
-            beta_x_a = beta_x_0*mass_flux_l*pow((mass_flux_h/mass_flux_l), xnp);
+            beta_x_a = a_0*mass_flux_l*pow((mass_flux_h/mass_flux_l), xnp);
 
             /* Compute evaporation source terms using Bosnjakovic hypothesis
              * NB: clippings ensuring xi > 1 and xlew > 0 */
@@ -1365,7 +1363,7 @@ cs_ctwr_source_term(int              f_id,
 
               //Looks wrong too: mass_flux_h = 0. from initialisation at the top
               //Why is it here anyway since it is recalculated below? - old copy/paste error?
-              beta_x_a = beta_x_0*mass_flux_l*pow((mass_flux_h/mass_flux_l),xnp);
+              beta_x_a = a_0*mass_flux_l*pow((mass_flux_h/mass_flux_l),xnp);
 
               if (x[cell_id] <= x_s_th) {
                 cpx = cp_a + x[cell_id]*cp_v;
@@ -1382,7 +1380,6 @@ cs_ctwr_source_term(int              f_id,
 
               /* Compute evaporation source terms using Bosnjakovic hypothesis
                * NB: clippings ensuring xi > 1 and xlew > 0 */ //FIXME xi not computed
-              xlew = pow(0.866,(2./3.))*(xi-1.)/log(xi);
               xi = (molmassrat + x_s_tl)/(molmassrat + CS_MIN(x[cell_id], x_s_tl));
               if ((xi - 1.) < 1.e-15)
                 xlew = pow(0.866,(2./3.));
@@ -1422,10 +1419,10 @@ cs_ctwr_source_term(int              f_id,
               }
 
               /* Dry air flux - Fa in reference */
-              mass_flux_h = rho_h[cell_id] * v_air;
+              mass_flux_h = rho_h[cell_id] * v_air * y_a[cell_id];
 
               /* Evaporation coefficient Beta_x times exchange surface 's' */
-              beta_x_a = beta_x_0*mass_flux_l*pow((mass_flux_h/mass_flux_l),xnp);
+              beta_x_a = a_0*mass_flux_l*pow((mass_flux_h/mass_flux_l),xnp);
 
             }
           }
@@ -1486,18 +1483,22 @@ cs_ctwr_source_term(int              f_id,
         /* Humid air temperature equation */
         else if (f_id == (CS_F_(t)->id)) {
           /* Because the writing is in a non-conservtiv form */
-          imp_st[i] = CS_MAX(mass_source, 0.);
+          cs_real_t cp_h = cs_ctwr_cp_humidair(x[cell_id], x_s[cell_id]);
+          imp_st[i] = CS_MAX(mass_source, 0.)*cp_h; //TODO check was working before fix...
           if (x[cell_id] <= x_s_th) {
             /* Implicit term */
-            imp_st[i] += beta_x_a * ( xlew * (cp_a + x[cell_id] * cp_v) //FIXME divide by (1+x)
-                                   + (x_s_tl - x[cell_id]) * cp_v);
+            imp_st[i] += beta_x_a * ( xlew * cp_h
+                                   + (x_s_tl - x[cell_id]) * cp_v
+                                   / (1. + x[cell_id]));
             exp_st[i] += imp_st[i] * (t_l[cell_id] - f_var[cell_id]);
           } else {
-            cs_real_t coeft = xlew * (cp_a + x_s_th * cp_v + (x[cell_id] - x_s_th) * cp_l);//FIXME divide by (1+x)
+            cs_real_t coeft = xlew * cp_h;
             /* Implicit term */
-            imp_st[i] += beta_x_a * ( coeft + (x_s_tl - x_s_th) * cp_l);
+            imp_st[i] += beta_x_a * ( coeft
+                                    + (x_s_tl - x_s_th) * cp_l / (1. + x[cell_id]));
             exp_st[i] += beta_x_a * ( coeft * t_l[cell_id]
                                     + (x_s_tl - x_s_th) * (cp_v * t_l[cell_id] + hv0)
+                                    / (1. + x[cell_id])
                                     )
                        - imp_st[i] * f_var[cell_id];
           }
@@ -1508,17 +1509,21 @@ cs_ctwr_source_term(int              f_id,
          * NB: it is in fact "y_l x h_l" */
         else if (f_id == (CS_F_(h_l)->id)) {
           /* Implicit term */
+          cs_real_t cp_h = cs_ctwr_cp_humidair(x[cell_id], x_s[cell_id]);
           imp_st[i] = CS_MAX(mass_source, 0.);
           if (x[cell_id] <= x_s_th) {
-            cs_real_t coefh = beta_x_a * ( xlew * (cp_a + x[cell_id] * cp_v) //FIXME divide by (1+x)
-                                        + (x_s_tl - x[cell_id]) * cp_v);
+            cs_real_t coefh = beta_x_a * ( xlew * cp_h
+                                        + (x_s_tl - x[cell_id]) * cp_v
+                                        / (1. + x[cell_id]));
             exp_st[i] = coefh * (t_h[cell_id] - t_l[cell_id]);
           } else {
-            cs_real_t coefh = xlew * (cp_a + x_s_th * cp_v + (x[cell_id] - x_s_th) * cp_l);//FIXME divide by (1+x)
+            cs_real_t coefh = xlew * cp_h;
             exp_st[i] += beta_x_a * ( coefh * t_h[cell_id]
-                                    + (x_s_tl - x_s_th) * cp_l * t_h[cell_id]
                                     - coefh * t_l[cell_id]
-                                    - (x_s_tl - x_s_th) * (cp_v * t_l[cell_id] + hv0)
+                                    + (x_s_tl - x_s_th) / (1. + x[cell_id])
+                                      * (  cp_l * t_h[cell_id]
+                                        - (cp_v * t_l[cell_id] + hv0)
+                                        )
                                     );
           }
           /* Because we deal with an increment */
