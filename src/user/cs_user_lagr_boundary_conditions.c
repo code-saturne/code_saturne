@@ -64,9 +64,6 @@
  *
  * This is used definition of for inlet and of the other boundaries
  *
- * Boundary faces may be selected using the
- * \ref cs_selector_get_b_face_list function.
- *
  * \param[in] bc_type    type of the boundary faces
  */
 /*----------------------------------------------------------------------------*/
