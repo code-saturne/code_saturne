@@ -228,6 +228,8 @@ double precision, dimension(:), pointer :: coefb_nu, coefbf_nu
 double precision, dimension(:,:), pointer :: coefa_rij, coefaf_rij, coefad_rij
 double precision, dimension(:,:,:), pointer :: coefb_rij, coefbf_rij, coefbd_rij
 
+double precision  pimp_lam, pimp_turb, gammap
+
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
 save             ntlast , iaff
@@ -1456,16 +1458,17 @@ do ifac = 1, nfabor
       ! Si on est hors de la sous-couche visqueuse (reellement ou via les
       ! scalable wall functions)
       ! Comme iuntur=1 yplus est forcement >0
-      if (iuntur.eq.1) then
-        pimp = distbf*4.d0*uk**3*romc**2/           &
-              (sqrcmu*xkappa*visclc**2*(yplus+dplus)**2)
-        qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
+      pimp_turb = distbf*4.d0*uk**3*romc**2/           &
+                 (sqrcmu*xkappa*visclc**2*(yplus+dplus)**2)
 
-      ! Si on est en sous-couche visqueuse
-      else
-        pimp = 120.d0*8.d0*visclc/(romc*ckwbt1*distbf**2)
-        qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
-      endif
+      ! In viscous sub layer
+      pimp_lam  = 120.d0*8.d0*visclc/(romc*ckwbt1*distbf**2)
+
+      ! Use gamma function of Kader to weight between high and low Reynolds meshes
+      gammap    = -0.01d0*(yplus+dplus)**4.d0/(1.d0+5.d0*(yplus+dplus))
+
+      pimp      = pimp_lam*exp(gammap) + exp(1.d0/gammap)*pimp_turb
+      qimp      = -pimp*hint !TODO transform it, it is only to be fully equivalent
 
       call set_neumann_scalar &
            !==================
