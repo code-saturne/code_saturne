@@ -1175,7 +1175,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 if XmlCaseNameList != [] :
                     for i in XmlCaseNameList :
                         self._SolverGUI.removeDockWindow(studyName, caseName,i)
-
+                if CFDSTUDYGUI_SolverGUI.findDockWindow("unnamed", caseName, studyName):
+                    self._SolverGUI.removeDockWindow(studyName, caseName,"unnamed")
             watchCursor = QCursor(Qt.WaitCursor)
             QApplication.setOverrideCursor(watchCursor)
 #           As we remove case directory which can be the current working directory, we need to change the current working directory eitherwise there is a problem with os.getcwd() or equivalent
