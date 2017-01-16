@@ -112,10 +112,10 @@ static int                      _n_internal_couplings = 0;
  *----------------------------------------------------------------------------*/
 
 static inline void
-_compute_ani_dc(double wi[],
-                double wj[],
-                double w[],
-                double a)
+_compute_ani_dc(const double  wi[],
+                const double  wj[],
+                double        w[],
+                double        a)
 {
   int ii;
   cs_real_6_t sum;
@@ -159,12 +159,12 @@ _compute_ani_dc(double wi[],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_compute_ani_weighting_cocg(double wi[],
-                            double wj[],
-                            double w[],
-                            double a,
-                            double resi[],
-                            cs_real_33_t inv_kf)
+_compute_ani_weighting_cocg(const double  wi[],
+                            const double  wj[],
+                            double        w[],
+                            double        a,
+                            double        resi[],
+                            cs_real_33_t  inv_kf)
 {
   int ii;
   double _resi[3] = {0., 0., 0.};
@@ -212,9 +212,9 @@ _compute_ani_weighting_cocg(double wi[],
  *----------------------------------------------------------------------------*/
 
 static inline void
-_compute_ani_weighting(double wi[],
-                       double w[],
-                       double resi[])
+_compute_ani_weighting(const double  wi[],
+                       const double  w[],
+                       double        resi[])
 {
   int ii;
   double _resi[3] = {0., 0., 0.};
@@ -897,8 +897,6 @@ cs_internal_coupling_initial_contribution(const cs_internal_coupling_t  *cpl,
 
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
-  const cs_lnum_t n_distant = cpl->n_distant;
-  const cs_lnum_t *faces_distant = cpl->faces_distant;
   const cs_real_t* g_weight = cpl->g_weight;
   cs_real_t *r_weight = NULL;
 
@@ -976,13 +974,10 @@ cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
                               const cs_real_t                pvar[],
                               cs_real_3_t                    rhs[])
 {
-  int ll;
   cs_lnum_t face_id, cell_id;
 
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
-  const cs_lnum_t n_distant = cpl->n_distant;
-  const cs_lnum_t *faces_distant = cpl->faces_distant;
   const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
   const cs_real_t* g_weight = cpl->g_weight;
   cs_real_t *r_weight = NULL;
@@ -1002,7 +997,7 @@ cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
   BFT_MALLOC(pvar_local, n_local, cs_real_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            3,
-                                           grad,
+                                           (const cs_real_t *)grad,
                                            grad_local);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            1,
@@ -1084,8 +1079,6 @@ cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
 
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
-  const cs_lnum_t n_distant = cpl->n_distant;
-  const cs_lnum_t *faces_distant = cpl->faces_distant;
   const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
 
   const cs_mesh_t* m = cs_glob_mesh;
@@ -1102,7 +1095,7 @@ cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
   BFT_MALLOC(r_grad_local, 3*n_local, cs_real_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            3,
-                                           r_grad,
+                                           (const cs_real_t *)r_grad,
                                            r_grad_local);
 
   /* Compute rhs */
@@ -1299,8 +1292,6 @@ cs_internal_coupling_lsq_cocg_weighted(const cs_internal_coupling_t  *cpl,
 
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
-  const cs_lnum_t n_distant = cpl->n_distant;
-  const cs_lnum_t *faces_distant = cpl->faces_distant;
   const cs_real_t* g_weight = cpl->g_weight;
   const cs_real_3_t *ci_cj_vect = (const cs_real_3_t *)cpl->ci_cj_vect;
 

@@ -269,8 +269,8 @@ cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t *mesh)
                            "interface_criterion");
 
   /*! [param_internal_coupling] */
-
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define internal coupling options.
@@ -293,7 +293,6 @@ cs_user_internal_coupling(void)
 
 
   /*! [param_internal_coupling] */
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -4198,10 +4198,9 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
         formula_sca = cs_gui_get_text_value(path_sca);
         BFT_FREE(path_sca);
 
-        const int itherm = cs_glob_thermal_model->itherm;
-
         /* For non-specific physics defined with the GUI,
-           itherm can only be 1 or 2 here (as the thermal model is on) */
+           the thermal variable can only be temperature or enthalpy
+           (as the thermal model is on) */
 
         cs_field_t *c = cs_thermal_model_field();
         assert(c != NULL);
