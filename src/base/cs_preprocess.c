@@ -45,6 +45,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_boundary_zone.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
 #include "cs_internal_coupling.h"
@@ -357,6 +358,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_mesh_init_selectors();
   cs_mesh_location_build(cs_glob_mesh, -1);
   cs_volume_zone_build_all(true);
+  cs_boundary_zone_build_all(true);
 
   /* For debugging purposes */
 

@@ -42,6 +42,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_ctwr.h"
 #include "cs_fan.h"
 #include "cs_field.h"
@@ -153,6 +154,7 @@ _log_global_model_options(void)
 
   /* Zone information */
   cs_volume_zone_log_setup();
+  cs_boundary_zone_log_setup();
 }
 
 

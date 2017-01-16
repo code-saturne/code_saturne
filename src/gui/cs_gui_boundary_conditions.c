@@ -52,6 +52,7 @@
 
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
+#include "cs_boundary_zone.h"
 #include "cs_parameters.h"
 #include "cs_gui_util.h"
 #include "cs_gui.h"
@@ -1157,7 +1158,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
                  const int        *nozppm,
                  const int        *ncharb,
                  const int        *nclpch,
-                       int        *izfppp,
+                 int              *izfppp,
                  const int        *idarcy)
 {
   cs_lnum_t faces = 0;
@@ -1170,7 +1171,6 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
   char *choice_d = NULL;
   char *nature = NULL;
   char *label = NULL;
-  cs_lnum_t  *faces_list = NULL;
 
   cs_var_t  *vars = cs_glob_var;
   assert(boundaries == NULL);
@@ -1607,11 +1607,19 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
   int overlap_error[4] = {0, -1, -1, -1};
 
   for (izone = 0 ; izone < zones ; izone++) {
+
     zone_nbr = cs_gui_boundary_zone_number(izone + 1);
-    faces_list = cs_gui_get_boundary_faces(izone,
-                                           boundaries->label[izone],
-                                           *nozppm,
-                                           &faces);
+
+    if (nozppm && zone_nbr > *nozppm)
+      bft_error(__FILE__, __LINE__, 0,
+                _("zone's label number %i is greater than %i,"
+                  " the maximum allowed \n"), zone_nbr, *nozppm);
+
+    cs_lnum_t *tmp_list = NULL;
+    const cs_lnum_t *faces_list
+      = cs_gui_get_boundary_faces(boundaries->label[izone],
+                                  &faces,
+                                  &tmp_list);
 
     /* check if faces are already marked with a zone number */
 
@@ -1630,7 +1638,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
         izfppp[ifbr] = zone_nbr;
       }
     } /* for ifac */
-    BFT_FREE(faces_list);
+    BFT_FREE(tmp_list);
   } /*  for izone */
 
   /* Check for zone overlap errors */
@@ -1758,7 +1766,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
   double t0;
   double norm = 0.;
   double X[3];
-  cs_lnum_t *faces_list = NULL;
 
   cs_var_t  *vars = cs_glob_var;
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
@@ -1787,9 +1794,11 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
     zone_nbr = cs_gui_boundary_zone_number(ith_zone);
 
-    faces_list = cs_gui_get_boundary_faces(izone,
-                                           boundaries->label[izone],
-                                           *nozppm, &faces);
+    cs_lnum_t *tmp_list = NULL;
+    const cs_lnum_t *faces_list
+      = cs_gui_get_boundary_faces(boundaries->label[izone],
+                                  &faces,
+                                  &tmp_list);
 
     /* Mapped inlet ? */
 
@@ -2515,7 +2524,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                    ||cs_gui_strcmp(model, "Rij-SSG")) {
             const char *symbols[] = {"r11", "r22", "r33", "r12", "r13", "r23", "epsilon"};
             if (mei_tree_find_symbols(ev_formula, 7, symbols))
-              bft_error(__FILE__, __LINE__, 0, _("Error: can not find the required symbol: %s\n"),
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Error: can not find the required symbol: %s\n"),
                         "r11, r22, r33, r12, r13, r23 or epsilon");
 
             cs_field_t *c_r11 = cs_field_by_name("r11");
@@ -2549,7 +2559,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             }
           }
           else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
-            const char *symbols[] = {"r11", "r22", "r33", "r12", "r13", "r23", "epsilon", "alpha"};
+            const char *symbols[] = {"r11", "r22", "r33", "r12", "r13", "r23",
+                                     "epsilon", "alpha"};
             if (mei_tree_find_symbols(ev_formula, 8, symbols))
               bft_error(__FILE__, __LINE__, 0,
                         _("Error: can not find the required symbol: %s\n"),
@@ -2853,7 +2864,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       const cs_field_t  *fp1 = cs_field_by_name_try("hydraulic_head");
       const int var_key_id = cs_field_key_id("variable_id");
       int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-      char *choice_d = _boundary_choice(boundaries->nature[izone], boundaries->label[izone], "hydraulicHead", "choice");
+      char *choice_d = _boundary_choice(boundaries->nature[izone],
+                                        boundaries->label[izone],
+                                        "hydraulicHead",
+                                        "choice");
 
       for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
         ifbr = faces_list[ifac];
@@ -2886,7 +2900,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac];
           icodcl[ivar1 * n_b_faces + ifbr] = 3;
-          rcodcl[2 * n_b_faces * (*nvar) + ivar1 * n_b_faces + ifbr] = boundaries->preout[izone];
+          rcodcl[2 * n_b_faces * (*nvar) + ivar1 * n_b_faces + ifbr]
+            = boundaries->preout[izone];
         }
       }
       else if (cs_gui_strcmp(choice_d, "dirichlet_formula"))
@@ -2966,7 +2981,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
     }
 
-    BFT_FREE(faces_list);
+    BFT_FREE(tmp_list);
   } /*  for (izone=0 ; izone < zones ; izone++) */
 
 #if _XML_DEBUG_
@@ -2975,16 +2990,17 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
   for (izone = 0 ; izone < zones ; izone++) {
 
-    faces_list = cs_gui_get_boundary_faces(izone,
-                                           boundaries->label[izone],
-                                           *nozppm, &faces);
+    cs_lnum_t *tmp_list = NULL;
+    const cs_lnum_t *faces_list
+      = cs_gui_get_boundary_faces(boundaries->label[izone], &faces, &tmp_list);
 
     zone_nbr = cs_gui_boundary_zone_number(izone+1);
 
     bft_printf("\n---zone %i label: %s\n", zone_nbr, boundaries->label[izone]);
     bft_printf("---zone %i nature: %s\n", zone_nbr, boundaries->nature[izone]);
     bft_printf("---zone %i number of faces: %i\n", zone_nbr, faces);
-    bft_printf("----localization: %s\n", cs_gui_boundary_zone_localization(boundaries->label[izone]));
+    bft_printf("----localization: %s\n",
+               cs_gui_boundary_zone_localization(boundaries->label[izone]));
 
     if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
       char * choice_v = _boundary_choice("inlet",
@@ -3084,7 +3100,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
       }
     }
-    BFT_FREE(faces_list);
+    BFT_FREE(tmp_list);
   }
 #endif
 }
@@ -3105,14 +3121,13 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
 void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
                                const int  *iale,
-                                     int  *itypfb,
-                                     int  *izfppp)
+                               int        *itypfb,
+                               int        *izfppp)
 {
   cs_lnum_t ifbr, ifac;
   int izone, zones, zone_nbr;
   int inature = 0;
   int inature2 = 0;
-  cs_lnum_t *faces_list = NULL;
   cs_lnum_t faces = 0;
 
   zones   = cs_gui_boundary_zones_number();
@@ -3149,10 +3164,19 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
           _("boundary nature %s is unknown \n"),
           boundaries->nature[izone]);
 
-    zone_nbr =  cs_gui_boundary_zone_number(izone + 1);
-    faces_list = cs_gui_get_boundary_faces(izone,
-                                           boundaries->label[izone],
-                                           *nozppm, &faces);
+    zone_nbr = cs_gui_boundary_zone_number(izone + 1);
+
+    if (nozppm && zone_nbr > *nozppm)
+      bft_error(__FILE__, __LINE__, 0,
+                _("zone's label number %i is greater than %i,"
+                  " the maximum allowed \n"), zone_nbr, *nozppm);
+
+    cs_lnum_t *tmp_list = NULL;
+    const cs_lnum_t *faces_list
+      = cs_gui_get_boundary_faces(boundaries->label[izone],
+                                  &faces,
+                                  &tmp_list);
+
     for (ifac = 0; ifac < faces; ifac++) {
       ifbr = faces_list[ifac];
 
@@ -3228,7 +3252,7 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
              "@                                                            \n"),
            boundaries->label[izone], boundaries->nature[izone], inature2);
     }
-    BFT_FREE(faces_list);
+    BFT_FREE(tmp_list);
   } /*  for izone */
 }
 
@@ -3354,51 +3378,45 @@ cs_gui_boundary_zone_localization(const char  *label)
 /*-----------------------------------------------------------------------------
  * Helper to get the face list for the izone
  *
+ * If the matching mesh locator leads to an empty (trivial) list, a temporary
+ * list is created. The caller should always free tmp_list if non-NULL
+ * once the list is no longer needed.
+ *
  * parameters:
- *   izone   <--  zone index
- *   label   <--  boundary label
- *   nozppm  <--  max number of boundary zone for preefined physics
- *   faces   -->  number of faces
+ *   label     <--  boundary label
+ *   n_faces   -->  number of faces
+ *   tmp_list  -->  pointer to list to free after use, or NULL
+ *
+ * returns:
+ *   pointer to face list
  *----------------------------------------------------------------------------*/
 
-cs_lnum_t *
-cs_gui_get_boundary_faces(int          izone,
-                          const char  *label,
-                          int          nozppm,
-                          cs_lnum_t   *faces)
+const cs_lnum_t *
+cs_gui_get_boundary_faces(const char   *label,
+                          cs_lnum_t    *n_faces,
+                          cs_lnum_t   **tmp_faces)
 {
-  cs_lnum_t  c_id        = 0;
-  cs_lnum_t *faces_list = NULL;
-  char *description = NULL;
+  const cs_lnum_t *faces_list = NULL;
+  cs_lnum_t *_tmp_faces = NULL;
 
-  int  boundary_zones = cs_gui_boundary_zone_number(izone + 1);
+  const cs_boundary_zone_t *z = cs_boundary_zone_by_name(label);
 
-  if (nozppm && boundary_zones > nozppm)
-    bft_error(__FILE__, __LINE__, 0,
-              _("zone's label number %i is greater than %i,"
-                " the maximum allowed \n"), boundary_zones , nozppm);
+  *n_faces = z->n_faces;
 
-  description = cs_gui_boundary_zone_localization(label);
+  if (z->face_id != NULL || tmp_faces == NULL)
+    faces_list = z->face_id;
 
-  /* list of faces building */
-  BFT_MALLOC(faces_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
-
-  c_id = fvm_selector_get_list(cs_glob_mesh->select_b_faces,
-                               description,
-                               0,
-                               faces,
-                               faces_list);
-
-  if (fvm_selector_n_missing(cs_glob_mesh->select_b_faces, c_id) > 0) {
-    const char *missing
-      = fvm_selector_get_missing(cs_glob_mesh->select_b_faces, c_id, 0);
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_("The group or attribute \"%s\" in the selection\n"
-                 "criteria:\n"  "\"%s\"\n"
-                 " does not correspond to any boundary face.\n"),
-                  missing, description);
+  else if (z->n_faces > 0) {
+    cs_lnum_t _n_faces = z->n_faces;
+    BFT_MALLOC(_tmp_faces, _n_faces, cs_lnum_t);
+    for (cs_lnum_t i = 0; i < _n_faces; i++)
+      _tmp_faces[i] = i;
+    faces_list = _tmp_faces;
   }
-  BFT_FREE(description);
+
+  if (tmp_faces != NULL)
+    *tmp_faces = _tmp_faces;
+
   return faces_list;
 }
 

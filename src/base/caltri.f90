@@ -838,6 +838,7 @@ endif
 
 mesh_modified = .false.
 call cs_volume_zone_build_all(mesh_modified)
+call cs_boundary_zone_build_all(mesh_modified)
 
 call dmtmps(titer1)
 

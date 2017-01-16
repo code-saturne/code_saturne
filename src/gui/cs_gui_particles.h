@@ -49,15 +49,11 @@ void
 cs_gui_particles_model(void);
 
 /*----------------------------------------------------------------------------;
-
  * Define lagrangian model boundary conditions
- *
- * parameters:
- *   nozppm <-- max number of boundary conditions zone
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_particles_bcs(const int   *nozppm);
+cs_gui_particles_bcs(void);
 
 /*----------------------------------------------------------------------------*/
 

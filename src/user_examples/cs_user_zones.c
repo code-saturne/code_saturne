@@ -81,7 +81,40 @@ BEGIN_C_DECLS
 void
 cs_user_zones(void)
 {
+  /* Example:
+     define 3 spherical source term zones based on geometrical criteria
+     described by a rule. */
 
+  /*! [user_zones_volume_1] */
+  {
+    char name[128], criteria[128];
+
+    for (int i = 0; i < 3; i++) {
+
+      double s_coords[] = {0, 0, 2.0*i};
+
+      snprintf(name, 127, "source_%d");
+      snprintf(criteria, 127, "sphere[%f, %f, %f, 0.5]",
+               s_coords[0], s_coords[0], s_coords[0]);
+
+      cs_volume_zone_define(name, criteria, CS_VOLUME_ZONE_SOURCE_TERM);
+    }
+  }
+  /*! [user_zones_volume_1] */
+ 
+  /* Example:
+     define simple boundary zones, allowing all faces not in the
+     "INLET" or "OUTLET" groups to be considered as walls */
+
+  /*! [user_zones_boundary_1] */
+  {
+    int z_id = cs_boundary_zone_define("wall", "all[]", 0);
+    cs_boundary_zone_set_overlay(z_id, true);
+
+    cs_boundary_zone_define("inlet", "INLET", 0);
+    cs_boundary_zone_define("outlet", "OUTLET", 0);
+  }
+  /*! [user_zones_boundary_1] */
 }
 
 /*----------------------------------------------------------------------------*/

@@ -740,13 +740,10 @@ cs_gui_particles_model(void)
 
 /*----------------------------------------------------------------------------
  * Define lagrangian model boundary conditions
- *
- * parameters:
- *   nozppm <-- max number of boundary conditions zone
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_particles_bcs(const int  *nozppm)
+cs_gui_particles_bcs(void)
 {
   int zones;
   int iclas, ilayer;
@@ -773,16 +770,17 @@ cs_gui_particles_bcs(const int  *nozppm)
     char *label = cs_gui_boundary_zone_label(izone + 1);
     char *nature = cs_gui_boundary_zone_nature(izone + 1);
 
-    cs_lnum_t *faces_list = cs_gui_get_boundary_faces(izone,
-                                                      label,
-                                                      *nozppm, &nelt);
+    cs_lnum_t *tmp_list = NULL;
+    const cs_lnum_t *faces_list
+      = cs_gui_get_boundary_faces(label, &nelt, &tmp_list);
 
-    for (cs_lnum_t ielt=0; ielt < nelt; ielt++) {
+    for (cs_lnum_t ielt = 0; ielt < nelt; ielt++) {
       cs_lnum_t ifac = faces_list[ielt];
       bdy_cond->b_face_zone_id[ifac] = izone;
     }
 
-    BFT_FREE(faces_list);
+    BFT_FREE(tmp_list);
+    faces_list = NULL;
 
     path2 = cs_xpath_init_path();
     cs_xpath_add_elements(&path2, 2, "boundary_conditions",

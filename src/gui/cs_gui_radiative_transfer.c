@@ -639,7 +639,6 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
                               cs_lnum_t      ivart,
                               int           *izfrdp,
                               int           *isothp,
-                              const    int  *nozppm,
                               double        *epsp,
                               double        *epap,
                               double        *tintp,
@@ -656,7 +655,6 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
   int ith_zone;
   int ifbr;
   cs_lnum_t j, n;
-  cs_lnum_t *faces_list = NULL;
   cs_lnum_t faces = 0;
   int iok = 0;
   double tmp = 0.;
@@ -742,9 +740,10 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
     /* list of faces building */
 
-    faces_list = cs_gui_get_boundary_faces(izone,
-                                           boundaries->label[izone],
-                                           *nozppm, &faces);
+    cs_lnum_t *tmp_list = NULL;
+    const cs_lnum_t *faces_list
+      = cs_gui_get_boundary_faces(boundaries->label[izone],
+                                  &faces, &tmp_list);
 
     if (cs_gui_strcmp(boundary->nature[izone], "wall")) {
       for (n = 0; n < faces; n++) {
@@ -797,7 +796,7 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
       }
     } /* if nature == "wall" */
 
-    BFT_FREE(faces_list);
+    BFT_FREE(tmp_list);
 
   } /* for izone */
 

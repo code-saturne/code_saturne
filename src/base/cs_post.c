@@ -48,6 +48,7 @@
 #include "fvm_nodal_extract.h"
 
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_field.h"
 #include "cs_file.h"
 #include "cs_lagr_extract.h"
@@ -246,6 +247,8 @@ typedef struct {
   int            active;        /* -1 if blocked at this stage,
                                    0 if no output at current time step,
                                    1 in case of output */
+  int            n_meta;        /* Time step number for last output of
+                                   metadata if needed */
   int            n_last;        /* Time step number for the last
                                    activation (-1 before first output) */
   double         t_last;        /* Time value number for the last
@@ -2269,6 +2272,61 @@ _cs_post_write_displacements(int     nt_cur_abs,
 }
 
 /*----------------------------------------------------------------------------
+ * Output zone information if needed.
+ *
+ * This function is called when we know some writers are active
+ *
+ * parameters:
+ *   ts <-- time step structure, or NULL
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_post_write_zone_info(const cs_post_mesh_t  *post_mesh,
+                         const cs_time_step_t  *ts)
+{
+  if (post_mesh->id != CS_POST_MESH_BOUNDARY)
+    return;
+
+  if (cs_boundary_zone_n_zones() < 1)
+    return;
+
+  const int *zone_id = cs_boundary_zone_face_zone_id();
+
+  if (cs_boundary_zone_n_zones_time_varying() > 0)
+    cs_post_write_var(post_mesh->id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
+                      "boundary zone id",
+                      1,       /* var_dim */
+                      true,    /* interlace */
+                      true,    /* use_parent */
+                      CS_POST_TYPE_int,
+                      NULL,
+                      NULL,
+                      zone_id,
+                      ts);
+  else {
+    int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+    for (int i = 0; i < post_mesh->n_writers; i++) {
+      cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
+      if (writer->active == 1 && writer->n_meta < nt_cur) {
+        cs_post_write_var(post_mesh->id,
+                          writer->id,
+                          "boundary zone id",
+                          1,       /* var_dim */
+                          true,    /* interlace */
+                          true,    /* use_parent */
+                          CS_POST_TYPE_int,
+                          NULL,
+                          NULL,
+                          zone_id,
+                          NULL);
+        writer->n_meta = nt_cur;
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Generate global group flags array from local family flags
  *
  * The caller should free the returned array once it is no longer needed.
@@ -3097,6 +3155,33 @@ cs_f_post_write_var(int               mesh_id,
                     ts);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Transform time-independent values into time-dependent
+ *        values for transient meshes.
+ *
+ * \param[in]       writer  pointer to associated writer
+ * \param[in, out]  nt_cur  associated time step (-1 initially for
+ *                          time-independent values)
+ * \param[in, out]  t_cur   associated time value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_check_non_transient(const cs_post_writer_t  *writer,
+                     int                     *nt_cur,
+                     double                  *t_cur)
+{
+  assert(writer->active > 0);
+
+  fvm_writer_time_dep_t time_dep = fvm_writer_get_time_dep(writer->writer);
+
+  if (time_dep == FVM_WRITER_TRANSIENT_CONNECT) {
+    *nt_cur = writer->n_last;
+    *t_cur = writer->t_last;
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -3267,6 +3352,7 @@ cs_post_define_writer(int                     writer_id,
   w->frequency_n = frequency_n;
   w->frequency_t = frequency_t;
   w->active = 0;
+  w->n_meta = -2;
   w->n_last = -2;
   w->t_last = cs_glob_time_step->t_prev;
   w->ot = NULL;
@@ -4721,8 +4807,8 @@ cs_post_write_var(int                    mesh_id,
                                NULL, NULL, NULL,
                                NULL, NULL, NULL};
 
-  const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
-  const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+  int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+  double t_cur = (ts != NULL) ? ts->t_cur : 0.;
 
   /* Initializations */
 
@@ -4883,6 +4969,8 @@ cs_post_write_var(int                    mesh_id,
     if (writer->id != writer_id && writer_id != CS_POST_WRITER_ALL_ASSOCIATED)
       continue;
 
+    _check_non_transient(writer, &nt_cur, &t_cur);
+
     if (writer->active == 1) {
 
       fvm_writer_export_field(writer->writer,
@@ -4961,8 +5049,8 @@ cs_post_write_vertex_var(int                    mesh_id,
                              NULL, NULL, NULL,
                              NULL, NULL, NULL};
 
-  const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
-  const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+  int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+  double t_cur = (ts != NULL) ? ts->t_cur : 0.;
 
   /* Initializations */
 
@@ -5010,6 +5098,8 @@ cs_post_write_vertex_var(int                    mesh_id,
 
     if (writer->id != writer_id && writer_id != CS_POST_WRITER_ALL_ASSOCIATED)
       continue;
+
+    _check_non_transient(writer, &nt_cur, &t_cur);
 
     if (writer->active == 1) {
 
@@ -5998,6 +6088,10 @@ cs_post_write_vars(const cs_time_step_t  *ts)
         post_mesh->n_b_faces = n_b_faces;
 
       }
+
+      /* Output of zone information if necessary */
+
+      _cs_post_write_zone_info(post_mesh, ts);
 
       /* Standard post-processing */
 

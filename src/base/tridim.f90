@@ -1011,8 +1011,7 @@ do while (iterns.le.nterup)
     if (iihmpr.eq.1) then
 
       call uialcl &
-    ( nozppm,                            &
-      ibfixe, igliss, ivimpo, ifresf,    &
+    ( ibfixe, igliss, ivimpo, ifresf,    &
       ialtyb,                            &
       impale,                            &
       disale,                            &

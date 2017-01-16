@@ -1410,6 +1410,17 @@ module cs_c_bindings
     end subroutine cs_volume_zone_select_type_cells
 
     !---------------------------------------------------------------------------
+
+    ! Interface to C function building boundary zones.
+
+    subroutine cs_boundary_zone_build_all(mesh_modified)  &
+      bind(C, name='cs_boundary_zone_build_all')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      logical(kind=c_bool), value :: mesh_modified
+    end subroutine cs_boundary_zone_build_all
+
+    !---------------------------------------------------------------------------
     ! Interface to C user function for boundary conditions
 
     subroutine user_boundary_conditions(nvar,                             &

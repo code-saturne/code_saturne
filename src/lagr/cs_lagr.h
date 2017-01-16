@@ -913,7 +913,6 @@ typedef struct {
 
   /* ppppar */
   int ncharm;
-  int nozppm;
 
   /* radiation */
   int iirayo;

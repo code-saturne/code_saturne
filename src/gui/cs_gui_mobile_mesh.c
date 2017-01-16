@@ -969,7 +969,6 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
  * uialcl
  *
  * parameters:
- *   nozppm       <-- Max number of boundary conditions zone
  *   ialtyb       <-- ialtyb
  *   impale       <-- uialcl_fixed_displacement
  *   disale       <-- See uialcl_fixed_displacement
@@ -979,8 +978,7 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
  *   rcodcl       <-- See uialcl_fixed_velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
-                                const int *const    ibfixe,
+void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
                                 const int *const    igliss,
                                 const int *const    ivimpo,
                                 const int *const    ifresf,
@@ -1003,10 +1001,11 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
 
   /* At each time-step, loop on boundary faces: */
   for (izone = 0; izone < zones; izone++) {
-    cs_lnum_t *faces_list = cs_gui_get_boundary_faces(izone,
-                                                      boundaries->label[izone],
-                                                      *nozppm,
-                                                      &faces);
+    cs_lnum_t *tmp_list = NULL;
+    const cs_lnum_t *faces_list
+      = cs_gui_get_boundary_faces(boundaries->label[izone],
+                                  &faces,
+                                  &tmp_list);
 
     /* get the ale choice */
     const char *label = boundaries->label[izone];
@@ -1062,7 +1061,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
       }
       BFT_FREE(nat);
     }
-    BFT_FREE(faces_list);
+    BFT_FREE(tmp_list);
   }
 }
 
@@ -1096,7 +1095,6 @@ void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
   int  ifac         = 0;
   cs_lnum_t  faces        = 0;
   cs_lnum_t  ifbr         = 0;
-  cs_lnum_t  *faces_list  = NULL;
   int        istruct = 0;
 
   /* Get advanced data */
@@ -1126,14 +1124,16 @@ void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
                                           &vstr0[3 * istruct]);
       }
 
-      faces_list = cs_gui_get_boundary_faces(izone, label, 0, &faces);
+      cs_lnum_t *tmp_list = NULL;
+      const cs_lnum_t *faces_list
+        = cs_gui_get_boundary_faces(label, &faces, &tmp_list);
       /* Set idfstr to positiv index starting at 1 */
       for (ifac = 0; ifac < faces; ifac++) {
         ifbr = faces_list[ifac];
         idfstr[ifbr] = istruct + 1;
       }
       ++istruct;
-      BFT_FREE(faces_list);
+      BFT_FREE(tmp_list);
     }
     BFT_FREE(nature);
     BFT_FREE(label);
@@ -1225,7 +1225,9 @@ CS_PROCF (uiaste, UIASTE) (int     *const idfstr,
 
     if (_get_ale_boundary_nature(label) == ale_boundary_nature_external_coupling) {
 
-      cs_lnum_t *faces_list = cs_gui_get_boundary_faces(izone, label, 0, &faces);
+      cs_lnum_t *tmp_list = NULL;
+      const cs_lnum_t *faces_list
+        = cs_gui_get_boundary_faces(label, &faces, &tmp_list);
 
       /* Get DDLX, DDLY and DDLZ values */
       asddlf[istruct * 3 + 0] = _get_external_coupling_dof(label, "DDLX") ? 0 : 1;
@@ -1238,7 +1240,7 @@ CS_PROCF (uiaste, UIASTE) (int     *const idfstr,
         idfstr[ifbr]  = -istruct - 1;
       }
       ++istruct;
-      BFT_FREE(faces_list);
+      BFT_FREE(tmp_list);
     }
 
     BFT_FREE(label);

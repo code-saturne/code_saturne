@@ -266,12 +266,18 @@ _zone_define(const char  *name)
  *----------------------------------------------------------------------------*/
 
 static inline void
-_log_add_type_flag(int type)
+_log_type(int type)
 {
-  int i;
+  if (type == 0)
+    return;
+
   int n_loc_flags = 0;
 
-  for (i = 0; i < _n_type_flags; i++) {
+  cs_log_printf(CS_LOG_SETUP,
+                _("    type:                       %d"), type);
+
+
+  for (int i = 0; i < _n_type_flags; i++) {
     if (type & _type_flag_mask[i]) {
       if (n_loc_flags == 0)
         cs_log_printf(CS_LOG_SETUP, " (%s", _(_type_flag_name[i]));
@@ -282,7 +288,9 @@ _log_add_type_flag(int type)
   }
 
   if (n_loc_flags > 0)
-    cs_log_printf(CS_LOG_SETUP, ")");
+    cs_log_printf(CS_LOG_SETUP, ")\n");
+  else
+    cs_log_printf(CS_LOG_SETUP, "\n");
 }
 
 /*============================================================================
@@ -697,18 +705,14 @@ cs_volume_zone_log_info(const cs_volume_zone_t  *z)
 
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"
-                  "  Zone: \"%s\"\n"), z->name);
+                  "  Zone: \"%s\"\n"
+                  "    id:                         %d\n"),
+                z->name, z->id);
+
+  _log_type(z->type);
 
   cs_log_printf(CS_LOG_SETUP,
-                _("    id:                         %d\n"
-                  "    type:                       %d"),
-                z->id, z->type);
-
-  _log_add_type_flag(z->type);
-
-  cs_log_printf(CS_LOG_SETUP,
-                _("\n"
-                  "    location_id:                %d\n"),
+                _("    location_id:                %d\n"),
                 z->location_id);
 
   if (z->time_varying)
@@ -722,12 +726,12 @@ cs_volume_zone_log_info(const cs_volume_zone_t  *z)
                   _("    selection criteria:         \"%s\"\n"),
                   sel_str);
   else {
-    const cs_mesh_location_select_t *sel_fp
+    cs_mesh_location_select_t *sel_fp
       = cs_mesh_location_get_selection_function(z->location_id);
     if (sel_fp != NULL)
       cs_log_printf(CS_LOG_SETUP,
                     _("    selection function:         %p\n"),
-                    sel_fp);
+                    (void *)sel_fp);
   }
 }
 

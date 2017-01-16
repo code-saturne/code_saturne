@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-01-15 01:09+0100\n"
+"POT-Creation-Date: 2017-01-16 17:04+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4927,6 +4927,93 @@ msgid ""
 "  elements. Check your coordinate shift definitions."
 msgstr ""
 
+msgid "Defining a zone requires a name."
+msgstr "La définition d'une zone nécessite un nom."
+
+#, c-format
+msgid "    type:                       %d"
+msgstr "    type :                      %d"
+
+msgid "face with forbidden zone overlap"
+msgstr ""
+
+msgid "zone id"
+msgstr ""
+
+msgid "zone_id"
+msgstr ""
+
+msgid "Faces with zone error"
+msgstr "faces avec erreur de zone"
+
+msgid "Faces with valid zones"
+msgstr "Faces avec zone valide"
+
+#, c-format
+msgid ""
+"Boundary zone %i (\"%s\") contains at least\n"
+"one face already marked with zone id %d (\"%s\").\n"
+"\n"
+"Check definitions or allow overlays for this zone."
+msgstr ""
+"La zone de bord %i (\"%s\") contient au moins\n"
+"une face déjà marquée par le numéro de zone %i (\"%s\").\n"
+"\n"
+"Vérifiez les définitions ou autorisez les recouvrements pour cette zone."
+
+#, c-format
+msgid "%s: selection criteria string must be non-null."
+msgstr ""
+
+#, c-format
+msgid "%s: selection function pointer must be non-null."
+msgstr ""
+
+#, c-format
+msgid "Boundary zone with id %d is not defined."
+msgstr "La zone de bord avec id %d n'est pas définie."
+
+#, c-format
+msgid "Boundary zone \"%s\" is not defined."
+msgstr "La zone de bord \"%s\" n'est pas définie."
+
+#, c-format
+msgid ""
+"\n"
+"  Zone: \"%s\"\n"
+"    id:                         %d\n"
+msgstr ""
+"\n"
+"  Zone : \"%s\"\n"
+"    id :                        %d\n"
+
+#, c-format
+msgid "    location_id:                %d\n"
+msgstr "    id de support :             %d\n"
+
+msgid "    time varying\n"
+msgstr "    variable en temps\n"
+
+msgid "    allow overlay\n"
+msgstr "    recouvrement autorisé\n"
+
+#, c-format
+msgid "    selection criteria:         \"%s\"\n"
+msgstr "    critère de sélection :      \"%s\"\n"
+
+#, c-format
+msgid "    selection function:         %p\n"
+msgstr "    fonction de sélection :     %p\n"
+
+msgid ""
+"\n"
+"Boundary zones\n"
+"--------------\n"
+msgstr ""
+"\n"
+"Zones de bord\n"
+"-------------\n"
+
 #, c-format
 msgid "    %d first and last elements:\n"
 msgstr "    %d premiers et derniers éléments :\n"
@@ -9188,16 +9275,7 @@ msgstr "perte de charge"
 msgid "source term"
 msgstr "terme source"
 
-msgid "Defining a zone requires a name."
-msgstr "La définition d'une zone nécessite un nom."
-
 msgid "cell with forbidden zone overlap"
-msgstr ""
-
-msgid "zone id"
-msgstr ""
-
-msgid "zone_id"
 msgstr ""
 
 msgid "Cells with zone error"
@@ -9215,58 +9293,12 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "%s: selection criteria string must be non-null."
-msgstr ""
-
-#, c-format
-msgid "%s: selection function pointer must be non-null."
-msgstr ""
-
-#, c-format
 msgid "Volume zone with id %d is not defined."
 msgstr "La zone volumique avec id %d n'est pas définie."
 
 #, c-format
 msgid "Volume zone \"%s\" is not defined."
 msgstr "La zone volumique \"%s\" n'est pas définie."
-
-#, c-format
-msgid ""
-"\n"
-"  Zone: \"%s\"\n"
-msgstr ""
-"\n"
-"  Zone : \"%s\"\n"
-
-#, c-format
-msgid ""
-"    id:                         %d\n"
-"    type:                       %d"
-msgstr ""
-"    id :                        %d\n"
-"    type :                      %d"
-
-#, c-format
-msgid ""
-"\n"
-"    location_id:                %d\n"
-msgstr ""
-"\n"
-"    id de support:              %d\n"
-
-msgid "    time varying\n"
-msgstr "    variable en temps\n"
-
-msgid "    allow overlay\n"
-msgstr "    recouvrement autorisé\n"
-
-#, c-format
-msgid "    selection criteria:         \"%s\"\n"
-msgstr "    critère de sélection :      \"%s\"\n"
-
-#, c-format
-msgid "    selection function:         %p\n"
-msgstr "    fonction de sélection :     %p\n"
 
 msgid ""
 "\n"
@@ -11020,6 +11052,10 @@ msgid "Invalid number of coal-> dp_FCP: %i xml: %i\n"
 msgstr ""
 
 #, c-format
+msgid "zone's label number %i is greater than %i, the maximum allowed \n"
+msgstr ""
+
+#, c-format
 msgid ""
 "\n"
 "Error: boundary face zone overlap\n"
@@ -11097,22 +11133,6 @@ msgid ""
 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
 "@                                                            \n"
 msgstr ""
-
-#, c-format
-msgid "zone's label number %i is greater than %i, the maximum allowed \n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The group or attribute \"%s\" in the selection\n"
-"criteria:\n"
-"\"%s\"\n"
-" does not correspond to any boundary face.\n"
-msgstr ""
-"Le groupe ou attribut \"%s\" figurant dans le\n"
-"critère de sélection:\n"
-"\"%s\"\n"
-" ne correspond à aucune face de bord.\n"
 
 #, c-format
 msgid "Invalid xpath: %s\n"
@@ -11203,6 +11223,14 @@ msgstr ""
 msgid ""
 "\n"
 "Time elapsed defining values using MEI: %12.5f\n"
+msgstr ""
+
+#, c-format
+msgid "Noncontiguous volume zone ids in XML: zone with index %d has id %d.\n"
+msgstr ""
+
+#, c-format
+msgid "Noncontiguous boundary zone ids in XML: zone with index %d has id %d.\n"
 msgstr ""
 
 #, c-format
@@ -16160,53 +16188,3 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
-
-#~ msgid " This situation is not handled yet."
-#~ msgstr " Cette situation n'est pas encorre gérée."
-
-#~ msgid ""
-#~ "The group or attribute \"%s\" in the selection\n"
-#~ "criteria:\n"
-#~ "\"%s\"\n"
-#~ " does not correspond to any cell.\n"
-#~ msgstr ""
-#~ "Le groupe ou attribut \"%s\" figurant dans le\n"
-#~ "critère de sélection:\n"
-#~ "\"%s\"\n"
-#~ " ne correspond à aucune cellule.\n"
-
-#~ msgid ""
-#~ "Abort while opening the cooling tower module restart file in write mode.\n"
-#~ "Verify the existence and the name of the restart file: %s\n"
-#~ msgstr ""
-#~ "Arrêt à l'ouverture en écriture du fichier de reprise de calcul "
-#~ "aéroréfrigérants.\n"
-#~ "Vérifier l''existence et le nom du fichier de reprise de calcul: %s \n"
-
-#~ msgid ""
-#~ "Abort while opening the cooling tower AERO module restart file in read "
-#~ "mode.\n"
-#~ "Verify the existence and the name of the restart file: %s\n"
-#~ msgstr ""
-#~ "Arrêt à l'ouverture en lecture du fichier de reprise de calcul "
-#~ "aéroréfrigérants.\n"
-#~ "Vérifier l'existence et le nom du fichier de reprise de calcul: %s \n"
-
-#~ msgid ""
-#~ "Problem while reading section in the restart file\n"
-#~ "for the cooling tower module:\n"
-#~ "<%s>\n"
-#~ "The calculation will not be run.\n"
-#~ msgstr ""
-#~ "Problème à la lecture de la rubrique dans le fichier de reprise de "
-#~ "calcul\n"
-#~ "du module aéroréfrigérants :\n"
-#~ "<%s>\n"
-#~ "Le calcul ne sera pas executé.\n"
-
-#~ msgid ""
-#~ "The mesh %d cannot be an alias of mesh %d,\n"
-#~ "which is itself an alias of mesh %d.\n"
-#~ msgstr ""
-#~ "Le maillage %d ne peut être un alias du maillage %d,\n"
-#~ "qui est lui-même déjà un alias du maillage %d.\n"

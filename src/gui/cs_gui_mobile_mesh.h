@@ -90,7 +90,6 @@ void CS_PROCF (uivima, UIVIMA) (void);
  * *****************
  *
  * parameters:
- *   nozppm       <-- Max number of boundary conditions zone
  *   ialtyb       --> ialtyb
  *   impale       --> uialcl_fixed_displacement
  *   disale       --> See uialcl_fixed_displacement
@@ -100,8 +99,7 @@ void CS_PROCF (uivima, UIVIMA) (void);
  *   rcodcl       --> See uialcl_fixed_velocity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
-                                const int *const    ibfixe,
+void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
                                 const int *const    igliss,
                                 const int *const    ivimpo,
                                 const int *const    ifresf,

@@ -49,6 +49,7 @@
 #include "cs_base.h"
 #include "cs_base_fortran.h"
 #include "cs_benchmark.h"
+#include "cs_boundary_zone.h"
 #include "cs_calcium.h"
 #include "cs_cdo_main.h"
 #include "cs_control.h"
@@ -202,6 +203,7 @@ cs_run(void)
   cs_glob_mesh = cs_mesh_create();
   cs_glob_mesh_builder = cs_mesh_builder_create();
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
+  cs_boundary_zone_initialize();
   cs_volume_zone_initialize();
 
   cs_preprocess_mesh_define();
@@ -481,6 +483,7 @@ cs_run(void)
 
   cs_mesh_adjacencies_finalize();
 
+  cs_boundary_zone_finalize();
   cs_volume_zone_finalize();
   cs_mesh_location_finalize();
   cs_mesh_quantities_destroy(cs_glob_mesh_quantities);

@@ -6461,18 +6461,21 @@ cs_gui_zones(void)
   if (!cs_gui_file_is_loaded())
     return;
 
-  const int n_zones
-    = cs_gui_get_tag_count("/solution_domain/volumic_conditions/zone\n", 1);
-
   const char default_criteria[] = "all[]";
+
+  /* Volume zones */
+  /*------------- */
+
+  const int n_v_zones
+    = cs_gui_get_tag_count("/solution_domain/volumic_conditions/zone\n", 1);
 
   /* Build ordering array to check zones are defined in increasing id order  */
 
   cs_lnum_t *order = NULL, *z_ids = NULL;
-  BFT_MALLOC(order, n_zones, cs_lnum_t);
-  BFT_MALLOC(z_ids, n_zones, cs_lnum_t);
+  BFT_MALLOC(order, n_v_zones, cs_lnum_t);
+  BFT_MALLOC(z_ids, n_v_zones, cs_lnum_t);
 
-  for (int i = 0; i < n_zones; i++) {
+  for (int i = 0; i < n_v_zones; i++) {
     char *path = NULL, *id = NULL;
     path = cs_xpath_init_path();
     cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
@@ -6484,13 +6487,18 @@ cs_gui_zones(void)
     BFT_FREE(path);
   }
 
-  cs_order_lnum_allocated(NULL, z_ids, order, n_zones);
+  cs_order_lnum_allocated(NULL, z_ids, order, n_v_zones);
 
   /* Now loop on zones in id order */
 
-  for (int i = 0; i < n_zones; i++) {
+  for (int i = 0; i < n_v_zones; i++) {
 
     int type_flag = 0, z_id = z_ids[order[i]];
+
+    if (z_id != i+1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Noncontiguous volume zone ids in XML: "
+                  "zone with index %d has id %d.\n"), i, z_id);
 
     char *path = NULL, *name = NULL, *_criteria = NULL;
     const char *criteria = default_criteria;
@@ -6543,6 +6551,56 @@ cs_gui_zones(void)
     /* Finally, define zone */
 
     cs_volume_zone_define(name, criteria, type_flag);
+
+    BFT_FREE(_criteria);
+    BFT_FREE(name);
+  }
+
+  BFT_FREE(order);
+  BFT_FREE(z_ids);
+
+  /* Boundary zones */
+  /*--------------- */
+
+  const int n_b_zones = cs_gui_boundary_zones_number();
+
+  /* Build ordering array to check zones are defined in increasing id order  */
+
+  BFT_MALLOC(order, n_b_zones, cs_lnum_t);
+  BFT_MALLOC(z_ids, n_b_zones, cs_lnum_t);
+
+  for (int i = 0; i < n_b_zones; i++)
+    z_ids[i] = cs_gui_boundary_zone_number(i+1);
+
+  cs_order_lnum_allocated(NULL, z_ids, order, n_b_zones);
+
+  /* Now loop on zones in id order */
+
+  for (int i = 0; i < n_b_zones; i++) {
+
+    int type_flag = 0, z_id = z_ids[order[i]];
+
+    if (z_id != i+1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Noncontiguous boundary zone ids in XML: "
+                  "zone with index %d has id %d.\n"), i, z_id);
+
+    char *name = NULL, *_criteria = NULL;
+    const char *criteria = default_criteria;
+
+    /* zone name */
+
+    name = cs_gui_boundary_zone_label(i+1);
+
+    /* location criteria */
+
+    _criteria = cs_gui_boundary_zone_localization(name);
+    if (_criteria != NULL)
+      criteria = _criteria;
+
+    /* Finally, define zone */
+
+    cs_boundary_zone_define(name, criteria, type_flag);
 
     BFT_FREE(_criteria);
     BFT_FREE(name);

@@ -225,7 +225,6 @@ _write_particle_vars(cs_lagr_post_options_t  *options,
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -360,36 +359,6 @@ _cs_lagr_post(void                  *input,
 
     BFT_FREE(val);
 
-  }
-
-  /* Add boundary zone ids */
-
-  if (cat_id == -2) {
-    const int *b_face_zone_id = NULL;
-    int *_b_face_zone_id = NULL;
-    if (cs_glob_lagr_bdy_conditions != NULL)
-      b_face_zone_id = cs_glob_lagr_bdy_conditions->b_face_zone_id;
-    else {
-      cs_mesh_t *m = cs_glob_mesh;
-      BFT_MALLOC(_b_face_zone_id, m->n_b_faces, int);
-      for (cs_lnum_t i = 0; i < m->n_b_faces; i++)
-        _b_face_zone_id[i] = -1;
-      b_face_zone_id = _b_face_zone_id;
-    }
-
-    cs_post_write_var(mesh_id,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      "lagrangian_boundary_zones",
-                      1,       /* var_dim */
-                      true,    /* interlace */
-                      true,    /* use_parent */
-                      CS_POST_TYPE_int,
-                      NULL,
-                      NULL,
-                      b_face_zone_id,
-                      cs_glob_time_step);
-
-    BFT_FREE(_b_face_zone_id);
   }
 }
 

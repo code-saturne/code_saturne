@@ -50,7 +50,27 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct _cs_boundary_zone_t cs_boundary_zone_t;
+/*! Boundary zone description */
+
+typedef struct {
+
+  const char       *name;           /*!< zone name */
+
+  int               id;             /*!< boundary zone id */
+  int               type;           /*!< boundary zone type flag */
+
+  int               location_id;    /*!< associated mesh location id */
+
+  cs_lnum_t         n_faces;        /*!< local number of associated faces */
+  const cs_lnum_t  *face_id;        /*!< local face ids, or NULL if trivial */
+
+
+  bool              time_varying;   /*!< does the selected zone change
+                                      with time ? */
+  bool              allow_overlay;  /*!< allow overlaying of this zone ? */
+
+
+} cs_boundary_zone_t;
 
 /*=============================================================================
  * Global variables
@@ -59,6 +79,231 @@ typedef struct _cs_boundary_zone_t cs_boundary_zone_t;
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize boundary zone structures.
+ *
+ * This defines a default boundary zone. This is the first function of
+ * the boundary zone handling functions which should be called, and it should
+ * only be called after \ref cs_mesh_location_initialize.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_initialize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free all boundary zone structures.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of boundary zones defined.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_zone_n_zones(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of boundary zones which may vary in time.
+ *
+ * \return  number of zones which may vary in time
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_zone_n_zones_time_varying(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update association of boundary zones with a mesh.
+ *
+ * For time-varying zones, the associated mesh location is updated.
+ *
+ * \param[in]  mesh_modified  indicate if mesh has been modified
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_build_all(bool  mesh_modified);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a new boundary zone using a selection criteria string.
+ *
+ * \param[in]  name       name of location to define
+ * \param[in]  criteria   selection criteria for associated elements
+ * \param[in]  type_flag  mask of zone category values
+ *
+ * \return  id of newly defined boundary zone
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_zone_define(const char  *name,
+                        const char  *criteria,
+                        int          type_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a new mesh location with an associated selection function.
+ *
+ * So as to define a subset of mesh entities of a given type, a pointer
+ * to a selection function may be given.
+ *
+ * This requires more programming but allows finer control than selection
+ * criteria, as the function has access to the complete mesh structure.
+ *
+ * \param[in]  name  name of location to define
+ * \param[in]  func  pointer to selection function for associated elements
+ * \param[in]  type_flag  mask of zone category values
+ *
+ * \return  id of newly defined created mesh location
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_zone_define_by_func(const char                 *name,
+                                cs_mesh_location_select_t  *func,
+                                int                         type_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to a boundary zone based on its id.
+ *
+ * This function requires that a boundary zone of the given id is defined.
+ *
+ * \param[in]  id   zone id
+ *
+ * \return  pointer to the boundary zone structure
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_boundary_zone_t  *
+cs_boundary_zone_by_id(int  id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to a boundary zone based on its name if present.
+ *
+ * This function requires that a boundary zone of the given name is defined.
+ *
+ * \param[in]  name  boundary zone name
+ *
+ * \return  pointer to (read-only) zone structure
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_boundary_zone_t  *
+cs_boundary_zone_by_name(const char  *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to a boundary zone based on its name if present.
+ *
+ * If no boundary zone of the given name is defined, NULL is returned.
+ *
+ * \param[in]  name  boundary zone name
+ *
+ * \return  pointer to (read only) zone structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_boundary_zone_t  *
+cs_boundary_zone_by_name_try(const char  *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set type flag for a given boundary zone.
+ *
+ * \param[in]  id         boundary zone id
+ * \param[in]  type_flag  true if the zone's definition varies in time
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_set_type(int   id,
+                          bool  type_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set time varying behavior for a given boundary zone.
+ *
+ * \param[in]  id            boundary zone id
+ * \param[in]  time_varying  true if the zone's definition varies in time
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_set_time_varying(int   id,
+                                  bool  time_varying);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set overlay behavior for a given boundary zone.
+ *
+ * \param[in]  id             boundary zone id
+ * \param[in]  allow_overlay  true if the zone may be overlayed by another
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_set_overlay(int   id,
+                             bool  allow_overlay)
+;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to zone id associated with each boundary face.
+ *
+ * In case of overlayed zones, the highest zone id associated with
+ * a given face is given.
+ */
+/*----------------------------------------------------------------------------*/
+
+const int *
+cs_boundary_zone_face_zone_id(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print info relative to a given boundary zone to log file.
+ *
+ * \param[in]  z   pointer to boundary zone structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_log_info(const cs_boundary_zone_t  *z);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log setup information relative to defined boundary zones.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of boundary zones associated with a
+ *        given zone flag.
+ *
+ * \param[in]  type_flag  flag to compare to zone type
+ *
+ * \return  number of zones matching the given type flag
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_boundary_zone_n_type_zones(int  type_flag);
 
 /*----------------------------------------------------------------------------*/
 
