@@ -1694,7 +1694,7 @@ cs_internal_coupling_initialize(void)
         cpl->thetav = var_cal_opt.thetav;
         cpl->idiff = var_cal_opt.idiff;
 
-        /* Check the case is without hydrostatis pressure */
+        /* Check the case is without hydrostatic pressure */
         cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
         if (stokes->iphydr == 1)
            bft_error(__FILE__, __LINE__, 0,
@@ -1705,31 +1705,29 @@ cs_internal_coupling_initialize(void)
         _initialize_coupled_faces(cpl);
 
         /* Initialize cocg & cocgb */
-        switch(var_cal_opt.imrgra){
+        switch(CS_ABS(var_cal_opt.imrgra)){
           case 0:
             cs_compute_cell_cocg_s_it_coupling(cs_glob_mesh,
                                                cs_glob_mesh_quantities,
                                                cpl);
             break;
           case 1:
-          case 7:
+          case 4:
             cs_compute_cell_cocg_lsq_coupling(cs_glob_mesh,
                                               cs_glob_mesh_quantities,
                                               cpl);
             break;
-          case 4:
+          case 2:
+          case 3:
           case 5:
           case 6:
             bft_error(__FILE__, __LINE__, 0,
-                      "Iterative reconstruction with LSQ initialisation \
+                      "(Partial) extended neighbourhood \
                        not implemented with internal coupling.");
             break;
-          case 2:
-          case 3:
-          case 8:
-          case 9:
+          default:
             bft_error(__FILE__, __LINE__, 0,
-                      "(Partial) extended neighbourhood \
+                      "Parameter imrgra above 6 is \
                        not implemented with internal coupling.");
             break;
         }
