@@ -42,6 +42,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_ctwr.h"
 #include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_log.h"
@@ -57,7 +58,7 @@
 #include "cs_rotation.h"
 #include "cs_turbulence_model.h"
 #include "cs_lagr_log.h"
-#include "cs_ctwr.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -149,6 +150,9 @@ _log_global_model_options(void)
                   r->omega);
 
   }
+
+  /* Zone information */
+  cs_volume_zone_log_setup();
 }
 
 

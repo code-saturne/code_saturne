@@ -321,6 +321,17 @@ cs_user_initialization(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define internal coupling options.
+ *
+ * Options are usually defined using cs_internal_coupling_add_entity.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_internal_coupling(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define volumes as internal coupling zones.
  *
  * These zones will be separated from the rest of the domain using automatically
@@ -643,12 +654,14 @@ cs_user_turbomachinery(void);
 void
 cs_user_turbomachinery_rotor(void);
 
-/*----------------------------------------------------------------------------
- * Define internal coupling options.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define volume and surface zones.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_user_internal_coupling(void);
+cs_user_zones(void);
 
 /*============================================================================
  *  CDO User function prototypes

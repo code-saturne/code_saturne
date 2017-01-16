@@ -588,7 +588,6 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
     }
 
   } /* Loop on mesh locations */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -787,6 +786,42 @@ cs_mesh_location_get_elt_list(int id)
   const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
 
   return ml->elt_list;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a mesh location's selection criteria string
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return  pointer to mesh location selection criteria, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_mesh_location_get_selection_string(int  id)
+{
+  const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
+
+  return ml->select_str;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a mesh location's selection function pointer
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return  pointer to mesh location selection function pointer, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_location_select_t *
+cs_mesh_location_get_selection_function(int  id)
+{
+  const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
+
+  return ml->select_fp;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -51,6 +51,7 @@
 #include "cs_prototypes.h"
 #include "cs_mesh_location.h"
 #include "cs_timer_stats.h"
+#include "cs_volume_zone.h"
 
 /* CDO module */
 #include "cs_cdo.h"
@@ -135,6 +136,8 @@ _setup_domain(cs_mesh_t             *m,
   n_mesh_locations = cs_mesh_location_n_locations();
   for (int  i = n_mesh_locations_ini; i < n_mesh_locations; i++)
     cs_mesh_location_build(m, i);
+
+  cs_volume_zone_build_all(true);
 
   /* Advanced settings (numerical scheme, hodge operators, solvers...).
      This call must be done before the field creation since the support

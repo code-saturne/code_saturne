@@ -65,6 +65,7 @@
 #include "cs_prototypes.h"
 #include "cs_preprocessor_data.h"
 #include "cs_timer_stats.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -355,6 +356,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   cs_mesh_init_selectors();
   cs_mesh_location_build(cs_glob_mesh, -1);
+  cs_volume_zone_build_all(true);
 
   /* For debugging purposes */
 

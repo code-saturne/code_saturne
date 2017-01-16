@@ -96,6 +96,8 @@ implicit none
 
 ! Local variables
 
+logical(kind=c_bool) mesh_modified
+
 integer          modhis, iappel, modntl, iisuit
 integer          iel
 
@@ -841,6 +843,9 @@ if (      (idtvar.eq.0 .or. idtvar.eq.1)                          &
     .and. (ttmabs.gt.0 .and. ttcabs.ge.ttmabs)) then
   ntmabs = ntcabs
 endif
+
+mesh_modified = .false.
+call cs_volume_zone_build_all(mesh_modified)
 
 call dmtmps(titer1)
 

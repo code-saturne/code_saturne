@@ -65,6 +65,8 @@ GUI changes
 Architectural changes
 ---------------------
 
+- Added general structures to handle boundary and volume zones.
+
 - Extended run staging and submission to coupled cases. Temporary status file
   is now in execution ad not scripts directory.
 

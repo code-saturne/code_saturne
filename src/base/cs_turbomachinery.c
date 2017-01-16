@@ -74,6 +74,7 @@
 #include "cs_timer_stats.h"
 #include "cs_restart.h"
 #include "cs_preprocessor_data.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -857,6 +858,7 @@ _update_mesh(bool     restart_mode,
 
   cs_mesh_init_selectors();
   cs_mesh_location_build(cs_glob_mesh, -1);
+  cs_volume_zone_build_all(true);
 
   /* Check coherency if debugging */
 

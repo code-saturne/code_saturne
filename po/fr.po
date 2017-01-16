@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-01-03 00:39+0100\n"
+"POT-Creation-Date: 2017-01-15 01:09+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4893,28 +4893,17 @@ msgstr ""
 msgid "boundary condition type"
 msgstr "type de conditions aux limites"
 
-#, c-format
-msgid ""
-"\n"
-"First face with boundary condition definition error\n"
-"  (out of %llu)\n"
-"  has %s %d, center (%g, %g, %g)\n"
-"\n"
-msgstr ""
-"\n"
-"Première face avec une mauvaise définition de conditions aux limites\n"
-"  (sur %llu)\n"
-"  a comme %s %d, et centre (%g, %g, %g)\n"
-"\n"
+msgid "face with boundary condition definition error"
+msgstr "face avec erreur de définition de conditions aux limites"
+
+msgid "BC type"
+msgstr "Type de CL"
 
 msgid "Faces with B.C. error"
 msgstr "Faces avec erreur de C.L."
 
 msgid "Faces with valid B.C.'s"
 msgstr "Faces avec C.L. valides"
-
-msgid "BC type"
-msgstr "Type de CL"
 
 msgid ""
 "\n"
@@ -5836,6 +5825,20 @@ msgstr ""
 "Erreur à la suppression du fichier \"%s\" :\n"
 "\n"
 "  %s"
+
+#, c-format
+msgid ""
+"\n"
+"First %s\n"
+"  (out of %llu)\n"
+"  has %s %d, center (%g, %g, %g)\n"
+"\n"
+msgstr ""
+"\n"
+"Première %s\n"
+"  (sur %llu)\n"
+"  a %s %d, centre (%g, %g, %g)\n"
+"\n"
 
 msgid "No gas species can be added. The gas mix model is not enabled.\n"
 msgstr ""
@@ -7028,6 +7031,24 @@ msgstr ""
 "le calcul en référentiel relatif n'est pas compatible avec le module de "
 "turbomachine.\n"
 "Si nécessaire, utilisez le module de turbomachine avec plusieurs rotors."
+
+msgid ""
+"while reading input data,\n"
+"the lagrangian checkpoint cannot be used\n"
+"without having the lagrangian module enabled."
+msgstr ""
+
+msgid ""
+"while reading input data,\n"
+"the radiative checkpoint cannot be used\n"
+"without having the radiative module enabled."
+msgstr ""
+
+msgid ""
+"while reading input data,\n"
+"the 1D wall thermal checkpoint cannot be used\n"
+"without having the 1D wall thermal module enabled."
+msgstr ""
 
 msgid ""
 "\n"
@@ -9155,6 +9176,107 @@ msgid ""
 "Check your restart directory."
 msgstr ""
 
+msgid "initialization"
+msgstr "initialisation"
+
+msgid "porosity"
+msgstr "porosité"
+
+msgid "head loss"
+msgstr "perte de charge"
+
+msgid "source term"
+msgstr "terme source"
+
+msgid "Defining a zone requires a name."
+msgstr "La définition d'une zone nécessite un nom."
+
+msgid "cell with forbidden zone overlap"
+msgstr ""
+
+msgid "zone id"
+msgstr ""
+
+msgid "zone_id"
+msgstr ""
+
+msgid "Cells with zone error"
+msgstr "Cellules avec erreur de zone"
+
+msgid "Cells with valid zones"
+msgstr "Cellules avec zone valide"
+
+#, c-format
+msgid ""
+"Volume zone %i (\"%s\") contains at least\n"
+"one cell already marked with zone id %d (\"%s\").\n"
+"\n"
+"Check definitions or allow overlays for this zone."
+msgstr ""
+
+#, c-format
+msgid "%s: selection criteria string must be non-null."
+msgstr ""
+
+#, c-format
+msgid "%s: selection function pointer must be non-null."
+msgstr ""
+
+#, c-format
+msgid "Volume zone with id %d is not defined."
+msgstr "La zone volumique avec id %d n'est pas définie."
+
+#, c-format
+msgid "Volume zone \"%s\" is not defined."
+msgstr "La zone volumique \"%s\" n'est pas définie."
+
+#, c-format
+msgid ""
+"\n"
+"  Zone: \"%s\"\n"
+msgstr ""
+"\n"
+"  Zone : \"%s\"\n"
+
+#, c-format
+msgid ""
+"    id:                         %d\n"
+"    type:                       %d"
+msgstr ""
+"    id :                        %d\n"
+"    type :                      %d"
+
+#, c-format
+msgid ""
+"\n"
+"    location_id:                %d\n"
+msgstr ""
+"\n"
+"    id de support:              %d\n"
+
+msgid "    time varying\n"
+msgstr "    variable en temps\n"
+
+msgid "    allow overlay\n"
+msgstr "    recouvrement autorisé\n"
+
+#, c-format
+msgid "    selection criteria:         \"%s\"\n"
+msgstr "    critère de sélection :      \"%s\"\n"
+
+#, c-format
+msgid "    selection function:         %p\n"
+msgstr "    fonction de sélection :     %p\n"
+
+msgid ""
+"\n"
+"Volume zones\n"
+"------------\n"
+msgstr ""
+"\n"
+"Zones volumiques\n"
+"----------------\n"
+
 msgid "bft_mem_init() has already been called"
 msgstr ""
 
@@ -9187,9 +9309,6 @@ msgstr ""
 msgid " Key not implemented for setting an advection field."
 msgstr ""
 
-msgid " Invalid numerical scheme for advection."
-msgstr ""
-
 msgid ""
 " Incompatible type of boundary condition by default.\n"
 " Please modify your settings.\n"
@@ -9200,34 +9319,19 @@ msgid ""
 " Stop generating the boundary condition structure."
 msgstr ""
 
-msgid " This situation is not handled yet."
-msgstr " Cette situation n'est pas encorre gérée."
-
-msgid ""
-" Invalid couple (definition type, degrees of freedom).\n"
-" Stop computing the Dirichlet values.\n"
-msgstr ""
-
-msgid ""
-" Invalid type of definition.\n"
-" Stop computing the Dirichlet value.\n"
-msgstr ""
-
 #, c-format
 msgid ""
 " The given couple of vertices (number): [%d, %d]\n"
 " is not defined in the edge structure.\n"
 msgstr ""
 
-msgid ""
-" Invalid space scheme for building the stiffness matrix.\n"
-" Please check your settings."
-msgstr ""
-
 msgid " Convection term is not handled yet.\n"
 msgstr ""
 
 msgid " Unsteady terms are not handled yet.\n"
+msgstr ""
+
+msgid "Invalid space scheme."
 msgstr ""
 
 #, c-format
@@ -9286,6 +9390,16 @@ msgstr ""
 msgid "cells"
 msgstr "cellules"
 
+msgid ""
+" Invalid key for setting a cs_domain_t structure. This key is not associated "
+"to a \"double\" type."
+msgstr ""
+
+msgid ""
+" Invalid key for setting a cs_domain_t structure. This key is not associated "
+"to a \"int\" type."
+msgstr ""
+
 msgid " Invalid key for setting a cs_domain_t structure."
 msgstr ""
 
@@ -9326,9 +9440,6 @@ msgid ""
 " Stop adding this advection field.\n"
 msgstr ""
 
-msgid " cs_domain_t structure is not allocated."
-msgstr ""
-
 msgid ""
 " Groundwater module is requested but is not activated.\n"
 " Please first activate this module."
@@ -9358,15 +9469,13 @@ msgid ""
 " Please check your settings.\n"
 msgstr ""
 
-msgid " Mesh location name is NULL."
-msgstr ""
-
 #, c-format
 msgid " Incompatible type of variable for equation %s."
 msgstr ""
 
-msgid "vertices"
-msgstr "sommets"
+#, c-format
+msgid " Incompatible way to initialize the field %s.\n"
+msgstr ""
 
 msgid ""
 " No variable name associated to an equation structure.\n"
@@ -9398,13 +9507,13 @@ msgstr ""
 #, c-format
 msgid ""
 " Invalid val %s related to key CS_EQKEY_HODGE_DIFF_ALGO\n"
-" Choice between cost, wbs or voronoi"
+" Choice between cost, wbs, auto or voronoi"
 msgstr ""
 
 #, c-format
 msgid ""
 " Invalid val %s related to key CS_EQKEY_HODGE_TIME_ALGO\n"
-" Choice between cost, wbs or voronoi"
+" Choice between cost, wbs, voronoi"
 msgstr ""
 
 #, c-format
@@ -9435,7 +9544,7 @@ msgstr ""
 #, c-format
 msgid ""
 " Invalid value \"%s\" for key CS_EQKEY_BC_QUADRATURE\n"
-" Valid choices are \"subdiv\", \"bary\", \"higher\" and \"highest\"."
+" Valid choices are \"bary\", \"bary_subdiv\", \"higher\" and \"highest\"."
 msgstr ""
 
 #, c-format
@@ -9475,42 +9584,12 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key for setting the initial condition.\n"
-" Given key: \"%s\"\n"
-" Valid choices are \"value\" and \"analytic\".\n"
-" Please modify your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid key for setting the type of definition.\n"
-" Given key: \"%s\"\n"
-" Valid keys: \"analytic\", \"user\", \"law\" or \"array\"\n"
-" Please modify your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid key for setting the type of boundary condition.\n"
-" Given key: \"%s\"\n"
-" Valid keys: \"dirichlet\", \"neumann\" or \"robin\".\n"
-" Please modify your settings."
-msgstr ""
-
-msgid " Invalid numerical scheme to set a source term."
-msgstr ""
-
-#, c-format
-msgid ""
-" Cannot find source term %s among defined source terms.\n"
-" Please check your settings for equation %s.\n"
-msgstr ""
-
-#, c-format
-msgid ""
 " Type of equation for eq. %s is incompatible with the creation of a field "
 "structure.\n"
 msgstr ""
+
+msgid "vertices"
+msgstr "sommets"
 
 #, c-format
 msgid ""
@@ -9547,6 +9626,11 @@ msgid ""
 " available for equation %s\n"
 msgstr ""
 
+msgid ""
+" Invalid type of definition.\n"
+" Stop computing the Dirichlet value.\n"
+msgstr ""
+
 #, c-format
 msgid ""
 " Undefined iterative solver for solving %s equation.\n"
@@ -9573,13 +9657,13 @@ msgid ""
 " This situation is not handled yet."
 msgstr ""
 
+msgid " Invalid type of model for estimating the moisture content."
+msgstr ""
+
 #, c-format
 msgid ""
 " Invalid type of mesh location for mesh location  %s.\n"
 " The expected type is CS_MESH_LOCATION_CELLS.\n"
-msgstr ""
-
-msgid " Invalid type of model for estimating the moisture content."
 msgstr ""
 
 #, c-format
@@ -9631,36 +9715,16 @@ msgstr ""
 msgid " Invalid type of model for groundwater module.."
 msgstr ""
 
-msgid " This type of discrete Hodge operator is not covered.\n"
-msgstr ""
-
-msgid " Invalid type of algorithm to build a discrete Hodge operator\n"
-msgstr ""
-
-msgid " Invalid type of discrete Hodge op. for WBS algorithm."
-msgstr ""
-
-msgid ""
-" Please change your function call with the following one:\n"
-" cs_hodge_build_cellwise(cell_mesh, hodge_builder)"
-msgstr ""
-
-msgid " Invalid type of Hodge operator.\n"
-msgstr ""
-
 msgid "by analytic function"
 msgstr ""
 
 msgid "by array"
 msgstr ""
 
-msgid "by law (one argument)"
+msgid "by one variable law"
 msgstr ""
 
-msgid "by law (two arguments)"
-msgstr ""
-
-msgid "by law (two arguments: scalar+vector)"
+msgid "by two variables law"
 msgstr ""
 
 msgid "quantity over a volume"
@@ -9764,6 +9828,9 @@ msgstr ""
 msgid "barycentric"
 msgstr ""
 
+msgid "barycentric on a tetrahedral submesh"
+msgstr ""
+
 msgid "higher (single weight)"
 msgstr ""
 
@@ -9778,7 +9845,10 @@ msgstr ""
 msgid " Invalid type of source term."
 msgstr ""
 
-msgid " Invalid case. Not able to compute an evaluation.\n"
+msgid " Invalid numerical scheme to set a source term."
+msgstr ""
+
+msgid " Invalid case. Not able to compute the source term.\n"
 msgstr ""
 
 msgid " Invalid type of definition.\n"
@@ -9836,7 +9906,7 @@ msgid ""
 "    criterion: %s\n"
 "    Parameters:\n"
 "      Model: %s\n"
-"      Beta_x_0 of the exchange law: %f\n"
+"      Lambda of the exchange law: %f\n"
 "      Exponent n of the exchange law: %f\n"
 "      Type: %d\n"
 "        Droplet diameter: %f\n"
@@ -9848,7 +9918,11 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "      %-19s  %-4d %s\n"
+msgid "      %-25s  %-4d\n"
+msgstr ""
+
+#, c-format
+msgid "      %-25s  %-4d %s\n"
 msgstr ""
 
 msgid "Sorption model (0: Kd, 1: EK model)"
@@ -9864,6 +9938,9 @@ msgid "Field id of Kplus (-1 if EK disabled)"
 msgstr ""
 
 msgid "Field id of Kminus (-1 if EK disabled)"
+msgstr ""
+
+msgid "Field id of solubility index (-1 if precipitation disabled)"
 msgstr ""
 
 #, c-format
@@ -11050,18 +11127,6 @@ msgid ""
 "Invalid xpath: %s\n"
 " component not found"
 msgstr ""
-
-#, c-format
-msgid ""
-"The group or attribute \"%s\" in the selection\n"
-"criteria:\n"
-"\"%s\"\n"
-" does not correspond to any cell.\n"
-msgstr ""
-"Le groupe ou attribut \"%s\" figurant dans le\n"
-"critère de sélection:\n"
-"\"%s\"\n"
-" ne correspond à aucune cellule.\n"
 
 #, c-format
 msgid ""
@@ -16095,6 +16160,20 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
+#~ msgid " This situation is not handled yet."
+#~ msgstr " Cette situation n'est pas encorre gérée."
+
+#~ msgid ""
+#~ "The group or attribute \"%s\" in the selection\n"
+#~ "criteria:\n"
+#~ "\"%s\"\n"
+#~ " does not correspond to any cell.\n"
+#~ msgstr ""
+#~ "Le groupe ou attribut \"%s\" figurant dans le\n"
+#~ "critère de sélection:\n"
+#~ "\"%s\"\n"
+#~ " ne correspond à aucune cellule.\n"
 
 #~ msgid ""
 #~ "Abort while opening the cooling tower module restart file in write mode.\n"

@@ -83,6 +83,7 @@
 #include "cs_opts.h"
 #include "cs_parameters.h"
 #include "cs_partition.h"
+#include "cs_physical_properties.h"
 #include "cs_post.h"
 #include "cs_preprocess.h"
 #include "cs_preprocessor_data.h"
@@ -100,7 +101,7 @@
 #include "cs_timer_stats.h"
 #include "cs_les_inflow.h"
 #include "cs_turbomachinery.h"
-#include "cs_physical_properties.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -201,6 +202,7 @@ cs_run(void)
   cs_glob_mesh = cs_mesh_create();
   cs_glob_mesh_builder = cs_mesh_builder_create();
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
+  cs_volume_zone_initialize();
 
   cs_preprocess_mesh_define();
 
@@ -241,6 +243,9 @@ cs_run(void)
       halo_type = CS_HALO_EXTENDED;
 
     cs_base_fortran_bft_printf_to_c();
+
+    cs_gui_zones();
+    cs_user_zones();
 
   }
   else if (opts.verif)
@@ -476,6 +481,7 @@ cs_run(void)
 
   cs_mesh_adjacencies_finalize();
 
+  cs_volume_zone_finalize();
   cs_mesh_location_finalize();
   cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
   cs_mesh_destroy(cs_glob_mesh);

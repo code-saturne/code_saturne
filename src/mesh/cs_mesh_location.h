@@ -301,6 +301,32 @@ const cs_lnum_t *
 cs_mesh_location_get_elt_list(int id);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a mesh location's selection criteria string
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return  pointer to mesh location selection criteria, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_mesh_location_get_selection_string(int  id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a mesh location's selection function pointer
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return  pointer to mesh location selection function pointer, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_location_select_t *
+cs_mesh_location_get_selection_function(int  id);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -269,6 +269,7 @@ cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  *a,
   }
 }
 
+/*----------------------------------------------------------------------------*/
 /*! \brief Set convective oulet boundary condition for a scalar
  *
  * Parameters:

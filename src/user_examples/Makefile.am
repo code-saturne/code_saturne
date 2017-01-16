@@ -108,6 +108,7 @@ cs_user_radiative_transfer.c \
 cs_user_radiative_transfer_bcs.c \
 cs_user_solver-heat-equation.c \
 cs_user_turbomachinery.c \
+cs_user_zones.c \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions-advanced.f90 \
 cs_user_boundary_conditions-atmospheric.f90 \

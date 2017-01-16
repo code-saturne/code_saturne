@@ -86,6 +86,7 @@ cs_base_fortran.h \
 cs_block_dist.h \
 cs_block_to_part.h \
 cs_boundary_conditions.h \
+cs_boundary_zone.h \
 cs_calcium.h \
 cs_control.h \
 cs_coupling.h \
@@ -99,6 +100,7 @@ cs_field.h \
 cs_field_default.h \
 cs_field_pointer.h \
 cs_field_operator.h \
+cs_flag_check.h \
 cs_fp_exception.h \
 cs_gas_mix.h \
 cs_halo.h \
@@ -153,6 +155,7 @@ cs_time_step.h \
 cs_timer.h \
 cs_timer_stats.h \
 cs_turbomachinery.h \
+cs_volume_zone.h \
 cs_wall_functions.h
 
 # Library source files
@@ -233,6 +236,7 @@ cs_array_reduce.c \
 cs_ast_coupling.c \
 cs_base_fortran.c \
 cs_boundary_conditions.c \
+cs_boundary_zone.c \
 cs_calcium.c \
 csc2cl.f90 \
 csc2ts.f90 \
@@ -252,6 +256,7 @@ cs_field.c \
 cs_field_default.c \
 cs_field_pointer.c \
 cs_field_operator.c \
+cs_flag_check.c \
 cs_gas_mix.c \
 cs_halo.c \
 cs_halo_perio.c \
@@ -301,6 +306,7 @@ cs_time_plot.c \
 cs_time_step.c \
 cs_timer_stats.c \
 cs_turbomachinery.c \
+cs_volume_zone.c \
 cs_wall_functions.c \
 cs_internal_coupling.c \
 csprnt.f90 \
