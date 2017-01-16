@@ -46,6 +46,9 @@ module cs_c_bindings
   integer :: RESTART_RAD_TRANSFER, RESTART_LAGR, RESTART_LAGR_STAT
   integer :: RESTART_1D_WALL_THERMAL, RESTART_LES_INFLOW
 
+  integer :: VOLUME_ZONE_INITIALIZATION, VOLUME_ZONE_POROSITY
+  integer :: VOLUME_ZONE_HEAD_LOSS, VOLUME_ZONE_SOURCE_TERM
+
   parameter (MESH_LOCATION_NONE=0)
   parameter (MESH_LOCATION_CELLS=1)
   parameter (MESH_LOCATION_INTERIOR_FACES=2)
@@ -65,6 +68,11 @@ module cs_c_bindings
   parameter (RESTART_LAGR_STAT=4)
   parameter (RESTART_1D_WALL_THERMAL=5)
   parameter (RESTART_LES_INFLOW=6)
+
+  parameter (VOLUME_ZONE_INITIALIZATION=1)
+  parameter (VOLUME_ZONE_POROSITY=2)
+  parameter (VOLUME_ZONE_HEAD_LOSS=4)
+  parameter (VOLUME_ZONE_SOURCE_TERM=8)
 
   !-----------------------------------------------------------------------------
 
@@ -1364,6 +1372,44 @@ module cs_c_bindings
     end subroutine cs_volume_zone_build_all
 
     !---------------------------------------------------------------------------
+
+    ! Interface to C function returning the number of volume zones
+    ! associated with a given zone flag
+
+    function cs_volume_zone_n_type_zones(type_flag) result(n)   &
+      bind(C, name='cs_volume_zone_n_type_zones')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value                            :: type_flag
+      integer(c_int)                                   :: n
+    end function cs_volume_zone_n_type_zones
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function returning the number of volume zone cells
+    ! associated with a given zone flag
+
+    function cs_volume_zone_n_type_cells(type_flag) result(n)   &
+      bind(C, name='cs_volume_zone_n_type_cells')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value                            :: type_flag
+      integer(c_int)                                   :: n
+    end function cs_volume_zone_n_type_cells
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function selecting cells in volume zones.
+
+    subroutine cs_volume_zone_select_type_cells(type_flag, cell_ids)  &
+      bind(C, name='cs_volume_zone_select_type_cells')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: type_flag
+      type(c_ptr), value :: cell_ids
+    end subroutine cs_volume_zone_select_type_cells
+
+    !---------------------------------------------------------------------------
     ! Interface to C user function for boundary conditions
 
     subroutine user_boundary_conditions(nvar,                             &
@@ -1421,8 +1467,6 @@ module cs_c_bindings
     !---------------------------------------------------------------------------
 
     ! Interface to C function for the destruction of a locator structure.
-
-    !> \param[in, out]   this_locator
 
     function ple_locator_destroy(this_locator) result (l) &
       bind(C, name='ple_locator_destroy')
@@ -1923,7 +1967,7 @@ contains
 
   !> \brief Compute balance on a given zone for a given scalar
 
-  !> param[in]       sel_crit   selection criterium of a volumic zone
+  !> param[in]       sel_crit   selection criteria of a volume zone
   !> param[in]       name       scalar name
 
   subroutine balance_by_zone(sel_crit, name)
@@ -1952,7 +1996,7 @@ contains
 
   !> \brief Compute pressure drop for a given zone
 
-  !> param[in]       sel_crit   selection criterium of a volumic zone
+  !> param[in]       sel_crit   selection criteria of a volume zone
 
   subroutine pressure_drop_by_zone(sel_crit)
     use, intrinsic :: iso_c_binding
@@ -1978,7 +2022,7 @@ contains
 
   !> \brief Compute surface scalar balance for a given surface area
 
-  !> param[in]       sel_crit   selection criterium of a volumic zone
+  !> param[in]       sel_crit   selection criteria of a volume zone
 
   subroutine surface_balance(sel_crit, name, normal)
     use, intrinsic :: iso_c_binding
@@ -3635,6 +3679,89 @@ contains
     return
 
   end subroutine variable_field_create
+
+  !=============================================================================
+
+  !> \brief Return the number of volume zones associated with a given type flag.
+
+  !> \param[in]   type_flag   type flag queried
+
+  function volume_zone_n_type_zones(type_flag) result(n)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer :: type_flag, n
+
+    ! Local variables
+
+    integer(c_int) :: c_type_flag, c_count
+
+    c_type_flag = type_flag
+    c_count = cs_volume_zone_n_type_zones(c_type_flag)
+    n = c_count
+
+  end function volume_zone_n_type_zones
+
+  !=============================================================================
+
+  !> \brief Return the number of volume zone cells associated with a given
+  !>        type flag.
+
+  !> \param[in]   type_flag   type flag queried
+
+  function volume_zone_n_type_cells(type_flag) result(n)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer :: type_flag, n
+
+    ! Local variables
+
+    integer(c_int) :: c_type_flag, c_count
+
+    c_type_flag = type_flag
+    c_count = cs_volume_zone_n_type_cells(c_type_flag)
+    n = c_count
+
+  end function volume_zone_n_type_cells
+
+  !=============================================================================
+
+  !> \brief Return the number of volume zone cells associated with a given
+  !>        type flag.
+
+  !> \param[in]   type_flag   type flag queried
+
+  subroutine volume_zone_select_type_cells(type_flag, cell_list)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer :: type_flag
+    integer, dimension(*), intent(out), target :: cell_list
+
+    ! Local variables
+
+    integer(c_int) :: c_type_flag, c_count, i
+    type(c_ptr) :: c_cell_list
+
+    c_type_flag = type_flag
+    c_cell_list = c_loc(cell_list)
+    c_count = volume_zone_n_type_cells(c_type_flag)
+    call cs_volume_zone_select_type_cells(c_type_flag, c_cell_list)
+    do i = 1, c_count
+      cell_list(i) = cell_list(i) + 1
+    enddo
+
+  end subroutine volume_zone_select_type_cells
 
   !=============================================================================
 

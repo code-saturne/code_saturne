@@ -4356,144 +4356,93 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 }
 
 /*----------------------------------------------------------------------------
- * Head losses definition
+ * Head losses
  *
  * Fortran Interface:
  *
  * subroutine uikpdc
  * *****************
  *
- * integer          iappel   <--  number of calls during a time step
- * integer          ncepdp  -->   number of cells with head losses
- * integer          icepdc  -->   ncepdp cells number with head losses
  * double precision ckupdc  -->   head losses matrix
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
-                              int          ncepdp[],
-                              int          icepdc[],
-                              double       ckupdc[])
+void CS_PROCF(uikpdc, UIKPDC)(cs_real_t  ckupdc[])
 {
-  cs_lnum_t ielpdc, ikpdc;
+  if (!cs_gui_file_is_loaded())
+    return;
+
   double vit;
   double a11, a12, a13, a21, a22, a23, a31, a32, a33;
   double c11, c12, c13, c21, c22, c23, c31, c32, c33;
   double k11, k22, k33;
 
   const int n_zones = cs_volume_zone_n_zones();
+  const cs_lnum_t ncepdp
+    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_HEAD_LOSS);
 
-  if (*iappel == 1) {
-    cs_lnum_t count = 0;
-    for (int z_id = 0; z_id < n_zones; z_id++) {
-      const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
-      if (z->type & CS_VOLUME_ZONE_HEAD_LOSS)
-        count += z->n_cells;
-    }
-    *ncepdp = count;
-  }
+  cs_lnum_t ielpdc = 0;
 
-  else if (*iappel == 2) {
-    ielpdc = 0;
-    for (int z_id = 0; z_id < n_zones; z_id++) {
-      const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
-      if (z->type & CS_VOLUME_ZONE_HEAD_LOSS) {
-        const cs_lnum_t n_cells = z->n_cells;
-        const cs_lnum_t *cell_id = z->cell_id;
+  cs_field_t *c_vel = cs_field_by_name("velocity");
 
-        if (cell_id != NULL) {
-          for (cs_lnum_t j = 0; j < n_cells; j++) {
-            icepdc[ielpdc] = cell_id[j] + 1;
-            ielpdc++;
-          }
-        }
-        else {
-          for (cs_lnum_t j = 0; j < n_cells; j++) {
-            icepdc[ielpdc] = j + 1;
-            ielpdc++;
-          }
-        }
+  for (int z_id = 0; z_id < n_zones; z_id++) {
+    const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
+    if (z->type & CS_VOLUME_ZONE_HEAD_LOSS) {
+
+      const cs_lnum_t n_cells = z->n_cells;
+      const cs_lnum_t *cell_id = z->cell_id;
+
+      char z_id_str[32];
+      snprintf(z_id_str, 31, "%d", z_id);
+
+      k11 = _c_head_losses(z_id_str, "kxx");
+      k22 = _c_head_losses(z_id_str, "kyy");
+      k33 = _c_head_losses(z_id_str, "kzz");
+
+      a11 = _c_head_losses(z_id_str, "a11");
+      a12 = _c_head_losses(z_id_str, "a12");
+      a13 = _c_head_losses(z_id_str, "a13");
+      a21 = _c_head_losses(z_id_str, "a21");
+      a22 = _c_head_losses(z_id_str, "a22");
+      a23 = _c_head_losses(z_id_str, "a23");
+      a31 = _c_head_losses(z_id_str, "a31");
+      a32 = _c_head_losses(z_id_str, "a32");
+      a33 = _c_head_losses(z_id_str, "a33");
+
+      if (   cs_gui_is_equal_real(a12, 0.0)
+          && cs_gui_is_equal_real(a13, 0.0)
+          && cs_gui_is_equal_real(a23, 0.0)) {
+
+        c11 = k11;
+        c22 = k22;
+        c33 = k33;
+        c12 = 0.0;
+        c13 = 0.0;
+        c23 = 0.0;
+
+      }
+      else
+        _matrix_base_conversion(a11, a12, a13, a21, a22, a23, a31, a32, a33,
+                                k11, 0.0, 0.0, 0.0, k22, 0.0, 0.0, 0.0, k33,
+                                &c11, &c12, &c13,
+                                &c21, &c22, &c23,
+                                &c31, &c32, &c33);
+
+      for (cs_lnum_t j = 0; j < n_cells; j++) {
+        cs_lnum_t iel = (cell_id != NULL) ? cell_id[j] : j;
+        vit =   c_vel->val_pre[3 * iel    ] * c_vel->val_pre[3 * iel    ]
+              + c_vel->val_pre[3 * iel + 1] * c_vel->val_pre[3 * iel + 1]
+              + c_vel->val_pre[3 * iel + 2] * c_vel->val_pre[3 * iel + 2];
+        vit = sqrt(vit);
+        ckupdc[0 * ncepdp + ielpdc] = 0.5 * c11 * vit;
+        ckupdc[1 * ncepdp + ielpdc] = 0.5 * c22 * vit;
+        ckupdc[2 * ncepdp + ielpdc] = 0.5 * c33 * vit;
+        ckupdc[3 * ncepdp + ielpdc] = 0.5 * c12 * vit;
+        ckupdc[4 * ncepdp + ielpdc] = 0.5 * c23 * vit;
+        ckupdc[5 * ncepdp + ielpdc] = 0.5 * c13 * vit;
+        ielpdc++;
       }
     }
-  }
-
-  else if (*iappel == 3) {
-
-    for (ikpdc = 0; ikpdc < 6; ikpdc++) {
-      for (ielpdc = 0; ielpdc < *ncepdp; ielpdc++)
-        ckupdc[ikpdc * (*ncepdp) + ielpdc] = 0.0;
-    }
-
-    ielpdc = 0;
-
-    cs_field_t *c_vel = cs_field_by_name("velocity");
-
-    for (int z_id = 0; z_id < n_zones; z_id++) {
-      const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
-      if (z->type & CS_VOLUME_ZONE_HEAD_LOSS) {
-
-        const cs_lnum_t n_cells = z->n_cells;
-        const cs_lnum_t *cell_id = z->cell_id;
-
-        char z_id_str[32];
-        snprintf(z_id_str, 31, "%d", z_id);
-
-        k11 = _c_head_losses(z_id_str, "kxx");
-        k22 = _c_head_losses(z_id_str, "kyy");
-        k33 = _c_head_losses(z_id_str, "kzz");
-
-        a11 = _c_head_losses(z_id_str, "a11");
-        a12 = _c_head_losses(z_id_str, "a12");
-        a13 = _c_head_losses(z_id_str, "a13");
-        a21 = _c_head_losses(z_id_str, "a21");
-        a22 = _c_head_losses(z_id_str, "a22");
-        a23 = _c_head_losses(z_id_str, "a23");
-        a31 = _c_head_losses(z_id_str, "a31");
-        a32 = _c_head_losses(z_id_str, "a32");
-        a33 = _c_head_losses(z_id_str, "a33");
-
-        if (   cs_gui_is_equal_real(a12, 0.0)
-            && cs_gui_is_equal_real(a13, 0.0)
-            && cs_gui_is_equal_real(a23, 0.0)) {
-
-          c11 = k11;
-          c22 = k22;
-          c33 = k33;
-          c12 = 0.0;
-          c13 = 0.0;
-          c23 = 0.0;
-
-        }
-        else
-          _matrix_base_conversion(a11, a12, a13, a21, a22, a23, a31, a32, a33,
-                                  k11, 0.0, 0.0, 0.0, k22, 0.0, 0.0, 0.0, k33,
-                                  &c11, &c12, &c13,
-                                  &c21, &c22, &c23,
-                                  &c31, &c32, &c33);
-
-        for (cs_lnum_t j = 0; j < n_cells; j++) {
-          cs_lnum_t iel = (cell_id != NULL) ? cell_id[j] : j;
-          vit =   c_vel->val_pre[3 * iel    ] * c_vel->val_pre[3 * iel    ]
-                + c_vel->val_pre[3 * iel + 1] * c_vel->val_pre[3 * iel + 1]
-                + c_vel->val_pre[3 * iel + 2] * c_vel->val_pre[3 * iel + 2];
-          vit = sqrt(vit);
-          ckupdc[0 * (*ncepdp) + ielpdc] = 0.5 * c11 * vit;
-          ckupdc[1 * (*ncepdp) + ielpdc] = 0.5 * c22 * vit;
-          ckupdc[2 * (*ncepdp) + ielpdc] = 0.5 * c33 * vit;
-          ckupdc[3 * (*ncepdp) + ielpdc] = 0.5 * c12 * vit;
-          ckupdc[4 * (*ncepdp) + ielpdc] = 0.5 * c23 * vit;
-          ckupdc[5 * (*ncepdp) + ielpdc] = 0.5 * c13 * vit;
-          ielpdc++;
-        }
-      }
-    } /* zones+1 */
-  }
-#if _XML_DEBUG_
-  bft_printf("==>uikpdc\n");
-  if (*iappel == 1)
-    bft_printf("--%i number of head losses cells: %i\n", *iappel, *ncepdp);
-  if (*iappel == 3)
-    bft_printf("--%i number of head losses cells: %i\n", *iappel, ielpdc);
-#endif
+  } /* zones+1 */
 }
 
 /*----------------------------------------------------------------------------

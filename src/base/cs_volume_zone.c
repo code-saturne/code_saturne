@@ -753,5 +753,96 @@ cs_volume_zone_log_setup(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of volume zones associated with a
+ *        given zone flag.
+ *
+ * \param[in]  type_flag  flag to compare to zone type
+ *
+ * \return  number of zones matching the given type flag
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_volume_zone_n_type_zones(int  type_flag)
+{
+  int count = 0;
+
+  for (int i = 0; i < _n_zones; i++) {
+    if (_zones[i]->type & type_flag)
+      count += 1;
+  }
+
+  return count;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of volume zone cells associated with a
+ *        given zone flag.
+ *
+ * Note that in the case of overlapping zones, a cell may be accounted
+ * for multiple times.
+ *
+ * \param[in]  type_flag  flag to compare to zone type
+ *
+ * \return  number of cells in zones matching the given type flag
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_volume_zone_n_type_cells(int  type_flag)
+{
+  cs_lnum_t count = 0;
+
+  for (int i = 0; i < _n_zones; i++) {
+    if (_zones[i]->type & type_flag)
+      count += _zones[i]->n_cells;
+  }
+
+  return count;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Select cells associated with volume zones of a given type.
+ *
+ * Note that in the case of overlapping zones, a cell may be accounted
+ * for multiple times.
+ *
+ * \param[in]   type_flag  flag to compare to zone type
+ * \param[out]  cell_id    ids of selected cells (size: given by
+ *                         \ref cs_volume_zone_n_type_cells)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_volume_zone_select_type_cells(int        type_flag,
+                                 cs_lnum_t  cell_id[])
+{
+  cs_lnum_t count = 0;
+
+  for (int i = 0; i < _n_zones; i++) {
+    const cs_volume_zone_t *z = _zones[i];
+    if (z->type & type_flag) {
+      const cs_lnum_t _n_cells = z->n_cells;
+      const cs_lnum_t *_cell_id = z->cell_id;
+      if (_cell_id != NULL) {
+        for (cs_lnum_t j = 0; j < _n_cells; j++) {
+          cell_id[count] = _cell_id[j];
+          count++;
+        }
+      }
+      else {
+        for (cs_lnum_t j = 0; j < _n_cells; j++) {
+          cell_id[count] = j;
+          count++;
+        }
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

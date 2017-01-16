@@ -305,6 +305,54 @@ void
 cs_volume_zone_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of volume zones associated with a
+ *        given zone flag.
+ *
+ * \param[in]  type_flag  flag to compare to zone type
+ *
+ * \return  number of zones matching the given type flag
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_volume_zone_n_type_zones(int  type_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of volume zone cells associated with a
+ *        given zone flag.
+ *
+ * Note that in the case of overlapping zones, a cell may be accounted
+ * for multiple times.
+ *
+ * \param[in]  type_flag  flag to compare to zone type
+ *
+ * \return  number of cells in zones matching the given type flag
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_volume_zone_n_type_cells(int  type_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Select cells associated with volume zones of a given type.
+ *
+ * Note that in the case of overlapping zones, a cell may be accounted
+ * for multiple times.
+ *
+ * \param[in]   type_flag  flag to compare to zone type
+ * \param[out]  cell_id    ids of selected cells (size: given by
+ *                         \ref cs_volume_zone_n_type_cells)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_volume_zone_select_type_cells(int        type_flag,
+                                 cs_lnum_t  cell_id[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

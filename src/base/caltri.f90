@@ -202,16 +202,9 @@ allocate(izftcd(ncel)) ! should be in init_pcond only
 ! ---------
 
 ! Initialize
-ncepdc = 0
-ncetsm = 0
 
-if (iihmpr.eq.1) then
-  call uikpdc &
-( iappel ,          &
-  ncepdc ,          &
-  ivoid  ,          &
-  rvoid  )
-endif
+ncetsm = volume_zone_n_type_cells(VOLUME_ZONE_SOURCE_TERM)
+ncepdc = volume_zone_n_type_cells(VOLUME_ZONE_HEAD_LOSS)
 
 call cs_user_head_losses &
 ( ncepdc , iappel ,                                              &
@@ -655,17 +648,16 @@ endif
 
 if (ncpdct.gt.0) then
 
-  iappel = 2
-
   if (iflow .eq.1) then
     do iel = 1, ncepdc
       icepdc(iel) = iel
     enddo
   endif
 
-  if (iihmpr.eq.1) then
-    call uikpdc(iappel, ncepdc, icepdc, ckupdc)
-  endif
+  ncepdc = volume_zone_n_type_cells(VOLUME_ZONE_HEAD_LOSS)
+  call volume_zone_select_type_cells(VOLUME_ZONE_HEAD_LOSS, icepdc)
+
+  iappel = 2
 
   call cs_user_head_losses &
 ( ncepdc , iappel ,                                              &
@@ -675,13 +667,13 @@ if (ncpdct.gt.0) then
 
 endif
 
-! On appelle cs_user_mass_source_terms lorqu'il y a sur un processeur au moins
+! On appelle cs_user_mass_source_terms lorsqu'il y a sur un processeur au moins
 !     des cellules avec terme source de masse.
 !     On ne fait que remplir le tableau d'indirection des cellules
 !     On appelle cependant cs_user_mass_source_terms avec tous les processeurs,
 !     au cas ou l'utilisateur aurait mis en oeuvre des operations globales.
 
-if(nctsmt.gt.0) then
+if (nctsmt.gt.0) then
 
   iappel = 2
   call cs_user_mass_source_terms &

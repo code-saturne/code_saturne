@@ -529,18 +529,15 @@ endif
 
 if (ncpdct.gt.0) then
 
-  iappel = 3
-
   do ikpdc = 1, 6
     do ielpdc = 1, ncepdc
       ckupdc(ielpdc,ikpdc) = 0.d0
     enddo
   enddo
 
-  if (iihmpr.eq.1) then
-    call uikpdc &
-  ( iappel, ncepdc, icepdc, ckupdc)
-  endif
+  call uikpdc(ckupdc)
+
+  iappel = 3
 
   call cs_user_head_losses &
 ( ncepdc , iappel ,                                              &
