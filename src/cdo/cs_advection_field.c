@@ -755,8 +755,8 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
 /*!
  * \brief  Compute the value of the advection field at vertices
  *
- * \param[in]      adv     pointer to a cs_adv_field_t structure
- * \param[in, out] vect    pointer to a cs_nvec3_t structure (meas/unitv)
+ * \param[in]      adv          pointer to a cs_adv_field_t structure
+ * \param[in, out] vtx_values   array storing the results
  */
 /*----------------------------------------------------------------------------*/
 

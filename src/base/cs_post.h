@@ -76,7 +76,7 @@ BEGIN_C_DECLS
 #define CS_POST_MESH_VOLUME           -1       /* volume mesh output */
 #define CS_POST_MESH_BOUNDARY         -2       /* boundary mesh output */
 #define CS_POST_MESH_PARTICLES        -3       /* particle output */
-#define CS_POST_MESH_PROBES           -4       /* probess output */
+#define CS_POST_MESH_PROBES           -4       /* probes output */
 #define CS_POST_MESH_TRAJECTORIES     -3       /* particle output */
 
 /*============================================================================
