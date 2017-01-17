@@ -290,6 +290,9 @@ cs_mesh_location_get_n_elts(int id);
  * A list of elements is defined if the location is a subset of a main
  * location type.
  *
+ * \deprecated  Use \ref cs_mesh_location_get_elt_ids_try or
+ * \ref cs_mesh_location_get_elt_ids instead.
+ *
  * parameters:
  *   id <-- id of mesh location
  *
@@ -299,6 +302,40 @@ cs_mesh_location_get_n_elts(int id);
 
 const cs_lnum_t *
 cs_mesh_location_get_elt_list(int id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a mesh location's element ids, if present.
+ *
+ * An array of element ids is returned if the location is a subset of a main
+ * main location type, and NULL is returned when the id array would map to
+ * the identity function (i.e. {0, 1, 2, ..., n_elts-1}).
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return  pointer to elements array (0 to n-1 numbering).
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_mesh_location_get_elt_ids_try(int id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a mesh location's element ids.
+ *
+ * \This function may only be used with a given location if
+ * \ref cs_mesh_location_set_explicit_ids has been used to indicate
+ * explicit ids are needed for this location.
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return  pointer to elements array (0 to n-1 numbering).
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_mesh_location_get_elt_ids(int id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -325,6 +362,34 @@ cs_mesh_location_get_selection_string(int  id);
 
 cs_mesh_location_select_t *
 cs_mesh_location_get_selection_function(int  id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if \ref cs_mesh_location_get_elt_ids always returns
+ *         explicit element ids for a given mesh location.
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return true if explicit element ids are required, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_mesh_location_get_explicit_ids(int id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set behavior of \ref cs_mesh_location_get_elt_ids for a given
+ *         mesh location and locations based on it.
+ *
+ * \param[in]  id                id of mesh location
+ * \param[in]  explicit_elt_ids  indicate if explicit element ids are required
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_location_set_explicit_ids(int   id,
+                                  bool  explicit_elt_ids);
 
 /*----------------------------------------------------------------------------*/
 

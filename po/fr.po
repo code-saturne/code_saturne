@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-01-16 17:04+0100\n"
+"POT-Creation-Date: 2017-01-17 12:47+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -11226,11 +11226,17 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Noncontiguous volume zone ids in XML: zone with index %d has id %d.\n"
+msgid ""
+"\n"
+" Warning: noncontiguous volume zone ids in XML:\n"
+"          zone with index %d has id %d.\n"
 msgstr ""
 
 #, c-format
-msgid "Noncontiguous boundary zone ids in XML: zone with index %d has id %d.\n"
+msgid ""
+"\n"
+" Warning: noncontiguous boundary zone ids in XML:\n"
+"          zone with index %d has id %d.\n"
 msgstr ""
 
 #, c-format
@@ -14504,6 +14510,13 @@ msgstr ""
 msgid ""
 "A selection criteria is given but no associated selector\n"
 "is available for mesh location %d of type %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"Explicit ids have not been built for mesh location %d\n"
+"or its base type.\n"
+"Use cs_mesh_location_set_explicit_ids."
 msgstr ""
 
 msgid ""

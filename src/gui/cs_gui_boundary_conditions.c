@@ -1615,11 +1615,9 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
                 _("zone's label number %i is greater than %i,"
                   " the maximum allowed \n"), zone_nbr, *nozppm);
 
-    cs_lnum_t *tmp_list = NULL;
     const cs_lnum_t *faces_list
       = cs_gui_get_boundary_faces(boundaries->label[izone],
-                                  &faces,
-                                  &tmp_list);
+                                  &faces);
 
     /* check if faces are already marked with a zone number */
 
@@ -1638,7 +1636,6 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
         izfppp[ifbr] = zone_nbr;
       }
     } /* for ifac */
-    BFT_FREE(tmp_list);
   } /*  for izone */
 
   /* Check for zone overlap errors */
@@ -1794,11 +1791,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
     zone_nbr = cs_gui_boundary_zone_number(ith_zone);
 
-    cs_lnum_t *tmp_list = NULL;
     const cs_lnum_t *faces_list
       = cs_gui_get_boundary_faces(boundaries->label[izone],
-                                  &faces,
-                                  &tmp_list);
+                                  &faces);
 
     /* Mapped inlet ? */
 
@@ -2981,7 +2976,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
     }
 
-    BFT_FREE(tmp_list);
   } /*  for (izone=0 ; izone < zones ; izone++) */
 
 #if _XML_DEBUG_
@@ -2990,9 +2984,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
   for (izone = 0 ; izone < zones ; izone++) {
 
-    cs_lnum_t *tmp_list = NULL;
     const cs_lnum_t *faces_list
-      = cs_gui_get_boundary_faces(boundaries->label[izone], &faces, &tmp_list);
+      = cs_gui_get_boundary_faces(boundaries->label[izone], &faces);
 
     zone_nbr = cs_gui_boundary_zone_number(izone+1);
 
@@ -3100,7 +3093,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
       }
     }
-    BFT_FREE(tmp_list);
   }
 #endif
 }
@@ -3171,11 +3163,8 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
                 _("zone's label number %i is greater than %i,"
                   " the maximum allowed \n"), zone_nbr, *nozppm);
 
-    cs_lnum_t *tmp_list = NULL;
     const cs_lnum_t *faces_list
-      = cs_gui_get_boundary_faces(boundaries->label[izone],
-                                  &faces,
-                                  &tmp_list);
+      = cs_gui_get_boundary_faces(boundaries->label[izone], &faces);
 
     for (ifac = 0; ifac < faces; ifac++) {
       ifbr = faces_list[ifac];
@@ -3252,7 +3241,6 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
              "@                                                            \n"),
            boundaries->label[izone], boundaries->nature[izone], inature2);
     }
-    BFT_FREE(tmp_list);
   } /*  for izone */
 }
 
@@ -3378,14 +3366,9 @@ cs_gui_boundary_zone_localization(const char  *label)
 /*-----------------------------------------------------------------------------
  * Helper to get the face list for the izone
  *
- * If the matching mesh locator leads to an empty (trivial) list, a temporary
- * list is created. The caller should always free tmp_list if non-NULL
- * once the list is no longer needed.
- *
  * parameters:
  *   label     <--  boundary label
  *   n_faces   -->  number of faces
- *   tmp_list  -->  pointer to list to free after use, or NULL
  *
  * returns:
  *   pointer to face list
@@ -3393,29 +3376,14 @@ cs_gui_boundary_zone_localization(const char  *label)
 
 const cs_lnum_t *
 cs_gui_get_boundary_faces(const char   *label,
-                          cs_lnum_t    *n_faces,
-                          cs_lnum_t   **tmp_faces)
+                          cs_lnum_t    *n_faces)
 {
   const cs_lnum_t *faces_list = NULL;
-  cs_lnum_t *_tmp_faces = NULL;
 
   const cs_boundary_zone_t *z = cs_boundary_zone_by_name(label);
 
   *n_faces = z->n_faces;
-
-  if (z->face_id != NULL || tmp_faces == NULL)
-    faces_list = z->face_id;
-
-  else if (z->n_faces > 0) {
-    cs_lnum_t _n_faces = z->n_faces;
-    BFT_MALLOC(_tmp_faces, _n_faces, cs_lnum_t);
-    for (cs_lnum_t i = 0; i < _n_faces; i++)
-      _tmp_faces[i] = i;
-    faces_list = _tmp_faces;
-  }
-
-  if (tmp_faces != NULL)
-    *tmp_faces = _tmp_faces;
+  faces_list = z->face_id;
 
   return faces_list;
 }

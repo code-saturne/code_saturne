@@ -103,10 +103,10 @@ struct _cs_mesh_location_t {
   char                       *select_str;   /* String */
   cs_mesh_location_select_t  *select_fp;    /* Function pointer */
   int                         n_sub_ids;    /* Number of mesh location ids
-                                               used to build a new mesh location
-                                            */
+                                               used to build this location */
   int                        *sub_ids;      /* List of mesh location ids */
   bool                        complement;   /* Take the complement ? */
+  bool                        explicit_ids; /* Need explicit ids ? */
 
   cs_lnum_t                   n_elts[3];    /* Number of associated elements:
                                                0: local,
@@ -144,6 +144,11 @@ const char  *cs_mesh_location_type_name[] = {N_("none"),
 static int                  _n_mesh_locations_max = 0;
 static int                  _n_mesh_locations = 0;
 static cs_mesh_location_t  *_mesh_location = NULL;
+
+/* Shared explicit ids */
+
+static cs_lnum_t            _explicit_ids_size = 0;
+static cs_lnum_t           *_explicit_ids = NULL;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -271,6 +276,7 @@ _mesh_location_define(const char               *name,
   ml->n_sub_ids = 0;
   ml->sub_ids = NULL;
   ml->complement = false;
+  ml->explicit_ids = false;
 
   for (i = 0; i < 3; i++)
     ml->n_elts[i] = 0;
@@ -457,6 +463,8 @@ cs_mesh_location_finalize(void)
 {
   int  i;
 
+  BFT_FREE(_explicit_ids);
+
   for (i = 0; i < _n_mesh_locations; i++) {
     cs_mesh_location_t  *ml = _mesh_location + i;
     BFT_FREE(ml->elt_list);
@@ -464,6 +472,7 @@ cs_mesh_location_finalize(void)
     BFT_FREE(ml->sub_ids);
   }
 
+  _explicit_ids_size = 0;
   _n_mesh_locations = 0;
   _n_mesh_locations_max = 0;
 
@@ -493,6 +502,8 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
 {
   int  ml_id;
   int id_start = 0, id_end = _n_mesh_locations;
+
+  cs_lnum_t  explicit_ids_size = 0;
 
   assert(mesh != NULL);
   assert(   mesh->halo != NULL
@@ -587,7 +598,20 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
       }
     }
 
+    if (ml->explicit_ids && explicit_ids_size < ml->n_elts[0])
+      explicit_ids_size = ml->n_elts[0];
+
   } /* Loop on mesh locations */
+
+  if (explicit_ids_size != _explicit_ids_size) {
+    if (id == 0 || explicit_ids_size > _explicit_ids_size) {
+      cs_lnum_t s_id = (id == 0) ? 0 : _explicit_ids_size;
+      _explicit_ids_size = explicit_ids_size;
+      BFT_REALLOC(_explicit_ids, _explicit_ids_size, cs_lnum_t);
+      for (cs_lnum_t i = s_id; i < _explicit_ids_size; i++)
+        _explicit_ids[i] = i;
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -774,9 +798,12 @@ cs_mesh_location_get_n_elts(int id)
  * A list of elements is defined if the location is a subset of a main
  * location type.
  *
+ * \deprecated  Use \ref cs_mesh_location_get_elt_ids_try or
+ * \ref cs_mesh_location_get_elt_ids instead.
+ *
  * \param[in]  id  id of mesh location
  *
- * \return  pointer to elements list (0 to n-1 numbering).
+ * \return  pointer to elements array (0 to n-1 numbering).
  */
 /*----------------------------------------------------------------------------*/
 
@@ -786,6 +813,61 @@ cs_mesh_location_get_elt_list(int id)
   const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
 
   return ml->elt_list;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a mesh location's element ids, if present.
+ *
+ * An array of element ids is returned if the location is a subset of a main
+ * main location type, and NULL is returned when the id array would map to
+ * the identity function (i.e. {0, 1, 2, ..., n_elts-1}).
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return  pointer to elements array (0 to n-1 numbering).
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_mesh_location_get_elt_ids_try(int id)
+{
+  const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
+
+  return ml->elt_list;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a mesh location's element ids.
+ *
+ * \This function may only be used with a given location if
+ * \ref cs_mesh_location_set_explicit_ids has been used to indicate
+ * explicit ids are needed for this location type.
+ *
+ * \param[in]  id  id of mesh location
+ *
+ * \return  pointer to elements array (0 to n-1 numbering).
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_lnum_t *
+cs_mesh_location_get_elt_ids(int id)
+{
+  const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
+
+  if (! (   _mesh_location->explicit_ids
+         || (_mesh_location + ml->type)->explicit_ids))
+    bft_error(__FILE__, __LINE__, 0,
+              _("Explicit ids have not been built for mesh location %d\n"
+                "or its base type.\n"
+                "Use cs_mesh_location_set_explicit_ids."), id);
+
+  const cs_lnum_t *retval = ml->elt_list;
+  if (retval == NULL)
+    retval = _explicit_ids;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -822,6 +904,42 @@ cs_mesh_location_get_selection_function(int  id)
   const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
 
   return ml->select_fp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if \ref cs_mesh_location_get_elt_ids always returns
+ *         explicit element ids for a given mesh location type.
+ *
+ * \param[in]  type  type of location
+ *
+ * \return true if explicit element ids are needed, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_mesh_location_get_explicit_ids(int id)
+{
+  const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
+  return ml->explicit_ids;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set behavior of \ref cs_mesh_location_get_elt_ids for mesh
+ *         mesh location type.
+ *
+ * \param[in]  type              type of location
+ * \param[in]  explicit_elt_ids  indicate if explicit element ids are needed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_location_set_explicit_ids(int   id,
+                                  bool  explicit_elt_ids)
+{
+  cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
+  ml->explicit_ids = explicit_elt_ids;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -318,6 +318,8 @@ cs_volume_zone_initialize(void)
 {
   assert(_n_zones == 0);
 
+  cs_mesh_location_set_explicit_ids(CS_MESH_LOCATION_CELLS, true);
+
   const char *name = cs_mesh_location_get_name(CS_MESH_LOCATION_CELLS);
 
   cs_volume_zone_t *z = _zone_define(name);
@@ -392,7 +394,7 @@ cs_volume_zone_build_all(bool  mesh_modified)
       has_time_varying = true;
     }
     z->n_cells = cs_mesh_location_get_n_elts(z->location_id)[0];
-    z->cell_id = cs_mesh_location_get_elt_list(z->location_id);
+    z->cell_id = cs_mesh_location_get_elt_ids(z->location_id);
   }
 
   /* Assign maximum zone id and check for overlap errors

@@ -227,14 +227,9 @@ cs_gui_boundary_zone_localization(const char *label);
 /*-----------------------------------------------------------------------------
  * Helper to get the face list for the izone
  *
- * If the matching mesh locator leads to an empty (trivial) list, a temporary
- * list is created. The caller should always free tmp_list if non-NULL
- * once the list is no longer needed.
- *
  * parameters:
  *   label     <--  boundary label
  *   n_faces   -->  number of faces
- *   tmp_list  -->  pointer to list to free after use, or NULL
  *
  * returns:
  *   pointer to face list
@@ -242,8 +237,7 @@ cs_gui_boundary_zone_localization(const char *label);
 
 const cs_lnum_t *
 cs_gui_get_boundary_faces(const char   *label,
-                          cs_lnum_t    *n_faces,
-                          cs_lnum_t   **tmp_faces);
+                          cs_lnum_t    *n_faces);
 
 /*----------------------------------------------------------------------------
  * Free boundary conditions structures

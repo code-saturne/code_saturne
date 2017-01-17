@@ -288,6 +288,8 @@ cs_boundary_zone_initialize(void)
 {
   assert(_n_zones == 0);
 
+  cs_mesh_location_set_explicit_ids(CS_MESH_LOCATION_BOUNDARY_FACES, true);
+
   const char *name = cs_mesh_location_get_name(CS_MESH_LOCATION_BOUNDARY_FACES);
 
   cs_boundary_zone_t *z = _zone_define(name);
@@ -383,7 +385,7 @@ cs_boundary_zone_build_all(bool  mesh_modified)
       has_time_varying = true;
     }
     z->n_faces = cs_mesh_location_get_n_elts(z->location_id)[0];
-    z->face_id = cs_mesh_location_get_elt_list(z->location_id);
+    z->face_id = cs_mesh_location_get_elt_ids(z->location_id);
   }
 
   /* Assign maximum zone id and check for overlap errors

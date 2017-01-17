@@ -101,7 +101,7 @@ cs_user_zones(void)
     }
   }
   /*! [user_zones_volume_1] */
- 
+
   /* Example:
      define simple boundary zones, allowing all faces not in the
      "INLET" or "OUTLET" groups to be considered as walls */
