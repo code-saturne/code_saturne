@@ -1278,6 +1278,11 @@ class XMLinit(Variables):
         if node:
             node.xmlRemoveNode()
 
+        # renumber boundary and volume zones if required
+
+        bd = LocalizationModel('BoundaryZone', self.case)
+        bd.renumberZones()
+
 
 
 #-------------------------------------------------------------------------------

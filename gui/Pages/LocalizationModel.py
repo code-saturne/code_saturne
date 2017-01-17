@@ -57,7 +57,8 @@ class Zone(object):
     """
     Zone API
     """
-    def __new__(cls, typeZone, case = None, label = None, codeNumber = None, localization = None, nature = None):
+    def __new__(cls, typeZone, case = None, label = None, codeNumber = None,
+                localization = None, nature = None):
         """
         Factory
         """
@@ -69,7 +70,8 @@ class Zone(object):
             raise ValueError("Unknown type zone")
 
 
-    def __init__(self, typeZone, case = None, label = None, codeNumber = None, localization = None, nature = None):
+    def __init__(self, typeZone, case = None, label = None, codeNumber = None,
+                 localization = None, nature = None):
         """
         """
         self.case = case
@@ -101,6 +103,7 @@ class Zone(object):
         self._natureList = []
         self._natureDict = {}
         self.case = case
+
 
     def setLabel(self, text):
         if Model().isStr(text):
@@ -499,6 +502,7 @@ class LocalizationModel(object):
         """
         Replace a zone by another in the XML file
         """
+
         newLabel = new_zone.getLabel()
         if newLabel == new_zone.defaultValues()['label']:
             newLabel = old_zone.getLabel()
@@ -867,7 +871,8 @@ class BoundaryLocalizationModel(LocalizationModel):
         LocalizationModel.setCodeNumber(self, label, codeNumber)
         #
         # XML file updating
-        node = self.__XMLBoundaryConditionsNode.xmlGetChildNode('boundary', 'name', 'nature', label = label)
+        node = self.__XMLBoundaryConditionsNode.xmlGetChildNode('boundary', 'name', 'nature',
+                                                                label = label)
         node['name'] = str(codeNumber)
 
 
@@ -958,12 +963,15 @@ class BoundaryLocalizationModel(LocalizationModel):
         LocalizationModel.deleteZone(self, label)
 
         # Get Nature
-        node = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'name', 'nature', label = label)
+        node = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'name', 'nature',
+                                                           label = label)
         nature = node['nature']
         node.xmlRemoveNode()
 
         # Delete nature boundary
         Boundary(nature, label, self.case).delete()
+
+        self.renumberZones()
 
 
     @Variables.undoGlobal
@@ -973,26 +981,36 @@ class BoundaryLocalizationModel(LocalizationModel):
         """
         LocalizationModel.mergeZones(self, label, localization, lst)
 
-        node = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'name', 'nature', label = label)
+        node = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'name', 'nature',
+                                                           label = label)
         node.xmlSetTextNode(localization)
 
         lst.reverse()
 
         for z in lst:
-            n = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'nature', 'label', name = z + 1)
+            n = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'nature', 'label',
+                                                            name = z + 1)
             label = n['label']
             nature = n['nature']
             Boundary(nature, label, self.case).delete()
             n.xmlRemoveNode()
 
+        self.renumberZones()
+
+
+    @Variables.undoGlobal
+    def renumberZones(self):
+        """
+        Merge zones in the XML file
+        """
+
         count = 1
         for z in self.getCodeNumbersList():
-            n = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'nature', 'label', name = z)
-            n['name'] = count
+            n = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'nature', 'label',
+                                                            name = z)
+            n['name'] = str(count)
             nature = n['nature']
             count = count + 1
-            # Delete nature boundary
-            Boundary(nature, label, self.case).delete()
 
 
 #-------------------------------------------------------------------------------
