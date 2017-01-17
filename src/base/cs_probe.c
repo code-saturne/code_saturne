@@ -230,7 +230,7 @@ _get_psetkey(const char  *keyname)
     key = PSETKEY_TRANSIENT_LOC;
   else if (strcmp(keyname, "boundary") == 0)
     key = PSETKEY_BOUNDARY;
-  else if (strcmp(keyname, "mode") == 0)
+  else if (strcmp(keyname, "snap_mode") == 0)
     key = PSETKEY_SNAP_MODE;
   else if (strcmp(keyname, "selection_criteria") == 0)
     key = PSETKEY_SELECT_CRIT;
