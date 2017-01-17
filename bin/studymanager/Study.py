@@ -653,7 +653,7 @@ class Study(object):
     """
     Create, run and compare all cases for a given study.
     """
-    def __init__(self, pkg, parser, study, exe, dif, rlog):
+    def __init__(self, pkg, parser, study, exe, dif, rlog, force_rm=False):
         """
         Constructor.
           1. initialize attributes,
@@ -667,12 +667,15 @@ class Study(object):
         @param exe: name of the solver executable: C{code_saturne} or C{neptune_cfd}.
         @type dif: C{String}
         @param dif: name of the diff executable: C{cs_io_dump -d}.
+        @type force_rm: C{True} or C{False}
+        @param force_rm: remove always existing cases
         """
         # Initialize attributes
         self.__parser   = parser
         self.__main_exe = exe
         self.__diff     = dif
         self.__log      = rlog
+        self.__force_rm = force_rm
 
         self.__repo = os.path.join(self.__parser.getRepository(),  study)
         self.__dest = os.path.join(self.__parser.getDestination(), study)
@@ -712,6 +715,40 @@ class Study(object):
         """
         return self.cases
 
+    def createCase(self, c, log_lines):
+        """
+        Create a case in a study
+        """
+        e = os.path.join(c.pkg.get_dir('bindir'), c.exe)
+        if c.subdomains:
+            os.mkdir(c.label)
+            os.chdir(c.label)
+            refdir = os.path.join(self.__repo, c.label)
+            retval = 1
+            for node in os.listdir(refdir):
+                ref = os.path.join(self.__repo, c.label, node)
+                if node in c.subdomains:
+                    cmd = e + " create --case " + node \
+                          + " --quiet --noref --copy-from " \
+                          + ref
+                    node_retval, t = run_studymanager_command(cmd, self.__log)
+                    # negative retcode is kept
+                    retval = min(node_retval,retval)
+                elif os.path.isdir(ref):
+                    shutil.copytree(ref, node, symlinks=True)
+                else:
+                    shutil.copy2(ref, node)
+            c.update_runcase_path(c.label, destdir=self.__dest)
+            os.chdir(self.__dest)
+        else:
+            cmd = e + " create --case " + c.label  \
+                  + " --quiet --noref --copy-from "    \
+                  + os.path.join(self.__repo, c.label)
+            retval, t = run_studymanager_command(cmd, self.__log)
+        if retval == 0:
+            log_lines += ['    - create case: ' + c.label]
+        else:
+            log_lines += ['    - create case: %s --> FAILED' % c.label]
 
     def createCases(self):
         """
@@ -766,38 +803,13 @@ class Study(object):
         log_lines = []
         for c in self.Cases:
             if not os.path.isdir(c.label):
-                e = os.path.join(c.pkg.get_dir('bindir'), c.exe)
-                if c.subdomains:
-                    os.mkdir(c.label)
-                    os.chdir(c.label)
-                    refdir = os.path.join(self.__repo, c.label)
-                    retval = 1
-                    for node in os.listdir(refdir):
-                        ref = os.path.join(self.__repo, c.label, node)
-                        if node in c.subdomains:
-                            cmd = e + " create --case " + node \
-                                  + " --quiet --noref --copy-from " \
-                                  + ref
-                            node_retval, t = run_studymanager_command(cmd, self.__log)
-                            # negative retcode is kept
-                            retval = min(node_retval,retval)
-                        elif os.path.isdir(ref):
-                            shutil.copytree(ref, node, symlinks=True)
-                        else:
-                            shutil.copy2(ref, node)
-                    c.update_runcase_path(c.label, destdir=self.__dest)
-                    os.chdir(self.__dest)
-                else:
-                    cmd = e + " create --case " + c.label  \
-                          + " --quiet --noref --copy-from "    \
-                          + os.path.join(self.__repo, c.label)
-                    retval, t = run_studymanager_command(cmd, self.__log)
-                if retval == 0:
-                    log_lines += ['    - create case: ' + c.label]
-                else:
-                    log_lines += ['    - create case: %s --> FAILED' % c.label]
+                self.createCase(c, log_lines);
             else:
-                print("Warning: the case %s already exists in the destination." % c.label)
+                if self.__force_rm == True:
+                    shutil.rmtree(c.label)
+                    self.createCase(c, log_lines)
+                else:
+                    print("Warning: the case %s already exists in the destination." % c.label)
 
         os.chdir(repbase)
 
@@ -821,29 +833,22 @@ class Studies(object):
     """
     Manage all Studies and all Cases described in the files of parameters.
     """
-    def __init__(self, pkg, f, v, x, r, n, c, d, p, exe, dif, log, dis_tex):
+    def __init__(self, pkg, options, exe, dif):
         """
         Constructor.
           1. create if necessary the destination directory,
           2. initialize the parser and the plotter,
           3. build the list of the studies,
           4. start the report.
-        @type f: C{String}
-        @param f: xml file of parameters.
-        @type v: C{True} or C{False}
-        @param v: verbose mode.
-        @type x: C{True} or C{False}
-        @param x: update xml in repo only.
-        @type r: C{True} or C{False}
-        @param r: have to run the case.
-        @type c: C{True} or C{False}
-        @param c: have to do a comparison.
+        @type options: C{Structure}
+        @param options: structure the parameters options.
         @type exe: C{String}
         @param exe: name of the solver executable: C{code_saturne} or C{neptune_cfd}.
         @type dif: C{String}
         @param dif: name of the diff executable: C{cs_io_dump -d}.
         """
 
+        f = options.filename
         # create a first xml parser only for
         #   the repository verification and
         #   the destination creation
@@ -856,7 +861,7 @@ class Studies(object):
 
         # create if necessary the destination directory
 
-        self.__xmlupdate = x
+        self.__xmlupdate = options.update_xml
         if not self.__xmlupdate:
             self.dest = self.getDestination()
         else:
@@ -886,13 +891,14 @@ class Studies(object):
 
         # build the list of the studies
 
-        doc = os.path.join(self.dest, log)
+        doc = os.path.join(self.dest, options.log_file)
         self.__log = open(doc, "w")
         self.labels  = self.__parser.getStudiesLabel()
         self.studies = []
         for l in self.labels:
             self.studies.append( [l, Study(pkg, self.__parser, l, \
-                                  exe, dif, self.__log)] )
+                                           exe, dif, self.__log, \
+                                           options.remove_existing)] )
 
         # start the report
         self.report = os.path.join(self.dest, "report.txt")
@@ -901,13 +907,16 @@ class Studies(object):
 
         # attributes
 
-        self.__verbose = v
-        self.__running = r
-        self.__n_iter  = n
-        self.__compare = c
-        self.__ref     = d
-        self.__postpro = p
-        self.__dis_tex = dis_tex
+        self.__verbose = options.verbose
+        self.__running = options.runcase
+        self.__n_iter  = options.n_iterations
+        self.__compare = options.compare
+        self.__ref     = options.reference
+        self.__postpro = options.post
+        self.__dis_tex = options.disable_tex
+        self.__do_detailed_report = True;
+        if options.disable_report:
+            self.__do_detailed_report = False;
 
         # in case of restart
         iok = 0
@@ -1338,66 +1347,36 @@ class Studies(object):
 
         # Second detailed report
         if self.__compare or self.__postpro:
-            doc2 = Report2(self.dest, report2, self.__log)
+            if self.__do_detailed_report:
+                doc2 = Report2(self.dest, report2, self.__log)
 
-            for l, s in self.studies:
-                doc2.appendLine("\\section{%s}" % l)
+                for l, s in self.studies:
+                    doc2.appendLine("\\section{%s}" % l)
 
-                if s.matplotlib_figures or s.vtk_figures:
-                    doc2.appendLine("\\subsection{Graphical results}")
-                    for g in s.matplotlib_figures:
-                        doc2.addFigure(g)
-                    for g in s.vtk_figures:
-                        doc2.addFigure(g)
+                    if s.matplotlib_figures or s.vtk_figures:
+                        doc2.appendLine("\\subsection{Graphical results}")
+                        for g in s.matplotlib_figures:
+                            doc2.addFigure(g)
+                        for g in s.vtk_figures:
+                            doc2.addFigure(g)
 
-                for case in s.Cases:
-                    if case.is_compare == "done":
-                        run_id = None
-                        if case.run_id != "":
-                            run_id = case.run_id
-                        doc2.appendLine("\\subsection{Comparison for case %s (run_id: %s)}" % (case.label, run_id))
-                        if case.diff_value:
-                            doc2.add_row(case.diff_value, l, case.label)
-                        elif self.__compare:
-                            doc2.appendLine("No difference between the repository and the destination.")
+                    for case in s.Cases:
+                        if case.is_compare == "done":
+                            run_id = None
+                            if case.run_id != "":
+                                run_id = case.run_id
+                            doc2.appendLine("\\subsection{Comparison for case %s (run_id: %s)}" % (case.label, run_id))
+                            if case.diff_value:
+                                doc2.add_row(case.diff_value, l, case.label)
+                            elif self.__compare:
+                                doc2.appendLine("No difference between the repository and the destination.")
 
-                    # handle the input nodes that are inside case nodes
-                    if case.plot == "on" and case.is_run != "KO":
-                        nodes = self.__parser.getChilds(case.node, "input")
-                        if nodes:
-                            doc2.appendLine("\\subsection{Results for case %s}" % case.label)
-                            for node in nodes:
-                                f, dest, repo, tex = self.__parser.getInput(node)
-                                doc2.appendLine("\\subsubsection{%s}" % f)
-
-                                if dest:
-                                    d = dest
-                                    dd = self.dest
-                                elif repo:
-                                    d = repo
-                                    dd = self.repo
-                                else:
-                                    d = ""
-                                    dd = ""
-
-                                ff = os.path.join(dd, l, case.label, "RESU", d, f)
-
-                                if not os.path.isfile(ff):
-                                    print("\n\nWarning: this file does not exist: %s\n\n" % ff)
-                                elif tex == 'on':
-                                    doc2.addTexInput(ff)
-                                else:
-                                    doc2.addInput(ff)
-
-                # handle the input nodes that are inside postpro nodes
-                if self.__postpro:
-                    script, label, nodes, args = self.__parser.getPostPro(l)
-                    doc2.appendLine("\\subsection{Results for post-processing cases}")
-                    for i in range(len(label)):
-                        if script[i]:
-                            input_nodes = self.__parser.getChilds(nodes[i], "input")
-                            if input_nodes:
-                                for node in input_nodes:
+                        # handle the input nodes that are inside case nodes
+                        if case.plot == "on" and case.is_run != "KO":
+                            nodes = self.__parser.getChilds(case.node, "input")
+                            if nodes:
+                                doc2.appendLine("\\subsection{Results for case %s}" % case.label)
+                                for node in nodes:
                                     f, dest, repo, tex = self.__parser.getInput(node)
                                     doc2.appendLine("\\subsubsection{%s}" % f)
 
@@ -1411,7 +1390,7 @@ class Studies(object):
                                         d = ""
                                         dd = ""
 
-                                    ff = os.path.join(dd, l, "POST", d, f)
+                                    ff = os.path.join(dd, l, case.label, "RESU", d, f)
 
                                     if not os.path.isfile(ff):
                                         print("\n\nWarning: this file does not exist: %s\n\n" % ff)
@@ -1420,7 +1399,38 @@ class Studies(object):
                                     else:
                                         doc2.addInput(ff)
 
-            attached_files.append(doc2.close())
+                    # handle the input nodes that are inside postpro nodes
+                    if self.__postpro:
+                        script, label, nodes, args = self.__parser.getPostPro(l)
+                        doc2.appendLine("\\subsection{Results for post-processing cases}")
+                        for i in range(len(label)):
+                            if script[i]:
+                                input_nodes = self.__parser.getChilds(nodes[i], "input")
+                                if input_nodes:
+                                    for node in input_nodes:
+                                        f, dest, repo, tex = self.__parser.getInput(node)
+                                        doc2.appendLine("\\subsubsection{%s}" % f)
+
+                                        if dest:
+                                            d = dest
+                                            dd = self.dest
+                                        elif repo:
+                                            d = repo
+                                            dd = self.repo
+                                        else:
+                                            d = ""
+                                            dd = ""
+
+                                        ff = os.path.join(dd, l, "POST", d, f)
+
+                                        if not os.path.isfile(ff):
+                                            print("\n\nWarning: this file does not exist: %s\n\n" % ff)
+                                        elif tex == 'on':
+                                            doc2.addTexInput(ff)
+                                        else:
+                                            doc2.addInput(ff)
+
+                attached_files.append(doc2.close())
 
         return attached_files
 

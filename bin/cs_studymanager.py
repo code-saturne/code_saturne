@@ -86,7 +86,7 @@ def process_cmd_line(argv, pkg):
                       help="update scripts in the repository")
 
     parser.add_option("-x", "--update-xml",
-                      action="store_true", dest="updatexml", default=False,
+                      action="store_true", dest="update_xml", default=False,
                       help="update only xml files in the repository")
 
     parser.add_option("-t", "--test-compile",
@@ -123,19 +123,23 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="disable_tex", default=False,
                       help="disable text rendering with LaTex in Matplotlib (use Mathtext)")
 
+    parser.add_option("--rm",
+                      action="store_true", dest="remove_existing", default=False,
+                      help="remove existing run directories")
+
+    parser.add_option("-s", "--skip-report",
+                      action="store_true", dest="disable_report", default=False,
+                      help="disable the generation of a detailed report")
+
     (options, args) = parser.parse_args(argv)
 
-    return  options.filename, options.verbose, \
-        options.update, options.updatexml, options.compile, \
-        options.runcase, options.n_iterations, options.compare, \
-        options.reference, options.post, options.log_file, options.addresses, \
-        options.disable_tex
+    return  options
 
 #-------------------------------------------------------------------------------
 # Send the report.
 #-------------------------------------------------------------------------------
 
-def sendmail(code_name, report, labels, to, files):
+def send_report(code_name, report, labels, to, files):
     """
     Build the mail to be send.
     """
@@ -166,6 +170,9 @@ def sendmail(code_name, report, labels, to, files):
     except:
         send_mail(FROM, TO, "[ERROR] %s" % SUBJECT, retour, [], SERVER)
 
+#-------------------------------------------------------------------------------
+# Send an email
+#-------------------------------------------------------------------------------
 
 def send_mail(send_from, send_to, subject, text, files=[], server="localhost"):
     """
@@ -190,7 +197,7 @@ def send_mail(send_from, send_to, subject, text, files=[], server="localhost"):
         msg.attach(part)
 
     smtp = smtplib.SMTP(server)
-    smtp.sendmail(send_from, send_to, msg.as_string())
+    smtp.send_report(send_from, send_to, msg.as_string())
     smtp.close()
 
 #-------------------------------------------------------------------------------
@@ -211,7 +218,7 @@ def release():
 # Start point of studymanager script
 #-------------------------------------------------------------------------------
 
-def run_studymanager(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to, opt_z):
+def run_studymanager(pkg, options):
     """
     Main function
       1. parse the command line,
@@ -252,8 +259,8 @@ def run_studymanager(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c
 
     # Read the file of parameters
 
-    studies = Studies(pkg, opt_f, opt_v, opt_x, opt_r, opt_n, opt_c, opt_d, opt_p, exe, dif, opt_l, opt_z)
-    if opt_x == False:
+    studies = Studies(pkg, options, exe, dif)
+    if options.update_xml == False:
         os.chdir(studies.getDestination())
     else:
         os.chdir(studies.getRepository())
@@ -281,22 +288,22 @@ def run_studymanager(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c
 
     # Update repository if needed
 
-    if opt_u:
+    if options.update:
         studies.updateRepository()
         sys.exit(0)
 
     # Update only xml data if needed
 
-    if opt_x:
+    if options.update_xml:
         studies.updateRepository(True)
         sys.exit(0)
 
     # Check if xml for result directories in the repository are OK
 
-    if opt_c:
+    if options.compare:
         studies.check_compare(destination=False)
 
-    if opt_p:
+    if options.post:
         studies.check_script(destination=False)
         studies.check_plot(destination=False)
 
@@ -306,23 +313,23 @@ def run_studymanager(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c
 
     # Compile sources of all cases
 
-    if opt_t:
+    if options.compile:
         studies.compilation()
 
     # Preprocessing and run all cases
 
-    if opt_r:
+    if options.runcase:
         studies.run()
 
     # Compare checkpoint files
 
-    if opt_c:
+    if options.compare:
         studies.check_compare()
         studies.compare()
 
     # Postprocess results and probes
 
-    if opt_p:
+    if options.post:
         studies.check_script()
         studies.scripts()
         studies.check_plot()
@@ -336,8 +343,11 @@ def run_studymanager(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c
     # Reporting
 
     attached_file = studies.build_reports("report_global", "report_detailed")
-    if opt_to:
-        sendmail(pkg.code_name, studies.logs(), studies.getlabel(), opt_to, attached_file)
+    if len(options.addresses.split()) > 0:
+        send_report(pkg.code_name, studies.logs(),
+                    studies.getlabel(),
+                    options.addresses.split(),
+                    attached_file)
 
 #-------------------------------------------------------------------------------
 # Main
@@ -348,12 +358,10 @@ def main(argv, pkg):
     Main function.
     """
 
-    # Command line
+    # Process command line
+    options = process_cmd_line(argv, pkg)
 
-    opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, addresses, opt_z = process_cmd_line(argv, pkg)
-    opt_to  = addresses.split()
-
-    retcode = run_studymanager(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to, opt_z)
+    retcode = run_studymanager(pkg, options)
     sys.exit(retcode)
 
 #-------------------------------------------------------------------------------
