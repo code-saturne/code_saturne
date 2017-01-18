@@ -93,7 +93,7 @@ cs_user_zones(void)
 
       double s_coords[] = {0, 0, 2.0*i};
 
-      snprintf(name, 127, "source_%d");
+      snprintf(name, 127, "source_%d", i);
       snprintf(criteria, 127, "sphere[%f, %f, %f, 0.5]",
                s_coords[0], s_coords[0], s_coords[0]);
 
