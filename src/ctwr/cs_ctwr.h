@@ -109,7 +109,6 @@ typedef struct _cs_ctwr_zone_t cs_ctwr_zone_t;
  * \param[in]   xap             Beta_x_0 of the exchange law
  * \param[in]   xnp             Exponent n of the exchange law
  * \param[in]   surface         Total Surface of ingoing water
- * \param[in]   droplet_diam    Droplet diameter in rain zones
  */
 /*----------------------------------------------------------------------------*/
 
@@ -123,8 +122,7 @@ cs_ctwr_define(const char           zone_criteria[],
                cs_real_t            q_l_bc,
                cs_real_t            xap,
                cs_real_t            xnp,
-               cs_real_t            surface,
-               cs_real_t            droplet_diam);
+               cs_real_t            surface);
 
 /*----------------------------------------------------------------------------*/
 /*!

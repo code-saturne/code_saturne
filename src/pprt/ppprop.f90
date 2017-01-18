@@ -69,8 +69,10 @@ implicit none
 ! Local variables
 
 character(len=80) :: name_d, label_d
+character(len=80) :: f_name, f_label
 
 integer          idim1, type_flag, f_id
+integer          itycat
 logical       :: has_previous
 
 !===============================================================================
@@ -129,6 +131,27 @@ if (ippmod(iaeros).ge.0) then
   call add_property_field_1d('enthalpy', 'Enthalpy humid air', ihm)
   call add_property_field_1d('temperature_liquid', 'Temp liq', itml)
   call add_property_field_1d('vertvel_l', 'Vertical vel liq', ivertvel)
+
+  ! Continuous phase variables
+  !---------------------------
+
+  ! NB: 'c' stands for continuous <> 'p' stands for particles
+
+  ! Mass fraction of the continuous phase (X1)
+  f_name= 'x_c'
+  call add_property_field_1d('x_c', 'Gas mass fraction', f_id)
+
+  ! Mass fraction of the continuous phase (X1) BOUNDARY VALUE
+  f_name= 'b_x_c'
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+  call field_create(f_name,  &
+                    itycat,  &
+                    3,       & ! location (boundary faces)
+                    1,       &! dimension
+                    .false., & ! Has previous ?
+                    f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+
 endif
 
 ! Add the mixture molar mass fraction field

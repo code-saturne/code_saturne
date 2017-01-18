@@ -55,6 +55,7 @@ use cavitation
 use darcy_module
 use radiat
 use cs_nz_condensation, only: nzones
+use ctincl
 
 !===============================================================================
 
@@ -152,6 +153,7 @@ call turb_reference_values_init
 call listing_writing_period_init
 call radiat_init
 call gas_mix_options_init
+call ctwr_properties_init
 
 !===============================================================================
 ! 2. ENTREES SORTIES entsor.f90

@@ -161,9 +161,9 @@ cs_lagr_car(int              iprev,
   cs_real_t d1s3   = 1.0 / 3.0;
   cs_real_t d3s444 = 0.44 * 3.0 / 4.0;
 
-  cs_real_3_t grav = {cs_glob_physical_constants->gx,
-                      cs_glob_physical_constants->gy,
-                      cs_glob_physical_constants->gz};
+  cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
+                         cs_glob_physical_constants->gravity[1],
+                         cs_glob_physical_constants->gravity[2]};
 
   /* Compute Tp and Tc in case of thermal model
      -------------------------------------------*/

@@ -123,9 +123,10 @@ _lages1(cs_real_t           dtp,
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
   /* Initialisations*/
-  cs_real_3_t grav = {cs_glob_physical_constants->gx,
-                      cs_glob_physical_constants->gy,
-                      cs_glob_physical_constants->gz};
+  cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
+                         cs_glob_physical_constants->gravity[1],
+                         cs_glob_physical_constants->gravity[2]};
+
 
   cs_real_t tkelvi =  273.15;
 
@@ -443,9 +444,9 @@ _lages2(cs_real_t           dtp,
   /* 1. INITIALISATIONS                                                            */
   /* ==============================================================================*/
 
-  const cs_real_t grav[] = {cs_glob_physical_constants->gx,
-                            cs_glob_physical_constants->gy,
-                            cs_glob_physical_constants->gz};
+  cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
+                         cs_glob_physical_constants->gravity[1],
+                         cs_glob_physical_constants->gravity[2]};
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
@@ -779,9 +780,10 @@ _lagesd(cs_real_t           dtp,
    * 1. INITIALISATIONS
    * ======================================================================== */
 
-  cs_real_3_t grav = {cs_glob_physical_constants->gx,
-                      cs_glob_physical_constants->gy,
-                      cs_glob_physical_constants->gz};
+  cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
+                         cs_glob_physical_constants->gravity[1],
+                         cs_glob_physical_constants->gravity[2]};
+
 
   /* particle data */
   unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
@@ -2079,9 +2081,10 @@ _lagdep(cs_real_t           dtp,
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
   /* Initialisations*/
-  cs_real_3_t grav = {cs_glob_physical_constants->gx,
-                      cs_glob_physical_constants->gy,
-                      cs_glob_physical_constants->gz};
+  cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
+                         cs_glob_physical_constants->gravity[1],
+                         cs_glob_physical_constants->gravity[2]};
+
 
   cs_real_t tkelvi =  273.15;
 

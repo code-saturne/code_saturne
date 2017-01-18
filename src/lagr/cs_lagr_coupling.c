@@ -134,9 +134,9 @@ cs_lagr_coupling(cs_real_t taup[],
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
   cs_lagr_source_terms_t *lag_st = cs_glob_lagr_source_terms;
 
-  cs_real_t grav[] = {cs_glob_physical_constants->gx,
-                      cs_glob_physical_constants->gy,
-                      cs_glob_physical_constants->gz};
+  cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
+                         cs_glob_physical_constants->gravity[1],
+                         cs_glob_physical_constants->gravity[2]};
 
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;

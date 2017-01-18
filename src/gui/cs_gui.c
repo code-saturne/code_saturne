@@ -2877,9 +2877,9 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
 
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
 
-  _gravity_value("gravity_x", &(phys_cst->gx));
-  _gravity_value("gravity_y", &(phys_cst->gy));
-  _gravity_value("gravity_z", &(phys_cst->gz));
+  _gravity_value("gravity_x", &(phys_cst->gravity[0]));
+  _gravity_value("gravity_y", &(phys_cst->gravity[1]));
+  _gravity_value("gravity_z", &(phys_cst->gravity[2]));
 
   cs_real_t w_x, w_y, w_z;
   w_x = 0.;

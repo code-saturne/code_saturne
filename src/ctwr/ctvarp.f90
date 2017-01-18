@@ -103,37 +103,88 @@ icp = 0     ! Cp is variable (>=0 means variable, -1 means constant)
 
 ! The thermal transported scalar is the temperature of the bulk.
 call add_model_scalar_field('temperature', 'Temperature humid air', iscalt)
+f_id = ivarfl(isca(iscalt))
 
 ifcvsl = 0 ! Set variable diffusivity for the humid air enthalpy
            ! The diffusivity used in the transport equation will be
-           ! the cell value of the viscls array for ivarfl(isca(iscalt)).
+           ! the cell value of the viscls array for f_id
            ! This value is updated at the top of each time step in 'ctphyv'
            ! along with the other variable properties
-call field_set_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
+call field_set_key_int(f_id, kivisl, ifcvsl)
 
-! Mass fraction of dry air in the bulk, humid air
-call add_model_scalar_field('ym_dry_air', 'Ym dry air', iyma)
 
-ifcvsl = -1 ! Set constant diffusivity for the dry air mass fraction
-            ! The diffusivity used in the transport equation will be
-            ! the value of visls0(iyma)
-call field_set_key_int(ivarfl(isca(iyma)), kivisl, ifcvsl)
-
-! Injected liquid water definition - This is the separate phase
-! which is injected in the packing zones.  Not to be confused with
-! the water content in the humid air.
-! ---------------------------------------------------------------
-
-! Activate the drift: 0 (no activation),
-!                     1 (transported particle velocity)
-!                     2 (limit drop particle velocity)
-iscdri = 1
+! Rain zone phase variables
+!--------------------------
 
 ! Associate the injected liquid water with class 1
 icla = 1
 
+! NB: 'c' stands for continuous <> 'p' stands for particles
+
+! Activate the drift for all scalars with key "drift" > 0
+iscdri = 1
+
+! GNU function to return the value of iscdri
+! with the bit value of iscdri at position
+! 'DRIFT_SCALAR_CENTRIFUGALFORCE' set to one
+iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
+
 ! Mass fraction of liquid
-call add_model_scalar_field('ym_liquid', 'Ym liq', iyml)
+call add_model_scalar_field('y_p', 'Yp liq', iy_p_l)
+f_id = ivarfl(isca(iy_p_l))
+
+call field_set_key_int(f_id, keyccl, icla) ! Set the class index for the field
+
+! Scalar with drift: Create additional mass flux
+! This flux will then be reused for all scalars associated with this class
+
+! GNU function to return the value of iscdri
+! with the bit value of iscdri at position
+! 'DRIFT_SCALAR_ADD_DRIFT_FLUX' set to one
+iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+
+call field_set_key_int(f_id, keydri, iscdri)
+
+ifcvsl = -1 ! Set constant diffusivity for the injected liquid mass fraction
+            ! The diffusivity used in the transport equation will be
+            ! the value of visls0(iy_p_l)
+call field_set_key_int(f_id, kivisl, ifcvsl)
+
+! Transport and solve for the temperature of the liquid - with the same drift
+! as the mass fraction Y_l in rain zones
+! NB: Temperature of the liquidus must be transported after the bulk enthalpy
+call add_model_scalar_field('y_p_t_l', 'Tp liq', it_p_l)
+f_id = ivarfl(isca(it_p_l))
+
+call field_set_key_int(f_id, keyccl, icla)
+
+! Scalar with drift, but do not create an additional mass flux (use 'ibclr' instead of 'ibset')
+! for the enthalpy.  It reuses the mass flux of already identified with the mass fraction
+iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+
+call field_set_key_int(f_id, keydri, iscdri)
+
+ifcvsl = 0   ! Set variable diffusivity for the injected liquid enthalpy transport
+             ! The diffusivity used in the transport equation will be
+             ! the cell value of the viscls array for f_id
+call field_set_key_int(f_id, kivisl, ifcvsl)
+
+
+! Packing zones variables
+!-------------------------
+
+! Associate the injected liquid water with class 2
+icla = 2
+
+! Injected liquid water definition - This is the separate phase
+! which is injected in the packing zones.  Not to be confused with
+! the water content in the humid air.
+
+! Activate the drift for all scalars with key "drift" > 0
+iscdri = 1
+
+! Mass fraction of liquid
+call add_model_scalar_field('y_l_packing', 'Yl packing', iyml)
 f_id = ivarfl(isca(iyml))
 
 call field_set_key_int(f_id, keyccl, icla) ! Set the class index for the field
@@ -155,20 +206,19 @@ call field_set_key_int(f_id, keydri, iscdri)
 
 ifcvsl = -1 ! Set constant diffusivity for the injected liquid mass fraction
             ! The diffusivity used in the transport equation will be
-            ! the value of visls0(iyml)
-call field_set_key_int(ivarfl(isca(iyml)), kivisl, ifcvsl)
+            ! the value of f_id
+call field_set_key_int(f_id, kivisl, ifcvsl)
 
 ! Transport and solve for the enthalpy of the liquid - with the same drift
 ! as the mass fraction Y_l
 ! NB: Enthalpy of the liquidus must be transported after the bulk enthalpy
-call add_model_scalar_field('enthalpy_liquid', 'Enthalpy liq', ihml)
+call add_model_scalar_field('enthalpy_liquid', 'Enthalpy liq', ihml) ! TODO x_p_h_l or y_p_h_2
 f_id = ivarfl(isca(ihml))
 
 call field_set_key_int(f_id, keyccl, icla)
 
 ! Scalar with drift, but do not create an additional mass flux (use 'ibclr' instead of 'ibset')
-! Incredibly opaque coding!
-! for the temperature.  It reuses the mass flux of already identified with the mass fraction
+! for the enthalpy.  It reuses the mass flux of already identified with the mass fraction
 iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
 
 iscdri = ibset(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX)
@@ -177,7 +227,33 @@ call field_set_key_int(f_id, keydri, iscdri)
 
 ifcvsl = 0   ! Set variable diffusivity for the injected liquid enthalpy transport
              ! The diffusivity used in the transport equation will be
-             ! the cell value of the viscls array for ivarfl(isca(ihml)
+             ! the cell value of the viscls array for f_id
 call field_set_key_int(f_id, kivisl, ifcvsl)
+
+
+! Continuous phase variables
+!---------------------------
+
+icla = -1
+
+! NB: 'c' stands for continuous <> 'p' stands for particles
+
+! Mass fraction of dry air in the bulk, humid air
+call add_model_scalar_field('ym_water', 'Ym water', iymw)
+f_id = ivarfl(isca(iymw))
+
+call field_set_key_int(f_id, keyccl, icla)
+
+ifcvsl = -1 ! Set constant diffusivity for the dry air mass fraction
+            ! The diffusivity used in the transport equation will be
+            ! the value of visls0 of f_id
+call field_set_key_int(f_id, kivisl, ifcvsl)
+
+! Activate the drift for all scalars with key "drift" > 0
+iscdri = 1
+! Activated drift. As it is the continuous phase class (==-1)
+! the convective flux is deduced for classes > 0 and bulk class (==0)
+iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+call field_set_key_int(f_id, keydri, iscdri)
 
 end subroutine

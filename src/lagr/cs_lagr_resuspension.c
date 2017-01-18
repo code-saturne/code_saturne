@@ -351,9 +351,9 @@ cs_lagr_resuspension(void)
         /* Adhesion forces not implemented */
 
         /* Gravity forces */
-        cs_real_3_t gravity = {cs_glob_physical_constants->gx,
-                               cs_glob_physical_constants->gy,
-                               cs_glob_physical_constants->gz};
+        cs_real_3_t gravity = {cs_glob_physical_constants->gravity[0],
+                               cs_glob_physical_constants->gravity[1],
+                               cs_glob_physical_constants->gravity[2]};
 
         cs_real_t fgrav
           =   p_mass * reorient_face

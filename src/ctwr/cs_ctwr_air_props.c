@@ -55,53 +55,62 @@
 
 BEGIN_C_DECLS
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* main physical constants structure and associated pointer */
+
+static cs_ctwr_fluid_props_t _props = {
+  .humidity0 = 0.,
+  .cp_a = 0.,
+  .cp_v = 0.,
+  .cp_l = 0.,
+  .hv0 = 0.,
+  .rho_l = 0.,
+  .visc = 0.,
+  .lambda_h = 0.,
+  .lambda_l = 0.,
+  .droplet_diam = 0.
+};
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
 
-cs_ctwr_fluid_props_t  *cs_glob_ctwr_props = NULL;
+cs_ctwr_fluid_props_t *cs_glob_ctwr_props = &_props;
 
 /*============================================================================
  *  Public function prototypes for Fortran API
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Definition des proprietes physiques
- *
- * Interface Fortran :
- *
- * SUBROUTINE CTPROF
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (ctprof, CTPROF)
-(
-  const cs_real_t   *cp_a,   /* Capacite calorifique de l air        */
-  const cs_real_t   *cp_v,   /* Capacite calorifique de la vapeur    */
-  const cs_real_t   *cp_l,   /* Capacite calorifique de l eau        */
-  const cs_real_t   *hv0,    /* Chaleur latente                      */
-  const cs_real_t   *rho_l,  /* Masse volumique de l eau             */
-  const cs_real_t   *visc,   /* Molecular viscosity of humid air     */
-  const cs_real_t   *cond_h, /* Humid air conductivity               */
-  const cs_real_t   *cond_l, /* Water conductivity                   */
-  const cs_real_t   *gravx,  /* gravite selon x                      */
-  const cs_real_t   *gravy,  /* gravite selon y                      */
-  const cs_real_t   *gravz   /* gravite selon z                      */
-)
+void
+cs_ctwr_glob_properties_get_pointer(double  **humidity0,
+                                    double  **cp_a,
+                                    double  **cp_v,
+                                    double  **cp_l,
+                                    double  **hv0,
+                                    double  **rho_l,
+                                    double  **visc,
+                                    double  **lambda_h,
+                                    double  **lambda_l,
+                                    double  **droplet_diam)
 {
-  if (cs_glob_ctwr_props == NULL)
-    BFT_MALLOC(cs_glob_ctwr_props, 1, cs_ctwr_fluid_props_t);
 
-  cs_glob_ctwr_props->cp_a   = *cp_a;
-  cs_glob_ctwr_props->cp_v   = *cp_v;
-  cs_glob_ctwr_props->cp_l   = *cp_l;
-  cs_glob_ctwr_props->hv0    = *hv0;
-  cs_glob_ctwr_props->rho_l  = *rho_l;
-  cs_glob_ctwr_props->visc   = *visc;
-  cs_glob_ctwr_props->cond_h = *cond_h;
-  cs_glob_ctwr_props->cond_l = *cond_l;
-  cs_glob_ctwr_props->gravx  = *gravx;
-  cs_glob_ctwr_props->gravy  = *gravy;
-  cs_glob_ctwr_props->gravz  = *gravz;
+  *humidity0    = &(_props.humidity0    );
+  *cp_a         = &(_props.cp_a         );
+  *cp_v         = &(_props.cp_v         );
+  *cp_l         = &(_props.cp_l         );
+  *hv0          = &(_props.hv0          );
+  *rho_l        = &(_props.rho_l        );
+  *visc         = &(_props.visc         );
+  *lambda_h     = &(_props.lambda_h     );
+  *lambda_l     = &(_props.lambda_l     );
+  *droplet_diam = &(_props.droplet_diam );
 }
 
 /*----------------------------------------------------------------------------

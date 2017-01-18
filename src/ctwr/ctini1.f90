@@ -107,8 +107,5 @@ enddo
 
 call cs_user_cooling_towers()
 
-call ctprof(cp_a, cp_v, cp_l, hv0, rho_l, viscl0, lambda_h, &
-     lambda_l, gx, gy, gz)
-
 return
 end subroutine

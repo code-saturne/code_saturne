@@ -1550,10 +1550,9 @@ cs_pressure_drop_by_zone(const char *selection_crit)
   const cs_real_t *pressure = f_pres->val;
   const cs_field_t *f_vel = CS_F_(u);
   const cs_real_3_t *velocity =  (const cs_real_3_t *)f_vel->val;
-  cs_real_3_t gravity;
-  gravity[0] = cs_glob_physical_constants->gx;
-  gravity[1] = cs_glob_physical_constants->gy;
-  gravity[2] = cs_glob_physical_constants->gz;
+  cs_real_3_t gravity = {cs_glob_physical_constants->gravity[0],
+                         cs_glob_physical_constants->gravity[1],
+                         cs_glob_physical_constants->gravity[2]};
 
   /* Zone cells selection variables*/
   cs_lnum_t n_cells_sel = 0;

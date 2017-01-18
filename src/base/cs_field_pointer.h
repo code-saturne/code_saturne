@@ -186,7 +186,7 @@ typedef enum {
 
   /* Cooling tower fields */
   CS_ENUMF_(humid),          /*!< Humidity */
-  CS_ENUMF_(ym_a),           /*!< Mass fraction of dry air in humid air */
+  CS_ENUMF_(ym_w),           /*!< Mass fraction of dry air in humid air */
   CS_ENUMF_(t_l),            /*!< Injected liquid water temperature */
   CS_ENUMF_(h_l),            /*!< Injected liquid water enthalpy */
   CS_ENUMF_(ym_l),           /*!< Mass of liquid per unit volume of cell */

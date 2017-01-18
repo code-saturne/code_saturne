@@ -57,6 +57,7 @@
 #include "fvm_writer.h"
 
 #include "cs_base.h"
+#include "cs_ctwr.h"
 #include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -117,7 +118,6 @@ BEGIN_C_DECLS
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
  * fields may be set here.
- * See \subpage cs_user_cooling_towers for examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -136,16 +136,21 @@ cs_user_parameters(void)
 
     cs_ctwr_define(
         "2 or 3", /* selction criterion */
-        1, /*Evaporation model: 0 None, 1 Poppe, 2 Merkel*/
-        1, /*Type: 1 cunter current, 2 cross, 3 rain zone */
+        CS_CTWR_POPPE, /*Evaporation model:
+                         CS_CTWR_NONE None,
+                         CS_CTWR_POPPE Poppe,
+                         CS_CTWR_MERKEL Merkel*/
+        CS_CTWR_COUNTER_CURRENT, /*Type:
+                                   CS_CTWR_COUNTER_CURRENT counter current,
+                                   CS_CTWR_CROSS_CURRENT cross,
+                                   CS_CTWR_RAIN rain zone */
         -1., /* Imposed delta temperature if positive */
         0.1, /* Associated relaxation time */
         36., /* Liquid injected water temperature */
         qw,
         0.2, /* Evaportaion law constant A */
         0.5, /* Evaportaion law constant n */
-        surface,
-        0.005); /* Droplet diameter if rain zone */
+        surface);
 
   }
   /*! [ctwr_user_1] */

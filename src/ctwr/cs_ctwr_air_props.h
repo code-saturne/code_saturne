@@ -49,34 +49,20 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_real_t  cp_a;            /* Capacite calorifique de l air */
-  cs_real_t  cp_v;            /* Capacite calorifique de la vapeur */
-  cs_real_t  cp_l;            /* Capacite calorifique de l eau */
-  cs_real_t  hv0;             /* Chaleur latente */
-  cs_real_t  rho_l;           /* Masse volumique de l eau*/
-  cs_real_t  visc;            /* Viscosite Dynamique */
-  cs_real_t  cond_h;          /* Humid air conductivity            */
-  cs_real_t  cond_l;          /* Water conductivity                */
-  cs_real_t  gravx;           /* Gravite x */
-  cs_real_t  gravy;           /* Gravite y */
-  cs_real_t  gravz;           /* Gravite z */
+  cs_real_t   humidity0;       /* Reference humidity */
+  cs_real_t   cp_a;            /* Capacite calorifique de l air */
+  cs_real_t   cp_v;            /* Capacite calorifique de la vapeur */
+  cs_real_t   cp_l;            /* Capacite calorifique de l eau */
+  cs_real_t   hv0;             /* Chaleur latente */
+  cs_real_t   rho_l;           /* Masse volumique de l eau */
+  cs_real_t   visc;            /* Viscosite Dynamique */
+  cs_real_t   lambda_h;        /* Humid air conductivity */
+  cs_real_t   lambda_l;        /* Water conductivity */
+  cs_real_t   droplet_diam;    /* Drop diameter for rain zones */
 
 } cs_ctwr_fluid_props_t;
 
 extern  cs_ctwr_fluid_props_t  *cs_glob_ctwr_props;
-
-/* Structure associated to air properties */
-
-typedef struct {
-
-  cs_real_t  rho_ref; /* Reference density */
-  cs_real_t  p_ref;   /* Reference pressure */
-  cs_real_t  t_ref;   /* Reference temperature */
-  cs_real_t  delta;
-
-  cs_real_t  g[3]; /* Gravity vector */
-
-} cs_ctwr_air_props_t;
 
 /*============================================================================
  *  Public function prototypes for Fortran API
@@ -118,30 +104,6 @@ void CS_PROCF (dxsath, DXSATH)
  const cs_real_t  *th,
  const cs_real_t  *p0,
        cs_real_t  *dxsat
-);
-
-/*----------------------------------------------------------------------------
- * Communication des proprietes physiques
- *
- * Fortran interface:
- *
- * SUBROUTINE CTPROF
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (ctprof, CTPROF)
-(
- const cs_real_t  *cp_a,           /* Specific heat of air */
- const cs_real_t  *cp_v,           /* Specific heat of vapor */
- const cs_real_t  *cp_l,           /* Specific heat of liquid water */
- const cs_real_t  *hv0,            /* Chaleur latente */
- const cs_real_t  *rho_l,          /* Water density */
- const cs_real_t  *visc,           /* Viscosite Dynamique */
- const cs_real_t  *cond_h,         /* Humid air conductivity        */
- const cs_real_t  *cond_l,         /* Liquid water conductivity     */
- const cs_real_t  *gravx,          /* Gravite x */
- const cs_real_t  *gravy,          /* Gravite y */
- const cs_real_t  *gravz           /* Gravite z */
 );
 
 /*----------------------------------------------------------------------------
@@ -277,13 +239,10 @@ void CS_PROCF (h_liqwater, H_LIQUWATER)
  *   DOUBLE PRECISION H_AIR : ->  : specific enthalpy of humid air
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (h_humidair_fixed, H_HUMIDAIR_FIXED)
-(
- const cs_real_t  *x_air,
- const cs_real_t  *t_air,
-
- cs_real_t  *h_humidair_fixed
- );
+void CS_PROCF (h_humidair_fixed, H_HUMIDAIR_FIXED)(
+  const cs_real_t  *x_air,
+  const cs_real_t  *t_air,
+  cs_real_t        *h_humidair_fixed);
 
 /*============================================================================
  *  Prototypes of public function

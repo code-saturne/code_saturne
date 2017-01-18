@@ -130,7 +130,7 @@ double precision, dimension(:), pointer :: imasfl_mix, bmasfl_mix
 double precision, dimension(:,:), pointer :: vdp_i
 double precision, dimension(:), pointer :: x2
 double precision, dimension(:), pointer :: imasfl_gas, bmasfl_gas
-double precision, dimension(:), pointer :: x1, b_x1
+double precision, dimension(:), pointer :: cpro_x1, bpro_x1
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:), pointer :: cvar_k
@@ -169,10 +169,10 @@ call field_get_key_int(iflid, keydri, iscdri)
 ! Massic fraction of gas
 call field_get_id_try("x_c", id_x1)
 if (id_x1.ne.-1) then
-  call field_get_val_s(id_x1, x1)
+  call field_get_val_s(id_x1, cpro_x1)
 
   ! Mass fraction of the gas at the boundary
-  call field_get_val_s_by_name("b_x_c", b_x1)
+  call field_get_val_s_by_name("b_x_c", bpro_x1)
 
   ! Get the mass flux of the continuous phase (gas)
   ! that is the negative scalar class
@@ -525,7 +525,8 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 !===============================================================================
 
   ! For all scalar with a drift excpted the gas phase which is deduced
-  if (icla.ge.0.and.id_drift.ne.-1) then
+  ! And for those whom mass flux is imposed elsewhere
+  if (icla.ge.0.and.(.not.btest(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX))) then
 
     ! Zero additional flux at the boundary
     do ifac = 1, nfabor
@@ -617,7 +618,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
       ielup = ifacel(2,ifac)
       if (imasfl_gas(ifac).ge.0.d0) ielup = ifacel(1,ifac)
 
-      imasfl_gas(ifac) = imasfl_gas(ifac)/x1(ielup)
+      imasfl_gas(ifac) = imasfl_gas(ifac)/cpro_x1(ielup)
     enddo
 
     do ifac = 1, nfabor
@@ -625,9 +626,9 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
       !  other transport equations
       ielup = ifabor(ifac)
       if (bmasfl_gas(ifac).lt.0.d0) then
-        bmasfl_gas(ifac) = bmasfl_gas(ifac)/b_x1(ifac)
+        bmasfl_gas(ifac) = bmasfl_gas(ifac)/bpro_x1(ifac)
       else
-        bmasfl_gas(ifac) = bmasfl_gas(ifac)/x1(ielup)
+        bmasfl_gas(ifac) = bmasfl_gas(ifac)/cpro_x1(ielup)
       endif
     enddo
   endif

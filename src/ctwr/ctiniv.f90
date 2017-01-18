@@ -68,21 +68,12 @@ double precision dt(ncelet)
 
 ! Local variables
 
-integer          iel, ifac, ii, jj, f_id
+integer          iel, ifac, f_id
 integer          iflmas, iflmab
 
-double precision drop_vel(3)
-
 double precision, dimension(:), pointer :: cvar_temp, cvar_templ, cvar_yml
-double precision, dimension(:), pointer :: cvar_yma
+double precision, dimension(:), pointer :: cvar_ymw
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer :: cpro_rho
-double precision humidity, humid_sat
-double precision t_h, h_h, cp_h
-double precision t_l, h_l
-double precision den_rat
-double precision gnorm, gx_norm, gy_norm, gz_norm
-double precision liq_mass_flux, liq_surf
 
 !===============================================================================
 ! 1. Initialization
@@ -90,9 +81,8 @@ double precision liq_mass_flux, liq_surf
 
 call field_get_val_s(ivarfl(isca(iscalt)), cvar_temp)
 call field_get_val_s(ivarfl(isca(iyml)), cvar_yml)
-call field_get_val_s(ivarfl(isca(iyma)), cvar_yma)
+call field_get_val_s(ivarfl(isca(iymw)), cvar_ymw)
 call field_get_val_s(itml, cvar_templ)
-call field_get_val_s(icrom, cpro_rho)
 
 !===============================================================================
 ! 2. Standard initialization
@@ -102,7 +92,7 @@ call field_get_val_s(icrom, cpro_rho)
 if (isuite.eq.0) then
   do iel = 1, ncel
     cvar_temp(iel) = (t0 - tkelvi)
-    cvar_yma(iel) = 1.d0 / ( 1.d0 + humidity0)
+    cvar_ymw(iel) = humidity0 / ( 1.d0 + humidity0)
     ! The liquid values can be adjusted in the packing regions
     ! using 'cs_user_f_initialization'
     cvar_templ(iel) = cvar_temp(iel)
@@ -111,14 +101,14 @@ if (isuite.eq.0) then
   enddo
 
   call synsca(cvar_temp)
-  call synsca(cvar_yma)
+  call synsca(cvar_ymw)
   call synsca(cvar_templ)
   call synsca(cvar_yml)
 
   ! Diffusivities of the dry air and the injected liquid
   ! Note: this comes after 'cs_user_cooling_towers' so it will overwrite
   !       what users may have specified there
-  visls0(iyma) = 1.d-12
+  visls0(iymw) = 1.d-12
   visls0(iyml) = 1.d-12
 
   ! initialise:
@@ -169,7 +159,7 @@ call field_get_val_s(iflmab, bmasfl)
 call cs_ctwr_init_flow_vars(imasfl)
 
 call synsca(cvar_temp)
-call synsca(cvar_yma)
+call synsca(cvar_ymw)
 call synsca(cvar_templ)
 call synsca(cvar_yml)
 

@@ -113,14 +113,11 @@ double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
 
-character(len=80) :: name
-
-integer          ii, ifac, izone, mode, iel
+integer          ifac, izone, iel
 integer          icke
-integer          f_id, keyvar
 
-double precision viscla, d2s3, uref2, rhomoy, dhy, xiturb
-double precision humidity, humid_sat, t_h, cp_h, h_h
+double precision viscla, uref2, rhomoy, dhy, xiturb
+double precision humidity, t_h
 double precision t_l, h_l
 double precision, dimension(:), pointer :: brom
 
@@ -129,10 +126,6 @@ double precision, dimension(:), pointer :: brom
 !===============================================================================
 
 call field_get_val_s(ibrom, brom)
-
-d2s3 = 2.d0/3.d0
-
-call field_get_key_id("variable_id", keyvar)
 
 !===============================================================================
 ! 1.  Parallel exchanges for the user data
@@ -201,9 +194,9 @@ do ifac = 1, nfabor
        icodcl(ifac, isca(iscalt)) = 1
        rcodcl(ifac, isca(iscalt), 1) = t_h
     endif
-    if (icodcl(ifac, isca(iyma)).eq.0) then
-      icodcl(ifac, isca(iyma)) = 1
-      rcodcl(ifac, isca(iyma), 1) = 1.d0 / (1.d0 + humidity)
+    if (icodcl(ifac, isca(iymw)).eq.0) then
+      icodcl(ifac, isca(iymw)) = 1
+      rcodcl(ifac, isca(iymw), 1) = humidity / (1.d0 + humidity)
     endif
 
     ! For injected liquid
@@ -227,8 +220,8 @@ do ifac = 1, nfabor
 
     icodcl(ifac, isca(iscalt)) = 3
     rcodcl(ifac, isca(iscalt), 3) = 0.d0
-    icodcl(ifac, isca(iyma)) = 3
-    rcodcl(ifac, isca(iyma), 3) = 0.d0
+    icodcl(ifac, isca(iymw)) = 3
+    rcodcl(ifac, isca(iymw), 3) = 0.d0
 
     icodcl(ifac, isca(ihml)) = 3
     rcodcl(ifac, isca(ihml), 3) = 0.d0

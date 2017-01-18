@@ -300,9 +300,7 @@ BEGIN_C_DECLS
 /* main physical constants structure and associated pointer */
 
 static cs_physical_constants_t _physical_constants = {
-  .gx = 0.,
-  .gy = 0.,
-  .gz = 0.,
+  .gravity = {0., 0., 0.,},
   .icorio = 0};
 
 /* main fluid properties structure and associated pointer */
@@ -417,9 +415,9 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   gx     --> pointer to cs_glob_physical_constants->gx
- *   gy     --> pointer to cs_glob_physical_constants->gy
- *   gz     --> pointer to cs_glob_physical_constants->gz
+ *   gx     --> pointer to cs_glob_physical_constants->gravity[0]
+ *   gy     --> pointer to cs_glob_physical_constants->gravity[1]
+ *   gz     --> pointer to cs_glob_physical_constants->gravity[2]
  *   icorio --> pointer to cs_glob_physical_constants->icorio
  *----------------------------------------------------------------------------*/
 
@@ -429,9 +427,9 @@ cs_f_physical_constants_get_pointers(double  **gx,
                                      double  **gz,
                                      int     **icorio)
 {
-  *gx     = &(_physical_constants.gx);
-  *gy     = &(_physical_constants.gy);
-  *gz     = &(_physical_constants.gz);
+  *gx     = &(_physical_constants.gravity[0]);
+  *gy     = &(_physical_constants.gravity[1]);
+  *gz     = &(_physical_constants.gravity[2]);
   *icorio = &(_physical_constants.icorio);
 }
 
@@ -573,13 +571,13 @@ cs_physical_constants_log_setup(void)
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("    gx:          %14.5e (Gravity x component)\n"
-       "    gy:          %14.5e (Gravity y component)\n"
-       "    gz:          %14.5e (Gravity z component)\n"
+     _("    gravity:    [%14.5e, (Gravity x component)\n"
+       "                 %14.5e, (Gravity y component)\n"
+       "                 %14.5e] (Gravity z component)\n"
        "    icorio:      %14d (Coriolis source terms)\n\n"),
-       cs_glob_physical_constants->gx,
-       cs_glob_physical_constants->gy,
-       cs_glob_physical_constants->gz,
+       cs_glob_physical_constants->gravity[0],
+       cs_glob_physical_constants->gravity[1],
+       cs_glob_physical_constants->gravity[2],
        cs_glob_physical_constants->icorio);
 }
 

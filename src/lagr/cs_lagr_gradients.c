@@ -104,9 +104,9 @@ cs_lagr_gradients(int            time_id,
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
   cs_real_t   ro0 = cs_glob_fluid_properties->ro0;
-  cs_real_3_t grav = {cs_glob_physical_constants->gx,
-                      cs_glob_physical_constants->gy,
-                      cs_glob_physical_constants->gz};
+  cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
+                         cs_glob_physical_constants->gravity[1],
+                         cs_glob_physical_constants->gravity[2]};
 
   /* ====================================================================
    * 0. Parameters for gradient computation

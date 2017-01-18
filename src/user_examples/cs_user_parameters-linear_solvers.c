@@ -65,6 +65,7 @@
 #include "fvm_writer.h"
 
 #include "cs_base.h"
+#include "cs_ctwr.h"
 #include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"

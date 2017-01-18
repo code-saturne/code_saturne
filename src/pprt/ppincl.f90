@@ -656,22 +656,29 @@ module ppincl
   !> \addtogroup cool_transported
   !> \{
 
-  !> pointer to define the mass fraction of the dry air in array isca(iyma)
-  integer, save :: iyma
+  !> Pointer to define the mass fraction of the water in array isca(iymw)
+  integer, save :: iymw
 
-  !> pointer to define mass fraction of liquid water which is injected in the packing
+  !> Pointer to define mass fraction of liquid water which is injected in the packing
   integer, save :: iyml
 
-  !> pointer to define the temperature isca(itml) of liquid water which is injected in the packing
+  !> Pointer to define mass fraction of liquid water which is injected in the rain zones
+  integer, save :: iy_p_l
+
+  !> Pointer to define the temperature of liquide water in rain zone (in fact Y_l.T_l)
+  integer, save :: it_p_l
+
+  !> Pointer to define the temperature (property, deduced from enthalpy)
+  !> of liquid water which is injected in the packing
   integer, save :: itml
 
-  !> pointer to define the field enthalpy of liquid water
+  !> Pointer to define the field enthalpy of liquid water
   integer, save :: ihml
 
-  !> pointer to define the air humidity
+  !> Pointer to define the air humidity
   integer, save :: ihumid
 
-  !> pointer to define the vertical velocity of liquid water
+  !> Pointer to define the vertical velocity of liquid water
   integer, save :: ivertvel
 
   !> \}

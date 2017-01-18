@@ -123,6 +123,7 @@ $(top_srcdir)/src/cogz/coincl.f90: paramx.lo ppppar.lo ppincl.lo
 $(top_srcdir)/src/comb/cpincl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/comb/cs_coal_incl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/comb/cs_fuel_incl.f90: ppppar.lo ppthch.lo
+$(top_srcdir)/src/ctwr/ctincl.f90: cstphy.lo
 $(top_srcdir)/src/lagr/lagran.f90: cstnum.lo optcal.lo ppincl.lo radiat.lo cpincl.lo ppppar.lo cstphy.lo
 $(top_srcdir)/src/pprt/ppcpfu.f90: ppthch.lo ppppar.lo
 $(top_srcdir)/src/pprt/ppincl.f90: ppppar.lo ppthch.lo

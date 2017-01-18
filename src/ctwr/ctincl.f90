@@ -26,6 +26,10 @@ module ctincl
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
+  use cstphy
+
   implicit none
 
   !=============================================================================
@@ -35,35 +39,102 @@ module ctincl
   !> \addtogroup ctincl
   !> \{
 
+  !=============================================================================
+
+  !> Initial absolute humidity in the cooling tower
+  real(c_double), pointer, save :: humidity0
+
+  !> Cp of dry air
+  real(c_double), pointer, save :: cp_a
+
+  !> Cp of water vapour
+  real(c_double), pointer, save :: cp_v
+
+  !> Cp of liquid water
+  real(c_double), pointer, save :: cp_l
+
+  !> Enthalpy of vapourisation of water
+  real(c_double), pointer, save :: hv0
+
+  !> Density of liquid water
+  real(c_double), pointer, save :: rho_l
+
+  !> Conductivity of liquid water
+  real(c_double), pointer, save :: lambda_l
+
+  !> Conductivity of humid air
+  real(c_double), pointer, save :: lambda_h
+
+  !> Droplet diameter for rain zones and liquid water initialization
+  real(c_double), pointer, save :: droplet_diam
+
+  !> \}
 
   !=============================================================================
 
+  interface
 
-  !> Cp of dry air
-  double precision, save :: cp_a
+    !---------------------------------------------------------------------------
 
-  !> Cp of water vapour
-  double precision, save :: cp_v
+    !> \cond DOXYGEN_SHOULD_SKIP_THIS
 
-  !> Cp of liquid water
-  double precision, save :: cp_l
 
-  !> Enthalpy of vapourisation of water
-  double precision, save :: hv0
+    ! Interface to C function retrieving pointers to members of the
+    ! global fluid properties structure
+    subroutine cs_ctwr_glob_properties_get_pointer( &
+        humidity0, &
+        cp_a, cp_v, cp_l, hv0, rho_l, visc, &
+        lambda_h, lambda_l, &
+        droplet_diam) &
+        bind(C, name='cs_ctwr_glob_properties_get_pointer')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: humidity0
+      type(c_ptr), intent(out) :: cp_a, cp_v, cp_l, hv0, rho_l, visc
+      type(c_ptr), intent(out) :: lambda_h, lambda_l
+      type(c_ptr), intent(out) :: droplet_diam
+    end subroutine cs_ctwr_glob_properties_get_pointer
 
-  !> Density of liquid water
-  double precision, save :: rho_l
+    !---------------------------------------------------------------------------
 
-  !> Conductivity of liquid water
-  double precision, save :: lambda_l
+    !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
-  !> Conductivity of humid air
-  double precision, save :: lambda_h
+    !---------------------------------------------------------------------------
 
-  !> Initial absolute humidity in the cooling tower
-  double precision, save :: humidity0
+  end interface
 
-  !> \}
+contains
+
+  subroutine ctwr_properties_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_humidity0
+    type(c_ptr) :: c_cp_a, c_cp_v, c_cp_l, c_hv0, c_rho_l, c_visc
+    type(c_ptr) :: c_lambda_h, c_lambda_l
+    type(c_ptr) :: c_droplet_diam
+
+    call cs_ctwr_glob_properties_get_pointer( &
+      c_humidity0, &
+      c_cp_a, c_cp_v, c_cp_l, c_hv0, c_rho_l, c_visc, &
+      c_lambda_h, c_lambda_l, &
+      c_droplet_diam)
+
+    call c_f_pointer(c_humidity0   , humidity0   )
+    call c_f_pointer(c_cp_a        , cp_a        )
+    call c_f_pointer(c_cp_v        , cp_v        )
+    call c_f_pointer(c_cp_l        , cp_l        )
+    call c_f_pointer(c_hv0         , hv0         )
+    call c_f_pointer(c_rho_l       , rho_l       )
+    call c_f_pointer(c_visc        , viscl0      )
+    call c_f_pointer(c_lambda_h    , lambda_h    )
+    call c_f_pointer(c_lambda_l    , lambda_l    )
+    call c_f_pointer(c_droplet_diam, droplet_diam)
+
+  end subroutine ctwr_properties_init
 
   !=============================================================================
 
