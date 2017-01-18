@@ -228,6 +228,28 @@ cs_reco_pv_inside_cell(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the value of a scalar potential at a point inside a cell
+ *         The scalar potential has DoFs located at primal vertices
+ *
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      pdi          array of DoF values at vertices
+ * \param[in]      length_xcxp  lenght of the segment [x_c, x_p]
+ * \param[in]      unitv_xcxp   unitary vector pointed from x_c to x_p
+ * \param[in, out] wbuf         pointer to a temporary buffer
+ *
+ * \return the value of the reconstructed potential at the evaluation point
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_reco_pv_inside_cell(const cs_cell_mesh_t    *cm,
+                       const cs_real_t          pdi[],
+                       const cs_real_t          length_xcxp,
+                       const cs_real_t          unitv_xcxp[],
+                       cs_real_t                wbuf[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct by a constant vector a field of edge-based DoFs
  *         in a volume surrounding an edge
  *
