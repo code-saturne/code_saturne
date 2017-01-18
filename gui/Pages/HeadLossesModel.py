@@ -63,7 +63,7 @@ class HeadLossesModel(Variables, Model):
         self.node_models  = self.case.xmlGetNode('thermophysical_models')
         self.node_domain  = self.case.xmlGetNode('solution_domain')
         self.node_volzone = self.node_domain.xmlGetNode('volumic_conditions')
-        self.node_hloss   = self.node_models.xmlInitNode('heads_losses')
+        self.node_hloss   = self.node_models.xmlInitNode('head_losses')
 
         self.coeffNames = ('kxx', 'kyy', 'kzz')
         self.matrix = ('a11', 'a12', 'a13',
@@ -309,7 +309,7 @@ class HeadLossesModelTestCase(ModelTest):
         #we can test
         mdl = HeadLossesModel(self.case)
         mdl.getNameAndLocalizationZone()
-        doc = '''<heads_losses>
+        doc = '''<head_losses>
                     <head_loss zone_id="2">
                         <kxx>0</kxx>
                         <kyy>0</kyy>
@@ -324,7 +324,7 @@ class HeadLossesModelTestCase(ModelTest):
                         <a32>0</a32>
                         <a33>0</a33>
                     </head_loss>
-                </heads_losses>'''
+                </head_losses>'''
         assert mdl.node_hloss == self.xmlNodeFromString(doc),\
             'Could not set zone_id and label for head losses'
         assert mdl.getNameAndLocalizationZone() == {'toto': (2, '1 or door')},\
@@ -339,7 +339,7 @@ class HeadLossesModelTestCase(ModelTest):
 
         mdl = HeadLossesModel(self.case)
         mdl.setKCoefficients('2', 10., 100., 1000.)
-        doc = '''<heads_losses>
+        doc = '''<head_losses>
                     <head_loss zone_id="2">
                         <kxx>10</kxx>
                         <kyy>100</kyy>
@@ -354,7 +354,7 @@ class HeadLossesModelTestCase(ModelTest):
                         <a32>0</a32>
                         <a33>0</a33>
                     </head_loss>
-                </heads_losses>'''
+                </head_losses>'''
 
         assert mdl.node_hloss == self.xmlNodeFromString(doc),\
             'Could not set kxx, kyy, kzz coefficients for head losses'
@@ -362,7 +362,7 @@ class HeadLossesModelTestCase(ModelTest):
             'Could not get kxx, kyy, kzz coefficients for head losses'
 
         mdl.setCoefficient('2', 'kyy', 555.)
-        doc2 = '''<heads_losses>
+        doc2 = '''<head_losses>
                     <head_loss zone_id="2">
                         <kxx>10</kxx>
                         <kyy>555</kyy>
@@ -377,7 +377,7 @@ class HeadLossesModelTestCase(ModelTest):
                         <a32>0</a32>
                         <a33>0</a33>
                     </head_loss>
-                </heads_losses>'''
+                </head_losses>'''
 
         assert mdl.node_hloss == self.xmlNodeFromString(doc2),\
             'Could not set one coefficient for head losses'
@@ -393,7 +393,7 @@ class HeadLossesModelTestCase(ModelTest):
 
         mdl = HeadLossesModel(self.case)
         mdl.setMatrix('2', 1., 1.2, 1.5, 2., 2.2, 2.5, 3., 3.2, 3.5)
-        doc = '''<heads_losses>
+        doc = '''<head_losses>
                     <head_loss zone_id="2">
                         <kxx>0</kxx>
                         <kyy>0</kyy>
@@ -408,7 +408,7 @@ class HeadLossesModelTestCase(ModelTest):
                         <a32>3.2</a32>
                         <a33>3.5</a33>
                     </head_loss>
-                </heads_losses>'''
+                </head_losses>'''
 
         assert mdl.node_hloss == self.xmlNodeFromString(doc),\
             'Could not set matrix for head losses'
@@ -416,7 +416,7 @@ class HeadLossesModelTestCase(ModelTest):
             'Could not get matrix for head losses'
 
         mdl.setMatrixComposant('2', 'a23', 2300.55)
-        doc2='''<heads_losses>
+        doc2='''<head_losses>
                     <head_loss zone_id="2">
                         <kxx>0</kxx>
                         <kyy>0</kyy>
@@ -431,7 +431,7 @@ class HeadLossesModelTestCase(ModelTest):
                         <a32>3.2</a32>
                         <a33>3.5</a33>
                     </head_loss>
-                </heads_losses>'''
+                </head_losses>'''
         assert mdl.node_hloss == self.xmlNodeFromString(doc2),\
             'Could not set one composant of the matrix for head losses'
         assert mdl.getMatrixComposant('2', 'a23') == 2300.55,\

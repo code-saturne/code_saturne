@@ -2092,7 +2092,7 @@ _c_head_losses(const char* zone_id, const char* c)
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 3,
-                        "thermophysical_models", "heads_losses", "head_loss");
+                        "thermophysical_models", "head_losses", "head_loss");
   cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
   cs_xpath_add_element(&path, c);
   cs_xpath_add_function_text(&path);

@@ -251,7 +251,7 @@ class VolumicZone(Zone):
                 self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
             else:
                 self._natureList.append('momentum_source_term')
-                self._natureDict['momentum_source_term'] = self.tr("Volumetric source\n term")
+                self._natureDict['momentum_source_term'] = self.tr("Volumic source\n term")
             del GroundwaterModel
 
             from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
@@ -560,7 +560,7 @@ class VolumicLocalizationModel(LocalizationModel):
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_veloce = self.node_models.xmlGetNode('velocity_pressure')
         self.scalar_node = self.case.xmlGetNode('additional_scalars')
-        self.losses_node = self.case.xmlGetNode('heads_losses')
+        self.losses_node = self.case.xmlGetNode('head_losses')
 
 
     @Variables.noUndo
@@ -722,25 +722,12 @@ class VolumicLocalizationModel(LocalizationModel):
             name = node['id']
             node.xmlRemoveNode()
 
-        # Delete the other nodes for zone initializations
-        for tag in self._tagList:
-            nodeList = self.case.xmlGetNodeList(tag, zone_id=name)
-            for node in nodeList:
-                node.xmlRemoveNode()
+            # Delete the other nodes for zone initializations
+            n_d = self.case.xmlGetNodeWithAttrList('zone_id', zone_id=name)
+            for n in n_d:
+                n.xmlRemoveNode()
 
-        # Update Id's
-        XMLZonesNodes = self.__XMLVolumicConditionsNode.xmlGetChildNodeList('zone', 'label', 'id')
-
-        for node in XMLZonesNodes:
-            nodeid = int(node['id'])
-            if nodeid > int(name):
-                node['id'] = str(nodeid-1)
-
-        if self.losses_node is not None:
-            for node in self.losses_node.xmlGetNodeList('head_loss'):
-                nodeid = int(node['zone_id'])
-                if nodeid > int(name):
-                    node['zone_id'] = str(nodeid-1)
+            self.renumberZones(name)
 
 
     @Variables.undoGlobal
@@ -764,11 +751,33 @@ class VolumicLocalizationModel(LocalizationModel):
                 for node in nodeList:
                     node.xmlRemoveNode()
 
-        # Update Id's
-        count = 1
+        self.renumberZones()
+
+
+    @Variables.undoGlobal
+    def renumberZones(self, start_id='0'):
+        """
+        Renumber zones in the XML file and update dependent id's
+        """
+
         XMLZonesNodes = self.__XMLVolumicConditionsNode.xmlGetChildNodeList('zone', 'label', 'id')
+
+        n_d = self.case.xmlGetNodeWithAttrList('zone_id')
+
+        count = 1
         for node in XMLZonesNodes:
-            node['id'] = str(count)
+            zoneid = int(node['id'])
+
+            if zoneid > int(start_id):
+                new_id = str(count)
+                old_id = node['id']
+                node['id'] = new_id
+
+                for n in n_d:
+                    if n['zone_id'] == old_id:
+                        n['zone_id'] = new_id
+
+            count = count + 1
 
 
 #-------------------------------------------------------------------------------
@@ -1026,173 +1035,6 @@ class LocalizationVolumicTestCase(ModelTest):
         model = None
         model = LocalizationModel("VolumicZone", self.case)
         assert model != None, 'Could not instantiate LocalizationVolumicModel'
-
-
-    def checkInitialZone(self):
-        """Check whether the zone could be initialized"""
-        model = LocalizationModel("VolumicZone", self.case)
-        node = self.case.xmlGetNode('volumic_conditions')
-
-        doc = '''<volumic_conditions>
-                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
-                            all[]
-                    </zone>
-                 </volumic_conditions>'''
-
-        assert node == self.xmlNodeFromString(doc),\
-           'Could not initialize default volumic zone'
-
-
-    def checkAddAndDeleteZone(self):
-        """Check whether the zone could be added and deleted"""
-        model = LocalizationModel("VolumicZone", self.case)
-        node = self.case.xmlGetNode('volumic_conditions')
-        model.addZone()
-        zone = Zone("VolumicZone", label='toto', localization="1 or door")
-        model.addZone(zone)
-        zone = Zone("VolumicZone", label='fenetre', localization="12 and window or door")
-        model.addZone(zone)
-        model.addZone()
-
-        doc = '''<volumic_conditions>
-                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
-                            all[]
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
-                            not(all[])
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="toto" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="off">
-                            1 or door
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
-                            12 and window or door
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_2" mass_source_term="off" momentum_source_term="off" name="5" thermal_source_term="off">
-                            not(all[];not(all[]);1 or door;12 and window or door)
-                    </zone>
-                </volumic_conditions>'''
-
-        assert node == self.xmlNodeFromString(doc),\
-           'Could not add one volumic zone'
-
-        model.deleteZone(label="toto")
-        model.deleteZone(label="Zone_2")
-
-        doc = '''<volumic_conditions>
-                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
-                            all[]
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
-                            not(all[])
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
-                            12 and window or door
-                    </zone>
-                </volumic_conditions>'''
-
-        assert node == self.xmlNodeFromString(doc),\
-           'Could not delete one volumic zone'
-
-
-    def checkReplaceZone(self):
-        """Check whether the zone could be replaced"""
-        model = LocalizationModel("VolumicZone", self.case)
-        node = self.case.xmlGetNode('volumic_conditions')
-        model.addZone()
-        zone = Zone("VolumicZone", label='toto', localization="1 or door")
-        model.addZone(zone)
-        zone1 = Zone("VolumicZone", label='fenetre', localization="12 and window or door")
-        model.addZone(zone1)
-        new_zone = Zone("VolumicZone", label='window', localization="12 or window or door")
-##        new_zone = Zone("VolumicZone", localization="12 or window or door")
-##        new_zone = Zone("VolumicZone", label='window')
-
-        model.replaceZone(zone1, new_zone)
-
-        doc = '''<volumic_conditions>
-                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
-                            all[]
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
-                            not(all[])
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="toto" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="off">
-                            1 or door
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="window" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
-                            12 or window or door
-                    </zone>
-                </volumic_conditions>'''
-
-        assert node == self.xmlNodeFromString(doc),\
-           'Could not replace volumic zone'
-
-
-    def checkSetLabelAndLocalization(self):
-        """Check whether the zone could be set label ,and localization"""
-        model = LocalizationModel("VolumicZone", self.case)
-        node = self.case.xmlGetNode('volumic_conditions')
-        model.addZone()
-        zone = Zone("VolumicZone", label='toto', localization="1 or door")
-        model.addZone(zone)
-        zone = Zone("VolumicZone", label='fenetre', localization="12 and window or door")
-        model.addZone(zone)
-
-        model.setLocalization("Zone_1", "1 and 2 and 3 or group1")
-        doc = '''<volumic_conditions>
-                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
-                            all[]
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
-                            1 and 2 and 3 or group1
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="toto" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="off">
-                            1 or door
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
-                            12 and window or door
-                    </zone>
-                </volumic_conditions>'''
-
-        assert node == self.xmlNodeFromString(doc),\
-           'Could not set localization on volumic zone'
-
-
-    def checkSetAndGetNature(self):
-        """Check whether the zone could be set and get nature"""
-        model = LocalizationModel("VolumicZone", self.case)
-        node = self.case.xmlGetNode('volumic_conditions')
-        model.addZone()
-        zone = Zone("VolumicZone", label='porte', localization="1 or door")
-        model.addZone(zone)
-        zone = Zone("VolumicZone", label='fenetre', localization="12 and window or door")
-        model.addZone(zone)
-
-        model.setNature('porte', "head_losses,thermal_source_term")
-
-        doc = '''<volumic_conditions>
-                    <zone head_losses="off" porosity="off" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" name="1" thermal_source_term="off">
-                            all[]
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="Zone_1" mass_source_term="off" momentum_source_term="off" name="2" thermal_source_term="off">
-                            not(all[])
-                    </zone>
-                    <zone head_losses="on" porosity="off" initialization="off" label="porte" mass_source_term="off" momentum_source_term="off" name="3" thermal_source_term="on">
-                            1 or door
-                    </zone>
-                    <zone head_losses="off" porosity="off" initialization="on" label="fenetre" mass_source_term="off" momentum_source_term="off" name="4" thermal_source_term="off">
-                            12 and window or door
-                    </zone>
-                </volumic_conditions>'''
-
-        assert node == self.xmlNodeFromString(doc),\
-           'Could not set nature on volumic zone'
-
-        assert model.getNature('fenetre') == "initialization",\
-           'Could not get nature on volumic zone'
-
-        assert model.getNature('porte') == "thermal_source_term,head_losses",\
-           'Could not get nature on volumic zone'
 
 
 def suite1():

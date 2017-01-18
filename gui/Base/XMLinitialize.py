@@ -1278,11 +1278,23 @@ class XMLinit(Variables):
         if node:
             node.xmlRemoveNode()
 
+        # renames
+
+        node = self.case.xmlGetNode('thermophysical_models')
+        if node:
+            oldnode = node.xmlGetNode('heads_losses')
+            if oldnode:
+                newnode = node.xmlInitNode('head_losses')
+                newnode.xmlChildsCopy(oldnode)
+                oldnode.xmlRemoveNode()
+
         # renumber boundary and volume zones if required
 
-        bd = LocalizationModel('BoundaryZone', self.case)
-        bd.renumberZones()
+        m = LocalizationModel('BoundaryZone', self.case)
+        m.renumberZones()
 
+        m = LocalizationModel('VolumicZone', self.case)
+        m.renumberZones()
 
 
 #-------------------------------------------------------------------------------

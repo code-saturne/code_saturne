@@ -389,7 +389,7 @@ class XMLElement:
     def __getitem__(self, attr):
         """
         Return the XMLElement attribute's value
-        with a dictionary syntaxe: node['attr']
+        with a dictionary syntax: node['attr']
         Return None if the searched attribute does not exist.
         """
         a = self.el.getAttributeNode(attr)
@@ -401,7 +401,7 @@ class XMLElement:
     def __setitem__(self, attr, value):
         """
         Set a XMLElement attribute an its value
-        with a dictionary syntaxe: node['attr'] = value
+        with a dictionary syntax: node['attr'] = value
         """
         if self.ca: self.ca.modified()
         self.el.setAttribute(attr, _encode(str(value)))
@@ -411,7 +411,7 @@ class XMLElement:
 
     def __delitem__(self, name):
         """
-        Delete a XMLElement attribute with a dictionary syntaxe: del node['attr']
+        Delete a XMLElement attribute with a dictionary syntax: del node['attr']
         """
         if self.ca: self.ca.modified()
         self.xmlDelAttribute(name)
@@ -496,6 +496,52 @@ class XMLElement:
                 return False
 
 
+    def _nodeWithAttrList(self, node, *attrList, **kwargs):
+        """
+        Return a list of Element (and not XMLElement)!
+        """
+        nodeList = []
+
+        # Get the nodes list
+        #
+        nodeL = []
+
+        iok = 0
+        try:
+            for attr in attrList:
+                if node.hasAttribute(str(attr)):
+                    iok = 1
+                else:
+                    iok = 0
+                    break
+            if iok: nodeList = [node]
+        except Exception:
+            pass
+
+        if attrList and kwargs:
+            nodeL = nodeList
+            nodeList = []
+
+        for n in nodeL:
+            iok = 0
+            for k, v in list(kwargs.items()):
+                if n.getAttribute(str(k)) == str(v):
+                    iok = 1
+                else:
+                    iok = 0
+                    break
+            if iok: nodeList.append(n)
+
+        if not attrList and not kwargs:
+            nodeList = nodeL
+
+        if node.childNodes:
+            for c in node.childNodes:
+                nodeList += self._nodeWithAttrList(c, *attrList, **kwargs)
+
+        return nodeList
+
+
     def _nodeList(self, tag, *attrList, **kwargs):
         """
         Return a list of Element (and not XMLElement)!
@@ -505,23 +551,6 @@ class XMLElement:
         # Get the nodes list
         #
         nodeL = self.el.getElementsByTagName(tag)
-
-        # If there is a precision for the selection
-        #
-#TRYME
-##        for attr in attrList:
-##            for node in nodeL:
-##                if node.hasAttribute(attr) and node not in nodeList:
-##                    nodeList.append(node)
-
-##        if attrList and kwargs:
-##            nodeL = nodeList
-##            nodeList = []
-
-##        for k, v in kwargs.items():
-##            for node in nodeL:
-##                if node.getAttribute(k) == v and node not in nodeList:
-##                    nodeList.append(node)
 
         for node in nodeL:
             iok = 0
@@ -546,7 +575,6 @@ class XMLElement:
                     iok = 0
                     break
             if iok: nodeList.append(node)
-#TRYME
 
         if not attrList and not kwargs:
             nodeList = nodeL
@@ -845,6 +873,14 @@ class XMLElement:
         elt = self._inst( self.el.appendChild(self.doc.createComment(data)) )
         log.debug("xmlAddComment-> %s" % self.__xmlLog())
         return elt
+
+
+    def xmlGetNodeWithAttrList(self, *attrList, **kwargs):
+        """
+        Return a list of XMLElement nodes from the explored
+        XMLElement node (i.e. self).
+        """
+        return list(map(self._inst, self._nodeWithAttrList(self.el, *attrList, **kwargs)))
 
 
     def xmlGetNodeList(self, tag, *attrList, **kwargs):
