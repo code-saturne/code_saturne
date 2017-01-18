@@ -78,6 +78,8 @@ class Parser(object):
         @param XMLFileName: name of the xml file
         """
         self.filename = XMLFileName
+        self.__repo = None
+        self.__dest = None
 
         try:
             self.doc =  minidom.parse(XMLFileName)
@@ -94,28 +96,12 @@ class Parser(object):
             print(XMLFileName + ": Wrong XML file. The Root markup is not studymanager.\n")
             sys.exit(1)
 
+    #---------------------------------------------------------------------------
 
     def write(self):
         return self.doc.toxml()
 
-
-    def __checkDirectory(self, d):
-        """
-        Test if the given directory exists.
-        @type d: C{String}
-        @param d: name of the directory
-        @rtype: C{String}
-        @return: the directory
-        """
-        log.debug("__checkDirectory(): %s" % d)
-        dir = os.path.abspath(d)
-        if os.path.isdir(dir):
-            log.debug("__checkDirectory(): %s" % dir)
-            return dir
-        else:
-            print("Directory: %s does not exist." % dir)
-            sys.exit(1)
-
+    #---------------------------------------------------------------------------
 
     def getDataFromNode(self, father, childName):
         """
@@ -138,6 +124,7 @@ class Parser(object):
 
         return data
 
+    #---------------------------------------------------------------------------
 
     def addChild(self, father, childname):
         """
@@ -151,6 +138,7 @@ class Parser(object):
         """
         return father.appendChild(self.doc.createElement(childname))
 
+    #---------------------------------------------------------------------------
 
     def getChild(self, father, childname):
         """
@@ -172,6 +160,7 @@ class Parser(object):
             print("Error: in getChild several markup %s found." %  childname)
             sys.exit(1)
 
+    #---------------------------------------------------------------------------
 
     def getChilds(self, father, childname):
         """
@@ -185,22 +174,60 @@ class Parser(object):
         """
         return father.getElementsByTagName(childname)
 
+    #---------------------------------------------------------------------------
 
     def getRepository(self):
         """
         @rtype: C{String}
         @return: repository directory of all studies.
         """
-        return self.__checkDirectory(self.getDataFromNode(self.root, "repository"))
+        if self.__repo == None: # Set the member
+            elt = self.root.getElementsByTagName("repository");
+            if len(elt) == 1:
+                try:
+                    self.__repo=elt.item(0).firstChild.data;
+                except AttributeError:
+                    msg="Parser.getRepository() >> No repository set.\n";
+                    msg+="Add a path to the *.xml file or use the command "
+                    msg+="line argument.\n"
+                    sys.exit(msg);
 
+        return self.__repo;
+
+    #---------------------------------------------------------------------------
+
+    def setRepository(self, repo_path):
+        """
+        @rtype: C{String}
+        @param: repository directory of all studies.
+        """
+
+        self.__repo = os.path.expanduser(repo_path);
+        self.__repo = os.path.abspath(self.__repo);
+
+    #---------------------------------------------------------------------------
 
     def getDestination(self):
         """
         @rtype: C{String}
         @return: destination directory of all studies.
         """
-        return self.getDataFromNode(self.root, "destination")
+        if self.__dest == None:
+            self.__dest = self.getDataFromNode(self.root, "destination")
 
+        return self.__dest
+
+    #---------------------------------------------------------------------------
+
+    def setDestination(self, dest_path):
+        """
+        @rtype: C{String}
+        @param: destination directory of all studies.
+        """
+        self.__dest = os.path.expanduser(dest_path);
+        self.__dest = os.path.abspath(self.__dest);
+
+    #---------------------------------------------------------------------------
 
     def getStudiesLabel(self):
         """
@@ -225,6 +252,7 @@ class Parser(object):
                     sys.exit(1)
         return labels
 
+    #---------------------------------------------------------------------------
 
     def getStudyNode(self, l):
         """
@@ -253,6 +281,7 @@ class Parser(object):
 
         return node
 
+    #---------------------------------------------------------------------------
 
     def getCasesLabel(self, l, attr=None):
         """
@@ -280,6 +309,7 @@ class Parser(object):
 
         return labels
 
+    #---------------------------------------------------------------------------
 
     def getCasesKeywords(self, l):
         """
@@ -321,6 +351,7 @@ class Parser(object):
                 data.append(d)
         return data
 
+    #---------------------------------------------------------------------------
 
     def setAttribute(self, node, attr, v):
         """
@@ -347,6 +378,7 @@ class Parser(object):
         self.doc.writexml(writer)
         writer.close()
 
+    #---------------------------------------------------------------------------
 
     def getCompare(self, caseNode):
         """
@@ -385,6 +417,7 @@ class Parser(object):
 
         return compare, nodes, repo, dest, threshold, args
 
+    #---------------------------------------------------------------------------
 
     def getPrepro(self, caseNode):
         """
@@ -414,6 +447,7 @@ class Parser(object):
 
         return prepro, label, nodes, args
 
+    #---------------------------------------------------------------------------
 
     def getScript(self, caseNode):
         """
@@ -451,6 +485,7 @@ class Parser(object):
 
         return script, label, nodes, args, repo, dest
 
+    #---------------------------------------------------------------------------
 
     def getResult(self, node):
         """
@@ -479,6 +514,7 @@ class Parser(object):
 
         return plots, f, dest, repo
 
+    #---------------------------------------------------------------------------
 
     def getInput(self, node):
         """
@@ -504,6 +540,7 @@ class Parser(object):
 
         return  f, dest, repo, tex
 
+    #---------------------------------------------------------------------------
 
     def getProbes(self, node):
         """
@@ -525,6 +562,7 @@ class Parser(object):
 
         return f, dest, fig
 
+    #---------------------------------------------------------------------------
 
     def getMeasurement(self, l):
         """
@@ -557,6 +595,7 @@ class Parser(object):
 
         return nodes, files
 
+    #---------------------------------------------------------------------------
 
     def getPostPro(self, l):
         """
@@ -594,13 +633,17 @@ class Parser(object):
         return scripts, labels, nodes, args
 
 
+    #---------------------------------------------------------------------------
+
     def getSubplots(self, studyLabel):
         return self.getStudyNode(studyLabel).getElementsByTagName("subplot")
 
+    #---------------------------------------------------------------------------
 
     def getFigures(self, studyLabel):
         return self.getStudyNode(studyLabel).getElementsByTagName("figure")
 
+    #---------------------------------------------------------------------------
 
     def getPltCommands(self, node):
         """
@@ -612,6 +655,7 @@ class Parser(object):
                     cmd.append(n.childNodes[0].data)
         return cmd
 
+    #---------------------------------------------------------------------------
 
     def getVTKCommands(self, node):
         """
@@ -623,6 +667,7 @@ class Parser(object):
                     cmd.append(n.childNodes[0].data)
         return cmd
 
+    #---------------------------------------------------------------------------
 
     def getAttributes(self, node):
         """
@@ -633,6 +678,7 @@ class Parser(object):
             d[k] = node.attributes[k].value
         return d
 
+    #---------------------------------------------------------------------------
 
     def getAttribute(self, node, k, default = None):
         """
@@ -646,6 +692,7 @@ class Parser(object):
             else:
                 return default
 
+    #---------------------------------------------------------------------------
 
     def getAttributeTuple(self, node, k, default = None):
         """

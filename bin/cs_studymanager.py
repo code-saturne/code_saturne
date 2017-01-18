@@ -127,9 +127,25 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="remove_existing", default=False,
                       help="remove existing run directories")
 
-    parser.add_option("-s", "--skip-report",
-                      action="store_true", dest="disable_report", default=False,
-                      help="disable the generation of a detailed report")
+    parser.add_option("-s", "--skip-reports", default=False,
+                      action="store_true", dest="disable_reports",
+                      help="disable the generation of reports")
+
+    parser.add_option("--fmt", type="string",
+                      dest="default_fmt", default="pdf",
+                      help="Set the default format for exporting matplotlib figuer")
+
+    parser.add_option("--repo", type="string",
+                      dest="repo_path", default="",
+                      help="Force the path to the repository directory")
+
+    parser.add_option("--dest", type="string",
+                      dest="dest_path", default="",
+                      help="Force the path to the destination directory")
+
+    parser.add_option("-g", "--debug", action="store_true",
+                      dest="debug", default=False,
+                      help="Activate debugging mode")
 
     (options, args) = parser.parse_args(argv)
 
@@ -260,6 +276,8 @@ def run_studymanager(pkg, options):
     # Read the file of parameters
 
     studies = Studies(pkg, options, exe, dif)
+    if options.debug:
+        print " run_studymanager() >> Studies are initialized"
     if options.update_xml == False:
         os.chdir(studies.getDestination())
     else:
@@ -317,9 +335,14 @@ def run_studymanager(pkg, options):
         studies.compilation()
 
     # Preprocessing and run all cases
+    if options.debug:
+        print " run_studymanager() >> Starts running..."
 
     if options.runcase:
         studies.run()
+
+    if options.debug:
+        print " run_studymanager() >> Exits runs"
 
     # Compare checkpoint files
 
@@ -341,13 +364,14 @@ def run_studymanager(pkg, options):
     studies.reporting(" --------------------")
 
     # Reporting
-
-    attached_file = studies.build_reports("report_global", "report_detailed")
-    if len(options.addresses.split()) > 0:
-        send_report(pkg.code_name, studies.logs(),
-                    studies.getlabel(),
-                    options.addresses.split(),
-                    attached_file)
+    if not options.disable_reports:
+        attached_file = studies.build_reports("report_global",
+                                              "report_detailed")
+        if len(options.addresses.split()) > 0:
+            send_report(pkg.code_name, studies.logs(),
+                        studies.getlabel(),
+                        options.addresses.split(),
+                        attached_file)
 
 #-------------------------------------------------------------------------------
 # Main

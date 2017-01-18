@@ -56,12 +56,16 @@ rcParams['text.usetex']     = True
 # additional colors
 #-------------------------------------------------------------------------------
 
-bedf = (0, 0.3569, 0.7333)
-dbedf = (0.0353, 0.2078, 0.4784)
-oedf = (1, 0.6275, 0.1843)
-doedf = (0.9961, 0.3451, 0.0824)
-yedf = (0.7686, 0.8392, 0)
-gedf = (0.3137, 0.6196, 0.1843)
+bedf      = (0,      0.3569, 0.7333)
+dbedf     = (0.0353, 0.2078, 0.4784)
+oedf      = (1,      0.6275, 0.1843)
+doedf     = (0.9961, 0.3451, 0.0824)
+yedf      = (0.7686, 0.8392, 0)
+gedf      = (0.3137, 0.6196, 0.1843)
+violet    = (0.5803, 0,      0.8275)
+turquoise = (0,      0.8078, 0.8196)
+brown     = (0.5451, 0.2706, 0.0745)
+red       = (1,      0,      0)
 
 #-------------------------------------------------------------------------------
 # log config
@@ -72,9 +76,9 @@ log = logging.getLogger(__file__)
 log.setLevel(logging.NOTSET)
 #log.setLevel(logging.DEBUG)
 
-#-------------------------------------------------------------------------------
-# Curve or plot
-#-------------------------------------------------------------------------------
+#===============================================================================
+# Plot class
+#===============================================================================
 
 class Plot(object):
     """
@@ -154,16 +158,19 @@ class Plot(object):
 
         self.cmd += parser.getPltCommands(node)
 
+    #---------------------------------------------------------------------------
 
     def setMeasurement(self, bool):
         self.ismesure = bool
         if self.ismesure and self.fmt == "":
             self.fmt = 'ko'
 
+    #---------------------------------------------------------------------------
 
     def measurement(self):
         return self.ismesure
 
+    #---------------------------------------------------------------------------
 
     def uploadData(self, xcol, ycol, xplus, xfois, yplus, yfois):
         """
@@ -182,6 +189,7 @@ class Plot(object):
 
                 self.yspan.append(float(line.split()[ycol-1])*yfois + yplus)
 
+    #---------------------------------------------------------------------------
 
     def uploadErrorBar(self, errorbar, errorp, col):
         """
@@ -225,9 +233,10 @@ class Plot(object):
                         error.append(errorp/100.*float(line.split()[col-1]))
                 return error
 
-#-------------------------------------------------------------------------------
+#===============================================================================
+# Probes class
 # Curve or plot for monitoring point (probe)
-#-------------------------------------------------------------------------------
+#===============================================================================
 
 class Probes(object):
     """
@@ -237,15 +246,15 @@ class Probes(object):
         """
         Constructor of a curve.
         """
-        self.subplots  = [int(fig)]
+        self.subplots = [int(fig)]
         self.xspan    = []
         self.yspan    = []
         self.cmd      = []
         self.legend   = "Probe " + str(ycol - 1)
         self.fmt      = ""
         self.ismesure = False
-        self.xerr    = None
-        self.yerr    = None
+        self.xerr     = None
+        self.yerr     = None
 
         xcol = 1
 
@@ -259,12 +268,14 @@ class Probes(object):
 
         f.close()
 
+    #---------------------------------------------------------------------------
+
     def measurement(self):
         return self.ismesure
 
-#-------------------------------------------------------------------------------
-# SubPlot
-#-------------------------------------------------------------------------------
+#===============================================================================
+# Subplot class
+#===============================================================================
 
 class Subplot(object):
     """
@@ -314,20 +325,20 @@ class Subplot(object):
 
         self.cmd += parser.getPltCommands(node)
 
-#-------------------------------------------------------------------------------
-# Figure
-#-------------------------------------------------------------------------------
+#===============================================================================
+# Figure class
+#===============================================================================
 
 class Figure(object):
     """
     Management of a single figure (layout of several subplots).
     """
-    def __init__ (self, node, parser, curves, subplots):
+    def __init__ (self, node, parser, curves, subplots, default_fmt):
         """
         Constructor of a figure.
         """
         self.file_name = node.attributes["name"].value
-        self.format = parser.getAttribute(node, "format", "pdf")
+        self.format = parser.getAttribute(node, "format", default_fmt)
 
         for tag in ("title", "nbrow", "nbcol"):
             self.__dict__[tag] = parser.getAttribute(node, tag, False)
@@ -346,6 +357,7 @@ class Figure(object):
                 if p.id == id:
                     self.subplots.append(p)
 
+    #---------------------------------------------------------------------------
 
     def layout(self):
         """
@@ -427,9 +439,9 @@ class Figure(object):
 
         return nbrow, nbcol, hs, ri, le, ws
 
-#-------------------------------------------------------------------------------
-# Plotter
-#-------------------------------------------------------------------------------
+#===============================================================================
+# Plotter class
+#===============================================================================
 
 class Plotter(object):
     """
@@ -443,6 +455,11 @@ class Plotter(object):
         """
         self.parser = parser
 
+        # initialisation for each Study
+        self.curves  = []
+        self.figures = []
+
+    #---------------------------------------------------------------------------
 
     def __number_of_column(self, file_name):
         """
@@ -458,19 +475,17 @@ class Plotter(object):
         f.close()
         return nbr
 
+    #---------------------------------------------------------------------------
 
-    def plot_study(self, study_label, study_object, disable_tex):
+    def plot_study(self, study_label, study_object, disable_tex, default_fmt):
         """
         Method used to plot all plots from a I{study_label} (all cases).
         @type study_label: C{String}
         @param study_label: label of a study
+
         """
         # disable tex in Matplotlib (use Mathtext instead)
         rcParams['text.usetex'] = not disable_tex
-
-        # initialisation for each Study
-        self.curves  = []
-        self.figures = []
 
         # Read the parser for the Measurements Files
         nodes_list, files = self.parser.getMeasurement(study_label)
@@ -563,8 +578,12 @@ class Plotter(object):
         for node in self.parser.getSubplots(study_label):
             subplots.append(Subplot(node, self.parser, self.curves))
 
+        # Build the list of figures to handle
         for node in self.parser.getFigures(study_label):
-            self.figures.append(Figure(node, self.parser, self.curves, subplots))
+            self.figures.append(Figure(node,
+                                       self.parser, self.curves,
+                                       subplots,
+                                       default_fmt))
 
         for figure in self.figures:
             # Plot curve
@@ -582,7 +601,7 @@ class Plotter(object):
             # save the figure
             self.__save(f, figure.format)
 
-
+    #---------------------------------------------------------------------------
 
     def __draw_curve(self, ax, curve, p):
         """
@@ -619,6 +638,7 @@ class Plotter(object):
 
         plt.hold(True)
 
+    #---------------------------------------------------------------------------
 
     def __draw_axis(self, ax, p):
         if p.xlabel:
@@ -630,6 +650,7 @@ class Plotter(object):
         if p.ylim:
             ax.set_ylim((p.ylim[0], p.ylim[1]))
 
+    #---------------------------------------------------------------------------
 
     def __draw_legend(self, ax, p, bool, hs, ws, ri, le):
         if p.legstatus == "on":
@@ -676,6 +697,7 @@ class Plotter(object):
                                         right=ri2,
                                         left=le2)
 
+    #---------------------------------------------------------------------------
 
     def plot_figure(self, figure):
         """
@@ -735,11 +757,15 @@ class Plotter(object):
                 except:
                     print("Error with the matplotlib command: %s" % cmd)
 
+    #---------------------------------------------------------------------------
 
     def __save(self, f, fmt):
         """method used to save the figure"""
         f = f + "." + fmt
-        plt.savefig(f, format=fmt, bbox_inches="tight", pad_inches=0.)
+        if fmt == "png":
+            plt.savefig(f, format=fmt, dpi=800)
+        else:
+            plt.savefig(f, format=fmt, bbox_inches="tight", pad_inches=0.)
         plt.close()
 
 #-------------------------------------------------------------------------------

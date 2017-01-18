@@ -69,6 +69,10 @@ def nodot(item):
 
 #-------------------------------------------------------------------------------
 
+#===============================================================================
+# Case class
+#===============================================================================
+
 class Case(object):
     def __init__(self, pkg, rlog, diff, parser, study, data, repo, dest):
         """
@@ -123,6 +127,7 @@ class Case(object):
             run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
             self.exe, self.pkg = self.__get_exe(pkg, run_ref)
 
+    #---------------------------------------------------------------------------
 
     def __get_exe(self, old_pkg, run_ref):
         """
@@ -143,6 +148,7 @@ class Case(object):
 
         return runcase.cmd_name, pkg
 
+    #---------------------------------------------------------------------------
 
     def __update_domain(self, subdir, xmlonly=False):
         """
@@ -220,6 +226,7 @@ class Case(object):
         # 4) Update the runcase script from the Repository
         self.update_runcase_path(os.path.join(self.__repo, subdir, "SCRIPTS"), None, xmlonly)
 
+    #---------------------------------------------------------------------------
 
     def update_runcase_path(self, subdir, destdir=None, xmlonly=False):
         """
@@ -254,6 +261,7 @@ class Case(object):
         f.writelines(lines)
         f.close()
 
+    #---------------------------------------------------------------------------
 
     def update(self, xmlonly=False):
         """
@@ -304,6 +312,7 @@ class Case(object):
             except IOError:
                 pass
 
+    #---------------------------------------------------------------------------
 
     def compile(self, d):
         """
@@ -342,6 +351,7 @@ class Case(object):
 
         return self.is_compil
 
+    #---------------------------------------------------------------------------
 
     def __suggest_run_id(self):
 
@@ -359,6 +369,7 @@ class Case(object):
 
         return run_id, os.path.join(self.__dest, self.label, self.resu, run_id)
 
+    #---------------------------------------------------------------------------
 
     def __updateRuncase(self, run_id):
         """
@@ -438,6 +449,7 @@ class Case(object):
         f.writelines(lines)
         f.close()
 
+    #---------------------------------------------------------------------------
 
     def run(self):
         """
@@ -494,6 +506,7 @@ class Case(object):
 
         return error
 
+    #---------------------------------------------------------------------------
 
     def runCompare(self, studies, r, d, threshold, args, reference=None):
         home = os.getcwd()
@@ -559,6 +572,7 @@ class Case(object):
 
         return tab
 
+    #---------------------------------------------------------------------------
 
     def check_dir(self, studies, node, result, rep, attr):
         """
@@ -647,7 +661,9 @@ class Case(object):
             result = os.path.join(self.__dest, self.label, self.resu)
             self.check_dir(studies, node, result, dest, "dest")
 
-#-------------------------------------------------------------------------------
+#===============================================================================
+# Study class
+#===============================================================================
 
 class Study(object):
     """
@@ -706,6 +722,7 @@ class Study(object):
                          self.__dest)
                 self.Cases.append(c)
 
+    #---------------------------------------------------------------------------
 
     def getCasesLabel(self):
         """
@@ -714,6 +731,8 @@ class Study(object):
         @return: labels of the cases
         """
         return self.cases
+
+    #---------------------------------------------------------------------------
 
     def createCase(self, c, log_lines):
         """
@@ -749,6 +768,8 @@ class Study(object):
             log_lines += ['    - create case: ' + c.label]
         else:
             log_lines += ['    - create case: %s --> FAILED' % c.label]
+
+    #---------------------------------------------------------------------------
 
     def createCases(self):
         """
@@ -815,6 +836,7 @@ class Study(object):
 
         return log_lines
 
+    #---------------------------------------------------------------------------
 
     def getRunDirectories(self):
         list_cases = []
@@ -827,7 +849,9 @@ class Study(object):
 
         return " ".join(list_cases), " ".join(list_dir)
 
-#-------------------------------------------------------------------------------
+#===============================================================================
+# Studies class
+#===============================================================================
 
 class Studies(object):
     """
@@ -857,21 +881,28 @@ class Studies(object):
 
         # Test if the repository exists
 
-        self.repo = self.getRepository()
+        if len(options.repo_path) > 0:
+            self.__parser.setRepository(options.repo_path)
+        self.__repo = self.__parser.getRepository()
+        if not os.path.isdir(self.__repo):
+            msg="Studies.__init__() >> self.__repo = {0}\n".format(self.__repo)
+            sys.exit(msg+"Error: repository path is not valid.")
 
         # create if necessary the destination directory
 
+        if len(options.dest_path) > 0:
+            self.__parser.setDestination(options.dest_path)
         self.__xmlupdate = options.update_xml
         if not self.__xmlupdate:
-            self.dest = self.getDestination()
+            self.__dest = self.__parser.getDestination()
         else:
-            self.dest = self.getRepository()
-        if not os.path.isdir(self.dest):
-            os.makedirs(self.dest)
+            self.__dest = self.__repo
+        if not os.path.isdir(self.__dest):
+            os.makedirs(self.__dest)
 
         # copy the xml file of parameters for update and restart
 
-        file = os.path.join(self.dest, os.path.basename(f))
+        file = os.path.join(self.__dest, os.path.basename(f))
         try:
             shutil.copyfile(f, file)
         except:
@@ -880,6 +911,11 @@ class Studies(object):
         # create a new parser, which is definitive and the plotter
 
         self.__parser  = Parser(file)
+        self.__parser.setDestination(self.__dest)
+        self.__parser.setRepository(self.__repo)
+        if options.debug:
+            print " Studies >> Repository  >> ", self.__repo
+            print " Studies >> Destination >> ", self.__dest
         try:
             self.__plotter = Plotter(self.__parser)
         except Exception:
@@ -891,7 +927,7 @@ class Studies(object):
 
         # build the list of the studies
 
-        doc = os.path.join(self.dest, options.log_file)
+        doc = os.path.join(self.__dest, options.log_file)
         self.__log = open(doc, "w")
         self.labels  = self.__parser.getStudiesLabel()
         self.studies = []
@@ -899,24 +935,25 @@ class Studies(object):
             self.studies.append( [l, Study(pkg, self.__parser, l, \
                                            exe, dif, self.__log, \
                                            options.remove_existing)] )
+            if options.debug:
+                print " >> Append study ", l
 
         # start the report
-        self.report = os.path.join(self.dest, "report.txt")
+        self.report = os.path.join(self.__dest, "report.txt")
         self.reportFile = open(self.report, mode='w')
         self.reportFile.write('\n')
 
         # attributes
 
-        self.__verbose = options.verbose
-        self.__running = options.runcase
-        self.__n_iter  = options.n_iterations
-        self.__compare = options.compare
-        self.__ref     = options.reference
-        self.__postpro = options.post
-        self.__dis_tex = options.disable_tex
-        self.__do_detailed_report = True;
-        if options.disable_report:
-            self.__do_detailed_report = False;
+        self.__debug       = options.debug
+        self.__verbose     = options.verbose
+        self.__running     = options.runcase
+        self.__n_iter      = options.n_iterations
+        self.__compare     = options.compare
+        self.__ref         = options.reference
+        self.__postpro     = options.post
+        self.__default_fmt = options.default_fmt;
+        self.__dis_tex     = options.disable_tex
 
         # in case of restart
         iok = 0
@@ -930,6 +967,34 @@ class Studies(object):
         if self.__xmlupdate:
             os.remove(file)
             os.remove(doc)
+
+    #---------------------------------------------------------------------------
+
+    def getDestination(self):
+        """
+        @rtype: C{String}
+        @return: destination directory of all studies.
+        """
+        if self.__dest == None:
+            msg=" Study.py >> Studies.getDestination()"
+            msg+=" >> self.__dest is not set"
+            sys.exit(msg)
+        return self.__dest
+
+    #---------------------------------------------------------------------------
+
+    def getRepository(self):
+        """
+        @rtype: C{String}
+        @return: repository directory of all studies.
+        """
+        if self.__repo == None:
+            msg=" Study.py >> Studies.getRepository()"
+            msg+=" >> self.__repo is not set"
+            sys.exit(msg)
+        return self.__repo
+
+    #---------------------------------------------------------------------------
 
     def reporting(self, msg, screen_only=False):
         """
@@ -952,50 +1017,28 @@ class Studies(object):
             self.reportFile.write(msg + '\n')
             self.reportFile.flush()
 
-
-    def getRepository(self):
-        """
-        Return the directory of the repository.
-        @rtype: C{String}
-        @return: the directory of the repository of all studies.
-        """
-        r = self.__parser.getRepository()
-
-        if not os.path.isdir(r):
-            self.reporting('Error: the repository does not exist.')
-            sys.exit(1)
-
-        return r
-
-
-    def getDestination(self):
-        """
-        Return the directory of the destination.
-        @rtype: C{String}
-        @return: the directory of the destination.
-        """
-        return self.__parser.getDestination()
-
+    #---------------------------------------------------------------------------
 
     def updateRepository(self, xml_only=False):
         """
         Create all studies and all cases.
         """
-        iok = 0
+        iko = 0
         for l, s in self.studies:
             self.reporting('  o Update repository: ' + l)
             for case in s.Cases:
                 self.reporting('    - update  %s' % case.label)
                 case.update(xml_only)
-                if case.compile(os.path.join(self.repo, l)) == "OK":
+                if case.compile(os.path.join(self.__repo, l)) == "OK":
                     self.reporting('    - compile %s --> OK' % case.label)
                 else:
                     self.reporting('    - compile %s --> FAILED' % case.label)
-                    iok+=1
-        if iok:
-            self.reporting('Error: compilation failed. Number of failed cases: %s' % iok)
+                    iko+=1
+        if iko:
+            self.reporting('Error: compilation failed. Number of failed cases: %s' % iko)
             sys.exit(1)
 
+    #---------------------------------------------------------------------------
 
     def createStudies(self):
         """
@@ -1007,25 +1050,27 @@ class Studies(object):
             for line in log_lines:
                 self.reporting(line)
 
+    #---------------------------------------------------------------------------
 
     def compilation(self):
         """
         Compile sources of all cases.
         """
-        iok = 0
+        iko = 0
         for l, s in self.studies:
             self.reporting('  o Compile study: ' + l)
             for case in s.Cases:
                 if case.compute == 'on':
-                    if case.compile(os.path.join(self.dest, l)) == "OK":
+                    if case.compile(os.path.join(self.__dest, l)) == "OK":
                         self.reporting('    - compile %s --> OK' % case.label)
                     else:
                         self.reporting('    - compile %s --> FAILED' % case.label)
-                        iok+=1
-        if iok:
-            self.reporting('Error: compilation failed. Number of failed cases: %s' % iok)
+                        iko+=1
+        if iko > 0:
+            self.reporting('Error: compilation failed. Number of failed cases: %s' % iko)
             sys.exit(1)
 
+    #---------------------------------------------------------------------------
 
     def prepro(self, l, s, case):
         """
@@ -1036,10 +1081,10 @@ class Studies(object):
             if pre[i]:
                 # search if the script is the directoty MESH
                 # if not, the script is searched in the directories of the current case
-                cmd = os.path.join(self.dest, l, "MESH", label[i])
+                cmd = os.path.join(self.__dest, l, "MESH", label[i])
                 if not os.path.isfile(cmd):
                     filePath = ""
-                    for root, dirs, fs in os.walk(os.path.join(self.dest, l, case.label)):
+                    for root, dirs, fs in os.walk(os.path.join(self.__dest, l, case.label)):
                         if label[i] in fs:
                             filePath = root
                             break
@@ -1048,9 +1093,9 @@ class Studies(object):
 
                 if os.path.isfile(cmd):
                     cmd += " " + args[i]
-                    cmd += " -c " + os.path.join(self.dest, l, case.label)
+                    cmd += " -c " + os.path.join(self.__dest, l, case.label)
                     repbase = os.getcwd()
-                    os.chdir(os.path.join(self.dest, l, "MESH"))
+                    os.chdir(os.path.join(self.__dest, l, "MESH"))
                     # Prepro external script might need pythondir and pkgpythondir
                     pdir = case.pkg.get_dir('pythondir')
                     pdir = pdir + ":" + case.pkg.get_dir('pkgpythondir')
@@ -1067,6 +1112,8 @@ class Studies(object):
                     self.reporting('    - script %s not found' % cmd)
 
 
+    #---------------------------------------------------------------------------
+
     def run(self):
         """
         Update and run all cases.
@@ -1082,10 +1129,10 @@ class Studies(object):
 
                         if self.__n_iter:
                             if case.subdomains:
-                                case_dir = os.path.join(self.dest, s.label, case.label,
+                                case_dir = os.path.join(self.__dest, s.label, case.label,
                                                         case.subdomains[0], "DATA")
                             else:
-                                case_dir = os.path.join(self.dest, s.label, case.label, "DATA")
+                                case_dir = os.path.join(self.__dest, s.label, case.label, "DATA")
                             os.chdir(case_dir)
                             # Create a control_file in each case DATA
                             if not os.path.exists('control_file'):
@@ -1120,6 +1167,7 @@ class Studies(object):
 
                         self.__log.flush()
 
+    #---------------------------------------------------------------------------
 
     def check_compare(self, destination=True):
         """
@@ -1152,6 +1200,7 @@ class Studies(object):
                             dest = None
                         case.check_dirs(self, node, repo, dest, reference=ref)
 
+    #---------------------------------------------------------------------------
 
     def compare(self):
         """
@@ -1191,7 +1240,7 @@ class Studies(object):
                             else:
                                 self.reporting('    - compare %s (default mode) --> NO DIFFERENCES FOUND' % (case.label))
 
-
+    #---------------------------------------------------------------------------
 
     def check_script(self, destination=True):
         """
@@ -1207,6 +1256,7 @@ class Studies(object):
                             dest[i] = None
                         case.check_dirs(self, nodes[i], repo[i], dest[i])
 
+    #---------------------------------------------------------------------------
 
     def scripts(self):
         """
@@ -1218,20 +1268,21 @@ class Studies(object):
                 script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
                 for i in range(len(label)):
                     if script[i] and case.is_run != "KO":
-                        cmd = os.path.join(self.dest, l, "POST", label[i])
+                        cmd = os.path.join(self.__dest, l, "POST", label[i])
                         if os.path.isfile(cmd):
                             cmd += " " + args[i]
                             if repo[i]:
-                                r = os.path.join(self.repo,  l, case.label, "RESU", repo[i])
+                                r = os.path.join(self.__repo,  l, case.label, "RESU", repo[i])
                                 cmd += " -r " + r
                             if dest[i]:
-                                d = os.path.join(self.dest, l, case.label, "RESU", dest[i])
+                                d = os.path.join(self.__dest, l, case.label, "RESU", dest[i])
                                 cmd += " -d " + d
                             retcode, t = run_studymanager_command(cmd, self.__log)
                             self.reporting('    - script %s --> OK (%s s)' % (cmd, t))
                         else:
                             self.reporting('    - script %s not found' % cmd)
 
+    #---------------------------------------------------------------------------
 
     def postpro(self):
         """
@@ -1243,7 +1294,7 @@ class Studies(object):
             for case in s.Cases:
                 if case.is_run != "KO":
                     if case.run_dir == "":
-                        resu = os.path.join(self.dest, l, case.label, case.resu)
+                        resu = os.path.join(self.__dest, l, case.label, case.resu)
                         rep = case.check_dir(self, None, resu, "", "dest")
                         case.run_id = rep
                         case.run_dir = os.path.join(resu, rep)
@@ -1252,7 +1303,7 @@ class Studies(object):
             script, label, nodes, args = self.__parser.getPostPro(l)
             for i in range(len(label)):
                 if script[i]:
-                    cmd = os.path.join(self.dest, l, "POST", label[i])
+                    cmd = os.path.join(self.__dest, l, "POST", label[i])
                     if os.path.isfile(cmd):
                         list_cases, list_dir = s.getRunDirectories()
                         cmd += ' ' + args[i] + ' -c "' + list_cases + '" -d "' + list_dir + '" -s ' + l
@@ -1261,6 +1312,7 @@ class Studies(object):
                     else:
                         self.reporting('    - postpro %s not found' % cmd)
 
+    #---------------------------------------------------------------------------
 
     def check_plot(self, destination=True):
         """
@@ -1295,6 +1347,7 @@ class Studies(object):
                             dest = None
                         case.check_dirs(self, node, repo, dest)
 
+    #---------------------------------------------------------------------------
 
     def plot(self):
         """
@@ -1303,12 +1356,15 @@ class Studies(object):
         if self.__plotter:
             for l, s in self.studies:
                 self.reporting('  o Plot study: ' + l)
-                self.__plotter.plot_study(l, s, self.__dis_tex)
+                self.__plotter.plot_study(l, s,
+                                          self.__dis_tex,
+                                          self.__default_fmt)
 
         if self.__plotvtk:
             for l, s in self.studies:
                 self.__plotvtk.plot_study(l, s)
 
+    #---------------------------------------------------------------------------
 
     def build_reports(self, report1, report2):
         """
@@ -1321,8 +1377,8 @@ class Studies(object):
         """
         attached_files = []
 
-        # Fisrt global report
-        doc1 = Report1(self.dest,
+        # First global report
+        doc1 = Report1(self.__dest,
                        report1,
                        self.__log,
                        self.report,
@@ -1347,50 +1403,80 @@ class Studies(object):
 
         # Second detailed report
         if self.__compare or self.__postpro:
-            if self.__do_detailed_report:
-                doc2 = Report2(self.dest, report2, self.__log)
+            doc2 = Report2(self.__dest, report2, self.__log)
 
-                for l, s in self.studies:
-                    doc2.appendLine("\\section{%s}" % l)
+            for l, s in self.studies:
+                doc2.appendLine("\\section{%s}" % l)
 
-                    if s.matplotlib_figures or s.vtk_figures:
-                        doc2.appendLine("\\subsection{Graphical results}")
-                        for g in s.matplotlib_figures:
-                            doc2.addFigure(g)
-                        for g in s.vtk_figures:
-                            doc2.addFigure(g)
+                if s.matplotlib_figures or s.vtk_figures:
+                    doc2.appendLine("\\subsection{Graphical results}")
+                    for g in s.matplotlib_figures:
+                        doc2.addFigure(g)
+                    for g in s.vtk_figures:
+                        doc2.addFigure(g)
 
-                    for case in s.Cases:
-                        if case.is_compare == "done":
-                            run_id = None
-                            if case.run_id != "":
-                                run_id = case.run_id
-                            doc2.appendLine("\\subsection{Comparison for case %s (run_id: %s)}" % (case.label, run_id))
-                            if case.diff_value:
-                                doc2.add_row(case.diff_value, l, case.label)
-                            elif self.__compare:
-                                doc2.appendLine("No difference between the repository and the destination.")
+                for case in s.Cases:
+                    if case.is_compare == "done":
+                        run_id = None
+                        if case.run_id != "":
+                            run_id = case.run_id
+                        doc2.appendLine("\\subsection{Comparison for case %s (run_id: %s)}" % (case.label, run_id))
+                        if case.diff_value:
+                            doc2.add_row(case.diff_value, l, case.label)
+                        elif self.__compare:
+                            doc2.appendLine("No difference between the repository and the destination.")
 
-                        # handle the input nodes that are inside case nodes
-                        if case.plot == "on" and case.is_run != "KO":
-                            nodes = self.__parser.getChilds(case.node, "input")
-                            if nodes:
-                                doc2.appendLine("\\subsection{Results for case %s}" % case.label)
-                                for node in nodes:
+                    # handle the input nodes that are inside case nodes
+                    if case.plot == "on" and case.is_run != "KO":
+                        nodes = self.__parser.getChilds(case.node, "input")
+                        if nodes:
+                            doc2.appendLine("\\subsection{Results for case %s}" % case.label)
+                            for node in nodes:
+                                f, dest, repo, tex = self.__parser.getInput(node)
+                                doc2.appendLine("\\subsubsection{%s}" % f)
+
+                                if dest:
+                                    d = dest
+                                    dd = self.__dest
+                                elif repo:
+                                    d = repo
+                                    dd = self.__repo
+                                else:
+                                    d = ""
+                                    dd = ""
+
+                                ff = os.path.join(dd, l, case.label, "RESU", d, f)
+
+                                if not os.path.isfile(ff):
+                                    print("\n\nWarning: this file does not exist: %s\n\n" % ff)
+                                elif tex == 'on':
+                                    doc2.addTexInput(ff)
+                                else:
+                                    doc2.addInput(ff)
+
+                # handle the input nodes that are inside postpro nodes
+                if self.__postpro:
+                    script, label, nodes, args = self.__parser.getPostPro(l)
+                    doc2.appendLine("\\subsection{Results for post-processing cases}")
+                    for i in range(len(label)):
+                        if script[i]:
+                            input_nodes = self.__parser.getChilds(nodes[i], "input")
+                            if input_nodes:
+                                for node in input_nodes:
                                     f, dest, repo, tex = self.__parser.getInput(node)
                                     doc2.appendLine("\\subsubsection{%s}" % f)
 
                                     if dest:
                                         d = dest
-                                        dd = self.dest
+                                        dd = self.__dest
                                     elif repo:
                                         d = repo
-                                        dd = self.repo
+                                        dd = self.__repo
                                     else:
                                         d = ""
                                         dd = ""
 
-                                    ff = os.path.join(dd, l, case.label, "RESU", d, f)
+                                    ff = os.path.join(dd, l, "POST", d, f)
 
                                     if not os.path.isfile(ff):
                                         print("\n\nWarning: this file does not exist: %s\n\n" % ff)
@@ -1399,45 +1485,16 @@ class Studies(object):
                                     else:
                                         doc2.addInput(ff)
 
-                    # handle the input nodes that are inside postpro nodes
-                    if self.__postpro:
-                        script, label, nodes, args = self.__parser.getPostPro(l)
-                        doc2.appendLine("\\subsection{Results for post-processing cases}")
-                        for i in range(len(label)):
-                            if script[i]:
-                                input_nodes = self.__parser.getChilds(nodes[i], "input")
-                                if input_nodes:
-                                    for node in input_nodes:
-                                        f, dest, repo, tex = self.__parser.getInput(node)
-                                        doc2.appendLine("\\subsubsection{%s}" % f)
-
-                                        if dest:
-                                            d = dest
-                                            dd = self.dest
-                                        elif repo:
-                                            d = repo
-                                            dd = self.repo
-                                        else:
-                                            d = ""
-                                            dd = ""
-
-                                        ff = os.path.join(dd, l, "POST", d, f)
-
-                                        if not os.path.isfile(ff):
-                                            print("\n\nWarning: this file does not exist: %s\n\n" % ff)
-                                        elif tex == 'on':
-                                            doc2.addTexInput(ff)
-                                        else:
-                                            doc2.addInput(ff)
-
-                attached_files.append(doc2.close())
+            attached_files.append(doc2.close())
 
         return attached_files
 
+    #---------------------------------------------------------------------------
 
     def getlabel(self):
         return self.labels
 
+    #---------------------------------------------------------------------------
 
     def logs(self):
         try:
@@ -1447,6 +1504,7 @@ class Studies(object):
         self.reportFile = open(self.report, mode='r')
         return self.reportFile.read()
 
+    #---------------------------------------------------------------------------
 
     def __del__(self):
         try:
