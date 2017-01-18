@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-01-17 12:47+0100\n"
+"POT-Creation-Date: 2017-01-18 15:51+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -9274,6 +9274,9 @@ msgstr "perte de charge"
 
 msgid "source term"
 msgstr "terme source"
+
+msgid "mass source term"
+msgstr "terme source de masse"
 
 msgid "cell with forbidden zone overlap"
 msgstr ""

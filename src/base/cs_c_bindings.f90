@@ -47,7 +47,8 @@ module cs_c_bindings
   integer :: RESTART_1D_WALL_THERMAL, RESTART_LES_INFLOW
 
   integer :: VOLUME_ZONE_INITIALIZATION, VOLUME_ZONE_POROSITY
-  integer :: VOLUME_ZONE_HEAD_LOSS, VOLUME_ZONE_SOURCE_TERM
+  integer :: VOLUME_ZONE_HEAD_LOSS
+  integer :: VOLUME_ZONE_SOURCE_TERM, VOLUME_ZONE_MASS_SOURCE_TERM
 
   parameter (MESH_LOCATION_NONE=0)
   parameter (MESH_LOCATION_CELLS=1)
@@ -73,6 +74,7 @@ module cs_c_bindings
   parameter (VOLUME_ZONE_POROSITY=2)
   parameter (VOLUME_ZONE_HEAD_LOSS=4)
   parameter (VOLUME_ZONE_SOURCE_TERM=8)
+  parameter (VOLUME_ZONE_MASS_SOURCE_TERM=16)
 
   !-----------------------------------------------------------------------------
 

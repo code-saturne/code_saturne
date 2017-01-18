@@ -203,7 +203,7 @@ allocate(izftcd(ncel)) ! should be in init_pcond only
 
 ! Initialize
 
-ncetsm = volume_zone_n_type_cells(VOLUME_ZONE_SOURCE_TERM)
+ncetsm = volume_zone_n_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM)
 ncepdc = volume_zone_n_type_cells(VOLUME_ZONE_HEAD_LOSS)
 
 call cs_user_head_losses &
@@ -674,6 +674,9 @@ endif
 !     au cas ou l'utilisateur aurait mis en oeuvre des operations globales.
 
 if (nctsmt.gt.0) then
+
+  ncetsm = volume_zone_n_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM)
+  call volume_zone_select_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM, icetsm)
 
   iappel = 2
   call cs_user_mass_source_terms &

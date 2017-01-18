@@ -65,8 +65,11 @@ BEGIN_C_DECLS
 /*! head loss zone */
 #define CS_VOLUME_ZONE_HEAD_LOSS            (1 << 2)
 
-/*! source term */
+/*! source term (general) */
 #define CS_VOLUME_ZONE_SOURCE_TERM          (1 << 3)
+
+/*! source term (mass) */
+#define CS_VOLUME_ZONE_MASS_SOURCE_TERM     (1 << 4)
 
 /*! @} */
 
