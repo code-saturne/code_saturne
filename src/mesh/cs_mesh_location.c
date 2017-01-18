@@ -856,7 +856,7 @@ cs_mesh_location_get_elt_ids(int id)
 {
   const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
 
-  if (! (   _mesh_location->explicit_ids
+  if (! (   ml->explicit_ids
          || (_mesh_location + ml->type)->explicit_ids))
     bft_error(__FILE__, __LINE__, 0,
               _("Explicit ids have not been built for mesh location %d\n"
