@@ -76,12 +76,12 @@ typedef enum {
  *----------------------------------------------------------------------------*/
 
 void
-cs_thermal_table_set(const char *material,
-                     const char *method,
-                     const char *phas,
-                     const char *reference,
-                     cs_phys_prop_thermo_plane_type_t thermo_plane,
-                     const int   temp_scale);
+cs_thermal_table_set(const char                        *material,
+                     const char                        *method,
+                     const char                        *phas,
+                     const char                        *reference,
+                     cs_phys_prop_thermo_plane_type_t   thermo_plane,
+                     const int                          temp_scale);
 
 /*----------------------------------------------------------------------------
  * Finalize thermal table
@@ -91,21 +91,31 @@ void
 cs_thermal_table_finalize(void);
 
 /*----------------------------------------------------------------------------
- * Compute a property with table.
+ * Compute a physical property.
  *
+ * For values var1 and var2, we can use a stride so that accesses for a given
+ * element with id i will be of the form: var[i*stride]; this allows regular
+ * access with stride 1, and access to constant variables stored as a
+ * single-valued array with a stride of 0.
+ *
+ * parameters:
  *   property     <-- property queried
  *   n_vals       <-- number of values
+ *   var1_stride  <-- stride between successive values of var1
+ *   var2_stride  <-- stride between successive values of var2
  *   var1         <-- values on first plane axis
  *   var2         <-- values on second plane axis
  *   val          --> resulting property values
  *----------------------------------------------------------------------------*/
 
 void
-cs_phys_prop_compute(cs_phys_prop_type_t                property,
-                     const cs_lnum_t                    n_vals,
-                     const cs_real_t                    var1[],
-                     const cs_real_t                    var2[],
-                     cs_real_t                          val[]);
+cs_phys_prop_compute(cs_phys_prop_type_t          property,
+                     cs_lnum_t                    n_vals,
+                     cs_lnum_t                    var1_stride,
+                     cs_lnum_t                    var2_stride,
+                     const cs_real_t              var1[],
+                     const cs_real_t              var2[],
+                     cs_real_t                    val[]);
 
 /*----------------------------------------------------------------------------
  * Compute properties with Freesteam in a defined thermal plane.

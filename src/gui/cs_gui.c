@@ -506,44 +506,45 @@ _physical_property(const char       *param,
 
     /* For incompressible flows, the thermodynamic pressure is constant over
      * time and is the reference pressure. */
-    cs_real_t *thermodynamic_pressure;
-    BFT_MALLOC(thermodynamic_pressure, ncelet, cs_real_t);
 
-    cs_field_t *_thermal_f = NULL;
+    cs_lnum_t thermodynamic_pressure_stride = 0;
+    cs_lnum_t thermal_f_val_stride = 1;
+    cs_real_t _p0 = p0, _t0 = cs_glob_fluid_properties->t0;
+    const cs_real_t *thermodynamic_pressure = &_p0;
+    const cs_real_t *thermal_f_val = NULL;
+    const cs_real_t *_thermal_f_val = NULL;
 
-    if (CS_F_(t)) {
-      if (CS_F_(t)->type & CS_FIELD_VARIABLE) {
-        _thermal_f = CS_F_(t);
-        for (iel = 0; iel < ncelet; iel++)
-          thermodynamic_pressure[iel] = p0;
+    if (CS_F_(t) != NULL) {
+      if (CS_F_(t)->type & CS_FIELD_VARIABLE)
+        _thermal_f_val = CS_F_(t)->val;
+    }
+    else if (CS_F_(h) != NULL) {
+      if (CS_F_(h)->type & CS_FIELD_VARIABLE)
+        _thermal_f_val = CS_F_(h)->val;
+    }
+    else if (CS_F_(energy) != NULL) {
+      if (CS_F_(h)->type & CS_FIELD_VARIABLE) {
+        _thermal_f_val = CS_F_(energy)->val;
+        thermodynamic_pressure = CS_F_(p)->val;
+        thermodynamic_pressure_stride = 1;
       }
     }
-    if (CS_F_(h)) {
-      if (CS_F_(h)->type & CS_FIELD_VARIABLE) {
-        _thermal_f = CS_F_(h);
-        for (iel = 0; iel < ncelet; iel++)
-          thermodynamic_pressure[iel] = p0;
-      }
-    }
-    if (CS_F_(energy)) {
-      if (CS_F_(h)->type & CS_FIELD_VARIABLE) {
-        _thermal_f = CS_F_(energy);
-        for (iel = 0; iel < ncelet; iel++)
-          thermodynamic_pressure[iel] = CS_F_(p)->val[iel];
-      }
+    else {
+      thermal_f_val_stride = 0;
+      _thermal_f_val = &_t0;
     }
 
     cs_phys_prop_compute(property,
                          ncel,
+                         thermodynamic_pressure_stride,
+                         thermal_f_val_stride,
                          thermodynamic_pressure,
-                         _thermal_f->val,
+                         _thermal_f_val,
                          c_prop->val);
 
-    BFT_FREE(thermodynamic_pressure);
   }
   BFT_FREE(prop_choice);
   BFT_FREE(law);
-
 }
 
 /*-----------------------------------------------------------------------------
@@ -2952,6 +2953,8 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
   else
     cs_phys_prop_compute(CS_PHYS_PROP_DENSITY,
                          1,
+                         0,
+                         0,
                          &phys_pp->p0,
                          &phys_pp->t0,
                          &phys_pp->ro0);
@@ -2961,6 +2964,8 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
   else
     cs_phys_prop_compute(CS_PHYS_PROP_DYNAMIC_VISCOSITY,
                          1,
+                         0,
+                         0,
                          &phys_pp->p0,
                          &phys_pp->t0,
                          &phys_pp->viscl0);
@@ -2970,6 +2975,8 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
   else
     cs_phys_prop_compute(CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY,
                          1,
+                         0,
+                         0,
                          &phys_pp->p0,
                          &phys_pp->t0,
                          &phys_pp->cp0);
@@ -3110,8 +3117,12 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
         cs_gui_properties_value("thermal_conductivity", &visls0[i]);
       else
         cs_phys_prop_compute(CS_PHYS_PROP_THERMAL_CONDUCTIVITY,
-                             1, &(cs_glob_fluid_properties->p0),
-                             &(cs_glob_fluid_properties->t0), &visls0[i]);
+                             1,
+                             0,
+                             0,
+                             &(cs_glob_fluid_properties->p0),
+                             &(cs_glob_fluid_properties->t0),
+                             &visls0[i]);
 
       /* for the Temperature, the diffusivity factor is not divided by Cp */
       if (itherm != CS_THERMAL_MODEL_TEMPERATURE)

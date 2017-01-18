@@ -422,10 +422,17 @@ cs_thermal_table_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute a property.
+ * \brief Compute a physical property.
+ *
+ * For values var1 and var2, we can use a stride so that accesses for a given
+ * element with id i will be of the form: var[i*stride]; this allows regular
+ * access with stride 1, and access to constant variables stored as a
+ * single-valued array with a stride of 0.
  *
  * \param[in]   property      property queried
  * \param[in]   n_vals        number of values
+ * \param[in]   var1_stride   stride between successive values of var1
+ * \param[in]   var2_stride   stride between successive values of var2
  * \param[in]   var1          values on first plane axis
  * \param[in]   var2          values on second plane axis
  * \param[out]  val           resulting property values
@@ -433,35 +440,72 @@ cs_thermal_table_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_phys_prop_compute(cs_phys_prop_type_t                property,
-                     const cs_lnum_t                    n_vals,
-                     const cs_real_t                    var1[],
-                     const cs_real_t                    var2[],
-                     cs_real_t                          val[])
+cs_phys_prop_compute(cs_phys_prop_type_t          property,
+                     cs_lnum_t                    n_vals,
+                     cs_lnum_t                    var1_stride,
+                     cs_lnum_t                    var2_stride,                  
+                     const cs_real_t              var1[],
+                     const cs_real_t              var2[],
+                     cs_real_t                    val[])
 {
-  double *val_compute;
-  BFT_MALLOC(val_compute, n_vals, double);
-  for (int ii = 0; ii < n_vals; ii++) {
-    if (cs_glob_thermal_table->temp_scale == 2)
-      val_compute[ii] = var2[ii] + 273.15;
-    else
-      val_compute[ii] = var2[ii];
+  cs_lnum_t        _n_vals = n_vals;
+  cs_real_t         _var2_c_single[1];
+  cs_real_t        *_var1_c = NULL, *_var2_c = NULL;
+  const cs_real_t  *var1_c = var1, *var2_c = var2;
+
+  if (n_vals < 1)
+    return;
+
+  /* Adapt to different strides to optimize for constant arrays */
+
+  if (var1_stride == 0 && var2_stride == 0)
+    _n_vals = 1;
+
+  if (var1_stride == 0 && n_vals > 1) {
+    BFT_MALLOC(_var1_c, n_vals, cs_real_t);
+    for (cs_lnum_t ii = 0; ii < n_vals; ii++)
+      _var1_c[ii] = var1[0];
+    var1_c = _var1_c;
   }
+
+  if (cs_glob_thermal_table->temp_scale == 2) {
+    if (_n_vals == 1) {
+      _var2_c_single[0] = var2[0] + 273.15;
+      var2_c = _var2_c_single;
+    }
+    else {
+      BFT_MALLOC(_var2_c, n_vals, cs_real_t);
+      for (cs_lnum_t ii = 0; ii < n_vals; ii++)
+        _var2_c[ii] = var2[ii*var2_stride] + 273.15;
+      var2_c = _var2_c;
+    }
+  }
+  else {
+    if (var2_stride == 0 && n_vals > 1) {
+      BFT_MALLOC(_var2_c, n_vals, cs_real_t);
+      for (cs_lnum_t ii = 0; ii < n_vals; ii++)
+        _var2_c[ii] = var2[0];
+      var2_c = _var2_c;
+    }
+  }
+
+  /* Compute proper */
+
   if (cs_glob_thermal_table->type == 1) {
     cs_phys_prop_freesteam(cs_glob_thermal_table->thermo_plane,
                            property,
-                           n_vals,
-                           var1,
-                           val_compute,
+                           _n_vals,
+                           var1_c,
+                           var2_c,
                            val);
   }
 #if defined(HAVE_EOS)
   else if (cs_glob_thermal_table->type == 2) {
     _cs_phys_prop_eos(cs_glob_thermal_table->thermo_plane,
                       property,
-                      n_vals,
-                      var1,
-                      val_compute,
+                      _n_vals,
+                      var1_c,
+                      var2_c,
                       val);
   }
 #endif
@@ -470,13 +514,22 @@ cs_phys_prop_compute(cs_phys_prop_type_t                property,
     _cs_phys_prop_coolprop(cs_glob_thermal_table->material,
                            cs_glob_thermal_table->thermo_plane,
                            property,
-                           n_vals,
-                           var1,
-                           val_compute,
+                           _n_vals,
+                           var1_c,
+                           var2_c,
                            val);
   }
 #endif
-  BFT_FREE(val_compute);
+  BFT_FREE(_var1_c);
+  BFT_FREE(_var2_c);
+
+  /* In case of single value, apply to all */
+
+  if (_n_vals == 1) {
+    cs_real_t val_const = val[0];
+    for (cs_lnum_t ii = 0; ii < n_vals; ii++)
+      val[ii] = val_const;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
