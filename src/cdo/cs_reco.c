@@ -519,61 +519,6 @@ cs_reco_pv_inside_cell(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct the value of a scalar potential at a gpoint inside a cell
- *         The scalar potential has DoFs located at primal vertices
- *
- * \param[in]      cm           pointer to a cs_cell_mesh_t structure
- * \param[in]      pdi          array of DoF values at vertices
- * \param[in]      length_xcxp  lenght of the segment [x_c, x_p]
- * \param[in]      unitv_xcxp   unitary vector pointed from x_c to x_p
- * \param[in, out] wbuf         pointer to a temporary buffer
- *
- * \return the value of the reconstructed potential at the evaluation point
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_reco_pv_inside_cell(const cs_cell_mesh_t    *cm,
-                       const cs_real_t          pdi[],
-                       const cs_real_t          length_xcxp,
-                       const cs_real_t          unitv_xcxp[],
-                       cs_real_t                wbuf[])
-{
-  /* Sanity checks */
-  assert(cm != NULL && pdi != NULL && wbuf != NULL);
-
-  cs_real_t  *_pv = wbuf;           // Local value of the potential field
-
-  /* Reconstruct the value at the cell center */
-  cs_real_t  pc = 0.;
-  for (short int v = 0; v < cm->n_vc; v++) {
-    _pv[v] = pdi[cm->v_ids[v]];
-    pc += cm->wvc[v] * _pv[v];
-  }
-
-  /* Reconstruct a constant gradient inside the current cell */
-  cs_real_3_t  gcell = {0., 0., 0.};
-  for (short int e = 0; e < cm->n_ec; e++) {
-    const short int  ee = 2*e;
-    const cs_real_t  ge =
-      cm->e2v_sgn[ee]*( _pv[cm->e2v_ids[ee]] - _pv[cm->e2v_ids[ee+1]]);
-    const cs_real_t  coef_e = ge * cm->dface[e].meas;
-    for (int k = 0; k < 3; k++)
-      gcell[k] += coef_e * cm->dface[e].unitv[k];
-  }
-
-  const cs_real_t  invcell = 1./cm->vol_c;
-  for (int k = 0; k < 3; k++) gcell[k] *= invcell;
-
-  /* Evaluation at the given point */
-  cs_real_t  prec = pc;
-  prec += length_xcxp * cs_math_3_dot_product(gcell, unitv_xcxp);
-
-  return  prec;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Reconstruct the value at the cell center of the gradient of a field
  *         defined on primal vertices.
  *
