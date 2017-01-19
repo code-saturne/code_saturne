@@ -5,6 +5,9 @@ Release 4.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Avoid crash using automatic output on postprocessing meshes
+  with interior faces.
+
 - Fix for some environment module variants.
 
 - Fix syntax error in autovnv study code.

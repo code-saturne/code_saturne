@@ -174,7 +174,7 @@ _write_additional_vars(void                  *input,
 
   /* Add specific outputs for Code_Saturne */
 
-  if (cat_id < 0)
+  if (cat_id < 0 && ent_flag[1] == 0)
     CS_PROCF(dvvpst, DVVPST) (&nummai, &numtyp,
                               _input->nvar,
                               &n_cells, &n_b_faces,

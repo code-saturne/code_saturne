@@ -174,7 +174,6 @@ BEGIN_C_DECLS
   \param[in]       t_cur_abs    current physical time
   \param[in]       nt_cur_abs   current time step number
   \param[in]       t_cur_abs    absolute time at the current time step
-
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -1275,7 +1274,6 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
                                             MPI_Allreduce(..., MPI_MIN, ...) */
 
   fvm_nodal_t  *exp_mesh = NULL;
-  bool          maj_ent_flag = false;
 
   /* Flags:
      0: 0 if cells present, 1 if none,
@@ -1350,25 +1348,6 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
                                                 i_face_list,
                                                 b_face_list);
 
-  }
-
-  /* Global indicators of mesh entity type presence;
-     updated only if the mesh is not totally empty (for time-depending
-     meshes, empty at certain times, we want to know the last type
-     of entity used) */
-
-  for (i = 0; i < 3; i++) {
-    if (glob_flag[i] == 0)
-      maj_ent_flag = true;
-  }
-
-  if (maj_ent_flag == true) {
-    for (i = 0; i < 3; i++) {
-      if (glob_flag[i] == 0)         /* Inverted glob_flag 0 to 2 logic */
-        post_mesh->ent_flag[i] = 1;  /* (c.f. remark above) */
-      else
-        post_mesh->ent_flag[i] = 0;
-    }
   }
 
   /* Fix category id now that we have knowledge of entity counts */
@@ -3141,6 +3120,7 @@ cs_post_define_volume_mesh(int          mesh_id,
     BFT_MALLOC(post_mesh->criteria[0], strlen(cell_criteria) + 1, char);
     strcpy(post_mesh->criteria[0], cell_criteria);
   }
+  post_mesh->ent_flag[0] = 1;
 
   post_mesh->add_groups = (add_groups) ? true : false;
   if (auto_variables)
@@ -3200,6 +3180,7 @@ cs_post_define_volume_mesh_by_func(int                    mesh_id,
 
   post_mesh->sel_func[0] = cell_select_func;
   post_mesh->sel_input[0] = cell_select_input;
+  post_mesh->ent_flag[0] = 1;
 
   post_mesh->add_groups = (add_groups) ? true : false;
   if (auto_variables)
@@ -3246,11 +3227,13 @@ cs_post_define_surface_mesh(int          mesh_id,
   if (i_face_criteria != NULL) {
     BFT_MALLOC(post_mesh->criteria[1], strlen(i_face_criteria) + 1, char);
     strcpy(post_mesh->criteria[1], i_face_criteria);
+    post_mesh->ent_flag[1] = 1;
   }
 
   if (b_face_criteria != NULL) {
     BFT_MALLOC(post_mesh->criteria[2], strlen(b_face_criteria) + 1, char);
     strcpy(post_mesh->criteria[2], b_face_criteria);
+    post_mesh->ent_flag[2] = 1;
   }
 
   post_mesh->add_groups = (add_groups != 0) ? true : false;
@@ -3322,6 +3305,12 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
   post_mesh->sel_input[2] = b_face_select_input;
 
   post_mesh->add_groups = (add_groups != 0) ? true : false;
+
+  if (post_mesh->sel_func[1] != NULL)
+    post_mesh->ent_flag[1] = 1;
+  if (post_mesh->sel_func[2] != NULL)
+    post_mesh->ent_flag[2] = 1;
+
   if (auto_variables)
     post_mesh->cat_id = -2;
 }
@@ -3379,6 +3368,7 @@ cs_post_define_particles_mesh(int          mesh_id,
     BFT_MALLOC(post_mesh->criteria[3], strlen(cell_criteria) + 1, char);
     strcpy(post_mesh->criteria[3], cell_criteria);
   }
+  post_mesh->ent_flag[3] = 1;
 
   post_mesh->add_groups = false;
 
@@ -3696,7 +3686,7 @@ cs_post_define_existing_mesh(int           mesh_id,
   /* Global indicators of mesh entity type presence;
      updated only if the mesh is not totally empty (for time-depending
      meshes, empty at certain times, we want to know the last type
-     of entity used in usmpst) */
+     of entity used) */
 
   for (i = 0; i < 3; i++) {
     if (glob_flag[i] == 0)
