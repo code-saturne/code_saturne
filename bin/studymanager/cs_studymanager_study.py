@@ -40,17 +40,17 @@ import fnmatch
 #-------------------------------------------------------------------------------
 
 from cs_exec_environment import get_shell_type, enquote_arg
-from studymanager.Parser import Parser
-from studymanager.TexMaker import Report1, Report2
+from studymanager.cs_studymanager_parser import Parser
+from studymanager.cs_studymanager_texmaker import Report1, Report2
 try:
-    from studymanager.Drawing import Plotter
+    from studymanager.cs_studymanager_drawing import Plotter
 except Exception:
     pass
 try:
-    from studymanager.PlotVTK import PlotVTK
+    from studymanager.cs_studymanager_plotvtk import PlotVTK
 except Exception:
     pass
-from studymanager.Command import run_studymanager_command
+from studymanager.cs_studymanager_run import run_studymanager_command
 import cs_runcase
 
 #-------------------------------------------------------------------------------
@@ -976,7 +976,7 @@ class Studies(object):
         @return: destination directory of all studies.
         """
         if self.__dest == None:
-            msg=" Study.py >> Studies.getDestination()"
+            msg=" cs_studymanager_study.py >> Studies.getDestination()"
             msg+=" >> self.__dest is not set"
             sys.exit(msg)
         return self.__dest
@@ -989,7 +989,7 @@ class Studies(object):
         @return: repository directory of all studies.
         """
         if self.__repo == None:
-            msg=" Study.py >> Studies.getRepository()"
+            msg=" cs_studymanager_study.py >> Studies.getRepository()"
             msg+=" >> self.__repo is not set"
             sys.exit(msg)
         return self.__repo
