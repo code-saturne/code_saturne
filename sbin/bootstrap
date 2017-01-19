@@ -46,14 +46,70 @@ case $cs_gettext_version in
       cp -p $d/configure.ac $d/configure.ac.tmp
       sed -e s/AM_GNU_GETTEXT_VERSION.*/AM_GNU_GETTEXT_VERSION\(\[$cs_gettext_version\]\)/g $d/configure.ac.tmp > $d/configure.ac
     done
-    autoreconf -vif $@
+    ;;
+  *)
+    ;;
+esac
+
+# Prefer autoreconf to separate stages when possible
+
+type autopoint > /dev/null 2>&1
+
+if test $? = 0 ; then
+
+  autoreconf -vif $@
+
+else
+
+  # To add gettext support, use :
+  # gettextize -f -c --no-changelog --intl
+  # rm -f config/gettext.m4
+
+  # To use an external gettext version, do not use --intl
+  # To use a link instead of copy, do not use -c
+
+  if [ ! -f config/gettext.m4 ]; then
+    echo "running gettextize"
+    \rm -rf configure.ac~ Makefile.am~
+    sed -e "s/read dummy/# read dummy/" `which gettextize` > ./tmp_gettextize
+    chmod +x ./tmp_gettextize
+    ./tmp_gettextize -f -c --no-changelog
+    if [ -f configure.ac~ ]; then
+      mv configure.ac~ configure.ac
+    fi
+    if [ -f Makefile.am~ ]; then
+      mv Makefile.am~ Makefile.am
+    fi
+    rm -rf po/*~ tmp_gettextize
+  fi
+
+  echo "running aclocal"
+  aclocal -I config
+
+  echo "running autoconf"
+  autoconf
+
+  if [ ! -f config/ltmain.sh ]; then
+    echo "running libtoolize"
+    libtoolize --force --copy
+  fi
+
+  echo "running autoheader"
+  autoheader
+
+  echo "running automake"
+  automake -a -c
+
+fi
+
+case $cs_gettext_version in
+  0.17*)
     for d in . libple
     do
       \mv configure.ac.tmp configure.ac
     done
     ;;
   *)
-    autoreconf -vif $@
     ;;
 esac
 
