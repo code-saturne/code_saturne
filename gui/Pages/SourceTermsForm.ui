@@ -15,19 +15,6 @@
   </property>
   <layout class="QGridLayout" name="gridLayout_5">
    <item row="0" column="0">
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>0</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="0" column="1">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
       <widget class="QGroupBox" name="groupBoxSourceTerms">
@@ -38,34 +25,12 @@
         <string>Source Terms</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_4">
-        <item row="0" column="0" rowspan="5">
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item row="0" column="1">
          <layout class="QHBoxLayout">
           <property name="spacing">
            <number>6</number>
           </property>
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
+          <property name="margin">
            <number>0</number>
           </property>
           <item>
@@ -113,19 +78,6 @@
           </item>
          </layout>
         </item>
-        <item row="0" column="2" rowspan="5">
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item row="1" column="1">
          <widget class="Line" name="line">
           <property name="orientation">
@@ -135,6 +87,18 @@
         </item>
         <item row="2" column="1">
          <widget class="QGroupBox" name="groupBoxStandard">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>230</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="title">
            <string/>
           </property>
@@ -144,16 +108,10 @@
              <property name="spacing">
               <number>0</number>
              </property>
-             <property name="leftMargin">
-              <number>0</number>
+             <property name="sizeConstraint">
+              <enum>QLayout::SetDefaultConstraint</enum>
              </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
+             <property name="margin">
               <number>0</number>
              </property>
              <item>
@@ -161,16 +119,7 @@
                <property name="spacing">
                 <number>6</number>
                </property>
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
+               <property name="margin">
                 <number>0</number>
                </property>
                <item>
@@ -217,16 +166,7 @@
                <property name="spacing">
                 <number>6</number>
                </property>
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
+               <property name="margin">
                 <number>0</number>
                </property>
                <item>
@@ -273,16 +213,7 @@
                <property name="spacing">
                 <number>6</number>
                </property>
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
+               <property name="margin">
                 <number>0</number>
                </property>
                <item>
@@ -297,6 +228,18 @@
                </item>
                <item>
                 <widget class="QComboBox" name="comboBoxSpecies">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>80</width>
+                   <height>0</height>
+                  </size>
+                 </property>
                  <property name="toolTip">
                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define scalar source terms by selecting the user scalar and using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
@@ -350,16 +293,7 @@
              <property name="spacing">
               <number>6</number>
              </property>
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
+             <property name="margin">
               <number>0</number>
              </property>
              <item>
@@ -368,7 +302,7 @@
                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define a volumetric source term for the Richards equation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
-                <string>Volumetric source term</string>
+                <string>Volumic source term</string>
                </property>
               </widget>
              </item>
@@ -418,16 +352,7 @@
              <property name="spacing">
               <number>6</number>
              </property>
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="rightMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
+             <property name="margin">
               <number>0</number>
              </property>
              <item>
@@ -479,6 +404,32 @@
           </layout>
          </widget>
         </item>
+        <item row="0" column="0" rowspan="5">
+         <spacer>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="2" rowspan="5">
+         <spacer>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
        </layout>
       </widget>
      </item>
@@ -496,19 +447,6 @@
       </spacer>
      </item>
     </layout>
-   </item>
-   <item row="0" column="2">
-    <spacer name="horizontalSpacer_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>0</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>
