@@ -476,8 +476,6 @@ cs_ctwr_all_destroy(void)
   _n_ct_zones_max = 0;
   _n_ct_zones = 0;
 
-  BFT_FREE(cs_glob_ctwr_props);
-
   BFT_FREE(_ct_zone);
 }
 
