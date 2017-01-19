@@ -269,7 +269,7 @@ def run_studymanager(pkg, options):
         if not os.path.isfile(p):
             print("Error: executable %s not found." % p)
             if not sys.platform.startswith('win'):
-                sys.exit(1)
+                return 1
 
     dif += " -d"
 
@@ -308,13 +308,13 @@ def run_studymanager(pkg, options):
 
     if options.update:
         studies.updateRepository()
-        sys.exit(0)
+        return 0
 
     # Update only xml data if needed
 
     if options.update_xml:
         studies.updateRepository(True)
-        sys.exit(0)
+        return 0
 
     # Check if xml for result directories in the repository are OK
 
@@ -372,6 +372,8 @@ def run_studymanager(pkg, options):
                         studies.getlabel(),
                         options.addresses.split(),
                         attached_file)
+
+    return 0
 
 #-------------------------------------------------------------------------------
 # Main
