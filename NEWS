@@ -5,6 +5,8 @@ Release 4.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- GUI: fix update issues when removing or merging volume zones.
+
 - Avoid crash using automatic output on postprocessing meshes
   with interior faces.
 
