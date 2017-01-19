@@ -1304,57 +1304,13 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
 {
   /* local variables */
 
-  int    i;
-  int    glob_flag[5];
-
-  int    loc_flag[5] = {1, 1, 1, 0, 0};  /* Flags 0 to 2 "inverted" compared
-                                            to others so as to use a single
-                                            call to
-                                            MPI_Allreduce(..., MPI_MIN, ...) */
-
   fvm_nodal_t  *exp_mesh = NULL;
-
-  /* Flags:
-     0: 0 if cells present, 1 if none,
-     1: 0 if interior faces present, 1 if none,
-     2: 0 if boundary faces present, 1 if none,
-     3: 1 if all cells were selected,
-     4: 1 if all boundary faces and no interior faces selected */
-
-  if (n_cells > 0)
-    loc_flag[0] = 0;
-  else {
-    if (n_i_faces > 0)
-      loc_flag[1] = 0;
-    if (n_b_faces > 0)
-      loc_flag[2] = 0;
-  }
-
-  if (n_cells >= cs_glob_mesh->n_cells)
-    loc_flag[3] = 1;
-  else
-    loc_flag[3] = 0;
-
-  if (   n_b_faces >= cs_glob_mesh->n_b_faces
-      && n_i_faces == 0)
-    loc_flag[4] = 1;
-  else
-    loc_flag[4] = 0;
-
-  for (i = 0; i < 5; i++)
-    glob_flag[i] = loc_flag[i];
-
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
-    MPI_Allreduce (loc_flag, glob_flag, 5, MPI_INT, MPI_MIN,
-                   cs_glob_mpi_comm);
-#endif
 
   /* Create associated structure */
 
-  if (glob_flag[0] == 0) {
+  if (post_mesh->ent_flag[0] == 1) {
 
-    if (glob_flag[3] == 1)
+    if (n_cells >= cs_glob_mesh->n_cells)
       exp_mesh = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
                                                 post_mesh->name,
                                                 post_mesh->add_groups,
@@ -1370,7 +1326,8 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
   }
   else {
 
-    if (glob_flag[4] == 1)
+    if (   n_b_faces >= cs_glob_mesh->n_b_faces
+        && n_i_faces == 0)
       exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                                 post_mesh->name,
                                                 post_mesh->add_groups,
