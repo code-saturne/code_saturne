@@ -234,11 +234,11 @@ class VolumicZone(Zone):
         if self.case['package'].name == 'code_saturne':
             from code_saturne.Pages.GroundwaterModel import GroundwaterModel
             if GroundwaterModel(self.case).getGroundwaterModel() != "groundwater":
-                self._natureList.append('heads_losses')
+                self._natureList.append('head_losses')
                 self._natureList.append('porosity')
                 self._natureList.append('momentum_source_term')
 
-                self._natureDict['heads_losses']          = self.tr("Head losses")
+                self._natureDict['head_losses']          = self.tr("Head losses")
                 self._natureDict['porosity']             = self.tr("Porosity")
                 self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
             else:
@@ -271,7 +271,7 @@ class VolumicZone(Zone):
         dico['label'] = 'Zone_'
         dico['nature'] = {}
         dico['nature']['initialization']       = "on"
-        dico['nature']['heads_losses']          = "off"
+        dico['nature']['head_losses']          = "off"
         dico['nature']['porosity']             = "off"
         dico['nature']['momentum_source_term'] = "off"
         dico['nature']['mass_source_term']     = "off"

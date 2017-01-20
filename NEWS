@@ -1,4 +1,13 @@
 
+Release 4.3.4 (unreleased)
+==========================
+
+Changes:
+--------
+
+- GUI: fix potential issues (not apparent) with handling of
+  head loss zones.
+
 Release 4.3.3 (January 19 2017)
 ===============================
 
