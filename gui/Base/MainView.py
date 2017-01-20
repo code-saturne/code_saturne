@@ -946,8 +946,13 @@ class MainView(object):
         file_name = self.case['xmlfile']
         log.debug("fileSave(): %s" % file_name)
         if not file_name:
-            self.fileSaveAs()
-            return
+            default_name = os.path.join(os.getcwd(), "setup.xml")
+            if os.path.exists(default_name) or os.path.islink(default_name):
+                self.fileSaveAs()
+                return
+            else:
+                self.case['xmlfile'] = default_name
+                file_name = default_name
 
         log.debug("fileSave(): %s" % os.path.dirname(file_name))
         log.debug("fileSave(): %s" % os.access(os.path.dirname(file_name), os.W_OK))
