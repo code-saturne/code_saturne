@@ -541,10 +541,10 @@ class StandardItemModelLocalization(QStandardItemModel):
         row = self.rowCount()
         self.setRowCount(row+1)
 
-        # Warning: the Volume region 'all_cells' is mandatory, and can not be modified.
+        # Warning: the Volume region 'all_cells' is mandatory, and can not be removed.
         if self.zoneType == "VolumicZone":
             if zone.getLabel() == "all_cells":
-                for c in range(self.columnCount()):
+                for c in [0, 3]:
                     self._disable.append((row, c))
         self._disable.append((row, 1))
         self.browser.configureTree(self.case)
@@ -565,6 +565,8 @@ class StandardItemModelLocalization(QStandardItemModel):
         nb_rows = self.rowCount()
         self.setRowCount(nb_rows-1)
         self.updateItem()
+        if irow < nb_rows:
+            self.browser.configureTree(self.case)
 
 
     def deleteItems(self):
@@ -666,6 +668,8 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
             if not (label == "all_cells" and self.zoneType == 'VolumicZone'):
                 self.mdl.deleteZone(label)
                 self.modelLocalization.deleteItem(row)
+        for index in self.tableView.selectionModel().selectedRows():
+            self.modelLocalization.dataChanged.emit(index, index)
 
 
     @pyqtSignature("")

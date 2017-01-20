@@ -428,6 +428,52 @@ class XMLElement:
         return 0
 
 
+    def _nodeWithAttrList(self, node, *attrList, **kwargs):
+        """
+        Return a list of Element (and not XMLElement)!
+        """
+        nodeList = []
+
+        # Get the nodes list
+        #
+        nodeL = []
+
+        iok = 0
+        try:
+            for attr in attrList:
+                if node.hasAttribute(str(attr)):
+                    iok = 1
+                else:
+                    iok = 0
+                    break
+            if iok: nodeList = [node]
+        except Exception:
+            pass
+
+        if attrList and kwargs:
+            nodeL = nodeList
+            nodeList = []
+
+        for n in nodeL:
+            iok = 0
+            for k, v in list(kwargs.items()):
+                if n.getAttribute(str(k)) == str(v):
+                    iok = 1
+                else:
+                    iok = 0
+                    break
+            if iok: nodeList.append(n)
+
+        if not attrList and not kwargs:
+            nodeList = nodeL
+
+        if node.childNodes:
+            for c in node.childNodes:
+                nodeList += self._nodeWithAttrList(c, *attrList, **kwargs)
+
+        return nodeList
+
+
     def _nodeList(self, tag, *attrList, **kwargs):
         """
         Return a list of Element (and not XMLElement)!
@@ -777,6 +823,14 @@ class XMLElement:
         elt = self._inst( self.el.appendChild(self.doc.createComment(data)) )
         log.debug("xmlAddComment-> %s" % self.__xmlLog())
         return elt
+
+
+    def xmlGetNodeWithAttrList(self, *attrList, **kwargs):
+        """
+        Return a list of XMLElement nodes from the explored
+        XMLElement node (i.e. self).
+        """
+        return list(map(self._inst, self._nodeWithAttrList(self.el, *attrList, **kwargs)))
 
 
     def xmlGetNodeList(self, tag, *attrList, **kwargs):
