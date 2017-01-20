@@ -181,22 +181,22 @@
 
   \snippet cs_user_mesh-periodicity.c mesh_periodicity_4
 
-  \section cs_user_mesh_h_cs_user_mesh_thinwall  Mesh thin wall
+  \section cs_user_mesh_h_cs_user_mesh_boundary  Mesh boundary insertion
 
-  The user function \ref cs_user_mesh_thinwall allows insertion of boundaries in
-  the calculation mesh. Currently, this function simply transforms the selected
-  interior faces into boundary faces, on which boundary conditions can (and must)
-  be applied.
+  The user function \ref cs_user_mesh_boundary allows insertion of boundaries in
+  the calculation mesh. This function transforms the selected interior faces
+  into boundary faces, on which boundary conditions can (and must) be applied.
+  Vertices are also split so as to be distinct on each side of the boundary.
 
   Boundaries can be directly inserted based on a selection of interior faces,
   such as shown here:
 
-  \snippet cs_user_mesh-thinwall.c mesh_thinwall
+  \snippet cs_user_mesh-boundary.c mesh_boundary
 
   Boundaries can also be inserted between a set of selected cells and the
   rest of the mesh. In this case, a mesh group name can be assigned to
   the added boundary faces.
 
-  \snippet cs_user_mesh-thinwall.c mesh_boundary_cells
+  \snippet cs_user_mesh-boundary.c mesh_boundary_cells
 
 */

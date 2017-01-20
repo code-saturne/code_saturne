@@ -319,7 +319,6 @@ static void
 _physical_property(const char       *param,
                    const char       *symbol,
                    const cs_lnum_t  ncel,
-                   const cs_lnum_t  ncelet,
                    const cs_int_t   icp,
                    const cs_real_t  p0,
                    const cs_real_t  ro0,
@@ -511,7 +510,6 @@ _physical_property(const char       *param,
     cs_lnum_t thermal_f_val_stride = 1;
     cs_real_t _p0 = p0, _t0 = cs_glob_fluid_properties->t0;
     const cs_real_t *thermodynamic_pressure = &_p0;
-    const cs_real_t *thermal_f_val = NULL;
     const cs_real_t *_thermal_f_val = NULL;
 
     if (CS_F_(t) != NULL) {
@@ -4479,7 +4477,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
                               const cs_real_t *viscv0)
 {
   const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
   char *path = NULL;
@@ -4496,7 +4493,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
       if (cs_glob_fluid_properties->irovar == 1) {
           cs_field_t *c_rho = CS_F_(rho);
           _physical_property("density", "density",
-                             n_cells, n_cells_ext, cs_glob_fluid_properties->icp,
+                             n_cells, cs_glob_fluid_properties->icp,
                              cs_glob_fluid_properties->p0,
                              cs_glob_fluid_properties->ro0,
                              cs_glob_fluid_properties->cp0,
@@ -4509,7 +4506,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
   if (cs_glob_fluid_properties->ivivar == 1) {
     cs_field_t *c_mu = CS_F_(mu);
     _physical_property("molecular_viscosity", "molecular_viscosity",
-                       n_cells, n_cells_ext, cs_glob_fluid_properties->icp,
+                       n_cells, cs_glob_fluid_properties->icp,
                        cs_glob_fluid_properties->p0,
                        cs_glob_fluid_properties->ro0,
                        cs_glob_fluid_properties->cp0,
@@ -4521,7 +4518,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
   if (cs_glob_fluid_properties->icp > 0) {
     cs_field_t *c_cp = CS_F_(cp);
     _physical_property("specific_heat", "specific_heat",
-                       n_cells, n_cells_ext, cs_glob_fluid_properties->icp,
+                       n_cells, cs_glob_fluid_properties->icp,
                        cs_glob_fluid_properties->p0,
                        cs_glob_fluid_properties->ro0,
                        cs_glob_fluid_properties->cp0,
@@ -4544,7 +4541,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
           if (cond_diff_id > -1) {
             cond_dif = cs_field_by_id(cond_diff_id);
             _physical_property("thermal_conductivity", "thermal_conductivity",
-                               n_cells, n_cells_ext, cs_glob_fluid_properties->icp,
+                               n_cells, cs_glob_fluid_properties->icp,
                                cs_glob_fluid_properties->p0,
                                cs_glob_fluid_properties->ro0,
                                cs_glob_fluid_properties->cp0,

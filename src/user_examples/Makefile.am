@@ -86,13 +86,13 @@ cs_user_electric_scaling.c \
 cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
 cs_user_lagr_particle.c \
+cs_user_mesh-boundary.c \
 cs_user_mesh-groups_from_free_faces.c \
 cs_user_mesh-input-save.c \
 cs_user_mesh-joining.c \
 cs_user_mesh-modify.c \
 cs_user_mesh-periodicity.c \
 cs_user_mesh-quality.c \
-cs_user_mesh-thinwall.c \
 cs_user_parameters-base.c \
 cs_user_parameters-ctwr.c \
 cs_user_parameters-fans.c \

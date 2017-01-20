@@ -55,7 +55,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_warping.h"
 #include "cs_mesh_smoother.h"
-#include "cs_mesh_thinwall.h"
+#include "cs_mesh_boundary.h"
 #include "cs_mesh_extrude.h"
 #include "cs_prototypes.h"
 
@@ -601,7 +601,7 @@ cs_gui_mesh_smoothe(cs_mesh_t  *mesh)
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_mesh_thinwall(cs_mesh_t  *mesh)
+cs_gui_mesh_boundary(cs_mesh_t  *mesh)
 {
   if (!cs_gui_file_is_loaded())
     return;
@@ -628,13 +628,12 @@ cs_gui_mesh_thinwall(cs_mesh_t  *mesh)
                                &n_selected_faces,
                                selected_faces);
 
-    cs_create_thinwall(mesh,
-                       selected_faces,
-                       n_selected_faces);
-
+    cs_mesh_boundary_insert(mesh,
+                            selected_faces,
+                            n_selected_faces);
 
 #if _XML_DEBUG_
-    bft_printf("cs_gui_mesh_thinwall==> \n");
+    bft_printf("cs_gui_mesh_boundary==> \n");
     bft_printf("--selector  = %s\n", value);
 #endif
     BFT_FREE(selected_faces);
@@ -652,14 +651,14 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh)
   if (!cs_gui_file_is_loaded())
     return;
 
-  int n_ext = cs_gui_get_tag_count("/solution_domain/extrude_meshes/extrude_mesh", 1);
+  int n_ext = cs_gui_get_tag_count("/solution_domain/extrusion/extrude_mesh", 1);
 
   if (n_ext == 0)
     return;
 
   for (int ext = 0; ext < n_ext; ext++) {
     char *path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "solution_domain", "extrude_meshes");
+    cs_xpath_add_elements(&path, 2, "solution_domain", "extrusion");
     cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
     cs_xpath_add_element(&path, "selector");
     cs_xpath_add_function_text(&path);
@@ -667,7 +666,7 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh)
     BFT_FREE(path);
 
     path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "solution_domain", "extrude_meshes");
+    cs_xpath_add_elements(&path, 2, "solution_domain", "extrusion");
     cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
     cs_xpath_add_element(&path, "layers_number");
     cs_xpath_add_function_text(&path);
@@ -676,7 +675,7 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh)
     BFT_FREE(path);
 
     path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "solution_domain", "extrude_meshes");
+    cs_xpath_add_elements(&path, 2, "solution_domain", "extrusion");
     cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
     cs_xpath_add_element(&path, "thickness");
     cs_xpath_add_function_text(&path);
@@ -685,7 +684,7 @@ cs_gui_mesh_extrude(cs_mesh_t  *mesh)
     BFT_FREE(path);
 
     path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 2, "solution_domain", "extrude_meshes");
+    cs_xpath_add_elements(&path, 2, "solution_domain", "extrusion");
     cs_xpath_add_element_num(&path, "extrude_mesh", ext + 1);
     cs_xpath_add_element(&path, "reason");
     cs_xpath_add_function_text(&path);

@@ -11,6 +11,7 @@ User changes
 
 - When inserting boundaries (shuch as thin walls), vertices are now separated
   on each side of those boundaries, for a true topological mesh modification.
+  cs_user_mesh_thinwall is also renamed to cs_user_mesh_boundary.
 
 - Add a cooling towers module to simulate exchange zones.
 

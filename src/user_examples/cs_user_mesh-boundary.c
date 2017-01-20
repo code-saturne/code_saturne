@@ -89,14 +89,14 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Insert thin wall into a mesh.
+ * \brief Insert boundaries into a mesh.
  *
  * \param[in,out] mesh pointer to cs_mesh_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_thinwall(cs_mesh_t  *mesh)
+cs_user_mesh_boundary(cs_mesh_t  *mesh)
 {
   /* Example: insert boundary along a plane */
   /*----------------------------------------*/

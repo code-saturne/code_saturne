@@ -1037,6 +1037,10 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.pushButtonAddThinWall.clicked.connect(self.slotAddThinWall)
         self.pushButtonDeleteThinWall.clicked.connect(self.slotDeleteThinWall)
 
+        # load values
+        for tw in range(self.mdl.getThinWallSelectionsCount()):
+            self.tableModelThinWall.newItem(tw)
+
         # 2.5) Extrude
 
         self.tableModelExtrude = StandardItemModelExtrude(self, self.mdl)

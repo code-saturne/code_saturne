@@ -200,6 +200,21 @@ class XMLinit(Variables):
         return msg
 
 
+    def __renameSingle(self, parent_tag, old_tag, new_tag):
+        """
+        Rename some nodes in order to ensure backward compatibility.
+        """
+
+        # renames
+
+        node = self.case.xmlGetNode(parent_tag)
+        if node:
+            oldnode = node.xmlGetNode(old_tag)
+            if oldnode:
+                newnode = node.xmlInitNode(new_tag)
+                newnode.xmlChildsCopy(oldnode)
+                oldnode.xmlRemoveNode()
+
     def __backwardCompatibility(self):
         """
         Change XML in order to ensure backward compatibility.
@@ -1280,13 +1295,8 @@ class XMLinit(Variables):
 
         # renames
 
-        node = self.case.xmlGetNode('thermophysical_models')
-        if node:
-            oldnode = node.xmlGetNode('heads_losses')
-            if oldnode:
-                newnode = node.xmlInitNode('head_losses')
-                newnode.xmlChildsCopy(oldnode)
-                oldnode.xmlRemoveNode()
+        self.__renameSingle('thermophysical_models', 'heads_losses', 'head_losses')
+        self.__renameSingle('solution_domain', 'extrude_meshes', 'extrusion')
 
         # renumber boundary and volume zones if required
 

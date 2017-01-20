@@ -246,10 +246,10 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   cs_join_all(true);
 
-  /* Insert thin walls if necessary */
+  /* Insert boundaries if necessary */
 
-  cs_gui_mesh_thinwall(cs_glob_mesh);
-  cs_user_mesh_thinwall(cs_glob_mesh);
+  cs_gui_mesh_boundary(cs_glob_mesh);
+  cs_user_mesh_boundary(cs_glob_mesh);
 
   cs_user_internal_coupling_add_volumes(cs_glob_mesh);
 

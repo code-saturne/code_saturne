@@ -414,11 +414,11 @@ void
 cs_user_mesh_modify(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
- * Insert thin wall into a mesh.
+ * Insert boundary wall into a mesh.
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_thinwall(cs_mesh_t  *mesh);
+cs_user_mesh_boundary(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Mesh smoothing.

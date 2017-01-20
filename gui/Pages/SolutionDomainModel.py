@@ -198,7 +198,7 @@ class SolutionDomainModel(MeshModel, Model):
         self.node_join       = self.node_ecs.xmlInitNode('joining')
         self.node_perio      = self.node_ecs.xmlInitNode('periodicity')
         self.node_thinwall   = self.node_ecs.xmlInitNode('thin_walls')
-        self.node_extrude    = self.node_ecs.xmlInitNode('extrude_meshes')
+        self.node_extrude    = self.node_ecs.xmlInitNode('extrusion')
 
 
 #************************* Private methods *****************************
