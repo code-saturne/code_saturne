@@ -572,9 +572,9 @@ if(nctsmt.gt.0) then
   if (ippmod(iaeros).gt.0) then
      ! Cooling tower model
      ! Evaporation mass exchange term
-     call cs_ctwr_bulk_mass_source_term&
-          (iappel, p0, molmass_rat,     &
-          ncetsm, icetsm, smacel(1,ipr))
+     call cs_ctwr_bulk_mass_source_term &
+          (p0   , molmass_rat,            &
+          ncetsm, smacel(1,ipr))
   endif
 
 endif

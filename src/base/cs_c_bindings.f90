@@ -1938,16 +1938,14 @@ module cs_c_bindings
 
     ! Interface to C function for Cooling towers
 
-    subroutine cs_ctwr_bulk_mass_source_term(iappel, p0, molmassrat,         &
-                                             n_tot, packing_cell,            &
+    subroutine cs_ctwr_bulk_mass_source_term(p0, molmassrat,                 &
+                                             n_tot,                          &
                                              mass_source)                    &
       bind(C, name='cs_ctwr_bulk_mass_source_term')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: iappel
       real(kind=c_double), value :: p0, molmassrat
       integer(c_int), intent(inout) :: n_tot
-      integer(c_int), dimension(*), intent(inout) :: packing_cell
       real(kind=c_double), dimension(*), intent(inout) :: mass_source
     end subroutine cs_ctwr_bulk_mass_source_term
 

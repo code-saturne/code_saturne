@@ -141,22 +141,18 @@ cs_ctwr_field_pointer_map(void);
  * Careful, this is different from an injection source term, which would
  * normally be handled with 'cs_user_mass_source_term'
  *
- * \param[in]   call_id          Calling sequence flag
  * \param[in]   p0              Reference pressure
  * \param[in]   molmassrat      Dry air to water vapor molecular mass ratio
  * \param[in]   n_tot           Pointer to the total number
  *                              of cells in the packing zones
- * \param[in]   packing_cell    Packing cell ids
  * \param[in]   mass_source     Mass source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_bulk_mass_source_term(int               call_id,
-                              const cs_real_t   p0,
+cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
                               const cs_real_t   molmassrat,
                               int              *n_tot,
-                              cs_lnum_t         packing_cell[],
                               cs_real_t         mass_source[]);
 
 /*----------------------------------------------------------------------------*/
@@ -265,32 +261,6 @@ cs_ctwr_source_term(int              f_id,
                     const cs_real_t  molmassrat,
                     cs_real_t        exp_st[],
                     cs_real_t        imp_st[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Phase change mass source term from the evaporating liquid to the
- *        bulk, humid air.
- *
- * Careful, this is different from an injection source term, which would
- * normally be handled with 'cs_user_mass_source_term'
- *
- * \param[in]   call_id          Calling sequence flag
- * \param[in]   p0              Reference pressure
- * \param[in]   molmassrat      Dry air to water vapor molecular mass ratio
- * \param[in]   n_tot           Pointer to the total number
- *                              of cells in the packing zones
- * \param[in]   packing_cell    Packing cell ids
- * \param[in]   mass_source     Mass source term
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_ctwr_bulk_mass_source_term(int               call_id,
-                              const cs_real_t   p0,
-                              const cs_real_t   molmassrat,
-                              int              *n_tot,
-                              cs_lnum_t         packing_cell[],
-                              cs_real_t         mass_source[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -256,16 +256,6 @@ call cs_user_mass_source_terms &
   rvoid  ,                                                       &
   ckupdc , rvoid  )
 
-if (ippmod(iaeros).gt.0) then
-   ! Cooling tower model
-   ! Evaporation mass exchange term
-
-   call cs_ctwr_bulk_mass_source_term  &
-        (iappel, p0, molmass_rat,      &
-        ncetsm, ivoid, rvoid)
-
-endif
-
 ! Total number of cells with mass source term
 nctsmt = ncetsm
 if (irangp.ge.0) then
@@ -680,14 +670,6 @@ if (nctsmt.gt.0) then
   icetsm , itypsm , izctsm ,                                     &
   dt     ,                                                       &
   ckupdc , smacel )
-
-  if (ippmod(iaeros).gt.0) then
-     ! Cooling tower model
-     ! Evaporation mass exchange term
-     call cs_ctwr_bulk_mass_source_term&
-          (iappel, p0, molmass_rat,      &
-          ncetsm, icetsm, smacel)
-  endif
 
 endif
 

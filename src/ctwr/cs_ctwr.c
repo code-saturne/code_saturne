@@ -73,6 +73,7 @@
 #include "cs_post.h"
 #include "cs_restart.h"
 #include "cs_selector.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -100,7 +101,9 @@ BEGIN_C_DECLS
 struct _cs_ctwr_zone_t {
 
   int                  num;        /* Exchange zone number */
-  char                *criteria;   /* Exchange zone elements name */
+  char                *criteria;   /* Exchange zone selcection criteria */
+  char                *name;       /* Exchange zone name */
+  char                *file_name;  /* Exchange zone budget file name */
   cs_ctwr_model_t      model;      /* Exchange model type */
   cs_ctwr_zone_type_t  type;       /* Zone type */
 
@@ -125,13 +128,10 @@ struct _cs_ctwr_zone_t {
 
   cs_int_t   up_ct_id;           /* Id of upstream exchange zone (if any) */
 
-  cs_int_t   *ze_cell_list;      /* List of cells of ct criteria */
-  cs_int_t   *mark_ze;           /* Cell marker for ct */
-
   cs_lnum_t  n_inlet_faces;      /* Number of inlet faces */
   cs_lnum_t  n_outlet_faces;     /* Number of outlet faces */
-  cs_lnum_t *inlet_faces_list;   /* List of inlet faces */
-  cs_lnum_t *outlet_faces_list;  /* List of outlet faces */
+  cs_lnum_t *inlet_faces_ids;    /* List of inlet faces */
+  cs_lnum_t *outlet_faces_ids;   /* List of outlet faces */
 
   cs_real_t  q_l_in;          /* Water entry flow */
   cs_real_t  q_l_out;         /* Water exit flow */
@@ -226,8 +226,9 @@ _write_liquid_vars(void                  *input,
 
     for (int ict = 0; ict < _n_ct_zones; ict++) {
       cs_ctwr_zone_t *ct = _ct_zone[ict];
+      const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
       for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
-        cs_lnum_t cell_id = ct->ze_cell_list[i];
+        cs_lnum_t cell_id = ze_cell_ids[i];
         if (y_l[cell_id] > 0.)
           val[cell_id] = h_l[cell_id]/y_l[cell_id];
       }
@@ -301,7 +302,6 @@ cs_ctwr_define(const char           zone_criteria[],
   cs_ctwr_zone_t  *ct;
   int length;
   FILE *f;
-  char  *file_name = NULL;
 
   /* Definition d'une nouvelle zone d'echange */
 
@@ -316,11 +316,21 @@ cs_ctwr_define(const char           zone_criteria[],
   ct->model = model;
   ct->type = zone_type;
 
-  ct->delta_t   = delta_t;
-  ct->relax = relax;
-  ct->t_l_bc   = t_l_bc;
-  ct->q_l_bc   = q_l_bc;
-  ct->y_l_bc   = -1; /* Mass of liquid water divided by the mass of humid air
+  ct->name = NULL;
+  length = strlen("cooling_towers_") + 3;
+  BFT_MALLOC(ct->name, length, char);
+  sprintf(ct->name, "cooling_towers_%02d", ct->num);
+
+  /* Define zone */
+  cs_volume_zone_define(ct->name,
+                        ct->criteria,
+                        CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+
+  ct->delta_t = delta_t;
+  ct->relax   = relax;
+  ct->t_l_bc  = t_l_bc;
+  ct->q_l_bc  = q_l_bc;
+  ct->y_l_bc  = -1; /* Mass of liquid water divided by the mass of humid air
                         in packing zones.
                         Factice version, initialize after */
   ct->xap = xap;
@@ -336,8 +346,8 @@ cs_ctwr_define(const char           zone_criteria[],
 
   ct->n_inlet_faces = 0;
   ct->n_outlet_faces = 0;
-  ct->inlet_faces_list = NULL;
-  ct->outlet_faces_list = NULL;
+  ct->inlet_faces_ids = NULL;
+  ct->outlet_faces_ids = NULL;
 
   ct->q_l_in = 0.0;
   ct->q_l_out = 0.0;
@@ -354,9 +364,6 @@ cs_ctwr_define(const char           zone_criteria[],
   ct->q_h_in = 0.0;
   ct->q_h_out = 0.0;
 
-  /* Cells selection */
-  ct->ze_cell_list = NULL;
-
   if (_n_ct_zones >= _n_ct_zones_max) {
     _n_ct_zones_max = (_n_ct_zones_max + 1);
     BFT_REALLOC(_ct_zone, _n_ct_zones_max, cs_ctwr_zone_t *);
@@ -369,10 +376,10 @@ cs_ctwr_define(const char           zone_criteria[],
 
   if (cs_glob_rank_id <= 0) {
     length = strlen("cooling_towers_balance.") + 3;
-    BFT_MALLOC(file_name, length, char);
-    sprintf(file_name, "cooling_towers_balance.%02d", ct->num);
+    BFT_MALLOC(ct->file_name, length, char);
+    sprintf(ct->file_name, "cooling_towers_balance.%02d", ct->num);
 
-    f = fopen(file_name, "a");
+    f = fopen(ct->file_name, "a");
 
     fprintf(f, "# Balance for the exchange zone %02d\n", ct->num);
     fprintf(f, "# ==========================================================\n");
@@ -384,7 +391,6 @@ cs_ctwr_define(const char           zone_criteria[],
     fprintf(f, "\tDeb liq in\tDeb liq out");
     fprintf(f, "\tDeb air in\tDeb air out\n");
     fclose(f);
-    BFT_FREE(file_name);
   }
 
 }
@@ -423,20 +429,10 @@ void
 cs_ctwr_build_all(const cs_mesh_t              *mesh,
                   const cs_mesh_quantities_t   *mesh_quantities)
 {
-  /* Create an array for cells flagging */
-  /*------------------------------------*/
-
-  cs_ctwr_zone_t  *ct;
-
-  for (int id = 0; id < _n_ct_zones; id++) {
-
-    ct = _ct_zone[id];
-    /* Cells selection */
-    BFT_MALLOC(ct->ze_cell_list, mesh->n_cells_with_ghosts, cs_lnum_t);
-
-    cs_selector_get_cell_list(ct->criteria, &(ct->n_cells), ct->ze_cell_list);
-
-    BFT_REALLOC(ct->ze_cell_list, ct->n_cells, cs_lnum_t);
+  /* Loop over exchange zones: set number of cells */
+  for (int ict = 0; ict < _n_ct_zones; ict++) {
+    cs_ctwr_zone_t *ct = _ct_zone[ict];
+    ct->n_cells = cs_volume_zone_by_name(ct->name)->n_cells;
   }
 
   /* Postprocessing: multiply enthalpy by fraction */
@@ -466,9 +462,10 @@ cs_ctwr_all_destroy(void)
 
     ct = _ct_zone[id];
     BFT_FREE(ct->criteria);
-    BFT_FREE(ct->ze_cell_list);
-    BFT_FREE(ct->inlet_faces_list);
-    BFT_FREE(ct->outlet_faces_list);
+    BFT_FREE(ct->name);
+    BFT_FREE(ct->file_name);
+    BFT_FREE(ct->inlet_faces_ids);
+    BFT_FREE(ct->outlet_faces_ids);
     BFT_FREE(ct);
 
   }
@@ -565,12 +562,11 @@ cs_ctwr_log_balance(void)
   cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;   /* liquid mass per unit
                                                        cell volume */
 
-  cs_real_t *liq_mass_flow = cs_field_by_name("inner_mass_flux_y_l_packing")->val;
+  cs_real_t *liq_mass_flow = cs_field_by_name("inner_mass_flux_y_l_packing")->val;//FIXME take the good one... for y_p
   cs_real_t *mass_flow = cs_field_by_name("inner_mass_flux")->val;
 
   int length;
   FILE *f;
-  char  *file_name = NULL;
   cs_real_t cp_l = cs_glob_ctwr_props->cp_l;
 
   /* Loop over Cooling tower zones */
@@ -597,7 +593,7 @@ cs_ctwr_log_balance(void)
      * And humid air quantities at liquid inlet */
     for (cs_lnum_t i = 0; i < ct->n_inlet_faces; i++) {
 
-      cs_lnum_t face_id = ct->inlet_faces_list[i];
+      cs_lnum_t face_id = ct->inlet_faces_ids[i];
       cs_lnum_t cell_id_l, cell_id_h;
 
       /* Convention: inlet is negativ mass flux
@@ -648,7 +644,7 @@ cs_ctwr_log_balance(void)
      * And humid air quantities at liquid outlet */
     for (cs_lnum_t i = 0; i < ct->n_outlet_faces; i++) {
 
-      cs_lnum_t face_id = ct->outlet_faces_list[i];
+      cs_lnum_t face_id = ct->outlet_faces_ids[i];
       cs_lnum_t cell_id_l, cell_id_h;
 
       /* Convention: outlet is positiv mass flux
@@ -695,12 +691,8 @@ cs_ctwr_log_balance(void)
 
     /* Writings */
     if (cs_glob_rank_id <= 0) {
-      length = strlen("cooling_towers_balance.") + 3;
-      BFT_MALLOC(file_name, length, char);
-      sprintf(file_name, "cooling_towers_balance.%02d", ct->num);
-
       if (CS_ABS(ct->h_l_in - ct->h_l_out)> 1.e-6) {
-        f = fopen(file_name, "a");
+        f = fopen(ct->file_name, "a");
         cs_real_t aux = CS_ABS(  (ct->h_h_out - ct->h_h_in)
                                / (ct->h_l_in - ct->h_l_out));
         fprintf(f,
@@ -720,7 +712,6 @@ cs_ctwr_log_balance(void)
       }
     }
 
-    BFT_FREE(file_name);
   }
 }
 
@@ -847,8 +838,9 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
+    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
     for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
-      cs_lnum_t cell_id = ct->ze_cell_list[i];
+      cs_lnum_t cell_id = ze_cell_ids[i];
 
       /* Initialize with the injection water temperature */
       t_l[cell_id] = ct->t_l_bc;
@@ -962,10 +954,11 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   for (int ict = 0; ict < _n_ct_zones; ict++) {
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
-    BFT_MALLOC(ct->inlet_faces_list, n_i_faces, cs_lnum_t);
-    BFT_MALLOC(ct->outlet_faces_list, n_i_faces, cs_lnum_t);
+    BFT_MALLOC(ct->inlet_faces_ids, n_i_faces, cs_lnum_t);
+    BFT_MALLOC(ct->outlet_faces_ids, n_i_faces, cs_lnum_t);
+    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
     for (int i = 0; i < ct->n_cells; i++) {
-      cell_id = ct->ze_cell_list[i];
+      cell_id = ze_cell_ids[i];
       packing_cell[cell_id] = ict;
 
     }
@@ -1007,7 +1000,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
         /* cell_id_2 is an inlet halo */
         if (liq_mass_flow[face_id] < 0.0) {
 
-          ct->inlet_faces_list[ct->n_inlet_faces] = face_id;
+          ct->inlet_faces_ids[ct->n_inlet_faces] = face_id;
 
           ct->n_inlet_faces ++;
           ct->surface_in += liq_surf;
@@ -1019,7 +1012,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
         }
         /* face_id is an outlet */
         else {
-          ct->outlet_faces_list[ct->n_outlet_faces] = face_id;
+          ct->outlet_faces_ids[ct->n_outlet_faces] = face_id;
 
           ct->n_outlet_faces ++;
           ct->surface_out += liq_surf;
@@ -1030,7 +1023,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
         /* cell_id_1 is an inlet halo */
         if (liq_mass_flow[face_id] > 0.0) {
 
-          ct->inlet_faces_list[ct->n_inlet_faces] = face_id;
+          ct->inlet_faces_ids[ct->n_inlet_faces] = face_id;
 
           ct->n_inlet_faces ++;
           ct->surface_in += liq_surf;
@@ -1042,7 +1035,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
         }
         /* cell_id_1 is an outlet */
         else {
-          ct->outlet_faces_list[ct->n_outlet_faces] = face_id;
+          ct->outlet_faces_ids[ct->n_outlet_faces] = face_id;
 
           ct->n_outlet_faces ++;
           ct->surface_out += liq_surf;
@@ -1057,7 +1050,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           /* CT2 */
           ct = _ct_zone[packing_cell[cell_id_2]];
 
-          ct->inlet_faces_list[ct->n_inlet_faces] = face_id;
+          ct->inlet_faces_ids[ct->n_inlet_faces] = face_id;
 
           ct->n_inlet_faces ++;
           ct->surface_in += liq_surf;
@@ -1065,7 +1058,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           /* CT1 */
           ct = _ct_zone[packing_cell[cell_id_1]];
 
-          ct->outlet_faces_list[ct->n_outlet_faces] = face_id;
+          ct->outlet_faces_ids[ct->n_outlet_faces] = face_id;
 
           ct->n_outlet_faces ++;
           ct->surface_out += liq_surf;
@@ -1076,7 +1069,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           /* CT2 */
           ct = _ct_zone[packing_cell[cell_id_2]];
 
-          ct->outlet_faces_list[ct->n_outlet_faces] = face_id;
+          ct->outlet_faces_ids[ct->n_outlet_faces] = face_id;
 
           ct->n_outlet_faces ++;
           ct->surface_out += liq_surf;
@@ -1084,7 +1077,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           /* CT1 */
           ct = _ct_zone[packing_cell[cell_id_1]];
 
-          ct->inlet_faces_list[ct->n_inlet_faces] = face_id;
+          ct->inlet_faces_ids[ct->n_inlet_faces] = face_id;
 
           ct->n_inlet_faces ++;
           ct->surface_in += liq_surf;
@@ -1100,8 +1093,8 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   for (int ict = 0; ict < _n_ct_zones; ict++) {
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
-    BFT_REALLOC(ct->inlet_faces_list, ct->n_inlet_faces, cs_lnum_t);
-    BFT_REALLOC(ct->outlet_faces_list, ct->n_outlet_faces, cs_lnum_t);
+    BFT_REALLOC(ct->inlet_faces_ids, ct->n_inlet_faces, cs_lnum_t);
+    BFT_REALLOC(ct->outlet_faces_ids, ct->n_outlet_faces, cs_lnum_t);
 
     cs_parall_sum(1, CS_DOUBLE, &(ct->surface_in));
     cs_parall_sum(1, CS_DOUBLE, &(ct->surface_out));
@@ -1154,7 +1147,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   cs_real_t *h_l = (cs_real_t *)CS_F_(h_l)->val;    /*liquid enthalpy */
   cs_real_t *y_l = (cs_real_t *)CS_F_(ym_l)->val;      /*liquid mass per unit cell volume*/
 
-  cs_real_t *liq_mass_flow = cs_field_by_name("inner_mass_flux_y_l_packing")->val;
+  cs_real_t *liq_mass_flow = cs_field_by_name("inner_mass_flux_y_l_packing")->val;//FIXME
 
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
@@ -1208,8 +1201,9 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   for (int ict = 0; ict < _n_ct_zones; ict++) {
     cs_ctwr_zone_t *ct = _ct_zone[ict];
 
+    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
     for (cs_lnum_t i = 0; i < ct->n_cells; i++) {
-      cs_lnum_t cell_id = ct->ze_cell_list[i];
+      cs_lnum_t cell_id = ze_cell_ids[i];
 
       /* Update the injected liquid temperature
        * NB: (y_l.h_l) is transported and not (h_l) */
@@ -1228,7 +1222,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
        * And humid air quantities at liquid outlet */
       for (cs_lnum_t i = 0; i < ct->n_outlet_faces; i++) {
 
-        cs_lnum_t face_id = ct->outlet_faces_list[i];
+        cs_lnum_t face_id = ct->outlet_faces_ids[i];
         cs_lnum_t cell_id_l, cell_id_h;
 
         /* Convention: outlet is positiv mass flux
@@ -1303,6 +1297,8 @@ cs_ctwr_source_term(int              f_id,
                     cs_real_t        exp_st[],
                     cs_real_t        imp_st[])
 {
+  const cs_lnum_2_t *i_face_cells
+    = (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
   cs_real_t  *rho_h = (cs_real_t *)CS_F_(rho)->val; /* humid air (bulk) density */
   cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(u)->val;   /* humid air (bulk) */
 
@@ -1320,6 +1316,8 @@ cs_ctwr_source_term(int              f_id,
   /* Variable and properties for rain zones */
   cs_field_t *cfld_yp = cs_field_by_name_try("y_p");
   cs_field_t *cfld_drift_vel = cs_field_by_name_try("drift_vel_y_p");
+  cs_real_t *liq_mass_flow
+    = cs_field_by_name("inner_mass_flux_y_p")->val;
 
   cs_real_t vertical[3], horizontal[3], norme_g;
 
@@ -1379,11 +1377,13 @@ cs_ctwr_source_term(int              f_id,
     int zone_type = ct->type;
     int evap_model = ct->model;
 
+    const cs_lnum_t *ze_cell_ids = cs_volume_zone_by_name(ct->name)->cell_ids;
+
     if (evap_model != CS_CTWR_NONE) {
 
       for (cs_lnum_t j = 0; j < ct->n_cells; j++) {
 
-        cs_lnum_t cell_id = ct->ze_cell_list[j];
+        cs_lnum_t cell_id = ze_cell_ids[j];
 
         /* For correlations, T_h cannot be greter than T_l */
         cs_real_t temp_h = CS_MIN(t_h[cell_id], t_l[cell_id]);
@@ -1583,6 +1583,29 @@ cs_ctwr_source_term(int              f_id,
 
       } /* end loop over cells */
     } /* end evaporation model */
+
+    /* Impose rain zone injection */
+    if (zone_type == CS_CTWR_RAIN) {
+      if (f_id == cfld_yp->id) {
+        /* Compute liquid water quantities
+         * And humid air quantities at liquid inlet */
+        for (cs_lnum_t i = 0; i < ct->n_inlet_faces; i++) {
+
+          cs_lnum_t face_id = ct->inlet_faces_ids[i];
+          cs_lnum_t cell_id;
+
+          /* Convention: inlet is negativ mass flux
+           * Then upwind cell for liquid is i_face_cells[][1] */
+          if (liq_mass_flow[face_id] > 0)
+            cell_id = i_face_cells[face_id][0];
+          else
+            cell_id = i_face_cells[face_id][1];
+          imp_st[cell_id] = cs_math_infinite_r;
+          /* Because we deal with an increment */
+          exp_st[cell_id] -= imp_st[lc_id] * ct->y_l_bc;
+        }
+      }
+    }
   } /* end packing zone */
 }
 
@@ -1594,87 +1617,47 @@ cs_ctwr_source_term(int              f_id,
  * Careful, this is different from an injection source term, which would
  * normally be handled with 'cs_user_mass_source_term'
  *
- * \param[in]   call_id          Calling sequence flag
  * \param[in]   p0              Reference pressure
  * \param[in]   molmassrat      Dry air to water vapor molecular mass ratio
  * \param[in]   n_tot           Pointer to the total number
  *                              of cells in the packing zones
- * \param[in]   packing_cell    Packing cell ids
  * \param[in]   mass_source     Mass source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_bulk_mass_source_term(int               call_id,
-                              const cs_real_t   p0,
+cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
                               const cs_real_t   molmassrat,
                               int              *n_tot,
-                              cs_lnum_t         packing_cell[],
                               cs_real_t         mass_source[])
 {
-  if (call_id == 1) {
-    // Count the total number of cells in which the source term will be applied
-    // This is the total number of cells in the packing regions
 
-    if (*n_tot != 0) {
-      //Error message - This would indicate that 'cs_user_mass_source_term' is also
-      //in use, which would be inconsistent with activating the cooling towers model
+  /* Compute the mass exchange term */
+  cs_real_t *exp_st;
+  cs_real_t *imp_st;
 
-    }
-    for (cs_lnum_t ict = 0; ict < _n_ct_zones; ict++) {
-      cs_ctwr_zone_t *ct = _ct_zone[ict];
-      *n_tot = *n_tot + (ct->n_cells);
-    }
+  BFT_MALLOC(exp_st, *n_tot, cs_real_t);
+  BFT_MALLOC(imp_st, *n_tot, cs_real_t);
 
-  } else if (call_id == 2) {
-
-    // Fill in the array of cells in which the source term will be applied
-    // These are the cells located in the packing regions
-
-    cs_lnum_t i = 0;
-
-    for (cs_lnum_t ict = 0; ict < _n_ct_zones; ict++) {
-
-      cs_ctwr_zone_t *ct = _ct_zone[ict];
-
-      for (cs_lnum_t j = 0; j < ct->n_cells; j++) {
-        cs_lnum_t cell_id = ct->ze_cell_list[j];
-        /* Careful, cell number and not cell id because used in Fortran */
-        packing_cell[i] = cell_id + 1;
-        i++;
-      }
-
-    }
-
-  } else if (call_id == 3) {
-
-    // Compute the mass exchange term
-    cs_real_t *exp_st;
-    cs_real_t *imp_st;
-
-    BFT_MALLOC(exp_st, *n_tot, cs_real_t);
-    BFT_MALLOC(imp_st, *n_tot, cs_real_t);
-
-    for (cs_lnum_t i = 0; i < *n_tot; i++) {
-      exp_st[i] = 0.0;
-      imp_st[i] = 0.0;
-    }
-
-
-    cs_ctwr_source_term(CS_F_(p)->id, /* Bulk mass source term is
-                                         stored for pressure */
-                        p0,
-                        molmassrat,
-                        exp_st,
-                        imp_st);
-
-    for (cs_lnum_t i = 0; i < *n_tot; i++) {
-      mass_source[i] = mass_source[i] + exp_st[i];
-    }
-
-    BFT_FREE(exp_st);
-    BFT_FREE(imp_st);
+  for (cs_lnum_t i = 0; i < *n_tot; i++) {
+    exp_st[i] = 0.0;
+    imp_st[i] = 0.0;
   }
+
+
+  cs_ctwr_source_term(CS_F_(p)->id, /* Bulk mass source term is
+                                       stored for pressure */
+      p0,
+      molmassrat,
+      exp_st,
+      imp_st);
+
+  for (cs_lnum_t i = 0; i < *n_tot; i++) {
+    mass_source[i] = mass_source[i] + exp_st[i];
+  }
+
+  BFT_FREE(exp_st);
+  BFT_FREE(imp_st);
 }
 
 /*----------------------------------------------------------------------------

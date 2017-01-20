@@ -228,6 +228,9 @@ do ifac = 1, nfabor
     icodcl(ifac, isca(iyml)) = 3
     rcodcl(ifac, isca(iyml), 3) = 0.d0
 
+    icodcl(ifac, isca(iy_p_l)) = 1
+    rcodcl(ifac, isca(iy_p_l), 1) = 0.d0
+
   endif
 
 enddo
