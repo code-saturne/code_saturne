@@ -443,7 +443,7 @@ void
 cs_phys_prop_compute(cs_phys_prop_type_t          property,
                      cs_lnum_t                    n_vals,
                      cs_lnum_t                    var1_stride,
-                     cs_lnum_t                    var2_stride,                  
+                     cs_lnum_t                    var2_stride,
                      const cs_real_t              var1[],
                      const cs_real_t              var2[],
                      cs_real_t                    val[])
