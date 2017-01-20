@@ -84,6 +84,13 @@ _code_saturne() {
                 *) cmdOpts="-q --quiet -r --run -c --compare -p --post";;
             esac
             ;;
+        smgr)
+            case ${prev} in
+                -f|--file) _filedir; return 0;;
+                -m|--mail) COMPREPLY=( ); return 0;;
+                *) cmdOpts="-q --quiet -r --run -c --compare -p --post";;
+            esac
+            ;;
         bdiff)
             case ${prev} in
                 --f-format)    COMPREPLY=( ); return 0;;

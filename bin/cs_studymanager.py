@@ -254,7 +254,7 @@ def run_studymanager(pkg, options):
     set_modules(pkg)
     source_rcfile(pkg)
 
-    from studymanager.Study import Studies
+    from studymanager.cs_studymanager_study import Studies
 
     # Scripts
 
