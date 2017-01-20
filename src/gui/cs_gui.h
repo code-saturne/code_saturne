@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -362,19 +363,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
                               const cs_real_t *viscv0);
 
 /*----------------------------------------------------------------------------
- * Head losses
- *
- * Fortran Interface:
- *
- * subroutine uikpdc
- * *****************
- *
- * double precision ckupdc  -->   head losses matrix
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(uikpdc, UIKPDC)(cs_real_t  ckupdc[]);
-
-/*----------------------------------------------------------------------------
  * 1D profile postprocessing
  *
  * Fortran Interface:
@@ -480,6 +468,22 @@ cs_gui_init(void);
 
 void
 cs_gui_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute GUI-defined head losses for a given volume zone.
+ *
+ * Head loss tensor coefficients for each cell are organized as follows:
+ * cku11, cku22, cku33, cku12, cku13, cku23.
+ *
+ * \param[in]       zone  pointer to zone structure
+ * \param[in, out]  cku   head loss coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_head_losses(const cs_volume_zone_t  *zone,
+                   cs_real_t                cku[][6]);
 
 /*-----------------------------------------------------------------------------
  * Selection of linear solvers.

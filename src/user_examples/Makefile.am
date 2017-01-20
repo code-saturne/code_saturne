@@ -137,7 +137,7 @@ cs_user_extra_operations-parallel_operations.f90 \
 cs_user_extra_operations-richards_flux.f90 \
 cs_user_extra_operations-scalar_balance_by_zone.f90 \
 cs_user_fluid_structure_interaction.f90 \
-cs_user_head_losses.f90 \
+cs_user_head_losses.c \
 cs_user_initialization-atmospheric.f90 \
 cs_user_initialization-base.f90 \
 cs_user_initialization-compressible.f90 \

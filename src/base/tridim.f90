@@ -110,7 +110,7 @@ integer          ntrela
 integer          icmst
 
 integer          isvhb, iz
-integer          ii    ,  ikpdc
+integer          ii
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
@@ -529,17 +529,11 @@ endif
 
 if (ncpdct.gt.0) then
 
-  do ikpdc = 1, 6
-    do ielpdc = 1, ncepdc
-      ckupdc(ielpdc,ikpdc) = 0.d0
-    enddo
-  enddo
-
-  call uikpdc(ckupdc)
+  call cs_head_losses_compute(ckupdc)
 
   iappel = 3
 
-  call cs_user_head_losses &
+  call cs_f_user_head_losses &
 ( ncepdc , iappel ,                                              &
   icepdc , izcpdc ,                                              &
   dt     ,                                                       &

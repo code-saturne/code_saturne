@@ -70,9 +70,10 @@ AM_LDFLAGS =
 # Add cs_user_modules file to distribution as it is not automatically accounted
 # for by automake
 
-EXTRA_DIST = cs_user_modules.f90 cs_user_parameters.f90 \
-cs_user_extra_operations.f90 cs_user_physical_properties.f90 \
-cs_user_initialization.f90 cs_user_boundary_conditions.f90
+EXTRA_DIST = cs_user_modules.f90 \
+cs_user_boundary_conditions.f90 cs_user_extra_operations.f90 \
+cs_user_head_losses.f90 cs_user_initialization.f90  \
+cs_user_parameters.f90 cs_user_physical_properties.f90
 
 # Library source files
 
@@ -88,7 +89,7 @@ cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \
-cs_user_head_losses.f90 \
+cs_user_head_losses.c \
 cs_user_initialization.c \
 cs_user_les_inflow.f90 \
 cs_user_mass_source_terms.f90 \
@@ -116,7 +117,7 @@ usthht.f90 \
 usvort.f90 \
 usvosy.f90
 
-# Special treatment to files existing both in f90 and C:
+# Special treatment for files existing both in f90 and C:
 cs_user_f_boundary_conditions = $(top_srcdir)/src/user/cs_user_boundary_conditions.f90
 
 cs_f_user_boundary_conditions.o: $(cs_user_f_boundary_conditions)
@@ -150,6 +151,17 @@ cs_f_user_extra_operations.obj: $(cs_user_f_extra_operations)
 cs_f_user_extra_operations.lo: $(cs_user_f_extra_operations)
 	$(LTFCCOMPILE) -c -o cs_f_user_extra_operations.o $(cs_user_f_extra_operations)
 
+cs_user_f_head_losses = $(top_srcdir)/src/user/cs_user_head_losses.f90
+
+cs_f_user_head_losses.o: $(cs_user_f_head_losses)
+	$(FCCOMPILE) -c -o cs_f_user_head_losses.o  $(cs_user_f_head_losses)
+
+cs_f_user_head_losses.obj: $(cs_user_f_head_losses)
+	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_head_losses)`
+
+cs_f_user_head_losses.lo: $(cs_user_f_head_losses)
+	$(LTFCCOMPILE) -c -o cs_f_user_head_losses.o $(cs_user_f_head_losses)
+
 cs_user_f_initialization = $(top_srcdir)/src/user/cs_user_initialization.f90
 
 cs_f_user_initialization.o: $(cs_user_f_initialization)
@@ -176,7 +188,7 @@ noinst_LTLIBRARIES = libcsuser.la
 libcsuser_la_SOURCES = $(userfiles)
 libcsuser_la_LIBADD = cs_f_user_parameters.lo cs_f_user_extra_operations.lo \
 cs_f_user_initialization.lo cs_f_user_physical_properties.lo \
-cs_f_user_boundary_conditions.lo
+cs_f_user_boundary_conditions.lo cs_f_user_head_losses.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
 userdir = $(pkgdatadir)/user

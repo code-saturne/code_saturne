@@ -105,6 +105,7 @@ cs_fp_exception.h \
 cs_gas_mix.h \
 cs_halo.h \
 cs_halo_perio.h \
+cs_head_losses.h \
 cs_interface.h \
 cs_interpolate.h \
 cs_internal_coupling.h \
@@ -260,6 +261,7 @@ cs_flag_check.c \
 cs_gas_mix.c \
 cs_halo.c \
 cs_halo_perio.c \
+cs_head_losses.c \
 cs_interpolate.c \
 csinit.f90 \
 cs_log_iteration.c \

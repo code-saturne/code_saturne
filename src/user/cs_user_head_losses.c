@@ -1,5 +1,5 @@
 /*============================================================================
- * Boundary and volume zone definitions.
+ * User head loss definitions.
  *============================================================================*/
 
 /* VERS */
@@ -22,7 +22,7 @@
   You should have received a copy of the GNU General Public License along with
   this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
- */
+*/
 
 /*----------------------------------------------------------------------------*/
 
@@ -33,33 +33,44 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
- * Local headers
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "cs_mesh_location.h"
 #include "cs_base.h"
-#include "cs_boundary_zone.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_field_operator.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_halo.h"
 #include "cs_log.h"
 #include "cs_parameters.h"
+#include "cs_prototypes.h"
+#include "cs_rotation.h"
 #include "cs_time_step.h"
+#include "cs_turbomachinery.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
- * Header for the current file
+ *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_prototypes.h"
@@ -68,65 +79,43 @@
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Public function definitions
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_head_losses.c
+ *
+ * \brief User head loss definitions.
+ */
+/*----------------------------------------------------------------------------*/
+
+/*============================================================================
+ * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define volume and surface zones.
+ * \brief Define head losses for a given volume zone.
+ *
+ * Head loss tensor coefficients for each cell are organized as follows:
+ * ck11, ck22, ck33, ck12, ck13, ck23.
+ *
+ * Coefficients are set to zero (then computed based on definitions provided
+ * through the GUI if this is the case) before calling this function, so
+ * setting values to zero is usually not necessary, unless we want to fully
+ * overwrite a GUI-based definition.
+ *
+ * Diagonal coefficients must be positive; the calculation may diverge
+ * if this is not the case.
+ *
+ * \param[in]       zone  pointer to zone structure
+ * \param[in, out]  cku   head loss coefficients
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_zones(void)
+cs_user_head_losses(const  cs_volume_zone_t  *zone,
+                    cs_real_t                 cku[][6])
 {
-  /* Example:
-     a volume zone for head losses based on geometrical criteria
-     described by a rule. */
 
-  /*! [user_zones_head_loss_1] */
-  {
-    cs_volume_zone_define("head_loss_1",
-                          "box[4.0, 6.0, -1e6, 2.0, 8.0, 1e6]",
-                          CS_VOLUME_ZONE_HEAD_LOSS);
-  }
-  /*! [user_zones_head_loss_1] */
-
-  /* Example:
-     define 3 spherical source term zones based on geometrical criteria
-     described by a rule. */
-
-  /*! [user_zones_volume_1] */
-  {
-    char name[128], criteria[128];
-
-    for (int i = 0; i < 3; i++) {
-
-      double s_coords[] = {0, 0, 2.0*i};
-
-      snprintf(name, 127, "source_%d", i);
-      snprintf(criteria, 127, "sphere[%f, %f, %f, 0.5]",
-               s_coords[0], s_coords[0], s_coords[0]);
-
-      cs_volume_zone_define(name, criteria, CS_VOLUME_ZONE_SOURCE_TERM);
-    }
-  }
-  /*! [user_zones_volume_1] */
-
-  /* Example:
-     define simple boundary zones, allowing all faces not in the
-     "INLET" or "OUTLET" groups to be considered as walls */
-
-  /*! [user_zones_boundary_1] */
-  {
-    int z_id = cs_boundary_zone_define("wall", "all[]", 0);
-    cs_boundary_zone_set_overlay(z_id, true);
-
-    cs_boundary_zone_define("inlet", "INLET", 0);
-    cs_boundary_zone_define("outlet", "OUTLET", 0);
-  }
-  /*! [user_zones_boundary_1] */
 }
 
 /*----------------------------------------------------------------------------*/

@@ -36,6 +36,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
 #include "cs_probe.h"
+#include "cs_volume_zone.h"
 
 #include "cs_domain.h"
 
@@ -188,9 +189,25 @@ void CS_PROCF (usvpst, USVPST)
  const cs_int_t   lstfbr[]   /* <-- list of post-processed boundary faces */
 );
 
-/*-------------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute GUI-defined head losses for a given volume zone.
+ *
+ * Head loss tensor coefficients for each cell are organized as follows:
+ * cku11, cku22, cku33, cku12, cku13, cku23.
+ *
+ * \param[in]       zone  pointer to zone structure
+ * \param[in, out]  cku   head loss coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_head_losses(const cs_volume_zone_t  *zone,
+                    cs_real_t                cku[][6]);
+
+/*----------------------------------------------------------------------------
  * Absorption coefficient for radiative module
- *-------------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_user_rad_transfer_absorption(const int         bc_type[],
@@ -198,9 +215,9 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
                                 const cs_real_t   dt[],
                                 cs_real_t         ck[]);
 
-/*-------------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * Compute the net radiation flux
- *-------------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_user_rad_transfer_net_flux(const int        itypfb[],

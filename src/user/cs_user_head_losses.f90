@@ -101,7 +101,7 @@
 !_______________________________________________________________________________
 
 
-subroutine cs_user_head_losses &
+subroutine cs_f_user_head_losses &
  ( ncepdp , iappel ,                                              &
    icepdc , izcpdc ,                                              &
    dt     ,                                                       &
@@ -140,4 +140,4 @@ double precision ckupdc(ncepdp,6)
 !===============================================================================
 
 return
-end subroutine cs_user_head_losses
+end subroutine cs_f_user_head_losses

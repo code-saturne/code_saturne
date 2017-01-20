@@ -2083,7 +2083,8 @@ _matrix_base_conversion(double  a11,   double  a12,   double  a13,
  *----------------------------------------------------------------------------*/
 
 static double
-_c_head_losses(const char* zone_id, const char* c)
+_c_head_losses(const char  *zone_id,
+               const char  *c)
 {
   char* path;
   double result = 0.0;
@@ -4368,96 +4369,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
 }
 
 /*----------------------------------------------------------------------------
- * Head losses
- *
- * Fortran Interface:
- *
- * subroutine uikpdc
- * *****************
- *
- * double precision ckupdc  -->   head losses matrix
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(uikpdc, UIKPDC)(cs_real_t  ckupdc[])
-{
-  if (!cs_gui_file_is_loaded())
-    return;
-
-  double vit;
-  double a11, a12, a13, a21, a22, a23, a31, a32, a33;
-  double c11, c12, c13, c21, c22, c23, c31, c32, c33;
-  double k11, k22, k33;
-
-  const int n_zones = cs_volume_zone_n_zones();
-  const cs_lnum_t ncepdp
-    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_HEAD_LOSS);
-
-  cs_lnum_t ielpdc = 0;
-
-  cs_field_t *c_vel = cs_field_by_name("velocity");
-
-  for (int z_id = 0; z_id < n_zones; z_id++) {
-    const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
-    if (z->type & CS_VOLUME_ZONE_HEAD_LOSS) {
-
-      const cs_lnum_t n_cells = z->n_cells;
-      const cs_lnum_t *cell_id = z->cell_id;
-
-      char z_id_str[32];
-      snprintf(z_id_str, 31, "%d", z_id);
-
-      k11 = _c_head_losses(z_id_str, "kxx");
-      k22 = _c_head_losses(z_id_str, "kyy");
-      k33 = _c_head_losses(z_id_str, "kzz");
-
-      a11 = _c_head_losses(z_id_str, "a11");
-      a12 = _c_head_losses(z_id_str, "a12");
-      a13 = _c_head_losses(z_id_str, "a13");
-      a21 = _c_head_losses(z_id_str, "a21");
-      a22 = _c_head_losses(z_id_str, "a22");
-      a23 = _c_head_losses(z_id_str, "a23");
-      a31 = _c_head_losses(z_id_str, "a31");
-      a32 = _c_head_losses(z_id_str, "a32");
-      a33 = _c_head_losses(z_id_str, "a33");
-
-      if (   cs_gui_is_equal_real(a12, 0.0)
-          && cs_gui_is_equal_real(a13, 0.0)
-          && cs_gui_is_equal_real(a23, 0.0)) {
-
-        c11 = k11;
-        c22 = k22;
-        c33 = k33;
-        c12 = 0.0;
-        c13 = 0.0;
-        c23 = 0.0;
-
-      }
-      else
-        _matrix_base_conversion(a11, a12, a13, a21, a22, a23, a31, a32, a33,
-                                k11, 0.0, 0.0, 0.0, k22, 0.0, 0.0, 0.0, k33,
-                                &c11, &c12, &c13,
-                                &c21, &c22, &c23,
-                                &c31, &c32, &c33);
-
-      for (cs_lnum_t j = 0; j < n_cells; j++) {
-        cs_lnum_t iel = (cell_id != NULL) ? cell_id[j] : j;
-        vit =   c_vel->val_pre[3 * iel    ] * c_vel->val_pre[3 * iel    ]
-              + c_vel->val_pre[3 * iel + 1] * c_vel->val_pre[3 * iel + 1]
-              + c_vel->val_pre[3 * iel + 2] * c_vel->val_pre[3 * iel + 2];
-        vit = sqrt(vit);
-        ckupdc[0 * ncepdp + ielpdc] = 0.5 * c11 * vit;
-        ckupdc[1 * ncepdp + ielpdc] = 0.5 * c22 * vit;
-        ckupdc[2 * ncepdp + ielpdc] = 0.5 * c33 * vit;
-        ckupdc[3 * ncepdp + ielpdc] = 0.5 * c12 * vit;
-        ckupdc[4 * ncepdp + ielpdc] = 0.5 * c23 * vit;
-        ckupdc[5 * ncepdp + ielpdc] = 0.5 * c13 * vit;
-        ielpdc++;
-      }
-    }
-  } /* zones+1 */
-}
-
-/*----------------------------------------------------------------------------
  * User law for material properties
  *
  * Fortran Interface:
@@ -5627,6 +5538,83 @@ cs_gui_finalize(void)
   xmlCleanupParser();
   xmlMemoryDump();
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute GUI-defined head losses for a given volume zone.
+ *
+ * Head loss tensor coefficients for each cell are organized as follows:
+ * cku11, cku22, cku33, cku12, cku13, cku23.
+ *
+ * \param[in]       zone  pointer to zone structure
+ * \param[in, out]  cku   head loss coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_head_losses(const cs_volume_zone_t  *zone,
+                   cs_real_t                cku[][6])
+{
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  if (! (zone->type & CS_VOLUME_ZONE_HEAD_LOSS))
+    return;
+
+  double c11, c12, c13, c21, c22, c23, c31, c32, c33;
+
+  const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(u)->val_pre);
+
+  const cs_lnum_t n_cells = zone->n_cells;
+  const cs_lnum_t *cell_id = zone->cell_id;
+
+  char z_id_str[32];
+  snprintf(z_id_str, 31, "%d", zone->id);
+
+  double k11 = _c_head_losses(z_id_str, "kxx");
+  double k22 = _c_head_losses(z_id_str, "kyy");
+  double k33 = _c_head_losses(z_id_str, "kzz");
+
+  double a11 = _c_head_losses(z_id_str, "a11");
+  double a12 = _c_head_losses(z_id_str, "a12");
+  double a13 = _c_head_losses(z_id_str, "a13");
+  double a21 = _c_head_losses(z_id_str, "a21");
+  double a22 = _c_head_losses(z_id_str, "a22");
+  double a23 = _c_head_losses(z_id_str, "a23");
+  double a31 = _c_head_losses(z_id_str, "a31");
+  double a32 = _c_head_losses(z_id_str, "a32");
+  double a33 = _c_head_losses(z_id_str, "a33");
+
+  if (   cs_gui_is_equal_real(a12, 0.0)
+      && cs_gui_is_equal_real(a13, 0.0)
+      && cs_gui_is_equal_real(a23, 0.0)) {
+
+    c11 = k11;
+    c22 = k22;
+    c33 = k33;
+    c12 = 0.0;
+    c13 = 0.0;
+    c23 = 0.0;
+
+  }
+  else
+    _matrix_base_conversion(a11, a12, a13, a21, a22, a23, a31, a32, a33,
+                            k11, 0.0, 0.0, 0.0, k22, 0.0, 0.0, 0.0, k33,
+                            &c11, &c12, &c13,
+                            &c21, &c22, &c23,
+                            &c31, &c32, &c33);
+
+  for (cs_lnum_t j = 0; j < n_cells; j++) {
+    cs_lnum_t c_id = cell_id[j];
+    cs_real_t v = cs_math_3_norm(cvara_vel[c_id]);
+    cku[j][0] = 0.5 * c11 * v;
+    cku[j][1] = 0.5 * c22 * v;
+    cku[j][2] = 0.5 * c33 * v;
+    cku[j][3] = 0.5 * c12 * v;
+    cku[j][4] = 0.5 * c23 * v;
+    cku[j][5] = 0.5 * c13 * v;
+  }
 }
 
 /*-----------------------------------------------------------------------------

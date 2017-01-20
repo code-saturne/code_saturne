@@ -5,6 +5,8 @@ Trunk (unreleased)
 User changes
 ------------
 
+- Allow user definitions of head losses by zones (see cs_user_head_losses.c).
+
 - Add a conservative gradient reconstructed with least squares gradient for
   vectors and scalars, in place of iterative gradient initialized by least
   squares gradient (imrgra=4,5,6).
