@@ -153,7 +153,7 @@
     \tens{M} \vect{X^{\prime\prime}} + \tens{C} \vect{X^{\prime}} + \tens{K} (\vect{X}+\vect{X_0}) = \vect{F}
   \f]
   where \f$\vect{X}\f$ stands for the structural displacement compared to initial mesh
-      postition (\c \ref xstr) and \f$\vect{X_0}\f$ represents the displacement of the structure in initial mesh compared to equilibrium.
+      position (\c \ref xstr) and \f$\vect{X_0}\f$ represents the displacement of the structure in initial mesh compared to equilibrium.
 
     Note that \f$\tens{M}\f$, \f$\tens{C}\f$ and \f$\tens{K}\f$ are 3x3 matrices.
 

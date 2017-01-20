@@ -629,8 +629,8 @@ cs_gui_mesh_boundary(cs_mesh_t  *mesh)
                                selected_faces);
 
     cs_mesh_boundary_insert(mesh,
-                            selected_faces,
-                            n_selected_faces);
+                            n_selected_faces,
+                            selected_faces);
 
 #if _XML_DEBUG_
     bft_printf("cs_gui_mesh_boundary==> \n");

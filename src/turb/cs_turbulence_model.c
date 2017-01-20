@@ -154,17 +154,15 @@ BEGIN_C_DECLS
         - 1: true (default if \f$ \rho \f$ is variable)
         - 0: false
         Useful if and only if \ref iturb = 20, 21, 50 or 60 and
-        (\ref cs_physical_constants_t::gx "gx", \ref cs_physical_constants_t::gy "gy",
-        \ref cs_physical_constants_t::gz "gz) \f$\ne\f$ (0,0,0) and the
-        density is not uniform.
+        (\ref cs_physical_constants_t::gravity "gravity")
+        \f$\ne\f$ (0,0,0) and the density is not uniform.
   \var  cs_turb_rans_model_t::igrari
         Indicates if the terms related to gravity are taken
         into account in the equations of \f$R_{ij}-\epsilon\f$.\n
         - 1: true (default if \f$ \rho \f$ is variable)
         - 0: false
         Useful if and only if \ref iturb = 30 or 31 and
-        (\ref cs_physical_constants_t::gx "gx", \ref cs_physical_constants_t::gy "gy",
-        \ref cs_physical_constants_t::gz "gz) \f$\ne\f$
+        (\ref cs_physical_constants_t::gravity "gravity") \f$\ne\f$
         (0,0,0) (\f$R_{ij}-\epsilon\f$ model with gravity) and the
         density is not uniform.
   \var  cs_turb_rans_model_t::ikecou
@@ -772,7 +770,7 @@ const double cs_turb_ccazd = 0.682;
  * Constant used in the definition of LES filtering diameter:
  * \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}}\f$
  * \ref cs_turb_xlesfl is a constant used to define, for
- * each cell $\Omega_i$, the width of the (implicit) filter:
+ * each cell \f$\Omega_i\f$, the width of the (implicit) filter:
  * \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$\n
  * Useful if and only if \ref iturb = 40 or 41
  */

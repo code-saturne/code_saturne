@@ -1658,7 +1658,7 @@ _boundary_insert(cs_mesh_t           *mesh,
  *
  * \param[in]       mesh     pointer to mesh structure to modify
  * \param[in]       n_faces  number of selected (interior) faces
- * \param[in, out]  ids      list of selected (interior) faces (0 to n-1)
+ * \param[in, out]  face_id  list of selected (interior) faces (0 to n-1)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1688,7 +1688,7 @@ cs_mesh_boundary_insert(cs_mesh_t  *mesh,
 
  * \param[in]       mesh     pointer to mesh structure to modify
  * \param[in]       n_faces  number of selected (interior) faces
- * \param[in, out]  ids      list of selected (interior) faces (0 to n-1)
+ * \param[in, out]  face_id  list of selected (interior) faces (0 to n-1)
  */
 /*----------------------------------------------------------------------------*/
 

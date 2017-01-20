@@ -368,7 +368,7 @@ cs_mesh_location_get_selection_function(int  id);
  * \brief  Check if \ref cs_mesh_location_get_elt_ids always returns
  *         explicit element ids for a given mesh location.
  *
- * \param[in]  id  id of mesh location
+ * \param[in]  id  id or type of mesh location
  *
  * \return true if explicit element ids are required, false otherwise
  */
@@ -382,7 +382,7 @@ cs_mesh_location_get_explicit_ids(int id);
  * \brief  Set behavior of \ref cs_mesh_location_get_elt_ids for a given
  *         mesh location and locations based on it.
  *
- * \param[in]  id                id of mesh location
+ * \param[in]  id                id or type of mesh location
  * \param[in]  explicit_elt_ids  indicate if explicit element ids are required
  */
 /*----------------------------------------------------------------------------*/

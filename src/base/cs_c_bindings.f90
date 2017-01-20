@@ -568,7 +568,8 @@ module cs_c_bindings
     !---------------------------------------------------------------------------
 
     !> \brief Calculation of \f$ u^\star \f$, \f$ k \f$ and \f$\varepsilon \f$
-    !>        from a diameter \f$ D_H \f$ and the reference velocity \f$ U_{ref} \f$
+    !>        from a diameter \f$ D_H \f$ and the reference velocity
+    !>        \f$ U_{ref} \f$
     !>        for a circular duct flow with smooth wall
     !>        (use for inlet boundary conditions).
     !>
@@ -644,7 +645,8 @@ module cs_c_bindings
     !---------------------------------------------------------------------------
 
     !> \brief Set inlet boundary condition values for turbulence variables based
-    !>        on a diameter \f$ D_H \f$ and the reference velocity \f$ U_{ref} \f$
+    !>        on a diameter \f$ D_H \f$ and the reference velocity
+    !>        \f$ U_{ref} \f$
     !>        for a circular duct flow with smooth wall.
     !>
     !> We use the laws from Idel'Cik, i.e.
@@ -1925,7 +1927,7 @@ module cs_c_bindings
 
     ! Interface to C function for Cooling towers
 
-    subroutine cs_ctwr_init_flow_vars(liq_mass_flow)                               &
+    subroutine cs_ctwr_init_flow_vars(liq_mass_flow)                         &
       bind(C, name='cs_ctwr_init_flow_vars')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -1963,6 +1965,17 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(inout) :: exp_st
       real(kind=c_double), dimension(*), intent(inout) :: imp_st
     end subroutine cs_ctwr_source_term
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for head losses
+
+    subroutine cs_head_losses_compute(ckupdc)  &
+      bind(C, name='cs_head_losses_compute')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: ckupdc
+    end subroutine cs_head_losses_compute
 
     !---------------------------------------------------------------------------
 
@@ -3746,10 +3759,11 @@ contains
 
   !=============================================================================
 
-  !> \brief Return the number of volume zone cells associated with a given
+  !> \brief Return the list of volume zone cells associated with a given
   !>        type flag.
 
   !> \param[in]   type_flag   type flag queried
+  !> \param[out]  cell_list   list of cells
 
   subroutine volume_zone_select_type_cells(type_flag, cell_list)
 
@@ -3888,19 +3902,17 @@ contains
   !>                               of the variable (explicit part)
   !> \param[in]     cofbfp        boundary condition array for the diffusion
   !>                               of the variable (implicit part)
-  !> \param[in]     flumas        mass flux at interior faces
-  !> \param[in]     flumab        mass flux at boundary faces
-  !> \param[in]     viscfm        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+  !> \param[in]     i_massflux    mass flux at interior faces
+  !> \param[in]     b_massflux    mass flux at boundary faces
+  !> \param[in]     i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
   !>                               at interior faces for the matrix
-  !> \param[in]     viscbm        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+  !> \param[in]     b_viscm       \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
   !>                               at boundary faces for the matrix
-  !> \param[in]     visccm        symmetric cell tensor
-  !>                              \f$ \tens{\mu}_\celli \f$
-  !> \param[in]     viscfs        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+  !> \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
   !>                               at interior faces for the r.h.s.
-  !> \param[in]     viscbs        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+  !> \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
   !>                               at boundary faces for the r.h.s.
-  !> \param[in]     visccs        symmetric cell tensor
+  !> \param[in]     viscel        symmetric cell tensor
   !>                              \f$ \tens{\mu}_\celli \f$
   !> \param[in]     weighf        internal face weight between cells i j in case
   !>                               of tensor diffusion

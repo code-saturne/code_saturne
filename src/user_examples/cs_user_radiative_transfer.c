@@ -48,8 +48,6 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "fvm_writer.h"
-
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -184,7 +182,7 @@ cs_user_radiative_transfer_parameters(void)
   /*! [cs_user_radiative_transfer_parameters] */
 }
 
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Absorption coefficient for radiative module
  *
@@ -205,7 +203,7 @@ cs_user_radiative_transfer_parameters(void)
  * \param[out]    ck            medium's absorption coefficient
  *                              (zero if transparent)
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_rad_transfer_absorption(const int         bc_type[],
@@ -232,7 +230,7 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
   /*< [abso_coeff]*/
 }
 
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the net radiation flux.
  *
@@ -261,7 +259,7 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
  * \param[in]   ck        absorption coefficient
  * \param[out]  net_flux  net flux (W/m2)
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_rad_transfer_net_flux(const int        bc_type[],

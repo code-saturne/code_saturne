@@ -53,8 +53,6 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "fvm_writer.h"
-
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"

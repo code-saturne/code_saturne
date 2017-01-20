@@ -841,7 +841,7 @@ cs_mesh_location_get_elt_ids_try(int id)
 /*!
  * \brief  Get a mesh location's element ids.
  *
- * \This function may only be used with a given location if
+ * This function may only be used with a given location if
  * \ref cs_mesh_location_set_explicit_ids has been used to indicate
  * explicit ids are needed for this location type.
  *
@@ -911,7 +911,7 @@ cs_mesh_location_get_selection_function(int  id)
  * \brief  Check if \ref cs_mesh_location_get_elt_ids always returns
  *         explicit element ids for a given mesh location type.
  *
- * \param[in]  type  type of location
+ * \param[in]  id  id or type of location
  *
  * \return true if explicit element ids are needed, false otherwise
  */
@@ -929,7 +929,7 @@ cs_mesh_location_get_explicit_ids(int id)
  * \brief  Set behavior of \ref cs_mesh_location_get_elt_ids for mesh
  *         mesh location type.
  *
- * \param[in]  type              type of location
+ * \param[in]  id                id or type of location
  * \param[in]  explicit_elt_ids  indicate if explicit element ids are needed
  */
 /*----------------------------------------------------------------------------*/

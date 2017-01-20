@@ -62,8 +62,6 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "fvm_writer.h"
-
 #include "cs_base.h"
 #include "cs_ctwr.h"
 #include "cs_fan.h"

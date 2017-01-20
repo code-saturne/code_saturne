@@ -101,11 +101,11 @@ Therefore :
 
    The following initialization block needs to be added for the following examples:
 
-  \snippet cs_user_radiative_transfer_bcs.f90 allocate
+  \snippet cs_user_radiative_transfer_bcs.c allocate
 
   At the end of the subroutine, it is recommended to deallocate the work array:
 
-  \snippet cs_user_radiative_transfer_bcs.f90 deallocate
+  \snippet cs_user_radiative_transfer_bcs.c deallocate
 
   In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their allocation is good pratice, and avoids using a different logic for C and Fortran.
 
@@ -114,13 +114,13 @@ Therefore :
 
   ivar: number of the thermal variable
 
-   \snippet cs_user_radiative_transfer_bcs.f90 ivar
+   \snippet cs_user_radiative_transfer_bcs.c ivar
 
   Min and Max values for the wall temperatures (clipping otherwise)
 
  \f$ T_{min} \f$ and \f$T_{max} \f$ are given in Kelvin.
 
-  \snippet  cs_user_radiative_transfer_bcs.f90 temp
+  \snippet  cs_user_radiative_transfer_bcs.c temp
 
    \subsection assign2 Assign boundary conditions to boundary wall
 
@@ -179,21 +179,21 @@ Here is a list of examples:
 
   For wall boundary faces, selection criteria: color 1  \n
 
-  \snippet   cs_user_radiative_transfer_bcs.f90  example_1
+  \snippet   cs_user_radiative_transfer_bcs.c  example_1
 
 
   \subsubsection ex2 Gray or black wall with fixed outside temperature \f$ T_{ext} \f$
 
   For wall boundary faces, selection criteria: color 2  \n
 
-  \snippet  cs_user_radiative_transfer_bcs.f90 example_2
+  \snippet  cs_user_radiative_transfer_bcs.c example_2
 
 
   \subsubsection ex3 Reflecting wall (\f$ epsp = 0 \f$) with fixed outside temperature \f$ T_{ext} \f$
 
   For wall boundary faces, selection criteria: color 3 \n
 
-  \snippet  cs_user_radiative_transfer_bcs.f90 example_3
+  \snippet  cs_user_radiative_transfer_bcs.c example_3
 
 
   \subsubsection ex4 Gray or black wall and fixed conduction flux through the wall
@@ -217,7 +217,7 @@ Flux density (< 0 if gain for the fluid)
  - For enthalpy \f$h\f$, in \f$ W.m^{-2} \f$:
  \f[ RCODC(IFAC,IVAR,3)=(viscls+\frac{visct}{\sigma})\cdot \grad{H} \cdot \vect{n}\f]
 
-\snippet  cs_user_radiative_transfer_bcs.f90 example_4
+\snippet  cs_user_radiative_transfer_bcs.c example_4
 
 
 \subsubsection ex5 Reflecting wall and fixed conduction flux through the wall
@@ -236,29 +236,29 @@ If the conduction flux is zero then the wall is adiabatic.
   - For enthalpies \f$h\f$,      in \f$ W.m^{-2} \f$:
     \f[  rcodcl(ifac,ivar,3) =    (viscls+\frac{visct}{\sigma})  \cdot \grad{H} \cdot \vect{n} \f]
 
-\snippet  cs_user_radiative_transfer_bcs.f90 example_5
+\snippet  cs_user_radiative_transfer_bcs.c example_5
 
 \subsubsection w Warning
 
 For all boundary faces that are not wall it is MANDATORY to impose a number of
 zone in the array \c izfrdp. For each zone, informations will be displayed in the listing.
 
-\snippet cs_user_radiative_transfer_bcs.f90 w
+\snippet cs_user_radiative_transfer_bcs.c w
 
 Verification that all boundary faces have been treated
 
-\snippet  cs_user_radiative_transfer_bcs.f90 check
+\snippet  cs_user_radiative_transfer_bcs.c check
 
 \subsection end_loop End of the loop on the boundary faces
 
-\snippet  cs_user_radiative_transfer_bcs.f90 end_radiative
+\snippet  cs_user_radiative_transfer_bcs.c end_radiative
 \subsection format_radiative_trans Format
-\snippet cs_user_radiative_transfer_bcs.f90 format_radiative
+\snippet cs_user_radiative_transfer_bcs.c format_radiative
 
 \section abso_flux Absorption coefficient and net radiation flux
 
 The absorption coefficient and the net radiation flux for the radiative module
-can be defined in \ref cs_user_radiative_transfer.f90 through the \ref usray3
+can be defined in \ref cs_user_radiative_transfer.c through the \ref usray3
 and \ref usray5 subroutines.
 
 \subsection abso Absorption coefficient
@@ -267,19 +267,19 @@ The absorption coefficient is defined in \ref usray3 .
 
 \subsubsection arg Arguments of usray3
 
-\snippet cs_user_radiative_transfer.f90 arg_1
+\snippet cs_user_radiative_transfer.c arg_1
 
 \subsubsection var Local variables to be added
 
-\snippet cs_user_radiative_transfer.f90 loc_var_dec_1
+\snippet cs_user_radiative_transfer.c loc_var_dec_1
 
 \subsubsection abso_coeff_computation Computation of the absorption coefficient
 
-\snippet cs_user_radiative_transfer.f90 abso_coeff
+\snippet cs_user_radiative_transfer.c abso_coeff
 
 \subsubsection format_1 Format
 
-\snippet cs_user_radiative_transfer.f90 format_1
+\snippet cs_user_radiative_transfer.c format_1
 
 \subsection usray5_flux Net radiation flux
 
@@ -287,25 +287,25 @@ The net radiation flux is computed in \ref usray5 .
 
 \subsubsection arg2 Arguments of usray5
 
-\snippet cs_user_radiative_transfer.f90 arg_2
+\snippet cs_user_radiative_transfer.c arg_2
 
 \subsubsection var2 Local variables to be added
 
-\snippet cs_user_radiative_transfer.f90 loc_var_dec_2
+\snippet cs_user_radiative_transfer.c loc_var_dec_2
 
 \subsubsection init Initialization
 
 At the end of the subroutine, if \c iok is different from zero, some faces
 have been forgotten and the calculation stops.
 
-\snippet cs_user_radiative_transfer.f90 init
+\snippet cs_user_radiative_transfer.c init
 
 \subsubsection net_flux_computation Computation of the net radiation flux
 
-\snippet cs_user_radiative_transfer.f90 net_flux
+\snippet cs_user_radiative_transfer.c net_flux
 
 \subsubsection format_2 Format
 
-\snippet cs_user_radiative_transfer.f90 format_2
+\snippet cs_user_radiative_transfer.c format_2
 
 */

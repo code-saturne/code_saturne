@@ -201,7 +201,7 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *q);
 /*!
  * \brief Summarize generic information about the cdo mesh quantities
  *
- * \param[in]  cdoq     pointer to cs_cdo_quantities_t structure
+ * \param[in]  quant   pointer to cs_cdo_quantities_t structure
  *
  */
 /*----------------------------------------------------------------------------*/

@@ -53,8 +53,6 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "fvm_writer.h"
-
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -73,8 +71,6 @@
 #include "cs_1d_wall_thermal.h"
 #include "cs_turbomachinery.h"
 #include "cs_selector.h"
-
-#include "cs_post.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -181,7 +177,8 @@ cs_user_1d_wall_thermal(int iappel,
 
     /* Get the list of boundary faces that will be coupled */
 
-    cs_selector_get_b_face_num_list("2 or 3 or 5 or 6 or 7 or 8 or 9 or 10", &nlelt, lstelt);
+    cs_selector_get_b_face_list("2 or 3 or 5 or 6 or 7 or 8 or 9 or 10",
+                                &nlelt, lstelt);
 
     izone++;
 
@@ -293,7 +290,6 @@ cs_user_1d_wall_thermal(int iappel,
   BFT_FREE(lstelt);
 
 /*! [deallocate] */
-
 }
 
 /*----------------------------------------------------------------------------*/

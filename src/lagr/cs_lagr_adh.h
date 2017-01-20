@@ -65,12 +65,9 @@ cs_lagr_adh(cs_lnum_t   ip,
             cs_real_t  *adhesion_energ);
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Calculation of the adhesion force and adhesion energy
  *
- * \param[in]  ip               particle number
  * \param[in]  tempf            thermal scalar value at current time step
  * \param[out] adhesion_energ   particle adhesion energy
  */

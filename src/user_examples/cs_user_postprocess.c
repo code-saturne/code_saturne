@@ -39,8 +39,6 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 
-#include "fvm_writer.h"
-
 #include "cs_base.h"
 #include "cs_field.h"
 #include "cs_interpolate.h"

@@ -34,7 +34,6 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[out]    icodcl        face boundary condition code:
 !>                               - 1 Dirichlet
 !>                               - 2 Radiative outlet

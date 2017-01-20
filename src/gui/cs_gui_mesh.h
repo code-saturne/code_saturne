@@ -82,7 +82,7 @@ cs_gui_mesh_smoothe(cs_mesh_t  *mesh);
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_mesh_thinwall(cs_mesh_t  *mesh);
+cs_gui_mesh_boundary(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Define user mesh extrude through the GUI.

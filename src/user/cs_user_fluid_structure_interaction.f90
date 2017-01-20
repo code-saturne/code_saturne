@@ -144,8 +144,6 @@ end subroutine usstr1
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]    nbstru         nombre de structures definies
-!> \param[in]    nvar           total number of variables
-!> \param[in]    nscal          total number of scalars
 !> \param[in]    idfstr         definition des structures
 !> \param[in]    dtcel          time step (per cell
 !> \param[in]    xmstru         matrix of structural mass

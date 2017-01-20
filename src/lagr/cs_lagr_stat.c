@@ -1456,7 +1456,7 @@ _find_or_add_moment(int                       location_id,
  * \brief Update weight accumulator for a mesh-based weight array
  *
  * \param[in, out]   mwa  moment weight accumulator
- * \param[in]        pointer to current weight values
+ * \param[in]        w    pointer to current weight values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2373,7 +2373,7 @@ _stat_define(const char                *name,
  * \param[in]  location_id    id of associated mesh location
  * \param[in]  stat_type      predefined statistics type, or -1
  * \param[in]  m_type         moment type
- * \param[in]  class          particle class id, or 0 for all
+ * \param[in]  class_id       particle class id, or 0 for all
  * \param[in]  dim            dimension associated with element data
  * \param[in]  component_id   attribute component id, or < 0 for all
  * \param[in]  data_func      pointer to function to compute statistics
@@ -2594,7 +2594,7 @@ cs_lagr_stat_time_moment_define(const char                *name,
  *
  * This function is ignored if called after \ref cs_lagr_stat_initialize.
  *
- * \param[in]  stat_type_id   particle statistics type
+ * \param[in]  stat_type   particle statistics type
  */
 /*----------------------------------------------------------------------------*/
 

@@ -42,7 +42,7 @@
 !> \param[in]     bb            linear system right hand side
 !_______________________________________________________________________________
 
-subroutine gauss(nn,mm,aa,xx,bb)
+subroutine gauss(nn ,mm, aa, xx, bb)
 
 !===============================================================================
 

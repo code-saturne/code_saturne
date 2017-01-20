@@ -1774,11 +1774,11 @@ cs_cdo_advection_get_vcb(const cs_equation_param_t   *eqp,
  *          advection field is approximated in each cell by a constant vector
  *          field
  *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in]      cbc     pointer to a cs_cell_bc_t structure
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in, out] fm      pointer to a cs_face_mesh_t structure
- * \param[in, out] b       pointer to a convection builder structure
+ * \param[in, out] cb      pointer to a convection builder structure
  * \param[in, out] csys    cell-wise structure storing the local system
  */
 /*----------------------------------------------------------------------------*/
@@ -1854,11 +1854,11 @@ cs_cdo_advection_add_vb_bc_cw(const cs_cell_bc_t         *cbc,
  * \brief   Compute the BC contribution for the convection operator when the
  *          convection field is not uniform inside a cell
  *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in]      cbc     pointer to a cs_cell_bc_t structure
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in, out] fm      pointer to a cs_face_mesh_t structure
- * \param[in, out] b       pointer to a convection builder structure
+ * \param[in, out] cb      pointer to a convection builder structure
  * \param[in, out] csys    cell-wise structure storing the local system
  */
 /*----------------------------------------------------------------------------*/
@@ -2146,7 +2146,7 @@ cs_cdo_advection_add_vcb_bc_analytic(const cs_cell_bc_t          *cbc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \Brief   Compute the value in each cell of the upwinding coefficient given
+ * \brief   Compute the value in each cell of the upwinding coefficient given
  *          a related Peclet number
  *
  * \param[in]      cdoq      pointer to the cdo quantities structure

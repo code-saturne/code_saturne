@@ -280,7 +280,7 @@ end subroutine ustsnv
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss terms
-!> \param[in]     ncssmp        number of cells with mass source terms
+!> \param[in]     ncesmp        number of cells with mass source terms
 !> \param[in]     iscal         index number of the current scalar
 !> \param[in]     icepdc        index number of cells with head loss terms
 !> \param[in]     icetsm        index number of cells with mass source terms
@@ -289,7 +289,8 @@ end subroutine ustsnv
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
-!> \param[in]                    source terms or mass rate (see \ref cs_user_mass_source_terms)
+!> \param[in]                    source terms or mass rate (see \ref
+!>                               cs_user_mass_source_terms)
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !______________________________________________________________________________!
@@ -467,7 +468,7 @@ end subroutine ustssc
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss terms
-!> \param[in]     ncssmp        number of cells with mass source terms
+!> \param[in]     ncesmp        number of cells with mass source terms
 !> \param[in]     iscal         index number of the current scalar
 !> \param[in]     icepdc        index number of cells with head loss terms
 !> \param[in]     icetsm        index number of cells with mass source terms
@@ -476,7 +477,8 @@ end subroutine ustssc
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
-!> \param[in]                    source terms or mass rate (see \ref cs_user_mass_source_terms)
+!> \param[in]                    source terms or mass rate
+!>                               (see \ref cs_user_mass_source_terms)
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !______________________________________________________________________________!

@@ -221,33 +221,28 @@
   These properties are defined in the files \ref numvar.f90 and
   \ref cs_field_pointer.h.
 
-  Deprecated Fortran code  | Current Fortran code                                                                            |C code                             | Description
-  ------------------------ | ------------------------------------------------------------------------------------------------|---------------------------------- | ------------
-  <tt> dt                  | dt                                                                                              |CS_F_(dt)->val                     | Local time step
-  propce(iel,irom)         | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::icrom "icrom", cpro_rho  )      |CS_F_(rho)->val                    | Density at the current time step
-  propce(iel,irom)         | call \ref field::field_get_val_s "field_get_val_prev_s"(\ref numvar::icrom "icrom", cproa_rho ) |CS_F_(rho)->val_pre                | Density at the previous time step
-  propce(iel,iromaa)       | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::icroaa "icroaa", cproaa_rho)    |\ref cs_real_t *cproaa_rho = \ref cs_field_by_name("density_old")->val    | Density at the second previous time
-  propce(iel,iviscl)       | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::iviscl "iviscl", cpro_viscl)    |CS_F_(mu)->val                     | Molecular viscosity
-  propce(iel,ivisct)       | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ivisct "ivisct", cpro_visct)    |CS_F_(mu_t)->val                   | Turbulent dynamic viscosity
-  propce(iel,ivisla)       | call \ref field::field_get_val_s "field_get_val_prev_s"(\ref numvar::iviscl "iviscl", cproa_viscl)|CS_F_(mu)->val_pre               | Dynamic molecular viscosity (in kg/(m.s)) \n at the previous time-step
-  propce(iel,ivista)       | call \ref field::field_get_val_s "field_get_val_prev_s"(\ref numvar::ivisct "ivisct", cproa_visct)|CS_F_(mu_t)->val_pre             | Dynamic turbulent viscosity \n at the previous time-step
-  propce(iel,icp)          | call \ref field::field_get_val_s "field_get_val_s"(\ref cstphy::icp "icp", cpro_cp)             |CS_F_(cp)->val                     | Specific heat
-  propce(iel,icpa)         | call \ref field::field_get_val_s "field_get_val_prev_s"(\ref numvar::icp "icp", cproa_cp)       |CS_F_(cp)->val_pre                 | specific heat at the previous time-step
-  propce(iel,icrom)        | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::icrom "icrom", cpro_crom)       |CS_F_(rho)->val                    | Density (at cells)
-  propfb(ifac,ibrom)       | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ibrom "ibrom", bpro_rho)        |CS_F_(rho_b)->val[face_id]         | Density (at boundary faces)
-  propce(iel,ismago)       | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ismago "ismago", cpro_smago)    |\ref cs_real_t *cpro_smago = \ref cs_field_by_name("smagorinsky_constant^2")->val| Field id of the anisotropic turbulent viscosity
-  propce(iel,icour)        | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::icour "icour", cpro_cour)       |\ref cs_real_t *cpro_cour = \ref cs_field_by_name("courant_number")->val | Courant number
-  propce(iel,ifour)        | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ifour "ifour", cpro_four)       |\ref cs_real_t *cpro_four = \ref cs_field_by_name("fourier_number")->val | Fourier number
-  propce(iel,iprtot)       | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::iprtot "iprtot", cpro_prtot)    |\ref cs_real_t *cpro_prtot = \ref cs_field_by_name("total_pressure")->val | Total pressure at cell centers
-  propce(iel,ivisma(1)) \n propce(iel,ivisma(2)) \n propce(iel,ivisma(3)) | callield::field_get_val_s "field_get_val_s"(\ref numvar::ivisma "ivisma"(1), cpro_vism1) \n call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ivisma "ivisma"(2), cpro_vism2) \n call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ivisma "ivisma"(3), cpro_vism3) | \ref cs_real_t *cpro_vism1  = \ref cs_field_by_name("mesh_viscosity_1")->val \n \ref cs_real_t *cpro_vism2 = \ref cs_field_by_name("mesh_viscosity_2")->val \n \ref cs_real_t *cpro_vism3  = \ref cs_field_by_name("mesh_viscosity_3")->val | Mesh velocity viscosity for the ALE module
-  propce(iel,itsrho)       | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::itsrho "itsrho"), cpro_tsrho )   |\ref cs_real_t *cpro_tsrho = \ref cs_field_by_name("dila_st")->val        | Global dilatation source terms
-  propce(iel,ibeta)        | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ibeta "ibeta"), cpro_beta  )     |\ref cs_real_t *cpro_beta = \ref cs_field_by_name("thermal_expansion")->val | Thermal expansion coefficient
-  -                        | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ipori "ipori", cpro_ipori)       |CS_F_(poro)->val                   | Porosity
-  -                        | call \ref field::field_get_val_v "field_get_val_v"(\ref numvar::iporf "iporf", cpro_iporf)       |CS_F_(t_poro)->val                 | Tensorial porosity
-  -                        | call \ref field::field_get_val_v "field_get_val_v"(\ref numvar::iforbr "iforbr", bpro_forbr)     |\ref cs_real_t *bpro_forbr = \ref cs_field_by_name("boundary_forces")->val| Field id of the stresses at boundary
-  -                        | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::iyplbr "iyplbr", bpro_yplus)     |\ref cs_real_t *bpro_yplus = \ref cs_field_by_name("yplus")->val          | Field id of \f$y^+\f$ at boundary
-  -                        | call \ref field::field_get_val_v "field_get_val_v"(\ref numvar::idtten "idtten", dttens)         |\ref cs_real_t *dttens = \ref cs_field_by_name("dttens")->val         | Field id for the dttens tensor
-  -                        | call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::itempb "itempb", t_b)            |CS_F_(t_b)->val                   | Boundary temperature </tt>
+  Fortran code                                                                                    |C code                             | Description
+  ------------------------------------------------------------------------------------------------|---------------------------------- | ------------
+  dt                                                                                              |CS_F_(dt)->val                     | Local time step
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::iviscl "iviscl", cpro_viscl)    |CS_F_(mu)->val                     | Molecular viscosity
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ivisct "ivisct", cpro_visct)    |CS_F_(mu_t)->val                   | Turbulent dynamic viscosity
+  call \ref field::field_get_val_s "field_get_val_s"(\ref cstphy::icp "icp", cpro_cp)             |CS_F_(cp)->val                     | Specific heat
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::icrom "icrom", cpro_crom)       |CS_F_(rho)->val                    | Density (at cells)
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ibrom "ibrom", bpro_rho)        |CS_F_(rho_b)->val[face_id]         | Density (at boundary faces)
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ismago "ismago", cpro_smago)    |\ref cs_real_t *cpro_smago = \ref cs_field_by_name("smagorinsky_constant^2")->val| Field id of the anisotropic turbulent viscosity
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::icour "icour", cpro_cour)       |\ref cs_real_t *cpro_cour = \ref cs_field_by_name("courant_number")->val | Courant number
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ifour "ifour", cpro_four)       |\ref cs_real_t *cpro_four = \ref cs_field_by_name("fourier_number")->val | Fourier number
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::iprtot "iprtot", cpro_prtot)    |\ref cs_real_t *cpro_prtot = \ref cs_field_by_name("total_pressure")->val | Total pressure at cell centers
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ivisma "ivisma", cpro_visma_s)  |\ref cs_real_t *cpro_visma_s = \ref cs_field_by_name("mesh_viscosity")->val | Mesh velocity viscosity (scalar) for the ALE module
+  call \ref field::field_get_val_v "field_get_val_v"(\ref numvar::ivisma "ivisma", cpro_visma_s)  |\ref cs_real_t *cpro_visma_v = \ref cs_field_by_name("mesh_viscosity")->val | Mesh velocity viscosity (vector) for the ALE module
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::itsrho "itsrho"), cpro_tsrho )   |\ref cs_real_t *cpro_tsrho = \ref cs_field_by_name("dila_st")->val        | Global dilatation source terms
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ibeta "ibeta"), cpro_beta  )     |\ref cs_real_t *cpro_beta = \ref cs_field_by_name("thermal_expansion")->val | Thermal expansion coefficient
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ipori "ipori", cpro_ipori)       |CS_F_(poro)->val                   | Porosity
+  call \ref field::field_get_val_v "field_get_val_v"(\ref numvar::iporf "iporf", cpro_iporf)       |CS_F_(t_poro)->val                 | Tensorial porosity
+  call \ref field::field_get_val_v "field_get_val_v"(\ref numvar::iforbr "iforbr", bpro_forbr)     |\ref cs_real_t *bpro_forbr = \ref cs_field_by_name("boundary_forces")->val| Field id of the stresses at boundary
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::iyplbr "iyplbr", bpro_yplus)     |\ref cs_real_t *bpro_yplus = \ref cs_field_by_name("yplus")->val          | Field id of \f$y^+\f$ at boundary
+  call \ref field::field_get_val_v "field_get_val_v"(\ref numvar::idtten "idtten", dttens)         |\ref cs_real_t *dttens = \ref cs_field_by_name("dttens")->val         | Field id for the dttens tensor
+  call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::itempb "itempb", t_b)            |CS_F_(t_b)->val                   | Boundary temperature </tt>
 
 
   \section cs_var_dico_part Specific physics
@@ -332,24 +327,24 @@
 
   \subsection cs_var_dico_rayt Radiative transfer
 
-  Defined in \ref radiat.f90 and \ref cs_field_pointer.h.
+  Defined in\ref cs_field_pointer.h.
 
-  Deprecated Fortran code                       | Fortran code                                                              | C code                       | Description
-  --------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------- | ------------
-  <tt> propce(iel,\ref radiat::ilumin "ilumin") |  call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::ilumin "ilumin", cpro_lumin)       | CS_F_(rad_lumin)->val        | Radiative luminance
-  propce(iel,\ref radiat::iqx "iqx") \n propce(iel,\ref radiat::iqy "iqy") \n propce(iel,\ref radiat::iqz "iqz")            | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::iqx "iqx", cpro_qx) \n call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::iqy "iqy", cpro_qy) \n call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::iqz "iqz", cpro_qz) | CS_F_(rad_q)->val | Radiative flux
-  propce(iel,\ref radiat::itsre "itsre"(iesp))  | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::itsre "itsre"(iesp), cpro_tsre) | \ref CS_FI_(rad_ets,iesp-1)->val  | Radiative flux explicit source term
-  propce(iel,\ref radiat::itsri "itsri"(iesp))  | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::itsri "itsri"(iesp), cpro_tsri) | \ref CS_FI_(rad_its,iesp-1)->val  | Radiative flux implicit source term
-  propce(iel,\ref radiat::iabso "iabso"(iesp))  | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::iabso "iabso"(iesp), cpro_abso) | \ref CS_FI_(rad_abs,iesp-1)->val  | Radiative absorption
-  propce(iel,\ref radiat::iemi "iemi"(iesp))    | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::iemi "iemi"(iesp), cpro_emi)    | \ref CS_FI_(rad_emi,iesp-1)->val  | Radiative emission
-  propce(iel,\ref radiat::icak "icak"(iesp))    | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::icak "icak"(iesp), cpro_cak)    | \ref CS_FI_(rad_cak,iesp-1)->val  | Radiative absorption coefficient
-  -                                             | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::iqinci "iqinci", bqinci)                | CS_F_(qinci)->val            | Radiative incident radiative flux density
-  -                                             | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::ixlam "ixlam", bxlam)                   | CS_F_(xlam)->val             | Wall thermal conductivity
-  -                                             | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::iepa "iepa", bepa)                      | CS_F_(epa)->val              | Wall thickness
-  -                                             | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::ieps "ieps", beps)                      | CS_F_(emissivity)->val       | Wall emissivity
-  -                                             | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::ifnet "ifnet", bfnet)                   | CS_F_(fnet)->val             | Boundary radiative flux
-  -                                             | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::ifconv "ifconv", bfconv)                | CS_F_(fconv)->val            | Boundary radiative convective flux
-  -                                             | call \ref field::field_get_val_s "field_get_val_s"(\ref radiat::ihconv "ihconv", bhconv)                | CS_F_(hconv)->val            | Radiative exchange coefficient </tt>
+  C code                            | Description
+  --------------------------------- | ------------
+  \ref CS_F_(rad_lumin)->val        | Radiative luminance
+  \ref CS_F_(rad_q)->val            | Radiative flux
+  \ref CS_FI_(rad_ets,iesp-1)->val  | Radiative flux explicit source term
+  \ref CS_FI_(rad_its,iesp-1)->val  | Radiative flux implicit source term
+  \ref CS_FI_(rad_abs,iesp-1)->val  | Radiative absorption
+  \ref CS_FI_(rad_emi,iesp-1)->val  | Radiative emission
+  \ref CS_FI_(rad_cak,iesp-1)->val  | Radiative absorption coefficient
+  \ref CS_F_(qinci)->val            | Radiative incident radiative flux density
+  \ref CS_F_(xlam)->val             | Wall thermal conductivity
+  \ref CS_F_(epa)->val              | Wall thickness
+  \ref CS_F_(emissivity)->val       | Wall emissivity
+  \ref CS_F_(fnet)->val             | Boundary radiative flux
+  \ref CS_F_(fconv)->val            | Boundary radiative convective flux
+  \ref CS_F_(hconv)->val            | Radiative exchange coefficient </tt>
 
 */
 // _____________________________________________________________________________
