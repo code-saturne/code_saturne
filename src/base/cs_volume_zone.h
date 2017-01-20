@@ -89,7 +89,7 @@ typedef struct {
   int               location_id;    /*!< associated mesh location id */
 
   cs_lnum_t         n_cells;        /*!< local number of associated cells */
-  const cs_lnum_t  *cell_id;        /*!< local cell ids, or NULL if trivial */
+  const cs_lnum_t  *cell_ids;       /*!< associated cell ids */
 
 
   bool              time_varying;   /*!< does the selected zone change
@@ -346,14 +346,14 @@ cs_volume_zone_n_type_cells(int  type_flag);
  * for multiple times.
  *
  * \param[in]   type_flag  flag to compare to zone type
- * \param[out]  cell_id    ids of selected cells (size: given by
+ * \param[out]  cell_ids   ids of selected cells (size: given by
  *                         \ref cs_volume_zone_n_type_cells)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_volume_zone_select_type_cells(int        type_flag,
-                                 cs_lnum_t  cell_id[]);
+                                 cs_lnum_t  cell_ids[]);
 
 /*----------------------------------------------------------------------------*/
 

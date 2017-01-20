@@ -3378,14 +3378,14 @@ const cs_lnum_t *
 cs_gui_get_boundary_faces(const char   *label,
                           cs_lnum_t    *n_faces)
 {
-  const cs_lnum_t *faces_list = NULL;
+  const cs_lnum_t *face_ids = NULL;
 
   const cs_boundary_zone_t *z = cs_boundary_zone_by_name(label);
 
   *n_faces = z->n_faces;
-  faces_list = z->face_id;
+  face_ids = z->face_ids;
 
-  return faces_list;
+  return face_ids;
 }
 
 /*----------------------------------------------------------------------------

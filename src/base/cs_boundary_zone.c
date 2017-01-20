@@ -237,7 +237,7 @@ _zone_define(const char  *name)
   z->location_id = 0;
 
   z->n_faces = 0;
-  z->face_id = NULL;
+  z->face_ids = NULL;
 
   z->time_varying = false;
   z->allow_overlay = false;
@@ -385,7 +385,7 @@ cs_boundary_zone_build_all(bool  mesh_modified)
       has_time_varying = true;
     }
     z->n_faces = cs_mesh_location_get_n_elts(z->location_id)[0];
-    z->face_id = cs_mesh_location_get_elt_ids(z->location_id);
+    z->face_ids = cs_mesh_location_get_elt_ids(z->location_id);
   }
 
   /* Assign maximum zone id and check for overlap errors
@@ -407,12 +407,12 @@ cs_boundary_zone_build_all(bool  mesh_modified)
     for (int i = 1; i < _n_zones; i++) {
       cs_boundary_zone_t *z = _zones[i];
       for (cs_lnum_t j = 0; j < z->n_faces; j++) {
-        cs_lnum_t c_id = (z->face_id != NULL) ? z->face_id[j] : j;
-        int z_id_prev = _zone_id[c_id];
+        cs_lnum_t f_id = z->face_ids[j];
+        int z_id_prev = _zone_id[f_id];
         if (z_id_prev == 0)
-          _zone_id[c_id] = z->id;
+          _zone_id[f_id] = z->id;
         else if (_zones[z_id_prev]->allow_overlay)
-          _zone_id[c_id] = z->id;
+          _zone_id[f_id] = z->id;
         else if (overlap_error[0] == _n_zones) {
           overlap_error[0] = z_id_prev;
           overlap_error[1] = z->id;
@@ -428,15 +428,15 @@ cs_boundary_zone_build_all(bool  mesh_modified)
       for (int i = 1; i < _n_zones; i++) {
         cs_boundary_zone_t *z = _zones[i];
         for (cs_lnum_t j = 0; j < z->n_faces; j++) {
-          cs_lnum_t c_id = (z->face_id != NULL) ? z->face_id[j] : j;
-          int z_id_prev = CS_ABS(_zone_id[c_id]);
+          cs_lnum_t f_id = z->face_ids[j];
+          int z_id_prev = CS_ABS(_zone_id[f_id]);
           if (z_id_prev == 0)
-            _zone_id[c_id] = z->id;
+            _zone_id[f_id] = z->id;
           else if (   _zones[z_id_prev]->allow_overlay
-                   && _zone_id[c_id] > 0)
-            _zone_id[c_id] = z->id;
+                   && _zone_id[f_id] > 0)
+            _zone_id[f_id] = z->id;
           else
-            _zone_id[c_id] = -z->id;
+            _zone_id[f_id] = -z->id;
         }
       }
 

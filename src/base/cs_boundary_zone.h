@@ -62,7 +62,7 @@ typedef struct {
   int               location_id;    /*!< associated mesh location id */
 
   cs_lnum_t         n_faces;        /*!< local number of associated faces */
-  const cs_lnum_t  *face_id;        /*!< local face ids, or NULL if trivial */
+  const cs_lnum_t  *face_ids;       /*!< associated face ids */
 
 
   bool              time_varying;   /*!< does the selected zone change

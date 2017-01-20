@@ -252,7 +252,7 @@ _zone_define(const char  *name)
   z->location_id = 0;
 
   z->n_cells = 0;
-  z->cell_id = NULL;
+  z->cell_ids = NULL;
 
   z->time_varying = false;
   z->allow_overlay = true;
@@ -396,7 +396,7 @@ cs_volume_zone_build_all(bool  mesh_modified)
       has_time_varying = true;
     }
     z->n_cells = cs_mesh_location_get_n_elts(z->location_id)[0];
-    z->cell_id = cs_mesh_location_get_elt_ids(z->location_id);
+    z->cell_ids = cs_mesh_location_get_elt_ids(z->location_id);
   }
 
   /* Assign maximum zone id and check for overlap errors
@@ -418,7 +418,7 @@ cs_volume_zone_build_all(bool  mesh_modified)
     for (int i = 1; i < _n_zones; i++) {
       cs_volume_zone_t *z = _zones[i];
       for (cs_lnum_t j = 0; j < z->n_cells; j++) {
-        cs_lnum_t c_id = (z->cell_id != NULL) ? z->cell_id[j] : j;
+        cs_lnum_t c_id = z->cell_ids[j];
         int z_id_prev = _zone_id[c_id];
         if (z_id_prev == 0)
           _zone_id[c_id] = z->id;
@@ -439,7 +439,7 @@ cs_volume_zone_build_all(bool  mesh_modified)
       for (int i = 1; i < _n_zones; i++) {
         cs_volume_zone_t *z = _zones[i];
         for (cs_lnum_t j = 0; j < z->n_cells; j++) {
-          cs_lnum_t c_id = (z->cell_id != NULL) ? z->cell_id[j] : j;
+          cs_lnum_t c_id = z->cell_ids[j];
           int z_id_prev = CS_ABS(_zone_id[c_id]);
           if (z_id_prev == 0)
             _zone_id[c_id] = z->id;
@@ -818,15 +818,15 @@ cs_volume_zone_n_type_cells(int  type_flag)
  * Note that in the case of overlapping zones, a cell may be accounted
  * for multiple times.
  *
- * \param[in]   type_flag  flag to compare to zone type
- * \param[out]  cell_id    ids of selected cells (size: given by
- *                         \ref cs_volume_zone_n_type_cells)
+ * \param[in]   type_flag   flag to compare to zone type
+ * \param[out]  cell_ids    ids of selected cells (size: given by
+ *                          \ref cs_volume_zone_n_type_cells)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_volume_zone_select_type_cells(int        type_flag,
-                                 cs_lnum_t  cell_id[])
+                                 cs_lnum_t  cell_ids[])
 {
   cs_lnum_t count = 0;
 
@@ -834,16 +834,16 @@ cs_volume_zone_select_type_cells(int        type_flag,
     const cs_volume_zone_t *z = _zones[i];
     if (z->type & type_flag) {
       const cs_lnum_t _n_cells = z->n_cells;
-      const cs_lnum_t *_cell_id = z->cell_id;
-      if (_cell_id != NULL) {
+      const cs_lnum_t *_cell_ids = z->cell_ids;
+      if (_cell_ids != NULL) {
         for (cs_lnum_t j = 0; j < _n_cells; j++) {
-          cell_id[count] = _cell_id[j];
+          cell_ids[count] = _cell_ids[j];
           count++;
         }
       }
       else {
         for (cs_lnum_t j = 0; j < _n_cells; j++) {
-          cell_id[count] = j;
+          cell_ids[count] = j;
           count++;
         }
       }
