@@ -171,7 +171,7 @@ cs_user_head_losses(const  cs_volume_zone_t  *zone,
 
       cs_real_t a11 = cs_math_sq(cosa)*ck0 + cs_math_sq(sina)*ck1;
       cs_real_t a22 = cs_math_sq(sina)*ck0 + cs_math_sq(cosa)*ck1;
-      cs_real_t a12 = cosa * sina * (-ck0 + ck1);
+      cs_real_t a12 = cosa * sina * (ck0 - ck1);
 
       /* compute local coefficients */
 
