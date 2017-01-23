@@ -26,7 +26,8 @@
 ! Function:
 ! ---------
 !> \file  cs_user_boundary_conditions-gas_libby_williams.f90
-!> \brief Example of cs_user_boundary_conditions subroutine.f90 for Libby-Williams gas
+!> \brief Example of cs_f_user_boundary_conditions subroutine.f90 for
+!>        Libby-Williams gas
 !
 !-------------------------------------------------------------------------------
 

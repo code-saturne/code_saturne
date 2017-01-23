@@ -26,8 +26,8 @@
 ! Function:
 ! ---------
 !> \file  cs_user_boundary_conditions-richards.f90
-!> \brief Example of cs_user_boundary_conditions subroutine.f90 for groundwater
-!> flow module
+!> \brief Example of cs_f_user_boundary_conditions subroutine.f90 for
+!>        groundwater flow module
 !
 !-------------------------------------------------------------------------------
 

@@ -26,7 +26,7 @@
 ! Function:
 ! ---------
 !> \file  cs_user_boundary_conditions-gas_ebu.f90
-!> \brief Example of cs_user_boundary_conditions subroutine.f90 for EBU gas
+!> \brief Example of cs_f_user_boundary_conditions subroutine.f90 for EBU gas
 !
 !-------------------------------------------------------------------------------
 

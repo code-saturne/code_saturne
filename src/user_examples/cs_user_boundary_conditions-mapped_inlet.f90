@@ -28,7 +28,7 @@
 
 !> \file cs_user_boundary_conditions-mapped_inlet.f90
 !>
-!> Example of cs_user_boundary_conditions subroutine.f90 for inlet
+!> Example of cs_f_user_boundary_conditions subroutine.f90 for inlet
 !> with inlet profile mapped to profile inside the domain.
 
 !> This example assumes the mesh is orthogonal at the inlet.

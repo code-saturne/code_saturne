@@ -26,7 +26,7 @@
 ! Function:
 ! ---------
 !> \file  cs_user_boundary_conditions-electric_arcs.f90
-!> \brief Example of cs_user_boundary_conditions subroutine for electric arcs
+!> \brief Example of cs_f_user_boundary_conditions subroutine for electric arcs
 !
 !-------------------------------------------------------------------------------
 

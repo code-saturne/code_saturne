@@ -26,7 +26,7 @@
 ! Function:
 ! ---------
 !> \file  cs_user_boundary_conditions-compressible.f90
-!> \brief Example of cs_user_boundary_conditions.f90 for compressible
+!> \brief Example of cs_f_user_boundary_conditions.f90 for compressible
 !
 !-------------------------------------------------------------------------------
 

@@ -26,7 +26,7 @@
 ! Function:
 ! ---------
 !> \file  cs_user_boundary_conditions-fuel.f90
-!> \brief Example of cs_user_boundary_conditions subroutine.f90 for fuel
+!> \brief Example of cs_f_user_boundary_conditions subroutine.f90 for fuel
 !
 !-------------------------------------------------------------------------------
 

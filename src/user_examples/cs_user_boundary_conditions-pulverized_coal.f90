@@ -26,7 +26,8 @@
 ! Function:
 ! ---------
 !> \file  cs_user_boundary_conditions-pulverized_coal.f90
-!> \brief Example of cs_user_boundary_conditions subroutine.f90 for pulverized coal
+!> \brief Example of cs_f_user_boundary_conditions subroutine.f90
+!>        for pulverized coal
 !
 !-------------------------------------------------------------------------------
 

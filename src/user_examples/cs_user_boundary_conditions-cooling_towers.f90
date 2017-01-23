@@ -26,7 +26,8 @@
 ! Function:
 ! ---------
 !> \file  cs_user_boundary_conditions-cooling_towers.f90
-!> \brief Example of cs_user_boundary_conditions subroutine.f90 for cooling towers
+!> \brief Example of cs_f_user_boundary_conditions subroutine.f90
+!>        for cooling towers
 !
 !-------------------------------------------------------------------------------
 
