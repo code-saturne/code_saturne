@@ -685,7 +685,7 @@ class VolumicLocalizationModel(LocalizationModel):
         newLabel, newCodeNumber, newLocal = LocalizationModel.replaceZone(self, old_zone, new_zone)
 
         node = self.__XMLVolumicConditionsNode.xmlGetNode('zone',
-                                                           label = old_zone.getLabel())
+                                                          label = old_zone.getLabel())
 
         # if codeNumber is modified, we must modify zone in initialization of variables
         if old_zone.getCodeNumber() != newCodeNumber:
@@ -760,15 +760,22 @@ class VolumicLocalizationModel(LocalizationModel):
         Renumber zones in the XML file and update dependent id's
         """
 
-        XMLZonesNodes = self.__XMLVolumicConditionsNode.xmlGetChildNodeList('zone', 'label', 'id')
+        volCondNode = self.__XMLVolumicConditionsNode
+        XMLZonesNodes = volCondNode.xmlGetChildNodeList('zone', 'label', 'id')
 
         n_d = self.case.xmlGetNodeWithAttrList('zone_id')
 
         count = 1
-        for node in XMLZonesNodes:
-            zoneid = int(node['id'])
 
+        l = []
+        for node in XMLZonesNodes:
+            l.append(int(node['id']))
+        l.sort()
+
+        for zoneid in l:
             if zoneid > int(start_id):
+                node = volCondNode.xmlGetNode('zone', id=zoneid)
+
                 new_id = str(count)
                 old_id = node['id']
                 node['id'] = new_id
@@ -1014,7 +1021,9 @@ class BoundaryLocalizationModel(LocalizationModel):
         """
 
         count = 1
-        for z in self.getCodeNumbersList():
+        l = self.getCodeNumbersList()
+        l.sort()
+        for z in l:
             n = self.__XMLBoundaryConditionsNode.xmlGetNode('boundary', 'nature', 'label',
                                                             name = z)
             n['name'] = str(count)
