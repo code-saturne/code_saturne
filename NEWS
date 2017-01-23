@@ -1,4 +1,13 @@
 
+Release 4.0.8 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- GUI: fix further issues when loading some old case files due
+  to zones renumbering.
+
 Release 4.0.7 (20 Jan 2017)
 ===========================
 
