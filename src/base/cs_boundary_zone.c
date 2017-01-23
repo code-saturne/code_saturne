@@ -848,7 +848,7 @@ cs_boundary_zone_face_class_id(void)
 void
 cs_boundary_zone_update_face_class_id(void)
 {
-  int max_class = 0;
+  int max_class = -1;
 
   if (_max_zone_class_id >= 0) {
 
