@@ -5,6 +5,9 @@ Release 4.3.4 (unreleased)
 Changes:
 --------
 
+- GUI: fix further issues when loading some old case files due
+  to zones renumbering.
+
 - GUI: fix potential issues (not apparent) with handling of
   head loss zones.
 
