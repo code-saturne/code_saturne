@@ -384,7 +384,8 @@ do ifac = 1, nfabor
 
   if (izone .gt. 0) then
 
-    if ( itypfb(ifac).eq.ientre ) then
+    if (     itypfb(ifac).eq.ientre  &
+        .or. itypfb(ifac).eq.i_convective_inlet) then
 
 ! ----  Traitement automatique de la turbulence
 
