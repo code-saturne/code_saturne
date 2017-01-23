@@ -1268,6 +1268,7 @@ class Case(Dico, XMLDocument, QObject):
         self.record_local = False
         self.record_global = True
         self.xml_prev = ""
+        self.xml_saved = self.toString()
 
 
     def xmlRootNode(self):
@@ -1289,7 +1290,13 @@ class Case(Dico, XMLDocument, QObject):
         """
         Return True if the xml doc is modified.
         """
-        return self['saved'] == "no"
+        # return self['saved'] == "no"
+
+        s = self.toIOString()
+        if s == self.xml_saved:
+            return False
+        else:
+            return True
 
 
     def __del__(self):
@@ -1312,6 +1319,15 @@ class Case(Dico, XMLDocument, QObject):
         return self.toPrettyUnicodeString()
 
 
+    def toIOString(self):
+        """
+        Transform to string for IO.
+        """
+        d = XMLDocument().parseString(self.toPrettyString())
+        d.xmlCleanHightLevelBlank(d.root())
+        return d.toString()
+
+
     def xmlSaveDocument(self):
         """
         This method writes the associated xml file.
@@ -1320,9 +1336,11 @@ class Case(Dico, XMLDocument, QObject):
         try:
             d = XMLDocument().parseString(self.toPrettyString())
             d.xmlCleanHightLevelBlank(d.root())
+            s = d.toString()
             file = open(self['xmlfile'], 'w')
-            file.write(d.toString())
+            file.write(s)
             file.close()
+            self.xml_saved = s
             self['new'] = "no"
             self['saved'] = "yes"
             d.doc.unlink()
