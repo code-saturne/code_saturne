@@ -50,6 +50,7 @@
 
 #include "cs_1d_wall_thermal.h"
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_gui_util.h"
@@ -113,19 +114,18 @@ BEGIN_C_DECLS
  *
  * \section cs_user_radiative_transfer_bcs_zones  Zone definitions
  *
- *   We define zones of wall boundaries, and we assign a type.
- *     This allows to apply the boundary conditions and realize
- *     balance sheets by treating them separately for each zone.
- *   For each boundary face face_id (not just wall faces) a zone number
- *     izfrdp[face_id]) must be assigned.
- *   Warning: it is essential that ALL boundary faces
- *     have been assigned to a zone.
- *   The number of zones (the value of izfrdp[face_id]) is
- *     arbitrarily chosen by the user, but must be a positive integer
- *     less than or equal to cs_glob_rad_transfer_params->nbzrdm
- *     (value set in parameter cs_user_radiation_parameters.h).
+ * For each boundary face face_id, a specific output (logging and
+ * postprocessing) class id may be assigned. This allows realizing balance
+ * sheets by treating them separately for each zone. By default, the
+ * output class id is set to the general (input) zone id associated to a face.
  *
- \section cs_user_radiative_transfer_bcs_wall  Wall characteristics
+ * To access output class ids (both for reading and modifying), use the
+ * \ref cs_boundary_zone_face_class_id function.
+ * The zone id values are arbitrarily chosen by the user, but must be
+ * positive integers; very high numbers may also lead to higher memory
+ * consumption.
+ *
+ * \section cs_user_radiative_transfer_bcs_wall  Wall characteristics
  *
  * The following face characteristics must be set:
  *  - isothp(face_id) boundary face type
@@ -157,8 +157,7 @@ BEGIN_C_DECLS
  *                                - 6  -> roughness and u.n=0 (velocity)
  *                                - 9  -> free inlet/outlet (velocity)
  *                                inflowing possibly blocked
- * \param[in]     izfrdp        boundary faces -> zone number
- * \param[in]     isothp        boundary face type for radative transfer
+ * \param[in]     isothp        boundary face type for radiative transfer
  *                                - itpimp -> Gray wall with fixed inside temp
  *                                - ipgrno -> Gray wall with fixed outside temp
  *                                - iprefl -> Reflecting wall with fixed
@@ -190,7 +189,6 @@ void
 cs_user_radiative_transfer_bcs(int               nvar,
                                const int         bc_type[],
                                int               icodcl[],
-                               int               izfrdp[],
                                int               isothp[],
                                cs_real_t        *tmin,
                                cs_real_t        *tmax,

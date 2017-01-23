@@ -88,7 +88,6 @@ void
 cs_gui_radiative_transfer_bcs(const    int   itypfb[],
                               cs_lnum_t      nvar,
                               cs_lnum_t      ivart,
-                              int           *izfrdp,
                               int           *isothp,
                               double        *epsp,
                               double        *epap,

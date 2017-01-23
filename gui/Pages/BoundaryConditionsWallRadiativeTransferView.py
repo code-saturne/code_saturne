@@ -207,14 +207,8 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.modelRadiative.addItem(self.tr("Gray or black wall\n"\
                                             " and flux of fixed conduction"), 'ifgrno')
 
-        # Validator
-        validatorZone = IntValidator(self.lineEditZone, min=0)
-        validatorZone.setExclusiveMin(True)
-        self.lineEditZone.setValidator(validatorZone)
-
         # Connections
         self.comboBoxRadiative.activated[str].connect(self.slotRadiativeChoice)
-        self.lineEditZone.textChanged[str].connect(self.slotZone)
 
         self.__case.undoStartGlobal()
 
@@ -234,9 +228,6 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
             self.modelScalars = StandardItemModelScalars(self.__boundary)
             self.tableViewScalars.setModel(self.modelScalars)
 
-            self.nb_zone = self.__boundary.getOutputRadiativeZone()
-            self.lineEditZone.setText(str(self.nb_zone))
-
             self.show()
         else:
             self.hideWidget()
@@ -247,14 +238,6 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         Hide all the widget
         """
         self.hide()
-
-
-    @pyqtSlot(str)
-    def slotZone(self, text):
-        if self.lineEditZone.validator().state == QValidator.Acceptable:
-            nb_zone = from_qvariant(text, int)
-            self.__boundary.setOutputRadiativeZone(nb_zone)
-            return nb_zone
 
 
     @pyqtSlot(str)

@@ -943,12 +943,7 @@ do while (iterns.le.nterup)
     dt     ,                                                       &
     rcodcl )
 
-  ! C version
-  call user_boundary_conditions &
-  ( nvar   ,                                                       &
-    icodcl ,          itypfb , izfppp ,                            &
-    rcodcl )
-
+  call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
 
   !     - Interface Code_Saturne
   !       ======================
@@ -1076,7 +1071,7 @@ do while (iterns.le.nterup)
   if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
 
      call cs_rad_transfer_bcs(nvar, itypfb, icodcl,             &
-                              izfrad, nozppm, dt, rcodcl)
+                              dt, rcodcl)
 
   endif
 
@@ -1506,11 +1501,7 @@ if (ippmod(idarcy).eq.1) then
     dt     ,                                                       &
     rcodcl )
 
-  ! C version
-  call user_boundary_conditions &
-  ( nvar   ,                                                       &
-    icodcl ,          itypfb , izfppp ,                            &
-    rcodcl )
+  call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
 
   ! For internal coupling, set itypfb to wall function by default
   ! if not set by the user
@@ -1719,7 +1710,7 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
     write(nfecra,1070)
   endif
 
-  call cs_rad_transfer_solve(itypfb, izfrad, nclacp, nclafu, &
+  call cs_rad_transfer_solve(itypfb, nclacp, nclafu, &
                              dt, cp2fol, cp2ch, ichcor)
 endif
 

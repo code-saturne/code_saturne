@@ -214,7 +214,7 @@ cs_user_parameters(void)
 
   /*! [param_var_q_criterion] */
 
-  cs_glob_post_util_flag[CS_POST_UTIL_Q_CRITERION] = 0;
+  cs_glob_post_util_flag[CS_POST_UTIL_Q_CRITERION] = 1;
 
   /*! [param_var_q_criterion] */
 }

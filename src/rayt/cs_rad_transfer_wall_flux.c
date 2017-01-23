@@ -91,7 +91,6 @@ BEGIN_C_DECLS
  * \param[in]  nvar     number of variable BC's
  * \param[in]  ivart    variable id of thermal variable
  * \param[in]  isothp   list of isothermal boundaries
- * \param[in]  izfrap   numbers of boundary face zones
  * \param[in]  rcodcl   boundary condition values
  *                        rcodcl[0] = Dirichlet value
  *                        rcodcl[1] = exchange coefficient value. (infinite
@@ -117,10 +116,9 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
-                          cs_lnum_t   ivart,
+cs_rad_transfer_wall_flux(int         nvar,
+                          int         ivart,
                           int         isothp[],
-                          int         izfrap[],
                           cs_real_t  *tmin,
                           cs_real_t  *tmax,
                           cs_real_t  *tx,
@@ -144,14 +142,8 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
   const cs_real_t tkelvi = 273.15e0;
 
   /* local variables */
-  int        inttm1[nb1int], inttm2[nb2int];
-  int        nozrdm = cs_glob_rad_transfer_params->nozrdm;
+  cs_gnum_t  inttm1[nb1int], inttm2[nb2int];
   cs_real_t  xtpmax, ytpmax, ztpmax, xtpmin, ytpmin, ztpmin;
-
-  int        indtp[nozrdm];
-  cs_real_t  tzomax[nozrdm], tzomin[nozrdm], tzomoy[nozrdm];
-  cs_real_t  flunet[nozrdm], radios[nozrdm], surft[nozrdm];
-  cs_real_t  rdptmp[nbrrdp];
 
   cs_real_t tpmax  = -cs_math_big_r;
   cs_real_t tpmin  =  cs_math_big_r;
@@ -160,11 +152,11 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
   cs_real_t qrmax  = -cs_math_big_r;
   cs_real_t qrmin  =  cs_math_big_r;
   cs_real_t rapmax = 0.0;
-  int n1min  = 0;
-  int n1max  = 0;
-  int nrelax = 0;
-  int nmoins = 0;
-  int nplus  = 0;
+  cs_gnum_t n1min  = 0;
+  cs_gnum_t n1max  = 0;
+  cs_gnum_t nrelax = 0;
+  cs_gnum_t nmoins = 0;
+  cs_gnum_t nplus  = 0;
   int iitpim = 0;
   int iipgrn = 0;
   int iipref = 0;
@@ -176,10 +168,30 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
 
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-  for (int izone = 0; izone < nozrdm; izone++) {
-    indtp[izone]  = 0;
-    tzomax[izone] = -cs_math_big_r;
-    tzomin[izone] =  cs_math_big_r;
+  cs_boundary_zone_update_face_class_id();
+  const int n_zones = cs_boundary_zone_max_class_or_zone_id() + 1;
+  const int *b_face_class_id = cs_boundary_zone_face_class_or_zone_id();
+
+  int       *i_buf;
+  cs_real_t *r_buf;
+  const size_t  buf_stride = n_zones;
+
+  BFT_MALLOC(i_buf, n_zones, int);
+  BFT_MALLOC(r_buf, buf_stride*7, cs_real_t);
+
+  int        *indtp = i_buf;
+  cs_real_t  *tzomax = r_buf;
+  cs_real_t  *tzomin = r_buf + buf_stride;
+  cs_real_t  *tzomoy = r_buf + buf_stride*2;
+  cs_real_t  *flunet = r_buf + buf_stride*3;
+  cs_real_t  *radios = r_buf + buf_stride*4;
+  cs_real_t  *surft  = r_buf + buf_stride*5;
+  cs_real_t  *rdptmp = r_buf + buf_stride*6;
+
+  for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
+    indtp[log_z_id]  = 0;
+    tzomax[log_z_id] = -cs_math_big_r;
+    tzomin[log_z_id] =  cs_math_big_r;
   }
 
   /* Wall temperature computation
@@ -192,15 +204,16 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
     cs_real_t qconv = 0.0;
     cs_real_t qrayt = 0.0;
 
-    int izone = izfrap[ifac] - 1; //TODO check -1
+    int log_z_id = b_face_class_id[ifac];
 
-    /* 1) Isotherms */
+    /* Isotherms */
     if (isothp[ifac] == cs_glob_rad_transfer_params->itpimp) {
-      /*      Reperage pour impression  */
-      iitpim = 1;
-      indtp[izone] = cs_glob_rad_transfer_params->itpimp;
 
-      /*      Calcul     */
+      /* Mark for logging */
+      iitpim = 1;
+      indtp[log_z_id] = cs_glob_rad_transfer_params->itpimp;
+
+      /* Computation */
       tparop[ifac] = tintp[ifac];
 
       qconv = flconp[ifac];
@@ -210,13 +223,14 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
       qrayt = epp * (qinci - sigt4);
     }
 
-    /* 2) Grey or black boundaries (non reflecting) */
+    /* Grey or black boundaries (non reflecting) */
     else if (isothp[ifac] == cs_glob_rad_transfer_params->ipgrno) {
-      /*       Reperage pour impression */
-      iipgrn = 1;
-      indtp[izone] = cs_glob_rad_transfer_params->ipgrno;
 
-      /*       Calcul    */
+      /* Mark for logging */
+      iipgrn = 1;
+      indtp[log_z_id] = cs_glob_rad_transfer_params->ipgrno;
+
+      /* Computation */
       cs_real_t esl    = epap[ifac] / xlamp[ifac];
       qconv  = flconp[ifac];
       cs_real_t qinci  = qincip[ifac];
@@ -228,7 +242,7 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
       cs_real_t rapp   = detep / tparop[ifac];
       cs_real_t abrapp = CS_ABS(rapp);
 
-      /*       Relaxation     */
+      /* Relaxation */
       if (abrapp >= *tx) {
         nrelax++;
         tparop[ifac] *= 1.0 + *tx * rapp / abrapp;
@@ -242,7 +256,7 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
       else
         nplus++;
 
-      /*       Clipping  */
+      /* Clipping */
       if (tparop[ifac] < *tmin) {
         n1min++;
         tparop[ifac] = *tmin;
@@ -254,13 +268,14 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
 
     }
 
-    /* 3) Reflecting walls */
+    /* Reflecting walls */
     else if (isothp[ifac] == cs_glob_rad_transfer_params->iprefl) {
-      /*       Reperage pour impression */
-      iipref = 1;
-      indtp[izone] = cs_glob_rad_transfer_params->iprefl;
 
-      /*       Calcul    */
+      /* Mark for logging */
+      iipref = 1;
+      indtp[log_z_id] = cs_glob_rad_transfer_params->iprefl;
+
+      /* Computation */
       cs_real_t esl    = epap[ifac] / xlamp[ifac];
       qconv  = flconp[ifac];
       cs_real_t detep  =  (esl * qconv - (tparop[ifac] - textp[ifac]))
@@ -269,7 +284,7 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
       cs_real_t abrapp = CS_ABS(rapp);
       qrayt = 0.0;
 
-      /*       Relaxation     */
+      /* Relaxation */
       if (abrapp >= *tx) {
         nrelax++;
         tparop[ifac] *= 1.0 + *tx * rapp / abrapp;
@@ -283,7 +298,7 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
       else
         nplus++;
 
-      /*       Clipping  */
+      /* Clipping */
       if (tparop[ifac] < *tmin) {
         n1min++;
         tparop[ifac] = *tmin;
@@ -295,16 +310,16 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
 
     }
 
-    /* 4) parois a flux de conduction impose non reflechissante
-     *    si le flux impose est nul, la paroi est adiabatique (la
-     *    transmition de chaleur par rayonnement est
-     *    equilibree avec celle de la convection) */
+    /* Wall with non-reflecting conduction flux:
+     *   if the flux is zero, the wall is adiabatic
+     *   (radiative transfer is balanced by convection) */
     else if (isothp[ifac] == cs_glob_rad_transfer_params->ifgrno) {
-      /*       Reperage pour impression */
-      iifgrn = 1;
-      indtp[izone] = cs_glob_rad_transfer_params->ifgrno;
 
-      /*       Calcul    */
+      /* Mark for logging */
+      iifgrn = 1;
+      indtp[log_z_id] = cs_glob_rad_transfer_params->ifgrno;
+
+      /* Computation */
       qconv  = flconp[ifac];
       cs_real_t qinci  = qincip[ifac];
       cs_real_t epp    = epsp[ifac];
@@ -315,7 +330,7 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
       cs_real_t rapp   = detep / tparop[ifac];
       cs_real_t abrapp = CS_ABS(rapp);
 
-      /*       Relaxation     */
+      /* Relaxation */
       if (abrapp >= *tx) {
         nrelax++;
         tparop[ifac] *= 1.0 + *tx * rapp / abrapp;
@@ -329,7 +344,7 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
       else
         nplus++;
 
-      /*       Clipping  */
+      /* Clipping */
       if (tparop[ifac] < *tmin) {
         n1min++;
         tparop[ifac] = *tmin;
@@ -344,11 +359,12 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
     /* 5) parois a flux de conduction imposee et reflechissante
      *    equivalent a impose un flux total au fluide    */
     else if (isothp[ifac] == cs_glob_rad_transfer_params->ifrefl) {
-      /*       Reperage pour impression */
-      iifref = 1;
-      indtp[izone] = cs_glob_rad_transfer_params->ifrefl;
 
-      /*       Calcul    */
+      /* Mark for logging */
+      iifref = 1;
+      indtp[log_z_id] = cs_glob_rad_transfer_params->ifrefl;
+
+      /* Computation */
       cs_lnum_t iel = cs_glob_mesh->b_face_cells[ifac];
       tparop[ifac] = hfconp[ifac] * tempkp[iel] - rcodcl[ifac + ircodcl];
       tparop[ifac] = tparop[ifac] / CS_MAX(hfconp[ifac], cs_math_epzero);
@@ -356,7 +372,7 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
       qconv = flconp[ifac];
       qrayt = 0.0;
 
-      /*       Clipping  */
+      /* Clipping */
       if (tparop[ifac] < *tmin) {
         n1min++;
         tparop[ifac] = *tmin;
@@ -368,8 +384,8 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
 
     }
 
-    /*       Max-Min   */
-    if (  isothp[ifac] == cs_glob_rad_transfer_params->itpimp
+    /* Max-Min */
+    if (   isothp[ifac] == cs_glob_rad_transfer_params->itpimp
         || isothp[ifac] == cs_glob_rad_transfer_params->ipgrno
         || isothp[ifac] == cs_glob_rad_transfer_params->iprefl
         || isothp[ifac] == cs_glob_rad_transfer_params->ifgrno
@@ -386,68 +402,68 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
         qcmin  = qconv;
         qrmin  = qrayt;
       }
-      tzomax[izone] = CS_MAX(tzomax[izone], tparop[ifac]);
-      tzomin[izone] = CS_MIN(tzomin[izone], tparop[ifac]);
+      tzomax[log_z_id] = CS_MAX(tzomax[log_z_id], tparop[ifac]);
+      tzomin[log_z_id] = CS_MIN(tzomin[log_z_id], tparop[ifac]);
     }
 
   }
 
-  /* ====================================================================
-   * Printings
-   * ====================================================================   */
+  /* Logging
+   * ======= */
 
-  /* Check if there are any wall zone */
+  /* Check if there are any wall zones */
 
   if (cs_glob_rank_id >= 0)
-    cs_parall_max(cs_glob_rad_transfer_params->nozarm, CS_INT_TYPE, indtp);
+    cs_parall_max(n_zones, CS_INT_TYPE, indtp);
 
   int indtpm = 0;
-  for (int izone = 0; izone < nozrdm; izone++) {
-    if (indtp[izone] != 0) {
+  for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
+    if (indtp[log_z_id] != 0) {
       indtpm  = 1;
       break;
     }
   }
 
-  /* If there are any wall */
+  /* If there are any walls */
   if (indtpm > 0) {
 
     /* Level 1 verbosity */
     if (cs_glob_rad_transfer_params->iimpar >= 1) {
 
-      /*      Calcul de TZOMOY FLUNET RADIOS SURFT     */
-      for (int izone = 0; izone < nozrdm; izone++) {
-        tzomoy[izone] = 0.0;
-        flunet[izone] = 0.0;
-        radios[izone] = 0.0;
-        surft[izone]  = 0.0;
+      /* Calcul de TZOMOY FLUNET RADIOS SURFT */
+      for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
+        tzomoy[log_z_id] = 0.0;
+        flunet[log_z_id] = 0.0;
+        radios[log_z_id] = 0.0;
+        surft[log_z_id]  = 0.0;
       }
 
       for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
         cs_real_t srfbn = cs_glob_mesh_quantities->b_face_surf[ifac];
-        int izone = izfrap[ifac] - 1; //TODO check -1
+        int log_z_id = b_face_class_id[ifac];
 
-        if (indtp[izone] != 0) {
+        if (indtp[log_z_id] != 0) {
           cs_real_t tp4 = pow(tparop[ifac], 4);
-          tzomoy[izone] += tparop[ifac] * srfbn;
-          flunet[izone] += epsp[ifac] * (qincip[ifac] - stephn * tp4) * srfbn;
-          radios[izone] += - (epsp[ifac] * stephn * tp4 + (1.0 - epsp[ifac]) * qincip[ifac]) * srfbn;
-          surft[izone]  += srfbn;
+          tzomoy[log_z_id] += tparop[ifac] * srfbn;
+          flunet[log_z_id] += epsp[ifac] * (qincip[ifac] - stephn * tp4) * srfbn;
+          radios[log_z_id] += - (epsp[ifac] * stephn * tp4
+                           + (1.0 - epsp[ifac]) * qincip[ifac]) * srfbn;
+          surft[log_z_id]  += srfbn;
         }
 
       }
 
       if (cs_glob_rank_id >= 0) {
-        cs_parall_sum(cs_glob_rad_transfer_params->nozarm, CS_DOUBLE, tzomoy);
-        cs_parall_sum(cs_glob_rad_transfer_params->nozarm, CS_DOUBLE, flunet);
-        cs_parall_sum(cs_glob_rad_transfer_params->nozarm, CS_DOUBLE, radios);
-        cs_parall_sum(cs_glob_rad_transfer_params->nozarm, CS_DOUBLE, surft);
+        cs_parall_sum(n_zones, CS_REAL_TYPE, tzomoy);
+        cs_parall_sum(n_zones, CS_REAL_TYPE, flunet);
+        cs_parall_sum(n_zones, CS_REAL_TYPE, radios);
+        cs_parall_sum(n_zones, CS_REAL_TYPE, surft);
       }
 
-      for (int izone = 0; izone < nozrdm; izone++) {
-        if (indtp[izone] != 0) {
-          tzomoy[izone] /= surft[izone];
-          radios[izone] /= surft[izone];
+      for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
+        if (indtp[log_z_id] != 0) {
+          tzomoy[log_z_id] /= surft[log_z_id];
+          radios[log_z_id] /= surft[log_z_id];
         }
       }
 
@@ -504,32 +520,32 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
         qrmin  = rdptmp[4];
       }
 
-      /*      Determination des compteurs et autres    */
+      /* Determination of counters */
 
       if (cs_glob_rank_id >= 0) {
-        cs_parall_max(1, CS_DOUBLE, &rapmax);
+        cs_parall_max(1, CS_REAL_TYPE, &rapmax);
 
         inttm2[0] = nmoins;
         inttm2[1] = nplus;
         inttm2[2] = n1min;
         inttm2[3] = n1max;
         inttm2[4] = nrelax;
-        cs_parall_sum(nb2int, CS_INT_TYPE, inttm2);
+        cs_parall_sum(nb2int, CS_GNUM_TYPE, inttm2);
         nmoins = inttm2[0];
         nplus  = inttm2[1];
         n1min  = inttm2[2];
         n1max  = inttm2[3];
         nrelax = inttm2[4];
 
-        cs_parall_max(cs_glob_rad_transfer_params->nozarm, CS_DOUBLE, tzomax);
-        cs_parall_min(cs_glob_rad_transfer_params->nozarm, CS_DOUBLE, tzomin);
+        cs_parall_max(n_zones, CS_REAL_TYPE, tzomax);
+        cs_parall_min(n_zones, CS_REAL_TYPE, tzomin);
 
         inttm1[0] = iitpim;
         inttm1[1] = iipgrn;
         inttm1[2] = iipref;
         inttm1[3] = iifgrn;
         inttm1[4] = iifref;
-        cs_parall_max(nb1int, CS_INT_TYPE, inttm1);
+        cs_parall_max(nb1int, CS_GNUM_TYPE, inttm1);
         iitpim = inttm1[0];
         iipgrn = inttm1[1];
         iipref = inttm1[2];
@@ -537,166 +553,156 @@ cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
         iifref = inttm1[4];
       }
 
-      /* Impressions */
-      cs_log_printf(CS_LOG_DEFAULT, "   ** Information on wall temperature\n"
-                                    "      -------------------------------\n");
-      cs_log_printf(CS_LOG_DEFAULT, "-----------------------------------------------------------------------\n");
+      cs_log_separator(CS_LOG_DEFAULT);
 
-      if (nrelax > 0) {
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "WARNING: wall temperature relaxed to %7.2f %% at (%8d points)\n",
-                      *tx * 100.0, nrelax);
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "-----------------------------------------------------------------------\n");
-      }
+      cs_log_printf(CS_LOG_DEFAULT,
+                    _("\n"
+                      "  ** Information on wall temperature\n"
+                      "     -------------------------------\n"));
 
-      if (n1min > 0 || n1max > 0) {
+      if (nrelax > 0)
         cs_log_printf(CS_LOG_DEFAULT,
-                      "WARNING, wall temperature CLIPPED at MIN-MAX:\n");
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "Number of points clipped to minimum: %8d\n", n1min);
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "Number of points clipped to maximum: %8d\n", n1max);
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "-----------------------------------------------------------------------\n");
-      }
+                      _("\n"
+                        " Warning: wall temperature relaxed to %7.2f "
+                        "at (%llu points)\n"),
+                      *tx * 100.0, (unsigned long long)nrelax);
 
-      if (rapmax > 0 || nmoins > 0 || nplus > 0) {
+      if (n1min > 0 || n1max > 0)
         cs_log_printf(CS_LOG_DEFAULT,
-                      _("Maximum variation: %9.4f %%\n"),
-                      rapmax * 100.0);
+                      _("\n"
+                        " Warning: wall temperature clipped:\n"
+                        "   to minimum at %llu faces\n"
+                        "   to maximum at %llu faces\n"),
+                      (unsigned long long)n1min,
+                      (unsigned long long)n1max);
+
+      if (rapmax > 0 || nmoins > 0 || nplus > 0)
         cs_log_printf(CS_LOG_DEFAULT,
-                      _("Decreasing wall temperature: %8d wall faces\n"),
-                      nmoins);
-        cs_log_printf(CS_LOG_DEFAULT,
-                      _("Increasing wall temperature: %8d wall faces\n"),
-                      nplus);
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "-----------------------------------------------------------------------\n");
-      }
+                      _("\n"
+                        " Maximum variation: %9.4f\n"
+                        "   decreasing wall temperature: %llu faces\n"
+                        "   increasing wall temperature: %llu faces\n"),
+                      rapmax * 100.0,
+                      (unsigned long long)nmoins,
+                      (unsigned long long)nplus);
 
       if (iitpim == 1) {
         cs_log_printf(CS_LOG_DEFAULT,
-                      _("Fixed profiles   Temp max (C)   Temp min (C)   "
-                        "Temp mean (C)  Net flux (W)\n"));
-        for (int izone = 0; izone < nozrdm; izone++) {
-          if (indtp[izone] == cs_glob_rad_transfer_params->itpimp)
+                      _("\n"
+                        " Fixed profiles   Temp max (C)   Temp min (C)   "
+                        "Temp mean (C)  Net flux (W)\n"
+                        " ------------------------------------------------"
+                        "---------------------------\n"));
+        for (int log_z_id = 0; log_z_id < n_zones; log_z_id++)
+          if (indtp[log_z_id] == cs_glob_rad_transfer_params->itpimp)
             cs_log_printf(CS_LOG_DEFAULT,
                           "%10d        %11.4e    %11.4e    %11.4e    %11.4e\n",
-                          izone+1,
-                          tzomax[izone]-tkelvi,
-                          tzomin[izone]-tkelvi,
-                          tzomoy[izone]-tkelvi,
-                          flunet[izone]);
-        }
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "-----------------------------------------------------------------------\n");
+                          log_z_id,
+                          tzomax[log_z_id]-tkelvi,
+                          tzomin[log_z_id]-tkelvi,
+                          tzomoy[log_z_id]-tkelvi,
+                          flunet[log_z_id]);
       }
 
       if (iipgrn == 1) {
         cs_log_printf(CS_LOG_DEFAULT,
-                      "Gray or black    Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n");
-        for (int izone = 0; izone < nozrdm; izone++) {
-          if (indtp[izone] == cs_glob_rad_transfer_params->ipgrno)
+                      _("\n"
+                        " Gray or black    Temp max (C)   Temp min (C)   "
+                        "Temp mean (C)  Net flux (W)\n"
+                        "------------------------------------------------"
+                        "---------------------------\n"));
+        for (int log_z_id = 0; log_z_id < n_zones; log_z_id++)
+          if (indtp[log_z_id] == cs_glob_rad_transfer_params->ipgrno)
             cs_log_printf(CS_LOG_DEFAULT,
                           "%10d        %11.4e    %11.4e    %11.4e    %11.4e\n",
-                          izone+1,
-                          tzomax[izone]-tkelvi,
-                          tzomin[izone]-tkelvi,
-                          tzomoy[izone]-tkelvi,
-                          flunet[izone]);
-        }
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "-----------------------------------------------------------------------\n");
+                          log_z_id,
+                          tzomax[log_z_id]-tkelvi,
+                          tzomin[log_z_id]-tkelvi,
+                          tzomoy[log_z_id]-tkelvi,
+                          flunet[log_z_id]);
       }
 
       if (iipref == 1) {
         cs_log_printf(CS_LOG_DEFAULT,
-                      "Walls at EPS=0   Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n");
-        for (int izone = 0; izone < nozrdm; izone++) {
-          if (indtp[izone] == cs_glob_rad_transfer_params->iprefl)
+                      _("\n"
+                        " Walls at EPS=0   Temp max (C)   Temp min (C)   "
+                        "Temp mean (C)  Net flux (W)\n"
+                        "------------------------------------------------"
+                        "---------------------------\n"));
+        for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
+          if (indtp[log_z_id] == cs_glob_rad_transfer_params->iprefl)
             cs_log_printf(CS_LOG_DEFAULT,
                           "%10d        %11.4e    %11.4e    %11.4e    %11.4e\n",
-                          izone+1,
-                          tzomax[izone]-tkelvi,
-                          tzomin[izone]-tkelvi,
-                          tzomoy[izone]-tkelvi,
-                          flunet[izone]);
+                          log_z_id,
+                          tzomax[log_z_id]-tkelvi,
+                          tzomin[log_z_id]-tkelvi,
+                          tzomoy[log_z_id]-tkelvi,
+                          flunet[log_z_id]);
         }
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "-----------------------------------------------------------------------\n");
       }
 
       if (iifgrn == 1) {
         cs_log_printf(CS_LOG_DEFAULT,
-                      "Fix flux EPS!=0  Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n");
-        for (int izone = 0; izone < nozrdm; izone++) {
-          if (indtp[izone] == cs_glob_rad_transfer_params->ifgrno)
+                      _("\n"
+                        " Fix flux EPS!=0  Temp max (C)   Temp min (C)   "
+                        "Temp mean (C)  Net flux (W)\n"
+                        "------------------------------------------------"
+                        "---------------------------\n"));
+        for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
+          if (indtp[log_z_id] == cs_glob_rad_transfer_params->ifgrno)
             cs_log_printf(CS_LOG_DEFAULT,
                           "%10d        %11.4e    %11.4e    %11.4e    %11.4e\n",
-                          izone+1,
-                          tzomax[izone]-tkelvi,
-                          tzomin[izone]-tkelvi,
-                          tzomoy[izone]-tkelvi,
-                          flunet[izone]);
+                          log_z_id,
+                          tzomax[log_z_id]-tkelvi,
+                          tzomin[log_z_id]-tkelvi,
+                          tzomoy[log_z_id]-tkelvi,
+                          flunet[log_z_id]);
         }
 
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "-----------------------------------------------------------------------\n");
       }
 
       if (iifref == 1) {
         cs_log_printf(CS_LOG_DEFAULT,
-                      "Fix flux EPS=0   Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n");
-        for (int izone = 0; izone < nozrdm; izone++) {
-          if (indtp[izone] == cs_glob_rad_transfer_params->ifrefl)
+                      _("\n"
+                        " Fix flux EPS=0   Temp max (C)   Temp min (C)   "
+                        "Temp mean (C)  Net flux (W)\n"
+                        "------------------------------------------------"
+                        "---------------------------\n"));
+        for (int log_z_id = 0; log_z_id < n_zones; log_z_id++) {
+          if (indtp[log_z_id] == cs_glob_rad_transfer_params->ifrefl)
             cs_log_printf(CS_LOG_DEFAULT,
                           "%10d        %11.4e    %11.4e    %11.4e    %11.4e\n",
-                          izone+1,
-                          tzomax[izone]-tkelvi,
-                          tzomin[izone]-tkelvi,
-                          tzomoy[izone]-tkelvi,
-                          flunet[izone]);
+                          log_z_id,
+                          tzomax[log_z_id]-tkelvi,
+                          tzomin[log_z_id]-tkelvi,
+                          tzomoy[log_z_id]-tkelvi,
+                          flunet[log_z_id]);
         }
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "-----------------------------------------------------------------------\n");
       }
 
     }
 
-    /*   Si on veut imprimer EN PLUS en niveau 2     */
-    /*                       =======  */
+    /* If we need additional verbosity */
 
     if (cs_glob_rad_transfer_params->iimpar >= 2) {
+      const char fmt[]
+        = N_("\n"
+             " %s wall temperature (degrees Celsius) = %15.7f\n"
+             "   at coordinates [%11.4e, %11.4e, %11.4e]\n"
+             "\n"
+             "   convective flux: %15.7f\n"
+             "   radiative flux = %15.7f\n\n");
       cs_log_printf(CS_LOG_DEFAULT,
-                    "\n          Maximum wall temperature (degrees Celsius) = %15.7f\n",
-                    tpmax-tkelvi);
+                    fmt, _("Maximum"),
+                    tpmax-tkelvi, xtpmax, ytpmax, ztpmax, qcmax, qrmax);
       cs_log_printf(CS_LOG_DEFAULT,
-                    "             at point x y z = %11.4e    %11.4e    %11.4e\n",
-                    xtpmax, ytpmax, ztpmax);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "            Convective flux = %15.7f\n",
-                    qcmax);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "            Radiative flux = %15.7f\n\n",
-                    qrmax);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "\n          Minimum wall temperature (degrees Celsius) = %15.7f\n",
-                    tpmin-tkelvi);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "             at point x y z = %11.4e    %11.4e    %11.4e\n",
-                    xtpmin, ytpmin, ztpmin);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "             Convective flux = %15.7f\n",
-                    qcmin);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "             Radiative flux = %15.7f\n\n",
-                    qrmin);
+                    fmt, _("Minimum"),
+                    tpmin-tkelvi, xtpmin, ytpmin, ztpmin, qcmin, qrmin);
     }
   }
 
-  return;
-
+  BFT_FREE(i_buf);
+  BFT_FREE(r_buf);
 }
 
 /*----------------------------------------------------------------------------*/

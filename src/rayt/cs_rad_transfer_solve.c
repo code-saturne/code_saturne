@@ -50,6 +50,7 @@
 #include "bft_printf.h"
 
 #include "cs_boundary_conditions.h"
+#include "cs_boundary_zone.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_gui_util.h"
@@ -681,7 +682,6 @@ _compute_net_flux(const int        itypfb[],
  *  - P-1 approximation (only recommended for pulverized coal)
  *
  *  \param[in, out]  bc_type       boundary face types
- *  \param[in]       izfrad        zone number of boundary faces
  *  \param[in]       nclacp        number of pulverized coal classes
  *  \param[in]       nclafu        number of fuel classes
  *  \param[in]       dt            time step (per cell)
@@ -693,7 +693,6 @@ _compute_net_flux(const int        itypfb[],
 
 void
 cs_rad_transfer_solve(int               bc_type[],
-                      const int         izfrad[],
                       int               nclacp,
                       int               nclafu,
                       const cs_real_t   dt[],
@@ -1045,7 +1044,6 @@ cs_rad_transfer_solve(int               bc_type[],
     if (rt_params->imoadf == 0 && rt_params->imfsck == 0) {
 
       cs_user_rad_transfer_absorption(bc_type,
-                                      izfrad,
                                       dt,
                                       cpro_cak0);
 
@@ -1613,7 +1611,6 @@ cs_rad_transfer_solve(int               bc_type[],
    */
 
   cs_user_rad_transfer_net_flux(bc_type,
-                                izfrad,
                                 dt,
                                 coefap,
                                 coefbp,
@@ -1637,49 +1634,49 @@ cs_rad_transfer_solve(int               bc_type[],
 
   cs_boundary_conditions_error(bc_type, "Net flux BC values");
 
-  /* Integrate net flux net on different boundary zones;
-     iflux used in parallel tolocate existing zones */
-  int nozrdm = rt_params->nozrdm;
-  int nozarm = rt_params->nozarm;
+  /* Integrate net flux net on different boundary zones */
 
-  int iflux[nozrdm];
-  cs_real_t flux[nozrdm];
+  cs_boundary_zone_update_face_class_id();
+  const int n_zones = cs_boundary_zone_max_class_or_zone_id() + 1;
+  const int *b_face_class_id = cs_boundary_zone_face_class_or_zone_id();
 
-  for (int izone = 0; izone < nozrdm; izone++) {
+  int *iflux;
+  BFT_MALLOC(iflux, n_zones, int);
+
+  cs_real_t *flux;
+  BFT_MALLOC(flux, n_zones, cs_real_t);
+
+  for (int izone = 0; izone < n_zones; izone++) {
     flux[izone]  = 0.0;
     iflux[izone] = 0;
   }
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-    int izone = izfrad[ifac] - 1;// TODO Check index here
+    int izone = b_face_class_id[ifac];
     flux[izone]  = flux[izone] + f_fnet->val[ifac] * b_face_surf[ifac];
     iflux[izone] = 1;
   }
 
   if (cs_glob_rank_id >= 0) {
-    cs_parall_sum(nozarm, CS_DOUBLE, flux);
-    cs_parall_max(nozarm, CS_INT_TYPE, iflux);
+    cs_parall_sum(n_zones, CS_REAL_TYPE, flux);
+    cs_parall_max(n_zones, CS_INT_TYPE, iflux);
   }
 
   cs_log_printf
     (CS_LOG_DEFAULT,
-     _("-------------------------------------------------------------------\n"));
-  cs_log_printf
-    (CS_LOG_DEFAULT,
-     _("Zone         Radiative net flux (Watt) (outward-facing unit normal)\n"));
+     _("\n"
+       "Zone         Radiative net flux (Watt) (outward-facing unit normal)\n"
+       "--------------------------------------\n"));
 
-  for (int izone = 0; izone < nozarm; izone++) {
+  for (int izone = 0; izone < n_zones; izone++) {
 
     if (iflux[izone] == 1)
       cs_log_printf(CS_LOG_DEFAULT,
                     _("%6d             %11.4e\n"),
-                    izone + 1, // for listing identicity with fortran version
+                    izone,
                     flux[izone]);
   }
-
-  cs_log_printf
-    (CS_LOG_DEFAULT,
-     _("-------------------------------------------------------------------\n"));
+  cs_log_printf(CS_LOG_DEFAULT, "\n");
 
   /* -> Integration de la densite de flux net aux frontieres */
   cs_real_t aa = 0.0;
@@ -1687,7 +1684,7 @@ cs_rad_transfer_solve(int               bc_type[],
     aa += f_fnet->val[ifac] * b_face_surf[ifac];
 
   if (cs_glob_rank_id >= 0)
-    cs_parall_sum(1, CS_DOUBLE, &aa);
+    cs_parall_sum(1, CS_REAL_TYPE, &aa);
 
   cs_log_printf
     (CS_LOG_DEFAULT,
@@ -1856,7 +1853,7 @@ cs_rad_transfer_solve(int               bc_type[],
       s[1] +=   (cpro_abso0[cell_id] + cpro_emi0[cell_id])
               * cell_vol[cell_id];
 
-    cs_parall_sum(2, CS_DOUBLE, s);
+    cs_parall_sum(2, CS_REAL_TYPE, s);
 
     s[0] /= s[1];
 
@@ -1882,7 +1879,7 @@ cs_rad_transfer_solve(int               bc_type[],
       aa += cpro_re_st0[cell_id] * cell_vol[cell_id];
 
     if (cs_glob_rank_id >= 0)
-      cs_parall_sum(1, CS_DOUBLE, &aa);
+      cs_parall_sum(1, CS_REAL_TYPE, &aa);
 
     cs_log_printf
       (CS_LOG_DEFAULT,
@@ -1902,6 +1899,8 @@ cs_rad_transfer_solve(int               bc_type[],
 
   /* Free memory */
 
+  BFT_FREE(iflux);
+  BFT_FREE(flux);
   BFT_FREE(iqpato);
   BFT_FREE(viscf);
   BFT_FREE(viscb);

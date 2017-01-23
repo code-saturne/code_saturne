@@ -53,7 +53,6 @@
 #include "cs_mesh_connect.h"
 #include "cs_mesh_location.h"
 #include "cs_prototypes.h"
-#include "cs_selector.h"
 #include "cs_time_step.h"
 #include "cs_timer_stats.h"
 
@@ -213,6 +212,8 @@ _write_additional_vars(void                  *input,
     }
   }
 
+  /* Automatic outputs from Fortran code */
+
   if (cat_id < 0 && ent_flag[1] == 0)
     CS_PROCF(dvvpst, DVVPST) (&nummai, &numtyp,
                               _input->nvar,
@@ -235,6 +236,71 @@ _write_additional_vars(void                  *input,
   BFT_FREE(cell_num);
   BFT_FREE(i_face_num);
   BFT_FREE(b_face_num);
+}
+
+/*----------------------------------------------------------------------------
+ * Additional output of mesh and time-dependent variables for the
+ * radiative model for the call to pstvar / cs_post_write_vars.
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the output function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_var()
+ *   or similar before the data pointed to goes out of scope.
+ *
+ * parameters:
+ *   input       <-> pointer to optional (untyped) value or structure;
+ *                   here, we should point to _default_input.
+ *   mesh_id     <-- id of the output mesh for the current call
+ *   cat_id      <-- category id of the output mesh for the current call
+ *   ent_flag    <-- indicate global presence of cells (ent_flag[0]), interior
+ *                   faces (ent_flag[1]), boundary faces (ent_flag[2]),
+ *                   particles (ent_flag[3]) or probes (ent_flag[4])
+ *   n_cells     <-- local number of cells of post_mesh
+ *   n_i_faces   <-- local number of interior faces of post_mesh
+ *   n_b_faces   <-- local number of boundary faces of post_mesh
+ *   cell_ids    <-- list of cells (0 to n-1) of post-processing mesh
+ *   i_face_ids  <-- list of interior faces (0 to n-1) of post-processing mesh
+ *   b_face_ids  <-- list of boundary faces (0 to n-1) of post-processing mesh
+ *   ts          <-- time step status structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_write_boundary_zone_or_class_id(void                  *input,
+                                 int                    mesh_id,
+                                 int                    cat_id,
+                                 int                    ent_flag[5],
+                                 cs_lnum_t              n_cells,
+                                 cs_lnum_t              n_i_faces,
+                                 cs_lnum_t              n_b_faces,
+                                 const cs_lnum_t        cell_ids[],
+                                 const cs_lnum_t        i_face_ids[],
+                                 const cs_lnum_t        b_face_ids[],
+                                 const cs_time_step_t  *ts)
+{
+  /* Local variables */
+  CS_UNUSED(input);
+  CS_UNUSED(n_cells);
+  CS_UNUSED(n_i_faces);
+  CS_UNUSED(n_b_faces);
+  CS_UNUSED(cell_ids);
+  CS_UNUSED(i_face_ids);
+  CS_UNUSED(b_face_ids);
+
+  /* radiative output zone ids */
+
+  if (cat_id == -2 && ent_flag[1] == 0)
+    cs_post_write_var(mesh_id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,
+                      "boundary_zone_class_id",
+                      1,
+                      true, /* interlace */
+                      true, /* use_parent */
+                      CS_POST_TYPE_int,
+                      NULL,
+                      NULL,
+                      cs_boundary_zone_face_class_or_zone_id(),
+                      ts);
 }
 
 /*----------------------------------------------------------------------------
@@ -364,10 +430,13 @@ void CS_PROCF (pstvar, PSTVAR)
     cs_post_add_time_mesh_dep_output(_write_additional_vars,
                                      &_default_input);
 
-    if (cs_glob_post_util_flag[CS_POST_UTIL_Q_CRITERION] >= 0) {
+    if (cs_glob_post_util_flag[CS_POST_UTIL_Q_CRITERION] >= 0)
       cs_post_add_time_mesh_dep_output(_write_q_criterion,
                                        &_default_input);
-    }
+
+    if (cs_glob_post_util_flag[CS_POST_UTIL_BOUNDARY_CLASS_ID] >= 0)
+      cs_post_add_time_mesh_dep_output(_write_boundary_zone_or_class_id,
+                                       &_default_input);
 
     _default_input_is_set = true;
   }

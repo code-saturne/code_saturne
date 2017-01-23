@@ -109,12 +109,17 @@ typedef struct {
 
 static int  _n_zones = 0;
 static int  _n_zones_max = 0;
-static cs_boundary_zone_t     **_zones = NULL;
+static cs_boundary_zone_t   **_zones = NULL;
 static cs_map_name_to_id_t   *_zone_map = NULL;
 
 /* Boundary zone id associated with boundary faces */
 
 static int *_zone_id = NULL;
+
+/* Optional, separate zone classification id for data extraction */
+
+static int  _max_zone_class_id = -1;
+static int *_zone_class_id = NULL;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -263,6 +268,25 @@ _log_type(int type)
   cs_log_printf(CS_LOG_SETUP, "\n");
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build zone class id array, based on zone class id.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_zone_class_id(void)
+{
+  cs_mesh_t  *m = cs_glob_mesh;
+
+  cs_lnum_t n_faces = m->n_b_faces;
+
+  BFT_REALLOC(_zone_class_id, n_faces, int);
+# pragma omp parallel for if (n_faces > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i <n_faces; i++)
+    _zone_class_id[i] = _zone_id[i];
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -312,6 +336,7 @@ cs_boundary_zone_initialize(void)
 void
 cs_boundary_zone_finalize(void)
 {
+  BFT_FREE(_zone_class_id);
   BFT_FREE(_zone_id);
 
   for (int i = 0; i < _n_zones; i++) {
@@ -458,6 +483,9 @@ cs_boundary_zone_build_all(bool  mesh_modified)
                 i1, _zones[i1]->name, i0, _zones[i0]->name);
 
     }
+
+    if (_max_zone_class_id > -1)
+      _build_zone_class_id();
   }
 }
 
@@ -772,6 +800,117 @@ cs_boundary_zone_n_type_zones(int  type_flag)
   }
 
   return count;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to optional boundary face class ids.
+ *
+ * For each boundary face, a specific output (logging and postprocessing)
+ * class id may be assigned. This allows realizing logging, postprocessing,
+ * or otherwise extracting data based on this class.
+ *
+ * Using this function at a given point indicates that user-defined class
+ * ids will be used. The face class ids are initially equal to the
+ * face zone ids, but may be modified by the user.
+ *
+ * In the presence of a time-varying mesh or boundary zones, the face
+ * class ids will be reset to the zone ids, so it may be necessary to
+ * update the user definitions.
+ *
+ * The class id values are arbitrarily chosen by the user, but must be
+ * positive integers; numbers do not need to be contiguous, but very high
+ * numbers may also lead to higher memory consumption.
+ *
+ * \return  pointer to array of boundary face output zone ids;
+ */
+/*----------------------------------------------------------------------------*/
+
+int *
+cs_boundary_zone_face_class_id(void)
+{
+  if (_max_zone_class_id < 0)
+    _build_zone_class_id();
+
+  _max_zone_class_id = 0;
+
+  return _zone_class_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update boundary face output class ids if present.
+ *
+ * Face class ids lower than 0 are replaced by the matching face zone id.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_update_face_class_id(void)
+{
+  int max_class = 0;
+
+  if (_max_zone_class_id >= 0) {
+
+    const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      int o_id = _zone_class_id[i];
+      if (o_id < 0) {
+        o_id = _zone_id[i];
+        _zone_class_id[i] = o_id;
+      }
+      if (o_id >= max_class)
+        max_class = o_id;
+    }
+
+  }
+
+  cs_parall_max(1, CS_INT_TYPE, &max_class);
+
+  _max_zone_class_id = max_class;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get read pointer to optional boundary face class or zone ids.
+ *
+ * If no face classes have been defined by \ref cs_boundary_zone_face_class_id
+ * the boundary face zone id is returned instead.
+ *
+ * \return  pointer to array of boundary face output zone ids;
+ */
+/*----------------------------------------------------------------------------*/
+
+const int *
+cs_boundary_zone_face_class_or_zone_id(void)
+{
+  const int *retval = _zone_class_id;
+
+  if (retval == NULL)
+    retval = _zone_id;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the maximum defined face class or zone id.
+ *
+ * This value is valid only if \ref cs_boundary_zone_update_face_class_id
+ * \return  maximum face class or zone id;
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_zone_max_class_or_zone_id(void)
+{
+  int retval = _n_zones;
+
+  if (_max_zone_class_id > retval)
+    retval = _max_zone_class_id;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

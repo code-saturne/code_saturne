@@ -50,6 +50,7 @@
 
 #include "cs_1d_wall_thermal.h"
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_gui_util.h"
@@ -113,19 +114,18 @@ BEGIN_C_DECLS
  *
  * \section cs_user_radiative_transfer_bcs_zones  Zone definitions
  *
- *   We define zones of wall boundaries, and we assign a type.
- *     This allows to apply the boundary conditions and realize
- *     balance sheets by treating them separately for each zone.
- *   For each boundary face face_id (not just wall faces) a zone number
- *     izfrdp[face_id]) must be assigned.
- *   Warning: it is essential that ALL boundary faces
- *     have been assigned to a zone.
- *   The number of zones (the value of izfrdp[face_id]) is
- *     arbitrarily chosen by the user, but must be a positive integer
- *     less than or equal to cs_glob_rad_transfer_params->nbzrdm
- *     (value set in parameter cs_user_radiation_parameters.h).
+ * For each boundary face face_id, a specific output (logging and
+ * postprocessing) class id may be assigned. This allows realizing balance
+ * sheets by treating them separately for each zone. By default, the
+ * output class id is set to the general (input) zone id associated to a face.
  *
- \section cs_user_radiative_transfer_bcs_wall  Wall characteristics
+ * To access output class ids (both for reading and modifying), use the
+ * \ref cs_boundary_zone_face_class_id function.
+ * The zone id values are arbitrarily chosen by the user, but must be
+ * positive integers; very high numbers may also lead to higher memory
+ * consumption.
+ *
+ * \section cs_user_radiative_transfer_bcs_wall  Wall characteristics
  *
  * The following face characteristics must be set:
  *  - isothp(face_id) boundary face type
@@ -157,8 +157,7 @@ BEGIN_C_DECLS
  *                                - 6  -> roughness and u.n=0 (velocity)
  *                                - 9  -> free inlet/outlet (velocity)
  *                                inflowing possibly blocked
- * \param[in]     izfrdp        boundary faces -> zone number
- * \param[in]     isothp        boundary face type for radative transfer
+ * \param[in]     isothp        boundary face type for radiative transfer
  *                                - itpimp -> Gray wall with fixed inside temp
  *                                - ipgrno -> Gray wall with fixed outside temp
  *                                - iprefl -> Reflecting wall with fixed
@@ -190,7 +189,6 @@ void
 cs_user_radiative_transfer_bcs(int               nvar,
                                const int         bc_type[],
                                int               icodcl[],
-                               int               izfrdp[],
                                int               isothp[],
                                cs_real_t        *tmin,
                                cs_real_t        *tmax,
@@ -210,15 +208,9 @@ cs_user_radiative_transfer_bcs(int               nvar,
   /*< [loc_var]*/
   cs_real_t tkelvi = 273.15;
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_boundary_zone_t *zone = NULL;
+  int *izfrdp = cs_boundary_zone_face_class_id();
   /*< [loc_var]*/
-
-  /*< [allocate]*/
-  /* Allocate a temporary array for boundary faces selection */
-
-  cs_lnum_t nlelt;
-  cs_lnum_t  *lstelt;
-  BFT_MALLOC(lstelt, n_b_faces, cs_lnum_t);
-  /*< [allocate]*/
 
   /*< [ivar]*/
   cs_field_t *fth = cs_thermal_model_field();
@@ -234,23 +226,20 @@ cs_user_radiative_transfer_bcs(int               nvar,
   *tmax = cs_math_big_r + tkelvi;
   /*<[temp]*/
 
-  /* Zone definitions */
-  /*------------------*/
-
-   /* Example: for wall boundary faces, selection criteria: color 1;
+   /* Example: for wall boundary faces, in zone named "wall_1";
     * gray or black wall with profile of fixed inside temperature
     * ------------------------------------------------------------*/
 
   /*< [example_1]*/
-  cs_selector_get_b_face_list("1",
-                              &nlelt,
-                              lstelt);
-  for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++) {
+  zone = cs_boundary_zone_by_name("wall_1");
 
-    cs_lnum_t face_id = lstelt[ilelt];
+  for (cs_lnum_t ilelt = 0; ilelt < zone->n_faces; ilelt++) {
+
+    cs_lnum_t face_id = zone->face_ids[ilelt];
 
     if (bc_type[face_id] == CS_SMOOTHWALL) {
-      /* zone number */
+
+      /* logging zone number */
       izfrdp[face_id] = 51;
 
       /* Type of condition: gray or black wall with fixed inside temperature */
@@ -261,25 +250,27 @@ cs_user_radiative_transfer_bcs(int               nvar,
 
       /* Fixed inside temperature */
       tintp[face_id] = 200 + tkelvi;
+
     }
 
   }
   /*< [example_1]*/
 
-  /* Example: for wall boundary faces, selection criteria: color 2;
+  /* Example: for wall boundary faces, zone named "wall_2";
    * gray or black wall with fixed outside temperature TEXTP
    * --------------------------------------------------------*/
 
   /*< [example_2]*/
-  cs_selector_get_b_face_list("2",
-                              &nlelt,
-                              lstelt);
-  for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++) {
+  zone = cs_boundary_zone_by_name("wall_2");
 
-    cs_lnum_t face_id = lstelt[ilelt];
+  for (cs_lnum_t ilelt = 0; ilelt < zone->n_faces; ilelt++) {
+
+    cs_lnum_t face_id = zone->face_ids[ilelt];
 
     if (bc_type[face_id] == CS_ROUGHWALL) {
-      /* zone number */
+
+      /* logging zone number */
+
       izfrdp[face_id] = 52;
 
       /* Type of condition: gray or black wall with fixed
@@ -305,20 +296,20 @@ cs_user_radiative_transfer_bcs(int               nvar,
   }
   /*< [example_2]*/
 
-  /* Example: for wall boundary faces, selection criteria: color 3
+  /* Example: for wall boundary faces, zone named "wall_3";
    * reflecting wall (EPSP = 0) with fixed outside temperature TEXTP
    * --------------------------------------------------------------- */
 
   /*< [example_3]*/
-  cs_selector_get_b_face_list("3",
-                                  &nlelt,
-                                  lstelt);
-  for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++) {
+  zone = cs_boundary_zone_by_name("wall_3");
 
-    cs_lnum_t face_id = lstelt[ilelt];
+  for (cs_lnum_t ilelt = 0; ilelt < zone->n_faces; ilelt++) {
+
+    cs_lnum_t face_id = zone->face_ids[ilelt];
 
     if (bc_type[face_id] == CS_SMOOTHWALL) {
-      /* zone number */
+
+      /* log zone number */
       izfrdp[face_id] = 53;
 
       /* Type of condition: reflecting wall with fixed outside temperature TEXTP */
@@ -335,12 +326,13 @@ cs_user_radiative_transfer_bcs(int               nvar,
 
       /* Initial inside temperature: 473.15 K */
       tintp[face_id] = 200.0 + tkelvi;
+
     }
 
   }
   /*< [example_3]*/
 
-  /* Example: for wall boundary faces which have the color 4:
+  /* Example: for wall boundary faces of zone named "wall_4":
    * gray or black wall and fixed conduction flux through the wall
    *
    *        XLAMP
@@ -358,15 +350,15 @@ cs_user_radiative_transfer_bcs(int               nvar,
    */
 
   /*< [example_4]*/
-  cs_selector_get_b_face_list("4",
-                              &nlelt,
-                              lstelt);
-  for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++) {
+  zone = cs_boundary_zone_by_name("wall_4");
 
-    cs_lnum_t face_id = lstelt[ilelt];
+  for (cs_lnum_t ilelt = 0; ilelt < zone->n_faces; ilelt++) {
+
+    cs_lnum_t face_id = zone->face_ids[ilelt];
 
     if (bc_type[face_id] == CS_SMOOTHWALL) {
-      /* zone number */
+
+      /* log zone number */
       izfrdp[face_id] = 54;
 
       /* Type of condition: gray or black wall with fixed conduction
@@ -377,16 +369,17 @@ cs_user_radiative_transfer_bcs(int               nvar,
       epsp[face_id] = 0.9;
 
       /* Conduction flux (W/m2) */
-      rcodcl[face_id + ivart * n_b_faces + 2 * nvar * n_b_faces ] = 0.0;
+      rcodcl[face_id + ivart * n_b_faces + 2 * nvar * n_b_faces] = 0.0;
 
       /* Initial inside temperature: 473.15 K */
       tintp[face_id] = 200.0 + tkelvi;
+
     }
 
   }
   /*< [example_4]*/
 
-  /* Example: for wall boundary faces which have the color 5:
+  /* Example: for wall boundary faces of zone named "wall_5":
    * reflecting wall and fixed conduction flux through the wall
    *
    *      Equivalent to impose a Neumann to the fluid
@@ -405,15 +398,15 @@ cs_user_radiative_transfer_bcs(int               nvar,
    */
 
   /*< [example_5]*/
-  cs_selector_get_b_face_list("5",
-                              &nlelt,
-                              lstelt);
-  for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++) {
+  zone = cs_boundary_zone_by_name("wall_5");
 
-    cs_lnum_t face_id = lstelt[ilelt];
+  for (cs_lnum_t ilelt = 0; ilelt < zone->n_faces; ilelt++) {
+
+    cs_lnum_t face_id = zone->face_ids[ilelt];
 
     if (bc_type[face_id] == CS_SMOOTHWALL) {
-      /* zone number */
+
+      /* log zone number */
       izfrdp[face_id] = 55;
 
       /* Type of condition: reflecting wall with fixed conduction
@@ -425,6 +418,7 @@ cs_user_radiative_transfer_bcs(int               nvar,
 
       /* Initial inside temperature: 473.15 K */
       tintp[face_id] = 200.0 + tkelvi;
+
     }
 
   }
@@ -456,10 +450,7 @@ cs_user_radiative_transfer_bcs(int               nvar,
   }
   /*< [example_6]*/
 
-  /* WARNING: for all boundary faces, even when not a wall, it is MANDATORY to
-   *          assign a zone number in the array izfrdp. */
-
-  /* Example for assigning zones */
+  /* Example for assigning specific output zones to non-wall faces */
 
   for (cs_lnum_t face_id = 0; face_id < cs_glob_mesh->n_b_faces; face_id++) {
 
@@ -467,17 +458,13 @@ cs_user_radiative_transfer_bcs(int               nvar,
       izfrdp[face_id] = 60;
     else if (bc_type[face_id] == CS_FREE_INLET)
       izfrdp[face_id] = 61;
-    else if (bc_type[face_id] == CS_INLET)
+    else if (   bc_type[face_id] == CS_INLET
+             || bc_type[face_id] == CS_CONVECTIVE_INLET)
       izfrdp[face_id] = 62;
-    else if (bc_type[face_id] == CS_CONVECTIVE_INLET)
-      izfrdp[face_id] = 63;
     else if (bc_type[face_id] == CS_SYMMETRY)
-      izfrdp[face_id] = 64;
+      izfrdp[face_id] = 63;
 
   }
-
-  /* Deallocate the temporary array */
-  BFT_FREE(lstelt);
 }
 
 /*----------------------------------------------------------------------------*/

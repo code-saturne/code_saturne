@@ -127,12 +127,8 @@ module pointe
   integer, allocatable, dimension(:) :: itrifb
 
   !> to identify boundary zones associated with boundary faces
-  !> (particular physics)
+  !> (specific physics models)
   integer, dimension(:), pointer :: izfppp
-
-  !> to identify boundary zones associated with boundary faces
-  !> (radiative transfer)
-  integer, allocatable, dimension(:) :: izfrad
 
   !> the index of the structure, (\c idfstr(ifac) where \c ifac is the index
   !> of the face), 0 if the face is not coupled to any structure.
@@ -329,7 +325,6 @@ contains
     use entsor
     use ppincl
     use lagran
-    use radiat, only: iirayo
     use albase
     use ihmpre
     use field
@@ -342,19 +337,12 @@ contains
     integer, intent(in) :: ncelet, nfabor
 
     ! Local variables
-    integer                ifac
 
     type(var_cal_opt) :: vcopt
 
     ! Boundary-face related arrays
 
     allocate(itrifb(nfabor))
-    if (iirayo.gt.0) then
-      allocate(izfrad(nfabor))
-      do ifac = 1, nfabor
-        izfrad(ifac) = 0
-      enddo
-    endif
 
     ! ALE array for structure definition
 
@@ -481,7 +469,6 @@ contains
   subroutine finalize_aux_arrays
 
     deallocate(itrifb)
-    if (allocated(izfrad)) deallocate(izfrad)
     if (allocated(idfstr)) deallocate(idfstr)
     if (allocated(izcpdc)) deallocate(izcpdc)
     if (allocated(izctsm)) deallocate(izctsm)

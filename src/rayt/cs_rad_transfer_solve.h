@@ -31,6 +31,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -47,10 +49,6 @@ BEGIN_C_DECLS
  *  Global variables
  *============================================================================*/
 
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -64,7 +62,6 @@ BEGIN_C_DECLS
  *  - P-1 approximation (only recommended for pulverized coal)
  *
  *  \param[in, out]  bc_type       boundary face types
- *  \param[in]       izfrad        zone number of boundary faces
  *  \param[in]       nclacp        number of pulverized coal classes
  *  \param[in]       nclafu        number of fuel classes
  *  \param[in]       dt            time step (per cell)
@@ -76,7 +73,6 @@ BEGIN_C_DECLS
 
 void
 cs_rad_transfer_solve(int               bc_type[],
-                      const int         izfrad[],
                       int               nclacp,
                       int               nclafu,
                       const cs_real_t   dt[],

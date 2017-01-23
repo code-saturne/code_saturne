@@ -48,6 +48,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_boundary_zone.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -175,19 +176,6 @@ BEGIN_C_DECLS
         Number of ETRs to solve.
   \var  cs_rad_transfer_params_t::wq
         Weights of the Gaussian quadrature
-  \var  cs_rad_transfer_params_t::nbzrdm
-        Maximum number of boundary zones.
-  \var  cs_rad_transfer_params_t::nozrdm
-        Maximum number of the boundary zones.
-  \var  cs_rad_transfer_params_t::nozarm
-        Maximum boundary zone number reached.
-        For instance, if there are three zones,
-        numbered 1, 4 and 2, then \ref nzfrad = 3
-        and \ref nozarm = 4.
-  \var  cs_rad_transfer_params_t::nzfrad
-        Number of boundary zones (on the current rank).
-  \var  cs_rad_transfer_params_t::ilzrad
-        List of boundary faces numbers (on the current rank).
   \var  cs_rad_transfer_params_t::itpimp
         Wall face with imposed temperature.
   \var  cs_rad_transfer_params_t::ipgrno
@@ -211,6 +199,18 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
+/*=============================================================================
+ * Local Macro Definitions
+ *============================================================================*/
+
+/*=============================================================================
+ * Local type definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
 cs_rad_transfer_params_t _rt_params = {.iirayo = 0,
                                        .nrphas = 0,
                                        .iimpar = 0,
@@ -230,11 +230,6 @@ cs_rad_transfer_params_t _rt_params = {.iirayo = 0,
                                        .nfreqr = 0,
                                        .nwsgg = 0,
                                        .wq = NULL,
-                                       .nbzrdm = 2000,
-                                       .nozrdm = 2000,
-                                       .nozarm = 0,
-                                       .nzfrad = 0,
-                                       .ilzrad = NULL,
                                        .itpimp = 1,
                                        .ipgrno = 21,
                                        .iprefl = 22,
@@ -243,14 +238,6 @@ cs_rad_transfer_params_t _rt_params = {.iirayo = 0,
                                        .itpt1d = 4 };
 
 cs_rad_transfer_params_t *cs_glob_rad_transfer_params = &_rt_params;
-
-/*=============================================================================
- * Local Macro Definitions
- *============================================================================*/
-
-/*=============================================================================
- * Local type definitions
- *============================================================================*/
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -299,7 +286,6 @@ cs_rad_transfer_finalize(void)
   BFT_FREE(_rt_params.sxyz);
   BFT_FREE(_rt_params.angsol);
   BFT_FREE(_rt_params.wq);
-  BFT_FREE(_rt_params.ilzrad);
 }
 
 /*----------------------------------------------------------------------------*/

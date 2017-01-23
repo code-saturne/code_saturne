@@ -3117,8 +3117,7 @@ class RadiativeWallBoundary(Boundary) :
                           'wall_thermal_conductivity',
                           'thickness', 'flux',
                           'external_temperature_profile',
-                          'internal_temperature_profile',
-                          'output_zone']
+                          'internal_temperature_profile']
 
 
     def _getListValRay(self, choice):
@@ -3128,13 +3127,13 @@ class RadiativeWallBoundary(Boundary) :
         Model().isInList(choice, self._radiativeChoices)
         lst = []
         if choice == 'itpimp':
-            lst = ('emissivity', 'internal_temperature_profile', 'output_zone')
+            lst = ('emissivity', 'internal_temperature_profile')
         elif choice == 'ipgrno':
             lst = ('emissivity', 'wall_thermal_conductivity', 'thickness',
                     'external_temperature_profile',
-                    'internal_temperature_profile', 'output_zone')
+                    'internal_temperature_profile')
         elif choice == 'ifgrno':
-            lst = ('emissivity', 'flux', 'internal_temperature_profile', 'output_zone')
+            lst = ('emissivity', 'flux', 'internal_temperature_profile')
 
         return lst
 
@@ -3151,7 +3150,6 @@ class RadiativeWallBoundary(Boundary) :
         dico['external_temperature_profile'] = 300.
         dico['internal_temperature_profile'] = 300.
         dico['choice_condition'] = 'itpimp'
-        dico['output_zone'] = 1
         return dico
 
 
@@ -3327,31 +3325,6 @@ class RadiativeWallBoundary(Boundary) :
         Model().isGreaterOrEqual(val, 0.)
 
         self.setValRay(val, 'flux')
-
-
-    @Variables.noUndo
-    def getOutputRadiativeZone(self):
-        """
-        Return value of output radiative zone for the radiative wall
-        """
-        nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
-        ival = nod_ray_cond.xmlGetInt('output_zone')
-        if not ival:
-            ival = self.__defaultValues()['output_zone']
-            self.setOutputRadiativeZone(ival)
-
-        return ival
-
-
-    @Variables.undoLocal
-    def setOutputRadiativeZone(self, ival):
-        """
-        Put value of output radiative zone for the radiative wall
-        """
-        Model().isInt(ival)
-
-        nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
-        nod_ray_cond.xmlSetData('output_zone', ival)
 
 
     @Variables.noUndo
@@ -4680,44 +4653,6 @@ class RadiativeWallBoundaryTestCase(ModelTest):
         assert model.getInternalTemperatureProfile() == 987.,\
            'Could not get internal temperature profile for radiative wall boundary'
 
-
-
-    def checkSetAndGetOutputRadiativeZone(self):
-        """
-        Check whether the output radiative zone could be set and get for
-        radiative wall boundary.
-        """
-        from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
-        ThermalRadiationModel(self.case).setRadiativeModel('dom')
-
-        model = Boundary("wall", "mur", self.case)
-        model.setVelocityChoice('off')
-        model = Boundary("radiative_wall", "radiateur", self.case)
-        model.setRadiativeChoice('ipgrno')
-        model.setOutputRadiativeZone(21)
-        node =  model._XMLBoundaryConditionsNode
-
-        doc = '''<boundary_conditions>
-                    <wall label="mur">
-                        <velocity_pressure choice="off"/>
-                    </wall>
-                    <wall label="radiateur">
-                        <radiative_data choice="ipgrno">
-                            <emissivity>0.8</emissivity>
-                            <wall_thermal_conductivity>3</wall_thermal_conductivity>
-                            <thickness>0.1</thickness>
-                            <external_temperature_profile>300.</external_temperature_profile>
-                            <internal_temperature_profile>300.</internal_temperature_profile>
-                            <output_zone>21</output_zone>
-                        </radiative_data>
-                    </wall>
-                </boundary_conditions>'''
-
-        assert node == self.xmlNodeFromString(doc),\
-           'Could not set output radiative zone for radiative wall boundary'
-
-        assert model.getOutputRadiativeZone() == 21,\
-           'Could not get output radiative zone for radiative wall boundary'
 
 
     def checkSetAndGetFlux(self):

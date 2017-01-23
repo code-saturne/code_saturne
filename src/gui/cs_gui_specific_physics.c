@@ -656,56 +656,54 @@ _get_PCI_type(int icha)
   cs_xpath_add_attribute(&path,"choice");
   buff = cs_gui_get_attribute_value(path);
   if (buff != NULL) {
-    if (cs_gui_strcmp(buff, "LHV"))
-      {
-        path2 = cs_xpath_init_path();
-        cs_xpath_add_elements(&path2, 2,"thermophysical_models", "solid_fuels");;
-        cs_xpath_add_element_num(&path2, "solid_fuel", icha);
-        cs_xpath_add_element(&path2, "Heating_model");
-        cs_xpath_add_element(&path2, "type");
-        cs_xpath_add_function_text(&path2);
-        buff2 = cs_gui_get_text_value(path2);
-        if (buff2 == NULL) {
+    if (cs_gui_strcmp(buff, "LHV")) {
+      path2 = cs_xpath_init_path();
+      cs_xpath_add_elements(&path2, 2,"thermophysical_models", "solid_fuels");;
+      cs_xpath_add_element_num(&path2, "solid_fuel", icha);
+      cs_xpath_add_element(&path2, "Heating_model");
+      cs_xpath_add_element(&path2, "type");
+      cs_xpath_add_function_text(&path2);
+      buff2 = cs_gui_get_text_value(path2);
+      if (buff2 == NULL) {
+        ichoice = 1;
+      } else {
+        if (cs_gui_strcmp(buff2, "dry_basis"))
           ichoice = 1;
-        } else {
-          if (cs_gui_strcmp(buff2, "dry_basis"))
-            ichoice = 1;
-          else if (cs_gui_strcmp(buff2, "dry_ash_free"))
-            ichoice = 0;
-          else if (cs_gui_strcmp(buff2, "as_received"))
-            ichoice = 2;
-          else
-            bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path2);
-
-          BFT_FREE(path2);
-          BFT_FREE(buff2);
-        }
+        else if (cs_gui_strcmp(buff2, "dry_ash_free"))
+          ichoice = 0;
+        else if (cs_gui_strcmp(buff2, "as_received"))
+          ichoice = 2;
+        else
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path2);
+        
+        BFT_FREE(buff2);
       }
-    else if (cs_gui_strcmp(buff, "HHV"))
-      {
-        path2 = cs_xpath_init_path();
-        cs_xpath_add_elements(&path2, 2,"thermophysical_models", "solid_fuels");
-        cs_xpath_add_element_num(&path2, "solid_fuel", icha);
-        cs_xpath_add_element(&path2, "Heating_model");
-        cs_xpath_add_element(&path2, "type");
-        cs_xpath_add_function_text(&path2);
-        buff2 = cs_gui_get_text_value(path2);
-        if (buff2 == NULL) {
+      BFT_FREE(path2);
+    }
+    else if (cs_gui_strcmp(buff, "HHV")) {
+      path2 = cs_xpath_init_path();
+      cs_xpath_add_elements(&path2, 2,"thermophysical_models", "solid_fuels");
+      cs_xpath_add_element_num(&path2, "solid_fuel", icha);
+      cs_xpath_add_element(&path2, "Heating_model");
+      cs_xpath_add_element(&path2, "type");
+      cs_xpath_add_function_text(&path2);
+      buff2 = cs_gui_get_text_value(path2);
+      if (buff2 == NULL) {
+        ichoice = 4;
+      } else {
+        if (cs_gui_strcmp(buff2, "dry_basis"))
           ichoice = 4;
-        } else {
-          if (cs_gui_strcmp(buff2, "dry_basis"))
-            ichoice = 4;
-          else if (cs_gui_strcmp(buff2, "dry_ash_free"))
-            ichoice = 3;
-          else if (cs_gui_strcmp(buff2, "as_received"))
-            ichoice = 5;
-          else
-            bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path2);
+        else if (cs_gui_strcmp(buff2, "dry_ash_free"))
+          ichoice = 3;
+        else if (cs_gui_strcmp(buff2, "as_received"))
+          ichoice = 5;
+        else
+          bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path2);
 
-          BFT_FREE(path2);
-          BFT_FREE(buff2);
-        }
+        BFT_FREE(buff2);
       }
+      BFT_FREE(path2);
+    }
     else if (cs_gui_strcmp(buff, "IGT_correlation"))
       ichoice = 6;
     else

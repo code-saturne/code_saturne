@@ -31,8 +31,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_base.h"
-#include "cs_halo.h"
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -52,55 +51,32 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  int      iirayo;
-
-  int      nrphas;
-
-  int      iimpar;
-
-  int      iimlum;
-
-  int      imodak;
-
-  int      imoadf;
-
-  int iwrp1t;
-
-  int  imfsck;
-
-  double  xnp1mx;
-
-  int  idiver;
-
-  int  i_quadrature;
-
-  int      ndirec;
-
-  int      ndirs;
-
+  int           iirayo;
+  int           nrphas;
+  int           iimpar;
+  int           iimlum;
+  int           imodak;
+  int           imoadf;
+  int           iwrp1t;
+  int           imfsck;
+  double        xnp1mx;
+  int           idiver;
+  int           i_quadrature;
+  int           ndirec;
+  int           ndirs;
   cs_real_3_t  *sxyz;
-
   cs_real_t    *angsol;
-
-  int  restart;
-
-  int      nfreqr;
-
-  int      nwsgg;
-
-  cs_real_t *wq;
-
-  int      nbzrdm;
-
-  int      nozrdm;
-
-  int      nozarm;
-
-  int      nzfrad;
-
-  int     *ilzrad;
-
-  int      itpimp, ipgrno, iprefl, ifgrno, ifrefl, itpt1d;
+  int           restart;
+  int           nfreqr;
+  int           nwsgg;
+  cs_real_t    *wq;
+  int           nzfrad;
+  int           itpimp;
+  int           ipgrno;
+  int           iprefl;
+  int           ifgrno;
+  int           ifrefl;
+  int           itpt1d;
 
 } cs_rad_transfer_params_t;
 

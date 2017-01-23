@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-01-18 15:51+0100\n"
+"POT-Creation-Date: 2017-01-22 19:14+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7150,15 +7150,15 @@ msgstr ""
 
 #, c-format
 msgid ""
-"    gx:          %14.5e (Gravity x component)\n"
-"    gy:          %14.5e (Gravity y component)\n"
-"    gz:          %14.5e (Gravity z component)\n"
+"    gravity:    [%14.5e, (Gravity x component)\n"
+"                 %14.5e, (Gravity y component)\n"
+"                 %14.5e] (Gravity z component)\n"
 "    icorio:      %14d (Coriolis source terms)\n"
 "\n"
 msgstr ""
-"    gx:          %14.5e (Composante x de la gravité)\n"
-"    gy:          %14.5e (Composante y de la gravité)\n"
-"    gz:          %14.5e (Composante z de la gravité)\n"
+"    gravity:    [%14.5e, (Composante x de la gravité)\n"
+"                 %14.5e, (Composante y de la gravité)\n"
+"                 %14.5e] (Composante z de la gravité)\n"
 "    icorio:      %14d (Termes source de Coriolis)\n"
 "\n"
 
@@ -9926,14 +9926,17 @@ msgid ""
 "can't be null."
 msgstr ""
 
+#, c-format
 msgid ""
 "\n"
 "Cooling towers\n"
 "--------------\n"
+"  Droplet diameter: %f\n"
 msgstr ""
 "\n"
 "Aéroréfrigérants\n"
 "----------------\n"
+"  Diamètre de goutte : %f\n"
 
 #, c-format
 msgid ""
@@ -9944,7 +9947,6 @@ msgid ""
 "      Lambda of the exchange law: %f\n"
 "      Exponent n of the exchange law: %f\n"
 "      Type: %d\n"
-"        Droplet diameter: %f\n"
 "      Delta Temperature: %f\n"
 "        Relaxation: %f\n"
 "      Injected water temperature: %f\n"
@@ -15030,33 +15032,14 @@ msgstr ""
 #, c-format
 msgid ""
 "%s:\n"
-"The zone number associated with a face must be in the\n"
-"range ]0, nozrdm = %10d].\n"
-"\n"
-"This number is outside these bounds for %llu faces\n"
-"  last face zone:  %d\n"
-msgstr ""
-
-msgid "Radiative boundary conditions errors:\n"
-msgstr "Erreurs de conditions aux limites radiatives\n"
-
-#, c-format
-msgid ""
-"%s:\n"
-"The maximum number of boundary zones which can be defined\n"
-"by the user is nbzrdm = %d\n"
-"\n"
-"It has been exceeded.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"%s:\n"
 "isothp must be defined on all wall faces.\n"
 "It has not been defined for %llu faces.\n"
 "\n"
 "  last undefined face value:  %d\n"
 msgstr ""
+
+msgid "Radiative boundary conditions errors:\n"
+msgstr "Erreurs de conditions aux limites radiatives\n"
 
 #, c-format
 msgid ""
@@ -15377,11 +15360,14 @@ msgstr ""
 "----------------------------\n"
 "\n"
 
-msgid "-------------------------------------------------------------------\n"
+msgid ""
+"\n"
+"Zone         Radiative net flux (Watt) (outward-facing unit normal)\n"
+"--------------------------------------\n"
 msgstr ""
-
-msgid "Zone         Radiative net flux (Watt) (outward-facing unit normal)\n"
-msgstr ""
+"\n"
+"Zone         Flux net radiatif (Watt) (normale sortante)\n"
+"-------------------------------------\n"
 
 #, c-format
 msgid "%6d             %11.4e\n"
@@ -15397,21 +15383,86 @@ msgid ""
 "(If IDIVER = 1 or 2, we must have Srad = -Fnet)\n"
 msgstr ""
 
-#, c-format
-msgid "Maximum variation: %9.4f %%\n"
-msgstr "Variation maximum: %9.4f %%\n"
-
-#, c-format
-msgid "Decreasing wall temperature: %8d wall faces\n"
-msgstr ""
-
-#, c-format
-msgid "Increasing wall temperature: %8d wall faces\n"
+msgid "-------------------------------------------------------------------\n"
 msgstr ""
 
 msgid ""
-"Fixed profiles   Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n"
+"\n"
+"  ** Information on wall temperature\n"
+"     -------------------------------\n"
 msgstr ""
+"\n"
+"  ** Informations sur la température de paroi\n"
+"     ----------------------------------------\n"
+
+#, c-format
+msgid ""
+"\n"
+" Warning: wall temperature relaxed to %7.2f at (%llu points)\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" Warning: wall temperature clipped:\n"
+"   to minimum at %llu faces\n"
+"   to maximum at %llu faces\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" Maximum variation: %9.4f\n"
+"   decreasing wall temperature: %llu faces\n"
+"   increasing wall temperature: %llu faces\n"
+msgstr ""
+
+msgid ""
+"\n"
+" Fixed profiles   Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n"
+" ---------------------------------------------------------------------------\n"
+msgstr ""
+
+msgid ""
+"\n"
+" Gray or black    Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n"
+"---------------------------------------------------------------------------\n"
+msgstr ""
+
+msgid ""
+"\n"
+" Walls at EPS=0   Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n"
+"---------------------------------------------------------------------------\n"
+msgstr ""
+
+msgid ""
+"\n"
+" Fix flux EPS!=0  Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n"
+"---------------------------------------------------------------------------\n"
+msgstr ""
+
+msgid ""
+"\n"
+" Fix flux EPS=0   Temp max (C)   Temp min (C)   Temp mean (C)  Net flux (W)\n"
+"---------------------------------------------------------------------------\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" %s wall temperature (degrees Celsius) = %15.7f\n"
+"   at coordinates [%11.4e, %11.4e, %11.4e]\n"
+"\n"
+"   convective flux: %15.7f\n"
+"   radiative flux = %15.7f\n"
+"\n"
+msgstr ""
+
+msgid "Maximum"
+msgstr "Maximum"
+
+msgid "Minimum"
+msgstr "Minimum"
 
 msgid "Max. size of synthetic eddies:\n"
 msgstr ""
@@ -16204,3 +16255,6 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
+#~ msgid "Maximum variation: %9.4f %%\n"
+#~ msgstr "Variation maximum: %9.4f %%\n"

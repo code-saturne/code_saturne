@@ -44,7 +44,9 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_POST_UTIL_Q_CRITERION,        /*!< Q-criterion post-treatment */
+  CS_POST_UTIL_Q_CRITERION,        /*!< Q-criterion output */
+
+  CS_POST_UTIL_BOUNDARY_CLASS_ID,  /*!< Boundary zone class id output */
 
   CS_POST_UTIL_N_TYPES             /*!< Number of post utility types */
 
@@ -54,7 +56,7 @@ typedef enum {
  * Global variables
  *============================================================================*/
 
-/*! Names of post utilities */
+/*! Names of post utility outputs */
 
 extern int cs_glob_post_util_flag[];
 

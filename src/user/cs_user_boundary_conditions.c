@@ -47,6 +47,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
@@ -89,7 +90,6 @@ BEGIN_C_DECLS
  *                                - 6  -> roughness and u.n=0 (velocity)
  *                                - 9  -> free inlet/outlet (velocity)
  *                                inflowing possibly blocked
- * \param[in]     izfrdp        boundary faces -> zone number
  * \param[in]     rcodcl        boundary condition values
  *                                rcodcl(3) = flux density value
  *                                (negative for gain) in W/m2
@@ -98,9 +98,8 @@ BEGIN_C_DECLS
 
 void
 cs_user_boundary_conditions(int         nvar,
-                            int         icodcl[],
                             int         bc_type[],
-                            int         izfrdp[],
+                            int         icodcl[],
                             cs_real_t   rcodcl[])
 {
 

@@ -49,6 +49,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_boundary_zone.h"
 #include "cs_log.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -174,10 +175,6 @@ _sync_rad_bc_err(cs_gnum_t  nerloc[],
  *                                 - 13 Dirichlet for the advection operator and
  *                                      Neumann for the diffusion operator
  *   \param[in]     bc_type       face boundary condition type
- *   \param[in]     izfrad        zone index for boundary faces
- *                                 and reference face index
- *   \param[in]     iihmpr        GUI use indicator
- *   \param[in]     nozppm        max number of boundary conditions zone
  *   \param[in]     dt            time step (per cell)
  *   \param[in,out] rcodcl        boundary condition values:
  *                                 - rcodcl(1) value of the dirichlet
@@ -200,8 +197,6 @@ void
 cs_rad_transfer_bcs(int         nvar,
                     int         bc_type[],
                     int         icodcl[],
-                    int         izfrad[],
-                    int        *nozppm,
                     cs_real_t   dt[],
                     cs_real_t   rcodcl[])
 {
@@ -272,7 +267,6 @@ cs_rad_transfer_bcs(int         nvar,
 
   /* Default initialization */
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-    izfrad[ifac] = -1;
     isothm[ifac] = -1;
     f_bxlam->val[ifac] = -cs_math_big_r;
     f_bepa->val[ifac]  = -cs_math_big_r;
@@ -341,7 +335,6 @@ cs_rad_transfer_bcs(int         nvar,
     cs_gui_radiative_transfer_bcs(bc_type,
                                   nvar,
                                   ivart,
-                                  izfrad,
                                   isothm,
                                   f_beps->val,
                                   f_bepa->val,
@@ -353,7 +346,6 @@ cs_rad_transfer_bcs(int         nvar,
     cs_user_radiative_transfer_bcs(nvar,
                                    bc_type,
                                    icodcl,
-                                   izfrad,
                                    isothm,
                                    &tmin,
                                    &tmax,
@@ -408,7 +400,6 @@ cs_rad_transfer_bcs(int         nvar,
   cs_gui_radiative_transfer_bcs(bc_type,
                                 nvar,
                                 ivart,
-                                izfrad,
                                 isothm,
                                 f_beps->val,
                                 f_bepa->val,
@@ -420,7 +411,6 @@ cs_rad_transfer_bcs(int         nvar,
   cs_user_radiative_transfer_bcs(nvar,
                                  bc_type,
                                  icodcl,
-                                 izfrad,
                                  isothm,
                                  &tmin,
                                  &tmax,
@@ -439,64 +429,15 @@ cs_rad_transfer_bcs(int         nvar,
 
   /* Check user BC definitions */
 
+  const int *face_zone_id = cs_boundary_zone_face_zone_id();
+
   /* Error counter */
   cs_gnum_t nrferr[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   int       icoerr[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-  /* Stop is zone number is not defined correctly */
-
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-    if (   izfrad[ifac] <= 0
-        || izfrad[ifac] > cs_glob_rad_transfer_params->nozrdm) {
-      nrferr[0]++;
-      icoerr[0]     = izfrad[ifac];
-      bc_type[ifac] = -CS_ABS(bc_type[ifac]);
-    }
-  }
-
-  /* Build a list of boundary zone numbers (rank-local in parallel); */
-  /* errer if exceeded */
-
-  if (cs_glob_rad_transfer_params->ilzrad == NULL)
-    BFT_MALLOC(cs_glob_rad_transfer_params->ilzrad,
-               cs_glob_rad_transfer_params->nbzrdm,
-               int);
-
-  cs_glob_rad_transfer_params->nzfrad = 0;
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-
-    int ifvu = 0;
-    for (int ii = 0; ii < cs_glob_rad_transfer_params->nzfrad; ii++) {
-      if (cs_glob_rad_transfer_params->ilzrad[ii] == izfrad[ifac])
-        ifvu  = 1;
-    }
-
-    if (ifvu == 0) {
-      if (   cs_glob_rad_transfer_params->nzfrad
-          <= cs_glob_rad_transfer_params->nbzrdm)
-        cs_glob_rad_transfer_params->ilzrad[cs_glob_rad_transfer_params->nzfrad]
-          = izfrad[ifac];
-      else
-        nrferr[1]++;
-      cs_glob_rad_transfer_params->nzfrad++;
-    }
-
-  }
-
-  /* Highest zone number reached */
-
-  int izonem = 0;
-  for (int ii = 0; ii < cs_glob_rad_transfer_params->nzfrad; ii++)
-    izonem = CS_MAX(izonem, cs_glob_rad_transfer_params->ilzrad[ii]);
-
-  if (cs_glob_rank_id >= 0)
-    cs_parall_max(1, CS_INT_TYPE, &izonem);
-
-  cs_glob_rad_transfer_params->nozarm = izonem;
-
   cs_real_t rvferr[27];
-  if (true) {
 
+  {
     /* Error if isothm not defined on wall, or defined on non-wall */
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
@@ -504,14 +445,14 @@ cs_rad_transfer_bcs(int         nvar,
              || bc_type[ifac] == CS_ROUGHWALL)
           && isothm[ifac] ==  -1) {
         nrferr[2]++;
-        icoerr[2]    = izfrad[ifac];
+        icoerr[2]    = face_zone_id[ifac];
         bc_type[ifac] = -CS_ABS(bc_type[ifac]);
       }
       else if (   bc_type[ifac] != CS_SMOOTHWALL
                && bc_type[ifac] != CS_ROUGHWALL
                && isothm[ifac] != -1) {
         nrferr[3]++;
-        icoerr[3]    =  izfrad[ifac];
+        icoerr[3]    =  face_zone_id[ifac];
         bc_type[ifac] = -CS_ABS(bc_type[ifac]);
       }
     }
@@ -525,7 +466,7 @@ cs_rad_transfer_bcs(int         nvar,
             || f_beps->val[ifac] > 1.0
             || tint[ifac] <= 0.0) {
           nrferr[4]++;
-          icoerr[4]    = izfrad[ifac];
+          icoerr[4]    = face_zone_id[ifac];
           rvferr[0]    = f_beps->val[ifac];
           rvferr[1]    = tint[ifac];
           bc_type[ifac] = -CS_ABS(bc_type[ifac]);
@@ -540,7 +481,7 @@ cs_rad_transfer_bcs(int         nvar,
             || text[ifac] <= 0.0
             || tint[ifac] <= 0.0) {
           nrferr[5]++;
-          icoerr[5]    = izfrad[ifac];
+          icoerr[5]    = face_zone_id[ifac];
           rvferr[2]    = f_beps->val[ifac];
           rvferr[3]    = f_bxlam->val[ifac];
           rvferr[4]    = f_bepa->val[ifac];
@@ -556,7 +497,7 @@ cs_rad_transfer_bcs(int         nvar,
             || text[ifac] <= 0.0
             || tint[ifac] <= 0.0) {
           nrferr[6]++;
-          icoerr[6]    = izfrad[ifac];
+          icoerr[6]    = face_zone_id[ifac];
           rvferr[7]    = f_bxlam->val[ifac];
           rvferr[8]    = f_bepa->val[ifac];
           rvferr[9]    = text[ifac];
@@ -570,7 +511,7 @@ cs_rad_transfer_bcs(int         nvar,
             || f_beps->val[ifac] > 1.0
             || tint[ifac] <= 0.0) {
           nrferr[7]++;
-          icoerr[7]    = izfrad[ifac];
+          icoerr[7]    = face_zone_id[ifac];
           rvferr[11]   = f_beps->val[ifac];
           rvferr[12]   = tint[ifac];
           bc_type[ifac] = -CS_ABS(bc_type[ifac]);
@@ -580,7 +521,7 @@ cs_rad_transfer_bcs(int         nvar,
       else if (isothm[ifac] == cs_glob_rad_transfer_params->ifrefl) {
         if (tint[ifac] <= 0.0) {
           nrferr[8]++;
-          icoerr[8]    = izfrad[ifac];
+          icoerr[8]    = face_zone_id[ifac];
           rvferr[13]   = tint[ifac];
           bc_type[ifac] = -CS_ABS(bc_type[ifac]);
         }
@@ -591,7 +532,7 @@ cs_rad_transfer_bcs(int         nvar,
             || f_beps->val[ifac] > 1.0
             || tint[ifac] <= 0.0) {
           nrferr[14]++;
-          icoerr[15]   = izfrad[ifac];
+          icoerr[15]   = face_zone_id[ifac];
           rvferr[25]   = f_beps->val[ifac];
           rvferr[26]   = tint[ifac];
           bc_type[ifac] = -CS_ABS(bc_type[ifac]);
@@ -600,7 +541,7 @@ cs_rad_transfer_bcs(int         nvar,
 
       else if (isothm[ifac] !=  -1) {
         nrferr[9]++;
-        icoerr[9]    = izfrad[ifac];
+        icoerr[9]    = face_zone_id[ifac];
         icoerr[10]   = isothm[ifac];
         bc_type[ifac] = -CS_ABS(bc_type[ifac]);
       }
@@ -615,7 +556,7 @@ cs_rad_transfer_bcs(int         nvar,
             || f_bepa->val[ifac] > 0.0
             || text[ifac] > 0.0) {
           nrferr[10]++;
-          icoerr[11]   = izfrad[ifac];
+          icoerr[11]   = face_zone_id[ifac];
           rvferr[14]   = f_bxlam->val[ifac];
           rvferr[15]   = f_bepa->val[ifac];
           rvferr[16]   = text[ifac];
@@ -626,7 +567,7 @@ cs_rad_transfer_bcs(int         nvar,
       else if (isothm[ifac] == cs_glob_rad_transfer_params->iprefl) {
         if (f_beps->val[ifac] >= 0.0) {
           nrferr[11]++;
-          icoerr[12]   = izfrad[ifac];
+          icoerr[12]   = face_zone_id[ifac];
           rvferr[17]   = f_beps->val[ifac];
           bc_type[ifac] = -CS_ABS(bc_type[ifac]);
         }
@@ -637,7 +578,7 @@ cs_rad_transfer_bcs(int         nvar,
             || f_bepa->val[ifac] > 0.0
             || text[ifac] > 0.0) {
           nrferr[12]++;
-          icoerr[13]   = izfrad[ifac];
+          icoerr[13]   = face_zone_id[ifac];
           rvferr[18]   = f_bxlam->val[ifac];
           rvferr[19]   = f_bepa->val[ifac];
           rvferr[20]   = text[ifac];
@@ -651,7 +592,7 @@ cs_rad_transfer_bcs(int         nvar,
             || f_bepa->val[ifac] > 0.0
             || text[ifac] > 0.0) {
           nrferr[13]++;
-          icoerr[14]   = izfrad[ifac];
+          icoerr[14]   = face_zone_id[ifac];
           rvferr[21]   = f_beps->val[ifac];
           rvferr[22]   = f_bxlam->val[ifac];
           rvferr[23]   = f_bepa->val[ifac];
@@ -678,36 +619,6 @@ cs_rad_transfer_bcs(int         nvar,
     cs_parall_max(1, CS_INT_TYPE, &iok);
 
   if (iok != 0) {
-
-    _sync_rad_bc_err(&nrferr[0], 1, &(icoerr[0]), NULL);
-    if (nrferr[0] > 0)
-      cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
-                      "The zone number associated with a face must be in the\n"
-                      "range ]0, nozrdm = %10d].\n\n"
-                      "This number is outside these bounds for %llu faces\n"
-                      "  last face zone:  %d\n"),
-                    _("Radiative boundary conditions errors:\n"),
-                    cs_glob_rad_transfer_params->nozrdm,
-                    (unsigned long long)nrferr[0],
-                    icoerr[0]);
-
-    _sync_rad_bc_err(&nrferr[1],
-                     cs_glob_rad_transfer_params->nbzrdm,
-                     cs_glob_rad_transfer_params->ilzrad, NULL);
-    if (nrferr[1] > 0) {
-      cs_log_printf(CS_LOG_DEFAULT,
-                    _("%s:\n"
-                      "The maximum number of boundary zones which can be defined\n"
-                      "by the user is nbzrdm = %d\n\n"
-                      "It has been exceeded.\n"),
-                    _("Radiative boundary conditions errors:\n"),
-                    cs_glob_rad_transfer_params->nozrdm);
-      for (int ii = 0; ii < cs_glob_rad_transfer_params->nbzrdm; ii++)
-        cs_log_printf(CS_LOG_DEFAULT, "%10d\n",
-                      cs_glob_rad_transfer_params->ilzrad[ii]);
-      cs_exit(1);
-    }
 
     _sync_rad_bc_err(&nrferr[2], 1, &icoerr[2], NULL);
     if (nrferr[2] > 0) {
@@ -1060,7 +971,6 @@ cs_rad_transfer_bcs(int         nvar,
     cs_rad_transfer_wall_flux(nvar,
                               ivart,
                               isothm,
-                              izfrad,
                               &tmin,
                               &tmax,
                               &tx,
@@ -1372,7 +1282,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
       /* Symmetry or reflecting wall (EPS = 0) : zero flux */
       if (   bc_type[ifac] == CS_SYMMETRY
           || (   (   bc_type[ifac] == CS_SMOOTHWALL
-                  || bc_type[ifac] == CS_ROUGHWALL )
+                  || bc_type[ifac] == CS_ROUGHWALL)
               && f_eps->val[ifac] == 0.0) ) {
         cs_real_t qimp = 0.0;
         cs_boundary_conditions_set_neumann_scalar(&coefap[ifac],

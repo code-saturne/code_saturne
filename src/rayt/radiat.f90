@@ -114,14 +114,12 @@ module radiat
 
     ! Interface to C function handling source terms
 
-    subroutine cs_rad_transfer_bcs(nvar, bc_type, icodcl, izfrad,     &
-                                   nozppm, dt, rcodcl)                &
+    subroutine cs_rad_transfer_bcs(nvar, bc_type, icodcl, dt, rcodcl)  &
       bind(C, name='cs_rad_transfer_bcs')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(kind=c_int), value :: nvar
-      integer(kind=c_int), dimension(*) :: bc_type, icodcl, izfrad
-      integer(kind=c_int) :: nozppm
+      integer(kind=c_int), dimension(*) :: bc_type, icodcl
       real(kind=c_double), dimension(*) :: dt, rcodcl
     end subroutine cs_rad_transfer_bcs
 
@@ -129,13 +127,13 @@ module radiat
 
     ! Interface to C function handling resolution
 
-    subroutine cs_rad_transfer_solve(bc_type, izfrad, nclacp, nclafu, &
+    subroutine cs_rad_transfer_solve(bc_type, nclacp, nclafu,         &
                                      dt, cp2fol, cp2ch, ichcor)       &
       bind(C, name='cs_rad_transfer_solve')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(kind=c_int), value :: nclacp, nclafu
-      integer(kind=c_int), dimension(*) :: bc_type, izfrad, ichcor
+      integer(kind=c_int), dimension(*) :: bc_type, ichcor
       real(kind=c_double), value :: cp2fol
       real(kind=c_double), dimension(*) :: dt, cp2ch
     end subroutine cs_rad_transfer_solve

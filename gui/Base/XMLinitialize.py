@@ -1293,6 +1293,16 @@ class XMLinit(Variables):
         if node:
             node.xmlRemoveNode()
 
+        rd_list = None
+        XMLBoundaryNode = self.case.xmlGetNode('boundary_conditions')
+        if XMLBoundaryNode:
+            rd_list = XMLBoundaryNode.xmlGetNodeList('radiative_data')
+        if rd_list:
+            for rd in rd_list:
+                node = rd.xmlGetNode('output_zone')
+                if node:
+                    node.xmlRemoveNode()
+
         # renames
 
         self.__renameSingle('thermophysical_models', 'heads_losses', 'head_losses')

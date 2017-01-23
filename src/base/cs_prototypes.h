@@ -211,7 +211,6 @@ cs_user_head_losses(const cs_volume_zone_t  *zone,
 
 void
 cs_user_rad_transfer_absorption(const int         bc_type[],
-                                const int         izfrdp[],
                                 const cs_real_t   dt[],
                                 cs_real_t         ck[]);
 
@@ -221,7 +220,6 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
 
 void
 cs_user_rad_transfer_net_flux(const int        itypfb[],
-                              const int        izfrdp[],
                               const cs_real_t  dt[],
                               const cs_real_t  coefap[],
                               const cs_real_t  coefbp[],
@@ -316,7 +314,6 @@ void
 cs_user_boundary_conditions(int         nvar,
                             int         icodcl[],
                             int         bc_type[],
-                            int         izfrdp[],
                             cs_real_t   rcodcl[]);
 
 /*----------------------------------------------------------------------------
@@ -532,7 +529,6 @@ void
 cs_user_radiative_transfer_bcs(int               nvar,
                                const int         bc_type[],
                                int               icodcl[],
-                               int               izfrdp[],
                                int               isothp[],
                                cs_real_t        *tmin,
                                cs_real_t        *tmax,

@@ -62,11 +62,10 @@ BEGIN_C_DECLS
  * \param[in]  nvar     number of variable BC's
  * \param[in]  ivart    variable id of thermal variable
  * \param[in]  isothp   list of isothermal boundaries
- * \param[in]  izfrap   numbers of boundary face zones
  * \param[in]  rcodcl   boundary condition values
  *                        rcodcl[0] = Dirichlet value
- *                        rcodcl[1] = exchange coefficient value. (infinite
- *                                    if no exchange)
+ *                        rcodcl[1] = exchange coefficient value.
+ *                                    (infinite if no exchange)
  *                        rcodcl[2] = flux density value (negative if gain)
  *                                    in w/m2 or rugosity height (m)
  *                                    if icodcl=6,
@@ -75,7 +74,7 @@ BEGIN_C_DECLS
  *                                    - for scalars,
  *                                      cp*(viscls+visct/turb_schmidt)*gradt
  * \param[out] tparop   wall temperature in Kelvin
- * \param[in]  qincip   dradiative flux density at boundaries
+ * \param[in]  qincip   radiative flux density at boundaries
  * \param[in]  textp    exterior boundary temperature in degrees C
  * \param[in]  tintp    interior boundary temperature in degrees C
  * \param[in]  xlamp    thermal conductivity coefficient of wall faces (w/m/k)
@@ -88,10 +87,9 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_wall_flux(cs_lnum_t   nvar,
-                          cs_lnum_t   ivart,
+cs_rad_transfer_wall_flux(int         nvar,
+                          int         ivart,
                           int         isothp[],
-                          int         izfrap[],
                           cs_real_t  *tmin,
                           cs_real_t  *tmax,
                           cs_real_t  *tx,

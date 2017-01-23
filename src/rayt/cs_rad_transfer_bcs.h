@@ -79,9 +79,6 @@ BEGIN_C_DECLS
  *                                 - 13 Dirichlet for the advection operator and
  *                                      Neumann for the diffusion operator
  *   \param[in]     bc_type       face boundary condition type
- *   \param[in]     izfrad        zone index for boundary faces
- *                                 and reference face index
- *   \param[in]     nozppm        max number of boundary conditions zone
  *   \param[in]     dt            time step (per cell)
  *   \param[in,out] rcodcl        boundary condition values:
  *                                 - rcodcl(1) value of the dirichlet
@@ -104,8 +101,6 @@ void
 cs_rad_transfer_bcs(int         nvar,
                     int         bc_type[],
                     int         icodcl[],
-                    int         izfrad[],
-                    int        *nozppm,
                     cs_real_t   dt[],
                     cs_real_t   rcodcl[]);
 
@@ -135,7 +130,6 @@ cs_rad_transfer_bcs(int         nvar,
  * ----------------------------------------
  *
  * \param[in]  bc_type         boundary face types
- * \param[out] izfrdp          boundary faces -> zone number
  * \param[out] coefap, coefbp  boundary conditions for intensity or P-1 model
  *             cofafp, cofbfp
  * \param[in]  tparoi          inside current wall temperature (K)

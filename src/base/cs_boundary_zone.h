@@ -306,6 +306,69 @@ cs_lnum_t
 cs_boundary_zone_n_type_zones(int  type_flag);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to optional boundary face class ids.
+ *
+ * For each boundary face, a specific output (logging and postprocessing)
+ * class id may be assigned. This allows realizing logging, postprocessing,
+ * or otherwise extracting data based on this class.
+ *
+ * Using this function at a given point indicates that user-defined class
+ * ids will be used. The face class ids are initially equal to the
+ * face zone ids, but may be modified by the user.
+ *
+ * In the presence of a time-varying mesh or boundary zones, the face
+ * class ids will be reset to the zone ids, so it may be necessary to
+ * update the user definitions.
+ *
+ * The class id values are arbitrarily chosen by the user, but must be
+ * positive integers; numbers do not need to be contiguous, but very high
+ * numbers may also lead to higher memory consumption.
+ *
+ * \return  pointer to array of boundary face output zone ids;
+ */
+/*----------------------------------------------------------------------------*/
+
+int *
+cs_boundary_zone_face_class_id(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get read pointer to optional boundary face class or zone ids.
+ *
+ * If no face classes have been defined by \ref cs_boundary_zone_face_class_id
+ * the boundary face zone id is returned instead.
+ *
+ * \return  pointer to array of boundary face output zone ids;
+ */
+/*----------------------------------------------------------------------------*/
+
+const int *
+cs_boundary_zone_face_class_or_zone_id(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update boundary face output class ids if present.
+ *
+ * Face class ids lower than 0 are replaced by the matching face zone id.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_zone_update_face_class_id(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the maximum defined face class or zone id.
+ *
+ * \return  maximum face class or zone id;
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_zone_max_class_or_zone_id(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -89,79 +89,61 @@ Therefore :
 
   \subsection bound_faces Boundary faces identification
 
-   Boundary faces may be identified using the \ref getfbr subroutine. The syntax of this subroutine is described in the \ref cs_user_boundary_conditions subroutine, but a more thorough description can be found in the user guide.
+   Boundary faces may be identified using the \ref getfbr function,
+   or preferrably, through boundary zones, defined using the
+   GUI or the \ref cs_user_zones function..
 
-\note These usefull constant are definded \n
-\f$ TKELVI = 273.16D0 \f$ \n
-\f$ SIG = 5.6703D-8 \f$
+\subsection init_fin Initialization and finalization
 
+The following declaration and initialization block needs to be added
+for the following examples:
 
-  \subsection init_fin Initialization and finalization
+\snippet cs_user_radiative_transfer_bcs.c loc_var
 
+<b> Remaining initialisation</b>
 
-   The following initialization block needs to be added for the following examples:
+ivar: number of the thermal variable
 
-  \snippet cs_user_radiative_transfer_bcs.c allocate
+\snippet cs_user_radiative_transfer_bcs.c ivar
 
-  At the end of the subroutine, it is recommended to deallocate the work array:
+Min and Max values for the wall temperatures (clipping otherwise)
 
-  \snippet cs_user_radiative_transfer_bcs.c deallocate
+\f$ T_{min} \f$ and \f$T_{max} \f$ are given in Kelvin.
 
-  In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their allocation is good pratice, and avoids using a different logic for C and Fortran.
+\snippet  cs_user_radiative_transfer_bcs.c temp
 
- <b> Remaining initialisation</b>
+\subsection assign2 Assign boundary conditions to boundary wall
 
+\section cs_user_radiative_transfer_bcs_zones  Zone definitions
 
-  ivar: number of the thermal variable
+For each boundary face face_id, a specific output (logging and
+postprocessing) zone id may be assigned. This allows realizing balance
+sheets by treating them separately for each zone. By default, the
+output zone id is set to the general (input) zone id associated to a face.
 
-   \snippet cs_user_radiative_transfer_bcs.c ivar
+To access output zone ids (both for reading and modifying), use the
+\ref cs_rad_transfer_get_output_b_face_zone_ids function.
+The zone id values are arbitrarily chosen by the user, but must be
+positive integers; very high numbers may also lead to higher memory
+consumption.
 
-  Min and Max values for the wall temperatures (clipping otherwise)
-
- \f$ T_{min} \f$ and \f$T_{max} \f$ are given in Kelvin.
-
-  \snippet  cs_user_radiative_transfer_bcs.c temp
-
-   \subsection assign2 Assign boundary conditions to boundary wall
-
-    \subsubsection zone_def Zones definition
-
- We define zones of wall boundary, and we assign a type.
-   This allows to apply the boundary conditions and realize
-   balance sheets by treating them separately for each zone.
-
- For each boundary face ifac (not just the faces of wall)
-   the user defines his own choice by a number of zone
-   \c izfrdp(ifac) from color of the boundary face
-     or more generally, their properties (color, groups ...),
-     or boundary conditions specified in \ref cs_user_boundary_conditions,
-     or even of their coordinates.
-
-\warning It is essential that ALL boundary faces
-   have been assigned to a zone.
-   The number of zones (the value of \c izfrdp(ifac)) is
-   arbitrarily chosen by the user, but must be a
-   positive integer and less than or equal to \c nbzrdm
-   (value set in parameter \ref radiat.h).
-
-
-\paragraph wall_carac Wall caracteristics
+\paragraph wall_carac Wall characteristics
 
 \warning The unit of the temperature is the Kelvin
 
 \paragraph manda Mandatory data
 
-   - \c isothp(ifac) boundary face type
-               -  \c itpimp -> Gray wall with fixed inside temperature
-               -  \c ipgrno -> Gray wall with fixed outside temperature
-               -  \c iprefl -> Reflecting wall with fixed outside temperature
-               -  \c ifgrno -> Gray wall with fixed conduction flux
-               -  \c ifrefl -> Reflecting wall with fixed conduction flux
+  - \c isothp(ifac) boundary face type
+              -  \c itpimp -> Gray wall with fixed inside temperature
+              -  \c ipgrno -> Gray wall with fixed outside temperature
+              -  \c iprefl -> Reflecting wall with fixed outside temperature
+              -  \c ifgrno -> Gray wall with fixed conduction flux
+              -  \c ifrefl -> Reflecting wall with fixed conduction flux
 
-   - \c tintp(ifac) inside wall temperature (Kelvin)
-                  initialize thwall at the first time step.
-                  If \c isothp = \c itpimp, the value of thwall is fixed to \c tintp
-                  In the other case, \c tintp is only for initialization.
+  - \c tintp(ifac) inside wall temperature (Kelvin)
+                   initialize thwall at the first time step.
+                   If \c isothp = \c itpimp, the value of thwall is fixed to \c tintp
+                   In the other case, \c tintp is only for initialization.
 \paragraph data Other data (depending of the isothp)
 
   - \c rcodcl = conduction flux

@@ -69,7 +69,6 @@ use lagran
 use ppppar
 use ppthch
 use ppincl
-use radiat, only: iirayo
 use cplsat
 use mesh
 use field
@@ -125,7 +124,7 @@ double precision, dimension(:), pointer :: cvar_pr
 ipp = 0
 
 !===============================================================================
-! 1.1. Fluid domain
+! Fluid domain
 !===============================================================================
 
 if (numtyp .eq. -1) then
@@ -134,8 +133,8 @@ if (numtyp .eq. -1) then
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_v(ivarfl(iu), vel)
 
-  !  1.1.2 Automatic additional variables
-  !  ------------------------------------
+  !  Automatic additional variables
+  !  ------------------------------
 
   ! Wall distance (if LES+VanDriest or Rij+Echo or K-w SST)
 
@@ -167,7 +166,7 @@ if (numtyp .eq. -1) then
 
   endif
 
-  ! Vitesse et pression absolues en cas de calcul en repère relatif
+  ! Relative pressure and volocity in case of relative coordinate system
 
   if (icorio.eq.1) then
 
@@ -210,7 +209,7 @@ if (numtyp .eq. -1) then
 
   endif
 
-  ! Vitesse et pression relatives en cas de calcul en repère fixe
+  ! Relative pressure and volocity in case of fixed coordinate system
 
   if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
 
@@ -255,7 +254,7 @@ if (numtyp .eq. -1) then
 
 
 !===============================================================================
-! 1.2. Boundary
+! Boundary
 !===============================================================================
 
 else if (numtyp .eq. -2) then
@@ -484,30 +483,7 @@ else if (numtyp .eq. -2) then
 endif ! end of test on postprocessing mesh number
 
 !===============================================================================
-!     2.2. VARIABLES RADIATIVES AUX FRONTIERES
-!===============================================================================
-
-if (numtyp.eq.-2) then
-
-  if (iirayo.gt.0) then
-
-    do iloc = 1, nfbrps
-      ifac = lstfbr(iloc)
-      trafbr(iloc) = izfrad(ifac)
-    enddo
-
-    idimt  = 1
-    ientla = .true.
-    ivarpr = .false.
-
-    call post_write_var(nummai, 'radiative_boundary_zones', idimt,           &
-                        ientla, ivarpr, ntcabs, ttcabs, rbid, rbid, trafbr)
-
-  endif
-endif
-
-!===============================================================================
-! 2.3. Electric module variables
+! Electric module variables
 !===============================================================================
 
 if (numtyp.eq.-1) then
@@ -520,8 +496,7 @@ if (numtyp.eq.-1) then
     ! For Joule Heating by direct conduction:
     !   gradient of the imaginary component of the potential
 
-    if (.true.                                                               &
-        .and. (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4)) then
+    if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
 
       call field_get_id('elec_pot_i', f_id)
 
@@ -545,8 +520,7 @@ if (numtyp.eq.-1) then
     ! For Joule heating by direct conduction:
     !   imaginary component of the current density
 
-    if (.true.                                                               &
-        .and. (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4)) then
+    if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
 
       call field_get_id('elec_pot_i', f_id)
 
@@ -583,7 +557,7 @@ if (numtyp.eq.-1) then
 
     ! Calculation of Module and Argument of the complex potential if IELJOU = 4
 
-    if (.true. .and. ippmod(ieljou).eq.4) then
+    if (ippmod(ieljou).eq.4) then
 
       ivar = 0
 
@@ -643,10 +617,6 @@ if (numtyp.eq.-1) then
   endif
 
 endif
-
-!--------
-! Formats
-!--------
 
 !----
 ! End

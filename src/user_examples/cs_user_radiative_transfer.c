@@ -49,6 +49,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
@@ -198,7 +199,6 @@ cs_user_radiative_transfer_parameters(void)
  * least of the order of 1.
  *
  * \param[in]     bc_type       boundary face types
- * \param[in]     izfrdp        zone number for boundary faces
  * \param[in]     dt            time step (per cell)
  * \param[out]    ck            medium's absorption coefficient
  *                              (zero if transparent)
@@ -207,7 +207,6 @@ cs_user_radiative_transfer_parameters(void)
 
 void
 cs_user_rad_transfer_absorption(const int         bc_type[],
-                                const int         izfrdp[],
                                 const cs_real_t   dt[],
                                 cs_real_t         ck[])
 {
@@ -241,7 +240,6 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
  * and the radiative absorbing part.
  *
  * \param[in]   bc_type   boundary face types
- * \param[in]   izfrdp    boundary faces -> zone number
  * \param[in]   dt        time step (per cell)
  * \param[in]   coefap    boundary condition work array for the luminance
  *                         (explicit part)
@@ -263,7 +261,6 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
 
 void
 cs_user_rad_transfer_net_flux(const int        bc_type[],
-                              const int        izfrdp[],
                               const cs_real_t  dt[],
                               const cs_real_t  coefap[],
                               const cs_real_t  coefbp[],
@@ -330,7 +327,7 @@ cs_user_rad_transfer_net_flux(const int        bc_type[],
          "  Last face: %10d; zone = %d; nature = %d\n",
          __func__,
          ifac,
-         izfrdp[ifac],
+         cs_boundary_zone_face_zone_id()[ifac],
          bc_type[ifac]);
 
   }

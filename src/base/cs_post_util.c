@@ -98,7 +98,7 @@ BEGIN_C_DECLS
 /*! Status of post utilities */
 
 int cs_glob_post_util_flag[CS_POST_UTIL_N_TYPES]
-  = { -1 };
+  = {-1, -1};
 
 /*============================================================================
  * Private function definitions

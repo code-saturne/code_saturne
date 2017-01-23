@@ -92,7 +92,6 @@ BEGIN_C_DECLS
 typedef struct {
   char     **label;                /* label for each boundary zone            */
   char     **nature;               /* nature for each boundary zone           */
-  int      *output_zone;
   int      *type;
   double   *emissivity;
   double   *conductivity;
@@ -386,35 +385,6 @@ _radiative_boundary_type(const char  *label)
   return result;
 }
 
-/*----------------------------------------------------------------------------
- *  Return maximum value of output zone
- *----------------------------------------------------------------------------*/
-
-static int
-_radiative_boundary_output_zone_max(void)
-{
-  char *path;
-  int nb_zone, zone_max = 0;
-
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 4,
-                        "boundary_conditions",
-                        "wall",
-                        "radiative_data",
-                        "output_zone" );
-
-  nb_zone = cs_gui_get_nb_element(path);
-
-  if (nb_zone > 0) {
-    cs_xpath_add_function_text(&path);
-    zone_max = cs_gui_get_max_value(path);
-  }
-
-  BFT_FREE(path);
-
-  return zone_max;
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -446,7 +416,6 @@ void CS_PROCF (memui2, MEMUI2) (void)
     }
     BFT_FREE(boundary->label);
     BFT_FREE(boundary->nature);
-    BFT_FREE(boundary->output_zone);
     BFT_FREE(boundary->type);
     BFT_FREE(boundary->emissivity);
     BFT_FREE(boundary->thickness);
@@ -637,7 +606,6 @@ void
 cs_gui_radiative_transfer_bcs(const    int   itypfb[],
                               cs_lnum_t      nvar,
                               cs_lnum_t      ivart,
-                              int           *izfrdp,
                               int           *isothp,
                               double        *epsp,
                               double        *epap,
@@ -649,22 +617,16 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
   if (!cs_gui_file_is_loaded())
     return;
 
-  int zones = 0;
-  int output_zone_max = 0;
   int izone;
   int ith_zone;
   int ifbr;
-  cs_lnum_t j, n;
   cs_lnum_t faces = 0;
-  int iok = 0;
-  double tmp = 0.;
   char *nature = NULL;
   char *label = NULL;
 
   const cs_lnum_t  n_b_faces = cs_glob_mesh->n_b_faces;
 
-  zones   = cs_gui_boundary_zones_number();
-  output_zone_max = _radiative_boundary_output_zone_max();
+  int zones = cs_gui_boundary_zones_number();
 
   /* First call only: memory allocation */
 
@@ -673,7 +635,6 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
     BFT_MALLOC(boundary, 1, cs_radiative_transfer_boundary_t);
     BFT_MALLOC(boundary->label,                zones, char *);
     BFT_MALLOC(boundary->nature,               zones, char *);
-    BFT_MALLOC(boundary->output_zone,          zones, int);
     BFT_MALLOC(boundary->type,                 zones, int);
     BFT_MALLOC(boundary->emissivity,           zones, double);
     BFT_MALLOC(boundary->thickness,            zones, double);
@@ -699,11 +660,8 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
       BFT_MALLOC(boundary->nature[izone], strlen(nature)+1, char);
       strcpy(boundary->nature[izone], nature);
 
-      /* Default initialization: these values are the same that in
-         cs_rad_tranfer_bcs but given on each face there whereas here one does
-         not necessarily have boundary faces (parallism) -> duplication */
+      /* Default initialization */
       boundary->type[izone] = -1;
-      boundary->output_zone[izone] = -1;
       boundary->emissivity[izone] = -1.e12;
       boundary->thickness[izone] = -1.e12;
       boundary->thermal_conductivity[izone] = -1.e12;
@@ -713,9 +671,6 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
       if (cs_gui_strcmp(nature, "wall")) {
         boundary->type[izone] = _radiative_boundary_type(label);
-        tmp = (double) boundary->output_zone[izone];
-        _radiative_boundary(label, "output_zone", &tmp);
-        boundary->output_zone[izone] = (int) tmp;
         _radiative_boundary(label, "emissivity", &boundary->emissivity[izone]);
         _radiative_boundary(label, "thickness", &boundary->thickness[izone]);
         _radiative_boundary(label, "wall_thermal_conductivity",
@@ -744,8 +699,8 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
       = cs_gui_get_boundary_faces(boundaries->label[izone], &faces);
 
     if (cs_gui_strcmp(boundary->nature[izone], "wall")) {
-      for (n = 0; n < faces; n++) {
-        ifbr = faces_list[n];
+      for (cs_lnum_t i = 0; i < faces; i++) {
+        ifbr = faces_list[i];
 
         if (itypfb[ifbr] != CS_SMOOTHWALL && itypfb[ifbr] != CS_ROUGHWALL)
           bft_error
@@ -760,7 +715,6 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
                " must be coherent\n"
                "with these new natures.\n"));
 
-        izfrdp[ifbr] = boundary->output_zone[izone];
         isothp[ifbr] = boundary->type[izone];
         if (isothp[ifbr] == cs_glob_rad_transfer_params->itpimp) {
           epsp[ifbr] = boundary->emissivity[izone];
@@ -786,47 +740,15 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
         }
       }
 
-    } else {
-      j = output_zone_max++;
-      for (n = 0; n < faces; n++) {
-        ifbr = faces_list[n];
-        izfrdp[ifbr] = j;
-      }
     } /* if nature == "wall" */
 
   } /* for izone */
-
-  iok = 0;
-  for (n = 0; n < n_b_faces; n++) {
-    if (izfrdp[n] == -1) iok = 1;
-  }
-  if (iok == 1) {
-    bft_printf("Warning: radiative boundary conditions in GUI are not totally defined \n");
-    if (zones)
-      bft_printf("These are radiative boundary conditions defined in GUI: \n");
-    for (izone = 0; izone < zones; izone++) {
-       bft_printf("  nature: %s label: %s\n", boundary->nature[izone],
-                  boundary->label[izone]);
-       if (cs_gui_strcmp(boundary->nature[izone], "wall")) {
-         bft_printf("    output_zone = %i\n", boundary->output_zone[izone]);
-         bft_printf("    type = %i\n", boundary->type[izone]);
-         bft_printf("    emissivity = %f\n", boundary->emissivity[izone]);
-         bft_printf("    thickness= %f\n", boundary->thickness[izone]);
-         bft_printf("    wall_thermal_conductivity = %f\n",
-                    boundary->thermal_conductivity[izone]);
-         bft_printf("    external_temp = %f\n", boundary->external_temp[izone]);
-         bft_printf("    internal_temp = %f\n", boundary->internal_temp[izone]);
-         bft_printf("    conduction_flux= %f\n", boundary->conduction_flux[izone]);
-       }
-    }
-  }
 
 #if _XML_DEBUG_
   bft_printf("==>UIRAY2\n");
   for (izone = 0; izone < zones; izone++) {
      bft_printf("--label zone = %s\n", boundary->label[izone]);
      if (cs_gui_strcmp(boundary->nature[izone], "wall")) {
-       bft_printf("----output_zone = %i\n", boundary->output_zone[izone]);
        bft_printf("----type = %i\n", boundary->type[izone]);
        bft_printf("----emissivity = %f\n", boundary->emissivity[izone]);
        bft_printf("----thickness= %f\n", boundary->thickness[izone]);
