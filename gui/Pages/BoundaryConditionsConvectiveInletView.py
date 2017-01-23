@@ -24,7 +24,7 @@
 
 """
 This module contains the following classes:
-- BoundaryConditionsMappedInletView
+- BoundaryConditionsConvectiveInletView
 """
 
 #-------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Pages.BoundaryConditionsMappedInletForm import Ui_BoundaryConditionsMappedInletForm
+from code_saturne.Pages.BoundaryConditionsConvectiveInletForm import Ui_BoundaryConditionsConvectiveInletForm
 
 from code_saturne.Base.Toolbox import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
@@ -60,14 +60,14 @@ from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 #-------------------------------------------------------------------------------
 
 logging.basicConfig()
-log = logging.getLogger("BoundaryConditionsMappedInletView")
+log = logging.getLogger("BoundaryConditionsConvectiveInletView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
 
-class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInletForm):
+class BoundaryConditionsConvectiveInletView(QWidget, Ui_BoundaryConditionsConvectiveInletForm):
     """
     Boundary condition for velocity in inlet, without particular physics.
     """
@@ -77,7 +77,7 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
         """
         QWidget.__init__(self, parent)
 
-        Ui_BoundaryConditionsMappedInletForm.__init__(self)
+        Ui_BoundaryConditionsConvectiveInletForm.__init__(self)
         self.setupUi(self)
 
 
@@ -91,21 +91,11 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
         self.__case.undoStopGlobal()
 
         # Connections
-        self.groupBoxMappedInlet.clicked[bool].connect(self.__slotMappedInlet)
-
-        self.lineEditTranslationX.textChanged[str].connect(self.__slotTrX)
-        self.lineEditTranslationY.textChanged[str].connect(self.__slotTrY)
-        self.lineEditTranslationZ.textChanged[str].connect(self.__slotTrZ)
+        self.groupBoxConvectiveInlet.clicked[bool].connect(self.__slotConvectiveInlet)
 
         # Validators
-        validatorX = DoubleValidator(self.lineEditTranslationX)
-        validatorY = DoubleValidator(self.lineEditTranslationY)
-        validatorZ = DoubleValidator(self.lineEditTranslationZ)
 
         # Apply validators
-        self.lineEditTranslationX.setValidator(validatorX)
-        self.lineEditTranslationY.setValidator(validatorY)
-        self.lineEditTranslationZ.setValidator(validatorZ)
 
         self.__case.undoStartGlobal()
 
@@ -123,14 +113,14 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
         if mdl.getCompressibleModel() != "off":
             hide = True
 
-        if not hide and self.__boundary.getMappedInletStatus() == "on":
+        if not hide and self.__boundary.getConvectiveInletStatus() == "on":
             checked = True
 
         if checked:
-            self.groupBoxMappedInlet.setChecked(True)
+            self.groupBoxConvectiveInlet.setChecked(True)
         else:
-            self.groupBoxMappedInlet.setChecked(False)
-        self.__slotMappedInlet(checked)
+            self.groupBoxConvectiveInlet.setChecked(False)
+        self.__slotConvectiveInlet(checked)
 
         if hide:
             self.hide()
@@ -146,61 +136,21 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
 
 
     @pyqtSlot(bool)
-    def __slotMappedInlet(self, checked):
+    def __slotConvectiveInlet(self, checked):
         """
         Private slot.
 
-        Activates mapped inlet boundary condition.
+        Activates convective inlet boundary condition.
 
         @type checked: C{True} or C{False}
-        @param checked: if C{True}, shows the QGroupBox mapped inlet parameters.
+        @param checked: if C{True}, shows the QGroupBox convective inlet parameters.
         """
-        self.groupBoxMappedInlet.setFlat(not checked)
+        self.groupBoxConvectiveInlet.setFlat(not checked)
 
         if checked:
-            self.__boundary.setMappedInletStatus("on")
-            self.labelDirection.show()
-            self.frameDirectionCoordinates.show()
-            x = self.__boundary.getMappedInletTranslation('translation_x')
-            y = self.__boundary.getMappedInletTranslation('translation_y')
-            z = self.__boundary.getMappedInletTranslation('translation_z')
-            self.lineEditTranslationX.setText(str(x))
-            self.lineEditTranslationY.setText(str(y))
-            self.lineEditTranslationZ.setText(str(z))
+            self.__boundary.setConvectiveInletStatus("on")
         else:
-            self.__boundary.setMappedInletStatus("off")
-            self.labelDirection.hide()
-            self.frameDirectionCoordinates.hide()
-
-
-    @pyqtSlot(str)
-    def __slotTrX(self, text):
-        """
-        INPUT value into direction of mapping translation
-        """
-        if self.lineEditTranslationX.validator().state == QValidator.Acceptable:
-            value = from_qvariant(text, float)
-            self.__boundary.setMappedInletTranslation('translation_x', value)
-
-
-    @pyqtSlot(str)
-    def __slotTrY(self, text):
-        """
-        INPUT value into direction of mapping translation
-        """
-        if self.lineEditTranslationY.validator().state == QValidator.Acceptable:
-            value = from_qvariant(text, float)
-            self.__boundary.setMappedInletTranslation('translation_y', value)
-
-
-    @pyqtSlot(str)
-    def __slotTrZ(self, text):
-        """
-        INPUT value into direction of mapping translation
-        """
-        if self.lineEditTranslationZ.validator().state == QValidator.Acceptable:
-            value = from_qvariant(text, float)
-            self.__boundary.setMappedInletTranslation('translation_z', value)
+            self.__boundary.setConvectiveInletStatus("off")
 
 
     def tr(self, text):

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>281</width>
-    <height>398</height>
+    <height>468</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -66,7 +66,7 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
+      <item row="6" column="0">
        <widget class="BoundaryConditionsVelocityInletView" name="velocityWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -75,6 +75,64 @@
          </sizepolicy>
         </property>
        </widget>
+      </item>
+      <item row="8" column="0">
+       <widget class="BoundaryConditionsCoalInletView" name="coalWidget" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="0">
+       <widget class="BoundaryConditionsCompressibleOutletView" name="compressibleOutletWidget" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="0">
+       <widget class="BoundaryConditionsTurbulenceInletView" name="turbulenceWidget" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="0">
+       <widget class="BoundaryConditionsScalarsView" name="scalarsWidget" native="true"/>
+      </item>
+      <item row="12" column="0">
+       <widget class="BoundaryConditionsMobileMeshView" name="mobileMeshWidget" native="true"/>
+      </item>
+      <item row="13" column="0">
+       <widget class="BoundaryConditionsWallRadiativeTransferView" name="radiativeWidget" native="true"/>
+      </item>
+      <item row="14" column="0">
+       <widget class="BoundaryConditionsElectricalView" name="electricalWidget" native="true"/>
+      </item>
+      <item row="15" column="0">
+       <widget class="BoundaryConditionsExternalHeadLossesView" name="externalHeadLossesWidget" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="16" column="0">
+       <widget class="BoundaryConditionsHydraulicHeadView" name="hydraulicheadWidget" native="true"/>
+      </item>
+      <item row="17" column="0">
+       <widget class="BoundaryConditionsPressureView" name="pressureWidget" native="true"/>
       </item>
       <item row="5" column="0">
        <widget class="BoundaryConditionsMappedInletView" name="mappedInletWidget" native="true">
@@ -86,8 +144,8 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="0">
-       <widget class="BoundaryConditionsCoalInletView" name="coalWidget" native="true">
+      <item row="4" column="0">
+       <widget class="BoundaryConditionsConvectiveInletView" name="convectiveInletWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -95,54 +153,6 @@
          </sizepolicy>
         </property>
        </widget>
-      </item>
-      <item row="7" column="0">
-       <widget class="BoundaryConditionsCompressibleOutletView" name="compressibleOutletWidget" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="0">
-       <widget class="BoundaryConditionsTurbulenceInletView" name="turbulenceWidget" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
-      </item>
-      <item row="9" column="0">
-       <widget class="BoundaryConditionsScalarsView" name="scalarsWidget" native="true"/>
-      </item>
-      <item row="10" column="0">
-       <widget class="BoundaryConditionsMobileMeshView" name="mobileMeshWidget" native="true"/>
-      </item>
-      <item row="11" column="0">
-       <widget class="BoundaryConditionsWallRadiativeTransferView" name="radiativeWidget" native="true"/>
-      </item>
-      <item row="12" column="0">
-       <widget class="BoundaryConditionsElectricalView" name="electricalWidget" native="true"/>
-      </item>
-      <item row="13" column="0">
-       <widget class="BoundaryConditionsExternalHeadLossesView" name="externalHeadLossesWidget" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
-      </item>
-      <item row="14" column="0">
-       <widget class="BoundaryConditionsHydraulicHeadView" name="hydraulicheadWidget" native="true"/>
-      </item>
-      <item row="15" column="0">
-       <widget class="BoundaryConditionsPressureView" name="pressureWidget" native="true"/>
       </item>
      </layout>
     </widget>
@@ -251,6 +261,12 @@
    <class>BoundaryConditionsPressureView</class>
    <extends>QWidget</extends>
    <header location="global">BoundaryConditionsPressureView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsConvectiveInletView</class>
+   <extends>QWidget</extends>
+   <header>BoundaryConditionsConvectiveInletView.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

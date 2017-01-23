@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BoundaryConditionsConvectiveInletForm</class>
+ <widget class="QWidget" name="BoundaryConditionsConvectiveInletForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>313</width>
+    <height>116</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBoxConvectiveInlet">
+     <property name="toolTip">
+      <string>For a convective inlet, diffusion is disabled at adjacent cells.</string>
+     </property>
+     <property name="title">
+      <string>Convective Inlet</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="resources_pages.qrc"/>
+ </resources>
+ <connections/>
+</ui>

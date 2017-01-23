@@ -36,6 +36,7 @@ BodyForcesModel.py \
 BodyForcesView.py \
 BoundaryConditionsCoalInletView.py \
 BoundaryConditionsCompressibleOutletView.py \
+BoundaryConditionsConvectiveInletView.py \
 BoundaryConditionsElectricalView.py \
 BoundaryConditionsExternalHeadLossesView.py \
 BoundaryConditionsMappedInletView.py \
@@ -155,6 +156,7 @@ BatchRunningStopByIterationDialogForm.ui \
 BodyForcesForm.ui \
 BoundaryConditionsCoalInletForm.ui \
 BoundaryConditionsCompressibleOutletForm.ui \
+BoundaryConditionsConvectiveInletForm.ui \
 BoundaryConditionsForm.ui \
 BoundaryConditionsElectricalForm.ui \
 BoundaryConditionsExternalHeadLossesForm.ui \

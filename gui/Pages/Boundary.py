@@ -308,7 +308,6 @@ class InletBoundary(Boundary):
         dico['pressure']            = 0.0
         dico['pressure_flux']       = 0.0
         dico['hydraulicHeadChoice'] = 'dirichlet'
-        dico['mapped']              = 'off'
 
         from code_saturne.Pages.GasCombustionModel import GasCombustionModel
         model = GasCombustionModel(self.case).getGasCombustionModel()
@@ -1125,6 +1124,34 @@ omega = 0.;"""
         scalarNode = self.boundNode.xmlInitNode('dirichlet_formula', name='hydraulicHead')
 
         n = scalarNode.xmlSetData('formula', formula)
+
+
+    @Variables.noUndo
+    def getConvectiveInletStatus(self):
+        """
+        Get the convective inlet status
+        """
+        status = None
+        n = self.boundNode.xmlGetNode('convective_inlet')
+        if n:
+            status = n['status']
+        if not status:
+            status = 'off'
+        return status
+
+
+    @Variables.undoLocal
+    def setConvectiveInletStatus(self, status):
+        """
+        Set the convective inlet status
+        """
+        Model().isInList(status, ('on', 'off'))
+
+        n = self.boundNode.xmlInitNode('convective_inlet', status=status)
+        if status == 'off':
+            self.boundNode.xmlRemoveChild('convective_inlet')
+        else:
+            n['status'] = status
 
 
     @Variables.noUndo

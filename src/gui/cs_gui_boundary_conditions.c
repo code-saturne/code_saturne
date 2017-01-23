@@ -173,6 +173,36 @@ _boundary_status(const char  *nature,
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
   cs_xpath_add_test_attribute(&path, "label", label);
+  cs_xpath_add_element(&path, tag);
+  cs_xpath_add_attribute(&path, "status");
+
+  if (cs_gui_get_status(path, &result))
+    *data = result;
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Get status of data for velocity_pressure node of inlet or outlet information.
+ *
+ * parameters:
+ *   nature      <--  nature of the boundary
+ *   label       <--  label of the inlet or the outlet
+ *   tag         <--  name of researched data
+ *   data       -->   value associated to the data
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_status_vp(const char  *nature,
+                    const char  *label,
+                    const char  *tag,
+                    int         *data)
+{
+  char  *path = NULL;
+  int  result = 0;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", nature);
+  cs_xpath_add_test_attribute(&path, "label", label);
   cs_xpath_add_elements(&path, 2, "velocity_pressure", tag);
   cs_xpath_add_attribute(&path, "status");
 
@@ -218,6 +248,7 @@ _mapped_inlet(const char                *label,
       cs_xpath_add_element(&path, "inlet");
       cs_xpath_add_element(&path, "mapped_inlet");
       cs_xpath_add_element(&path, tname[i]);
+      cs_xpath_add_function_text(&path);
       cs_gui_get_double(path, &value);
       BFT_FREE(path);
       coord_shift[i] = value;
@@ -1442,10 +1473,10 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
       /* Inlet: data for ATMOSPHERIC FLOWS */
       if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
       {
-        _boundary_status("inlet", label, "meteo_data",
-                         &boundaries->meteo[izone].read_data);
-        _boundary_status("inlet", label, "meteo_automatic",
-                         &boundaries->meteo[izone].automatic);
+        _boundary_status_vp("inlet", label, "meteo_data",
+                            &boundaries->meteo[izone].read_data);
+        _boundary_status_vp("inlet", label, "meteo_automatic",
+                            &boundaries->meteo[izone].automatic);
       }
 
       /* Inlet: data for darcy */
@@ -1473,10 +1504,10 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     else if (cs_gui_strcmp(nature, "outlet")) {
       /* Outlet: data for ATMOSPHERIC FLOWS */
       if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
-        _boundary_status("outlet", label, "meteo_data",
-                         &boundaries->meteo[izone].read_data);
-        _boundary_status("outlet", label, "meteo_automatic",
-                         &boundaries->meteo[izone].automatic);
+        _boundary_status_vp("outlet", label, "meteo_data",
+                            &boundaries->meteo[izone].read_data);
+        _boundary_status_vp("outlet", label, "meteo_automatic",
+                            &boundaries->meteo[izone].automatic);
       }
 
       /* Outlet: data for COMPRESSIBLE MODEL */
@@ -2120,17 +2151,25 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
       /* data by boundary faces */
 
+      int inlet_type = CS_INLET;
+
+      if (cs_gui_strcmp(vars->model, "compressible_model"))
+        inlet_type = boundaries->itype[izone];
+      else {
+        int convective_inlet = 0;
+        _boundary_status("inlet", boundaries->label[izone],
+                         "convective_inlet", &convective_inlet);
+        if (convective_inlet)
+          inlet_type = CS_CONVECTIVE_INLET;
+      }
+
       for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
         ifbr = faces_list[ifac];
 
         /* zone number and nature of boundary */
         izfppp[ifbr] = zone_nbr;
-        if (cs_gui_strcmp(vars->model, "compressible_model"))
-          itypfb[ifbr] = boundaries->itype[izone];
-        else
-          itypfb[ifbr] = CS_INLET;
+        itypfb[ifbr] = inlet_type;
       }
-
 
       if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
         iprofm[zone_nbr-1] = boundaries->meteo[izone].read_data;
@@ -2948,32 +2987,24 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         ivar = cs_field_get_key_int(f, var_key_id) -1;
 
         if (f->type & CS_FIELD_VARIABLE) {
-          switch (boundaries->type_code[f->id][izone]) {
-          case DIRICHLET:
-          case DIRICHLET_FORMULA:
-            {
-              int interpolate = 0;
-              int normalize = 0;
-              if (f == CS_F_(u))
-                normalize = 1;
-              else {
-                const int keysca = cs_field_key_id("scalar_id");
-                if (cs_field_get_key_int(f, keysca) > 0)
-                  normalize = 1;
-              }
-              cs_boundary_conditions_mapped_set(f, boundaries->locator[izone],
-                                                CS_MESH_LOCATION_CELLS,
-                                                normalize, interpolate,
-                                                faces, faces_list,
-                                                NULL, *nvar, rcodcl);
-            }
-            break;
-          default:
-            break;
+          int interpolate = 0;
+          int normalize = 0;
+          if (f == CS_F_(u))
+            normalize = 1;
+          else {
+            const int keysca = cs_field_key_id("scalar_id");
+            if (cs_field_get_key_int(f, keysca) > 0)
+              normalize = 1;
           }
+          if (f != CS_F_(p))
+            cs_boundary_conditions_mapped_set(f, boundaries->locator[izone],
+                                              CS_MESH_LOCATION_CELLS,
+                                              normalize, interpolate,
+                                              faces, faces_list,
+                                              NULL, *nvar, rcodcl);
         }
-      }
 
+      }
     }
 
   } /*  for (izone=0 ; izone < zones ; izone++) */
@@ -3163,6 +3194,32 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
                 _("zone's label number %i is greater than %i,"
                   " the maximum allowed \n"), zone_nbr, *nozppm);
 
+    /* Boundary types compatibilty:
+       the nature of the boundary can be changed from smooth wall to
+       rough wall or vice-versa between the GUI and the user code.
+       It can also be changed from inlet to convective inlet and
+       vice-versa */
+
+    int enature = inature;
+    if (inature == CS_ROUGHWALL)
+      enature = CS_SMOOTHWALL;
+    else if (inature == CS_CONVECTIVE_INLET)
+      enature = CS_INLET;
+
+    int atmo_auto = 0;
+    int compr_auto = 0;
+
+    if (cs_gui_strcmp(cs_glob_var->model, "atmospheric_flows")) {
+      if (boundaries->meteo[izone].automatic) {
+        if (inature == CS_INLET || inature == CS_OUTLET)
+          atmo_auto = inature;
+      }
+    }
+    else if (cs_gui_strcmp(cs_glob_var->model, "compressible_model")) {
+      if (inature == CS_INLET || inature == CS_OUTLET)
+        compr_auto = inature;
+    }
+
     const cs_lnum_t *faces_list
       = cs_gui_get_boundary_faces(boundaries->label[izone], &faces);
 
@@ -3195,29 +3252,24 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
 
       inature2 = itypfb[ifbr];
 
-      /* The nature of the boundary can be changed from smooth wall to
-         rough wall or vice-versa between the GUI and the FORTRAN */
-      if (inature2 == CS_ROUGHWALL) inature2 = CS_SMOOTHWALL;
-      if (inature == CS_ROUGHWALL) inature = CS_SMOOTHWALL;
+      int enature2 = inature;
+      if (inature2 == CS_ROUGHWALL)
+        enature2 = CS_SMOOTHWALL;
+      else if (inature2 == CS_CONVECTIVE_INLET)
+        inature2 = CS_INLET;
 
-      if (cs_gui_strcmp(cs_glob_var->model, "atmospheric_flows")) {
-        if (boundaries->meteo[izone].automatic) {
-          if ((inature == CS_INLET || inature == CS_OUTLET) && inature2 == 0)
-            inature2 = inature;
-        }
-      }
-      else if (cs_gui_strcmp(cs_glob_var->model, "compressible_model")) {
-        if (inature == CS_INLET  && inature2 == CS_ESICF)
-          inature2 = inature;
-        if (inature == CS_INLET  && inature2 == CS_EPHCF)
-          inature2 = inature;
-        if (inature == CS_OUTLET  && inature2 == CS_SSPCF)
-          inature2 = inature;
-        if (inature == CS_OUTLET  && inature2 == CS_SOPCF)
+      if (atmo_auto  && inature2 == 0)
+        inature2 = inature;
+
+      else if (compr_auto) {
+        if (   (compr_auto == CS_INLET  && (   inature2 == CS_ESICF
+                                            || inature2 == CS_EPHCF))
+            || (compr_auto = CS_OUTLET  &&  (   inature2 == CS_SSPCF
+                                             || inature2 == CS_SOPCF)))
           inature2 = inature;
       }
 
-      if (inature2 != inature)
+      if (enature2 != enature)
         bft_error
           (__FILE__, __LINE__, 0,
            _("@                                                            \n"

@@ -164,13 +164,16 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         # Set the case for custom widgets
         self.roughWidget.setup(self.__case)
         self.slidingWidget.setup(self.__case)
+        self.convectiveInletWidget.setup(self.__case)
         self.mappedInletWidget.setup(self.__case)
         self.velocityWidget.setup(self.__case)
         self.turbulenceWidget.setup(self.__case)
         self.compressibleOutletWidget.setup(self.__case)
         self.coalWidget.setup(self.__case)
         self.scalarsWidget.setup(self.__case)
-        self.meteoWidget.setup(self.__case, self.velocityWidget, self.turbulenceWidget, self.scalarsWidget)
+        self.meteoWidget.setup(self.__case, self.velocityWidget,
+                               self.turbulenceWidget,
+                               self.scalarsWidget)
         self.mobileMeshWidget.setup(self.__case)
         self.radiativeWidget.setup(self.__case)
         self.electricalWidget.setup(self.__case)
@@ -233,6 +236,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.electricalWidget.showWidget(boundary)
         self.externalHeadLossesWidget.hideWidget()
         self.pressureWidget.hideWidget()
+        self.convectiveInletWidget.showWidget(boundary)
         self.mappedInletWidget.showWidget(boundary)
 
 
@@ -249,6 +253,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.externalHeadLossesWidget.hideWidget()
         self.hydraulicheadWidget.hideWidget()
         self.pressureWidget.hideWidget()
+        self.convectiveInletWidget.hideWidget()
         self.mappedInletWidget.hideWidget()
 
 
@@ -270,6 +275,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         else:
             self.hydraulicheadWidget.showWidget(boundary)
         self.pressureWidget.hideWidget()
+        self.convectiveInletWidget.hideWidget()
         self.mappedInletWidget.hideWidget()
 
 
@@ -287,6 +293,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.externalHeadLossesWidget.showWidget(boundary)
         self.hydraulicheadWidget.hideWidget()
         self.pressureWidget.hideWidget()
+        self.convectiveInletWidget.hideWidget()
         self.mappedInletWidget.hideWidget()
 
 
@@ -304,6 +311,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.externalHeadLossesWidget.hideWidget()
         self.hydraulicheadWidget.hideWidget()
         self.pressureWidget.showWidget(boundary)
+        self.convectiveInletWidget.hideWidget()
         self.mappedInletWidget.hideWidget()
 
 
@@ -321,6 +329,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.externalHeadLossesWidget.hideWidget()
         self.hydraulicheadWidget.showWidget(boundary)
         self.pressureWidget.hideWidget()
+        self.convectiveInletWidget.hideWidget()
         self.mappedInletWidget.hideWidget()
 
 
@@ -349,6 +358,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.externalHeadLossesWidget.hideWidget()
         self.hydraulicheadWidget.hideWidget()
         self.pressureWidget.hideWidget()
+        self.convectiveInletWidget.hideWidget()
         self.mappedInletWidget.hideWidget()
 
 
