@@ -60,6 +60,7 @@ use cplsat
 use field
 use mesh
 use cavitation
+use vof
 use cs_cf_bindings
 use cs_c_bindings
 use darcy_module
@@ -150,14 +151,15 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
 !     Masse volumique aux cellules (et au pdt precedent si ordre2 ou icalhy
-!     ou cavitation)
+!     ou algo. VOF)
 do iel = 1, ncel
   crom(iel)  = ro0
 enddo
-if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0.or.ipthrm.eq.1) then
+if (    iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1 &
+    .or.ivofmt.ge.0.or.ipthrm.eq.1) then
   call field_current_to_previous(icrom)
 endif
-if (icavit.ge.0.or.idilat.gt.1) then
+if (ivofmt.ge.0.or.idilat.gt.1) then
   call field_get_val_s(icroaa, crom_prev2)
   do iel = 1, ncelet
     crom_prev2(iel) = crom(iel)
@@ -168,7 +170,7 @@ endif
 do ifac = 1, nfabor
   brom(ifac) = ro0
 enddo
-if (iroext.gt.0.or.icavit.ge.0) then
+if (iroext.gt.0.or.ivofmt.ge.0) then
   call field_current_to_previous(ibrom)
 endif
 
@@ -315,15 +317,15 @@ do iel = 1, ncel
 enddo
 
 ! On definit les clipping du taux de vide et on initialize au clipping inf.
-if (icavit.ge.0) then
+if (ivofmt.ge.0) then
 
   call field_get_key_id("min_scalar_clipping", kscmin)
   call field_get_key_id("max_scalar_clipping", kscmax)
 
-  call field_set_key_double(ivarfl(ivoidf), kscmin, clvfmn)
-  call field_set_key_double(ivarfl(ivoidf), kscmax, clvfmx)
+  call field_set_key_double(ivarfl(ivolf1), kscmin, clvfmn)
+  call field_set_key_double(ivarfl(ivolf1), kscmax, clvfmx)
 
-  call field_get_val_s(ivarfl(ivoidf), field_s_v)
+  call field_get_val_s(ivarfl(ivolf1), field_s_v)
   do iel = 1, ncel
     field_s_v(iel) = clvfmn
   enddo

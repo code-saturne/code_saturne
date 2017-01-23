@@ -66,6 +66,7 @@ use mesh
 use field
 use cavitation
 use cs_c_bindings
+use vof
 
 !===============================================================================
 
@@ -267,6 +268,18 @@ write(nfecra,9900)
 ! 3. MODELISATION PHYSIQUE
 !===============================================================================
 
+! --- VOF Model
+
+write(nfecra,2101)
+write(nfecra,2111) ivofmt
+
+if (ivofmt.ge.0) then
+
+  write(nfecra,2121) rho1, mu1
+  write(nfecra,2131) rho2,  mu2
+
+endif
+
 ! --- Modele diphasique homogene de cavitation
 
 write(nfecra,2100)
@@ -274,8 +287,9 @@ write(nfecra,2110) icavit
 
 if (icavit.ge.0) then
 
-  write(nfecra,2120) rol, mul
-  write(nfecra,2130) rov, muv
+  write(nfecra,2120)
+  write(nfecra,2130)
+
   if (icavit.eq.1) then
     write(nfecra,2140) presat, linf, uinf
   endif
@@ -297,15 +311,11 @@ write(nfecra,9900)
  2110 format(                                                     &
 '       ICAVIT = ',4x,i10,    ' (-1: ecoulement monophasique )',/,&
 '                               ( 0: sans transfert de masse )',/,&
-'                               ( 1: modele de Merkle        )' ,/)
+'                               ( 1: modele de Merkle        )',/)
  2120 format(                                                     &
-'  -- Phase lique :',                                           /,&
-'       ROL    = ', e14.5,    ' (Masse volumique     de ref. )',/,&
-'       MUL    = ', e14.5,    ' (Visc. molec. dynam. de ref. )',/)
+'  -- Phase liquide : fluide 1',                                /)
  2130 format(                                                     &
-'  -- Phase gazeuse :',                                         /,&
-'       ROV    = ', e14.5,    ' (Masse volumique     de ref. )',/,&
-'       MUV    = ', e14.5,    ' (Visc. molec. dynam. de ref. )',/)
+'  -- Phase gaz : fluide 2',                                     /)
  2140 format(                                                     &
 '  -- Modele de vaporisation/condensation (Merkle)',            /,&
 '       PRESAT = ', e14.5,    ' (Pression de saturation      )',/,&
@@ -315,6 +325,22 @@ write(nfecra,9900)
 '  -- Correction de viscosite turbulente de Reboud',            /,&
 '       ICVEVM = ',4x,i10,    ' (Active (1) ou non     (0)   )',/,&
 '       MCAV   = ', e14.5,    ' (Constante mcav              )',/)
+
+ 2101 format(                                                     &
+                                                                /,&
+' ** METHODE VOF                             ',                 /,&
+'    ----------------------------------------',                 /)
+ 2111 format(                                                     &
+'       IVOLFL = ',4x,i10,    ' ( -1: inactif                 )',/,&
+'                               (  0: actif                   )',/)
+ 2121 format(                                                     &
+'  -- Fluide 1 :',                                              /,&
+'       RHO1     = ', e14.5,  ' (Masse volumique     de ref.)', /,&
+'       MU1      = ', e14.5,  ' (Visc. molec. dynam. de ref.)', /)
+ 2131 format(                                                     &
+'  -- Fluide 2 :',                                              /,&
+'       RHO2     = ', e14.5,  ' (Masse volumique     de ref.)', /,&
+'       MU2      = ', e14.5,  ' (Visc. molec. dynam. de ref.)', /)
 
 #else
 
@@ -327,13 +353,9 @@ write(nfecra,9900)
 '                               ( 0: no vap./cond. model     )',/,&
 '                               ( 1: Merkle''s model        )' ,/)
  2120 format(                                                     &
-'  -- Liquid phase:',                                           /,&
-'       ROL    = ', e14.5,    ' (Reference density           )',/,&
-'       MUL    = ', e14.5,    ' (Ref. molecular dyn. visc.   )',/)
+'  -- Liquid phase: fluid 1',                                   /)
  2130 format(                                                     &
-'  -- Gas phase:',                                              /,&
-'       ROV    = ', e14.5,    ' (Reference density           )',/,&
-'       MUV    = ', e14.5,    ' (Ref. molecular dyn. visc.   )',/)
+'  -- Gas phase: fluid 2',                                      /)
  2140 format(                                                     &
 '  -- Vaporization/condensation model (Merkle)',                /,&
 '       PRESAT = ', e14.5,    ' (Saturation pressure         )',/,&
@@ -343,6 +365,22 @@ write(nfecra,9900)
 '  -- Eddy-viscosity correction (Reboud correction)',           /,&
 '       ICVEVM = ',4x,i10,    ' (Activated (1) or not (0)    )',/,&
 '       MCAV   = ', e14.5,    ' (mcav constant               )',/)
+
+ 2101 format(                                                     &
+                                                                /,&
+' ** VOF METHOD                              ',                 /,&
+'    ----------------------------------------',                 /)
+ 2111 format(                                                     &
+'       IVOLFL = ',4x,i10,    ' ( -1: inactive                )',/,&
+'                               (  0: active                  )',/)
+ 2121 format(                                                     &
+'  -- Fluid 1:',                                                /,&
+'       RHO1   = ', e14.5,  ' (Reference density          )',   /,&
+'       MU1    = ', e14.5,  ' (Ref. molecular dyn. visc.  )',   /)
+ 2131 format(                                                     &
+'  -- Fluid 2:',                                                /,&
+'       RHO2   = ', e14.5,  ' (Reference density          )',   /,&
+'       MU2    = ', e14.5,  ' (Ref. molecular dyn. visc.  )',   /)
 
 #endif
 

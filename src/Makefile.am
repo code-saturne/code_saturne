@@ -87,6 +87,7 @@ $(top_srcdir)/src/pprt/ppppar.f90 \
 $(top_srcdir)/src/pprt/ppthch.f90 \
 $(top_srcdir)/src/cogz/coincl.f90 \
 $(top_srcdir)/src/rayt/radiat.f90 \
+$(top_srcdir)/src/base/vof.f90 \
 $(top_srcdir)/src/turb/vorinc.f90 \
 $(top_srcdir)/src/base/ptrglo.f90 \
 $(top_srcdir)/src/darc/darcy_module.f90 \
@@ -97,7 +98,8 @@ $(top_srcdir)/src/base/turbomachinery.f90
 
 $(top_srcdir)/src/base/albase.f90: cplsat.lo optcal.lo
 $(top_srcdir)/src/base/alstru.f90: paramx.lo
-$(top_srcdir)/src/base/cavitation.f90: cstphy.lo field.lo numvar.lo optcal.lo pointe.lo mesh.lo paramx.lo entsor.lo parall.lo rotation.lo turbomachinery.lo
+$(top_srcdir)/src/base/cavitation.f90: cstphy.lo field.lo numvar.lo optcal.lo pointe.lo mesh.lo paramx.lo entsor.lo parall.lo rotation.lo turbomachinery.lo vof.lo
+$(top_srcdir)/src/base/vof.f90: cstphy.lo field.lo numvar.lo optcal.lo pointe.lo mesh.lo paramx.lo entsor.lo parall.lo rotation.lo turbomachinery.lo
 $(top_srcdir)/src/base/cplsat.f90: paramx.lo
 $(top_srcdir)/src/base/cstphy.f90: paramx.lo
 $(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo mesh.lo period.lo field.lo field_operator.lo

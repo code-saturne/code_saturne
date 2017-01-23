@@ -1074,7 +1074,7 @@ call field_get_coefbf_s(ivarfl(ipr), cofbfp)
 
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
-if (icavit.ge.0)  call field_get_val_s(icrom, crom)
+if (ivofmt.ge.0)  call field_get_val_s(icrom, crom)
 
 do ifac = 1, nfabor
 
@@ -1086,14 +1086,14 @@ do ifac = 1, nfabor
   ! if a flux dt.grad p (w/m2) is set in cs_user_boundary
   if (vcopt%idften.eq.1) then
     hint = dt(iel)/distbf
-    if (icavit.ge.0)  hint = hint/crom(iel)
+    if (ivofmt.ge.0)  hint = hint/crom(iel)
     if (ippmod(idarcy).eq.1) hint = permeability(iel)/distbf
   else if (vcopt%idften.eq.3) then
     hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
            + dttens(2, iel)*surfbo(2,ifac)**2              &
            + dttens(3, iel)*surfbo(3,ifac)**2              &
            ) / (surfbn(ifac)**2 * distbf)
-    if (icavit.ge.0)  hint = hint/crom(iel)
+    if (ivofmt.ge.0)  hint = hint/crom(iel)
   ! symmetric tensor diffusivity
   elseif (vcopt%idften.eq.6) then
     if (ippmod(idarcy).eq.-1) then
@@ -1150,7 +1150,7 @@ do ifac = 1, nfabor
     fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
 
     hint = viscis/surfbn(ifac)/fikis
-    if (icavit.ge.0)  hint = hint/crom(iel)
+    if (ivofmt.ge.0)  hint = hint/crom(iel)
 
   endif
 
@@ -1238,28 +1238,28 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 11. void fraction (cavitation): dirichlet and neumann and convective outlet
+! 11. void fraction (VOF): dirichlet and neumann and convective outlet
 !===============================================================================
 
-if (icavit.ge.0) then
+if (ivofmt.ge.0) then
 
-  call field_get_coefa_s(ivarfl(ivoidf), coefap)
-  call field_get_coefb_s(ivarfl(ivoidf), coefbp)
-  call field_get_coefaf_s(ivarfl(ivoidf), cofafp)
-  call field_get_coefbf_s(ivarfl(ivoidf), cofbfp)
+  call field_get_coefa_s(ivarfl(ivolf1), coefap)
+  call field_get_coefb_s(ivarfl(ivolf1), coefbp)
+  call field_get_coefaf_s(ivarfl(ivolf1), cofafp)
+  call field_get_coefbf_s(ivarfl(ivolf1), cofbfp)
 
   do ifac = 1, nfabor
 
-    ! hint in unused since there is no diffusion for the void fraction
+    ! hint is unused since there is no diffusion for the void fraction
     hint = 1.d0
 
     ! dirichlet boundary condition
     !-----------------------------
 
-    if (icodcl(ifac,ivoidf).eq.1) then
+    if (icodcl(ifac,ivolf1).eq.1) then
 
-      pimp = rcodcl(ifac,ivoidf,1)
-      hext = rcodcl(ifac,ivoidf,2)
+      pimp = rcodcl(ifac,ivolf1,1)
+      hext = rcodcl(ifac,ivolf1,2)
 
       call set_dirichlet_scalar &
     ( coefap(ifac), cofafp(ifac),                        &
@@ -1271,9 +1271,9 @@ if (icavit.ge.0) then
     ! neumann boundary conditions
     !----------------------------
 
-    if (icodcl(ifac,ivoidf).eq.3) then
+    if (icodcl(ifac,ivolf1).eq.3) then
 
-      qimp = rcodcl(ifac,ivoidf,3)
+      qimp = rcodcl(ifac,ivolf1,3)
 
       call set_neumann_scalar &
     ( coefap(ifac), cofafp(ifac),                        &
@@ -1283,10 +1283,10 @@ if (icavit.ge.0) then
       ! convective boundary conditions
       !-------------------------------
 
-    elseif (icodcl(ifac,ivoidf).eq.2) then
+    elseif (icodcl(ifac,ivolf1).eq.2) then
 
-      pimp = rcodcl(ifac,ivoidf,1)
-      cfl = rcodcl(ifac,ivoidf,2)
+      pimp = rcodcl(ifac,ivolf1,1)
+      cfl = rcodcl(ifac,ivolf1,2)
 
       call set_convective_outlet_scalar &
     ( coefap(ifac), cofafp(ifac),                        &

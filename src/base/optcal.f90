@@ -1100,6 +1100,11 @@ module optcal
   !>    -  1: Merkle's model
   integer, save :: icavit
 
+  !> VOF method
+  !>    -  0: method not activated
+  !>    -  1: method activated
+  integer, save :: ivofmt
+
   !> \}
 
   !----------------------------------------------------------------------------

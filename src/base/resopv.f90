@@ -133,6 +133,7 @@ use mesh
 use field
 use field_operator
 use cavitation
+use vof
 use cs_f_interfaces
 use cs_c_bindings
 use cs_tagms, only:s_metal
@@ -323,19 +324,18 @@ endif
 ibsize = 1
 iesize = 1
 
-! Initialization dedicated to cavitation module
-if (icavit.ge.0) then
-
+! Initialization dedicated to VOF algo.
+if (ivofmt.ge.0) then
   ! The pressure correction is done through the volumetric flux (that is
   ! the convective flux of the void fraction), not the mass flux
-  call field_get_key_int(ivarfl(ivoidf), kimasf, iflmas)
-  call field_get_key_int(ivarfl(ivoidf), kbmasf, iflmab)
+  call field_get_key_int(ivarfl(ivolf1), kimasf, iflmas)
+  call field_get_key_int(ivarfl(ivolf1), kbmasf, iflmab)
   call field_get_val_s(iflmas, imasfl)
   call field_get_val_s(iflmab, bmasfl)
 endif
 
 ! Calculation of dt/rho
-if (icavit.ge.0.or.idilat.eq.4) then
+if (ivofmt.ge.0.or.idilat.eq.4) then
 
   ! Allocate and initialize specific arrays
   allocate(xunsro(ncelet))
@@ -425,7 +425,7 @@ if (irnpnw.ne.1) then
   epsrgp = vcopt_u%epsrgr
   climgp = vcopt_u%climgr
   itypfl = 1
-  if (idilat.ge.4.or.icavit.ge.0) itypfl = 0
+  if (idilat.ge.4.or.ivofmt.ge.0) itypfl = 0
 
   call inimav &
   !==========
@@ -483,7 +483,7 @@ if (irnpnw.ne.1) then
   ! Cavitation source term
   if (icavit.gt.0) then
     do iel = 1, ncel
-      res(iel) = res(iel) -cell_f_vol(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
+      res(iel) = res(iel) -cell_f_vol(iel)*gamcav(iel)*(1.d0/rho2 - 1.d0/rho1)
     enddo
   endif
 
@@ -804,10 +804,10 @@ enddo
 ! Implicit part of the cavitation source
 if (icavit.gt.0.and.itscvi.eq.1) then
   do iel = 1, ncel
-    rovsdt(iel) = rovsdt(iel) - cell_f_vol(iel)*dgdpca(iel)*(1.d0/rov - 1.d0/rol)
+    rovsdt(iel) = rovsdt(iel) - cell_f_vol(iel)*dgdpca(iel)*(1.d0/rho2 - 1.d0/rho1)
   enddo
 endif
-! Strengthen the diagonal for Low Mach Algorithme
+! Strengthen the diagonal for Low Mach Algorithm
 if (idilat.eq.3) then
   do iel = 1, ncel
     rovsdt(iel) = rovsdt(iel) + epsdp*cell_f_vol(iel)/dt(iel)
@@ -820,8 +820,8 @@ if (vcopt_p%idiff.ge.1) then
   ! Scalar diffusivity
   if (vcopt_p%idften.eq.1) then
 
-    if (icavit.ge.0) then
-      imvisp = 1  ! Cavitation: continuity of the flux across internal faces
+    if (ivofmt.ge.0) then
+      imvisp = 1  ! VOF algorithm: continuity of the flux across internal faces
     else
       imvisp = imvisf
     endif
@@ -909,12 +909,12 @@ iccocg = 1
 iprev  = 1
 inc    = 1
 
-if (icavit.lt.0) then
+if (ivofmt.lt.0) then
   call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
                                 iccocg, iphydr,                     &
                                 frcxt, gradp)
 else
-  ! Cavitating flows: continuity of the diffusive flux across internal faces
+  ! VOF algo.: continuity of the diffusive flux across internal faces
 
   nswrgp = vcopt_p%nswrgr
   imligp = vcopt_p%imligr
@@ -1032,7 +1032,7 @@ iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_u%epsrgr
 climgp = vcopt_u%climgr
 itypfl = 1
-if (icavit.ge.0.or.idilat.eq.4) itypfl = 0
+if (ivofmt.ge.0.or.idilat.eq.4) itypfl = 0
 
 call inimav &
 !==========
@@ -1271,7 +1271,7 @@ if (arak.gt.0.d0) then
       !Scalar diffusivity
       if (vcopt_p%idften.eq.1) then
 
-        if (icavit.lt.0) then
+        if (ivofmt.lt.0) then
           imvisp = imvisf
         else
           imvisp = 1
@@ -1470,7 +1470,7 @@ endif
 ! --- Cavitation source term
 if (icavit.gt.0) then
   do iel = 1, ncel
-    divu(iel) = divu(iel) - cell_f_vol(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
+    divu(iel) = divu(iel) - cell_f_vol(iel)*gamcav(iel)*(1.d0/rho2 - 1.d0/rho1)
   enddo
 endif
 
@@ -2332,7 +2332,7 @@ deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 if (icalhy.eq.1) deallocate(frchy, dfrchy, hydro_pres)
-if (icavit.ge.0.or.idilat.eq.4) then
+if (ivofmt.ge.0.or.idilat.eq.4) then
   deallocate(xdtsro)
   if (allocated(xunsro)) deallocate(xunsro)
   if (allocated(tpusro)) deallocate(tpusro)

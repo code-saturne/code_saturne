@@ -80,6 +80,7 @@ use ppcpfu
 use mesh
 use field
 use cavitation
+use vof
 use cs_c_bindings
 use cs_nz_condensation, only: izzftcd, nztag1d, ztpar
 use cs_nz_tagmr, only: znmurx, znmur, ztmur
@@ -111,7 +112,7 @@ integer          nberro, inierr, ivers(1)
 integer          ilu   , ierrch
 integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
 integer          nfmtst
-integer          jale, jcavit
+integer          jale, jcavit, jvolfl
 integer          f_id, iflmas, iflmab, iflvoi, iflvob
 integer          ival(1), ngbstr(2)
 double precision rval(1), tmpstr(27)
@@ -123,7 +124,7 @@ logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
 type(c_ptr) :: rp
 
 double precision, dimension(:), pointer :: sval
-double precision, dimension(:), pointer :: voidfl
+double precision, dimension(:), pointer :: voidfl, volfl
 double precision, dimension(:,:), pointer :: disale, cpro_visma_v
 
 double precision, allocatable, dimension(:,:) :: tmurbf
@@ -240,11 +241,31 @@ call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
 jcavit = ival(1)
 nberro=nberro+ierror
 
-! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers anterieurs)
+! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers
+!                          anterieurs)
 !       -> on n'affiche le message que si ICAVIT>=0 (sinon RAS)
 if (nberro.ne.0) then
   if (icavit.ge.0) write(nfecra,9220)
   jcavit = -1
+endif
+
+!     VOF
+
+nberro = 0
+
+rubriq = 'vof'
+itysup = 0
+nbval  = 1
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jvolfl = ival(1)
+nberro=nberro+ierror
+
+! --->  Message si erreur (pas de stop pour compatibilite avec les fichiers
+!                          anterieurs)
+!       -> on n'affiche le message que si IVOLFL=1 (sinon RAS)
+if (nberro.ne.0) then
+  if (ivofmt.ge.0) write(nfecra,9221)
+  jvolfl = 0
 endif
 
 car54 =' Fin de la lecture des options                        '
@@ -305,15 +326,16 @@ endif
 
 inierr = 0
 
-if (irovar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
+if (    irovar.eq.1                   &
+    .or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
 
   ! Masse volumique - cellules
   call restart_read_field_vals(rp, icrom, 0, ierror)
   nberro = nberro+ierror
   inierr = inierr+ierror
 
-  ! Masse volumique du pdt precedent - cellules (uniquement pour cavitation)
-  if (icavit.ge.0.and.jcavit.ge.0.or.idilat.ge.4) then
+  ! Masse volumique du pdt precedent - cellules
+  if (ivofmt.ge.0.and.jvolfl.ge.0.or.idilat.ge.4) then
     call restart_read_field_vals(rp, icrom, 1, ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
@@ -351,13 +373,15 @@ endif
 !     La viscosite moleculaire est egalement lue pour le modele de cavitation
 !     Si on reussit, on l'indique
 
-if (iviext.gt.0.or.(icavit.ge.0.and.jcavit.ge.0)) then
+if (    iviext.gt.0                   &
+    .or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
 
   inierr = 0
 
   !         Viscosite moleculaire - cellules
-  !         Uniquement si elle est variable ou pour le modele de cavitation
-  if (ivivar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
+  !         Uniquement si elle est variable ou pour la methode VOF
+  if (    ivivar.eq.1                   &
+      .or.(ivofmt.ge.0.and.jvolfl.ge.0)) then
     call restart_read_field_vals(rp, iviscl, 0, ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
@@ -510,17 +534,17 @@ if (nfaiok.eqv..true. .or. nfabok.eqv..true.) then
   nberro=0
 
   ! Initialization of the void fraction convective flux, if required
-  if (icavit.ge.0.and.jcavit.lt.0) then
+  if (ivofmt.ge.0.and.jvolfl.lt.0) then
 
     ! Interior faces
 
     call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-    call field_get_key_int(ivarfl(ivoidf), kimasf, iflvoi)
+    call field_get_key_int(ivarfl(ivolf1), kimasf, iflvoi)
 
     call field_get_val_s(iflmas, sval)
     call field_get_val_s(iflvoi, voidfl)
     do ifac = 1, nfac
-      voidfl(ifac) = sval(ifac)/rol
+      voidfl(ifac) = sval(ifac)/rho1
     enddo
 
     call field_have_previous(iflmas, lprev)
@@ -528,27 +552,27 @@ if (nfaiok.eqv..true. .or. nfabok.eqv..true.) then
       call field_get_val_prev_s(iflmas, sval)
       call field_get_val_prev_s(iflvoi, voidfl)
       do ifac = 1, nfac
-        voidfl(ifac) = sval(ifac)/rol
+        voidfl(ifac) = sval(ifac)/rho1
       enddo
     endif
 
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
     call field_get_val_s(iflmab, sval)
-    call field_get_key_int(ivarfl(ivoidf), kbmasf, iflvob)
+    call field_get_key_int(ivarfl(ivolf1), kbmasf, iflvob)
     call field_get_val_s(iflvob, voidfl)
     do ifac = 1, nfabor
-      voidfl(ifac) = sval(ifac)/rol
+      voidfl(ifac) = sval(ifac)/rho1
     enddo
 
     ! Boundary faces
 
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-    call field_get_key_int(ivarfl(ivoidf), kbmasf, iflvob)
+    call field_get_key_int(ivarfl(ivolf1), kbmasf, iflvob)
 
     call field_get_val_s(iflmab, sval)
     call field_get_val_s(iflvob, voidfl)
     do ifac = 1, nfabor
-      voidfl(ifac) = sval(ifac)/rol
+      voidfl(ifac) = sval(ifac)/rho1
     enddo
 
     call field_have_previous(iflmas, lprev)
@@ -556,7 +580,7 @@ if (nfaiok.eqv..true. .or. nfabok.eqv..true.) then
       call field_get_val_prev_s(iflmab, sval)
       call field_get_val_prev_s(iflvob, voidfl)
       do ifac = 1, nfabor
-        voidfl(ifac) = sval(ifac)/rol
+        voidfl(ifac) = sval(ifac)/rho1
       enddo
     endif
 
@@ -1892,6 +1916,27 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 9221 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ERREUR A LA LECTURE DU FICHIER SUITE        ',/,&
+'@    =========                                     AUXILIAIRE',/,&
+'@                                                            ',/,&
+'@      ERREUR A LA LECTURE DE L''INDICATEUR DE MODELE DE     ',/,&
+'@                                                  VOF       ',/,&
+'@                                                            ',/,&
+'@    Il se peut que le fichier suite relu corresponde a une  ',/,&
+'@      version anterieure de Code_Saturne, sans modele de    ',/,&
+'@                                                 VOF.       ',/,&
+'@    Le calcul sera execute en reinitialisant toutes les     ',/,&
+'@      donnees du modele de VOF       .                      ',/,&
+'@    Verifier neanmoins que le fichier suite utilise n''a    ',/,&
+'@        pas ete endommage.                                  ',/,&
+'@                                                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  9320 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2063,6 +2108,24 @@ return
 '@      version of Code_Saturne, without the cavitation model.',/,&
 '@    The run will be executed with reinitialising all        ',/,&
 '@      cavitation model data.                                ',/,&
+'@                                                            ',/,&
+'@    Verify that the restart file used has not been damaged. ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 9221 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING: ERROR WHILE READING THE AUXILIARY RESTART FILE ',/,&
+'@    =======                                                 ',/,&
+'@                                                            ',/,&
+'@      ERROR WHEN READING THE INDICATOR OF THE VOF MODEL     ',/,&
+'@                                                            ',/,&
+'@    It is possible that the file read corresponds to an old ',/,&
+'@      version of Code_Saturne, without the VOF model.       ',/,&
+'@    The run will be executed with reinitialising all        ',/,&
+'@      VOF model data.                                       ',/,&
 '@                                                            ',/,&
 '@    Verify that the restart file used has not been damaged. ',/,&
 '@                                                            ',/,&

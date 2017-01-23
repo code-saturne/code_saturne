@@ -128,11 +128,11 @@ if (ipass.eq.1) then
   call field_init_bc_coeffs(ivarfl(ivar))
 endif
 
-! Void fraction for cavitation
-!-----------------------------
+! Void fraction for VOF algo.
+!----------------------------
 
-if (icavit.ge.0) then
-  ivar = ivoidf
+if (ivofmt.ge.0) then
+  ivar = ivolf1
   if (ipass .eq. 1) then
     call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
     call field_init_bc_coeffs(ivarfl(ivar))

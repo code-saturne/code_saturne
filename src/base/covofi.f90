@@ -917,8 +917,9 @@ if (st_prv_id .ge. 0) then
   enddo
 endif
 
-! Low Mach compressible algos (conservative in time). Same algo for cavitation.
-if (idilat.gt.1 .or. icavit.ge.0) then
+! Low Mach compressible algos (conservative in time).
+! Same algo. for Volume of Fluid method
+if (idilat.gt.1 .or. ivofmt.ge.0) then
   call field_get_val_prev_s(icrom_scal, pcrom)
 
 ! Standard algo

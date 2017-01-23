@@ -66,9 +66,9 @@ module numvar
   !> velocity component \f$ u_z \f$
   integer, save :: iw
 
-  !> \anchor ivoidf
-  !> void fraction for cavitation modelling
-  integer, save :: ivoidf
+  !> \anchor ivolf1
+  !> void fraction for VOF method
+  integer, save :: ivolf1
 
   !> \anchor ik
   !> turbulent kinetic energy \f$ k \f$

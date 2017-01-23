@@ -91,6 +91,7 @@ use turbomachinery
 use ptrglo
 use field
 use cavitation
+use vof
 use cs_c_bindings
 
 !===============================================================================
@@ -291,9 +292,9 @@ endif
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
-if (icavit.ge.0) then
-  call field_get_val_s(ivarfl(ivoidf), cvar_voidf)
-  call field_get_val_prev_s(ivarfl(ivoidf), cvara_voidf)
+if (ivofmt.ge.0) then
+  call field_get_val_s(ivarfl(ivolf1), cvar_voidf)
+  call field_get_val_prev_s(ivarfl(ivolf1), cvara_voidf)
 endif
 
 ! Allocate work arrays
@@ -724,9 +725,9 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
     if (idtten.ge.0) call field_get_val_v(idtten, dttens)
 
-    if (icavit.ge.0) then
-      call field_get_val_s(ivarfl(ivoidf), cvar_voidf)
-      call field_get_val_prev_s(ivarfl(ivoidf), cvara_voidf)
+    if (ivofmt.ge.0) then
+      call field_get_val_s(ivarfl(ivolf1), cvar_voidf)
+      call field_get_val_prev_s(ivarfl(ivolf1), cvara_voidf)
     endif
 
   endif
@@ -830,8 +831,8 @@ endif
 ! 9. Update of the fluid velocity field
 !===============================================================================
 
-! Mass flux initialization for cavitating flows
-if (icavit.ge.0) then
+! Mass flux initialization for VOF algorithm
+if (ivofmt.ge.0) then
   do ifac = 1, nfac
     imasfl(ifac) = 0.d0
   enddo
@@ -883,7 +884,7 @@ if (ippmod(icompf).lt.0) then
     !Allocation
     allocate(gradp(3, ncelet))
 
-    if (icavit.lt.0) then
+    if (ivofmt.lt.0) then
       call gradient_potential_s &
        (ivarfl(ipr)     , imrgra , inc    , iccocg , nswrgp , imligp , &
         iphydr , iwarnp , epsrgp , climgp , extrap ,                   &
@@ -1156,7 +1157,7 @@ endif
 !      and mass flux (resopv solved the convective flux of void fraction, divU)
 !===============================================================================
 
-if (icavit.ge.0) then
+if (ivofmt.ge.0) then
 
   ! Void fraction solving
 
@@ -1168,19 +1169,19 @@ if (icavit.ge.0) then
 
   ! Get the void fraction boundary conditions
 
-  call field_get_coefa_s(ivarfl(ivoidf), coavoi)
-  call field_get_coefb_s(ivarfl(ivoidf), cobvoi)
+  call field_get_coefa_s(ivarfl(ivolf1), coavoi)
+  call field_get_coefb_s(ivarfl(ivolf1), cobvoi)
 
   ! Get the convective flux of the void fraction
 
-  call field_get_key_int(ivarfl(ivoidf), kimasf, iflvoi)
-  call field_get_key_int(ivarfl(ivoidf), kbmasf, iflvob)
+  call field_get_key_int(ivarfl(ivolf1), kimasf, iflvoi)
+  call field_get_key_int(ivarfl(ivolf1), kbmasf, iflvob)
   call field_get_val_s(iflvoi, ivoifl)
   call field_get_val_s(iflvob, bvoifl)
 
   ! Update mixture density/viscosity and mass flux
 
-  call cavitation_update_phys_prop &
+  call vof_update_phys_prop &
  ( cvar_voidf, coavoi, cobvoi, ivoifl, bvoifl, &
    crom, brom, imasfl, bmasfl )
 
@@ -1190,7 +1191,7 @@ if (icavit.ge.0) then
 
     call field_get_val_prev_s(icrom, croma)
 
-    call cavitation_print_mass_budget &
+    call vof_print_mass_budget &
    ( crom, croma, brom, dt, imasfl, bmasfl )
 
   endif

@@ -940,14 +940,14 @@ endif
 ! 10. Cavitation modelling: 9100 formats
 !===============================================================================
 
-if (icavit.ge.0) then
-  ! For now, cavitation model is not compatible with the handling of
+if (ivofmt.ge.0) then
+  ! For now, VOF method is not compatible with the handling of
   ! hydrostatic pressure
   if (iphydr.ne.0) then
     write(nfecra,9110) iphydr
     iok = iok + 1
   endif
-  ! Cavitation model is not compatible with dilatable or low-mach algorithms
+  ! VOF method is not compatible with dilatable or low-mach algorithms
   if (idilat.gt.1) then
     write(nfecra,9120) idilat
     iok = iok + 1
@@ -2297,7 +2297,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@   LE MODELE DE CAVITATION N''EST PAS COMPATIBLE AVEC LES',   /,&
+'@   LA METHODE VOF N''EST PAS COMPATIBLE AVEC LES',            /,&
 '@     ALGORITHMES DE PRISE EN COMPTE DE LA PRESSION',          /,&
 '@     HYDROSTATIQUE',                                          /,&
 '@',                                                            /,&
@@ -2314,7 +2314,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@   LE MODELE DE CAVITATION N''EST PAS COMPATIBLE AVEC LES',   /,&
+'@   LA METHODE VOF N''EST PAS COMPATIBLE AVEC LES',            /,&
 '@     ALGORITHMES D''ECOULEMENTS DILATABLES OU BAS-MACH',      /,&
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
@@ -3667,7 +3667,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@   THE CAVITATION MODEL IS NOT COMPATIBLE WITH THE HANDLING', /,&
+'@   THE VOF METHOD IS NOT COMPATIBLE WITH THE HANDLING',       /,&
 '@     OF HYDROSTATIC PRESSURE ALGORITHMS',                     /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
@@ -3683,7 +3683,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@   THE CAVITATION MODEL IS NOT COMPATIBLE WITH THE',          /,&
+'@   THE VOF METHOD IS NOT COMPATIBLE WITH THE',                /,&
 '@     DILATABLE OR LOW-MACH FLOWS ALGORITHMS',                 /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&

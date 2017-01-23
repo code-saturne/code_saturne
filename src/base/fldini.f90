@@ -427,7 +427,15 @@ do ii = 1, nvar
     ! Now create matching field
     ! Build name and label
     call field_get_name(f_id, f_name)
-    name  = trim(f_name) // '_conv_lim'
+    if (ii.eq.iu) then
+      name = trim(f_name) // '_x_conv_lim'
+    else if (ii.eq.iv) then
+      name = trim(f_name) // '_y_conv_lim'
+    else if (ii.eq.iw) then
+      name = trim(f_name) // '_z_conv_lim'
+    else
+      name = trim(f_name) // '_conv_lim'
+    endif
 
     ityloc = 1 ! cells
 
@@ -441,7 +449,15 @@ do ii = 1, nvar
     ! Now create matching field
     ! Build name and label
     call field_get_name(f_id, f_name)
-    name  = trim(f_name) // '_conv_lim'
+    if (ii.eq.iu) then
+      name = trim(f_name) // '_x_conv_lim'
+    else if (ii.eq.iv) then
+      name = trim(f_name) // '_y_conv_lim'
+    else if (ii.eq.iw) then
+      name = trim(f_name) // '_z_conv_lim'
+    else
+      name = trim(f_name) // '_conv_lim'
+    endif
 
     ityloc = 2 ! Interior faces
 
@@ -455,22 +471,22 @@ enddo
 
 !===============================================================================
 
-! Cavitation: the void fraction has its spectific convective flux
-!----------------------------------------------------------------
+! VOF algorithm: the void fraction has its spectific convective flux
+!-------------------------------------------------------------------
 
-if (icavit.ge.0) then
+if (ivofmt.ge.0) then
 
   itycat = FIELD_EXTENSIVE + FIELD_PROPERTY
 
   ityloc = 2  ! inner faces
   f_name = 'inner_void_fraction_flux'
   call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
-  call field_set_key_int(ivarfl(ivoidf), kimasf, f_id)
+  call field_set_key_int(ivarfl(ivolf1), kimasf, f_id)
 
   ityloc = 3 ! boundary faces
   f_name = 'boundary_void_fraction_flux'
   call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
-  call field_set_key_int(ivarfl(ivoidf), kbmasf, f_id)
+  call field_set_key_int(ivarfl(ivolf1), kbmasf, f_id)
 
 endif
 

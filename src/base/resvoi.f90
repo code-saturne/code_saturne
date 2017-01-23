@@ -26,7 +26,8 @@
 
 !> \file resvoi.f90
 !>
-!> \brief Solving the void fraction \f$ \alpha \f$ for cavitation model.
+!> \brief Solving the void fraction \f$ \alpha \f$ for the Volume of Fluid
+!>        method (and hence for cavitating flows).
 !>
 !> This function solves the equation:
 !> \f[
@@ -34,8 +35,9 @@
 !>     + \divs \left( \alpha^n \vect{u}^n \right)
 !>     = \dfrac{\Gamma_V \left( \alpha^{n-1}, p^n \right)}{\rho_v}
 !> \f]
-!> with \f$ \Gamma_V \f$ the vaporization source term (Merkle model) and
-!> \f$ \rho_v \f$ the reference gas density.
+!> with \f$ \Gamma_V \f$ the eventual vaporization source term (Merkle model) in
+!> case the cavitation model is enabled and \f$ \rho_v \f$ the reference gas
+!> density.
 !>
 !-------------------------------------------------------------------------------
 
@@ -65,6 +67,7 @@ use pointe, only: gamcav, dgdpca
 use mesh
 use field
 use cavitation
+use vof
 use parall
 use cs_c_bindings
 
@@ -116,13 +119,14 @@ type(var_cal_opt) :: vcopt
 ! 1. Initialization
 !===============================================================================
 
-ivar = ivoidf
+ivar = ivolf1
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-call field_get_val_s(ivarfl(ivoidf), cvar_voidf)
-call field_get_val_prev_s(ivarfl(ivoidf), cvara_voidf)
+call field_get_val_s(ivarfl(ivolf1), cvar_voidf)
+call field_get_val_prev_s(ivarfl(ivolf1), cvara_voidf)
 
+! implicitation in pressure of the vaporization/condensation model (cavitation)
 if (itscvi.eq.1) then
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
@@ -157,7 +161,7 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 ! Theta related to explicit source terms
 thets  = thetsn
 if (isno2t.gt.0) then
-  call field_get_key_int(ivarfl(ivoidf), kstprv, f_id)
+  call field_get_key_int(ivarfl(ivolf1), kstprv, f_id)
   call field_get_val_s(f_id, c_st_voidf)
 else
   c_st_voidf => null()
@@ -207,9 +211,9 @@ dtmaxg = 1.d15
 if (icavit.gt.0) then
   do iel = 1, ncel
     if (gamcav(iel).lt.0.d0) then
-      dtmaxl = -rov*cvara_voidf(iel)/gamcav(iel)
+      dtmaxl = -rho2*cvara_voidf(iel)/gamcav(iel)
     else
-      dtmaxl = rol*(1.d0-cvara_voidf(iel))/gamcav(iel)
+      dtmaxl = rho1*(1.d0-cvara_voidf(iel))/gamcav(iel)
     endif
     dtmaxg = min(dtmaxl,dtmaxg)
   enddo
@@ -226,10 +230,11 @@ endif
 !-------------
 
 ! Cavitation source term (explicit)
-
-do iel = 1, ncel
-  smbrs(iel) = smbrs(iel) + cell_f_vol(iel)*gamcav(iel)/rov
-enddo
+if (icavit.ge.0) then
+  do iel = 1, ncel
+    smbrs(iel) = smbrs(iel) + cell_f_vol(iel)*gamcav(iel)/rho2
+  enddo
+endif
 
 ! Source term linked with the non-conservative form of convection term
 ! in codits (always implicited)
@@ -321,7 +326,7 @@ call codits &
 iclmax(1) = 0
 iclmin(1) = 0
 
-if (dt(1).gt.dtmaxg) then
+if (icavit.ge.0.and.dt(1).gt.dtmaxg) then
 
   ! --- Calcul du min et max
   vmin(1) = cvar_voidf(1)
@@ -335,7 +340,7 @@ if (dt(1).gt.dtmaxg) then
   call field_get_key_double(ivarfl(ivar), kscmin, scminp)
   call field_get_key_double(ivarfl(ivar), kscmax, scmaxp)
 
-  if(scmaxp.gt.scminp)then
+  if(scmaxp.gt.scminp) then
     do iel = 1, ncel
       if(cvar_voidf(iel).gt.scmaxp)then
         iclmax(1) = iclmax(1) + 1
@@ -350,7 +355,8 @@ if (dt(1).gt.dtmaxg) then
 
 endif
 
-call log_iteration_clipping_field(ivarfl(ivar), iclmin(1), iclmax(1), vmin,vmax,iclmin(1), iclmax(1))
+call log_iteration_clipping_field(ivarfl(ivar), iclmin(1), iclmax(1), &
+                                  vmin, vmax, iclmin(1), iclmax(1))
 
 ! Free memory
 deallocate(viscf, viscb)

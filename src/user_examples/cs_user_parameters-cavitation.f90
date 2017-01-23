@@ -101,6 +101,7 @@ use coincl
 use cpincl
 use field
 use cavitation
+use vof
 
 !===============================================================================
 
@@ -163,16 +164,16 @@ integer ii, jj, imom, kscmin, kscmax
 !       liquid phase
 
 !< [phprop_l]
-rol = 1.d3
-mul = 1.d-3
+rho1 = 1.d3
+mu1 = 1.d-3
 !< [phprop_l]
 
 ! --- Reference density, in kg/m3, and molecular viscosity, kg/(m s), of the
 !       gas phase
 
 !< [phprop_g]
-rov = 1.d0
-muv = 1.d-5
+rho2 = 1.d0
+mu2 = 1.d-5
 !< [phprop_g]
 
 !===============================================================================

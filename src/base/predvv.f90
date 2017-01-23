@@ -152,6 +152,7 @@ use field
 use field_operator
 use pointe, only: gamcav
 use cavitation
+use vof
 use cs_tagms, only:s_metal
 use atincl, only: kopint
 
@@ -286,7 +287,7 @@ endif
 
 
 if (iappel.eq.2) then
-  if (iforbr.ge.0 .and. iterns.eq.1 .or. icavit.ge.0) then
+  if (iforbr.ge.0 .and. iterns.eq.1 .or. ivofmt.ge.0) then
     call field_get_val_s(ivarfl(ipr), cvara_pr)
   endif
   if(iforbr.ge.0 .and. iterns.eq.1                                          &
@@ -306,7 +307,7 @@ if (iappel.eq.2) then
     endif
   endif
 else
-  if (iforbr.ge.0 .and. iterns.eq.1 .or. icavit.ge.0) then
+  if (iforbr.ge.0 .and. iterns.eq.1 .or. ivofmt.ge.0) then
     call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
   endif
   if(iforbr.ge.0 .and. iterns.eq.1                                          &
@@ -371,15 +372,15 @@ else
   iprev = 1
 endif
 
-if (icavit.lt.0) then
+if (ivofmt.lt.0) then
   call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
                                 iccocg, iphydr,                     &
                                 frcxt, grad)
 
 else
 
-  ! Cavitating flows: consistency of the gradient with the diffusive flux scheme
-  ! of the correction step
+  ! VOF algorithm: consistency of the gradient
+  ! with the diffusive flux scheme of the correction step
 
   call field_get_coefa_s (ivarfl(ipr), coefa_p)
   call field_get_coefb_s (ivarfl(ipr), coefb_p)
@@ -473,9 +474,9 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 !     Calcul de rho dt/rho*grad P.n aux faces
 !       Pour gagner du temps, on ne reconstruit pas.
   itypfl = 1
-  ! Cavitation algorithm: the pressure step corresponds to the
+  ! VOF algorithm: the pressure step corresponds to the
   ! correction of the volumetric flux, not the mass flux
-  if (icavit.ge.0)  itypfl = 0
+  if (ivofmt.ge.0)  itypfl = 0
   init   = 1
   inc    = 0
   iflmb0 = 1
@@ -556,7 +557,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   ! Cavitation source term
   if (icavit.gt.0) then
     do iel = 1, ncel
-      xnormp(iel) = xnormp(iel) -cell_f_vol(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
+      xnormp(iel) = xnormp(iel) -cell_f_vol(iel)*gamcav(iel)*(1.d0/rho2 - 1.d0/rho1)
     enddo
   endif
 
@@ -711,8 +712,8 @@ if (iappel.eq.1) then
   if (idilat.gt.1.or.ippmod(icompf).ge.0) then
     call field_get_val_prev_s(icrom, pcrom)
 
-  ! Cavitation
-  else if (icavit.ge.0) then
+  ! VOF algorithm
+  else if (ivofmt.ge.0) then
     call field_get_val_s(icroaa, pcrom)
 
   ! Standard algo
@@ -1836,9 +1837,9 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 
   ! To save time, no space reconstruction
   itypfl = 1
-  ! Cavitation algorithm: the pressure step corresponds to the
+  ! VOF algorithm: the pressure step corresponds to the
   ! correction of the volumetric flux, not the mass flux
-  if (icavit.ge.0)  itypfl = 0
+  if (ivofmt.ge.0)  itypfl = 0
   init   = 1
   inc    = 1
   iflmb0 = 1

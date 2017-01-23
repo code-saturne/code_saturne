@@ -85,7 +85,7 @@ integer          ivar  , ivers(1), f_id
 integer          ierror, itysup, nbval
 integer          nberro, t_id
 integer          nfmtru
-integer          jale, jcavit
+integer          jale, jcavit, jvolfl
 integer          ival(1)
 double precision rval(1)
 
@@ -228,8 +228,26 @@ nberro=nberro+ierror
 ! Message si erreur (pas de stop pour compatibilite avec fichiers anterieurs)
 ! -> on n'affiche le message que si ICAVIT>=0 (sinon RAS)
 if (nberro.ne.0) then
-  if (icavit.ge.0) write(nfecra,9401)
+  if (icavit.ge.0) write(nfecra,9404)
   jcavit = -1
+endif
+
+!     VOF
+
+nberro = 0
+
+rubriq = 'vof'
+itysup = 0
+nbval  = 1
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jvolfl = ival(1)
+nberro=nberro+ierror
+
+! Message si erreur (pas de stop pour compatibilite avec fichiers anterieurs)
+! -> on n'affiche le message que si IVOLFL>=0 (sinon RAS)
+if (nberro.ne.0) then
+  if (ivofmt.ge.0) write(nfecra,9405)
+  jvolfl = -1
 endif
 
 ! --->  Stop si pas de temps incoherent
@@ -503,6 +521,47 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 9404 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ERREUR A LA LECTURE DU FICHIER SUITE        ',/,&
+'@    =========                                      PRINCIPAL',/,&
+'@                                                            ',/,&
+'@      ERREUR A LA LECTURE DE L''INDICATEUR DU MODELE DE     ',/,&
+'@                                                  CAVITATION',/,&
+'@                                                            ',/,&
+'@    Il se peut que le fichier suite relu corresponde a une  ',/,&
+'@      version anterieure de Code_Saturne, sans cavitation.  ',/,&
+'@    Le calcul sera execute en reinitialisant toutes les     ',/,&
+'@      donnees du modele de cavitation.                      ',/,&
+'@    Verifier neanmoins que le fichier suite utilise n''a    ',/,&
+'@        pas ete endommage.                                  ',/,&
+'@                                                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 9405 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ERREUR A LA LECTURE DU FICHIER SUITE        ',/,&
+'@    =========                                      PRINCIPAL',/,&
+'@                                                            ',/,&
+'@      ERREUR A LA LECTURE DE L''INDICATEUR DE LA METHODE    ',/,&
+'@                                             VOLUME of FLUID',/,&
+'@                                                            ',/,&
+'@    Il se peut que le fichier suite relu corresponde a une  ',/,&
+'@      version anterieure de Code_Saturne, sans methode      ',/,&
+'@      Volume of Fluid.                                      ',/,&
+'@    Le calcul sera execute en reinitialisant toutes les     ',/,&
+'@      donnees de la methode Volume of Fluid.                ',/,&
+'@    Verifier neanmoins que le fichier suite utilise n''a    ',/,&
+'@        pas ete endommage.                                  ',/,&
+'@                                                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  9410 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -639,7 +698,45 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9410 format(                                                     &
+ 9404 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : ERROR AT THE MAIN RESTART FILE READING        ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@      ERROR AT READING THE INDICATOR OF THE CAVITATION MODEL',/,&
+'@                                                            ',/,&
+'@    The read restart file might come from a previous        ',/,&
+'@      version of Code Saturne, without cavitation.          ',/,&
+'@    The calculation will be executed but                    ',/,&
+'@      cavitation model data will be reset.                  ',/,&
+'@    Please check the integrity of the file used as          ',/,&
+'@        restart file, however.                              ',/,&
+'@                                                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 9405 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : ERROR AT THE MAIN RESTART FILE READING        ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@      ERROR AT READING THE INDICATOR OF THE VOLUME OF FLUID ',/,&
+'@                                                      METHOD',/,&
+'@    The read restart file might come from a previous        ',/,&
+'@      version of Code Saturne, without VOF.                 ',/,&
+'@    The calculation will be executed but                    ',/,&
+'@      Volume of Fluid method data will be reset.            ',/,&
+'@    Please check the integrity of the file used as          ',/,&
+'@        restart file, however.                              ',/,&
+'@                                                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+9410 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&

@@ -447,7 +447,7 @@ endif
 !     pour eviter une nouvelle communication
 
 ! If required, the density at time step n-2 is updated
-if (icavit.ge.0.or.idilat.gt.1) then
+if (ivofmt.ge.0.or.idilat.gt.1) then
   call field_get_val_prev_s(icrom, crom_prev)
   call field_get_val_s(icroaa, crom_prev2)
   do iel = 1, ncelet
@@ -456,7 +456,7 @@ if (icavit.ge.0.or.idilat.gt.1) then
 endif
 
 ! If required, the density at time step n-1 is updated
-if (icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0.or.ipthrm.eq.1) then
+if (icalhy.eq.1.or.idilat.gt.1.or.ivofmt.ge.0.or.ipthrm.eq.1) then
   call field_get_val_s(icrom, crom)
   call field_get_val_prev_s(icrom, crom_prev)
   do iel = 1, ncelet

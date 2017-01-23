@@ -231,6 +231,13 @@ nbval  = 1
 ival(1) = icavit
 call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
+!  ---> VOF
+rubriq = 'vof'
+itysup = 0
+nbval  = 1
+ival(1) = ivofmt
+call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
+
 rubriq = 'instant_mobile_precedent'
 itysup = 0
 nbval  = 1
@@ -331,6 +338,12 @@ if (iecaux.eq.1) then
   ival(1) = icavit
   call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
+  !  ---> VOF
+  rubriq = 'vof'
+  itysup = 0
+  nbval  = 1
+  ival(1) = ivofmt
+  call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
 #if defined(_CS_LANG_FR)
   car54 =' Fin de l''ecriture des dimensions et des options     '
@@ -374,14 +387,14 @@ if (iecaux.eq.1) then
   endif
 
   !     Masse volumique si elle est variable uniquement
-  !     La masse volumique est egalement ecrite pour le modele de cavitation
-  if (irovar.eq.1.or.icavit.ge.0) then
+  !     La masse volumique est egalement ecrite pour l'algo. VOF
+  if (irovar.eq.1.or.ivofmt.ge.0) then
     ! Masse volumique - cellules
     call restart_write_field_vals(rp, icrom, 0)
 
     ! Masse volumique du pdt precedent - cellules
-    ! only for cavitation and dilatable models (idilat = 4, 5)
-    if (icavit.ge.0.or.idilat.ge.4) then
+    ! only for VOF algo. and dilatable models (idilat = 4, 5)
+    if (ivofmt.ge.0.or.idilat.ge.4) then
       call restart_write_field_vals(rp, icrom, 1)
     endif
 
@@ -409,9 +422,9 @@ if (iecaux.eq.1) then
   !       Une exception : on ecrit egalement Cp en effet joule pour
   !         pouvoir calculer la temperature H/Cp en debut de calcul
 
-  if (iviext.gt.0.or.icavit.ge.0) then
+  if (iviext.gt.0.or.ivofmt.ge.0) then
     !  Viscosite moleculaire - cellules (si variable ou cavitation)
-    if (ivivar.eq.1.or.icavit.ge.0) then
+    if (ivivar.eq.1.or.ivofmt.ge.0) then
       call restart_write_field_vals(rp, iviscl, 0)
     endif
 

@@ -5,6 +5,9 @@ Trunk (unreleased)
 User changes
 ------------
 
+- Add a Volume Of Fluid algorithm:
+  * partly merge cavitation algorithm with VOF algorithm.
+
 - Add data assimilation feature to atmospheric module
   (optimal interpolation and nudging):
   * copy LU utilities to cs_math and keep static inline version of them
