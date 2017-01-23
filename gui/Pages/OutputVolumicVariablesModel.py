@@ -65,58 +65,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
         model = XMLmodel(self.case)
 
-        self.listNodeVolum = (self._getListOfVelocityPressureVariables(),
-                              model.getTurbNodeList(),
-                              self.getThermalScalar(),
-                              self.getAdditionalScalar(),
-                              self.getAdditionalScalarProperty(),
-                              self.getFluidProperty(),
-                              self.getTimeProperty(),
-                              self.getMeteoScalProper(),
-                              self.getElecScalProper(),
-                              self.getPuCoalScalProper(),
-                              self.getGasCombScalProper(),
-                              self._getWeightMatrixProperty(),
-                              self.getListOfTimeAverage(),
-                              self._getListOfAleMethod(),
-                              self._getThermalRadiativeProperties(),
-                              self._getListOfEstimator())
-
-        self.listNode = []
-        for part in self._getListOfVelocityPressureVariables():
-            self.listNode.append([part, 'base'])
-        for part in model.getTurbNodeList():
-            self.listNode.append([part, 'turbulence'])
-        for part in self.getThermalScalar():
-            self.listNode.append([part, 'thermal'])
-        for part in self._getThermalRadiativeProperties():
-            self.listNode.append([part, 'thermal'])
-        for part in self.getPuCoalScalProper():
-            self.listNode.append([part, 'coal'])
-        for part in self.getGasCombScalProper():
-            self.listNode.append([part, 'gas'])
-        for part in self.getMeteoScalProper():
-            self.listNode.append([part, 'atmospheric'])
-        for part in self.getElecScalProper():
-            self.listNode.append([part, 'electric'])
-        for part in self.getAdditionalScalar():
-            self.listNode.append([part, 'other'])
-        for part in self.getAdditionalScalarProperty():
-            self.listNode.append([part, 'other'])
-        for part in self.getFluidProperty():
-            self.listNode.append([part, 'physical_properties'])
-        for part in self.getTimeProperty():
-            self.listNode.append([part, 'other'])
-        for part in self.getListOfTimeAverage():
-            self.listNode.append([part, 'other'])
-        for part in self._getListOfAleMethod():
-            self.listNode.append([part, 'other'])
-        for part in self._getListOfEstimator():
-            self.listNode.append([part, 'estimator'])
-
-        self.dicoLabelName = {}
-        self.list_name = []
-        self._updateDictLabelName()
+        self.updateList()
 
 
 # Following private methods: (to see for gathering eventually)

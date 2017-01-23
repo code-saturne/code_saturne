@@ -1316,6 +1316,13 @@ class XMLinit(Variables):
         m = LocalizationModel('VolumicZone', self.case)
         m.renumberZones()
 
+        # missing info from some old files
+
+        for node in self.case.xmlGetNodeList('time_average'):
+            if node:
+                if not node['name']:
+                    node['name'] = node['label']
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

@@ -121,8 +121,6 @@ class Informations:
         self.refList = refList
         self.groupList = groupList
 
-        self.updateListes()
-
 
     def readFile(self, file):
         if not file:
@@ -194,11 +192,6 @@ class Informations:
                                 break
 
         return refList, groupList
-
-
-    # TODO: delete this method
-    def updateListes(self):
-        return self.refList, self.groupList
 
 
     def getLocalizations(self):
