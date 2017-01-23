@@ -885,6 +885,8 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
 
+  const cs_time_step_t *ts = cs_glob_time_step;
+
   /* Check input data */
 
   assert(mesh_quantities->i_face_normal != NULL);
@@ -916,9 +918,10 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
      For the moment, we export the mesh at this stage; this should be moved
      once PSTEMA has been moved from CALTRI to an earlier step. */
 
-  cs_post_write_meshes(NULL);
-
   cs_post_activate_writer(0, 1);
+
+  if (vol_fields || brd_fields)
+    cs_post_write_meshes(ts);
 
   /* Evaluate mesh quality criteria */
   /*--------------------------------*/
@@ -979,7 +982,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                           face_to_cell,
                           NULL,
                           NULL,
-                          NULL);
+                          ts);
 
       }
       if (face_to_vtx != NULL) {
@@ -998,7 +1001,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                  true,
                                  CS_POST_TYPE_cs_real_t,
                                  face_to_vtx,
-                                 NULL);
+                                 ts);
       }
 
     } /* End of post-processing on volume */
@@ -1014,7 +1017,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         NULL,
                         NULL,
                         b_face_warping,
-                        NULL);
+                        ts);
 
     BFT_FREE(working_array);
 
@@ -1070,7 +1073,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                           face_to_cell,
                           NULL,
                           NULL,
-                          NULL);
+                          ts);
 
       }
       if (face_to_vtx != NULL) {
@@ -1084,7 +1087,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                  true,
                                  CS_POST_TYPE_cs_real_t,
                                  face_to_vtx,
-                                 NULL);
+                                 ts);
 
       }
       cs_post_write_var(CS_POST_MESH_VOLUME,
@@ -1097,7 +1100,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         offsetting,
                         NULL,
                         NULL,
-                        NULL);
+                        ts);
 
     } /* End of post-processing on volume */
 
@@ -1157,7 +1160,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                           face_to_cell,
                           NULL,
                           NULL,
-                          NULL);
+                          ts);
 
       }
       if (face_to_vtx != NULL) {
@@ -1171,7 +1174,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                  true,
                                  CS_POST_TYPE_cs_real_t,
                                  face_to_vtx,
-                                 NULL);
+                                 ts);
       }
 
     } /* End of post-processing on volume */
@@ -1187,7 +1190,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         NULL,
                         NULL,
                         b_face_ortho,
-                        NULL);
+                        ts);
 
     BFT_FREE(working_array);
 
@@ -1220,7 +1223,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         mesh_quantities->cell_vol,
                         NULL,
                         NULL,
-                        NULL);
+                        ts);
 
   } /* End of cell volume treatment */
 
@@ -1253,7 +1256,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                         NULL,
                         NULL,
                         b_thickness,
-                        NULL);
+                        ts);
 
     BFT_FREE(b_thickness);
 
