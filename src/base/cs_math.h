@@ -554,6 +554,40 @@ cs_math_voltet(const cs_real_t   xv[3],
                const cs_real_t   xf[3],
                const cs_real_t   xc[3]);
 
+/*----------------------------------------------------------------------------
+ * Compute inverses of dense matrices.
+ *
+ * parameters:
+ *  n_blocks  <--  number of blocks
+ *  ad        <--  diagonal part of linear equation matrix
+ *  ad_inv    -->  inverse of the diagonal part of linear equation matrix
+ *----------------------------------------------------------------------------*/
+
+void
+cs_math_fact_lu(cs_lnum_t         n_blocks,
+                const int         db_size,
+                const cs_real_t  *ad,
+                cs_real_t        *ad_inv);
+
+/*----------------------------------------------------------------------------
+ *  Block Jacobi utilities.
+ *  Compute forward and backward to solve an LU P*P system.
+ *
+ * parameters
+ *  mat     <-- P*P*dim matrix
+ *  db_size <-- matrix size
+ *  x       --> solution
+ *  b       --> 1st part of RHS (c - b)
+ *  c       --> 2nd part of RHS (c - b)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_math_fw_and_bw_lu(const cs_real_t  mat[],
+                     const int        db_size,
+                     cs_real_t        x[],
+                     const cs_real_t  b[],
+                     const cs_real_t  c[]);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

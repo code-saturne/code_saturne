@@ -354,5 +354,105 @@ cs_math_voltet(const cs_real_t   xv[3],
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute inverses of dense matrices.
+ *
+ * \param[in]   n_blocks  number of blocks
+ * \param[in]   ad        diagonal part of linear equation matrix
+ * \param[out]  ad_inv    inverse of the diagonal part of linear equation matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_math_fact_lu(cs_lnum_t         n_blocks,
+                const int         db_size,
+                const cs_real_t  *ad,
+                cs_real_t        *ad_inv)
+{
+# pragma omp parallel for if(n_blocks > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_blocks; i++) {
+
+    cs_real_t *restrict _ad_inv = &ad_inv[db_size*db_size*i];
+    const cs_real_t *restrict  _ad = &ad[db_size*db_size*i];
+
+    _ad_inv[0] = _ad[0];
+    // ad_inv(1,j) = ad(1,j)
+    // ad_inv(j,1) = ad(j,1)/a(1,1)
+    for (cs_lnum_t ii = 1; ii < db_size; ii++) {
+      _ad_inv[ii] = _ad[ii];
+      _ad_inv[ii*db_size] = _ad[ii*db_size]/_ad[0];
+    }
+    // ad_inv(i,i) = ad(i,i) - Sum( ad_inv(i,k)*ad_inv(k,i)) k=1 to i-1
+    for (cs_lnum_t ii = 1; ii < db_size - 1; ii++) {
+      _ad_inv[ii + ii*db_size] = _ad[ii + ii*db_size];
+      for (cs_lnum_t kk = 0; kk < ii; kk++) {
+        _ad_inv[ii + ii*db_size] -= _ad_inv[ii*db_size + kk]
+                                   *_ad_inv[kk*db_size + ii];
+      }
+
+      for (cs_lnum_t jj = ii + 1; jj < db_size; jj++) {
+        _ad_inv[ii*db_size + jj] = _ad[ii*db_size + jj];
+        _ad_inv[jj*db_size + ii] =   _ad[jj*db_size + ii]
+                                   / _ad_inv[ii*db_size + ii];
+        for (cs_lnum_t kk = 0; kk < ii; kk++) {
+          _ad_inv[ii*db_size + jj] -=  _ad_inv[ii*db_size + kk]
+                                      *_ad_inv[kk*db_size + jj];
+          _ad_inv[jj*db_size + ii] -=  _ad_inv[jj*db_size + kk]
+                                      *_ad_inv[kk*db_size + ii]
+                                      /_ad_inv[ii*db_size + ii];
+        }
+      }
+    }
+    _ad_inv[db_size*db_size -1] = _ad[db_size*db_size - 1];
+
+    for (cs_lnum_t kk = 0; kk < db_size - 1; kk++) {
+      _ad_inv[db_size*db_size - 1] -=  _ad_inv[(db_size-1)*db_size + kk]
+                                      *_ad_inv[kk*db_size + db_size -1];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Block Jacobi utilities.
+ *         Compute forward and backward to solve an LU P*P system.
+ *
+ * \param[in]   mat      P*P*dim matrix
+ * \param[in]   db_size  matrix size
+ * \param[out]  x        solution
+ * \param[out]  b        1st part of RHS (c - b)
+ * \param[out]  c        2nd part of RHS (c - b)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_math_fw_and_bw_lu(const cs_real_t  mat[],
+                     const int        db_size,
+                     cs_real_t        x[],
+                     const cs_real_t  b[],
+                     const cs_real_t  c[])
+{
+  cs_real_t  aux[db_size];
+  int ii, jj;
+
+  /* forward */
+  for (ii = 0; ii < db_size; ii++) {
+    aux[ii] = (c[ii] - b[ii]);
+    for (jj = 0; jj < ii; jj++) {
+      aux[ii] -= aux[jj]*mat[ii*db_size + jj];
+    }
+  }
+
+  /* backward */
+  for (ii = db_size - 1; ii >= 0; ii-=1) {
+    x[ii] = aux[ii];
+    for (jj = db_size - 1; jj > ii; jj-=1) {
+      x[ii] -= x[jj]*mat[ii*db_size + jj];
+    }
+    x[ii] /= mat[ii*(db_size + 1)];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

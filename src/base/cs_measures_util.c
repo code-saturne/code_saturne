@@ -68,6 +68,8 @@
 #include "cs_mesh.h"
 #include "cs_measures_util.h"
 
+#include "cs_field.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -178,9 +180,10 @@ _mesh_interpol_create_connect(cs_interpol_grid_t   *ig)
   }
 #endif
 
+  /* copy location and switch to 0-based */
 #   pragma omp parallel for
   for (ii = 0; ii < nb_points; ii++) {
-    ig->cell_connect[ii] = location[ii];
+    ig->cell_connect[ii] = location[ii] - 1;
   }
 
   nodal_mesh = fvm_nodal_destroy(nodal_mesh);
@@ -210,10 +213,10 @@ cs_interpol_field_on_grid(cs_interpol_grid_t         *ig,
 
 #   pragma omp parallel for private(jj)
   for (ii = 0; ii < nb_points; ii++) {
-    if (ig->cell_connect[ii] > 0 && ig->cell_connect[ii] < mesh->n_cells +1)
+    if (ig->cell_connect[ii] > -1 && ig->cell_connect[ii] < mesh->n_cells)
       for (jj = 0; jj < ms_dim; jj++)
         interpoled_values[ii*ms_dim +jj] =
-          values_to_interpol[(ig->cell_connect[ii] -1)*ms_dim + jj];
+          values_to_interpol[(ig->cell_connect[ii])*ms_dim + jj];
   }
 
 #if defined(HAVE_MPI)
@@ -419,7 +422,6 @@ cs_interpol_grid_init(cs_interpol_grid_t    *ig,
   _mesh_interpol_create_connect(ig);
 
   ig->is_connect = true;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -518,7 +520,7 @@ cs_measures_set_create(const char   *name,
     ms->is_cressman = NULL;
     ms->is_interpol = NULL;
     ms->inf_radius = NULL;
-
+    ms->comp_ids = NULL;
   }
   else {
     BFT_FREE(ms->coords);
@@ -526,6 +528,7 @@ cs_measures_set_create(const char   *name,
     BFT_FREE(ms->is_cressman);
     BFT_FREE(ms->is_interpol);
     BFT_FREE(ms->inf_radius);
+    BFT_FREE(ms->comp_ids);
   }
 
   return ms;
@@ -544,7 +547,7 @@ cs_measures_set_create(const char   *name,
  *                          0: not taken into account
  *                          1: taken into account
  *   measures_coords  <-- measures spaces coordonates
- *   measures         <-- measures values (associated to coordonates)
+ *   measures         <-- measures values (associated to coordinates)
  *   influence_radius <-- influence radius for interpolation (xyz interleaved)
  *----------------------------------------------------------------------------*/
 
@@ -607,7 +610,6 @@ cs_measures_set_map_values(cs_measures_set_t       *ms,
         ms->inf_radius[ii*3 +jj] = influence_radius[ii*3 + jj];
       }
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -808,6 +810,7 @@ cs_measures_sets_destroy(void)
     BFT_FREE(ms->coords);
     BFT_FREE(ms->is_interpol);
     BFT_FREE(ms->is_cressman);
+    BFT_FREE(ms->comp_ids);
   }
 
   BFT_FREE(_measures_sets);

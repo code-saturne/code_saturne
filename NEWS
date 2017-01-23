@@ -5,6 +5,14 @@ Trunk (unreleased)
 User changes
 ------------
 
+- Add data assimilation feature to atmospheric module
+  (optimal interpolation and nudging):
+  * copy LU utilities to cs_math and keep static inline version of them
+    in cs_sles_it
+  * an optimal interpolation structure is created
+  * interpol grid and measures set structures are used as well
+  * multidimensional analysis are computed for multidimensional variables.
+
 - Allow user definitions of head losses by zones (see cs_user_head_losses.c).
 
 - Add a conservative gradient reconstructed with least squares gradient for

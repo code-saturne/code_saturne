@@ -45,6 +45,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/pprt \
 -I$(top_srcdir)/src/rayt \
 -I$(top_srcdir)/src/turb \
+-I$(top_srcdir)/src/atmo \
 $(CPPFLAGS_PLE) \
 $(FREESTEAM_CPPFLAGS) \
 $(MPI_CPPFLAGS)

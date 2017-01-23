@@ -51,6 +51,8 @@ typedef struct _cs_measures_set_t {
   int                 type;                /* Measures set type flag
                                               not yet used */
   int                 dim;                 /* Measures set dimension */
+  int                *comp_ids;            /* index of components of measures if
+                                              dim > 1 */
   cs_lnum_t           nb_measures;         /* Number of measures */
   cs_lnum_t           nb_measures_max;     /* Dynamic reallocation parameter */
   bool                interleaved;         /* Is measures set interleaved ? */
@@ -61,7 +63,7 @@ typedef struct _cs_measures_set_t {
                                               interpolation ?
                                                 0: no
                                                 1: yes */
-  cs_real_t          *coords;              /* measures coordonates */
+  cs_real_t          *coords;              /* measures coordinates */
   cs_real_t          *measures;            /* measures values */
   cs_real_t          *inf_radius;          /* influence radius */
 
@@ -73,7 +75,7 @@ typedef struct _cs_interpol_grid_t {
   int                 id;                  /* Grid id */
   cs_lnum_t           nb_points;           /* Number of grid points */
   bool                is_connect;          /* Is connectivity computed? */
-  cs_real_t          *coords;              /* measures coordonates */
+  cs_real_t          *coords;              /* measures coordinates */
   cs_lnum_t          *cell_connect;        /* Mesh -> grid connectivity */
   int                *rank_connect;        /* Rank location */
 

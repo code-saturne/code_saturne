@@ -35,7 +35,7 @@ use paramx
 use optcal
 use entsor
 use ihmpre
-use ppincl, only: ippmod, nmodmx
+use ppincl, only: ippmod, nmodmx, iatmos
 use post
 use cs_c_bindings
 use field
@@ -123,6 +123,8 @@ call ppini1
 call elec_option_init
 
 call cs_rad_transfer_options
+
+if (ippmod(iatmos).ge.0) call cs_at_data_assim_initialize
 
 ! Additional fields
 

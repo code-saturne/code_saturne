@@ -651,13 +651,13 @@ _dot_products_xx_yy_xy_xz_yz(const cs_sles_it_t  *c,
 }
 
 /*----------------------------------------------------------------------------
-* Compute inverses of dense 3*3 matrices.
-*
-* parameters:
-*   n_blocks <-- number of blocks
-*   ad       <-- diagonal part of linear equation matrix
-*   ad_inv   --> inverse of the diagonal part of linear equation matrix
-*----------------------------------------------------------------------------*/
+ * Compute inverses of dense 3*3 matrices.
+ *
+ * parameters:
+ *   n_blocks <-- number of blocks
+ *   ad       <-- diagonal part of linear equation matrix
+ *   ad_inv   --> inverse of the diagonal part of linear equation matrix
+ *----------------------------------------------------------------------------*/
 
 static void
 _fact_lu33(cs_lnum_t         n_blocks,
@@ -686,13 +686,13 @@ _fact_lu33(cs_lnum_t         n_blocks,
 }
 
 /*----------------------------------------------------------------------------
-* Compute inverses of dense matrices.
-*
-* parameters:
-*   n_blocks <-- number of blocks
-*   ad       <-- diagonal part of linear equation matrix
-*   ad_inv   --> inverse of the diagonal part of linear equation matrix
-*----------------------------------------------------------------------------*/
+ * Compute inverses of dense matrices.
+ *
+ * parameters:
+ *   n_blocks <-- number of blocks
+ *   ad       <-- diagonal part of linear equation matrix
+ *   ad_inv   --> inverse of the diagonal part of linear equation matrix
+ *----------------------------------------------------------------------------*/
 
 static void
 _fact_lu(cs_lnum_t         n_blocks,

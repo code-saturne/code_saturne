@@ -55,6 +55,7 @@ use optcal
 use ppppar
 use ppthch
 use ppincl
+use cs_c_bindings
 
 !===============================================================================
 
@@ -80,6 +81,10 @@ endif
 if (iturb.eq.41) ivoset = 1
 
 if (ippmod(iaeros).ge.0) ivoset = 1
+
+if (ippmod(iatmos).ge.0) then
+  ivoset = cs_at_opt_interp_is_p1_proj_needed()
+endif
 
 return
 end subroutine

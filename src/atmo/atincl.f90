@@ -276,6 +276,9 @@ double precision, save:: sigc
 !> automatically set in lecamp)
 integer, save :: init_at_chem
 
+!> key id for optimal interpolation
+integer, save :: kopint
+
 !> \}
 
 contains

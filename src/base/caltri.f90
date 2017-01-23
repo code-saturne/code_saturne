@@ -363,6 +363,8 @@ if (ippmod(iatmos).ge.0) then
     call activate_imbrication
   endif
 
+  call cs_at_data_assim_build_ops
+
   if (ifilechemistry.ge.1) then
     call init_chemistry
   endif
@@ -1103,6 +1105,8 @@ if (ippmod(iatmos).ge.0) then
   if(imbrication_flag)then
     call finalize_imbrication
   endif
+
+  call cs_at_data_assim_finalize
 
   if (ifilechemistry.ge.1) then
     call finalize_chemistry

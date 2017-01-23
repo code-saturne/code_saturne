@@ -84,6 +84,10 @@ endif
 ! 1. INFORMATIONS GENERALES
 !===============================================================================
 
+! key id for optimal interpolation
+
+call field_get_key_id("opt_interp_id", kopint)
+
 !--> constants used in the atmospheric physics module
 !    (see definition in atincl.h):
 

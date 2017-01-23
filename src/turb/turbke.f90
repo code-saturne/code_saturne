@@ -81,6 +81,7 @@ use mesh
 use field
 use field_operator
 use cs_c_bindings
+use atincl, only: kopint
 
 !===============================================================================
 
@@ -110,7 +111,7 @@ integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          iflmas, iflmab
 integer          iwarnp
-integer          istprv
+integer          istprv, f_oi_id
 integer          iphydp, iprev
 integer          imucpp, idftnp, iswdyp
 
@@ -728,6 +729,20 @@ call cs_user_turbulence_source_terms &
    icepdc , icetsm , itypsm ,                                     &
    ckupdc , smacel ,                                              &
    w8     , usimpe )
+
+if (ippmod(iatmos).ge.0) then
+  ! Nudging towards optimal interpolation for k
+  call field_get_key_int(ivarfl(ik), kopint, f_oi_id)
+  if (f_oi_id.ge.0) then
+    call cs_at_data_assim_source_term(ivarfl(ik), w7, usimpk)
+  endif
+
+  ! Nudging towards optimal interpolation for epsilon
+  call field_get_key_int(ivarfl(iep), kopint, f_oi_id)
+  if (f_oi_id.ge.0) then
+    call cs_at_data_assim_source_term(ivarfl(ik), w8, usimpe)
+  endif
+endif
 
 ! If source terms are extrapolated over time
 if (istprv.ge.0) then

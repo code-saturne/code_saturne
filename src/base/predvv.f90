@@ -153,6 +153,7 @@ use field_operator
 use pointe, only: gamcav
 use cavitation
 use cs_tagms, only:s_metal
+use atincl, only: kopint
 
 !===============================================================================
 
@@ -202,7 +203,7 @@ integer          iswdyp, idftnp
 integer          iconvp, idiffp, ndircp, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
 integer          iflmb0, nswrp
-integer          idtva0, icvflb
+integer          idtva0, icvflb, f_oi_id
 integer          jsou  , ivisep, imasac
 integer          ivoid(1)
 
@@ -1369,6 +1370,14 @@ if (iterns.eq.1) then
   if (vcopt_u%ibdtso.lt.0) then
     vcopt_u%ibdtso = iabs(vcopt_u%ibdtso)
     call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+  endif
+
+  ! Nudging towards optimal interpolation for velocity
+  if (ippmod(iatmos).ge.0) then
+    call field_get_key_int(ivarfl(iu), kopint, f_oi_id)
+    if (f_oi_id.ge.0) then
+      call cs_at_data_assim_source_term(ivarfl(iu), tsexp, tsimp)
+    endif
   endif
 
   ! Coupling between two Code_Saturne

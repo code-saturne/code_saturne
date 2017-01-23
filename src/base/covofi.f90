@@ -117,6 +117,7 @@ use atchem
 use darcy_module
 use cs_c_bindings
 use pointe, only: itypfb, pmapper_double_r1
+use atincl, only: kopint
 
 !===============================================================================
 
@@ -149,7 +150,7 @@ integer          ii, ifac , iel, isou
 integer          iprev , inc   , iccocg, iiun, ibcl
 integer          ivarsc
 integer          iiscav
-integer          ifcvsl, iflmas, iflmab
+integer          ifcvsl, iflmas, iflmab, f_oi_id
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -414,6 +415,14 @@ if (vcopt%ibdtso.lt.0) vcopt%ibdtso = iabs(vcopt%ibdtso)
 
 ! Set ibdtso value
 call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+! Nudging towards optimal interpolation for current scalar
+if (ippmod(iatmos).ge.0) then
+  call field_get_key_int(ivarfl(ivar), kopint, f_oi_id)
+  if (f_oi_id.ge.0) then
+    call cs_at_data_assim_source_term(ivarfl(ivar), smbrs, rovsdt)
+  endif
+endif
 
 ! Atmospheric chemistry
 ! In case of a semi-coupled resolution, computation of the explicit
