@@ -4916,9 +4916,9 @@ cs_post_write_var(int                    mesh_id,
     if (writer->id != writer_id && writer_id != CS_POST_WRITER_ALL_ASSOCIATED)
       continue;
 
-    _check_non_transient(writer, &nt_cur, &t_cur);
-
     if (writer->active == 1) {
+
+      _check_non_transient(writer, &nt_cur, &t_cur);
 
       fvm_writer_export_field(writer->writer,
                               post_mesh->exp_mesh,
@@ -5046,9 +5046,9 @@ cs_post_write_vertex_var(int                    mesh_id,
     if (writer->id != writer_id && writer_id != CS_POST_WRITER_ALL_ASSOCIATED)
       continue;
 
-    _check_non_transient(writer, &nt_cur, &t_cur);
-
     if (writer->active == 1) {
+
+      _check_non_transient(writer, &nt_cur, &t_cur);
 
       fvm_writer_export_field(writer->writer,
                               post_mesh->exp_mesh,
