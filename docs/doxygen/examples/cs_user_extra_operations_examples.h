@@ -39,7 +39,7 @@
   Here is the list of examples dedicated to different physics:
 
   - \subpage cs_user_extra_operations_examples_energy_balance_p
-  - \subpage cs_user_extra_operations_examples_scalar_balance_by_zone_p
+  - \subpage cs_user_extra_operations_examples_balance_by_zone_p
   - \subpage cs_user_extra_operations_examples_oned_profile_p
   - \subpage cs_user_extra_operations_examples_force_temperature_p
   - \subpage cs_user_extra_operations_examples_global_efforts_p
@@ -155,7 +155,7 @@
 // __________________________________________________________________________________
 /*!
 
-  \page cs_user_extra_operations_examples_scalar_balance_by_zone_p Scalar balance by zone
+  \page cs_user_extra_operations_examples_scalar_by_zone_p Scalar and head loss balance by zone
 
   \section cs_user_extra_operations_examples_scalar_balance_by_zone Scalar balance by zone
 
@@ -226,7 +226,7 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-scalar_balance_by_zone.c example_1
+  \snippet cs_user_extra_operations-balance_by_zone.c example_1
 
   \subsection cs_user_extra_operations_examples_example_2 Example 2
 
@@ -240,14 +240,21 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-scalar_balance_by_zone.c example_2
+  \snippet cs_user_extra_operations-balance_by_zone.c example_2
 
   \subsection cs_user_extra_operations_examples_example_3 Scalar balance through a surface
 
   This example computes the balance relative to a scalar named "scalar1".
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-scalar_balance_by_zone.c example_3
+  \snippet cs_user_extra_operations-balance_by_zone.c example_3
+
+  \section cs_user_extra_operations_examples_head_balance_by_zone Head loss balance by zone
+
+  This example computes the head balance  for a volume zone.
+  Here is the corresponding code:
+
+  \snippet cs_user_extra_operations-balance_by_zone.c example_4
 
 */
 // __________________________________________________________________________________

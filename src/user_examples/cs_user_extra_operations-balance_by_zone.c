@@ -130,6 +130,9 @@ cs_user_extra_operations(void)
   cs_surface_balance("selection_criterion", "scalar1", normal);
   //!< [example_3]
 
+  //!< [example_4]
+  cs_balance_by_zone("box[-0.5d0, 1.3d0, 0.d0, 1.d0, 1.9d0, 1.d0]");
+  //!< [example_4]
 }
 
 /*----------------------------------------------------------------------------*/
