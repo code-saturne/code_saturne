@@ -3364,6 +3364,151 @@ cs_field_get_key_struct(const cs_field_t  *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return a pointer to a simple structure for a given key to a field.
+ *
+ * If the key id is not valid, the value type or field category is not
+ * compatible, or the structure has been locked, a fatal error is provoked.
+ *
+ * Note that using this function marks the field's value for this structure
+ * as set, and if no values have been set yet, the structure is set to
+ * default values.
+ *
+ * \param[in]  f       pointer to field structure
+ * \param[in]  key_id  id of associated key
+ *
+ * \return  pointer to key structure in case of success, NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_field_get_key_struct_ptr(cs_field_t  *f,
+                            int          key_id)
+{
+  int errcode = CS_FIELD_OK;
+
+  assert(f->id >= 0 && f->id < _n_fields);
+
+  if (key_id > -1) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
+      errcode = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 't')
+      errcode = CS_FIELD_INVALID_TYPE;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
+      void *p = NULL;
+      if (kv->is_locked)
+        errcode = CS_FIELD_LOCKED;
+      else {
+        if (kv->is_set == false) {
+          BFT_MALLOC(kv->val.v_p, kd->type_size, unsigned char);
+          cs_field_get_key_struct(f, key_id, kv->val.v_p);
+        }
+        p = kv->val.v_p;
+        kv->is_set = 1;
+        return p;
+      }
+    }
+  }
+  else
+    errcode = CS_FIELD_INVALID_KEY_ID;
+
+  if (errcode != CS_FIELD_OK) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
+    if (errcode == CS_FIELD_INVALID_CATEGORY)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" with type flag %d\n"
+                  "has no value associated with key %d (\"%s\")."),
+                f->name, f->type, key_id, key);
+    else if (errcode == CS_FIELD_INVALID_TYPE)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" has keyword %d (\"%s\")\n"
+                  "of type \"%c\" and not \"%c\"."),
+                f->name, key_id, key, (_key_defs + key_id)->type_id, 'i');
+    else if (errcode == CS_FIELD_LOCKED)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" structure indicated by keyword %d (\"%s\")\n"
+                  "has been locked.\n"
+                  "use %s to access instead."),
+                f->name, key_id, key, "cs_field_get_key_struct_const_ptr");
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field keyword with id %d is not defined."),
+                key_id);
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a read-only pointer to a simple structure for a given key
+ *        to a field.
+ *
+ * If the key id is not valid, the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * \param[in]  f       pointer to field structure
+ * \param[in]  key_id  id of associated key
+ *
+ * \return  pointer to key structure in case of success, NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+const void *
+cs_field_get_key_struct_const_ptr(cs_field_t  *f,
+                                  int          key_id)
+{
+  int errcode = CS_FIELD_OK;
+
+  assert(f->id >= 0 && f->id < _n_fields);
+
+  if (key_id > -1 && key_id < _n_keys) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
+      errcode = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 't')
+      errcode = CS_FIELD_INVALID_TYPE;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
+      const unsigned char *p = NULL;
+      if (kv->is_set)
+        p = kv->val.v_p;
+      else if (kd->is_sub)
+        p = cs_field_get_key_struct_const_ptr(f, kd->def_val.v_int);
+      else
+        p = kd->def_val.v_p;
+      return p;
+    }
+  }
+  else
+    errcode = CS_FIELD_INVALID_KEY_ID;
+
+  if (errcode != CS_FIELD_OK) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
+    if (errcode == CS_FIELD_INVALID_CATEGORY)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" with type flag %d\n"
+                  "has no value associated with key %d (\"%s\")."),
+                f->name, f->type, key_id, key);
+    else if (errcode == CS_FIELD_INVALID_TYPE)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" has keyword %d (\"%s\")\n"
+                  "of type \"%c\" and not \"%c\"."),
+                f->name, key_id, key, (_key_defs + key_id)->type_id, 'i');
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field keyword with id %d is not defined."),
+                key_id);
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print info relative to all field definitions to log file.
  */
 /*----------------------------------------------------------------------------*/

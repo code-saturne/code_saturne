@@ -888,6 +888,47 @@ cs_field_get_key_struct(const cs_field_t  *f,
                         int                key_id,
                         void              *s);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to a simple structure for a given key to a field.
+ *
+ * If the key id is not valid, the value type or field category is not
+ * compatible, or the structure has been locked, a fatal error is provoked.
+ *
+ * Note that using this function marks the field's value for this structure
+ * as set, and if no values have been set yet, the structure is set to
+ * default values.
+ *
+ * \param[in]  f       pointer to field structure
+ * \param[in]  key_id  id of associated key
+ *
+ * \return  pointer to key structure in case of success, NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_field_get_key_struct_ptr(cs_field_t  *f,
+                            int          key_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a read-only pointer to a simple structure for a given key
+ *        to a field.
+ *
+ * If the key id is not valid, the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * \param[in]  f       pointer to field structure
+ * \param[in]  key_id  id of associated key
+ *
+ * \return  pointer to key structure in case of success, NULL in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+const void *
+cs_field_get_key_struct_const_ptr(cs_field_t  *f,
+                                  int          key_id);
+
 /*----------------------------------------------------------------------------
  * Print info relative to all field definitions to log file.
  *----------------------------------------------------------------------------*/
