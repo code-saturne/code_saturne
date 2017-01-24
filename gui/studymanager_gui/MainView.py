@@ -30,7 +30,7 @@ informations in the XML document, which reflets the treated case.
 This module defines the following classes:
 - MainView
 
-    @copyright: 1998-2016 EDF S.A., France
+    @copyright: 1998-2017 EDF S.A., France
     @author: U{EDF<mailto:saturne-support@edf.fr>}
     @license: GNU GPL v2, see COPYING for details.
 """
