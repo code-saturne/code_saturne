@@ -5225,57 +5225,6 @@ The thermal balance example is particularly interesting.
 \end{list}
 
 %==================================
-\subsection{Non-standard management of the chronological record files}
-%==================================
-\label{sec:prg_ushist}
-
-Both the interface and the subroutine \texttt{cs\_user\_parameters.f90} allow autonomous management of the
-``automatic'' chronological record files:
-position of the probes, printing frequency and related variables. The
-results are written in a different file for each variable. These files
-are written in text (readable by {\em xmgrace} or {\em gnuplot}}) or CSV format and contain the profiles corresponding to
-every probe. This type of output format may not be well adapted if, for
-instance, the number of probes is too high. The subroutine
-\texttt{ushist}, called at each time step, allows then to personalise the output format of the
-chronological record files. The example in the
-directory works as follows:
-
-\begin{list}{-}{}
-\item Positioning of the probes (only at the first passage): the index
-      \texttt{ii} varies between 1 and the number of probes. The coordinates
-      \texttt{xx}, \texttt{yy} and \texttt{zz} of each probe are given.
-      The subroutine \texttt{findpt}
-      gives then the number \texttt{icapt(ii)\index{icapt}} of the cell center
-      which is the closest to the defined probe.
-
-\item Opening of the output files (only at the first pass): in the
-      example, the program opens a different file for
-      all the \texttt{nvar} variables. \texttt{ficush(j)} contains the name of the
-      J\raisebox{1ex}{\small th} file and \texttt{impush(j)} its unit number
-      (\texttt{impush} is initialised by default so that the user has at his
-      disposal specific unit numbers and does not run the risk to overwrite an
-      already open file).
-
-\item Writing to the files: in the version given as example, the program
-      writes the time step number, the physical time step (based on the
-      standard time step in the case of a variable time step) and the
-      value of the selected variable at the different probes.
-
-\item Closing of the files (only at the last time step).
-
-\end{list}
-
-{\em WARNING: The use of {\em\texttt{ushist}} neither erases nor replaces the
-parameters given in the interface or in {\em\texttt{cs\_user\_parameters.f90}}. Therefore, in
-the case of the use of {\em\texttt{ushist}}, and to avoid the creation
-of useless files, the user should set {\em \texttt{ncapt}=0} in the interface or
-in {\em \texttt{cs\_user\_parameters.f90}} to deactivate the automatic production of
-chronological records}.\\
-In addition, {\em \texttt{ushist}} generates supplementary result
-files.
-
-
-%==================================
 \section{Advanced modelling setup}
 %==================================
 
