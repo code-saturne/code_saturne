@@ -84,6 +84,7 @@ cs_user_coupling-syrthes.c \
 cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations-scalar_balance.c \
+cs_user_extra_operations-scalar_balance_by_zone.c \
 cs_user_extra_operations-turbomachinery.c \
 cs_user_lagr_particle.c \
 cs_user_mesh-boundary.c \

@@ -93,7 +93,7 @@ double precision dt(ncelet)
 ! Local variables
 
 !< [loc_var_dec]
-
+double precision normal(3)
 !< [loc_var_dec]
 
 !===============================================================================
@@ -126,6 +126,13 @@ call balance_by_zone("box[-0.5d0, 1.3d0, 0.d0, 1.d0, 1.9d0, 1.d0]", &
 
 !< [example_2]
 
+!< [example_3]
+normal(1) = 0.d0
+normal(2) = 0.d0
+normal(3) = 1.d0
+
+call surface_balance("selection_criterion", "scalar1", normal)
+!< [example_3]
 
 !< [finalize]
 
