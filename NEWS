@@ -1376,7 +1376,7 @@ Changes
 
 - Adapt the Multigrid algorithm to vectorial Poisson equation
   (such as mesh velocity for ALE).
-  - The aggregation criterium is based on the trace of the diagonal block
+  - The aggregation criterion is based on the trace of the diagonal block
     DA (3x3), but can be a changed (We could test n.DA.n),
   - The multigrid algorithm for scalars (such as the pressure field) is
     rigourously unchanged.

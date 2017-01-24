@@ -673,18 +673,18 @@ _balance_internal_faces(const int         iupwin,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Computes the different terms of the balance of a scalar which name is
- * given as argument, on a volumic zone defined by the criterium also given as
+ * given as argument, on a volumic zone defined by the criterion also given as
  * argument. The different contributions to the balance are printed in the
  * listing.
  *
- * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     selection_crit      zone selection criterion
  * \param[in]     scalar_name         scalar name
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_balance_by_zone(const char *selection_crit,
-                   const char *scalar_name)
+cs_balance_by_zone(const char  *selection_crit,
+                   const char  *scalar_name)
 {
   int nt_cur = cs_glob_time_step->nt_cur;
   int idtvar = cs_glob_time_step_options->idtvar;
@@ -748,10 +748,10 @@ cs_balance_by_zone(const char *selection_crit,
 
   cs_real_t *pvar_local = NULL;
   cs_real_t *pvar_distant = NULL;
-  cs_real_t hint, hext, heq;
+  cs_real_t  hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
-  cs_int_t n_local;
-  cs_lnum_t n_distant;
+  cs_lnum_t  n_local;
+  cs_lnum_t  n_distant;
   cs_lnum_t *faces_distant = NULL;
   int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
@@ -977,13 +977,13 @@ cs_balance_by_zone(const char *selection_crit,
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
 
   cs_real_t *c_visc = NULL;
-  const int kivisl =
-    cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
+  const int kivisl
+    = cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
   if (kivisl != -1)
     c_visc = cs_field_by_id(kivisl)->val;
   else {
-    const double visls0 =
-      cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
+    const double visls0
+      = cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
     BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       c_visc[c_id] = visls0;
@@ -1340,7 +1340,6 @@ cs_balance_by_zone(const char *selection_crit,
   double blencp = var_cal_opt.blencv;
   int iupwin = (blencp > 0.) ? 0 : 1;
 
-
   for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
 
     cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
@@ -1504,15 +1503,15 @@ cs_balance_by_zone(const char *selection_crit,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Computes one term of the head loss balance (pressure drop) on a
- * volumic zone defined by the criterium also given as argument.
+ * volumic zone defined by the criterion also given as argument.
  * The different contributions are printed in the listing.
  *
- * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     selection_crit      zone selection criterion
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_pressure_drop_by_zone(const char *selection_crit)
+cs_pressure_drop_by_zone(const char * selection_crit)
 {
   int nt_cur = cs_glob_time_step->nt_cur;
 
@@ -1629,7 +1628,7 @@ cs_pressure_drop_by_zone(const char *selection_crit)
      ---> Get user-selected zone
      =========================================================================*/
 
-  /* Initialise arrays */
+  /* Initialize arrays */
 
   /* Internal faces of the selected zone */
   BFT_MALLOC(i_face_sel_list, n_i_faces, cs_lnum_t);
@@ -1723,7 +1722,6 @@ cs_pressure_drop_by_zone(const char *selection_crit)
   /* 2. Compute the balance at time step n
     ======================================
    */
-
 
   int iconvp = 1;
   int ircflp = 0; /* No reconstruction */
@@ -2135,21 +2133,21 @@ cs_pressure_drop_by_zone(const char *selection_crit)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Computes the surface balance of a scalar which name is
- * given as argument, on an oriented surface area defined by the criterium also
- * given as argument. The flux is counted negatively in the given out normal
- * direction.
+ * given as argument, on a oriented surface area defined by the criterion also
+ * given as argument. The flux is counted negatively in the given
+ * outwards-facing normal direction.
  *
  *
- * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     selection_crit      zone selection criterion
  * \param[in]     scalar_name         scalar name
  * \param[in]     normal              out normal surface
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_surface_balance(const char *selection_crit,
-                   const char *scalar_name,
-                   const cs_real_3_t normal)
+cs_surface_balance(const char       *selection_crit,
+                   const char       *scalar_name,
+                   const cs_real_t   normal[3])
 {
  /* ---------------------------------------------------- */
  /*                   Local variables                    */
@@ -2190,7 +2188,6 @@ cs_surface_balance(const char *selection_crit,
   const cs_field_t *f = cs_field_by_name_try(scalar_name);
   const int field_id = cs_field_id_by_name(scalar_name);
 
-
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
@@ -2207,7 +2204,7 @@ cs_surface_balance(const char *selection_crit,
   cs_real_t *pvar_distant = NULL;
   cs_real_t hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
-  cs_int_t n_local;
+  cs_lnum_t n_local;
   cs_lnum_t n_distant;
   cs_lnum_t *faces_distant = NULL;
   int coupling_id;
@@ -2328,8 +2325,6 @@ cs_surface_balance(const char *selection_crit,
                            true, /* _recompute_cocg */
                            grad);
 
-
-
   int inc = 1;
 
   /* Compute the gradient for convective scheme
@@ -2433,7 +2428,6 @@ cs_surface_balance(const char *selection_crit,
     cs_lnum_t c_id = b_face_cells[f_id_sel];
     cells_tag_list[c_id] = 1;
   }
-
 
   double flux_b_faces = 0.;
   double flux_i_faces = 0.;
@@ -2630,7 +2624,6 @@ cs_surface_balance(const char *selection_crit,
                             cpro_cp[c_id2],
                             bi_bterms);
 
-
     /* (The cell is counted only once in parallel by checking that
        the c_id is not in the halo) */
     /* Face normal well oriented (check i_face_cells array) */
@@ -2709,11 +2702,10 @@ cs_surface_balance(const char *selection_crit,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get the face by face surface flux of a scalar which name is
- * given as argument, on a surface area defined by the criterium also given as
+ * given as argument, on a surface area defined by the criterion also given as
  * argument. Counted negatively through the normal.
  *
- *
- * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     selection_crit      zone selection criterion
  * \param[in]     scalar_name         scalar name
  * \param[in]     normal              normal surface
  * \param[in,out] flux_b_faces        pointer surface flux boundary faces
@@ -2724,15 +2716,14 @@ cs_surface_balance(const char *selection_crit,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_flux_through_surface(const char *selection_crit,
-                        const char *scalar_name,
-                        const cs_real_3_t normal,
-                        cs_real_t *flux_b_faces,
-                        cs_real_t *flux_i_faces,
-                        int *nb_faces_sel,
-                        int *ni_faces_sel)
+cs_flux_through_surface(const char          *selection_crit,
+                        const char          *scalar_name,
+                        const cs_real_t      normal[3],
+                        cs_real_t          *flux_b_faces,
+                        cs_real_t          *flux_i_faces,
+                        cs_lnum_t          *nb_faces_sel,
+                        cs_lnum_t          *ni_faces_sel)
 {
-
  /* ---------------------------------------------------- */
  /*                   Local variables                    */
  /* ---------------------------------------------------- */
@@ -2741,7 +2732,6 @@ cs_flux_through_surface(const char *selection_crit,
 
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -2771,7 +2761,6 @@ cs_flux_through_surface(const char *selection_crit,
   const cs_field_t *f = cs_field_by_name_try(scalar_name);
   const int field_id = cs_field_id_by_name(scalar_name);
 
-
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
@@ -2788,7 +2777,7 @@ cs_flux_through_surface(const char *selection_crit,
   cs_real_t *pvar_distant = NULL;
   cs_real_t hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
-  cs_int_t n_local;
+  cs_lnum_t n_local;
   cs_lnum_t n_distant;
   cs_lnum_t *faces_distant = NULL;
   int coupling_id;
@@ -2797,7 +2786,6 @@ cs_flux_through_surface(const char *selection_crit,
  /* ---------------------------------------------------- */
  /*                 Physical properties                  */
  /* ---------------------------------------------------- */
-
 
   /* Temperature indicator.
      Will multiply by CP in order to have energy. */
@@ -2850,13 +2838,13 @@ cs_flux_through_surface(const char *selection_crit,
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
 
   cs_real_t *c_visc = NULL;
-  const int kivisl =
-    cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
+  const int kivisl
+    = cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
   if (kivisl != -1)
     c_visc = cs_field_by_id(kivisl)->val;
   else {
-    const double visls0 =
-      cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
+    const double visls0
+      = cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
     BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       c_visc[c_id] = visls0;
@@ -2954,14 +2942,11 @@ cs_flux_through_surface(const char *selection_crit,
                          b_mass_flux,
                          f->val,
                          gradup);
-
   }
 
  /* ---------------------------------------------------- */
  /*                    Faces selection                   */
  /* ---------------------------------------------------- */
-
-
 
   cs_lnum_t n_bb_faces_sel = 0;
   cs_lnum_t *bb_face_sel_list = NULL;
@@ -2986,7 +2971,6 @@ cs_flux_through_surface(const char *selection_crit,
   for (cs_lnum_t c_id = 0; c_id< n_cells_ext; c_id++){
     cells_tag_list[c_id] = -1;
   }
-
 
   for (cs_lnum_t f_id =0; f_id < n_bi_faces_sel; f_id++) {
     cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
@@ -3238,9 +3222,6 @@ cs_flux_through_surface(const char *selection_crit,
   BFT_FREE(cells_tag_list);
   BFT_FREE(bi_face_sel_list);
   BFT_FREE(bb_face_sel_list);
-
-  /* Sum of values on all rank (parallel calculations */
-
 }
 
 END_C_DECLS

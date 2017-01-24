@@ -154,8 +154,8 @@ cs_i_conv_flux_lax_wendroff(const int         iconvp,
  * \param[in]     grdpai          upwind gradient at cell i
  * \param[in]     grdpaj          upwind gradient at cell j
  * \param[in]     i_massflux      mass flux at face (from i to j)
- * \param[out]    testij          value of slope test first criterium
- * \param[out]    tesqck          value of slope test second criterium
+ * \param[out]    testij          value of slope test first criterion
+ * \param[out]    tesqck          value of slope test second criterion
  */
 /*----------------------------------------------------------------------------*/
 
@@ -219,8 +219,8 @@ cs_slope_test(const cs_real_t     pi,
  * \param[in]     grdpai          upwind gradient at cell i
  * \param[in]     grdpaj          upwind gradient at cell j
  * \param[in]     i_massflux      mass flux at face (from i to j)
- * \param[out]    testij          value of slope test first criterium
- * \param[out]    tesqck          value of slope test second criterium
+ * \param[out]    testij          value of slope test first criterion
+ * \param[out]    tesqck          value of slope test second criterion
  */
 /*----------------------------------------------------------------------------*/
 
@@ -285,8 +285,8 @@ cs_slope_test_vector(const cs_real_3_t   pi,
  * \param[in]     grdpai          upwind gradient at cell i
  * \param[in]     grdpaj          upwind gradient at cell j
  * \param[in]     i_massflux      mass flux at face (from i to j)
- * \param[out]    testij          value of slope test first criterium
- * \param[out]    tesqck          value of slope test second criterium
+ * \param[out]    testij          value of slope test first criterion
+ * \param[out]    tesqck          value of slope test second criterion
  */
 /*----------------------------------------------------------------------------*/
 

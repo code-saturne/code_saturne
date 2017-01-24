@@ -32186,12 +32186,12 @@
 	  src/base/predfl.f90, src/base/resolp.f90, src/base/resopv.f90:
 	  Adapt the Multigrid algorithm to vectorial Poisson equation (such
 	  as mesh velocity for ALE).
-	  
-	  The aggregation criterium is based on the trace of the diagonal
+
+	  The aggregation criterion is based on the trace of the diagonal
 	  block DA (3x3), but could be a changed (We could test n.DA.n).
 	  The multigrid algorithm for scalars (such as the pressure field)
 	  is rigourously unchanged.
-	  
+
 	  Comments in codits/coditv are updated and translated in English.
 	  GOTO are replaced by dowhile loop.
 
@@ -50984,7 +50984,7 @@
 2009-07-10 13:32  Code_Saturne development team <saturne-support@edf.fr>
 
 	* [r872] ChangeLog, src/base/cs_mesh_quality.c: Fix the calculation
-	  of the face-warping quality criterium.
+	  of the face-warping quality criterion.
 
 2009-07-10 13:06  Code_Saturne development team <saturne-support@edf.fr>
 
@@ -71545,7 +71545,7 @@
     users/base/usini1.f90
 
 * 10/07/2009 - Yvan Fournier <yvan.fournier@edf.fr>
-  Fix the calculation of the face-warping quality criterium.
+  Fix the calculation of the face-warping quality criterion.
   modified routine:
     src/base/cs_mesh_quality.c
 

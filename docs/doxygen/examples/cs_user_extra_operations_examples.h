@@ -235,7 +235,7 @@
   on a box defined by two diagonally opposite points (the extrema in terms
   of coordinates).
 
-  The box criterium can be used as follows:
+  The box criterion can be used as follows:
   box[\f$x_{min}\f$, \f$y_{min}\f$, \f$z_{min}\f$, \f$x_{max}\f$, \f$y_{max}\f$, \f$z_{max}\f$].
 
   Here is the corresponding code:

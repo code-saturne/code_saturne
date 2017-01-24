@@ -91,7 +91,7 @@
   are not allowed.
 
   Set a a Dirichlet value on the three components of \f$ \vect{u} \f$
-  on the faces with the selection criterium '2 and x < 0.01' and set a Dirichlet
+  on the faces with the selection criterion '2 and x < 0.01' and set a Dirichlet
   to all the scalars \f$ \varia \f$.
 
   Turbulence example computed using equations valid for a pipe.
@@ -117,7 +117,7 @@
   Assign an inlet to boundary faces of group '3'.
 
   Set a a Dirichlet value on the three components of \f$ \vect{u} \f$
-  on the faces with the selection criterium '3' and set a Dirichlet
+  on the faces with the selection criterion '3' and set a Dirichlet
   to all the scalars \f$ \varia \f$.
 
   Turbulence example computed using turbulence intensity data.

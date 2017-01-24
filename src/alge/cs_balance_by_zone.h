@@ -46,61 +46,58 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Computes the different terms of the balance of a scalar which name is
- * given as argument, on a volumic zone defined by the criterium also given as
+ * given as argument, on a volumic zone defined by the criterion also given as
  * argument. The different contributions to the balance are printed in the
  * listing.
  *
- * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     selection_crit      zone selection criterion
  * \param[in]     scalar_name         scalar name
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_balance_by_zone(const char *selection_crit,
-                   const char *scalar_name);
+cs_balance_by_zone(const char  *selection_crit,
+                   const char  *scalar_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Computes one term of the head loss balance (pressure drop) on a
- * volumic zone defined by the criterium also given as argument.
+ * volumic zone defined by the criterion also given as argument.
  * The different contributions are printed in the listing.
  *
- * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     selection_crit      zone selection criterion
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_pressure_drop_by_zone(const char *selection_crit);
-
-/*----------------------------------------------------------------------------*/
+cs_pressure_drop_by_zone(const char  *selection_crit);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Computes the surface balance of a scalar which name is
- * given as argument, on a oriented surface area defined by the criterium also
- * given as argument. The flux is counted negatively in the given out normal direction.
+ * given as argument, on a oriented surface area defined by the criterion also
+ * given as argument. The flux is counted negatively in the given
+ * outwards-facing normal direction.
  *
  *
- * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     selection_crit      zone selection criterion
  * \param[in]     scalar_name         scalar name
  * \param[in]     normal              out normal surface
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_surface_balance(const char *selection_crit,
-                   const char *scalar_name,
-                   const cs_real_3_t normal);
-/*----------------------------------------------------------------------------*/
+cs_surface_balance(const char       *selection_crit,
+                   const char       *scalar_name,
+                   const cs_real_t   normal[3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get the face by face surface flux of a scalar which name is
- * given as argument, on a surface area defined by the criterium also given as
- * argument. Counted negativly through the normal.
+ * given as argument, on a surface area defined by the criterion also given as
+ * argument. Counted negatively through the normal.
  *
- *
- * \param[in]     selection_crit      zone selection criterium
+ * \param[in]     selection_crit      zone selection criterion
  * \param[in]     scalar_name         scalar name
  * \param[in]     normal              normal surface
  * \param[in,out] flux_b_faces        pointer surface flux boundary faces
@@ -111,14 +108,16 @@ cs_surface_balance(const char *selection_crit,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_flux_through_surface(const char *selection_crit,
-                        const char *scalar_name,
-                        const cs_real_3_t normal,
-                        cs_real_t *flux_b_faces,
-                        cs_real_t *flux_i_faces,
-                        int *nb_faces_sel,
-                        int *ni_faces_sel);
+cs_flux_through_surface(const char          *selection_crit,
+                        const char          *scalar_name,
+                        const cs_real_t      normal[3],
+                        cs_real_t          *flux_b_faces,
+                        cs_real_t          *flux_i_faces,
+                        cs_lnum_t          *nb_faces_sel,
+                        cs_lnum_t          *ni_faces_sel);
+
 /*----------------------------------------------------------------------------*/
+
 END_C_DECLS
 
 #endif /* __CS_BALANCE_BY_ZONE_H__ */
