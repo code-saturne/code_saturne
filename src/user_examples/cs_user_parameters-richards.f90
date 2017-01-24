@@ -56,9 +56,33 @@
 
 !===============================================================================
 
+!> \brief User subroutine for selection of specific physics module
+
+!> Define the use of a specific physics amongst the following:
+!>   - combustion with gas / coal / heavy fuel oil
+!>   - compressible flows
+!>   - electric arcs
+!>   - atmospheric modelling
+!>   - radiative transfer
+!>   - cooling towers modelling
+!>
+!>    Only one specific physics module can be activated at once.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ixmlpu        indicates if the XML file from the GUI is used
+!>                              (1 : yes, 0 : no)
+!______________________________________________________________________________!
+
 subroutine usppmo &
-!================
  ( ixmlpu )
+
+!===============================================================================
+! Module files
+!===============================================================================
 
 use paramx
 use entsor
@@ -90,9 +114,24 @@ end subroutine usppmo
 
 !===============================================================================
 
+!> \brief User subroutine for input of model selection parameters.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]      ixmlpu       indicates if the XML file from the GUI is used
+!>                              used (1: yes, 0: no
+!> \param[in, out] iturb        turbulence model
+!> \param[in, out] itherm       thermal model
+!> \param[in, out] iale         ale module
+!> \param[in, out] ivofmt       vof method
+!> \param[in, out] icavit       cavitation model
+!______________________________________________________________________________!
+
 subroutine usipph &
-!================
- ( ixmlpu, iturb , itherm, iale , icavit )
+ ( ixmlpu, iturb , itherm, iale , ivofmt, ivofmt, icavit )
 
 !===============================================================================
 
@@ -119,9 +158,17 @@ end subroutine usipph
 
 !===============================================================================
 
-subroutine usipsu &
-!================
+!> \brief User subroutine for the input of additional user parameters.
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nmodpp         number of active specific physics models
+!______________________________________________________________________________!
 
+subroutine usipsu &
  ( nmodpp )
 
 use paramx
@@ -167,8 +214,10 @@ type(var_cal_opt) :: vcopt
 
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
-! Set gradient computation to weighted (1) for high permeability ratio in tetrahedral meshes.
-! Only works with isotropic permeability and the standard least square gradient reconstruction.
+! Set gradient computation to weighted (1) for high permeability ratio in
+! tetrahedral meshes.
+! Only works with isotropic permeability and the
+! standard least square gradient reconstruction.
 if (darcy_anisotropic_permeability.eq.0) then
   vcopt%iwgrec = 1
   imrgra = 1
@@ -177,7 +226,8 @@ endif
 !< [richards_iwgrec]
 
 !< [richards_num_flow]
-! Set low criteria for gradient reconstruction to obtain a smooth velocity field
+! Set low criteria for gradient reconstruction to obtain a
+! smooth velocity field
 
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
@@ -211,7 +261,8 @@ endif
 
 !---------------
 
-! Set total number of iteration and reference time step (can be modified in cs_user_extra_operations.f90)
+! Set total number of iteration and reference time step
+! (can be modified in cs_user_extra_operations.f90)
 !< [richards_num_time]
 ntmabs = 500
 dtref  = 1.d-3
@@ -230,8 +281,20 @@ end subroutine usipsu
 
 !===============================================================================
 
+!> \brief User routine for definition of computation parameters dealing
+!>        with Darcy module
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+
 subroutine user_darcy_ini1
-!========================
+
+!===============================================================================
+! Module files
+!===============================================================================
 
 use ihmpre, only: iihmpr
 use entsor
@@ -309,3 +372,5 @@ call field_set_key_struct_gwf_soilwater_partition(ivarfl(isca(1)), &
 return
 
 end subroutine user_darcy_ini1
+
+!===============================================================================

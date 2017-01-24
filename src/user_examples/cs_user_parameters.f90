@@ -56,16 +56,7 @@
 
 !===============================================================================
 
-subroutine usppmo &
-!================
- ( ixmlpu )
-
-
-!===============================================================================
-! Purpose:
-! -------
-
-!> \brief User subroutine.
+!> \brief User subroutine for selection of specific physics module
 
 !> Define the use of a specific physics amongst the following:
 !>   - combustion with gas / coal / heavy fuel oil
@@ -77,7 +68,6 @@ subroutine usppmo &
 !>
 !>    Only one specific physics module can be activated at once.
 
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
@@ -86,6 +76,9 @@ subroutine usppmo &
 !> \param[in]     ixmlpu        indicates if the XML file from the GUI is used
 !>                              (1 : yes, 0 : no)
 !______________________________________________________________________________!
+
+subroutine usppmo &
+ ( ixmlpu )
 
 !===============================================================================
 ! Module files
@@ -439,29 +432,24 @@ end subroutine usppmo
 
 !===============================================================================
 
-
-subroutine usipph &
-!================
- ( ixmlpu, iturb , itherm, iale , icavit )
-
-!===============================================================================
-! Purpose:
-! --------
-
-!> \brief User subroutine for input of parameters.
+!> \brief User subroutine for input of model selection parameters.
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     ixmlpu        indicates if the XML file from the GUI is used
+!> \param[in]      ixmlpu       indicates if the XML file from the GUI is used
 !>                              used (1: yes, 0: no
 !> \param[in, out] iturb        turbulence model
 !> \param[in, out] itherm       thermal model
 !> \param[in, out] iale         ale module
+!> \param[in, out] ivofmt       vof method
 !> \param[in, out] icavit       cavitation model
 !______________________________________________________________________________!
+
+subroutine usipph &
+ ( ixmlpu, iturb , itherm, iale , ivofmt, ivofmt, icavit )
 
 !===============================================================================
 ! Module files
@@ -477,7 +465,7 @@ implicit none
 ! Arguments
 
 integer ixmlpu
-integer iturb, itherm, iale, icavit
+integer iturb, itherm, iale, ivofmt, ivofmt, icavit
 
 ! Local variables
 
@@ -578,16 +566,6 @@ end subroutine usipph
 
 !===============================================================================
 
-
-subroutine usipsu &
-!================
-
- ( nmodpp )
-
-!===============================================================================
-! Purpose:
-! -------
-
 !> \brief User subroutine for the input of additional user parameters.
 !
 !-------------------------------------------------------------------------------
@@ -597,6 +575,9 @@ subroutine usipsu &
 !______________________________________________________________________________!
 !> \param[in]     nmodpp         number of active specific physics models
 !______________________________________________________________________________!
+
+subroutine usipsu &
+ ( nmodpp )
 
 !===============================================================================
 ! Module files
@@ -1435,17 +1416,6 @@ end subroutine usipsu
 
 !===============================================================================
 
-
-subroutine usipes &
-!================
-
- ( nmodpp )
-
-
-!===============================================================================
-! Purpose:
-! --------
-
 !> \brief User subroutine for the input of additional user parameters for
 !>        input/output.
 
@@ -1456,6 +1426,9 @@ subroutine usipes &
 !______________________________________________________________________________!
 !> \param[in]     nmodpp       number of active specific physics models
 !______________________________________________________________________________!
+
+subroutine usipes &
+ ( nmodpp )
 
 !===============================================================================
 ! Module files
@@ -1569,14 +1542,6 @@ end subroutine usipes
 !===============================================================================
 
 
-subroutine usati1
-!================
-
-
-!===============================================================================
-! Purpose:
-! --------
-
 !> \brief Initialize non-standard calculation options for the atmospheric version.
 
 !-------------------------------------------------------------------------------
@@ -1584,6 +1549,8 @@ subroutine usati1
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
+
+subroutine usati1
 
 !===============================================================================
 ! Module files
@@ -1758,7 +1725,6 @@ end subroutine usati1
 
 subroutine cs_user_combustion
 
-
 !===============================================================================
 ! Module files
 !===============================================================================
@@ -1848,14 +1814,6 @@ end subroutine cs_user_combustion
 
 !===============================================================================
 
-subroutine uscfx1
-!================
-
-
-!===============================================================================
-! Purpose:
-! -------
-
 !> \brief User subroutine.
 
 !> Initialize non standard options for the compressible flow scheme such
@@ -1867,6 +1825,8 @@ subroutine uscfx1
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
+
+subroutine uscfx1
 
 !===============================================================================
 ! Module files
@@ -1938,13 +1898,6 @@ end subroutine uscfx1
 !===============================================================================
 
 
-subroutine uscfx2
-!================
-
-
-! Purpose:
-! -------
-
 !> \brief User subroutine.
 !>
 !> Set values for the reference volumic viscosity, the reference
@@ -1958,12 +1911,13 @@ subroutine uscfx2
 !> molecular viscosity is constant, its values being given in the user
 !> subroutine \ref usipsu .
 
-
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
+
+subroutine uscfx2
 
 !===============================================================================
 ! Module files
@@ -2052,14 +2006,6 @@ end subroutine uscfx2
 
 !===============================================================================
 
-
-subroutine cs_user_cooling_towers
-
-
-!===============================================================================
-! Purpose:
-! -------
-
 !> \brief Definition of cooling tower model and exchange zones
 
 !-------------------------------------------------------------------------------
@@ -2067,6 +2013,8 @@ subroutine cs_user_cooling_towers
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
+
+subroutine cs_user_cooling_towers
 
 !===============================================================================
 ! Module files
@@ -2119,20 +2067,16 @@ end subroutine cs_user_cooling_towers
 
 !===============================================================================
 
-subroutine user_darcy_ini1
-!========================
-
-!===============================================================================
-!  Purpose:
-!  --------
-
-!> \brief User routine for definition of computation parameters dealing with darcy module
+!> \brief User routine for definition of computation parameters dealing
+!>        with Darcy module
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
+
+subroutine user_darcy_ini1
 
 !===============================================================================
 ! Module files
