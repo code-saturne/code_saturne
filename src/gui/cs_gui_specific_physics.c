@@ -675,7 +675,7 @@ _get_PCI_type(int icha)
           ichoice = 2;
         else
           bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path2);
-        
+
         BFT_FREE(buff2);
       }
       BFT_FREE(path2);
