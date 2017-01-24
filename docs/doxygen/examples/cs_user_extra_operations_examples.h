@@ -226,9 +226,6 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-scalar_balance_by_zone.f90 example_1
-
-  And in the C function:
   \snippet cs_user_extra_operations-scalar_balance_by_zone.c example_1
 
   \subsection cs_user_extra_operations_examples_example_2 Example 2
@@ -243,9 +240,6 @@
 
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-scalar_balance_by_zone.f90 example_2
-
-  And in the C function:
   \snippet cs_user_extra_operations-scalar_balance_by_zone.c example_2
 
   \subsection cs_user_extra_operations_examples_example_3 Scalar balance through a surface
@@ -253,9 +247,6 @@
   This example computes the balance relative to a scalar named "scalar1".
   Here is the corresponding code:
 
-  \snippet cs_user_extra_operations-scalar_balance_by_zone.f90 example_3
-
-  And in the C function:
   \snippet cs_user_extra_operations-scalar_balance_by_zone.c example_3
 
 */
