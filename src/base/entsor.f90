@@ -107,21 +107,16 @@ module entsor
   !> \addtogroup userfile
   !> \{
 
-  !> name of the thermochemical data file.
+  !> name of the thermochemical data file for combustion.
   !>
-  !> The launch script is designed
-  !> to copy the user specified thermochemical data file in the temporary
-  !> execution directory under the name \em dp_thch, for \e Code_Saturne to open
-  !> it properly.  Should the value of \ref ficfpp be changed, the launch script
-  !> would have to be adapted.
-  !> Useful in case of gas or pulverised coal combustion.
+  !> Useful in case of gas or pulverized coal combustion.
   character(len=32), save :: ficfpp
 
   !> logical unit of the thermochemical data file.
-  !> Useful in case of gas or pulverised coal combustion or electric arcs;
+  !> Useful in case of gas or pulverized coal combustion or electric arcs;
   integer, save :: impfpp
 
-  !> perform Janaf (=1) or not (=0)
+  !> use Janaf (=1) or not (=0)
   integer, save :: indjon
 
   !> Input files for the atmospheric specific physics

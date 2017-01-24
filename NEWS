@@ -76,6 +76,10 @@ GUI changes
 - Add automatic transported scalar balance by zone and pressure drop by zone
   in the GUI.
 
+- Physical properties files for the electric modules now use a fixed name,
+  and are not handled by the GUI. If a local file is not present, the reference
+  file will be used.
+
 Architectural changes
 ---------------------
 

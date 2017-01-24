@@ -1,0 +1,16 @@
+1                    Number of reference trasnformer (0: the reference is not a transformer)
+List of transformers
+====================
+1                    Number of transformers
+Transfo 1
+10000.               Primary tension
+296.                 Spires count ratio
+61.     168.4        Complex impedances
+0                    Primary branch   (value 0= Triangle, =1 star, =2  mono)
+0                    Secondary branch (value 0= Triangle, =1 star, =2  mono/mono , =3 mono/tri)
+Electrodes definition
+=====================
+3                    Total number of electrodes
+7   1   1            Electrode color, transformer number, connection number
+8   1   2
+9   1   3

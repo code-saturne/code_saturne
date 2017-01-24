@@ -1,22 +1,22 @@
-# Fichier ASCII format libre version electrique Code_Saturne (c) EDF 2003
-# Les lignes de commentaires sont obligatoires (leur nombre est fixe)
+# Physial property definitions for Code_Saturne electric arcs module (c) EDF 2017
+# Comment lines must not be removed (their number is fixed)
 #
-#   Proprietes de l'Argon
+#   Argon properties
 #
-# Nb d'especes NGAZG et Nb de points NPO (le fichier contient NGAZG blocs de NPO lignes chacun)
+# Number of gas species NGAZG and Nb points NPO (file contains NGAZG blocks of NPO lines each)
 # NGAZG NPO 
    1   249
 #
-# Rayonnement : IXKABE = 0 -> XKABEL est lu mais pas utilise
-#               IXKABE = 1 -> XKABEL represente le coefficient d'absorption 
-#               IXKABE = 2 -> XKABEL est le terme source radiatif en W/m3
+# Radiation:    IXKABE = 0 -> XKABEL read but not used
+#               IXKABE = 1 -> XKABEL represents the absorption coefficient 
+#               IXKABE = 2 -> XKABEL is the radiative source term, in W/m3
 #
    0
 #
-#  Proprietes
+#  Properties
 #      T           H          ROEL       CPEL           SIGEL        VISEL        XLABEL        XKABEL
-#  Temperature  Enthalpie   Masse vol. Chaleur       Conductivite  Viscosite   Conductivite   Coefficient  
-#                           volumique  massique       electrique   dynamique     thermique   d'absorption  
+#  Temperature  Enthalpy    Density    Specific heat Electrical    Dynamic     Thermal        Absorption  
+#                                      massique      conductivity  viscosity   conductivity   coefficient 
 #       K         J/kg         kg/m3     J/(kg K)       Ohm/m        kg/(m s)     W/(m K)         -
 #
    300.00       14000.       1.6225       520.33      0.13214E-03  0.34224E-04  0.26712E-01   0.0000     

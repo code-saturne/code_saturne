@@ -27,8 +27,16 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------
  * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+#include <stdio.h>
+
+/*----------------------------------------------------------------------------
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
 /*=============================================================================
@@ -367,6 +375,23 @@ cs_base_get_pkglibdir(void);
 
 void
 cs_base_check_bool(bool *b);
+
+/*----------------------------------------------------------------------------
+ * Open a data file in read mode.
+ *
+ * If a file of the given name in the working directory is found, it
+ * will be opened. Otherwise, it will be searched for in the "data/thch"
+ * subdirectory of pkgdatadir.
+ *
+ * parameters:
+ *   base_name      <-- base file name
+ *
+ * returns:
+ *   pointer to opened file
+ *----------------------------------------------------------------------------*/
+
+FILE *
+cs_base_open_properties_data_file(const char  *base_name);
 
 /*----------------------------------------------------------------------------*/
 

@@ -390,24 +390,6 @@ class ElectricalModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getPropertiesDataFileName(self):
-        """
-        Get name for properties data (return None if not defined)i
-        """
-        f = self.node_gas.xmlGetString('data_file')
-        return f
-
-
-    @Variables.undoGlobal
-    def setPropertiesDataFileName(self, name):
-        """
-        Put name for properties data and load file for number gaz and radiative model
-        """
-        self.node_gas.xmlSetData('data_file', name)
-        self.load(name)
-
-
-    @Variables.noUndo
     def getScalingModel(self):
         """
         Get modele for "Electric variables" scaling

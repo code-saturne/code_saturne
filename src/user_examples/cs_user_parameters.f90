@@ -401,25 +401,7 @@ if (ixmlpu.eq.0) then
   ! Fuel combustion
 
   if (ippmod(icfuel).ge.0) then
-
     ficfpp = 'dp_FUE'
-
-  endif
-
-  ! Electric arcs
-
-  if (ippmod(ielarc).ge.1) then
-
-    ficfpp = 'dp_ELE'
-
-  endif
-
-  ! Joule effect
-
-  if (ippmod(ieljou).eq.1 .or. ippmod(ieljou).eq.2) then
-    ficfpp = 'dp_ELE'
-  else if (ippmod(ieljou).eq.3 .or. ippmod(ieljou).eq.4) then
-    ficfpp = 'dp_transfo'
   endif
 
   ! Atmospheric flows

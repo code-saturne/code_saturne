@@ -295,7 +295,7 @@ data/thch/dp_radiat_ADF8 \
 data/thch/dp_radiat_Planck_CO2 \
 data/thch/dp_radiat_Planck_H2O \
 data/thch/dp_radiat_wave \
-data/thch/dp_transfo \
+data/thch/dp_transformers \
 data/thch/JANAF \
 data/thch/meteo
 

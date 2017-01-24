@@ -104,7 +104,6 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.modelDirection.addItem(self.tr("Z"), "Z")
 
         # Connections
-        self.pushButtonPropertiesData.pressed.connect(self.__slotSearchPropertiesData)
         self.lineEditSRROM.textChanged[str].connect(self.slotSRROM)
         self.lineEditPower.textChanged[str].connect(self.slotPower)
         self.lineEditCurrent.textChanged[str].connect(self.slotCurrent)
@@ -150,13 +149,6 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         Initialize widget
         """
-        name = self.model.getPropertiesDataFileName()
-        if name != None:
-            self.labelPropertiesFile.setText(str(name))
-            self.pushButtonPropertiesData.setStyleSheet("background-color: green")
-        else:
-            self.pushButtonPropertiesData.setStyleSheet("background-color: red")
-
         srrom = self.model.getSRROM()
         self.lineEditSRROM.setText(str(srrom))
 
@@ -179,14 +171,6 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.modelJoule.setItem(str_model=str(model))
             power = self.model.getPower()
             self.lineEditPower.setText(str(power))
-
-            self.labelPropertiesData.hide()
-            self.pushButtonPropertiesData.hide()
-            self.labelPropertiesFile.hide()
-
-            self.pushButtonPropertiesData.hide()
-            self.labelPropertiesData.hide()
-            self.labelPropertiesFile.hide()
 
         elif self.model.getElectricalModel() == "arc":
             self.groupBoxJoule.hide()
@@ -212,29 +196,6 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
                     self.lineEditPlaneDefinitionD.setText(str(definition))
                     definition = self.model.getPlaneDefinition("epsilon")
                     self.lineEditEpsilon.setText(str(definition))
-
-
-    @pyqtSlot()
-    def __slotSearchPropertiesData(self):
-        """
-        Select a properties file of data for electric arc
-        """
-        data = self.case['data_path']
-        title = self.tr("Properties file of data.")
-        filetypes = self.tr("Properties data (*dp_ELE*);;All Files (*)")
-        file = QFileDialog.getOpenFileName(self, title, data, filetypes)[0]
-        file = str(file)
-        if not file:
-            return
-        file = os.path.basename(file)
-        if file not in os.listdir(data):
-            title = self.tr("WARNING")
-            msg   = self.tr("This selected file is not in the DATA directory")
-            QMessageBox.information(self, title, msg)
-        else:
-            self.labelPropertiesFile.setText(str(file))
-            self.model.setPropertiesDataFileName(file)
-            self.pushButtonPropertiesData.setStyleSheet("background-color: green")
 
 
     @pyqtSlot(str)

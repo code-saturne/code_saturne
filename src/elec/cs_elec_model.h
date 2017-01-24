@@ -110,7 +110,6 @@ typedef struct {
   cs_real_t   coejou;
   cs_real_t   elcou;
   cs_real_t   srrom;
-  char       *ficfpp;
 } cs_elec_option_t;
 
 /*============================================================================
@@ -255,7 +254,7 @@ cs_elec_physical_properties(const cs_mesh_t             *mesh,
                             const cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
- * compute source terms for energie
+ * compute source terms for energy
  *----------------------------------------------------------------------------*/
 
 void

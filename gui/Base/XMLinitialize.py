@@ -1303,6 +1303,17 @@ class XMLinit(Variables):
                 if node:
                     node.xmlRemoveNode()
 
+        XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
+        node_joule = XMLThermoPhysicalModelNode.xmlGetNode('joule_effect', 'model')
+        if node_joule:
+            if node_joule['model'] != 'off':
+                node_gas = XMLThermoPhysicalModelNode.xmlGetNode('gas_combustion',
+                                                                 'model')
+                if node_gas:
+                    node = node_gas.xmlGetNode('data_file')
+                    if node:
+                        node.xmlRemoveNode()
+
         # renames
 
         self.__renameSingle('thermophysical_models', 'heads_losses', 'head_losses')

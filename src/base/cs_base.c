@@ -60,7 +60,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "cs_prototypes.h"
+#include "cs_file.h"
 #include "cs_log.h"
 #include "cs_timer.h"
 
@@ -2002,6 +2002,51 @@ cs_base_check_bool(bool *b)
     if (*pb != 0 && *pb != 1)
       *b = true;
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Open a data file in read mode.
+ *
+ * If a file of the given name in the working directory is found, it
+ * will be opened. Otherwise, it will be searched for in the "data/thch"
+ * subdirectory of pkgdatadir.
+ *
+ * parameters:
+ *   base_name      <-- base file name
+ *
+ * returns:
+ *   pointer to opened file
+ *----------------------------------------------------------------------------*/
+
+FILE *
+cs_base_open_properties_data_file(const char  *base_name)
+{
+  FILE *f = NULL;
+
+  char *_f_name = NULL;
+  const char *file_name = base_name;
+
+  /* choose local file if present, default otherwise */
+
+  if (! cs_file_isreg(file_name)) {
+    const char *datadir = cs_base_get_pkgdatadir();
+    const char subdir[] = "/data/thch/";
+    BFT_MALLOC(_f_name,
+               strlen(datadir) + strlen(subdir) + strlen(base_name) + 1,
+               char);
+    sprintf(_f_name, "%s%s%s", datadir, subdir, base_name);
+    file_name = _f_name;
+  }
+
+  f = fopen(file_name, "r");
+
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, errno,
+              _("Error opening data file \"%s\""), file_name);
+
+  BFT_FREE(_f_name);
+
+  return f;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -46,14 +46,15 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_field.h"
+#include "cs_field_default.h"
+#include "cs_file.h"
 #include "cs_log.h"
 #include "cs_parall.h"
 #include "cs_math.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_location.h"
 #include "cs_time_step.h"
-#include "cs_field.h"
-#include "cs_field_default.h"
 #include "cs_parameters.h"
 #include "cs_field_pointer.h"
 #include "cs_gradient.h"
@@ -177,8 +178,6 @@ BEGIN_C_DECLS
         coefficient for scaling
   \var  cs_elec_option_t::elcou
         current in scaling plane
-  \var  cs_elec_option_t::ficfpp
-        data file name
 */
 
 /*! \struct cs_data_joule_effect_t
@@ -255,8 +254,7 @@ static cs_elec_option_t  _elec_option = {.ieljou = -1,
                                          .puisim = 0.,
                                          .coejou = 0.,
                                          .elcou = 0.,
-                                         .srrom = 0.,
-                                         .ficfpp = NULL};
+                                         .srrom = 0.};
 
 static cs_data_elec_t  _elec_properties = {.ngaz = 0,
                                            .npoint = 0,
@@ -622,7 +620,6 @@ cs_electrical_model_initialize(int  ielarc,
     _elec_option.restrike_point[i] = 0.;
   _elec_option.izreca    = NULL;
   _elec_option.elcou     = 0.;
-  _elec_option.ficfpp    = NULL;
   _elec_option.ielcor    = 0;
   _elec_option.couimp    = 0.;
   _elec_option.puisim    = 0.;
@@ -635,9 +632,6 @@ cs_electrical_model_initialize(int  ielarc,
   for (int i = 0; i < 3; i++)
     _elec_option.crit_reca[i] = 0.;
   _elec_option.crit_reca[4] = 0.0002;
-
-  BFT_MALLOC(_elec_option.ficfpp, 7, char);
-  strcpy(_elec_option.ficfpp, "dp_ELE");
 
   cs_glob_elec_option     = &_elec_option;
   cs_glob_elec_properties = &_elec_properties;
@@ -682,7 +676,6 @@ cs_electrical_model_finalize(int ielarc,
     BFT_FREE(_transformer);
   }
 
-  BFT_FREE(_elec_option.ficfpp);
   BFT_FREE(_elec_option.izreca);
 }
 
@@ -807,22 +800,20 @@ cs_electrical_properties_read(int  ielarc,
   if (ielarc <= 0 && ieljou < 3)
     return;
 
-  FILE *file;
   char str[LG_MAX];
-  file = fopen(cs_glob_elec_option->ficfpp, "r");
 
-  if (!file)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error opening file \"%s\""),
-              cs_glob_elec_option->ficfpp);
-
-  /* Position at the beginning of the file */
-  fseek(file, 0, SEEK_SET);
-
-  int nb_line_tot = 0;
-
-  /* read file for electric arc properties */
   if (ielarc > 0) {
+
+    /* read local file for electric properties if present,
+       default otherwise */
+
+    FILE *file = cs_base_open_properties_data_file("dp_ELE");
+
+    /* Position at the beginning of the file */
+    fseek(file, 0, SEEK_SET);
+
+    int nb_line_tot = 0;
+
     int iesp = 0;
     int it = 0;
 
@@ -889,11 +880,15 @@ cs_electrical_properties_read(int  ielarc,
         }
       }
     }
+
+    fclose(file);
   }
 
 #if 0
   for (int it = 0; it < cs_glob_elec_properties->npoint; it++)
-    bft_printf("read ficfpp %15.8E %15.8E %15.8E %15.8E %15.8E %15.8E %15.8E %15.8E\n",
+    bft_printf("read dp_ELE "
+               "%15.8E %15.8E %15.8E %15.8E "
+               "%15.8E %15.8E %15.8E %15.8E\n",
                _elec_properties.th[it],
                _elec_properties.ehgaz[it],
                _elec_properties.rhoel[it],
@@ -904,8 +899,18 @@ cs_electrical_properties_read(int  ielarc,
                _elec_properties.xkabel[it]);
 #endif
 
-  /* read file for joule effect */
   if (ieljou >= 3) {
+
+    /* read local file for Joule effect if present,
+       default otherwise */
+
+    FILE *file = cs_base_open_properties_data_file("dp_transformers");
+
+    /* Position at the beginning of the file */
+    fseek(file, 0, SEEK_SET);
+
+    int nb_line_tot = 0;
+
     int iesp = 0;
     int it = 0;
     while (fgets(str, LG_MAX, file) != NULL) {
@@ -953,8 +958,7 @@ cs_electrical_properties_read(int  ielarc,
       if (nb_line_tot < 7 + cs_glob_transformer->nbtrf * 6)
         continue;
 
-      if (nb_line_tot == 7 + cs_glob_transformer->nbtrf * 6)
-      {
+      if (nb_line_tot == 7 + cs_glob_transformer->nbtrf * 6) {
         sscanf(str, "%i", &(_transformer->nbelec));
         BFT_MALLOC(_transformer->ielecc,  cs_glob_transformer->nbelec, int);
         BFT_MALLOC(_transformer->ielect,  cs_glob_transformer->nbelec, int);
@@ -970,9 +974,9 @@ cs_electrical_properties_read(int  ielarc,
         iesp++;
       }
     }
-  }
 
-  fclose(file);
+    fclose(file);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1066,7 +1070,7 @@ cs_elec_convert_h_t(int        mode,
   }
   else
     bft_error(__FILE__, __LINE__, 0,
-              _("electric module : \n"
+              _("electric module:\n"
                 "bad value for mode (integer equal to -1 or 1 : %i here.\n"),
               mode);
 }
@@ -1417,6 +1421,7 @@ cs_compute_electric_field(const cs_mesh_t  *mesh,
   /* ----------------------------------------------------- */
   /* first call : J, E => J.E                              */
   /* ----------------------------------------------------- */
+
   if (call_id == 1) {
     /* compute grad(potR) */
 
@@ -1468,9 +1473,9 @@ cs_compute_electric_field(const cs_mesh_t  *mesh,
 
     /* compute min max for E and J */
     if (modntl == 0) {
-      bft_printf("-----------------------------------------                    \n");
-      bft_printf("   Variable         Minimum       Maximum                    \n");
-      bft_printf("-----------------------------------------                    \n");
+      bft_printf("-----------------------------------------\n"
+                 "   Variable         Minimum       Maximum\n"
+                 "-----------------------------------------\n");
 
       /* Grad PotR = -E */
       double vrmin, vrmax;
@@ -1514,7 +1519,7 @@ cs_compute_electric_field(const cs_mesh_t  *mesh,
         else if (i == 2)
           bft_printf("v  Cour_ReZ    %12.5E  %12.5E\n", vrmin, vrmax);
       }
-      bft_printf("-----------------------------------------                    \n");
+      bft_printf("-----------------------------------------\n");
     }
 
     if (cs_glob_elec_option->ieljou == 2 || cs_glob_elec_option->ieljou == 4) {
@@ -1613,6 +1618,7 @@ cs_compute_electric_field(const cs_mesh_t  *mesh,
   /* ----------------------------------------------------- */
   /* second call : A, B, JXB                               */
   /* ----------------------------------------------------- */
+
   else if (call_id == 2) {
 
     cs_real_t *Bx, *By, *Bz;
@@ -1723,9 +1729,8 @@ cs_compute_electric_field(const cs_mesh_t  *mesh,
   BFT_FREE(grad);
 }
 
-
 /*----------------------------------------------------------------------------
- * compute source terms for energie
+ * compute source terms for energy
  *----------------------------------------------------------------------------*/
 
 void
@@ -1776,7 +1781,8 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
         cs_parall_min(1, CS_DOUBLE, &valmin);
         cs_parall_max(1, CS_DOUBLE, &valmax);
 
-        bft_printf(" source terms for H min= %14.5E, max= %14.5E\n", valmin, valmax);
+        bft_printf(" source terms for H min= %14.5E, max= %14.5E\n",
+                   valmin, valmax);
       }
     }
   }
