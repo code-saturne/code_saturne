@@ -373,6 +373,27 @@ cs_volume_zone_n_zones(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return number of volume zones which may vary in time.
+ *
+ * \return  number of zones which may vary in time
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_volume_zone_n_zones_time_varying(void)
+{
+  int count = 0;
+
+  for (int i = 0; i < _n_zones; i++) {
+    if (_zones[i]->time_varying)
+      count += 1;
+  }
+
+  return count;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Update association of volume zones with a mesh.
  *
  * For time-varying zones, the associated mesh location is updated.

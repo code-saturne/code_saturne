@@ -62,6 +62,7 @@
 #include "cs_selector.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -246,7 +247,7 @@ typedef struct {
   int            active;        /* -1 if blocked at this stage,
                                    0 if no output at current time step,
                                    1 in case of output */
-  int            n_meta;        /* Time step number for last output of
+  int            n_meta[2];     /* Time step number for last output of
                                    metadata if needed */
   int            n_last;        /* Time step number for the last
                                    activation (-1 before first output) */
@@ -2220,43 +2221,84 @@ static void
 _cs_post_write_zone_info(const cs_post_mesh_t  *post_mesh,
                          const cs_time_step_t  *ts)
 {
-  if (post_mesh->id != CS_POST_MESH_BOUNDARY)
-    return;
+  if (post_mesh->id == CS_POST_MESH_VOLUME) {
 
-  if (cs_boundary_zone_n_zones() < 1)
-    return;
+    if (cs_volume_zone_n_zones() < 2)
+      return;
 
-  const int *zone_id = cs_boundary_zone_face_zone_id();
+    const int *zone_id = cs_volume_zone_cell_zone_id();
 
-  if (cs_boundary_zone_n_zones_time_varying() > 0)
-    cs_post_write_var(post_mesh->id,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      "boundary zone id",
-                      1,       /* var_dim */
-                      true,    /* interlace */
-                      true,    /* use_parent */
-                      CS_POST_TYPE_int,
-                      NULL,
-                      NULL,
-                      zone_id,
-                      ts);
-  else {
-    int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
-    for (int i = 0; i < post_mesh->n_writers; i++) {
-      cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
-      if (writer->active == 1 && writer->n_meta < nt_cur) {
-        cs_post_write_var(post_mesh->id,
-                          writer->id,
-                          "boundary zone id",
-                          1,       /* var_dim */
-                          true,    /* interlace */
-                          true,    /* use_parent */
-                          CS_POST_TYPE_int,
-                          NULL,
-                          NULL,
-                          zone_id,
-                          NULL);
-        writer->n_meta = nt_cur;
+    if (cs_volume_zone_n_zones_time_varying() > 0)
+      cs_post_write_var(post_mesh->id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        "volume zone id",
+                        1,       /* var_dim */
+                        true,    /* interlace */
+                        true,    /* use_parent */
+                        CS_POST_TYPE_int,
+                        zone_id,
+                        NULL,
+                        NULL,
+                        ts);
+    else {
+      int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+      for (int i = 0; i < post_mesh->n_writers; i++) {
+        cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
+        if (writer->active == 1 && writer->n_meta[0] < nt_cur) {
+          cs_post_write_var(post_mesh->id,
+                            writer->id,
+                            "volume zone id",
+                            1,       /* var_dim */
+                            true,    /* interlace */
+                            true,    /* use_parent */
+                            CS_POST_TYPE_int,
+                            zone_id,
+                            NULL,
+                            NULL,
+                            NULL);
+          writer->n_meta[0] = nt_cur;
+        }
+      }
+    }
+  }
+
+  else if (post_mesh->id == CS_POST_MESH_BOUNDARY) {
+
+    if (cs_boundary_zone_n_zones() < 2)
+      return;
+
+    const int *zone_id = cs_boundary_zone_face_zone_id();
+
+    if (cs_boundary_zone_n_zones_time_varying() > 0)
+      cs_post_write_var(post_mesh->id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        "boundary zone id",
+                        1,       /* var_dim */
+                        true,    /* interlace */
+                        true,    /* use_parent */
+                        CS_POST_TYPE_int,
+                        NULL,
+                        NULL,
+                        zone_id,
+                        ts);
+    else {
+      int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+      for (int i = 0; i < post_mesh->n_writers; i++) {
+        cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
+        if (writer->active == 1 && writer->n_meta[1] < nt_cur) {
+          cs_post_write_var(post_mesh->id,
+                            writer->id,
+                            "boundary zone id",
+                            1,       /* var_dim */
+                            true,    /* interlace */
+                            true,    /* use_parent */
+                            CS_POST_TYPE_int,
+                            NULL,
+                            NULL,
+                            zone_id,
+                            NULL);
+          writer->n_meta[1] = nt_cur;
+        }
       }
     }
   }
@@ -3288,7 +3330,8 @@ cs_post_define_writer(int                     writer_id,
   w->frequency_n = frequency_n;
   w->frequency_t = frequency_t;
   w->active = 0;
-  w->n_meta = -2;
+  w->n_meta[0] = -2;
+  w->n_meta[1] = -2;
   w->n_last = -2;
   w->t_last = cs_glob_time_step->t_prev;
   w->ot = NULL;
