@@ -176,6 +176,23 @@ cs_field_interpolate(cs_field_t              *f,
                      cs_real_t               *val);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief find local extrema of a given scalar field at each cell
+ *
+ * \param[in]     field id    The scalar field id
+ * \param[in]     halo_type   Halo type
+ * \param[inout]  local_max   The local maximum value
+ * \param[inout]  local_min   The local minimum value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_local_extrema_scalar(const int        f_id,
+                              cs_halo_type_t   halo_type,
+                              cs_real_t       *local_max,
+                              cs_real_t       *local_min);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -52,6 +52,29 @@ enum {X, Y, Z};
  * Type definition
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * NVD/TVD Advection Scheme
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_NVD_GAMMA      = 0,      /* GAMMA            */
+  CS_NVD_SMART      = 1,      /* SMART            */
+  CS_NVD_CUBISTA    = 2,      /* CUBISTA          */
+  CS_NVD_SUPERBEE   = 3,      /* SUPERBEE         */
+  CS_NVD_MUSCL      = 4,      /* MUSCL            */
+  CS_NVD_MINMOD     = 5,      /* MINMOD           */
+  CS_NVD_CLAM       = 6,      /* CLAM             */
+  CS_NVD_STOIC      = 7,      /* STOIC            */
+  CS_NVD_OSHER      = 8,      /* OSHER            */
+  CS_NVD_WASEB      = 9,      /* WASEB            */
+  CS_NVD_VOF_HRIC   = 10,     /* M-HRIC for VOF   */
+  CS_NVD_VOF_CICSAM = 11,     /* M-CICSAM for VOF */
+  CS_NVD_VOF_STACS  = 12,     /* STACS for VOF    */
+  CS_NVD_N_TYPES    = 13      /* number of NVD schemes */
+
+} cs_nvd_type_t;
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -59,86 +82,6 @@ enum {X, Y, Z};
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute different types of "limiter function" according to the method
-    proposed by Roe-Sweby (Second Order Upwind TVD schemes)
- *
- * \param[in]     limiter      choice of the limiter function
- * \param[in]     r            r = downstream_slope/face_slope
-                               in a structured 1D mesh, for face "i+1/2" and
-                               for positive mass flux, it could represent:
-                               (Y_{i+2}-Y_{i+1})/(Y_{i+1}-Y_{i})
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t cs_limiter_function(const int   limiter,
-                              cs_real_t   r);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add convective fluxes using limiter function found in the Roe-Sweby
- *        theory for the Lax Wendroff scheme (subtracting the mass accumulation
- *        from them) to fluxes at face ij.
- *
- * \param[in]     iconvp       convection flag
- * \param[in]     thetap       weighting coefficient for the theta-schema
- * \param[in]     imasac       take mass accumulation into account?
- * \param[in]     limiter      choice of the limiter function
- * \param[in]     lambdaij
- * \param[in]     rij          rij downstream_slope/face_slope
- *                             in a structured 1D mesh, for face "i+1/2" and
- *                             for positive mass flux, it could represent:
- *                             (Y_{i+2}-Y_{i+1})/(Y_{i+1}-Y_{i})
- * \param[in]     pi           value at cell i
- * \param[in]     pj           value at cell j
- * \param[in]     pifri        contribution of i to flux from i to j
- * \param[in]     pifrj        contribution of i to flux from j to i
- * \param[in]     pjfri        contribution of j to flux from i to j
- * \param[in]     pjfrj        contribution of j to flux from j to i
- * \param[in]     i_massflux   mass flux at face ij
- * \param[in,out] fluxij       fluxes at face ij
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_i_conv_flux_lax_wendroff(const int         iconvp,
-                            const cs_real_t   thetap,
-                            const int         imasac,
-                            const int         limiter,
-                            const cs_real_t   lambdaij,
-                            const cs_real_t   rij,
-                            const cs_real_t   pi,
-                            const cs_real_t   pj,
-                            const cs_real_t   pifri,
-                            const cs_real_t   pifrj,
-                            const cs_real_t   pjfri,
-                            const cs_real_t   pjfrj,
-                            const cs_real_t   i_massflux,
-                            cs_real_2_t       fluxij)
-{
-  cs_real_t flui, fluj;
-  cs_real_t phi;
-  phi = cs_limiter_function(limiter, rij);
-
-  flui = 0.5*(i_massflux + fabs(i_massflux));
-  fluj = 0.5*(i_massflux - fabs(i_massflux));
-
-  // FIXME not homogeneous, divide by rho
-  fluxij[0] += iconvp * (thetap * (flui*pifri + fluj*pjfri
-                                + lambdaij * phi*0.5*(  CS_ABS(i_massflux)
-                                                      - lambdaij*i_massflux
-                                                                *i_massflux)
-                                           * (pj - pi))
-      *                - imasac * i_massflux * pi);
-  fluxij[1] += iconvp * (thetap * (flui*pifrj + fluj*pjfrj
-                                + lambdaij * phi*0.5*(  CS_ABS(i_massflux)
-                                                      - lambdaij*i_massflux
-                                                                *i_massflux)
-                                           * (pj-pi))
-                       - imasac * i_massflux * pj);
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -743,34 +686,6 @@ cs_centered_f_val(const double     pnd,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Prepare value at face ij by using a centered limited scheme.
-          following the Roe-Sweby theory
- *
- * \param[in]     pnd      weight
- * \param[in]     phi      limiter function that damps the flux fluctuations
-                           in second order schemes causing unphysical oscillations
-                           and violations of maximum principle in case
-                           of discontinuous solutions
- * \param[in]     p        value at cell
- * \param[in]     pip      reconstructed value at cell i
- * \param[in]     pjp      reconstructed value at cell j
- * \param[out]    pf       face value
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_centered_f_val_limiter(const double     pnd,
-                          cs_real_t        phi,
-                          const cs_real_t  p,
-                          const cs_real_t  pip,
-                          const cs_real_t  pjp,
-                          cs_real_t       *pf)
-{
-  *pf = p + phi * (pnd * pip + (1.-pnd) * pjp - p);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Prepare value at face ij by using a centered scheme.
  *
  * \param[in]     pnd      weight
@@ -837,42 +752,6 @@ cs_solu_f_val(const cs_real_3_t  cell_cen,
   df[2] = i_face_cog[2] - cell_cen[2];
 
   *pf = p + _CS_DOT_PRODUCT(df, grad);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Prepare LIMITED value at face ij by using a Second Order
- *        Linear Upwind scheme.
- *
- * \param[in]     cell_cen     center of gravity coordinates of cell
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     grad         gradient upwind at cell
- * \param[in]     phi          limiter function that damps the flux fluctuations
-                               in second order schemes causing unphysical oscillations
-                               and violations of maximum principle in case
-                               of discontinuous solutions
- * \param[in]     p            value at cell
- * \param[out]    pf           face value
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_solu_f_val_limiter(const cs_real_3_t  cell_cen,
-                      const cs_real_3_t  i_face_cog,
-                      const cs_real_3_t  grad,
-                      const cs_real_t    phi,
-                      const cs_real_t    p,
-                      cs_real_t         *pf)
-{
-  cs_real_3_t df;
-
-  df[0] = i_face_cog[0] - cell_cen[0];
-  df[1] = i_face_cog[1] - cell_cen[1];
-  df[2] = i_face_cog[2] - cell_cen[2];
-
-  // FIXME not coherent with center.
-
-  *pf = p + phi*_CS_DOT_PRODUCT(df, grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2312,118 +2191,6 @@ cs_i_cd_unsteady(const int          ircflp,
   cs_blend_f_val(blencp,
                  pj,
                  pjf);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Handle preparation of internal face values for the fluxes computation
- * in case of a LIMITED unsteady algorithm
- * LIMITED meaning 'inspired' from the Roe-Sweby limiter theory where the second
-   order part of the numerical flux (flux fluctuations in space) is limited in
-   amplitude by a limiter function which depends upon an upwind slope rate
-
- *
- * \param[in]     ircflp       recontruction flag
- * \param[in]     ischcp       second order convection scheme flag
- * \param[in]     weight       geometrical weight
- * \param[in]     cell_ceni    center of gravity coordinates of cell i
- * \param[in]     cell_cenj    center of gravity coordinates of cell i
- * \param[in]     i_face_cog   center of gravity coordinates of face ij
- * \param[in]     phi_rij      limiter function that damps the flux fluctuations
-                               in second order schemes causing unphysical oscillations
-                               and violations of maximum principle in case
-                               of discontinuous solutions
- * \param[in]     dijpf        distance I'J'
- * \param[in]     gradi        gradient at cell i
- * \param[in]     gradj        gradient at cell j
- * \param[in]     gradupi      upwind gradient at cell i
- * \param[in]     gradupj      upwind gradient at cell j
- * \param[in]     pi           value at cell i
- * \param[in]     pj           value at cell j
- * \param[out]    pif          contribution of i to flux from i to j
- * \param[out]    pjf          contribution of j to flux from i to j
- * \param[out]    pip          reconstructed value at cell i
- * \param[out]    pjp          reconstructed value at cell j
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_i_cd_unsteady_limiter(const int          ircflp,
-                         const int          ischcp,
-                         const cs_real_t    weight,
-                         const cs_real_3_t  cell_ceni,
-                         const cs_real_3_t  cell_cenj,
-                         const cs_real_3_t  i_face_cog,
-                               cs_real_t    phi_rij,
-                         const cs_real_3_t  dijpf,
-                         const cs_real_3_t  gradi,
-                         const cs_real_3_t  gradj,
-                         const cs_real_3_t  gradupi,
-                         const cs_real_3_t  gradupj,
-                         const cs_real_t    pi,
-                         const cs_real_t    pj,
-                         cs_real_t         *pif,
-                         cs_real_t         *pjf,
-                         cs_real_t         *pip,
-                         cs_real_t         *pjp)
-{
-  cs_real_t recoi, recoj;
-
-  cs_i_compute_quantities(ircflp,
-                          weight,
-                          cell_ceni,
-                          cell_cenj,
-                          i_face_cog,
-                          dijpf,
-                          gradi,
-                          gradj,
-                          pi,
-                          pj,
-                          &recoi,
-                          &recoj,
-                          pip,
-                          pjp);
-
-  /* Only Standard SOLU or Centered scheme is allowed (not original SOLU) */
-  assert(ischcp > 0);
-
-  if (ischcp == 1) {
-
-    /* Centered
-       --------*/
-
-    cs_centered_f_val_limiter(weight,
-                              phi_rij,
-                              pi,
-                              *pip,
-                              *pjp,
-                              pif);
-    cs_centered_f_val_limiter(weight,
-                              phi_rij,
-                              pj,
-                              *pip,
-                              *pjp,
-                              pjf);
-
-  } else {
-
-    /* SOLU
-       ----*/
-
-    cs_solu_f_val_limiter(cell_ceni,
-                          i_face_cog,
-                          gradupi,
-                          phi_rij,
-                          pi,
-                          pif);
-    cs_solu_f_val_limiter(cell_cenj,
-                          i_face_cog,
-                          gradupj,
-                          phi_rij,
-                          pj,
-                          pjf);
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/

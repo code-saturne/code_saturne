@@ -5,6 +5,11 @@ Trunk (unreleased)
 User changes
 ------------
 
+- Add and reorganize convection schemes (especially for VOF method)
+  * reorganize Roe-Sweby limiters.
+  * add Compressive convection schemes for accurate modeling of free surface
+    with VOF method.
+
 - Add a Volume Of Fluid algorithm:
   * partly merge cavitation algorithm with VOF algorithm.
 

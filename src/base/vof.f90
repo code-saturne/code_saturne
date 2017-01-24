@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file vof.f90
-!> Module for Volume-in-Fluid modeling
+!> Module for Volume-Of-Fluid method
 
 module vof
 

@@ -270,6 +270,88 @@ _field_interpolate_by_gradient(cs_field_t         *f,
   BFT_FREE(grad);
 }
 
+/*----------------------------------------------------------------------------
+ * For each mesh cell this function finds the local extrema of a
+ * scalar field.
+ *
+ * parameters:
+ *   pvar            <-- scalar values
+ *   halo_type       <-- halo type
+ *   local_max       --> local maximum value
+ *   local_min       --> local minimum value
+ *----------------------------------------------------------------------------*/
+
+static void
+_local_extrema_scalar(cs_real_t *restrict pvar,
+                      cs_halo_type_t      halo_type,
+                      cs_real_t          *local_max,
+                      cs_real_t          *local_min)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+
+  const cs_lnum_t *restrict cell_cells_idx
+    = (const cs_lnum_t *restrict) m->cell_cells_idx;
+  const cs_lnum_t *restrict cell_cells_lst
+    = (const cs_lnum_t *restrict) m->cell_cells_lst;
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+
+# pragma omp parallel for
+  for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
+    local_max[ii] = pvar[ii];
+    local_min[ii] = pvar[ii];
+  }
+
+  /* Contribution from interior faces */
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+          face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+          face_id++) {
+
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
+
+        cs_real_t pi = pvar[ii];
+        cs_real_t pj = pvar[jj];
+
+        local_max[ii] = CS_MAX(local_max[ii], pj);
+        local_max[jj] = CS_MAX(local_max[jj], pi);
+        local_min[ii] = CS_MIN(local_min[ii], pj);
+        local_min[jj] = CS_MIN(local_min[jj], pi);
+      }
+    }
+  }
+
+  /* Contribution from extended neighborhood */
+
+  if (halo_type == CS_HALO_EXTENDED) {
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
+      for (cs_lnum_t cidx = cell_cells_idx[ii];
+           cidx < cell_cells_idx[ii + 1];
+           cidx++) {
+        cs_lnum_t jj = cell_cells_lst[cidx];
+
+        cs_real_t pi = pvar[ii];
+        cs_real_t pj = pvar[jj];
+
+        local_max[ii] = CS_MAX(local_max[ii], pj);
+        local_max[jj] = CS_MAX(local_max[jj], pi);
+        local_min[ii] = CS_MIN(local_min[ii], pj);
+        local_min[jj] = CS_MIN(local_min[jj], pi);
+      }
+    }
+  } /* End for extended neighborhood */
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -761,6 +843,50 @@ cs_field_interpolate(cs_field_t              *f,
   default:
     assert(0);
     break;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief find local extrema of a given scalar field at each cell
+ *
+ * \param[in]     field id    The scalar field id
+ * \param[in]     halo_type   Halo type
+ * \param[inout]  local_max   The local maximum value
+ * \param[inout]  local_min   The local minimum value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_local_extrema_scalar(const int        f_id,
+                              cs_halo_type_t   halo_type,
+                              cs_real_t       *local_max,
+                              cs_real_t       *local_min)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  cs_field_t *f = cs_field_by_id(f_id);
+  const cs_real_t *restrict pvar = f->val;
+
+  _local_extrema_scalar(pvar,
+                        halo_type,
+                        local_max,
+                        local_min);
+
+  /* Initialisation of local extrema */
+
+  int key_scamax_id = cs_field_key_id("max_scalar");
+  int key_scamin_id = cs_field_key_id("min_scalar");
+
+  cs_real_t scalar_max = cs_field_get_key_double(f, key_scamax_id);
+  cs_real_t scalar_min = cs_field_get_key_double(f, key_scamin_id);
+
+  /* Bounded by the global extrema */
+# pragma omp parallel for
+  for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
+    local_max[ii] = CS_MIN(local_max[ii], scalar_max);
+    local_min[ii] = CS_MAX(local_min[ii], scalar_min);
   }
 }
 

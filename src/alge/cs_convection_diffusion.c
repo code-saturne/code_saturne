@@ -180,6 +180,96 @@ static cs_real_t  *_get_v_slope_test(int                       f_id,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute the local cell Courant number as the maximum of all cell face based
+ * Courant number at each cell.
+ *
+ * parameters:
+ *   f_id        <-- field id (or -1)
+ *   courant     --> cell Courant number
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cell_courant_number(const int  f_id,
+                     cs_real_t *courant)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_real_t *restrict vol
+    = (cs_real_t *restrict)fvq->cell_vol;
+
+  cs_field_t *f = cs_field_by_id(f_id);
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  const cs_real_t *restrict i_massflux
+    = cs_field_by_id( cs_field_get_key_int(f, kimasf) )->val;
+  const cs_real_t *restrict b_massflux
+    = cs_field_by_id( cs_field_get_key_int(f, kbmasf) )->val;
+
+  const cs_real_t *restrict dt
+    = (const cs_real_t *restrict)CS_F_(dt)->val;
+
+  /* Initialisation */
+
+# pragma omp parallel for
+  for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
+    courant[ii] = 0.;
+  }
+
+  /* ---> Contribution from interior faces */
+
+  cs_real_t cnt;
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+          face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+          face_id++) {
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
+
+        cnt = CS_ABS(i_massflux[face_id])*dt[ii]/vol[ii];
+        courant[ii] = CS_MAX(courant[ii], cnt);
+
+        cnt = CS_ABS(i_massflux[face_id])*dt[jj]/vol[jj];
+        courant[jj] = CS_MAX(courant[jj], cnt);
+      }
+    }
+  }
+
+  /* ---> Contribution from boundary faces */
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+          face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+          face_id++) {
+        cs_lnum_t ii = b_face_cells[face_id];
+
+        cnt = CS_ABS(b_massflux[face_id])*dt[ii]/vol[ii];
+        courant[ii] = CS_MAX(courant[ii], cnt);
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Return the denominator to build the Min/max limiter.
  *
  * parameters:
@@ -542,152 +632,327 @@ _max_limiter_num(const int           f_id,
   }
 }
 
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the minmod limiter function
+/*----------------------------------------------------------------------------
+ * Compute the normalised face scalar using the specified NVD scheme.
  *
- * \param[in]     r            r=downstream_slope/face_slope
-                               in a structured 1D mesh, for face "i+1/2" and
-                               for positive mass flux, it could represent:
-                               (Y_{i+2}-Y_{i+1})/(Y_{i+1}-Y_{i})
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_real_t cs_limiter_minmod(cs_real_t r)
-{
-  cs_real_t phi = CS_MAX(0.,CS_MIN(1,r));
-  return phi;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the Van-Leer limiter function
+ * parameters:
+ *   scheme      <--  choice of the NVD scheme
+ *   nvf_p_c     <--  normalised property of the current cell
+ *   nvf_r_f     <--  normalised distance from the face
+ *   nvf_r_c     <--  normalised distance from the current cell
  *
- * \param[in]     r             = downstream_slope/face_slope
-                               in a structured 1D mesh, for face "i+1/2" and
-                               for positive mass flux, it could represent:
-                               (Y_{i+2}-Y_{i+1})/(Y_{i+1}-Y_{i})
- */
-/*----------------------------------------------------------------------------*/
-
-static
-cs_real_t cs_limiter_van_leer(cs_real_t  r)
-{
-  cs_real_t phi;
-  phi = (r + CS_ABS(r)) / (1. + r);
-  return phi;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the Van-Albada limiter function
- *
- * \param[in]     r            r = downstream_slope/face_slope
-                               in a structured 1D mesh, for face "i+1/2" and
-                               for positive mass flux, it could represent:
-                               (Y_{i+2}-Y_{i+1})/(Y_{i+1}-Y_{i})
- */
-/*----------------------------------------------------------------------------*/
-
-static
-cs_real_t cs_limiter_van_albada(cs_real_t  r)
-{
-  cs_real_t phi;
-  phi = CS_MAX(0., (r * (1. + r)) / (1. + pow(r, 2.)));
-  return phi;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the Van-Leer limiter function
- *
- * \param[in]     r            r = downstream_slope/face_slope
-                               in a structured 1D mesh, for face "i+1/2" and
-                               for positive mass flux, it could represent:
-                               (Y_{i+2}-Y_{i+1})/(Y_{i+1}-Y_{i})
- */
-/*----------------------------------------------------------------------------*/
-
-static
-cs_real_t cs_limiter_superbee(cs_real_t  r)
-{
-  cs_real_t phi;
-  phi = CS_MAX(0., CS_MAX( CS_MIN(2.*r,1.), CS_MIN(2., r)));
-  return phi;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute different types of "limiter function" according to the method
-    proposed by Roe-Sweby (Second Order Upwind TVD schemes)
- *
- * \param[in]     limiter      choice of the limiter function
- * \param[in]     r            r = downstream_slope/face_slope
-                               in a structured 1D mesh, for face "i+1/2" and
-                               for positive mass flux, it could represent:
-                               (Y_{i+2}-Y_{i+1})/(Y_{i+1}-Y_{i})
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t cs_limiter_function(const int   limiter,
-                              cs_real_t   r)
-{
-
-  cs_real_t phi;
-
-  /* minmod limiter */
-  if (limiter == 0) {
-    phi = cs_limiter_minmod(r);
-  }
-  /* Van-Leer limiter */
-  else if (limiter == 1) {
-    phi = cs_limiter_van_leer(r);
-  }
-  /* Van-Albada limiter */
-  else if (limiter == 2) {
-    phi = cs_limiter_van_albada(r);
-  }
-  /* Superbee limiter */
-  else if (limiter == 3) {
-    phi = cs_limiter_superbee(r);
-  }
-  /* Lax Wendroff */
-  else {
-    phi = 1.;
-  }
-
-  return phi;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute The Upstream "Y_{U}" Value of a scalar in order to use it in new limiters
-    or slope tests.
- *
- * \param[in]     p_c                  current  point value for the face
- * \param[in]     c_vol                current  volume (related to current cell)
- * \param[in]     surf                 surface of the studied face
- * \param[in]     normal               surf*normal vector of the face
- * \param[in]     gradup               upwind gradient of the current point
- */
-/*----------------------------------------------------------------------------*/
+ * returns normalised face scalar value.
+ *----------------------------------------------------------------------------*/
 
 static cs_real_t
-cs_upstream_val(const cs_real_t                     p_c,
-                const cs_real_t                     c_vol,
-                const cs_real_t                     surf,
-                const cs_real_3_t                   normal,
-                const cs_real_3_t                   gradup)
+_nvd_scheme_scalar(const cs_nvd_type_t  scheme,
+                   const cs_real_t      nvf_p_c,
+                   const cs_real_t      nvf_r_f,
+                   const cs_real_t      nvf_r_c)
 {
-  cs_real_t p_u;
-  p_u = p_c - c_vol/pow(surf, 2)*(  normal[0]*gradup[0]
-                                  + normal[1]*gradup[1]
-                                  + normal[2]*gradup[2]);
-  return p_u;
+  cs_real_t nvf_p_f;
+
+  cs_real_t beta_m, rfc, r1f, r1, r2, r3, b1, b2;
+
+  switch (scheme) {
+  case CS_NVD_GAMMA: /* Gamma scheme */
+    beta_m = 0.1; /* in [0.1, 0.5] */
+    rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+
+    if (nvf_p_c < beta_m) {
+      nvf_p_f = nvf_p_c*(1.+rfc*(1.-nvf_p_c)/beta_m);
+    } else {
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = r1f*nvf_p_c+rfc;
+    }
+
+    break;
+
+  case CS_NVD_SMART: /* SMART scheme */
+    if (nvf_p_c < (nvf_r_c/3.)) {
+      r1 = nvf_r_f*(1.-3.*nvf_r_c+2.*nvf_r_f);
+      r2 = nvf_r_c*(1.-nvf_r_c);
+
+      nvf_p_f = nvf_p_c*r1/r2;
+    } else if (nvf_p_c <= (nvf_r_c*(1.+nvf_r_f-nvf_r_c)/nvf_r_f)) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = nvf_r_f*(r1f*nvf_p_c/nvf_r_c + rfc);
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  case CS_NVD_CUBISTA: /* CUBISTA scheme */
+    if (nvf_p_c < (3.*nvf_r_c/4.)) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+
+      nvf_p_f = nvf_r_f*(1.+rfc/3.)*nvf_p_c/nvf_r_c;
+    } else if (nvf_p_c <= (nvf_r_c*(1.+2.*(nvf_r_f-nvf_r_c))/(2.*nvf_r_f-nvf_r_c))) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = nvf_r_f*(r1f*nvf_p_c/nvf_r_c+rfc);
+    } else {
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = 1.-.5*r1f*(1.-nvf_p_c);
+    }
+
+    break;
+
+  case CS_NVD_SUPERBEE: /* SuperBee scheme */
+    if (nvf_p_c < (nvf_r_c/(2.-nvf_r_c))) {
+      nvf_p_f = (2.*nvf_r_f-nvf_r_c)*nvf_p_c/nvf_r_c;
+    } else if (nvf_p_c < nvf_r_c) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = r1f*nvf_p_c+rfc;
+    } else if (nvf_p_c < (nvf_r_c/nvf_r_f)) {
+      nvf_p_f = nvf_r_f*nvf_p_c/nvf_r_c;
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  case CS_NVD_MUSCL: /* MUSCL scheme */
+    if (nvf_p_c < (.5*nvf_r_c)) {
+      nvf_p_f = (2.*nvf_r_f-nvf_r_c)*nvf_p_c/nvf_r_c;
+    } else if (nvf_p_c < (1.+nvf_r_c-nvf_r_f)) {
+      nvf_p_f = nvf_p_c+nvf_r_f-nvf_r_c;
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  case CS_NVD_MINMOD: /* MINMOD scheme */
+    if (nvf_p_c < nvf_r_c) {
+      nvf_p_f = nvf_r_f*nvf_p_c/nvf_r_c;
+    } else {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = r1f*nvf_p_c+rfc;
+    }
+
+    break;
+
+  case CS_NVD_CLAM: /* CLAM scheme */
+    r1 = nvf_r_c*nvf_r_c-nvf_r_f;
+    r2 = nvf_r_c*(nvf_r_c-1.);
+    r3 = nvf_r_f-nvf_r_c;
+
+    nvf_p_f = nvf_p_c*(r1+r3*nvf_p_c)/r2;
+
+    break;
+
+  case CS_NVD_STOIC: /* STOIC scheme */
+    b1 = (nvf_r_c-nvf_r_f)*nvf_r_c;
+    b2 = nvf_r_c+nvf_r_f+2.*nvf_r_f*nvf_r_f-4.*nvf_r_f*nvf_r_c;
+
+    if (nvf_p_c < (b1/b2)) {
+      r1 = -nvf_r_f*(1.-3.*nvf_r_c+2.*nvf_r_f);
+      r2 = nvf_r_c*(nvf_r_c-1.);
+
+      nvf_p_f = nvf_p_c*r1/r2;
+    } else if (nvf_p_c < nvf_r_c) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = r1f*nvf_p_c+rfc;
+    } else if (nvf_p_c < (nvf_r_c*(1.+nvf_r_f-nvf_r_c)/nvf_r_f)) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = nvf_r_f*(nvf_p_c*r1f/nvf_r_c+rfc);
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  case CS_NVD_OSHER: /* OSHER scheme */
+    if (nvf_p_c < (nvf_r_c/nvf_r_f)) {
+      nvf_p_f = nvf_r_f*nvf_p_c/nvf_r_c;
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  case CS_NVD_WASEB: /* WASEB scheme */
+    r1 = nvf_r_c*nvf_r_f*(nvf_r_f-nvf_r_c);
+    r2 = 2.*nvf_r_c*(1.-nvf_r_c)-nvf_r_f*(1.-nvf_r_f);
+
+    if (nvf_p_c < (r1/r2)) {
+      nvf_p_f = 2.*nvf_p_c;
+    } else if (nvf_p_c <= (nvf_r_c*(1.+nvf_r_f-nvf_r_c)/nvf_r_f)) {
+      rfc = (nvf_r_f-nvf_r_c)/(1.-nvf_r_c);
+      r1f = (1.-nvf_r_f)/(1.-nvf_r_c);
+
+      nvf_p_f = nvf_r_f*(nvf_p_c*r1f/nvf_r_c+rfc);
+    } else {
+      nvf_p_f = 1.;
+    }
+
+    break;
+
+  default: /* Upwinding */
+    nvf_p_f = nvf_p_c;
+    break;
+  }
+
+  return nvf_p_f;
 }
+
+/*----------------------------------------------------------------------------
+ * Compute the normalised face scalar using the specified NVD scheme
+ * for the case of a Volume-of-Fluid (VOF) transport equation.
+ *
+ * parameters:
+ *   scheme   <--  choice of the NVD scheme for VOF
+ *   face_id  <--  the current cell face
+ *   nvf_p_c  <--  normalised property of the current cell
+ *   nvf_r_f  <--  normalised distance from the face
+ *   nvf_r_c  <--  normalised distance from the current cell
+ *   grad     <--  the gradient of the property in the cell
+ *
+ * returns normalised face scalar.
+ *----------------------------------------------------------------------------*/
+
+static cs_real_t
+_nvd_vof_scheme_scalar(const cs_nvd_type_t  scheme,
+                       const cs_lnum_t      face_id,
+                       const cs_real_t      nvf_p_c,
+                       const cs_real_t      nvf_r_f,
+                       const cs_real_t      nvf_r_c,
+                       const cs_real_3_t    grad,
+                       const cs_real_t      c_courant)
+{
+  cs_real_t nvf_p_f;
+  cs_real_t denom, blend, high_order, low_order, ratio;
+
+  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+
+  /* Compute gradient angle indicator */
+  cs_real_t dotp = CS_ABS(grad[0]*i_face_normal[face_id][0] +
+                          grad[1]*i_face_normal[face_id][1] +
+                          grad[2]*i_face_normal[face_id][2]);
+
+  cs_real_t sgrad = sqrt(grad[0]*grad[0] + grad[1]*grad[1] + grad[2]*grad[2]);
+
+  cs_real_t snorm = sqrt(i_face_normal[face_id][0]*i_face_normal[face_id][0] +
+                         i_face_normal[face_id][1]*i_face_normal[face_id][1] +
+                         i_face_normal[face_id][2]*i_face_normal[face_id][2]);
+
+  denom = snorm*sgrad;
+
+  if (scheme == CS_NVD_VOF_HRIC) {   /* M-HRIC scheme */
+    /* High order scheme : Bounded Downwind */
+    if (nvf_p_c <= .5) {
+      high_order = 2.*nvf_p_c;
+    } else {
+      high_order = 1.;
+    }
+
+    /* Low order scheme : MUSCL */
+    low_order = _nvd_scheme_scalar(CS_NVD_MUSCL,
+                                   nvf_p_c,
+                                   nvf_r_f,
+                                   nvf_r_c);
+
+    /* Compute the blending factor */
+    if (denom < (cs_math_epzero*dotp)) {
+      blend = 1.;
+    } else {
+      ratio = dotp/denom;
+      blend = CS_MIN(1., pow(ratio, .5));
+    }
+
+    /* Blending */
+    nvf_p_f = blend*high_order + (1.-blend)*low_order;
+
+    /* Extra blending due to the cell Courant number */
+    if (c_courant < .7 && c_courant > .3) {
+      nvf_p_f = nvf_p_f + (nvf_p_f - low_order)*(.7 - c_courant )/.4;
+    } else if (c_courant >= .7) {
+      nvf_p_f = low_order;
+    }
+  } else if (scheme == CS_NVD_VOF_CICSAM) { /* M-CICSAM scheme */
+    /* High order scheme : HYPER-C + SUPERBEE */
+    if (c_courant <= .3) {
+      high_order = CS_MIN(1., nvf_p_c/(c_courant+cs_math_epzero));
+    } else if (c_courant <= .6) {
+      high_order = CS_MIN(1., nvf_p_c/.3);
+    } else if (c_courant <= .7) {
+      cs_real_t superbee = _nvd_scheme_scalar(CS_NVD_SUPERBEE,
+                                              nvf_p_c,
+                                              nvf_r_f,
+                                              nvf_r_c);
+      high_order =  10.*(  (.7-c_courant)*CS_MIN(1., nvf_p_c/.3)
+                         + (c_courant-.6)*superbee);
+    }
+    else {
+      high_order = _nvd_scheme_scalar(CS_NVD_SUPERBEE,
+                                      nvf_p_c,
+                                      nvf_r_f,
+                                      nvf_r_c);
+    }
+
+    /* Low order scheme : MUSCL */
+    low_order = _nvd_scheme_scalar(CS_NVD_MUSCL,
+                                   nvf_p_c,
+                                   nvf_r_f,
+                                   nvf_r_c);
+
+    /* Compute the blending factor */
+    if (denom < (cs_math_epzero*dotp)) {
+      blend = 1.;
+    } else {
+      ratio = dotp/denom;
+      blend = CS_MIN(1., pow(ratio, 2.));
+    }
+
+    /* Blending */
+    nvf_p_f = blend*high_order + (1.-blend)*low_order;
+  } else { /* STACS scheme */
+    /* High order scheme : SUPERBEE */
+    high_order = _nvd_scheme_scalar(CS_NVD_SUPERBEE,
+                                    nvf_p_c,
+                                    nvf_r_f,
+                                    nvf_r_c);
+
+    /* Low order scheme : STOIC */
+    low_order = _nvd_scheme_scalar(CS_NVD_STOIC,
+                                   nvf_p_c,
+                                   nvf_r_f,
+                                   nvf_r_c);
+
+    /* Compute the blending factor */
+    if (denom < (cs_math_epzero*dotp)) {
+      blend = 1.;
+    } else {
+      ratio = dotp/denom;
+      blend = CS_MIN(1., pow(ratio, 4.));
+    }
+
+    /* Blending */
+    nvf_p_f = blend*high_order + (1.-blend)*low_order;
+  }
+
+  return nvf_p_f;
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API
@@ -1787,10 +2052,17 @@ cs_convection_diffusion_scalar(int                       idtvar,
   cs_real_3_t *gradst = NULL;
   cs_field_t *f = NULL;
 
+  cs_real_t *local_min = NULL;
+  cs_real_t *local_max = NULL;
+  cs_real_t *courant = NULL;
+
   cs_field_t *f_limiter = NULL;
   cs_real_t *limiter = NULL;
 
   cs_real_t *gweight = NULL;
+
+  const int key_lim_choice = cs_field_key_id("limiter_choice");
+  const int key_lim_id = cs_field_key_id("convection_limiter_id");
 
   cs_real_t  *v_slope_test = _get_v_slope_test(f_id,  var_cal_opt);
 
@@ -1823,13 +2095,23 @@ cs_convection_diffusion_scalar(int                       idtvar,
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
     cs_gradient_perio_init_rij(f, &tr_dim, grad);
-    /* Get option from the field */
+
+    /* NVD/TVD limiters */
     if (isstpp >= 3) {
-      const int key_limiter = cs_field_key_id("limiter_choice");
-      limiter_choice = cs_field_get_key_int(f, key_limiter);
+      limiter_choice = cs_field_get_key_int(f, key_lim_choice);
+      BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
+      BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
+      cs_field_local_extrema_scalar(f_id,
+                                    CS_HALO_EXTENDED,
+                                    local_max,
+                                    local_min);
+      if (limiter_choice >= CS_NVD_VOF_HRIC) {
+        BFT_MALLOC(courant, n_cells_ext, cs_real_t);
+        _cell_courant_number(f_id, courant);
+      }
     }
 
-    int f_limiter_id = cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
+    int f_limiter_id = cs_field_get_key_int(f, key_lim_id);
     if (f_limiter_id > -1) {
       f_limiter = cs_field_by_id(f_limiter_id);
       limiter = f_limiter->val;
@@ -1933,7 +2215,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
     }
   }
 
-  /* 2.1 Compute the gradient for convective scheme (the slope test, limiter, SOLU, etc) */
+  /* 2.1 Compute the gradient for convective scheme
+     (the slope test, limiter, SOLU, etc) */
 
   /* Slope test gradient */
   if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
@@ -1960,7 +2243,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   }
 
   /* Pure SOLU scheme without using gradient_slope_test function
-     or Roe and Sweby limiters */
+     or NVD/TVD limiters */
   if (iconvp > 0 && iupwin == 0 && (ischcp == 2 || isstpp == 3)) {
 
     BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
@@ -2307,8 +2590,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
     }
 
-  /* --> Flux with slope test or Roe and Sweby limiter
-    ==================================================*/
+  /* --> Flux with slope test or NVD/TVD limiter
+    ============================================*/
 
   } else {
 
@@ -2480,76 +2763,128 @@ cs_convection_diffusion_scalar(int                       idtvar,
                              1., /* xcpp */
                              fluxij);
 
-            }
-            /* Roe- Sweby limiter */
-            else { /* if (isstpp == 3) */
+            } else { /* if (isstpp == 3) */
+              /* NVD/TVD family of high accuracy schemes */
 
-              cs_real_t rij;
-
-              int cur;
               cs_real_t p_u, p_c, p_d;
+              cs_lnum_t ic, id;
 
-              cur = ii;
-              // Current    point value
-              p_c = pvar[ii];
-              // Downstream point value
-              p_d = pvar[jj];
-
-              if (i_massflux[face_id] < 0.) {
-                cur = jj;
-                p_c = pvar[jj];
-                p_d = pvar[ii];
+              /* Determine the upwind and downwind sides */
+              if (i_massflux[face_id] >= 0.) {
+                ic = ii;
+                id = jj;
+              } else {
+                ic = jj;
+                id = ii;
               }
 
-              /* Compute the upstream point value */
-              p_u = cs_upstream_val(p_c,
-                                    cell_vol[cur],
-                                    i_face_surf[face_id],
-                                    i_face_normal[face_id],
-                                    gradup[cur]);
+              /* Compute required quantities */
+              cs_real_t recoi, recoj;
 
-              /* If non monotonicity is detected at the downstream side
-                 the scheme switches to a first order upwind scheme */
-              if ((p_c-p_u)*(p_d-p_c) <= 0.) {
-                 rij = 0.;
-              }
-              /* There is monotonicity at the downstream side */
-              else {
-                if (CS_ABS(p_d-p_c) < cs_math_epzero*(CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d))) {
-                  rij = cs_math_big_r;
+              cs_i_compute_quantities(ircflp,
+                                      weight[face_id],
+                                      cell_cen[ii],
+                                      cell_cen[jj],
+                                      i_face_cog[face_id],
+                                      dijpf[face_id],
+                                      grad[ii],
+                                      grad[jj],
+                                      pvar[ii],
+                                      pvar[jj],
+                                      &recoi,
+                                      &recoj,
+                                      &pip,
+                                      &pjp);
+
+              /* Determine the properties central and downwind the face */
+              p_c = pvar[ic];
+              p_d = pvar[id];
+
+              /* Compute the distance between the face and the
+                 centroid of the central cell */
+              cs_real_3_t rfc;
+              rfc[0] = i_face_cog[face_id][0] - cell_cen[ic][0];
+              rfc[1] = i_face_cog[face_id][1] - cell_cen[ic][1];
+              rfc[2] = i_face_cog[face_id][2] - cell_cen[ic][2];
+
+              const cs_real_t dist_fc
+                = sqrt(rfc[0]*rfc[0] + rfc[1]*rfc[1] + rfc[2]*rfc[2]);
+
+              /* Compute the vector of the line that joins the current point
+                 with the downwind point */
+              cs_real_3_t rdc, ndc;
+              rdc[0] = cell_cen[id][0] - cell_cen[ic][0];
+              rdc[1] = cell_cen[id][1] - cell_cen[ic][1];
+              rdc[2] = cell_cen[id][2] - cell_cen[ic][2];
+
+              const cs_real_t dist_dc
+                = sqrt(rdc[0]*rdc[0] + rdc[1]*rdc[1] + rdc[2]*rdc[2]);
+
+              /* Compute the unit vector of the line that joins the current
+                 point with the downwind point */
+              ndc[0] = rdc[0]/dist_dc;
+              ndc[1] = rdc[1]/dist_dc;
+              ndc[2] = rdc[2]/dist_dc;
+
+              /* Place the upwind point on the line that joins
+                 the two cells on the upwind side and the same
+                 distance as that between the two cells */
+              const cs_real_t dist_cu = dist_dc;
+              const cs_real_t dist_du = dist_dc + dist_cu;
+
+              /* Compute the property on the upwind assuming a parabolic
+                 variation of the property between the two cells */
+              const cs_real_t gradc = grad[ic][0]*ndc[0]
+                                    + grad[ic][1]*ndc[1]
+                                    + grad[ic][2]*ndc[2];
+
+              const cs_real_t grad2c = ((p_d - p_c)/dist_dc - gradc)/dist_dc;
+
+              p_u = p_c + (grad2c*dist_cu - gradc)*dist_cu;
+              p_u = CS_MAX(CS_MIN(p_u, local_max[ic]), local_min[ic]);
+
+              /* Compute the normalised distances */
+              const cs_real_t nvf_r_f = (dist_fc+dist_cu)/dist_du;
+              const cs_real_t nvf_r_c = dist_cu/dist_du;
+
+              /* Check for the bounds of the NVD diagram and compute the face
+                 property according to the selected NVD scheme */
+              const cs_real_t small
+                = cs_math_epzero*(CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d));
+
+              if (CS_ABS(p_d-p_u) < small) {
+                pif = p_c;
+                pjf = p_c;
+              } else {
+                const cs_real_t nvf_p_c = (p_c - p_u)/(p_d - p_u);
+
+                if (nvf_p_c <= 0. || nvf_p_c >= 1.) {
+                  pif = p_c;
+                  pjf = p_c;
+                } else {
+                  cs_real_t nvf_p_f;
+
+                  /* Highly compressive NVD scheme for VOF */
+                  if (limiter_choice >= CS_NVD_VOF_HRIC) {
+                    nvf_p_f = _nvd_vof_scheme_scalar(limiter_choice,
+                                                     face_id,
+                                                     nvf_p_c,
+                                                     nvf_r_f,
+                                                     nvf_r_c,
+                                                     grad[ic],
+                                                     courant[ic]);
+                  } else { /* Regular NVD scheme */
+                    nvf_p_f = _nvd_scheme_scalar(limiter_choice,
+                                                 nvf_p_c,
+                                                 nvf_r_f,
+                                                 nvf_r_c);
+                  }
+
+                  pif = p_u + nvf_p_f*(p_d - p_u);
+                  pif = CS_MAX(CS_MIN(pif, local_max[ic]), local_min[ic]);
+                  pjf = pif;
                 }
-                /* consecutive downstream slopes rate */
-                else {
-                  rij = CS_MIN(CS_ABS((p_c-p_u)/(p_d-p_c)), cs_math_big_r);
-                }
               }
-
-              cs_real_t phi = cs_limiter_function(limiter_choice, rij);
-              /* If stored for post-processing */
-              if (limiter != NULL)
-                limiter[face_id] = phi;
-
-              /* Compute the limited convective flux based on
-                 SOLU or centered scheme */
-
-              cs_i_cd_unsteady_limiter(ircflp,
-                                       ischcp,
-                                       weight[face_id],
-                                       cell_cen[ii],
-                                       cell_cen[jj],
-                                       i_face_cog[face_id],
-                                       phi,
-                                       dijpf[face_id],
-                                       grad[ii],
-                                       grad[jj],
-                                       gradup[ii],
-                                       gradup[jj],
-                                       pvar[ii],
-                                       pvar[jj],
-                                       &pif,
-                                       &pjf,
-                                       &pip,
-                                       &pjp);
 
               cs_i_conv_flux(iconvp,
                              thetap,
@@ -2604,9 +2939,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
     /* Sum number of clippings */
     cs_parall_counter(&n_upwind, 1);
 
-  bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
-             var_name, (unsigned long long)n_upwind,
-             (unsigned long long)m->n_g_i_faces);
+    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
+               var_name, (unsigned long long)n_upwind,
+               (unsigned long long)m->n_g_i_faces);
   }
 
   /* ======================================================================
@@ -2905,15 +3240,11 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   /* Free memory */
   BFT_FREE(grad);
-  grad = NULL;
-  if (gradup!=NULL) {
-    BFT_FREE(gradup);
-    gradup = NULL;
-  }
-  if (gradst!=NULL) {
-    BFT_FREE(gradst);
-    gradst = NULL;
-  }
+  BFT_FREE(gradup);
+  BFT_FREE(gradst);
+  BFT_FREE(local_max);
+  BFT_FREE(local_min);
+  BFT_FREE(courant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5100,6 +5431,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
   cs_real_3_t *gradst = NULL;
   cs_field_t *f = NULL;
 
+  cs_real_t *local_min = NULL;
+  cs_real_t *local_max = NULL;
+
   cs_field_t *f_limiter = NULL;
   cs_real_t *limiter = NULL;
 
@@ -5140,6 +5474,12 @@ cs_convection_diffusion_thermal(int                       idtvar,
     if (isstpp >= 3) {
       const int key_limiter = cs_field_key_id("limiter_choice");
       limiter_choice = cs_field_get_key_int(f, key_limiter);
+      BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
+      BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
+      cs_field_local_extrema_scalar(f_id,
+                                    CS_HALO_EXTENDED,
+                                    local_max,
+                                    local_min);
     }
 
     int f_limiter_id = cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
@@ -5276,7 +5616,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   }
 
   /* Pure SOLU scheme without using gradient_slope_test function
-     or Roe and Sweby limiters */
+     or NVD/TVD limiters */
   if (iconvp > 0 && iupwin == 0 && (ischcp == 2 || isstpp == 3)) {
 
     BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
@@ -5620,8 +5960,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
     }
 
-  /* --> Flux with slope test or Roe and Sweby limiter
-    ==================================================*/
+  /* --> Flux with slope test or NVD/TVD limiter
+    ============================================*/
 
   } else {
 
@@ -5795,75 +6135,129 @@ cs_convection_diffusion_thermal(int                       idtvar,
                              fluxij);
 
             }
-            /* Roe- Sweby limier */
+            /* NVD/TVD family of high accuracy schemes */
             else { /* if (isstpp == 3) */
 
-              cs_real_t rij;
-
-              int cur;
               cs_real_t p_u, p_c, p_d;
+              cs_lnum_t ic, id;
 
-              cur = ii;
-              // Current    point value
-              p_c = pvar[ii];
-              // Downstream point value
-              p_d = pvar[jj];
-
-              if (i_massflux[face_id] < 0.) {
-                cur = jj;
-                p_c = pvar[jj];
-                p_d = pvar[ii];
+              /* Determine the upwind and downwind sides */
+              if (i_massflux[face_id] >= 0.) {
+                ic = ii;
+                id = jj;
               }
-
-              /* Compute the upstream point value */
-              p_u = cs_upstream_val(p_c,
-                                    cell_vol[cur],
-                                    i_face_surf[face_id],
-                                    i_face_normal[face_id],
-                                    gradup[cur]);
-
-              /* If non monotonicity is detected at the downstream side
-                 the scheme switches to a first order upwind scheme */
-              if ((p_c-p_u)*(p_d-p_c) <= 0.) {
-                 rij = 0.;
-              }
-              /* There is monotonicity at the downstream side */
               else {
-                if (CS_ABS(p_d-p_c) < cs_math_epzero*(CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d))) {
-                  rij = cs_math_big_r;
-                }
-                /* consecutive downstream slopes rate */
-                else {
-                  rij = CS_MIN(CS_ABS((p_c-p_u)/(p_d-p_c)), cs_math_big_r);
-                }
+                ic = jj;
+                id = ii;
               }
 
-              cs_real_t phi = cs_limiter_function(limiter_choice, rij);
-              /* If stored for post-processing */
-              if (limiter != NULL)
-                limiter[face_id] = phi;
+              /* Compute required quantities */
+              cs_real_t recoi, recoj;
 
-              /* Compute the limited convective flux based on
-                 SOLU or centered scheme */
+              cs_i_compute_quantities(ircflp,
+                                    weight[face_id],
+                                      cell_cen[ii],
+                                      cell_cen[jj],
+                                      i_face_cog[face_id],
+                                      dijpf[face_id],
+                                      grad[ii],
+                                      grad[jj],
+                                      pvar[ii],
+                                      pvar[jj],
+                                      &recoi,
+                                      &recoj,
+                                      &pip,
+                                      &pjp);
 
-              cs_i_cd_unsteady_limiter(ircflp,
-                                       ischcp,
-                                       weight[face_id],
-                                       cell_cen[ii],
-                                       cell_cen[jj],
-                                       i_face_cog[face_id],
-                                       phi,
-                                       dijpf[face_id],
-                                       grad[ii],
-                                       grad[jj],
-                                       gradup[ii],
-                                       gradup[jj],
-                                       pvar[ii],
-                                       pvar[jj],
-                                       &pif,
-                                       &pjf,
-                                       &pip,
-                                       &pjp);
+              /* Determine the properties central and downwind
+                 the face */
+              p_c = pvar[ic];
+              p_d = pvar[id];
+
+              /* Compute the distance between the face and the
+                 centroid of the central cell
+              */
+              cs_real_3_t rfc;
+              rfc[0] = i_face_cog[face_id][0] - cell_cen[ic][0];
+              rfc[1] = i_face_cog[face_id][1] - cell_cen[ic][1];
+              rfc[2] = i_face_cog[face_id][2] - cell_cen[ic][2];
+
+              const cs_real_t dist_fc
+          = sqrt(rfc[0]*rfc[0] + rfc[1]*rfc[1] + rfc[2]*rfc[2]);
+
+              /* Compute the vector of the line that joins the current point
+               * with the downwind point
+               */
+              cs_real_3_t rdc, ndc;
+              rdc[0] = cell_cen[id][0] - cell_cen[ic][0];
+              rdc[1] = cell_cen[id][1] - cell_cen[ic][1];
+              rdc[2] = cell_cen[id][2] - cell_cen[ic][2];
+
+              const cs_real_t dist_dc
+          = sqrt(rdc[0]*rdc[0] + rdc[1]*rdc[1] + rdc[2]*rdc[2]);
+
+              ndc[0] = rdc[0]/dist_dc;
+              ndc[1] = rdc[1]/dist_dc;
+              ndc[2] = rdc[2]/dist_dc;
+
+              /* Locate the upwind point to be on the line that joins
+               * the two cells on the upwind side and the same distance
+               */
+              const cs_real_t dist_cu = dist_dc;
+              const cs_real_t dist_du = dist_dc + dist_cu;
+
+              /* Compute the property on the upwind assuming a parabolic
+               * variation of the property between the two cells
+               */
+              const cs_real_t gradc
+          = grad[ic][0]*ndc[0] +
+                grad[ic][1]*ndc[1] +
+              grad[ic][2]*ndc[2];
+
+              const cs_real_t grad2c
+          = ((p_d - p_c)/dist_dc - gradc)/dist_dc;
+
+              p_u = p_c + (grad2c*dist_cu - gradc)*dist_cu;
+              p_u = CS_MAX(CS_MIN(p_u, local_max[ic]), local_min[ic]);
+
+              /* Compute the normalised distances */
+              const cs_real_t nvf_r_f = (dist_fc+dist_cu)/dist_du;
+              const cs_real_t nvf_r_c = dist_cu/dist_du;
+
+              /* Check for the bounds of the NVD diagram and compute the face property
+                 according to the selected NVD scheme
+              */
+              const cs_real_t small
+          = cs_math_epzero*(CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d));
+
+              if (CS_ABS(p_d-p_u) < small) {
+                pif = p_c;
+                pjf = p_c;
+              }
+              else {
+
+                const cs_real_t nvf_p_c = (p_c - p_u)/(p_d - p_u);
+
+                if (nvf_p_c <= 0. || nvf_p_c >= 1.) {
+                  pif = p_c;
+                  pjf = p_c;
+                }
+                else {
+
+                  cs_real_t nvf_p_f;
+
+                  nvf_p_f = _nvd_scheme_scalar(CS_MIN(CS_NVD_WASEB,limiter_choice),
+                                               nvf_p_c,
+                                               nvf_r_f,
+                                               nvf_r_c);
+
+                  pif = p_u + nvf_p_f*(p_d - p_u);
+                  pif = CS_MAX(CS_MIN(pif, local_max[ic]), local_min[ic]);
+                  pjf = pif;
+
+                }
+
+              }
 
               cs_i_conv_flux(iconvp,
                              thetap,
@@ -6093,15 +6487,10 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   /* Free memory */
   BFT_FREE(grad);
-  grad = NULL;
-  if (gradup!=NULL) {
-    BFT_FREE(gradup);
-    gradup = NULL;
-  }
-  if (gradst!=NULL) {
-    BFT_FREE(gradst);
-    gradst = NULL;
-  }
+  BFT_FREE(gradup);
+  BFT_FREE(gradst);
+  BFT_FREE(local_max);
+  BFT_FREE(local_min);
 }
 
 /*----------------------------------------------------------------------------*/
