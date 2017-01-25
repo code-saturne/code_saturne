@@ -351,12 +351,11 @@ _log_array_info(const char        *prefix,
                 const double       vsum[],
                 const double      *wsum)
 {
-  int c_id;
   const int _dim = (dim == 3) ? 4 : dim;
 
   char tmp_s[2][64] =  {"", ""};
 
-  for (c_id = 0; c_id < _dim; c_id++) {
+  for (int c_id = 0; c_id < _dim; c_id++) {
 
     if (dim == 3) {
       if (c_id < 3)
@@ -397,7 +396,11 @@ _log_array_info(const char        *prefix,
                     vmax[c_id],
                     vsum[c_id] / n_g_elts);
 
+    /* Checlk Nan and exit */
+    if (vsum[c_id] != vsum[c_id])
+      cs_exit(EXIT_FAILURE);
   }
+
 }
 
 /*----------------------------------------------------------------------------
