@@ -76,7 +76,6 @@ cs_ctwr_bcond.f90 \
 ctini1.f90 \
 ctiniv.f90 \
 ctphyv.f90 \
-cttssc.f90 \
 ctvarp.f90
 libcsctwr_la_LDFLAGS = -no-undefined
 

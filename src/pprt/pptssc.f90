@@ -87,6 +87,8 @@ use cpincl
 use ppincl
 use lagran
 use mesh
+use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -166,7 +168,7 @@ endif
 ! ---> Version aerorefrigerant :
 
 if (ippmod(iaeros).ge.0) then
-  call cttssc(iscal, ncesmp, icetsm, smbrs, rovsdt)
+  call cs_ctwr_source_term(ivarfl(isca(iscal)), p0, molmass_rat, smbrs, rovsdt)
 endif
 
 !----

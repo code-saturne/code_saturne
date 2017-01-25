@@ -983,7 +983,6 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
       cs_real_t liq_surf = cs_math_3_dot_product(gravity, i_face_normal[face_id]);
 
       /* Face mass flux of the liquid */
-      cs_real_t y_l_bc = ct->y_l_bc;
       liq_mass_flow[face_id] = ct->q_l_bc / (ct->surface * ct->y_l_bc) * liq_surf;
 
       /* Initialise a band of ghost cells on the top side of the
@@ -1294,6 +1293,15 @@ cs_ctwr_source_term(int              f_id,
 {
   const cs_lnum_2_t *i_face_cells
     = (const cs_lnum_2_t *)(cs_glob_mesh->i_face_cells);
+  const cs_lnum_t *b_face_cells
+    = (const cs_lnum_t *)(cs_glob_mesh->b_face_cells);
+
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->b_face_normal;
+
   cs_real_t  *rho_h = (cs_real_t *)CS_F_(rho)->val; /* humid air (bulk) density */
   cs_real_3_t *vel_h = (cs_real_3_t *)CS_F_(u)->val;   /* humid air (bulk) */
 
@@ -1311,8 +1319,7 @@ cs_ctwr_source_term(int              f_id,
   /* Variable and properties for rain zones */
   cs_field_t *cfld_yp = cs_field_by_name_try("y_p");
   cs_field_t *cfld_drift_vel = cs_field_by_name_try("drift_vel_y_p");
-  cs_real_t *liq_mass_flow
-    = cs_field_by_name("inner_mass_flux_y_p")->val;
+  cs_field_t *cfld_taup = cs_field_by_name_try("drift_tau_y_p");
 
   cs_real_t vertical[3], horizontal[3], norme_g;
 
@@ -1358,9 +1365,6 @@ cs_ctwr_source_term(int              f_id,
   cs_real_t visc = cs_glob_fluid_properties->viscl0;
   cs_real_t lambda_h = ct_prop->lambda_h;
   cs_real_t droplet_diam  = ct_prop->droplet_diam;
-
-  /* Local cell id number */
-  cs_lnum_t lc_id = 0;
 
   for (int ict = 0; ict < _n_ct_zones; ict++) {
 
@@ -1494,48 +1498,50 @@ cs_ctwr_source_term(int              f_id,
           mass_source = beta_x_a*(x_s_tl - x_s_th);
         }
         mass_source = CS_MAX(mass_source, 0.);
+        cs_real_t vol_mass_source = mass_source * cell_f_vol[cell_id];
+        cs_real_t vol_beta_x_a = beta_x_a * cell_f_vol[cell_id];
 
-        /* Global continuity (pressure) equation */
+        /* Global mass source term for continuity (pressure) equation */
         if (f_id == (CS_F_(p)->id)) {
-          exp_st[lc_id] = mass_source;
-          imp_st[lc_id] = 0.0;
+          /* Warning: not multiplied by Cell volume! no addition neither */
+          exp_st[cell_id] = mass_source;
         }
 
         /* Water mass fraction equation  except rain */
         else if (f_id == (CS_F_(ym_w)->id)) {
-          exp_st[lc_id] = mass_source*(1. - f_var[cell_id]); //TODO add mass_from_rain
-          imp_st[lc_id] = CS_MAX(mass_source, 0.);
+          exp_st[cell_id] += vol_mass_source*(1. - f_var[cell_id]); //TODO add mass_from_rain
+          imp_st[cell_id] += vol_mass_source;
         }
 
         /* Injected liquid mass equation (solve in drift model form) */
         else if (f_id == (CS_F_(ym_l)->id)) {
-          exp_st[lc_id] = -mass_source * y_l[cell_id];
-          imp_st[lc_id] = CS_MAX(mass_source, 0.);
+          exp_st[cell_id] -= vol_mass_source * y_l[cell_id];
+          imp_st[cell_id] += vol_mass_source;
         }
 
         /* Humid air temperature equation */
         else if (f_id == (CS_F_(t)->id)) {
           /* Because the writing is in a non-conservtiv form */
           cs_real_t cp_h = cs_ctwr_cp_humidair(x[cell_id], x_s[cell_id]);
-          imp_st[lc_id] = CS_MAX(mass_source, 0.)*cp_h;
+          cs_real_t l_imp_st = vol_mass_source * cp_h;
           if (x[cell_id] <= x_s_th) {
             /* Implicit term */
-            imp_st[lc_id] += beta_x_a * ( xlew * cp_h
+            l_imp_st += vol_beta_x_a * ( xlew * cp_h
                                    + (x_s_tl - x[cell_id]) * cp_v
                                    / (1. + x[cell_id]));
-            exp_st[lc_id] += imp_st[lc_id] * (t_l[cell_id] - f_var[cell_id]);
+            exp_st[cell_id] += l_imp_st * (t_l[cell_id] - f_var[cell_id]);
           } else {
             cs_real_t coeft = xlew * cp_h;
             /* Implicit term */
-            imp_st[lc_id] += beta_x_a * ( coeft
-                                    + (x_s_tl - x_s_th) * cp_l / (1. + x[cell_id]));
-            exp_st[lc_id] += beta_x_a * ( coeft * t_l[cell_id]
+            l_imp_st += vol_beta_x_a * ( coeft
+                                   + (x_s_tl - x_s_th) * cp_l / (1. + x[cell_id]));
+            exp_st[cell_id] += vol_beta_x_a * ( coeft * t_l[cell_id]
                                     + (x_s_tl - x_s_th) * (cp_v * t_l[cell_id] + hv0)
                                     / (1. + x[cell_id])
                                     )
-                       - imp_st[lc_id] * f_var[cell_id];
+                       - l_imp_st * f_var[cell_id];
           }
-          imp_st[lc_id] = CS_MAX(imp_st[lc_id], 0.);
+          imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
         }
 
         /* Injected liquid enthalpy equation (solve in drift model form)
@@ -1543,15 +1549,15 @@ cs_ctwr_source_term(int              f_id,
         else if (f_id == (CS_F_(h_l)->id)) {
           /* Implicit term */
           cs_real_t cp_h = cs_ctwr_cp_humidair(x[cell_id], x_s[cell_id]);
-          imp_st[lc_id] = CS_MAX(mass_source, 0.);
+          cs_real_t l_imp_st = vol_mass_source;
           if (x[cell_id] <= x_s_th) {
-            cs_real_t coefh = beta_x_a * ( xlew * cp_h
+            cs_real_t coefh = vol_beta_x_a * ( xlew * cp_h
                                         + (x_s_tl - x[cell_id]) * cp_v
                                         / (1. + x[cell_id]));
-            exp_st[lc_id] = coefh * (t_h[cell_id] - t_l[cell_id]);
+            exp_st[cell_id] += coefh * (t_h[cell_id] - t_l[cell_id]);
           } else {
             cs_real_t coefh = xlew * cp_h;
-            exp_st[lc_id] += beta_x_a * ( coefh * t_h[cell_id]
+            exp_st[cell_id] += vol_beta_x_a * ( coefh * t_h[cell_id]
                                     - coefh * t_l[cell_id]
                                     + (x_s_tl - x_s_th) / (1. + x[cell_id])
                                       * (  cp_l * t_h[cell_id]
@@ -1560,28 +1566,51 @@ cs_ctwr_source_term(int              f_id,
                                     );
           }
           /* Because we deal with an increment */
-          exp_st[lc_id] -= imp_st[lc_id] * f_var[cell_id];
+          exp_st[cell_id] -= l_imp_st * f_var[cell_id];
+          imp_st[cell_id] += CS_MAX(l_imp_st, 0.);
 
         }
 
         /* Injected liquid mass equation for rain zones (solve in drift model form) */
         else if (cfld_yp != NULL) {
           if (f_id == cfld_yp->id) {
-            imp_st[lc_id] = CS_MAX(mass_source, 0.);
             /* Because we deal with an increment */
-            exp_st[lc_id] -= imp_st[lc_id] * f_var[cell_id];
+            exp_st[cell_id] -= vol_mass_source * f_var[cell_id];
+            imp_st[cell_id] += vol_mass_source;
             //FIXME other terms ???
           }
         }
-
-        lc_id++;
 
       } /* end loop over cells */
     } /* end evaporation model */
 
     /* Impose rain zone injection */
     if (zone_type == CS_CTWR_RAIN) {
+      cs_real_t *y_p = cfld_yp->val;
+      cs_real_t *cpro_taup = cfld_taup->val;
+      /* Global mass source term for continuity (pressure) equation
+       * Sink term on the walls */
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+        cs_lnum_t cell_id =  b_face_cells[face_id];
+        cs_real_t g_dot_normal =
+          cs_math_3_dot_product(gravity, b_face_normal[face_id]);
+        cs_real_t vol_mass_source = CS_MAX(rho_h[cell_id]
+          * cpro_taup[cell_id] * g_dot_normal, 0.);
+        if (f_id == (CS_F_(p)->id)) {
+          /* Warning: not multiplied by Cell volume! */
+//          exp_st[cell_id] -= y_p[cell_id] * vol_mass_source / cell_f_vol[cell_id];
+        }
+        if (f_id == cfld_yp->id) {
+          exp_st[cell_id] -= vol_mass_source * y_p[cell_id];
+          imp_st[cell_id] += vol_mass_source;
+        }
+      }
+
+
+
       if (f_id == cfld_yp->id) {
+        cs_real_t *liq_mass_flow
+          = cs_field_by_name("inner_mass_flux_y_p")->val;
         /* Compute liquid water quantities
          * And humid air quantities at liquid inlet */
         for (cs_lnum_t i = 0; i < ct->n_inlet_faces; i++) {
@@ -1595,9 +1624,10 @@ cs_ctwr_source_term(int              f_id,
             cell_id = i_face_cells[face_id][0];
           else
             cell_id = i_face_cells[face_id][1];
-          imp_st[cell_id] = cs_math_infinite_r;
+          /* Overwrite source terms */
+          imp_st[cell_id] = cs_math_big_r * cell_f_vol[cell_id];
           /* Because we deal with an increment */
-          exp_st[cell_id] -= imp_st[lc_id] * ct->y_l_bc;
+          exp_st[cell_id] = - imp_st[cell_id] * (f_var[cell_id] - ct->y_l_bc);
         }
       }
     }
@@ -1614,8 +1644,6 @@ cs_ctwr_source_term(int              f_id,
  *
  * \param[in]   p0              Reference pressure
  * \param[in]   molmassrat      Dry air to water vapor molecular mass ratio
- * \param[in]   n_tot           Pointer to the total number
- *                              of cells in the packing zones
  * \param[in]   mass_source     Mass source term
  */
 /*----------------------------------------------------------------------------*/
@@ -1623,35 +1651,26 @@ cs_ctwr_source_term(int              f_id,
 void
 cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
                               const cs_real_t   molmassrat,
-                              int              *n_tot,
                               cs_real_t         mass_source[])
 {
 
+  cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   /* Compute the mass exchange term */
-  cs_real_t *exp_st;
   cs_real_t *imp_st;
 
-  BFT_MALLOC(exp_st, *n_tot, cs_real_t);
-  BFT_MALLOC(imp_st, *n_tot, cs_real_t);
+  BFT_MALLOC(imp_st, n_cells_with_ghosts, cs_real_t);
 
-  for (cs_lnum_t i = 0; i < *n_tot; i++) {
-    exp_st[i] = 0.0;
-    imp_st[i] = 0.0;
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++) {
+    imp_st[cell_id] = 0.0;
   }
-
 
   cs_ctwr_source_term(CS_F_(p)->id, /* Bulk mass source term is
                                        stored for pressure */
       p0,
       molmassrat,
-      exp_st,
+      mass_source,
       imp_st);
 
-  for (cs_lnum_t i = 0; i < *n_tot; i++) {
-    mass_source[i] = mass_source[i] + exp_st[i];
-  }
-
-  BFT_FREE(exp_st);
   BFT_FREE(imp_st);
 }
 

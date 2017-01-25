@@ -143,8 +143,6 @@ cs_ctwr_field_pointer_map(void);
  *
  * \param[in]   p0              Reference pressure
  * \param[in]   molmassrat      Dry air to water vapor molecular mass ratio
- * \param[in]   n_tot           Pointer to the total number
- *                              of cells in the packing zones
  * \param[in]   mass_source     Mass source term
  */
 /*----------------------------------------------------------------------------*/
@@ -152,7 +150,6 @@ cs_ctwr_field_pointer_map(void);
 void
 cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
                               const cs_real_t   molmassrat,
-                              int              *n_tot,
                               cs_real_t         mass_source[]);
 
 /*----------------------------------------------------------------------------*/

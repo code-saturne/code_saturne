@@ -143,6 +143,7 @@ double precision, allocatable, dimension(:,:,:) :: rcodcl
 double precision, allocatable, dimension(:) :: hbord, theipb
 double precision, allocatable, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
+double precision, allocatable, dimension(:) :: mass_source
 double precision, dimension(:), pointer :: brom, crom, crom_prev, crom_prev2
 
 double precision, pointer, dimension(:,:) :: uvwk
@@ -570,11 +571,19 @@ if(nctsmt.gt.0) then
   ckupdc , smacel )
 
   if (ippmod(iaeros).gt.0) then
-     ! Cooling tower model
-     ! Evaporation mass exchange term
-     call cs_ctwr_bulk_mass_source_term &
-          (p0   , molmass_rat,            &
-          ncetsm, smacel(1,ipr))
+
+    allocate(mass_source(ncelet))
+    ! Cooling tower model
+    ! Evaporation mass exchange term
+    call cs_ctwr_bulk_mass_source_term &
+      (p0   , molmass_rat, mass_source)
+
+    do ii = 1, ncetsm
+      iel = icetsm(ii)
+      smacel(ii, ipr) = smacel(ii, ipr) + mass_source(iel)
+    enddo
+
+    deallocate(mass_source)
   endif
 
 endif
