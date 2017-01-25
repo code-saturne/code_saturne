@@ -420,14 +420,11 @@ cs_ctwr_field_pointer_map(void)
 /*!
  * \brief  Define the cells belonging to the different packing zones.
  *
- * \param[in]   mesh             associated mesh structure
- * \param[in]   mesh_quantities  mesh quantities
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_build_all(const cs_mesh_t              *mesh,
-                  const cs_mesh_quantities_t   *mesh_quantities)
+cs_ctwr_build_all(void)
 {
   /* Loop over exchange zones: set number of cells */
   for (int ict = 0; ict < _n_ct_zones; ict++) {
@@ -565,9 +562,7 @@ cs_ctwr_log_balance(void)
   cs_real_t *liq_mass_flow = cs_field_by_name("inner_mass_flux_y_l_packing")->val;//FIXME take the good one... for y_p
   cs_real_t *mass_flow = cs_field_by_name("inner_mass_flux")->val;
 
-  int length;
   FILE *f;
-  cs_real_t cp_l = cs_glob_ctwr_props->cp_l;
 
   /* Loop over Cooling tower zones */
   for (int ict=0; ict < _n_ct_zones; ict++) {

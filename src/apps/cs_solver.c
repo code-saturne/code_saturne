@@ -374,7 +374,7 @@ cs_run(void)
 
           cs_fan_build_all(cs_glob_mesh, cs_glob_mesh_quantities);
 
-          cs_ctwr_build_all(cs_glob_mesh, cs_glob_mesh_quantities);
+          cs_ctwr_build_all();
 
           /*----------------------------------------------
            * Call main calculation function (code Kernel)

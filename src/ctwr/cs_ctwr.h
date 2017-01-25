@@ -159,14 +159,11 @@ cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
 /*!
  * \brief  Define the cells belonging to the different packing zones.
  *
- * \param[in]   mesh             associated mesh structure
- * \param[in]   mesh_quantities  mesh quantities
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ctwr_build_all(const cs_mesh_t              *mesh,
-                  const cs_mesh_quantities_t   *mesh_quantities);
+cs_ctwr_build_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
