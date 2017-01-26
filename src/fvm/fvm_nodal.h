@@ -180,6 +180,29 @@ fvm_nodal_init_io_num(fvm_nodal_t        *this_nodal,
                       int                 entity_dim);
 
 /*----------------------------------------------------------------------------
+ * Transfer an existing global numbering structure to a nodal mesh.
+ *
+ * This assumes the local number of vertices is identical to that of
+ * the numberign structure.
+ *
+ * The argument pointer to the global numbering structure is set to NULL
+ * so the caller does not spuriously modify the structure after this call.
+ *
+ * A call to this function may be used instead of fvm_nodal_init_io_num
+ * (for vertices only).
+ *
+ * parameters:
+ *   this_nodal    <-- nodal mesh structure
+ *   io_num        <-> pointer to external numbering structure
+ *                     whose property is transferred to the mesh
+ *                     independent) parent entity numbers
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_transfer_vertex_io_num(fvm_nodal_t    *this_nodal,
+                                 fvm_io_num_t  **io_num);
+
+/*----------------------------------------------------------------------------
  * Set entity tags (for non-vertex entities).
  *
  * The number of entities of the given dimension may be obtained

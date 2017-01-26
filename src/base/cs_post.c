@@ -347,17 +347,16 @@ fvm_writer_time_dep_t  _cs_post_mod_flag_min = FVM_WRITER_FIXED_MESH;
 static bool        _number_particles_by_coord = false;
 
 /* Array of exportable meshes associated with post-processing;
-   meshes -1 (volume), -2 (boundary), and -3 (particles)
-   are reserved, so free ids start under -3) */
+   free ids start under the last CS_POST_MESH_* definition,
+   currently at -5) */
 
-static int              _cs_post_min_mesh_id = -3;
+static int              _cs_post_min_mesh_id = -5;
 static int              _cs_post_n_meshes = 0;
 static int              _cs_post_n_meshes_max = 0;
 static cs_post_mesh_t  *_cs_post_meshes = NULL;
 
 /* Array of writers for post-processing; */
-/* writers -1 (default), -2 (show errors), -3 (probe monitoring),
-   -4 (particles default) and -5 (trajectories default) are reserved */
+/* writers CS_POST_WRITER_... are reserved */
 
 static int                _cs_post_min_writer_id = -5;
 static int                _cs_post_n_writers = 0;
@@ -1261,12 +1260,13 @@ _free_mesh(int _mesh_id)
 static void
 _check_mesh_cat_id(cs_post_mesh_t  *post_mesh)
 {
-  if (post_mesh->cat_id == -1 || post_mesh->cat_id == -2) {
+  if (   post_mesh->cat_id == CS_POST_MESH_VOLUME
+      || post_mesh->cat_id == CS_POST_MESH_BOUNDARY) {
     const int *ef = post_mesh->ent_flag;
     if (ef[0] == 1 && ef[1] == 0 && ef[2] == 0)
-      post_mesh->cat_id = -1;
+      post_mesh->cat_id = CS_POST_MESH_VOLUME;
     else if (ef[0] == 0 && ef[1] == 0 && ef[2] == 1)
-      post_mesh->cat_id = -2;
+      post_mesh->cat_id = CS_POST_MESH_BOUNDARY;
   }
 }
 
@@ -1522,7 +1522,7 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
   /* Fix category id */
 
   if (post_mesh->cat_id < 0)
-    post_mesh->cat_id = -3;
+    post_mesh->cat_id = CS_POST_MESH_PARTICLES;
 
   /* Link to newly created mesh */
 
@@ -3415,7 +3415,7 @@ cs_post_define_volume_mesh(int          mesh_id,
 
   post_mesh->add_groups = (add_groups) ? true : false;
   if (auto_variables)
-    post_mesh->cat_id = -1;
+    post_mesh->cat_id = CS_POST_MESH_VOLUME;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3475,7 +3475,7 @@ cs_post_define_volume_mesh_by_func(int                    mesh_id,
 
   post_mesh->add_groups = (add_groups) ? true : false;
   if (auto_variables)
-    post_mesh->cat_id = -1;
+    post_mesh->cat_id = CS_POST_MESH_VOLUME;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3529,7 +3529,7 @@ cs_post_define_surface_mesh(int          mesh_id,
 
   post_mesh->add_groups = (add_groups != 0) ? true : false;
   if (auto_variables)
-    post_mesh->cat_id = -2;
+    post_mesh->cat_id = CS_POST_MESH_BOUNDARY;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3603,7 +3603,7 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
     post_mesh->ent_flag[2] = 1;
 
   if (auto_variables)
-    post_mesh->cat_id = -2;
+    post_mesh->cat_id = CS_POST_MESH_BOUNDARY;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3667,7 +3667,7 @@ cs_post_define_particles_mesh(int          mesh_id,
   post_mesh->density = CS_MAX(post_mesh->density, 0.);
 
   if (auto_variables)
-    post_mesh->cat_id = -1;
+    post_mesh->cat_id = CS_POST_MESH_VOLUME;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3733,7 +3733,7 @@ cs_post_define_particles_mesh_by_func(int                    mesh_id,
   post_mesh->density = 1.;
 
   if (auto_variables)
-    post_mesh->cat_id = -3;
+    post_mesh->cat_id = CS_POST_MESH_PARTICLES;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3868,7 +3868,7 @@ cs_post_define_existing_mesh(int           mesh_id,
   }
 
   if (auto_variables) {
-    post_mesh->cat_id = -1;
+    post_mesh->cat_id = CS_POST_MESH_VOLUME;
     _check_mesh_cat_id(post_mesh);
   }
 }
@@ -5650,20 +5650,6 @@ cs_post_init_writers(void)
                           -1,                       /* time step frequency */
                           -1.0);                    /* time value frequency */
 
-  /* Additional writer for probe monitoring */
-
-  if (!cs_post_writer_exists(CS_POST_WRITER_PROBES))
-    cs_post_define_writer(CS_POST_WRITER_PROBES,    /* writer_id */
-                          "",                       /* writer name */
-                          "monitoring",
-                          "time_plot",              /* format name */
-                          "",                       /* format options */
-                          FVM_WRITER_FIXED_MESH,
-                          false,                    /* output_at_start */
-                          false,                    /* output at end */
-                          1,                        /* time step frequency */
-                          -1.0);                    /* time value frequency */
-
   /* Additional writers for Lagrangian output */
 
   if (_lagrangian_needed(NULL)) {
@@ -5695,6 +5681,32 @@ cs_post_init_writers(void)
                             -1.0);                  /* time value frequency */
 
   }
+
+  /* Additional writers for probe monitoring and profiles */
+
+  if (!cs_post_writer_exists(CS_POST_WRITER_PROBES))
+    cs_post_define_writer(CS_POST_WRITER_PROBES,    /* writer_id */
+                          "",                       /* writer name */
+                          "monitoring",
+                          "time_plot",              /* format name */
+                          "",                       /* format options */
+                          FVM_WRITER_FIXED_MESH,
+                          false,                    /* output_at_start */
+                          false,                    /* output at end */
+                          1,                        /* time step frequency */
+                          -1.0);                    /* time value frequency */
+
+  if (!cs_post_writer_exists(CS_POST_WRITER_PROFILES))
+    cs_post_define_writer(CS_POST_WRITER_PROFILES,  /* writer_id */
+                          "",                       /* writer name */
+                          "profiles",
+                          "plot",                   /* format name */
+                          "",                       /* format options */
+                          FVM_WRITER_FIXED_MESH,
+                          false,                    /* output_at_start */
+                          true,                     /* output at end */
+                          -1,                       /* time step frequency */
+                          -1.0);                    /* time value frequency */
 
   /* Print info on writers */
 
@@ -5808,7 +5820,7 @@ cs_post_init_meshes(int check_mask)
       if (n_writers < 0) {
 
         if (! is_profile) {
-          const int  default_writer_ids[] = {-3};
+          const int  default_writer_ids[] = {CS_POST_WRITER_PROBES};
           cs_probe_set_associate_writers(pset, 1, default_writer_ids);
         }
 
@@ -6544,8 +6556,7 @@ cs_post_init_error_writer(void)
 {
   /* Default values */
 
-  const int writer_id = -2;
-
+  int writer_id = CS_POST_WRITER_ERRORS;
   if (cs_post_writer_exists(writer_id))
     return;
 
@@ -6602,7 +6613,7 @@ cs_post_init_error_writer_cells(void)
 
   if (mesh->i_face_vtx_idx != NULL || mesh->b_face_vtx_idx != NULL) {
 
-    const int writer_id = -2;
+    const int writer_id = CS_POST_WRITER_ERRORS;
     const char *mesh_name = N_("Calculation domain");
     cs_post_mesh_t *post_mesh = NULL;
 

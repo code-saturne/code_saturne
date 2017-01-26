@@ -2469,17 +2469,17 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
               _("%s: point set is empty or contains identical values."),
               __func__);
 
-  double scale = (1.0 - 1.e12) / (v_max - v_min);
-
-  cs_real_t *s_val;
-  BFT_MALLOC(s_val, n_entities, cs_real_t);
-
-  for (i = 0; i < n_entities; i++)
-    s_val[i] = (val[i] - v_min)*scale;
-
 #if defined(HAVE_MPI)
 
   if (n_ranks > 1) {
+
+    double scale = (1.0 - 1.e12) / (v_max - v_min);
+
+    cs_real_t *s_val;
+    BFT_MALLOC(s_val, n_entities, cs_real_t);
+
+    for (i = 0; i < n_entities; i++)
+      s_val[i] = (val[i] - v_min)*scale;
 
     int *dest_rank = NULL;
     cs_lnum_t *order = NULL;

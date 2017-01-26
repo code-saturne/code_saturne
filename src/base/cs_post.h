@@ -67,17 +67,18 @@ BEGIN_C_DECLS
 
 #define CS_POST_WRITER_DEFAULT        -1       /* default visualisation */
 #define CS_POST_WRITER_ERRORS         -2       /* error visualisation */
-#define CS_POST_WRITER_PROBES         -3       /* probe monitoring */
-#define CS_POST_WRITER_PARTICLES      -4       /* particle visualisation */
-#define CS_POST_WRITER_TRAJECTORIES   -5       /* trajectories visualisation */
+#define CS_POST_WRITER_PARTICLES      -3       /* particle visualisation */
+#define CS_POST_WRITER_TRAJECTORIES   -4       /* trajectories visualisation */
+#define CS_POST_WRITER_PROBES         -5       /* probe monitoring */
+#define CS_POST_WRITER_PROFILES       -6       /* profiles */
 
 /* Default mesh ids */
 
 #define CS_POST_MESH_VOLUME           -1       /* volume mesh output */
 #define CS_POST_MESH_BOUNDARY         -2       /* boundary mesh output */
 #define CS_POST_MESH_PARTICLES        -3       /* particle output */
-#define CS_POST_MESH_PROBES           -4       /* probes output */
-#define CS_POST_MESH_TRAJECTORIES     -3       /* particle output */
+#define CS_POST_MESH_TRAJECTORIES     -4       /* particle output */
+#define CS_POST_MESH_PROBES           -5       /* probes output */
 
 /*============================================================================
  * Local type definitions

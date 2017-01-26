@@ -92,9 +92,44 @@ extern int cs_glob_post_util_flag[];
 /*----------------------------------------------------------------------------*/
 
 void
-cell_segment_intersect_select(void        *input,
-                              cs_lnum_t   *n_cells,
-                              cs_lnum_t  **cell_ids);
+cs_cell_segment_intersect_select(void        *input,
+                                 cs_lnum_t   *n_cells,
+                                 cs_lnum_t  **cell_ids);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define probes based on the centers of cells intersected by
+ *        a given segment.
+ *
+ * This selection function may be used as a probe set definition function
+ * for postprocessing.
+ *
+ * In this case, the input points to a real array containing the segment's
+ * start and end coordinates.
+ *
+ * Note: the input pointer must point to valid data when this selection
+ * function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_meshes()
+ *   with a fixed-mesh writer before the data pointed to goes out of scope;
+ *
+ * The caller is responsible for freeing the returned cell_ids array.
+ * When passed to postprocessing mesh or probe set definition functions,
+ * this is handled automatically.
+ *
+ * \param[in]   input   pointer to segment start and end:
+ *                      [x0, y0, z0, x1, y1, z1]
+ * \param[out]  n_elts  number of selected coordinates
+ * \param[out]  coords  coordinates of selected elements.
+ * \param[out]  s       curvilinear coordinates of selected elements
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_segment_intersect_probes_define(void          *input,
+                                        cs_lnum_t     *n_elts,
+                                        cs_real_3_t  **coords,
+                                        cs_real_t    **s);
 
 /*----------------------------------------------------------------------------*/
 /*!

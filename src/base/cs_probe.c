@@ -344,7 +344,7 @@ _probe_set_create(const char    *name,
   BFT_MALLOC(pset->name, len, char);
   strncpy(pset->name, name, len);
 
-  pset->flags = 0;
+  pset->flags = CS_PROBE_AUTO_VAR;
   pset->tolerance = 0.1;
   pset->sel_criter = NULL;
 
@@ -401,6 +401,44 @@ _check_probe_set_name(const cs_probe_set_t   *pset,
   }
   else
     return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build probes based on a function-definition
+ *
+ * Note: if the p_define_input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * \param[in, out]  pset  pointer to a cs_probe_set_t structure to update
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_local_probe_set(cs_probe_set_t  *pset)
+{
+  assert(pset->p_define_func != NULL);
+
+  pset->n_max_probes = 0;
+  pset->n_probes = 0;
+  pset->n_loc_probes = 0;
+
+  BFT_FREE(pset->coords);
+  BFT_FREE(pset->s_coords);
+
+  cs_lnum_t     n_elts = 0;
+  cs_real_3_t  *coords = NULL;
+  cs_real_t    *s = NULL;
+
+  pset->p_define_func(pset->p_define_input,
+                      &n_elts,
+                      &coords,
+                      &s);
+
+  pset->n_probes = n_elts;
+  pset->coords = coords;
+  pset->s_coords = s;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -707,6 +745,8 @@ cs_probe_set_create_from_segment(const char        *name,
 
   pset->n_probes = n_probes;
   pset->flags |= CS_PROBE_ON_CURVE;
+  if (pset->flags & CS_PROBE_AUTO_VAR)
+    pset->flags -= CS_PROBE_AUTO_VAR;
 
   BFT_MALLOC(pset->s_coords, n_probes, cs_real_t);
 
@@ -748,7 +788,7 @@ cs_probe_set_create_from_segment(const char        *name,
  * \brief Define a new set of probes from rank-local definition function.
  *
  * The local definition function given by the p_define_func pointer
- * is called just before location probes on the parent mesh, so this allows
+ * is called just before locating probes on the parent mesh, so this allows
  * building probe sets based on subsets of the computational mesh.
  *
  * Note: if the p_define_input pointer is non-NULL, it must point to valid data
@@ -771,6 +811,8 @@ cs_probe_set_create_from_local(const char                   *name,
   cs_probe_set_t  *pset = _probe_set_create(name, 0);
 
   pset->flags |= CS_PROBE_ON_CURVE;
+  if (pset->flags & CS_PROBE_AUTO_VAR)
+    pset->flags -= CS_PROBE_AUTO_VAR;
 
   pset->p_define_func = p_define_func;
   pset->p_define_input = p_define_input;
@@ -999,6 +1041,11 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
   const bool  on_boundary = (pset->flags & CS_PROBE_BOUNDARY) ? true : false;
 
+  /* Build in local case */
+
+  if (pset->p_define_func != NULL)
+    _build_local_probe_set(pset);
+
   /* Allocate on first pass */
 
   if (pset->located == NULL) {
@@ -1006,7 +1053,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
     first_location = true;
   }
 
-  /* Realocate on all passes, in case local sizes change */
+  /* Reallocate on all passes, in case local sizes change */
 
   BFT_REALLOC(pset->loc_id, pset->n_probes, int);
   BFT_REALLOC(pset->elt_id, pset->n_probes, cs_lnum_t);
@@ -1093,7 +1140,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
   int n_loc_probes = 0;
 
-  if (cs_glob_n_ranks == 1) {
+  if (cs_glob_n_ranks == 1 || pset->p_define_func != NULL) {
     for (int i = 0; i < pset->n_probes; i++) {
       if (distance[i] >= 0.5*HUGE_VAL) {
         pset->located[i] = 0;
@@ -1109,7 +1156,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
   }
 
 #if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
+  if (cs_glob_n_ranks > 1 && pset->p_define_func == NULL) {
 
     cs_double_int_t  *gmin_loc = NULL, *loc = NULL;
 
@@ -1284,7 +1331,7 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
 
   /* Build the final list of probe coordinates */
 
-  cs_real_t  max_distance = 0., gmax_distance = 0.;
+  cs_real_t  max_distance = 0.;
 
   for (int i = 0; i < pset->n_loc_probes; i++) {
     int j = pset->loc_id[i];
@@ -1302,6 +1349,8 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
       max_distance = fmax(max_distance, cs_math_3_square_norm(v));
     }
   }
+
+  cs_real_t gmax_distance = max_distance;
 
   /* Handle snap mode if active */
 
@@ -1331,9 +1380,21 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
   fvm_nodal_define_vertex_list(exp_mesh, pset->n_loc_probes, NULL);
   fvm_nodal_transfer_vertices(exp_mesh, (cs_coord_t *)probe_coords);
 
-  if (cs_glob_n_ranks > 1) {
+  /* Set a global numbering if needed */
 
-    /* Set a global numbering */
+  if (pset->p_define_func != NULL) {
+    cs_real_t *s;
+    BFT_MALLOC(s, pset->n_loc_probes, cs_real_t);
+    for (int i = 0; i < pset->n_loc_probes; i++) {
+      int j = pset->loc_id[i];
+      s[i] = pset->s_coords[j];
+    }
+    fvm_io_num_t *vtx_io_num
+      = fvm_io_num_create_from_real(pset->s_coords, pset->n_loc_probes);
+    BFT_FREE(s);
+    fvm_nodal_transfer_vertex_io_num(exp_mesh, &vtx_io_num);
+  }
+  else if (cs_glob_n_ranks > 1) {
     fvm_nodal_init_io_num(exp_mesh, global_num, 0); // 0 = vertices
 
 #if defined(HAVE_MPI)
@@ -1341,13 +1402,13 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
                cs_glob_mpi_comm);
 #endif
   }
-  else
-    gmax_distance = max_distance;
 
-  bft_printf(_("\n Probe set: \"%s\":\n"
-               "   maximum distance between cell centers and"
-               " requested coordinates:"
-               " %5.3e\n"), pset->name, gmax_distance);
+  if (! (   pset->flags & CS_PROBE_ON_CURVE
+         || pset->flags & CS_PROBE_TRANSIENT))
+    bft_printf(_("\n Probe set: \"%s\":\n"
+                 "   maximum distance between cell centers and"
+                 " requested coordinates:"
+                 " %5.3e\n"), pset->name, gmax_distance);
 
   BFT_FREE(global_num);
 
@@ -1415,8 +1476,22 @@ cs_probe_set_unlocated_export_mesh(cs_probe_set_t   *pset,
   fvm_nodal_define_vertex_list(exp_mesh, n_exp_probes, NULL);
   fvm_nodal_transfer_vertices(exp_mesh, (cs_coord_t *)probe_coords);
 
-  /* Set a global numbering */
-  if (cs_glob_n_ranks > 1)
+  /* Set a global numbering if needed */
+
+  if (pset->p_define_func != NULL) {
+    cs_real_t *s;
+    BFT_MALLOC(s, pset->n_probes, cs_real_t);
+    int j = 0;
+    for (int i = 0; i < pset->n_probes; i++) {
+      if (pset->located[i] == 0)
+        s[j++] = pset->s_coords[i];
+    }
+    fvm_io_num_t *vtx_io_num
+      = fvm_io_num_create_from_real(pset->s_coords, j);
+    BFT_FREE(s);
+    fvm_nodal_transfer_vertex_io_num(exp_mesh, &vtx_io_num);
+  }
+  else if (cs_glob_n_ranks > 1)
     fvm_nodal_init_io_num(exp_mesh, global_num, 0); // 0 = vertices
 
   BFT_FREE(global_num);

@@ -139,9 +139,9 @@ int cs_glob_post_util_flag[CS_POST_UTIL_N_TYPES]
 /*----------------------------------------------------------------------------*/
 
 void
-cell_segment_intersect_select(void        *input,
-                              cs_lnum_t   *n_cells,
-                              cs_lnum_t  **cell_ids)
+cs_cell_segment_intersect_select(void        *input,
+                                 cs_lnum_t   *n_cells,
+                                 cs_lnum_t  **cell_ids)
 {
   cs_real_t *sx = (cs_real_t *)input;
 
@@ -279,6 +279,79 @@ cell_segment_intersect_select(void        *input,
 
   *n_cells = _n_cells;
   *cell_ids = _cell_ids;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define probes based on the centers of cells intersected by
+ *        a given segment.
+ *
+ * This selection function may be used as a probe set definition function
+ * for postprocessing.
+ *
+ * In this case, the input points to a real array containing the segment's
+ * start and end coordinates.
+ *
+ * Note: the input pointer must point to valid data when this selection
+ * function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_meshes()
+ *   with a fixed-mesh writer before the data pointed to goes out of scope;
+ *
+ * The caller is responsible for freeing the returned cell_ids array.
+ * When passed to postprocessing mesh or probe set definition functions,
+ * this is handled automatically.
+ *
+ * \param[in]   input   pointer to segment start and end:
+ *                      [x0, y0, z0, x1, y1, z1]
+ * \param[out]  n_elts  number of selected coordinates
+ * \param[out]  coords  coordinates of selected elements.
+ * \param[out]  s       curvilinear coordinates of selected elements
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_segment_intersect_probes_define(void          *input,
+                                        cs_lnum_t     *n_elts,
+                                        cs_real_3_t  **coords,
+                                        cs_real_t    **s)
+{
+  cs_real_t *sx = (cs_real_t *)input;
+
+  const cs_real_t sx0[3] = {sx[0], sx[1], sx[2]};
+  const cs_real_t dx1[3] = {sx[3]-sx[0], sx[4]-sx[1], sx[5]-sx[2]};
+  const cs_real_t s_norm2 = cs_math_3_square_norm(dx1);
+
+  const cs_real_3_t  *cell_cen
+    = (const cs_real_3_t *)(cs_glob_mesh_quantities->cell_cen);
+
+  cs_lnum_t n_cells = 0;
+  cs_lnum_t *cell_ids = NULL;
+
+  cs_cell_segment_intersect_select(input, &n_cells, &cell_ids);
+
+  cs_real_3_t *_coords;
+  cs_real_t *_s;
+  BFT_MALLOC(_coords, n_cells, cs_real_3_t);
+  BFT_MALLOC(_s, n_cells, cs_real_t);
+
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    cs_real_t dx[3], coo[3];
+    for (cs_lnum_t j = 0; j < 3; j++) {
+      coo[j] = cell_cen[cell_ids[i]][j];
+      dx[j] = coo[j] - sx[j];
+      _coords[i][j] = coo[j];
+    }
+    _s[i] = cs_math_3_dot_product(dx, dx1) / s_norm2;
+  }
+
+  BFT_FREE(cell_ids);
+
+  /* Set return values */
+
+  *n_elts = n_cells;
+  *coords = _coords;
+  *s = _s;
 }
 
 /*----------------------------------------------------------------------------*/

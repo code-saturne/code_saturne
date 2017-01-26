@@ -365,7 +365,7 @@ cs_user_postprocess_meshes(void)
   /* De-activate boundary mesh output by redefining it with no writer
      association (default is:
      int n_writers = 1;
-     const int writer_ids[] = {-1});
+     const int writer_ids[] = {CS_POST_WRITER_DEFAULT});
   */
 
   /*! [post_define_mesh_m2] */
@@ -546,7 +546,7 @@ cs_user_postprocess_probes(void)
     cs_probe_set_associate_writers(pset, 1, writer_ids);
 
     cs_probe_set_option(pset, "boundary", "true");
-    cs_probe_set_option(pset, "snap_mode", "vertex");
+    cs_probe_set_snap_mode(pset, CS_PROBE_SNAP_VERTEX);
   }
 
 }
