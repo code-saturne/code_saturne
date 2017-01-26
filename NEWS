@@ -5,10 +5,38 @@ Trunk (unreleased)
 User changes
 ------------
 
+- Allow user definitions of head losses by zones (see cs_user_head_losses.c).
+
+- When inserting boundaries (shuch as thin walls), vertices are now separated
+  on each side of those boundaries, for a true topological mesh modification.
+  cs_user_mesh_thinwall is also renamed to cs_user_mesh_boundary.
+
+
+Numerics
+--------
+
+- Improve time stepping of the coupled solver for the components of Reynolds stress tensor (irijco = 1).
+  * No clipping on Rij should appear when no flux rectonstruction is needed and a upwind scheme is used
+    (except those due to boundary conditions on R12).
+  * Add eigen_max function to cs_math.c
+  * EBRSM and SSG models are treated.
+  * Add a clipping indicator which can be activated to check where clipping occurs in the output files
+
 - Add and reorganize convection schemes (especially for VOF method)
   * reorganize Roe-Sweby limiters.
   * add Compressive convection schemes for accurate modeling of free surface
     with VOF method.
+
+- Add a conservative gradient reconstructed with least squares gradient for
+  vectors and scalars, in place of iterative gradient initialized by least
+  squares gradient (imrgra=4,5,6).
+
+- Add a cooling towers module to simulate exchange zones.
+
+- Add a convection-diffusion equation solver for additional vector variables.
+
+Physical modelling
+------------------
 
 - Add a Volume Of Fluid algorithm:
   * partly merge cavitation algorithm with VOF algorithm.
@@ -21,21 +49,7 @@ User changes
   * interpol grid and measures set structures are used as well
   * multidimensional analysis are computed for multidimensional variables.
 
-- Allow user definitions of head losses by zones (see cs_user_head_losses.c).
-
-- Add a conservative gradient reconstructed with least squares gradient for
-  vectors and scalars, in place of iterative gradient initialized by least
-  squares gradient (imrgra=4,5,6).
-
-- When inserting boundaries (shuch as thin walls), vertices are now separated
-  on each side of those boundaries, for a true topological mesh modification.
-  cs_user_mesh_thinwall is also renamed to cs_user_mesh_boundary.
-
-- Add a cooling towers module to simulate exchange zones.
-
 - Modification of the LES dynamic Smagorinsky clippings.
-
-- Add a convection-diffusion equation solver for additional vector variables.
 
 - Add internal coupling for scalars of two domains (for instance temperature
   between solid and liquid, or enthalpy for electric arcs between plasma and
