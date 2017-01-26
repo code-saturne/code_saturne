@@ -1077,11 +1077,18 @@ class Studies(object):
         Launch external additional scripts with arguments.
         """
         pre, label, nodes, args = self.__parser.getPrepro(case.node)
+        if self.__debug:
+            print " >> prepro", pre
+            print " >> label ", label
+            print " >> nodes ", nodes
+            print " >> args  ", args
         for i in range(len(label)):
             if pre[i]:
                 # search if the script is the directoty MESH
                 # if not, the script is searched in the directories of the current case
                 cmd = os.path.join(self.__dest, l, "MESH", label[i])
+                if self.__debug:
+                    print "Path to prepro script ", cmd
                 if not os.path.isfile(cmd):
                     filePath = ""
                     for root, dirs, fs in os.walk(os.path.join(self.__dest, l, case.label)):
@@ -1163,7 +1170,11 @@ class Studies(object):
                                 if self.__parser.getAttribute(n, "dest") == "":
                                     self.__parser.setAttribute(n, "dest", case.run_id)
                         else:
-                            self.reporting('    - run %s --> FAILED' % case.label)
+                            if not case.run_id:
+                                self.reporting('    - run %s --> FAILED' % case.label)
+                            else:
+                                self.reporting('    - run {0} --> FAILED in {1}'.format(case.label,
+                                                                                        case.run_id))
 
                         self.__log.flush()
 
