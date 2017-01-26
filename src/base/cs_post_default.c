@@ -45,6 +45,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_ctwr.h"
 #include "cs_field.h"
 #include "cs_lagr_tracking.h"
