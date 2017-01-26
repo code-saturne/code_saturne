@@ -70,7 +70,6 @@ static cs_ctwr_fluid_props_t _props = {
   .cp_l = 0.,
   .hv0 = 0.,
   .rho_l = 0.,
-  .visc = 0.,
   .lambda_h = 0.,
   .lambda_l = 0.,
   .droplet_diam = 0.
@@ -95,7 +94,6 @@ cs_ctwr_glob_properties_get_pointer(double  **humidity0,
                                     double  **cp_l,
                                     double  **hv0,
                                     double  **rho_l,
-                                    double  **visc,
                                     double  **lambda_h,
                                     double  **lambda_l,
                                     double  **droplet_diam)
@@ -107,7 +105,6 @@ cs_ctwr_glob_properties_get_pointer(double  **humidity0,
   *cp_l         = &(_props.cp_l         );
   *hv0          = &(_props.hv0          );
   *rho_l        = &(_props.rho_l        );
-  *visc         = &(_props.visc         );
   *lambda_h     = &(_props.lambda_h     );
   *lambda_l     = &(_props.lambda_l     );
   *droplet_diam = &(_props.droplet_diam );

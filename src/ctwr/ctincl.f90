@@ -83,14 +83,14 @@ module ctincl
     ! global fluid properties structure
     subroutine cs_ctwr_glob_properties_get_pointer( &
         humidity0, &
-        cp_a, cp_v, cp_l, hv0, rho_l, visc, &
+        cp_a, cp_v, cp_l, hv0, rho_l, &
         lambda_h, lambda_l, &
         droplet_diam) &
         bind(C, name='cs_ctwr_glob_properties_get_pointer')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: humidity0
-      type(c_ptr), intent(out) :: cp_a, cp_v, cp_l, hv0, rho_l, visc
+      type(c_ptr), intent(out) :: cp_a, cp_v, cp_l, hv0, rho_l
       type(c_ptr), intent(out) :: lambda_h, lambda_l
       type(c_ptr), intent(out) :: droplet_diam
     end subroutine cs_ctwr_glob_properties_get_pointer
@@ -113,13 +113,13 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_humidity0
-    type(c_ptr) :: c_cp_a, c_cp_v, c_cp_l, c_hv0, c_rho_l, c_visc
+    type(c_ptr) :: c_cp_a, c_cp_v, c_cp_l, c_hv0, c_rho_l
     type(c_ptr) :: c_lambda_h, c_lambda_l
     type(c_ptr) :: c_droplet_diam
 
     call cs_ctwr_glob_properties_get_pointer( &
       c_humidity0, &
-      c_cp_a, c_cp_v, c_cp_l, c_hv0, c_rho_l, c_visc, &
+      c_cp_a, c_cp_v, c_cp_l, c_hv0, c_rho_l, &
       c_lambda_h, c_lambda_l, &
       c_droplet_diam)
 
@@ -129,7 +129,6 @@ contains
     call c_f_pointer(c_cp_l        , cp_l        )
     call c_f_pointer(c_hv0         , hv0         )
     call c_f_pointer(c_rho_l       , rho_l       )
-    call c_f_pointer(c_visc        , viscl0      )
     call c_f_pointer(c_lambda_h    , lambda_h    )
     call c_f_pointer(c_lambda_l    , lambda_l    )
     call c_f_pointer(c_droplet_diam, droplet_diam)

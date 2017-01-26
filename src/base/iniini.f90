@@ -825,38 +825,10 @@ gz = 0.d0
 
 icorio = 0
 
-! --- Constantes physiques de chaque phase
-!       RO0,VISCL0 et CP0 devront etre initialises par l'utilisateur
-!       P0 est donne par phase, mais seul P0(1) est utilise, idem
-!        pour PRED0 et XYZREF
-!       T0 ne sert a rien, sauf a etre dispo pour l'utilisateur
+! --- Physical constants initialized in C (cs_physical_constants.c)
 
-!       IROVAR : en attendant mieux, IROVAR indique si rho est constant
-!         (et c'est donc RO0) : utilise uniquement pour les suites de
-!         calcul, il indique qu'il ne faut pas relire la valeur de rho
-!         qui a ete stockee dans le fichier suite. Ceci permet de ne pas
-!         ecraser la valeur de rho0 (eventuellement modifiee par
-!         l'utilisateur) par la valeur de l'ancien calcul.
-!         Le pb ne se pose pas pour la viscosite car elle n'est relue
-!         que si elle est extrapolee et elle est alors forcement variable
-!         (du moins, on l'espere...) : on adopte la meme methode pour la
-!         symetrie.
-
-irovar = 0
-ivivar = 0
-ro0    = 1.17862d0
-roref  = ro0
-viscl0 = 1.83337d-5
-p0     = 1.01325d5
 ! Reset pther to p0
 pther = p0
-pred0  = 0.d0
-xyzp0(1)= -rinfin
-xyzp0(2)= -rinfin
-xyzp0(3)= -rinfin
-ixyzp0 = -1
-t0 = 20.d0 + 273.15d0
-cp0    = 1017.24d0
 
 ! --- Turbulence
 !     YPLULI est mis a -GRAND*10. Si l'utilisateur ne l'a pas specifie dans usipsu, on

@@ -300,7 +300,9 @@ BEGIN_C_DECLS
 /* main physical constants structure and associated pointer */
 
 static cs_physical_constants_t _physical_constants = {
-  .gravity = {0., 0., 0.,},
+  .gravity[0] = 0.,
+  .gravity[1] = 0.,
+  .gravity[2] = 0.,
   .icorio = 0};
 
 /* main fluid properties structure and associated pointer */

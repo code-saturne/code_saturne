@@ -55,7 +55,6 @@ typedef struct {
   cs_real_t   cp_l;            /* Capacite calorifique de l eau */
   cs_real_t   hv0;             /* Chaleur latente */
   cs_real_t   rho_l;           /* Masse volumique de l eau */
-  cs_real_t   visc;            /* Viscosite Dynamique */
   cs_real_t   lambda_h;        /* Humid air conductivity */
   cs_real_t   lambda_l;        /* Water conductivity */
   cs_real_t   droplet_diam;    /* Drop diameter for rain zones */

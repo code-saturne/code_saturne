@@ -772,20 +772,38 @@ module cstphy
     ! Interface to C function retrieving pointers to members of the
     ! global fluid properties structure
 
-    subroutine cs_f_fluid_properties_get_pointers(ixyzp0, ieos, icp, icv,      &
-                                                  irovar, ivivar, ro0, ivsuth, &
-                                                  viscl0, p0, pred0, xyzp0, t0,&
-                                                  cp0, cv0, xmasmr, psginf,    &
-                                                  gammasg, ipthrm, pther,      &
-                                                  pthera, pthermax,            &
-                                                  sleak, kleak,roref)          &
+    subroutine cs_f_fluid_properties_get_pointers(ixyzp0,  &
+                                                  ieos,    &
+                                                  icp,     &
+                                                  icv,     &
+                                                  irovar,  &
+                                                  ivivar,  &
+                                                  ivsuth,  &
+                                                  ro0,     &
+                                                  viscl0,  &
+                                                  p0,      &
+                                                  pred0,   &
+                                                  xyzp0,   &
+                                                  t0,      &
+                                                  cp0,     &
+                                                  cv0,     &
+                                                  xmasmr,  &
+                                                  psginf,  &
+                                                  gammasg, &
+                                                  ipthrm,  &
+                                                  pther,   &
+                                                  pthera,  &
+                                                  pthermax,&
+                                                  sleak,   &
+                                                  kleak,   &
+                                                  roref)   &
       bind(C, name='cs_f_fluid_properties_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ixyzp0, ieos, icp, icv, irovar, ivivar, ivsuth
-      type(c_ptr), intent(out) :: ipthrm
       type(c_ptr), intent(out) :: ro0, viscl0, p0, pred0
       type(c_ptr), intent(out) :: xyzp0, t0, cp0, cv0, xmasmr, psginf, gammasg
+      type(c_ptr), intent(out) :: ipthrm
       type(c_ptr), intent(out) :: pther, pthera, pthermax
       type(c_ptr), intent(out) :: sleak, kleak, roref
     end subroutine cs_f_fluid_properties_get_pointers
@@ -866,10 +884,11 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_ixyzp0, c_ieos, c_icp, c_icv, c_irovar, c_ivivar
-    type(c_ptr) :: c_ipthrm
     type(c_ptr) :: c_ivsuth, c_ro0, c_viscl0, c_p0
     type(c_ptr) :: c_pred0, c_xyzp0, c_t0, c_cp0, c_cv0, c_xmasmr, c_psginf
-    type(c_ptr) :: c_gammasg, c_pther, c_pthera, c_pthermax
+    type(c_ptr) :: c_gammasg
+    type(c_ptr) :: c_ipthrm
+    type(c_ptr) :: c_pther, c_pthera, c_pthermax
     type(c_ptr) :: c_sleak, c_kleak, c_roref
 
     call cs_f_fluid_properties_get_pointers(c_ixyzp0, c_ieos, c_icp, c_icv, &
