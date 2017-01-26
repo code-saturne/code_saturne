@@ -48,6 +48,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_geom.h \
 cs_join.h \
 cs_join_intersect.h \
 cs_join_merge.h \
@@ -85,6 +86,7 @@ noinst_LTLIBRARIES = libcsmesh.la \
                      libcspartition.la
 
 libcsmesh_la_SOURCES = \
+cs_geom.c \
 cs_join.c \
 cs_join_intersect.c \
 cs_join_merge.c \

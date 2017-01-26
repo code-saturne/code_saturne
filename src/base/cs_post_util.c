@@ -48,6 +48,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
+#include "cs_geom.h"
 #include "cs_gradient.h"
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
@@ -109,6 +110,176 @@ int cs_glob_post_util_flag[CS_POST_UTIL_N_TYPES]
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Select cells cut by a given segment
+ *
+ * This selection function may be used as an elements selection function
+ * for postprocessing.
+ *
+ * In this case, the input points to a real array containing the segment's
+ * start and end coordinates.
+ *
+ * Note: the input pointer must point to valid data when this selection
+ * function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_meshes()
+ *   with a fixed-mesh writer before the data pointed to goes out of scope;
+ *
+ * The caller is responsible for freeing the returned cell_ids array.
+ * When passed to postprocessing mesh or probe set definition functions,
+ * this is handled automatically.
+ *
+ * \param[in]   input     pointer to segment start and end:
+ *                        [x0, y0, z0, x1, y1, z1]
+ * \param[out]  n_cells   number of selected cells
+ * \param[out]  cell_ids  array of selected cell ids (0 to n-1 numbering)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cell_segment_intersect_select(void        *input,
+                              cs_lnum_t   *n_cells,
+                              cs_lnum_t  **cell_ids)
+{
+  cs_real_t *sx = (cs_real_t *)input;
+
+  const cs_real_t sx0[3] = {sx[0], sx[1], sx[2]};
+  const cs_real_t sx1[3] = {sx[3], sx[4], sx[5]};
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  cs_lnum_t _n_cells = m->n_cells;
+  cs_lnum_t *_cell_ids = NULL;
+
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  BFT_MALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Allocate selection list */
+
+  /* Mark for each cell */
+  /*--------------------*/
+
+  for (cs_lnum_t cell_id = 0; cell_id < _n_cells; cell_id++) {
+    _cell_ids[cell_id] = -1;
+  }
+
+  const cs_real_3_t *vtx_coord= (const cs_real_3_t *)m->vtx_coord;
+
+  /* Contribution from interior faces;
+     note the to mark cells, we could use a simple loop,
+     as thread races would not lead to a incorrect result, but
+     even if is slightly slower, we prefer to have a clean
+     behavior under thread debuggers. */
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           face_id++) {
+
+        int n_crossings[2] = {0, 0};
+
+        cs_lnum_t vtx_start = m->i_face_vtx_idx[face_id];
+        cs_lnum_t vtx_end = m->i_face_vtx_idx[face_id+1];
+        cs_lnum_t n_vertices = vtx_end - vtx_start;
+        const cs_lnum_t *vertex_ids = m->i_face_vtx_lst + vtx_start;
+
+        const cs_real_t *face_center = fvq->i_face_cog + (3*face_id);
+        const cs_real_t *face_normal = fvq->i_face_normal + (3*face_id);
+
+        double t = cs_geom_segment_intersect_face(0,
+                                                  n_vertices,
+                                                  vertex_ids,
+                                                  vtx_coord,
+                                                  face_center,
+                                                  face_normal,
+                                                  sx0,
+                                                  sx1,
+                                                  n_crossings);
+
+        if (t >= 0 && t <= 1) {
+          cs_lnum_t  c_id0 = m->i_face_cells[face_id][0];
+          cs_lnum_t  c_id1 = m->i_face_cells[face_id][1];
+          if (c_id0 < _n_cells)
+            _cell_ids[c_id0] = 1;
+          if (c_id1 < _n_cells)
+            _cell_ids[c_id1] = 1;
+        }
+
+      }
+
+    }
+
+  }
+
+  /* Contribution from boundary faces*/
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
+
+        int n_crossings[2] = {0, 0};
+
+        cs_lnum_t vtx_start = m->b_face_vtx_idx[face_id];
+        cs_lnum_t vtx_end = m->b_face_vtx_idx[face_id+1];
+        cs_lnum_t n_vertices = vtx_end - vtx_start;
+        const cs_lnum_t *vertex_ids = m->b_face_vtx_lst + vtx_start;
+
+        const cs_real_t *face_center = fvq->b_face_cog + (3*face_id);
+        const cs_real_t *face_normal = fvq->b_face_normal + (3*face_id);
+
+        double t = cs_geom_segment_intersect_face(0,
+                                                  n_vertices,
+                                                  vertex_ids,
+                                                  vtx_coord,
+                                                  face_center,
+                                                  face_normal,
+                                                  sx0,
+                                                  sx1,
+                                                  n_crossings);
+
+        if (t >= 0 && t <= 1) {
+          cs_lnum_t  c_id = m->b_face_cells[face_id];
+          _cell_ids[c_id] = 1;
+        }
+
+      }
+
+    }
+
+  }
+
+  /* Now check marked cells */
+
+  _n_cells = 0;
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+    if (_cell_ids[cell_id] >= 0)
+      _cell_ids[_n_cells++] = cell_id;
+  }
+
+  BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
+                                                  but not required) */
+
+  /* Set return values */
+
+  *n_cells = _n_cells;
+  *cell_ids = _cell_ids;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -66,6 +66,38 @@ extern int cs_glob_post_util_flag[];
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Select cells cut by a given segment
+ *
+ * This selection function may be used as an elements selection function
+ * for postprocessing.
+ *
+ * In this case, the input points to a real array containing the segment's
+ * start and end coordinates.
+ *
+ * Note: the input pointer must point to valid data when this selection
+ * function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_meshes()
+ *   with a fixed-mesh writer before the data pointed to goes out of scope;
+ *
+ * The caller is responsible for freeing the returned cell_ids array.
+ * When passed to postprocessing mesh or probe set definition functions,
+ * this is handled automatically.
+ *
+ * \param[in]   input     pointer to segment start and end:
+ *                        [x0, y0, z0, x1, y1, z1]
+ * \param[out]  n_cells   number of selected cells
+ * \param[out]  cell_ids  array of selected cell ids (0 to n-1 numbering)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cell_segment_intersect_select(void        *input,
+                              cs_lnum_t   *n_cells,
+                              cs_lnum_t  **cell_ids);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the head of a turbomachinery (total pressure increase)
  *
  * \param[in]   criteria_in   selection criteria of turbomachinery suction

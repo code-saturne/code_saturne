@@ -56,6 +56,7 @@
 
 #include "cs_base.h"
 #include "cs_physical_constants.h"
+#include "cs_geom.h"
 #include "cs_halo.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -348,45 +349,6 @@ _apply_vector_rotation(const cs_real_t   matrix[3][4],
   v[0] = matrix[0][0]*v_in[0] + matrix[0][1]*v_in[1] + matrix[0][2]*v_in[2];
   v[1] = matrix[1][0]*v_in[0] + matrix[1][1]*v_in[1] + matrix[1][2]*v_in[2];
   v[2] = matrix[2][0]*v_in[0] + matrix[2][1]*v_in[1] + matrix[2][2]*v_in[2];
-}
-
-/*----------------------------------------------------------------------------
- * Compute wether the projection point of prev_location is inside or outside
- * the a given edge of a sub triangle
- *
- * parameters:
- *   prev_location <-- Previous location of the particle
- *   next_location <-- Next location of the particle
- *   vtx_0         <-- First vertex of the edge (sorted by index)
- *   vtx_1         <-- Second vertex of the edge (sorted by index)
- *----------------------------------------------------------------------------*/
-
-static int
-_test_edge(const cs_real_t prev_location[3],
-           const cs_real_t next_location[3],
-           const cs_real_t vtx_0[3],
-           const cs_real_t vtx_1[3])
-{
-
-  /* vO vector where the choice for v between v0 and v1 has no importance
-   * so we take the smaller vertex id */
-  cs_real_3_t vO = {prev_location[0] - vtx_0[0],
-                    prev_location[1] - vtx_0[1],
-                    prev_location[2] - vtx_0[2]};
-
-  cs_real_3_t edge = {vtx_1[0] - vtx_0[0],
-                      vtx_1[1] - vtx_0[1],
-                      vtx_1[2] - vtx_0[2]};
-
-  cs_real_3_t disp = {next_location[0] - prev_location[0],
-                      next_location[1] - prev_location[1],
-                      next_location[2] - prev_location[2]};
-  /* p = edge ^ vO */
-  const cs_real_3_t p = {edge[1]*vO[2] - edge[2]*vO[1],
-                         edge[2]*vO[0] - edge[0]*vO[2],
-                         edge[0]*vO[1] - edge[1]*vO[0]};
-
-  return (cs_math_3_dot_product(disp, p) > 0 ? 1 : -1);
 }
 
 #if defined(HAVE_MPI)
@@ -942,261 +904,6 @@ _manage_error(cs_lnum_t                       failsafe_mode,
       break;
     }
   }
-}
-
-/*----------------------------------------------------------------------------
- * Test if the current particle moves to the next cell through this face.
- *
- *                               |
- *      x------------------------|--------x Q: particle location
- *   P: prev. particle location  |
- *                               x Face (Center of Gravity)
- *             x current         |
- *               cell center     |
- *                               |
- *                           Face number
- *
- * parameters:
- *   face_num      <-- local number of the studied face
- *   n_vertices    <-- size of the face connectivity
- *   face_connect  <-- face -> vertex connectivity
- *   particle      <-- particle attributes
- *   p_am          <-- pointer to attributes map
- *
- * returns:
- *   -1 if the cell-center -> particle segment does not go through the face's
- *   plane, minimum relative distance (in terms of barycentric coordinates)
- *   of intersection point to face.
- *----------------------------------------------------------------------------*/
-
-static double
-_intersect_face(cs_lnum_t                       face_num,
-                cs_lnum_t                       n_vertices,
-                int                             reorient_face,
-                int                            *n_in,
-                int                            *n_out,
-                const cs_lnum_t                 face_connect[],
-                const void                     *particle,
-                const cs_lagr_attribute_map_t  *p_am)
-{
-  const cs_real_t  *face_cog;
-
-  cs_lnum_t  cur_cell_id
-    = cs_lagr_particle_get_cell_id(particle, p_am);
-  const cs_real_t  *next_location
-    = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
-  const cs_real_t  *prev_location
-    = ((const cs_lagr_tracking_info_t *)particle)->start_coords;
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
-  const double epsilon = 1.e-15;
-
-  /* Initialization of retval to unity*/
-  double retval = 1.;
-
-  assert(sizeof(cs_real_t) == 8);
-
-  /* Initialization */
-
-  if (face_num > 0) { /* Interior  face */
-
-    cs_lnum_t  face_id = face_num - 1;
-    face_cog = fvq->i_face_cog + (3*face_id);
-
-  }
-  else { /* Boundary face */
-
-    cs_lnum_t  face_id = -face_num - 1;
-    face_cog = fvq->b_face_cog + (3*face_id);
-
-  }
-
-  cs_real_3_t disp = {next_location[0] - prev_location[0],
-                      next_location[1] - prev_location[1],
-                      next_location[2] - prev_location[2]};
-  cs_real_3_t GO = {prev_location[0] - face_cog[0],
-                    prev_location[1] - face_cog[1],
-                    prev_location[2] - face_cog[2]};
-
-  cs_real_t *cell_cen = fvq->cell_cen + (3*cur_cell_id);
-  cs_real_3_t vect_cen = {face_cog[0] - cell_cen[0],
-                          face_cog[1] - cell_cen[1],
-                          face_cog[2] - cell_cen[2]};
-
-
-  int n_intersects = 0;
-
-  /* Principle:
-   *  - loop on sub-triangles of the face
-   *    and test for each triangle if the intersection is inside the triangle
-   *  - use of a geometric algorithm:
-   *    the intersection is in the triangle if it is on the proper side of each
-   *    three edges defining the triangle (e0, e1 and e_out)
-   *    This is measured calculating the sign u, v and w
-   *    (and keeping them in memory to calculate each value only once)
-   *
-   *        e0
-   *          ---------
-   *          |\  xI /|        I = intersection (occurring at t such that
-   *          | \   / |                           I = O + t * OD          )
-   *          |  \ /  |
-   *    e_out |   x G |        G = Center of gravity of the face
-   *          |  / \  |
-   *          | /   \ |
-   *          |/     \|
-   *          ---------
-   *        e1
-   */
-
-  /* Initialization of triangle points and edges (vectors)*/
-  cs_real_3_t  e0, e1;
-  int pi, pip1, p0;
-
-  /* 1st vertex: vector e0, p0 = e0 ^ GO  */
-  cs_lnum_t vtx_id_0 = face_connect[0];
-  cs_real_t *vtx_0 = mesh->vtx_coord + (3*vtx_id_0);
-
-  p0 = _test_edge(prev_location, next_location, face_cog, vtx_0);
-  pi = p0;
-  pip1 = p0;
-
-  /* Loop on vertices of the face */
-  for (cs_lnum_t i = 0; i < n_vertices; i++) {
-
-    vtx_id_0 = face_connect[i];
-    cs_lnum_t vtx_id_1 = face_connect[(i+1)%n_vertices];
-
-    vtx_0 = mesh->vtx_coord + (3 * vtx_id_0);
-    cs_real_t *vtx_1 = mesh->vtx_coord + (3 * vtx_id_1);
-    for (int j = 0; j < 3; j++) {
-      e0[j] = vtx_0[j] - face_cog[j];
-      e1[j] = vtx_1[j] - face_cog[j];
-
-    }
-
-    /* P = e1^e0 */
-
-    const cs_real_3_t pvec = {e1[1]*e0[2] - e1[2]*e0[1],
-                              e1[2]*e0[0] - e1[0]*e0[2],
-                              e1[0]*e0[1] - e1[1]*e0[0]};
-
-    double det = cs_math_3_dot_product(disp, pvec);
-
-    /* Reorient before computing the sign regarding the face so that
-     * we are sure that it the test is true for one side of the face, it is false
-     * on the other side */
-    det = reorient_face * det;
-
-    int sign_det = (det > 0 ? 1 : -1);
-
-    sign_det = reorient_face * sign_det;
-    det = reorient_face * det;
-
-    /* 2nd edge: vector ei+1, pi+1 = ei+1 ^ GO  */
-
-    pi = - pip1;
-    if (i == n_vertices - 1)
-      pip1 = p0;
-    else
-      pip1 = _test_edge(prev_location, next_location, face_cog, vtx_1);
-
-    const int u_sign = pip1 * sign_det;
-
-    /* 1st edge: vector ei, pi = ei ^ GO */
-    const int v_sign = pi * sign_det;
-
-    /* 3rd edge: vector e_out */
-
-    /* Check the orientation of the edge */
-    int reorient_edge = (vtx_id_0 < vtx_id_1 ? 1 : -1);
-
-    /* Sort the vertices of the edges so that it is easier to find it after */
-    cs_lnum_2_t edge_id = {vtx_id_0, vtx_id_1};
-    if (reorient_edge == -1) {
-      edge_id[0] = vtx_id_1;
-      edge_id[1] = vtx_id_0;
-    }
-
-    vtx_0 = mesh->vtx_coord + (3*edge_id[0]);
-    vtx_1 = mesh->vtx_coord + (3*edge_id[1]);
-
-    int w_sign = _test_edge(prev_location, next_location, vtx_0, vtx_1)
-                 * reorient_edge * sign_det;
-
-    /* The projection of point O along displacement is outside of the triangle
-     * then no intersection */
-    if (w_sign > 0 || u_sign  < 0 || v_sign < 0)
-      continue;
-
-    /* We have an intersection if
-     * u_sign >= 0, v_sign <= 0 and w_sign <= 0
-     * If det is nearlly 0, consider that the particle does not cross the face */
-
-    double go_p = - cs_math_3_dot_product(GO, pvec);
-
-    /* Reorient before computing the sign regarding the face so that
-     * we are sure that it the test is true for one side of the face, it is false
-     * on the other side */
-    go_p = reorient_face * go_p;
-
-    int sign_go_p = (go_p > 0 ? 1 : -1);
-
-    sign_go_p = reorient_face * sign_go_p;
-    go_p = reorient_face * go_p;
-
-    /* We check the direction of displacement and the triangle normal
-    *  to see if the particles enters or leaves the cell */
-    int sign_face_orient = (cs_math_3_dot_product(pvec,vect_cen) > 0 ? 1 : -1 );
-    bool dir_move = (sign_face_orient * sign_det > 0);
-
-    /* Same sign (meaning there is a possible intersection with t>0).  */
-    if (sign_det == sign_go_p) {
-      /* The particle enters (n_in++) or leaves (n_out++) the cell */
-      if (dir_move) {
-        if (fabs(go_p) < fabs(det)) {
-          /* There is a real intersection (outward) with 0<t<1 (n_intersect ++) */
-          double t = 0.99;
-
-          const double det_cen = cs_math_3_dot_product(vect_cen, pvec);
-          if (fabs(det/det_cen) > epsilon) {
-            t = go_p / det;
-          }
-
-          (*n_out)++;
-          n_intersects += 1;
-          if (t < retval)
-            retval = t;
-        } else {
-          (*n_out)++;
-        }
-      } else {
-        (*n_in)++;
-        if (fabs(go_p) < fabs(det))
-          n_intersects -= 1;
-        /* There is a real intersection (inward) with 0<t<1 (n_intersect -) */
-      }
-    } else {
-      /* Opposite sign (meaning there is a possible intersection with t<0).  */
-      if (dir_move)
-        (*n_out)++;
-      else
-        (*n_in)++;
-    }
-
-  /* In case intersections were removed due to non-convex cases
-   *  (i.e.  n_intersects < 1, but retval <1 ),
-   *  the retval value is forced to 1
-   *  (no intersection since the particle entered and left from this face). */
-
-    if (n_intersects < 1 && retval < 1.) {
-      retval = 1.;
-    }
-
-  }
-
-  return retval;
 }
 
 /*----------------------------------------------------------------------------
@@ -2360,6 +2067,9 @@ _local_propagation(void                           *particle,
 
   cs_lnum_t  cur_cell_id
     = cs_lagr_particle_get_cell_id(particle, p_am);
+
+  const cs_real_3_t *vtx_coord
+    = (const cs_real_3_t *)(cs_glob_mesh->vtx_coord);
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   /* Dimension less test: no movement? */
@@ -2486,14 +2196,14 @@ _local_propagation(void                           *particle,
     double t_intersect = -1;
 
     bool restart = false;
-    /* Outward normal: always well oriented for external faces, depend on the
-     * connectivity for internal faces */
-    int reorient_face = 1;
 
   reloop_cen:;
 
     int n_in = 0;
     int n_out = 0;
+
+    const cs_real_t  *next_location
+      = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
 
     /* Loop on faces to see if the particle trajectory crosses it*/
     for (i = cell_face_idx[cur_cell_id];
@@ -2502,6 +2212,11 @@ _local_propagation(void                           *particle,
 
       cs_lnum_t face_id, vtx_start, vtx_end, n_vertices;
       const cs_lnum_t  *face_connect;
+      const cs_real_t *face_cog, *face_normal;
+
+      /* Outward normal: always well oriented for external faces, depend on the
+       * connectivity for internal faces */
+      int reorient_face = 1;
 
       cs_lnum_t face_num = cell_face_lst[i];
 
@@ -2517,6 +2232,8 @@ _local_propagation(void                           *particle,
         n_vertices = vtx_end - vtx_start;
 
         face_connect = mesh->i_face_vtx_lst + vtx_start;
+        face_cog = fvq->i_face_cog + (3*face_id);
+        face_normal = fvq->i_face_normal + (3*face_id);
 
       }
       else {
@@ -2531,22 +2248,30 @@ _local_propagation(void                           *particle,
         n_vertices = vtx_end - vtx_start;
 
         face_connect = mesh->b_face_vtx_lst + vtx_start;
+        face_cog = fvq->b_face_cog + (3*face_id);
+        face_normal = fvq->b_face_normal + (3*face_id);
 
       }
 
       /*
         adimensional distance estimation of face intersection
-        (-1 if no chance of intersection)
+        (1 if no chance of intersection)
       */
 
-      double t    = _intersect_face(face_num,
-                                    n_vertices,
-                                    reorient_face,
-                                    &n_in,
-                                    &n_out,
-                                    face_connect,
-                                    particle,
-                                    p_am);
+      int n_crossings[2] = {0, 0};
+
+      double t = cs_geom_segment_intersect_face(reorient_face,
+                                                n_vertices,
+                                                face_connect,
+                                                vtx_coord,
+                                                face_cog,
+                                                face_normal,
+                                                prev_location,
+                                                next_location,
+                                                n_crossings);
+
+      n_in += n_crossings[0];
+      n_out += n_crossings[1];
 
       if (t < adist_min) {
         exit_face = face_num;
@@ -2577,9 +2302,9 @@ _local_propagation(void                           *particle,
         restart = true;
       else {
         _manage_error(failsafe_mode,
-            particle,
-            p_am,
-            CS_LAGR_TRACKING_ERR_LOST_PIC);
+                      particle,
+                      p_am,
+                      CS_LAGR_TRACKING_ERR_LOST_PIC);
 
         move_particle  = CS_LAGR_PART_MOVE_OFF;
         particle_state = CS_LAGR_PART_TREATED;
