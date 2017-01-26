@@ -165,7 +165,7 @@ static cs_real_t  *_get_v_slope_test(int                       f_id,
       f_track_slope_test_id = cs_field_get_key_int(f, _k_slope_test_f_id);
 
     if (f_track_slope_test_id > -1)
-    v_slope_test = (cs_field_by_id(f_track_slope_test_id))->val;
+      v_slope_test = (cs_field_by_id(f_track_slope_test_id))->val;
 
     if (v_slope_test != NULL) {
       const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;

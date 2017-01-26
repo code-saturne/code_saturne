@@ -139,11 +139,13 @@ integer          idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
 integer          dimrij
+integer          t2v(3,3)
+integer          iv2t(6), jv2t(6)
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision trprod, trrij
-double precision deltij(6)
+double precision deltij(6), dij(3,3)
 double precision tuexpr, thets , thetv , thetp1
 double precision aiksjk, aikrjk, aii ,aklskl, aikakj
 double precision xaniso(3,3), xstrai(3,3), xrotac(3,3), xprod(3,3), matrot(3,3)
@@ -154,6 +156,16 @@ double precision pij, phiij1, phiij2, epsij
 double precision phiijw, epsijw
 double precision ccorio
 double precision rctse
+double precision eigen_max
+double precision eigen_vals(3)
+double precision turb_schmidt
+double precision gradchk, gradro_impl
+double precision kseps, eps_ckrij
+double precision matrn(6), oo_matrn(6)
+double precision ceps_impl, cphi3impl, cphiw_impl
+double precision impl_drsm(6,6)
+double precision implmat2add(3,3)
+double precision impl_lin_cst, impl_id_cst
 
 character(len=80) :: label
 double precision, allocatable, dimension(:,:) :: grad
@@ -193,6 +205,22 @@ allocate(weighb(nfabor))
 ! Initialize variables to avoid compiler warnings
 iii = 0
 jjj = 0
+
+! Generating the tensor to vector (t2v) and vector to tensor (v2t) mask
+! arrays
+! a) t2v
+t2v(1,1) = 1; t2v(1,2) = 4; t2v(1,3) = 6;
+t2v(2,1) = 4; t2v(2,2) = 2; t2v(2,3) = 5;
+t2v(3,1) = 6; t2v(3,2) = 5; t2v(3,3) = 3;
+! b) i index of v2t
+iv2t(1) = 1; iv2t(2) = 2; iv2t(3) = 3;
+iv2t(4) = 1; iv2t(5) = 2; iv2t(6) = 1;
+! c) j index of v2t
+jv2t(1) = 1; jv2t(2) = 2; jv2t(3) = 3;
+jv2t(4) = 2; jv2t(5) = 3; jv2t(6) = 3;
+! d) kronecker symbol
+dij(:,:) = 0.0d0;
+dij(1,1) = 1.0d0; dij(2,2) = 1.0d0; dij(3,3) = 1.0d0;
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
@@ -275,7 +303,6 @@ endif
 ! 2. User source terms
 !===============================================================================
 call cs_user_turbulence_source_terms2 &
-!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(ivar)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -286,15 +313,15 @@ call cs_user_turbulence_source_terms2 &
 do isou = 1, dimrij
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
-      !       Save for exchange
+      ! Save for exchange
       tuexpr = c_st_prv(isou,iel)
-      !       For continuation and the next time step
+      ! For continuation and the next time step
       c_st_prv(isou,iel) = smbr(isou,iel)
-      !       Second member of the previous time step
-      !       We suppose -rovsdt > 0: we implicite
-      !          the user source term (the rest)
+      ! Second member of the previous time step
+      ! We suppose -rovsdt > 0: we implicite
+      !    the user source term (the rest)
       smbr(isou,iel) = rovsdt(isou,isou,iel)*cvara_var(isou,iel)  - thets*tuexpr
-      !       Diagonal
+      ! Diagonal
       rovsdt(isou,isou,iel) = - thetv*rovsdt(isou,isou,iel)
     enddo
   else
@@ -337,7 +364,7 @@ do isou = 1, dimrij
      cell_f_vol , cvara_var  , smacel(:,ivar+isou-1)  , smacel(:,ipr) ,   &
      smbr   ,  rovsdt    , w1 )
 
-    ! If we extrapolate the source terms we put Gamma Pinj in the previous st
+   ! If we extrapolate the source terms we put Gamma Pinj in the previous st
     if (st_prv_id.ge.0) then
       do iel = 1, ncel
         c_st_prv(isou,iel) = c_st_prv(isou,iel) + w1(iel)
@@ -414,6 +441,21 @@ do iel=1,ncel
       xnal(3) = grad(3,iel)/xnoral
     endif
   endif
+
+  ! Initalize implicit matrices at 0
+  do isou = 1, 6
+    do jsou = 1, 6
+      impl_drsm(isou, jsou) = 0.0d0
+    end do
+  end do
+  do isou = 1, 3
+    do jsou = 1, 3
+      implmat2add(isou, jsou) = 0.0d0
+    end do
+  end do
+
+  impl_lin_cst = 0.0d0
+  impl_id_cst  = 0.0d0
 
   ! Pij
   xprod(1,1) = -2.0d0*(cvara_var(1 ,iel)*gradv(1, 1, iel) +         &
@@ -514,6 +556,113 @@ do iel=1,ncel
   xrotac(3,2) = -xrotac(2,3)
   xrotac(3,3) = 0.d0
 
+  do ii=1,3
+    do jj = 1,3
+      ! aii = aij.aij
+      aii    = aii+xaniso(ii,jj)*xaniso(ii,jj)
+      ! aklskl = aij.Sij
+      aklskl = aklskl + xaniso(ii,jj)*xstrai(ii,jj)
+    enddo
+  enddo
+
+  ! Computation of implicit components
+  ! -----------------------------------
+  ! Global variables needed for SSG and EBRSM
+  ! -------------
+  ! Computing the inverse matrix of R^n
+  ! Scaling by epsilon in order to dodge inversion errors
+  do isou = 1, 6
+    matrn(isou) = cvara_var(isou,iel)/cvara_ep(iel)
+    oo_matrn(isou) = 0.0d0
+  end do
+
+  ! Inversing the matrix
+  call symmetric_matrix_inverse(matrn, oo_matrn)
+  do isou = 1, dimrij
+    oo_matrn(isou) = cvara_ep(iel)*oo_matrn(isou)
+  end do
+
+  ! Computing the maximal eigenvalue (in terms of norm!) of S
+  call calc_symtens_eigvals(xstrai, eigen_vals)
+  eigen_max = maxval(abs(eigen_vals))
+
+  ! Constant for the dissipation
+  ceps_impl = d1s3 * cvara_ep(iel)
+
+
+  if (iturb .eq. 31 ) then ! SSG - Epsilon
+
+    ! Identity constant for phi3
+    cphi3impl = abs(cssgr2 - cssgr3*sqrt(aii))
+
+    ! Identity constant
+    impl_id_cst = - d2s3*cssgr1*min(trprod,0.0d0)         & ! Phi1
+                  - d1s3*cssgs2*cvara_ep(iel)*aii         & ! Phi2
+                  + cphi3impl * trrij * eigen_max     & ! Phi3
+                  + 2.0d0*d2s3*cssgr4*trrij*eigen_max & ! Phi4
+                  + d2s3*trrij*cssgr4*max(aklskl,0.0d0)     ! Phi4
+
+    ! Linear constant
+    impl_lin_cst = eigen_max *     ( &
+                   1.0d0             & ! Production
+                 + cssgr4            & ! Phi 4 linear part
+                 + cssgr5          )   ! Phi 5 linear part
+
+    do jsou = 1, 3
+      do isou = 1 ,3
+        iii = t2v(isou,jsou)
+        implmat2add(isou,jsou) = xrotac(isou,jsou)              &
+                               + impl_lin_cst*deltij(iii)       &
+                               + impl_id_cst*d1s2*oo_matrn(iii) &
+                               + ceps_impl*oo_matrn(iii)
+      end do
+    end do
+
+    impl_drsm(:,:) = 0.0d0
+    call reduce_symprod33_to_6(implmat2add, impl_drsm)
+
+
+  else ! EBRSM
+
+    ! Phi3 constant
+    cphi3impl = abs(cebmr2 - cebmr3*sqrt(aii))
+
+    ! PhiWall constant
+    cphiw_impl = 5.0d0*(1.0d0-alpha3)*cvara_ep(iel)/trrij
+
+
+    ! Identity constant
+    impl_id_cst = - d2s3*cebmr1*min(trprod,0.0d0)        &
+                  + cphi3impl * trrij * eigen_max        &
+                  + 2.0d0*d2s3*cebmr4*trrij*eigen_max    &
+                  + d2s3*trrij*cebmr4*max(aklskl,0.d0)
+
+    impl_id_cst = alpha3*impl_id_cst
+
+    ! Linear constant
+    impl_lin_cst = alpha3 * eigen_max * (             &
+                   1.0d0                              & ! Production
+                   + cebmr4                           & ! Phi4 Linear part
+                   + cebmr5             )             & ! Phi5 Linear part
+                 + (1.0d0-alpha3)*cvara_ep(iel)/trrij   ! Epsilon wall
+
+
+    do jsou = 1, 3
+      do isou = 1, 3
+        iii = t2v(isou,jsou)
+        implmat2add(isou,jsou) = alpha3 * xrotac(isou,jsou)         &
+                               + impl_lin_cst*deltij(iii)           &
+                               + impl_id_cst*d1s2*oo_matrn(iii)     &
+                               + ceps_impl*oo_matrn(iii)            &
+                               + cphiw_impl*xnal(isou)*xnal(jsou)
+      end do
+    end do
+
+    impl_drsm(:,:) = 0.0d0
+    call reduce_symprod33_to_6(implmat2add, impl_drsm)
+
+  end if
+
   ! Rotating frame of reference => "absolute" vorticity
   if (icorio.eq.1) then
     do ii = 1, 3
@@ -523,14 +672,6 @@ do iel=1,ncel
     enddo
   endif
 
-  do ii=1,3
-    do jj = 1,3
-      ! aii = aij.aij
-      aii    = aii+xaniso(ii,jj)*xaniso(ii,jj)
-      ! aklskl = aij.Sij
-      aklskl = aklskl + xaniso(ii,jj)*xstrai(ii,jj)
-    enddo
-  enddo
 
   do isou = 1, dimrij
     if (isou.eq.1)then
@@ -580,6 +721,7 @@ do iel=1,ncel
 
     if (iturb.eq.31) then
 
+      ! Explicit terms
       pij = xprod(iii,jjj)
       phiij1 = -cvara_ep(iel)* &
          (cssgs1*xaniso(iii,jjj)+cssgs2*(aikakj-d1s3*deltij(isou)*aii))
@@ -591,8 +733,10 @@ do iel=1,ncel
 
       w1(iel) = cromo(iel)*cell_f_vol(iel)*(pij+phiij1+phiij2+epsij)
 
+      ! Implicit terms
       w2(iel) = cell_f_vol(iel)/trrij*crom(iel)*(                              &
              cssgs1*cvara_ep(iel) + cssgr1*max(trprod,0.d0) )
+
 
     ! EBRSM
     else
@@ -655,17 +799,27 @@ do iel=1,ncel
       ! \f$ \alpha^3 \f$
       w2(iel) = cell_f_vol(iel)*crom(iel)*(                             &
                 cebms1*cvara_ep(iel)/trrij*alpha3                       &
-               +cebmr1*max(trprod/trrij,0.d0)*alpha3                &
-      ! Implicitation of epsijw
-      ! (the factor 5 appears when we calculate \f$ Phi_{ij}^w - epsijw\f$)
-              + 5.d0 * (1.d0-alpha3)*cvara_ep(iel)/trrij                &
-              +        (1.d0-alpha3)*cvara_ep(iel)/trrij)
+               +cebmr1*max(trprod/trrij,0.d0)*alpha3)
+
+!FIXME               +cebmr1*max(trprod/trrij,0.d0)*alpha3                &
+!      ! Implicitation of epsijw
+!      ! (the factor 5 appears when we calculate \f$ Phi_{ij}^w - epsijw\f$)
+!              + 5.d0 * (1.d0-alpha3)*cvara_ep(iel)/trrij                &
+!              +        (1.d0-alpha3)*cvara_ep(iel)/trrij)
     endif
     if (st_prv_id.ge.0) then
       c_st_prv(isou,iel) = c_st_prv(isou,iel) + w1(iel)
     else
       smbr(isou,iel) = smbr(isou,iel) + w1(iel)
       rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel) + w2(iel)
+
+      ! Carefull ! Inversion of the order of the coefficients since
+      ! rovsdt matrix is then used by a c function for the linear solving
+      do jsou = 1, 6
+        rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) + cell_f_vol(iel) &
+                                *crom(iel) * impl_drsm(isou,jsou)
+      end do
+
     endif
   enddo
 enddo
@@ -677,7 +831,6 @@ endif
 if (iturb.eq.32) then
   deallocate(grad)
 endif
-
 
 !===============================================================================
 ! 7. Buoyancy source term
@@ -709,6 +862,53 @@ if (igrari.eq.1) then
     endif
   enddo
 
+  ! Implicit buoyancy term
+  if (st_prv_id .ge. 0) then
+    if (iscalt.gt.0 .AND. nscal.ge.iscalt) then
+      call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
+      if (iturb .eq. 32) then
+        gradro_impl = -1.5d0*cmu/turb_schmidt * (1.0d0-cebmr6)
+      else
+        gradro_impl = -1.5d0*cmu/turb_schmidt * (1.0d0-crij3)
+      end if
+    else
+      if (iturb .eq. 32) then
+        gradro_impl = -1.5d0*cmu*(1.0d0-cebmr6)
+      else
+        gradro_impl = -1.5d0*cmu*(1.0d0-crij3)
+      end if
+    end if
+
+    do iel = 1, ncel
+      gradchk = gx*gradro(1,iel) + gy*gradro(2,iel) + gz*gradro(3,iel)
+      if (gradchk .lt. 0.0d0) then
+        kseps = (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel)) &
+                / (2.0d0*cvara_ep(iel))
+
+        do jsou = 1, 6
+          do isou = 1, 6
+            impl_drsm(isou,jsou) = 0.0d0
+          end do
+        end do
+        implmat2add(:,:) = 0.0d0
+
+        do jsou = 1, 3
+          implmat2add(1,jsou) = kseps * gradro_impl * gx * gradro(jsou,iel)
+          implmat2add(2,jsou) = kseps * gradro_impl * gy * gradro(jsou,iel)
+          implmat2add(3,jsou) = kseps * gradro_impl * gz * gradro(jsou,iel)
+        end do
+
+        call reduce_symprod33_to_6(implmat2add, impl_drsm)
+
+        do isou = 1, dimrij
+          do jsou = 1, dimrij
+            rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) - volume(iel) &
+                                    * impl_drsm(isou,jsou)
+          end do
+        end do
+      end if
+    end do
+  end if
   ! Free memory
   deallocate(w7)
 
@@ -751,7 +951,7 @@ else
 
   call viscfa                    &
   !==========
-  ( imvisf ,                      &
+  ( imvisf ,                     &
    w1     ,                      &
    viscf  , viscb  )
 

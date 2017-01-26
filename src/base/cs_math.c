@@ -136,6 +136,34 @@ void CS_PROCF (symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
                          sout);
 }
 
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_math_reduce_sym_prod_33_to_6
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (reduce_symprod33_to_6, REDUCE_SYMPROD33_TO_6)
+(
+  const cs_real_33_t s,
+  cs_real_66_t       sout
+)
+{
+  cs_math_reduce_sym_prod_33_to_6(s,
+                                  sout);
+}
+
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_math_eigen_max
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (calc_symtens_eigvals, CALC_SYMTENS_EIGVALS)
+(
+  const cs_real_33_t m,
+  cs_real_3_t          eig_vals
+)
+{
+  cs_math_33_eigen_vals(m,
+                       eig_vals);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/

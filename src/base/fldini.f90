@@ -82,8 +82,8 @@ implicit none
 ! Local variables
 
 integer          ii, ivar
-integer          iflid, kcvlim, ifctsl
-integer          kturt, kfturt, kislts, keyvar
+integer          iflid, kcvlim, ifctsl, clip_id
+integer          kturt, kfturt, kislts, keyvar, kclipp
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          iprev, inoprv
 integer          f_id, kscavr, f_vis, f_log, f_type
@@ -92,6 +92,7 @@ integer          iscdri, icla, iclap
 integer          keyccl, keydri
 integer          idfm, iggafm, nfld
 integer          iflidp, idimf, n_fans
+integer          f_dim
 
 character(len=80) :: name, f_name
 
@@ -375,23 +376,51 @@ call field_get_key_id("slope_test_upwind_id", kislts)
 itycat = FIELD_POSTPROCESS
 ityloc = 1 ! cells
 
-do ii = 1, nvar
-  f_id = ivarfl(ii)
-  call field_get_key_int(f_id, kislts, ifctsl)
-  if (ifctsl.eq.0) then
-   call field_get_key_struct_var_cal_opt(f_id, vcopt)
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_key_int(f_id, kislts, ifctsl)
+    if (ifctsl.ge.0) then
+      call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
-   ! Now create matching field
-    if (vcopt%iconv.gt.0 .and. vcopt%blencv.gt.0 .and. vcopt%isstpc.eq.0) then
+      ! Now create matching field
+      if (vcopt%iconv.gt.0 .and. vcopt%blencv.gt.0 .and. vcopt%isstpc.eq.0) then
+        ! Build name and label
+        call field_get_name(f_id, f_name)
+        name  = trim(f_name) // '_slope_upwind'
+        call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
+        call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
+        call field_set_key_int(f_id, kislts, ifctsl)
+      endif
+    endif
+  endif
+enddo
+
+! Postprocessing of clippings
+
+call field_get_key_id("clipping_id", kclipp)
+
+itycat = FIELD_POSTPROCESS
+ityloc = 1 ! cells
+
+do f_id = 0, nfld - 1
+  call field_get_type(f_id, f_type)
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_key_int(f_id, kclipp, clip_id)
+    if (clip_id.ge.0) then
+
+      ! Now create matching field
       ! Build name and label
       call field_get_name(f_id, f_name)
-      name  = trim(f_name) // '_slope_upwind'
-      call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
-      call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
-    else
-      ifctsl = -1
+
+      call field_get_dim(f_id, f_dim)
+      name  = trim(f_name) // '_clipped'
+      call field_create(name, itycat, ityloc, f_dim, inoprv, clip_id)
+      call field_set_key_int(clip_id, keyvis, POST_ON_LOCATION)
+      call field_set_key_int(f_id, kclipp, clip_id)
     endif
-    call field_set_key_int(f_id, kislts, ifctsl)
   endif
 enddo
 

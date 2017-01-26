@@ -341,10 +341,17 @@ integer          iclip
 integer          iel, ivar, ivar1, ivar2, isou, icltot, iclpep(1)
 integer          is_clipped
 integer          iclrij(6),iclrij_max(6), iclep_max(1)
+integer          kclipp, clip_id
+
 double precision vmin(7), vmax(7), rijmin, varrel, und0, epz2,cvar_var1, cvar_var2
+double precision eigen_min
+double precision eigen_vals(3)
+double precision tensor(3,3)
 
 double precision, dimension(:), pointer :: cvar_ep, cvara_ep
 double precision, dimension(:,:), pointer :: cvar_rij, cvara_rij
+double precision, dimension(:,:), pointer :: cpro_rij_clipped
+
 !===============================================================================
 
 ! Initialization to avoid compiler warnings
@@ -360,6 +367,14 @@ epz2 = epzero**2
 call field_get_val_s(ivarfl(iep), cvar_ep)
 call field_get_val_v(ivarfl(irij), cvar_rij)
 
+call field_get_key_id("clipping_id", kclipp)
+
+call field_get_key_int(ivarfl(irij), kclipp, clip_id)
+if (clip_id.ge.0) then
+  call field_get_val_v(clip_id, cpro_rij_clipped)
+endif
+
+
 !===============================================================================
 !  ---> Stockage Min et Max pour listing
 !===============================================================================
@@ -373,6 +388,8 @@ do isou = 1, 7
       iclrij_max(isou) = 0
       vmin(isou) = min(vmin(isou),cvar_rij(isou,iel))
       vmax(isou) = max(vmax(isou),cvar_rij(isou,iel))
+      if (clip_id.ge.0) &
+        cpro_rij_clipped(isou, iel) = 0.d0
     else
       iclep_max(1) = 0
       vmin(isou) = min(vmin(isou),cvar_ep(iel))
@@ -404,6 +421,8 @@ do iel = 1, ncel
     do isou = 1, 3
       if (cvar_rij(isou,iel).le.epz2) then
         is_clipped = 1
+        if (clip_id.ge.0) &
+          cpro_rij_clipped(isou, iel) = abs(cvar_rij(isou,iel)-epz2)
         cvar_rij(isou,iel) = epz2
         iclrij(isou) = iclrij(isou) + 1
       endif
@@ -425,10 +444,16 @@ do iel = 1, ncel
     do isou = 1, 3
       if (abs(cvar_rij(isou,iel)).le.epz2) then
         is_clipped = 1
+        if (clip_id.ge.0) &
+          cpro_rij_clipped(isou, iel) = abs(cvar_rij(isou,iel)-epz2)
         cvar_rij(isou,iel) = max(cvar_rij(isou,iel),epz2)
+        iclrij(isou) = iclrij(isou) + 1
       elseif(cvar_rij(isou,iel).le.0.d0) then
         is_clipped = 1
+        if (clip_id.ge.0) &
+          cpro_rij_clipped(isou, iel) = 2.d0 * abs(cvar_rij(isou,iel))
         cvar_rij(isou,iel) = min(abs(cvar_rij(isou,iel)), varrel*abs(cvara_rij(isou,iel)))
+        iclrij(isou) = iclrij(isou) + 1
       endif
     enddo
 
@@ -460,10 +485,37 @@ do iel = 1, ncel
     rijmin = sqrt(cvar_var1*cvar_var2)
     if (rijmin.lt.abs(cvar_rij(isou,iel))) then
       is_clipped = 1
-      cvar_rij(isou,iel) = sign(und0,cvar_rij(isou,iel)) * rijmin
+      if (clip_id.ge.0) &
+        cpro_rij_clipped(isou, iel) = cvar_rij(isou,iel)
+      cvar_rij(isou,iel) = sign(und0,cvar_rij(isou,iel)) &
+                         * rijmin / (1.d0 + epzero)
       iclrij(isou) = iclrij(isou) + 1
     endif
   enddo
+
+  ! Check if R is positive
+
+  tensor(1,1) = cvar_rij(1,iel)
+  tensor(1,2) = cvar_rij(4,iel)
+  tensor(1,3) = cvar_rij(6,iel)
+  tensor(2,1) = cvar_rij(4,iel)
+  tensor(2,2) = cvar_rij(2,iel)
+  tensor(2,3) = cvar_rij(5,iel)
+  tensor(3,1) = cvar_rij(6,iel)
+  tensor(3,2) = cvar_rij(5,iel)
+  tensor(3,3) = cvar_rij(3,iel)
+  call calc_symtens_eigvals(tensor,eigen_vals)
+  eigen_min = minval(eigen_vals(1:3))
+
+  if (eigen_min .LE. 0.0d0) then
+    is_clipped = 1
+    do isou = 1, 3
+      if (clip_id.ge.0) &
+        cpro_rij_clipped(isou, iel) = cvar_rij(isou,iel) * epzero - eigen_min
+      cvar_rij(isou,iel) = cvar_rij(isou,iel)*(1.0d0+epzero) - eigen_min
+      iclrij(isou) = iclrij(isou) + 1
+    end do
+  end if
 
   icltot = icltot + is_clipped
 enddo

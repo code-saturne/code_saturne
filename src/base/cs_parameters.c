@@ -833,6 +833,7 @@ cs_parameters_define_field_keys(void)
   /* TODO merge with previous key word */
   cs_field_define_key_int("source_term_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("slope_test_upwind_id", -1, CS_FIELD_VARIABLE);
+  cs_field_define_key_int("clipping_id", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("boundary_value_id", -1, 0);
 
