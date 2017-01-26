@@ -393,6 +393,7 @@ _cs_timer_initialize(void)
     }
   }
 
+#if defined (HAVE_CLOCK_GETCPUCLOCKID)
   if (_cs_timer_cpu_method == CS_TIMER_DISABLE) {
     clockid_t clock_id;
     if (clock_getcpuclockid(0, &clock_id) == 0) {
@@ -404,6 +405,7 @@ _cs_timer_initialize(void)
       }
     }
   }
+#endif
 
 #endif
 
