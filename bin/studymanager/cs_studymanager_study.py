@@ -914,8 +914,8 @@ class Studies(object):
         self.__parser.setDestination(self.__dest)
         self.__parser.setRepository(self.__repo)
         if options.debug:
-            print " Studies >> Repository  >> ", self.__repo
-            print " Studies >> Destination >> ", self.__dest
+            print(" Studies >> Repository  >> ", self.__repo)
+            print(" Studies >> Destination >> ", self.__dest)
         try:
             self.__plotter = Plotter(self.__parser)
         except Exception:
@@ -936,7 +936,7 @@ class Studies(object):
                                            exe, dif, self.__log, \
                                            options.remove_existing)] )
             if options.debug:
-                print " >> Append study ", l
+                print(" >> Append study ", l)
 
         # start the report
         self.report = os.path.join(self.__dest, "report.txt")

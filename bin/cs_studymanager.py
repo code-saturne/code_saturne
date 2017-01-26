@@ -277,7 +277,7 @@ def run_studymanager(pkg, options):
 
     studies = Studies(pkg, options, exe, dif)
     if options.debug:
-        print " run_studymanager() >> Studies are initialized"
+        print(" run_studymanager() >> Studies are initialized")
     if options.update_xml == False:
         os.chdir(studies.getDestination())
     else:
@@ -336,13 +336,13 @@ def run_studymanager(pkg, options):
 
     # Preprocessing and run all cases
     if options.debug:
-        print " run_studymanager() >> Starts running..."
+        print(" run_studymanager() >> Starts running...")
 
     if options.runcase:
         studies.run()
 
     if options.debug:
-        print " run_studymanager() >> Exits runs"
+        print(" run_studymanager() >> Exits runs")
 
     # Compare checkpoint files
 
