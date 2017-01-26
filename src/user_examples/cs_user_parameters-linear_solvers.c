@@ -214,8 +214,6 @@ static void
 _petsc_p_setup_hook_view(const void  *context,
                          KSP          ksp)
 {
-  PC pc;
-
   const char *p = getenv("CS_USER_PETSC_MAT_VIEW");
 
   if (p != NULL) {

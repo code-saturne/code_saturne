@@ -83,21 +83,6 @@ cs_param_var_type_name[CS_PARAM_N_VAR_TYPES][CS_BASE_STRING_LEN]=
     N_("tensor") };
 
 static const char
-cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_BASE_STRING_LEN] =
-  { N_("Homogeneous Dirichlet"),
-    N_("Dirichlet"),
-    N_("Homogeneous Neumann"),
-    N_("Neumann"),
-    N_("Robin") };
-
-static const char
-cs_param_boundary_type_name[CS_PARAM_N_BOUNDARY_TYPES][CS_BASE_STRING_LEN] =
-  { N_("Wall"),
-    N_("Inlet"),
-    N_("Outlet"),
-    N_("Symmetry") };
-
-static const char
 cs_param_hodge_type_desc[CS_PARAM_N_HODGE_TYPES][CS_BASE_STRING_LEN] =
   { "VpCd",
     "EpFd",

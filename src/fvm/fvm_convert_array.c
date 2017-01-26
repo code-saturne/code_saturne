@@ -2051,8 +2051,7 @@ fvm_convert_array(const int                     src_dim,
                   "float to int32, int64, uint32, or uint64"));
       break;
 
-    case CS_CHAR:
-    case CS_DATATYPE_NULL:
+    default:
       break;
 
     }
@@ -2099,8 +2098,7 @@ fvm_convert_array(const int                     src_dim,
                   "double to int32, int64, uint32, or uint64"));
       break;
 
-    case CS_CHAR:
-    case CS_DATATYPE_NULL:
+    default:
       break;
 
     }
@@ -2177,8 +2175,7 @@ fvm_convert_array(const int                     src_dim,
                                      dest_data);
       break;
 
-    case CS_CHAR:
-    case CS_DATATYPE_NULL:
+    default:
       break;
 
     }
@@ -2333,8 +2330,7 @@ fvm_convert_array(const int                     src_dim,
                                       dest_data);
       break;
 
-    case CS_CHAR:
-    case CS_DATATYPE_NULL:
+    default:
       break;
 
     }
@@ -2411,15 +2407,13 @@ fvm_convert_array(const int                     src_dim,
                                       dest_data);
       break;
 
-    case CS_CHAR:
-    case CS_DATATYPE_NULL:
+    default:
       break;
 
     }
     break;
 
-  case CS_CHAR:
-  case CS_DATATYPE_NULL:
+  default:
     break;
   }
 }

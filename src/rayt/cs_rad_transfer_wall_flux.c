@@ -50,6 +50,7 @@
 #include "bft_printf.h"
 
 #include "cs_log.h"
+#include "cs_boundary_zone.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"

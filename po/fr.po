@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-01-24 12:19+0100\n"
+"POT-Creation-Date: 2017-01-25 14:55+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5576,6 +5576,13 @@ msgstr ""
 "Le champ %s avec indicateur de type %d\n"
 "na pas de valeur associée au mot clé %d (%s)."
 
+#, c-format
+msgid ""
+"Field \"%s\" structure indicated by keyword %d (\"%s\")\n"
+"has been locked.\n"
+"use %s to access instead."
+msgstr ""
+
 msgid "Field"
 msgstr "Champ"
 
@@ -6546,9 +6553,10 @@ msgid ""
 "(2)"
 msgstr "Type de schéma convectif : Upwind 2ème ordre (0), centré (1), SOLU (2)"
 
+#, fuzzy
 msgid ""
-"0 for slope test, 1 for no slope test, 2 for min/max limiter and 3 for Roe "
-"Sweby limiter"
+"0 for slope test, 1 for no slope test, 2 for min/max limiter and 3 for NVD/"
+"TVD scheme"
 msgstr ""
 "0 pour le test de pente, 1 pour pas de test de pente, 2 pour limiteur min/"
 "max et 3 pour limiteur de Roe Sweby"
@@ -9793,33 +9801,6 @@ msgid "vector"
 msgstr ""
 
 msgid "tensor"
-msgstr ""
-
-msgid "Homogeneous Dirichlet"
-msgstr ""
-
-msgid "Dirichlet"
-msgstr ""
-
-msgid "Homogeneous Neumann"
-msgstr ""
-
-msgid "Neumann"
-msgstr ""
-
-msgid "Robin"
-msgstr ""
-
-msgid "Wall"
-msgstr ""
-
-msgid "Inlet"
-msgstr ""
-
-msgid "Outlet"
-msgstr ""
-
-msgid "Symmetry"
 msgstr ""
 
 msgid " Invalid type of variable."

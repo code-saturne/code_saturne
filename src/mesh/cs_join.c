@@ -1192,11 +1192,11 @@ _split_faces(cs_join_t           *this_join,
 
     *join_type = _join_type;
 
-    if (join_type == CS_JOIN_TYPE_NULL)
+    if (*join_type == CS_JOIN_TYPE_NULL)
       bft_printf(_("\n  Joining operation is null.\n"));
-    else if (join_type == CS_JOIN_TYPE_CONFORMING)
+    else if (*join_type == CS_JOIN_TYPE_CONFORMING)
       bft_printf(_("\n  Joining operation is conforming.\n"));
-    else if (join_type == CS_JOIN_TYPE_NON_CONFORMING)
+    else if (*join_type == CS_JOIN_TYPE_NON_CONFORMING)
       bft_printf(_("\n  Joining operation is non-conforming.\n"));
     bft_printf_flush();
 
