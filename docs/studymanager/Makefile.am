@@ -30,7 +30,7 @@ TEXMAIN = studymanager.tex
 
 TEXOTHERS =
 
-TEXINPUTFILES = input
+TEXINPUTFILES =
 
 # Distributed files
 
