@@ -27,17 +27,22 @@
 
 /*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- *  Local headers
- *----------------------------------------------------------------------------*/
-
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
 #include <math.h>
+
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
+#include "bft_error.h"
+#endif
 
 /*----------------------------------------------------------------------------*/
 
@@ -65,52 +70,6 @@ extern const cs_real_t cs_math_epzero;
 extern const cs_real_t cs_math_infinite_r;
 extern const cs_real_t cs_math_big_r;
 extern const cs_real_t cs_math_pi;
-
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_math_sym_33_inv_cramer
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(symmetric_matrix_inverse, SYMMETRIC_MATRIX_INVERSE)
-(
-  const cs_real_6_t s,
-  cs_real_6_t       sout
-);
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_math_sym_33_product
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
-(
- const cs_real_6_t s1,
- const cs_real_6_t s2,
- cs_real_6_t       sout
-);
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_math_reduce_sym_prod_33_to_6
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(reduce_symprod33_to_6, REDUCE_SYMPROD33_TO_6)
-(
-   const cs_real_33_t s,
-   cs_real_66_t       sout
-);
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_math_eigen_vals
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(calc_symtens_eigvals, CALC_SYMTENS_EIGVALS)
-(
-    const cs_real_33_t m,
-    cs_real_3_t          eig_vals
-);
-
 
 /*=============================================================================
  * Inline static function prototypes
@@ -424,17 +383,15 @@ cs_math_sym_33_product(const cs_real_t s1[6],
  * \brief Compute a 6x6 matrix A, equivalent to a 3x3 matrix s, such as:
  * A*R_6 = R*s^t + s*R
  *
- *
  * \param[in]     s            3x3 matrix
  * \param[out]    sout         6x6 matrix
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_reduce_sym_prod_33_to_6(const cs_real_t s[3][3],
-                                cs_real_t       sout[restrict 6][6])
+cs_math_reduce_sym_prod_33_to_66(const cs_real_t s[3][3],
+                                 cs_real_t       sout[restrict 6][6])
 {
-
   cs_real_33_t tens2vect;
   cs_real_6_t iindex;
   cs_real_6_t jindex;
@@ -454,7 +411,6 @@ cs_math_reduce_sym_prod_33_to_6(const cs_real_t s[3][3],
   /* Consider : W = R*s^t + s*R.
    *            W_ij = Sum_{k<3} [s_jk*r_ik + s_ik*r_jk]
    * We look for A such as
-   *
    */
   for (int iR = 0; iR < 6; iR++) {
     int ii;
@@ -475,18 +431,19 @@ cs_math_reduce_sym_prod_33_to_6(const cs_real_t s[3][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the all eigenvalue of a 3x3 matrix which is symmetric and real
- *         -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
- *         Communication of the ACM (April 1961)
- *         -> Wikipedia article entitled "Eigenvalue algorithm"
+ * \brief Compute the all eigenvalue of a 3x3 matrix which is symmetric and real
+ *        -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
+ *        Communication of the ACM (April 1961)
+ *        -> Wikipedia article entitled "Eigenvalue algorithm"
  *
  * \param[in]  m          3x3 matrix
  * \param[out] eig_vals   size 3 vector
- * */
+ */
 /*----------------------------------------------------------------------------*/
+
 static inline void
-cs_math_33_eigen_vals(const cs_real_t     m[3][3],
-                     cs_real_3_t          eig_vals)
+cs_math_33_eigen_vals(const cs_real_t   m[3][3],
+                     cs_real_t          eig_vals[3])
 {
   cs_real_t  e, e1, e2, e3;
 
@@ -555,7 +512,6 @@ cs_math_33_eigen_vals(const cs_real_t     m[3][3],
   eig_vals[1] = e2;
   eig_vals[2] = e3;
 }
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -572,10 +528,10 @@ cs_math_33_eigen_vals(const cs_real_t     m[3][3],
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_sym_33_double_product(const cs_real_t s1[6],
-                              const cs_real_t s2[6],
-                              const cs_real_t s3[6],
-                              cs_real_t       sout[restrict 3][3])
+cs_math_sym_33_double_product(const cs_real_t  s1[6],
+                              const cs_real_t  s2[6],
+                              const cs_real_t  s3[6],
+                              cs_real_t        sout[restrict 3][3])
 {
   cs_real_33_t _sout;
 

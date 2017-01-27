@@ -69,9 +69,9 @@ implicit none
 ! Local variables
 
 character(len=80) :: name_d, label_d
-character(len=80) :: f_name, f_label
+character(len=80) :: f_name
 
-integer          idim1, type_flag, f_id
+integer          idim1, f_id
 integer          itycat
 logical       :: has_previous
 

@@ -86,7 +86,7 @@ integer          iflid, kcvlim, ifctsl, clip_id
 integer          kturt, kfturt, kislts, keyvar, kclipp
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          iprev, inoprv
-integer          f_id, kscavr, f_vis, f_log, f_type
+integer          f_id, kscavr, f_type
 integer          iopchr
 integer          iscdri, icla, iclap
 integer          keyccl, keydri

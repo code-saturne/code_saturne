@@ -21,10 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine cou1do &
-!================
-
- ( nvar   , nscal  , cvcst ,  &
-   hbord  , tbord  )
+ ( cvcst ,  hbord  , tbord  )
 
 !===============================================================================
 ! FONCTION :
@@ -37,8 +34,6 @@ subroutine cou1do &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
 ! cvcst            ! r  ! <-- ! chaleur specifique si constante                !
 ! hbord(nfabor)    ! ra ! <-> ! coefficients d'echange aux bords               !
 ! tbord(nfabor)    ! ra ! <-> ! temperatures aux bords                         !
@@ -73,10 +68,9 @@ use radiat
 implicit none
 
 ! Arguments
-integer          nvar   , nscal
 
-double precision hbord(nfabor),tbord(nfabor)
 double precision cvcst
+double precision hbord(nfabor),tbord(nfabor)
 
 !     VARIABLES LOCALES
 

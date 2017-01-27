@@ -318,7 +318,6 @@ cs_cell_segment_intersect_probes_define(void          *input,
 {
   cs_real_t *sx = (cs_real_t *)input;
 
-  const cs_real_t sx0[3] = {sx[0], sx[1], sx[2]};
   const cs_real_t dx1[3] = {sx[3]-sx[0], sx[4]-sx[1], sx[5]-sx[2]};
   const cs_real_t s_norm2 = cs_math_3_square_norm(dx1);
 

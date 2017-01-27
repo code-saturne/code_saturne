@@ -1455,9 +1455,6 @@ void
 fvm_nodal_transfer_vertex_io_num(fvm_nodal_t    *this_nodal,
                                  fvm_io_num_t  **io_num)
 {
-  int  i;
-  fvm_nodal_section_t  *section;
-
   this_nodal->global_vertex_num = *io_num;
   *io_num = NULL;
   _remove_global_vertex_labels(this_nodal);

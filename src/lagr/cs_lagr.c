@@ -1785,8 +1785,6 @@ cs_get_lagr_extra_module(void)
 void
 cs_lagr_solve_initialize(const cs_real_t  *dt)
 {
-  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
-
   /* For frozen field:
      values at previous time step = values at current time step */
 
@@ -1810,8 +1808,6 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
   _lagr_map_fields_default();
 
   cs_lagr_tracking_initialize();
-
-  cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
 
   /* first initializations */
 

@@ -291,24 +291,6 @@ void CS_PROCF(synvie, SYNVIE)
 );
 
 /*----------------------------------------------------------------------------
- * Update a vector array in case of parallelism and/or periodicity,
- * ignoring periodicity of rotation.
- *
- * Fortran interface:
- *
- * subroutine synvnr(var)
- * *****************
- *
- * var   : <-> : interleaved vector (of dimension 3)
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (synvnr, SYNVNR)
-(
- cs_real_t  var[]
-);
-
-/*----------------------------------------------------------------------------
  * Update a diagonal tensor array in case of parallelism and/or periodicity.
  *
  * Fortran interface:

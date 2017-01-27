@@ -37,13 +37,12 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nfbpcd        number of faces with condensation source terms
-!> \param[in]     ifbpcd        index of faces with condensation source terms
 !> \param[in]     izzftcd       faces zone with condensation source terms imposed
 !>                              (at previous and current time steps)
 !_______________________________________________________________________________
 
 subroutine cs_mesh_tagmr &
- ( nfbpcd , ifbpcd, izzftcd )
+ ( nfbpcd , izzftcd )
 
 !===============================================================================
 ! Module files
@@ -71,7 +70,7 @@ implicit none
 
 ! Arguments
 
-integer          nfbpcd, ifbpcd(nfbpcd), izzftcd(nfbpcd)
+integer          nfbpcd, izzftcd(nfbpcd)
 
 ! Local variables
 

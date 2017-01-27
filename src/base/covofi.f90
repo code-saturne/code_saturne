@@ -492,10 +492,7 @@ endif
 !     Ordre 2 non pris en compte
 
 if (ippmod(iphpar).ge.1) then
-  call pptssc &
-  !==========
- ( iscal  , ncesmp , icetsm ,                                       &
-   smbrs  , rovsdt , tslagr )
+  call pptssc(iscal, smbrs, rovsdt, tslagr)
 endif
 
 ! --> Rayonnement

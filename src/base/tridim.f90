@@ -1161,9 +1161,7 @@ do while (iterns.le.nterup)
     call coupbo(itherm, cvcst, hbord, theipb)
 
     if (nfpt1t.gt.0) then
-      call cou1do &
-    ( nvar   , nscal  , cvcst,  &
-      hbord  , theipb )
+      call cou1do(cvcst, hbord, theipb)
 
       if (iirayo.ge.1) call cou1di(nfabor, iscalt, icodcl, rcodcl)
 

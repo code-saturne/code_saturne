@@ -244,7 +244,7 @@ contains
       ztmur(:,:) = 0.d0
 
       !1-D mesh generated and temperature initialization
-      call cs_mesh_tagmr(nfbpcd, ifbpcd, izzftcd)
+      call cs_mesh_tagmr(nfbpcd, izzftcd)
 
     endif
 

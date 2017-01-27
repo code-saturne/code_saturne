@@ -86,14 +86,14 @@ integer          ifcvsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
 integer          f_id, potr, poti, flag
-integer          f_vis, f_log, f_type, iut, ialpha
-integer          kturt, kfturt, kislts, keyvar
+integer          f_vis, f_log, iut, ialpha
+integer          kturt, kfturt
 integer          keycpl
 integer          ivar
 logical          iprev, inoprv, is_set
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
-type(var_cal_opt) :: vcopt, vcopt_dfm, vcopt_alpha
+type(var_cal_opt) :: vcopt_dfm, vcopt_alpha
 
 !===============================================================================
 

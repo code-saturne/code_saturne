@@ -165,6 +165,30 @@ static cs_lnum_t           *_explicit_ids = NULL;
  */
 /*----------------------------------------------------------------------------*/
 
+static cs_mesh_location_t *
+_mesh_location_by_id(int  id)
+{
+  const cs_mesh_location_t  *retval = NULL;
+
+  if (id < 0 || id > _n_mesh_locations)
+    bft_error(__FILE__, __LINE__, 0,
+              _("The requested mesh location\n"
+                "%d is not defined.\n"), id);
+  else
+    retval = _mesh_location + id;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * \brief Get a const pointer to a mesh location by its id.
+ *
+ * \param[in]  id         id of mesh location
+ *
+ * \return  a pointer to the associated mesh location
+ */
+/*----------------------------------------------------------------------------*/
+
 static const cs_mesh_location_t *
 _const_mesh_location_by_id(int  id)
 {
@@ -938,7 +962,7 @@ void
 cs_mesh_location_set_explicit_ids(int   id,
                                   bool  explicit_elt_ids)
 {
-  cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
+  cs_mesh_location_t  *ml = _mesh_location_by_id(id);
   ml->explicit_ids = explicit_elt_ids;
 }
 

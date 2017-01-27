@@ -160,7 +160,7 @@ double precision eigen_max
 double precision eigen_vals(3)
 double precision turb_schmidt
 double precision gradchk, gradro_impl
-double precision kseps, eps_ckrij
+double precision kseps
 double precision matrn(6), oo_matrn(6)
 double precision ceps_impl, cphi3impl, cphiw_impl
 double precision impl_drsm(6,6)
@@ -619,8 +619,7 @@ do iel=1,ncel
     end do
 
     impl_drsm(:,:) = 0.0d0
-    call reduce_symprod33_to_6(implmat2add, impl_drsm)
-
+    call reduce_symprod33_to_66(implmat2add, impl_drsm)
 
   else ! EBRSM
 
@@ -659,7 +658,7 @@ do iel=1,ncel
     end do
 
     impl_drsm(:,:) = 0.0d0
-    call reduce_symprod33_to_6(implmat2add, impl_drsm)
+    call reduce_symprod33_to_66(implmat2add, impl_drsm)
 
   end if
 
@@ -898,7 +897,7 @@ if (igrari.eq.1) then
           implmat2add(3,jsou) = kseps * gradro_impl * gz * gradro(jsou,iel)
         end do
 
-        call reduce_symprod33_to_6(implmat2add, impl_drsm)
+        call reduce_symprod33_to_66(implmat2add, impl_drsm)
 
         do isou = 1, dimrij
           do jsou = 1, dimrij

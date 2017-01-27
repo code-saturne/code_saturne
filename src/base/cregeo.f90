@@ -66,7 +66,7 @@ implicit none
 
 ! Local variables
 
-integer          nbrsyr , nbzech, imrgrl
+integer          nbrsyr , imrgrl
 
 !===============================================================================
 ! 1. Creation of extracted mesh coupled with SYRTHES

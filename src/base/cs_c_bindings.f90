@@ -1973,6 +1973,54 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function cs_f_math_sym_33_inv_cramer
+
+    subroutine symmetric_matrix_inverse(s, sout)                    &
+      bind(C, name='cs_f_math_sym_33_inv_cramer')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(in) :: s
+      real(kind=c_double), dimension(*), intent(out) :: sout
+    end subroutine symmetric_matrix_inverse
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function cs_f_math_sym_33_product
+
+    subroutine symmetric_matrix_product(s1, s2, sout)               &
+      bind(C, name='cs_f_math_sym_33_product')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(in) :: s1, s2
+      real(kind=c_double), dimension(*), intent(out) :: sout
+    end subroutine symmetric_matrix_product
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function cs_f_math_reduce_symprod33_to_66
+
+    subroutine reduce_symprod33_to_66(s, sout)                      &
+      bind(C, name='cs_f_math_reduce_sym_prod_33_to_66')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(in) :: s
+      real(kind=c_double), dimension(*), intent(out) :: sout
+    end subroutine reduce_symprod33_to_66
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function cs_f_math_33_eignen_vals
+
+    subroutine calc_symtens_eigvals(m, eig_vals)                   &
+      bind(C, name='cs_f_math_33_eigen_vals')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(in) :: m
+      real(kind=c_double), dimension(*), intent(out) :: eig_vals
+    end subroutine calc_symtens_eigvals
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function for data assimilation (atmospheric module)
 
     subroutine cs_at_data_assim_initialize()                        &

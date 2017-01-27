@@ -66,7 +66,7 @@
 
 
 subroutine pptssc &
- ( iscal  , ncesmp , icetsm ,                                       &
+ ( iscal  ,                                                         &
    smbrs  , rovsdt , tslagr )
 
 !===============================================================================
@@ -96,8 +96,7 @@ implicit none
 
 ! Arguments
 
-integer          iscal, ncesmp
-integer          icetsm(ncesmp)
+integer          iscal
 
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)

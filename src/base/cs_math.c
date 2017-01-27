@@ -103,65 +103,72 @@ const cs_real_t cs_math_pi = 3.14159265358979323846;
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public function definitions for Fortran API
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_math_sym_33_inv_cramer(const cs_real_t s[6],
+                            cs_real_t       sout[6]);
+
+void
+cs_f_math_sym_33_product(const cs_real_t  s1[6],
+                         const cs_real_t  s2[6],
+                         cs_real_t        sout[6]);
+
+void
+cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t  s[3][3],
+                                   cs_real_t        sout[6][6]);
+
+void cs_f_math_33_eigen_vals(const cs_real_t  m[3][3],
+                             cs_real_t        eig_vals[3]);
+
+/*============================================================================
+ * Fortran wrapper function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_math_sym_33_inv_cramer
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (symmetric_matrix_inverse, SYMMETRIC_MATRIX_INVERSE)
-(
-  const cs_real_6_t s,
-  cs_real_6_t       sout
-)
+void
+cs_f_math_sym_33_inv_cramer(const cs_real_t s[6],
+                            cs_real_t       sout[6])
 {
-  cs_math_sym_33_inv_cramer(s,
-                            sout);
+  cs_math_sym_33_inv_cramer(s, sout);
 }
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_math_sym_33_product
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (symmetric_matrix_product, SYMMETRIC_MATRIX_PRODUCT)
-(
-  const cs_real_6_t s1,
-  const cs_real_6_t s2,
-  cs_real_6_t       sout
-)
+void
+cs_f_math_sym_33_product(const cs_real_t  s1[6],
+                         const cs_real_t  s2[6],
+                         cs_real_t        sout[6])
 {
-  cs_math_sym_33_product(s1,
-                         s2,
-                         sout);
+  cs_math_sym_33_product(s1, s2, sout);
 }
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_math_reduce_sym_prod_33_to_6
+ * Wrapper to cs_math_reduce_sym_prod_33_to_66
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (reduce_symprod33_to_6, REDUCE_SYMPROD33_TO_6)
-(
-  const cs_real_33_t s,
-  cs_real_66_t       sout
-)
+void
+cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t  s[3][3],
+                                   cs_real_t        sout[6][6])
 {
-  cs_math_reduce_sym_prod_33_to_6(s,
-                                  sout);
+  cs_math_reduce_sym_prod_33_to_66(s, sout);
 }
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_math_eigen_max
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (calc_symtens_eigvals, CALC_SYMTENS_EIGVALS)
-(
-  const cs_real_33_t m,
-  cs_real_3_t          eig_vals
-)
+void cs_f_math_33_eigen_vals(const cs_real_t  m[3][3],
+                             cs_real_t        eig_vals[3])
 {
-  cs_math_33_eigen_vals(m,
-                       eig_vals);
+  cs_math_33_eigen_vals(m, eig_vals);
 }
 
 /*============================================================================
