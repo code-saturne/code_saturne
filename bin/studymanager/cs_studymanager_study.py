@@ -1078,17 +1078,17 @@ class Studies(object):
         """
         pre, label, nodes, args = self.__parser.getPrepro(case.node)
         if self.__debug:
-            print " >> prepro", pre
-            print " >> label ", label
-            print " >> nodes ", nodes
-            print " >> args  ", args
+            print(" >> prepro ", pre)
+            print(" >> label ", label)
+            print(" >> nodes ", nodes)
+            print(" >> args  ", args)
         for i in range(len(label)):
             if pre[i]:
                 # search if the script is the directoty MESH
                 # if not, the script is searched in the directories of the current case
                 cmd = os.path.join(self.__dest, l, "MESH", label[i])
                 if self.__debug:
-                    print "Path to prepro script ", cmd
+                    print("Path to prepro script ", cmd)
                 if not os.path.isfile(cmd):
                     filePath = ""
                     for root, dirs, fs in os.walk(os.path.join(self.__dest, l, case.label)):
