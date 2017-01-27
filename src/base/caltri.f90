@@ -640,7 +640,6 @@ if (ncpdct.gt.0) then
     enddo
   endif
 
-  ncepdc = volume_zone_n_type_cells(VOLUME_ZONE_HEAD_LOSS)
   call volume_zone_select_type_cells(VOLUME_ZONE_HEAD_LOSS, icepdc)
 
   iappel = 2
@@ -661,7 +660,6 @@ endif
 
 if (nctsmt.gt.0) then
 
-  ncetsm = volume_zone_n_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM)
   call volume_zone_select_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM, icetsm)
 
   iappel = 2
