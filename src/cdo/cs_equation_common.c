@@ -626,7 +626,7 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t          *mesh,
                          quant->n_vertices,
                          1,            // stride
                          false,        // interlace (not useful here)
-                         CS_FLAG_TYPE, // unsigned short int
+                         CS_UINT16,    // unsigned short int
                          counter);
 
     cs_interface_set_sum(cs_shared_connect->v_rs->ifs,
