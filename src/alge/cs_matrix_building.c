@@ -1802,9 +1802,9 @@ cs_matrix_time_step(const cs_mesh_t          *m,
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
- * \param[in]     coefbu        boundary condition array for the variable
+ * \param[in]     coefbp        boundary condition array for the variable
  *                               (implicit part - 3x3 tensor array)
- * \param[in]     cofbfu        boundary condition array for the variable flux
+ * \param[in]     cofbfp        boundary condition array for the variable flux
  *                               (implicit part - 3x3 tensor array)
  * \param[in]     fimp          part of the diagonal
  * \param[in]     i_massflux    mass flux at interior faces
@@ -1823,8 +1823,8 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
                                 int                       iconvp,
                                 int                       idiffp,
                                 double                    thetap,
-                                const cs_real_33_t        coefbu[],
-                                const cs_real_33_t        cofbfu[],
+                                const cs_real_33_t        coefbp[],
+                                const cs_real_33_t        cofbfp[],
                                 const cs_real_33_t        fimp[],
                                 const cs_real_t           i_massflux[],
                                 const cs_real_t           b_massflux[],
@@ -1852,8 +1852,8 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
       }
     }
   }
-  if(n_cells_ext > n_cells) {
-    for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
+  if (n_cells_ext > n_cells) {
+    for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
         for (int jsou = 0; jsou < 3; jsou++) {
           da[cell_id][jsou][isou] = 0.;
@@ -1875,8 +1875,8 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
-    double flui = 0.5*( i_massflux[face_id] -fabs(i_massflux[face_id]) );
-    double fluj =-0.5*( i_massflux[face_id] +fabs(i_massflux[face_id]) );
+    double flui = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
+    double fluj =-0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
 
     for (int isou = 0; isou < 3; isou++) {
       xa[face_id][0][isou][isou] = iconvp*flui;
@@ -1928,14 +1928,14 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
          */
         if(isou == jsou) {
           da[ii][jsou][isou] += iconvp*( thetap*flui
-                                        *(coefbu[face_id][jsou][isou]-1.)
+                                        *(coefbp[face_id][jsou][isou]-1.)
                                        - (1. - thetap)*b_massflux[face_id])
                               + idiffp*thetap*b_visc[face_id]
-                                      *cofbfu[face_id][jsou][isou];
+                                      *cofbfp[face_id][jsou][isou];
         } else {
-          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbu[face_id][jsou][isou]
+          da[ii][jsou][isou] += thetap*( iconvp*flui*coefbp[face_id][jsou][isou]
                                         +idiffp*b_visc[face_id]
-                                         *cofbfu[face_id][jsou][isou] );
+                                         *cofbfp[face_id][jsou][isou] );
         }
       }
     }

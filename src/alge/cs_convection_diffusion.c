@@ -7535,8 +7535,8 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                              + i_visc[face_id][1][isou]*(pip[1] - pjp[1])
                              + i_visc[face_id][2][isou]*(pip[2] - pjp[2]);
 
-            rhs[ii][isou] = rhs[ii][isou] - thetap*flux;
-            rhs[jj][isou] = rhs[jj][isou] + thetap*flux;
+            rhs[ii][isou] -= thetap*flux;
+            rhs[jj][isou] += thetap*flux;
 
           }
 
@@ -7628,7 +7628,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
             }
 
             cs_real_t flux = b_visc[face_id]*pfacd;
-            rhs[ii][isou] = rhs[ii][isou] - thetap * flux;
+            rhs[ii][isou] -= thetap * flux;
 
           } /* isou */
 
