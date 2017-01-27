@@ -917,7 +917,7 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
     while (i_d >= 0) {
 
       if (g_id[i_d] >= l_range[0] && g_id[i_d] < l_range[1]) {
-        memcpy(dest, src, d_size);
+        memmove(dest, src, d_size);
         src -= d_size;
         i_s--;
       }
