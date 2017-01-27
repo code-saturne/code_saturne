@@ -480,15 +480,15 @@ cs_matrix_assembler_get_rank_counts(const cs_matrix_assembler_t  *ma,
 /*!
  * \brief Log rank counts for a given matrix assembler.
  *
- * \param[in]  ma     pointer to matrix assembler structure
- * \param[in]  log    log type
- * \param[in]  name   name of this assembler
+ * \param[in]  ma      pointer to matrix assembler structure
+ * \param[in]  log_id  log type
+ * \param[in]  name    name of this assembler
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_assembler_log_rank_counts(const cs_matrix_assembler_t  *ma,
-                                    cs_log_t                      log,
+                                    cs_log_t                      log_id,
                                     const char                   *name);
 
 /*----------------------------------------------------------------------------*/

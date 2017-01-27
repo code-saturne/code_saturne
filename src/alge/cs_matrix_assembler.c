@@ -261,13 +261,13 @@ struct _cs_matrix_assembler_values_t {
 /*!
  * \brief Print distribution of counter over ranks info to a given log type.
  *
- * \param[in]  log    log file type
- * \param[in]  count  counter value for current rank
+ * \param[in]  log_id  log file type
+ * \param[in]  count   counter value for current rank
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_display_rank_histogram(cs_log_t  log,
+_display_rank_histogram(cs_log_t  log_id,
                         int       count)
 {
   int  i, j, k, count_max, count_min;
@@ -298,8 +298,8 @@ _display_rank_histogram(cs_log_t  log,
     count_max = CS_MAX(count_max, r_count[i]);
   }
 
-  cs_log_printf(log, _("    minimum count =         %10d\n"), count_min);
-  cs_log_printf(log, _("    maximum count =         %10d\n\n"), count_max);
+  cs_log_printf(log_id, _("    minimum count =         %10d\n"), count_min);
+  cs_log_printf(log_id, _("    maximum count =         %10d\n\n"), count_max);
 
   /* Define axis subdivisions */
 
@@ -328,13 +328,13 @@ _display_rank_histogram(cs_log_t  log,
     }
 
     for (i = 0, j = 1; i < n_steps - 1; i++, j++)
-      cs_log_printf(log, "    %3d : [ %10d ; %10d [ = %10d\n",
+      cs_log_printf(log_id, "    %3d : [ %10d ; %10d [ = %10d\n",
                     i+1,
                     (int)(count_min + i*step),
                     (int)(count_min + j*step),
                     h_count[i]);
 
-    cs_log_printf(log, "    %3d : [ %10d ; %10d ] = %10d\n",
+    cs_log_printf(log_id, "    %3d : [ %10d ; %10d ] = %10d\n",
                   n_steps,
                   (int)(count_min + (n_steps - 1)*step),
                   count_max,
@@ -343,7 +343,7 @@ _display_rank_histogram(cs_log_t  log,
   }
 
   else { /* if (count_max == count_min) */
-    cs_log_printf(log, "    %3d : [ %10d ; %10d ] = %10d\n",
+    cs_log_printf(log_id, "    %3d : [ %10d ; %10d ] = %10d\n",
                   1, count_min, count_max, n_counts);
   }
 }
@@ -633,6 +633,77 @@ _sort_and_compact_distant(cs_matrix_assembler_t  *ma)
     BFT_REALLOC(ma->d_g_c_id, (ma->d_r_idx[n_rows]), cs_gnum_t);
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add terms to local matrix elements defined by distant ranks
+ *
+ * \param[in, out]  ma    pointer to matrix assembler structure
+ * \param[in]       n     number of added column and row couples
+ * \param[in]       l_ij  added couples
+ *
+ * This function should be called by a single thread for a given assembler.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_complete_local(cs_matrix_assembler_t  *ma,
+                cs_lnum_t               n,
+                cs_lnum_2_t             l_ij[])
+{
+  /* Count maximum terms to add for each row */
+
+  cs_lnum_t n_rows = ma->n_rows;
+
+  cs_lnum_t *l_c_count, *l_r_idx;
+  BFT_MALLOC(l_c_count, n_rows, cs_lnum_t);
+
+  for (cs_lnum_t i = 0; i < n_rows; i++)
+    l_c_count[i] = 0;
+
+  for (cs_lnum_t i = 0; i < n; i++)
+    l_c_count[l_ij[i][0]] += 1;
+
+  BFT_MALLOC(l_r_idx, n_rows+1, cs_lnum_t);
+
+  l_r_idx[0] = 0;
+  for (cs_lnum_t i = 0; i < n_rows; i++)
+    l_r_idx[i+1] = l_r_idx[i] + l_c_count[i];
+
+  /* Expand matrix, starting copies from end to avoid overwrites
+     (first line untouched) */
+
+  BFT_REALLOC(ma->_c_id, ma->r_idx[n_rows] + l_r_idx[n_rows], cs_lnum_t);
+  ma->c_id = ma->_c_id;
+
+  for (cs_lnum_t i = n_rows-1; i > 0; i--) {
+    cs_lnum_t n_cols = ma->_r_idx[i+1] - ma->_r_idx[i];
+    cs_lnum_t *col_id = ma->_c_id + ma->_r_idx[i] + l_r_idx[i];
+    const cs_lnum_t *col_id_s = ma->_c_id + ma->_r_idx[i];
+    l_c_count[i] = n_cols;
+    ma->_r_idx[i+1] += l_r_idx[i+1];
+    for (cs_lnum_t j = n_cols-1; j >= 0; j--)
+      col_id[j] = col_id_s[j];
+  }
+  l_c_count[0] = ma->_r_idx[1];
+  ma->_r_idx[1] += l_r_idx[1];
+
+  BFT_FREE(l_r_idx);
+
+  /* Now add terms */
+
+  for (cs_lnum_t i = 0; i < n; i++) {
+    cs_lnum_t r_id = l_ij[i][0];
+    cs_gnum_t c_id = l_ij[i][1];
+    ma->_c_id[ma->_r_idx[r_id] + l_c_count[r_id]] = c_id;
+    l_c_count[r_id] += 1;
+  }
+  BFT_FREE(l_c_count);
+
+  /* Sort and remove duplicates */
+
+  _sort_and_compact_local(ma);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1195,7 +1266,14 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
     if (ma->flags & CS_MATRIX_DISTANT_ROW_USE_COL_IDX) {
 
+      cs_lnum_t    n_l_insert = 0, n_l_insert_max = 0;
+      cs_lnum_2_t *l_insert = NULL;
+
       BFT_MALLOC(ma->coeff_recv_col_idx, ma->coeff_recv_size, cs_lnum_t);
+
+      /* First pass: determine local row ids, and check if insertion of
+         previously unknown entries is required;
+         column ids are set for local entries */
 
       for (cs_lnum_t i = 0; i < ma->coeff_recv_size; i++) {
 
@@ -1216,18 +1294,63 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
                                                           l_c_id,
                                                           col_id);
 
-          /* special case for separate diagonal, other cases not handled */
+          /* special case for separate diagonal, other cases require insertion */
 
           if (   ma->coeff_recv_col_idx[i] < 0
-              && (!ma->separate_diag || l_c_id != l_r_id))
-            bft_error
-              (__FILE__, __LINE__, 0,
-               "%s:\n"
-               "  Unexpected and unhandled use case:\n"
-               "    a distant rank has defined a matrix relation between\n"
-               "    elements %d and %d assigned to the current rank, with no\n"
-               "    such relation previously defined on the current rank.\n",
-               __func__, (int)l_r_id, (int)l_c_id);
+              && (!ma->separate_diag || l_c_id != l_r_id)) {
+
+            if (n_l_insert <= n_l_insert_max) {
+              n_l_insert_max = CS_MAX(n_l_insert_max*2, 16);
+              BFT_REALLOC(l_insert, n_l_insert_max, cs_lnum_2_t);
+            }
+
+            l_insert[n_l_insert][0] = l_r_id;
+            l_insert[n_l_insert][1] = l_c_id;
+            n_l_insert++;
+
+          }
+
+        }
+
+      }
+
+      /* Insert additional local terms if required */
+
+      if (n_l_insert > 0) {
+
+        _complete_local(ma, n_l_insert, l_insert);
+
+        BFT_FREE(l_insert);
+        n_l_insert_max = 0;
+
+      }
+
+      /* Second pass: determine local column ids, and check if insertion of
+         previously unknown entries is required */
+
+      for (cs_lnum_t i = 0; i < ma->coeff_recv_size; i++) {
+
+        cs_lnum_t l_r_id = recv_data[i*2] - ma->l_range[0];
+        cs_gnum_t g_c_id = recv_data[i*2+1];
+
+        /* Local part */
+
+        if (g_c_id >= ma->l_range[0] && g_c_id < ma->l_range[1]) {
+
+          if (n_l_insert == 0)  /* Already up-to-date if no insertion */
+            continue;
+
+          cs_lnum_t n_cols = ma->r_idx[l_r_id+1] - ma->r_idx[l_r_id];
+          cs_lnum_t l_c_id = g_c_id - ma->l_range[0];
+          const cs_lnum_t *col_id = ma->c_id + ma->r_idx[l_r_id];
+
+          ma->coeff_recv_col_idx[i] = _l_id_binary_search(n_cols,
+                                                          l_c_id,
+                                                          col_id);
+
+          assert(   ma->coeff_recv_col_idx[i] >= 0
+                 || (ma->separate_diag && l_c_id == l_r_id));
+
         }
 
         /* Distant part */
@@ -2729,18 +2852,18 @@ cs_matrix_assembler_get_rank_counts(const cs_matrix_assembler_t  *ma,
 /*!
  * \brief Log rank counts for a given matrix assembler.
  *
- * \param[in]  ma     pointer to matrix assembler structure
- * \param[in]  log    log type
- * \param[in]  name   name of this assembler
+ * \param[in]  ma      pointer to matrix assembler structure
+ * \param[in]  log_id  log type
+ * \param[in]  name    name of this assembler
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_assembler_log_rank_counts(const cs_matrix_assembler_t  *ma,
-                                    cs_log_t                      log,
+                                    cs_log_t                      log_id,
                                     const char                   *name)
 {
-  cs_log_printf(log,
+  cs_log_printf(log_id,
                 _("\nNeighbor rank counts for matrix assembler: %s\n"
                   "-----------------------------------------\n"),
                 name);
@@ -2764,9 +2887,9 @@ cs_matrix_assembler_log_rank_counts(const cs_matrix_assembler_t  *ma,
       ul[j] = '-';
     ul[j] = '\0';
 
-    cs_log_printf(log, "\n  %s:\n  %s\n\n", _(count_name[i]), ul);
+    cs_log_printf(log_id, "\n  %s:\n  %s\n\n", _(count_name[i]), ul);
 
-    _display_rank_histogram(log, counts[i]);
+    _display_rank_histogram(log_id, counts[i]);
 
   }
 }
