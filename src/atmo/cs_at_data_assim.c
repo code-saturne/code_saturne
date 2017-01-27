@@ -168,7 +168,6 @@ cs_at_data_assim_initialize(void)
                                                    type_flag,
                                                    f->dim,
                                                    ilved);
-    BFT_FREE(name_buf);
     cs_field_set_key_int(f, key_ms, ms->id);
 
     /* create interpol grid for current variable */
@@ -176,7 +175,6 @@ cs_at_data_assim_initialize(void)
     snprintf(name_buf, fn_size + suf_size + 1, "%s_ig", f->name);
 
     cs_interpol_grid_t *ig = cs_interpol_grid_create(name_buf);
-    BFT_FREE(name_buf);
 
     /* create optimal interpolation for current variable */
 
@@ -186,18 +184,12 @@ cs_at_data_assim_initialize(void)
     BFT_FREE(name_buf);
     cs_field_set_key_int(f, key_oi, oi->id);
 
+    oi->ig_id = ig->id;
+
     char filename[50];
     sprintf(filename, "%s_%s", "measures", f->name);
 
     cs_at_opt_interp_read_file(filename, ms, oi, f->dim);
-    cs_lnum_t n_obs = ms->nb_measures;
-
-    cs_interpol_grid_init(ig, n_obs, ms->coords);
-    oi->ig_id = ig->id;
-
-#if _DA_DEBUG_
-    bft_printf("\n *Start processing variable %s\n\n", f->name);
-#endif
 
     cs_at_opt_interp_map_values(oi, ms);
 
@@ -262,6 +254,11 @@ cs_at_data_assim_build_ops(void)
 
     int ig_id = oi->ig_id;
     cs_interpol_grid_t *ig = cs_interpol_grid_by_id(ig_id);
+    cs_interpol_grid_init(ig, n_obs, ms->coords);
+
+#if _DA_DEBUG_
+    bft_printf("\n *Start processing variable %s\n\n", f->name);
+#endif
 
     /* Computing observation operator (H) */
 

@@ -1002,14 +1002,14 @@ cs_at_opt_interp_read_file(char const           filename[50],
     /* Reading measures */
     if (strncmp(line, "_measures_", 9) == 0) {
 
-      BFT_MALLOC(oi->measures_idx, ms->dim*n_obs + 1, int);
+      BFT_MALLOC(oi->measures_idx, ms->dim*(n_obs + 1), int);
       BFT_MALLOC(ms->measures, _tot_n_readable_measures, cs_real_t);
 
       if (oi->steady <= 0)
         BFT_MALLOC(oi->times, _tot_n_readable_measures, cs_real_t);
 
       /* Initialising index list */
-      for (int ii = 0; ii < ms->dim*n_obs + 1; ii++)
+      for (int ii = 0; ii < ms->dim*(n_obs + 1); ii++)
         oi->measures_idx[ii] = 0;
 
 #if _OI_DEBUG_
@@ -1023,6 +1023,13 @@ cs_at_opt_interp_read_file(char const           filename[50],
       BFT_MALLOC(_n_readable_measures, ms->dim, int);
       for (int kk = 0; kk < ms->dim; kk++)
         _n_readable_measures[kk] = 0;
+
+      /* read again components to skip the line */
+
+      for (int kk = 0; kk < ms->dim-1; kk++) {
+        fscanf(fichier, "%i ", &ms->comp_ids[kk]);
+      }
+      fscanf(fichier, "%i", &ms->comp_ids[ms->dim-1]);
 
       for (int ii = 0; ii < n_obs; ii++) {
 #if _OI_DEBUG_
@@ -1038,6 +1045,9 @@ cs_at_opt_interp_read_file(char const           filename[50],
                 oi->times[_n_readable_measures[kk]] = oi->times_read[jj];
               oi->measures_idx[(ii+1)*ms->dim+kk] += 1;
               _n_readable_measures[kk] += 1;
+#if _OI_DEBUG_
+              bft_printf("%.2f ", val);
+#endif
             }
           }
           val = 0;
@@ -1048,10 +1058,10 @@ cs_at_opt_interp_read_file(char const           filename[50],
               oi->times[_n_readable_measures[ms->dim-1]] = oi->times_read[jj];
             oi->measures_idx[(ii+1)*ms->dim+ms->dim-1] += 1;
             _n_readable_measures[ms->dim-1] += 1;
-          }
 #if _OI_DEBUG_
-          bft_printf("%.2f ", val);
+            bft_printf("%.2f", val);
 #endif
+          }
         }
 #if _OI_DEBUG_
         bft_printf("\n");

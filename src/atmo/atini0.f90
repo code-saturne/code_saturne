@@ -160,6 +160,10 @@ cressman_nc = .false.
 horizontal_influence_radius = 8500.d0
 vertical_influence_radius = 100.d0
 
+! key id for optimal interpolation
+
+call field_get_key_id("opt_interp_id", kopint)
+
 !===============================================================================
 ! 2. ON DONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
