@@ -833,12 +833,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
   /* Third reading */
   fichier = fopen(filename, "r");
-
-  /* initialize count */
-  int *_n_readable_measures;
-  BFT_MALLOC(_n_readable_measures, ms->dim+1, int);
-  for (int kk = 0; kk < ms->dim+1; kk++)
-    _n_readable_measures[kk] = 0;
+  int _tot_n_readable_measures = 0;
 
   while (fgets(line, MAX_LINE_SIZE, fichier)) {
 
@@ -855,19 +850,15 @@ cs_at_opt_interp_read_file(char const           filename[50],
           for (int kk = 0; kk < ms->dim-1; kk++) {
             fscanf(fichier, "%lf ", &val);
             if (!isnan(val))
-              _n_readable_measures[kk+1] += 1;
+              _tot_n_readable_measures++;
           }
           fscanf(fichier, "%lf", &val); /* read after because of ending space */
           if (!isnan(val))
-            _n_readable_measures[kk+1] += 1;
+            _tot_n_readable_measures++;
         }
     }
   }
   fclose(fichier);
-
-  int _tot_n_readable_measures = 0;
-  for (int kk = 0; kk < ms->dim+1; kk++)
-    _tot_n_readable_measures += _n_readable_measures[kk];
 
   /* 4th reading */
   fichier = fopen(filename, "r");
@@ -1008,7 +999,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
     }
 
-    /* reading measures */
+    /* Reading measures */
     if (strncmp(line, "_measures_", 9) == 0) {
 
       BFT_MALLOC(oi->measures_idx, ms->dim*(n_obs + 1), int);
@@ -1017,13 +1008,9 @@ cs_at_opt_interp_read_file(char const           filename[50],
       if (oi->steady <= 0)
         BFT_MALLOC(oi->times, _tot_n_readable_measures, cs_real_t);
 
-      /* initialising index list */
+      /* Initialising index list */
       for (int ii = 0; ii < ms->dim*(n_obs + 1); ii++)
         oi->measures_idx[ii] = 0;
-
-      /* build index */
-      for (int kk = 0; kk < ms->dim-1; kk++) {
-        _n_readable_measures[kk+1] += _n_readable_measures[kk];
 
 #if _OI_DEBUG_
       bft_printf("   * Reading _measures_\n");
@@ -1032,14 +1019,10 @@ cs_at_opt_interp_read_file(char const           filename[50],
       /* try to read measures value at each defined time and
          count successful reads by measure (measures by time index) */
 
-      /* read again components to skip the line */
-
-      for (int kk = 0; kk < ms->dim-1; kk++) {
-        fscanf(fichier, "%i ", &ms->comp_ids[kk]);
-      }
-      fscanf(fichier, "%i", &ms->comp_ids[ms->dim-1]);
-
-      /* read measures */
+      int *_n_readable_measures;
+      BFT_MALLOC(_n_readable_measures, ms->dim, int);
+      for (int kk = 0; kk < ms->dim; kk++)
+        _n_readable_measures[kk] = 0;
 
       /* read again components to skip the line */
 
