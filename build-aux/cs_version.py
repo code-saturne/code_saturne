@@ -104,6 +104,8 @@ def version_from_news(srcdir):
             extra = '-alpha'
 
     elif version[0] > -1:
+        while len(version) < 4:
+            version.append('')
         major, minor, release, extra \
             = branch_release_extra(version[1], version[2], version[3],
                                    release[1], release[2], release[3])
@@ -151,7 +153,7 @@ def branch_release_extra(cur_major, cur_minor, cur_release,
 
     else:
         try:
-            if int(cur_release) == 0:
+            if not cur_release or int(cur_release) == 0:
                 release = ''
                 extra = '-beta'
         except Exception:
