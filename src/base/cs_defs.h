@@ -258,7 +258,7 @@ typedef enum {
   CS_CHAR,               /* character values */
   CS_FLOAT,              /* 4-byte floating point values */
   CS_DOUBLE,             /* 8-byte floating point values */
-  CS_FLAG,               /* unsigned short integer values */
+  CS_UINT16,             /* 2-byte unsigned integer values */
   CS_INT32,              /* 4-byte signed integer values */
   CS_INT64,              /* 8-byte signed integer values */
   CS_UINT32,             /* 4-byte unsigned integer values */
@@ -388,6 +388,7 @@ typedef struct {
 # define CS_INT_TYPE      CS_INT32
 #endif
 
+#define CS_FLAG_TYPE      CS_UINT16
 #define CS_REAL_TYPE      CS_DOUBLE
 #define CS_COORD_TYPE     CS_DOUBLE
 

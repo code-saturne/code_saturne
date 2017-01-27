@@ -617,23 +617,23 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t          *mesh,
 
     cs_interface_set_max(cs_shared_connect->v_rs->ifs,
                          quant->n_vertices,
-                         1,          // stride
-                         false,      // interlace (not useful here)
-                         CS_FLAG,    // unsigned short int
+                         1,            // stride
+                         false,        // interlace (not useful here)
+                         CS_FLAG_TYPE, // unsigned short int
                          flag);
 
     cs_interface_set_sum(cs_shared_connect->v_rs->ifs,
                          quant->n_vertices,
-                         1,          // stride
-                         false,      // interlace (not useful here)
-                         CS_FLAG,    // unsigned short int
+                         1,            // stride
+                         false,        // interlace (not useful here)
+                         CS_FLAG_TYPE, // unsigned short int
                          counter);
 
     cs_interface_set_sum(cs_shared_connect->v_rs->ifs,
                          quant->n_vertices,
-                         1,          // stride
-                         false,      // interlace (not useful here)
-                         CS_DOUBLE,
+                         1,            // stride
+                         false,        // interlace (not useful here)
+                         CS_REAL_TYPE,
                          dir_val);
 
   }

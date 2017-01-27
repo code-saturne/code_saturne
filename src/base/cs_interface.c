@@ -4847,6 +4847,31 @@ cs_interface_set_min(const cs_interface_set_t  *ifs,
     }
     break;
 
+  case CS_UINT16:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      uint16_t *v = var;
+      const uint16_t *p = (const uint16_t *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] = CS_MIN(v[elt_id*stride + l],
+                                          p[k*stride + l]);
+        }
+      }
+      else {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] = CS_MIN(v[elt_id + l*n_elts],
+                                          p[k*stride + l]);
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
   case CS_UINT32:
     for (i = 0, j = 0; i < ifs->size; i++) {
       cs_interface_t *itf = ifs->interfaces[i];
@@ -5066,6 +5091,31 @@ cs_interface_set_max(const cs_interface_set_t  *ifs,
       cs_interface_t *itf = ifs->interfaces[i];
       int64_t *v = var;
       const int64_t *p = (const int64_t *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] = CS_MAX(v[elt_id*stride + l],
+                                          p[k*stride + l]);
+        }
+      }
+      else {
+        for (k = 0; k < itf->size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] = CS_MAX(v[elt_id + l*n_elts],
+                                          p[k*stride + l]);
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_UINT16:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      uint16_t *v = var;
+      const uint16_t *p = (const uint16_t *)buf + j*stride;
       if (stride < 2 || interlace) {
         for (k = 0; k < itf->size; k++) {
           cs_lnum_t elt_id = itf->elt_id[k];
