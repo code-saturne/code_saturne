@@ -7529,7 +7529,7 @@ msgid ""
 "   %lu (of %d) probes are not located on the associated mesh:\n"
 msgstr ""
 "\n"
-" Attention : ensembe de sondes \"%s\"\n"
+" Attention : ensemble de sondes \"%s\"\n"
 "   %lu sondes (sur %d) ne sont pas localisées dans le maillage associé :\n"
 
 #, c-format
