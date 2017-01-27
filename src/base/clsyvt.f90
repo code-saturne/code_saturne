@@ -933,15 +933,15 @@ do ifac = 1, nfabor
       rkl = viscls(iel)/cpp
     endif
 
-    hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &
-             + visten(1,iel)*ctheta(iscal)/distbf
-    hintt(2) = 0.5d0*(visclc+rkl)/distbf                        &
-             + visten(2,iel)*ctheta(iscal)/distbf
-    hintt(3) = 0.5d0*(visclc+rkl)/distbf                        &
-             + visten(3,iel)*ctheta(iscal)/distbf
-    hintt(4) = visten(4,iel)*ctheta(iscal)/distbf
-    hintt(5) = visten(5,iel)*ctheta(iscal)/distbf
-    hintt(6) = visten(6,iel)*ctheta(iscal)/distbf
+    !FIXME for EB DFM
+    do isou = 1, 6
+      if (isou.le.3) then
+        hintt(isou) = (0.5d0*(visclc + rkl)    &
+          + ctheta(iscal)*visten(isou,iel)/csrij) / distbf
+      else
+        hintt(isou) = ctheta(iscal)*visten(isou,iel) / csrij / distbf
+      endif
+    enddo
 
     ! Gradient BCs
     coefaut(1,ifac) = 0.d0
