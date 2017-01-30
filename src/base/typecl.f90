@@ -117,7 +117,7 @@ integer          irangd
 integer          ifadir
 integer          iut  , ivt   , iwt, iscal
 integer          keyvar
-integer          f_id
+integer          f_id, i_dim, f_type, nfld, f_dim
 
 double precision pref, pipb
 double precision diipbx, diipby, diipbz
@@ -165,6 +165,9 @@ call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 
 call field_get_key_id("variable_id", keyvar)
+
+! Number of fields
+call field_get_n_fields(nfld)
 
 !===============================================================================
 ! 2.  Check consistency of types given in cs_user_boundary_conditions
@@ -969,39 +972,50 @@ enddo
 deallocate(pripb)
 
 
-! 6.3 SYMETRIE
-! =============
+! Symmetry
+! =========
 
-! ---> Les vecteurs et tenseurs ont un traitement particulier
-!        le reste Neumann sera traite plus tard
+! ---> Vectors and tensors have a special treatment. scalars an homogeneous Neumann
 
 ideb = idebty(isymet)
 ifin = ifinty(isymet)
 
-do ivar = 1, nvar
-  if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw                     &
-     .or.(itytur.eq.3                                            &
-         .and.(ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
-               ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23))) then
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
+do f_id = 0, nfld - 1
+
+  call field_get_type(f_id, f_type)
+
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_dim (f_id, f_dim)
+    call field_get_key_int(f_id, keyvar, ivar)
+
+    ! Special treatment for uncoupled version of Rij models,
+    ! will be removed with the coupled solver
+    if (icodcl(ifac,ivar).eq.0.and. &
+      (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
+       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23)) then
         icodcl(ifac,ivar)   = 4
-        !         rcodcl(ifac,ivar,1) = Modifie eventuellement par l'ALE
+        rcodcl(ifac,ivar,1) = 0.d0
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
-      endif
-    enddo
-  elseif(ivar.eq.ipr) then
-    do ii = ideb, ifin
-      ifac = itrifb(ii)
-      if(icodcl(ifac,ivar).eq.0) then
+    endif
+
+    ! Homogeneous Neumann on scalars
+    if (f_dim.eq.1.and.icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 3
         rcodcl(ifac,ivar,1) = 0.d0
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
-      endif
-    enddo
+
+      ! Symmetry BC if nothing is set by the user on vector and tensors
+    else if (icodcl(ifac,ivar).eq.0) then
+      do i_dim = 0, f_dim - 1
+        icodcl(ifac,ivar + i_dim)    = 4
+        rcodcl(ifac,ivar + i_dim, 1) = 0.d0
+        rcodcl(ifac,ivar + i_dim, 2) = rinfin
+        rcodcl(ifac,ivar + i_dim, 3) = 0.d0
+      enddo
+    endif
   endif
 enddo
 
@@ -1349,7 +1363,7 @@ do ivar = 1, nvar
 enddo
 
 ! 6.2.c Free surface
-! ===================================
+! ==================
 
 ! ---> Free surface
 
@@ -1372,28 +1386,6 @@ do ivar = 1, nvar
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
       endif
-    endif
-  enddo
-enddo
-
-! 6.3 SYMETRIE bis
-! =============
-
-! ---> Les vecteurs et tenseurs ont un traitement particulier
-!        traite plus haut
-!        le reste Neumann
-
-ideb = idebty(isymet)
-ifin = ifinty(isymet)
-
-do ivar = 1, nvar
-  do ii = ideb, ifin
-    ifac = itrifb(ii)
-    if(icodcl(ifac,ivar).eq.0) then
-      icodcl(ifac,ivar)   = 3
-      rcodcl(ifac,ivar,1) = 0.d0
-      rcodcl(ifac,ivar,2) = rinfin
-      rcodcl(ifac,ivar,3) = 0.d0
     endif
   enddo
 enddo
