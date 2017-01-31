@@ -5,6 +5,9 @@ Release 4.2.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix double symmetric 3x3 matrix product, used in anisotropic
+  heterogeneous diffusion.
+
 - Fix for some environment module variants.
 
 - Radiative model: GUI setting for imodak should not overwrite settings
