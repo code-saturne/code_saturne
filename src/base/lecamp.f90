@@ -244,7 +244,7 @@ jvolfl = ival(1)
 nberro=nberro+ierror
 
 ! Message si erreur (pas de stop pour compatibilite avec fichiers anterieurs)
-! -> on n'affiche le message que si IVOLFL>=0 (sinon RAS)
+! -> on n'affiche le message que si IVOFMT>=0 (sinon RAS)
 if (nberro.ne.0) then
   if (ivofmt.ge.0) write(nfecra,9405)
   jvolfl = -1
