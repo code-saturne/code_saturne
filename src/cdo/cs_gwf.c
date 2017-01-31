@@ -1914,18 +1914,31 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
     /* Initialization of soil_id and moisture content */
     if (gw->n_soils > 1) {
 
-      assert(elt_ids != NULL); /* sanity check */
+      if (elt_ids == NULL) {
+        assert(cs_glob_n_ranks > 1); // Only possible in parallel
 
 # pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
+        for (cs_lnum_t c_id = 0; c_id < n_elts[0]; c_id++) {
 
-        cs_lnum_t  c_id = elt_ids[i];
+          gw->moisture_content->val[c_id] = theta_s;
+          gw->soil_id[c_id] = soil_id;
 
-        gw->moisture_content->val[c_id] = theta_s;
-        gw->soil_id[c_id] = soil_id;
+        } // Loop on all cells
 
-      } // Loop on selected cells
+      }
+      else {
 
+# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
+
+          cs_lnum_t  c_id = elt_ids[i];
+
+          gw->moisture_content->val[c_id] = theta_s;
+          gw->soil_id[c_id] = soil_id;
+
+        } // Loop on selected cells
+
+      }
     }
     else { /* n_soils == 1 => all cells are selected */
 
