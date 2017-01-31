@@ -969,11 +969,11 @@ do ifac = 1, nfabor
     cofbfut(3,3,ifac) = hintt(6)*rnx*rnz + hintt(5)*rny*rnz + hintt(3)*rnz**2
 
     cofbfut(1,2,ifac) = hintt(1)*rnx*rny + hintt(4)*rny**2  + hintt(6)*rny*rnz
-    cofbfut(2,1,ifac) = hintt(1)*rnx*rny + hintt(4)*rny**2  + hintt(6)*rny*rnz
+    cofbfut(2,1,ifac) = hintt(4)*rnx**2  + hintt(2)*rny*rnx + hintt(5)*rnx*rnz
     cofbfut(1,3,ifac) = hintt(1)*rnx*rnz + hintt(4)*rny*rnz + hintt(6)*rnz**2
-    cofbfut(3,1,ifac) = hintt(1)*rnx*rnz + hintt(4)*rny*rnz + hintt(6)*rnz**2
+    cofbfut(3,1,ifac) = hintt(6)*rnx**2  + hintt(5)*rny*rnx + hintt(3)*rnz*rnx
     cofbfut(2,3,ifac) = hintt(4)*rnx*rnz + hintt(2)*rny*rnz + hintt(5)*rnz**2
-    cofbfut(3,2,ifac) = hintt(4)*rnx*rnz + hintt(2)*rny*rnz + hintt(5)*rnz**2
+    cofbfut(3,2,ifac) = hintt(6)*rnx*rny + hintt(5)*rny**2  + hintt(3)*rnz*rny
 
     ! Boundary conditions for thermal transport equation
     do isou = 1, 3
