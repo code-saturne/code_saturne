@@ -451,7 +451,7 @@ cs_math_sym_33_double_product(const cs_real_t s1[6],
   /* S23  */
   sout[1][2] = _sout[1][0]*s3[5] + _sout[1][1]*s3[4] + _sout[1][2]*s3[2];
   /* S32  */
-  sout[2][1] = s3[2]*_sout[2][0] + s3[1]*_sout[2][1] + s3[4]*_sout[2][2];
+  sout[2][1] = s3[3]*_sout[2][0] + s3[1]*_sout[2][1] + s3[4]*_sout[2][2];
   /* S13  */
   sout[0][2] = _sout[0][0]*s3[5] + _sout[0][1]*s3[4] + _sout[0][2]*s3[2];
   /* S31  */
