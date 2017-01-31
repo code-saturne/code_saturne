@@ -989,33 +989,37 @@ do f_id = 0, nfld - 1
     call field_get_dim (f_id, f_dim)
     call field_get_key_int(f_id, keyvar, ivar)
 
-    ! Special treatment for uncoupled version of Rij models,
-    ! will be removed with the coupled solver
-    if (icodcl(ifac,ivar).eq.0.and. &
-      (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
-       ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23)) then
+    ! Loop over faces
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      ! Special treatment for uncoupled version of Rij models,
+      ! will be removed with the coupled solver
+      if (icodcl(ifac,ivar).eq.0.and. &
+        (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
+        ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23)) then
         icodcl(ifac,ivar)   = 4
         rcodcl(ifac,ivar,1) = 0.d0
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
-    endif
+      endif
 
-    ! Homogeneous Neumann on scalars
-    if (f_dim.eq.1.and.icodcl(ifac,ivar).eq.0) then
+      ! Homogeneous Neumann on scalars
+      if (f_dim.eq.1.and.icodcl(ifac,ivar).eq.0) then
         icodcl(ifac,ivar)   = 3
         rcodcl(ifac,ivar,1) = 0.d0
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
 
-      ! Symmetry BC if nothing is set by the user on vector and tensors
-    else if (icodcl(ifac,ivar).eq.0) then
-      do i_dim = 0, f_dim - 1
-        icodcl(ifac,ivar + i_dim)    = 4
-        rcodcl(ifac,ivar + i_dim, 1) = 0.d0
-        rcodcl(ifac,ivar + i_dim, 2) = rinfin
-        rcodcl(ifac,ivar + i_dim, 3) = 0.d0
-      enddo
-    endif
+        ! Symmetry BC if nothing is set by the user on vector and tensors
+      else if (icodcl(ifac,ivar).eq.0) then
+        do i_dim = 0, f_dim - 1
+          icodcl(ifac,ivar + i_dim)    = 4
+          rcodcl(ifac,ivar + i_dim, 1) = 0.d0
+          rcodcl(ifac,ivar + i_dim, 2) = rinfin
+          rcodcl(ifac,ivar + i_dim, 3) = 0.d0
+        enddo
+      endif
+    enddo
   endif
 enddo
 
