@@ -53,8 +53,9 @@ BEGIN_C_DECLS
  * Public function prototypes
  *===========================================================================*/
 
-/*----------------------------------------------------------------------------
- * Test if a line segment intersects a face.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Test if a line segment intersects a face.
  *
  * If the orient parameter is set to -1 or 1, intersection is only
  * considered when (sx1-sx0).normal.orient > 0.
@@ -76,7 +77,8 @@ BEGIN_C_DECLS
  *   1 if the segment does not go through the face's plane, or minimum
  *   relative distance (in terms of barycentric coordinates)
  *   of intersection point to face.
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 double
 cs_geom_segment_intersect_face(int              orient,
