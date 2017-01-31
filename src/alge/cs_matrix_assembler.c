@@ -544,9 +544,9 @@ _g_id_binary_search(cs_lnum_t        g_id_array_size,
 /*----------------------------------------------------------------------------*/
 
 static inline int
-_g_id_rank(int              n_ranges,
-           const cs_gnum_t  d_ranges[],
-           cs_gnum_t        g_id)
+_g_id_rank_index(int              n_ranges,
+                 const cs_gnum_t  d_ranges[],
+                 cs_gnum_t        g_id)
 {
   int start_id = 0;
   int end_id = n_ranges - 1;
@@ -979,7 +979,7 @@ _assumed_rank_neighbors(cs_lnum_t        n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build Assumed rank-helvetica-medium- neighbors info
+ * \brief Exchange range info for building assumed rank neighbors info
  *
  * This operation is collective on communicator comm. The caller is
  * responsible for freeng the returned array.
@@ -993,9 +993,9 @@ _assumed_rank_neighbors(cs_lnum_t        n,
 /*----------------------------------------------------------------------------*/
 
 static cs_gnum_t *
-_assumed_rank_exchange(cs_rank_neighbors_t  *arn,
-                       cs_gnum_t             l_range[2],
-                       MPI_Comm              comm)
+_rank_ranges_exchange(cs_rank_neighbors_t  *arn,
+                      cs_gnum_t             l_range[2],
+                      MPI_Comm              comm)
 {
   MPI_Request *request = NULL;
   MPI_Status *status = NULL;
@@ -1005,10 +1005,7 @@ _assumed_rank_exchange(cs_rank_neighbors_t  *arn,
   BFT_MALLOC(request, arn->size*2, MPI_Request);
   BFT_MALLOC(status, arn->size*2, MPI_Status);
 
-  /* Prepare for determination of assumed rank;
-     we will send both a partial local range description and global ids to the
-     assumed partition, using a common array, so as to minimize
-     all-to-all communication. */
+  /* Prepare for determination of assumed rank */
 
   /* Exchange local range with neighbor ranks */
 
@@ -1045,6 +1042,310 @@ _assumed_rank_exchange(cs_rank_neighbors_t  *arn,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Build true rank info based on assumed rank info
+ *
+ * This operation is collective on communicator comm.
+ *
+ * The caller is responsible for freeing the returned array
+ *
+ * \param[in]  arn       info on ranks with which we initially communicate
+ * \param[in]  n         number of global ids for local rank
+ * \param[in]  n_g       global number of ids
+ * \param[in]  l_range   global id range [min, max[ for local rank
+ * \param[in]  d_ranges  global id ranges [min, max[ for neighboring ranks
+ * \param[in]  g_id      sorted array of global ids for local rank
+ *                       (size: n)
+ * \param[in]  comm      associated communicator
+ *
+ * \return  effective ranks matching given global ids (size n)
+ */
+/*----------------------------------------------------------------------------*/
+
+static int *
+_assumed_to_true_rank(cs_rank_neighbors_t  *arn,
+                      cs_lnum_t             n,
+                      cs_gnum_t             n_g,
+                      const cs_gnum_t       l_range[2],
+                      const cs_gnum_t       d_ranges[],
+                      const cs_gnum_t       g_id[],
+                      MPI_Comm              comm)
+{
+  int *d_rank;
+  BFT_MALLOC(d_rank, n, int);
+
+  MPI_Request *request = NULL;
+  MPI_Status *status = NULL;
+
+  const int local_rank = cs_glob_rank_id;
+
+  /* Prepare for determination of assumed rank;
+     we will send both a partial local range description and global ids to the
+     assumed partition, using a common array, so as to minimize
+     all-to-all communication. */
+
+  int n_ranks, l_rank;
+  int *a_rank;
+
+  MPI_Comm_size(comm, &n_ranks);
+  MPI_Comm_rank(comm, &l_rank);
+
+  BFT_MALLOC(request, arn->size*2, MPI_Request);
+  BFT_MALLOC(status, arn->size*2, MPI_Status);
+
+  /* Determine ranks with which we will first exchange;
+     we filter and immediately handle elements whose assumed
+     rank matches the current rank */
+
+  BFT_MALLOC(a_rank, n, int);
+
+  cs_lnum_t n_range_match = 0;
+  cs_lnum_t n_range_dist = 0;
+
+  int a_rank_prev = -1;
+  for (cs_lnum_t i = 0; i < n; i++) {
+    int r = _assumed_rank(n_ranks, n_g, g_id[i]);
+    if (r == local_rank) {
+      int r_idx = _g_id_rank_index(arn->size, d_ranges, g_id[i]);
+      assert(r_idx >= 0);
+      d_rank[i] = arn->rank[r_idx];
+      n_range_match += 1;
+    }
+    else {
+      d_rank[i] = -1; /* flag for later */
+      a_rank[n_range_dist] = r;
+      n_range_dist += 1;
+    }
+    assert(r >= a_rank_prev);
+    a_rank_prev = r;
+  }
+
+  cs_rank_neighbors_to_index(arn, n_range_dist, a_rank, a_rank);
+
+  /* Count number of exchanges with each assumed rank
+     and build index, first handled as counts;
+     local values have index -1 */
+
+  cs_lnum_t *send_index;
+  BFT_MALLOC(send_index, arn->size+1, cs_lnum_t);
+
+  send_index[0] = 0;
+  cs_rank_neighbors_count(arn, n_range_dist, a_rank, send_index + 1);
+
+  BFT_FREE(a_rank);
+
+  /* Exchange counts */
+
+  cs_lnum_t *recv_index;
+  BFT_MALLOC(recv_index, arn->size + 1, cs_lnum_t);
+
+  recv_index[0] = 0;
+
+  int request_count = 0;
+
+  for (int i = 0; i < arn->size; i++) {
+    MPI_Irecv(recv_index + i + 1,
+              1,
+              CS_MPI_LNUM,
+              arn->rank[i],
+              local_rank,
+              comm,
+              &(request[request_count++]));
+  }
+
+  for (int i = 0; i < arn->size; i++) {
+    MPI_Isend(send_index + i + 1,
+              1,
+              CS_MPI_LNUM,
+              arn->rank[i],
+              arn->rank[i],
+              comm,
+              &(request[request_count++]));
+  }
+
+  MPI_Waitall(request_count, request, status);
+
+  /* Now transform counts to indexes */
+
+  for (int i = 0; i < arn->size; i++)
+    send_index[i+1] += send_index[i];
+
+  for (int i = 0; i < arn->size; i++)
+    recv_index[i+1] += recv_index[i];
+
+  /* Now exchange global ids */
+
+  const cs_lnum_t recv_size = recv_index[arn->size];
+
+  cs_gnum_t *recv_g_id;
+  BFT_MALLOC(recv_g_id, recv_size, cs_gnum_t);
+
+  request_count = 0;
+
+  for (int i = 0; i < arn->size; i++) {
+    if (recv_index[i+1] > recv_index[i])
+      MPI_Irecv(recv_g_id + recv_index[i],
+                recv_index[i+1] - recv_index[i],
+                CS_MPI_GNUM,
+                arn->rank[i],
+                local_rank,
+                comm,
+                &(request[request_count++]));
+  }
+
+  for (int i = 0; i < arn->size; i++) {
+    if (send_index[i+1] > send_index[i]) {
+      cs_lnum_t shift = (arn->rank[i] > local_rank) ? n_range_match : 0;
+      MPI_Isend(g_id + send_index[i] + shift,
+                send_index[i+1] - send_index[i],
+                CS_MPI_GNUM,
+                arn->rank[i],
+                arn->rank[i],
+                comm,
+                &(request[request_count++]));
+    }
+  }
+
+  MPI_Waitall(request_count, request, status);
+
+  /* Now for each global id, determine its rank */
+
+  int *d_rank_ar;
+  BFT_MALLOC(d_rank_ar, recv_size, int);
+
+  for (cs_lnum_t i = 0; i < recv_size; i++) {
+    cs_gnum_t _g_id = recv_g_id[i];
+    if (l_range[0] <= _g_id && l_range[1] > _g_id)
+      d_rank_ar[i] = local_rank;
+    else {
+      int r_idx = _g_id_rank_index(arn->size, d_ranges, recv_g_id[i]);
+      assert(r_idx >= 0);
+      d_rank_ar[i] = arn->rank[r_idx];
+      assert(d_rank_ar[i] >= 0);
+    }
+  }
+
+  BFT_FREE(recv_g_id);
+
+  /* Send data back to original rank;
+     remember part of the data is already known */
+
+  request_count = 0;
+
+  for (int i = 0; i < arn->size; i++) {
+    if (send_index[i+1] > send_index[i]) {
+      cs_lnum_t shift = (arn->rank[i] > local_rank) ? n_range_match : 0;
+      MPI_Irecv(d_rank + send_index[i] + shift,
+                send_index[i+1] - send_index[i],
+                MPI_INT,
+                arn->rank[i],
+                arn->rank[i],
+                comm,
+                &(request[request_count++]));
+    }
+  }
+
+  for (int i = 0; i < arn->size; i++) {
+    if (recv_index[i+1] > recv_index[i])
+      MPI_Isend(d_rank_ar + recv_index[i],
+                recv_index[i+1] - recv_index[i],
+                MPI_INT,
+                arn->rank[i],
+                local_rank,
+                comm,
+                &(request[request_count++]));
+  }
+
+  MPI_Waitall(request_count, request, status);
+
+  /* Note: we could add an additional exchange here, for each
+     connected rank, to indicate which ranks may need
+     to communicate with it; this would avoid the need for a
+     symmetrization of the rank neighbors structure built from
+     the d_rank[] array, as ranks would also know who needs to
+     send some info. An all-to-all communication with just
+     1 value per rank could thus be replaced by a point-to-point
+     communication, but with slightly larger messages.
+     We are not sure the added complexity would be worth it,
+     so at this stage, we just add this placeholder. */
+
+  BFT_FREE(d_rank_ar);
+
+  BFT_FREE(recv_index);
+  BFT_FREE(send_index);
+
+  BFT_FREE(request);
+  BFT_FREE(status);
+
+  return d_rank;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine rank neighbors based on global id info
+ *
+ * This assumes the ordered and compact list of external global ids
+ * has been built.
+ *
+ * \param[in]   n_e_g_ids     number of unique external global ids
+ * \param[in]   n_g           global number of ids
+ * \param[in]   l_range       global id range [min, max[ for local rank
+ * \param[in]   e_g_id        ordered unique external global ids
+ * \param[out]  n_init_ranks  number of ranks in initial assumed
+ *                            neighborhood (for logging), or NULL
+ * \param[in]   comm          associated communicator
+ *
+ * This function should be called by a single thread for a given assembler.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_rank_neighbors_t *
+_rank_neighbors(cs_lnum_t          n_e_g_ids,
+                cs_gnum_t          n_g,
+                cs_gnum_t          l_range[2],
+                const cs_gnum_t    e_g_id[],
+                int               *n_init_ranks,
+                MPI_Comm           comm)
+{
+  /* Determine assumed rank neighbors based on compact info */
+
+  cs_rank_neighbors_t *arn = _assumed_rank_neighbors(n_e_g_ids,
+                                                     n_g,
+                                                     l_range,
+                                                     e_g_id,
+                                                     comm);
+
+  if (n_init_ranks != NULL)
+    *n_init_ranks = arn->size;
+
+  cs_gnum_t *d_ranges = _rank_ranges_exchange(arn,
+                                              l_range,
+                                              comm);
+
+  int *e_rank_id = _assumed_to_true_rank(arn,
+                                         n_e_g_ids,
+                                         n_g,
+                                         l_range,
+                                         d_ranges,
+                                         e_g_id,
+                                         comm);
+
+  BFT_FREE(d_ranges);
+
+  /* Now rebuild rank neighbors */
+
+  cs_rank_neighbors_destroy(&arn);
+
+  arn = cs_rank_neighbors_create(n_e_g_ids, e_rank_id);
+
+  BFT_FREE(e_rank_id);
+
+  cs_rank_neighbors_symmetrize(arn, comm);
+
+  return arn;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Process and exchange info relative to data that will
  *        be sent to neighboring ranks.
  *
@@ -1071,15 +1372,26 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
   cs_gnum_t g_r_id_prev = ma->l_range[0]; /* impossible value here */
 
+  cs_lnum_t  n_e_g_ids = 0;
+  cs_gnum_t *e_g_id = NULL;
+
   for (cs_lnum_t i = 0; i < ma->coeff_send_size; i++) {
     cs_gnum_t g_r_id = e_g_ij[i*2];
     if (g_r_id != g_r_id_prev) {
+      n_e_g_ids += 1;
       ma->coeff_send_n_rows += 1;
       g_r_id_prev = g_r_id;
     }
+    cs_gnum_t g_c_id = e_g_ij[i*2+1];
+    if (g_c_id < ma->l_range[0] || g_c_id >= ma->l_range[1])
+      n_e_g_ids += 1;
   }
 
   if (ma->coeff_send_size > 0) {
+
+    BFT_MALLOC(e_g_id, n_e_g_ids, cs_gnum_t);
+
+    n_e_g_ids = 0;
 
     cs_lnum_t row_count = 0;
 
@@ -1094,29 +1406,36 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
       if (g_r_id != g_r_id_prev) {
         ma->coeff_send_index[row_count] = i;
         ma->coeff_send_row_g_id[row_count] = g_r_id;
+        e_g_id[n_e_g_ids++] = g_r_id;
         row_count++;
         g_r_id_prev = g_r_id;
       }
       cs_gnum_t g_c_id = e_g_ij[i*2+1];
       ma->coeff_send_col_g_id[i] = g_c_id;
+      if (g_c_id < ma->l_range[0] || g_c_id >= ma->l_range[1]) {
+        e_g_id[n_e_g_ids++] = g_c_id;
+      }
     }
     ma->coeff_send_index[row_count] = ma->coeff_send_size;
+
+    n_e_g_ids = cs_sort_and_compact_gnum(n_e_g_ids, e_g_id);
 
   }
 
   /* Determine ranks we may be communicating with for this stage */
 
-  cs_rank_neighbors_t *arn = _assumed_rank_neighbors(ma->coeff_send_n_rows,
-                                                     ma->n_g_rows,
-                                                     ma->l_range,
-                                                     ma->coeff_send_row_g_id,
-                                                     ma->comm);
+  cs_rank_neighbors_t *arn = _rank_neighbors(n_e_g_ids,
+                                             ma->n_g_rows,
+                                             ma->l_range,
+                                             e_g_id,
+                                             &(ma->n_ranks_init[0]),
+                                             ma->comm);
 
-  ma->n_ranks_init[0] = arn->size;
+  BFT_FREE(e_g_id);
 
-  cs_gnum_t *d_ranges = _assumed_rank_exchange(arn,
-                                               ma->l_range,
-                                               ma->comm);
+  cs_gnum_t *d_ranges = _rank_ranges_exchange(arn, ma->l_range, ma->comm);
+
+  /* Prepare counts */
 
   cs_lnum_t *counts;
   BFT_MALLOC(counts, arn->size*2, cs_lnum_t);
@@ -1126,7 +1445,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
   for (cs_lnum_t i = 0; i < ma->coeff_send_n_rows; i++) {
     cs_gnum_t g_r_id = ma->coeff_send_row_g_id[i];
-    int r_rank_id = _g_id_rank(arn->size, d_ranges, g_r_id);
+    int r_rank_id = _g_id_rank_index(arn->size, d_ranges, g_r_id);
     assert(r_rank_id >= 0 && r_rank_id < arn->size);
     assert(   g_r_id >= d_ranges[2*r_rank_id]
            && g_r_id < d_ranges[2*r_rank_id+1]);
@@ -1414,19 +1733,14 @@ _matrix_assembler_compute_halo(cs_matrix_assembler_t  *ma,
 {
   /* Determine assumed rank neighbors based on compact info */
 
-  cs_rank_neighbors_t *arn = _assumed_rank_neighbors(n_e_g_ids,
-                                                     ma->n_g_rows,
-                                                     ma->l_range,
-                                                     e_g_id,
-                                                     ma->comm);
+  cs_rank_neighbors_t *arn = _rank_neighbors(n_e_g_ids,
+                                             ma->n_g_rows,
+                                             ma->l_range,
+                                             e_g_id,
+                                             &(ma->n_ranks_init[1]),
+                                             ma->comm);
 
-  ma->n_ranks_init[1] = arn->size;
-
-  /* Exchange info on distant ranks */
-
-  cs_gnum_t *d_ranges = _assumed_rank_exchange(arn,
-                                               ma->l_range,
-                                               ma->comm);
+  cs_gnum_t *d_ranges = _rank_ranges_exchange(arn, ma->l_range, ma->comm);
 
   /* Identifiy rank and local id associated with each element */
 
@@ -1438,7 +1752,7 @@ _matrix_assembler_compute_halo(cs_matrix_assembler_t  *ma,
 # pragma omp parallel if(n_e_g_ids > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_e_g_ids; i++) {
     cs_gnum_t g_id = e_g_id[i];
-    int r_id = _g_id_rank(arn->size, d_ranges, g_id);
+    int r_id = _g_id_rank_index(arn->size, d_ranges, g_id);
     assert(r_id > -1);
     assert(g_id >= d_ranges[r_id*2]);
     r_loc_id[i] = g_id - d_ranges[r_id*2];

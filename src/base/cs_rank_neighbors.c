@@ -744,7 +744,7 @@ cs_rank_neighbors_count(const cs_rank_neighbors_t  *n,
 /*!
  * \brief Exchange send and receive counts for rank neighborhoods.
  *
- * This allocated the n_recv ranks neighborhood structure and the
+ * This allocates the n_recv ranks neighborhood structure and the
  * recv_count counts array, which the caller is responsible for freeing.
  *
  * \param[in]   n_send       pointer to rank neighborhood used for sending
