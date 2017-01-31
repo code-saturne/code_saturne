@@ -136,7 +136,7 @@ contains
     ! Reboud correction constant
     mcav = 10.d0
 
-    ! Numercial parameters
+    ! Numerical parameters
     !---------------------
 
     ! implicitation in pressure
