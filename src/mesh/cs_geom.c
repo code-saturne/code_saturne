@@ -55,6 +55,15 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_geom.c
+        Geometry utility functions.
+*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -116,8 +125,9 @@ _test_edge(const cs_real_t  sx0[3],
  * Public function definitions
  *===========================================================================*/
 
-/*----------------------------------------------------------------------------
- * Test if a line segment intersects a face.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Test if a line segment intersects a face.
  *
  * If the orient parameter is set to -1 or 1, intersection is only
  * considered when (sx1-sx0).normal.orient > 0.
@@ -139,7 +149,8 @@ _test_edge(const cs_real_t  sx0[3],
  *   2 if the segment does not go through the face's plane, or minimum
  *   relative distance (in terms of barycentric coordinates)
  *   of intersection point to face.
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 double
 cs_geom_segment_intersect_face(int              orient,
