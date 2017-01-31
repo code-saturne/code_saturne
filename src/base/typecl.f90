@@ -489,14 +489,14 @@ if(ipass.eq.0.or.vcopt%iwarni.ge.2) then
 
     do ii = 1, ntypmx
       if (ii.ne.iesicf .and. &
-           ii.ne.isspcf .and. &
-           ii.ne.ieqhcf .and. &
-           ii.ne.iephcf .and. &
-           ii.ne.isopcf .and. &
-           ii.ne.iparoi .and. &
-           ii.ne.iparug .and. &
-           ii.ne.isymet .and. &
-           ii.ne.iindef ) then
+          ii.ne.isspcf .and. &
+          ii.ne.ieqhcf .and. &
+          ii.ne.iephcf .and. &
+          ii.ne.isopcf .and. &
+          ii.ne.iparoi .and. &
+          ii.ne.iparug .and. &
+          ii.ne.isymet .and. &
+          ii.ne.iindef ) then
         inb = ifinty(ii)-idebty(ii)+1
         if (irangp.ge.0) call parcpt (inb)
         if(inb.gt.0) then
@@ -994,9 +994,9 @@ do f_id = 0, nfld - 1
       ifac = itrifb(ii)
       ! Special treatment for uncoupled version of Rij models,
       ! will be removed with the coupled solver
-      if (icodcl(ifac,ivar).eq.0.and. &
-        (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
-        ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23)) then
+      if (icodcl(ifac,ivar).eq.0.and.                        &
+          (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
+           ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23)) then
         icodcl(ifac,ivar)   = 4
         rcodcl(ifac,ivar,1) = 0.d0
         rcodcl(ifac,ivar,2) = rinfin
@@ -1010,7 +1010,7 @@ do f_id = 0, nfld - 1
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
 
-        ! Symmetry BC if nothing is set by the user on vector and tensors
+      ! Symmetry BC if nothing is set by the user on vector and tensors
       else if (icodcl(ifac,ivar).eq.0) then
         do i_dim = 0, f_dim - 1
           icodcl(ifac,ivar + i_dim)    = 4
