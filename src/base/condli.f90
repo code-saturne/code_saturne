@@ -2330,6 +2330,8 @@ if (nscal.ge.1) then
       endif
     endif
 
+    call field_get_key_double(ivarfl(isca(ii)), ksigmas, turb_schmidt)
+
     call field_get_dim(ivarfl(isca(iscal)), f_dim)
 
     ! Scalar transported quantity
@@ -2371,7 +2373,6 @@ if (nscal.ge.1) then
         ! Scalar diffusivity
         if (vcopt%idften.eq.1) then
           if (ippmod(idarcy).eq.-1) then !FIXME
-            call field_get_key_double(ivarfl(isca(ii)), ksigmas, turb_schmidt)
             hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
           else ! idarcy = 1
             hint = rkl/distbf
@@ -2758,7 +2759,6 @@ if (nscal.ge.1) then
         ! Scalar diffusivity
         if (vcopt%idften.eq.1) then
           if (ippmod(idarcy).eq.-1) then !FIXME
-            call field_get_key_double(ivarfl(isca(ii)), ksigmas, turb_schmidt)
             hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
           else ! idarcy = 1
             hint = rkl/distbf
