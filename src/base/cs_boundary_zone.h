@@ -164,6 +164,8 @@ cs_boundary_zone_define(const char  *name,
  *
  * \param[in]  name  name of location to define
  * \param[in]  func  pointer to selection function for associated elements
+ * \param[in, out]  input  pointer to optional (untyped) value
+ *                         or structure.
  * \param[in]  type_flag  mask of zone category values
  *
  * \return  id of newly defined created mesh location
@@ -173,6 +175,7 @@ cs_boundary_zone_define(const char  *name,
 int
 cs_boundary_zone_define_by_func(const char                 *name,
                                 cs_mesh_location_select_t  *func,
+                                void                       *input,
                                 int                         type_flag);
 
 /*----------------------------------------------------------------------------*/

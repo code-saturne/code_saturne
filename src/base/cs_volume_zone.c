@@ -539,9 +539,11 @@ cs_volume_zone_define(const char  *name,
  * This requires more programming but allows finer control than selection
  * criteria, as the function has access to the complete mesh structure.
  *
- * \param[in]  name  name of location to define
- * \param[in]  func  pointer to selection function for associated elements
- * \param[in]  type_flag  mask of zone category values
+ * \param[in]  name        name of location to define
+ * \param[in]  func        pointer to selection function for associated elements
+ * \param[in, out]  input  pointer to optional (untyped) value
+ *                         or structure.
+ * \param[in]  type_flag   mask of zone category values
  *
  * \return  id of newly defined created mesh location
  */
@@ -550,6 +552,7 @@ cs_volume_zone_define(const char  *name,
 int
 cs_volume_zone_define_by_func(const char                 *name,
                               cs_mesh_location_select_t  *func,
+                              void                       *input,
                               int                         type_flag)
 {
   if (func == NULL)
@@ -561,7 +564,8 @@ cs_volume_zone_define_by_func(const char                 *name,
 
   z->location_id = cs_mesh_location_add_by_func(name,
                                                 CS_MESH_LOCATION_CELLS,
-                                                func);
+                                                func,
+                                                input);
 
   z->type = type_flag;
 

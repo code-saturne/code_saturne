@@ -537,6 +537,8 @@ cs_boundary_zone_define(const char  *name,
  *
  * \param[in]  name  name of location to define
  * \param[in]  func  pointer to selection function for associated elements
+ * \param[in, out]  input  pointer to optional (untyped) value
+ *                         or structure.
  * \param[in]  type_flag  mask of zone category values
  *
  * \return  id of newly defined created mesh location
@@ -546,6 +548,7 @@ cs_boundary_zone_define(const char  *name,
 int
 cs_boundary_zone_define_by_func(const char                 *name,
                                 cs_mesh_location_select_t  *func,
+                                void                       *input,
                                 int                         type_flag)
 {
   if (func == NULL)
@@ -557,7 +560,8 @@ cs_boundary_zone_define_by_func(const char                 *name,
 
   z->location_id = cs_mesh_location_add_by_func(name,
                                                 CS_MESH_LOCATION_BOUNDARY_FACES,
-                                                func);
+                                                func,
+                                                input);
 
   z->type = type_flag;
 
@@ -748,12 +752,12 @@ cs_boundary_zone_log_info(const cs_boundary_zone_t  *z)
                   _("    selection criteria:         \"%s\"\n"),
                   sel_str);
   else {
-    cs_mesh_location_select_t *sel_fp
+    cs_mesh_location_select_t *select_fp
       = cs_mesh_location_get_selection_function(z->location_id);
-    if (sel_fp != NULL)
+    if (select_fp != NULL)
       cs_log_printf(CS_LOG_SETUP,
                     _("    selection function:         %p\n"),
-                    (void *)sel_fp);
+                    (void *)select_fp);
   }
 }
 
