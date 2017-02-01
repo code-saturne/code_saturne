@@ -5050,7 +5050,6 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
         cs_real_t alpha_param, ks_param, l_param, n_param;
         cs_real_t thetas_param, thetar_param;
         cs_real_t ks_xx, ks_yy, ks_zz, ks_xy, ks_xz, ks_yz;
-        cs_real_t molecular_diffusion;
 
         /* Van Genuchten parameters */
         if (*unsaturated) {
@@ -5060,8 +5059,6 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
           _gwf_parameter_value(z_id_str, "thetar", &thetar_param);
         }
 
-        _gwf_parameter_value(z_id_str, "molecularDiff",
-                                       &molecular_diffusion);
         _gwf_parameter_value(z_id_str, "thetas", &thetas_param);
 
 
