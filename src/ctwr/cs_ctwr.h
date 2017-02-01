@@ -154,6 +154,16 @@ cs_ctwr_bulk_mass_source_term(const cs_real_t   p0,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define zones.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_build_zones(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the cells belonging to the different packing zones.
  *
  */

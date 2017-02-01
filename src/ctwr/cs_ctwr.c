@@ -263,6 +263,65 @@ _write_liquid_vars(void                  *input,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Function for selection of cells for rain zones (yp > 0).
+ *
+ * parameters:
+ *   input       <-> pointer to input
+ *   m           <-- pointer to associated mesh structure.
+ *   location_id <-- id of associated location.
+ *   n_elts      --> number of selected elements
+ *   elt_list    --> list of selected elements (0 to n-1 numbering).
+ *----------------------------------------------------------------------------*/
+
+static void
+_rain_zone_select(void            *input,
+                  const cs_mesh_t *m,
+                  int              location_id,
+                  cs_lnum_t       *n_cells,
+                  cs_lnum_t      **cell_ids)
+{
+  cs_lnum_t _n_cells = 0;
+  cs_lnum_t *_cell_ids = NULL;
+
+  cs_field_t *f = cs_field_by_name("y_p"); /* Get access to field */
+
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "No field with name \"He_fraction\" defined");
+
+  BFT_MALLOC(_cell_ids, m->n_cells, cs_lnum_t); /* Allocate selection list */
+
+  /* Get selection criterion */
+  char *criterion = ((char *)input);
+
+  /* Select cell criterion first */
+  cs_selector_get_cell_list(criterion,
+                            &_n_cells,
+                            _cell_ids);
+
+
+
+  /* Before time loop, field is defined, but has no values yet,
+     so ignore that case (postprocessing mesh will be initially empty) */
+  if (f->val != NULL) {
+    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+      if (f->val[cell_id] > 0.) {
+        _cell_ids[_n_cells] = cell_id;
+        _n_cells ++;
+      }
+    }
+  }
+
+  BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t); /* Adjust size (good practice,
+                                                  but not required) */
+
+  /* Set return values */
+
+  *n_cells = _n_cells;
+  *cell_ids = _cell_ids;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -320,11 +379,6 @@ cs_ctwr_define(const char           zone_criteria[],
   length = strlen("cooling_towers_") + 3;
   BFT_MALLOC(ct->name, length, char);
   sprintf(ct->name, "cooling_towers_%02d", ct->num);
-
-  /* Define zone */
-  cs_volume_zone_define(ct->name,
-                        ct->criteria,
-                        CS_VOLUME_ZONE_MASS_SOURCE_TERM);
 
   ct->delta_t = delta_t;
   ct->relax   = relax;
@@ -417,6 +471,38 @@ cs_ctwr_field_pointer_map(void)
 }
 
 /*----------------------------------------------------------------------------*/
+
+/*!
+ * \brief  Define zones.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_build_zones(void)
+{
+  /* Loop over exchange zones */
+  for (int ict = 0; ict < _n_ct_zones; ict++) {
+    cs_ctwr_zone_t *ct = _ct_zone[ict];
+
+    /* Define zone */
+    void *input = (void*)ct->criteria;
+
+    if (ct->type == CS_CTWR_RAIN)
+      cs_volume_zone_define_by_func(ct->name,
+          _rain_zone_select, /*function to select */
+          input, /* optional inputs it */
+          CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+    else
+      cs_volume_zone_define(ct->name,
+          ct->criteria,
+          CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the cells belonging to the different packing zones.
  *
@@ -443,6 +529,7 @@ cs_ctwr_build_all(void)
     }
   }
 }
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -635,35 +722,42 @@ cs_ctwr_log_balance(void)
     }
     ct->q_h_out /= ct->surface_in;
 
-    /* Compute liquid water quantities
-     * And humid air quantities at liquid outlet */
-    for (cs_lnum_t i = 0; i < ct->n_outlet_faces; i++) {
+    if (ct->type != CS_CTWR_RAIN) {
+      /* Compute liquid water quantities
+       * And humid air quantities at liquid outlet */
+      for (cs_lnum_t i = 0; i < ct->n_outlet_faces; i++) {
 
-      cs_lnum_t face_id = ct->outlet_faces_ids[i];
-      cs_lnum_t cell_id_l, cell_id_h;
+        cs_lnum_t face_id = ct->outlet_faces_ids[i];
+        cs_lnum_t cell_id_l, cell_id_h;
 
-      /* Convention: outlet is positiv mass flux
-       * Then upwind cell for liquid is i_face_cells[][0] */
-      int sign = 1;
-      if (liq_mass_flow[face_id] < 0) {
-        sign = -1;
-        cell_id_l = i_face_cells[face_id][1];
-        cell_id_h = i_face_cells[face_id][0];
-      } else {
-        cell_id_l = i_face_cells[face_id][0];
-        cell_id_h = i_face_cells[face_id][1];
+        /* Convention: outlet is positiv mass flux
+         * Then upwind cell for liquid is i_face_cells[][0] */
+        int sign = 1;
+        if (liq_mass_flow[face_id] < 0) {
+          sign = -1;
+          cell_id_l = i_face_cells[face_id][1];
+          cell_id_h = i_face_cells[face_id][0];
+        } else {
+          cell_id_l = i_face_cells[face_id][0];
+          cell_id_h = i_face_cells[face_id][1];
+        }
+
+        /* h_l is in fact (y_l. h_l),
+         * and the transport field is (y_l*liq_mass_flow) */
+        ct->t_l_out += sign * t_l[cell_id_l]
+          * y_l[cell_id_l] * liq_mass_flow[face_id];
+        ct->q_l_out += sign * y_l[cell_id_l] * liq_mass_flow[face_id];
+        ct->h_l_out += sign * h_l[cell_id_l] * liq_mass_flow[face_id];
+
+        ct->t_h_in  += sign * t_h[cell_id_h] * mass_flow[face_id];
+        ct->h_h_in  += sign * h_h[cell_id_h] * mass_flow[face_id];
+        ct->q_h_in  += sign * mass_flow[face_id];
       }
+    }
+    /* Compute liquid water quantities
+     * And humid air quantities for rain zones */
+    else {
 
-      /* h_l is in fact (y_l. h_l),
-       * and the transport field is (y_l*liq_mass_flow) */
-      ct->t_l_out += sign * t_l[cell_id_l]
-                          * y_l[cell_id_l] * liq_mass_flow[face_id];
-      ct->q_l_out += sign * y_l[cell_id_l] * liq_mass_flow[face_id];
-      ct->h_l_out += sign * h_l[cell_id_l] * liq_mass_flow[face_id];
-
-      ct->t_h_in  += sign * t_h[cell_id_h] * mass_flow[face_id];
-      ct->h_h_in  += sign * h_h[cell_id_h] * mass_flow[face_id];
-      ct->q_h_in  += sign * mass_flow[face_id];
     }
 
     cs_parall_sum(1, CS_DOUBLE, &(ct->t_l_out));

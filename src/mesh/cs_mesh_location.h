@@ -87,14 +87,15 @@ typedef struct _cs_mesh_location_t cs_mesh_location_t;
  *   m           <-- pointer to associated mesh structure.
  *   location_id <-- id of associated location.
  *   n_elts      --> number of selected elements
- *   elt_list    --> list of selected elements (0 to n-1 numbering).
+ *   elt_ids     --> list of selected elements (0 to n-1 numbering).
  *----------------------------------------------------------------------------*/
 
 typedef void
-(cs_mesh_location_select_t) (const cs_mesh_t   *m,
+(cs_mesh_location_select_t) (void              *input,
+                             const cs_mesh_t   *m,
                              int                location_id,
                              cs_lnum_t         *n_elts,
-                             cs_lnum_t        **elt_list);
+                             cs_lnum_t        **elt_ids);
 
 /*=============================================================================
  * Global variables
@@ -193,8 +194,9 @@ cs_mesh_location_add(const char               *name,
                      cs_mesh_location_type_t   type,
                      const char               *criteria);
 
-/*----------------------------------------------------------------------------
- * Define a new mesh location.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a new mesh location with an associated selection function.
  *
  * So as to define a subset of mesh entities of a given type, a pointer
  * to a selection function may be given.
@@ -202,19 +204,22 @@ cs_mesh_location_add(const char               *name,
  * This requires more programming but allows finer control than selection
  * criteria, as the function has access to the complete mesh structure.
  *
- * parameters:
- *   name <-- name of location to define
- *   type <-- type of location to define
- *   func <-- pointer to selection function for associated elements, or NULL
+ * \param[in]  name        name of location to define
+ * \param[in]  type        type of location to define
+ * \param[in]  func        pointer to selection function for associated
+ *                         elements, or NULL
+ * \param[in, out]  input  pointer to optional (untyped) value
+ *                         or structure.
  *
- * returns:
- *   id of newly created mesh location
- *----------------------------------------------------------------------------*/
+ * \return  id of newly defined created mesh location
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_mesh_location_add_by_func(const char                 *name,
                              cs_mesh_location_type_t     type,
-                             cs_mesh_location_select_t  *func);
+                             cs_mesh_location_select_t  *func,
+                             void                       *input);
 
 /*----------------------------------------------------------------------------*/
 /*!

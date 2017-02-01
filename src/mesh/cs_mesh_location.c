@@ -102,6 +102,7 @@ struct _cs_mesh_location_t {
 
   char                       *select_str;   /* String */
   cs_mesh_location_select_t  *select_fp;    /* Function pointer */
+  void                       *select_input; /* Optional input for the function pointer */
   int                         n_sub_ids;    /* Number of mesh location ids
                                                used to build this location */
   int                        *sub_ids;      /* List of mesh location ids */
@@ -297,6 +298,7 @@ _mesh_location_define(const char               *name,
 
   ml->select_str = NULL;
   ml->select_fp = NULL;
+  ml->select_input = NULL;
   ml->n_sub_ids = 0;
   ml->sub_ids = NULL;
   ml->complement = false;
@@ -602,7 +604,8 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
                   ml_id, (int)ml->type);
     }
     else if (ml->select_fp != NULL)
-      ml->select_fp(ml->mesh,
+      ml->select_fp(ml->select_input,
+                    ml->mesh,
                     ml_id,
                     ml->n_elts,
                     &(ml->elt_list));
@@ -680,10 +683,12 @@ cs_mesh_location_add(const char                *name,
  * This requires more programming but allows finer control than selection
  * criteria, as the function has access to the complete mesh structure.
  *
- * \param[in]  name  name of location to define
- * \param[in]  type  type of location to define
- * \param[in]  func  pointer to selection function for associated elements,
- *                   or NULL
+ * \param[in]  name        name of location to define
+ * \param[in]  type        type of location to define
+ * \param[in]  func        pointer to selection function for associated
+ *                         elements, or NULL
+ * \param[in, out]  input  pointer to optional (untyped) value
+ *                         or structure.
  *
  * \return  id of newly defined created mesh location
  */
@@ -692,12 +697,14 @@ cs_mesh_location_add(const char                *name,
 int
 cs_mesh_location_add_by_func(const char                 *name,
                              cs_mesh_location_type_t     type,
-                             cs_mesh_location_select_t  *func)
+                             cs_mesh_location_select_t  *func,
+                             void                       *input)
 {
   int  ml_id = _mesh_location_define(name, type);
   cs_mesh_location_t  *ml = _mesh_location + ml_id;
 
   ml->select_fp = func;
+  ml->select_input = input;
 
   return ml_id;
 }
