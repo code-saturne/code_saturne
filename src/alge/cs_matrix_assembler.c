@@ -1618,7 +1618,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
           if (   ma->coeff_recv_col_idx[i] < 0
               && (!ma->separate_diag || l_c_id != l_r_id)) {
 
-            if (n_l_insert <= n_l_insert_max) {
+            if (n_l_insert >= n_l_insert_max) {
               n_l_insert_max = CS_MAX(n_l_insert_max*2, 16);
               BFT_REALLOC(l_insert, n_l_insert_max, cs_lnum_2_t);
             }
