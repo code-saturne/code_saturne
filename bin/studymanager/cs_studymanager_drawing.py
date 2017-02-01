@@ -536,18 +536,16 @@ class Plotter(object):
                     iok = False
                     for ddd in dom_list:
 
-                        f = os.path.join(dd,
-                                         study_label,
-                                         case.label, case.resu,
-                                         d, ddd, file_name)
+                        for sd in (".", "monitoring", "profiles"):
 
-                        if not os.path.isfile(f):
                             f = os.path.join(dd,
                                              study_label,
                                              case.label, case.resu,
-                                             d, ddd, "monitoring", file_name)
+                                             d, ddd, sd, file_name)
 
-                        iok = iok or os.path.isfile(f)
+                            if os.path.isfile(f):
+                                iok = True
+                                break
 
                     if not iok:
                         raise ValueError("\n\nThis file does not exist: %s\n (last call with path: %s)\n" % (file_name, f))
