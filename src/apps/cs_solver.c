@@ -248,6 +248,7 @@ cs_run(void)
 
     cs_gui_zones();
     cs_user_zones();
+    cs_ctwr_build_zones();
 
   }
   else if (opts.verif)

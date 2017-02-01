@@ -380,20 +380,6 @@ cs_ctwr_define(const char           zone_criteria[],
   BFT_MALLOC(ct->name, length, char);
   sprintf(ct->name, "cooling_towers_%02d", ct->num);
 
-  /* Define zone */
-  void *input = (void*)ct->criteria;
-
-  if (ct->type == CS_CTWR_RAIN)
-    cs_volume_zone_define_by_func(ct->name,
-                                  _rain_zone_select, /*function to select */
-                                  input, /* optional inputs it */
-                                  CS_VOLUME_ZONE_MASS_SOURCE_TERM);
-  else
-    cs_volume_zone_define(ct->name,
-                          ct->criteria,
-                          CS_VOLUME_ZONE_MASS_SOURCE_TERM);
-
-
   ct->delta_t = delta_t;
   ct->relax   = relax;
   ct->t_l_bc  = t_l_bc;
@@ -485,6 +471,38 @@ cs_ctwr_field_pointer_map(void)
 }
 
 /*----------------------------------------------------------------------------*/
+
+/*!
+ * \brief  Define zones.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ctwr_build_zones(void)
+{
+  /* Loop over exchange zones */
+  for (int ict = 0; ict < _n_ct_zones; ict++) {
+    cs_ctwr_zone_t *ct = _ct_zone[ict];
+
+    /* Define zone */
+    void *input = (void*)ct->criteria;
+
+    if (ct->type == CS_CTWR_RAIN)
+      cs_volume_zone_define_by_func(ct->name,
+          _rain_zone_select, /*function to select */
+          input, /* optional inputs it */
+          CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+    else
+      cs_volume_zone_define(ct->name,
+          ct->criteria,
+          CS_VOLUME_ZONE_MASS_SOURCE_TERM);
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the cells belonging to the different packing zones.
  *
@@ -511,6 +529,7 @@ cs_ctwr_build_all(void)
     }
   }
 }
+
 
 /*----------------------------------------------------------------------------*/
 /*!
