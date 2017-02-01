@@ -339,17 +339,20 @@ if (ivofmt.ge.0.or.idilat.eq.4) then
 
   ! Allocate and initialize specific arrays
   allocate(xunsro(ncelet))
-  do iel = 1, ncelet
+  do iel = 1, ncel
     xunsro(iel) = 1.d0/crom(iel)
   enddo
+  call synsca(xunsro)
+
   if (vcopt_p%idften.eq.1) then
     allocate(xdtsro(ncelet))
-    do iel = 1, ncelet
+    do iel = 1, ncel
       xdtsro(iel) = dt(iel)/crom(iel)
     enddo
+    call synsca(xdtsro)
   elseif (vcopt_p%idften.eq.6) then
     allocate(tpusro(6,ncelet))
-    do iel = 1, ncelet
+    do iel = 1, ncel
       tpusro(1,iel) = vitenp(1,iel)*xunsro(iel)
       tpusro(2,iel) = vitenp(2,iel)*xunsro(iel)
       tpusro(3,iel) = vitenp(3,iel)*xunsro(iel)
@@ -357,6 +360,7 @@ if (ivofmt.ge.0.or.idilat.eq.4) then
       tpusro(5,iel) = vitenp(5,iel)*xunsro(iel)
       tpusro(6,iel) = vitenp(6,iel)*xunsro(iel)
     enddo
+    call syntis(tpusro)
   endif
 
   ! Associate pointers to pressure diffusion coefficient

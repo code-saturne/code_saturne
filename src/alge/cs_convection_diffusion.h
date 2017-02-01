@@ -35,6 +35,9 @@
 
 #include "cs_base.h"
 #include "cs_halo.h"
+#include "cs_math.h"
+#include "cs_mesh_quantities.h"
+#include "cs_parameters.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -43,10 +46,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
-
-enum {X, Y, Z};
-#define _CS_DOT_PRODUCT(vect1, vect2) \
-  (vect1[X] * vect2[X] + vect1[Y] * vect2[Y] + vect1[Z] * vect2[Z])
 
 /*============================================================================
  * Type definition
@@ -145,7 +144,7 @@ cs_slope_test(const cs_real_t     pi,
     ddi = (pj-pi)/distf *srfan;
     ddj = testj;
   }
-  *tesqck = pow(dcc, 2.) - pow(ddi-ddj, 2.);
+  *tesqck = cs_math_sq(dcc) - cs_math_sq(ddi-ddj);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -210,7 +209,7 @@ cs_slope_test_vector(const cs_real_3_t   pi,
       ddi[isou] = (pj[isou]-pi[isou])/distf *srfan;
       ddj[isou] = testj[isou];
     }
-    tesqck[isou] = pow(dcc[isou], 2.) - pow(ddi[isou]-ddj[isou], 2.);
+    tesqck[isou] = cs_math_sq(dcc[isou]) - cs_math_sq(ddi[isou]-ddj[isou]);
   }
 }
 
@@ -276,7 +275,7 @@ cs_slope_test_tensor(const cs_real_6_t   pi,
       ddi[isou] = (pj[isou]-pi[isou])/distf *srfan;
       ddj[isou] = testj[isou];
     }
-    tesqck[isou] = pow(dcc[isou], 2.) - pow(ddi[isou]-ddj[isou], 2.);
+    tesqck[isou] = cs_math_sq(dcc[isou]) - cs_math_sq(ddi[isou]-ddj[isou]);
   }
 }
 
@@ -751,7 +750,7 @@ cs_solu_f_val(const cs_real_3_t  cell_cen,
   df[1] = i_face_cog[1] - cell_cen[1];
   df[2] = i_face_cog[2] - cell_cen[2];
 
-  *pf = p + _CS_DOT_PRODUCT(df, grad);
+  *pf = p + cs_math_3_dot_product(df, grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3401,7 +3400,7 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
                          tesqck);
 
     /* FIXME: slope test should be done for the vector and not component by
-     * component. This is concerved for compatibility only. */
+     * component. This is conserved for compatibility only. */
     for (isou = 0; isou < 3; isou++) {
       if (tesqck[isou]<=0. || testij[isou]<=0.) {
 
@@ -5573,11 +5572,6 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                                    const cs_real_2_t         weighf[],
                                    const cs_real_t           weighb[],
                                    cs_real_t       *restrict diverg);
-
-/*----------------------------------------------------------------------------*/
-/* Delete local macro definitions */
-
-#undef _CS_DOT_PRODUCT
 
 /*----------------------------------------------------------------------------*/
 

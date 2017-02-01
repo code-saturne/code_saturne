@@ -871,7 +871,7 @@ _nvd_vof_scheme_scalar(const cs_nvd_type_t  scheme,
                                    nvf_r_c);
 
     /* Compute the blending factor */
-    if (denom < (cs_math_epzero*dotp)) {
+    if (denom <= (cs_math_epzero*dotp)) {
       blend = 1.;
     } else {
       ratio = dotp/denom;
@@ -915,7 +915,7 @@ _nvd_vof_scheme_scalar(const cs_nvd_type_t  scheme,
                                    nvf_r_c);
 
     /* Compute the blending factor */
-    if (denom < (cs_math_epzero*dotp)) {
+    if (denom <= (cs_math_epzero*dotp)) {
       blend = 1.;
     } else {
       ratio = dotp/denom;
@@ -938,7 +938,7 @@ _nvd_vof_scheme_scalar(const cs_nvd_type_t  scheme,
                                    nvf_r_c);
 
     /* Compute the blending factor */
-    if (denom < (cs_math_epzero*dotp)) {
+    if (denom <= (cs_math_epzero*dotp)) {
       blend = 1.;
     } else {
       ratio = dotp/denom;
@@ -2102,7 +2102,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
       BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
       BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
       cs_field_local_extrema_scalar(f_id,
-                                    CS_HALO_EXTENDED,
+                                    halo_type,
                                     local_max,
                                     local_min);
       if (limiter_choice >= CS_NVD_VOF_HRIC) {
@@ -2807,8 +2807,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
               rfc[1] = i_face_cog[face_id][1] - cell_cen[ic][1];
               rfc[2] = i_face_cog[face_id][2] - cell_cen[ic][2];
 
-              const cs_real_t dist_fc
-                = sqrt(rfc[0]*rfc[0] + rfc[1]*rfc[1] + rfc[2]*rfc[2]);
+              const cs_real_t dist_fc = cs_math_3_norm(rfc);
 
               /* Compute the vector of the line that joins the current point
                  with the downwind point */
@@ -2817,8 +2816,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
               rdc[1] = cell_cen[id][1] - cell_cen[ic][1];
               rdc[2] = cell_cen[id][2] - cell_cen[ic][2];
 
-              const cs_real_t dist_dc
-                = sqrt(rdc[0]*rdc[0] + rdc[1]*rdc[1] + rdc[2]*rdc[2]);
+              const cs_real_t dist_dc = cs_math_3_norm(rdc);
 
               /* Compute the unit vector of the line that joins the current
                  point with the downwind point */
@@ -2834,9 +2832,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
               /* Compute the property on the upwind assuming a parabolic
                  variation of the property between the two cells */
-              const cs_real_t gradc = grad[ic][0]*ndc[0]
-                                    + grad[ic][1]*ndc[1]
-                                    + grad[ic][2]*ndc[2];
+              const cs_real_t gradc = cs_math_3_dot_product(grad[ic], ndc);
 
               const cs_real_t grad2c = ((p_d - p_c)/dist_dc - gradc)/dist_dc;
 
@@ -2849,10 +2845,10 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
               /* Check for the bounds of the NVD diagram and compute the face
                  property according to the selected NVD scheme */
-              const cs_real_t small
-                = cs_math_epzero*(CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d));
+              const cs_real_t _small = cs_math_epzero
+                                     * (CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d));
 
-              if (CS_ABS(p_d-p_u) < small) {
+              if (CS_ABS(p_d-p_u) <= _small) {
                 pif = p_c;
                 pjf = p_c;
               } else {
@@ -5482,7 +5478,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                     local_min);
     }
 
-    int f_limiter_id = cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
+    int f_limiter_id =
+      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
     if (f_limiter_id > -1) {
       f_limiter = cs_field_by_id(f_limiter_id);
       limiter = f_limiter->val;
@@ -6175,47 +6172,37 @@ cs_convection_diffusion_thermal(int                       idtvar,
               p_d = pvar[id];
 
               /* Compute the distance between the face and the
-                 centroid of the central cell
-              */
+                 centroid of the central cell */
               cs_real_3_t rfc;
               rfc[0] = i_face_cog[face_id][0] - cell_cen[ic][0];
               rfc[1] = i_face_cog[face_id][1] - cell_cen[ic][1];
               rfc[2] = i_face_cog[face_id][2] - cell_cen[ic][2];
 
-              const cs_real_t dist_fc
-          = sqrt(rfc[0]*rfc[0] + rfc[1]*rfc[1] + rfc[2]*rfc[2]);
+              const cs_real_t dist_fc = cs_math_3_norm(rfc);
 
               /* Compute the vector of the line that joins the current point
-               * with the downwind point
-               */
+                 with the downwind point */
               cs_real_3_t rdc, ndc;
               rdc[0] = cell_cen[id][0] - cell_cen[ic][0];
               rdc[1] = cell_cen[id][1] - cell_cen[ic][1];
               rdc[2] = cell_cen[id][2] - cell_cen[ic][2];
 
-              const cs_real_t dist_dc
-          = sqrt(rdc[0]*rdc[0] + rdc[1]*rdc[1] + rdc[2]*rdc[2]);
+              const cs_real_t dist_dc = cs_math_3_norm(rdc);
 
               ndc[0] = rdc[0]/dist_dc;
               ndc[1] = rdc[1]/dist_dc;
               ndc[2] = rdc[2]/dist_dc;
 
               /* Locate the upwind point to be on the line that joins
-               * the two cells on the upwind side and the same distance
-               */
+                 the two cells on the upwind side and the same distance */
               const cs_real_t dist_cu = dist_dc;
               const cs_real_t dist_du = dist_dc + dist_cu;
 
               /* Compute the property on the upwind assuming a parabolic
-               * variation of the property between the two cells
-               */
-              const cs_real_t gradc
-          = grad[ic][0]*ndc[0] +
-                grad[ic][1]*ndc[1] +
-              grad[ic][2]*ndc[2];
+                 variation of the property between the two cells */
+              const cs_real_t gradc = cs_math_3_dot_product(grad[ic], ndc);
 
-              const cs_real_t grad2c
-          = ((p_d - p_c)/dist_dc - gradc)/dist_dc;
+              const cs_real_t grad2c = ((p_d - p_c)/dist_dc - gradc)/dist_dc;
 
               p_u = p_c + (grad2c*dist_cu - gradc)*dist_cu;
               p_u = CS_MAX(CS_MIN(p_u, local_max[ic]), local_min[ic]);
@@ -6224,39 +6211,30 @@ cs_convection_diffusion_thermal(int                       idtvar,
               const cs_real_t nvf_r_f = (dist_fc+dist_cu)/dist_du;
               const cs_real_t nvf_r_c = dist_cu/dist_du;
 
-              /* Check for the bounds of the NVD diagram and compute the face property
-                 according to the selected NVD scheme
-              */
-              const cs_real_t small
-          = cs_math_epzero*(CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d));
+              /* Check for the bounds of the NVD diagram and compute
+                 the face property according to the selected NVD scheme */
+              const cs_real_t _small = cs_math_epzero
+                                     * (CS_ABS(p_u)+CS_ABS(p_c)+CS_ABS(p_d));
 
-              if (CS_ABS(p_d-p_u) < small) {
+              if (CS_ABS(p_d-p_u) <= _small) {
                 pif = p_c;
                 pjf = p_c;
-              }
-              else {
-
+              } else {
                 const cs_real_t nvf_p_c = (p_c - p_u)/(p_d - p_u);
 
                 if (nvf_p_c <= 0. || nvf_p_c >= 1.) {
                   pif = p_c;
                   pjf = p_c;
-                }
-                else {
-
-                  cs_real_t nvf_p_f;
-
-                  nvf_p_f = _nvd_scheme_scalar(CS_MIN(CS_NVD_WASEB,limiter_choice),
-                                               nvf_p_c,
-                                               nvf_r_f,
-                                               nvf_r_c);
+                } else {
+                  cs_real_t nvf_p_f = _nvd_scheme_scalar(limiter_choice,
+                                                         nvf_p_c,
+                                                         nvf_r_f,
+                                                         nvf_r_c);
 
                   pif = p_u + nvf_p_f*(p_d - p_u);
                   pif = CS_MAX(CS_MIN(pif, local_max[ic]), local_min[ic]);
                   pjf = pif;
-
                 }
-
               }
 
               cs_i_conv_flux(iconvp,
