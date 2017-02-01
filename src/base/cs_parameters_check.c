@@ -64,6 +64,8 @@
 #include "cs_stokes_model.h"
 #include "cs_syr_coupling.h"
 #include "cs_wall_functions.h"
+#include "cs_convection_diffusion.h"
+#include "cs_thermal_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -807,12 +809,15 @@ cs_parameters_check(void)
   const int kivisl = cs_field_key_id("scalar_diffusivity_id");
   const int kvisls0 = cs_field_key_id("scalar_diffusivity_ref");
   const int restart_file_key_id = cs_field_key_id("restart_file");
+  const int key_limiter = cs_field_key_id("limiter_choice");
 
   cs_field_t *f_pot = NULL;
   if (cs_glob_physical_model_flag[CS_GROUNDWATER] > 0)
     f_pot = CS_F_(head);
   else
     f_pot = CS_F_(p);
+
+  cs_field_t *f_th = cs_thermal_model_field();
 
   char *f_desc = NULL;
 
@@ -912,10 +917,27 @@ cs_parameters_check(void)
     }
   }
 
+  /* check if NVD scheme for thermal scalar is not one of the VOF schemes */
+  if (f_th != NULL) {
+    cs_field_get_key_struct(f_th, key_cal_opt_id, &var_cal_opt);
+    if (var_cal_opt.isstpc >= 3) { /* NVD scheme on thermal scalar? */
+      cs_nvd_type_t limiter_choice = cs_field_get_key_int(f_th, key_limiter);
+
+      f_desc = _field_section_desc(f_th, "while reading numerical "
+                                         "parameters for variable");
+
+      cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                    _(f_desc),
+                                    "NVD scheme",
+                                    limiter_choice,
+                                    CS_NVD_GAMMA, CS_NVD_VOF_HRIC);
+    }
+  }
+
   /* thetav for pressure must be equal to 1 */
   cs_field_get_key_struct(f_pot, key_cal_opt_id, &var_cal_opt);
   f_desc = _field_section_desc(f_pot, "while reading numerical "
-                                         "parameters for variable");
+                                      "parameters for variable");
 
   cs_parameters_is_equal_double(CS_ABORT_DELAYED,
                                 _(f_desc),
