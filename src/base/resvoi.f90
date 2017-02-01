@@ -127,7 +127,7 @@ call field_get_val_s(ivarfl(ivolf1), cvar_voidf)
 call field_get_val_prev_s(ivarfl(ivolf1), cvara_voidf)
 
 ! implicitation in pressure of the vaporization/condensation model (cavitation)
-if (itscvi.eq.1) then
+if (icavit.ge.0.and.itscvi.eq.1) then
   call field_get_val_s(ivarfl(ipr), cvar_pr)
   call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 endif
@@ -196,7 +196,7 @@ enddo
 !   if it has been implicited in pressure at correction step,
 !   in order to ensure mass conservation.
 
-if (itscvi.eq.1) then
+if (icavit.ge.0.and.itscvi.eq.1) then
   do iel = 1, ncel
     gamcav(iel) = gamcav(iel) + dgdpca(iel)*(cvar_pr(iel)-cvara_pr(iel))
   enddo
