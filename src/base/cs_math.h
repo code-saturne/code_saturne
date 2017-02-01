@@ -107,13 +107,36 @@ static inline cs_real_t
 cs_math_3_length(const cs_real_t  xa[3],
                  const cs_real_t  xb[3])
 {
-  cs_real_3_t  v;
+  cs_real_t  v[3];
 
   v[0] = xb[0] - xa[0];
   v[1] = xb[1] - xa[1];
   v[2] = xb[2] - xa[2];
 
   return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the squared distance between two points xa and xb in
+ *         a cartesian coordinate system of dimension 3
+ *
+ * \param[in]  xa   first coordinate
+ * \param[in]  xb   second coordinate
+ *
+ * \return the square length between two points xa and xb
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_3_distance_squared(const cs_real_t  xa[3],
+                           const cs_real_t  xb[3])
+{
+  cs_real_t v[3] = {xb[0] - xa[0],
+                    xb[1] - xa[1],
+                    xb[2] - xa[2]};
+
+  return (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
 /*----------------------------------------------------------------------------*/

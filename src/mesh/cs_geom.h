@@ -55,6 +55,30 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief find the closest point of a set to a given point in space.
+ *
+ * If the orient parameter is set to -1 or 1, intersection is only
+ * considered when (sx1-sx0).normal.orient > 0.
+ * If set to 0, intersection is considered in both cases.
+ *
+ * \param[in]   n_points      number of points
+ * \param[in]   point_coords  point coordinates
+ * \param[in]   query_coords  coordinates searched for
+ * \param[out]  point_id      id of closest point if on the same rank,
+ *                            -1 otherwise
+ * \param[out]  rank_id       id of rank containing closest point
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_geom_closest_point(cs_lnum_t         n_points,
+                      const cs_real_t   point_coords[][3],
+                      const cs_real_t   query_coords[3],
+                      cs_lnum_t        *point_id,
+                      int              *rank_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Test if a line segment intersects a face.
  *
  * If the orient parameter is set to -1 or 1, intersection is only
