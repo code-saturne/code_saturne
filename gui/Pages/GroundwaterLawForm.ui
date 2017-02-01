@@ -244,7 +244,7 @@
                    <item>
                     <widget class="QLabel" name="label_2">
                      <property name="text">
-                      <string>Diffusivity</string>
+                      <string>Molecular diffusivity</string>
                      </property>
                     </widget>
                    </item>
