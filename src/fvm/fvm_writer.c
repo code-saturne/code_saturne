@@ -266,7 +266,8 @@ static fvm_writer_format_t _fvm_writer_format_list[8] = {
     "",
     (  FVM_WRITER_FORMAT_HAS_POLYGON
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON
-     | FVM_WRITER_FORMAT_SEPARATE_MESHES),
+     | FVM_WRITER_FORMAT_SEPARATE_MESHES
+     | FVM_WRITER_FORMAT_NAME_IS_OPTIONAL),
     FVM_WRITER_TRANSIENT_CONNECT,
     0,                                 /* dynamic library count */
     NULL,                              /* dynamic library */
@@ -289,7 +290,8 @@ static fvm_writer_format_t _fvm_writer_format_list[8] = {
     "",
     (  FVM_WRITER_FORMAT_HAS_POLYGON
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON
-     | FVM_WRITER_FORMAT_SEPARATE_MESHES),
+     | FVM_WRITER_FORMAT_SEPARATE_MESHES
+     | FVM_WRITER_FORMAT_NAME_IS_OPTIONAL),
     FVM_WRITER_FIXED_MESH,
     0,                                 /* dynamic library count */
     NULL,                              /* dynamic library */
@@ -577,6 +579,9 @@ static void *
 _format_writer_init(fvm_writer_t  *this_writer,
                     const char    *mesh_name)
 {
+  const  char empty[] = "";
+  const  char untitled[] = "[untitled]";
+
   char   local_dir[] = ".";
   char  *tmp_path = NULL, *tmp_name = NULL;
 
@@ -628,6 +633,13 @@ _format_writer_init(fvm_writer_t  *this_writer,
   }
   else
     name = mesh_name;
+
+  if (name == NULL) {
+    if (this_writer->format->info_mask & FVM_WRITER_FORMAT_NAME_IS_OPTIONAL)
+      name = empty;
+    else
+      name = untitled;
+  }
 
   /* Initialize format-specific writer */
 
