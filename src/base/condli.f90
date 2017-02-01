@@ -2272,7 +2272,7 @@ endif
 
 !===============================================================================
 ! 13. Other scalars (except variances):
-!     Dirichlet and Neumann and convectiv outlet
+!     Dirichlet and Neumann and convective outlet
 !===============================================================================
 
 if (nscal.ge.1) then

@@ -1124,13 +1124,13 @@ if (ifcvsl .ge. 0) then
 endif
 
 ! retrieve turbulent Schmidt value for current scalar
-call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+call field_get_key_double(ivarfl(ivar), ksigmas, turb_schmidt)
 
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 
   ! Test on symmetry boundary condition: start
-  if (icodcl(ifac,iu).eq.4) then
+  if (icodcl(ifac,ivar).eq.4) then
 
     iel = ifabor(ifac)
     ! --- Physical Propreties
