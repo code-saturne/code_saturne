@@ -146,6 +146,15 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
                     self.zone = name
         self.modelZone.setItem(str_model = self.zone)
 
+        scalar_list = self.th_sca.getUserScalarNameList()
+        for s in self.th_sca.getScalarsVarianceList():
+            if s in scalar_list: scalar_list.remove(s)
+        if scalar_list != []:
+            for scalar in scalar_list:
+                self.scalar = scalar
+                self.modelSpecies.addItem(self.tr(scalar),self.scalar)
+            self.modelSpecies.setItem(str_model = self.scalar)
+
         # 2/ Connections
 
         self.comboBoxZone.activated[str].connect(self.slotZone)
@@ -166,7 +175,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
 
     def initialize(self, zone_num):
         """
-        Initialize widget when a new volumic zone is choosen
+        Initialize widget when a new volumic zone is chosen
         """
         zone = self.case.xmlGetNode("zone", id=zone_num)
 
@@ -181,15 +190,19 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
                 self.pushButtonMomentum.setStyleSheet("background-color: red")
 
             if GroundwaterModel(self.case).getGroundwaterModel() != "off":
+                self.groupBoxRichards.show()
                 exp = self.mdl.getRichardsFormula(self.zone)
                 if exp:
                     self.pushButtonRichards.setToolTip(exp)
                     self.pushButtonRichards.setStyleSheet("background-color: green")
                 else:
                     self.pushButtonRichards.setStyleSheet("background-color: red")
+            else:
+                self.groupBoxRichards.hide()
         else:
             self.labelMomentum.hide()
             self.pushButtonMomentum.hide()
+            self.groupBoxRichards.hide()
 
         if zone['thermal_source_term']  == "on":
             self.pushButtonThermal.show()
@@ -209,39 +222,22 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             self.pushButtonSpecies.show()
             self.labelSpecies.show()
 
-            self.scalar = ""
-            scalar_list = self.th_sca.getUserScalarNameList()
-            for s in self.th_sca.getScalarsVarianceList():
-                if s in scalar_list: scalar_list.remove(s)
-            if scalar_list != []:
-                for scalar in scalar_list:
-                    self.scalar = scalar
-                    self.modelSpecies.addItem(self.tr(scalar),self.scalar)
-                self.modelSpecies.setItem(str_model = self.scalar)
-                exp = self.mdl.getSpeciesFormula(self.zone, self.scalar)
-                if exp:
-                    self.pushButtonSpecies.setToolTip(exp)
-                    self.pushButtonSpecies.setStyleSheet("background-color: green")
-                else:
-                    self.pushButtonSpecies.setStyleSheet("background-color: red")
+            exp = self.mdl.getSpeciesFormula(self.zone, self.scalar)
+            if exp:
+                self.pushButtonSpecies.setToolTip(exp)
+                self.pushButtonSpecies.setStyleSheet("background-color: green")
+            else:
+                self.pushButtonSpecies.setStyleSheet("background-color: red")
 
             if GroundwaterModel(self.case).getGroundwaterModel() != "off":
                 self.groupBoxTransport.show()
-                self.scalar = ""
-                scalar_list = self.th_sca.getUserScalarNameList()
-                for s in self.th_sca.getScalarsVarianceList():
-                    if s in scalar_list: scalar_list.remove(s)
-                if scalar_list != []:
-                    for scalar in scalar_list:
-                        self.scalar = scalar
-                        self.modelSpecies2.addItem(self.tr(scalar),self.scalar)
-                    self.modelSpecies2.setItem(str_model = self.scalar)
-                    exp = self.mdl.getGroundWaterSpeciesFormula(self.zone, self.scalar)
-                    if exp:
-                        self.pushButtonSpecies2.setToolTip(exp)
-                        self.pushButtonSpecies2.setStyleSheet("background-color: green")
-                    else:
-                        self.pushButtonSpecies2.setStyleSheet("background-color: red")
+
+                exp = self.mdl.getGroundWaterSpeciesFormula(self.zone, self.scalar)
+                if exp:
+                    self.pushButtonSpecies2.setToolTip(exp)
+                    self.pushButtonSpecies2.setStyleSheet("background-color: green")
+                else:
+                    self.pushButtonSpecies2.setStyleSheet("background-color: red")
             else:
                 self.groupBoxTransport.hide()
         else:
@@ -263,14 +259,15 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
     @pyqtSlot(str)
     def slotSpeciesChoice(self, text):
         """
-        INPUT label for choice of zone
+        INPUT label for choice of species
         """
-        self.scalar= self.modelSpecies.dicoV2M[str(text)]
+        self.scalar = self.modelSpecies.dicoV2M[str(text)]
         exp = self.mdl.getSpeciesFormula(self.zone, self.scalar)
         if exp:
             self.pushButtonSpecies.setToolTip(exp)
             self.pushButtonSpecies.setStyleSheet("background-color: green")
         else:
+            self.pushButtonSpecies.setToolTip("Use the formula editor to define a source term for this species.")
             self.pushButtonSpecies.setStyleSheet("background-color: red")
 
 

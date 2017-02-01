@@ -5287,7 +5287,7 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
 
           for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
             cs_lnum_t iel = cell_ids[icel];
-            fdiff->val[iel] = diff_val;
+            fdiff->val[iel] = saturation_field[iel]*diff_val;
           }
         }
       }
