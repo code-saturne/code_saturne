@@ -1110,6 +1110,13 @@ do iscal = 1, nscal
         rcodcl(ifac,iut,1) = 0.d0
         rcodcl(ifac,ivt,1) = 0.d0
         rcodcl(ifac,iwt,1) = 0.d0
+      else if (icodcl(ifac, isca(iscal)).eq.5.and.icodcl(ifac, iut).eq.0) then
+        icodcl(ifac,iut) = 5
+        icodcl(ifac,ivt) = 5
+        icodcl(ifac,iwt) = 5
+        rcodcl(ifac,iut,1) = 0.d0
+        rcodcl(ifac,ivt,1) = 0.d0
+        rcodcl(ifac,iwt,1) = 0.d0
       endif
     enddo
   endif
@@ -1170,6 +1177,42 @@ do ivar = 1, nvar
         rcodcl(ifac,ivar,1) = 0.d0
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  endif
+enddo
+
+! Turbulent fluxes: 0 Dirichlet if Dirichlet on the scalar
+do iscal = 1, nscal
+  if (ityturt(iscal).eq.3) then
+    ! Name of the scalar ivar
+    call field_get_name(ivarfl(isca(iscal)), fname)
+
+    ! Index of the corresponding turbulent flux
+    call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+
+
+    ! Set pointer values of turbulent fluxes in icodcl
+    call field_get_key_int(f_id, keyvar, iut)
+    ivt = iut + 1
+    iwt = iut + 2
+
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if (icodcl(ifac, isca(iscal)).eq.1.and.icodcl(ifac, iut).eq.0) then
+        icodcl(ifac,iut) = 1
+        icodcl(ifac,ivt) = 1
+        icodcl(ifac,iwt) = 1
+        rcodcl(ifac,iut,1) = 0.d0
+        rcodcl(ifac,ivt,1) = 0.d0
+        rcodcl(ifac,iwt,1) = 0.d0
+      else if (icodcl(ifac, isca(iscal)).eq.6.and.icodcl(ifac, iut).eq.0) then
+        icodcl(ifac,iut) = 6
+        icodcl(ifac,ivt) = 6
+        icodcl(ifac,iwt) = 6
+        rcodcl(ifac,iut,1) = 0.d0
+        rcodcl(ifac,ivt,1) = 0.d0
+        rcodcl(ifac,iwt,1) = 0.d0
       endif
     enddo
   endif
