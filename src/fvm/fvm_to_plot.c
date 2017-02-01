@@ -250,7 +250,7 @@ _field_output(void           *context,
     }
 
     if (w->format == CS_PLOT_DAT) {
-      if (w->n_cols > 1)
+      if (w->n_cols > 0)
         fprintf(w->f, " | %s", name_buf);
       else
         fprintf(w->f, " %s", name_buf);

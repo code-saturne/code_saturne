@@ -44,6 +44,7 @@
 #include "bft_printf.h"
 
 #include "cs_math.h"
+#include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -65,6 +66,15 @@ BEGIN_C_DECLS
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Local macro definitions
+ *============================================================================*/
+
+/* In case <math.h> does not define HUGE_VAL, use a "safe" value */
+#if !defined(HUGE_VAL)
+#define HUGE_VAL 1.0e+30
+#endif
 
 /*============================================================================
  * Static global variables
@@ -124,6 +134,51 @@ _test_edge(const cs_real_t  sx0[3],
 /*============================================================================
  * Public function definitions
  *===========================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief find the closest point of a set to a given point in space.
+ *
+ * If the orient parameter is set to -1 or 1, intersection is only
+ * considered when (sx1-sx0).normal.orient > 0.
+ * If set to 0, intersection is considered in both cases.
+ *
+ * \param[in]   n_points      number of points
+ * \param[in]   point_coords  point coordinates
+ * \param[in]   query_coords  coordinates searched for
+ * \param[out]  point_id      id of closest point if on the same rank,
+ *                            -1 otherwise
+ * \param[out]  rank_id       id of rank containing closest point
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_geom_closest_point(cs_lnum_t         n_points,
+                      const cs_real_t   point_coords[][3],
+                      const cs_real_t   query_coords[3],
+                      cs_lnum_t        *point_id,
+                      int              *rank_id)
+{
+  cs_lnum_t id_min = -1;
+  cs_real_t d2_min = HUGE_VAL;
+
+  for (cs_lnum_t i = 0; i < n_points; i++) {
+    cs_real_t d2 = cs_math_3_distance_squared(point_coords[i], query_coords);
+    if (d2 < d2_min) {
+      d2_min = d2;
+      id_min = i;
+    }
+  }
+
+  *rank_id = cs_glob_rank_id;
+
+  cs_parall_min_id_rank_r(&id_min, rank_id, d2_min);
+
+  if (*rank_id != cs_glob_rank_id)
+    *point_id = -1;
+  else
+    *point_id = id_min;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

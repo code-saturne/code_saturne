@@ -164,9 +164,9 @@ cs_post_turbomachinery_head(const char               *criteria_in,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_post_moment_of_force(cs_lnum_t     n_b_faces,
-                        cs_lnum_t    *b_face_ids,
-                        cs_real_3_t   axis);
+cs_post_moment_of_force(cs_lnum_t        n_b_faces,
+                        const cs_lnum_t  b_face_ids[],
+                        cs_real_t        axis[3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -180,9 +180,9 @@ cs_post_moment_of_force(cs_lnum_t     n_b_faces,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_stress_tangential(cs_lnum_t n_b_faces,
-                          cs_lnum_t  b_face_list[],
-                          cs_real_3_t stress[]);
+cs_post_stress_tangential(cs_lnum_t        n_b_faces,
+                          const cs_lnum_t  b_face_ids[],
+                          cs_real_3_t      stress[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -196,9 +196,9 @@ cs_post_stress_tangential(cs_lnum_t n_b_faces,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_evm_reynolds_stresses(cs_lnum_t   n_loc_cells,
-                              cs_lnum_t   cells_list[],
-                              cs_real_6_t rst[]);
+cs_post_evm_reynolds_stresses(cs_lnum_t        n_loc_cells,
+                              const cs_lnum_t  cell_ids[],
+                              cs_real_6_t      rst[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
