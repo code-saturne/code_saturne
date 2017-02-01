@@ -975,7 +975,8 @@ deallocate(pripb)
 ! Symmetry
 ! =========
 
-! ---> Vectors and tensors have a special treatment. scalars an homogeneous Neumann
+! ---> Vectors and tensors have a special treatment.
+!      Scalars have an homogeneous Neumann.
 
 ideb = idebty(isymet)
 ifin = ifinty(isymet)

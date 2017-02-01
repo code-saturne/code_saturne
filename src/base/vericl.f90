@@ -671,6 +671,7 @@ if(nscal.ge.1) then
         if(icodcl(ifac,ivar).ne. 1.and.                             &
            icodcl(ifac,ivar).ne. 2.and.                             &
            icodcl(ifac,ivar).ne. 3.and.                             &
+           icodcl(ifac,ivar).ne. 4.and.                             &
            icodcl(ifac,ivar).ne. 5.and.                             &
            icodcl(ifac,ivar).ne.11.and.                             &
            icodcl(ifac,ivar).ne.13.and.                             &
