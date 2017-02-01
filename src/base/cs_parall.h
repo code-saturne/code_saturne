@@ -324,8 +324,8 @@ cs_parall_min_loc_vals(int         n,
                        cs_real_t   min_loc_vals[]);
 
 /*----------------------------------------------------------------------------
- * Given an (id, rank, value) tuple, return the local id, rank,
- * and value corresponding to the global minimum value.
+ * Given an (id, rank, value) tuple, return the local id and rank
+ * corresponding to the global minimum value.
  *
  * parameters:
  *   elt_id  <-> element id for which the value is the smallest

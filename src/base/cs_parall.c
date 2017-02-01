@@ -767,6 +767,13 @@ cs_parall_max_loc_vals(int         n,
   }
 
 #endif
+
+  if (cs_glob_n_ranks == 1) {
+
+    for (int i = 0; i < n; i++)
+      max_loc_vals[i] = max[i];
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -805,12 +812,19 @@ cs_parall_min_loc_vals(int         n,
   }
 
 #endif
+
+  if (cs_glob_n_ranks == 1) {
+
+    for (int i = 0; i < n; i++)
+      min_loc_vals[i] = min[i];
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Given an (id, rank, value) tuple, return the local id, rank,
- *        and value corresponding to the global minimum value.
+ * \brief Given an (id, rank, value) tuple, return the local id and rank
+ *        corresponding to the global minimum value.
  *
  * \param[in, out]   elt_id   element id for which the value is the smallest
  *                            (local in, global out)
@@ -918,6 +932,15 @@ cs_parall_allgather_r(int        n_elts,
   }
 
 #endif
+
+  if (cs_glob_n_ranks == 1) {
+
+    assert(n_elts == n_g_elts);
+
+    for (int i = 0; i < n_elts; i++)
+      g_array[i] = array[i];
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
