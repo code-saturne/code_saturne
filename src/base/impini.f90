@@ -331,7 +331,7 @@ write(nfecra,9900)
 ' ** METHODE VOF                             ',                 /,&
 '    ----------------------------------------',                 /)
  2111 format(                                                     &
-'       IVOLFL = ',4x,i10,    ' ( -1: inactif                 )',/,&
+'       IVOFMT = ',4x,i10,    ' ( -1: inactif                 )',/,&
 '                               (  0: actif                   )',/)
  2121 format(                                                     &
 '  -- Fluide 1 :',                                              /,&
@@ -371,7 +371,7 @@ write(nfecra,9900)
 ' ** VOF METHOD                              ',                 /,&
 '    ----------------------------------------',                 /)
  2111 format(                                                     &
-'       IVOLFL = ',4x,i10,    ' ( -1: inactive                )',/,&
+'       IVOFMT = ',4x,i10,    ' ( -1: inactive                )',/,&
 '                               (  0: active                  )',/)
  2121 format(                                                     &
 '  -- Fluid 1:',                                                /,&
