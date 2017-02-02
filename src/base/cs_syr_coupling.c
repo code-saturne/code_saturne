@@ -586,32 +586,6 @@ void CS_PROCF(tvolsy, TVOLSY)
 }
 
 /*----------------------------------------------------------------------------
- * Create nodal coupled mesh.
- *
- * Setup PLE locator for SYRTHES 4.
- *
- * Fortran Interface:
- *
- * SUBROUTINE GEOSYR
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(geosyr, GEOSYR)
-(
- void
-)
-{
-  int coupl_id;
-
-  _cs_glob_n_syr4_cp = cs_syr4_coupling_n_couplings();
-
-  for (coupl_id = 0; coupl_id < _cs_glob_n_syr4_cp; coupl_id++) {
-    cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupl_id);
-    cs_syr4_coupling_init_mesh(syr_coupling);
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Get number of coupled elements with SYRTHES.
  *
  * Fortran Interface:
@@ -678,23 +652,6 @@ void CS_PROCF(leltsy, LELTSY)
       = cs_syr4_coupling_by_id(*coupl_num - 1);
     cs_syr4_coupling_get_elt_list(syr_coupling, coupl_elt_list, *mode);
   }
-}
-
-/*----------------------------------------------------------------------------
- * User function wrapper for definition of SYRTHES couplings
- *
- * Fortran Interface:
- *
- * SUBROUTINE USSYRC
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (ussyrc, USSYRC)
-(
- void
-)
-{
-  cs_user_syrthes_coupling();
 }
 
 /*----------------------------------------------------------------------------
@@ -942,6 +899,8 @@ cs_syr_coupling_all_init(void)
               _("At least 1 SYRTHES coupling was defined for which\n"
                 "no communication with a SYRTHES instance is possible."));
   }
+
+  _cs_glob_n_syr4_cp = cs_syr4_coupling_n_couplings();
 }
 
 /*----------------------------------------------------------------------------
@@ -1001,14 +960,14 @@ cs_syr_coupling_set_explicit_treatment(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print SYRTHES coupling informations to setup.log.
+ * \brief Log SYRTHES coupling setup information.
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_syr_coupling_log_setup(void)
 {
-
-  /* Get the number of SYRTHES coupling */
+  /* Get the number of SYRTHES couplings */
   int n_coupl = cs_syr_coupling_n_couplings();
   const int keysca = cs_field_key_id("scalar_id");
   const int kcpsyr = cs_field_key_id("syrthes_coupling");
@@ -1020,7 +979,7 @@ cs_syr_coupling_log_setup(void)
       (CS_LOG_SETUP,
        _("SYRTHES coupling\n"
          "----------------\n\n"
-         "    nbccou:          %10d (Number of couplings)\n"),
+         "    number of couplings: %d\n"),
          n_coupl);
 
     int n_surf_coupl = 0, n_vol_coupl = 0, issurf, isvol;
@@ -1039,8 +998,8 @@ cs_syr_coupling_log_setup(void)
 
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    with             %10d surface coupling(s)\n"
-         "    with             %10d volume coupling(s)\n"),
+       _("    with             %d surface coupling(s)\n"
+         "    with             %d volume coupling(s)\n"),
          n_surf_coupl, n_vol_coupl);
 
     cs_log_printf
@@ -1068,6 +1027,21 @@ cs_syr_coupling_log_setup(void)
       (CS_LOG_SETUP,
        _("------------------------\n\n"
          "    icpsyr = 0 or 1         (1: scalar coupled to SYRTHES)\n"));
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create coupled meshes and setup PLE locator for Syrthes couplings.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_init_meshes(void)
+{
+  for (int coupl_id = 0; coupl_id < _cs_glob_n_syr4_cp; coupl_id++) {
+    cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupl_id);
+    cs_syr4_coupling_init_mesh(syr_coupling);
   }
 }
 

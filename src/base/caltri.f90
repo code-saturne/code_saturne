@@ -98,7 +98,7 @@ implicit none
 
 logical(kind=c_bool) mesh_modified
 
-integer          modhis, iappel, modntl, iisuit
+integer          modhis, iappel, modntl, iisuit, imrgrl
 integer          iel
 
 integer          inod   , idim, ifac
@@ -176,7 +176,14 @@ endif
 ! Geometry
 !===============================================================================
 
-call cregeo
+! Filter extended neighborhood for least-squares gradients
+
+imrgrl = abs(imrgra)
+imrgrl = modulo(imrgrl,10)
+
+if (imrgrl.eq.3 .or. imrgrl.eq.6 .or. imrgrl.eq.9) then
+  call redvse(anomax)
+endif
 
 !===============================================================================
 ! End of modules initialization
@@ -776,7 +783,7 @@ call timer_stats_start(post_stats_id)
 call post_activate_by_time_step
 call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
 
-call pstvar(ntcabs, nvar, nscal)
+call pstvar(nvar, nscal)
 
 call timer_stats_stop(post_stats_id)
 
@@ -979,7 +986,7 @@ endif
 ! Standard visualization output
 !===============================================================================
 
-call pstvar(ntcabs, nvar, nscal)
+call pstvar(nvar, nscal)
 
 !===============================================================================
 ! Structures
@@ -1021,9 +1028,7 @@ else
 endif
 if (modntl.eq.0) then
 
-  call ecrlis &
-  ( ncelet , ncel   ,                                    &
-    dt     , volume )
+  call ecrlis(ncelet, ncel, dt, volume)
 
   call log_iteration
 

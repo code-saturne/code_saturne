@@ -58,37 +58,20 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Output post-processing meshes using associated writers.
- *
- * Fortran interface:
- *
- * subroutine pstgeo
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstgeo, PSTGEO)
-(
- void
-);
-
-/*----------------------------------------------------------------------------
  * Loop on post-processing meshes to output variables
  *
  * Fortran interface:
  *
  * subroutine pstvar
  * *****************
- *                  ( ntcabs,
- *                    nvar,   nscal,  nvlsta, nvisbr )
+ *                  ( nvar,   nscal )
  *
- * integer          ntcabs      : --> : current time step number
  * integer          nvar        : <-- : number of variables
  * integer          nscal       : <-- : number of scalars
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstvar, PSTVAR)
 (
- const cs_int_t   *ntcabs,
  const cs_int_t   *nvar,
  const cs_int_t   *nscal
 );
@@ -96,6 +79,13 @@ void CS_PROCF (pstvar, PSTVAR)
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Output post-processing meshes using associated writers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_default_write_meshes(void);
 
 /*----------------------------------------------------------------------------*/
 

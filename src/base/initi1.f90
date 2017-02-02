@@ -85,6 +85,12 @@ interface
     implicit none
   end subroutine user_output
 
+  subroutine user_syrthes_coupling()  &
+      bind(C, name='cs_user_syrthes_coupling')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine user_syrthes_coupling
+
 end interface
 
 !===============================================================================
@@ -167,7 +173,7 @@ if (iihmpr.eq.1) then
   call uisyrc
 endif
 
-call ussyrc
+call user_syrthes_coupling
 
 call ussatc
 

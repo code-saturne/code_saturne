@@ -86,6 +86,7 @@
 #include "cs_partition.h"
 #include "cs_physical_properties.h"
 #include "cs_post.h"
+#include "cs_post_default.h"
 #include "cs_preprocess.h"
 #include "cs_preprocessor_data.h"
 #include "cs_probe.h"
@@ -376,6 +377,14 @@ cs_run(void)
           cs_fan_build_all(cs_glob_mesh, cs_glob_mesh_quantities);
 
           cs_ctwr_build_all();
+
+          /* Setup couplings and fixed-mesh postprocessing */
+
+          cs_syr_coupling_init_meshes();
+
+          cs_post_default_write_meshes();
+
+          cs_turbomachinery_restart_mesh();
 
           /*----------------------------------------------
            * Call main calculation function (code Kernel)

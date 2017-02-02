@@ -376,45 +376,20 @@ _write_q_criterion(void                  *input,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Output post-processing meshes using associated writers.
- *
- * Fortran interface:
- *
- * subroutine pstgeo
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (pstgeo, PSTGEO)
-(
- void
-)
-{
-  int t_top_id
-    = cs_timer_stats_switch(cs_timer_stats_id_by_name("postprocessing_stage"));
-
-  cs_post_write_meshes(cs_glob_time_step);
-
-  cs_timer_stats_switch(t_top_id);
-}
-
-/*----------------------------------------------------------------------------
  * Loop on post-processing meshes to output variables
  *
  * Fortran interface:
  *
  * subroutine pstvar
  * *****************
- *                  ( ntcabs,
- *                    nvar,   nscal,  nvlsta, nvisbr )
+ *                  ( nvar,   nscal )
  *
- * integer          ntcabs      : --> : current time step number
  * integer          nvar        : <-- : number of variables
  * integer          nscal       : <-- : number of scalars
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstvar, PSTVAR)
 (
- const cs_int_t   *ntcabs,
  const cs_int_t   *nvar,
  const cs_int_t   *nscal
 )
@@ -444,7 +419,7 @@ void CS_PROCF (pstvar, PSTVAR)
 
   /* Call main post-processing function */
 
-  if (*ntcabs > -1)
+  if (cs_glob_time_step->nt_cur > -1)
     cs_post_write_vars(cs_glob_time_step);
   else
     cs_post_write_vars(NULL);
@@ -453,6 +428,21 @@ void CS_PROCF (pstvar, PSTVAR)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Output post-processing meshes using associated writers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_post_default_write_meshes(void)
+{
+  int t_top_id
+    = cs_timer_stats_switch(cs_timer_stats_id_by_name("postprocessing_stage"));
+
+  cs_post_write_meshes(cs_glob_time_step);
+
+  cs_timer_stats_switch(t_top_id);
+}
 
 /*----------------------------------------------------------------------------*/
 

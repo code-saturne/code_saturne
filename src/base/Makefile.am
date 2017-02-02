@@ -230,7 +230,6 @@ covofi.f90 \
 covofv.f90 \
 cptssy.f90 \
 cpvosy.f90 \
-cregeo.f90 \
 cs_1d_wall_thermal.c \
 cs_1d_wall_thermal_check.c \
 cs_ale.c \

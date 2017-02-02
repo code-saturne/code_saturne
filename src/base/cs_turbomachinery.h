@@ -145,16 +145,13 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
                               double  *t_elapsed);
 
 /*----------------------------------------------------------------------------
- * Read mesh from checkpoint for unsteady rotor/stator computation
+ * Update mesh for unsteady rotor/stator computation in case of restart.
  *
- * parameters:
- *   t_cur_mob    <-- current rotor time
- *   t_elapsed    --> elapsed computation time
+ * Reads mesh from checkpoint when available.
  *----------------------------------------------------------------------------*/
 
 void
-cs_turbomachinery_restart_mesh(double   t_cur_mob,
-                               double  *t_elapsed);
+cs_turbomachinery_restart_mesh(void);
 
 /*----------------------------------------------------------------------------
  * Reinitialize interior face-based fields.
