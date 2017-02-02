@@ -114,21 +114,6 @@ void CS_PROCF(tvolsy, TVOLSY)
 );
 
 /*----------------------------------------------------------------------------
- * Create nodal coupled mesh.
- * Send vertices's coordinates and connectivity of coupled mesh.
- *
- * Fortran Interface:
- *
- * SUBROUTINE GEOSYR
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(geosyr, GEOSYR)
-(
- void
-);
-
-/*----------------------------------------------------------------------------
  * Get number of coupled elements with SYRTHES.
  *
  * Fortran Interface:
@@ -166,20 +151,6 @@ void CS_PROCF(leltsy, LELTSY)
  const cs_int_t    *coupl_num,
  const cs_int_t    *mode,
        cs_lnum_t   *coupl_elt_list
-);
-
-/*----------------------------------------------------------------------------
- * User function wrapper for definition of SYRTHES couplings
- *
- * Fortran Interface:
- *
- * SUBROUTINE USSYRC
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (ussyrc, USSYRC)
-(
- void
 );
 
 /*----------------------------------------------------------------------------
@@ -331,11 +302,23 @@ cs_syr_coupling_set_conservativity(int  flag);
 void
 cs_syr_coupling_set_explicit_treatment(void);
 
-/*----------------------------------------------------------------------------*
- * Print SYRTHES coupling informations to setup.log.
-*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log SYRTHES coupling setup information.
+ */
+/*----------------------------------------------------------------------------*/
+
 void
 cs_syr_coupling_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create coupled meshes and setup PLE locator for Syrthes couplings.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_init_meshes(void);
 
 /*----------------------------------------------------------------------------*/
 

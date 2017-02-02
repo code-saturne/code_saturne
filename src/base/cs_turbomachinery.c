@@ -700,8 +700,12 @@ _update_mesh(bool     restart_mode,
   /* Cell and boundary face numberings can be moved from old mesh
      to new one, as the corresponding parts of the mesh should not change */
 
-  cs_numbering_t *cell_numbering = cs_glob_mesh->cell_numbering;
-  cs_glob_mesh->cell_numbering = NULL;
+  cs_numbering_t *cell_numbering = NULL;
+
+  if (restart_mode == false) {
+    cell_numbering = cs_glob_mesh->cell_numbering;
+    cs_glob_mesh->cell_numbering = NULL;
+  }
 
   /* Destroy previous global mesh and related entities */
 
@@ -1077,18 +1081,22 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Read mesh from checkpoint for unsteady rotor/stator computation.
+ * \brief Update mesh for unsteady rotor/stator computation in case of restart.
  *
- * \param[in]   t_cur_mob     current rotor time
- * \param[out]  t_elapsed     elapsed computation time
+ * Reads mesh from checkpoint when available.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbomachinery_restart_mesh(double   t_cur_mob,
-                               double  *t_elapsed)
+cs_turbomachinery_restart_mesh(void)
 {
-  _update_mesh(true, t_cur_mob, t_elapsed);
+  if (cs_glob_time_step->nt_prev > 0) {
+    double t_elapsed;
+    if (cs_file_isreg("restart/mesh"))
+      _update_mesh(true, cs_glob_time_step->t_cur, &t_elapsed);
+    else
+      _update_mesh(false, cs_glob_time_step->t_cur, &t_elapsed);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1143,12 +1151,7 @@ cs_turbomachinery_initialize(void)
 
   if (cs_glob_n_joinings > 0) {
     cs_real_t t_elapsed;
-    if (cs_file_isreg("restart/mesh"))
-      cs_turbomachinery_restart_mesh(cs_glob_time_step->t_cur,
-                                     &t_elapsed);
-    else
-      cs_turbomachinery_update_mesh(cs_glob_time_step->t_cur,
-                                    &t_elapsed);
+    cs_turbomachinery_update_mesh(0.0, &t_elapsed);
   }
 
   /* Adapt postprocessing options if required;
