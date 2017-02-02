@@ -1090,6 +1090,9 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 void
 cs_turbomachinery_restart_mesh(void)
 {
+  if (cs_turbomachinery_get_model() != CS_TURBOMACHINERY_TRANSIENT)
+    return;
+
   if (cs_glob_time_step->nt_prev > 0) {
     double t_elapsed;
     if (cs_file_isreg("restart/mesh"))
