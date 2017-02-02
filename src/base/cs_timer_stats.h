@@ -71,6 +71,20 @@ cs_timer_stats_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set a start time for time stats.
+ *
+ * This is useful to shift the time id for restarts. This function must
+ * not be called after \ref cs_timer_stats_increment_time_step.
+ *
+ * \param[in]  time_id  associated starting time id
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_timer_stats_set_start_time(int time_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set global timer statistics plot options.
  *
  * This function is only effective before the first call to

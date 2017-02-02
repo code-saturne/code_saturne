@@ -251,6 +251,8 @@ cs_run(void)
     cs_user_zones();
     cs_ctwr_build_zones();
 
+    cs_timer_stats_set_start_time(cs_glob_time_step->nt_cur);
+
   }
   else if (opts.verif)
     halo_type = CS_HALO_EXTENDED;
