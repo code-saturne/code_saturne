@@ -127,7 +127,7 @@ static cs_time_plot_format_t  _plot_format = CS_TIME_PLOT_CSV;
 
 /* Timer status */
 
-static int  _time_id = -1;
+static int  _time_id = -1, _start_time_id = -1;
 static int  _n_roots = 0;
 static int  *_active_id = NULL;
 static cs_time_plot_t  *_time_plot = NULL;
@@ -299,6 +299,7 @@ cs_timer_stats_initialize(void)
   int id;
 
   _time_id = 0;
+  _start_time_id = 0;
 
   if (_name_map != NULL)
     cs_timer_stats_finalize();
@@ -344,6 +345,28 @@ cs_timer_stats_finalize(void)
 
   _n_stats = 0;
   _n_stats_max = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set a start time for time stats.
+ *
+ * This is useful to shift the time id for restarts. This function must
+ * not be called after \ref cs_timer_stats_increment_time_step.
+ *
+ * \param[in]  time_id  associated starting time id
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_timer_stats_set_start_time(int time_id)
+{
+  int id;
+
+  if (_time_id <= 0 && _start_time_id <= 0) {
+    _time_id = time_id;
+    _start_time_id = time_id;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -399,7 +422,8 @@ cs_timer_stats_increment_time_step(void)
 
   /* Now output data */
 
-  if (_time_plot == NULL && _time_id < 1 && cs_glob_rank_id < 1)
+  if (   _time_plot == NULL && _time_id < _start_time_id + 1
+      && cs_glob_rank_id < 1)
     _build_time_plot();
 
   if (_time_id % _plot_frequency == 0) {
