@@ -14,16 +14,17 @@ User changes
   on each side of those boundaries, for a true topological mesh modification.
   cs_user_mesh_thinwall is also renamed to cs_user_mesh_boundary.
 
-
 Numerics
 --------
 
-- Improve time stepping of the coupled solver for the components of Reynolds stress tensor (irijco = 1).
-  * No clipping on Rij should appear when no flux rectonstruction is needed and a upwind scheme is used
-    (except those due to boundary conditions on R12).
+- Improve time stepping of the coupled solver for the components of Reynolds
+  stress tensor (irijco = 1).
+  * No clipping on Rij should appear when no flux rectonstruction is needed and
+    an upwind scheme is used (except those due to boundary conditions on R12).
   * Add eigen_max function to cs_math.c
   * EBRSM and SSG models are treated.
-  * Add a clipping indicator which can be activated to check where clipping occurs in the output files
+  * Add a clipping indicator which can be activated to check where clipping
+    occurs in the output files
 
 - Add and reorganize convection schemes (especially for VOF method)
   * reorganize Roe-Sweby limiters.
@@ -104,6 +105,9 @@ GUI changes
 
 Architectural changes
 ---------------------
+
+- Paths needed for Catalyst are now sourced automatically in most cases;
+  for movable builds, a CATALYST_ROOT_DIR environment variable may be used.
 
 - Added general structures to handle boundary and volume zones.
 

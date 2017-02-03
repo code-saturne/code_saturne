@@ -277,7 +277,7 @@ def get_build_flags(pkg, flag, install=False, destdir=None):
             # Strangely, on MinGW, Windows paths are not correctly handled here
             # So, assuming we always build on MinGW, here is a little trick!
             if sys.platform.startswith("win"):
-                if pkg.get_cross_compil() != 'cygwin': #mingw32 or mingw64
+                if pkg.get_cross_compile() != 'cygwin': #mingw32 or mingw64
                     libdir = os.path.normpath('C:\\MinGW\\msys\\1.0' + libdir)
             if destdir:
                 libdir = dest_subdir(destdir, libdir)
@@ -485,7 +485,7 @@ def link_build(pkg, install=False, destdir=None):
         # Strangely, on MinGW, Windows paths are not correctly handled here...
         # So, assuming we always build on MinGW, here is a little trick!
         if sys.platform.startswith("win"):
-            if pkg.get_cross_compil() != 'cygwin': #mingw32 or mingw64
+            if pkg.get_cross_compile() != 'cygwin': #mingw32 or mingw64
                 exec_name = os.path.normpath('C:\\MinGW\\msys\\1.0' + exec_name)
             else:
                 exec_name = pkg.dirs['pkglibexecdir'][1] + "/" + pkg.solver
