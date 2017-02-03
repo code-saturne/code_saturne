@@ -127,15 +127,15 @@ integer, save :: initmeteo
 ! 2.1 Constant specific to the physics (defined in atini1.f90)
 !-------------------------------------------------------------------------------
 
-!> ps  --> reference pressure (to comput potential temp: 1.0d+5)
+!> reference pressure (to compute potential temp: 1.0d+5)
 double precision, save:: ps
-!> rvsra  --> ratio gaz constant h2o/ dry air: 1.608d0
+!> ratio gaz constant h2o/ dry air: 1.608d0
 double precision, save:: rvsra
-!> cpvcpa --> ratio Cp h2o/ dry air: 1.866d0
+!> ratio Cp h2o/ dry air: 1.866d0
 double precision, save:: cpvcpa
 !> latent heat of evaporation: 2.501d+6
 double precision, save:: clatev
-!> gammat --> temperature gradient for the standard atmosphere (-6.5d-03 K/m)
+!> temperature gradient for the standard atmosphere (-6.5d-03 K/m)
 double precision, save:: gammat
 !> rvsra*rair
 double precision, save:: rvap
