@@ -995,7 +995,7 @@ do f_id = 0, nfld - 1
       ifac = itrifb(ii)
       ! Special treatment for uncoupled version of Rij models,
       ! will be removed with the coupled solver
-      if (icodcl(ifac,ivar).eq.0.and.                        &
+      if (icodcl(ifac,ivar).eq.0.and.irijco.eq.0.and.        &
           (ivar.eq.ir11.or.ivar.eq.ir22.or.ivar.eq.ir33.or.  &
            ivar.eq.ir12.or.ivar.eq.ir13.or.ivar.eq.ir23)) then
         icodcl(ifac,ivar)   = 4
