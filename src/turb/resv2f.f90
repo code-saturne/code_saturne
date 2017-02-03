@@ -390,7 +390,7 @@ call itrgrp &
 !      In this case of the second-order in time, T is calculated in n
 !      (it will be extrapolated) and L^2 in n+theta
 !      (even if k and eps stay in n)
-do iel=1,ncel
+do iel = 1, ncel
   xk = cvara_k(iel)
   xe = cvara_ep(iel)
   xnu  = cpro_pcvlo(iel)/cromo(iel)
@@ -414,22 +414,22 @@ do iel=1,ncel
   endif
 enddo
 
-!     Explicit term, stores ke temporarily in W5
-!     W2 is already multipicated by the volume which already contains
+!     Explicit term, stores ke temporarily in w5
+!     w2 is already multipicated by the volume which already contains
 !     a mark "-" (coming from itrgrp)
 do iel = 1, ncel
-    xrom = cromo(iel)
-    xnu  = cpro_pcvlo(iel)/xrom
-    xk = cvara_k(iel)
-    xe = cvara_ep(iel)
-    if (iturb.eq.50) then
-      w5(iel) = - cell_f_vol(iel)*                                    &
-           ( (cv2fc1-1.d0)*(cvara_phi(iel)-d2s3)/w3(iel)              &
-             -cv2fc2*prdv2f(iel)/xrom/xk                          &
-             -2.0d0*xnu/xe/w3(iel)*w1(iel) ) - xnu*w2(iel)
-    elseif (iturb.eq.51) then
-      w5(iel) = cell_f_vol(iel)
-    endif
+  xrom = cromo(iel)
+  xnu  = cpro_pcvlo(iel)/xrom
+  xk = cvara_k(iel)
+  xe = cvara_ep(iel)
+  if (iturb.eq.50) then
+    w5(iel) = - cell_f_vol(iel)*                                    &
+         ( (cv2fc1-1.d0)*(cvara_phi(iel)-d2s3)/w3(iel)              &
+               -cv2fc2*prdv2f(iel)/xrom/xk                          &
+          -2.0d0*xnu/xe/w3(iel)*w1(iel) ) - xnu*w2(iel)
+  elseif (iturb.eq.51) then
+    w5(iel) = cell_f_vol(iel)
+  endif
 enddo
 !     If we extrapolate the source term:
 if (istprv.ge.0) then
@@ -467,7 +467,7 @@ enddo
 
 
 !===============================================================================
-! 3.3 Effective resolution in the equation of f_barre / alpha
+! 3.3 Effective resolution in the equation of f_barre or alpha
 !===============================================================================
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
@@ -665,6 +665,7 @@ do iel = 1, ncel
     w2(iel)   = cell_f_vol(iel)*                                    &
          ( cvara_al(iel)**3*fhomog*xrom                             &
            +2.d0/xk*cpro_pcvto(iel)/sigmak*w1(iel) )
+         !FIXME implit negativ w1 and fhomog
   endif
 
 enddo

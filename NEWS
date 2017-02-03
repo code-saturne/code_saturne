@@ -7,6 +7,8 @@ User changes
 
 - Allow user definitions of head losses by zones (see cs_user_head_losses.c).
 
+- Do not relax k and epsilon by default when using Bl v2 k turbulence model.
+
 - When inserting boundaries (shuch as thin walls), vertices are now separated
   on each side of those boundaries, for a true topological mesh modification.
   cs_user_mesh_thinwall is also renamed to cs_user_mesh_boundary.

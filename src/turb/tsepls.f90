@@ -94,9 +94,6 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 ! 2. Calculation of the term d2Ui/dxkdxj*d2Ui/dxkdxj
 !===============================================================================
 
-do iel = 1, ncel
-  w1(iel) = 0.0d0
-enddo
 
 inc = 1
 iprev = 1
@@ -142,7 +139,7 @@ do isou = 1, 3
   enddo
 
   do iel = 1, ncel
-    w1(iel) = w1(iel) + (w7(iel)/volume(iel))**2
+    w1(iel) = (w7(iel)/volume(iel))**2
   enddo
 
 enddo
