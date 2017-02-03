@@ -1237,6 +1237,13 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 
   cs_real_t *liq_mass_flow = cs_field_by_name("inner_mass_flux_y_l_packing")->val;//FIXME
 
+  /* Variable and properties for rain zones */
+  cs_field_t *cfld_yp = cs_field_by_name_try("y_p");
+
+  cs_real_t *y_p = NULL;
+  if (cfld_yp != NULL)
+    y_p = cfld_yp->val;
+
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
@@ -1256,6 +1263,13 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     if (y_w[cell_id] >= 1.0)
       y_w[cell_id] = 1. - cs_math_epzero; //TODO count it
 
+    if (y_p != NULL) {
+      if (y_p[cell_id] < 0.0)
+        y_p[cell_id] = 0; //TODO count it
+
+      if (y_p[cell_id] >= 1.0)
+        y_p[cell_id] = 1. - cs_math_epzero; //TODO count it
+    }
 
     /* Update humidity field */
     x[cell_id] = y_w[cell_id]/(1.0-y_w[cell_id]);
