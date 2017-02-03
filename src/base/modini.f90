@@ -803,24 +803,24 @@ else
     if (itytur.eq.5) then !FIXME
       call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
       if (abs(vcopt%relaxv+999.d0).lt.epzero) then
-           vcopt%relaxv = 0.7d0
-           call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+        vcopt%relaxv = 1.d0
+        call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
       endif
       call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
       if (abs(vcopt%relaxv+999.d0).lt.epzero) then
-           vcopt%relaxv = 0.7d0
-           call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+        vcopt%relaxv = 1.d0
+        call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
       endif
     else if (itytur.eq.2) then
       call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
       if (abs(vcopt%relaxv+999.d0).lt.epzero) then
-           vcopt%relaxv = 1.d0
-           call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
+        vcopt%relaxv = 1.d0
+        call field_set_key_struct_var_cal_opt(ivarfl(ik), vcopt)
       endif
       call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
       if (abs(vcopt%relaxv+999.d0).lt.epzero) then
-           vcopt%relaxv = 1.d0
-           call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+        vcopt%relaxv = 1.d0
+        call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
       endif
     else if (itytur.eq.6) then
       call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)

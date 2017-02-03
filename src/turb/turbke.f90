@@ -640,7 +640,7 @@ else if (iturb.eq.50) then
                - d2s3*rho*ceps1*xk*divu(iel)                        &
                )
 
-    ! We store the part with Pk in PRDV2F which will be reused in RESV2F
+    ! We store the part with Pk in prdv2f which will be reused in resv2f
     prdv2f(iel) = prdv2f(iel)                               &
                 - d2s3*rho*cvara_k(iel)*divu(iel)!FIXME this term should be removed
 
@@ -681,7 +681,7 @@ else if (iturb.eq.51) then
                - d2s3*rho*cpale1*xk/tt*divu(iel)                            &
                )
 
-    ! We store the part with Pk in PRDV2F which will be reused in RESV2F
+    ! We store the part with Pk in prdv2f which will be reused in resv2f
     prdv2f(iel) = prdv2f(iel)                               &
                 - d2s3*rho*cvara_k(iel)*divu(iel)!FIXME this term should be removed
 
@@ -690,7 +690,9 @@ else if (iturb.eq.51) then
       tinstk(iel) = tinstk(iel) + rho*volume(iel)/ttke
     endif
     tinstk(iel) = tinstk(iel) + max(d2s3*rho*volume(iel)*divu(iel), 0.d0)
+    ! Note that w11 is positiv
     tinstk(iel) = tinstk(iel) + w11(iel)*rho*volume(iel)
+    ! Note that w10 is positiv
     tinste(iel) = tinste(iel) + w10(iel)*rho*volume(iel)/tt                  &
                 + max(d2s3*cpale1*ttke/tt*rho*volume(iel)*divu(iel), 0.d0)
 
