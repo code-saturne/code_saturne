@@ -340,8 +340,61 @@ class config:
                                   'ldflags': "@SCOTCH_LDFLAGS@",
                                   'libs': "@SCOTCH_LIBS@"})
 
+    def __get_search_paths_catalyst__(self):
+        """
+        return Catalyst library search path and Python search paths if available
+        """
+
+        catalyst_lib_dir = None
+        catalyst_pythonpath_dirs = ()
+
+        if self.libs['catalyst'].have:
+
+            if self.features['relocatable']:
+                catalyst_lib_dir = os.getenv('CATALYST_ROOT_DIR')
+
+            if not catalyst_lib_dir:
+                libs = self.libs['catalyst'].flags['libs']
+                for l in libs.split('-Wl,'):
+                    if l.find('libvtkPVPythonCatalyst') > -1:
+                        catalyst_lib_dir = os.path.dirname(l)
+                        break
+
+        if catalyst_lib_dir:
+            sp_dir = os.path.join(catalyst_lib_dir, 'site-packages')
+            if os.path.isdir(sp_dir):
+                catalyst_pythonpath_dirs = (os.path.join(sp_dir, 'vtk'),
+                                            os.path.join(sp_dir, 'paraview'),
+                                            sp_dir)
+
+        return catalyst_lib_dir, catalyst_pythonpath_dirs
+
+    def get_plugin_search_paths(self):
+        """
+        return plugin library search path and Python search paths if available
+        """
+
+        plugin_lib_dirs = []
+        plugin_pythonpath_dirs = []
+
+        for lib in self.deplibs:
+            if (self.libs[lib].have == "yes"
+                and (self.libs[lib].dynamic_load)):
+
+                if lib == 'catalyst':
+                    catalyst_lib_dir, catalyst_pythonpath_dirs \
+                        = self.__get_search_paths_catalyst__()
+
+                    plugin_lib_dirs.append(catalyst_lib_dir)
+                    for p in catalyst_pythonpath_dirs:
+                        plugin_pythonpath_dirs.append(p)
+
+        return plugin_lib_dirs, plugin_pythonpath_dirs
 
     def print_config(self):
+        """
+        Prinf configuration info
+        """
 
         for lib in self.deplibs:
             self.libs[lib].print_config()
