@@ -873,6 +873,11 @@ class Studies(object):
         """
 
         f = options.filename
+        if f == None:
+            print("A file of parameters must be specified for studymanager to run.\n"
+                  "See help message and use '--file' or '-f' option.")
+            sys.exit(1)
+
         # create a first xml parser only for
         #   the repository verification and
         #   the destination creation
