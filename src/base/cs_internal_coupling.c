@@ -356,6 +356,7 @@ _destroy_entity(cs_internal_coupling_t  *cpl)
   BFT_FREE(cpl->cocgb_s_it);
   BFT_FREE(cpl->cocg_s_it);
   BFT_FREE(cpl->cells_criteria);
+  BFT_FREE(cpl->faces_criteria);
   BFT_FREE(cpl->namesca);
   ple_locator_destroy(cpl->locator);
 }
@@ -668,7 +669,6 @@ _criteria_initialize(const char   criteria_cells[],
              char);
 
   strcpy(cpl->faces_criteria, criteria_faces);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -716,7 +716,6 @@ _volume_initialize_insert_boundary(cs_mesh_t               *m,
              char);
 
   strcpy(cpl->faces_criteria, group_name);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -774,6 +773,23 @@ _volume_face_initialize(cs_mesh_t               *m,
   cs_selector_get_b_face_list(cpl->faces_criteria,
                               &n_selected_faces,
                               selected_faces);
+
+  /* reorder selected faces */
+  {
+    cs_lnum_t n = 0;
+    char  *b_face_flag;
+    BFT_MALLOC(b_face_flag, m->n_b_faces, char);
+    for (cs_lnum_t i = 0; i < m->n_b_faces; i++)
+      b_face_flag[i] = 0;
+    for (cs_lnum_t i = 0; i < n_selected_faces; i++)
+      b_face_flag[selected_faces[i]] = 1;
+    for (cs_lnum_t i = 0; i < m->n_b_faces; i++) {
+      if (b_face_flag[i] == 1)
+        selected_faces[n++] = i;
+    }
+    assert(n == n_selected_faces);
+    BFT_FREE(b_face_flag);
+  }
 
   /* Prepare locator */
 
