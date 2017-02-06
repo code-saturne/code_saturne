@@ -882,7 +882,11 @@ class Studies(object):
         #   the repository verification and
         #   the destination creation
 
-        self.__parser = Parser(f)
+        if os.path.isfile(options.filename):
+            self.__parser = Parser(f)
+        else:
+            print("Specified XML parameter file for studymanager does not exist.")
+            sys.exit(1)
 
         # Test if the repository exists
 

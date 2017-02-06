@@ -84,7 +84,7 @@ class Parser(object):
         try:
             self.doc =  minidom.parse(XMLFileName)
         except:
-            print("No file of parameters or error in the name of the file or error in the syntax of the xml.\n")
+            print("Error in the syntax of the xml.\n")
             msg =  xmlChecker(self.filename)
             if msg:
                 print(msg)
