@@ -2972,7 +2972,7 @@ cs_flux_through_surface(const char          *selection_crit,
     cells_tag_list[c_id] = -1;
   }
 
-  for (cs_lnum_t f_id =0; f_id < n_bi_faces_sel; f_id++) {
+  for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
     cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
@@ -2981,7 +2981,7 @@ cs_flux_through_surface(const char          *selection_crit,
                       + normal[1]*i_face_normal[f_id_sel][1]
                       + normal[2]*i_face_normal[f_id_sel][2];
     if (fabs(dot_pro) < 1.0e-14)//FIXME
-      dot_pro =0;
+      dot_pro = 0;
     if(dot_pro > 0.)
       bi_face_cells[f_id_sel][0] = c_id1;
     else if (dot_pro < 0.)
@@ -2994,7 +2994,7 @@ cs_flux_through_surface(const char          *selection_crit,
   cs_selector_get_b_face_list(selection_crit, &n_bb_faces_sel, bb_face_sel_list);
 
   BFT_REALLOC(flux_b_faces, n_bb_faces_sel, cs_real_t);
-  for( cs_lnum_t f_id =0; f_id < n_bb_faces_sel; f_id++){
+  for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
     cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
     cs_lnum_t c_id = b_face_cells[f_id_sel];
     cells_tag_list[c_id] = 1;

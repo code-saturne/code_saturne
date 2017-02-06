@@ -64,6 +64,7 @@
 #include "cs_prototypes.h"
 #include "cs_thermal_model.h"
 #include "cs_timer.h"
+#include "cs_turbulence_model.h"
 #include "cs_parall.h"
 #include "cs_elec_model.h"
 
@@ -2562,19 +2563,14 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                         _("Error: can not find the required symbol: %s\n"),
                         "r11, r22, r33, r12, r13, r23 or epsilon");
 
-            cs_field_t *c_r11 = cs_field_by_name("r11");
-            cs_field_t *c_r22 = cs_field_by_name("r22");
-            cs_field_t *c_r33 = cs_field_by_name("r33");
-            cs_field_t *c_r12 = cs_field_by_name("r12");
-            cs_field_t *c_r13 = cs_field_by_name("r13");
-            cs_field_t *c_r23 = cs_field_by_name("r23");
+            cs_field_t *cfld_rij;
+            if (cs_glob_turb_rans_model->irijco == 1)
+              cfld_rij = cs_field_by_name("rij");
+            else
+              cfld_rij = cs_field_by_name("r11");
+
             cs_field_t *c_eps = cs_field_by_name("epsilon");
-            int ivarr11 = cs_field_get_key_int(c_r11, var_key_id) -1;
-            int ivarr22 = cs_field_get_key_int(c_r22, var_key_id) -1;
-            int ivarr33 = cs_field_get_key_int(c_r33, var_key_id) -1;
-            int ivarr12 = cs_field_get_key_int(c_r12, var_key_id) -1;
-            int ivarr13 = cs_field_get_key_int(c_r13, var_key_id) -1;
-            int ivarr23 = cs_field_get_key_int(c_r23, var_key_id) -1;
+            int ivarrij = cs_field_get_key_int(cfld_rij, var_key_id) - 1;
             int ivare   = cs_field_get_key_int(c_eps, var_key_id) -1;
 
             for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
@@ -2583,12 +2579,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
               mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
               mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
               mei_evaluate(ev_formula);
-              rcodcl[ivarr11 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r11");
-              rcodcl[ivarr22 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r22");
-              rcodcl[ivarr33 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r33");
-              rcodcl[ivarr12 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r12");
-              rcodcl[ivarr13 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r13");
-              rcodcl[ivarr23 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r23");
+              rcodcl[ ivarrij      * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r11");
+              rcodcl[(ivarrij + 1) * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r22");
+              rcodcl[(ivarrij + 2) * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r33");
+              rcodcl[(ivarrij + 3) * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r12");
+              rcodcl[(ivarrij + 4) * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r23");
+              rcodcl[(ivarrij + 5) * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r13");
               rcodcl[ivare   * n_b_faces + ifbr] = mei_tree_lookup(ev_formula, "epsilon");
             }
           }
@@ -2600,20 +2596,15 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                         _("Error: can not find the required symbol: %s\n"),
                         "R11, R22, R33, R12, R13, R23, eps or alpha");
 
-            cs_field_t *c_r11 = cs_field_by_name("r11");
-            cs_field_t *c_r22 = cs_field_by_name("r22");
-            cs_field_t *c_r33 = cs_field_by_name("r33");
-            cs_field_t *c_r12 = cs_field_by_name("r12");
-            cs_field_t *c_r13 = cs_field_by_name("r13");
-            cs_field_t *c_r23 = cs_field_by_name("r23");
+            cs_field_t *cfld_rij;
+            if (cs_glob_turb_rans_model->irijco == 1)
+              cfld_rij = cs_field_by_name("rij");
+            else
+              cfld_rij = cs_field_by_name("r11");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
             cs_field_t *c_a   = cs_field_by_name("alpha");
-            int ivarr11 = cs_field_get_key_int(c_r11, var_key_id) -1;
-            int ivarr22 = cs_field_get_key_int(c_r22, var_key_id) -1;
-            int ivarr33 = cs_field_get_key_int(c_r33, var_key_id) -1;
-            int ivarr12 = cs_field_get_key_int(c_r12, var_key_id) -1;
-            int ivarr13 = cs_field_get_key_int(c_r13, var_key_id) -1;
-            int ivarr23 = cs_field_get_key_int(c_r23, var_key_id) -1;
+
+            int ivarrij = cs_field_get_key_int(cfld_rij, var_key_id) - 1;
             int ivare   = cs_field_get_key_int(c_eps, var_key_id) -1;
             int ivara   = cs_field_get_key_int(c_a, var_key_id) -1;
 
@@ -2623,12 +2614,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
               mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
               mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
               mei_evaluate(ev_formula);
-              rcodcl[ivarr11 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r11");
-              rcodcl[ivarr22 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r22");
-              rcodcl[ivarr33 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r33");
-              rcodcl[ivarr12 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r12");
-              rcodcl[ivarr13 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r13");
-              rcodcl[ivarr23 * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r23");
+              rcodcl[ ivarrij      * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r11");
+              rcodcl[(ivarrij + 1) * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r22");
+              rcodcl[(ivarrij + 2) * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r33");
+              rcodcl[(ivarrij + 3) * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r12");
+              rcodcl[(ivarrij + 4) * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r23");
+              rcodcl[(ivarrij + 5) * n_b_faces + ifbr]  = mei_tree_lookup(ev_formula, "r13");
               rcodcl[ivare   * n_b_faces + ifbr] = mei_tree_lookup(ev_formula, "epsilon");
               rcodcl[ivara   * n_b_faces + ifbr] = mei_tree_lookup(ev_formula, "alpha");
             }
