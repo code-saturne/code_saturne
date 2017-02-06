@@ -517,7 +517,7 @@ endif
 
 ! Coupled solver for Rij components (when iturb=30, 31 or 32)
 
-irijco = 0
+irijco = 1
 
 ! --- Thermal model
 !      0: none
