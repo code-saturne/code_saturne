@@ -5741,10 +5741,10 @@ cs_post_init_meshes(int check_mask)
   { /* Definition of default post-processing meshes if this has not been
        done yet */
 
-    const int  writer_ids[] = {-1}; /* Default (main) writer id */
+    const int  writer_ids[] = {CS_POST_WRITER_DEFAULT};
 
-    if (!cs_post_mesh_exists(-1))
-      cs_post_define_volume_mesh(-1,
+    if (!cs_post_mesh_exists(CS_POST_MESH_VOLUME))
+      cs_post_define_volume_mesh(CS_POST_MESH_VOLUME,
                                  _("Fluid domain"),
                                  "all[]",
                                  true,
@@ -5752,8 +5752,8 @@ cs_post_init_meshes(int check_mask)
                                  1,
                                  writer_ids);
 
-    if (!cs_post_mesh_exists(-2))
-      cs_post_define_surface_mesh(-2,
+    if (!cs_post_mesh_exists(CS_POST_MESH_BOUNDARY))
+      cs_post_define_surface_mesh(CS_POST_MESH_BOUNDARY,
                                   _("Boundary"),
                                   NULL,
                                   "all[]",
@@ -5767,9 +5767,9 @@ cs_post_init_meshes(int check_mask)
   /* Additional writers for Lagrangian output */
 
   if (_lagrangian_needed(NULL)) {
-    if (!cs_post_mesh_exists(-3)) {
-      const int writer_ids[] = {-3};
-      cs_post_define_particles_mesh(-3,
+    if (!cs_post_mesh_exists(CS_POST_MESH_PARTICLES)) {
+      const int writer_ids[] = {CS_POST_WRITER_PARTICLES};
+      cs_post_define_particles_mesh(CS_POST_MESH_PARTICLES,
                                     _("Particles"),
                                     "all[]",
                                     1.0,    /* density */
