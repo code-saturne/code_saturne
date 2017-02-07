@@ -457,7 +457,10 @@ class Builder(object):
     def convertCell2Point(self, cellDataSet):
         """Apply filter vtkCellDataToPointData"""
         convert = vtk.vtkCellDataToPointData()
-        convert.SetInputData(cellDataSet)
+        try:
+            convert.SetInputData(cellDataSet)
+        except AttributeError:
+            convert.SetInput(cellDataSet)
         convert.Update()
         return convert
 
@@ -595,7 +598,10 @@ class Builder(object):
         tprop = self.textProperty(fontsize = self.opt.axes_fontsize)
 
         axes = vtk.vtkCubeAxesActor2D()
-        axes.SetInputData(obj.GetOutput())
+        try:
+            axes.SetInputData(obj.GetOutput())
+        except AttributeError:
+            axes.SetInput(obj.GetOutput())
         axes.SetLabelFormat(self.opt.axes_format)
         axes.SetFlyModeToOuterEdges()
         axes.SetFontFactor(1.5)
