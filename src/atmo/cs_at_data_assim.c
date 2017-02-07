@@ -358,7 +358,7 @@ cs_at_data_assim_log(cs_measures_set_t     *ms,
   int n_log_data = oi->n_log_data;
   int n_obs = ms->nb_measures;
 
-  bft_printf("\n * Variable %s\n", f->name);
+  bft_printf("\n   * Variable %s\n", f->name);
   bft_printf("\n\n");
   bft_printf("  Number of observations : %i\n", n_obs);
   bft_printf("  Coordinates (x,y,z) :\n");
@@ -392,7 +392,6 @@ cs_at_data_assim_log(cs_measures_set_t     *ms,
   bft_printf("  Measures :\n");
 
   for (int ii = 0; ii < n_obs; ii++) {
-    bft_printf("   ");
     if (ii == n_log_data) {
       for (cs_lnum_t jj = 0; jj < oi->nb_times; jj++) {
         bft_printf("... ");
@@ -402,24 +401,27 @@ cs_at_data_assim_log(cs_measures_set_t     *ms,
       bft_printf("\n");
       break;
     }
-    int ic = oi->measures_idx[ii];
-    for (cs_lnum_t jj = 0; jj < oi->nb_times; jj++) {
-      if (jj == n_log_data) {
-        bft_printf("...");
-        break;
+    for (int kk = 0; kk < ms->dim; kk++) {
+      bft_printf("   Comp. %i\n   ", kk);
+      int ic = oi->measures_idx[ii*ms->dim+kk];
+      for (cs_lnum_t jj = 0; jj < oi->nb_times; jj++) {
+        if (jj == n_log_data) {
+          bft_printf("...");
+          break;
+        }
+        if (ic < oi->measures_idx[(ii+1)*ms->dim+kk]
+            && (oi->steady > 0 || CS_ABS(oi->times[ic] - oi->times_read[jj]) < 1.e-12)) {
+          bft_printf("%.2f ", ms->measures[ic]);
+          ic++;
+        }
+        else
+          bft_printf("NaN ");
       }
-      if (ic < oi->measures_idx[ii+1]
-      && (oi->steady > 0 || fabs(oi->times[ic] - oi->times_read[jj]) < 1e-12)) {
-        bft_printf("%.2f ", ms->measures[ic]);
-        ic++;
-      }
-      else
-        bft_printf("NaN ");
+      bft_printf("\n  ");
     }
-    bft_printf("\n");
   }
 
-  bft_printf("  Observation covariance error matrix :\n");
+  bft_printf("\n  Observation covariance error matrix :\n");
   for (int ii = 0; ii < n_obs; ii++) {
     bft_printf("   ");
 

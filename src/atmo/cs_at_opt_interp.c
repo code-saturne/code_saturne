@@ -833,7 +833,12 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
   /* Third reading */
   fichier = fopen(filename, "r");
-  int _tot_n_readable_measures = 0;
+
+  /* initialize count */
+  int *_n_readable_measures;
+  BFT_MALLOC(_n_readable_measures, ms->dim+1, int);
+  for (int kk = 0; kk < ms->dim+1; kk++)
+    _n_readable_measures[kk] = 0;
 
   while (fgets(line, MAX_LINE_SIZE, fichier)) {
 
@@ -850,15 +855,19 @@ cs_at_opt_interp_read_file(char const           filename[50],
           for (int kk = 0; kk < ms->dim-1; kk++) {
             fscanf(fichier, "%lf ", &val);
             if (!isnan(val))
-              _tot_n_readable_measures++;
+              _n_readable_measures[kk+1] += 1;
           }
           fscanf(fichier, "%lf", &val); /* read after because of ending space */
           if (!isnan(val))
-            _tot_n_readable_measures++;
+            _n_readable_measures[ms->dim] += 1;
         }
     }
   }
   fclose(fichier);
+
+  int _tot_n_readable_measures = 0;
+  for (int kk = 0; kk < ms->dim + 1; kk++)
+    _tot_n_readable_measures += _n_readable_measures[kk];
 
   /* 4th reading */
   fichier = fopen(filename, "r");
@@ -999,7 +1008,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
 
     }
 
-    /* Reading measures */
+    /* reading measures */
     if (strncmp(line, "_measures_", 9) == 0) {
 
       BFT_MALLOC(oi->measures_idx, ms->dim*(n_obs + 1), int);
@@ -1008,9 +1017,13 @@ cs_at_opt_interp_read_file(char const           filename[50],
       if (oi->steady <= 0)
         BFT_MALLOC(oi->times, _tot_n_readable_measures, cs_real_t);
 
-      /* Initialising index list */
+      /* initialising index list */
       for (int ii = 0; ii < ms->dim*(n_obs + 1); ii++)
         oi->measures_idx[ii] = 0;
+
+      /* build index */
+      for (int kk = 0; kk < ms->dim; kk++)
+        _n_readable_measures[kk+1] += _n_readable_measures[kk];
 
 #if _OI_DEBUG_
       bft_printf("   * Reading _measures_\n");
@@ -1019,10 +1032,19 @@ cs_at_opt_interp_read_file(char const           filename[50],
       /* try to read measures value at each defined time and
          count successful reads by measure (measures by time index) */
 
-      int *_n_readable_measures;
-      BFT_MALLOC(_n_readable_measures, ms->dim, int);
+      /* read again components to skip the line */
+
+      for (int kk = 0; kk < ms->dim-1; kk++) {
+        fscanf(fichier, "%i ", &ms->comp_ids[kk]);
+      }
+      fscanf(fichier, "%i", &ms->comp_ids[ms->dim-1]);
+
+      /* read measures */
+
+      int *_n_readable_measures_c;
+      BFT_MALLOC(_n_readable_measures_c, ms->dim, int);
       for (int kk = 0; kk < ms->dim; kk++)
-        _n_readable_measures[kk] = 0;
+        _n_readable_measures_c[kk] = 0;
 
       /* read again components to skip the line */
 
@@ -1040,11 +1062,13 @@ cs_at_opt_interp_read_file(char const           filename[50],
           for (int kk = 0; kk < ms->dim-1; kk++) {
             fscanf(fichier, "%lf ", &val);
             if (!isnan(val)) {
-              ms->measures[_n_readable_measures[kk]] = val;
+              int cc = _n_readable_measures[kk] + _n_readable_measures_c[kk];
+
+              ms->measures[cc] = val;
               if (oi->steady <= 0)
-                oi->times[_n_readable_measures[kk]] = oi->times_read[jj];
+                oi->times[cc] = oi->times_read[jj];
               oi->measures_idx[(ii+1)*ms->dim+kk] += 1;
-              _n_readable_measures[kk] += 1;
+              _n_readable_measures_c[kk] += 1;
 #if _OI_DEBUG_
               bft_printf("%.2f ", val);
 #endif
@@ -1053,11 +1077,14 @@ cs_at_opt_interp_read_file(char const           filename[50],
           val = 0;
           fscanf(fichier, "%lf", &val); /* read after because of ending space */
           if (!isnan(val)) {
-            ms->measures[_n_readable_measures[ms->dim-1]] = val;
+            int cc = _n_readable_measures[ms->dim-1]
+                   + _n_readable_measures_c[ms->dim-1];
+
+            ms->measures[cc] = val;
             if (oi->steady <= 0)
-              oi->times[_n_readable_measures[ms->dim-1]] = oi->times_read[jj];
+              oi->times[cc] = oi->times_read[jj];
             oi->measures_idx[(ii+1)*ms->dim+ms->dim-1] += 1;
-            _n_readable_measures[ms->dim-1] += 1;
+            _n_readable_measures_c[ms->dim-1] += 1;
 #if _OI_DEBUG_
             bft_printf("%.2f", val);
 #endif
@@ -1067,18 +1094,28 @@ cs_at_opt_interp_read_file(char const           filename[50],
         bft_printf("\n");
 #endif
       }
+
+      for (int kk = 0; kk < ms->dim; kk++) {
+        for (int ii = 0; ii < n_obs; ii++) {
+          oi->measures_idx[(ii+1)*ms->dim+kk] +=
+            oi->measures_idx[ii*ms->dim+kk];
+        }
+        oi->measures_idx[kk] = 0;
+      }
+
+      for (int kk = 0; kk < ms->dim; kk++) {
+        for (int ii = 0; ii < n_obs + 1; ii++) {
+          oi->measures_idx[ii*ms->dim+kk] += _n_readable_measures[kk];
+        }
+      }
+
+      BFT_FREE(_n_readable_measures_c);
       BFT_FREE(_n_readable_measures);
-
-      /* building measures index list */
-
-      for (int ii = 0; ii < n_obs; ii++)
-        for (int kk = 0; kk < ms->dim; kk++)
-          oi->measures_idx[ms->dim*(ii+1)+kk] += oi->measures_idx[ms->dim*ii+kk];
 
 #if _OI_DEBUG_
       bft_printf("   * Building index list\n    ");
       for (int kk = 0; kk < ms->dim; kk++) {
-        bft_printf("Comp. %i\n", kk);
+        bft_printf("    Comp. %i\n    ", kk);
         for (int ii = 0; ii < n_obs + 1; ii++) {
           bft_printf("%i ", oi->measures_idx[ms->dim*ii+kk]);
         }
@@ -1086,31 +1123,31 @@ cs_at_opt_interp_read_file(char const           filename[50],
       }
 
       bft_printf("\n");
-      bft_printf("   * Building measures list\n    ");
+      bft_printf("   * Building measures list\n");
       for (int kk = 0; kk < ms->dim; kk++) {
-        bft_printf("Comp. %i\n", kk);
+        bft_printf("    Comp. %i\n    ", kk);
         for (int ii = 0; ii < n_obs; ii++) {
           for (int jj = oi->measures_idx[ms->dim*ii+kk];
                jj < oi->measures_idx[ms->dim*(ii+1)+kk];
                jj++) {
             bft_printf("%.2f ", ms->measures[jj]);
           }
-          bft_printf("\n");
+          bft_printf("\n    ");
         }
         bft_printf("\n\n");
       }
 
       if (oi->steady <= 0) {
-        bft_printf("   * Building times list\n    ");
+        bft_printf("   * Building times list\n");
         for (int kk = 0; kk < ms->dim; kk++) {
-          bft_printf("Comp. %i\n", kk);
+          bft_printf("    Comp. %i\n    ", kk);
           for (int ii = 0; ii < n_obs; ii++) {
             for (int jj = oi->measures_idx[ms->dim*ii+kk];
                  jj < oi->measures_idx[ms->dim*(ii+1)+kk];
                  jj++) {
               bft_printf("%.2f ", oi->times[jj]);
             }
-            bft_printf("\n");
+            bft_printf("\n    ");
           }
           bft_printf("\n\n");
         }
@@ -1208,7 +1245,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
   fclose(fichier);
 
 #if _OI_DEBUG_
-  bft_printf("\n * File %s closed\n\n", filename);
+  bft_printf("\n   * File %s closed\n\n", filename);
 #endif
 
   /* Verifications */
