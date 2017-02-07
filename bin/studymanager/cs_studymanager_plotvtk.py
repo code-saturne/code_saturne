@@ -207,7 +207,7 @@ class PlotVTK(object):
         # Read the files of results
         for case in study_object.Cases:
             if case.plot == "on" and case.is_run != "KO":
-                for node in self.parser.getChilds(case.node, "resu"):
+                for node in self.parser.getChildren(case.node, "resu"):
                     plots, file_name, dest, repo = self.parser.getResult(node)
 
                     if dest:
