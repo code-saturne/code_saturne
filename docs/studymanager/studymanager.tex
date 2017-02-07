@@ -139,7 +139,7 @@ completed;
 \item \texttt{-m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...}: addresses
   for sending the reports.
 \item \texttt{-l LOG\_FILE, --log=LOG\_FILE}: name of studymanager log file (default value is 'auto\_vnv.log';
-\item \texttt{-z, --disable-tex}: disable text rendering with LaTex in Matplotlib (use Mathtext);
+\item \texttt{-z, --disable-tex}: disable text rendering with \LaTeX in Matplotlib (use Mathtext);
 \end{list}
 
 \underline{Examples:}
@@ -630,7 +630,7 @@ figure. The figure will be saved on the disk in a \textbf{pdf} (default)
 or \textbf{png} format, in the \texttt{POST} directory of the related study
 in the \textbf{destination}. Each drawing of a single curve is defined as a
 markup child of a file of data inside a case. Subsets and figures are defined
-as markup childs of \texttt{<study>}.
+as markup children of \texttt{<study>}.
 
 \small
 \begin{verbatim}
@@ -944,7 +944,7 @@ should be used as a child of a markup \texttt{<case>} as illustrated below:
 The file of parameters allows to execute additional matplotlib commands (i.e
 Python commands), for curves (2D lines), or subplot, or figure. For every object
 drawn, \texttt{studymanager} associate a name to this object that can be reused in
-standard matplotlib commands. Therefore, childs markup \texttt{<plt\_command>}
+standard matplotlib commands. Therefore, children markup \texttt{<plt\_command>}
 could be added to \texttt{<plot>}, \texttt{<subplot>} or \texttt{<figure>}.
 
 It is possible to add commands with \textbf{Matlab style} or \textbf{Python
@@ -1021,7 +1021,7 @@ defined as a markup child of a file of data inside a case.
 In the file of parameters, scalar map are defined with two markups:
 \texttt{<resu>} and \texttt{<scalar>}. Four other markups can be used:
 \texttt{<scale>}, \texttt{<contours>}, \texttt{<title>} and \texttt{<axes>} as
-childs of the markups \texttt{<scalar>}.
+children of the markups \texttt{<scalar>}.
 
 \begin{list}{$\bullet$}{}
 \item \texttt{<resu>}: child of markup \texttt{<case>}, defines the master file
@@ -1221,7 +1221,7 @@ No attribute is mandatory.
 The file of parameters allows to execute additional vtk commands (i.e Python
 commands). This possibility is mainly useful for interaction with actors and the
 camera. For each actor drawn, \texttt{studymanager} associate a name to this object
-that can be reused in standard vtk commands. Therefore, childs markup
+that can be reused in standard vtk commands. Therefore, child markup
 \texttt{<vtk\_command>} could be added to \texttt{<scalar>}.
 
 The defined actors and camera are:
@@ -1271,8 +1271,11 @@ files: \texttt{performance.log} and \texttt{setup.log} from the
 \end{verbatim}
 \normalsize
 
+Text files, \LaTeX source files, or graphical (PNG, JPEG, or PDF) files
+may be included.
+
 In the file of parameters, input files are defined with markups \texttt{<input>}
-as childs of a single markup \texttt{<case>}.
+as children of a single markup \texttt{<case>}.
 The attributes of \texttt{<input>} are:
 \begin{list}{$\rightarrow$}{}
 \item \texttt{file}: name of the file to be included
@@ -1411,7 +1414,7 @@ gt   & $>$ & greater-than sign     \\
 \end{table}
 
 For any of this predefined entities, the XML parser will first replace the string ``\&name;''
-by the character, which will then allow LaTeX (or Mathtext if LaTeX is disabled) to process it.
+by the character, which will then allow \LaTeX (or Mathtext if \LaTeX is disabled) to process it.
 
 For example, in order to write ``$\lambda<1$'' in a legend, the following attribute will be used:
 \small

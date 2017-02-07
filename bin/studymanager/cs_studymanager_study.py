@@ -706,6 +706,7 @@ class Study(object):
         self.Cases = []
         self.matplotlib_figures = []
         self.vtk_figures = []
+        self.input_figures = []
 
         # build the list of the cases
         self.cases = parser.getCasesLabel(study)
@@ -1206,12 +1207,12 @@ class Studies(object):
                             self.__parser.setAttribute(case.node, "compute", "off")
 
                             # update dest="" attribute
-                            n1 = self.__parser.getChilds(case.node, "compare")
-                            n2 = self.__parser.getChilds(case.node, "script")
-                            n3 = self.__parser.getChilds(case.node, "data")
-                            n4 = self.__parser.getChilds(case.node, "probe")
-                            n5 = self.__parser.getChilds(case.node, "resu")
-                            n6 = self.__parser.getChilds(case.node, "input")
+                            n1 = self.__parser.getChildren(case.node, "compare")
+                            n2 = self.__parser.getChildren(case.node, "script")
+                            n3 = self.__parser.getChildren(case.node, "data")
+                            n4 = self.__parser.getChildren(case.node, "probe")
+                            n5 = self.__parser.getChildren(case.node, "resu")
+                            n6 = self.__parser.getChildren(case.node, "input")
                             for n in n1 + n2 + n3 + n4 + n5 + n6:
                                 if self.__parser.getAttribute(n, "dest") == "":
                                     self.__parser.setAttribute(n, "dest", case.run_id)
@@ -1379,26 +1380,26 @@ class Studies(object):
         for l, s in self.studies:
             for case in s.Cases:
                 if case.plot == "on" and case.is_run != "KO":
-                    for node in self.__parser.getChilds(case.node, "data"):
+                    for node in self.__parser.getChildren(case.node, "data"):
                         plots, file, dest, repo = self.__parser.getResult(node)
                         if destination == False:
                             dest = None
                         case.check_dirs(self, node, repo, dest)
 
-                    for node in self.__parser.getChilds(case.node, "probes"):
+                    for node in self.__parser.getChildren(case.node, "probes"):
                         file, dest, fig = self.__parser.getProbes(node)
                         if destination == False:
                             dest = None
                         repo = None
                         case.check_dirs(self, node, repo, dest)
 
-                    for node in self.__parser.getChilds(case.node, "resu"):
+                    for node in self.__parser.getChildren(case.node, "resu"):
                         plots, file, dest, repo = self.__parser.getResult(node)
                         if destination == False:
                             dest = None
                         case.check_dirs(self, node, repo, dest)
 
-                    for node in self.__parser.getChilds(case.node, "input"):
+                    for node in self.__parser.getChildren(case.node, "input"):
                         file, dest, repo, tex = self.__parser.getInput(node)
                         if destination == False:
                             dest = None
@@ -1471,6 +1472,8 @@ class Studies(object):
                         doc2.addFigure(g)
                     for g in s.vtk_figures:
                         doc2.addFigure(g)
+                    for g in s.input_figures:
+                        doc2.addFigure(g)
 
                 for case in s.Cases:
                     if case.is_compare == "done":
@@ -1485,7 +1488,7 @@ class Studies(object):
 
                     # handle the input nodes that are inside case nodes
                     if case.plot == "on" and case.is_run != "KO":
-                        nodes = self.__parser.getChilds(case.node, "input")
+                        nodes = self.__parser.getChildren(case.node, "input")
                         if nodes:
                             doc2.appendLine("\\subsection{Results for case %s}" % case.label)
                             for node in nodes:
@@ -1506,6 +1509,8 @@ class Studies(object):
 
                                 if not os.path.isfile(ff):
                                     print("\n\nWarning: this file does not exist: %s\n\n" % ff)
+                                elif ff[-4:] in ('.png', '.jpg', '.pdf') or ff[-5:] == '.jpeg':
+                                    doc2.addFigure(ff)
                                 elif tex == 'on':
                                     doc2.addTexInput(ff)
                                 else:
@@ -1517,7 +1522,7 @@ class Studies(object):
                     doc2.appendLine("\\subsection{Results for post-processing cases}")
                     for i in range(len(label)):
                         if script[i]:
-                            input_nodes = self.__parser.getChilds(nodes[i], "input")
+                            input_nodes = self.__parser.getChildren(nodes[i], "input")
                             if input_nodes:
                                 for node in input_nodes:
                                     f, dest, repo, tex = self.__parser.getInput(node)
@@ -1537,6 +1542,8 @@ class Studies(object):
 
                                     if not os.path.isfile(ff):
                                         print("\n\nWarning: this file does not exist: %s\n\n" % ff)
+                                    elif ff[-4:] in ('.png', '.jpg', '.pdf') or ff[-5:] == '.jpeg':
+                                        doc2.addFigure(ff)
                                     elif tex == 'on':
                                         doc2.addTexInput(ff)
                                     else:

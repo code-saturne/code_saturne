@@ -183,6 +183,8 @@ class Plot(object):
             line = line.lstrip()
             if line and line[0] != '#':
                 j += 1
+                line = line.replace(", ", " ") # compatibility with CSV
+                line = line.lstrip()
                 if xcol:
                     self.xspan.append(float(line.split()[xcol-1])*xfois + xplus)
                 else:
@@ -208,6 +210,7 @@ class Plot(object):
             if len(errorbar) == 2:
                 error = [ [], [] ]
                 for line in self.f.readlines():
+                    line = line.replace(", ", " ") # compatibility with CSV
                     line = line.lstrip()
                     if line and line[0] != '#':
                         error[0].append(float(line.split()[errorbar[0]-1]))
@@ -229,6 +232,7 @@ class Plot(object):
             else:
                 error = []
                 for line in self.f.readlines():
+                    line = line.replace(", ", " ") # compatibility with CSV
                     line = line.lstrip()
                     if line and line[0] != '#':
                         error.append(errorp/100.*float(line.split()[col-1]))
@@ -501,7 +505,7 @@ class Plotter(object):
         # Read the files for probes
         for case in study_object.Cases:
             if case.plot == "on" and case.is_run != "KO":
-                for node in self.parser.getChilds(case.node, "probes"):
+                for node in self.parser.getChildren(case.node, "probes"):
                     file_name, dest, fig = self.parser.getProbes(node)
 
                     f = os.path.join(self.parser.getDestination(),
@@ -518,7 +522,7 @@ class Plotter(object):
         # Read the files of results of cases
         for case in study_object.Cases:
             if case.plot == "on" and case.is_run != "KO":
-                for node in self.parser.getChilds(case.node, "data"):
+                for node in self.parser.getChildren(case.node, "data"):
                     plots, file_name, dest, repo = self.parser.getResult(node)
 
                     if dest:
@@ -559,7 +563,7 @@ class Plotter(object):
         script, label, nodes, args = self.parser.getPostPro(study_label)
         for i in range(len(label)):
             if script[i]:
-                for node in self.parser.getChilds(nodes[i], "data"):
+                for node in self.parser.getChildren(nodes[i], "data"):
                     plots, file_name, dest, repo = self.parser.getResult(node)
 
                     dd = self.parser.getDestination()

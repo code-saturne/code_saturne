@@ -162,7 +162,7 @@ class Parser(object):
 
     #---------------------------------------------------------------------------
 
-    def getChilds(self, father, childname):
+    def getChildren(self, father, childname):
         """
         Return a list of child of the father node.
         @type father: C{DOM element}
