@@ -247,8 +247,6 @@ typedef struct {
   int            active;        /* -1 if blocked at this stage,
                                    0 if no output at current time step,
                                    1 in case of output */
-  int            n_meta[2];     /* Time step number for last output of
-                                   metadata if needed */
   int            n_last;        /* Time step number for the last
                                    activation (-1 before first output) */
   double         t_last;        /* Time value number for the last
@@ -1939,6 +1937,149 @@ _cs_post_write_domain(fvm_writer_t       *writer,
 }
 
 /*----------------------------------------------------------------------------
+ * Output fixed zone information if needed.
+ *
+ * This function is called when we know some writers are active
+ *
+ * parameters:
+ *   writer     <-- FVM writer
+ *   post_mesh  <-- postprocessing mesh
+ *   nt_cur_abs <-- current time step number
+ *   t_cur_abs  <-- current physical time
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_post_write_fixed_zone_info(fvm_writer_t          *writer,
+                               const cs_post_mesh_t  *post_mesh,
+                               int                    nt_cur_abs,
+                               double                 t_cur_abs)
+{
+  assert(post_mesh->exp_mesh != NULL);
+
+  bool output = false;
+  const int   *var_ptr[1] = {NULL};
+
+  if (post_mesh->id == CS_POST_MESH_VOLUME) {
+
+    /* Ignore cases where all zones include all cells */
+
+    int n_zones = cs_volume_zone_n_zones();
+    int z_id = 0;
+
+    for (z_id = 0; z_id < n_zones; z_id++) {
+      const cs_volume_zone_t  *z = cs_volume_zone_by_id(z_id);
+      if (z->location_id != CS_MESH_LOCATION_CELLS)
+        break;
+    }
+    if (z_id >= n_zones)
+      return;
+
+    const int *zone_id = cs_volume_zone_cell_zone_id();
+
+    if (cs_volume_zone_n_zones_time_varying() == 0) {
+      output = true;
+      var_ptr[0] = zone_id;
+    }
+
+  }
+
+  else if (post_mesh->id == CS_POST_MESH_BOUNDARY) {
+
+    /* Ignore cases where all zones include all boundary faces */
+
+    int n_zones = cs_boundary_zone_n_zones();
+    int z_id = 0;
+
+    for (z_id = 0; z_id < n_zones; z_id++) {
+      const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(z_id);
+      if (z->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
+        break;
+    }
+    if (z_id >= n_zones)
+      return;
+
+    const int *zone_id = cs_boundary_zone_face_zone_id();
+
+    if (cs_boundary_zone_n_zones_time_varying() == 0) {
+      output = true;
+      var_ptr[0] = zone_id;
+    }
+
+  }
+
+  if (output) {
+
+    cs_lnum_t  parent_num_shift[1]  = {0};
+    int _nt_cur_abs = -1;
+    double _t_cur_abs = 0.;
+
+    if (fvm_writer_get_time_dep(writer) != FVM_WRITER_FIXED_MESH) {
+      _nt_cur_abs = nt_cur_abs;
+      _t_cur_abs = t_cur_abs;
+    }
+
+    fvm_writer_export_field(writer,
+                            post_mesh->exp_mesh,
+                            "boundary zone id",
+                            FVM_WRITER_PER_ELEMENT,
+                            1,
+                            CS_INTERLACE,
+                            0,
+                            parent_num_shift,
+                            CS_INT_TYPE,
+                            _nt_cur_abs,
+                            _t_cur_abs,
+                            (const void * *)var_ptr);
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Output varying zone information if needed.
+ *
+ * This function is called when we know some writers are active
+ *
+ * parameters:
+ *   ts <-- time step structure, or NULL
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_post_write_transient_zone_info(const cs_post_mesh_t  *post_mesh,
+                                   const cs_time_step_t  *ts)
+{
+  if (post_mesh->id == CS_POST_MESH_VOLUME) {
+    if (cs_volume_zone_n_zones_time_varying() > 0) {
+      cs_post_write_var(post_mesh->id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        "volume zone id",
+                        1,       /* var_dim */
+                        true,    /* interlace */
+                        true,    /* use_parent */
+                        CS_POST_TYPE_int,
+                        cs_volume_zone_cell_zone_id(),
+                        NULL,
+                        NULL,
+                        ts);
+    }
+  }
+
+  else if (post_mesh->id == CS_POST_MESH_BOUNDARY) {
+    if (cs_boundary_zone_n_zones_time_varying() > 0)
+      cs_post_write_var(post_mesh->id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        "boundary zone id",
+                        1,       /* var_dim */
+                        true,    /* interlace */
+                        true,    /* use_parent */
+                        CS_POST_TYPE_int,
+                        NULL,
+                        NULL,
+                        cs_boundary_zone_face_zone_id(),
+                        ts);
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Output a post-processing mesh using associated writers.
  *
  * If the time step structure argument passed is NULL, a time-independent
@@ -2015,12 +2156,18 @@ _cs_post_write_mesh(cs_post_mesh_t        *post_mesh,
 
     }
 
-    if (write_mesh == true && post_mesh->post_domain) {
+    if (write_mesh == true) {
 
-      _cs_post_write_domain(writer->writer,
-                            post_mesh->exp_mesh,
-                            nt_cur,
-                            t_cur);
+      if (post_mesh->post_domain)
+        _cs_post_write_domain(writer->writer,
+                              post_mesh->exp_mesh,
+                              nt_cur,
+                              t_cur);
+
+      _cs_post_write_fixed_zone_info(writer->writer,
+                                     post_mesh,
+                                     nt_cur,
+                                     t_cur);
 
       if (nt_cur >= 0) {
         writer->n_last = nt_cur;
@@ -2206,102 +2353,6 @@ _cs_post_write_displacements(int     nt_cur_abs,
   /* Free memory */
 
   BFT_FREE(deplacements);
-}
-
-/*----------------------------------------------------------------------------
- * Output zone information if needed.
- *
- * This function is called when we know some writers are active
- *
- * parameters:
- *   ts <-- time step structure, or NULL
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_post_write_zone_info(const cs_post_mesh_t  *post_mesh,
-                         const cs_time_step_t  *ts)
-{
-  if (post_mesh->id == CS_POST_MESH_VOLUME) {
-
-    if (cs_volume_zone_n_zones() < 2)
-      return;
-
-    const int *zone_id = cs_volume_zone_cell_zone_id();
-
-    if (cs_volume_zone_n_zones_time_varying() > 0)
-      cs_post_write_var(post_mesh->id,
-                        CS_POST_WRITER_ALL_ASSOCIATED,
-                        "volume zone id",
-                        1,       /* var_dim */
-                        true,    /* interlace */
-                        true,    /* use_parent */
-                        CS_POST_TYPE_int,
-                        zone_id,
-                        NULL,
-                        NULL,
-                        ts);
-    else {
-      int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
-      for (int i = 0; i < post_mesh->n_writers; i++) {
-        cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
-        if (writer->active == 1 && writer->n_meta[0] < nt_cur) {
-          cs_post_write_var(post_mesh->id,
-                            writer->id,
-                            "volume zone id",
-                            1,       /* var_dim */
-                            true,    /* interlace */
-                            true,    /* use_parent */
-                            CS_POST_TYPE_int,
-                            zone_id,
-                            NULL,
-                            NULL,
-                            NULL);
-          writer->n_meta[0] = nt_cur;
-        }
-      }
-    }
-  }
-
-  else if (post_mesh->id == CS_POST_MESH_BOUNDARY) {
-
-    if (cs_boundary_zone_n_zones() < 2)
-      return;
-
-    const int *zone_id = cs_boundary_zone_face_zone_id();
-
-    if (cs_boundary_zone_n_zones_time_varying() > 0)
-      cs_post_write_var(post_mesh->id,
-                        CS_POST_WRITER_ALL_ASSOCIATED,
-                        "boundary zone id",
-                        1,       /* var_dim */
-                        true,    /* interlace */
-                        true,    /* use_parent */
-                        CS_POST_TYPE_int,
-                        NULL,
-                        NULL,
-                        zone_id,
-                        ts);
-    else {
-      int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
-      for (int i = 0; i < post_mesh->n_writers; i++) {
-        cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
-        if (writer->active == 1 && writer->n_meta[1] < nt_cur) {
-          cs_post_write_var(post_mesh->id,
-                            writer->id,
-                            "boundary zone id",
-                            1,       /* var_dim */
-                            true,    /* interlace */
-                            true,    /* use_parent */
-                            CS_POST_TYPE_int,
-                            NULL,
-                            NULL,
-                            zone_id,
-                            NULL);
-          writer->n_meta[1] = nt_cur;
-        }
-      }
-    }
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3330,8 +3381,6 @@ cs_post_define_writer(int                     writer_id,
   w->frequency_n = frequency_n;
   w->frequency_t = frequency_t;
   w->active = 0;
-  w->n_meta[0] = -2;
-  w->n_meta[1] = -2;
   w->n_last = -2;
   w->t_last = cs_glob_time_step->t_prev;
   w->ot = NULL;
@@ -6093,7 +6142,7 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
       /* Output of zone information if necessary */
 
-      _cs_post_write_zone_info(post_mesh, ts);
+      _cs_post_write_transient_zone_info(post_mesh, ts);
 
       /* Standard post-processing */
 
