@@ -35,6 +35,7 @@
 #include "cs_log.h"
 #include "cs_halo_perio.h"
 #include "cs_matrix.h"
+#include "cs_matrix.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -483,6 +484,37 @@ cs_sles_get_verbosity(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Activate postprocessing output for a given linear equation solver.
+ *
+ * This allows the output of the residualt at the end of each solution
+ * series, using a single postprocessing writer.
+ * By default, no output is activated.
+ *
+ * \param[in, out]  sles       pointer to solver object
+ * \param[in]       verbosity  verbosity level
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_post_output(cs_sles_t  *sles,
+                        int         writer_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the id of the associated writer if postprocessing output
+ *        is active for a given linear equation solver.
+ *
+ * \param[in]  sles  pointer to solver object
+ *
+ * \return  id od associated writer, or 0
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_get_post_output(cs_sles_t  *sles);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return type name of solver context.
  *
  * The returned string is intended to help determine which type is associated
@@ -747,20 +779,25 @@ cs_sles_post_error_output_def(const char          *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Output post-processing variable for failed system convergence.
+ * \brief Output post-processing variable related to system convergence.
  *
  * \param[in]       name             variable name
  * \param[in]       mesh_id          id of error output mesh, or 0 if none
+ * \param[in]       location_id      mesh location id (cells or vertices)
+ * \param[in]       writer_id        id of specified associated writer, or
+ *                                   \ref CS_POST_WRITER_ALL_ASSOCIATED for all
  * \param[in]       diag_block_size  block size for diagonal
  * \param[in, out]  var              variable values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sles_post_error_output_var(const char  *name,
-                              int          mesh_id,
-                              int          diag_block_size,
-                              cs_real_t   *var);
+cs_sles_post_output_var(const char      *name,
+                        int              mesh_id,
+                        int              location_id,
+                        int              writer_id,
+                        int              diag_block_size,
+                        cs_real_t        var[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

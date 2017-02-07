@@ -943,6 +943,8 @@ static void
 _cs_multigrid_post_function(void                  *mgh,
                             const cs_time_step_t  *ts)
 {
+  CS_UNUSED(ts);
+
   int ii;
   size_t name_len;
   char *var_name = NULL;
@@ -3052,6 +3054,7 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
   int level = mgd->exit_level;
 
   int mesh_id = cs_post_init_error_writer_cells();
+  int location_id = CS_MESH_LOCATION_CELLS;
 
   if (mesh_id != 0) {
 
@@ -3103,11 +3106,21 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
       cs_matrix_copy_diagonal(_matrix, da);
       cs_grid_project_var(g, n_base_cells, da, var);
       sprintf(var_name, "Diag_%04d", lv_id);
-      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
+      cs_sles_post_output_var(var_name,
+                              mesh_id,
+                              location_id,
+                              CS_POST_WRITER_ERRORS,
+                              db_size[1],
+                              var);
 
       cs_grid_project_diag_dom(g, n_base_cells, var);
       sprintf(var_name, "Diag_Dom_%04d", lv_id);
-      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
+      cs_sles_post_output_var(var_name,
+                              mesh_id,
+                              location_id,
+                              CS_POST_WRITER_ERRORS,
+                              db_size[1],
+                              var);
     }
 
     /* Output info on current level if > 0 */
@@ -3135,11 +3148,21 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
 
       cs_grid_project_var(g, n_base_cells, mgd->rhs_vx[level*2], var);
       sprintf(var_name, "RHS_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
+      cs_sles_post_output_var(var_name,
+                              mesh_id,
+                              location_id,
+                              CS_POST_WRITER_ERRORS,
+                              db_size[1],
+                              var);
 
       cs_grid_project_var(g, n_base_cells, mgd->rhs_vx[level*2+1], var);
       sprintf(var_name, "X_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
+      cs_sles_post_output_var(var_name,
+                              mesh_id,
+                              location_id,
+                              CS_POST_WRITER_ERRORS,
+                              db_size[1],
+                              var);
 
       /* Compute residual */
 
@@ -3164,7 +3187,12 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
       BFT_FREE(c_res);
 
       sprintf(var_name, "Residual_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
+      cs_sles_post_output_var(var_name,
+                              mesh_id,
+                              location_id,
+                              CS_POST_WRITER_ERRORS,
+                              db_size[1],
+                              var);
     }
 
     cs_post_finalize();

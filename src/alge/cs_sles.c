@@ -56,6 +56,7 @@
 #include "cs_halo.h"
 #include "cs_map.h"
 #include "cs_mesh.h"
+#include "cs_mesh_location.h"
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
 #include "cs_matrix_util.h"
@@ -63,6 +64,7 @@
 #include "cs_post.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -285,6 +287,21 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *============================================================================*/
 
+/* Postprocessing of linear system residuals */
+/*-------------------------------------------*/
+
+typedef struct {
+
+  int                       writer_id;     /* writer id in case of
+                                              postprocessing (0 for none) */
+
+  cs_lnum_t                 n_rows;        /* number of rows */
+  cs_lnum_t                 block_size;    /* size of block */
+
+  cs_real_t                *row_residual;  /* residual */
+
+} cs_sles_post_t;
+
 /* Basic per linear system options and logging */
 /*---------------------------------------------*/
 
@@ -318,7 +335,9 @@ struct _cs_sles_t {
 
   cs_sles_destroy_t        *destroy_func;  /* destruction function */
 
-  cs_sles_error_handler_t  *error_func;  /* error handler */
+  cs_sles_error_handler_t  *error_func;    /* error handler */
+
+  cs_sles_post_t           *post_info;     /* postprocessing info */
 
 };
 
@@ -402,6 +421,8 @@ _sles_create(int          f_id,
 
   sles->n_calls = 0;
   sles->n_no_op = 0;
+
+  sles->post_info = NULL;
 
   return sles;
 }
@@ -575,7 +596,7 @@ _save_system_info(cs_sles_t  *s)
  * Compute per-cell residual for Ax = b.
  *
  * parameters:
- *   diag_block_size  <-- Block sizes for diagonal
+ *   n_vals           <-- Number of values
  *   rotation_mode    <-- Halo update option for rotational periodicity
  *   a                <-- Linear equation matrix
  *   rhs              <-- Right hand side
@@ -584,21 +605,17 @@ _save_system_info(cs_sles_t  *s)
  *----------------------------------------------------------------------------*/
 
 static void
-_cell_residual(const int           *diag_block_size,
-               cs_halo_rotation_t   rotation_mode,
-               const cs_matrix_t   *a,
-               const cs_real_t      rhs[],
-               cs_real_t            vx[],
-               cs_real_t            res[])
+_residual(cs_lnum_t            n_vals,
+          cs_halo_rotation_t   rotation_mode,
+          const cs_matrix_t   *a,
+          const cs_real_t      rhs[],
+          cs_real_t            vx[],
+          cs_real_t            res[])
 {
-  cs_int_t ii;
-
-  const cs_int_t n_vals = cs_glob_mesh->n_cells * diag_block_size[1];
-
   cs_matrix_vector_multiply(rotation_mode, a, vx, res);
 
 # pragma omp parallel for if(n_vals > CS_THR_MIN)
-  for (ii = 0; ii < n_vals; ii++)
+  for (cs_lnum_t ii = 0; ii < n_vals; ii++)
     res[ii] = fabs(res[ii] - rhs[ii]);
 }
 
@@ -755,6 +772,101 @@ _value_type(size_t     n_vals,
   return retval;
 }
 
+/*----------------------------------------------------------------------------
+ * Ensure array for postprocessing output of residuals is allocated
+ *
+ * parameters
+ *   sles <-> pointer to solver object
+ *   a    <-- matrix
+ *----------------------------------------------------------------------------*/
+
+static void
+_ensure_alloc_post(cs_sles_t          *sles,
+                   const cs_matrix_t  *a)
+{
+  if (sles->post_info != NULL) {
+
+    const int *diag_block_size = cs_matrix_get_diag_block_size(a);
+    const cs_lnum_t n_vals = cs_matrix_get_n_columns(a) * diag_block_size[1];
+
+    sles->post_info->n_rows = cs_matrix_get_n_rows(a);
+    sles->post_info->block_size = diag_block_size[1];
+
+    BFT_REALLOC(sles->post_info->row_residual, n_vals, cs_real_t);
+
+    assert(diag_block_size[0] == diag_block_size[1]); /* for now */
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Post process the residual for a given linear equation solver
+ *
+ * parameters:
+ *   sles_p <-- void pointer to sparse linear equation solver context
+ *   ts     <-- time step status structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_post_function(void                  *sles_p,
+               const cs_time_step_t  *ts)
+{
+  CS_UNUSED(ts);
+
+  cs_sles_t *sles = sles_p;
+
+  cs_sles_post_t *sp = sles->post_info;
+
+  assert(sp != NULL);
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+
+  int mesh_id = CS_POST_MESH_VOLUME;
+
+  char base_name[32], val_name[32];
+
+  /* Check for mesh location */
+
+  int location_id = 0, flag = 0;
+  if (sp->n_rows == mesh->n_cells)
+    location_id = CS_MESH_LOCATION_CELLS;
+  else if (sp->n_rows == mesh->n_vertices)
+    location_id = CS_MESH_LOCATION_VERTICES;
+
+  flag = location_id;
+  cs_parall_max(1, CS_INT_TYPE, &flag);
+  if (flag == location_id)
+    flag = 0;
+  else
+    flag =1;
+  cs_parall_max(1, CS_INT_TYPE, &flag);
+  if (flag != 0)
+    return;
+
+  strcpy(base_name, "Residual");
+
+  const char *name = cs_sles_get_name(sles);
+
+  if (strlen(name) + strlen(base_name) < 31) {
+    strcpy(val_name, base_name);
+    strcat(val_name, "_");
+    strcat(val_name, name);
+  }
+  else {
+    strncpy(val_name, base_name, 31);
+    val_name[31] = '\0';
+  }
+
+  cs_sles_post_output_var(val_name,
+                          mesh_id,
+                          location_id,
+                          sp->writer_id,
+                          sp->block_size,
+                          sp->row_residual);
+
+  BFT_FREE(sp->row_residual);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -802,6 +914,10 @@ cs_sles_finalize(void)
           sles->free_func(sles->context);
         if (sles->destroy_func != NULL)
           sles->destroy_func(&(sles->context));
+        if (sles->post_info != NULL) {
+          BFT_FREE(sles->post_info->row_residual);
+          BFT_FREE(sles->post_info);
+        }
         BFT_FREE(sles->_name);
         BFT_FREE(_cs_sles_systems[i][j]);
       }
@@ -927,6 +1043,11 @@ cs_sles_log(cs_log_t  log_type)
           cs_log_printf
             (log_type,
              _("  Verbosity: %d\n"), sles->verbosity);
+          if (sles->post_info != NULL)
+            cs_log_printf
+              (log_type,
+               _("  Residual postprocessing writer id: %d\n"),
+               sles->post_info->writer_id);
           break;
 
         case CS_LOG_PERFORMANCE:
@@ -1234,6 +1355,58 @@ cs_sles_get_verbosity(cs_sles_t  *sles)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Activate postprocessing output for a given linear equation solver.
+ *
+ * This allows the output of the residualt at the end of each solution
+ * series, using a single postprocessing writer.
+ * By default, no output is activated.
+ *
+ * \param[in, out]  sles       pointer to solver object
+ * \param[in]       verbosity  verbosity level
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_post_output(cs_sles_t  *sles,
+                        int         writer_id)
+{
+  if (sles->n_calls > 0)
+    return;
+
+  if (sles->post_info == NULL)
+    cs_post_add_time_dep_output(_post_function, (void *)sles);
+
+  BFT_REALLOC(sles->post_info, 1, cs_sles_post_t);
+  sles->post_info->writer_id = writer_id;
+  sles->post_info->n_rows = 0;
+  sles->post_info->block_size = 0;
+  sles->post_info->row_residual = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the id of the associated writer if postprocessing output
+ *        is active for a given linear equation solver.
+ *
+ * \param[in]  sles  pointer to solver object
+ *
+ * \return  id od associated writer, or 0
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_get_post_output(cs_sles_t  *sles)
+{
+  int retval = 0;
+
+  if (sles->post_info != NULL)
+    retval = sles->post_info->writer_id;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return type name of solver context.
  *
  * The returned string is intended to help determine which type is associated
@@ -1346,6 +1519,18 @@ cs_sles_setup(cs_sles_t          *sles,
     sles->setup_func(sles->context, sles_name, a, sles->verbosity);
   }
 
+  /* Prepare residual postprocessing if required */
+
+  if (sles->post_info != NULL) {
+    _ensure_alloc_post(sles, a);
+    const cs_lnum_t n_vals
+      = cs_matrix_get_n_columns(a) * sles->post_info->block_size;
+    cs_real_t *r = sles->post_info->row_residual;
+#   pragma omp parallel for if(n_vals > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_vals; i++)
+      r[i] = 0;
+  }
+
   cs_timer_stats_switch(t_top_id);
 }
 
@@ -1454,6 +1639,20 @@ cs_sles_solve(cs_sles_t           *sles,
     else
       do_solve = false;
 
+  }
+
+  /* Prepare postprocessing if needed */
+
+  if (sles->post_info != NULL) {
+    _ensure_alloc_post(sles, a);
+    const cs_lnum_t n_vals
+      = sles->post_info->n_rows * sles->post_info->block_size;
+    _residual(n_vals,
+              rotation_mode,
+              a,
+              rhs,
+              vx,
+              sles->post_info->row_residual);
   }
 
   cs_timer_stats_switch(t_top_id);
@@ -1650,15 +1849,33 @@ cs_sles_post_error_output_def(const char          *name,
 
     char base_name[32], val_name[32];
 
-    int val_id;
-    const cs_int_t n_cells = mesh->n_cells;
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
+    const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
     const int *diag_block_size = cs_matrix_get_diag_block_size(a);
 
+    /* Check for mesh location */
+
+    int location_id = 0, flag = 0;
+    if (n_rows == mesh->n_cells)
+      location_id = CS_MESH_LOCATION_CELLS;
+    else if (n_rows == mesh->n_vertices)
+      location_id = CS_MESH_LOCATION_VERTICES;
+    flag = location_id;
+    cs_parall_max(1, CS_INT_TYPE, &flag);
+    if (flag == location_id)
+      flag = 0;
+    else
+      flag =1;
+    cs_parall_max(1, CS_INT_TYPE, &flag);
+    if (flag != 0)
+      return;
+
+    /* Now generate output */
+
     cs_real_t *val;
+    BFT_MALLOC(val, n_cols*diag_block_size[1], cs_real_t);
 
-    BFT_MALLOC(val, mesh->n_cells_with_ghosts*diag_block_size[1], cs_real_t);
-
-    for (val_id = 0; val_id < 5; val_id++) {
+    for (int val_id = 0; val_id < 5; val_id++) {
 
       switch(val_id) {
 
@@ -1669,22 +1886,22 @@ cs_sles_post_error_output_def(const char          *name,
 
       case 1:
         strcpy(base_name, "RHS");
-        memcpy(val, rhs, n_cells*diag_block_size[1]*sizeof(cs_real_t));
+        memcpy(val, rhs, n_rows*diag_block_size[1]*sizeof(cs_real_t));
         break;
 
       case 2:
         strcpy(base_name, "X");
-        memcpy(val, vx, n_cells*diag_block_size[1]*sizeof(cs_real_t));
+        memcpy(val, vx, n_rows*diag_block_size[1]*sizeof(cs_real_t));
         break;
 
       case 3:
         strcpy(base_name, "Residual");
-        _cell_residual(diag_block_size,
-                       rotation_mode,
-                       a,
-                       rhs,
-                       vx,
-                       val);
+        _residual(n_rows*diag_block_size[1],
+                  rotation_mode,
+                  a,
+                  rhs,
+                  vx,
+                  val);
         break;
 
       case 4:
@@ -1706,10 +1923,12 @@ cs_sles_post_error_output_def(const char          *name,
 
       assert(diag_block_size[0] == diag_block_size[1]); /* for now */
 
-      cs_sles_post_error_output_var(val_name,
-                                    mesh_id,
-                                    diag_block_size[1],
-                                    val);
+      cs_sles_post_output_var(val_name,
+                              mesh_id,
+                              location_id,
+                              CS_POST_WRITER_ERRORS,
+                              diag_block_size[1],
+                              val);
     }
 
     BFT_FREE(val);
@@ -1718,29 +1937,39 @@ cs_sles_post_error_output_def(const char          *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Output post-processing variable for failed system convergence.
+ * \brief Output post-processing variable related to system convergence.
  *
  * \param[in]       name             variable name
  * \param[in]       mesh_id          id of error output mesh, or 0 if none
+ * \param[in]       location_id      mesh location id (cells or vertices)
+ * \param[in]       writer_id        id of specified associated writer, or
+ *                                   \ref CS_POST_WRITER_ALL_ASSOCIATED for all
  * \param[in]       diag_block_size  block size for diagonal
  * \param[in, out]  var              variable values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sles_post_error_output_var(const char   *name,
-                              int           mesh_id,
-                              int           diag_block_size,
-                              cs_real_t    *var)
+cs_sles_post_output_var(const char      *name,
+                        int              mesh_id,
+                        int              location_id,
+                        int              writer_id,
+                        int              diag_block_size,
+                        cs_real_t        var[])
 {
   if (mesh_id != 0) {
 
     int _diag_block_size[4] = {1, 1, 1, 1};
 
     const cs_mesh_t *mesh = cs_glob_mesh;
+    const cs_time_step_t *ts = cs_glob_time_step;
 
     size_t n_non_norm;
-    const cs_int_t n_cells = mesh->n_cells;
+    cs_lnum_t n_rows = 0;
+    if (location_id == CS_MESH_LOCATION_CELLS)
+      n_rows = mesh->n_cells;
+    else if (location_id == CS_MESH_LOCATION_VERTICES)
+      n_rows = mesh->n_vertices;
 
     cs_real_t *val_type;
 
@@ -1753,23 +1982,37 @@ cs_sles_post_error_output_var(const char   *name,
       _diag_block_size[3] = diag_block_size*diag_block_size;
     }
 
-    BFT_MALLOC(val_type, _diag_block_size[1]*n_cells, cs_real_t);
+    BFT_MALLOC(val_type, _diag_block_size[1]*n_rows, cs_real_t);
 
-    n_non_norm = _value_type(_diag_block_size[1]*n_cells, var, val_type);
+    n_non_norm = _value_type(_diag_block_size[1]*n_rows, var, val_type);
 
-    cs_post_write_var(mesh_id,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      name,
-                      _diag_block_size[0],
-                      true, /* interlace */
-                      true, /* use parents */
-                      CS_POST_TYPE_cs_real_t,
-                      var,
-                      NULL,
-                      NULL,
-                      NULL);
+    if (location_id == CS_MESH_LOCATION_CELLS)
+      cs_post_write_var(mesh_id,
+                        writer_id,
+                        name,
+                        _diag_block_size[0],
+                        true, /* interlace */
+                        true, /* use parents */
+                        CS_POST_TYPE_cs_real_t,
+                        var,
+                        NULL,
+                        NULL,
+                        ts);
+    else if (location_id == CS_MESH_LOCATION_VERTICES)
+      cs_post_write_vertex_var(mesh_id,
+                               writer_id,
+                               name,
+                               _diag_block_size[0],
+                               true, /* interlace */
+                               true, /* use parents */
+                               CS_POST_TYPE_cs_real_t,
+                               var,
+                               ts);
 
-    if (n_non_norm > 0) {
+    int flag = (n_non_norm > 0) ? 1 : 0;
+    cs_parall_max(1, CS_INT_TYPE, &flag);
+
+    if (flag > 0) {
 
       char type_name[32];
       size_t l = strlen(name);
@@ -1784,17 +2027,28 @@ cs_sles_post_error_output_var(const char   *name,
 
       strcat(type_name, "_fp_type");
 
-      cs_post_write_var(mesh_id,
-                        CS_POST_WRITER_ALL_ASSOCIATED,
-                        type_name,
-                        _diag_block_size[0],
-                        true, /* interlace */
-                        true, /* use parents */
-                        CS_POST_TYPE_cs_real_t,
-                        val_type,
-                        NULL,
-                        NULL,
-                        NULL);
+      if (location_id == CS_MESH_LOCATION_CELLS)
+        cs_post_write_var(mesh_id,
+                          writer_id,
+                          type_name,
+                          _diag_block_size[0],
+                          true, /* interlace */
+                          true, /* use parents */
+                          CS_POST_TYPE_cs_real_t,
+                          val_type,
+                          NULL,
+                          NULL,
+                          ts);
+      else if (location_id == CS_MESH_LOCATION_VERTICES)
+        cs_post_write_vertex_var(mesh_id,
+                                 writer_id,
+                                 name,
+                                 _diag_block_size[0],
+                                 true, /* interlace */
+                                 true, /* use parents */
+                                 CS_POST_TYPE_cs_real_t,
+                                 var,
+                                 ts);
 
     }
 

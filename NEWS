@@ -10,6 +10,8 @@ User changes
   added complexity; a more general interpolation framework, usable also
   from user functions, is planned for the future.
 
+- Add option for postprocessing output of linear solver residuals.
+
 Release 5.0.0 (unreleased)
 ==========================
 
