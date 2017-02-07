@@ -1842,7 +1842,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.lineEditFrequency.show()
                 self.lineEditFrequency.setEnabled(True)
                 self.pushButtonFrequency.setEnabled(False)
-                ntchr = self.mdl.getWriterFrequency(writer_id)
+                ntchr = int(self.mdl.getWriterFrequency(writer_id))
                 if ntchr < 1:
                     ntchr = 1
                     self.mdl.setWriterFrequency(writer_id, ntchr)
