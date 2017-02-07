@@ -669,7 +669,7 @@ class Study(object):
     """
     Create, run and compare all cases for a given study.
     """
-    def __init__(self, pkg, parser, study, exe, dif, rlog, force_rm=False):
+    def __init__(self, pkg, parser, study, exe, dif, rlog, force_rm=False, force_overwrite=False):
         """
         Constructor.
           1. initialize attributes,
@@ -692,6 +692,7 @@ class Study(object):
         self.__diff     = dif
         self.__log      = rlog
         self.__force_rm = force_rm
+        self.__force_ow = force_overwrite
 
         self.__repo = os.path.join(self.__parser.getRepository(),  study)
         self.__dest = os.path.join(self.__parser.getDestination(), study)
@@ -818,7 +819,7 @@ class Study(object):
                 shutil.rmtree(des)
                 shutil.copytree(ref, des, symlinks=True)
 
-        # Create cases
+        # Change directory to destination directory
         os.chdir(self.__dest)
 
         log_lines = []
@@ -827,14 +828,49 @@ class Study(object):
                 self.createCase(c, log_lines);
             else:
                 if self.__force_rm == True:
-                    shutil.rmtree(c.label)
-                    self.createCase(c, log_lines)
+                    # Build short path to RESU dir. such as 'CASE1/RESU'
+                    _dest_resu_dir = os.path.join(c.label, 'RESU')
+                    if os.path.isdir(_dest_resu_dir):
+                        shutil.rmtree(_dest_resu_dir)
+                        os.makedirs(_dest_resu_dir)
                 else:
                     print("Warning: the case %s already exists in the destination." % c.label)
 
+                # if overwrite option enabled, overwrite content of DATA, SRC, SCRIPTS
+                if self.__force_ow:
+                    dirs_to_overwrite = ["DATA", "SRC", "SCRIPTS"]
+                    self.overwriteDirectories(dirs_to_overwrite,
+                                              case_label=c.label)
+
+
+
         os.chdir(repbase)
 
+        if self.__force_ow:
+            dirs_to_overwrite = ["POST", "MESH"]
+            self.overwriteDirectories(dirs_to_overwrite)
+
         return log_lines
+
+    #---------------------------------------------------------------------------
+
+    def overwriteDirectories(self, dirs_to_overwrite, case_label=""):
+        """
+        Overwrite given directories in the Study tree.
+        Label of case is an empty string by default.
+        """
+        for _dir in dirs_to_overwrite:
+            ref = os.path.join(self.__repo, case_label, _dir)
+            if os.path.isdir(ref):
+                dest = os.path.join(self.__dest, case_label, _dir)
+                for _ref_dir, _dirs, _files in os.walk(ref):
+                    _dest_dir = _ref_dir.replace(ref, dest, 1)
+                    for _file in _files:
+                        _ref_file = os.path.join(_ref_dir, _file)
+                        _dest_file = os.path.join(_dest_dir, _file)
+                        if _dest_file:
+                            os.remove(_dest_file)
+                        shutil.copy2(_ref_file, _dest_dir)
 
     #---------------------------------------------------------------------------
 
@@ -882,7 +918,11 @@ class Studies(object):
         #   the repository verification and
         #   the destination creation
 
-        self.__parser = Parser(f)
+        if os.path.isfile(options.filename):
+            self.__parser = Parser(f)
+        else:
+            print("Specified XML parameter file for studymanager does not exist.")
+            sys.exit(1)
 
         # Test if the repository exists
 
@@ -939,7 +979,8 @@ class Studies(object):
         for l in self.labels:
             self.studies.append( [l, Study(pkg, self.__parser, l, \
                                            exe, dif, self.__log, \
-                                           options.remove_existing)] )
+                                           options.remove_existing, \
+                                           options.force_overwrite)] )
             if options.debug:
                 print(" >> Append study ", l)
 

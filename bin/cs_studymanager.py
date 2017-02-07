@@ -127,6 +127,10 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="remove_existing", default=False,
                       help="remove existing run directories")
 
+    parser.add_option("--fow",
+                      action="store_true", dest="force_overwrite", default=False,
+                      help="overwrite files in MESH and POST directories")
+
     parser.add_option("-s", "--skip-reports", default=False,
                       action="store_true", dest="disable_reports",
                       help="disable the generation of reports")
