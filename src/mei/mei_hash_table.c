@@ -45,8 +45,6 @@ extern "C" {
 #include "bft_mem.h"
 #include "bft_error.h"
 
-#include "mei_math_util.h"
-
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -189,7 +187,6 @@ mei_hash_table_find(hash_table_t *const htable, const char *const key)
  * \param [in] f2 pointer on a two argument function
  * \param [in] f3 pointer on a three argument function
  * \param [in] f4 pointer on a four argument function
- * \param [in] i1d pointer on a 1D interpolation function
  */
 /*----------------------------------------------------------------------------*/
 
@@ -201,8 +198,7 @@ mei_hash_table_insert(hash_table_t *const htable,
                       const func1_t f1,
                       const func2_t f2,
                       const func3_t f3,
-                      const func4_t f4,
-                      const interp1d_t i1d)
+                      const func4_t f4)
 {
   unsigned v;
   struct item* item = mei_hash_table_find(htable, key);
@@ -224,9 +220,6 @@ mei_hash_table_insert(hash_table_t *const htable,
 
     } else if (type == FUNC4) {
       bft_error(__FILE__, __LINE__, 0, "not implemented yet \n");
-
-    } else if (type == INTERP1D) {
-      item->data->i1d = i1d;
 
     } else {
       item->data->value = value;
@@ -356,21 +349,12 @@ mei_hash_table_init(hash_table_t *const htable)
   /* predefined functions pointers to functions to calculate them */
   static double (*functions2[]) (double, double) = { atan2, fmin, fmax, fmod };
 
-  /* predefined functions names with two arguments*/
-  static const char *interp1d_names[] = { "interp1d" };
-
-  /* predefined functions pointers to functions to calculate them */
-  static double (*interp1d[]) (char*, int, int, double) = { mei_interp1d };
-
-
-
   j = sizeof(constants_names) / sizeof(constants_names[0]);
   for (i = 0; i < j; i++)
     mei_hash_table_insert(htable,
                           constants_names[i],
                           CONSTANT,
                           constants[i],
-                          NULL,
                           NULL,
                           NULL,
                           NULL,
@@ -385,7 +369,6 @@ mei_hash_table_init(hash_table_t *const htable)
                           functions[i],
                           NULL,
                           NULL,
-                          NULL,
                           NULL);
 
   j = sizeof(functions2_names) / sizeof(functions2_names[0]);
@@ -397,20 +380,7 @@ mei_hash_table_init(hash_table_t *const htable)
                           NULL,
                           functions2[i],
                           NULL,
-                          NULL,
                           NULL);
-
-  j = sizeof(interp1d_names) / sizeof(interp1d_names[0]);
-  for (i = 0; i < j; i++)
-    mei_hash_table_insert(htable,
-                          interp1d_names[i],
-                          INTERP1D,
-                          0,
-                          NULL,
-                          NULL,
-                          NULL,
-                          NULL,
-                          interp1d[i]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -430,8 +400,7 @@ mei_hash_table_item_print(struct item *item)
     if (item->type != FUNC1 &&
         item->type != FUNC2 &&
         item->type != FUNC3 &&
-        item->type != FUNC4 &&
-        item->type != INTERP1D)
+        item->type != FUNC4)
       printf("valeur : %f\n", item->data->value);
     item = item->next;
   }

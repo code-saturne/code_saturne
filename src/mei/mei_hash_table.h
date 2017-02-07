@@ -54,7 +54,6 @@ typedef enum {
   FUNC2,
   FUNC3,
   FUNC4,
-  INTERP1D,
   OPR
 
 } mei_flag_t;
@@ -88,20 +87,13 @@ typedef double (*func3_t) (double, double, double);
 typedef double (*func4_t) (double, double, double, double);
 
 /*!
- * \brief Type definition for pointer to a function of for 1D interpolation
- */
-
-typedef double (*interp1d_t) (char*, int, int, double);
-
-/*!
  * \brief Type definition for data of each element contained in the hash table
  */
 
 typedef union {
   double value;    /*!< Constant or variable value.  */
   func1_t func;    /*!< Pointer to function with one argument */
-  func2_t f2;      /*!< Pointer to function with two argument */
-  interp1d_t i1d;  /*!< Pointer to function for 1D interpolation */
+  func2_t f2;      /*!< Pointer to function with two arguments */
 } data_t;
 
 /*!
@@ -207,8 +199,7 @@ mei_hash_table_insert(hash_table_t *const htable,
                       const func1_t func,
                       const func2_t f2,
                       const func3_t f3,
-                      const func4_t f4,
-                      const interp1d_t i1d);
+                      const func4_t f4);
 
 /*----------------------------------------------------------------------------*/
 /*

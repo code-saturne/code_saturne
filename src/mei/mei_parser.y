@@ -110,7 +110,6 @@ expr:
         | FUN2 '(' expr ',' expr ')'                   { $$ = mei_funcx_node($1, 2, $3, $5); }
         | FUN3 '(' expr ',' expr ',' expr ')'          { $$ = mei_funcx_node($1, 3, $3, $5, $7); }
         | FUN4 '(' expr ',' expr ',' expr ',' expr ')' { $$ = mei_funcx_node($1, 4, $3, $5, $7, $9); }
-        | IN1D '(' expr ',' expr ',' expr ',' expr ')' { $$ = mei_interp1d_node($1, $3, $5, $7, $9); }
         | '!' expr                                     { $$ = mei_opr_node('!',     1, $2); }
         | '-' expr %prec UMINUS                        { $$ = mei_opr_node(UMINUS,  1, $2); }
         | '+' expr %prec UPLUS                         { $$ = mei_opr_node(UPLUS,   1, $2); }

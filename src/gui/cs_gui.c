@@ -62,7 +62,6 @@
 #include "fvm_selector.h"
 
 #include "mei_evaluate.h"
-#include "mei_math_util.h"
 
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
@@ -5511,8 +5510,6 @@ cs_gui_finalize(void)
     BFT_FREE(cs_glob_var->model_value);
     BFT_FREE(cs_glob_var);
   }
-
-  mei_data_free();
 
   /* clean memory for xml document */
 

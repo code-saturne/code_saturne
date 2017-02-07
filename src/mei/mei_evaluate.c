@@ -121,9 +121,6 @@ _init_symbol_table(mei_node_t    *n,
     for (i = 0; i < n->type->funcx.nops; i++)
       _init_symbol_table(n->type->funcx.op[i], h);
   }
-  else if (n->flag == INTERP1D) {
-    _init_symbol_table(n->type->interp1d.op, h);
-  }
   else if (n->flag == OPR) {
     for (i = 0; i < n->type->opr.nops; i++)
       _init_symbol_table(n->type->opr.op[i], h);
@@ -219,19 +216,6 @@ _check_symbol(mei_node_t  *p)
     bft_error(__FILE__, __LINE__, 0, _("not implemented yet \n"));
     break;
 
-  case INTERP1D:
-    if (mei_hash_table_lookup(p->ht, p->type->interp1d.name) == NULL) {
-
-      /* it is normally impossible to arrive here */
-      /* because the parser has already checked function names */
-
-      bft_error(__FILE__, __LINE__, 0, _("Error: _check_symbol\n"));
-
-      return 1;
-    }
-    return _check_symbol(p->type->interp1d.op);
-
-
   case OPR:
 
     switch (p->type->opr.oper) {
@@ -251,7 +235,6 @@ _check_symbol(mei_node_t  *p)
                             p->type->opr.op[0]->type->id.i,
                             CONSTANT,
                             0,
-                            NULL,
                             NULL,
                             NULL,
                             NULL,
@@ -294,7 +277,6 @@ _evaluate(mei_node_t  *p)
   double t1, t2;
   func1_t f1;
   func2_t f2;
-  interp1d_t i1d;
 
   if (!p) return 0;
 
@@ -321,14 +303,6 @@ _evaluate(mei_node_t  *p)
   case FUNC4:
     bft_error(__FILE__, __LINE__, 0, _("not implemented\n"));
     break;
-
-  case INTERP1D:
-    i1d = (mei_hash_table_lookup(p->ht, p->type->interp1d.name))->data->i1d;
-
-    return i1d(p->type->interp1d.data,
-               p->type->interp1d.col1,
-               p->type->interp1d.col2,
-               _evaluate(p->type->interp1d.op));
 
   case OPR:
 
@@ -359,7 +333,6 @@ _evaluate(mei_node_t  *p)
                             p->type->opr.op[0]->type->id.i,
                             CONSTANT,
                             t2,
-                            NULL,
                             NULL,
                             NULL,
                             NULL,
@@ -742,7 +715,6 @@ mei_tree_insert(mei_tree_t    *ev,
                         NULL,
                         NULL,
                         NULL,
-                        NULL,
                         NULL);
 }
 
@@ -768,7 +740,6 @@ mei_symbol_table_insert(hash_table_t  *symbol_table,
                         str,
                         CONSTANT,
                         value,
-                        NULL,
                         NULL,
                         NULL,
                         NULL,

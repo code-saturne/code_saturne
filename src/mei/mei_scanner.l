@@ -78,12 +78,6 @@ size_t len;
     return VAR;
 }
 
-"interp1d" {
-    strncpy(yylval.sIndex, yytext, yyleng+1);
-    mei_glob_column += yyleng;
-    return IN1D;
-}
-
 "min"|"max"|"atan2"|"mod" {
     strncpy(yylval.sIndex, yytext, yyleng+1);
     mei_glob_column += yyleng;

@@ -5126,9 +5126,6 @@ There are three types of symbols \\
 
 \texttt{max}: maximum
 
-\texttt{interp1d}: 1D linear interpolation\\
-
-
 \underline{Useful constants:}
 
 pi = 3.14159265358979323846
@@ -5150,34 +5147,6 @@ $+$ \qquad$-$\qquad $*$\qquad $/$ \qquad$\wedge$
 This tab displays examples of formula, which could be copy and paste.
 
 \end{list}
-
-\underline{External data}
-
-Through the predefined function \texttt{interp1d} it is possible to use
-external data inside a user law. This function allows to make linear interpolation
-from a data file (\texttt{.dat} or \texttt{.csv}) by selecting two columns in this file
-for the abscissa and ordinate of a function. In a ``\texttt{.dat}'' data file, tabular
-values are stored in plain-text form and are separated by a blank. In a comma-separated values
-(``\texttt{.csv}'') file, values are separated by a comma ``\texttt{,}''.
-For both formats, lines beginning with ``\texttt{\#}'' are considered as comments.
-
-To use this function:
-
-\texttt{interp1d(file.csv, i, j, x)}
-
-with:
-\begin{itemize}
-\item file.csv, the name of the file
-\item i, the column number for the abscissa
-\item j, the column number for the ordinate
-\item x, the number for which the linear interpolation is looked
-\end{itemize}
-The function return a linear interpolation for the x value
-if it is in the range of the abscissa definition, or a
-linear extrapolation if it is out of this range.
-
-NB: the abscissa value must be in the growing order.
-
 %==================================
 \subsection{Modification of the variables at the end of a time step}
 %==================================

@@ -102,7 +102,7 @@ class QMeiHighlighter(QSyntaxHighlighter):
          'acos', 'asin', 'atan', 'atan2', 'cosh', 'sinh',
          'tanh', 'abs', 'mod', 'int', 'min', 'max',
          'pi', 'e', 'while', 'if', 'else', 'print',
-         'while', 'interp1d'
+         'while'
     ]
 
     operators = [
@@ -242,7 +242,6 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
                   "<b>int</b>: floor<br>"\
                   "<b>min</b>: minimum<br>"\
                   "<b>max</b>: maximum<br>"\
-                  "<b>interp1d</b>: 1D linear interpolation<br>"\
                   "<br>"\
                   "<big><u>Useful constants:</u></big><br>"\
                   "<b>pi</b> = 3.14159265358979323846<br>"\

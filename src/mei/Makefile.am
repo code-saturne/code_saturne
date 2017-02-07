@@ -41,7 +41,6 @@ mei_hash_table.h \
 mei_node.h
 
 noinst_HEADERS = \
-mei_math_util.h \
 mei_parser_glob.h
 
 noinst_LTLIBRARIES = libmei.la
@@ -49,7 +48,6 @@ libmei_la_LIBADD =
 libmei_la_SOURCES = \
 mei_evaluate.c \
 mei_hash_table.c \
-mei_math_util.c \
 mei_node.c \
 mei_parser_glob.c \
 mei_parser.y \

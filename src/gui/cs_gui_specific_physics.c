@@ -49,7 +49,6 @@
 #include "fvm_selector.h"
 
 #include "mei_evaluate.h"
-#include "mei_math_util.h"
 
 #include "cs_base.h"
 #include "cs_gui_util.h"
@@ -2085,7 +2084,6 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
   }
 
 }
-
 
 /*----------------------------------------------------------------------------
  * groundwater model : read parameters

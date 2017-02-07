@@ -221,56 +221,6 @@ mei_funcx_node(const char *function,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build a node for an 1D interpolation.
- *
- * \param [in] function interp1d
- * \param [in] data name of the file which contains data
- * \param [in] col1 abscissa for interpolation
- * \param [in] col2 ordinate for interpolation
- * \param [in] expr node that represents the variable to be interpolated
- *
- * \return built node
- */
-/*----------------------------------------------------------------------------*/
-
-mei_node_t*
-mei_interp1d_node(const char *function,
-                  const mei_node_t *data,
-                  const mei_node_t *col1,
-                  const mei_node_t *col2,
-                  const mei_node_t *expr)
-{
-  mei_node_t *node = NULL;
-  size_t length;
-  size_t nodeSize;
-
-  nodeSize = sizeof(interp1d_node_t) + sizeof(mei_node_t);
-
-  BFT_MALLOC(node, 1, mei_node_t);
-
-  BFT_MALLOC(node->type, nodeSize, node_type_t);
-
-  length = strlen(function)+1;
-  BFT_MALLOC(node->type->interp1d.name, length, char);
-  strncpy(node->type->interp1d.name, function, length);
-  node->type->interp1d.c  = mei_glob_column-length+1;
-
-  length = strlen(data->type->id.i)+1;
-  BFT_MALLOC(node->type->interp1d.data, length, char);
-  strncpy(node->type->interp1d.data, data->type->id.i, length);
-
-  node->flag = INTERP1D;
-  node->ht = NULL;
-  node->type->interp1d.op = expr;
-  node->type->interp1d.l  = mei_glob_line;
-  node->type->interp1d.col1  = (int) col1->type->con.value;
-  node->type->interp1d.col2  = (int) col2->type->con.value;
-
-  return node;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Build a node for an operators and its operands.
  *
  * \param [in] oper operator
@@ -338,9 +288,6 @@ mei_label_node(mei_node_t *n)
   else if (n->flag == FUNC2 || n->flag == FUNC3 || n->flag == FUNC4) {
     return n->type->funcx.name;
   }
-  else if (n->flag == INTERP1D) {
-    return n->type->interp1d.name;
-  }
   else if (n->flag == OPR) {
     BFT_MALLOC(buff, 256, char);
     sprintf(buff, "operator number: %d", n->type->opr.nops);
@@ -378,11 +325,6 @@ mei_free_node(mei_node_t *n)
     BFT_FREE(n->type->funcx.name);
     for (i = 0; i < n->type->funcx.nops; i++)
       mei_free_node(n->type->funcx.op[i]);
-  }
-  else if (n->flag == INTERP1D) {
-    BFT_FREE(n->type->interp1d.name);
-    BFT_FREE(n->type->interp1d.data);
-    mei_free_node(n->type->interp1d.op);
   }
   else if (n->flag == OPR) {
     for (i = 0; i < n->type->opr.nops; i++)

@@ -90,21 +90,6 @@ typedef struct
 } func2_node_t;
 
 /*!
- * \brief Function of interpolation 1D
- */
-
-typedef struct
-{
-  char *name;              /*!< label of the interpolation function */
-  char *data;              /*!< name of the file of the data  */
-  int l;                   /*!< line number  */
-  int c;                   /*!< column number  */
-  int col1;                /*!< column number in the file for interpolation  */
-  int col2;                /*!< column number in the file for interpolation  */
-  struct _mei_node_t *op;  /*!< variable to be interpolate  */
-} interp1d_node_t;
-
-/*!
  * \brief Operators node
  */
 
@@ -125,7 +110,6 @@ typedef union
   id_node_t    id;          /* identifiers */
   func_node_t  func;        /* function with one argument  */
   func2_node_t funcx;       /* function with two, three, or four arguments */
-  interp1d_node_t interp1d; /* function of 1D interpolation */
   opr_node_t   opr;         /* operators */
 } node_type_t;
 
@@ -206,26 +190,6 @@ mei_node_t *
 mei_funcx_node(const char *function,
                const int nops,
                ...);
-
-/*----------------------------------------------------------------------------*/
-/* Build a node for an 1D interpolation.
- *
- * param [in] function interp1d
- * param [in] data name of the file which contains data
- * param [in] col1 abscissa for interpolation
- * param [in] col2 ordinate for interpolation
- * param [in] expr node that represents the variable to be interpolate
- *
- * return built node
- */
-/*----------------------------------------------------------------------------*/
-
-mei_node_t *
-mei_interp1d_node(const char *function,
-                  const mei_node_t *data,
-                  const mei_node_t *col1,
-                  const mei_node_t *col2,
-                  const mei_node_t *expr);
 
 /*----------------------------------------------------------------------------*/
 /*

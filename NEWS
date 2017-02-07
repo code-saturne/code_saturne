@@ -2,6 +2,14 @@
 Trunk (unreleased)
 ==================
 
+User changes
+------------
+
+- Removed "interp1d" (1d-D interpolation) option from MEI (Mathematical
+  Expresion Interpreter) syntax, as it was poorly documented and
+  added complexity; a more general interpolation framework, usable also
+  from user functions, is planned for the future.
+
 Release 5.0.0 (unreleased)
 ==========================
 
