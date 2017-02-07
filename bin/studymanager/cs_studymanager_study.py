@@ -669,7 +669,7 @@ class Study(object):
     """
     Create, run and compare all cases for a given study.
     """
-    def __init__(self, pkg, parser, study, exe, dif, rlog, force_rm=False):
+    def __init__(self, pkg, parser, study, exe, dif, rlog, force_rm=False, force_overwrite=False):
         """
         Constructor.
           1. initialize attributes,
@@ -692,6 +692,7 @@ class Study(object):
         self.__diff     = dif
         self.__log      = rlog
         self.__force_rm = force_rm
+        self.__force_ow = force_overwrite
 
         self.__repo = os.path.join(self.__parser.getRepository(),  study)
         self.__dest = os.path.join(self.__parser.getDestination(), study)
@@ -834,6 +835,23 @@ class Study(object):
 
         os.chdir(repbase)
 
+        dirs_to_overwrite = []
+        if self.__force_ow:
+            dirs_to_overwrite = ["POST", "MESH"]
+
+        for _dir in dirs_to_overwrite:
+            ref = os.path.join(self.__repo, _dir)
+            if os.path.isdir(ref):
+                dest = os.path.join(self.__dest, _dir)
+                for _src_dir, _dirs, _files in os.walk(ref):
+                    _dst_dir = _src_dir.replace(ref, dest, 1)
+                    for _file in _files:
+                        _src_file = os.path.join(_src_dir, _file)
+                        _dst_file = os.path.join(_dst_dir, _file)
+                        if _dst_file:
+                            os.remove(_dst_file)
+                        shutil.move(_src_file, _dst_dir)
+
         return log_lines
 
     #---------------------------------------------------------------------------
@@ -943,7 +961,8 @@ class Studies(object):
         for l in self.labels:
             self.studies.append( [l, Study(pkg, self.__parser, l, \
                                            exe, dif, self.__log, \
-                                           options.remove_existing)] )
+                                           options.remove_existing, \
+                                           options.force_overwrite)] )
             if options.debug:
                 print(" >> Append study ", l)
 
