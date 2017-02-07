@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-01-26 18:57+0100\n"
+"POT-Creation-Date: 2017-02-07 16:25+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3863,6 +3863,10 @@ msgstr ""
 #, c-format
 msgid "  Verbosity: %d\n"
 msgstr "  Verbosité : %d\n"
+
+#, c-format
+msgid "  Residual postprocessing writer id: %d\n"
+msgstr "  Id de gestionnaire d'écriture pour les résidus :%d\n"
 
 #, c-format
 msgid ""
@@ -8696,20 +8700,20 @@ msgid ""
 "SYRTHES coupling\n"
 "----------------\n"
 "\n"
-"    nbccou:          %10d (Number of couplings)\n"
+"    number of couplings: %d\n"
 msgstr ""
 "Couplage SYRTHES\n"
 "----------------\n"
 "\n"
-"    nbccou:          %10d (Nombre de couplages)\n"
+"    nombre de couplages : %d\n"
 
 #, c-format
 msgid ""
-"    with             %10d surface coupling(s)\n"
-"    with             %10d volume coupling(s)\n"
+"    with             %d surface coupling(s)\n"
+"    with             %d volume coupling(s)\n"
 msgstr ""
-"    avec             %10d couplage(s) surfacique(s)\n"
-"    avec             %10d couplage(s) volumique(s)\n"
+"    avec             %d couplage(s) surfacique(s)\n"
+"    avec             %d couplage(s) volumique(s)\n"
 
 msgid ""
 "\n"
@@ -13157,37 +13161,6 @@ msgstr "Erreur : exception en virgule flottante\n"
 #, c-format
 msgid ""
 "Error in mei_tree_lookup function: %s does not exist in the symbol table\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The user data file: %s needed by interp1d is not found.\n"
-"Add this data file to the list of users file to copy \n"
-"in the computational directory.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"interp1d: the file extention expected is dat or csv.  Extension found: %s\n"
-msgstr ""
-
-#, c-format
-msgid "At least two lines are expected in %s.\n"
-msgstr ""
-
-#, c-format
-msgid "At least two columns are expected in %s.\n"
-msgstr ""
-
-#, c-format
-msgid "In the file %s, line %i, there is a wrong value :%s\n"
-msgstr ""
-
-#, c-format
-msgid "The file %s does not have a correct structure at line %i.\n"
-msgstr ""
-
-msgid "Abscissa colomn is not in the rigth order.\n"
 msgstr ""
 
 msgid ""
