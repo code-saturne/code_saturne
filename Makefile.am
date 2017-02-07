@@ -261,7 +261,6 @@ bin/studymanager/cs_studymanager_run.py \
 bin/studymanager/cs_studymanager_drawing.py \
 bin/studymanager/__init__.py \
 bin/studymanager/cs_studymanager_parser.py \
-bin/studymanager/cs_studymanager_plotvtk.py \
 bin/studymanager/cs_studymanager_study.py \
 bin/studymanager/cs_studymanager_texmaker.py
 

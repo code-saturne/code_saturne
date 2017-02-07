@@ -5,6 +5,10 @@ Trunk (unreleased)
 User changes
 ------------
 
+- Removed handling of VTK-based scalar slice outputs in studymanager;
+  graphical files may now be included, and using Catalyst to produce
+  images is recommended.
+
 - Removed "interp1d" (1d-D interpolation) option from MEI (Mathematical
   Expresion Interpreter) syntax, as it was poorly documented and
   added complexity; a more general interpolation framework, usable also

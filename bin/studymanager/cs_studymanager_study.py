@@ -46,10 +46,6 @@ try:
     from studymanager.cs_studymanager_drawing import Plotter
 except Exception:
     pass
-try:
-    from studymanager.cs_studymanager_plotvtk import PlotVTK
-except Exception:
-    pass
 from studymanager.cs_studymanager_run import run_studymanager_command
 import cs_runcase
 
@@ -705,7 +701,6 @@ class Study(object):
 
         self.Cases = []
         self.matplotlib_figures = []
-        self.vtk_figures = []
         self.input_figures = []
 
         # build the list of the cases
@@ -966,10 +961,6 @@ class Studies(object):
             self.__plotter = Plotter(self.__parser)
         except Exception:
             self.__plotter = None
-        try:
-            self.__plotvtk = PlotVTK(self.__parser)
-        except Exception:
-            self.__plotvtk = None
 
         # build the list of the studies
 
@@ -1418,10 +1409,6 @@ class Studies(object):
                                           self.__dis_tex,
                                           self.__default_fmt)
 
-        if self.__plotvtk:
-            for l, s in self.studies:
-                self.__plotvtk.plot_study(l, s)
-
     #---------------------------------------------------------------------------
 
     def build_reports(self, report1, report2):
@@ -1466,11 +1453,9 @@ class Studies(object):
             for l, s in self.studies:
                 doc2.appendLine("\\section{%s}" % l)
 
-                if s.matplotlib_figures or s.vtk_figures:
+                if s.matplotlib_figures or s.input_figures:
                     doc2.appendLine("\\subsection{Graphical results}")
                     for g in s.matplotlib_figures:
-                        doc2.addFigure(g)
-                    for g in s.vtk_figures:
                         doc2.addFigure(g)
                     for g in s.input_figures:
                         doc2.addFigure(g)
