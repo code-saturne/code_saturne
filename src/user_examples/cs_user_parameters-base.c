@@ -55,6 +55,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_convection_diffusion.h"
 #include "cs_ctwr.h"
 #include "cs_fan.h"
 #include "cs_field.h"
@@ -191,6 +192,48 @@ cs_user_model(void)
 void
 cs_user_parameters(void)
 {
+  /* Example: choose a limiter for a given scalar */
+  /*----------------------------------------------*/
+
+  /*! [param_var_limiter_choice] */
+
+  /* retrieve scalar field by its name */
+  cs_field_t *sca1 = cs_field_by_name("scalar1");
+
+  /* isstpc:
+     0: swich on the slope test
+     1: swich off the slope test (default)
+     2: continuous limiter ensuring boundedness (beta limiter)
+     3: NVD/TVD Scheme */
+
+  cs_var_cal_opt_t vcopt;
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+
+  cs_field_get_key_struct(sca1, key_cal_opt_id, &vcopt);
+  vcopt.isstpc = 3;
+  cs_field_set_key_struct(sca1, key_cal_opt_id, &vcopt);
+
+  /* Min/Max limiter or NVD/TVD limiters
+     then "limiter_choice" keyword must be set:
+     0: Gamma
+     1: SMART
+     2: CUBISTA
+     3: SUPERBEE
+     4: MUSCL
+     5: MINMOD
+     6: CLAM
+     7: STOIC
+     8: OSHER
+     9: WASEB
+     --- VOF scheme ---
+     10: M-HRIC
+     11: M-CICSAM       */
+
+  int key_lim_id = cs_field_key_id("limiter_choice");
+  cs_field_set_key_int(sca1, key_lim_id, CS_NVD_SUPERBEE);
+
+  /*! [param_var_limiter_choice] */
+
   /* Example: add boundary values for all scalars */
   /*----------------------------------------------*/
 
@@ -249,7 +292,8 @@ cs_user_internal_coupling_add_volumes(cs_mesh_t *mesh)
 /*!
  * \brief Define volumesi from separated meshes as internal coupling zones.
  *
- * These zones must be disjoint and the face selection criterion must be specified.
+ * These zones must be disjoint and the face selection criterion must be
+ * specified.
  *
  * \param[in, out]  mesh  pointer to a cs_mesh_t structure
  */
