@@ -5,6 +5,8 @@ Release 4.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix detection of writer format availability for plugins.
+
 - Fix double symmetric 3x3 matrix product, used in anisotropic
   heterogeneous diffusion.
 
