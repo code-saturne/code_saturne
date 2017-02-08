@@ -217,7 +217,7 @@ def send_mail(send_from, send_to, subject, text, files=[], server="localhost"):
         msg.attach(part)
 
     smtp = smtplib.SMTP(server)
-    smtp.send_report(send_from, send_to, msg.as_string())
+    smtp.sendmail(send_from, send_to, msg.as_string())
     smtp.close()
 
 #-------------------------------------------------------------------------------
