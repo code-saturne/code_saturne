@@ -46,6 +46,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_error.h"
+#include "bft_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -393,6 +394,7 @@ cs_math_voltet(const cs_real_t   xv[3],
  * \brief Compute inverses of dense matrices.
  *
  * \param[in]   n_blocks  number of blocks
+ * \param[in]   db_size   matrix size
  * \param[in]   ad        diagonal part of linear equation matrix
  * \param[out]  ad_inv    inverse of the diagonal part of linear equation matrix
  */
@@ -400,7 +402,7 @@ cs_math_voltet(const cs_real_t   xv[3],
 
 void
 cs_math_fact_lu(cs_lnum_t         n_blocks,
-                const int         db_size,
+                int               db_size,
                 const cs_real_t  *ad,
                 cs_real_t        *ad_inv)
 {
@@ -462,30 +464,32 @@ cs_math_fact_lu(cs_lnum_t         n_blocks,
 
 void
 cs_math_fw_and_bw_lu(const cs_real_t  mat[],
-                     const int        db_size,
+                     int              db_size,
                      cs_real_t        x[],
                      const cs_real_t  b[],
                      const cs_real_t  c[])
 {
-  cs_real_t  aux[db_size];
-  int ii, jj;
+  cs_real_t  *aux;
+  BFT_MALLOC(aux, db_size, cs_real_t);
 
   /* forward */
-  for (ii = 0; ii < db_size; ii++) {
+  for (int ii = 0; ii < db_size; ii++) {
     aux[ii] = (c[ii] - b[ii]);
-    for (jj = 0; jj < ii; jj++) {
+    for (int jj = 0; jj < ii; jj++) {
       aux[ii] -= aux[jj]*mat[ii*db_size + jj];
     }
   }
 
   /* backward */
-  for (ii = db_size - 1; ii >= 0; ii-=1) {
+  for (int ii = db_size - 1; ii >= 0; ii-=1) {
     x[ii] = aux[ii];
-    for (jj = db_size - 1; jj > ii; jj-=1) {
+    for (int jj = db_size - 1; jj > ii; jj-=1) {
       x[ii] -= x[jj]*mat[ii*db_size + jj];
     }
     x[ii] /= mat[ii*(db_size + 1)];
   }
+
+  BFT_FREE(aux);
 }
 
 /*----------------------------------------------------------------------------*/

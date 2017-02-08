@@ -693,10 +693,11 @@ cs_math_voltet(const cs_real_t   xv[3],
                const cs_real_t   xc[3]);
 
 /*----------------------------------------------------------------------------
- * Compute inverses of dense matrices.
+ * Compute inverse of an array of dense matrices of same size.
  *
  * parameters:
  *  n_blocks  <--  number of blocks
+ *  db_size   <-- matrix size
  *  ad        <--  diagonal part of linear equation matrix
  *  ad_inv    -->  inverse of the diagonal part of linear equation matrix
  *----------------------------------------------------------------------------*/
@@ -708,8 +709,7 @@ cs_math_fact_lu(cs_lnum_t         n_blocks,
                 cs_real_t        *ad_inv);
 
 /*----------------------------------------------------------------------------
- *  Block Jacobi utilities.
- *  Compute forward and backward to solve an LU P*P system.
+ *  Compute forward and backward to solve an LU system of size db_size.
  *
  * parameters
  *  mat     <-- P*P*dim matrix

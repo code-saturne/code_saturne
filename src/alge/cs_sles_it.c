@@ -2014,26 +2014,27 @@ _fw_and_bw_lu33(const cs_real_t  mat[],
 
 inline static void
 _fw_and_bw_lu(const cs_real_t  mat[],
-              const int        db_size,
+              int              db_size,
               cs_real_t        x[],
               const cs_real_t  b[],
               const cs_real_t  c[])
 {
-  cs_real_t  aux[db_size];
-  int ii, jj;
+  const int _db_size_max = 8;
+  assert(_db_size_max >= db_size);
+  cs_real_t  aux[_db_size_max];
 
   /* forward */
-  for (ii = 0; ii < db_size; ii++) {
+  for (int ii = 0; ii < db_size; ii++) {
     aux[ii] = (c[ii] - b[ii]);
-    for (jj = 0; jj < ii; jj++) {
+    for (int jj = 0; jj < ii; jj++) {
       aux[ii] -= aux[jj]*mat[ii*db_size + jj];
     }
   }
 
   /* backward */
-  for (ii = db_size - 1; ii >= 0; ii-=1) {
+  for (int ii = db_size - 1; ii >= 0; ii-=1) {
     x[ii] = aux[ii];
-    for (jj = db_size - 1; jj > ii; jj-=1) {
+    for (int jj = db_size - 1; jj > ii; jj-=1) {
       x[ii] -= x[jj]*mat[ii*db_size + jj];
     }
     x[ii] /= mat[ii*(db_size + 1)];
