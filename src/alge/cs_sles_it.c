@@ -142,6 +142,8 @@ BEGIN_C_DECLS
 #define HUGE_VAL  1.E+12
 #endif
 
+#define DB_SIZE_MAX 8
+
 /* SIMD unit size to ensure SIMD alignement (2 to 8 required on most
  * current architectures, so 16 should be enough on most architectures) */
 
@@ -2019,9 +2021,8 @@ _fw_and_bw_lu(const cs_real_t  mat[],
               const cs_real_t  b[],
               const cs_real_t  c[])
 {
-  const int _db_size_max = 8;
-  assert(_db_size_max >= db_size);
-  cs_real_t  aux[_db_size_max];
+  assert(db_size <= DB_SIZE_MAX);
+  cs_real_t aux[DB_SIZE_MAX];
 
   /* forward */
   for (int ii = 0; ii < db_size; ii++) {
