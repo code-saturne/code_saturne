@@ -202,7 +202,7 @@ static fvm_writer_format_t _fvm_writer_format_list[8] = {
   /* Catalyst (VTK) writer (plugin) */
   {
     "Catalyst",
-    "4.0 +",
+    "4.2 +",
     (  FVM_WRITER_FORMAT_USE_EXTERNAL
      | FVM_WRITER_FORMAT_HAS_POLYGON
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
@@ -210,8 +210,13 @@ static fvm_writer_format_t _fvm_writer_format_list[8] = {
 #if !defined(HAVE_CATALYST) || defined(HAVE_PLUGINS)
     0,                                 /* dynamic library count */
     NULL,                              /* dynamic library */
+#if defined(HAVE_CATALYST)
     "fvm_catalyst",                    /* dynamic library name */
     "fvm_to_catalyst_",                /* dynamic library prefix */
+#else
+    NULL,
+    NULL,
+#endif
     NULL,
     NULL,
     NULL,
@@ -247,8 +252,13 @@ static fvm_writer_format_t _fvm_writer_format_list[8] = {
     FVM_WRITER_FIXED_MESH,
     0,                                 /* dynamic library count */
     NULL,                              /* dynamic library */
+#if defined(HAVE_MEDCOUPLING)
     "fvm_medcoupling",                 /* dynamic library name */
     "fvm_to_medcoupling_",             /* dynamic library prefix */
+#else
+    NULL,
+    NULL,
+#endif
     NULL,
     NULL,
     NULL,
