@@ -68,12 +68,16 @@ integer          iclip
 integer          iclpke, iel, iclpk2, iclpe2
 integer          ivar, ii, iwarnk
 integer          iclpmn(2), iclpmx(1)
+integer          kclipp, clip_e_id, clip_k_id
+
 double precision xepmin,xepm,xe,xkmin,xkm,xk,var,epz2
 double precision vmin(2), vmax(2)
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_var
 double precision, dimension(:), pointer :: viscl
+double precision, dimension(:), pointer :: cpro_k_clipped
+double precision, dimension(:), pointer :: cpro_e_clipped
 
 type(var_cal_opt) :: vcopt
 
@@ -95,6 +99,19 @@ iclpmx(1) = 0
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 
 epz2 = epzero**2
+
+call field_get_key_id("clipping_id", kclipp)
+
+! Postprocess clippings?
+call field_get_key_int(ivarfl(iep), kclipp, clip_k_id)
+if (clip_k_id.ge.0) then
+  call field_get_val_s(clip_k_id, cpro_k_clipped)
+endif
+
+call field_get_key_int(ivarfl(iep), kclipp, clip_e_id)
+if (clip_e_id.ge.0) then
+  call field_get_val_s(clip_e_id, cpro_e_clipped)
+endif
 
 !===============================================================================
 ! ---> Stockage Min et Max pour listing
@@ -120,6 +137,13 @@ do ii = 1, 2
 
 enddo
 
+do iel = 1, ncel
+  if (clip_k_id.ge.0) &
+    cpro_k_clipped(iel) = 0.d0
+  if (clip_e_id.ge.0) &
+    cpro_e_clipped(iel) = 0.d0
+enddo
+
 !===============================================================================
 ! ---> Detection des valeurs hors norme "physiques"
 !       uniquement pour avertissement
@@ -133,14 +157,18 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
     xkm = 1296.d0*sqrt(cmu)/almax**2
     xepm = 46656.d0*cmu/almax**4
     iclpke = 0
-    do iel=1,ncel
+    do iel= 1, ncel
       xk = cvar_k(iel)
       xe = cvar_ep(iel)
       xkmin = xkm * (viscl(iel) / crom(iel))**2
       xepmin = xepm * (viscl(iel) / crom(iel))**3
       if (xk.le.xkmin.or.xe.le.xepmin) then
         if(iclkep.eq.1) then
+          if (clip_k_id.ge.0) &
+            cpro_k_clipped(iel) = xkmin - xk
           cvar_k(iel)  = xkmin
+          if (clip_e_id.ge.0) &
+            cpro_e_clipped(iel) = xepmin - xe
           cvar_ep(iel) = xepmin
         endif
         iclpke = iclpke + 1
@@ -158,7 +186,11 @@ if (iwarnk.ge.2.or.iclkep.eq.1) then
       if (xk.le.xkmin.or.xe.le.xepmin) then
         if (iclkep.eq.1) then
           cvar_k(iel)  = xkmin
+          if (clip_k_id.ge.0) &
+            cpro_k_clipped(iel) = xkmin - xk
           cvar_ep(iel) = xepmin
+          if (clip_e_id.ge.0) &
+            cpro_e_clipped(iel) = xepmin - xe
         endif
         iclpke = iclpke + 1
       endif
@@ -200,17 +232,25 @@ if (iclkep.eq.0) then
     xe = cvar_ep(iel)
     if (abs(xk).le.epz2) then
       iclpk2 = iclpk2 + 1
+      if (clip_k_id.ge.0) &
+        cpro_k_clipped(iel) = epz2 - cvar_k(iel)
       cvar_k(iel) = max(cvar_k(iel),epz2)
     elseif(xk.le.0.d0) then
       iclpk2 = iclpk2 + 1
+      if (clip_k_id.ge.0) &
+        cpro_k_clipped(iel) = -xk
       cvar_k(iel) = -xk
     endif
     if (abs(xe).le.epz2) then
       iclpe2 = iclpe2 + 1
-      cvar_ep(iel) = max(cvar_ep(iel),epz2)
+      if (clip_e_id.ge.0) &
+        cpro_e_clipped(iel) = epz2 - cvar_ep(iel)
+      cvar_ep(iel) = max(cvar_ep(iel), epz2)
     elseif(xe.le.0.d0) then
       iclpe2 = iclpe2 + 1
-      cvar_ep(iel) = -xe
+      if (clip_e_id.ge.0) &
+        cpro_e_clipped(iel) = - xe
+      cvar_ep(iel) = - xe
     endif
   enddo
 
