@@ -577,6 +577,48 @@ cs_post_define_edges_mesh(int        mesh_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Associate a writer to a postprocessing mesh.
+ *
+ * This function must be called during the postprocessing output definition
+ * stage, before any output actually occurs.
+ *
+ * If called with a non-existing mesh or writer id, or if the writer is
+ * already associated, no setting is changed, and this function
+ * returns silently.
+ *
+ * \param[in]  mesh_id      id of mesh to define
+ *                          (< 0 reserved, > 0 for user)
+ * \param[in]  writer_id    id of writer to associate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_attach_writer(int  mesh_id,
+                           int  writer_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief De-associate a writer from a postprocessing mesh.
+ *
+ * This function must be called during the postprocessing output definition
+ * stage, before any output actually occurs.
+ *
+ * If called with a non-existing mesh or writer id, or if the writer was not
+ * previously associated, no setting is changed, and this function
+ * returns silently.
+ *
+ * \param[in]  mesh_id      id of mesh to define
+ *                          (< 0 reserved, > 0 for user)
+ * \param[in]  writer_id    id of writer to associate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_detach_writer(int  mesh_id,
+                           int  writer_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get a postprocessing meshes entity presence flag.
  *
  * This flag is an array of 5 integers, indicating the presence of elements
