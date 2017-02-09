@@ -1046,13 +1046,6 @@ cs_at_opt_interp_read_file(char const           filename[50],
       for (int kk = 0; kk < ms->dim; kk++)
         _n_readable_measures_c[kk] = 0;
 
-      /* read again components to skip the line */
-
-      for (int kk = 0; kk < ms->dim-1; kk++) {
-        fscanf(fichier, "%i ", &ms->comp_ids[kk]);
-      }
-      fscanf(fichier, "%i", &ms->comp_ids[ms->dim-1]);
-
       for (int ii = 0; ii < n_obs; ii++) {
 #if _OI_DEBUG_
         bft_printf("    ");
@@ -1540,8 +1533,8 @@ cs_at_opt_interp_get_active_obs(cs_measures_set_t   *ms,
       /* stop if no active obs */
 
       if (n_active_obs[kk] == 0) {
+        int ll = ms->comp_ids[kk];
         for (cs_lnum_t c_id = 0; c_id < mesh->n_cells ; c_id++) {
-          int ll = ms->comp_ids[kk];
           f_oia->val[f_oia->dim*c_id+ll] = 0.;
         }
 #if _OI_DEBUG_
@@ -1649,13 +1642,14 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
     int obs_id = ao_idx[ii]; /* retrieve obs id */
     int r_id0 = ig->rank_connect[obs_id];
 
-    if (cs_glob_rank_id < 0 || cs_glob_rank_id == r_id0)
+    if (cs_glob_rank_id < 0 || cs_glob_rank_id == r_id0) {
       inc[ii] = ms->measures[oi->active_time[m_dim*obs_id+mc_id]];
 
-    for (cs_lnum_t jj = proj_idx[obs_id]; jj < proj_idx[obs_id+1]; jj++) {
-      cs_lnum_t c_id1 = proj_c_ids[jj];
-      inc[ii] -= ((proj + stride*jj)[mc_id])
-                *f->val_pre[c_id1*f_dim + ms->comp_ids[mc_id]];
+      for (cs_lnum_t jj = proj_idx[obs_id]; jj < proj_idx[obs_id+1]; jj++) {
+        cs_lnum_t c_id1 = proj_c_ids[jj];
+        inc[ii] -= ((proj + stride*jj)[mc_id])
+                  *f->val_pre[c_id1*f_dim + ms->comp_ids[mc_id]];
+      }
     }
   }
 
@@ -1687,7 +1681,7 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
                                                    mc_id);
     BFT_MALLOC(alu, a_size, cs_real_t);
 
-    cs_math_fact_lu(1, a_size, a, alu);
+    cs_math_fact_lu(1, a_l_size, a, alu);
     BFT_FREE(a);
 
 #if _OI_DEBUG_
@@ -1717,7 +1711,7 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
 
   /* Forward and backward */
 
-  cs_math_fw_and_bw_lu(alu, a_size, vect, zeros, inc);
+  cs_math_fw_and_bw_lu(alu, a_l_size, vect, zeros, inc);
 
   BFT_FREE(alu);
   BFT_FREE(zeros);
