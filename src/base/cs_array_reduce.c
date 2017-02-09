@@ -1387,11 +1387,6 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
 
     for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-      for (cs_lnum_t j = 0; j < dim; j++) {
-        lmin[j] = HUGE_VAL;
-        lmax[j] = -HUGE_VAL;
-      }
-
       double s[18];
       for (cs_lnum_t j = 0; j < dim2; j++)
         s[j] = 0.;

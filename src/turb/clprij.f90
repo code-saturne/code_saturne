@@ -20,33 +20,29 @@
 
 !-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
+
+!> \function clprij
+!> \brief Clipping of the turbulent Reynods stress tensor and the turbulent
+!> dissipation (segregated version).
+!>
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     iclip         indicator = 0 if viscl0 is used
+!>                              otherwise viscl is used.
+!______________________________________________________________________________
+
 subroutine clprij &
  ( ncelet , ncel   ,                                              &
    iclip  )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CLIPPING DE Rij ET EPSILON
-
-!-------------------------------------------------------------------------------
-! Arguments
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! e  ! <-- ! nombre de cellules                             !
-! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas les champs au  !
-!                  !    !     !     pas de temps precedent (inivar)            !
-!                  !    !     !            sinon on peut (turrij)              !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -265,55 +261,30 @@ enddo
 return
 
 end subroutine clprij
-!-------------------------------------------------------------------------------
-
-! This file is part of Code_Saturne, a general-purpose CFD tool.
-!
-! Copyright (C) 1998-2017 EDF S.A.
-!
-! This program is free software; you can redistribute it and/or modify it under
-! the terms of the GNU General Public License as published by the Free Software
-! Foundation; either version 2 of the License, or (at your option) any later
-! version.
-!
-! This program is distributed in the hope that it will be useful, but WITHOUT
-! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-! FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-! details.
-!
-! You should have received a copy of the GNU General Public License along with
-! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
-! Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
+
+!> \function clprij2
+!> \brief Clipping of the turbulent Reynods stress tensor and the turbulent
+!> dissipation (coupled version).
+!>
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     ncelet        number of extended (real + ghost) cells
+!> \param[in]     ncel          number of cells
+!> \param[in]     iclip         indicator = 0 if viscl0 is used
+!>                              otherwise viscl is used.
+!______________________________________________________________________________
 
 subroutine clprij2 &
  ( ncelet , ncel   ,                                              &
    iclip  )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CLIPPING DE Rij ET EPSILON
-
-!-------------------------------------------------------------------------------
-! Arguments
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! e  ! <-- ! nombre de cellules                             !
-! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas les champs au  !
-!                  !    !     !     pas de temps precedent (inivar)            !
-!                  !    !     !            sinon on peut (turrij)              !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -341,7 +312,7 @@ integer          iclip
 integer          iel, ivar, ivar1, ivar2, isou, icltot, iclpep(1)
 integer          is_clipped
 integer          iclrij(6),iclrij_max(6), iclep_max(1)
-integer          kclipp, clip_id
+integer          kclipp, clip_e_id, clip_r_id
 
 double precision vmin(7), vmax(7), rijmin, varrel, und0, epz2,cvar_var1, cvar_var2
 double precision eigen_min
@@ -351,6 +322,7 @@ double precision tensor(3,3)
 double precision, dimension(:), pointer :: cvar_ep, cvara_ep
 double precision, dimension(:,:), pointer :: cvar_rij, cvara_rij
 double precision, dimension(:,:), pointer :: cpro_rij_clipped
+double precision, dimension(:), pointer :: cpro_eps_clipped
 
 !===============================================================================
 
@@ -369,16 +341,20 @@ call field_get_val_v(ivarfl(irij), cvar_rij)
 
 call field_get_key_id("clipping_id", kclipp)
 
-call field_get_key_int(ivarfl(irij), kclipp, clip_id)
-if (clip_id.ge.0) then
-  call field_get_val_v(clip_id, cpro_rij_clipped)
+! Postprocess clippings?
+call field_get_key_int(ivarfl(iep), kclipp, clip_e_id)
+if (clip_e_id.ge.0) then
+  call field_get_val_s(clip_e_id, cpro_eps_clipped)
 endif
 
+call field_get_key_int(ivarfl(irij), kclipp, clip_r_id)
+if (clip_r_id.ge.0) then
+  call field_get_val_v(clip_r_id, cpro_rij_clipped)
+endif
 
 !===============================================================================
-!  ---> Stockage Min et Max pour listing
+!  Compute and store Min Max values for the listing
 !===============================================================================
-
 
 do isou = 1, 7
   vmin(isou) =  grand
@@ -388,12 +364,14 @@ do isou = 1, 7
       iclrij_max(isou) = 0
       vmin(isou) = min(vmin(isou),cvar_rij(isou,iel))
       vmax(isou) = max(vmax(isou),cvar_rij(isou,iel))
-      if (clip_id.ge.0) &
+      if (clip_r_id.ge.0) &
         cpro_rij_clipped(isou, iel) = 0.d0
     else
       iclep_max(1) = 0
       vmin(isou) = min(vmin(isou),cvar_ep(iel))
       vmax(isou) = max(vmax(isou),cvar_ep(iel))
+      if (clip_e_id.ge.0) &
+        cpro_eps_clipped(iel) = 0.d0
     endif
   enddo
 enddo
@@ -421,7 +399,7 @@ do iel = 1, ncel
     do isou = 1, 3
       if (cvar_rij(isou,iel).le.epz2) then
         is_clipped = 1
-        if (clip_id.ge.0) &
+        if (clip_r_id.ge.0) &
           cpro_rij_clipped(isou, iel) = abs(cvar_rij(isou,iel)-epz2)
         cvar_rij(isou,iel) = epz2
         iclrij(isou) = iclrij(isou) + 1
@@ -431,9 +409,13 @@ do iel = 1, ncel
     ! Epsilon
     if (abs(cvar_ep(iel)).le.epz2) then
       iclpep(1) = iclpep(1) + 1
-      cvar_ep(iel) = max(cvar_ep(iel),epz2)
+      if (clip_e_id.ge.0) &
+        cpro_eps_clipped(iel) = abs(cvar_ep(iel) - epz2)
+      cvar_ep(iel) = max(cvar_ep(iel), epz2)
     elseif(cvar_ep(iel).le.0.d0) then
       iclpep(1) = iclpep(1) + 1
+      if (clip_e_id.ge.0) &
+        cpro_eps_clipped(iel) = 2.d0*abs(cvar_ep(iel))
       cvar_ep(iel) = abs(cvar_ep(iel))
     endif
 
@@ -444,13 +426,13 @@ do iel = 1, ncel
     do isou = 1, 3
       if (abs(cvar_rij(isou,iel)).le.epz2) then
         is_clipped = 1
-        if (clip_id.ge.0) &
+        if (clip_r_id.ge.0) &
           cpro_rij_clipped(isou, iel) = abs(cvar_rij(isou,iel)-epz2)
         cvar_rij(isou,iel) = max(cvar_rij(isou,iel),epz2)
         iclrij(isou) = iclrij(isou) + 1
       elseif(cvar_rij(isou,iel).le.0.d0) then
         is_clipped = 1
-        if (clip_id.ge.0) &
+        if (clip_r_id.ge.0) &
           cpro_rij_clipped(isou, iel) = 2.d0 * abs(cvar_rij(isou,iel))
         cvar_rij(isou,iel) = min(abs(cvar_rij(isou,iel)), varrel*abs(cvara_rij(isou,iel)))
         iclrij(isou) = iclrij(isou) + 1
@@ -460,9 +442,13 @@ do iel = 1, ncel
     ! Epsilon
     if (abs(cvar_ep(iel)).lt.epz2) then
       iclpep(1) = iclpep(1) + 1
+      if (clip_e_id.ge.0) &
+        cpro_eps_clipped(iel) = abs(cvar_ep(iel) - epz2)
       cvar_ep(iel) = max(cvar_ep(iel),epz2)
     elseif(cvar_ep(iel).le.0.d0) then
       iclpep(1) = iclpep(1) + 1
+      if (clip_e_id.ge.0) &
+        cpro_eps_clipped(iel) = 2.d0*abs(cvar_ep(iel))
       cvar_ep(iel) = min(abs(cvar_ep(iel)), varrel*abs(cvara_ep(iel)))
     endif
 
@@ -485,7 +471,7 @@ do iel = 1, ncel
     rijmin = sqrt(cvar_var1*cvar_var2)
     if (rijmin.lt.abs(cvar_rij(isou,iel))) then
       is_clipped = 1
-      if (clip_id.ge.0) &
+      if (clip_r_id.ge.0) &
         cpro_rij_clipped(isou, iel) = cvar_rij(isou,iel)
       cvar_rij(isou,iel) = sign(und0,cvar_rij(isou,iel)) &
                          * rijmin / (1.d0 + epzero)
@@ -510,7 +496,7 @@ do iel = 1, ncel
   if (eigen_min .LE. 0.0d0) then
     is_clipped = 1
     do isou = 1, 3
-      if (clip_id.ge.0) &
+      if (clip_r_id.ge.0) &
         cpro_rij_clipped(isou, iel) = cvar_rij(isou,iel) * epzero - eigen_min
       cvar_rij(isou,iel) = cvar_rij(isou,iel)*(1.0d0+epzero) - eigen_min
       iclrij(isou) = iclrij(isou) + 1

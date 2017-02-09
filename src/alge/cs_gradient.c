@@ -500,83 +500,65 @@ _l2_norm_3(cs_lnum_t              n_elts,
 }
 
 /*----------------------------------------------------------------------------
- * Update direction vector for lsq gradient taking into account the weight
- * coefficients.
- * At this step we recompute inv_kf to avoid to store kf at the internal faces
+ * Update R.H.S. for lsq gradient taking into account the weight coefficients.
  *
  * parameters:
- *   wi   <-- Weight coefficient of cell i
- *   wj   <-- Weight coefficient of cell j
- *   w    <-> direction vector
- *   a    <-- J'F/I'J'
+ *   wi     <-- Weight coefficient of cell i
+ *   wj     <-- Weight coefficient of cell j
+ *   p_diff <-- R.H.S.
+ *   dc     <-- R.H.S.
+ *   resi   --> Updated R.H.S. for cell i
+ *   resj   --> Updated R.H.S. for cell j
  *----------------------------------------------------------------------------*/
 
 static inline void
-_compute_ani_dc(double wi[],
-                double wj[],
-                double w[],
-                double a)
+_compute_ani_weighting(double wi[],
+                       double wj[],
+                       double p_diff,
+                       double d[],
+                       double a,
+                       double resi[],
+                       double resj[])
 {
   int ii;
+  double ki_d[3] = {0., 0., 0.};
+  double kj_d[3] = {0., 0., 0.};
+
   cs_real_6_t sum;
   cs_real_6_t inv_wi;
   cs_real_6_t inv_wj;
-  cs_real_33_t inv_kf;
-  double _w[3];
+  double _d[3];
 
   for (ii = 0; ii < 6; ii++)
     sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
 
   cs_math_sym_33_inv_cramer(wi,
                             inv_wi);
+
   cs_math_sym_33_inv_cramer(wj,
                             inv_wj);
 
-  cs_math_sym_33_double_product(inv_wi,
-                                sum,
-                                inv_wj,
-                                inv_kf);
-  for (ii = 0; ii < 3; ii++)
-    _w[ii] = w[0]*inv_kf[ii][0]
-           + w[1]*inv_kf[ii][1]
-           + w[2]*inv_kf[ii][2];
+  cs_math_sym_33_3_product(inv_wj,
+                           d,
+                           _d);
+  cs_math_sym_33_3_product(sum,
+                           _d,
+                           ki_d);
+  cs_math_sym_33_3_product(inv_wi,
+                           d,
+                           _d);
+  cs_math_sym_33_3_product(sum,
+                           _d,
+                           kj_d);
 
-  for (ii = 0; ii < 3; ii++)
-    w[ii] = _w[ii];
-}
-
-/*----------------------------------------------------------------------------
- * Update R.H.S. for lsq gradient taking into account the weight coefficients.
- *
- * parameters:
- *   wi   <-- Weight coefficient of cell i
- *   wj   <-- Weight coefficient of cell j
- *   w    <-- R.H.S.
- *   resi --> Updated R.H.S. for cell i
- *   resj --> Updated R.H.S. for cell j
- *----------------------------------------------------------------------------*/
-
-static inline void
-_compute_ani_weighting(double wi[],
-                       double wj[],
-                       double w[],
-                       double resi[],
-                       double resj[])
-{
-  int ii;
-  double _resi[3] = {0., 0., 0.};
-  double _resj[3] = {0., 0., 0.};
-
-  cs_math_sym_33_3_product(wi,
-                           w,
-                           _resi);
-  cs_math_sym_33_3_product(wj,
-                           w,
-                           _resj);
+  /* 1 / ||Ki. K_f^-1. IJ||^2 */
+  cs_real_t normi = 1. / cs_math_3_dot_product(ki_d, ki_d);
+  /* 1 / ||Kj. K_f^-1. IJ||^2 */
+  cs_real_t normj = 1. / cs_math_3_dot_product(kj_d, kj_d);
 
   for (ii = 0; ii < 3; ii++) {
-    resi[ii] += _resi[ii];
-    resj[ii] += _resj[ii];
+    resi[ii] += p_diff * ki_d[ii] * normi;
+    resj[ii] += p_diff * kj_d[ii] * normj;
   }
 }
 
@@ -587,29 +569,25 @@ _compute_ani_weighting(double wi[],
  * parameters:
  *   wi     <-- Weight coefficient of cell i
  *   wj     <-- Weight coefficient of cell j
- *   w      <-> R.H.S.
- *   a      <-- J'F/I'J'
- *   resi   --> Updated vector for cell i
- *   resj   --> Updated vector for cell j
- *   inv_kf --> Inverse of the face viscosity
+ *   d      <-> IJ direction
+ *   a      <-- geometric weight J'F/I'J'
+ *   ki_d   --> Updated vector for cell i
+ *   kj_d   --> Updated vector for cell j
  *----------------------------------------------------------------------------*/
 
 static inline void
 _compute_ani_weighting_cocg(double wi[],
                             double wj[],
-                            double w[],
+                            double d[],
                             double a,
-                            double resi[],
-                            double resj[],
-                            cs_real_33_t inv_kf)
+                            double ki_d[],
+                            double kj_d[])
 {
   int ii;
-  double _resi[3] = {0., 0., 0.};
-  double _resj[3] = {0., 0., 0.};
   cs_real_6_t sum;
   cs_real_6_t inv_wi;
   cs_real_6_t inv_wj;
-  double _w[3];
+  double _d[3];
 
   for (ii = 0; ii < 6; ii++)
     sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
@@ -619,29 +597,22 @@ _compute_ani_weighting_cocg(double wi[],
   cs_math_sym_33_inv_cramer(wj,
                             inv_wj);
 
-  cs_math_sym_33_double_product(inv_wi,
-                                sum,
-                                inv_wj,
-                                inv_kf);
-  for (ii = 0; ii < 3; ii++)
-    _w[ii] = w[0]*inv_kf[ii][0]
-           + w[1]*inv_kf[ii][1]
-           + w[2]*inv_kf[ii][2];
+  /* Note: K_i.K_f^-1 = SUM.K_j^-1
+   *       K_j.K_f^-1 = SUM.K_i^-1
+   * So: K_i d = SUM.K_j^-1.IJ */
 
-  for (ii = 0; ii < 3; ii++)
-    w[ii] = _w[ii];
-
-  cs_math_sym_33_3_product(wi,
-                           w,
-                           _resi);
-  cs_math_sym_33_3_product(wj,
-                           w,
-                           _resj);
-
-  for (ii = 0; ii < 3; ii++) {
-    resi[ii] += _resi[ii];
-    resj[ii] += _resj[ii];
-  }
+  cs_math_sym_33_3_product(inv_wj,
+                           d,
+                           _d);
+  cs_math_sym_33_3_product(sum,
+                           _d,
+                           ki_d);
+  cs_math_sym_33_3_product(inv_wi,
+                           d,
+                           _d);
+  cs_math_sym_33_3_product(sum,
+                           _d,
+                           kj_d);
 }
 
 /*----------------------------------------------------------------------------
@@ -723,10 +694,9 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t              *m,
 
         cs_real_t pond = weight[face_id];
 
-        cs_real_t dc_i[3] = {0., 0., 0.};
-        cs_real_t dc_j[3] = {0., 0., 0.};
+        cs_real_t dc_i[3];
+        cs_real_t dc_j[3];
         cs_real_t dc[3];
-        cs_real_t inv_kf[3][3];
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -736,18 +706,18 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t              *m,
                                     dc,
                                     pond,
                                     dc_i,
-                                    dc_j,
-                                    inv_kf);
+                                    dc_j);
 
-        cs_real_t uddij2 = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        cs_real_t i_dci = 1. / (dc_i[0]*dc_i[0] + dc_i[1]*dc_i[1] + dc_i[2]*dc_i[2]);
+        cs_real_t i_dcj = 1. / (dc_j[0]*dc_j[0] + dc_j[1]*dc_j[1] + dc_j[2]*dc_j[2]);
 
         for (cs_lnum_t ll = 0; ll < 3; ll++) {
           for (cs_lnum_t mm = 0; mm < 3; mm++)
-            cocg[ii][ll][mm] += dc_i[mm] * dc_i[ll] * uddij2;
+            cocg[ii][ll][mm] += dc_i[mm] * dc_i[ll] * i_dci;
         }
         for (cs_lnum_t ll = 0; ll < 3; ll++) {
           for (cs_lnum_t mm = 0; mm < 3; mm++)
-            cocg[jj][ll][mm] += dc_j[mm] * dc_j[ll] * uddij2;
+            cocg[jj][ll][mm] += dc_j[mm] * dc_j[ll] * i_dcj;
         }
 
       } /* loop on faces */
@@ -2704,28 +2674,23 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
           if (c_weight != NULL) {
             if (w_stride == 6) {
-              _compute_ani_dc(&c_weight[ii*6],
-                              &c_weight[jj*6],
-                              dc,
-                              pond);
-            }
-          }
+              /* (P_j - P_i)*/
+              cs_real_t p_diff = (rhsv[jj][3] - rhsv[ii][3]);
 
-          pfac =   (rhsv[jj][3] - rhsv[ii][3])
-                 / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-          for (ll = 0; ll < 3; ll++)
-            fctb[ll] = dc[ll] * pfac;
-
-          if (c_weight != NULL) {
-            if (w_stride == 6) {
               _compute_ani_weighting(&c_weight[ii*6],
                                      &c_weight[jj*6],
-                                     fctb,
+                                     p_diff,
+                                     dc,
+                                     pond,
                                      &rhsv[ii][0],
                                      &rhsv[jj][0]);
             }
             else {
+              pfac =   (rhsv[jj][3] - rhsv[ii][3])
+                / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+              for (ll = 0; ll < 3; ll++)
+                fctb[ll] = dc[ll] * pfac;
+
               cs_real_t denom = 1. / (  pond       *c_weight[ii]
                                       + (1. - pond)*c_weight[jj]);
 
@@ -2737,6 +2702,13 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
             }
           }
           else {
+            /* (P_j - P_i) / ||d||^2 */
+            pfac =   (rhsv[jj][3] - rhsv[ii][3])
+              / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+            for (ll = 0; ll < 3; ll++)
+              fctb[ll] = dc[ll] * pfac;
+
             for (ll = 0; ll < 3; ll++)
               rhsv[ii][ll] += fctb[ll];
 
@@ -2831,7 +2803,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   /* Case with hydrostatic pressure */
   /*--------------------------------*/
 
-  else {  /* if hyd_p_flag != 0 */
+  else {  /* if hyd_p_flag == 1 */
 
     /* Contribution from interior faces */
 

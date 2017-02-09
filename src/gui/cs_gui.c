@@ -5069,8 +5069,8 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
           _gwf_parameter_value(z_id_str, "ks_yy",     &ks_yy);
           _gwf_parameter_value(z_id_str, "ks_zz",     &ks_zz);
           _gwf_parameter_value(z_id_str, "ks_xy",     &ks_xy);
-          _gwf_parameter_value(z_id_str, "ks_xz",     &ks_xz);
           _gwf_parameter_value(z_id_str, "ks_yz",     &ks_yz);
+          _gwf_parameter_value(z_id_str, "ks_xz",     &ks_xz);
         }
 
         /* unsaturated zone considered */
@@ -5095,8 +5095,8 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
                 permeability_field_v[iel][1] = ks_yy;
                 permeability_field_v[iel][2] = ks_zz;
                 permeability_field_v[iel][3] = ks_xy;
-                permeability_field_v[iel][4] = ks_xz;
-                permeability_field_v[iel][5] = ks_yz;
+                permeability_field_v[iel][4] = ks_yz;
+                permeability_field_v[iel][5] = ks_xz;
               }
             }
             else {
@@ -5120,8 +5120,8 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
                 permeability_field_v[iel][1] = perm * ks_yy;
                 permeability_field_v[iel][2] = perm * ks_zz;
                 permeability_field_v[iel][3] = perm * ks_xy;
-                permeability_field_v[iel][4] = perm * ks_xz;
-                permeability_field_v[iel][5] = perm * ks_yz;
+                permeability_field_v[iel][4] = perm * ks_yz;
+                permeability_field_v[iel][5] = perm * ks_xz;
               }
             }
           }
@@ -5138,8 +5138,8 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
               permeability_field_v[iel][1] = ks_yy;
               permeability_field_v[iel][2] = ks_zz;
               permeability_field_v[iel][3] = ks_xy;
-              permeability_field_v[iel][4] = ks_xz;
-              permeability_field_v[iel][5] = ks_yz;
+              permeability_field_v[iel][4] = ks_yz;
+              permeability_field_v[iel][5] = ks_xz;
             }
           }
         }
@@ -5196,7 +5196,7 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
                           _("Error: can not find the required symbol: %s\n %s\n %s\n"),
                           "capacity, saturation,",
                           "          permeability[XX], permeability[YY], permeability[ZZ]",
-                          "          permeability[XY], permeability[XZ] or permeability[YZ]");
+                          "          permeability[XY], permeability[YZ] or permeability[XZ]");
           }
 
           for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
@@ -5218,9 +5218,9 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
               permeability_field_v[iel][3] = mei_tree_lookup(ev_formula,
                                                              "permeability[XY]");
               permeability_field_v[iel][4] = mei_tree_lookup(ev_formula,
-                                                             "permeability[XZ]");
-              permeability_field_v[iel][5] = mei_tree_lookup(ev_formula,
                                                              "permeability[YZ]");
+              permeability_field_v[iel][5] = mei_tree_lookup(ev_formula,
+                                                             "permeability[XZ]");
             }
             else
               permeability_field[iel] = mei_tree_lookup(ev_formula,

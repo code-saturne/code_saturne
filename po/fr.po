@@ -6560,8 +6560,8 @@ msgstr ""
 "0 pour le test de pente, 1 pour pas de test de pente, 2 pour limiteur min/"
 "max et 3 pour limiteur NVD/TVD"
 
-msgid "[0.;1.] (1-upwind proportion)"
-msgstr "[0.;1.] (proportion d'upwind (1 : upwind))"
+msgid "[0.;1.] (1-upwind proportion (O: upwind))"
+msgstr "[0.;1.] (1 - proportion d'upwind (0 : upwind))"
 
 msgid "Reconstruction mode"
 msgstr "Mode de reconstruction"

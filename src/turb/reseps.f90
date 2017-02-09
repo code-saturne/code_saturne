@@ -335,7 +335,7 @@ endif
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                          &
-              + vcopt%istat*(crom(iel)/dt(iel))*volume(iel)
+              + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
 enddo
 
 !===============================================================================
@@ -405,16 +405,16 @@ if (iturb.eq.32) then
 
     ! Production (explicit)
     ! Compute of C_eps_1'
-    w1(iel) = cromo(iel)*volume(iel)*                                 &
+    w1(iel) = cromo(iel)*cell_f_vol(iel)*                                 &
               ce1*(1.d0+xa1*(1.d0-alpha3)*prdeps)*trprod/xttdrb
 
 
     ! Dissipation (implicit)
-    smbr(iel) = smbr(iel) - crom(iel)*volume(iel)*                    &
+    smbr(iel) = smbr(iel) - crom(iel)*cell_f_vol(iel)*                    &
                              ceps2*cvara_ep(iel)/xttdrb
 
     rovsdt(iel) = rovsdt(iel)                                         &
-                + ceps2*crom(iel)*volume(iel)*thetap/xttdrb
+                + ceps2*crom(iel)*cell_f_vol(iel)*thetap/xttdrb
   enddo
 
 ! SSG and LRR
@@ -429,14 +429,16 @@ else
       trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
     endif
     xttke  = trrij/cvara_ep(iel)
-    ! Production (explicit)
-    w1(iel) = cromo(iel)*volume(iel)*ce1/xttke*trprod
+    ! Production (explicit, a part might be implicit)
+    rovsdt(iel) = rovsdt(iel)                                        &
+                + max(- cromo(iel)*cell_f_vol(iel)*ce1*trprod/trrij, 0.d0)
+    w1(iel) = cromo(iel)*cell_f_vol(iel)*ce1/xttke*trprod
 
     ! Dissipation (implicit)
     smbr(iel) = smbr(iel)                                            &
-              - crom(iel)*volume(iel)*ceps2*cvara_ep(iel)**2/trrij
+              - crom(iel)*cell_f_vol(iel)*ceps2*cvara_ep(iel)**2/trrij
     rovsdt(iel) = rovsdt(iel)                                        &
-                + ceps2*crom(iel)*volume(iel)/xttke*thetap
+                + ceps2*crom(iel)*cell_f_vol(iel)/xttke*thetap
   enddo
 
 endif
@@ -466,12 +468,12 @@ if (igrari.eq.1) then
     w7(iel) = 0.d0
   enddo
 
+  ! Note that w7 is positive.
   if(irijco.eq.1) then
     call rijtheps(nscal, gradro, w7)
   else
     call rijthe(nscal, ivar, gradro, w7)
   endif
-  !==========
 
   ! Extrapolation of source terms (2nd order in time)
   if (st_prv_id.ge.0) then
