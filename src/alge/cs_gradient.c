@@ -512,22 +512,22 @@ _l2_norm_3(cs_lnum_t              n_elts,
  *----------------------------------------------------------------------------*/
 
 static inline void
-_compute_ani_weighting(double wi[],
-                       double wj[],
-                       double p_diff,
-                       double d[],
-                       double a,
-                       double resi[],
-                       double resj[])
+_compute_ani_weighting(const cs_real_t  wi[],
+                       const cs_real_t  wj[],
+                       const cs_real_t  p_diff,
+                       const cs_real_t  d[],
+                       cs_real_t        a,
+                       cs_real_t        resi[],
+                       cs_real_t        resj[])
 {
   int ii;
-  double ki_d[3] = {0., 0., 0.};
-  double kj_d[3] = {0., 0., 0.};
+  cs_real_t ki_d[3] = {0., 0., 0.};
+  cs_real_t kj_d[3] = {0., 0., 0.};
 
   cs_real_6_t sum;
   cs_real_6_t inv_wi;
   cs_real_6_t inv_wj;
-  double _d[3];
+  cs_real_t _d[3];
 
   for (ii = 0; ii < 6; ii++)
     sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
@@ -569,25 +569,25 @@ _compute_ani_weighting(double wi[],
  * parameters:
  *   wi     <-- Weight coefficient of cell i
  *   wj     <-- Weight coefficient of cell j
- *   d      <-> IJ direction
+ *   d      <-- IJ direction
  *   a      <-- geometric weight J'F/I'J'
  *   ki_d   --> Updated vector for cell i
  *   kj_d   --> Updated vector for cell j
  *----------------------------------------------------------------------------*/
 
 static inline void
-_compute_ani_weighting_cocg(double wi[],
-                            double wj[],
-                            double d[],
-                            double a,
-                            double ki_d[],
-                            double kj_d[])
+_compute_ani_weighting_cocg(const cs_real_t  wi[],
+                            const cs_real_t  wj[],
+                            const cs_real_t  d[],
+                            cs_real_t        a,
+                            cs_real_t        ki_d[],
+                            cs_real_t        kj_d[])
 {
   int ii;
   cs_real_6_t sum;
   cs_real_6_t inv_wi;
   cs_real_6_t inv_wj;
-  double _d[3];
+  cs_real_t _d[3];
 
   for (ii = 0; ii < 6; ii++)
     sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
@@ -623,7 +623,7 @@ _compute_ani_weighting_cocg(double wi[],
  *
  * parameters:
  *   m         <--  mesh
- *   c_weight  <--  weigthing coefficients
+ *   c_weight  <--  weighting coefficients
  *   fvq       <--  mesh quantities
  *   cpl       <--  pointer to coupling entity
  *   cocgb     -->  weighted cocgb
@@ -632,8 +632,8 @@ _compute_ani_weighting_cocg(double wi[],
 
 static void
 _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t              *m,
-                                  cs_real_t                    *c_weight,
-                                  cs_mesh_quantities_t         *fvq,
+                                  const cs_real_t              *c_weight,
+                                  const cs_mesh_quantities_t   *fvq,
                                   const cs_internal_coupling_t *cpl,
                                   cs_real_33_t                 *cocgb,
                                   cs_real_33_t                 *cocg)
@@ -902,7 +902,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
                           int                    verbosity,
                           int                    idimtr,
                           cs_real_t              climgp,
-                          cs_real_t              var[],
+                          const cs_real_t        var[],
                           cs_real_3_t  *restrict grad)
 {
   cs_gnum_t  t_n_clip;
@@ -935,8 +935,6 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
   /* Synchronize variable */
 
   if (halo != NULL) {
-
-    cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, var);
 
     /* Exchange for the gradients. Not useful for working array */
 
@@ -1378,7 +1376,7 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
                                 cs_mesh_quantities_t        *fvq,
                                 int                          idimtr,
                                 int                          hyd_p_flag,
-                                double                       inc,
+                                cs_real_t                    inc,
                                 const cs_real_3_t            f_ext[],
                                 const cs_real_t              coefap[],
                                 const cs_real_t              coefbp[],
@@ -1675,7 +1673,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
                             const cs_internal_coupling_t   *cpl,
                             int                             idimtr,
                             int                             hyd_p_flag,
-                            double                          inc,
+                            cs_real_t                       inc,
                             const cs_real_3_t               f_ext[],
                             const cs_real_t                 coefap[],
                             const cs_real_t                 coefbp[],
@@ -1972,9 +1970,9 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
                                int                          idimtr,
                                int                          hyd_p_flag,
                                int                          verbosity,
-                               double                       inc,
-                               double                       epsrgp,
-                               double                       extrap,
+                               cs_real_t                    inc,
+                               cs_real_t                    epsrgp,
+                               cs_real_t                    extrap,
                                const cs_real_3_t            f_ext[],
                                const cs_real_t              coefap[],
                                const cs_real_t              coefbp[],
@@ -2436,12 +2434,12 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                      int                             hyd_p_flag,
                      int                             w_stride,
                      cs_real_t                       inc,
-                     double                          extrap,
+                     cs_real_t                       extrap,
                      const cs_real_3_t               f_ext[],
                      const cs_real_t                 coefap[],
                      const cs_real_t                 coefbp[],
                      const cs_real_t                 pvar[],
-                     cs_real_t                       c_weight[],
+                     const cs_real_t       *restrict c_weight,
                      cs_real_3_t           *restrict grad,
                      cs_real_4_t           *restrict rhsv)
 {
@@ -3843,7 +3841,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                            int                           inc,
                            int                           n_r_sweeps,
                            int                           verbosity,
-                           double                        epsrgp,
+                           cs_real_t                     epsrgp,
                            const cs_real_3_t   *restrict coefav,
                            const cs_real_33_t  *restrict coefbv,
                            const cs_real_3_t   *restrict pvar,
@@ -4814,7 +4812,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
                            int                           inc,
                            int                           n_r_sweeps,
                            int                           verbosity,
-                           double                        epsrgp,
+                           cs_real_t                     epsrgp,
                            const cs_real_6_t   *restrict coefat,
                            const cs_real_66_t  *restrict coefbt,
                            const cs_real_6_t   *restrict pvar,
@@ -5055,8 +5053,8 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 
 static void
 _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
-                             cs_mesh_quantities_t            *fvq,
-                             cs_internal_coupling_t          *cpl,
+                             const cs_mesh_quantities_t      *fvq,
+                             const cs_internal_coupling_t    *cpl,
                              int                              idimtr,
                              int                              hyd_p_flag,
                              const cs_real_3_t                f_ext[],
@@ -5335,8 +5333,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                            int                             idimtr,
                            int                             hyd_p_flag,
                            int                             verbosity,
-                           double                          inc,
-                           double                          epsrgp,
+                           cs_real_t                       inc,
+                           cs_real_t                       epsrgp,
                            const cs_real_3_t               f_ext[],
                            const cs_real_t                 coefap[],
                            const cs_real_t                 coefbp[],
@@ -5576,8 +5574,8 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
             cs_real_t pfacj = pfaci;
 
             cs_real_t ktpond = (c_weight == NULL) ?
-              weight[face_id] :                     // no cell weightening
-              weight[face_id]  * c_weight[cell_id1] // cell weightening active
+              weight[face_id] :                     // no cell weighting
+              weight[face_id]  * c_weight[cell_id1] // cell weighting active
                 / (      weight[face_id]  * c_weight[cell_id1]
                   + (1.0-weight[face_id]) * c_weight[cell_id2]);
 
