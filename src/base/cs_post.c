@@ -300,6 +300,8 @@ typedef struct {
   bool                    add_groups;    /* Add group information if present */
   bool                    post_domain;   /* Output domain number in parallel
                                             if true */
+  bool                    time_varying;  /* Time varying if associated writers
+                                            allow it */
 
   int                     n_writers;     /* Number of associated writers */
   int                    *writer_id;     /* Array of associated writer ids */
@@ -905,6 +907,37 @@ _cs_post_writer_id(const int  writer_id)
 }
 
 /*----------------------------------------------------------------------------
+ * Search for position in the array of writers of a writer with a given id,
+ * allowing the writer not to be present.
+ *
+ * parameters:
+ *   writer_id <-- id of writer
+ *
+ * returns:
+ *   position in the array of writers, or -1
+ *----------------------------------------------------------------------------*/
+
+static int
+_cs_post_writer_id_try(const int  writer_id)
+{
+  int  id;
+
+  cs_post_writer_t  *writer = NULL;
+
+  /* Search for requested writer */
+
+  for (id = 0; id < _cs_post_n_writers; id++) {
+    writer = _cs_post_writers + id;
+    if (writer->id == writer_id)
+      break;
+  }
+  if (id >= _cs_post_n_writers)
+    id = -1;
+
+  return id;
+}
+
+/*----------------------------------------------------------------------------
  * Search for position in the array of meshes of a mesh with a given id.
  *
  * parameters:
@@ -1004,6 +1037,86 @@ _lagrangian_needed(const cs_time_step_t  *ts)
 }
 
 /*----------------------------------------------------------------------------
+ * Update mesh attributes related to writer association.
+ *
+ * parameters:
+ *   post_mesh  <-> pointer to postprocessing mesh
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_mesh_writer_associations(cs_post_mesh_t  *post_mesh)
+{
+  int i, j;
+
+  /* Minimum and maximum time dependency flags initially inverted,
+     will be recalculated after mesh - writer associations */
+
+  if (post_mesh->time_varying)
+    post_mesh->mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
+  else
+    post_mesh->mod_flag_min = _cs_post_mod_flag_min;
+  post_mesh->mod_flag_max = FVM_WRITER_FIXED_MESH;
+
+  int   n_writers = post_mesh->n_writers;
+
+  if (post_mesh->ent_flag[3] == 0) { /* Non-Lagrangian mesh */
+
+    for (i = 0; i < n_writers; i++) {
+
+      fvm_writer_time_dep_t mod_flag;
+      int _writer_id = post_mesh->writer_id[i];
+      cs_post_writer_t  *writer = _cs_post_writers + _writer_id;
+
+      post_mesh->writer_id[i] = _writer_id;
+
+      if (writer->wd != NULL)
+        mod_flag = writer->wd->time_dep;
+      else
+        mod_flag = fvm_writer_get_time_dep(writer->writer);
+
+      if (mod_flag < post_mesh->mod_flag_min)
+        post_mesh->mod_flag_min = mod_flag;
+      if (mod_flag > post_mesh->mod_flag_max)
+        post_mesh->mod_flag_max = mod_flag;
+
+    }
+
+  }
+  else { /* Lagrangian mesh: post_mesh->ent_flag[3] != 0 */
+
+    int mode = post_mesh->ent_flag[3];
+    fvm_writer_time_dep_t mod_type = (mode == 2) ?
+      FVM_WRITER_FIXED_MESH : FVM_WRITER_TRANSIENT_CONNECT;
+
+    post_mesh->ent_flag[3] = mode;
+    post_mesh->mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
+    post_mesh->mod_flag_max = FVM_WRITER_TRANSIENT_CONNECT;
+
+    for (i = 0, j = 0; i < n_writers; i++) {
+
+      fvm_writer_time_dep_t mod_flag;
+      int _writer_id = post_mesh->writer_id[i];
+      cs_post_writer_t  *writer = _cs_post_writers + _writer_id;
+
+      if (writer->wd != NULL)
+        mod_flag = writer->wd->time_dep;
+      else
+        mod_flag = fvm_writer_get_time_dep(writer->writer);
+
+      if (mod_flag == mod_type)
+        post_mesh->writer_id[j++] = _writer_id;
+
+    }
+
+    if (j < n_writers) {
+      post_mesh->n_writers = j;
+      BFT_REALLOC(post_mesh->writer_id, j, int);
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Add or select a post-processing mesh, do basic initialization, and return
  * a pointer to the associated structure.
  *
@@ -1100,6 +1213,8 @@ _predefine_mesh(int        mesh_id,
   else
     post_mesh->post_domain = false;
 
+  post_mesh->time_varying = time_varying;
+
   for (j = 0; j < 5; j++) {
     post_mesh->criteria[j] = NULL;
     post_mesh->sel_func[j] = NULL;
@@ -1118,7 +1233,7 @@ _predefine_mesh(int        mesh_id,
   /* Minimum and maximum time dependency flags initially inverted,
      will be recalculated after mesh - writer associations */
 
-  if (time_varying)
+  if (post_mesh->time_varying)
     post_mesh->mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
   else
     post_mesh->mod_flag_min = _cs_post_mod_flag_min;
@@ -1129,87 +1244,17 @@ _predefine_mesh(int        mesh_id,
   post_mesh->n_writers = n_writers;
   BFT_MALLOC(post_mesh->writer_id, n_writers, int);
 
-  if (mode == 0) { /* Non-Lagrangian mesh */
+  for (i = 0; i < n_writers; i++)
+    post_mesh->writer_id[i] = _cs_post_writer_id(writer_ids[i]);
 
-    for (i = 0; i < n_writers; i++) {
-
-      fvm_writer_time_dep_t mod_flag;
-      int _writer_id = _cs_post_writer_id(writer_ids[i]);
-      cs_post_writer_t  *writer = _cs_post_writers + _writer_id;
-
-      post_mesh->writer_id[i] = _writer_id;
-
-      if (writer->wd != NULL)
-        mod_flag = writer->wd->time_dep;
-      else
-        mod_flag = fvm_writer_get_time_dep(writer->writer);
-
-      if (mod_flag < post_mesh->mod_flag_min)
-        post_mesh->mod_flag_min = mod_flag;
-      if (mod_flag > post_mesh->mod_flag_max)
-        post_mesh->mod_flag_max = mod_flag;
-
-    }
-
-  }
-  else if (mode == 1 || mode == 2) { /* Lagrangian mesh */
-
-    fvm_writer_time_dep_t mod_type = (mode == 2) ?
-      FVM_WRITER_FIXED_MESH : FVM_WRITER_TRANSIENT_CONNECT;
-
+  if (mode == 1 || mode == 2)          /* Lagrangian mesh */
     post_mesh->ent_flag[3] = mode;
-    post_mesh->mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
-    post_mesh->mod_flag_max = FVM_WRITER_TRANSIENT_CONNECT;
 
-    for (i = 0, j = 0; i < n_writers; i++) {
-
-      fvm_writer_time_dep_t mod_flag;
-      int _writer_id = _cs_post_writer_id(writer_ids[i]);
-      cs_post_writer_t  *writer = _cs_post_writers + _writer_id;
-
-      if (writer->wd != NULL)
-        mod_flag = writer->wd->time_dep;
-      else
-        mod_flag = fvm_writer_get_time_dep(writer->writer);
-
-      if (mod_flag == mod_type)
-        post_mesh->writer_id[j++] = _writer_id;
-
-    }
-
-    if (j < n_writers) {
-      post_mesh->n_writers = j;
-      BFT_REALLOC(post_mesh->writer_id, j, int);
-    }
-
-  }
-  else  { /* Probe or profile mesh */
-
-    assert(mode == 3 || mode == 4); /* Sanity check */
+  else if (mode == 3 || mode == 4)     /* Probe or profile mesh */
     post_mesh->ent_flag[4] = mode - 2; /* 1 = probe monitoring,
                                           2 = profile */
 
-    for (i = 0; i < n_writers; i++) {
-
-      fvm_writer_time_dep_t mod_flag;
-      int _writer_id = _cs_post_writer_id(writer_ids[i]);
-      cs_post_writer_t  *writer = _cs_post_writers + _writer_id;
-
-      post_mesh->writer_id[i] = _writer_id;
-
-      if (writer->wd != NULL)
-        mod_flag = writer->wd->time_dep;
-      else
-        mod_flag = fvm_writer_get_time_dep(writer->writer);
-
-      if (mod_flag < post_mesh->mod_flag_min)
-        post_mesh->mod_flag_min = mod_flag;
-      if (mod_flag > post_mesh->mod_flag_max)
-        post_mesh->mod_flag_max = mod_flag;
-
-    }
-
-  }
+  _update_mesh_writer_associations(post_mesh);
 
   return post_mesh;
 }
@@ -3963,6 +4008,115 @@ cs_post_define_edges_mesh(int        mesh_id,
              char);
   strcpy(post_base->name, post_base->name);
   strcat(post_mesh->name, _(" edges"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Associate a writer to a postprocessing mesh.
+ *
+ * This function must be called during the postprocessing output definition
+ * stage, before any output actually occurs.
+ *
+ * If called with a non-existing mesh or writer id, or if the writer is
+ * already associated, no setting is changed, and this function
+ * returns silently.
+ *
+ * \param[in]  mesh_id      id of mesh to define
+ *                          (< 0 reserved, > 0 for user)
+ * \param[in]  writer_id    id of writer to associate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_attach_writer(int  mesh_id,
+                           int  writer_id)
+{
+  int _mesh_id = _cs_post_mesh_id_try(mesh_id);
+  int _writer_id = _cs_post_writer_id_try(writer_id);
+
+  if (_mesh_id < 0 || _writer_id < 0)
+    return;
+
+  cs_post_mesh_t *post_mesh = _cs_post_meshes + _mesh_id;
+
+  /* Check we have not output this mesh yet */
+
+  if (post_mesh->nt_last > -2)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error associating writer %d with mesh %d:"
+                "output has already been done for this mesh, "
+                "so mesh-writer association is locked."),
+              writer_id, mesh_id);
+
+  /* Ignore if writer id already associated */
+
+  for (int i = 0; i < post_mesh->n_writers; i++) {
+    if (post_mesh->writer_id[i] == _writer_id)
+      return;
+  }
+
+  BFT_REALLOC(post_mesh->writer_id, post_mesh->n_writers + 1, int);
+  post_mesh->writer_id[post_mesh->n_writers] = _writer_id;
+  post_mesh->n_writers += 1;
+
+  _update_mesh_writer_associations(post_mesh);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief De-associate a writer from a postprocessing mesh.
+ *
+ * This function must be called during the postprocessing output definition
+ * stage, before any output actually occurs.
+ *
+ * If called with a non-existing mesh or writer id, or if the writer was not
+ * previously associated, no setting is changed, and this function
+ * returns silently.
+ *
+ * \param[in]  mesh_id      id of mesh to define
+ *                          (< 0 reserved, > 0 for user)
+ * \param[in]  writer_id    id of writer to associate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_detach_writer(int  mesh_id,
+                           int  writer_id)
+{
+  int _mesh_id = _cs_post_mesh_id_try(mesh_id);
+  int _writer_id = _cs_post_writer_id_try(writer_id);
+
+  if (_mesh_id < 0 || _writer_id < 0)
+    return;
+
+  cs_post_mesh_t *post_mesh = _cs_post_meshes + _mesh_id;
+
+  /* Check we have not output this mesh yet */
+
+  if (post_mesh->nt_last > -2)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error unassociating writer %d from mesh %d:"
+                "output has already been done for this mesh, "
+                "so mesh-writer association is locked."),
+              writer_id, mesh_id);
+
+  /* Ignore if writer id already associated */
+
+  int i, j;
+  for (i = 0, j = 0; i < post_mesh->n_writers; i++) {
+    if (post_mesh->writer_id[i] != _writer_id) {
+      post_mesh->writer_id[j] = post_mesh->writer_id[i];
+      j++;
+    }
+  }
+
+  if (j < post_mesh->n_writers) {
+
+    post_mesh->n_writers = j;
+    BFT_REALLOC(post_mesh->writer_id, post_mesh->n_writers, int);
+
+    _update_mesh_writer_associations(post_mesh);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
