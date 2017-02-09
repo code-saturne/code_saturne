@@ -598,7 +598,7 @@ _log_func_default_var_cal_opt(const void *t)
                 _("0 for slope test, 1 for no slope test, 2 for min/max limiter "
                   "and 3 for NVD/TVD scheme"));
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "blencv", _t->blencv,
-                _("[0.;1.] (1-upwind proportion)"));
+                _("[0.;1.] (1-upwind proportion (0: upwind))"));
 
   cs_log_printf(CS_LOG_SETUP,"    Gradients calculation\n");
   cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imrgra", _t->imrgra,
