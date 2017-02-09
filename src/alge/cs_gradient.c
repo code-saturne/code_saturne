@@ -5908,9 +5908,6 @@ void CS_PROCF (cgdts, CGDTS)
                      grad);
 }
 
-
-
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -6059,8 +6056,14 @@ cs_gradient_scalar(const char                *var_name,
     else
       cs_halo_sync_var(halo, halo_type, var);
 
-    if (c_weight != NULL)
-      cs_halo_sync_var(halo, halo_type, c_weight);
+    if (c_weight != NULL) {
+      if (w_stride == 6) {
+        cs_halo_sync_var_strided(halo, halo_type, c_weight, 6);
+        cs_halo_perio_sync_var_sym_tens(halo, halo_type, c_weight);
+      }
+      else
+        cs_halo_sync_var(halo, halo_type, c_weight);
+    }
 
     if (hyd_p_flag == 1) {
       cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)f_ext, 3);
@@ -6228,7 +6231,6 @@ cs_gradient_scalar(const char                *var_name,
 
   BFT_FREE(rhsv);
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
