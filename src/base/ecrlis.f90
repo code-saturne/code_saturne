@@ -394,15 +394,10 @@ deallocate(w1, w2)
  1000 format (/,3X,'** INFORMATIONS SUR LA CONVERGENCE',/,        &
           3X,'   -------------------------------')
 
- 1011 format ('   Variable    Norm 2nd mb.',                      &
-        '  Nbiter  Residu norme        Derive Residu en temps')
-
 #else
 
  1000 format (/,3X,'** INFORMATION ON CONVERGENCE',/,             &
           3X,'   --------------------------')
- 1011 format ('   Variable    Rhs norm    ',                      &
-        '  N_iter  Norm. residual      Drift  Time residual')
 
 #endif
  3000 format (e12.5)
