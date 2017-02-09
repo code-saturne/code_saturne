@@ -124,7 +124,7 @@ logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
 type(c_ptr) :: rp
 
 double precision, dimension(:), pointer :: sval
-double precision, dimension(:), pointer :: voidfl, volfl
+double precision, dimension(:), pointer :: voidfl
 double precision, dimension(:,:), pointer :: disale, cpro_visma_v
 
 double precision, allocatable, dimension(:,:) :: tmurbf

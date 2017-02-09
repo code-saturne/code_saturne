@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-02-03 12:31+0100\n"
+"POT-Creation-Date: 2017-02-09 18:51+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6560,7 +6560,7 @@ msgstr ""
 "0 pour le test de pente, 1 pour pas de test de pente, 2 pour limiteur min/"
 "max et 3 pour limiteur NVD/TVD"
 
-msgid "[0.;1.] (1-upwind proportion (O: upwind))"
+msgid "[0.;1.] (1-upwind proportion (0: upwind))"
 msgstr "[0.;1.] (1 - proportion d'upwind (0 : upwind))"
 
 msgid "Reconstruction mode"
@@ -7325,6 +7325,18 @@ msgstr ""
 
 msgid " edges"
 msgstr " arêtes"
+
+#, c-format
+msgid ""
+"Error associating writer %d with mesh %d:output has already been done for "
+"this mesh, so mesh-writer association is locked."
+msgstr ""
+
+#, c-format
+msgid ""
+"Error unassociating writer %d from mesh %d:output has already been done for "
+"this mesh, so mesh-writer association is locked."
+msgstr ""
 
 #, c-format
 msgid "%s called before post-processing meshes are built."
