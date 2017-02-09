@@ -616,13 +616,18 @@ cs_boundary_conditions_mapped_set(const cs_field_t          *f,
 
   assert(sizeof(ple_coord_t) == sizeof(cs_real_t));
 
-  if (location_type == CS_MESH_LOCATION_CELLS || interpolate)
-    cs_field_interpolate(f,
+  if (location_type == CS_MESH_LOCATION_CELLS || interpolate) {
+    /* FIXME: we cheat here with the constedness of the field relative to
+       for a possible ghost values update, but having a finer control
+       of when syncing is required would be preferable */
+    cs_field_t *_f = cs_field_by_id(f->id);
+    cs_field_interpolate(_f,
                          interpolation_type,
                          n_dist,
                          dist_loc,
                          (const cs_real_3_t *)dist_coords,
                          distant_var);
+  }
 
   else if (location_type == CS_MESH_LOCATION_BOUNDARY_FACES) {
 
