@@ -182,8 +182,6 @@ double precision distb0, rugd  , rugt  , ydep
 double precision dsa0
 double precision rinfiv(3)
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
-double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
-double precision rttb, alpha_rnn
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, uetbor
@@ -191,8 +189,6 @@ double precision, dimension(:), allocatable :: byplus, buk, buet, bcfnns
 
 double precision, dimension(:), pointer :: cvar_k
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
-double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvara_nusa
 
 double precision, dimension(:,:), pointer :: coefau, cofafu
@@ -261,9 +257,6 @@ cfnne=1.d0
 
 und0   = 1.d0
 deuxd0 = 2.d0
-
-! Alpha constant for a realisable BC for R12 with the SSG model
-alpha_rnn = 0.47d0
 
 ! pointers to y+ if saved
 
@@ -491,16 +484,9 @@ if (itytur.eq.2 .or. itytur.eq.5                             &
 endif
 
 if(itytur.eq.3) then
-  if (irijco.eq.1) then
-    call field_get_val_v(ivarfl(irij), cvar_rij)
-  else
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
-  endif
+  call field_get_val_s(ivarfl(ir11), cvar_r11)
+  call field_get_val_s(ivarfl(ir22), cvar_r22)
+  call field_get_val_s(ivarfl(ir33), cvar_r33)
 endif
 
 call field_get_val_s(iviscl, viscl)
@@ -750,30 +736,7 @@ do ifac = 1, nfabor
       if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
         ek = cvar_k(iel)
       else if(itytur.eq.3) then
-        if (irijco.eq.1) then
-          ek = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-          rxx = cvar_rij(1,iel)
-          rxy = cvar_rij(4,iel)
-          rxz = cvar_rij(6,iel)
-          ryy = cvar_rij(2,iel)
-          ryz = cvar_rij(5,iel)
-          rzz = cvar_rij(3,iel)
-        else
-          ek = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-          rxx = cvar_r11(iel)
-          rxy = cvar_r12(iel)
-          rxz = cvar_r13(iel)
-          ryy = cvar_r22(iel)
-          ryz = cvar_r23(iel)
-          rzz = cvar_r33(iel)
-        endif
-        rnnb =   rnx * (rxx * rnx + rxy * rny + rxz * rnz) &
-               + rny * (rxy * rnx + ryy * rny + ryz * rnz) &
-               + rnz * (rxz * rnx + ryz * rny + rzz * rnz)
-
-        rttb =   tx * (rxx * tx + rxy * ty + rxz * tz) &
-               + ty * (rxy * tx + ryy * ty + ryz * tz) &
-               + tz * (rxz * tx + ryz * ty + rzz * tz)
+        ek = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
       endif
 
       uk = cmu025*sqrt(ek)
@@ -1037,7 +1000,6 @@ do ifac = 1, nfabor
           kk = 3
         endif
 
-        ! FIXME times cnnk
         if (iclptr.eq.1) then
           do ii = 1, 6
             if (ii.ne.isou) then
@@ -1057,8 +1019,7 @@ do ifac = 1, nfabor
 
         fcoefa(isou) = fcoefa(isou)                                 &
                        - (  eloglo(jj,1)*eloglo(kk,2)               &
-                          + eloglo(jj,2)*eloglo(kk,1))              &
-                         * alpha_rnn * sqrt(rnnb * rttb) * cfnnk
+                          + eloglo(jj,2)*eloglo(kk,1))*uet*uk*cfnnk
 
         ! Translate into Diffusive flux BCs
         fcofaf(isou) = -hint*fcoefa(isou)
