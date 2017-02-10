@@ -1126,7 +1126,7 @@ cs_equation_set_param(cs_equation_t       *eq,
     eqp->verbosity = atoi(val);
     break;
 
-  case CS_EQKEY_ITSOL_VERBOSITY: // "verbosity" for SLES structures
+  case CS_EQKEY_SLES_VERBOSITY: // "verbosity" for SLES structures
     eqp->sles_verbosity = atoi(val);
     break;
 

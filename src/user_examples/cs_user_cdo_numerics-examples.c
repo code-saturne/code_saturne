@@ -181,7 +181,7 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
      CS_EQKEY_ITSOL_RESNORM
      "true" or "false"
 
-     CS_EQKEY_ITSOL_VERBOSITY
+     CS_EQKEY_SLES_VERBOSITY
      "0", "1", "2" or higher
 
      CS_EQKEY_BC_ENFORCEMENT
@@ -243,13 +243,18 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
   cs_equation_set_param(eq, CS_EQKEY_HODGE_DIFF_COEF, "dga");
 
   /* Linear algebra settings */
+#if defined(HAVE_PETSC)
   cs_equation_set_param(eq, CS_EQKEY_SOLVER_FAMILY, "petsc");
-  cs_equation_set_param(eq, CS_EQKEY_PRECOND, "amg");
   cs_equation_set_param(eq, CS_EQKEY_ITSOL, "cg");
+  cs_equation_set_param(eq, CS_EQKEY_PRECOND, "amg");
+#else
+  cs_equation_set_param(eq, CS_EQKEY_SOLVER_FAMILY, "cs");
+  cs_equation_set_param(eq, CS_EQKEY_PRECOND, "jacobi");
+  cs_equation_set_param(eq, CS_EQKEY_ITSOL, "cg");
+#endif
   cs_equation_set_param(eq, CS_EQKEY_ITSOL_MAX_ITER, "2500");
   cs_equation_set_param(eq, CS_EQKEY_ITSOL_EPS, "1e-12");
   cs_equation_set_param(eq, CS_EQKEY_ITSOL_RESNORM, "false");
-  cs_equation_set_param(eq, CS_EQKEY_ITSOL_VERBOSITY, "1");
 }
 
 /*----------------------------------------------------------------------------*/
