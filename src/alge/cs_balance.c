@@ -144,7 +144,9 @@ BEGIN_C_DECLS
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved variable (current time step)
+ *                              may be NULL if pvara != NULL
  * \param[in]     pvara         solved variable (previous time step)
+ *                              may be NULL if pvar != NULL
  * \param[in]     coefap        boundary condition array for the variable
  *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
@@ -442,7 +444,7 @@ cs_balance_vector(int                  idtvar,
                   const cs_real_33_t   cofbfv[],
                   const cs_real_t      i_massflux[],
                   const cs_real_t      b_massflux[],
-                  cs_real_t            i_visc[],
+                  const cs_real_t      i_visc[],
                   const cs_real_t      b_visc[],
                   const cs_real_t      secvif[],
                   const cs_real_t      secvib[],
@@ -647,7 +649,6 @@ cs_balance_tensor(int                 idtvar,
                   int                 icvflb,
                   const int           icvfli[],
                   cs_real_6_t         smbrp[])
-
 {
   /* Local variables */
   int iconvp = var_cal_opt->iconv;

@@ -920,6 +920,9 @@ fvm_to_medcoupling_init_writer(const char             *name,
                                fvm_writer_time_dep_t   time_dependency)
 #endif
 {
+  CS_UNUSED(path);
+  CS_UNUSED(options);
+
   fvm_to_medcoupling_t  *writer = NULL;
 
   /* Initialize writer */
@@ -1031,11 +1034,12 @@ fvm_to_medcoupling_set_mesh_time(void          *this_writer_p,
                                  const int      time_step,
                                  const double   time_value)
 {
-  int i;
+  CS_UNUSED(time_step);
+  CS_UNUSED(time_value);
 
   fvm_to_medcoupling_t  *w = (fvm_to_medcoupling_t *)this_writer_p;
 
-  for (i = 0; i < w->n_med_meshes; i++) {
+  for (int i = 0; i < w->n_med_meshes; i++) {
     MEDCouplingUMesh  *m = w->med_meshes[i];
     m->updateTime();
   }
@@ -1183,8 +1187,6 @@ fvm_to_medcoupling_export_field(void                  *this_writer_p,
   fvm_to_medcoupling_t *this_writer = (fvm_to_medcoupling_t *)this_writer_p;
 
   TypeOfTimeDiscretization  td = (time_step < 0) ? NO_TIME : ONE_TIME;
-
-  const int  n_ranks = this_writer->n_ranks;
 
   /* Initialization */
   /*----------------*/

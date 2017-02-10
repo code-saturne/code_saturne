@@ -177,7 +177,9 @@ cs_field_interpolate(cs_field_t              *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief find local extrema of a given scalar field at each cell
+ * \brief Find local extrema of a given scalar field at each cell
+ *
+ * This assumes the field values have been synchronized.
  *
  * \param[in]     field id    The scalar field id
  * \param[in]     halo_type   Halo type
@@ -187,10 +189,25 @@ cs_field_interpolate(cs_field_t              *f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_field_local_extrema_scalar(const int        f_id,
+cs_field_local_extrema_scalar(int              f_id,
                               cs_halo_type_t   halo_type,
                               cs_real_t       *local_max,
                               cs_real_t       *local_min);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize current parallel and periodic field values.
+ *
+ * This function currently only upates fields based on CS_MESH_LOCATION_CELLS.
+ *
+ * \param[in, out]   f           pointer to field
+ * \param[in]        halo_type   halo type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_synchronize(cs_field_t      *f,
+                     cs_halo_type_t   halo_type);
 
 /*----------------------------------------------------------------------------*/
 
