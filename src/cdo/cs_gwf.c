@@ -75,6 +75,8 @@ BEGIN_C_DECLS
 /* Tag dedicated to build a flag for the groundwater module */
 /*   1: post the moisture content */
 #define CS_GWF_POST_MOISTURE  (1 <<  0)
+/*   2: an array has been allocated to be an input for laws */
+#define CS_GWF_FREE_HEAD_LAW  (1 <<  1)
 
 /*============================================================================
  * Structure definitions
@@ -130,41 +132,42 @@ struct _gwf_t {
   /* Physical parameters related to each kind of soil considered.
      If n_soils > 1, soil_id array stores the id giving access to the soil
      parameters related to each cell of the mesh */
-  int             n_soils;
-  int             n_max_soils;
-  cs_gwf_soil_t  *soil_param;
+  int              n_soils;
+  int              n_max_soils;
+  cs_gwf_soil_t   *soil_param;
 
-  cs_lnum_t       n_cells;     // Number of cells (useful to get soil_id)
-  short int      *soil_id;     // NULL if only one soil or allocated to n_cells
+  cs_lnum_t        n_cells;   // Number of cells (useful to get soil_id)
+  short int       *soil_id;   // NULL if only one soil or allocated to n_cells
 
   /* Gravity effect */
-  bool            with_gravitation;
-  cs_real_3_t     gravity;
+  bool             with_gravitation;
+  cs_real_3_t      gravity;
 
   /* Related fields */
-  cs_field_t     *moisture_content; /* Always located at cells */
-  cs_field_t     *pressure_head;    /* Allocated only if gravitation is on.
-                                       Location depends on the discretization
-                                       scheme used to solve Richards eq.
-                                       pressure head is denoted by h
-                                       hydraulic head (solved in Richards eq.)
-                                       is denoted by H.
-                                       h = H - gravity_potential */
+  cs_field_t      *moisture_content; /* Always located at cells */
+  cs_field_t      *pressure_head;    /* Allocated only if gravitation is on.
+                                        Location depends on the discretization
+                                        scheme used to solve Richards eq.
+                                        pressure head is denoted by h
+                                        hydraulic head (solved in Richards eq.)
+                                        is denoted by H.
+                                        h = H - gravity_potential */
+  cs_real_t       *head_in_law;       /* Array used as an input in laws */
 
   /* Set of equations associated to this module */
-  int             richards_eq_id;
-  int             n_tracers;
-  int             n_max_tracers;
-  int            *tracer_eq_ids;
+  int              richards_eq_id;
+  int              n_tracers;
+  int              n_max_tracers;
+  int             *tracer_eq_ids;
 
   /* Permeability is the diffusion property related to Richards equation but
      this property plays also a role in the diffusion of tracer equations */
-  cs_property_t  *permeability;  /* shared with a cs_domain_t structure */
+  cs_property_t   *permeability;  /* shared with a cs_domain_t structure */
 
   /* Scan the c2e connectivity index to get the darcian flux related to
      each dual face when CDO vertex-based scheme is activated */
-  cs_real_t      *darcian_flux;
-  cs_adv_field_t *adv_field;    /* shared with a cs_domain_t structure */
+  cs_real_t       *darcian_flux;
+  cs_adv_field_t  *adv_field;    /* shared with a cs_domain_t structure */
 
 };
 
@@ -850,8 +853,6 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
 {
   CS_UNUSED(richards);
 
-  const cs_real_t  *h_vals;
-  cs_real_t  *c_head = NULL;
   cs_field_t  *moisture = gw->moisture_content;
 
   if (moisture == NULL)
@@ -871,14 +872,8 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
     h = cs_equation_get_field(richards);
 
   cs_mesh_location_type_t  ml_type = cs_mesh_location_get_type(h->location_id);
-  if (ml_type == CS_MESH_LOCATION_VERTICES) {
-    BFT_MALLOC(c_head, cdoq->n_cells, cs_real_t);
-    cs_reco_pv_at_cell_centers(connect->c2v, cdoq, h->val, c_head);
-    h_vals = c_head;
-  }
-  else {
-    h_vals = h->val;
-  }
+  if (ml_type == CS_MESH_LOCATION_VERTICES)
+    cs_reco_pv_at_cell_centers(connect->c2v, cdoq, h->val, gw->head_in_law);
 
   for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
@@ -889,13 +884,13 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
     switch (soil->model) {
 
     case CS_GWF_HYDRAULIC_GENUCHTEN:
-      _genuchten_moisture_from_c_head(n_elts[0], elt_ids, h_vals,
+      _genuchten_moisture_from_c_head(n_elts[0], elt_ids, gw->head_in_law,
                                       (const void *)soil,
                                       moisture->val);
       break;
 
     case CS_GWF_HYDRAULIC_TRACY:
-      _tracy_moisture_from_c_head(n_elts[0], elt_ids, h_vals,
+      _tracy_moisture_from_c_head(n_elts[0], elt_ids, gw->head_in_law,
                                   (const void *)soil,
                                   moisture->val);
       break;
@@ -927,8 +922,6 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
 
   } // Loop on soils
 
-  if (ml_type == CS_MESH_LOCATION_VERTICES)
-    BFT_FREE(c_head);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1105,6 +1098,7 @@ cs_gwf_create(void)
   gw->with_gravitation = false;
   gw->gravity[0] = 0, gw->gravity[1] = 0, gw->gravity[2] = 0;
   gw->pressure_head = NULL;
+  gw->head_in_law = NULL;
 
   gw->richards_eq_id = -1;
   gw->n_tracers = 0;
@@ -1135,6 +1129,8 @@ cs_gwf_finalize(cs_gwf_t   *gw)
 
   BFT_FREE(gw->tracer_eq_ids);
   BFT_FREE(gw->darcian_flux);
+  if (gw->flag & CS_GWF_FREE_HEAD_LAW)
+    BFT_FREE(gw->head_in_law);
 
   for (int i = 0; i < gw->n_soils; i++) {
     cs_gwf_soil_t *soil = gw->soil_param + i;
@@ -1855,7 +1851,7 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
   int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
   int  c_loc_id = cs_mesh_location_get_id_by_name(N_("cells"));
   int  v_loc_id = cs_mesh_location_get_id_by_name(N_("vertices"));
-  cs_desc_t  head_desc = {.location = CS_FLAG_SCALAR,
+  cs_desc_t  head_desc = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
                           .state = CS_FLAG_STATE_POTENTIAL};
 
   /* Create a moisture field attached to cells */
@@ -1871,32 +1867,47 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
   switch (cdo_scheme) {
   case CS_SPACE_SCHEME_CDOVB:
   case CS_SPACE_SCHEME_CDOVCB:
-    head_desc.location |= cs_cdo_primal_vtx;
-    if (gw->with_gravitation)
-      gw->pressure_head = cs_field_create("pressure_head",
-                                          field_mask,
-                                          v_loc_id,
-                                          1,
-                                          has_previous);
+    {
+      const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(c_loc_id);
+      BFT_MALLOC(gw->head_in_law, n_elts[0], cs_real_t);
+      gw->flag |= CS_GWF_FREE_HEAD_LAW;
+
+      if (gw->with_gravitation) {
+
+        gw->pressure_head = cs_field_create("pressure_head",
+                                            field_mask,
+                                            v_loc_id,
+                                            1,
+                                            has_previous);
+        cs_field_allocate_values(gw->pressure_head);
+
+      }
+    }
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
   case CS_SPACE_SCHEME_HHO:
-    head_desc.location |= cs_cdo_primal_cell;
-    if (gw->with_gravitation)
+
+    if (gw->with_gravitation) {
+
       gw->pressure_head = cs_field_create("pressure_head",
                                           field_mask,
                                           c_loc_id,
                                           1,
                                           has_previous);
 
+      cs_field_allocate_values(gw->pressure_head);
+      gw->head_in_law = gw->pressure_head->val;
+
+    }
+    else
+      gw->head_in_law = hydraulic_head->val;
+
+
   default:
     bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
 
   }
-
-  if (gw->with_gravitation) /* Allocate and init. values for pressure head */
-    cs_field_allocate_values(gw->pressure_head);
 
   /* Set the values for the permeability and the moisture content
      and if needed set also the value of the soil capacity */
@@ -1963,10 +1974,7 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
                                     (const void *)soil,
                                     _genuchten_permeability_from_c_head);
 
-      if (gw->with_gravitation)
-        cs_property_set_array(permeability, head_desc, gw->pressure_head->val);
-      else
-        cs_property_set_array(permeability, head_desc, hydraulic_head->val);
+      cs_property_set_array(permeability, head_desc, gw->head_in_law);
 
       /* Soil capacity settings (related to unsteady term) */
       if (has_previous) {
@@ -1978,10 +1986,7 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
                                       (const void *)soil,
                                       _genuchten_capacity_from_c_head);
 
-        if (gw->with_gravitation)
-          cs_property_set_array(capacity, head_desc, gw->pressure_head->val);
-        else
-          cs_property_set_array(capacity, head_desc, hydraulic_head->val);
+        cs_property_set_array(capacity, head_desc, gw->head_in_law);
 
       }
       break;
@@ -1994,10 +1999,7 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
                                     (const void *)soil,
                                     _tracy_permeability_from_c_head);
 
-      if (gw->with_gravitation)
-        cs_property_set_array(permeability, head_desc, gw->pressure_head->val);
-      else
-        cs_property_set_array(permeability, head_desc, hydraulic_head->val);
+      cs_property_set_array(permeability, head_desc, gw->head_in_law);
 
       /* Soil capacity settings (related to unsteady term) */
       if (has_previous) {
