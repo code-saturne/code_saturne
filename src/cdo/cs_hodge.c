@@ -560,7 +560,6 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
   cs_locmat_dump(cm->c_id, sloc);
 #endif
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -988,6 +987,9 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
   assert(cb != NULL && cb->hdg != NULL);
   assert(h_info.type == CS_PARAM_HODGE_TYPE_VPCD);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_WBS);
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PVQ |CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
+                      CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ));
 
   double  *wvf = cb->values;
   double  *pefc_vol = cb->values + cm->n_vc;
@@ -1331,12 +1333,12 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
       switch (h_info.algo) {
       case CS_PARAM_HODGE_ALGO_COST:
       case CS_PARAM_HODGE_ALGO_VORONOI:
-        msh_flag |= CS_CDO_LOCAL_PV;
+        msh_flag |= CS_CDO_LOCAL_PVQ;
         compute = cs_hodge_vpcd_voro_get;
         break;
       case CS_PARAM_HODGE_ALGO_WBS:
-        msh_flag |= CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_EV |
-          CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        msh_flag |= CS_CDO_LOCAL_PVQ |CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
+          CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
         compute = cs_hodge_vpcd_wbs_get;
         break;
       default:
@@ -1466,7 +1468,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         cs_locmat_matvec(cb->hdg, _in, cb->values);
 
         /* Assemble the resulting vector */
-        for (short int e = 0; e < cm->n_vc; e++)
+        for (short int e = 0; e < cm->n_ec; e++)
 #pragma omp atomic
           result[cm->e_ids[e]] += cb->values[e];
         break;
