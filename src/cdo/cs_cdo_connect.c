@@ -519,9 +519,9 @@ _build_c2f_connect(const cs_mesh_t   *mesh)
     int  c1_id = mesh->i_face_cells[i][0];
     int  c2_id = mesh->i_face_cells[i][1];
 
-    if (c1_id < n_cells)
+    if (c1_id < n_cells) // cell owned by the local rank
       c2f->idx[c1_id+1] += 1, idx_size += 1;
-    if (c2_id < n_cells)
+    if (c2_id < n_cells) // cell owned by the local rank
       c2f->idx[c2_id+1] += 1, idx_size += 1;
   }
 
@@ -631,15 +631,15 @@ _compute_max_ent(const cs_mesh_t      *m,
   assert(connect->c2v != NULL && connect->c2e != NULL && connect->f2c != NULL);
   assert(connect->f2e != NULL);
 
-  const cs_lnum_t  n_vertices = connect->v_info->n_elts;
+  const cs_lnum_t  n_vertices = connect->n_vertices;
 
   short int  *v_count = NULL;
   BFT_MALLOC(v_count, n_vertices, short int);
-#pragma omp parallel for if (n_vertices > CS_THR_MIN)
+# pragma omp parallel for if (n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_vertices; i++) v_count[i] = 0;
 
-  const cs_lnum_t  n_cells = connect->c2f->n_rows;
-  const cs_lnum_t  n_edges = connect->e_info->n_elts;
+  const cs_lnum_t  n_cells = connect->n_cells;
+  const cs_lnum_t  n_edges = connect->n_edges;
   const cs_connect_index_t  *c2v = connect->c2v;
   const cs_connect_index_t  *c2e = connect->c2e;
   const cs_sla_matrix_t  *e2v = connect->e2v;
@@ -763,163 +763,6 @@ _compute_max_ent(const cs_mesh_t      *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocated and initialize a cs_connect_info_t structure
- *
- * \param[in]     n_elts    Size of the maximal set of entities related to
- *                          this structure
- *
- * \return  a pointer to the new allocated structure
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_connect_info_t *
-_connect_info_create(cs_lnum_t     n_elts)
-{
-  cs_lnum_t  i;
-
-  cs_connect_info_t  *info = NULL;
-
-  if (n_elts < 1)
-    return NULL;
-
-  BFT_MALLOC(info, 1, cs_connect_info_t);
-
-  info->n_elts = n_elts;
-  info->n_i_elts = 0;
-  info->n_b_elts = 0;
-
-  BFT_MALLOC(info->flag, n_elts, cs_flag_t);
-  for (i = 0; i < n_elts; i++)
-    info->flag[i] = 0;
-
-  return info;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocated and initialize a cs_cdo_connect_info_t structure
- *
- * \param[in]     info      Info structure
- *
- * \return  a pointer to the new allocated structure
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_connect_info_t *
-_connect_info_free(cs_connect_info_t    *info)
-{
-  if (info == NULL)
-    return info;
-
-  BFT_FREE(info->flag);
-  BFT_FREE(info);
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a status Int/Border
- *
- * \param[in]       m        pointer to a cs_mesh_t structure
- * \param[in, out]  connect  pointer to a cs_cdo_connect_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_define_connect_info(const cs_mesh_t    *m,
-                     cs_cdo_connect_t   *connect)
-{
-  int  i, j, v_id, e_id, f_id, c_id;
-
-  cs_connect_info_t  *vi = NULL, *ei = NULL, *fi = NULL, *ci = NULL;
-
-  const cs_lnum_t  n_vertices = connect->v2e->n_rows;
-  const cs_lnum_t  n_edges = connect->e2f->n_rows;
-  const cs_lnum_t  n_faces = connect->f2e->n_rows;
-  const cs_lnum_t  n_cells = connect->c2f->n_rows;
-
-  /* Allocate info structures */
-  vi = _connect_info_create(n_vertices);
-  ei = _connect_info_create(n_edges);
-  fi = _connect_info_create(n_faces);
-  ci = _connect_info_create(n_cells);
-
-  /* By default all entities are set to the flag CS_CDO_CONNECT_IN (interior) */
-  for (i = 0; i < n_vertices; i++)
-    vi->flag[i] = CS_CDO_CONNECT_IN;
-  for (i = 0; i < n_edges; i++)
-    ei->flag[i] = CS_CDO_CONNECT_IN;
-  for (i = 0; i < n_faces; i++)
-    fi->flag[i] = CS_CDO_CONNECT_IN;
-  for (i = 0; i < n_cells; i++)
-    ci->flag[i] = CS_CDO_CONNECT_IN;
-
-  /* Loop on border faces and flag all border entities
-     -> cells, faces, edges and vertices */
-  for (f_id = m->n_i_faces; f_id < n_faces; f_id++) {
-
-    /* Flag related face */
-    fi->flag[f_id] = CS_CDO_CONNECT_BD;
-    assert(connect->f2c->idx[f_id+1]-connect->f2c->idx[f_id]==1);
-
-    /* Flag related cell */
-    c_id = connect->f2c->col_id[connect->f2c->idx[f_id]];
-    ci->flag[c_id] = CS_CDO_CONNECT_BD;
-
-    for (i = connect->f2e->idx[f_id]; i < connect->f2e->idx[f_id+1]; i++) {
-
-      /* Flag related edges */
-      e_id = connect->f2e->col_id[i];
-      ei->flag[e_id] = CS_CDO_CONNECT_BD;
-      for (j = connect->e2v->idx[e_id]; j < connect->e2v->idx[e_id+1]; j++) {
-
-        /* Flag related edges */
-        v_id = connect->e2v->col_id[j];
-        vi->flag[v_id] = CS_CDO_CONNECT_BD;
-
-      } /* Loop on border vertices */
-
-    } /* Loop on border edges */
-
-  } /* Loop on border faces */
-
-  /* Count number of border vertices */
-  for (i = 0; i < n_vertices; i++)
-    if (vi->flag[i] & CS_CDO_CONNECT_BD)
-      vi->n_b_elts++;
-  vi->n_i_elts = vi->n_elts - vi->n_b_elts;
-
-  /* Count number of border edges */
-  for (i = 0; i < n_edges; i++)
-    if (ei->flag[i] & CS_CDO_CONNECT_BD)
-      ei->n_b_elts++;
-  ei->n_i_elts = ei->n_elts - ei->n_b_elts;
-
-  /* Count number of border faces */
-  for (i = 0; i < n_faces; i++)
-    if (fi->flag[i] & CS_CDO_CONNECT_BD)
-      fi->n_b_elts++;
-  fi->n_i_elts = fi->n_elts - fi->n_b_elts;
-
-  /* Sanity check */
-  assert(m->n_i_faces == fi->n_i_elts);
-
-  /* Count number of border cells */
-  for (i = 0; i < n_cells; i++)
-    if (ci->flag[i] & CS_CDO_CONNECT_BD)
-      ci->n_b_elts++;
-  ci->n_i_elts = ci->n_elts - ci->n_b_elts;
-
-  /* Return pointers */
-  connect->v_info = vi;
-  connect->e_info = ei;
-  connect->f_info = fi;
-  connect->c_info = ci;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Associate to each cell a type of element (fvm_element_t)
  *
  * \param[in]  c_id      cell id
@@ -995,98 +838,50 @@ _get_cell_type(cs_lnum_t                 c_id,
   return ret_type;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Associate to each cell a type of element (fvm_element_t)
- *
- * \param[in, out]  connect  pointer to a cs_cdo_connect_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_define_cell_type(cs_cdo_connect_t   *connect)
-{
-  /* Sanity check */
-  assert(connect->c2f != NULL);
-  assert(connect->c2v != NULL);
-  assert(connect->c2e != NULL);
-
-  const cs_lnum_t  n_cells = connect->c_info->n_elts;
-
-  /* Allocate and define each cell type (by default to polyhedron) */
-  BFT_MALLOC(connect->cell_type, n_cells, fvm_element_t);
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    connect->cell_type[c_id] = _get_cell_type(c_id, connect);
-}
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  String related to flag in cs_cdo_connect_info_t
+ * \brief Allocate and define a new cs_cdo_connect_t structure
+ *        Range sets related to vertices and faces are computed inside and
+ *        set as members of the cs_mesh_t structure
  *
- * \param[in]  flag     retrieve name for this flag
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_cdo_connect_flagname(short int  flag)
-{
-  switch (flag) {
-
-  case CS_CDO_CONNECT_BD:
-    return " Border  ";
-    break;
-  case CS_CDO_CONNECT_IN:
-    return " Interior";
-    break;
-  default:
-    return " Undefined";
-  }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and define by default a cs_cdo_connect_t structure
- *
- * \param[in]  m    pointer to a cs_mesh_t structure
+ * \param[in, out]  mesh    pointer to a cs_mesh_t structure
  *
  * \return  a pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_connect_t *
-cs_cdo_connect_init(const cs_mesh_t      *m)
+cs_cdo_connect_init(cs_mesh_t      *mesh)
 {
   cs_timer_t t0 = cs_timer_time();
-
-  _edge_builder_t  *builder = _create_edge_builder(m);
 
   cs_cdo_connect_t  *connect = NULL;
 
   /* Build the connectivity structure */
   BFT_MALLOC(connect, 1, cs_cdo_connect_t);
 
-  /* Build DEC matrices related to connectivity cell / face connectivity */
-  connect->c2f = _build_c2f_connect(m);
-  cs_sla_matrix_set_info(connect->c2f);
+  /* Build the cell --> faces connectivity */
+  connect->c2f = _build_c2f_connect(mesh);
+
+  /* Build the face --> cells connectivity */
   connect->f2c = cs_sla_matrix_transpose(connect->c2f);
-  cs_sla_matrix_set_info(connect->f2c);
 
-  /*  Build DEC matrices related to face / edge connectivity */
-  connect->f2e = _build_f2e_connect(m, builder);
-  cs_sla_matrix_set_info(connect->f2e);
+  /* Build the face --> edges connectivity */
+  _edge_builder_t  *builder = _create_edge_builder(mesh);
+  connect->f2e = _build_f2e_connect(mesh, builder);
+
+  /* Build the edge --> faces connectivity */
   connect->e2f = cs_sla_matrix_transpose(connect->f2e);
-  cs_sla_matrix_set_info(connect->e2f);
 
-  /*  Build DEC matrices related to edge / vertex connectivity */
+  /* Build the edge --> vertices connectivity */
   connect->e2v = _build_e2v_connect(builder);
-  cs_sla_matrix_set_info(connect->e2v);
+
+  /* Build the vertex --> edges connectivity */
   connect->v2e = cs_sla_matrix_transpose(connect->e2v);
-  cs_sla_matrix_set_info(connect->v2e);
 
   _free_edge_builder(&builder);
 
@@ -1094,24 +889,46 @@ cs_cdo_connect_init(const cs_mesh_t      *m)
      dual volumes) */
   _build_additional_connect(connect);
 
-  /* Build a flag indicated if an element belongs to the interior or border of
-     the computatinoal domain. Indicate also the related number of interior and
-     border entities */
-  _define_connect_info(m, connect);
+  const cs_lnum_t  n_vertices = connect->v2e->n_rows;
+  const cs_lnum_t  n_edges = connect->e2f->n_rows;
+  const cs_lnum_t  n_faces = connect->f2e->n_rows;
+  const cs_lnum_t  n_cells = connect->c2f->n_rows;
+
+  connect->n_vertices = n_vertices;
+  connect->n_edges = n_edges;
+  connect->n_faces[0] = n_faces;
+  connect->n_faces[1] = mesh->n_b_faces;
+  connect->n_faces[2] = mesh->n_i_faces;
+  connect->n_cells = n_cells;
+
+  /* Build the cell flag and associate a cell type to each cell */
+  BFT_MALLOC(connect->cell_flag, n_cells, cs_flag_t);
+  BFT_MALLOC(connect->cell_type, n_cells, fvm_element_t);
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    connect->cell_flag[c_id] = 0;
+    connect->cell_type[c_id] = _get_cell_type(c_id, connect);
+  }
+
+  /* Loop on border faces and flag boundary cells */
+  cs_lnum_t  *c_ids = connect->f2c->col_id + connect->f2c->idx[mesh->n_i_faces];
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++)
+    connect->cell_flag[c_ids[f_id]] = CS_FLAG_BOUNDARY;
 
   /* Max number of entities (vertices, edges and faces) by cell */
-  _compute_max_ent(m, connect);
-
-  /* Associate to each cell a predefined type (tetra, prism, hexa...) */
-  _define_cell_type(connect);
+  _compute_max_ent(mesh, connect);
 
   /* Vertex range set */
-  connect->v_rs = cs_range_set_create(m->vtx_interfaces,
-                                      NULL,
-                                      m->n_vertices,
-                                      false,   // TODO: Ask Yvan
-                                      0);      // g_id_base
+  cs_range_set_t  *v_rs = cs_range_set_create(mesh->vtx_interfaces,
+                                              NULL,
+                                              n_vertices,
+                                              false,   // TODO: Ask Yvan
+                                              0);      // g_id_base
+  mesh->vtx_range_set = v_rs;
+  connect->v_rs = v_rs;
 
+  /* Face range set */
   connect->f_rs = NULL; // TODO
 
   /* Monitoring */
@@ -1150,15 +967,10 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   cs_index_free(&(connect->c2e));
   cs_index_free(&(connect->c2v));
 
-  connect->v_info = _connect_info_free(connect->v_info);
-  connect->e_info = _connect_info_free(connect->e_info);
-  connect->f_info = _connect_info_free(connect->f_info);
-  connect->c_info = _connect_info_free(connect->c_info);
-
   BFT_FREE(connect->cell_type);
+  BFT_FREE(connect->cell_flag);
 
   /* Structures for parallelism */
-  cs_range_set_destroy(&(connect->v_rs));
   cs_range_set_destroy(&(connect->f_rs));
 
   BFT_FREE(connect);
@@ -1209,7 +1021,7 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
   for (int i = 0; i < FVM_N_ELEMENT_TYPES; i++)
     n_type_cells[i] = 0;
 
-  for (cs_lnum_t i = 0; i < connect->c_info->n_elts; i++)
+  for (cs_lnum_t i = 0; i < connect->n_cells; i++)
     n_type_cells[connect->cell_type[i]] += 1;
 
   if (cs_glob_n_ranks > 1)
@@ -1230,72 +1042,6 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
   cs_log_printf(CS_LOG_DEFAULT,
                 " --dim-- number of polyhedra:  %8lu\n\n",
                 n_type_cells[FVM_CELL_POLY]);
-
-
-  /* Information about the distribution between interior and border entities */
-  if (connect->v_info != NULL) {
-
-    /* Re-use n_type_cells for another purpose */
-    n_type_cells[0] = connect->v_info->n_elts;
-    n_type_cells[1] = connect->v_info->n_i_elts;
-    n_type_cells[2] = connect->v_info->n_b_elts;
-    // Caution: BUG >> vertices may be shared (not only a sum)
-    if (cs_glob_n_ranks > 1)
-      cs_parall_sum(3, CS_GNUM_TYPE, n_type_cells);
-
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "                    |   full    |   intern  |   border  |"
-                  "\n --dim-- n_vertices | %9lu | %9lu | %9lu |",
-                  n_type_cells[0], n_type_cells[1], n_type_cells[2]);
-  }
-
-  if (connect->e_info != NULL) {
-
-    /* Re-use n_type_cells for another purpose */
-    n_type_cells[0] = connect->e_info->n_elts;
-    n_type_cells[1] = connect->e_info->n_i_elts;
-    n_type_cells[2] = connect->e_info->n_b_elts;
-    // Caution: BUG >> edges may be shared (not only a sum)
-    if (cs_glob_n_ranks > 1)
-      cs_parall_sum(3, CS_GNUM_TYPE, n_type_cells);
-
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n --dim-- n_edges    | %9lu | %9lu | %9lu |",
-                  n_type_cells[0], n_type_cells[1], n_type_cells[2]);
-
-  }
-
-  if (connect->f_info != NULL) {
-
-    /* Re-use n_type_cells for another purpose */
-    n_type_cells[0] = connect->f_info->n_elts;
-    n_type_cells[1] = connect->f_info->n_i_elts;
-    n_type_cells[2] = connect->f_info->n_b_elts;
-    // Caution: BUG >> interior faces may be shared (not only a sum)
-    if (cs_glob_n_ranks > 1)
-      cs_parall_sum(3, CS_GNUM_TYPE, n_type_cells);
-
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n --dim-- n_faces    | %9lu | %9lu | %9lu |",
-                  n_type_cells[0], n_type_cells[1], n_type_cells[2]);
-
-  }
-
-  if (connect->c_info != NULL) {
-
-    /* Re-use n_type_cells for another purpose */
-    n_type_cells[0] = connect->c_info->n_elts;
-    n_type_cells[1] = connect->c_info->n_i_elts;
-    n_type_cells[2] = connect->c_info->n_b_elts;
-    if (cs_glob_n_ranks > 1)
-      cs_parall_sum(3, CS_GNUM_TYPE, n_type_cells);
-
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n --dim-- n_cells    | %9lu | %9lu | %9lu |",
-                  n_type_cells[0], n_type_cells[1], n_type_cells[2]);
-  }
-
-  cs_log_printf(CS_LOG_DEFAULT, "\n");
 
 #if CS_CDO_CONNECT_DBG > 0 && defined(DEBUG) && !defined(NDEBUG)
   cs_cdo_connect_dump(connect);

@@ -638,10 +638,10 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
               " Expected: scalar-valued CDO face-based equation.");
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_cells = mesh->n_cells;
-  const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
-  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t  n_cells = connect->n_cells;
+  const cs_lnum_t  n_faces = connect->n_faces[0];
+  const cs_lnum_t  n_b_faces = connect->n_faces[1];
+  const cs_lnum_t  n_i_faces = connect->n_faces[2];
 
   cs_cdofb_scaleq_t  *b = NULL;
 
@@ -653,7 +653,7 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
   /* Dimensions of the algebraic system */
   b->n_cells = n_cells;
   b->n_faces = n_faces;
-  b->max_sys_size  = connect->n_max_fbyc + 1;
+  b->max_sys_size = connect->n_max_fbyc + 1;
 
   /* Store a direct access to which term one has to compute */
   b->sys_flag = 0;
@@ -1064,7 +1064,7 @@ cs_cdofb_scaleq_extra_op(const char            *eqname,
   char *postlabel = NULL;
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
+  const cs_lnum_t  n_i_faces = connect->n_faces[2];
   const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(builder);
 
   /* Field post-processing */

@@ -77,7 +77,8 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDOVCB_SCALEQ_DBG  0
+#define CS_CDOVCB_SCALEQ_DBG       0
+#define CS_CDOVCB_SCALEQ_MODULO  100
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
@@ -205,7 +206,7 @@ _get_cell_mesh_flag(cs_flag_t       cell_flag,
 {
   cs_flag_t  msh_flag = v_msh_flag | s_msh_flag;
 
-  if (cell_flag & CS_CDO_CONNECT_BD)
+  if (cell_flag & CS_FLAG_BOUNDARY)
     msh_flag |= b_msh_flag;
 
   return msh_flag;
@@ -297,7 +298,7 @@ _init_cell_structures(const cs_flag_t             cell_flag,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
-  if (cell_flag & CS_CDO_CONNECT_BD) {
+  if (cell_flag & CS_FLAG_BOUNDARY) {
 
     /* Reset values */
     cbc->n_bc_faces = 0;
@@ -313,7 +314,7 @@ _init_cell_structures(const cs_flag_t             cell_flag,
     short int  n_vf;
     for (short int f = 0; f < cm->n_fc; f++) {
 
-      const cs_lnum_t  f_id = cm->f_ids[f] - connect->f_info->n_i_elts;
+      const cs_lnum_t  f_id = cm->f_ids[f] - connect->n_faces[2]; // n_i_faces
       if (f_id > -1) { // Border face
 
         cs_flag_t  face_flag = face_bc->flag[f_id];
@@ -587,9 +588,9 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
               " Expected: scalar-valued CDO vertex+cell-based equation.");
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_vertices = connect->v_info->n_elts;
-  const cs_lnum_t  n_b_faces = connect->f_info->n_b_elts;
-  const cs_lnum_t  n_cells = connect->c_info->n_elts;
+  const cs_lnum_t  n_vertices = connect->n_vertices;
+  const cs_lnum_t  n_b_faces = connect->n_faces[1];
+  const cs_lnum_t  n_cells = connect->n_cells;
   const cs_param_bc_t  *bc_param = eqp->bc;
 
   cs_cdovcb_scaleq_t  *b = NULL;
@@ -1079,7 +1080,6 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
     int  t_id = 0;
 #endif
     const cs_equation_param_t  *eqp = b->eqp;
-    const cs_flag_t  *cell_flags = connect->c_info->flag;
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -1143,7 +1143,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
 #pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-      const cs_flag_t  cell_flag = cell_flags[c_id];
+      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
       const cs_flag_t  msh_flag = _get_cell_mesh_flag(cell_flag,
                                                       b->msh_flag,
                                                       b->bd_msh_flag,
@@ -1157,7 +1157,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
                             csys, cbc, cb);                          // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-      if (c_id % 100 == 0)
+      if (c_id % CS_CDOVCB_SCALEQ_MODULO == 0)
         cs_cell_mesh_dump(cm);
 #endif
 
@@ -1187,7 +1187,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs) */
-        if (cell_flag & CS_CDO_CONNECT_BD) {
+        if (cell_flag & CS_FLAG_BOUNDARY) {
           if (eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
               eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
 
@@ -1203,7 +1203,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
         } // Border cell
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-        if (c_id % 100 == 0)
+        if (c_id % CS_CDOVCB_SCALEQ_MODULO == 0)
           cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
       } /* END OF DIFFUSION */
@@ -1220,11 +1220,11 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
 
         /* Last treatment for the advection term: Apply boundary conditions
            csys is updated inside (matrix and rhs) */
-        if (cell_flag & CS_CDO_CONNECT_BD)
+        if (cell_flag & CS_FLAG_BOUNDARY)
           b->add_advection_bc(cbc, cm, eqp, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-        if (c_id % 100 == 0)
+        if (c_id % CS_CDOVCB_SCALEQ_MODULO == 0)
           cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
 #endif
       } /* END OF ADVECTION */
@@ -1313,7 +1313,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
       } /* END OF TIME CONTRIBUTION */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
-      if (c_id % 100 == 0)
+      if (c_id % CS_CDOVCB_SCALEQ_MODULO == 0)
         cs_cell_sys_dump(">> Local system matrix before condensation",
                          c_id, csys);
 #endif
@@ -1330,7 +1330,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs) */
-        if (cell_flag & CS_CDO_CONNECT_BD)
+        if (cell_flag & CS_FLAG_BOUNDARY)
           b->enforce_dirichlet(eqp->diffusion_hodge, cbc, cm, // in
                                b->boundary_flux_op,           // function (in)
                                fm, cb, csys);                 // in/out
@@ -1508,14 +1508,14 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
 
   if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) {
 
-    const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
-    const cs_lnum_t  *bf2c_ids = f2c->col_id + 2*n_i_faces;
+    const cs_lnum_t  n_i_faces = connect->n_faces[2];
+    const cs_lnum_t  *cell_ids = f2c->col_id + f2c->idx[n_i_faces];
 
     for (cs_lnum_t id = 0; id < n_elts[0]; id++) {
 
       const cs_lnum_t  bf_id = elt_ids[id];
       const cs_lnum_t  f_id = n_i_faces + bf_id;
-      const cs_lnum_t  c_id = bf2c_ids[bf_id];
+      const cs_lnum_t  c_id = cell_ids[bf_id];
 
       /* Build a face-wise view of the mesh */
       cs_face_mesh_build(c_id, f_id, connect, quant, fm);
@@ -1562,63 +1562,52 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
     for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
 
       const cs_lnum_t  f_id = elt_ids[i];
-      const cs_lnum_t  *f2c_ids = f2c->col_id + 2*f_id;
-      const cs_lnum_t  c1_id = f2c_ids[0], c2_id = f2c_ids[1];
 
-      /* Build a face-wise view of the mesh */
-      cs_face_mesh_build(c1_id, f_id, connect, quant, fm);
+      for (cs_lnum_t j = f2c->idx[f_id]; j < f2c->idx[f_id+1]; j++) {
 
-      const short int  sgn = (_dp3(fm->face.unitv, direction) < 0) ? -1 : 1;
+        const cs_lnum_t  c_id = f2c->col_id[j];
 
-      /* Store values related to this face */
-      for (short int v = 0; v < fm->n_vf; v++)
-        p_v[v] = pdi[fm->v_ids[v]];
+        /* Build a face-wise view of the mesh */
+        cs_face_mesh_build(c_id, f_id, connect, quant, fm);
 
-      cs_reco_pv_at_face_center(fm, p_v, &p_f);
+        const short int  sgn = (_dp3(fm->face.unitv, direction) < 0) ? -1 : 1;
 
-      if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
+        /* Store values related to this face */
+        for (short int v = 0; v < fm->n_vf; v++)
+          p_v[v] = pdi[fm->v_ids[v]];
 
-        /* Compute the diffusive flux seen from cell c1 */
-        cs_property_get_cell_tensor(c1_id,
-                                    eqp->diffusion_property,
-                                    eqp->diffusion_hodge.inv_pty,
-                                    pty_tens);
+        cs_reco_pv_at_face_center(fm, p_v, &p_f);
 
-        flx = cs_cdo_diffusion_face_flux(fm,
-                                         (const cs_real_3_t (*))pty_tens,
-                                         p_v, p_f, b->cell_values[c1_id],
-                                         cb);
+        if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
 
-        /* Compute the diffusive flux seen from cell c2 */
-        cs_face_mesh_build(c2_id, f_id, connect, quant, fm);
+          /* Compute the diffusive flux seen from cell c1 */
+          cs_property_get_cell_tensor(c_id,
+                                      eqp->diffusion_property,
+                                      eqp->diffusion_hodge.inv_pty,
+                                      pty_tens);
 
-        cs_property_get_cell_tensor(c2_id,
-                                    eqp->diffusion_property,
-                                    eqp->diffusion_hodge.inv_pty,
-                                    pty_tens);
+          flx = cs_cdo_diffusion_face_flux(fm,
+                                           (const cs_real_3_t (*))pty_tens,
+                                           p_v, p_f, b->cell_values[c_id],
+                                           cb);
 
-        flx += cs_cdo_diffusion_face_flux(fm,
-                                          (const cs_real_3_t (*))pty_tens,
-                                          p_v, p_f, b->cell_values[c2_id],
-                                          cb);
+          *diff_flux += sgn * 0.5 * flx;
 
-        *diff_flux += sgn * 0.5 * flx;
+        } // Diffusive flux
 
-      } // Diffusive flux
+        if (b->sys_flag & CS_FLAG_SYS_ADVECTION) { /* Centered flux */
 
-      if (b->sys_flag & CS_FLAG_SYS_ADVECTION) {
+          /* Compute the local advective flux seen from cell */
+          cs_advection_field_get_cell_vector(c_id,
+                                             eqp->advection_field,
+                                             &adv_c);
+          flx = adv_c.meas * _dp3(adv_c.unitv, fm->face.unitv);
 
-        /* Compute the local advective flux seen from cell 1 */
-        cs_advection_field_get_cell_vector(c1_id, eqp->advection_field, &adv_c);
-        flx = adv_c.meas * _dp3(adv_c.unitv, fm->face.unitv);
+          *conv_flux += sgn * 0.5 * flx  * p_f * fm->face.meas;
 
-        /* Compute the local advective flux seen from cell 2 */
-        cs_advection_field_get_cell_vector(c2_id, eqp->advection_field, &adv_c);
-        flx += adv_c.meas * _dp3(adv_c.unitv, fm->face.unitv);
+        } // Advective flux
 
-        *conv_flux += sgn * 0.5 * flx  * p_f * fm->face.meas;
-
-      } // Advective flux
+      } // Loop on cells attached to this interior face
 
     } // Loop on selected interior faces
 

@@ -120,7 +120,7 @@ static cs_connect_index_t *
 _get_v2v(const cs_cdo_connect_t     *connect)
 {
   /* Build a (sorted) v2v connectivity index */
-  const cs_lnum_t  n_vertices = connect->v_info->n_elts;
+  const cs_lnum_t  n_vertices = connect->n_vertices;
   const cs_connect_index_t  *c2v = connect->c2v;
 
   cs_connect_index_t  *v2c = cs_index_transpose(n_vertices, c2v);
@@ -169,7 +169,7 @@ _get_f2f(const cs_cdo_connect_t     *connect)
 {
   cs_connect_index_t  *c2f = NULL, *f2c = NULL, *f2f = NULL;
 
-  const cs_lnum_t  n_faces = connect->f_info->n_elts;
+  const cs_lnum_t  n_faces = connect->n_faces[0];
   const cs_sla_matrix_t *mc2f = connect->c2f;
   const cs_sla_matrix_t *mf2c = connect->f2c;
 
@@ -306,9 +306,9 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
   /* Allocate cell-wise and face-wise view of a mesh */
   cs_cdo_local_initialize(connect);
 
-  const cs_lnum_t  n_cells = connect->c_info->n_elts;
-  const cs_lnum_t  n_faces = connect->f_info->n_elts;
-  const cs_lnum_t  n_vertices = connect->v_info->n_elts;
+  const cs_lnum_t  n_cells = connect->n_cells;
+  const cs_lnum_t  n_faces = connect->n_faces[0];
+  const cs_lnum_t  n_vertices = connect->n_vertices;
 
   /* Allocate and initialize matrix assembler and matrix structures */
   if (scheme_flag & CS_SCHEME_FLAG_CDOVB ||

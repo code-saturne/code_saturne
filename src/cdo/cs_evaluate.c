@@ -844,10 +844,10 @@ _pvsp_by_qov(const double       quantity_val,
         for (cs_lnum_t l = f2e->idx[f_id]; l < f2e->idx[f_id+1]; l++) {
 
           const cs_lnum_t  e_id = f2e->col_id[l];
-          const cs_lnum_t  shift_e = 2*e_id;
+          const cs_lnum_t  *v_ids = e2v->col_id + 2*e_id;
 
-          vtx_tag[e2v->col_id[shift_e]] = 0;
-          vtx_tag[e2v->col_id[shift_e+1]] = 0;
+          vtx_tag[v_ids[0]] = 0;
+          vtx_tag[v_ids[1]] = 0;
 
         } // Loop on face edges
       } // This face belongs to the frontier of the selection (only interior)

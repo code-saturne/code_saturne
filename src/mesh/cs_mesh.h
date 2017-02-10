@@ -41,6 +41,7 @@
 #include "cs_halo.h"
 #include "cs_interface.h"
 #include "cs_numbering.h"
+#include "cs_range_set.h"
 
 #include "cs_mesh_builder.h"
 
@@ -125,6 +126,8 @@ typedef struct {
 
   cs_interface_set_t  *vtx_interfaces;   /* Vertices interface set */
   cs_halo_t           *halo;             /* Ghost cells structure */
+  cs_range_set_t      *vtx_range_set;    /* Handle local/distant ranges for
+                                            vertices in parallel */
 
   cs_numbering_t  *cell_numbering;   /* Cell numbering info */
   cs_numbering_t  *i_face_numbering; /* Interior face numbering info */

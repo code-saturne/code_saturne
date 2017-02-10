@@ -56,6 +56,7 @@
 #include "cs_hho_scaleq.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_range_set.h"
 #include "cs_sles.h"
@@ -75,7 +76,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_EQUATION_DBG  0
+#define CS_EQUATION_DBG  3
 
 /*============================================================================
  * Type definitions
@@ -287,19 +288,23 @@ struct _cs_equation_t {
   bool    do_build;     /* false => keep the system as it is */
 
   /* Algebraic system */
-  cs_lnum_t                 rhs_size; /* Size of the right-hand size */
-  cs_real_t                *rhs;      /* right-hand side defined by a local
-                                         cellwise building.
-                                         This may be different from the rhs
-                                         given to cs_sles_solve() in parallel
-                                         mode */
-  cs_matrix_t              *matrix;   /* matrix to inverse with cs_sles_solve()
-                                         The matrix size can be different from
-                                         rhs size in parallel mode since the
-                                         decomposition is different */
+  cs_lnum_t              sles_size[2]; /* 0: size of the linear system treated
+                                             on this rank
+                                             (size for gather operation)
+                                          1: size of the linear system related
+                                             to the local number of entities
+                                             (size for scatter operation) */
+  cs_real_t             *rhs;          /* right-hand side defined by a local
+                                          cellwise building. This may be
+                                          different from the rhs given to
+                                          cs_sles_solve() in parallel mode */
+  cs_matrix_t           *matrix;       /* matrix to inverse with cs_sles_solve()
+                                          The matrix size can be different from
+                                          rhs size in parallel mode since the
+                                          decomposition is different */
 
-  const cs_range_set_t     *rset;    /* range set to handle parallelism
-                                        shared with cs_cdo_connect_t struct. */
+  const cs_range_set_t  *rset;         /* range set to handle parallelism
+                                          shared with cs_cdo_connect_t struct.*/
 
   /* System builder depending on the numerical scheme */
   void                     *builder;
@@ -640,7 +645,7 @@ cs_equation_create(const char            *eqname,
   eq->matrix = NULL;
   eq->rhs = NULL;
   eq->rset = NULL;
-  eq->rhs_size = 0;
+  eq->sles_size[0] = eq->sles_size[1] = 0;
 
   /* Builder structure for this equation */
   eq->builder = NULL;
@@ -823,7 +828,9 @@ cs_equation_last_setup(const cs_cdo_connect_t   *connect,
     eq->rset = connect->v_rs;
 
     /* Set the size of the algebraic system arising from the cellwise process */
-    eq->rhs_size = connect->v_info->n_elts;
+    eq->sles_size[0] = eq->sles_size[1] = connect->n_vertices;
+    if (cs_glob_n_ranks > 1)
+      eq->sles_size[0] = connect->v_rs->n_elts[0];
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
@@ -843,7 +850,9 @@ cs_equation_last_setup(const cs_cdo_connect_t   *connect,
     eq->rset = connect->v_rs;
 
     /* Set the size of the algebraic system arising from the cellwise process */
-    eq->rhs_size = connect->v_info->n_elts;
+    eq->sles_size[0] = eq->sles_size[1] = connect->n_vertices;
+    if (cs_glob_n_ranks > 1)
+      eq->sles_size[0] = connect->v_rs->n_elts[0];
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
@@ -863,7 +872,9 @@ cs_equation_last_setup(const cs_cdo_connect_t   *connect,
     eq->rset = connect->f_rs;
 
     /* Set the size of the algebraic system arising from the cellwise process */
-    eq->rhs_size = connect->f_info->n_elts;
+    eq->sles_size[0] = eq->sles_size[1] = connect->n_faces[0];
+    if (cs_glob_n_ranks > 1)
+      eq->sles_size[0] = connect->f_rs->n_elts[0];
     break;
 
   case CS_SPACE_SCHEME_HHO:
@@ -884,7 +895,9 @@ cs_equation_last_setup(const cs_cdo_connect_t   *connect,
 
     /* Set the size of the algebraic system arising from the cellwise process */
     // TODO (update according to the order)
-    eq->rhs_size = connect->f_info->n_elts;
+    eq->sles_size[0] = eq->sles_size[1] = connect->n_faces[0];
+    if (cs_glob_n_ranks > 1)
+      eq->sles_size[0] = connect->f_rs->n_elts[0];
     break;
 
   default:
@@ -1867,56 +1880,67 @@ cs_equation_solve(cs_equation_t   *eq)
     cs_timer_stats_start(eq->solve_ts_id);
 
   const cs_equation_param_t  *eqp = eq->param;
-  const double r_norm = 1.0; // No renormalization by default (TODO)
+  const double  r_norm = 1.0; // No renormalization by default (TODO)
   const cs_param_itsol_t  itsol_info = eqp->itsol_info;
+  const cs_lnum_t  n_max_elts = CS_MAX(eq->sles_size[1],
+                                       cs_matrix_get_n_columns(eq->matrix));
 
-  if (eqp->sles_verbosity > 1)
-    printf("\n# %s >> Solve Ax = b with %s as solver and %s as precond.\n"
-           "# System size: %d ; eps: % -8.5e ;\n",
-           eq->name, cs_param_get_solver_name(itsol_info.solver),
-           cs_param_get_precond_name(itsol_info.precond),
-           eq->rhs_size, itsol_info.eps);
+  cs_real_t  *x = NULL; //cs_equation_get_tmpbuf();
+  cs_real_t  *b = NULL; //x + eq->sles_size[1];
 
-  cs_real_t  *x = cs_equation_get_tmpbuf();
-  cs_real_t  *b = x + eq->rhs_size;
+  BFT_MALLOC(x, n_max_elts, cs_real_t);
+  BFT_MALLOC(b, n_max_elts, cs_real_t);
+
   cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
   /* Sanity check (up to now, only scalar field are handled) */
   assert(fld->dim == 1);
 
+  /* x and b are a "gathered" view of field->val and eq->rhs respectively
+     through the range set operation.
+     Their size is equal to sles_size[0] <= sles_size[1] */
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 
     /* Compact numbering to fit the algebraic decomposition */
     cs_range_set_gather(eq->rset,
                         CS_REAL_TYPE, 1, // type and stride
-                        fld->val,
-                        x);
+                        fld->val,        // in: size = eq->sles_size[1]
+                        x);              //out: size = eq->sles_size[0]
 
     /* The right-hand side stems from a cellwise building on this rank.
        Other contributions from distant ranks may contribute to an element
        owned by the local rank */
-# pragma omp parallel for if (eq->rhs_size > CS_THR_MIN)
-    for (cs_lnum_t  i = 0; i < eq->rhs_size; i++)
+#if defined(HAVE_OPENMP)
+#   pragma omp parallel for if (eq->sles_size[1] > CS_THR_MIN)
+    for (cs_lnum_t  i = 0; i < eq->sles_size[1]; i++)
       b[i] = eq->rhs[i];
+#else
+    memcpy(b, eq->rhs, eq->sles_size[1] * sizeof(cs_real_t));
+#endif
 
     cs_interface_set_sum(eq->rset->ifs,
-                         eq->rhs_size, 1, false, CS_REAL_TYPE,
+                         eq->sles_size[1], 1, false, CS_REAL_TYPE,
                          b);
 
     cs_range_set_gather(eq->rset,
                         CS_REAL_TYPE, 1, // type and stride
-                        b,
-                        b);
+                        b,               // in: size = eq->sles_size[1]
+                        b);              //out: size = eq->sles_size[0]
 
   }
-  else { /* Serial mode */
+  else { /* Serial mode *** without periodicity *** */
 
-    assert(cs_matrix_get_n_rows(eq->matrix) == eq->rhs_size); // Sanity check
+    assert(eq->sles_size[0] == n_max_elts);
+    assert(cs_matrix_get_n_rows(eq->matrix) == n_max_elts);
 
-# pragma omp parallel for if (eq->rhs_size > CS_THR_MIN)
-    for (cs_lnum_t  i = 0; i < eq->rhs_size; i++)
+#if defined(HAVE_OPENMP)
+#   pragma omp parallel for if (eq->sles_size[1] > CS_THR_MIN)
+    for (cs_lnum_t  i = 0; i < eq->sles_size[1]; i++)
       x[i] = fld->val[i];
+#else
+    memcpy(x, fld->val, eq->sles_size[1] * sizeof(cs_real_t));
+#endif
 
     /* Nothing to do for the right-hand side */
     b = eq->rhs;
@@ -1937,28 +1961,31 @@ cs_equation_solve(cs_equation_t   *eq)
 
   if (eq->param->sles_verbosity > 0) {
 
+    const cs_lnum_t  size = eq->sles_size[0];
     const cs_lnum_t  *row_index, *col_id;
     const cs_real_t  *d_val, *x_val;
 
     cs_matrix_get_msr_arrays(eq->matrix, &row_index, &col_id, &d_val, &x_val);
 
+    cs_gnum_t  nnz = row_index[size];
+    if (cs_glob_n_ranks > 1)
+      cs_parall_counter(&nnz, 1);
+
     cs_log_printf(CS_LOG_DEFAULT,
                   "  <%s/sles_cvg> code  %d n_iters  %d residual  % -8.4e"
-                  " nnz %d\n",
-                  eq->name, code, n_iters, residual, row_index[eq->rhs_size]);
+                  " nnz %lu\n",
+                  eq->name, code, n_iters, residual, nnz);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
     if (eq->param->verbosity > 100) {
-      cs_dump_array_to_listing("EQ.AFTER.SOLVE >> X", eq->rhs_size, x, 8);
-      cs_dump_array_to_listing("EQ.SOLVE >> RHS", eq->rhs_size, b, 8);
+      cs_dump_array_to_listing("EQ.AFTER.SOLVE >> X", size, x, 8);
+      cs_dump_array_to_listing("EQ.SOLVE >> RHS", size, b, 8);
     }
-
 #if CS_EQUATION_DBG > 2
     if (eq->param->verbosity > 100) {
-      size_t  nnz = row_index[eq->rhs_size];
-      cs_dump_integer_to_listing("ROW_INDEX", eq->rhs_size + 1, row_index, 8);
+      cs_dump_integer_to_listing("ROW_INDEX", size + 1, row_index, 8);
       cs_dump_integer_to_listing("COLUMN_ID", nnz, col_id, 8);
-      cs_dump_array_to_listing("D_VAL", eq->rhs_size, d_val, 8);
+      cs_dump_array_to_listing("D_VAL", size, d_val, 8);
       cs_dump_array_to_listing("X_VAL", nnz, x_val, 8);
     }
 #endif
@@ -1988,17 +2015,20 @@ cs_equation_solve(cs_equation_t   *eq)
   /* Define the new field value for the current time */
   eq->update_field(x, eq->rhs, eq->builder, fld->val);
 
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_stop(eq->main_ts_id);
-
   if (eq->param->flag & CS_EQUATION_UNSTEADY)
     eq->do_build = true; /* Improvement: exhibit cases where a new build
                             is not needed */
 
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+
   /* Free memory */
+  BFT_FREE(x);
+  if (b != eq->rhs)
+    BFT_FREE(b);
+  BFT_FREE(eq->rhs);
   cs_sles_free(sles);
   cs_matrix_destroy(&(eq->matrix));
-  BFT_FREE(eq->rhs);
 }
 
 /*----------------------------------------------------------------------------*/

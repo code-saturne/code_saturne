@@ -1383,7 +1383,7 @@ cs_gwf_initialize(const cs_cdo_connect_t    *connect,
   cs_equation_t  *eq = NULL;
 
   const cs_connect_index_t  *c2e = connect->c2e;
-  const cs_lnum_t  n_cells = connect->c_info->n_elts;
+  const cs_lnum_t  n_cells = connect->n_cells;
 
   /* Sanity check */
   assert(n_soils > 0);

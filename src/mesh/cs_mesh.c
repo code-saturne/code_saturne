@@ -2168,6 +2168,7 @@ cs_mesh_create(void)
 
   mesh->vtx_interfaces = NULL;
   mesh->halo_type = CS_HALO_N_TYPES;
+  mesh->vtx_range_set = NULL;
   mesh->n_ghost_cells = 0;
   mesh->n_cells_with_ghosts = 0;
   mesh->halo = NULL;
@@ -2290,7 +2291,7 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
     BFT_FREE(mesh->gcell_vtx_lst);
   }
 
-  /* Free halo and interface structures */
+  /* Free halo, interface and range set structures */
 
   if (free_halos) {
 
@@ -2301,6 +2302,8 @@ cs_mesh_free_rebuildable(cs_mesh_t  *mesh,
       cs_interface_set_destroy(&(mesh->vtx_interfaces));
     if (mesh->halo != NULL)
       cs_halo_destroy(&(mesh->halo));
+    if (mesh->vtx_range_set != NULL)
+      cs_range_set_destroy(&(mesh->vtx_range_set));
 
   }
 

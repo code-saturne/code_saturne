@@ -42,7 +42,9 @@
 
 #include <bft_mem.h>
 
+#include "cs_array_reduce.h"
 #include "cs_log.h"
+#include "cs_order.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 
@@ -610,7 +612,6 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
   assert(quant != NULL); // Sanity check
 
   /* Cell info (set default values) */
-  quant->cell_info.min_id = quant->cell_info.max_id = -1;
   quant->cell_info.h_min = quant->cell_info.meas_min = DBL_MAX;
   quant->cell_info.h_max = quant->cell_info.meas_max = -DBL_MAX;
 
@@ -621,18 +622,15 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
     if (meas > quant->cell_info.meas_max) {
       quant->cell_info.meas_max = meas;
       quant->cell_info.h_max = pow(meas, cs_math_onethird);
-      quant->cell_info.max_id = c_id;
     }
     if (meas < quant->cell_info.meas_min) {
       quant->cell_info.meas_min = meas;
       quant->cell_info.h_min = pow(meas, cs_math_onethird);
-      quant->cell_info.min_id = c_id;
     }
 
   } // Loop on cells
 
   /* Face info (set default values) */
-  quant->face_info.min_id = quant->face_info.max_id = -1;
   quant->face_info.h_min = quant->face_info.meas_min = DBL_MAX;
   quant->face_info.h_max = quant->face_info.meas_max = -DBL_MAX;
 
@@ -643,18 +641,15 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
     if (meas > quant->face_info.meas_max) {
       quant->face_info.meas_max = meas;
       quant->face_info.h_max = sqrt(meas);
-      quant->face_info.max_id = f_id;
     }
     if (meas < quant->face_info.meas_min) {
       quant->face_info.meas_min = meas;
       quant->face_info.h_min = sqrt(meas);
-      quant->face_info.min_id = f_id;
     }
 
   } // Loop on faces
 
   /* Edge info (set default values) */
-  quant->edge_info.min_id = quant->edge_info.max_id = -1;
   quant->edge_info.h_min = quant->edge_info.meas_min = DBL_MAX;
   quant->edge_info.h_max = quant->edge_info.meas_max = -DBL_MAX;
 
@@ -665,17 +660,16 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
     if (meas > quant->edge_info.meas_max) {
       quant->edge_info.meas_max = meas;
       quant->edge_info.h_max = meas;
-      quant->edge_info.max_id = e_id;
     }
     if (meas < quant->edge_info.meas_min) {
       quant->edge_info.meas_min = meas;
       quant->edge_info.h_min = meas;
-      quant->edge_info.min_id = e_id;
     }
 
   } // Loop on edges
 
 }
+
 /*----------------------------------------------------------------------------
   Algorithm for computing mesh quantities : copy data from Saturne structure
   ----------------------------------------------------------------------------*/
@@ -699,10 +693,6 @@ _saturn_algorithm(const cs_mesh_t             *mesh,
   /* Copy cell volumes and compute vol_tot */
   memcpy(cdoq->cell_centers, mq->cell_cen, 3*n_cells*sizeof(cs_real_t));
   memcpy(cdoq->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
-
-  cdoq->vol_tot = 0.0;
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    cdoq->vol_tot += mq->cell_vol[i];
 
   /* Concatenate face centers for interior and border faces */
 # pragma omp parallel for if (n_i_faces > CS_THR_MIN)
@@ -742,9 +732,6 @@ _vtx_algorithm(const cs_mesh_t             *mesh,
 
   /* Copy cell volumes and compute vol_tot */
   memcpy(quant->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
-  quant->vol_tot = 0.0;
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    quant->vol_tot += mq->cell_vol[i];
 
   /* Concatenate face centers for interior and border faces */
 # pragma omp parallel for if (n_i_faces > CS_THR_MIN)
@@ -798,59 +785,56 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
                    const cs_cdo_connect_t      *connect,
                    cs_cdo_quantities_t         *quant) /* In/out */
 {
-  cs_lnum_t  i, k, c_id, f_id, A, B, C, sgn;
-  double  Fvol, inv_surf;
-  _cdo_fspec_t  fspec;
-  _cdo_fsubq_t  fsubq;
-
   const int X = 0, Y = 1, Z = 2;
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_t n_faces = quant->n_faces;
 
-  /* Sanity check */
-
+  /* Sanity checks */
   assert(connect->f2c != NULL);
   assert(connect->c2f != NULL);
 
   /* Allocate and initialize cell quantities */
-
   BFT_MALLOC(quant->face, n_faces, cs_quant_t);
   BFT_MALLOC(quant->cell_centers, 3*n_cells, cs_real_t);
   BFT_MALLOC(quant->cell_vol, n_cells, cs_real_t);
 
-  for (i = 0; i < n_cells; i++) {
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
     quant->cell_vol[i] = 0.0;
-    for (k = 0; k < 3; k++)
+    for (int k = 0; k < 3; k++)
       quant->cell_centers[3*i+k] = 0.0;
   }
 
-  for (f_id = 0; f_id < n_faces; f_id++) {   /* Loop on faces */
+  for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {   /* Loop on faces */
 
     /* Choose gamma to maximize normal according gamma (x, y, or z)
        Define a direct basis (alpha, beta, gamma) with this choice
        Compute omega = - <n, P> where P belongs to the face */
 
-    fspec = _get_fspec(f_id, mesh, mq);
+    _cdo_fspec_t  fspec = _get_fspec(f_id, mesh, mq);
 
-    A = fspec.XYZ[X];
-    B = fspec.XYZ[Y];
-    C = fspec.XYZ[Z];
+    cs_lnum_t  A = fspec.XYZ[X];
+    cs_lnum_t  B = fspec.XYZ[Y];
+    cs_lnum_t  C = fspec.XYZ[Z];
 
-    fsubq = _get_fsub_quantities(f_id, connect, mesh->vtx_coord, fspec);
+    _cdo_fsubq_t  fsubq = _get_fsub_quantities(f_id,
+                                               connect,
+                                               mesh->vtx_coord,
+                                               fspec);
 
-    inv_surf = 1.0/fsubq.F1;
+    const double  inv_surf = 1.0/fsubq.F1;
     quant->face[f_id].center[A] = inv_surf * fsubq.Fa;
     quant->face[f_id].center[B] = inv_surf * fsubq.Fb;
     quant->face[f_id].center[C] = inv_surf * fsubq.Fc;
 
     /* Update cell quantities */
-    for (i = connect->f2c->idx[f_id]; i < connect->f2c->idx[f_id+1]; i++) {
+    const cs_sla_matrix_t  *f2c = connect->f2c;
+    for (cs_lnum_t i = f2c->idx[f_id]; i < f2c->idx[f_id+1]; i++) {
 
-      c_id = connect->f2c->col_id[i];
-      sgn = connect->f2c->sgn[i];
-
-      Fvol = ( (fspec.XYZ[X] == 0) ? fsubq.Fa :
-               ( (fspec.XYZ[Y] == 0) ? fsubq.Fb : fsubq.Fc) );
+      const cs_lnum_t  c_id = f2c->col_id[i];
+      const short int  sgn = f2c->sgn[i];
+      const double Fvol = ( (fspec.XYZ[X] == 0) ? fsubq.Fa :
+                            ( (fspec.XYZ[Y] == 0) ? fsubq.Fb : fsubq.Fc) );
 
       quant->cell_vol[c_id] += sgn * fspec.q.unitv[0] * Fvol;
       quant->cell_centers[3*c_id + A] += sgn * fspec.q.unitv[A] * fsubq.Fa2;
@@ -862,30 +846,11 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
   } /* End of loop on faces */
 
   /* Compute cell center of gravity and total volume */
-  quant->vol_tot = 0.0;
-
-  for (i = 0; i < n_cells; i++) {
-
-    double  inv_vol2 = 0.5 / quant->cell_vol[i];
-
-    quant->vol_tot += quant->cell_vol[i];
-
-    for (k = 0; k < 3; k++)
-      quant->cell_centers[3*i+k] *= inv_vol2;
-
-#if CS_CDO_QUANTITIES_DBG > 1 && defined(DEBUG) && !defined(NDEBUG)
-    printf("\n (%4d) volINNOV: % -12.5e | volSAT % -12.5e | %-12.5e\n",
-           i+1, quant->cell_vol[i], mq->cell_vol[i],
-           fabs(quant->cell_vol[i] - mq->cell_vol[i]));
-    printf(" INNOVccog (% -.4e, % -.4e, % -.4e)",
-           quant->cell_centers[3*i], quant->cell_centers[3*i+1],
-           quant->cell_centers[3*i+2]);
-    printf(" SATccog (% -.4e, % -.4e, % -.4e) Delta (% -.4e, % -.4e, % -.4e)\n",
-           mq->cell_cen[3*i],mq->cell_cen[3*i+1],mq->cell_cen[3*i+2],
-           fabs(quant->cell_centers[3*i]-mq->cell_cen[3*i]),
-           fabs(quant->cell_centers[3*i+1]-mq->cell_cen[3*i+1]),
-           fabs(quant->cell_centers[3*i+2]-mq->cell_cen[3*i+2]));
-#endif
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    const double  inv_2vol = 0.5 / quant->cell_vol[i];
+    for (int k = 0; k < 3; k++)
+      quant->cell_centers[3*i+k] *= inv_2vol;
   }
 
 }
@@ -1006,16 +971,74 @@ cs_cdo_quantities_build(cs_cdo_cell_center_algo_t    cc_algo,
 
   /* Dimension of each type of entities */
   cdoq->n_cells = m->n_cells;
+  cdoq->n_g_cells = m->n_g_cells;
+
   cdoq->n_i_faces = m->n_i_faces;
   cdoq->n_b_faces = m->n_b_faces;
   cdoq->n_faces = m->n_i_faces + m->n_b_faces;
+  cdoq->n_g_faces = m->n_g_i_faces + m->n_g_b_faces;
+
   cdoq->n_vertices = m->n_vertices;
+  cdoq->n_g_vertices = m->n_g_vertices;
   cdoq->vtx_coord = m->vtx_coord;
 
-  if (topo->e2v != NULL)
+  if (topo->e2v != NULL) {
     cdoq->n_edges = topo->e2v->n_rows;
+
+    if (cs_glob_n_ranks == 1)
+      cdoq->n_g_edges = cdoq->n_edges;
+
+    else { /* Compute the global number of edges */
+
+      const cs_lnum_t  *e2v_ids = topo->e2v->col_id;
+
+      cs_gnum_t  *e2v_gnum = NULL;
+      BFT_MALLOC(e2v_gnum, 2*cdoq->n_edges, cs_gnum_t);
+
+#     pragma omp parallel for if (cdoq->n_edges > CS_THR_MIN)
+      for (cs_lnum_t e = 0; e < cdoq->n_edges; e++) {
+
+        cs_gnum_t  v1 = m->global_vtx_num[e2v_ids[2*e]];
+        cs_gnum_t  v2 = m->global_vtx_num[e2v_ids[2*e+1]];
+        if (v1 < v2)
+          e2v_gnum[2*e] = v1, e2v_gnum[2*e+1] = v2;
+        else
+          e2v_gnum[2*e+1] = v2, e2v_gnum[2*e+1] = v1;
+
+      }
+
+      cs_lnum_t  *order = NULL;
+      BFT_MALLOC(order, cdoq->n_edges, cs_lnum_t);
+      cs_order_gnum_allocated_s(NULL, e2v_gnum, 2, order, cdoq->n_edges);
+
+      cs_gnum_t  *order_couples = NULL;
+      BFT_MALLOC(order_couples, 2*cdoq->n_edges, cs_gnum_t);
+#     pragma omp parallel for if (cdoq->n_edges > CS_THR_MIN)
+      for (cs_lnum_t e = 0; e < cdoq->n_edges; e++) {
+        const cs_lnum_t  o_id = 2*order[e];
+        order_couples[2*e] = e2v_gnum[o_id];
+        order_couples[2*e+1] = e2v_gnum[o_id+1];
+      }
+
+      fvm_io_num_t *edge_io_num = fvm_io_num_create_from_adj_s(NULL,
+                                                               order_couples,
+                                                               cdoq->n_edges,
+                                                               2);
+
+      cdoq->n_g_edges = fvm_io_num_get_global_count(edge_io_num);
+
+      /* Free memory */
+      BFT_FREE(order);
+      BFT_FREE(e2v_gnum);
+      BFT_FREE(order_couples);
+      fvm_io_num_destroy(edge_io_num);
+
+    } // parallel run
+
+  }
   else /* Not used by the numerical scheme */
-    cdoq->n_edges = -1;
+    cdoq->n_edges = cdoq->n_g_edges = -1;
+
 
   /* Initialize quantities not used by all schemes */
   cdoq->edge = NULL;
@@ -1052,6 +1075,13 @@ cs_cdo_quantities_build(cs_cdo_cell_center_algo_t    cc_algo,
 
   } /* switch according to cc_algo */
 
+  /* Compute the volume of the whole domain */
+  cdoq->vol_tot = 0.0;
+  cs_array_reduce_sum_l(cdoq->n_cells, 1, NULL, cdoq->cell_vol,
+                        &(cdoq->vol_tot));
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(1, CS_REAL_TYPE, &(cdoq->vol_tot));
+
   /* Finalize definition of cs_quant_t struct. for faces.
      Define face normal with unitary norm and face area */
 # pragma omp parallel for if (m->n_i_faces > CS_THR_MIN)
@@ -1063,9 +1093,11 @@ cs_cdo_quantities_build(cs_cdo_cell_center_algo_t    cc_algo,
       cdoq->face[f_id].unitv[k] = v.unitv[k];
   }
 
-  for (cs_lnum_t i = 0, f_id = m->n_i_faces; i < m->n_b_faces; i++, f_id++) {
+# pragma omp parallel for if (m->n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < m->n_b_faces; i++) {
     cs_nvec3_t  v;
     cs_nvec3((mq->b_face_normal + 3*i), &v);
+    const cs_lnum_t  f_id = m->n_i_faces + i;
     cdoq->face[f_id].meas = v.meas;
     for (int k = 0; k < 3; k++)
       cdoq->face[f_id].unitv[k] = v.unitv[k];

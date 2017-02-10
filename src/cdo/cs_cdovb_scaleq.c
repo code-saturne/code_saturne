@@ -184,7 +184,7 @@ _get_cell_mesh_flag(cs_flag_t       cell_flag,
 {
   cs_flag_t  msh_flag = v_msh_flag | s_msh_flag;
 
-  if (cell_flag & CS_CDO_CONNECT_BD)
+  if (cell_flag & CS_FLAG_BOUNDARY)
     msh_flag |= b_msh_flag;
 
   return msh_flag;
@@ -271,7 +271,7 @@ _init_cell_structures(const cs_flag_t            cell_flag,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
-  if (cell_flag & CS_CDO_CONNECT_BD) {
+  if (cell_flag & CS_FLAG_BOUNDARY) {
 
     /* Sanity check */
     assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
@@ -290,7 +290,7 @@ _init_cell_structures(const cs_flag_t            cell_flag,
     short int  n_vf;
     for (short int f = 0; f < cm->n_fc; f++) {
 
-      const cs_lnum_t  f_id = cm->f_ids[f] - connect->f_info->n_i_elts;
+      const cs_lnum_t  f_id = cm->f_ids[f] - connect->n_faces[2]; // n_i_faces
       if (f_id > -1) { // Border face
 
         const cs_flag_t  face_flag = face_bc->flag[f_id];
@@ -481,8 +481,8 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
               " Expected: scalar-valued CDO vertex-based equation.");
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_vertices = connect->v_info->n_elts;
-  const cs_lnum_t  n_b_faces = connect->f_info->n_b_elts;
+  const cs_lnum_t  n_vertices = connect->n_vertices;
+  const cs_lnum_t  n_b_faces = connect->n_faces[1];
   const cs_param_bc_t  *bc_param = eqp->bc;
 
   cs_cdovb_scaleq_t  *b = NULL;
@@ -1049,7 +1049,6 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
 #endif
 
     const cs_equation_param_t  *eqp = b->eqp;
-    const cs_flag_t  *cell_flags = connect->c_info->flag;
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
@@ -1114,7 +1113,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
 #pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-      const cs_flag_t  cell_flag = cell_flags[c_id];
+      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
       const cs_flag_t  msh_flag = _get_cell_mesh_flag(cell_flag,
                                                       b->msh_flag,
                                                       b->bd_msh_flag,
@@ -1158,7 +1157,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs) */
-        if (cell_flag & CS_CDO_CONNECT_BD) {
+        if (cell_flag & CS_FLAG_BOUNDARY) {
 
           if (eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
               eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
@@ -1193,7 +1192,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
 
         /* Last treatment for the advection term: Apply boundary conditions
            csys is updated inside (matrix and rhs) */
-        if (cell_flag & CS_CDO_CONNECT_BD)
+        if (cell_flag & CS_FLAG_BOUNDARY)
           b->add_advection_bc(cbc, cm, eqp, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
@@ -1415,14 +1414,14 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
 
   if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) { // Belongs to only one cell
 
-    const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
-    const cs_lnum_t  shift_if = 2*n_i_faces;
+    const cs_lnum_t  n_i_faces = connect->n_faces[2];
+    const cs_lnum_t  *cell_ids = f2c->col_id + f2c->idx[n_i_faces];
 
     for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
 
       const cs_lnum_t  bf_id = elt_ids[i];
       const cs_lnum_t  f_id = n_i_faces + bf_id;
-      const cs_lnum_t  c_id = f2c->col_id[shift_if + bf_id];
+      const cs_lnum_t  c_id = cell_ids[bf_id];
       const cs_quant_t  f = quant->face[f_id];
       const short int  sgn = (_dp3(f.unitv, direction) < 0) ? -1 : 1;
       const double  coef = sgn * f.meas;
@@ -1463,76 +1462,58 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
     for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
 
       const cs_lnum_t  f_id = elt_ids[i];
-      const cs_lnum_t  shift_f = 2*f_id;
-      const cs_lnum_t  c1_id = f2c->col_id[shift_f];
-      const cs_lnum_t  c2_id = f2c->col_id[shift_f+1];
       const cs_quant_t  f = quant->face[f_id];
       const short int  sgn = (_dp3(f.unitv, direction) < 0) ? -1 : 1;
 
-      if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
+      for (cs_lnum_t j = f2c->idx[f_id]; j < f2c->idx[f_id+1]; j++) {
 
-        const double  coef = 0.5 * sgn * f.meas; // mean value at the face
+        const cs_lnum_t  c_id = f2c->col_id[j];
 
-        /* Compute the local diffusive flux */
-        cs_reco_grd_cell_from_pv(c1_id, connect, quant, pdi, gc);
-        cs_property_get_cell_tensor(c1_id,
-                                    eqp->diffusion_property,
-                                    eqp->diffusion_hodge.inv_pty,
-                                    pty_tens);
-        cs_math_33_3_product((const cs_real_t (*)[3])pty_tens, gc, pty_gc);
-        *diff_flux += -coef * _dp3(f.unitv, pty_gc);
+        if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
 
-        cs_reco_grd_cell_from_pv(c2_id, connect, quant, pdi, gc);
-        cs_property_get_cell_tensor(c2_id,
-                                    eqp->diffusion_property,
-                                    eqp->diffusion_hodge.inv_pty,
-                                    pty_tens);
-        cs_math_33_3_product((const cs_real_t (*)[3])pty_tens, gc, pty_gc);
-        *diff_flux += -coef * _dp3(f.unitv, pty_gc);
+          const double  coef = 0.5 * sgn * f.meas; // mean value at the face
 
-      }
+          /* Compute the local diffusive flux */
+          cs_reco_grd_cell_from_pv(c_id, connect, quant, pdi, gc);
+          cs_property_get_cell_tensor(c_id,
+                                      eqp->diffusion_property,
+                                      eqp->diffusion_hodge.inv_pty,
+                                      pty_tens);
+          cs_math_33_3_product((const cs_real_t (*)[3])pty_tens, gc, pty_gc);
+          *diff_flux += -coef * _dp3(f.unitv, pty_gc);
 
-      if (b->sys_flag & CS_FLAG_SYS_ADVECTION) {
-
-        cs_nvec3_t  adv_c1, adv_c2;
-        cs_real_3_t adv_f;
-
-        /* Compute the local advective flux */
-        cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
-
-        /* Evaluate the advection field at the face */
-        cs_advection_field_get_cell_vector(c1_id, eqp->advection_field,
-                                           &adv_c1);
-        cs_advection_field_get_cell_vector(c2_id, eqp->advection_field,
-                                           &adv_c2);
-
-        for (int k = 0; k < 3; k++)
-          adv_f[k] = 0.5*(adv_c1.meas * adv_c1.unitv[k] +
-                          adv_c2.meas * adv_c2.unitv[k]);
-
-        /* Update the convective flux (upwinding according to adv_f) */
-        const short int  ifc1 = f2c->sgn[shift_f];
-        const double  dpf = _dp3(adv_f, f.unitv);
-
-        cs_real_t  fconv_flux = 0;
-        if (dpf > 0) {
-          if (ifc1 > 0) // nf points outward c1; adv.nf > 0
-            fconv_flux = adv_c1.meas * _dp3(adv_c1.unitv, f.unitv);
-          else // nf points outward c2; adv.nf > 0
-            fconv_flux = adv_c2.meas * _dp3(adv_c2.unitv, f.unitv);
         }
-        else if (dpf < 0) {
-          if (ifc1 > 0) // nf points outward c1; adv.nf < 0
-            fconv_flux = adv_c2.meas * _dp3(adv_c2.unitv, f.unitv);
-          else // nf points outward c2; adv.nf > 0
-            fconv_flux = adv_c1.meas * _dp3(adv_c1.unitv, f.unitv);
+
+        if (b->sys_flag & CS_FLAG_SYS_ADVECTION) {
+
+          cs_nvec3_t  adv_c;
+
+          /* Compute the local advective flux */
+          cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
+
+          /* Evaluate the advection field at the face */
+          cs_advection_field_get_cell_vector(c_id, eqp->advection_field,
+                                             &adv_c);
+
+          /* Update the convective flux (upwinding according to adv_f) */
+          const double  dpc = _dp3(adv_c.unitv, f.unitv);
+
+          cs_real_t  fconv_flux = 0;
+          if (dpc > 0) {
+            if (f2c->sgn[j] > 0) // nf points outward c; adv.nf > 0
+              fconv_flux = adv_c.meas * dpc * sgn * f.meas * pf;
+          }
+          else if (dpc < 0) {
+            if (f2c->sgn[j] < 0) // nf points inward c; adv.nf < 0
+              fconv_flux = adv_c.meas * dpc * sgn * f.meas * pf;
+          }
+          else  // centered approach
+            fconv_flux = 0.5 * adv_c.meas * dpc * sgn * f.meas * pf;
+
+          *conv_flux += fconv_flux;
+
         }
-        else { // centered approach
-          fconv_flux = 0.5 * ( adv_c2.meas * _dp3(adv_c2.unitv, f.unitv)
-                             + adv_c1.meas * _dp3(adv_c1.unitv, f.unitv));
-        }
-        fconv_flux *= sgn * f.meas * pf;
-        *conv_flux += fconv_flux;
+
       }
 
     } // Loop on selected interior faces

@@ -40,6 +40,9 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Flag associated to each cell */
+#define CS_FLAG_BOUNDARY     (1 << 0)  //  1: cell with at least one border face
+
 /* Flag related to the way a CDO system is built */
 #define CS_FLAG_SYS_DIFFUSION    (1 << 0) //   1: Build the diffusion term
 #define CS_FLAG_SYS_ADVECTION    (1 << 1) //   2: Build the advection term
@@ -96,12 +99,7 @@ BEGIN_C_DECLS
 /* The following limitation only results from an optimization in the size of
    the bit mask (can be changed if needed by changing the definition of
    the type cs_mask_t) */
-#define CS_CDO_N_MAX_REACTIONS 6 // Max number of reaction terms in an equation
-
-/* Define a mask for each type of terms
-   reaction terms are in the range 0..5; cf. CS_CDO_N_MAX_REACTIONS */
-#define CS_MASK_DIFF   (1 << 6)
-#define CS_MASK_TIME   (1 << 7)
+#define CS_CDO_N_MAX_REACTIONS  8 // Max number of reaction terms in an equation
 
 /* Specifications for open mp loops */
 #define CS_CDO_OMP_CHUNK_SIZE  128

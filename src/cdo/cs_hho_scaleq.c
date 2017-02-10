@@ -238,9 +238,9 @@ cs_hho_scaleq_init(const cs_equation_param_t   *eqp,
               " Expected: scalar-valued HHO equation.");
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
-  const cs_lnum_t  n_b_faces = connect->f_info->n_b_elts;
-  const cs_lnum_t  n_cells = connect->c_info->n_elts;
+  const cs_lnum_t  n_b_faces = connect->n_faces[1];
+  const cs_lnum_t  n_i_faces = connect->n_faces[2];
+  const cs_lnum_t  n_cells = connect->n_cells;
   const cs_param_bc_t  *bc_param = eqp->bc;
 
   cs_hho_scaleq_t  *b = NULL;
@@ -252,7 +252,7 @@ cs_hho_scaleq_init(const cs_equation_param_t   *eqp,
   b->enforce = bc_param->enforcement;
 
   /* System dimension */
-  b->n_faces = n_i_faces + n_b_faces;
+  b->n_faces = connect->n_faces[0];
   b->n_cells = n_cells;
   b->n_dofs = b->n_faces; // * CS_HHO_N_FACE_DOFS[scheme_order]
   b->n_max_fcbyc = connect->n_max_fbyc + 1;
