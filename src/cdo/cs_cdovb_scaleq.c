@@ -1401,7 +1401,6 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
   double  pf;
   cs_real_3_t  gc, pty_gc;
   cs_real_33_t  pty_tens;
-  cs_nvec3_t  adv_c;
 
   if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) { // Belongs to only one cell
 
@@ -1434,6 +1433,8 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
 
       if (b->sys_flag & CS_FLAG_SYS_ADVECTION) {
 
+        cs_nvec3_t  adv_c;
+
         /* Compute the local advective flux */
         cs_advection_field_get_cell_vector(c_id, eqp->advection_field, &adv_c);
         cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
@@ -1456,9 +1457,10 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
       const cs_lnum_t  c2_id = f2c->col_id[shift_f+1];
       const cs_quant_t  f = quant->face[f_id];
       const short int  sgn = (_dp3(f.unitv, direction) < 0) ? -1 : 1;
-      const double  coef = 0.5 * sgn * f.meas; // mean value at the face
 
       if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
+
+        const double  coef = 0.5 * sgn * f.meas; // mean value at the face
 
         /* Compute the local diffusive flux */
         cs_reco_grd_cell_from_pv(c1_id, connect, quant, pdi, gc);
@@ -1481,19 +1483,45 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
 
       if (b->sys_flag & CS_FLAG_SYS_ADVECTION) {
 
+        cs_nvec3_t  adv_c1, adv_c2;
+        cs_real_3_t adv_f;
+
         /* Compute the local advective flux */
         cs_reco_pf_from_pv(f_id, connect, quant, pdi, &pf);
 
-        cs_advection_field_get_cell_vector(c1_id, eqp->advection_field, &adv_c);
+        /* Evaluate the advection field at the face */
+        cs_advection_field_get_cell_vector(c1_id, eqp->advection_field,
+                                           &adv_c1);
+        cs_advection_field_get_cell_vector(c2_id, eqp->advection_field,
+                                           &adv_c2);
 
-        /* Update the convective flux */
-        *conv_flux += coef * adv_c.meas * _dp3(adv_c.unitv, f.unitv) * pf;
+        for (int k = 0; k < 3; k++)
+          adv_f[k] = 0.5*(adv_c1.meas * adv_c1.unitv[k] +
+                          adv_c2.meas * adv_c2.unitv[k]);
 
-        cs_advection_field_get_cell_vector(c2_id, eqp->advection_field, &adv_c);
+        /* Update the convective flux (upwinding according to adv_f) */
+        const short int  ifc1 = f2c->sgn[shift_f];
+        const double  dpf = _dp3(adv_f, f.unitv);
 
-        /* Update the convective flux */
-        *conv_flux += coef * adv_c.meas * _dp3(adv_c.unitv, f.unitv) * pf;
-
+        cs_real_t  fconv_flux = 0;
+        if (dpf > 0) {
+          if (ifc1 > 0) // nf points outward c1; adv.nf > 0
+            fconv_flux = adv_c1.meas * _dp3(adv_c1.unitv, f.unitv);
+          else // nf points outward c2; adv.nf > 0
+            fconv_flux = adv_c2.meas * _dp3(adv_c2.unitv, f.unitv);
+        }
+        else if (dpf < 0) {
+          if (ifc1 > 0) // nf points outward c1; adv.nf < 0
+            fconv_flux = adv_c2.meas * _dp3(adv_c2.unitv, f.unitv);
+          else // nf points outward c2; adv.nf > 0
+            fconv_flux = adv_c1.meas * _dp3(adv_c1.unitv, f.unitv);
+        }
+        else { // centered approach
+          fconv_flux = 0.5 * ( adv_c2.meas * _dp3(adv_c2.unitv, f.unitv)
+                             + adv_c1.meas * _dp3(adv_c1.unitv, f.unitv));
+        }
+        fconv_flux *= sgn * f.meas * pf;
+        *conv_flux += fconv_flux;
       }
 
     } // Loop on selected interior faces
