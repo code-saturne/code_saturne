@@ -506,7 +506,8 @@ _l2_norm_3(cs_lnum_t              n_elts,
  *   wi     <-- Weight coefficient of cell i
  *   wj     <-- Weight coefficient of cell j
  *   p_diff <-- R.H.S.
- *   dc     <-- R.H.S.
+ *   d      <-- R.H.S.
+ *   a      <-- geometric weight J'F/I'J'
  *   resi   --> Updated R.H.S. for cell i
  *   resj   --> Updated R.H.S. for cell j
  *----------------------------------------------------------------------------*/
@@ -516,7 +517,7 @@ _compute_ani_weighting(const cs_real_t  wi[],
                        const cs_real_t  wj[],
                        const cs_real_t  p_diff,
                        const cs_real_t  d[],
-                       cs_real_t        a,
+                       const cs_real_t  a,
                        cs_real_t        resi[],
                        cs_real_t        resj[])
 {
@@ -579,7 +580,7 @@ static inline void
 _compute_ani_weighting_cocg(const cs_real_t  wi[],
                             const cs_real_t  wj[],
                             const cs_real_t  d[],
-                            cs_real_t        a,
+                            const cs_real_t  a,
                             cs_real_t        ki_d[],
                             cs_real_t        kj_d[])
 {
@@ -2684,8 +2685,10 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                                      &rhsv[jj][0]);
             }
             else {
+              /* (P_j - P_i) / ||d||^2 */
               pfac =   (rhsv[jj][3] - rhsv[ii][3])
                 / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
               for (ll = 0; ll < 3; ll++)
                 fctb[ll] = dc[ll] * pfac;
 
