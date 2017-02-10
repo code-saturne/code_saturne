@@ -182,6 +182,13 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
+/*=============================================================================
+ * Local Macro Definitions
+ *============================================================================*/
+
+#define _MIN_RESERVED_MESH_ID    CS_POST_MESH_PROBES
+#define _MIN_RESERVED_WRITER_ID  CS_POST_WRITER_PROFILES
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -350,7 +357,7 @@ static bool        _number_particles_by_coord = false;
    free ids start under the last CS_POST_MESH_* definition,
    currently at -5) */
 
-static int              _cs_post_min_mesh_id = -5;
+static int              _cs_post_min_mesh_id = _MIN_RESERVED_MESH_ID;
 static int              _cs_post_n_meshes = 0;
 static int              _cs_post_n_meshes_max = 0;
 static cs_post_mesh_t  *_cs_post_meshes = NULL;
@@ -358,7 +365,7 @@ static cs_post_mesh_t  *_cs_post_meshes = NULL;
 /* Array of writers for post-processing; */
 /* writers CS_POST_WRITER_... are reserved */
 
-static int                _cs_post_min_writer_id = -5;
+static int                _cs_post_min_writer_id = _MIN_RESERVED_WRITER_ID;
 static int                _cs_post_n_writers = 0;
 static int                _cs_post_n_writers_max = 0;
 static cs_post_writer_t  *_cs_post_writers = NULL;
@@ -4485,14 +4492,13 @@ cs_post_free_mesh(int  mesh_id)
 
   /* Finally, update free mesh ids */
 
-  int min_id = -3;
+  int min_id = _MIN_RESERVED_MESH_ID;
   for (i = 0; i < _cs_post_n_meshes; i++) {
     post_mesh = _cs_post_meshes + i;
     if (post_mesh->id < min_id)
       min_id = post_mesh->id;
   }
   _cs_post_min_mesh_id = min_id;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6499,7 +6505,7 @@ cs_post_finalize(void)
 
   BFT_FREE(_cs_post_meshes);
 
-  _cs_post_min_mesh_id = -2;
+  _cs_post_min_mesh_id = _MIN_RESERVED_MESH_ID;
   _cs_post_n_meshes = 0;
   _cs_post_n_meshes_max = 0;
 
