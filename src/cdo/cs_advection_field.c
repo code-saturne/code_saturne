@@ -461,8 +461,8 @@ cs_advection_field_def_by_array(cs_adv_field_t     *adv,
   adv->array_desc.state = desc.state;
   adv->array = array;
 
-  if (cs_cdo_same_support(desc.location, cs_cdo_dual_face_byc) ||
-      cs_cdo_same_support(desc.location, cs_cdo_primal_cell))
+  if (cs_test_flag(desc.location, cs_cdo_dual_face_byc) ||
+      cs_test_flag(desc.location, cs_cdo_primal_cell))
     adv->desc.state |= CS_FLAG_STATE_CELLWISE;
 }
 
@@ -536,6 +536,86 @@ cs_advection_field_create_field(cs_adv_field_t   *adv)
 /*!
  * \brief  Compute the value of the advection field at the cell center
  *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      adv     pointer to a cs_adv_field_t structure
+ * \param[in, out] vect    pointer to a cs_nvec3_t structure (meas + unitv)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_in_cell(const cs_cell_mesh_t   *cm,
+                           const cs_adv_field_t   *adv,
+                           cs_nvec3_t             *vect)
+{
+  /* Initialize the vector */
+  vect->meas = 0.;
+  for (int k = 0; k < 3; k++)
+    vect->unitv[k] = 0;
+
+  if (adv == NULL)
+    return;
+
+  switch (adv->def_type) {
+
+  case CS_PARAM_DEF_BY_VALUE:
+    cs_nvec3(adv->def.get.vect, vect);
+    break;
+
+  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_real_3_t  v_c;
+
+      /* Call the analytic function. result is stored in get */
+      adv->def.analytic(cs_time_step->t_cur, 1, cm->xc, v_c);
+
+      /* Switch to a cs_nvec3_t representation */
+      cs_nvec3(v_c, vect);
+    }
+    break;
+
+  case CS_PARAM_DEF_BY_ARRAY:
+    {
+      cs_real_3_t  val;
+
+      /* Test if location has at least the pattern of the reference support */
+      if (cs_test_flag(adv->array_desc.location, cs_cdo_dual_face_byc)) {
+
+        cs_reco_dfbyc_in_cell(cm,
+                              adv->array + cs_cdo_connect->c2e->idx[cm->c_id],
+                              val);
+
+      }
+      else if (cs_test_flag(adv->array_desc.location, cs_cdo_primal_cell)) {
+
+        for (int k = 0; k < 3; k++)
+          val[k] = adv->array[3*cm->c_id+k];
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " Invalid support for evaluating the advection field %s"
+                  " at the cell center of cell %d.", adv->name, cm->c_id);
+
+      /* Switch to a cs_nvec3_t representation */
+      cs_nvec3(val, vect);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Stop computing the vector field for cell id %d related to"
+              " the advection field %s.\n"
+              " Type of definition not handled yet.", cm->c_id, adv->name);
+    break;
+
+  } /* type of definition */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the advection field at the cell center
+ *
  * \param[in]      c_id    id of the current cell
  * \param[in]      adv     pointer to a cs_adv_field_t structure
  * \param[in, out] vect    pointer to a cs_nvec3_t structure (meas + unitv)
@@ -580,14 +660,13 @@ cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
       cs_real_3_t  val;
 
       /* Test if location has at least the pattern of the reference support */
-      if (cs_cdo_same_support(adv->array_desc.location, cs_cdo_dual_face_byc))
+      if (cs_test_flag(adv->array_desc.location, cs_cdo_dual_face_byc))
         cs_reco_dfbyc_at_cell_center(c_id,
                                      cs_cdo_connect->c2e,
                                      cs_cdo_quant,
                                      adv->array, val);
 
-      else if (cs_cdo_same_support(adv->array_desc.location,
-                                   cs_cdo_primal_cell)) {
+      else if (cs_test_flag(adv->array_desc.location, cs_cdo_primal_cell)) {
 
         for (int k = 0; k < 3; k++)
           val[k] = adv->array[3*c_id+k];
@@ -716,7 +795,7 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
       cs_real_3_t  recoval;
 
       /* Test if location has at least the pattern of the reference support */
-      if (cs_cdo_same_support(adv->array_desc.location, cs_cdo_dual_face_byc)) {
+      if (cs_test_flag(adv->array_desc.location, cs_cdo_dual_face_byc)) {
 
 #pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -803,17 +882,15 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
 
 #pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
       for (cs_lnum_t j = 0; j < quant->n_vertices; j++) {
-
-        dc_vol[j] = 0;
         cs_real_t  *v_val = vtx_values + 3*j;
         v_val[0] = v_val[1] = v_val[2] = 0.;
-
+        dc_vol[j] = 0;
       }
 
       const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
 
       /* Test if flag has at least the pattern of the reference support */
-      if (cs_cdo_same_support(adv->array_desc.location, cs_cdo_dual_face_byc)) {
+      if (cs_test_flag(adv->array_desc.location, cs_cdo_dual_face_byc)) {
 
         for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
@@ -842,8 +919,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
         } // Loop on cells
 
       }
-      else if (cs_cdo_same_support(adv->array_desc.location,
-                                   cs_cdo_primal_cell)) {
+      else if (cs_test_flag(adv->array_desc.location, cs_cdo_primal_cell)) {
 
         for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
@@ -955,7 +1031,7 @@ cs_advection_field_get_cell_max(const cs_adv_field_t      *adv)
  * \brief  Compute the value of the flux of the advection field across the
  *         the dual faces of a cell
  *
- * \param[in]      c_id     id of the current cell
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      a_info   set of parameters for the advection operator
  * \param[in]      adv      pointer to a cs_adv_field_t structure
  * \param[in, out] fluxes   array of values attached to dual faces of a cell
@@ -963,7 +1039,7 @@ cs_advection_field_get_cell_max(const cs_adv_field_t      *adv)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
+cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
                                    const cs_param_advection_t    a_info,
                                    const cs_adv_field_t         *adv,
                                    cs_real_t                    *fluxes)
@@ -975,39 +1051,45 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
     bft_error(__FILE__, __LINE__, 0,
               " fluxes array should be allocated before the call.");
 
-  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
-  const cs_cdo_connect_t  *connect = cs_cdo_connect;
-  const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
-
   if (adv->desc.state & CS_FLAG_STATE_UNIFORM ||
       adv->desc.state & CS_FLAG_STATE_CELLWISE) {
 
-    cs_nvec3_t  adv_vect;
-    const cs_dface_t  *qdf = cdoq->dface + c2e_idx[0];
+    assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PEQ));
 
-    cs_advection_field_get_cell_vector(c_id, adv, &adv_vect);
+    /* Retrieve the advection field */
+    cs_nvec3_t  adv_vect;
+    cs_advection_field_in_cell(cm, adv, &adv_vect);
 
     /* Loop on cell edges */
-    for (short int e = 0; e < c2e_idx[1] - c2e_idx[0]; e++)
-      fluxes[e] = adv_vect.meas * _dp3(adv_vect.unitv, qdf[e].vect);
+    for (short int e = 0; e < cm->n_ec; e++)
+      fluxes[e] = adv_vect.meas * cm->dface[e].meas *
+        _dp3(adv_vect.unitv, cm->dface[e].unitv);
 
-  } /* Uniform in this cell */
-  else {
+  }
+  else { /* Not uniform in this cell */
 
     switch (adv->def_type) {
 
     case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
       {
+        assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_EFQ |
+                            CS_CDO_LOCAL_PFQ));
+
         const double  t_cur = cs_time_step->t_cur;
-        const cs_real_t  *xc = cdoq->cell_centers + 3*c_id;
-        const cs_dface_t  *qdf_array = cdoq->dface + c2e_idx[0];
-        const cs_lnum_t  *c2e_ids = connect->c2e->ids + c2e_idx[0];
 
         /* Loop on cell edges */
-        for (short int e = 0; e < c2e_idx[1] - c2e_idx[0]; e++) {
+        for (short int e = 0; e < cm->n_ec; e++) {
 
-          const cs_quant_t  qe = cdoq->edge[c2e_ids[e]];
-          const cs_dface_t  qdf = qdf_array[e];
+          const cs_quant_t  edge = cm->edge[e];
+
+          // Two triangles composing the dual face inside a cell
+          const short int  f0 = cm->e2f_ids[2*e];
+          const cs_nvec3_t  sef0 = cm->sefc[2*e];
+          const cs_quant_t  qf0 = cm->face[f0];
+
+          const short int  f1 = cm->e2f_ids[2*e+1];
+          const cs_nvec3_t  sef1 = cm->sefc[2*e+1];
+          const cs_quant_t  qf1 = cm->face[f1];
 
           fluxes[e] = 0.;
           switch (a_info.quad_type) {
@@ -1017,14 +1099,8 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
             {
               cs_real_3_t  xg[2], adv_xg[2];
 
-              // Two triangles composing the dual face inside a cell
-              const cs_nvec3_t  sef0 = qdf.sface[0];
-              const cs_quant_t  qf0 = cdoq->face[qdf.parent_id[0]];
-              const cs_nvec3_t  sef1 = qdf.sface[1];
-              const cs_quant_t  qf1 = cdoq->face[qdf.parent_id[1]];
-
               for (int k = 0; k < 3; k++) {
-                const double  xec = xc[k] + qe.center[k];
+                const double  xec = cm->xc[k] + edge.center[k];
                 xg[0][k] = xec + qf0.center[k];
                 xg[0][k] *= cs_math_onethird;
                 xg[1][k] = xec + qf1.center[k];
@@ -1042,13 +1118,10 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
             {
               cs_real_t  w;
               cs_real_3_t  gpts[3], eval[3];
-              cs_nvec3_t  sef;
-              cs_quant_t  qf;
 
               // Two triangles composing the dual face inside a cell
-              sef = qdf.sface[0];
-              qf = cdoq->face[qdf.parent_id[0]];
-              cs_quadrature_tria_3pts(qe.center, qf.center, xc, sef.meas,
+              cs_quadrature_tria_3pts(edge.center, qf0.center, cm->xc,
+                                      sef0.meas,
                                       gpts, &w);
 
               /* Evaluate the field at the three quadrature points */
@@ -1056,12 +1129,11 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
                                 (cs_real_t *)eval);
 
               cs_real_t  add0 = 0;
-              for (int p = 0; p < 3; p++) add0 += _dp3(eval[p], sef.unitv);
+              for (int p = 0; p < 3; p++) add0 += _dp3(eval[p], sef0.unitv);
               add0 *= w;
 
-              sef = qdf.sface[1];
-              qf = cdoq->face[qdf.parent_id[1]];
-              cs_quadrature_tria_3pts(qe.center, qf.center, xc, sef.meas,
+              cs_quadrature_tria_3pts(edge.center, qf1.center, cm->xc,
+                                      sef1.meas,
                                       gpts, &w);
 
               /* Evaluate the field at the three quadrature points */
@@ -1069,7 +1141,7 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
                                 (cs_real_t *)eval);
 
               cs_real_t  add1 = 0;
-              for (int p = 0; p < 3; p++) add1 += _dp3(eval[p], sef.unitv);
+              for (int p = 0; p < 3; p++) add1 += _dp3(eval[p], sef1.unitv);
               add1 *= w;
 
               fluxes[e] = add0 + add1;
@@ -1091,18 +1163,21 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
     case CS_PARAM_DEF_BY_ARRAY:
       {
         /* Test if location has at least the pattern of the reference support */
-        if (cs_cdo_same_support(adv->array_desc.location,
-                                cs_cdo_dual_face_byc)) {
+        if (cs_test_flag(adv->array_desc.location, cs_cdo_dual_face_byc)) {
 
-          const cs_real_t  *flux_array = adv->array + c2e_idx[0];
-          for (short int e = 0; e < c2e_idx[1] - c2e_idx[0]; e++)
+          /* Sanity check */
+          assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PE));
+
+          const cs_real_t  *flux_array = adv->array
+            + cs_cdo_connect->c2e->idx[cm->c_id];
+          for (short int e = 0; e < cm->n_ec; e++)
             fluxes[e] = flux_array[e];
 
         }
         else
           bft_error(__FILE__, __LINE__, 0,
                     " Invalid support for evaluating the advection field %s"
-                    " at the cell center of cell %d.", adv->name, c_id);
+                    " at the cell center of cell %d.", adv->name, cm->c_id);
       }
       break;
 
@@ -1125,6 +1200,7 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
  * \param[in]  adv       pointer to a cs_adv_field_t structure
  * \param[in]  a_info    set of parameters for the advection operator
  * \param[in]  cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]  tef_meas  area of the triangle tef
  * \param[in]  f         id of the face in the current cell
  * \param[in]  e         id of the edge in the current cell
  * \param[in]  v1        id of the first vertex in the current cell
@@ -1138,6 +1214,7 @@ cs_real_t
 cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
                                 const cs_param_advection_t   a_info,
                                 const cs_cell_mesh_t        *cm,
+                                const cs_real_t              tef_meas,
                                 short int                    f,
                                 short int                    e,
                                 short int                    v1,
@@ -1148,22 +1225,18 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
   if (adv == NULL)
     return adv_flx;
 
+  /* Sanity check */
+  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ));
+
   const cs_real_t  *xv1 = cm->xv + 3*v1;
   const cs_real_t  *xv2 = cm->xv + 3*v2;
   const cs_quant_t  pfq = cm->face[f];
-
-  short int shft_e = -1;
-  for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++)
-    if (cm->f2e_ids[i] == e)
-      shft_e = i;
-  assert(shft_e != -1);
-  const cs_real_t  tef = cm->tef[shft_e];
 
   /* Compute the flux accros the portion of primal face */
   switch (adv->def_type) {
 
   case CS_PARAM_DEF_BY_VALUE:
-    adv_flx = tef * _dp3(adv->def.get.vect, pfq.unitv);
+    adv_flx = tef_meas * _dp3(adv->def.get.vect, pfq.unitv);
     break;
 
   case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
@@ -1184,7 +1257,7 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
 
           /* Call the analytic function. result is stored in eval */
           adv->def.analytic(t_cur, 1, (const cs_real_t *)xg, eval);
-          adv_flx = tef * _dp3(eval, pfq.unitv);
+          adv_flx = tef_meas * _dp3(eval, pfq.unitv);
         }
         break;
 
@@ -1193,7 +1266,7 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
           cs_real_t  w, add = 0.;
           cs_real_3_t  gpts[3];
 
-          cs_quadrature_tria_3pts(xv1, xv2, pfq.center, tef, gpts, &w);
+          cs_quadrature_tria_3pts(xv1, xv2, pfq.center, tef_meas, gpts, &w);
 
           /* Call the analytic function. result is stored in eval for the three
              quadrature points */
@@ -1219,21 +1292,19 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
 
     case CS_PARAM_DEF_BY_ARRAY:
       {
-        cs_real_3_t  reco;
+        cs_real_3_t  rec_field;
 
         /* Test if flag has at least the pattern of the reference support */
-        if (cs_cdo_same_support(adv->array_desc.location,
-                                cs_cdo_dual_face_byc)) {
+        if (cs_test_flag(adv->array_desc.location, cs_cdo_dual_face_byc)) {
 
           const cs_connect_index_t  *c2e = cs_cdo_connect->c2e;
+          const cs_real_t  *cell_array = adv->array + c2e->idx[cm->c_id];
 
           /* Compute the reconstruction of the flux in pec */
-          cs_reco_dfbyc_in_pec(cm->c_id, cm->e_ids[e], c2e, cs_cdo_quant,
-                               adv->array,
-                               reco);
+          cs_reco_dfbyc_in_pec(cm, e, cell_array, rec_field);
 
           /* The reconstruction yields a constant vector field */
-          adv_flx = tef * _dp3(pfq.unitv, reco);
+          adv_flx = tef_meas * _dp3(pfq.unitv, rec_field);
 
         }
         else
@@ -1272,23 +1343,25 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
-                                 cs_lnum_t                    e_id,
-                                 cs_lnum_t                    f_id,
+cs_advection_field_get_flux_svef(const cs_cell_mesh_t        *cm,
+                                 const short int              v,
+                                 const short int              e,
+                                 const short int              f,
                                  const cs_param_advection_t   a_info,
                                  const cs_adv_field_t        *adv)
 {
-  int  k;
-
   cs_real_t  adv_flx = 0;
 
   if (adv == NULL)
     return adv_flx;
 
-  const cs_cdo_quantities_t  *cdoq = cs_cdo_quant;
-  const cs_quant_t  pfq = cdoq->face[f_id];
-  const cs_quant_t  peq = cdoq->edge[e_id];
-  const cs_real_t  *xv = cdoq->vtx_coord + 3*v_id;
+  /* Sanity check */
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ));
+
+  const cs_quant_t  pfq = cm->face[f];
+  const cs_quant_t  peq = cm->edge[e];
+  const cs_real_t  *xv = cm->xv + 3*v;
 
   cs_real_t  surf = cs_math_surftri(xv, peq.center, pfq.center);
 
@@ -1311,7 +1384,7 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
 
       case CS_QUADRATURE_BARY:
       case CS_QUADRATURE_BARY_SUBDIV:
-        for (k = 0; k < 3; k++)
+        for (int k = 0; k < 3; k++)
           xg[k] = cs_math_onethird * (xv[k] + peq.center[k] + pfq.center[k]);
 
         /* Call the analytic function. result is stored in get */
@@ -1346,23 +1419,19 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
 
     case CS_PARAM_DEF_BY_ARRAY:
       {
-        cs_real_3_t  reco;
+        cs_real_3_t  rec_field;
 
         /* Test if flag has at least the pattern of the reference support */
-        if (cs_cdo_same_support(adv->array_desc.location,
-                                cs_cdo_dual_face_byc)) {
+        if (cs_test_flag(adv->array_desc.location, cs_cdo_dual_face_byc)) {
 
           const cs_connect_index_t  *c2e = cs_cdo_connect->c2e;
-          const cs_sla_matrix_t  *f2c = cs_cdo_connect->f2c;
-
-          cs_lnum_t  c_id = f2c->col_id[f2c->idx[f_id]];
-          assert(f2c->idx[f_id+1] - f2c->idx[f_id] == 1);
+          const cs_real_t  *cell_array = adv->array + c2e->idx[cm->c_id];
 
           /* Compute the reconstruction of the flux in pec */
-          cs_reco_dfbyc_in_pec(c_id, e_id, c2e, cdoq, adv->array, reco);
+          cs_reco_dfbyc_in_pec(cm, e, cell_array, rec_field);
 
           /* The reconstruction yields a constant vector field */
-          adv_flx = surf * _dp3(pfq.unitv, reco);
+          adv_flx = surf * _dp3(pfq.unitv, rec_field);
 
         }
         else
@@ -1372,7 +1441,6 @@ cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
 
       } // DEF_BY_ARRAY
       break;
-
 
   default:
     bft_error(__FILE__, __LINE__, 0,

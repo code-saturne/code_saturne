@@ -245,20 +245,22 @@ extern const cs_flag_t  cs_cdo_dual_face_byc;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if a location matches a referenced support
+ * \brief  Check if a two flag share the same pattern
+ *         Return true if the flag to check has at least the pattern of the
+ *         reference flag.
  *
- * \param[in]  location      flag corresponding to the location to check
- * \param[in]  reference     flag corresponding to the referenced support
+ * \param[in]  flag_to_check   flag corresponding to the location to check
+ * \param[in]  reference       flag corresponding to the referenced support
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_cdo_same_support(cs_flag_t   location,
-                    cs_flag_t   reference)
+cs_test_flag(cs_flag_t    flag_to_check,
+             cs_flag_t    reference)
 {
-  if ((location & reference) == reference)
+  if ((flag_to_check & reference) == reference)
     return true;
   else
     return false;

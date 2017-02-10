@@ -89,6 +89,12 @@ typedef struct {
   cs_connect_index_t  *c2e;  // cell -> edges connectivity
   cs_connect_index_t  *c2v;  // cell -> vertices connectivity
 
+  /* Delta of ids between the min./max. values of entities related to a cell
+     Useful to store compactly the link between mesh ids and cell mesh ids
+     needed during the cell mesh definition */
+  cs_lnum_t  e_max_cell_range;
+  cs_lnum_t  v_max_cell_range;
+
   /* Max. connectitivy size for cells */
   int  n_max_vbyc;   // max. number of vertices in a cell
   int  n_max_ebyc;   // max. number of edges in a cell

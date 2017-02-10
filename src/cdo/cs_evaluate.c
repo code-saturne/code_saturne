@@ -359,7 +359,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
 
   double  retval = 0.;
 
-  if (cm->type == FVM_CELL_TETRA) {
+  if (cs_cdo_connect->cell_type[cm->c_id] == FVM_CELL_TETRA) {
 
     switch(quad_type) {
 
@@ -1003,10 +1003,10 @@ cs_evaluate_density_by_analytic(cs_flag_t              dof_flag,
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
-    if (cs_cdo_same_support(dof_flag, cs_cdo_primal_cell))
+    if (cs_test_flag(dof_flag, cs_cdo_primal_cell))
       _pcsd_by_analytic(ana, n_elts[0], elt_ids, quad_type, retval);
 
-    else if (cs_cdo_same_support(dof_flag, cs_cdo_dual_cell))
+    else if (cs_test_flag(dof_flag, cs_cdo_dual_cell))
       _dcsd_by_analytic(ana, n_elts[0], elt_ids, quad_type, retval);
 
     else
@@ -1053,10 +1053,10 @@ cs_evaluate_density_by_value(cs_flag_t       dof_flag,
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
-    if (cs_cdo_same_support(dof_flag, cs_cdo_primal_cell))
+    if (cs_test_flag(dof_flag, cs_cdo_primal_cell))
       _pcsd_by_value(get.val, n_elts[0], elt_ids, retval);
 
-    else if (cs_cdo_same_support(dof_flag, cs_cdo_dual_cell))
+    else if (cs_test_flag(dof_flag, cs_cdo_dual_cell))
       _dcsd_by_value(get.val, n_elts[0], elt_ids, retval);
 
     else
@@ -1107,7 +1107,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
-    if (cs_cdo_same_support(dof_flag, cs_cdo_primal_vtx)) {
+    if (cs_test_flag(dof_flag, cs_cdo_primal_vtx)) {
 
       if (elt_ids == NULL) { /* All the support entities are selected */
         ana(tcur, quant->n_vertices, quant->vtx_coord, retval);
@@ -1123,7 +1123,7 @@ cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
 
     } /* Located at primal vertices */
 
-    else if (cs_cdo_same_support(dof_flag, cs_cdo_primal_face)) {
+    else if (cs_test_flag(dof_flag, cs_cdo_primal_face)) {
 
       if (elt_ids == NULL) { /* All the support entities are selected */
 # pragma omp parallel for if(quant->n_faces > CS_THR_MIN)
@@ -1142,8 +1142,8 @@ cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
 
     } /* Located at primal faces */
 
-    else if (cs_cdo_same_support(dof_flag, cs_cdo_primal_cell) ||
-             cs_cdo_same_support(dof_flag, cs_cdo_dual_vtx)) {
+    else if (cs_test_flag(dof_flag, cs_cdo_primal_cell) ||
+             cs_test_flag(dof_flag, cs_cdo_dual_vtx)) {
 
       if (elt_ids == NULL) { /* All the support entities are selected */
         ana(tcur, quant->n_cells, quant->cell_centers, retval);
@@ -1204,7 +1204,7 @@ cs_evaluate_potential_by_qov(cs_flag_t       dof_flag,
   bool check = false;
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
-    if (cs_cdo_same_support(dof_flag, cs_cdo_primal_vtx))
+    if (cs_test_flag(dof_flag, cs_cdo_primal_vtx))
       if (elt_ids != NULL) {
         _pvsp_by_qov(get.val, n_elts[0], elt_ids, retval);
         check = true;
@@ -1254,7 +1254,7 @@ cs_evaluate_potential_by_value(cs_flag_t       dof_flag,
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
-    if (cs_cdo_same_support(dof_flag, cs_cdo_primal_vtx)) {
+    if (cs_test_flag(dof_flag, cs_cdo_primal_vtx)) {
 
       if (elt_ids == NULL) { /* All the support entities are selected */
 # pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
@@ -1266,7 +1266,7 @@ cs_evaluate_potential_by_value(cs_flag_t       dof_flag,
 
     } /* Located at primal vertices */
 
-    else if (cs_cdo_same_support(dof_flag, cs_cdo_primal_face)) {
+    else if (cs_test_flag(dof_flag, cs_cdo_primal_face)) {
 
       if (elt_ids == NULL) { /* All the support entities are selected */
 # pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
@@ -1278,8 +1278,8 @@ cs_evaluate_potential_by_value(cs_flag_t       dof_flag,
 
     } /* Located at primal faces */
 
-    else if (cs_cdo_same_support(dof_flag, cs_cdo_primal_cell) ||
-             cs_cdo_same_support(dof_flag, cs_cdo_dual_vtx)) {
+    else if (cs_test_flag(dof_flag, cs_cdo_primal_cell) ||
+             cs_test_flag(dof_flag, cs_cdo_dual_vtx)) {
 
       if (elt_ids == NULL) { /* All the support entities are selected */
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)

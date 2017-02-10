@@ -271,8 +271,6 @@ cs_cdovb_diffusion_get_hodge_flux(const cs_cell_mesh_t      *cm,
  *          The computation takes into account a subdivision into tetrahedra of
  *          the current cell based on p_{ef,c}
  *
- * \param[in]      h_info   pointer to a cs_param_hodge_t structure
- * \param[in]      geom     pointer to a structure storing geom. quantities
  * \param[in]      cm       pointer to a cs_face_mesh_t structure
  * \param[in]      pot      values of the potential fields at vertices
  * \param[in, out] cb       auxiliary structure for computing the flux
@@ -281,11 +279,10 @@ cs_cdovb_diffusion_get_hodge_flux(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
-                              const cs_cell_mesh_t      *cm,
-                              const double              *pot,
-                              cs_cell_builder_t         *cb,
-                              double                    *flx);
+cs_cdo_diffusion_get_wbs_flux(const cs_cell_mesh_t   *cm,
+                              const double           *pot,
+                              cs_cell_builder_t      *cb,
+                              double                 *flx);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -615,7 +615,8 @@ _build_additional_connect(cs_cdo_connect_t  *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute max number of entities by cell
+ * \brief Compute max number of entities by cell and the max range between
+ *        the min. id and the max.id for edges and vertices
  *
  * \param[in]       m         pointer to a cs_mesh_t structure
  * \param[in, out]  connect   pointer to the cs_cdo_connect_t struct.
@@ -623,14 +624,13 @@ _build_additional_connect(cs_cdo_connect_t  *connect)
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_max_ent(const cs_mesh_t             *m,
-                 cs_cdo_connect_t  *connect)
+_compute_max_ent(const cs_mesh_t      *m,
+                 cs_cdo_connect_t     *connect)
 {
   assert(connect != NULL && m != NULL);
   assert(connect->c2v != NULL && connect->c2e != NULL && connect->f2c != NULL);
   assert(connect->f2e != NULL);
 
-  const cs_lnum_t  n_cells = connect->c2f->n_rows;
   const cs_lnum_t  n_vertices = connect->v_info->n_elts;
 
   short int  *v_count = NULL;
@@ -638,6 +638,8 @@ _compute_max_ent(const cs_mesh_t             *m,
 #pragma omp parallel for if (n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_vertices; i++) v_count[i] = 0;
 
+  const cs_lnum_t  n_cells = connect->c2f->n_rows;
+  const cs_lnum_t  n_edges = connect->e_info->n_elts;
   const cs_connect_index_t  *c2v = connect->c2v;
   const cs_connect_index_t  *c2e = connect->c2e;
   const cs_sla_matrix_t  *e2v = connect->e2v;
@@ -648,19 +650,42 @@ _compute_max_ent(const cs_mesh_t             *m,
   int  n_max_vc = 0, n_max_ec = 0, n_max_fc = 0;
   int  n_max_v2ec = 0, n_max_v2fc = 0, n_max_vf = 0;
 
+  connect->e_max_cell_range = 0;
+  connect->v_max_cell_range = 0;
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
+    /* Vertices */
     const cs_lnum_t  *c2v_idx = c2v->idx + c_id;
     const cs_lnum_t  *c2v_ids = c2v->ids + c2v_idx[0];
     const int n_vc = c2v_idx[1] - c2v_idx[0];
 
-    if (n_vc > n_max_vc) n_max_vc = n_vc;
+    cs_lnum_t  min_id = n_vertices, max_id = 0;
+    for (short int v = 0; v < n_vc; v++) {
+      if (c2v_ids[v] < min_id) min_id = c2v_ids[v];
+      if (c2v_ids[v] > max_id) max_id = c2v_ids[v];
+    }
+    cs_lnum_t  _range = max_id - min_id;
 
+    if (n_vc > n_max_vc) n_max_vc = n_vc;
+    if (connect->v_max_cell_range < _range)
+      connect->v_max_cell_range = _range;
+
+    /* Edges */
     const cs_lnum_t  *c2e_idx = c2e->idx + c_id;
     const cs_lnum_t  *c2e_ids = c2e->ids + c2e_idx[0];
     const int n_ec = c2e_idx[1] - c2e_idx[0];
 
+    min_id = n_edges, max_id = 0;
+    for (short int e = 0; e < n_ec; e++) {
+      if (c2e_ids[e] < min_id) min_id = c2e_ids[e];
+      if (c2e_ids[e] > max_id) max_id = c2e_ids[e];
+    }
+    _range = max_id - min_id;
+
     if (n_ec > n_max_ec) n_max_ec = n_ec;
+    if (connect->e_max_cell_range < _range)
+      connect->e_max_cell_range = _range;
 
     for (short int e = 0; e < n_ec; e++) {
 
@@ -1152,12 +1177,14 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
 void
 cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
 {
-  cs_lnum_t  n_max_entbyc[3] = {connect->n_max_fbyc,
+  cs_lnum_t  n_max_entbyc[5] = {connect->n_max_fbyc,
                                 connect->n_max_ebyc,
-                                connect->n_max_vbyc};
+                                connect->n_max_vbyc,
+                                connect->v_max_cell_range,
+                                connect->e_max_cell_range};
 
   if (cs_glob_n_ranks > 1)
-    cs_parall_max(3, CS_LNUM_TYPE, n_max_entbyc);
+    cs_parall_max(5, CS_LNUM_TYPE, n_max_entbyc);
 
   /* Output */
   cs_log_printf(CS_LOG_DEFAULT, "\n Connectivity information:\n");
@@ -1168,8 +1195,14 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
                 " --dim-- max. number of edges by cell:    %4d\n",
                 n_max_entbyc[1]);
   cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- max. number of vertices by cell: %4d\n\n",
+                " --dim-- max. number of vertices by cell: %4d\n",
                 n_max_entbyc[2]);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- max. vertex range for a cell:      %d\n",
+                n_max_entbyc[3]);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- max. edge range for a cell:        %d\n\n",
+                n_max_entbyc[4]);
 
   /* Information about the element types */
   cs_gnum_t  n_type_cells[FVM_N_ELEMENT_TYPES];

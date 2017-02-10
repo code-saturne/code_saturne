@@ -70,7 +70,7 @@ BEGIN_C_DECLS
  * Local macro definitions
  *============================================================================*/
 
-#define CS_GWF_DBG 1
+#define CS_GWF_DBG 0
 
 /* Tag dedicated to build a flag for the groundwater module */
 /*   1: post the moisture content */
@@ -271,7 +271,7 @@ _get_tracer_time_coeff(cs_lnum_t          n_elts,
   const cs_gwf_tracer_t  *tracer = (const cs_gwf_tracer_t  *)tracer_struc;
 
   if (elt_ids != NULL) {
-# pragma omp parallel for if (n_elts > CS_THR_MIN)
+
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       const cs_lnum_t  id = elt_ids[i];
       result[id] = theta[id] + tracer->rho_kd;
@@ -279,7 +279,7 @@ _get_tracer_time_coeff(cs_lnum_t          n_elts,
 
   }
   else {
-# pragma omp parallel for if (n_elts > CS_THR_MIN)
+
     for (cs_lnum_t i = 0; i < n_elts; i++)
       result[i] = theta[i] + tracer->rho_kd;
   }
@@ -309,7 +309,7 @@ _get_tracer_reaction_coeff(cs_lnum_t          n_elts,
   const cs_gwf_tracer_t  *tracer = (const cs_gwf_tracer_t  *)tracer_struc;
 
   if (elt_ids != NULL) {
-# pragma omp parallel for if (n_elts > CS_THR_MIN)
+
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       const cs_lnum_t  id = elt_ids[i];
       result[id] = tracer->reaction_rate * (theta[id] + tracer->rho_kd);
@@ -317,7 +317,7 @@ _get_tracer_reaction_coeff(cs_lnum_t          n_elts,
 
   }
   else {
-# pragma omp parallel for if (n_elts > CS_THR_MIN)
+
     for (cs_lnum_t i = 0; i < n_elts; i++)
       result[i] = tracer->reaction_rate * (theta[i] + tracer->rho_kd);
   }
@@ -342,15 +342,14 @@ static void
 _get_tracer_diffusion_tensor(cs_lnum_t          n_elts,
                              const cs_lnum_t    elt_ids[],
                              const cs_real_t    theta[],
-                             const double       velocity[],
+                             const cs_real_t    velocity[],
                              const void        *tracer_struc,
                              cs_real_t         *result)
 {
   const cs_gwf_tracer_t  *tp = (const cs_gwf_tracer_t *)tracer_struc;
 
   if (elt_ids != NULL) {
-# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none)     \
-  shared(n_elts, elt_ids, theta, velocity, tp, result)
+
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_lnum_t  id = elt_ids[i]; // cell_id
@@ -382,8 +381,7 @@ _get_tracer_diffusion_tensor(cs_lnum_t          n_elts,
 
   }
   else {
-# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none)     \
-  shared(n_elts, elt_ids, theta, velocity, tp, result)
+
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_real_t  *v = velocity + 3*i;
@@ -419,6 +417,7 @@ _get_tracer_diffusion_tensor(cs_lnum_t          n_elts,
 /*!
  * \brief  Define the permeability (or hydraulic conductivity) using the
  *         van Genuchten-Mualen law
+ *         One assumes that pressure head is located at cells
  *         This function fits the generic prototype of cs_onevar_law_func_t
  *
  * \param[in]      n_elts         number of elements to treat
@@ -443,8 +442,7 @@ _genuchten_permeability_from_c_head(cs_lnum_t          n_elts,
   const  double  iso_satval = soil->saturated_permeability.val;
 
   if (elt_ids != NULL) {
-# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none)        \
-  shared(n_elts, elt_ids, h_vals, soil, result)
+
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_lnum_t  id = elt_ids[i]; // cell_id
@@ -473,8 +471,7 @@ _genuchten_permeability_from_c_head(cs_lnum_t          n_elts,
 
   }
   else {
-# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none)        \
-  shared(n_elts, elt_ids, h_vals, soil, result)
+
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_real_t  h = h_vals[i];
@@ -528,6 +525,8 @@ _genuchten_moisture_from_c_head(cs_lnum_t          n_elts,
 
   if (elt_ids != NULL) {
 
+# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none) \
+  shared(n_elts, elt_ids, h_vals, soil, result)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_lnum_t  id = elt_ids[i];
@@ -547,6 +546,8 @@ _genuchten_moisture_from_c_head(cs_lnum_t          n_elts,
   }
   else {
 
+# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none)     \
+  shared(n_elts, elt_ids, h_vals, soil, result)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_real_t  h = h_vals[i];
@@ -715,7 +716,7 @@ _tracy_permeability_from_c_head(cs_lnum_t          n_elts,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+static void
 _tracy_moisture_from_c_head(cs_lnum_t         n_elts,
                             const cs_lnum_t   elt_ids[],
                             const cs_real_t   h_vals[],
@@ -727,6 +728,8 @@ _tracy_moisture_from_c_head(cs_lnum_t         n_elts,
 
   if (elt_ids != NULL) {
 
+# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none) \
+  shared(n_elts, elt_ids, h_vals, soil, result)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_lnum_t  id = elt_ids[i];
@@ -740,6 +743,8 @@ _tracy_moisture_from_c_head(cs_lnum_t         n_elts,
   }
   else {
 
+# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none) \
+  shared(n_elts, h_vals, soil, result)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_real_t  h = h_vals[i];
@@ -1908,7 +1913,7 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
       gw->global_model = CS_GWF_HYDRAULIC_COMPOSITE;
 
     const char  *ml_name = cs_mesh_location_get_name(soil->ml_id);
-    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(soil->ml_id);
+    const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(soil->ml_id);
     const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(soil->ml_id);
 
     /* Initialization of soil_id and moisture content */
@@ -2100,8 +2105,8 @@ cs_gwf_tracer_needs_reaction(const cs_gwf_t    *gw,
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_gwf_tracer_needs_diffusion(const cs_gwf_t    *gw,
-                                      int                        eq_id)
+cs_gwf_tracer_needs_diffusion(const cs_gwf_t      *gw,
+                              int                  eq_id)
 {
   int  tracer_id = _get_tracer_id(gw, eq_id);
   bool  is_needed = false;
@@ -2429,19 +2434,35 @@ cs_gwf_extra_post(void                      *input,
   }
 
   if (gw->with_gravitation) { /* Post-process pressure head */
+
     cs_field_t  *f = gw->pressure_head;
-    cs_post_write_var(CS_POST_MESH_VOLUME,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      f->name,
-                      1,               // dim
-                      true,            // interlace
-                      true,            // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      f->val,          // values on cells
-                      NULL,            // values at internal faces
-                      NULL,            // values at border faces
-                      time_step);      // time step structure
-  }
+
+    if (f->location_id == cs_mesh_location_get_id_by_name(N_("cells")))
+      cs_post_write_var(CS_POST_MESH_VOLUME,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        f->name,
+                        1,               // dim
+                        true,            // interlace
+                        true,            // true = original mesh
+                        CS_POST_TYPE_cs_real_t,
+                        f->val,          // values on cells
+                        NULL,            // values at internal faces
+                        NULL,            // values at border faces
+                        time_step);      // time step structure
+
+    else if (f->location_id == cs_mesh_location_get_id_by_name(N_("vertices")))
+      cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                               CS_POST_WRITER_ALL_ASSOCIATED,
+                               f->name,
+                               1,               // dim
+                               false,           // interlace
+                               true,            // true = original mesh
+                               CS_POST_TYPE_cs_real_t,
+                               f->val,          // values on vertices
+                               time_step);      // time step management structure
+
+
+  } // Post pressure head
 
 }
 

@@ -497,9 +497,8 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
        Compute L_Ec(GRAD(p_j)) on t_{e,f} for each vertex j of the cell */
     for (short int ek = 0; ek < cm->n_ec; ek++) {
 
-      const short int  shft = 2*ek;
-      const short int  vj1 = cm->e2v_ids[shft], vj2 = cm->e2v_ids[shft+1];
-      const short int  sgn_vj1 = cm->e2v_sgn[shft]; // sgn_vj2 = - sgn_vj1
+      const short int  vj1 = cm->e2v_ids[2*ek], vj2 = cm->e2v_ids[2*ek+1];
+      const short int  sgn_vj1 = cm->e2v_sgn[ek]; // sgn_vj2 = - sgn_vj1
       const cs_nvec3_t  dfq_k = cm->dface[ek];
 
       /* Compute l_(ek,c)|p(ei,f,c) */
@@ -752,13 +751,16 @@ cs_cdovb_diffusion_get_hodge_flux(const cs_cell_mesh_t      *cm,
                                   cs_cell_builder_t         *cb,
                                   double                    *flx)
 {
+  /* Sanity checks */
+  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_EV));
+
   /* Cellwise DoFs related to the discrete gradient (size: n_ec) */
   double  *gec = cb->values;
   for (short int e = 0; e < cm->n_ec; e++) {
 
-    const short int  *v_ids = cm->e2v_ids + 2*e;
-    // sgn_v2 = -sgn_v1
-    gec[e] = cm->e2v_sgn[2*e]*(pot[v_ids[1]] - pot[v_ids[0]]);
+    const short int  *v = cm->e2v_ids + 2*e;
+    // sgn_v2 = -sgn_v1; flux = - HDG * GRAD(P)
+    gec[e] = cm->e2v_sgn[e]*(pot[v[1]] - pot[v[0]]);
 
   } // Loop on cell edges
 
@@ -774,8 +776,6 @@ cs_cdovb_diffusion_get_hodge_flux(const cs_cell_mesh_t      *cm,
  *          The computation takes into account a subdivision into tetrahedra of
  *          the current cell based on p_{ef,c}
  *
- * \param[in]      h_info   pointer to a cs_param_hodge_t structure
- * \param[in]      geom     pointer to a structure storing geom. quantities
  * \param[in]      cm       pointer to a cs_face_mesh_t structure
  * \param[in]      pot      values of the potential fields at vertices
  * \param[in, out] cb       auxiliary structure for computing the flux
@@ -784,12 +784,16 @@ cs_cdovb_diffusion_get_hodge_flux(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
-                              const cs_cell_mesh_t      *cm,
-                              const double              *pot,
-                              cs_cell_builder_t         *cb,
-                              double                    *flx)
+cs_cdo_diffusion_get_wbs_flux(const cs_cell_mesh_t   *cm,
+                              const double           *pot,
+                              cs_cell_builder_t      *cb,
+                              double                 *flx)
 {
+  /* Sanity checks */
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_EFQ));
+
   cs_real_3_t  grd_c, grd_v1, grd_v2, grd_pef, mgrd;
 
   /* Temporary buffers */
@@ -824,10 +828,9 @@ cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const short int  e = cm->f2e_ids[i];
-      const short int  ee = 2*e;
 
-      p_f += cm->tef[i]*(  p_v[cm->e2v_ids[ee]]      // p_v1
-                         + p_v[cm->e2v_ids[ee+1]] ); // p_v2
+      p_f += cm->tef[i]*(  p_v[cm->e2v_ids[2*e]]      // p_v1
+                         + p_v[cm->e2v_ids[2*e+1]] ); // p_v2
     }
     p_f *= 0.5/pfq.meas;
 
@@ -856,12 +859,11 @@ cs_cdo_diffusion_get_wbs_flux(const cs_dface_t          *dface,
 
       cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, grd_pef, mgrd);
 
-      const cs_dface_t  dfq = dface[e];
-      if (f_id == dfq.parent_id[0])
-        flx[e] -= dfq.sface[0].meas * _dp3(dfq.sface[0].unitv, mgrd);
+      if (f_id == cm->e2f_ids[ee])
+        flx[e] -= cm->sefc[ee].meas * _dp3(cm->sefc[ee].unitv, mgrd);
       else {
-        assert(f_id == dfq.parent_id[1]);
-        flx[e] -= dfq.sface[1].meas * _dp3(dfq.sface[1].unitv, mgrd);
+        assert(f_id == cm->e2f_ids[ee+1]);
+        flx[e] -= cm->sefc[ee+1].meas * _dp3(cm->sefc[ee+1].unitv, mgrd);
       }
 
     } // Loop on face edges

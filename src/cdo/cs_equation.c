@@ -1935,27 +1935,30 @@ cs_equation_solve(cs_equation_t   *eq)
                                                    0,      // aux. size
                                                    NULL);  // aux. buffers
 
+  if (eq->param->sles_verbosity > 0) {
+
+    const cs_lnum_t  *row_index, *col_id;
+    const cs_real_t  *d_val, *x_val;
+
+    cs_matrix_get_msr_arrays(eq->matrix, &row_index, &col_id, &d_val, &x_val);
+
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "  <%s/sles_cvg> code  %d n_iters  %d residual  % -8.4e"
+                  " nnz %d\n",
+                  eq->name, code, n_iters, residual, row_index[eq->rhs_size]);
+
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
   cs_dump_array_to_listing("EQ.AFTER.SOLVE >> X", eq->rhs_size, x, 8);
   cs_dump_array_to_listing("EQ.SOLVE >> RHS", eq->rhs_size, b, 8);
 
 #if CS_EQUATION_DBG > 2
-  const cs_lnum_t  *row_index, *col_id;
-  const cs_real_t  *d_val, *x_val;
-
-  cs_matrix_get_msr_arrays(eq->matrix, &row_index, &col_id, &d_val, &x_val);
-
   cs_dump_integer_to_listing("ROW_INDEX", eq->rhs_size + 1, row_index, 8);
   cs_dump_integer_to_listing("COLUMN_ID", row_index[eq->rhs_size], col_id, 8);
   cs_dump_array_to_listing("D_VAL", eq->rhs_size, d_val, 8);
   cs_dump_array_to_listing("X_VAL", row_index[eq->rhs_size], x_val, 8);
 #endif
 #endif
-
-  if (eq->param->sles_verbosity > 0)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "  <%s/sles_cvg> code  %d n_iters  %d residual  % -8.4e\n",
-                  eq->name, code, n_iters, residual);
+  }
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 

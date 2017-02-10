@@ -141,10 +141,8 @@ cs_cdo_time_update_rhs_with_array(const cs_flag_t         sys_flag,
                                   const cs_real_t        *values,
                                   cs_real_t              *rhs)
 {
-  if ((sys_flag & CS_FLAG_SYS_TIME) == 0)
-    return; /* Nothing todo */
-  if ((sys_flag & CS_FLAG_SYS_SOURCETERM) == 0)
-    return; /* Nothing todo */
+  if (!cs_test_flag(sys_flag, CS_FLAG_SYS_TIME))
+    return; /* Nothing to do */
 
   /* Previous values are stored inside values */
   switch (t_info.scheme) {
@@ -165,7 +163,7 @@ cs_cdo_time_update_rhs_with_array(const cs_flag_t         sys_flag,
     break;
 
   case CS_TIME_SCHEME_IMPLICIT:
-  default: // Nothing todo
+  default: // Nothing to do
     break;
 
   } // End of switch

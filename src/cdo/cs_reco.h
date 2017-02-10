@@ -181,27 +181,43 @@ cs_reco_dfbyc_at_cell_center(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct a constant vector inside pec which is a volume
- *         surrounding the edge e inside the cell c.
- *         array is scanned thanks to the c2e connectivity.
+ * \brief  Reconstruct a constant vector inside the cell c.
+ *         array is scanned thanks to the c2e connectivity. Pointer is already
+ *         located at the beginning of the cell sequence.
  *         Reconstruction used is based on DGA (stabilization = 1/d where d is
  *         the space dimension)
  *
- *  \param[in]      c_id      cell id
- *  \param[in]      e_id      edge id
- *  \param[in]      c2e       cell -> edges connectivity
- *  \param[in]      quant     pointer to the additional quantities struct.
- *  \param[in]      array     pointer to the array of values
+ *  \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ *  \param[in]      array     local pointer to the array of values
+ *  \param[in, out] val_c     value of the reconstructed vector in the cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_dfbyc_in_cell(const cs_cell_mesh_t        *cm,
+                      const cs_real_t             *array,
+                      cs_real_3_t                  val_c);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct a constant vector inside pec which is a volume
+ *         surrounding the edge e inside the cell c.
+ *         array is scanned thanks to the c2e connectivity. Pointer is already
+ *         located at the beginning of the cell sequence.
+ *         Reconstruction used is based on DGA (stabilization = 1/d where d is
+ *         the space dimension)
+ *
+ *  \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ *  \param[in]      e         local edge id
+ *  \param[in]      array     local pointer to the array of values
  *  \param[in, out] val_pec   value of the reconstruction in pec
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_dfbyc_in_pec(cs_lnum_t                    c_id,
-                     cs_lnum_t                    e_id,
-                     const cs_connect_index_t    *c2e,
-                     const cs_cdo_quantities_t   *quant,
-                     const double                *array,
+cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
+                     short int                    e,
+                     const cs_real_t             *array,
                      cs_real_3_t                  val_pec);
 
 /*----------------------------------------------------------------------------*/

@@ -397,27 +397,68 @@ cs_reco_dfbyc_at_cell_center(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct a constant vector inside pec which is a volume
- *         surrounding the edge e inside the cell c.
- *         array is scanned thanks to the c2e connectivity.
+ * \brief  Reconstruct a constant vector inside the cell c.
+ *         array is scanned thanks to the c2e connectivity. Pointer is already
+ *         located at the beginning of the cell sequence.
  *         Reconstruction used is based on DGA (stabilization = 1/d where d is
  *         the space dimension)
  *
- *  \param[in]      c_id      cell id
- *  \param[in]      e_id      edge id
- *  \param[in]      c2e       cell -> edges connectivity
- *  \param[in]      quant     pointer to the additional quantities struct.
- *  \param[in]      array     pointer to the array of values
+ *  \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ *  \param[in]      array     local pointer to the array of values
+ *  \param[in, out] val_c     value of the reconstructed vector in the cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_dfbyc_in_cell(const cs_cell_mesh_t        *cm,
+                      const cs_real_t             *array,
+                      cs_real_3_t                  val_c)
+{
+  /* Initialization */
+  val_c[0] = val_c[1] = val_c[2] = 0.;
+
+  if (array == NULL)
+    return;
+
+  /* Sanity check */
+  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PEQ));
+
+  const double  invvol = 1/cm->vol_c;
+
+  for (short int e = 0; e < cm->n_ec; e++) {
+
+    const cs_quant_t  peq = cm->edge[e];
+    const cs_real_t  edge_contrib = array[e]*peq.meas;
+
+    for (int k = 0; k < 3; k++)
+      val_c[k] += edge_contrib * peq.unitv[k];
+
+  } // Loop on cell edges
+
+  for (int k = 0; k < 3; k++)
+    val_c[k] *= invvol;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct a constant vector inside pec which is a volume
+ *         surrounding the edge e inside the cell c.
+ *         array is scanned thanks to the c2e connectivity. Pointer is already
+ *         located at the beginning of the cell sequence.
+ *         Reconstruction used is based on DGA (stabilization = 1/d where d is
+ *         the space dimension)
+ *
+ *  \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ *  \param[in]      e         local edge id
+ *  \param[in]      array     local pointer to the array of values
  *  \param[in, out] val_pec   value of the reconstruction in pec
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_dfbyc_in_pec(cs_lnum_t                    c_id,
-                     cs_lnum_t                    e_id,
-                     const cs_connect_index_t    *c2e,
-                     const cs_cdo_quantities_t   *quant,
-                     const double                *array,
+cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
+                     short int                    e,
+                     const cs_real_t             *array,
                      cs_real_3_t                  val_pec)
 {
   /* Initialize values */
@@ -426,40 +467,33 @@ cs_reco_dfbyc_in_pec(cs_lnum_t                    c_id,
   if (array == NULL)
     return;
 
-  cs_lnum_t  _je = -1;
+  /* Sanity check */
+  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ));
+
   cs_real_3_t  val_c = {0., 0., 0.};
-
-  const cs_dface_t  *dfq = quant->dface;
-  const double  invvol = 1/quant->cell_vol[c_id];
-  const cs_quant_t  peq = quant->edge[e_id];
-
   /* Compute val_c */
-  for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
+  for (short int _e = 0; _e < cm->n_ec; _e++) {
 
-    const cs_lnum_t  ej_id = c2e->ids[j];
-    const cs_quant_t  pejq = quant->edge[ej_id];
-
-    if (e_id == ej_id)
-      _je = j;
+    const cs_quant_t  _peq = cm->edge[_e];
 
     for (int k = 0; k < 3; k++)
-      val_c[k] += array[j] * pejq.meas * pejq.unitv[k];
+      val_c[k] += array[_e] * _peq.meas * _peq.unitv[k];
 
   } // Loop on cell edges
 
-  assert(_je != -1);  /* Sanity check */
-
+  const double  invvol = 1/cm->vol_c;
   /* Compute the constency part related to this cell */
   for (int k = 0; k < 3; k++)
     val_c[k] *= invvol;
 
   /* Compute the reconstruction inside pec */
-  const double ecoef =
-    (array[_je] - _dp3(dfq[_je].vect,val_c)) / (_dp3(dfq[_je].vect, peq.unitv));
+  const cs_quant_t  peq = cm->edge[e];
+  const cs_nvec3_t  dfq = cm->dface[e];
+  const double ecoef = (array[e] - dfq.meas * _dp3(dfq.unitv, val_c))
+    / (dfq.meas * _dp3(dfq.unitv, peq.unitv));
 
   for (int k = 0; k < 3; k++)
     val_pec[k] = val_c[k] + ecoef * peq.unitv[k];
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -486,8 +520,10 @@ cs_reco_pv_inside_cell(const cs_cell_mesh_t    *cm,
 {
   /* Sanity checks */
   assert(cm != NULL && pdi != NULL && wbuf != NULL);
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
 
-  cs_real_t  *_pv = wbuf;           // Local value of the potential field
+  cs_real_t  *_pv = wbuf;  // Local value of the potential field
 
   /* Reconstruct the value at the cell center */
   cs_real_t  pc = 0.;
@@ -499,9 +535,8 @@ cs_reco_pv_inside_cell(const cs_cell_mesh_t    *cm,
   /* Reconstruct a constant gradient inside the current cell */
   cs_real_3_t  gcell = {0., 0., 0.};
   for (short int e = 0; e < cm->n_ec; e++) {
-    const short int  ee = 2*e;
     const cs_real_t  ge =
-      cm->e2v_sgn[ee]*( _pv[cm->e2v_ids[ee]] - _pv[cm->e2v_ids[ee+1]]);
+      cm->e2v_sgn[e]*( _pv[cm->e2v_ids[2*e]] - _pv[cm->e2v_ids[2*e+1]]);
     const cs_real_t  coef_e = ge * cm->dface[e].meas;
     for (int k = 0; k < 3; k++)
       gcell[k] += coef_e * cm->dface[e].unitv[k];

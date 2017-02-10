@@ -615,28 +615,31 @@ cs_source_term_summary(const char               *eqname,
  * \param[in, out] sys_flag        metadata about the algebraic system
  * \param[in, out] source_mask     pointer to an array storing in a compact way
  *                                 which source term is defined in a given cell
+ *
+ * \return a flag which indicates what to build in a cell mesh structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_source_term_init(cs_space_scheme_t            space_scheme,
-                    const int                    n_source_terms,
-                    const cs_source_term_t      *source_terms,
-                    cs_source_term_cellwise_t   *compute_source[],
-                    cs_flag_t                   *sys_flag,
-                    cs_mask_t                   *source_mask[])
+cs_flag_t
+cs_source_term_init(cs_space_scheme_t             space_scheme,
+                    const int                     n_source_terms,
+                    const cs_source_term_t       *source_terms,
+                    cs_source_term_cellwise_t    *compute_source[],
+                    cs_flag_t                    *sys_flag,
+                    cs_mask_t                    *source_mask[])
 {
   if (n_source_terms > CS_N_MAX_SOURCE_TERMS)
     bft_error(__FILE__, __LINE__, 0,
               " Limitation to %d source terms has been reached!",
               CS_N_MAX_SOURCE_TERMS);
 
+  cs_flag_t  msh_flag = 0;
   *source_mask = NULL;
   for (short int i = 0; i < CS_N_MAX_SOURCE_TERMS; i++)
     compute_source[i] = NULL;
 
   if (n_source_terms == 0)
-    return;
+    return msh_flag;
 
   bool  need_mask = false;
 
@@ -644,8 +647,14 @@ cs_source_term_init(cs_space_scheme_t            space_scheme,
 
     const cs_source_term_t  *st = source_terms + st_id;
 
-    if (st->flag & CS_FLAG_PRIMAL)
-      *sys_flag |= CS_FLAG_SYS_HLOC_CONF | CS_FLAG_SYS_SOURCES_HLOC;
+    if (st->flag & CS_FLAG_PRIMAL) {
+      if (space_scheme == CS_SPACE_SCHEME_CDOVB ||
+          space_scheme == CS_SPACE_SCHEME_CDOVCB) {
+        msh_flag |= CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
+          CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+        *sys_flag |= CS_FLAG_SYS_HLOC_CONF | CS_FLAG_SYS_SOURCES_HLOC;
+      }
+    }
 
     if ((st->flag & CS_FLAG_FULL_LOC) == 0) // Not defined on the whole mesh
       need_mask = true;
@@ -659,24 +668,39 @@ cs_source_term_init(cs_space_scheme_t            space_scheme,
         switch (st->def_type) {
 
         case CS_PARAM_DEF_BY_VALUE:
+          msh_flag |= CS_CDO_LOCAL_PVQ;
           compute_source[st_id] = cs_source_term_dcsd_by_value;
           break;
 
         case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
 
           switch (st->quad_type) {
+
           case CS_QUADRATURE_BARY:
+            msh_flag |= CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_PFQ |
+              CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE  | CS_CDO_LOCAL_FEQ;
             compute_source[st_id] = cs_source_term_dcsd_bary_by_analytic;
             break;
+
           case CS_QUADRATURE_BARY_SUBDIV:
+            msh_flag |= CS_CDO_LOCAL_EV | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ |
+              CS_CDO_LOCAL_FE | CS_CDO_LOCAL_FEQ;
             compute_source[st_id] = cs_source_term_dcsd_q1o1_by_analytic;
             break;
+
           case CS_QUADRATURE_HIGHER:
+            msh_flag |= CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE |
+              CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_PVQ |
+              CS_CDO_LOCAL_PEQ;
             compute_source[st_id] = cs_source_term_dcsd_q10o2_by_analytic;
             break;
+
           case CS_QUADRATURE_HIGHEST:
+            msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+              CS_CDO_LOCAL_EV;
             compute_source[st_id] = cs_source_term_dcsd_q5o3_by_analytic;
             break;
+
           default:
             bft_error(__FILE__, __LINE__, 0,
                       " Invalid type of quadrature for computing a source term"
@@ -697,10 +721,12 @@ cs_source_term_init(cs_space_scheme_t            space_scheme,
         switch (st->def_type) {
 
         case CS_PARAM_DEF_BY_VALUE:
+          msh_flag |= CS_CDO_LOCAL_PV;
           compute_source[st_id] = cs_source_term_pvsp_by_value;
           break;
 
         case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+          msh_flag |= CS_CDO_LOCAL_PV;
           compute_source[st_id] = cs_source_term_pvsp_by_analytic;
           break;
 
@@ -737,10 +763,12 @@ cs_source_term_init(cs_space_scheme_t            space_scheme,
         switch (st->def_type) {
 
         case CS_PARAM_DEF_BY_VALUE:
+          msh_flag |= CS_CDO_LOCAL_PV;
           compute_source[st_id] = cs_source_term_vcsp_by_value;
           break;
 
         case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+          msh_flag |= CS_CDO_LOCAL_PV;
           compute_source[st_id] = cs_source_term_vcsp_by_analytic;
           break;
 
@@ -780,6 +808,7 @@ cs_source_term_init(cs_space_scheme_t            space_scheme,
 
   } /* Build a tag related to the source terms defined in each cell */
 
+  return msh_flag;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -870,10 +899,10 @@ cs_source_term_compute(cs_desc_t                     dof_desc,
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_st));
 
   cs_lnum_t n_ent = 0;
-  if (cs_cdo_same_support(dof_desc.location, cs_cdo_dual_cell) ||
-      cs_cdo_same_support(dof_desc.location, cs_cdo_primal_vtx))
+  if (cs_test_flag(dof_desc.location, cs_cdo_dual_cell) ||
+      cs_test_flag(dof_desc.location, cs_cdo_primal_vtx))
     n_ent = quant->n_vertices;
-  else if (cs_cdo_same_support(dof_desc.location, cs_cdo_primal_cell))
+  else if (cs_test_flag(dof_desc.location, cs_cdo_primal_cell))
     n_ent = quant->n_cells;
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -967,6 +996,7 @@ cs_source_term_pvsp_by_value(const cs_source_term_t    *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL && cb->hdg != NULL);
+  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV));
 
   const double  pot_value = source->def.get.val;
 
@@ -1011,6 +1041,7 @@ cs_source_term_pvsp_by_analytic(const cs_source_term_t    *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL && cb->hdg != NULL);
+  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV));
 
   const double  tcur = cs_time_step->t_cur;
 
@@ -1052,6 +1083,7 @@ cs_source_term_dcsd_by_value(const cs_source_term_t    *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
+  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PVQ));
 
   const double  density_value = source->def.get.val;
   for (int v = 0; v < cm->n_vc; v++)
@@ -1064,7 +1096,7 @@ cs_source_term_dcsd_by_value(const cs_source_term_t    *source,
  *         add it the given array of values.
  *         Case of a scalar density defined at dual cells by an analytical
  *         function.
- *         Use a the barycentric approximation as quadrature to evaluate the
+ *         Use the barycentric approximation as quadrature to evaluate the
  *         integral. Exact for linear function.
  *
  * \param[in]      source     pointer to a cs_source_term_t structure
@@ -1085,6 +1117,9 @@ cs_source_term_dcsd_bary_by_analytic(const cs_source_term_t    *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ |
+                      CS_CDO_LOCAL_FE  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
   /* Compute the barycenter of each portion of dual cells */
   cs_real_3_t  *xgv = cb->vectors;
@@ -1165,6 +1200,9 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_source_term_t    *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
   const double  tcur = cs_time_step->t_cur;
 
@@ -1234,6 +1272,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_source_term_t    *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL);
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE  |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_PVQ |
+                      CS_CDO_LOCAL_PEQ));
 
   const double  tcur = cs_time_step->t_cur;
   cs_analytic_func_t  *ana = source->def.analytic;
@@ -1407,6 +1449,9 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_source_term_t    *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL);
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_FE |
+                      CS_CDO_LOCAL_EV));
 
   const double  tcur = cs_time_step->t_cur;
   cs_analytic_func_t  *ana = source->def.analytic;
