@@ -1959,7 +1959,7 @@ _cs_post_write_domain(fvm_writer_t       *writer,
   BFT_MALLOC(domain, n_elts, int32_t);
 
   for (i = 0; i < n_elts; i++)
-    domain[i] = cs_glob_mesh->domain_num;
+    domain[i] = cs_glob_rank_id;
 
   /* Prepare post-processing output */
 
@@ -1972,7 +1972,7 @@ _cs_post_write_domain(fvm_writer_t       *writer,
 
   fvm_writer_export_field(writer,
                           exp_mesh,
-                          _("parallel domain"),
+                          "mpi_rank_id",
                           FVM_WRITER_PER_ELEMENT,
                           1,
                           CS_INTERLACE,
