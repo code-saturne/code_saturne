@@ -7070,28 +7070,28 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
       BFT_MALLOC(pvar_local, n_local, cs_real_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                1, /* Dimension */
-                                               pvar,
+                                               (const cs_real_t*) pvar,
                                                pvar_local);
 
       /* Exchange grad */
       BFT_MALLOC(grad_local, n_local, cs_real_3_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                3, /* Dimension */
-                                               grad,
-                                               grad_local);
+                                               (const cs_real_t*) grad,
+                                               (cs_real_t*) grad_local);
 
       /* Exchange viscce */
       BFT_MALLOC(viscce_local, n_local, cs_real_6_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                6, /* Dimension */
-                                               viscce,
-                                               viscce_local);
+                                               (const cs_real_t*) viscce,
+                                               (cs_real_t*) viscce_local);
 
       /* Exchange weighb */
       BFT_MALLOC(weighb_local, n_local, cs_real_t);
       cs_internal_coupling_exchange_by_face_id(cpl,
                                                1, /* Dimension */
-                                               weighb,
+                                               (const cs_real_t*) weighb,
                                                weighb_local);
 
       /* Flux contribution */
