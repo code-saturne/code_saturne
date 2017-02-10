@@ -497,6 +497,8 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   /* Store a direct access to which term one has to compute
      High-level information on how to build the current system */
   b->sys_flag = 0;
+  if (eqp->verbosity > 100)
+    b->sys_flag = CS_FLAG_SYS_DEBUG;
 
   /* Flag to indicate the minimal set of quantities to build in a cell mesh
      According to the situation, additional flags have to be set */
@@ -897,7 +899,8 @@ cs_cdovb_scaleq_compute_source(void   *builder)
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-      if (c_id % 100 == 0) cs_cell_mesh_dump(cm);
+      if (b->sys_flag & CS_FLAG_SYS_DEBUG)
+        if (c_id % (eqp->verbosity - 100) == 0) cs_cell_mesh_dump(cm);
 #endif
 
       /* Build the local dense matrix related to this operator
@@ -928,8 +931,9 @@ cs_cdovb_scaleq_compute_source(void   *builder)
   } // OpenMP block
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-  cs_dump_array_to_listing("INIT_SOURCE_TERM_VTX", quant->n_vertices,
-                           b->source_terms, 8);
+  if (b->sys_flag & CS_FLAG_SYS_DEBUG)
+    cs_dump_array_to_listing("INIT_SOURCE_TERM_VTX", quant->n_vertices,
+                             b->source_terms, 8);
 #endif
 
   cs_timer_t  t1 = cs_timer_time();
@@ -949,9 +953,9 @@ cs_cdovb_scaleq_compute_source(void   *builder)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_initialize_system(void           *builder,
-                                  cs_matrix_t   **system_matrix,
-                                  cs_real_t     **system_rhs)
+cs_cdovb_scaleq_initialize_system(void            *builder,
+                                  cs_matrix_t    **system_matrix,
+                                  cs_real_t      **system_rhs)
 {
   if (builder == NULL)
     return;
@@ -1124,7 +1128,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
                             csys, cbc, cb);                          // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-      if (c_id % 100 == 0) cs_cell_mesh_dump(cm);
+      if (b->sys_flag & CS_FLAG_SYS_DEBUG)
+        if (c_id % (eqp->verbosity - 100) == 0) cs_cell_mesh_dump(cm);
 #endif
 
       /* DIFFUSION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
@@ -1170,8 +1175,9 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
         }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-        if (c_id % 100 == 0)
-          cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
+        if (b->sys_flag & CS_FLAG_SYS_DEBUG)
+          if (c_id % (eqp->verbosity - 100) == 0)
+            cs_cell_sys_dump("\n>> Local system after diffusion", c_id, csys);
 #endif
       } /* END OF DIFFUSION */
 
@@ -1191,8 +1197,9 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
           b->add_advection_bc(cbc, cm, eqp, fm, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-        if (c_id % 100 == 0)
-          cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
+        if (b->sys_flag & CS_FLAG_SYS_DEBUG)
+          if (c_id % (eqp->verbosity - 100) == 0)
+            cs_cell_sys_dump("\n>> Local system after advection", c_id, csys);
 #endif
 
       } /* END OF ADVECTION */
@@ -1201,9 +1208,11 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
         cb->hdg = b->get_mass_matrix(b->hdg_mass, cm, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-        if (c_id % 100 == 0) {
-          cs_log_printf(CS_LOG_DEFAULT, ">> Local mass matrix");
-          cs_locmat_dump(c_id, cb->hdg);
+        if (b->sys_flag & CS_FLAG_SYS_DEBUG) {
+          if (c_id % (eqp->verbosity - 100) == 0) {
+            cs_log_printf(CS_LOG_DEFAULT, ">> Local mass matrix");
+            cs_locmat_dump(c_id, cb->hdg);
+          }
         }
 #endif
       }
@@ -1286,8 +1295,9 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
       } /* END OF TIME CONTRIBUTION */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-      if (c_id % 1 == 0)
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
+      if (b->sys_flag & CS_FLAG_SYS_DEBUG)
+        if (c_id % (eqp->verbosity - 100) == 0)
+          cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
       /* Assemble the local system to the global system */
@@ -1305,7 +1315,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
   cs_matrix_assembler_values_finalize(&mav);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
-  if (b->source_terms != NULL)
+  if (b->source_terms != NULL && (b->sys_flag & CS_FLAG_SYS_DEBUG))
     cs_dump_array_to_listing("EQ.BUILD >> TS", b->n_dofs, b->source_terms, 8);
 #endif
 
@@ -1638,7 +1648,9 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
         cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-        cs_cell_mesh_dump(cm);
+        if (b->sys_flag & CS_FLAG_SYS_DEBUG)
+          if (c_id % (eqp->verbosity - 100) == 0)
+            cs_cell_mesh_dump(cm);
 #endif
         /* Define a local buffer keeping the value of the discrete potential
            for the current cell */

@@ -1948,14 +1948,19 @@ cs_equation_solve(cs_equation_t   *eq)
                   eq->name, code, n_iters, residual, row_index[eq->rhs_size]);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
-  cs_dump_array_to_listing("EQ.AFTER.SOLVE >> X", eq->rhs_size, x, 8);
-  cs_dump_array_to_listing("EQ.SOLVE >> RHS", eq->rhs_size, b, 8);
+    if (eq->param->verbosity > 100) {
+      cs_dump_array_to_listing("EQ.AFTER.SOLVE >> X", eq->rhs_size, x, 8);
+      cs_dump_array_to_listing("EQ.SOLVE >> RHS", eq->rhs_size, b, 8);
+    }
 
 #if CS_EQUATION_DBG > 2
-  cs_dump_integer_to_listing("ROW_INDEX", eq->rhs_size + 1, row_index, 8);
-  cs_dump_integer_to_listing("COLUMN_ID", row_index[eq->rhs_size], col_id, 8);
-  cs_dump_array_to_listing("D_VAL", eq->rhs_size, d_val, 8);
-  cs_dump_array_to_listing("X_VAL", row_index[eq->rhs_size], x_val, 8);
+    if (eq->param->verbosity > 100) {
+      size_t  nnz = row_index[eq->rhs_size];
+      cs_dump_integer_to_listing("ROW_INDEX", eq->rhs_size + 1, row_index, 8);
+      cs_dump_integer_to_listing("COLUMN_ID", nnz, col_id, 8);
+      cs_dump_array_to_listing("D_VAL", eq->rhs_size, d_val, 8);
+      cs_dump_array_to_listing("X_VAL", nnz, x_val, 8);
+    }
 #endif
 #endif
   }

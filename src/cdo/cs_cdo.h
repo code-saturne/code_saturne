@@ -50,6 +50,7 @@ BEGIN_C_DECLS
 #define CS_FLAG_SYS_SYM          (1 << 6) //  64: system matrix is symmetric
 #define CS_FLAG_SYS_TIME_DIAG    (1 << 7) // 128: lumping/diag by construction
 #define CS_FLAG_SYS_SOURCES_HLOC (1 << 8) // 256: source terms need a hodge op.
+#define CS_FLAG_SYS_DEBUG        (1 << 9) // 512: activate debug mode
 
 /* Flags use to identify the nature/status of an object (variable, property) */
 #define CS_FLAG_STATE_UNIFORM     (1 << 0) //    1: uniform (in space)
