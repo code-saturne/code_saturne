@@ -851,12 +851,10 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
+void
 cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
                      const cs_cell_mesh_t     *cm,
                      cs_cell_builder_t        *cb)
@@ -960,8 +958,6 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   cs_locmat_dump(cm->c_id, hdg);
 #endif
-
-  return hdg;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -973,12 +969,10 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
+void
 cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
                       const cs_cell_mesh_t     *cm,
                       cs_cell_builder_t        *cb)
@@ -1072,8 +1066,6 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   cs_locmat_dump(cm->c_id, hdg);
 #endif
-
-  return hdg;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1085,12 +1077,10 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
+void
 cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
                        const cs_cell_mesh_t     *cm,
                        cs_cell_builder_t        *cb)
@@ -1122,8 +1112,6 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   cs_locmat_dump(cm->c_id, hdg);
 #endif
-
-  return hdg;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1135,12 +1123,10 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
+void
 cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
                        const cs_cell_mesh_t     *cm,
                        cs_cell_builder_t        *cb)
@@ -1186,8 +1172,6 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   cs_locmat_dump(cm->c_id, hdg);
 #endif
-
-  return hdg;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1199,12 +1183,10 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
+void
 cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
                        const cs_cell_mesh_t     *cm,
                        cs_cell_builder_t        *cb)
@@ -1268,8 +1250,6 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   cs_locmat_dump(cm->c_id, hdg);
 #endif
-
-  return hdg;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1441,7 +1421,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
       }
 
       /* Build the local discrete Hodge operator */
-      cb->hdg = compute(h_info, cm, cb);
+      compute(h_info, cm, cb);
 
       /* Define a local vector to multiply for the current cell */
       switch (h_info.type) {

@@ -148,7 +148,7 @@ struct  _cs_cdofb_scaleq_t {
   cs_lnum_t        *f_i2z_ids;
 
   /* Pointer of function to build the diffusion term */
-  cs_hodge_stiffness_t            *get_stiffness_matrix;
+  cs_hodge_t                      *get_stiffness_matrix;
   cs_hodge_t                      *get_diffusion_hodge;
   cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
   cs_cdo_diffusion_flux_op_t      *boundary_flux_op;

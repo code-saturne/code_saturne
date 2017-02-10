@@ -146,7 +146,7 @@ struct _cs_cdovcb_scaleq_t {
   cs_cdo_bc_t           *face_bc; // list of faces sorted by type of BCs
 
   /* Pointer of function to build the diffusion term */
-  cs_hodge_stiffness_t            *get_stiffness_matrix;
+  cs_hodge_t                      *get_stiffness_matrix;
   cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
   cs_cdo_diffusion_flux_op_t      *boundary_flux_op;
 
@@ -922,7 +922,7 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
       /* Build the local dense matrix related to this operator
          Store in cb->hdg inside the cs_cell_builder_t structure */
       if (b->sys_flag & CS_FLAG_SYS_SOURCES_HLOC)
-        cb->hdg = b->get_mass_matrix(b->hdg_mass, cm, cb);
+        b->get_mass_matrix(b->hdg_mass, cm, cb);
 
       /* Initialize the local number of DoFs */
       csys->n_dofs = cm->n_vc + 1;
@@ -1230,7 +1230,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
       } /* END OF ADVECTION */
 
       if (b->sys_flag & CS_FLAG_SYS_HLOC_CONF)
-        cb->hdg = b->get_mass_matrix(b->hdg_mass, cm, cb);
+        b->get_mass_matrix(b->hdg_mass, cm, cb); // stored in cb->hdg
 
       /* REACTION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
       /* ============================================= */
@@ -1246,7 +1246,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
             rpty_val += cs_property_get_cell_value(c_id,
                                                    eqp->reaction_properties[r]);
 
-        /* Update local system matrix with the reaction term */
+        /* Update local system matrix with the reaction term
+           cb->hdg corresponds to the current mass matrix */
         cs_locmat_mult_add(csys->mat, rpty_val, cb->hdg);
 
       } /* END OF REACTION */
