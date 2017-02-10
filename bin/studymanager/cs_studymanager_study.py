@@ -437,7 +437,10 @@ class Case(object):
                     lines[i] = '# ' + lines[i]
             else:
                 if re.search(r'^\\' + self.exe, lines[i]):
-                    lines[i] = run_cmd + " --id=" + run_id
+                    if self.__data['n_procs'] == None:
+                        lines[i] = run_cmd + " --id=" + run_id
+                    else:
+                        lines[i] = run_cmd + " --id=" + run_id + " -n " + self.__data['n_procs']
                 elif re.search(r' cd ', lines[i]): # do not switch to batch submit directory
                     lines[i] = '# ' + lines[i]
 
@@ -665,7 +668,7 @@ class Study(object):
     """
     Create, run and compare all cases for a given study.
     """
-    def __init__(self, pkg, parser, study, exe, dif, rlog, force_rm=False, force_overwrite=False):
+    def __init__(self, pkg, parser, study, exe, dif, rlog, n_procs=None, force_rm=False, force_overwrite=False):
         """
         Constructor.
           1. initialize attributes,
@@ -679,6 +682,8 @@ class Study(object):
         @param exe: name of the solver executable: C{code_saturne} or C{neptune_cfd}.
         @type dif: C{String}
         @param dif: name of the diff executable: C{cs_io_dump -d}.
+        @n_procs: C{int}
+        @param n_procs: number of requested processors
         @type force_rm: C{True} or C{False}
         @param force_rm: remove always existing cases
         """
@@ -709,6 +714,10 @@ class Study(object):
             print("\n\n\nWarning: no case defined in %s study\n\n\n" % study)
         else:
             for data in self.__parser.getCasesKeywords(self.label):
+                if n_procs == None:
+                    data['n_procs'] = None
+                else:
+                    data['n_procs'] = str(n_procs)
                 c = Case(pkg,
                          self.__log,
                          self.__diff,
@@ -971,6 +980,7 @@ class Studies(object):
         for l in self.labels:
             self.studies.append( [l, Study(pkg, self.__parser, l, \
                                            exe, dif, self.__log, \
+                                           options.n_procs, \
                                            options.remove_existing, \
                                            options.force_overwrite)] )
             if options.debug:
