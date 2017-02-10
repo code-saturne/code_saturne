@@ -1005,7 +1005,60 @@ do ifac = 1, nfabor
 
     elseif (itytur.eq.3) then
 
-      ! ---> Tensor Rij (Partially implicited)
+      ! Exchange coefficient
+
+      ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
+      if (vcopt_rij%idften.eq.6) then
+
+        visci(1,1) = visclc + visten(1,iel)
+        visci(2,2) = visclc + visten(2,iel)
+        visci(3,3) = visclc + visten(3,iel)
+        visci(1,2) =          visten(4,iel)
+        visci(2,1) =          visten(4,iel)
+        visci(2,3) =          visten(5,iel)
+        visci(3,2) =          visten(5,iel)
+        visci(1,3) =          visten(6,iel)
+        visci(3,1) =          visten(6,iel)
+
+        ! ||Ki.S||^2
+        viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                 + visci(1,2)*surfbo(2,ifac)       &
+                 + visci(1,3)*surfbo(3,ifac))**2   &
+               + ( visci(2,1)*surfbo(1,ifac)       &
+                 + visci(2,2)*surfbo(2,ifac)       &
+                 + visci(2,3)*surfbo(3,ifac))**2   &
+               + ( visci(3,1)*surfbo(1,ifac)       &
+                 + visci(3,2)*surfbo(2,ifac)       &
+                 + visci(3,3)*surfbo(3,ifac))**2
+
+        ! IF.Ki.S
+        fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                )*surfbo(1,ifac)                              &
+              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                )*surfbo(2,ifac)                              &
+              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                )*surfbo(3,ifac)
+
+        distfi = distb(ifac)
+
+        ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+        ! NB: eps =1.d-1 must be consistent with vitens.f90
+        fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+        hint = viscis/surfbn(ifac)/fikis
+
+      ! Scalar diffusivity
+      else
+        hint = (visclc+visctc*csrij/cmu)/distbf
+      endif
+
+      ! ---> Tensor Rij (Partially or totally implicited)
 
       do isou = 1, 6
         fcoefa(isou) = 0.0d0
@@ -1068,57 +1121,6 @@ do ifac = 1, nfabor
           fcofad(isou) = 0.d0
           fcoefb(isou) = 0.d0
           fcofbd(isou) = 0.d0
-        endif
-
-        ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-        if (vcopt_rij%idften.eq.6) then
-
-          visci(1,1) = visclc + visten(1,iel)
-          visci(2,2) = visclc + visten(2,iel)
-          visci(3,3) = visclc + visten(3,iel)
-          visci(1,2) =          visten(4,iel)
-          visci(2,1) =          visten(4,iel)
-          visci(2,3) =          visten(5,iel)
-          visci(3,2) =          visten(5,iel)
-          visci(1,3) =          visten(6,iel)
-          visci(3,1) =          visten(6,iel)
-
-          ! ||Ki.S||^2
-          viscis = ( visci(1,1)*surfbo(1,ifac)       &
-                   + visci(1,2)*surfbo(2,ifac)       &
-                   + visci(1,3)*surfbo(3,ifac))**2   &
-                 + ( visci(2,1)*surfbo(1,ifac)       &
-                   + visci(2,2)*surfbo(2,ifac)       &
-                   + visci(2,3)*surfbo(3,ifac))**2   &
-                 + ( visci(3,1)*surfbo(1,ifac)       &
-                   + visci(3,2)*surfbo(2,ifac)       &
-                   + visci(3,3)*surfbo(3,ifac))**2
-
-          ! IF.Ki.S
-          fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
-                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
-                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
-                  )*surfbo(1,ifac)                              &
-                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
-                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
-                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
-                  )*surfbo(2,ifac)                              &
-                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
-                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
-                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
-                  )*surfbo(3,ifac)
-
-          distfi = distb(ifac)
-
-          ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-          ! NB: eps =1.d-1 must be consistent with vitens.f90
-          fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
-
-          hint = viscis/surfbn(ifac)/fikis
-
-        ! Scalar diffusivity
-        else
-          hint = (visclc+visctc*csrij/cmu)/distbf
         endif
 
         ! Translate into Diffusive flux BCs
@@ -2652,7 +2654,7 @@ integer          ifcvsl
 
 double precision cpp, rkl, prdtl, visclc, romc, cofimp
 double precision distbf, hint, heq, yptp, hflui, hext
-double precision yplus, dplus, rcprod, temp, uk
+double precision yplus, dplus, rcprod, uk
 double precision visctc, xmutlm, ypth, xnuii, srfbnf
 double precision rcodcx, rcodcy, rcodcz, rcodcn, rnx, rny, rnz
 double precision upx, upy, upz, usn, tx, ty, tz, txn, txn0, utau
@@ -2841,8 +2843,10 @@ do ifac = 1, nfabor
     ! Scalar diffusivity
     if (vcopt%idften.eq.1) then
       hint = (rkl+vcopt%idifft*cpp*visctc/turb_schmidt)/distbf
+    else
+      ! TODO if (vcopt%idften.eq.6)
+      call csexit(1)
     endif
-    ! TODO if (vcopt%idften.eq.6)
 
     ! Dirichlet on the scalar, with wall function
     if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5) then
