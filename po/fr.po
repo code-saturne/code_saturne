@@ -7303,9 +7303,6 @@ msgstr ""
 "Le numéro de maillage de post traitement demandé\n"
 "doit être < 0 (réservé) ou > 0 (utilisateur).\n"
 
-msgid "parallel domain"
-msgstr "Domaine parallèle"
-
 msgid "displacement"
 msgstr "déplacement"
 
@@ -16259,5 +16256,3 @@ msgstr ""
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
 
-#~ msgid "Maximum variation: %9.4f %%\n"
-#~ msgstr "Variation maximum: %9.4f %%\n"
