@@ -234,13 +234,13 @@ cs_advection_field_set_option(cs_adv_field_t            *adv,
  * \brief  Define the value of a cs_adv_field_t structure
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       keyval    accessor to the value to set
+ * \param[in]       vector    values to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_def_by_value(cs_adv_field_t    *adv,
-                                const char        *val);
+                                const cs_real_t    vector[3]);
 
 /*----------------------------------------------------------------------------*/
 /*!

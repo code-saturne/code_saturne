@@ -874,10 +874,9 @@ _test_cdovb_schemes(FILE             *out,
   eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
 
   /* Constant advection field */
-  cs_advection_field_def_by_value(beta, "1 0 0");
+  cs_real_3_t  vector_field = {1., 0., 0.};
+  cs_advection_field_def_by_value(beta, vector_field);
   eqp->advection_field = beta;
-
-
 
   /* Free memory */
   beta = cs_advection_field_free(beta);

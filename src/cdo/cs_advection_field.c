@@ -401,21 +401,22 @@ cs_advection_field_set_option(cs_adv_field_t            *adv,
  * \brief  Define the value of a cs_adv_field_t structure
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       val       accessor to the value to set
+ * \param[in]       vector    values to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_def_by_value(cs_adv_field_t    *adv,
-                                const char        *val)
+                                const cs_real_t    vector[3])
 {
   if (adv == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
 
   adv->def_type = CS_PARAM_DEF_BY_VALUE;
   adv->desc.state |= CS_FLAG_STATE_UNIFORM;
-
-  cs_param_set_get(CS_PARAM_VAR_VECT, (const void *)val, &(adv->def.get));
+  adv->def.get.vect[0] = vector[0];
+  adv->def.get.vect[1] = vector[1];
+  adv->def.get.vect[2] = vector[2];
 }
 
 /*----------------------------------------------------------------------------*/
