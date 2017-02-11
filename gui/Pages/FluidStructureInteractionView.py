@@ -400,15 +400,12 @@ class FormulaCoupling(Coupling):
         Constructor
         """
         Coupling.__init__(self, button, getter, setter)
-        self.notebook = NotebookModel(self.case)
 
         self.__default  = default
         self.__required = required
         self.__examples = examples
         self.__symbols  = symbols
 
-        for (nme, val) in self.notebook.getNotebookList():
-            self.__symbols.append((nme, 'value (notebook) = ' + str(val)))
         button.clicked.connect(self.__slotFormula)
 
 
@@ -576,6 +573,11 @@ class CouplingManager:
         symbols = [('dt', 'time step'),
                    ('t', 'current time'),
                    ('nbIter', 'number of iteration')]
+
+        # Add notebook symbols
+        self.notebook = NotebookModel(self.case)
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
 
         m_default = default % {'t':'m'}
         c_default = default % {'t':'c'}
