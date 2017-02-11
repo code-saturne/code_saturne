@@ -182,7 +182,7 @@ iok = 0
 !  Pression hydrostatique
 if (iphydr.eq.0.or.iphydr.eq.2) then
   icalhy = 0
-else if (iphydr.eq.1) then
+else if (iphydr.eq.1.and.icalhy.eq.-1) then
   gravn2 = gx**2+gy**2+gz**2
   if (gravn2.lt.epzero**2) then
     icalhy = 0
