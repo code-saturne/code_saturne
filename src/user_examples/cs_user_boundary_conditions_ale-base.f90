@@ -1,7 +1,7 @@
 !-------------------------------------------------------------------------------
 
-!                      Code_Saturne version 4.0-alpha
-!                      --------------------------
+!VERS
+
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2017 EDF S.A.
