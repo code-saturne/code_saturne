@@ -40,6 +40,7 @@ import fnmatch
 #-------------------------------------------------------------------------------
 
 from cs_exec_environment import get_shell_type, enquote_arg
+from cs_create import set_executable
 from studymanager.cs_studymanager_parser import Parser
 from studymanager.cs_studymanager_texmaker import Report1, Report2
 try:
@@ -191,13 +192,29 @@ class Case(object):
                 os.makedirs(r)
 
         # 3) Update the GUI script from the Repository
-        ref = os.path.join(self.__repo, subdir, "DATA", self.pkg.guiname)
+        gui_script = os.path.join(self.__repo, subdir, "DATA")
+        self.update_gui_script_path(data_subdir, None, xmlonly)
+
+        # 4) Update the runcase script from the Repository
+        scripts_subdir = os.path.join(self.__repo, subdir, "SCRIPTS")
+        self.update_runcase_path(scripts_subdir, None, xmlonly)
+
+    #---------------------------------------------------------------------------
+
+    def update_gui_script_path(self, subdir, destdir=None, xmlonly=False):
+        """
+        Update path for the script in the Repository.
+        """
+        if not destdir:
+            gui_script = os.path.join(self.__repo, subdir, self.pkg.guiname)
+        else:
+            gui_script = os.path.join(destdir, subdir, self.pkg.guiname)
 
         have_gui = 1
         try:
-            f = open(ref, mode = 'r')
+            f = open(gui_script, mode = 'r')
         except IOError:
-           print("Warning SaturneGUI does not exist: %s\n" % ref)
+           print("Warning SaturneGUI does not exist: %s\n" % gui_script)
            have_gui = 0
 
         if have_gui:
@@ -214,13 +231,13 @@ class Case(object):
                    if xmlonly:
                        lines[i] = 'export PATH="":$PATH\n'
                    else:
-                       lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
-           f = open(ref, mode = 'w')
+                       lines[i] = 'export PATH="' + self.pkg.get_dir('bindir')\
+                                                  +'":$PATH\n'
+           f = open(gui_script, mode = 'w')
            f.writelines(lines)
            f.close()
 
-        # 4) Update the runcase script from the Repository
-        self.update_runcase_path(os.path.join(self.__repo, subdir, "SCRIPTS"), None, xmlonly)
+           set_executable(gui_script)
 
     #---------------------------------------------------------------------------
 
@@ -229,14 +246,14 @@ class Case(object):
         Update path for the script in the Repository.
         """
         if not destdir:
-            ref = os.path.join(self.__repo, subdir, "runcase")
+            batch_file = os.path.join(self.__repo, subdir, "runcase")
         else:
-            ref = os.path.join(destdir, subdir, "runcase")
+            batch_file = os.path.join(destdir, subdir, "runcase")
 
         try:
-            f = open(ref, mode = 'r')
+            f = open(batch_file, mode = 'r')
         except IOError:
-            print("Error: can not open %s\n" % ref)
+            print("Error: can not open %s\n" % batch_file)
             sys.exit(1)
 
         lines = f.readlines()
@@ -253,9 +270,11 @@ class Case(object):
                     lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
                 j = lines[i].find(self.pkg.name)
 
-        f = open(ref, mode = 'w')
+        f = open(batch_file, mode = 'w')
         f.writelines(lines)
         f.close()
+
+        set_executable(batch_file)
 
     #---------------------------------------------------------------------------
 
@@ -846,8 +865,15 @@ class Study(object):
                     dirs_to_overwrite = ["DATA", "SRC", "SCRIPTS"]
                     self.overwriteDirectories(dirs_to_overwrite,
                                               case_label=c.label)
+                    # update path in gui script
+                    data_subdir = os.path.join(c.label, "DATA")
+                    c.update_gui_script_path(data_subdir, self.__dest,
+                                             xmlonly=False)
 
-
+                    # update path in runcase script
+                    scripts_subdir = os.path.join(c.label, "SCRIPTS")
+                    c.update_runcase_path(scripts_subdir, self.__dest,
+                                          xmlonly=False)
 
         os.chdir(repbase)
 

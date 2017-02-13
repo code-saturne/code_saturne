@@ -140,7 +140,7 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("--fmt", type="string",
                       dest="default_fmt", default="pdf",
-                      help="Set the default format for exporting matplotlib figuer")
+                      help="Set the default format for exporting matplotlib figure")
 
     parser.add_option("--repo", type="string",
                       dest="repo_path", default="",
