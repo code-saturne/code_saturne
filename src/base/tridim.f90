@@ -1026,7 +1026,7 @@ do while (iterns.le.nterup)
     dt     ,                                                       &
     rcodcl , xyzno0 , disale )
 
-    !     Au cas ou l'utilisateur aurait touche DEPALE sans mettre IMPALE=1, on
+    !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
     !       remet le deplacement initial
     do ii  = 1, nnod
       if (impale(ii).eq.0) then
