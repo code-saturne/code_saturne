@@ -99,71 +99,6 @@ _sort_descend_tree(cs_lnum_t  number[],
 }
 
 /*----------------------------------------------------------------------------
- * Order an array of local numbers.
- *
- * parameters:
- *   number   <-> array of numbers to sort
- *   n_elts   <-- number of elements considered
- *----------------------------------------------------------------------------*/
-
-#if defined(__INTEL_COMPILER)
-#pragma optimization_level 0 /* Bug above this with icc 15.0.1 20141023 ? */
-#endif
-
-static void
-_sort_lnum(cs_lnum_t  number[],
-           size_t     n_elts)
-{
-  if (n_elts < 2)
-    return;
-
-  /* Use shell sort for short arrays */
-
-  if (n_elts < 50) {
-
-    size_t inc;
-
-    /* Compute increment */
-    for (inc = 1; inc <= n_elts/9; inc = 3*inc+1);
-
-    /* Sort array */
-    while (inc > 0) {
-      for (size_t i = inc; i < n_elts; i++) {
-        cs_lnum_t num_save = number[i];
-        size_t j = i;
-        while (j >= inc && number[j-inc] > num_save) {
-          number[j] = number[j-inc];
-          j -= inc;
-        }
-        number[j] = num_save;
-      }
-      inc = inc / 3;
-    }
-
-  }
-
-  else {
-
-    /* Create binary tree */
-
-    size_t i = (n_elts / 2);
-    do {
-      i--;
-      _sort_descend_tree(number, i, n_elts);
-    } while (i > 0);
-
-    /* Sort binary tree */
-
-    for (size_t j = n_elts - 1; j > 0; j--) {
-      cs_lnum_t num_save   = number[0];
-      number[0] = number[j];
-      number[j] = num_save;
-      _sort_descend_tree(number, 0, j);
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Descend binary tree for the ordering of a cs_gnum_t (integer) array.
  *
  * parameters:
@@ -639,6 +574,71 @@ cs_sort_coupled_gnum_shell(cs_lnum_t   l,
 }
 
 /*----------------------------------------------------------------------------
+ * Order an array of local numbers.
+ *
+ * parameters:
+ *   number   <-> array of numbers to sort
+ *   n_elts   <-- number of elements considered
+ *----------------------------------------------------------------------------*/
+
+#if defined(__INTEL_COMPILER)
+#pragma optimization_level 0 /* Bug above this with icc 15.0.1 20141023 ? */
+#endif
+
+void
+cs_sort_lnum(cs_lnum_t  number[],
+             size_t     n_elts)
+{
+  if (n_elts < 2)
+    return;
+
+  /* Use shell sort for short arrays */
+
+  if (n_elts < 50) {
+
+    size_t inc;
+
+    /* Compute increment */
+    for (inc = 1; inc <= n_elts/9; inc = 3*inc+1);
+
+    /* Sort array */
+    while (inc > 0) {
+      for (size_t i = inc; i < n_elts; i++) {
+        cs_lnum_t num_save = number[i];
+        size_t j = i;
+        while (j >= inc && number[j-inc] > num_save) {
+          number[j] = number[j-inc];
+          j -= inc;
+        }
+        number[j] = num_save;
+      }
+      inc = inc / 3;
+    }
+
+  }
+
+  else {
+
+    /* Create binary tree */
+
+    size_t i = (n_elts / 2);
+    do {
+      i--;
+      _sort_descend_tree(number, i, n_elts);
+    } while (i > 0);
+
+    /* Sort binary tree */
+
+    for (size_t j = n_elts - 1; j > 0; j--) {
+      cs_lnum_t num_save   = number[0];
+      number[0] = number[j];
+      number[j] = num_save;
+      _sort_descend_tree(number, 0, j);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Sort rows of an indexed structure.
  *
  * parameters:
@@ -664,7 +664,7 @@ cs_sort_indexed(cs_lnum_t        n_elts,
     cs_lnum_t *restrict _elts = elts + elt_idx[i];
     cs_lnum_t _n_elts = elt_idx[i+1] - elt_idx[i];
     cs_lnum_t id_prev = -1;
-    _sort_lnum(_elts, _n_elts);
+    cs_sort_lnum(_elts, _n_elts);
     for (cs_lnum_t j = 0; j < _n_elts; j++) {
       if (_elts[j] == id_prev)
         retval = false;

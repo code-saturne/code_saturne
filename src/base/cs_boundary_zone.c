@@ -283,7 +283,7 @@ _build_zone_class_id(void)
 
   BFT_REALLOC(_zone_class_id, n_faces, int);
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i <n_faces; i++)
+  for (cs_lnum_t i = 0; i < n_faces; i++)
     _zone_class_id[i] = _zone_id[i];
 }
 

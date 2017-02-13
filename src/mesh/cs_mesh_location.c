@@ -603,12 +603,15 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
                     "is available for mesh location %d of type %d."),
                   ml_id, (int)ml->type);
     }
-    else if (ml->select_fp != NULL)
+    else if (ml->select_fp != NULL) {
       ml->select_fp(ml->select_input,
                     ml->mesh,
                     ml_id,
                     ml->n_elts,
                     &(ml->elt_list));
+      if (ml->elt_list != NULL)
+        cs_sort_lnum(ml->elt_list, ml->n_elts[0]);
+    }
     else if (ml->n_sub_ids > 0 && ml->sub_ids != NULL)
       _build_by_ml_ids(ml);
     else
