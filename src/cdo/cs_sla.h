@@ -54,7 +54,6 @@ BEGIN_C_DECLS
 #define  CS_SLA_MATRIX_SYM        (1 <<  0)  /* 1: symmetric */
 #define  CS_SLA_MATRIX_SORTED     (1 <<  1)  /* 2: sorted */
 #define  CS_SLA_MATRIX_SHARED     (1 <<  2)  /* 4: share pattern */
-#define  CS_SLA_MATRIX_INFO       (1 <<  3)  /* 8: info struct. is set */
 
 /*============================================================================
  * Type definitions
@@ -72,21 +71,7 @@ typedef enum {
 
 typedef struct {
 
-  /* Stencil */
-  int     stencil_min;
-  int     stencil_max;
-  double  stencil_mean;
-
-  /* Fill-in */
-  size_t  nnz;
-  double  fillin;
-
-} cs_sla_matrix_info_t;
-
-typedef struct {
-
   cs_sla_matrix_type_t   type;  /* Type of matrix storage */
-  cs_sla_matrix_info_t   info;  /* Information on how matrix is filled */
   int                    flag;  /* Symmetric, sorted, shared... */
 
   int     stride;   /* Number of entries in "val" for each couple A(i,j) */
@@ -325,18 +310,6 @@ cs_sla_matrix_get_diag(const cs_sla_matrix_t  *m,
 
 void
 cs_sla_matrix_sort(cs_sla_matrix_t  *m);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute general information related to a cs_sla_matrix_t structure
- *          and store it into a cs_sla_matrix_info_t structure
- *
- * \param[in, out]  m           matrix to analyse
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sla_matrix_set_info(cs_sla_matrix_t    *m);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -89,9 +89,8 @@ struct  _cs_cdofb_scaleq_t {
   short int            max_sys_size;
 
   /* Shortcut to know what to build */
-  bool       has[6]; // TODO: REMOVE
-  cs_flag_t            cm_flag;  // Information related to cell mesh
-  cs_flag_t            flag;     // Information related to the sytem
+  cs_flag_t            cm_flag;   // Information related to cell mesh
+  cs_flag_t            sys_flag;  // Information related to the sytem
 
   /* Common members for all terms */
 
@@ -149,7 +148,7 @@ struct  _cs_cdofb_scaleq_t {
   cs_lnum_t        *f_i2z_ids;
 
   /* Pointer of function to build the diffusion term */
-  cs_hodge_stiffness_t            *get_stiffness_matrix;
+  cs_hodge_t                      *get_stiffness_matrix;
   cs_hodge_t                      *get_diffusion_hodge;
   cs_cdo_diffusion_enforce_dir_t  *enforce_dirichlet;
   cs_cdo_diffusion_flux_op_t      *boundary_flux_op;
@@ -185,7 +184,7 @@ static cs_cell_bc_t  **cs_cdofb_cell_bc = NULL;
 /* Flag to indicate which members have to be built in a cs_cell_mesh_t
    structure */
 static const cs_flag_t  cs_cdofb_cmflag =
-  CS_CDO_LOCAL_F | CS_CDO_LOCAL_E | CS_CDO_LOCAL_FE;
+  CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PE | CS_CDO_LOCAL_FE;
 
 /*============================================================================
  * Private function prototypes
@@ -639,10 +638,10 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
               " Expected: scalar-valued CDO face-based equation.");
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_cells = mesh->n_cells;
-  const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
-  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t  n_cells = connect->n_cells;
+  const cs_lnum_t  n_faces = connect->n_faces[0];
+  const cs_lnum_t  n_b_faces = connect->n_faces[1];
+  const cs_lnum_t  n_i_faces = connect->n_faces[2];
 
   cs_cdofb_scaleq_t  *b = NULL;
 
@@ -654,14 +653,21 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
   /* Dimensions of the algebraic system */
   b->n_cells = n_cells;
   b->n_faces = n_faces;
-  b->max_sys_size  = connect->n_max_fbyc + 1;
+  b->max_sys_size = connect->n_max_fbyc + 1;
 
   /* Store a direct access to which term one has to compute */
-  b->has[CS_FLAG_SYS_DIFFUSION] = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
-  b->has[CS_FLAG_SYS_ADVECTION] = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
-  b->has[CS_FLAG_SYS_REACTION] = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
-  b->has[CS_FLAG_SYS_TIME] = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
-  b->has[CS_FLAG_SYS_SOURCETERM] = (eqp->n_source_terms > 0) ? true : false;
+  b->sys_flag = 0;
+  if (eqp->flag & CS_EQUATION_DIFFUSION)
+    b->sys_flag |= CS_FLAG_SYS_DIFFUSION;
+  if (eqp->flag & CS_EQUATION_CONVECTION)
+    b->sys_flag |= CS_FLAG_SYS_ADVECTION;
+  if (eqp->flag & CS_EQUATION_REACTION)
+    b->sys_flag |= CS_FLAG_SYS_REACTION;
+  if (eqp->flag & CS_EQUATION_UNSTEADY)
+    b->sys_flag |= CS_FLAG_SYS_TIME;
+  if (eqp->n_source_terms > 0)
+    b->sys_flag |= CS_FLAG_SYS_SOURCETERM;
+
 
   /* Set members and structures related to the management of the BCs */
   const cs_param_bc_t  *bc_param = eqp->bc;
@@ -680,7 +686,7 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
               " Please modify your settings.");
 
   /* Initialization of members common to several terms */
-  b->flag = 0;
+  b->sys_flag = 0;
   b->cm_flag = cs_cdofb_cmflag;
 
   BFT_MALLOC(b->loc_vals, 3*b->max_sys_size, double);
@@ -691,7 +697,7 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
   /* -------------- */
 
   b->diff_pty_uniform = false;
-  if (b->has[CS_FLAG_SYS_DIFFUSION]) {
+  if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
 
     bool is_uniform = cs_property_is_uniform(eqp->diffusion_property);
     b->diff_pty_uniform = is_uniform;
@@ -707,7 +713,7 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
   /* -------------- */
 
   /* b->adv = NULL; */
-  /* if (b->has[CS_FLAG_SYS_ADVECTION]) */
+  /* if (b->sys_flag & CS_FLAG_SYS_ADVECTION) */
   /*   b->adv = cs_cdo_advection_builder_init(connect, eqp, b->has[CS_FLAG_SYS_DIFFUSION]); */
   /* else { */
   /*   if (b->enforce != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE) */
@@ -719,18 +725,18 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
 
   b->time_pty_uniform = false;
   b->time_pty_val = 0.;
-  if (b->has[CS_FLAG_SYS_TIME]) {
+  if (b->sys_flag & CS_FLAG_SYS_TIME) {
 
     b->time_pty_uniform = cs_property_is_uniform(eqp->time_property);
     if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI)
-      b->flag |= CS_FLAG_SYS_TIME_DIAG;
+      b->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
   }
 
   /* Source term part */
   /* ---------------- */
 
 /*   /\* Default intialization *\/ */
-/*   cs_source_term_init(CS_SPACE_SCHEME_CDOVCB, */
+/*   b->st_msh_flag = cs_source_term_init(CS_SPACE_SCHEME_CDOVCB, */
 /*                       eqp->n_source_terms, */
 /*                       eqp->source_terms, */
 /*                       b->compute_source, */
@@ -1058,7 +1064,7 @@ cs_cdofb_scaleq_extra_op(const char            *eqname,
   char *postlabel = NULL;
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
+  const cs_lnum_t  n_i_faces = connect->n_faces[2];
   const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(builder);
 
   /* Field post-processing */

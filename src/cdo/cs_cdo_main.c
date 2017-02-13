@@ -81,7 +81,7 @@ BEGIN_C_DECLS
  * Local constant and enum definitions
  *============================================================================*/
 
-static const char cs_cdoversion[] = "0.8.3";
+static const char cs_cdoversion[] = "0.9";
 
 /*============================================================================
  * Private function prototypes
@@ -233,7 +233,7 @@ cs_cdo_main(cs_mesh_t             *m,
   cs_log_printf(CS_LOG_DEFAULT, "\tStart CDO Module  *** Experimental ***\n");
   cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
   cs_log_printf(CS_LOG_DEFAULT, "\n -msg- Version.Tag  %s\n", cs_cdoversion);
-  cs_log_printf(CS_LOG_SETUP,"\n <cdo-settings-begin>\n");
+  cs_log_printf(CS_LOG_SETUP,"\n <cdo-settings>\n");
 
   cs_timer_t t0 = cs_timer_time();
   cs_timer_stats_start(cdo_ts_id);
@@ -272,7 +272,7 @@ cs_cdo_main(cs_mesh_t             *m,
   /* Free main CDO structures */
   _finalize(domain);
 
-  cs_log_printf(CS_LOG_SETUP,"\n <cdo-settings-end>\n");
+  cs_log_printf(CS_LOG_SETUP,"\n<cdo-settings>\n");
   cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
   cs_log_printf(CS_LOG_DEFAULT, "\tExit CDO Module\n");
   cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);

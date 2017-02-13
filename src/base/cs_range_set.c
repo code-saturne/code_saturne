@@ -508,7 +508,7 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
  * \param[in]   ifs          pointer to interface set structure, or NULL
  * \param[in]   halo         pointer to halo structure, or NULL
  * \param[in]   n_elts       number of elements
- * \param[in]   balance      try to balance shared elements across ranks ?
+ * \param[in]   balance      try to balance shared elements across ranks?
  *                           (for elements shared across an interface set)
  * \param[in]   g_id_base    global id base index (usually 0, but 1
  *                           could be used to generate an IO numbering)

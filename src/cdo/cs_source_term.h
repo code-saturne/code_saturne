@@ -286,10 +286,12 @@ cs_source_term_summary(const char               *eqname,
  * \param[in, out] sys_flag        metadata about the algebraic system
  * \param[in, out] source_mask     pointer to an array storing in a compact way
  *                                 which source term is defined in a given cell
+ *
+ * \return a flag which indicates what to build in a cell mesh structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_flag_t
 cs_source_term_init(cs_space_scheme_t            space_scheme,
                     const int                    n_source_terms,
                     const cs_source_term_t      *source_terms,

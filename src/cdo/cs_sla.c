@@ -1265,12 +1265,6 @@ cs_sla_matrix_create(cs_lnum_t             n_rows,
   BFT_MALLOC(m, 1, cs_sla_matrix_t);
 
   /* Default initialization */
-  m->info.stencil_min = 0;
-  m->info.stencil_max = 0;
-  m->info.stencil_mean = 0;
-  m->info.nnz = 0;
-  m->info.fillin = 0;
-
   m->n_rows = n_rows;
   m->n_cols = n_cols;
   m->stride = stride;
@@ -1342,21 +1336,6 @@ cs_sla_matrix_create_from_ref(const cs_sla_matrix_t   *ref,
   BFT_MALLOC(m, 1, cs_sla_matrix_t);
 
   /* Default initialization */
-  if (ref->flag & CS_SLA_MATRIX_INFO) {
-    m->info.stencil_min = ref->info.stencil_min;
-    m->info.stencil_max = ref->info.stencil_max;
-    m->info.stencil_mean = ref->info.stencil_mean;
-    nnz = m->info.nnz = ref->info.nnz;
-    m->info.fillin = ref->info.fillin;
-  }
-  else {
-    m->info.stencil_min = 0;
-    m->info.stencil_max = 0;
-    m->info.stencil_mean = 0;
-    m->info.nnz = 0;
-    m->info.fillin = 0;
-  }
-
   m->type = type;
   m->n_rows = ref->n_rows;
   m->n_cols = ref->n_cols;
@@ -1453,9 +1432,6 @@ cs_sla_matrix_create_msr_from_index(const cs_connect_index_t   *connect_idx,
   m->didx = NULL;
   m->sgn = NULL;
 
-  /* Compute information on index */
-  cs_sla_matrix_set_info(m);
-
   /* Initialize diagonal */
   m->diag = NULL;
   BFT_MALLOC(m->diag, stride*m->n_rows, cs_real_t);
@@ -1505,13 +1481,6 @@ cs_sla_matrix_copy(const cs_sla_matrix_t  *a,
       b = cs_sla_matrix_create(a->n_rows, a->n_cols, a->stride, a->type, false);
 
     if (a->type != CS_SLA_MAT_NONE) { /* Copy pattern */
-
-      /* Copy matrix info */
-      b->info.stencil_min = a->info.stencil_min;
-      b->info.stencil_max = a->info.stencil_max;
-      b->info.stencil_mean = a->info.stencil_mean;
-      b->info.nnz = a->info.nnz;
-      b->info.fillin = a->info.fillin;
 
       b->flag = a->flag;
 
@@ -2016,68 +1985,6 @@ cs_sla_matrix_sort(cs_sla_matrix_t  *m)
                               m->idx[ii + 1],
                               m->col_id,
                               m->sgn);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute general information related to a cs_sla_matrix_t structure
- *          and store it into a cs_sla_matrix_info_t structure
- *
- * \param[in, out]  m           matrix to analyse
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sla_matrix_set_info(cs_sla_matrix_t    *m)
-{
-  int  i;
-  cs_data_info_t  dinfo;
-
-  int  *row_size = NULL;
-
-  if (m == NULL)
-    return;
-
-  /* Default initialization */
-  m->info.stencil_min = 0;
-  m->info.stencil_max = 0;
-  m->info.stencil_mean = 0;
-  m->info.nnz = 0;
-  m->info.fillin = 0;
-
-  if (m->type == CS_SLA_MAT_NONE)
-    return;
-
-  /* Compute information */
-  m->info.nnz = cs_sla_matrix_get_nnz(m);
-  m->info.fillin = (double)(m->info.nnz/m->n_rows)*(100./m->n_cols);
-
-  /* Stencil */
-  BFT_MALLOC(row_size, m->n_rows, int);
-  if (m->type == CS_SLA_MAT_MSR) {
-    for (i = 0; i < m->n_rows; i++)
-      row_size[i] = 1 + m->idx[i+1] - m->idx[i];
-  }
-  else {
-    for (i = 0; i < m->n_rows; i++)
-      row_size[i] = m->idx[i+1] - m->idx[i];
-  }
-
-  dinfo = cs_analysis_data(m->n_rows,  // n_elts
-                           1,          // stride
-                           CS_INT32,   // datatype
-                           row_size,   // data
-                           false);     // do_abs
-
-  BFT_FREE(row_size);
-
-  /* Stencil information */
-  m->info.stencil_min = dinfo.min.number;
-  m->info.stencil_max = dinfo.max.number;
-  m->info.stencil_mean = dinfo.mean;
-
-  m->flag |= CS_SLA_MATRIX_INFO;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3361,8 +3268,6 @@ cs_sla_matrix_summary(const char        *name,
                       FILE              *f,
                       cs_sla_matrix_t   *m)
 {
-  cs_data_info_t  dinfo;
-
   char  *filename = NULL;
   FILE  *_f = f;
   _Bool close_file = false;
@@ -3394,54 +3299,18 @@ cs_sla_matrix_summary(const char        *name,
   }
   else {
 
-    if (!(m->flag & CS_SLA_MATRIX_INFO))
-      cs_sla_matrix_set_info(m);
-
     fprintf(_f, " -sla-  SLA matrix structure: %p (%s)\n",
             (const void *)m, name);
     fprintf(_f, " -sla-  type          %s\n", _sla_matrix_type[m->type]);
     fprintf(_f, " -sla-  n_rows        %d\n", m->n_rows);
     fprintf(_f, " -sla-  n_cols        %d\n", m->n_cols);
     fprintf(_f, " -sla-  stride        %d\n", m->stride);
-    fprintf(_f, " -sla-  nnz           %lu\n", m->info.nnz);
-    fprintf(_f, " -sla-  fill-in       %5.2e %%\n", m->info.fillin);
-    fprintf(_f, " -sla-  stencil_min   %d\n", m->info.stencil_min);
-    fprintf(_f, " -sla-  stencil_max   %d\n", m->info.stencil_max);
-    fprintf(_f, " -sla-  stencil_mean  %5.2e\n", m->info.stencil_mean);
     if (m->flag & CS_SLA_MATRIX_SYM)
       fprintf(_f, " -sla-  sym           True\n");
     else
       fprintf(_f, " -sla-  sym           False\n");
 
-    if (m->type == CS_SLA_MAT_MSR ) {
-
-      dinfo = cs_analysis_data(m->n_rows,    // n_elts
-                               1,            // stride
-                               CS_DOUBLE,    // datatype
-                               m->diag,      // data
-                               false);       // work also with abs ?
-      cs_data_info_dump("mat->diag", _f, m->n_rows, CS_DOUBLE, dinfo);
-
-      const cs_lnum_t  n_msr_vals = m->info.nnz - m->n_rows;
-
-      dinfo = cs_analysis_data(n_msr_vals,   // n_elts
-                               1,            // stride
-                               CS_DOUBLE,    // datatype
-                               m->val,       // data
-                               false);       // work also with abs ?
-      cs_data_info_dump("mat->val", _f, n_msr_vals, CS_DOUBLE, dinfo);
-    }
-
-    if (m->type == CS_SLA_MAT_CSR) {
-      dinfo = cs_analysis_data(m->info.nnz,  // n_elts
-                               1,            // stride
-                               CS_DOUBLE,    // datatype
-                               m->val,       // data
-                               false);       // work also with abs ?
-      cs_data_info_dump("mat->val", _f, m->info.nnz, CS_DOUBLE, dinfo);
-    }
-
-  } /* m neither NULL nor CS_SLA_MAT_NONE */
+  } /* m is neither NULL nor CS_SLA_MAT_NONE */
 
   if (close_file) {
     BFT_FREE(filename);
@@ -3494,12 +3363,6 @@ cs_sla_matrix_dump(const char             *name,
       fprintf(_f, "   symmetry       False\n\n");
     fprintf(_f, "   n_rows         %d\n", m->n_rows);
     fprintf(_f, "   n_cols         %d\n", m->n_cols);
-    if (m->flag & CS_SLA_MATRIX_INFO) {
-      fprintf(_f, "   stencil_min    %d\n", m->info.stencil_min);
-      fprintf(_f, "   stencil_max    %d\n", m->info.stencil_max);
-      fprintf(_f, "   nnz            %lu\n", m->info.nnz);
-      fprintf(_f, "   fill-in        %.2f\n", m->info.fillin);
-    }
 
     const cs_lnum_t  *idx = m->idx;
     const cs_lnum_t  *col_id = m->col_id;
@@ -3594,12 +3457,6 @@ cs_sla_system_dump(const char              *name,
       fprintf(_f, "   symmetry       False\n\n");
     fprintf(_f, "   n_rows         %d\n", m->n_rows);
     fprintf(_f, "   n_cols         %d\n", m->n_cols);
-    if (m->flag & CS_SLA_MATRIX_INFO) {
-      fprintf(_f, "   stencil_min    %d\n", m->info.stencil_min);
-      fprintf(_f, "   stencil_max    %d\n", m->info.stencil_max);
-      fprintf(_f, "   nnz            %lu\n", m->info.nnz);
-      fprintf(_f, "   fill-in        %.2f\n", m->info.fillin);
-    }
 
     /* Sanity check */
     assert(rhs != NULL);

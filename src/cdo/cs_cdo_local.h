@@ -44,13 +44,20 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#define CS_CDO_LOCAL_V     (1 << 0) //  1: local info. related to vertices
-#define CS_CDO_LOCAL_E     (1 << 1) //  2: local info. related to edges
-#define CS_CDO_LOCAL_F     (1 << 2) //  4: local info. related to faces
-#define CS_CDO_LOCAL_EV    (1 << 3) //  8: cellwise edge --> vertices connect.
-#define CS_CDO_LOCAL_FE    (1 << 4) // 16: cellwise face --> edges connect.
-#define CS_CDO_LOCAL_EF    (1 << 5) // 32: cellwise edge --> faces connect.
-#define CS_CDO_LOCAL_ORTHO (1 << 6) // 64: orthogonality cond. is fullfilled
+#define CS_CDO_LOCAL_PV  (1 <<  0) //   1: cache related to vertices
+#define CS_CDO_LOCAL_PVQ (1 <<  1) //   2: cache related to vertex quantities
+#define CS_CDO_LOCAL_PE  (1 <<  2) //   4: cache related to edges
+#define CS_CDO_LOCAL_PEQ (1 <<  3) //   8: cache related to edge quantities
+#define CS_CDO_LOCAL_DFQ (1 <<  4) //  16: cache related to dual face quant.
+#define CS_CDO_LOCAL_PF  (1 <<  5) //  32: cache related to face
+#define CS_CDO_LOCAL_PFQ (1 <<  6) //  64: cache related to face quantities
+#define CS_CDO_LOCAL_DEQ (1 <<  7) // 128: cache related to dual edge quant.
+#define CS_CDO_LOCAL_EV  (1 <<  8) // 256: cache related to e2v connect.
+#define CS_CDO_LOCAL_FE  (1 <<  9) // 512: cache related to f2e connect.
+#define CS_CDO_LOCAL_FEQ (1 << 10) //1024: cache related to f2e quantities
+#define CS_CDO_LOCAL_EF  (1 << 11) //2048: cache related to e2f connect.
+#define CS_CDO_LOCAL_EFQ (1 << 12) //4096: cache related to e2f quantities
+#define CS_CDO_LOCAL_HFQ (1 << 13) //8192: cache related to the face pyramid
 
 /*============================================================================
  * Type definitions
@@ -124,13 +131,16 @@ typedef struct {
 
 typedef struct {
 
+  cs_flag_t      flag;    // indicate which quantities have to be defined
+  short int     *kbuf;    // buffer storing ids in a compact way
+
+  /* Sizes used to allocate buffers */
   short int      n_max_vbyc;
   short int      n_max_ebyc;
   short int      n_max_fbyc;
 
+  /* Cell information */
   cs_lnum_t      c_id;    // id of related cell
-  fvm_element_t  type;    // type of element related to this cell
-  cs_flag_t      flag;    // indicate which quantities are defined
   cs_real_3_t    xc;      // coordinates of the cell center
   double         vol_c;   // volume of the current cell
 
@@ -299,6 +309,17 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize to invalid values a cs_cell_mesh_t structure
+ *
+ * \param[in]  cm         pointer to a cs_cell_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_mesh_reset(cs_cell_mesh_t   *cm);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Dump a cs_cell_mesh_t structure
  *
  * \param[in]    cm    pointer to a cs_cell_mesh_t structure
@@ -369,20 +390,16 @@ cs_cdo_local_get_face_mesh(int    mesh_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a cs_cell_mesh_t structure
+ * \brief  Allocate and initialize a cs_cell_mesh_t structure
  *
- * \param[in]  n_max_vbyc      max. number of vertices in a cell
- * \param[in]  n_max_ebyc      max. number of edges in a cell
- * \param[in]  n_max_fbyc      max. number of faces in a cell
+ * \param[in]  connect        pointer to a cs_cdo_connect_t structure
  *
  * \return a pointer to a new allocated cs_cell_mesh_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_mesh_t *
-cs_cell_mesh_create(short int   n_max_vbyc,
-                    short int   n_max_ebyc,
-                    short int   n_max_fbyc);
+cs_cell_mesh_create(const cs_cdo_connect_t   *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!

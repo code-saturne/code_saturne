@@ -46,6 +46,7 @@
 #include "cs_blas.h"
 #include "cs_log.h"
 #include "cs_math.h"
+#include "cs_parall.h"
 #include "cs_sort.h"
 
 /*----------------------------------------------------------------------------
@@ -62,123 +63,6 @@ BEGIN_C_DECLS
  * Private function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Intialize by default a cs_data_info_t structure according to the
- *          datatype
- *
- * \param[in]  datatype
- *
- * \return a cs_data_info_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_data_info_t
-_init_dinfo(cs_datatype_t   datatype)
-{
-  cs_data_info_t  info;
-
-  info.mean = 0.0;
-  info.sigma = 0.0;
-  info.euclidean_norm = 0.0;
-
-  switch (datatype) {
-
-  case CS_DOUBLE:
-    info.min.value = DBL_MAX;
-    info.max.value = -DBL_MAX;
-    break;
-
-  case CS_INT32:
-    info.min.number = INT_MAX;
-    info.max.number = -INT_MAX;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("Invalid datatype for analysing data.\n"));
-  }
-
-  return info;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute simple information about an array of data.
- *          >> Algorithm from Mark Hoemmen (U.C. Berkeley)
- *
- * \param[in]      n_elts    number of couples in data
- * \param[in]      data      buffer containing input data
- * \param[in, out] info      pointer to a cs_data_info_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_compute_info_double(cs_lnum_t         n_elts,
-                     const cs_real_t   data[],
-                     cs_data_info_t   *info)
-{
-  if (n_elts == 0)
-    return;
-
-  /* Compute statistics */
-  for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-    const cs_real_t  val = data[i];
-    cs_real_t  delta = val - info->mean;
-    cs_real_t  chi = delta/(i+1);
-
-    if (info->min.value > val)  info->min.value = val;
-    if (info->max.value < val)  info->max.value = val;
-
-    info->sigma += i*chi*delta;
-    info->mean += chi;
-
-  }
-
-  info->sigma = sqrt(fabs(info->sigma)/n_elts);
-  info->euclidean_norm = cs_euclidean_norm(n_elts, data);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute simple information about an array of data.
- *          >> Algorithm from Mark Hoemmen (U.C. Berkeley)
- *
- * \param[in]      n_elts    number of couples in data
- * \param[in]      data      buffer containing input data
- * \param[in, out] info      pointer to a cs_data_info_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_compute_info_int32(cs_lnum_t         n_elts,
-                    const cs_lnum_t   data[],
-                    cs_data_info_t   *info)
-{
-  if (n_elts == 0)
-    return;
-
-  /* Compute statistics */
-  for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-    const cs_lnum_t  val = data[i];
-    double  delta = val - info->mean;
-    double  chi = delta/(i+1);
-
-    if (info->min.number > val)  info->min.number = val;
-    if (info->max.number < val)  info->max.number = val;
-
-    info->sigma += i*chi*delta;
-    info->mean += chi;
-    info->euclidean_norm += val*val;
-
-  }
-
-  info->sigma = sqrt(fabs(info->sigma)/n_elts);
-  info->euclidean_norm = sqrt(info->euclidean_norm);
-}
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -187,7 +71,7 @@ _compute_info_int32(cs_lnum_t         n_elts,
 /*!
  * \brief  Compute the euclidean norm 2 of a vector of size len
  *         This algorithm tries to reduce round-off error thanks to
- *          intermediate sums.
+ *         intermediate sums.
  *
  *  \param[in] len     vector dimension
  *  \param[in] v       vector
@@ -196,16 +80,21 @@ _compute_info_int32(cs_lnum_t         n_elts,
  */
 /*----------------------------------------------------------------------------*/
 
-double
-cs_euclidean_norm(int            len,
-                  const double   v[])
+cs_real_t
+cs_euclidean_norm(int               len,
+                  const cs_real_t   v[])
 {
-  double  n2 = DBL_MAX;
+  cs_real_t  n2 = DBL_MAX;
 
-  if (len < 1 || v == NULL)
+  assert(v != NULL);
+
+  if (len < 1 && cs_glob_n_ranks == 1)
     return 0.0;
 
   n2 = cs_dot(len, v, v);
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(1, CS_REAL_TYPE, &n2);
+
   if (n2 > -DBL_MIN)
     n2 = sqrt(n2);
   else
@@ -217,7 +106,7 @@ cs_euclidean_norm(int            len,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the weighted sum of square values of an array
+ * \brief  Compute the weighted sum of squared values of an array
  *
  *  \param[in] n       size of arrays x and weight
  *  \param[in] x       array of floating-point values
@@ -227,12 +116,12 @@ cs_euclidean_norm(int            len,
  */
 /*----------------------------------------------------------------------------*/
 
-double
-cs_weighted_sum_square(cs_lnum_t                n,
-                       const double *restrict   x,
-                       const double *restrict   weight)
+cs_real_t
+cs_weighted_sum_squared(cs_lnum_t                   n,
+                        const cs_real_t *restrict   x,
+                        const cs_real_t *restrict   weight)
 {
-  if (n == 0)
+  if (n == 0 && cs_glob_n_ranks == 1)
     return 0.0;
 
   /* Sanity check */
@@ -246,7 +135,7 @@ cs_weighted_sum_square(cs_lnum_t                n,
   const cs_lnum_t  n_sblocks = sqrt(n_blocks);
   const cs_lnum_t  blocks_in_sblocks = (n_sblocks > 0) ? n_blocks/n_sblocks : 0;
 
-  double result = 0.0;
+  cs_real_t result = 0.0;
 
  /*
   * The algorithm used is l3superblock60, based on the article:
@@ -259,12 +148,12 @@ cs_weighted_sum_square(cs_lnum_t                n,
 # pragma omp parallel for reduction(+:result) if (n > CS_THR_MIN)
   for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-    double sresult = 0.0;
+    cs_real_t sresult = 0.0;
 
     for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
       cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
       cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
-      double _result = 0.0;
+      cs_real_t _result = 0.0;
       for (cs_lnum_t i = start_id; i < end_id; i++)
         _result += weight[i]*x[i]*x[i];
       sresult += _result;
@@ -275,220 +164,17 @@ cs_weighted_sum_square(cs_lnum_t                n,
   }
 
   /* Remainder */
-  double _result = 0.0;
+  cs_real_t _result = 0.0;
   cs_lnum_t start_id = block_size * n_sblocks*blocks_in_sblocks;
   cs_lnum_t end_id = n;
   for (cs_lnum_t i = start_id; i < end_id; i++)
     _result += weight[i]*x[i]*x[i];
   result += _result;
 
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(1, CS_REAL_TYPE, &result);
+
   return result;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate or reallocate a temporary buffer structure
- *
- * \param[in]       bufsize   reference size
- * \param[in, out]  p_tb      pointer to the temporary structure to allocate
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_tmpbuf_alloc(size_t           bufsize,
-                cs_tmpbuf_t    **p_tb)
-{
-  cs_tmpbuf_t  *tb = *p_tb;
-
-  if (bufsize == 0)
-    return;
-
-  if (tb == NULL) { /* Creation */
-    BFT_MALLOC(tb, 1, cs_tmpbuf_t);
-    tb->bufsize = bufsize;
-    BFT_MALLOC(tb->buf, bufsize, char);
-  }
-  else { /* Reallocation if needed */
-    if (tb->bufsize < bufsize) {
-      tb->bufsize = bufsize;
-      BFT_REALLOC(tb->buf, bufsize, char);
-    }
-  }
-
-  /* Returns buffer structure */
-  *p_tb = tb;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a temporary buffer structure
- *
- * \param[in]  tb      pointer to the temporary structure to free
- *
- * \returns NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_tmpbuf_t *
-cs_tmpbuf_free(cs_tmpbuf_t  *tb)
-{
-  if (tb == NULL)
-    return tb;
-
-  BFT_FREE(tb->buf);
-  BFT_FREE(tb);
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute some simple statistics from an array
- *
- * \param[in]  n_elts      number of couples in data
- * \param[in]  stride      size of a couple of data
- * \param[in]  datatype    datatype
- * \param[in]  indata      buffer containing input data
- * \param[in]  do_abs      analyse the absolute value of indata
- *
- * \return a cs_data_info_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_data_info_t
-cs_analysis_data(cs_lnum_t       n_elts,
-                 int             stride,
-                 cs_datatype_t   datatype,
-                 const void     *indata,
-                 _Bool           do_abs)
-{
-  int  i, j;
-
-  _Bool  deallocate = false;
-  cs_data_info_t  info = _init_dinfo(datatype);
-
-  if (indata == NULL)
-    return info;
-
-  switch (datatype) { // Only for double
-  case CS_DOUBLE:
-    {
-      const cs_real_t  *data = (const cs_real_t *)indata;
-      cs_real_t  *values = NULL;
-
-      if (stride == 3) { // compute norm
-
-        cs_real_3_t  v;
-
-        BFT_MALLOC(values, n_elts, cs_real_t);
-        deallocate = true;
-        for (i = 0; i < n_elts; i++) {
-          for (j = 0; j < 3; j++)
-            v[j] = data[stride*i+j];
-          values[i] = cs_math_3_norm(v);
-        }
-        _compute_info_double(n_elts, values, &info);
-
-      }
-      else {  /* stride = 1 */
-
-        assert(stride==1);
-        if (do_abs) {
-          BFT_MALLOC(values, n_elts, cs_real_t);
-          deallocate = true;
-          for (i = 0; i < n_elts; i++)
-            values[i] = fabs(data[i]);
-          _compute_info_double(n_elts, values, &info);
-        }
-        else
-          _compute_info_double(n_elts, data, &info);
-
-      } // stride
-
-      if (deallocate)  BFT_FREE(values);
-    }
-    break;
-
-  case CS_INT32:
-    {
-      const cs_lnum_t  *data = (const cs_lnum_t *)indata;
-      cs_lnum_t  *numbers = NULL;
-
-      if (do_abs) {
-        BFT_MALLOC(numbers, n_elts, cs_lnum_t);
-        for (i = 0; i < n_elts; i++)
-          numbers[i] = CS_ABS(data[i]);
-        _compute_info_int32(n_elts, numbers, &info);
-        BFT_FREE(numbers);
-      }
-      else
-        _compute_info_int32(n_elts, data, &info);
-
-    }
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("Invalid datatype for analysing data.\n"));
-  }
-
-  return info;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Dump a cs_data_info_t structure
- *
- * \param[in]  name        filename if not NULL
- * \param[in]  f           output file if not NULL
- * \param[in]  n_elts      number of couples in data
- * \param[in]  datatype    datatype
- * \param[in]  dinfo       cs_data_info_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_data_info_dump(const char              *name,
-                  FILE                    *f,
-                  cs_lnum_t                n_elts,
-                  cs_datatype_t            datatype,
-                  const cs_data_info_t     dinfo)
-{
-  FILE  *_f = f;
-  _Bool close_file = false;
-
-  if (f == NULL) {
-    if (name == NULL) _f = stdout;
-    else
-      _f = fopen(name, "w"), close_file = true;
-  }
-
-  fprintf(_f, "\n");
-  if (name != NULL)
-    fprintf(_f, " -dat- name          %s\n", name);
-  fprintf(_f, " -dat- n_elts        %d\n", n_elts);
-
-  switch (datatype) {
-  case CS_DOUBLE:
-    fprintf(_f, " -dat- minimum    %- 9.6e\n", dinfo.min.value);
-    fprintf(_f, " -dat- maximum    %- 9.6e\n", dinfo.max.value);
-    break;
-  case CS_INT32:
-    fprintf(_f, " -dat- minimum    %10d\n", dinfo.min.number);
-    fprintf(_f, " -dat- maximum    %10d\n", dinfo.max.number);
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("Invalid datatype for analysing data.\n"));
-  }
-
-  fprintf(_f, " -dat- mean            %- 9.6e\n", dinfo.mean);
-  fprintf(_f, " -dat- sigma           %- 9.6e\n", dinfo.sigma);
-  fprintf(_f, " -dat- euclidean norm  %- 9.6e\n", dinfo.euclidean_norm);
-  fprintf(_f, "\n");
-
-  fflush(_f);
-  if (close_file)  fclose(_f);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -940,7 +626,7 @@ cs_locmat_add(cs_locmat_t        *loc,
 
 void
 cs_locmat_mult_add(cs_locmat_t        *loc,
-                   double              alpha,
+                   cs_real_t              alpha,
                    const cs_locmat_t  *add)
 {
   /* Sanity checks */
@@ -1061,81 +747,6 @@ cs_locmat_dump(int                 parent_id,
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Allocate and initialize a cs_locdec_t structure
- *
- * \param[in]  n_max_rows   max number of rows
- * \param[in]  n_max_cols   max number of columns
- *
- * \return  a new allocated cs_locdec_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_locdec_t *
-cs_locdec_create(int   n_max_rows,
-                 int   n_max_cols)
-{
-  int  i;
-
-  cs_locdec_t  *m = NULL;
-
-  BFT_MALLOC(m, 1, cs_locdec_t);
-
-  m->n_max_rows = n_max_rows;
-  m->n_max_cols = n_max_cols;
-  m->n_rows = 0;
-  m->n_cols = 0;
-  m->row_ids = m->col_ids = NULL;
-  m->sgn = NULL;
-
-  int msize = n_max_rows * n_max_cols;
-
-  if (msize > 0) {
-
-    BFT_MALLOC(m->row_ids, n_max_rows, cs_lnum_t);
-    for (i = 0; i < n_max_rows; i++)
-      m->row_ids[i] = 0;
-    BFT_MALLOC(m->col_ids, n_max_cols, cs_lnum_t);
-    for (i = 0; i < n_max_cols; i++)
-      m->col_ids[i] = 0;
-
-    BFT_MALLOC(m->sgn, msize, short int);
-    for (i = 0; i < msize; i++)
-      m->sgn[i] = 0;
-
-  }
-
-  return m;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Free a cs_locdec_t structure
- *
- * \param[in, out]  m    pointer to a cs_locdec_t structure to free
- *
- * \return  a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_locdec_t *
-cs_locdec_free(cs_locdec_t  *m)
-{
-  if (m == NULL)
-    return m;
-
-  if (m->n_max_rows > 0 && m->n_max_cols > 0) {
-    BFT_FREE(m->col_ids);
-    BFT_FREE(m->row_ids);
-    BFT_FREE(m->sgn);
-  }
-
-  BFT_FREE(m);
-
-  return NULL;
 }
 
 /*----------------------------------------------------------------------------*/

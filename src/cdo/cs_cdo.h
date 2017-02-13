@@ -40,6 +40,9 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Flag associated to each cell */
+#define CS_FLAG_BOUNDARY     (1 << 0)  //  1: cell with at least one border face
+
 /* Flag related to the way a CDO system is built */
 #define CS_FLAG_SYS_DIFFUSION    (1 << 0) //   1: Build the diffusion term
 #define CS_FLAG_SYS_ADVECTION    (1 << 1) //   2: Build the advection term
@@ -50,6 +53,7 @@ BEGIN_C_DECLS
 #define CS_FLAG_SYS_SYM          (1 << 6) //  64: system matrix is symmetric
 #define CS_FLAG_SYS_TIME_DIAG    (1 << 7) // 128: lumping/diag by construction
 #define CS_FLAG_SYS_SOURCES_HLOC (1 << 8) // 256: source terms need a hodge op.
+#define CS_FLAG_SYS_DEBUG        (1 << 9) // 512: activate debug mode
 
 /* Flags use to identify the nature/status of an object (variable, property) */
 #define CS_FLAG_STATE_UNIFORM     (1 << 0) //    1: uniform (in space)
@@ -95,12 +99,7 @@ BEGIN_C_DECLS
 /* The following limitation only results from an optimization in the size of
    the bit mask (can be changed if needed by changing the definition of
    the type cs_mask_t) */
-#define CS_CDO_N_MAX_REACTIONS 6 // Max number of reaction terms in an equation
-
-/* Define a mask for each type of terms
-   reaction terms are in the range 0..5; cf. CS_CDO_N_MAX_REACTIONS */
-#define CS_MASK_DIFF   (1 << 6)
-#define CS_MASK_TIME   (1 << 7)
+#define CS_CDO_N_MAX_REACTIONS  8 // Max number of reaction terms in an equation
 
 /* Specifications for open mp loops */
 #define CS_CDO_OMP_CHUNK_SIZE  128
@@ -245,20 +244,22 @@ extern const cs_flag_t  cs_cdo_dual_face_byc;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if a location matches a referenced support
+ * \brief  Check if a two flag share the same pattern
+ *         Return true if the flag to check has at least the pattern of the
+ *         reference flag.
  *
- * \param[in]  location      flag corresponding to the location to check
- * \param[in]  reference     flag corresponding to the referenced support
+ * \param[in]  flag_to_check   flag corresponding to the location to check
+ * \param[in]  reference       flag corresponding to the referenced support
  *
  * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_cdo_same_support(cs_flag_t   location,
-                    cs_flag_t   reference)
+cs_test_flag(cs_flag_t    flag_to_check,
+             cs_flag_t    reference)
 {
-  if ((location & reference) == reference)
+  if ((flag_to_check & reference) == reference)
     return true;
   else
     return false;

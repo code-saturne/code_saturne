@@ -97,6 +97,9 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="runcase", default=False,
                       help="run all cases")
 
+    parser.add_option("--n-procs",  dest="n_procs", default=None, type="int",
+                      help="Optional number of processors requested for the computations")
+
     parser.add_option("-n", "--n-iterations", dest="n_iterations",
                       type="int", help="maximum number of iterations for cases of the study")
 

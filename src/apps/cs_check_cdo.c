@@ -134,9 +134,10 @@ _define_cm_hexa_unif(double            a,
   const double  ah = a/2.;
 
   cm->c_id = 0;
-  cm->type = FVM_CELL_HEXA;
-  cm->flag = CS_CDO_LOCAL_V | CS_CDO_LOCAL_E | CS_CDO_LOCAL_F |
-    CS_CDO_LOCAL_EV | CS_CDO_LOCAL_ORTHO;
+  /* Set all quantities */
+  cm->flag = CS_CDO_LOCAL_PV |CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PEQ |
+    CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ |
+    CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE |CS_CDO_LOCAL_EFQ;
 
   cm->xc[0] = cm->xc[1] = cm->xc[2] = ah;
   cm->vol_c = a*a*a;
@@ -170,84 +171,84 @@ _define_cm_hexa_unif(double            a,
   cm->n_ec = 12;
 
   // e0
-  _e = 0, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 0, ids[1] = 1, sgn[0] = -1, sgn[1] = 1;
+  _e = 0, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 0, ids[1] = 1, sgn[0] = -1;
   q->center[0] = ah, q->center[1] = 0, q->center[2] = 0;
   q->unitv[0] = 1.0, q->unitv[1] = 0.0, q->unitv[2] = 0.0;
 
   // e1
-  _e = 1, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 0, ids[1] = 3, sgn[0] = -1, sgn[1] = 1;
+  _e = 1, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 0, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
   q->unitv[1] = 1.0, q->center[1] = ah;
   q->unitv[2] = 0.0, q->center[2] = 0;
 
   // e2
-  _e = 2, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 0, ids[1] = 4, sgn[0] = -1, sgn[1] = 1;
+  _e = 2, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 0, ids[1] = 4, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
   q->unitv[1] = 0.0, q->center[1] = 0;
   q->unitv[2] = 1.0, q->center[2] = ah;
 
   // e3
-  _e = 3, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 1, ids[1] = 2, sgn[0] = -1, sgn[1] = 1;
+  _e = 3, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 1, ids[1] = 2, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
   q->unitv[1] = 1.0, q->center[1] = ah;
   q->unitv[2] = 0.0, q->center[2] = 0;
 
   // e4
-  _e = 4, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 1, ids[1] = 5, sgn[0] = -1, sgn[1] = 1;
+  _e = 4, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 1, ids[1] = 5, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
   q->unitv[1] = 0.0, q->center[1] = 0;
   q->unitv[2] = 1.0, q->center[2] = ah;
 
   // e5
-  _e = 5, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 2, ids[1] = 6, sgn[0] = -1, sgn[1] = 1;
+  _e = 5, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 2, ids[1] = 6, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
   q->unitv[1] = 0.0, q->center[1] = a;
   q->unitv[2] = 1.0, q->center[2] = ah;
 
   // e6
-  _e = 6, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 2, ids[1] = 3, sgn[0] = -1, sgn[1] = 1;
+  _e = 6, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 2, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] = -1.0, q->center[0] = ah;
   q->unitv[1] =  0.0, q->center[1] = a;
   q->unitv[2] =  0.0, q->center[2] = 0;
 
   // e7
-  _e = 7, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 4, ids[1] = 5, sgn[0] = -1, sgn[1] = 1;
+  _e = 7, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 4, ids[1] = 5, sgn[0] = -1;
   q->unitv[0] = 1.0, q->center[0] = ah;
   q->unitv[1] = 0.0, q->center[1] = 0;
   q->unitv[2] = 0.0, q->center[2] = a;
 
   // e8
-  _e = 8; ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 5, ids[1] = 6, sgn[0] = -1, sgn[1] = 1;
+  _e = 8; ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 5, ids[1] = 6, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
   q->unitv[1] = 1.0, q->center[1] = ah;
   q->unitv[2] = 0.0, q->center[2] = a;
 
   // e9
-  _e = 9, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 6, ids[1] = 7, sgn[0] = -1, sgn[1] = 1;
+  _e = 9, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 6, ids[1] = 7, sgn[0] = -1;
   q->unitv[0] = -1.0, q->center[0] = ah;
   q->unitv[1] =  0.0, q->center[1] = a;
   q->unitv[2] =  0.0, q->center[2] = a;
 
   // e10
-  _e = 10; ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge +_e;
-  ids[0] = 4, ids[1] = 7, sgn[0] = -1, sgn[1] = 1;
+  _e = 10; ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge +_e;
+  ids[0] = 4, ids[1] = 7, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
   q->unitv[1] = 1.0, q->center[1] = ah;
   q->unitv[2] = 0.0, q->center[2] = a;
 
   // e11
-  _e = 11, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge +_e;
-  ids[0] = 3, ids[1] = 7, sgn[0] = -1, sgn[1] = 1;
+  _e = 11, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge +_e;
+  ids[0] = 3, ids[1] = 7, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
   q->unitv[1] = 0.0, q->center[1] = a;
   q->unitv[2] = 1.0, q->center[2] = ah;
@@ -344,9 +345,10 @@ _define_cm_tetra_ref(double            a,
   const double  sq2 = sqrt(2.), invsq2 = 1./sq2;
 
   cm->c_id = 0;
-  cm->type = FVM_CELL_TETRA;
-  cm->flag = CS_CDO_LOCAL_V | CS_CDO_LOCAL_E | CS_CDO_LOCAL_F |
-    CS_CDO_LOCAL_EV | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_ORTHO;
+  /* Set all quantities */
+  cm->flag = CS_CDO_LOCAL_PV |CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PEQ |
+    CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ |
+    CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FE |CS_CDO_LOCAL_EFQ;
 
   cm->vol_c = cs_math_onesix*a*a*a;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = 0.25*a;
@@ -373,47 +375,47 @@ _define_cm_tetra_ref(double            a,
   for (short int e = 0; e < cm->n_ec; e++) cm->e_ids[e] = e;
 
   // e0
-  _e = 0, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 0, ids[1] = 1, sgn[0] = -1, sgn[1] = 1;
+  _e = 0, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 0, ids[1] = 1, sgn[0] = -1;
   q->center[0] = ah, q->center[1] = 0, q->center[2] = 0;
   q->unitv[0] = 1.0, q->unitv[1] = 0.0, q->unitv[2] = 0.0;
   q->meas = a;
 
   // e1
-  _e = 1, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 0, ids[1] = 2, sgn[0] = -1, sgn[1] = 1;
+  _e = 1, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 0, ids[1] = 2, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
   q->unitv[1] = 1.0, q->center[1] = ah;
   q->unitv[2] = 0.0, q->center[2] = 0;
   q->meas = a;
 
   // e2
-  _e = 2, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 0, ids[1] = 3, sgn[0] = -1, sgn[1] = 1;
+  _e = 2, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 0, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
   q->unitv[1] = 0.0, q->center[1] = 0;
   q->unitv[2] = 1.0, q->center[2] = ah;
   q->meas = a;
 
   // e3
-  _e = 3, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 1, ids[1] = 2, sgn[0] = -1, sgn[1] = 1;
+  _e = 3, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 1, ids[1] = 2, sgn[0] = -1;
   q->unitv[0] =-invsq2, q->center[0] = ah;
   q->unitv[1] = invsq2, q->center[1] = ah;
   q->unitv[2] =    0.0, q->center[2] = 0;
   q->meas = a * sq2;
 
   // e4
-  _e = 4, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 1, ids[1] = 3, sgn[0] = -1, sgn[1] = 1;
+  _e = 4, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 1, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] =-invsq2, q->center[0] = ah;
   q->unitv[1] =    0.0, q->center[1] = 0;
   q->unitv[2] = invsq2, q->center[2] = ah;
   q->meas = a * sq2;
 
   // e5
-  _e = 5, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + 2*_e, q = cm->edge + _e;
-  ids[0] = 2, ids[1] = 3, sgn[0] = -1, sgn[1] = 1;
+  _e = 5, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
+  ids[0] = 2, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] =    0.0, q->center[0] = 0;
   q->unitv[1] =-invsq2, q->center[1] = ah;
   q->unitv[2] = invsq2, q->center[2] = ah;
@@ -872,10 +874,9 @@ _test_cdovb_schemes(FILE             *out,
   eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
 
   /* Constant advection field */
-  cs_advection_field_def_by_value(beta, "1 0 0");
+  cs_real_3_t  vector_field = {1., 0., 0.};
+  cs_advection_field_def_by_value(beta, vector_field);
   eqp->advection_field = beta;
-
-
 
   /* Free memory */
   beta = cs_advection_field_free(beta);
@@ -1091,6 +1092,8 @@ main(int    argc,
   connect->n_max_ebyc = 12;
   connect->n_max_fbyc = 6;
   connect->n_max_vbyf = 4;
+  connect->v_max_cell_range = 8;
+  connect->e_max_cell_range = 12;
 
   /* Nothing to do for quant */
 
@@ -1101,9 +1104,7 @@ main(int    argc,
   cs_source_term_set_shared_pointers(quant, connect, time_step);
 
   /* Allocate local structures */
-  cs_cell_mesh_t  *cm = cs_cell_mesh_create(connect->n_max_vbyc,
-                                            connect->n_max_ebyc,
-                                            connect->n_max_fbyc);
+  cs_cell_mesh_t  *cm = cs_cell_mesh_create(connect);
   cs_face_mesh_t  *fm = cs_face_mesh_create(connect->n_max_vbyf);
 
   /* ========= */

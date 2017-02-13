@@ -32,9 +32,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_cdo.h"
-#include "cs_param.h"
 #include "cs_cdo_connect.h"
+#include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
+#include "cs_param.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
@@ -434,6 +435,41 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
 cs_real_t
 cs_property_get_cell_value(cs_lnum_t              c_id,
                            const cs_property_t   *pty);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the tensor attached a property at the cell
+ *         center
+ *         Version using a cs_cell_mesh_t structure
+ *
+ * \param[in]      cm             pointer to a cs_cell_mesh_t structure
+ * \param[in]      pty            pointer to a cs_property_t structure
+ * \param[in]      do_inversion   true or false
+ * \param[in, out] tensor         3x3 matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
+                           const cs_property_t    *pty,
+                           bool                    do_inversion,
+                           cs_real_3_t            *tensor);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of a property at the cell center
+ *         Version using a cs_cell_mesh_t structure
+ *
+ * \param[in]   cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]   pty       pointer to a cs_property_t structure
+ *
+ * \return the value of the property for the given cell
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_property_value_in_cell(const cs_cell_mesh_t     *cm,
+                          const cs_property_t      *pty);
 
 /*----------------------------------------------------------------------------*/
 /*!

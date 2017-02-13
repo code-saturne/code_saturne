@@ -87,13 +87,8 @@ static cs_equation_algo_t _algo_info_by_default = {
 };
 
 static cs_param_itsol_t _itsol_info_by_default = {
-#if defined(HAVE_PETSC)
-  CS_PARAM_PRECOND_ILU0,  // preconditioner
-  CS_PARAM_ITSOL_BICG,    // iterative solver
-#else
   CS_PARAM_PRECOND_DIAG,  // preconditioner
-  CS_PARAM_ITSOL_CG,      // iterative solver
-#endif
+  CS_PARAM_ITSOL_BICG,      // iterative solver
   2500,                   // max. number of iterations
   1e-12,                  // stopping criterion on the accuracy
   150,                    // output frequency
@@ -742,7 +737,6 @@ cs_equation_param_init_sles(const char                 *eqname,
                             const cs_equation_param_t  *eqp,
                             int                         field_id)
 {
-
   const cs_equation_algo_t  algo = eqp->algo_info;
   const cs_param_itsol_t  itsol = eqp->itsol_info;
 
@@ -838,18 +832,14 @@ cs_equation_param_init_sles(const char                 *eqname,
       } // end of switch
 
       /* Define the level of verbosity for SLES structure */
-      if (eqp->sles_verbosity > 1) {
+      if (eqp->sles_verbosity > 3) {
 
         cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
         cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
 
-        /* Set verbosity */
-        cs_sles_set_verbosity(sles, eqp->sles_verbosity);
-
-        if (eqp->sles_verbosity > 2) /* Add plot */
-          cs_sles_it_set_plot_options(sles_it, eqname,
-                                      true);    /* use_iteration instead of
-                                                   wall clock time */
+        cs_sles_it_set_plot_options(sles_it, eqname,
+                                    true);    /* use_iteration instead of
+                                                 wall clock time */
 
       }
 
@@ -875,12 +865,19 @@ cs_equation_param_init_sles(const char                 *eqname,
 
       if (eqp->itsol_info.precond == CS_PARAM_PRECOND_SSOR ||
           eqp->itsol_info.precond == CS_PARAM_PRECOND_ILU0 ||
-          eqp->itsol_info.precond == CS_PARAM_PRECOND_ICC0)
+          eqp->itsol_info.precond == CS_PARAM_PRECOND_ICC0) {
+
+        if (cs_glob_n_ranks > 1)
+          bft_error(__FILE__, __LINE__, 0,
+                    " Incompatible PETSc settings for parallel run.\n");
+
         cs_sles_petsc_define(field_id,
                              NULL,
                              MATSEQAIJ, // Warning SEQ not MPI
                              _petsc_setup_hook,
                              (void *)eqp);
+
+      }
       else
         cs_sles_petsc_define(field_id,
                              NULL,
@@ -903,5 +900,16 @@ cs_equation_param_init_sles(const char                 *eqname,
     break;
 
   } // end switch on algorithms
+
+  /* Define the level of verbosity for SLES structure */
+  if (eqp->sles_verbosity > 1) {
+
+    cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
+    cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
+
+    /* Set verbosity */
+    cs_sles_set_verbosity(sles, eqp->sles_verbosity);
+
+  }
 
 }

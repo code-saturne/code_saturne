@@ -162,15 +162,15 @@ typedef enum {
 /*!
  * \brief  Create and initialize of cs_domain_t structure
  *
- * \param[in]   mesh              pointer to a cs_mesh_t struct.
- * \param[in]   mesh_quantities   pointer to a cs_mesh_quantities_t struct.
+ * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
+ * \param[in]       mesh_quantities   pointer to a cs_mesh_quantities_t struct.
  *
  * \return a pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_domain_t *
-cs_domain_init(const cs_mesh_t             *mesh,
+cs_domain_init(cs_mesh_t                   *mesh,
                const cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------*/

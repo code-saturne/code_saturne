@@ -46,6 +46,7 @@
 
 #include "cs_array_reduce.h"
 #include "cs_base.h"
+#include "cs_ctwr.h"
 #include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_log.h"
@@ -54,11 +55,12 @@
 #include "cs_mesh_location.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
+#include "cs_range_set.h"
 #include "cs_time_moment.h"
 #include "cs_time_step.h"
 #include "cs_lagr_stat.h"
 #include "cs_lagr_log.h"
-#include "cs_ctwr.h"
+
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -529,7 +531,7 @@ _log_fields(void)
                                          CS_MESH_LOCATION_VERTICES
                                          };
 
-  const cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   /* Allocate working arrays */
@@ -562,6 +564,7 @@ _log_fields(void)
     int have_weight = 0;
     double total_weight = -1;
     cs_gnum_t n_g_elts = 0;
+    cs_real_t *gather_array = NULL; /* only if CS_MESH_LOCATION_VERTICES */
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(loc_id);
     const cs_lnum_t _n_elts = n_elts[0];
     const cs_real_t *weight = NULL;
@@ -591,6 +594,7 @@ _log_fields(void)
       case CS_MESH_LOCATION_VERTICES:
         n_g_elts = m->n_g_vertices;
         have_weight = 0;
+        BFT_MALLOC(gather_array, m->n_vertices, cs_real_t);
         break;
       default:
         n_g_elts = _n_elts;
@@ -653,10 +657,34 @@ _log_fields(void)
 
       }
       else {
-        cs_array_reduce_simple_stats_l(_n_elts,
+
+        cs_real_t  *field_val = f->val;
+        cs_lnum_t  _n_cur_elts = _n_elts;
+        if (gather_array != NULL) { /* Eliminate shared values whose local
+                                       rank is not owner and compact */
+
+          if (m->vtx_range_set == NULL)
+            m->vtx_range_set = cs_range_set_create(m->vtx_interfaces,
+                                                   NULL,
+                                                   m->n_vertices,
+                                                   false, /* balance */
+                                                   0); /* g_id_base */
+
+          if (f->dim > 1)
+            BFT_REALLOC(gather_array, (f->dim * m->n_vertices), cs_real_t);
+
+          cs_range_set_gather(m->vtx_range_set,
+                              CS_REAL_TYPE,
+                              f->dim,
+                              f->val,
+                              gather_array);
+          field_val = gather_array;
+          _n_cur_elts = m->vtx_range_set->n_elts[0];
+        }
+        cs_array_reduce_simple_stats_l(_n_cur_elts,
                                        f->dim,
                                        NULL,
-                                       f->val,
+                                       field_val,
                                        vmin + log_count,
                                        vmax + log_count,
                                        vsum + log_count);
@@ -682,6 +710,9 @@ _log_fields(void)
       max_name_width = CS_MAX(max_name_width, l_name_width);
 
     } /* End of first loop on fields */
+
+    if (gather_array != NULL)
+      BFT_FREE(gather_array);
 
     if (log_count < 1)
       continue;

@@ -90,11 +90,14 @@ struct _cs_hho_scaleq_t {
   /* System size */
   cs_lnum_t  n_faces;
   cs_lnum_t  n_cells;
+  cs_lnum_t  n_dofs;
   int        n_max_fcbyc;  // n_max_fbyc + 1
 
   /* Shortcut to know what to build */
-  bool       has[6]; //TODO: REMOVE
-  cs_flag_t  flag;
+  cs_flag_t    msh_flag;     // Information related to cell mesh
+  cs_flag_t    bd_msh_flag;  // Information related to cell mesh (boundary)
+  cs_flag_t    st_msh_flag;  // Information related to cell mesh (source term)
+  cs_flag_t    sys_flag;     // Information related to the sytem
 
   /* Store the matrix to invert after assembling and static condensation for
      upper left part
@@ -109,7 +112,12 @@ struct _cs_hho_scaleq_t {
   double                *loc_vals; // local temporary values
 
   /* Source terms */
-  cs_real_t             *source_terms;
+  cs_real_t     *source_terms;
+  cs_mask_t     *source_mask;  /* NULL if at least one source term is not
+                                  defined for all cells (size = n_cells) */
+
+  /* Pointer to functions which compute the value of the source term */
+  cs_source_term_cellwise_t   *compute_source[CS_N_MAX_SOURCE_TERMS];
 
   /* Boundary conditions:
 
@@ -152,10 +160,6 @@ static const cs_cdo_quantities_t  *cs_shared_quant;
 static const cs_cdo_connect_t  *cs_shared_connect;
 static const cs_time_step_t  *cs_shared_time_step;
 
-/* Flag to indicate which members have to be built in a cs_cell_mesh_t
-   structure */
-static const cs_flag_t  cs_hho_cmflag = CS_CDO_LOCAL_V | CS_CDO_LOCAL_E |
-  CS_CDO_LOCAL_EV | CS_CDO_LOCAL_F | CS_CDO_LOCAL_FE;
 
 /*============================================================================
  * Private function prototypes
@@ -234,9 +238,9 @@ cs_hho_scaleq_init(const cs_equation_param_t   *eqp,
               " Expected: scalar-valued HHO equation.");
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_i_faces = connect->f_info->n_i_elts;
-  const cs_lnum_t  n_b_faces = connect->f_info->n_b_elts;
-  const cs_lnum_t  n_cells = connect->c_info->n_elts;
+  const cs_lnum_t  n_b_faces = connect->n_faces[1];
+  const cs_lnum_t  n_i_faces = connect->n_faces[2];
+  const cs_lnum_t  n_cells = connect->n_cells;
   const cs_param_bc_t  *bc_param = eqp->bc;
 
   cs_hho_scaleq_t  *b = NULL;
@@ -248,16 +252,52 @@ cs_hho_scaleq_init(const cs_equation_param_t   *eqp,
   b->enforce = bc_param->enforcement;
 
   /* System dimension */
-  b->n_faces = n_i_faces + n_b_faces;
+  b->n_faces = connect->n_faces[0];
   b->n_cells = n_cells;
+  b->n_dofs = b->n_faces; // * CS_HHO_N_FACE_DOFS[scheme_order]
   b->n_max_fcbyc = connect->n_max_fbyc + 1;
 
-  /* Store a direct access to which term one has to compute */
-  b->has[CS_FLAG_SYS_DIFFUSION] = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
-  b->has[CS_FLAG_SYS_ADVECTION] = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
-  b->has[CS_FLAG_SYS_REACTION] = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
-  b->has[CS_FLAG_SYS_TIME] = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
-  b->has[CS_FLAG_SYS_SOURCETERM] = (eqp->n_source_terms > 0) ? true : false;
+  /* Store a direct access to which term one has to compute
+     High-level information on how to build the current system */
+  b->sys_flag = 0;
+  if (eqp->flag & CS_EQUATION_DIFFUSION)
+    b->sys_flag |= CS_FLAG_SYS_DIFFUSION;
+  if (eqp->flag & CS_EQUATION_CONVECTION)
+    b->sys_flag |= CS_FLAG_SYS_ADVECTION;
+  if (eqp->flag & CS_EQUATION_REACTION)
+    b->sys_flag |= CS_FLAG_SYS_REACTION;
+  if (eqp->flag & CS_EQUATION_UNSTEADY)
+    b->sys_flag |= CS_FLAG_SYS_TIME;
+  if (eqp->n_source_terms > 0)
+    b->sys_flag |= CS_FLAG_SYS_SOURCETERM;
+
+  /* Flag to indicate what to build in a cell mesh */
+  b->msh_flag = CS_CDO_LOCAL_PFQ;
+
+  /* Store additional flags useful for building boundary operator.
+     Only activated on boundary cells */
+  b->bd_msh_flag = CS_CDO_LOCAL_FE;
+
+  /* Default intialization */
+  b->st_msh_flag = 0;
+  b->source_terms = NULL;
+
+  if (b->sys_flag & CS_FLAG_SYS_SOURCETERM) {
+
+    /* Default intialization */
+    b->st_msh_flag = cs_source_term_init(CS_SPACE_SCHEME_HHO,
+                                         eqp->n_source_terms,
+                                         eqp->source_terms,
+                                         b->compute_source,
+                                         &(b->sys_flag),
+                                         &(b->source_mask));
+
+    BFT_MALLOC(b->source_terms, b->n_dofs, cs_real_t);
+#pragma omp parallel for if (b->n_dofs > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < b->n_dofs; i++)
+      b->source_terms[i] = 0;
+
+  } /* There is at least one source term */
 
   return b;
 }

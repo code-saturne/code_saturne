@@ -59,6 +59,7 @@
 #include "cs_log.h"
 #include "cs_log_iteration.h"
 #include "cs_mesh_location.h"
+#include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
@@ -467,15 +468,15 @@ _set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*!
  * \brief  Create and initialize a cs_domain_t structure
  *
- * \param[in]   mesh              pointer to a cs_mesh_t struct.
- * \param[in]   mesh_quantities   pointer to a cs_mesh_quantities_t struct.
+ * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
+ * \param[in]       mesh_quantities   pointer to a cs_mesh_quantities_t struct.
  *
  * \return a pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_domain_t *
-cs_domain_init(const cs_mesh_t             *mesh,
+cs_domain_init(cs_mesh_t                   *mesh,
                const cs_mesh_quantities_t  *mesh_quantities)
 {
   cs_real_t  default_time_step = -1e13;
@@ -486,7 +487,8 @@ cs_domain_init(const cs_mesh_t             *mesh,
   domain->mesh = mesh;
   domain->mesh_quantities = mesh_quantities;
 
-  /* Build additional connectivity structures */
+  /* Build additional connectivity structures
+     Update mesh structure with range set structures */
   domain->connect = cs_cdo_connect_init(mesh);
 
   /* Default = CS_CDO_CC_SATURNE but can be modify by the user */
@@ -889,18 +891,25 @@ cs_domain_summary(const cs_domain_t   *domain)
   }
 
   /* Number of border faces for each type of boundary */
+  cs_gnum_t  counter[4] = { bdy->n_type_elts[CS_PARAM_BOUNDARY_WALL],
+                            bdy->n_type_elts[CS_PARAM_BOUNDARY_INLET],
+                            bdy->n_type_elts[CS_PARAM_BOUNDARY_OUTLET],
+                            bdy->n_type_elts[CS_PARAM_BOUNDARY_SYMMETRY] };
+  if (cs_glob_n_ranks > 1)
+    cs_parall_counter(counter, 4);
+
   cs_log_printf(CS_LOG_SETUP,
-                "  >> Number of faces with a wall boundary:      %d\n",
-                bdy->n_type_elts[CS_PARAM_BOUNDARY_WALL]);
+                "  >> Number of faces with a wall boundary:      %lu\n",
+                counter[0]);
   cs_log_printf(CS_LOG_SETUP,
-                "  >> Number of faces with an inlet boundary:    %d\n",
-                bdy->n_type_elts[CS_PARAM_BOUNDARY_INLET]);
+                "  >> Number of faces with an inlet boundary:    %lu\n",
+                counter[1]);
   cs_log_printf(CS_LOG_SETUP,
-                "  >> Number of faces with an outlet boundary:   %d\n",
-                bdy->n_type_elts[CS_PARAM_BOUNDARY_OUTLET]);
+                "  >> Number of faces with an outlet boundary:   %lu\n",
+                counter[2]);
   cs_log_printf(CS_LOG_SETUP,
-                "  >> Number of faces with a symmetry boundary:  %d\n",
-                bdy->n_type_elts[CS_PARAM_BOUNDARY_SYMMETRY]);
+                "  >> Number of faces with a symmetry boundary:  %lu\n",
+                counter[3]);
 
   /* Time step summary */
   cs_log_printf(CS_LOG_SETUP, "\n  Time step information\n");

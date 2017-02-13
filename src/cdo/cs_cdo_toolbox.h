@@ -48,14 +48,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Structure for managing temporary buffers */
-typedef struct {
-
-  size_t    bufsize;
-  void     *buf;
-
-} cs_tmpbuf_t;
-
 /* Index to scan a mesh connectivity */
 typedef struct {
 
@@ -77,43 +69,6 @@ typedef struct {
 
 } cs_locmat_t;
 
-/* Structure enabling the repeated usage of local dense DEC matrix associated
-   with a local set of entities */
-typedef struct {
-
-  int         n_max_rows; // max number of entries in a row
-  int         n_rows;     // current number of rows
-  cs_lnum_t  *row_ids;    // list of entity ids in a row (size = n_max_rows)
-
-  int         n_max_cols; // max number of entries in a column
-  int         n_cols;     // current number of columns
-  cs_lnum_t  *col_ids;    // list of entity ids in a col (size = n_max_rows)
-
-  short int  *sgn;        // local matrix (size: n_max_rows*n_max_cols)
-
-} cs_locdec_t;
-
-/* ============= *
- * DATA ANALYSIS *
- * ============= */
-
-typedef union {
-
-  cs_lnum_t   number;
-  double      value;
-
-} cs_data_t;
-
-typedef struct {
-
-  cs_data_t    min;
-  cs_data_t    max;
-  double       mean;
-  double       sigma;
-  double       euclidean_norm;
-
-} cs_data_info_t;
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -131,9 +86,9 @@ typedef struct {
  */
 /*----------------------------------------------------------------------------*/
 
-double
-cs_euclidean_norm(int            len,
-                  const double   v[]);
+cs_real_t
+cs_euclidean_norm(int               len,
+                  const cs_real_t   v[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -147,76 +102,10 @@ cs_euclidean_norm(int            len,
  */
 /*----------------------------------------------------------------------------*/
 
-double
-cs_weighted_sum_square(cs_lnum_t                n,
-                       const double *restrict   x,
-                       const double *restrict   weight);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate or reallocate a temporary buffer structure
- *
- * \param[in]       bufsize   reference size
- * \param[in, out]  p_tb      pointer to the temporary structure to allocate
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_tmpbuf_alloc(size_t          bufsize,
-                cs_tmpbuf_t   **p_tb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a temporary buffer structure
- *
- * \param[in]  tb      pointer to the temporary structure to free
- *
- * \returns NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_tmpbuf_t *
-cs_tmpbuf_free(cs_tmpbuf_t    *tb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute some simple statistics from an array
- *
- * \param[in]  n_elts      number of couples in data
- * \param[in]  stride      size of a couple of data
- * \param[in]  datatype    datatype
- * \param[in]  indata      buffer containing input data
- * \param[in]  do_abs      analyse the absolute value of indata
- *
- * \return a cs_data_info_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_data_info_t
-cs_analysis_data(cs_lnum_t       n_elts,
-                 int             stride,
-                 cs_datatype_t   datatype,
-                 const void     *indata,
-                 bool            do_abs);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Dump a cs_data_info_t structure
- *
- * \param[in]  name        filename if not NULL
- * \param[in]  f           output file if not NULL
- * \param[in]  n_elts      number of couples in data
- * \param[in]  datatype    datatype
- * \param[in]  dinfo       cs_data_info_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_data_info_dump(const char              *name,
-                  FILE                    *f,
-                  cs_lnum_t                n_elts,
-                  cs_datatype_t            datatype,
-                  const cs_data_info_t     dinfo);
+cs_real_t
+cs_weighted_sum_squared(cs_lnum_t                   n,
+                        const cs_real_t *restrict   x,
+                        const cs_real_t *restrict   weight);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -314,9 +203,9 @@ cs_index_sort(cs_connect_index_t   *x);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_index_dump(const char          *name,
-              FILE                *_f,
-              cs_connect_index_t  *x);
+cs_index_dump(const char           *name,
+              FILE                 *_f,
+              cs_connect_index_t   *x);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -399,7 +288,7 @@ cs_locmat_add(cs_locmat_t        *loc,
 
 void
 cs_locmat_mult_add(cs_locmat_t        *loc,
-                   double              alpha,
+                   cs_real_t           alpha,
                    const cs_locmat_t  *add);
 
 /*----------------------------------------------------------------------------*/
@@ -439,34 +328,6 @@ cs_locmat_asymm(cs_locmat_t  *loc);
 void
 cs_locmat_dump(int                 parent_id,
                const cs_locmat_t  *lm);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Allocate and initialize a cs_locdec_t structure
- *
- * \param[in]  n_max_rows   max number of rows
- * \param[in]  n_max_cols   max number of columns
- *
- * \return  a new allocated cs_locdec_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_locdec_t *
-cs_locdec_create(int   n_max_rows,
-                 int   n_max_cols);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Free a cs_locdec_t structure
- *
- * \param[in, out]  m    pointer to a cs_locdec_t structure to free
- *
- * \return  a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_locdec_t *
-cs_locdec_free(cs_locdec_t  *m);
 
 /*----------------------------------------------------------------------------*/
 /*!

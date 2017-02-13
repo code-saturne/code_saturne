@@ -50,39 +50,19 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell
+ * \brief   Build a local operator for a given cell (stored in cb->hdg for a
+ *          discrete Hodge operator or in cb->loc for a stiffness matrix)
  *
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a cs_locmat_t structure storing the local Hodge op.
- *         Notice that this structure is in fact stored cb->hdg.
- *         So do not free the returned local matrix.
- */
-/*----------------------------------------------------------------------------*/
-
-typedef cs_locmat_t *
-(cs_hodge_t)(const cs_param_hodge_t    h_info,
-             const cs_cell_mesh_t     *cm,
-             cs_cell_builder_t        *cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the stiffness matrix thanks to a cellwise process
- *         The computed matrix is stored in cb->loc
- *
- * \param[in]      h_info     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_hodge_stiffness_t)(const cs_param_hodge_t    h_info,
-                       const cs_cell_mesh_t     *cm,
-                       cs_cell_builder_t        *cb);
-
+(cs_hodge_t)(const cs_param_hodge_t    h_info,
+             const cs_cell_mesh_t     *cm,
+             cs_cell_builder_t        *cb);
 
 /*============================================================================
  * Public function definitions
@@ -161,12 +141,10 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
+void
 cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
                      const cs_cell_mesh_t     *cm,
                      cs_cell_builder_t        *cb);
@@ -180,12 +158,10 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
+void
 cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
                       const cs_cell_mesh_t     *cm,
                       cs_cell_builder_t        *cb);
@@ -199,12 +175,10 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
+void
 cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
                        const cs_cell_mesh_t     *cm,
                        cs_cell_builder_t        *cb);
@@ -218,12 +192,10 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
+void
 cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
                        const cs_cell_mesh_t     *cm,
                        cs_cell_builder_t        *cb);
@@ -237,12 +209,10 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
  * \param[in]      h_info    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
- *
- * \return a pointer to a cs_locmat_t structure storing the local Hodge operator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_locmat_t *
+void
 cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
                        const cs_cell_mesh_t     *cm,
                        cs_cell_builder_t        *cb);

@@ -343,12 +343,17 @@ class Parser(object):
                 except:
                     d['run_id'] = ""
 
+                try:
+                    d['n_procs'] = str(node.attributes["n_procs"].value)
+                except:
+                    d['n_procs'] = None
+
                 for n in node.childNodes:
                     if n.nodeType == minidom.Node.ELEMENT_NODE and n.childNodes:
                         if n.tagName not in ("compare", "prepro", "script", "data"):
                             d[n.tagName] = n.childNodes[0].data
-
                 data.append(d)
+
         return data
 
     #---------------------------------------------------------------------------

@@ -91,7 +91,7 @@ _get_wvf_pefcvol(short int                 f,
   /* Compute a weight for each vertex of the current face */
   for (short int e = 0; e < cm->f2e_idx[f+1] - f2e_start; e++) {
 
-    const double  tef =  tef_vals[e];
+    const double  tef = tef_vals[e];
     const double  ef_contrib = tef * f_coef;
     const short int  ee = 2*f2e_ids[e];
 
@@ -179,6 +179,11 @@ cs_compute_fwbs_q1(short int                 f,
                    cs_real_t                *wvf,
                    cs_real_t                *pefc_vol)
 {
+  /* Sanity checks */
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
+                      CS_CDO_LOCAL_EV));
+
   const cs_quant_t  pfq = cm->face[f];
   const double  h_coef = cs_math_onethird * cm->hfc[f];
   const double  f_coef = 0.5/pfq.meas;
@@ -212,6 +217,11 @@ cs_compute_fwbs_q2(short int                f,
                    cs_real_t               *wvf,
                    cs_real_t               *pefc_vol)
 {
+  /* Sanity checks */
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
+                      CS_CDO_LOCAL_EV));
+
   const cs_quant_t  pfq = cm->face[f];
   const double  f_coef = 0.5/pfq.meas;
 
@@ -250,6 +260,11 @@ cs_compute_fwbs_q3(short int                 f,
                    cs_real_t                *wvf,
                    cs_real_t                *pefc_vol)
 {
+  /* Sanity checks */
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
+                      CS_CDO_LOCAL_EV));
+
   const cs_quant_t  pfq = cm->face[f];
   const double  hf = cm->hfc[f];
   const double  h_coef = cs_math_onethird * hf;

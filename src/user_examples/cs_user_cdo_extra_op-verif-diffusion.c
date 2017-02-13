@@ -45,12 +45,14 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_array_reduce.h"
 #include "cs_blas.h"
 #include "cs_domain.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_location.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_field.h"
 #include "cs_cdo.h"
@@ -147,10 +149,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
             const cs_equation_t        *eq,
             bool                        anacomp)
 {
-  CS_UNUSED(connect);
-
-  cs_data_info_t  dinfo;
-  int  i, len;
+  int  len;
 
   char  *postlabel = NULL;
   double  *ddip = NULL, *rpex = NULL;
@@ -159,19 +158,48 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
   const cs_lnum_t  n_vertices = cdoq->n_vertices;
   const cs_field_t  *field = cs_equation_get_field(eq);
   const cs_real_t  *pdi = field->val;
+  const cs_connect_index_t  *c2v = connect->c2v;
 
-  /* Output a summary of results */
-  dinfo = cs_analysis_data(n_vertices,  // n_elts
-                           1,           // stride
-                           CS_DOUBLE,   // cs_datatype_t
-                           pdi,         // data
-                           false);      // compute with absolute values
+  /* Analyze the discrete solution */
+  cs_real_t  pdi_min, pdi_max, pdi_wsum, pdi_asum, pdi_ssum;
+  cs_array_reduce_minmax_l(cdoq->n_vertices, 1, NULL, pdi,
+                           &pdi_min, &pdi_max);
 
-  fprintf(resume, " -bnd- Scal.Min   % 10.6e\n", dinfo.min.value);
-  fprintf(resume, " -bnd- Scal.Max   % 10.6e\n", dinfo.max.value);
-  fprintf(resume, " -bnd- Scal.Mean  % 10.6e\n", dinfo.mean);
-  fprintf(resume, " -bnd- Scal.Sigma % 10.6e\n", dinfo.sigma);
-  fprintf(resume, "%s", msepline);
+  cs_array_scatter_reduce_norms_l(cdoq->n_cells, c2v->idx, c2v->ids,
+                                  NULL, // filter list
+                                  1,    // dim
+                                  cdoq->n_vertices,
+                                  pdi,
+                                  cdoq->dcell_vol,
+                                  &pdi_wsum,
+                                  &pdi_asum,
+                                  &pdi_ssum);
+  /* Parallel treatment */
+  if (cs_glob_n_ranks > 1) {
+
+    cs_real_t  minmax[2] = {-pdi_min, pdi_max};
+    cs_parall_max(2, CS_REAL_TYPE, minmax);
+    pdi_min = -minmax[0], pdi_max = minmax[1];
+
+    cs_real_t  sums[3] = {pdi_wsum, pdi_asum, pdi_ssum};
+    cs_parall_sum(3, CS_REAL_TYPE, sums);
+    pdi_wsum = sums[0], pdi_asum = sums[1], pdi_ssum = sums[2];
+
+  }
+
+  if (cs_glob_rank_id < 1) { /* Only the first rank write something */
+
+    const double  inv = 1/cdoq->vol_tot;
+    const cs_real_t  pdi_mean = pdi_wsum*inv;
+
+    fprintf(resume, " -bnd- Scal.Min   % 10.6e\n", pdi_min);
+    fprintf(resume, " -bnd- Scal.Max   % 10.6e\n", pdi_max);
+    fprintf(resume, " -bnd- Scal.Mean  % 10.6e\n", pdi_mean);
+    fprintf(resume, " -bnd- Scal.Varia % 10.6e\n",
+            pdi_ssum*inv - pdi_mean*pdi_mean);
+    fprintf(resume, "%s", msepline);
+
+  }
 
   if (anacomp) { /* Comparison with an analytical solution */
 
@@ -184,7 +212,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
     BFT_MALLOC(rpex, n_vertices, double);
     BFT_MALLOC(ddip, n_vertices, double);
     get_sol(tcur, n_vertices, cdoq->vtx_coord, rpex);
-    for (i = 0; i < n_vertices; i++)
+    for (int i = 0; i < n_vertices; i++)
       ddip[i] = rpex[i] - pdi[i];
 
     len = strlen(field->name) + 7 + 1;
@@ -211,19 +239,6 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
                              CS_POST_TYPE_cs_real_t,
                              rpex,        /* values on vertices */
                              time_step);  /* time step structure */
-
-    /* Analyse the exact solution */
-    dinfo = cs_analysis_data(n_vertices, // n_elts
-                             1,                // stride
-                             CS_DOUBLE,        // cs_datatype_t
-                             rpex,             // data
-                             false);           // compute with absolute values
-
-    fprintf(resume, " -bnd- Ref.Min    % 10.6e\n", dinfo.min.value);
-    fprintf(resume, " -bnd- Ref.Max    % 10.6e\n", dinfo.max.value);
-    fprintf(resume, " -bnd- Ref.Mean   % 10.6e\n", dinfo.mean);
-    fprintf(resume, " -bnd- Ref.Sigma  % 10.6e\n", dinfo.sigma);
-    fprintf(resume, "%s", msepline);
 
     /* Free */
     BFT_FREE(postlabel);

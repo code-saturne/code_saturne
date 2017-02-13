@@ -56,11 +56,10 @@ BEGIN_C_DECLS
 /* Type of algorithm used to compute the cell center */
 typedef enum {
 
-  CS_CDO_CCENTER_MEANV,   // Cell center is computed as the mean of cell vertices
-  CS_CDO_CCENTER_BARYC,   // Cell center is computed as the real cell barycenter
-  CS_CDO_CCENTER_SATURNE, // Cell center is given by Code_Saturne
-  CS_CDO_CCENTER_ORTHO,   /* Cell center is optimized to enforce orthogonality
-                             between cell-face edge and face plane */
+  CS_CDO_CCENTER_MEANV,   // Center is computed as the mean of cell vertices
+  CS_CDO_CCENTER_BARYC,   // Center is computed as the real cell barycenter
+  CS_CDO_CCENTER_SATURNE, // Center is given by Code_Saturne
+
   CS_CDO_N_CCENTER_ALGOS
 
 } cs_cdo_cell_center_algo_t;
@@ -69,13 +68,12 @@ typedef enum {
    mesh for a given type of entity (cell, face and edge) */
 typedef struct {
 
-  double   meas_min;  // Min. value of the entity measure (vol, surf or lenght)
-  double   meas_max;  // Max. value of the entity measure (vol, surf or lenght)
+  /* Measure is either a volume for cells, a surface for faces or a length
+     for edges */
+  double   meas_min;  // Min. value of the entity measure
+  double   meas_max;  // Max. value of the entity measure
   double   h_min;     // Estimation of the min. value of the diameter
   double   h_max;     // Estimation of the max. value of the diameter
-
-  cs_lnum_t   min_id; // Entity if related to the min. value
-  cs_lnum_t   max_id; // Entity if related to the max. value
 
 } cs_quant_info_t;
 
@@ -107,7 +105,8 @@ typedef struct { /* Specific mesh quantities */
   double           vol_tot;
 
   /* Cell-based quantities */
-  cs_lnum_t        n_cells;
+  cs_lnum_t        n_cells;      /* Local number of cells */
+  cs_gnum_t        n_g_cells;    /* Global number of cells */
   cs_real_t       *cell_centers;
   cs_real_t       *cell_vol;
   cs_quant_info_t  cell_info;
@@ -117,13 +116,15 @@ typedef struct { /* Specific mesh quantities */
   cs_lnum_t        n_i_faces;
   cs_lnum_t        n_b_faces;
   cs_lnum_t        n_faces;   /* n_i_faces + n_b_faces */
+  cs_gnum_t        n_g_faces; /* Global number of faces */
   cs_quant_t      *face;      /* Face quantities */
   cs_nvec3_t      *dedge;     /* Dual edge quantities (length and unit vector)
                                  Scan with the c2f connectivity */
   cs_quant_info_t  face_info;
 
   /* Edge-based quantities */
-  cs_lnum_t        n_edges;
+  cs_lnum_t        n_edges;   /* Local number of edges */
+  cs_gnum_t        n_g_edges; /* Global number of edges */
   cs_quant_t      *edge;      /* Edge quantities */
   cs_dface_t      *dface;     /* For each edge belonging to a cell, two
                                  contributions coming from 2 triangles
@@ -133,7 +134,8 @@ typedef struct { /* Specific mesh quantities */
   cs_quant_info_t  edge_info;
 
   /* Vertex-based quantities */
-  cs_lnum_t   n_vertices;
+  cs_lnum_t   n_vertices;      /* Local number of vertices */
+  cs_gnum_t   n_g_vertices;    /* Global number of vertices */
   double     *dcell_vol;       /* Dual volume related to each vertex.
                                   Scan with the c2v connectivity */
   const cs_real_t  *vtx_coord; /* Pointer to the one stored in cs_mesh_t */

@@ -234,13 +234,13 @@ cs_advection_field_set_option(cs_adv_field_t            *adv,
  * \brief  Define the value of a cs_adv_field_t structure
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
- * \param[in]       keyval    accessor to the value to set
+ * \param[in]       vector    values to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_def_by_value(cs_adv_field_t    *adv,
-                                const char        *val);
+                                const cs_real_t    vector[3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -280,6 +280,21 @@ cs_advection_field_def_by_array(cs_adv_field_t     *adv,
 
 void
 cs_advection_field_create_field(cs_adv_field_t   *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the advection field at the cell center
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      adv     pointer to a cs_adv_field_t structure
+ * \param[in, out] vect    pointer to a cs_nvec3_t structure (meas + unitv)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_in_cell(const cs_cell_mesh_t   *cm,
+                           const cs_adv_field_t   *adv,
+                           cs_nvec3_t             *vect);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -355,7 +370,7 @@ cs_advection_field_get_cell_max(const cs_adv_field_t      *adv);
  * \brief  Compute the value of the flux of the advection field across the
  *         the dual faces of a cell
  *
- * \param[in]      c_id     id of the current cell
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      a_info   set of parameters for the advection operator
  * \param[in]      adv      pointer to a cs_adv_field_t structure
  * \param[in, out] fluxes   array of values attached to dual faces of a cell
@@ -363,7 +378,7 @@ cs_advection_field_get_cell_max(const cs_adv_field_t      *adv);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
+cs_advection_field_get_flux_dfaces(const cs_cell_mesh_t         *cm,
                                    const cs_param_advection_t    a_info,
                                    const cs_adv_field_t         *adv,
                                    cs_real_t                    *fluxes);
@@ -377,6 +392,7 @@ cs_advection_field_get_flux_dfaces(cs_lnum_t                     c_id,
  * \param[in]  adv       pointer to a cs_adv_field_t structure
  * \param[in]  a_info    set of parameters for the advection operator
  * \param[in]  cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]  tef_meas  area of the triangle tef
  * \param[in]  f         id of the face in the current cell
  * \param[in]  e         id of the edge in the current cell
  * \param[in]  v1        id of the first vertex in the current cell
@@ -390,6 +406,7 @@ cs_real_t
 cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
                                 const cs_param_advection_t   a_info,
                                 const cs_cell_mesh_t        *cm,
+                                cs_real_t                    tef_meas,
                                 short int                    f,
                                 short int                    e,
                                 short int                    v1,
@@ -411,9 +428,10 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_advection_field_get_flux_svef(cs_lnum_t                    v_id,
-                                 cs_lnum_t                    e_id,
-                                 cs_lnum_t                    f_id,
+cs_advection_field_get_flux_svef(const cs_cell_mesh_t        *cm,
+                                 short int                    v,
+                                 short int                    e,
+                                 short int                    f,
                                  const cs_param_advection_t   a_info,
                                  const cs_adv_field_t        *adv);
 

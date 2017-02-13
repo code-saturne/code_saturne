@@ -48,46 +48,40 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/* First level of information */
-#define CS_CDO_CONNECT_IN     (1 << 0)  /* Interior entity */
-#define CS_CDO_CONNECT_BD     (1 << 1)  /* Border entity */
-#define CS_CDO_CONNECT_SHARED (1 << 2)  /* Shared with several openMP threads */
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
 
-/* Additional information for each type of entity (vertex, edge, face, cell) */
-typedef struct {
-
-  cs_flag_t  *flag;   // CS_CDO_CONNECT_IN/BD
-
-  cs_lnum_t   n_elts;    // number of entities
-  cs_lnum_t   n_i_elts;  // number of interior entities
-  cs_lnum_t   n_b_elts;  // number of border entities
-
-} cs_connect_info_t;
-
 /* Connectivity structure */
 typedef struct {
 
-  /* Specific CDO connect : not oriented (same spirit as Code_Saturne
-     historical connectivity).
-     Use this connectivity to scan dual quantities */
-  fvm_element_t     *cell_type;
+  /* Vertex-related members */
+  cs_lnum_t          n_vertices;
+  cs_sla_matrix_t   *v2e;         // vertex --> edges connectivity
 
-  /* Upward oriented connectivity */
-  cs_sla_matrix_t   *v2e;    // vertex --> edges connectivity
-  cs_sla_matrix_t   *e2f;    // edge --> faces connectivity
-  cs_sla_matrix_t   *f2c;    // face --> cells connectivity
+  /* Edge-related members */
+  cs_lnum_t          n_edges;
+  cs_sla_matrix_t   *e2f;         // edge --> faces connectivity
+  cs_sla_matrix_t   *e2v;         // edge --> vertices connectivity
 
-  /* Downward oriented connectivity */
-  cs_sla_matrix_t   *e2v;    // edge --> vertices connectivity
-  cs_sla_matrix_t   *f2e;    // face --> edges connectivity
-  cs_sla_matrix_t   *c2f;    // cell --> faces connectivity
+  /* Face-related members */
+  cs_lnum_t          n_faces[3];  // 0: all, 1: border, 2: interior
+  cs_sla_matrix_t   *f2c;         // face --> cells connectivity
+  cs_sla_matrix_t   *f2e;         // face --> edges connectivity
 
-  cs_connect_index_t  *c2e;  // cell -> edges connectivity
-  cs_connect_index_t  *c2v;  // cell -> vertices connectivity
+  /* Cell-related members */
+  cs_lnum_t            n_cells;
+  fvm_element_t       *cell_type; // type of cell
+  cs_flag_t           *cell_flag; // Flag (Border)
+  cs_sla_matrix_t     *c2f;       // cell --> faces connectivity
+  cs_connect_index_t  *c2e;       // cell -> edges connectivity
+  cs_connect_index_t  *c2v;       // cell -> vertices connectivity
+
+  /* Delta of ids between the min./max. values of entities related to a cell
+     Useful to store compactly the link between mesh ids and cell mesh ids
+     needed during the cell mesh definition */
+  cs_lnum_t  e_max_cell_range;
+  cs_lnum_t  v_max_cell_range;
 
   /* Max. connectitivy size for cells */
   int  n_max_vbyc;   // max. number of vertices in a cell
@@ -97,16 +91,9 @@ typedef struct {
   int  n_max_v2fc;   // max. number of faces connected to a vertex in a cell
   int  n_max_v2ec;   // max. number of edges connected to a vertex in a cell
 
-  /* Status internal or border entity */
-  cs_connect_info_t  *v_info;  // count of interior/border vertices
-  cs_connect_info_t  *e_info;  // count of interior/border edges
-  cs_connect_info_t  *f_info;  // count of interior/border faces
-  cs_connect_info_t  *c_info;  /* count of interior/border cells
-                                  a border cell has at least one border face */
-
   /* Structures to handle parallelism */
-  cs_range_set_t     *v_rs;  // range set related to vertices
-  cs_range_set_t     *f_rs;  // range set related to faces
+  const cs_range_set_t   *v_rs;  // range set related to vertices
+  cs_range_set_t         *f_rs;  // range set related to faces
 
 } cs_cdo_connect_t;
 
@@ -120,27 +107,18 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  String related to flag in cs_connect_info_t
+ * \brief Allocate and define a new cs_cdo_connect_t structure
+ *        Range sets related to vertices and faces are computed inside and
+ *        set as members of the cs_mesh_t structure
  *
- * \param[in]  flag     retrieve name for this flag
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_cdo_connect_flagname(short int  flag);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and define by default a cs_cdo_connect_t structure
+ * \param[in, out]  mesh    pointer to a cs_mesh_t structure
  *
- * \param[in]  m            pointer to a cs_mesh_t structure
- *
- * \return  a cs_cdo_connect_t structure
+ * \return  a pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_connect_t *
-cs_cdo_connect_init(const cs_mesh_t      *m);
+cs_cdo_connect_init(cs_mesh_t      *mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!
