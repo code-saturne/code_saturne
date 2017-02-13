@@ -134,11 +134,11 @@ call field_get_val_v(fdiale, disale)
 ! Set to 0 non specified RCODCL arrays
 do ifac = 1, nfabor
   if (rcodcl(ifac,iuma,1).gt.rinfin*0.5d0)                        &
-       rcodcl(ifac,iuma,1) = 0.d0
+    rcodcl(ifac,iuma,1) = 0.d0
   if (rcodcl(ifac,ivma,1).gt.rinfin*0.5d0)                        &
-       rcodcl(ifac,ivma,1) = 0.d0
+    rcodcl(ifac,ivma,1) = 0.d0
   if (rcodcl(ifac,iwma,1).gt.rinfin*0.5d0)                        &
-       rcodcl(ifac,iwma,1) = 0.d0
+    rcodcl(ifac,iwma,1) = 0.d0
 enddo
 
 !===============================================================================
@@ -389,11 +389,11 @@ do ifac = 1, nfabor
         ! and the tangential part is the one of the user (completed with 0
         ! for non set values)
         if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0)                 &
-             rcodcl(ifac,iu,1) = 0.d0
+          rcodcl(ifac,iu,1) = 0.d0
         if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0)                 &
-             rcodcl(ifac,iv,1) = 0.d0
+          rcodcl(ifac,iv,1) = 0.d0
         if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0)                 &
-             rcodcl(ifac,iw,1) = 0.d0
+          rcodcl(ifac,iw,1) = 0.d0
 
         srfbnf = surfbn(ifac)
         rnx = surfbo(1,ifac)/srfbnf
