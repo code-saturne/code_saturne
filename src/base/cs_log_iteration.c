@@ -531,7 +531,7 @@ _log_fields(void)
                                          CS_MESH_LOCATION_VERTICES
                                          };
 
-  const cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   /* Allocate working arrays */
@@ -564,7 +564,7 @@ _log_fields(void)
     int have_weight = 0;
     double total_weight = -1;
     cs_gnum_t n_g_elts = 0;
-    cs_real_t *gather_array = NULL; // only if CS_MESH_LOCATION_VERTICES
+    cs_real_t *gather_array = NULL; /* only if CS_MESH_LOCATION_VERTICES */
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(loc_id);
     const cs_lnum_t _n_elts = n_elts[0];
     const cs_real_t *weight = NULL;
@@ -662,7 +662,17 @@ _log_fields(void)
         cs_lnum_t  _n_cur_elts = _n_elts;
         if (gather_array != NULL) { /* Eliminate shared values whose local
                                        rank is not owner and compact */
-          assert(m->vtx_range_set != NULL);
+
+          if (m->vtx_range_set == NULL)
+            m->vtx_range_set = cs_range_set_create(m->vtx_interfaces,
+                                                   NULL,
+                                                   m->n_vertices,
+                                                   false, /* balance */
+                                                   0); /* g_id_base */
+
+          if (f->dim > 1)
+            BFT_REALLOC(gather_array, (f->dim * m->n_vertices), cs_real_t);
+
           cs_range_set_gather(m->vtx_range_set,
                               CS_REAL_TYPE,
                               f->dim,
