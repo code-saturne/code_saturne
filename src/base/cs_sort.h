@@ -176,6 +176,18 @@ cs_sort_coupled_gnum_shell(cs_lnum_t  l,
                            cs_gnum_t  b[]);
 
 /*----------------------------------------------------------------------------
+ * Order an array of local numbers.
+ *
+ * parameters:
+ *   number   <-> array of numbers to sort
+ *   n_elts   <-- number of elements considered
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sort_lnum(cs_lnum_t  number[],
+             size_t     n_elts);
+
+/*----------------------------------------------------------------------------
  * Sort rows of an indexed structure.
  *
  * parameters:
