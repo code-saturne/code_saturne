@@ -977,14 +977,16 @@ cs_balance_by_zone(const char  *selection_crit,
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
 
   cs_real_t *c_visc = NULL;
+  BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
   const int kivisl
     = cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
-  if (kivisl != -1)
-    c_visc = cs_field_by_id(kivisl)->val;
+  if (kivisl != -1) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      c_visc[c_id] = cs_field_by_id(kivisl)->val[c_id];
+  }
   else {
     const double visls0
       = cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
-    BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       c_visc[c_id] = visls0;
     }
@@ -1417,8 +1419,7 @@ cs_balance_by_zone(const char  *selection_crit,
 
   if (!itemperature || icp == -1)
     BFT_FREE(cpro_cp);
-  if (kivisl == -1)
-    BFT_FREE(c_visc);
+  BFT_FREE(c_visc);
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
 
@@ -2266,14 +2267,16 @@ cs_surface_balance(const char       *selection_crit,
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
 
   cs_real_t *c_visc = NULL;
+  BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
   const int kivisl =
     cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
-  if (kivisl != -1)
-    c_visc = cs_field_by_id(kivisl)->val;
+  if (kivisl != -1) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      c_visc[c_id] = cs_field_by_id(kivisl)->val[c_id];
+  }
   else {
     const double visls0 =
       cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
-    BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       c_visc[c_id] = visls0;
     }
@@ -2689,8 +2692,7 @@ cs_surface_balance(const char       *selection_crit,
 
   if (!itemperature || icp == -1)
     BFT_FREE(cpro_cp);
-  if (kivisl == -1)
-    BFT_FREE(c_visc);
+  BFT_FREE(c_visc);
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
   BFT_FREE(cells_tag_list);
@@ -2838,14 +2840,16 @@ cs_flux_through_surface(const char          *selection_crit,
   BFT_MALLOC(b_visc, n_b_faces, cs_real_t);
 
   cs_real_t *c_visc = NULL;
+  BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
   const int kivisl
     = cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
-  if (kivisl != -1)
-    c_visc = cs_field_by_id(kivisl)->val;
+  if (kivisl != -1) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+      c_visc[c_id] = cs_field_by_id(kivisl)->val[c_id];
+  }
   else {
     const double visls0
       = cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
-    BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       c_visc[c_id] = visls0;
     }
@@ -3215,8 +3219,7 @@ cs_flux_through_surface(const char          *selection_crit,
 
   if (!itemperature || icp == -1)
     BFT_FREE(cpro_cp);
-  if (kivisl == -1)
-    BFT_FREE(c_visc);
+  BFT_FREE(c_visc);
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
   BFT_FREE(cells_tag_list);
