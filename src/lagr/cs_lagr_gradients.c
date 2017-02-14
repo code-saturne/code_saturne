@@ -122,7 +122,6 @@ cs_lagr_gradients(int            time_id,
    * 1. Compute pressure gradient
    * ====================================================================   */
 
-  /* FIXME for iphydr = 1 and 2     */
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
   /* Get the calculation option from the pressure field */
@@ -132,14 +131,25 @@ cs_lagr_gradients(int            time_id,
                              &gradient_type,
                              &halo_type);
 
-  // FIXME not coherent with iphydr...
-  cs_field_gradient_scalar(extra->pressure,
-                           time_id,
-                           gradient_type,
-                           halo_type,
-                           inc,
-                           iccocg,
-                           gradpr);
+  bool use_previous_t = time_id ? true : false;
+
+  /* Hydrostatic pressure algorithm? */
+  int hyd_p_flag = cs_glob_stokes_model->iphydr;
+
+
+  cs_real_3_t *f_ext = NULL;
+  if (hyd_p_flag == 1)
+    f_ext = (cs_real_3_t *)(cs_field_by_name("volume_forces")->val);
+
+  cs_field_gradient_potential(extra->pressure,
+                              use_previous_t,
+                              gradient_type,
+                              halo_type,
+                              inc,
+                              iccocg,
+                              hyd_p_flag,
+                              f_ext,
+                              gradpr);
 
   /* Warning, in standard calculation, the computed pressure is
    * the hydrostatic pressure and not the real one */
