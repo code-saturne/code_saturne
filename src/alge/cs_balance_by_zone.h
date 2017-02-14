@@ -102,8 +102,10 @@ cs_surface_balance(const char       *selection_crit,
  * \param[in]     normal              normal surface
  * \param[in,out] flux_b_faces        pointer surface flux boundary faces
  * \param[in,out] flux_i_faces        pointer surface flux internal faces
- * \param[out]    nb_faces_sel        number of boundary faces
- * \param[out]    ni_faces_sel        number of internal faces
+ * \param[out]    n_b_faces_sel       number of boundary faces
+ * \param[out]    n_i_faces_sel       number of internal faces
+ * \param[out]    b_face_sel_ids      ids of boundary faces
+ * \param[out]    i_face_sel_ids      ids of internal faces
  */
 /*----------------------------------------------------------------------------*/
 
@@ -113,8 +115,10 @@ cs_flux_through_surface(const char          *selection_crit,
                         const cs_real_t      normal[3],
                         cs_real_t          *flux_b_faces,
                         cs_real_t          *flux_i_faces,
-                        cs_lnum_t          *nb_faces_sel,
-                        cs_lnum_t          *ni_faces_sel);
+                        cs_lnum_t          *n_b_faces_sel,
+                        cs_lnum_t          *n_i_faces_sel,
+                        cs_lnum_t          *b_face_sel_ids,
+                        cs_lnum_t          *i_face_sel_ids);
 
 /*----------------------------------------------------------------------------*/
 
