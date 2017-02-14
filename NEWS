@@ -5,6 +5,9 @@ Release 4.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix some excess memory allocation when registering additional
+  time-dependent postprocessing outputs.
+
 - Fix detection of writer format availability for plugins.
 
 - Fix double symmetric 3x3 matrix product, used in anisotropic
