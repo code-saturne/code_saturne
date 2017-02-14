@@ -800,15 +800,15 @@ cs_balance_by_zone(const char  *selection_crit,
 
   /* Zone cells selection variables*/
   cs_lnum_t n_cells_sel = 0;
-  cs_lnum_t *cells_sel_list = NULL;
+  cs_lnum_t *cells_sel_ids = NULL;
   cs_lnum_t n_i_faces_sel = 0;
-  cs_lnum_t *i_face_sel_list = NULL;
+  cs_lnum_t *i_face_sel_ids = NULL;
   cs_lnum_t n_bb_faces_sel = 0;
-  cs_lnum_t *bb_face_sel_list = NULL;
+  cs_lnum_t *bb_face_sel_ids = NULL;
   cs_lnum_t n_bi_faces_sel = 0;
-  cs_lnum_t *bi_face_sel_list = NULL;
+  cs_lnum_t *bi_face_sel_ids = NULL;
   cs_lnum_2_t *bi_face_cells = NULL;
-  cs_lnum_t *cells_tag_list = NULL;
+  cs_lnum_t *cells_tag_ids = NULL;
 
   /*--------------------------------------------------------------------------
    * This function computes the balance relative to a given scalar
@@ -1010,41 +1010,41 @@ cs_balance_by_zone(const char  *selection_crit,
   /* Initialise arrays */
 
   /* Internal faces of the selected zone */
-  BFT_MALLOC(i_face_sel_list, n_i_faces, cs_lnum_t);
+  BFT_MALLOC(i_face_sel_ids, n_i_faces, cs_lnum_t);
   /* Boundary faces of the selected zone,
      which are internal faces of the global mesh.
      Faces -> cells connectivity */
-  BFT_MALLOC(bi_face_sel_list, n_i_faces, cs_lnum_t);
+  BFT_MALLOC(bi_face_sel_ids, n_i_faces, cs_lnum_t);
   BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    i_face_sel_list[f_id] = -1;
-    bi_face_sel_list[f_id] = -1;
+    i_face_sel_ids[f_id] = -1;
+    bi_face_sel_ids[f_id] = -1;
     bi_face_cells[f_id][0] = -999;
     bi_face_cells[f_id][1] = -999;
   }
 
   /* Boundary faces of the selected zone,
      which are also boundary faces of the global mesh */
-  BFT_MALLOC(bb_face_sel_list, n_b_faces, cs_lnum_t);
+  BFT_MALLOC(bb_face_sel_ids, n_b_faces, cs_lnum_t);
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-    bb_face_sel_list[f_id] = -1;
+    bb_face_sel_ids[f_id] = -1;
   }
 
   /* Select cells */
-  BFT_MALLOC(cells_sel_list, n_cells, cs_lnum_t);
-  cs_selector_get_cell_list(selection_crit, &n_cells_sel, cells_sel_list);
+  BFT_MALLOC(cells_sel_ids, n_cells, cs_lnum_t);
+  cs_selector_get_cell_list(selection_crit, &n_cells_sel, cells_sel_ids);
 
   /* Synchronization for parallelism */
-  BFT_MALLOC(cells_tag_list, n_cells_ext, cs_lnum_t);
+  BFT_MALLOC(cells_tag_ids, n_cells_ext, cs_lnum_t);
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    cells_tag_list[c_id] = 0;
+    cells_tag_ids[c_id] = 0;
   }
   for (cs_lnum_t c_id = 0; c_id < n_cells_sel; c_id++) {
-    cs_lnum_t c_id_sel = cells_sel_list[c_id];
-    cells_tag_list[c_id_sel] = 1;
+    cs_lnum_t c_id_sel = cells_sel_ids[c_id];
+    cells_tag_ids[c_id_sel] = 1;
   }
   if (halo != NULL) {
-    cs_halo_sync_num(halo, halo_type, cells_tag_list);
+    cs_halo_sync_num(halo, halo_type, cells_tag_ids);
   }
 
   /* Classify mesh faces with respect to the selected zone */
@@ -1055,9 +1055,9 @@ cs_balance_by_zone(const char  *selection_crit,
 
     cs_lnum_t c_id = b_face_cells[f_id];
 
-    if (cells_tag_list[c_id] == 1) {
+    if (cells_tag_ids[c_id] == 1) {
       n_bb_faces_sel++;
-      bb_face_sel_list[n_bb_faces_sel-1] = f_id;
+      bb_face_sel_ids[n_bb_faces_sel-1] = f_id;
     }
   }
 
@@ -1072,18 +1072,18 @@ cs_balance_by_zone(const char  *selection_crit,
     bool indic1 = false;
     bool indic2 = false;
 
-    if (cells_tag_list[c_id1] == 1)
+    if (cells_tag_ids[c_id1] == 1)
       indic1 = true;
-    if (cells_tag_list[c_id2] == 1)
+    if (cells_tag_ids[c_id2] == 1)
       indic2 = true;
 
     if (indic1 && indic2) {
       n_i_faces_sel++;
-      i_face_sel_list[n_i_faces_sel-1] = f_id;
+      i_face_sel_ids[n_i_faces_sel-1] = f_id;
     }
     else if (indic1 || indic2) {
       n_bi_faces_sel++;
-      bi_face_sel_list[n_bi_faces_sel-1] = f_id;
+      bi_face_sel_ids[n_bi_faces_sel-1] = f_id;
       /* Build the faces -> cells connectivity as done in
          i_face_cells */
       if (indic1)
@@ -1107,7 +1107,7 @@ cs_balance_by_zone(const char  *selection_crit,
 
   for (cs_lnum_t c_id = 0; c_id < n_cells_sel; c_id++) {
 
-    cs_lnum_t c_id_sel = cells_sel_list[c_id];
+    cs_lnum_t c_id_sel = cells_sel_ids[c_id];
 
     vol_balance += cell_vol[c_id_sel] * rho[c_id_sel]
                  * cpro_cp[c_id_sel]
@@ -1126,7 +1126,7 @@ cs_balance_by_zone(const char  *selection_crit,
   /* Interior faces */
   for (cs_lnum_t f_id = 0; f_id < n_i_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = i_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = i_face_sel_ids[f_id];
     /* Associated internal cells */
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
@@ -1148,7 +1148,7 @@ cs_balance_by_zone(const char  *selection_crit,
   /* Boundary faces which are internal in the total mesh */
   for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = bi_face_sel_ids[f_id];
     /* Associated boundary-internal cells */
     cs_lnum_t c_id1 = bi_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = bi_face_cells[f_id_sel][1];
@@ -1177,7 +1177,7 @@ cs_balance_by_zone(const char  *selection_crit,
   /* Boundary faces which are also boundary in the total mesh */
   for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = bb_face_sel_ids[f_id];
     /* Associated boundary cell */
     cs_lnum_t c_id = b_face_cells[f_id_sel];
 
@@ -1204,7 +1204,7 @@ cs_balance_by_zone(const char  *selection_crit,
 
   for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = bb_face_sel_ids[f_id];
     /* Associated boundary cell */
     cs_lnum_t c_id = b_face_cells[f_id_sel];
 
@@ -1300,7 +1300,7 @@ cs_balance_by_zone(const char  *selection_crit,
      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
        cs_lnum_t f_id = faces_local[ii];
        cs_lnum_t c_id = b_face_cells[f_id];
-       if (cells_tag_list[c_id] == 1) {
+       if (cells_tag_ids[c_id] == 1) {
          cs_real_t pip, pjp;
          cs_real_t term_balance = 0.;
 
@@ -1344,7 +1344,7 @@ cs_balance_by_zone(const char  *selection_crit,
 
   for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = bi_face_sel_ids[f_id];
     /* Associated boundary-internal cells */
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
@@ -1423,12 +1423,12 @@ cs_balance_by_zone(const char  *selection_crit,
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
 
-  BFT_FREE(cells_sel_list);
-  BFT_FREE(cells_tag_list);
+  BFT_FREE(cells_sel_ids);
+  BFT_FREE(cells_tag_ids);
   BFT_FREE(bi_face_cells);
-  BFT_FREE(i_face_sel_list);
-  BFT_FREE(bb_face_sel_list);
-  BFT_FREE(bi_face_sel_list);
+  BFT_FREE(i_face_sel_ids);
+  BFT_FREE(bb_face_sel_ids);
+  BFT_FREE(bi_face_sel_ids);
 
   /* Sum of values on all ranks (parallel calculations) */
 
@@ -1556,15 +1556,15 @@ cs_pressure_drop_by_zone(const char * selection_crit)
 
   /* Zone cells selection variables*/
   cs_lnum_t n_cells_sel = 0;
-  cs_lnum_t *cells_sel_list = NULL;
+  cs_lnum_t *cells_sel_ids = NULL;
   cs_lnum_t n_i_faces_sel = 0;
-  cs_lnum_t *i_face_sel_list = NULL;
+  cs_lnum_t *i_face_sel_ids = NULL;
   cs_lnum_t n_bb_faces_sel = 0;
-  cs_lnum_t *bb_face_sel_list = NULL;
+  cs_lnum_t *bb_face_sel_ids = NULL;
   cs_lnum_t n_bi_faces_sel = 0;
-  cs_lnum_t *bi_face_sel_list = NULL;
+  cs_lnum_t *bi_face_sel_ids = NULL;
   cs_lnum_2_t *bi_face_cells = NULL;
-  cs_lnum_t *cells_tag_list = NULL;
+  cs_lnum_t *cells_tag_ids = NULL;
 
   /* 1. Initialization
      =================
@@ -1632,41 +1632,41 @@ cs_pressure_drop_by_zone(const char * selection_crit)
   /* Initialize arrays */
 
   /* Internal faces of the selected zone */
-  BFT_MALLOC(i_face_sel_list, n_i_faces, cs_lnum_t);
+  BFT_MALLOC(i_face_sel_ids, n_i_faces, cs_lnum_t);
   /* Boundary faces of the selected zone,
      which are internal faces of the global mesh.
      Faces -> cells connectivity */
-  BFT_MALLOC(bi_face_sel_list, n_i_faces, cs_lnum_t);
+  BFT_MALLOC(bi_face_sel_ids, n_i_faces, cs_lnum_t);
   BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    i_face_sel_list[f_id] = -1;
-    bi_face_sel_list[f_id] = -1;
+    i_face_sel_ids[f_id] = -1;
+    bi_face_sel_ids[f_id] = -1;
     bi_face_cells[f_id][0] = -999;
     bi_face_cells[f_id][1] = -999;
   }
 
   /* Boundary faces of the selected zone,
      which are also boundary faces of the global mesh */
-  BFT_MALLOC(bb_face_sel_list, n_b_faces, cs_lnum_t);
+  BFT_MALLOC(bb_face_sel_ids, n_b_faces, cs_lnum_t);
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-    bb_face_sel_list[f_id] = -1;
+    bb_face_sel_ids[f_id] = -1;
   }
 
   /* Select cells */
-  BFT_MALLOC(cells_sel_list, n_cells, cs_lnum_t);
-  cs_selector_get_cell_list(selection_crit, &n_cells_sel, cells_sel_list);
+  BFT_MALLOC(cells_sel_ids, n_cells, cs_lnum_t);
+  cs_selector_get_cell_list(selection_crit, &n_cells_sel, cells_sel_ids);
 
   /* Synchronization for parallelism */
-  BFT_MALLOC(cells_tag_list, n_cells_ext, cs_lnum_t);
+  BFT_MALLOC(cells_tag_ids, n_cells_ext, cs_lnum_t);
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    cells_tag_list[c_id] = 0;
+    cells_tag_ids[c_id] = 0;
   }
   for (cs_lnum_t c_id = 0; c_id < n_cells_sel; c_id++) {
-    cs_lnum_t c_id_sel = cells_sel_list[c_id];
-    cells_tag_list[c_id_sel] = 1;
+    cs_lnum_t c_id_sel = cells_sel_ids[c_id];
+    cells_tag_ids[c_id_sel] = 1;
   }
   if (halo != NULL) {
-    cs_halo_sync_num(halo, halo_type, cells_tag_list);
+    cs_halo_sync_num(halo, halo_type, cells_tag_ids);
   }
 
   /* Classify mesh faces with respect to the selected zone */
@@ -1677,9 +1677,9 @@ cs_pressure_drop_by_zone(const char * selection_crit)
 
     cs_lnum_t c_id = b_face_cells[f_id];
 
-    if (cells_tag_list[c_id] == 1) {
+    if (cells_tag_ids[c_id] == 1) {
       n_bb_faces_sel++;
-      bb_face_sel_list[n_bb_faces_sel-1] = f_id;
+      bb_face_sel_ids[n_bb_faces_sel-1] = f_id;
     }
   }
 
@@ -1694,18 +1694,18 @@ cs_pressure_drop_by_zone(const char * selection_crit)
     bool indic1 = false;
     bool indic2 = false;
 
-    if (cells_tag_list[c_id1] == 1)
+    if (cells_tag_ids[c_id1] == 1)
       indic1 = true;
-    if (cells_tag_list[c_id2] == 1)
+    if (cells_tag_ids[c_id2] == 1)
       indic2 = true;
 
     if (indic1 && indic2) {
       n_i_faces_sel++;
-      i_face_sel_list[n_i_faces_sel-1] = f_id;
+      i_face_sel_ids[n_i_faces_sel-1] = f_id;
     }
     else if (indic1 || indic2) {
       n_bi_faces_sel++;
-      bi_face_sel_list[n_bi_faces_sel-1] = f_id;
+      bi_face_sel_ids[n_bi_faces_sel-1] = f_id;
       /* Build the faces -> cells connectivity as done in
          i_face_cells */
       if (indic1)
@@ -1736,7 +1736,7 @@ cs_pressure_drop_by_zone(const char * selection_crit)
 
   for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = bb_face_sel_ids[f_id];
     /* Associated boundary cell */
     cs_lnum_t c_id = b_face_cells[f_id_sel];
 
@@ -1863,7 +1863,7 @@ cs_pressure_drop_by_zone(const char * selection_crit)
 
   for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = bi_face_sel_ids[f_id];
     /* Associated boundary-internal cells */
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
@@ -2060,12 +2060,12 @@ cs_pressure_drop_by_zone(const char * selection_crit)
 
   /* Free memory */
 
-  BFT_FREE(cells_sel_list);
-  BFT_FREE(cells_tag_list);
+  BFT_FREE(cells_sel_ids);
+  BFT_FREE(cells_tag_ids);
   BFT_FREE(bi_face_cells);
-  BFT_FREE(i_face_sel_list);
-  BFT_FREE(bb_face_sel_list);
-  BFT_FREE(bi_face_sel_list);
+  BFT_FREE(i_face_sel_ids);
+  BFT_FREE(bb_face_sel_ids);
+  BFT_FREE(bi_face_sel_ids);
 
   /* Sum of values on all ranks (parallel calculations) */
 
@@ -2385,29 +2385,29 @@ cs_surface_balance(const char       *selection_crit,
  /* ---------------------------------------------------- */
 
   cs_lnum_t n_bb_faces_sel = 0;
-  cs_lnum_t *bb_face_sel_list = NULL;
+  cs_lnum_t *bb_face_sel_ids = NULL;
   cs_lnum_t n_bi_faces_sel = 0;
-  cs_lnum_t *bi_face_sel_list = NULL;
-  cs_lnum_t *cells_tag_list = NULL;
+  cs_lnum_t *bi_face_sel_ids = NULL;
+  cs_lnum_t *cells_tag_ids = NULL;
   cs_lnum_2_t *bi_face_cells = NULL;
 
 
-  BFT_MALLOC(bi_face_sel_list, n_i_faces, cs_lnum_t);
+  BFT_MALLOC(bi_face_sel_ids, n_i_faces, cs_lnum_t);
   BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    bi_face_sel_list[f_id] = -1;
+    bi_face_sel_ids[f_id] = -1;
     bi_face_cells[f_id][0] = -999;
     bi_face_cells[f_id][1] = -999;
   }
-  cs_selector_get_i_face_list(selection_crit, &n_bi_faces_sel, bi_face_sel_list);
+  cs_selector_get_i_face_list(selection_crit, &n_bi_faces_sel, bi_face_sel_ids);
 
-  BFT_MALLOC(cells_tag_list, n_cells_ext, cs_lnum_t);
+  BFT_MALLOC(cells_tag_ids, n_cells_ext, cs_lnum_t);
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    cells_tag_list[c_id] = -1;
+    cells_tag_ids[c_id] = -1;
   }
 
   for (cs_lnum_t f_id =0; f_id < n_bi_faces_sel; f_id++) {
-    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = bi_face_sel_ids[f_id];
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
     cs_real_t dot_pro = normal[0]*i_face_normal[f_id_sel][0]
@@ -2422,17 +2422,17 @@ cs_surface_balance(const char       *selection_crit,
       bi_face_cells[f_id_sel][1] = c_id2;
   }
 
-  BFT_MALLOC(bb_face_sel_list, n_b_faces, cs_lnum_t);
+  BFT_MALLOC(bb_face_sel_ids, n_b_faces, cs_lnum_t);
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-    bb_face_sel_list[f_id] = -1;
+    bb_face_sel_ids[f_id] = -1;
   }
-  cs_selector_get_b_face_list(selection_crit, &n_bb_faces_sel, bb_face_sel_list);
+  cs_selector_get_b_face_list(selection_crit, &n_bb_faces_sel, bb_face_sel_ids);
 
   for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
-    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = bb_face_sel_ids[f_id];
     cs_lnum_t c_id = b_face_cells[f_id_sel];
     if (cs_math_3_dot_product(normal, b_face_normal[f_id_sel]) > 0.)
-      cells_tag_list[c_id] = 1;
+      cells_tag_ids[c_id] = 1;
   }
 
   double flux_b_faces = 0.;
@@ -2455,7 +2455,7 @@ cs_surface_balance(const char       *selection_crit,
 
   for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = bb_face_sel_ids[f_id];
     /* Associated boundary cell */
     cs_lnum_t c_id = b_face_cells[f_id_sel];
 
@@ -2536,7 +2536,7 @@ cs_surface_balance(const char       *selection_crit,
         cs_lnum_t f_id = faces_local[ii];
         cs_lnum_t c_id = b_face_cells[f_id];
 
-        if (cells_tag_list[c_id] == 1) {
+        if (cells_tag_ids[c_id] == 1) {
           cs_real_t pip, pjp;
           cs_real_t term_balance = 0.;
 
@@ -2579,7 +2579,7 @@ cs_surface_balance(const char       *selection_crit,
 
   for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = bi_face_sel_ids[f_id];
     /* Associated boundary-internal cells */
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
@@ -2687,10 +2687,10 @@ cs_surface_balance(const char       *selection_crit,
   BFT_FREE(c_visc);
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
-  BFT_FREE(cells_tag_list);
-  BFT_FREE(bi_face_sel_list);
+  BFT_FREE(cells_tag_ids);
+  BFT_FREE(bi_face_sel_ids);
   BFT_FREE(bi_face_cells);
-  BFT_FREE(bb_face_sel_list);
+  BFT_FREE(bb_face_sel_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2704,8 +2704,10 @@ cs_surface_balance(const char       *selection_crit,
  * \param[in]     normal              normal surface
  * \param[in,out] flux_b_faces        pointer surface flux boundary faces
  * \param[in,out] flux_i_faces        pointer surface flux internal faces
- * \param[out]    nb_faces_sel        number of boundary faces
- * \param[out]    ni_faces_sel        number of internal faces
+ * \param[out]    n_b_faces_sel       number of boundary faces
+ * \param[out]    n_i_faces_sel       number of internal faces
+ * \param[out]    b_face_sel_ids      ids of boundary faces
+ * \param[out]    i_face_sel_ids      ids of internal faces
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2715,8 +2717,10 @@ cs_flux_through_surface(const char          *selection_crit,
                         const cs_real_t      normal[3],
                         cs_real_t          *flux_b_faces,
                         cs_real_t          *flux_i_faces,
-                        cs_lnum_t          *nb_faces_sel,
-                        cs_lnum_t          *ni_faces_sel)
+                        cs_lnum_t          *n_b_faces_sel,
+                        cs_lnum_t          *n_i_faces_sel,
+                        cs_lnum_t          *b_face_sel_ids,
+                        cs_lnum_t          *i_face_sel_ids)
 {
  /* ---------------------------------------------------- */
  /*                   Local variables                    */
@@ -2947,32 +2951,30 @@ cs_flux_through_surface(const char          *selection_crit,
  /* ---------------------------------------------------- */
 
   cs_lnum_t n_bb_faces_sel = 0;
-  cs_lnum_t *bb_face_sel_list = NULL;
-  cs_lnum_t *inv_bb_face_sel_list = NULL;
+  cs_lnum_t *inv_bb_face_sel_ids = NULL;
   cs_lnum_t n_bi_faces_sel = 0;
-  cs_lnum_t *bi_face_sel_list = NULL;
-  cs_lnum_t *cells_tag_list = NULL;
+  cs_lnum_t *cells_tag_ids = NULL;
   cs_lnum_2_t *bi_face_cells = NULL;
 
 
   BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
-  BFT_MALLOC(bi_face_sel_list, n_i_faces, cs_lnum_t);
+  BFT_MALLOC(i_face_sel_ids, n_i_faces, cs_lnum_t);
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    bi_face_sel_list[f_id] = -1;
+    i_face_sel_ids[f_id] = -1;
     bi_face_cells[f_id][0] = -999;
     bi_face_cells[f_id][1] = -999;
   }
 
-  cs_selector_get_i_face_list(selection_crit, &n_bi_faces_sel, bi_face_sel_list);
+  cs_selector_get_i_face_list(selection_crit, &n_bi_faces_sel, i_face_sel_ids);
 
   BFT_REALLOC(flux_i_faces, n_bi_faces_sel, cs_real_t);
-  BFT_MALLOC(cells_tag_list, n_cells_ext, cs_lnum_t);
+  BFT_MALLOC(cells_tag_ids, n_cells_ext, cs_lnum_t);
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    cells_tag_list[c_id] = -1;
+    cells_tag_ids[c_id] = -1;
   }
 
   for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
-    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = i_face_sel_ids[f_id];
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
@@ -2987,25 +2989,25 @@ cs_flux_through_surface(const char          *selection_crit,
     flux_i_faces[f_id] = 0.;
   }
 
-  BFT_MALLOC(bb_face_sel_list, n_b_faces, cs_lnum_t);
-  BFT_MALLOC(inv_bb_face_sel_list, n_b_faces, cs_lnum_t);
+  BFT_MALLOC(b_face_sel_ids, n_b_faces, cs_lnum_t);
+  BFT_MALLOC(inv_bb_face_sel_ids, n_b_faces, cs_lnum_t);
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
-    inv_bb_face_sel_list[f_id] = -1;
+    inv_bb_face_sel_ids[f_id] = -1;
 
-  cs_selector_get_b_face_list(selection_crit, &n_bb_faces_sel, bb_face_sel_list);
+  cs_selector_get_b_face_list(selection_crit, &n_bb_faces_sel, b_face_sel_ids);
 
   BFT_REALLOC(flux_b_faces, n_bb_faces_sel, cs_real_t);
   for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
-    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
-    inv_bb_face_sel_list[f_id_sel] = f_id;
+    cs_lnum_t f_id_sel = b_face_sel_ids[f_id];
+    inv_bb_face_sel_ids[f_id_sel] = f_id;
     cs_lnum_t c_id = b_face_cells[f_id_sel];
     if (cs_math_3_dot_product(normal, b_face_normal[f_id_sel]) > 0.)
-      cells_tag_list[c_id] = 1;
+      cells_tag_ids[c_id] = 1;
     flux_b_faces[f_id] = 0.;
   }
 
-  *nb_faces_sel = n_bb_faces_sel;
-  *ni_faces_sel = n_bi_faces_sel;
+  *n_b_faces_sel = n_bb_faces_sel;
+  *n_i_faces_sel = n_bi_faces_sel;
 
   /* ------------------------------------------------------*/
   /*               Boundary faces contribution             */
@@ -3018,7 +3020,7 @@ cs_flux_through_surface(const char          *selection_crit,
 
   for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = b_face_sel_ids[f_id];
     /* Associated boundary cell */
     cs_lnum_t c_id = b_face_cells[f_id_sel];
 
@@ -3105,7 +3107,7 @@ cs_flux_through_surface(const char          *selection_crit,
         cs_lnum_t f_id = faces_local[ii];
         cs_lnum_t c_id = b_face_cells[f_id];
 
-        if (cells_tag_list[c_id] == 1) {
+        if (cells_tag_ids[c_id] == 1) {
           cs_real_t pip, pjp;
           cs_real_t term_balance = 0.;
 
@@ -3127,7 +3129,7 @@ cs_flux_through_surface(const char          *selection_crit,
                                   heq,
                                   &term_balance);
 
-          flux_b_faces[inv_bb_face_sel_list[f_id]] = -term_balance;
+          flux_b_faces[inv_bb_face_sel_ids[f_id]] = -term_balance;
 
         }
       }
@@ -3149,7 +3151,7 @@ cs_flux_through_surface(const char          *selection_crit,
 
   for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = bi_face_sel_list[f_id];
+    cs_lnum_t f_id_sel = i_face_sel_ids[f_id];
     /* Associated boundary-internal cells */
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
@@ -3217,10 +3219,8 @@ cs_flux_through_surface(const char          *selection_crit,
   BFT_FREE(c_visc);
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
-  BFT_FREE(cells_tag_list);
-  BFT_FREE(bi_face_sel_list);
-  BFT_FREE(bb_face_sel_list);
-  BFT_FREE(inv_bb_face_sel_list);
+  BFT_FREE(cells_tag_ids);
+  BFT_FREE(inv_bb_face_sel_ids);
 }
 
 END_C_DECLS
