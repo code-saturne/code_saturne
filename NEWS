@@ -5,6 +5,9 @@ Release 4.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix crash or errors in Lagrangian module when some inlet zones
+  are distributed overs several parallel ranks.
+
 - Fix some excess memory allocation when registering additional
   time-dependent postprocessing outputs.
 
