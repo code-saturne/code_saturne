@@ -2183,6 +2183,8 @@ cs_surface_balance(const char       *selection_crit,
     = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -2400,7 +2402,7 @@ cs_surface_balance(const char       *selection_crit,
   cs_selector_get_i_face_list(selection_crit, &n_bi_faces_sel, bi_face_sel_list);
 
   BFT_MALLOC(cells_tag_list, n_cells_ext, cs_lnum_t);
-  for (cs_lnum_t c_id = 0; c_id< n_cells_ext; c_id++){
+  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     cells_tag_list[c_id] = -1;
   }
 
@@ -2426,10 +2428,11 @@ cs_surface_balance(const char       *selection_crit,
   }
   cs_selector_get_b_face_list(selection_crit, &n_bb_faces_sel, bb_face_sel_list);
 
-  for (cs_lnum_t f_id =0; f_id < n_bb_faces_sel; f_id++) {
+  for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
     cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
     cs_lnum_t c_id = b_face_cells[f_id_sel];
-    cells_tag_list[c_id] = 1;
+    if (cs_math_3_dot_product(normal, b_face_normal[f_id_sel]) > 0.)
+      cells_tag_list[c_id] = 1;
   }
 
   double flux_b_faces = 0.;
@@ -2529,49 +2532,38 @@ cs_surface_balance(const char       *selection_crit,
 
       /* Faces tag for preventing add the contribution of the two opposite */
       /* ccoupled faces */
-      cs_lnum_t *cpl_faces_tag = NULL;
-      BFT_MALLOC(cpl_faces_tag, n_b_faces, cs_lnum_t);
-      for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
-        cpl_faces_tag[ii] = 0;
-      }
-
       for (cs_lnum_t ii = 0; ii < n_local; ii++) {
         cs_lnum_t f_id = faces_local[ii];
         cs_lnum_t c_id = b_face_cells[f_id];
 
         if (cells_tag_list[c_id] == 1) {
-          if (cpl_faces_tag[faces_distant[ii]] == 0) {
-            cs_real_t pip, pjp;
-            cs_real_t term_balance = 0.;
+          cs_real_t pip, pjp;
+          cs_real_t term_balance = 0.;
 
-            cs_b_cd_unsteady(ircflp,
-                             diipb[f_id],
-                             grad[c_id],
-                             f->val[c_id],
-                             &pip);
+          cs_b_cd_unsteady(ircflp,
+                           diipb[f_id],
+                           grad[c_id],
+                           f->val[c_id],
+                           &pip);
 
-            pjp = pvar_local[ii];
+          pjp = pvar_local[ii];
 
-            hint = cpl->h_int[ii];
-            hext = cpl->h_ext[ii];
-            heq = hint * hext / (hint + hext);
+          hint = cpl->h_int[ii];
+          hext = cpl->h_ext[ii];
+          heq = hint * hext / (hint + hext);
 
-            cs_b_diff_flux_coupling(idiffp,
-                                    pip,
-                                    pjp,
-                                    heq,
-                                    &term_balance);
+          cs_b_diff_flux_coupling(idiffp,
+                                  pip,
+                                  pjp,
+                                  heq,
+                                  &term_balance);
 
-            flux_ic_faces -= term_balance;
-            cpl_faces_tag[f_id]=1;
-          }
-
+          flux_ic_faces -= term_balance;
         }
       }
 
       BFT_FREE(pvar_local);
       BFT_FREE(pvar_distant);
-      BFT_FREE(cpl_faces_tag);
   }
 
   /*
@@ -2757,6 +2749,8 @@ cs_flux_through_surface(const char          *selection_crit,
     = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -2954,6 +2948,7 @@ cs_flux_through_surface(const char          *selection_crit,
 
   cs_lnum_t n_bb_faces_sel = 0;
   cs_lnum_t *bb_face_sel_list = NULL;
+  cs_lnum_t *inv_bb_face_sel_list = NULL;
   cs_lnum_t n_bi_faces_sel = 0;
   cs_lnum_t *bi_face_sel_list = NULL;
   cs_lnum_t *cells_tag_list = NULL;
@@ -2972,7 +2967,7 @@ cs_flux_through_surface(const char          *selection_crit,
 
   BFT_REALLOC(flux_i_faces, n_bi_faces_sel, cs_real_t);
   BFT_MALLOC(cells_tag_list, n_cells_ext, cs_lnum_t);
-  for (cs_lnum_t c_id = 0; c_id< n_cells_ext; c_id++){
+  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     cells_tag_list[c_id] = -1;
   }
 
@@ -2981,9 +2976,7 @@ cs_flux_through_surface(const char          *selection_crit,
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
-    cs_real_t dot_pro = normal[0]*i_face_normal[f_id_sel][0]
-                      + normal[1]*i_face_normal[f_id_sel][1]
-                      + normal[2]*i_face_normal[f_id_sel][2];
+    cs_real_t dot_pro = cs_math_3_dot_product(normal, i_face_normal[f_id_sel]);
     if (fabs(dot_pro) < 1.0e-14)//FIXME
       dot_pro = 0;
     if(dot_pro > 0.)
@@ -2995,13 +2988,19 @@ cs_flux_through_surface(const char          *selection_crit,
   }
 
   BFT_MALLOC(bb_face_sel_list, n_b_faces, cs_lnum_t);
+  BFT_MALLOC(inv_bb_face_sel_list, n_b_faces, cs_lnum_t);
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
+    inv_bb_face_sel_list[f_id] = -1;
+
   cs_selector_get_b_face_list(selection_crit, &n_bb_faces_sel, bb_face_sel_list);
 
   BFT_REALLOC(flux_b_faces, n_bb_faces_sel, cs_real_t);
   for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
     cs_lnum_t f_id_sel = bb_face_sel_list[f_id];
+    inv_bb_face_sel_list[f_id_sel] = f_id;
     cs_lnum_t c_id = b_face_cells[f_id_sel];
-    cells_tag_list[c_id] = 1;
+    if (cs_math_3_dot_product(normal, b_face_normal[f_id_sel]) > 0.)
+      cells_tag_list[c_id] = 1;
     flux_b_faces[f_id] = 0.;
   }
 
@@ -3107,38 +3106,34 @@ cs_flux_through_surface(const char          *selection_crit,
         cs_lnum_t c_id = b_face_cells[f_id];
 
         if (cells_tag_list[c_id] == 1) {
-          if(cpl_faces_tag[faces_distant[ii]] ==0){
-            cs_real_t pip, pjp;
-            cs_real_t term_balance = 0.;
+          cs_real_t pip, pjp;
+          cs_real_t term_balance = 0.;
 
-            cs_b_cd_unsteady(ircflp,
-                             diipb[f_id],
-                             grad[c_id],
-                             f->val[c_id],
-                             &pip);
+          cs_b_cd_unsteady(ircflp,
+                           diipb[f_id],
+                           grad[c_id],
+                           f->val[c_id],
+                           &pip);
 
-            pjp = pvar_local[ii];
+          pjp = pvar_local[ii];
 
-            hint = cpl->h_int[ii];
-            hext = cpl->h_ext[ii];
-            heq = hint * hext / (hint + hext);
+          hint = cpl->h_int[ii];
+          hext = cpl->h_ext[ii];
+          heq = hint * hext / (hint + hext);
 
-            cs_b_diff_flux_coupling(idiffp,
-                                    pip,
-                                    pjp,
-                                    heq,
-                                    &term_balance);
+          cs_b_diff_flux_coupling(idiffp,
+                                  pip,
+                                  pjp,
+                                  heq,
+                                  &term_balance);
 
-            flux_b_faces[f_id] = -term_balance;
-            cpl_faces_tag[f_id] = 1;
-          }
+          flux_b_faces[inv_bb_face_sel_list[f_id]] = -term_balance;
 
         }
       }
 
       BFT_FREE(pvar_local);
       BFT_FREE(pvar_distant);
-      BFT_FREE(cpl_faces_tag);
   }
 
   /*
@@ -3225,6 +3220,7 @@ cs_flux_through_surface(const char          *selection_crit,
   BFT_FREE(cells_tag_list);
   BFT_FREE(bi_face_sel_list);
   BFT_FREE(bb_face_sel_list);
+  BFT_FREE(inv_bb_face_sel_list);
 }
 
 END_C_DECLS
