@@ -175,6 +175,11 @@ cs_lagr_injection(int        time_id,
 
   /* Faces must all belong to a valid boundary zone */
 
+  int *ifvu;
+  BFT_MALLOC(ifvu, cs_glob_lagr_const_dim->nflagm, int);
+  for (int ii = 0; ii < cs_glob_lagr_const_dim->nflagm; ii++)
+    ifvu[ii] = 0;
+
   for (cs_lnum_t ifac = 0; ifac < mesh->n_b_faces; ifac++) {
     if (   bdy_cond->b_face_zone_id[ifac] < 0
         || bdy_cond->b_face_zone_id[ifac] >= cs_glob_lagr_const_dim->nflagm)
@@ -186,39 +191,24 @@ cs_lagr_injection(int        time_id,
                 (int)ifac,
                 (int)cs_glob_lagr_const_dim->nflagm,
                 (int)bdy_cond->b_face_zone_id[ifac]);
+    else
+      ifvu[bdy_cond->b_face_zone_id[ifac]] = 1;
   }
+
+  cs_parall_max(cs_glob_lagr_const_dim->nflagm, CS_INT_TYPE, ifvu);
 
   /* Build a list of boundary zone ids. */
 
   bdy_cond->n_b_zones = 0;
-  for (cs_lnum_t ifac = 0; ifac < mesh->n_b_faces; ifac++) {
 
-    int ifvu = 0;
-
-    for (int ii = 0; ii < bdy_cond->n_b_zones && ifvu == 0; ii++) {
-
-      if (bdy_cond->b_zone_id[ii] == bdy_cond->b_face_zone_id[ifac])
-        ifvu = 1;
-
-    }
-    if (ifvu == 0) {
-
+  for (int ii = 0; ii < cs_glob_lagr_const_dim->nflagm; ii++) {
+    if (ifvu[ii]) {
+      bdy_cond->b_zone_id[bdy_cond->n_b_zones] = ii;
       bdy_cond->n_b_zones += 1;
-
-      if (bdy_cond->n_b_zones <= cs_glob_lagr_const_dim->nflagm)
-        bdy_cond->b_zone_id[bdy_cond->n_b_zones - 1]
-          = bdy_cond->b_face_zone_id[ifac];
-
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Lagrangian module: \n"
-                    " the maximum number of user defined boundary zones"
-                    " nflagm = %d is reached."),
-                  (int)cs_glob_lagr_const_dim->nflagm);
-
     }
-
   }
+
+  BFT_FREE(ifvu);
 
   /* --> Calculation of the surfaces of the Lagrangian boundary zones  */
 
@@ -1408,17 +1398,16 @@ cs_lagr_injection(int        time_id,
               (int)nlocnew,
               (int)npt-p_set->n_particles);
 
-  /* ==============================================================================
-   * 5. MODIFICATION DES POIDS POUR AVOIR LE DEBIT
-   * ============================================================================== */
+  /* Update weights to have the correct flow rate
+     ============================================ */
 
-  /* Reinitialisation du compteur de nouvelles particules */
+  /* Reinitialize new particles counter */
   npt = p_set->n_particles;
 
-  /* pour chaque zone de bord :     */
-  for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
+  /* for each boundary zone */
+  for (int z_id = 0; z_id < bdy_cond->n_b_zones; z_id++) {
 
-    int izone = bdy_cond->b_zone_id[ii];
+    int izone = bdy_cond->b_zone_id[z_id];
 
     /* pour chaque classe : */
     for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
@@ -1431,34 +1420,29 @@ cs_lagr_injection(int        time_id,
       /* et si on a un debit non nul :  */
       if (   ts->nt_cur % local_userdata->injection_frequency == 0
           && userdata->flow_rate > 0.0
-          && local_userdata->nb_part > 0) {
+          && userdata->nb_part > 0) {
 
-        cs_real_t rapsurf;
-        if (cs_glob_rank_id >= 0)
-          rapsurf = local_userdata->nb_part / userdata->nb_part;
-
-        else
-          rapsurf = 1.0;
-
-        cs_real_t dmasse = 0.0;
+        cs_real_t dmass = 0.0;
 
         for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
 
           unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
-          dmasse += cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
+          dmass += cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
 
         }
 
-        /* Calcul des Poids     */
+        cs_parall_sum(1, CS_REAL_TYPE, &dmass);
 
-        if (dmasse > 0.0) {
+        /* Compute weights */
+
+        if (dmass > 0.0) {
 
           for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
 
             unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
             cs_lagr_particle_set_real
               (particle, p_am, CS_LAGR_STAT_WEIGHT,
-               (userdata->flow_rate * cs_glob_lagr_time_step->dtp) * rapsurf / dmasse);
+               (userdata->flow_rate * cs_glob_lagr_time_step->dtp) * dmass);
 
           }
 
@@ -1517,9 +1501,9 @@ cs_lagr_injection(int        time_id,
   npt = p_set->n_particles;
 
   /* pour chaque zone de bord: */
-  for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
+  for (int z_id = 0; z_id < bdy_cond->n_b_zones; z_id++) {
 
-    int izone = bdy_cond->b_zone_id[ii];
+    int izone = bdy_cond->b_zone_id[z_id];
 
     /* loop on classes */
     for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
@@ -1594,9 +1578,9 @@ cs_lagr_injection(int        time_id,
   p_set->weight_new = 0.0;
 
   /* pour chaque zone de bord :     */
-  for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
+  for (int z_id = 0; z_id < bdy_cond->n_b_zones; z_id++) {
 
-    int izone = bdy_cond->b_zone_id[ii];
+    int izone = bdy_cond->b_zone_id[z_id];
     bdy_cond->particle_flow_rate[izone] = 0.0;
 
     /* pour chaque classe : */
