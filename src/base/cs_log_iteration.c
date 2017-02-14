@@ -399,8 +399,10 @@ _log_array_info(const char        *prefix,
                     vsum[c_id] / n_g_elts);
 
     /* Checlk Nan and exit */
-    if (vsum[c_id] != vsum[c_id])
-      cs_exit(EXIT_FAILURE);
+    if (isnan(vsum[c_id]))
+      bft_error(__FILE__, __LINE__, 0,
+                _("Invalid (not-a-number) values detected for array %s."),
+                name);
   }
 
 }
