@@ -421,6 +421,27 @@ cs_f_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_num,
   _inlet_bc(face_num - 1, k, eps, rcodcl);
 }
 
+/*----------------------------------------------------------------------------
+ * Equivalent of cs_turbulence_bc_inlet_ke for Fortran calls
+ * (using 1-based face number instead of id).
+ *
+ * parameters:
+ *   face_num    <-- face number
+ *   uref2       <-- square of the reference flow velocity
+ *   t_intensity <-- turbulence intensity
+ *   dh          <-- hydraulic diameter \f$ D_H \f$
+ *   rcodcl      <-> boundary condition values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_turbulence_bc_inlet_k_eps(cs_lnum_t   face_num,
+                               double      k,
+                               double      eps,
+                               double     *rcodcl)
+{
+  _inlet_bc(face_num - 1, k, eps, rcodcl);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
