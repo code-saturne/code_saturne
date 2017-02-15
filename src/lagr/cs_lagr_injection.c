@@ -1420,7 +1420,7 @@ cs_lagr_injection(int        time_id,
             unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
             cs_lagr_particle_set_real
               (particle, p_am, CS_LAGR_STAT_WEIGHT,
-               (userdata->flow_rate * cs_glob_lagr_time_step->dtp) * dmass);
+               (userdata->flow_rate * cs_glob_lagr_time_step->dtp) / dmass);
 
           }
 
