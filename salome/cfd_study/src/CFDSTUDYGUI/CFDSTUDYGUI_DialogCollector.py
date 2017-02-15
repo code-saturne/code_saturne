@@ -104,7 +104,7 @@ class InfoDialogHandler(InfoDialog):
 
 
     def accept(self):
-        iok, mess = CheckCFD_CodeEnv("toto")#CFD_Code())
+        iok, mess = CheckCFD_CodeEnv(CFD_Code())
         if iok:
             if mess != "" :
                 mess = cfdstudyMess.trMessage(self.tr("CFDSTUDY_INVALID_ENV"),[]) + mess
