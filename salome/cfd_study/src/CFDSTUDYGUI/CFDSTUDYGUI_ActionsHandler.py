@@ -300,7 +300,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                       ObjectTR.tr("INFO_CFDSTUDY_TIP"),\
                                       ObjectTR.tr("INFO_CFDSTUDY_SB"),\
                                       ObjectTR.tr("INFO_CFDSTUDY_ICON"))
-        sgPyQt.createMenu(action, menu_id)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[InfoCFDSTUDYAction] = action_id
@@ -886,6 +885,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]:
             popup.addAction(self.commonAction(OpenGUIAction))
             popup.addAction(self.solverAction(SolverCloseAction))
+            popup.addAction(self.commonAction(InfoCFDSTUDYAction))
 #            popup.addAction(self.commonAction(CopyCaseFileAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SRCFolder"]:
             popup.addAction(self.commonAction(CheckCompilationAction))
