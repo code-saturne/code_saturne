@@ -225,6 +225,25 @@ cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
                     cs_real_t        q_crit[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute scalar flux on a specific boundary region.
+ *
+ * The flux is counted negatively through the normal.
+ *
+ * \param[in]   scalar_name    scalar name
+ * \param[in]   n_loc_b_faces  number of selected boundary faces
+ * \param[in]   b_face_ids     ids of selected boundary faces
+ * \param[out]  b_face_flux    surface flux through selected faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_boundary_flux(const char       *scalar_name,
+                      cs_lnum_t         n_loc_b_faces,
+                      const cs_lnum_t   b_face_ids[],
+                      cs_real_t         b_face_flux[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

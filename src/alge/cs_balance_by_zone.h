@@ -190,15 +190,17 @@ cs_pressure_drop_by_zone(const char  *selection_crit);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Computes the surface balance of a scalar which name is
- * given as argument, on a oriented surface area defined by the criterion also
- * given as argument. The flux is counted negatively in the given
- * outwards-facing normal direction.
+ * \brief Compute the surface balance of a given scalar.
  *
+ * For interior faces, the flux is counted negatively relative to the given
+ * normal (as neighboring interior faces may have differently-aligned normals).
+ *
+ * For boundary faces, the flux is counted negatively in the outwards-facing
+ * direction.
  *
  * \param[in]     selection_crit      zone selection criterion
  * \param[in]     scalar_name         scalar name
- * \param[in]     normal              out normal surface
+ * \param[in]     normal              outwards normal direction
  */
 /*----------------------------------------------------------------------------*/
 
@@ -212,10 +214,14 @@ cs_surface_balance(const char       *selection_crit,
  * \brief Get the face by face surface flux of a given scalar, through a
  *        surface area defined by the given face ids.
  *
- *  The flux is counted negatively through the normal.
+ * For interior faces, the flux is counted negatively relative to the given
+ * normal (as neighboring interior faces may have differently-aligned normals).
+ *
+ * For boundary faces, the flux is counted negatively in the outwards-facing
+ * direction.
  *
  * \param[in]   scalar_name       scalar name
- * \param[in]   normal            normal surface
+ * \param[in]   normal            outwards normal direction
  * \param[in]   n_b_faces_sel     number of selected boundary faces
  * \param[in]   n_i_faces_sel     number of selected internal faces
  * \param[in]   b_face_sel_ids    ids of selected boundary faces

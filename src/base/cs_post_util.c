@@ -45,6 +45,7 @@
 #include "cs_interface.h"
 
 #include "cs_base.h"
+#include "cs_balance_by_zone.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
@@ -70,6 +71,7 @@
 #include "cs_renumber.h"
 #include "cs_rotation.h"
 #include "cs_stokes_model.h"
+#include "cs_thermal_model.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
@@ -695,6 +697,53 @@ cs_post_q_criterion(const cs_lnum_t  n_loc_cells,
   }
 
   BFT_FREE(gradv);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute scalar flux on a specific boundary region.
+ *
+ * The flux is counted negatively through the normal.
+ *
+ * \param[in]   scalar_name    scalar name
+ * \param[in]   n_loc_b_faces  number of selected boundary faces
+ * \param[in]   b_face_ids     ids of selected boundary faces
+ * \param[out]  b_face_flux    surface flux through selected faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_boundary_flux(const char       *scalar_name,
+                      cs_lnum_t         n_loc_b_faces,
+                      const cs_lnum_t   b_face_ids[],
+                      cs_real_t         b_face_flux[])
+{
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+
+  cs_real_t normal[] = {0, 0, 0};
+
+  cs_flux_through_surface(scalar_name,
+                          normal,
+                          n_loc_b_faces,
+                          0,
+                          b_face_ids,
+                          NULL,
+                          NULL,
+                          b_face_flux,
+                          NULL);
+
+  if (b_face_ids != NULL) {
+    for (cs_lnum_t i = 0; i < n_loc_b_faces; i++) {
+      cs_lnum_t f_id = b_face_ids[i];
+      b_face_flux[i] /= b_face_surf[f_id];
+    }
+  }
+  else {
+    for (cs_lnum_t f_id = 0; f_id < n_loc_b_faces; f_id++) {
+      b_face_flux[f_id] /= b_face_surf[f_id];
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
