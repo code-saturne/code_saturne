@@ -187,10 +187,6 @@ class case:
             for d in self.ast_domains:
                 d.set_case_dir(self.case_dir)
 
-        # Mesh directory for default study structure
-
-        self.mesh_dir = os.path.join(self.study_dir, 'MESH')
-
         # Working directory
 
         self.exec_dir = None

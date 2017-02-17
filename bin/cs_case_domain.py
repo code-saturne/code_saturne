@@ -120,14 +120,13 @@ class base_domain:
         # Names, directories, and files in case structure
 
         self.case_dir = None
+        self.case_root_dir = None
 
         self.name = name # used for multiple domains only
 
         self.data_dir = None
         self.result_dir = None
         self.src_dir = None
-
-        self.mesh_dir = None
 
         # Working directory and executable
 
@@ -160,6 +159,7 @@ class base_domain:
         # Names, directories, and files in case structure
 
         self.case_dir = case_dir
+        self.case_root_dir = case_dir
 
         if self.name != None:
             self.case_dir = os.path.join(self.case_dir, self.name)
@@ -708,7 +708,7 @@ class domain(base_domain):
             return
 
         # Study directory
-        study_dir = os.path.split(self.case_dir)[0]
+        study_dir = os.path.split(self.case_root_dir)[0]
 
         # User config file
         u_cfg = configparser.ConfigParser()
@@ -724,7 +724,7 @@ class domain(base_domain):
         if self.mesh_dir is not None:
             mesh_dir = os.path.expanduser(self.mesh_dir)
             if not os.path.isabs(mesh_dir):
-                mesh_dir = os.path.join(self.case_dir, mesh_dir)
+                mesh_dir = os.path.join(self.case_root_dir, mesh_dir)
             mesh_dirs.append(mesh_dir)
         if os.path.isdir(os.path.join(study_dir, 'MESH')):
             mesh_dirs.append(os.path.join(study_dir, 'MESH'))
