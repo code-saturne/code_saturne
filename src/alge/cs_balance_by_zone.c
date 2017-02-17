@@ -753,9 +753,6 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     return;
   }
 
-  const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  cs_real_t turb_schmidt;
-
   /* Internal coupling variables */
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
@@ -767,10 +764,9 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_real_t *pvar_distant = NULL;
   cs_real_t  hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
-  cs_lnum_t  n_local;
-  cs_lnum_t  n_distant;
+  cs_lnum_t  n_local = 0;
+  cs_lnum_t  n_distant = 0;
   cs_lnum_t *faces_distant = NULL;
-  int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
 
   /* Temperature indicator.
@@ -805,8 +801,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   /* Internal coupling initialisation*/
   if (var_cal_opt.icoupl > 0) {
-    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
-    coupling_id = cs_field_get_key_int(f, coupling_key_id);
+    const int coupling_key_id = cs_field_key_id("coupling_entity");
+    const int coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
     cs_internal_coupling_coupled_faces(cpl,
                                        &n_local,
@@ -993,10 +989,10 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_real_t *c_visct = cs_field_by_name("turbulent_viscosity")->val;
 
   if (var_cal_opt.idifft == 1) {
-    turb_schmidt = cs_field_get_key_double(f, ksigmas);
+    const int ksigmas = cs_field_key_id("turbulent_schmidt");
+    cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
       c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/turb_schmidt;
-
   }
   cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
 
@@ -2198,15 +2194,17 @@ cs_pressure_drop_by_zone(const char * selection_crit)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Computes the surface balance of a scalar which name is
- * given as argument, on a oriented surface area defined by the criterion also
- * given as argument. The flux is counted negatively in the given
- * outwards-facing normal direction.
+ * \brief Compute the surface balance of a given scalar.
  *
+ * For interior faces, the flux is counted negatively relative to the given
+ * normal (as neighboring interior faces may have differently-aligned normals).
+ *
+ * For boundary faces, the flux is counted negatively in the outwards-facing
+ * direction.
  *
  * \param[in]     selection_crit      zone selection criterion
  * \param[in]     scalar_name         scalar name
- * \param[in]     normal              out normal surface
+ * \param[in]     normal              outwards normal direction
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2311,10 +2309,14 @@ cs_surface_balance(const char       *selection_crit,
  * \brief Get the face by face surface flux of a given scalar, through a
  *        surface area defined by the given face ids.
  *
- *  The flux is counted negatively through the normal.
+ * For interior faces, the flux is counted negatively relative to the given
+ * normal (as neighboring interior faces may have differently-aligned normals).
+ *
+ * For boundary faces, the flux is counted negatively in the outwards-facing
+ * direction.
  *
  * \param[in]   scalar_name       scalar name
- * \param[in]   normal            normal surface
+ * \param[in]   normal            outwards normal direction
  * \param[in]   n_b_faces_sel     number of selected boundary faces
  * \param[in]   n_i_faces_sel     number of selected internal faces
  * \param[in]   b_face_sel_ids    ids of selected boundary faces
@@ -2379,9 +2381,6 @@ cs_flux_through_surface(const char         *scalar_name,
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-  const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  cs_real_t turb_schmidt;
-
   /* initialize output */
 
   cs_real_t  _balance[CS_BALANCE_N_TERMS];
@@ -2397,10 +2396,9 @@ cs_flux_through_surface(const char         *scalar_name,
   cs_real_t *pvar_distant = NULL;
   cs_real_t hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
-  cs_lnum_t n_local;
-  cs_lnum_t n_distant;
+  cs_lnum_t n_local = 0;
+  cs_lnum_t n_distant = 0;
   cs_lnum_t *faces_distant = NULL;
-  int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
 
  /* Physical properties
@@ -2476,7 +2474,8 @@ cs_flux_through_surface(const char         *scalar_name,
   cs_real_t *c_visct = cs_field_by_name("turbulent_viscosity")->val;
 
   if (var_cal_opt.idifft == 1) {
-    turb_schmidt = cs_field_get_key_double(f, ksigmas);
+    const int ksigmas = cs_field_key_id("turbulent_schmidt");
+    const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
       c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/turb_schmidt;
 
@@ -2487,8 +2486,8 @@ cs_flux_through_surface(const char         *scalar_name,
   /* Internal coupling*/
 
   if (var_cal_opt.icoupl > 0) {
-    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
-    coupling_id = cs_field_get_key_int(f, coupling_key_id);
+    const int coupling_key_id = cs_field_key_id("coupling_entity");
+    const int coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
     cs_internal_coupling_coupled_faces(cpl,
                                        &n_local,
@@ -2569,19 +2568,12 @@ cs_flux_through_surface(const char         *scalar_name,
   /* Faces selection
      --------------- */
 
-  cs_lnum_t *inv_bb_face_sel_ids = NULL;
-  cs_lnum_t *cells_tag_ids = NULL;
   cs_lnum_2_t *bi_face_cells = NULL;
 
   BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     bi_face_cells[f_id][0] = -999;
     bi_face_cells[f_id][1] = -999;
-  }
-
-  BFT_MALLOC(cells_tag_ids, n_cells_ext, cs_lnum_t);
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    cells_tag_ids[c_id] = -1;
   }
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces_sel; f_id++) {
@@ -2603,18 +2595,6 @@ cs_flux_through_surface(const char         *scalar_name,
       flux_i_faces[f_id] = 0.;
   }
 
-  BFT_MALLOC(inv_bb_face_sel_ids, n_b_faces, cs_lnum_t);
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
-    inv_bb_face_sel_ids[f_id] = -1;
-
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces_sel; f_id++) {
-    cs_lnum_t f_id_sel = b_face_sel_ids[f_id];
-    inv_bb_face_sel_ids[f_id_sel] = f_id;
-    cs_lnum_t c_id = b_face_cells[f_id_sel];
-    if (cs_math_3_dot_product(normal, b_face_normal[f_id_sel]) > 0.)
-      cells_tag_ids[c_id] = 1;
-  }
-
   if (flux_b_faces != NULL) {
     for (cs_lnum_t f_id = 0; f_id < n_b_faces_sel; f_id++)
       flux_b_faces[f_id] = 0.;
@@ -2630,7 +2610,8 @@ cs_flux_through_surface(const char         *scalar_name,
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = b_face_sel_ids[f_id];
+    cs_lnum_t f_id_sel = (b_face_sel_ids != NULL) ? b_face_sel_ids[f_id] : f_id;
+
     /* Associated boundary cell */
     cs_lnum_t c_id = b_face_cells[f_id_sel];
 
@@ -2701,6 +2682,23 @@ cs_flux_through_surface(const char         *scalar_name,
 
   if (var_cal_opt.icoupl > 0) {
 
+    cs_lnum_t *inv_b_face_sel_ids = NULL;
+
+    BFT_MALLOC(inv_b_face_sel_ids, n_b_faces, cs_lnum_t);
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
+      inv_b_face_sel_ids[f_id] = -1;
+
+    if (b_face_sel_ids != NULL) {
+      for (cs_lnum_t f_id = 0; f_id < n_b_faces_sel; f_id++) {
+        cs_lnum_t f_id_sel = b_face_sel_ids[f_id];
+        inv_b_face_sel_ids[f_id_sel] = f_id;
+      }
+    }
+    else {
+      for (cs_lnum_t f_id_sel = 0; f_id_sel < n_b_faces_sel; f_id_sel++)
+        inv_b_face_sel_ids[f_id_sel] = f_id_sel;
+    }
+
     /* Prepare data for sending from distant */
     BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
 
@@ -2726,7 +2724,7 @@ cs_flux_through_surface(const char         *scalar_name,
     /* Flux contribution */
 
     /* Faces tag for preventing add the contribution of the two opposite */
-    /* ccoupled faces */
+    /* coupled faces */
     cs_lnum_t *cpl_faces_tag = NULL;
     BFT_MALLOC(cpl_faces_tag, n_b_faces, cs_lnum_t);
     for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
@@ -2734,41 +2732,47 @@ cs_flux_through_surface(const char         *scalar_name,
     }
 
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+
       cs_lnum_t f_id = faces_local[ii];
+      cs_lnum_t sel_f_id = inv_b_face_sel_ids[f_id];
+
+      if (sel_f_id < 0)
+        continue;
+
       cs_lnum_t c_id = b_face_cells[f_id];
 
-      if (cells_tag_ids[c_id] == 1) {
-        cs_real_t pip, pjp;
-        cs_real_t term_balance = 0.;
+      cs_real_t pip, pjp;
+      cs_real_t term_balance = 0.;
 
-        cs_b_cd_unsteady(ircflp,
-                         diipb[f_id],
-                         grad[c_id],
-                         f->val[c_id],
-                         &pip);
+      cs_b_cd_unsteady(ircflp,
+                       diipb[f_id],
+                       grad[c_id],
+                       f->val[c_id],
+                       &pip);
 
-        pjp = pvar_local[ii];
+      pjp = pvar_local[ii];
 
-        hint = cpl->h_int[ii];
-        hext = cpl->h_ext[ii];
-        heq = hint * hext / (hint + hext);
+      hint = cpl->h_int[ii];
+      hext = cpl->h_ext[ii];
+      heq = hint * hext / (hint + hext);
 
-        cs_b_diff_flux_coupling(idiffp,
-                                pip,
-                                pjp,
-                                heq,
-                                &term_balance);
+      cs_b_diff_flux_coupling(idiffp,
+                              pip,
+                              pjp,
+                              heq,
+                              &term_balance);
 
-        if (flux_b_faces != NULL)
-          flux_b_faces[inv_bb_face_sel_ids[f_id]] = term_balance;
+      if (flux_b_faces != NULL)
+        flux_b_faces[inv_b_face_sel_ids[f_id]] = term_balance;
 
-        _balance[CS_BALANCE_BOUNDARY_COUPLED_I] -= term_balance;
+      _balance[CS_BALANCE_BOUNDARY_COUPLED_I] -= term_balance;
 
-      }
     }
 
     BFT_FREE(pvar_local);
     BFT_FREE(pvar_distant);
+
+    BFT_FREE(inv_b_face_sel_ids);
   }
 
   /* Balance on selected interior faces */
@@ -2872,8 +2876,6 @@ cs_flux_through_surface(const char         *scalar_name,
   BFT_FREE(c_visc);
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
-  BFT_FREE(cells_tag_ids);
-  BFT_FREE(inv_bb_face_sel_ids);
 }
 
 /*----------------------------------------------------------------------------*/
