@@ -846,6 +846,8 @@ class resource_info(batch_info):
         self.n_procs = None
         self.n_nodes = None
         self.n_threads = None
+        self.n_procs_ri = None
+        self.n_threads_ri = None
 
         # Pre-set the number of threads if OMP_NUM_THREADS given
 
@@ -1007,16 +1009,21 @@ class resource_info(batch_info):
             elif self.hosts_list != None:
                 self.n_procs_from_hosts_list(self.hosts_list)
 
+        # keep track of automatically determined values
+
+        self.n_procs_ri = self.n_procs
+        self.n_threads_ri = self.n_threads
+
         # Check and possibly set number of processes
 
         if n_procs != None:
             if self.n_procs != None:
                 if self.n_procs != n_procs:
                     sys.stderr.write('Warning:\n'
-                                     +'   Will use ' + str(self.n_procs)
+                                     +'   Will try to use ' + str(n_procs)
                                      + ' processes while resource manager ('
                                      + self.manager + ')\n   allows for '
-                                     + str(n_procs) + '.\n\n')
+                                     + str(self.n_procs) + '.\n\n')
             self.n_procs = n_procs
 
         if self.n_procs == None:
@@ -1027,7 +1034,7 @@ class resource_info(batch_info):
         if n_threads != None:
             if self.n_threads != None and n_threads != self.n_threads:
                 sys.stderr.write('Warning:\n'
-                                 +'   Will use ' + str(self.n_threads)
+                                 +'   Will try to use ' + str(self.n_threads)
                                  + ' threads per task while resource manager ('
                                  + self.manager + ')\n   allows for '
                                  + str(n_threads) + '.\n\n')
@@ -1292,9 +1299,13 @@ class mpi_environment:
         # We may have a specific syntax for tasks per node if
         # a launcher from a resource manager is used:
 
-        if resource_info and self.mpiexec and not self.mpiexec_n_per_node:
+        if resource_info and self.mpiexec:
             if os.path.basename(self.mpiexec)[:4] == 'srun':
-                self.mpiexec_n_per_node = ' --ntasks-per-node='
+                if resource_info.n_procs_ri != None \
+                  and resource_info.n_procs_ri != resource_info.n_procs:
+                    self.mpiexec_n = ' --ntasks='
+                else if not self.mpiexec_n_per_node:
+                    self.mpiexec_n_per_node = ' --ntasks-per-node='
 
         # Initialize based on known MPI types, or default.
 
