@@ -1304,7 +1304,7 @@ class mpi_environment:
                 if resource_info.n_procs_ri != None \
                   and resource_info.n_procs_ri != resource_info.n_procs:
                     self.mpiexec_n = ' --ntasks='
-                else if not self.mpiexec_n_per_node:
+                elif not self.mpiexec_n_per_node:
                     self.mpiexec_n_per_node = ' --ntasks-per-node='
 
         # Initialize based on known MPI types, or default.
