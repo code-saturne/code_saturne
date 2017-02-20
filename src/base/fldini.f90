@@ -510,12 +510,12 @@ if (ivofmt.ge.0) then
   ityloc = 2  ! inner faces
   f_name = 'inner_void_fraction_flux'
   call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
-  call field_set_key_int(ivarfl(ivolf1), kimasf, f_id)
+  call field_set_key_int(ivarfl(ivolf2), kimasf, f_id)
 
   ityloc = 3 ! boundary faces
   f_name = 'boundary_void_fraction_flux'
   call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
-  call field_set_key_int(ivarfl(ivolf1), kbmasf, f_id)
+  call field_set_key_int(ivarfl(ivolf2), kbmasf, f_id)
 
 endif
 

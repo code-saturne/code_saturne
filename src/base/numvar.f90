@@ -66,9 +66,9 @@ module numvar
   !> velocity component \f$ u_z \f$
   integer, save :: iw
 
-  !> \anchor ivolf1
+  !> \anchor ivolf2
   !> void fraction for VOF method
-  integer, save :: ivolf1
+  integer, save :: ivolf2
 
   !> \anchor ik
   !> turbulent kinetic energy \f$ k \f$

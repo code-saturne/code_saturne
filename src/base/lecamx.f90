@@ -539,7 +539,7 @@ if (nfaiok.eqv..true. .or. nfabok.eqv..true.) then
     ! Interior faces
 
     call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-    call field_get_key_int(ivarfl(ivolf1), kimasf, iflvoi)
+    call field_get_key_int(ivarfl(ivolf2), kimasf, iflvoi)
 
     call field_get_val_s(iflmas, sval)
     call field_get_val_s(iflvoi, voidfl)
@@ -558,7 +558,7 @@ if (nfaiok.eqv..true. .or. nfabok.eqv..true.) then
 
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
     call field_get_val_s(iflmab, sval)
-    call field_get_key_int(ivarfl(ivolf1), kbmasf, iflvob)
+    call field_get_key_int(ivarfl(ivolf2), kbmasf, iflvob)
     call field_get_val_s(iflvob, voidfl)
     do ifac = 1, nfabor
       voidfl(ifac) = sval(ifac)/rho1
@@ -567,7 +567,7 @@ if (nfaiok.eqv..true. .or. nfabok.eqv..true.) then
     ! Boundary faces
 
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-    call field_get_key_int(ivarfl(ivolf1), kbmasf, iflvob)
+    call field_get_key_int(ivarfl(ivolf2), kbmasf, iflvob)
 
     call field_get_val_s(iflmab, sval)
     call field_get_val_s(iflvob, voidfl)

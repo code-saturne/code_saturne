@@ -132,7 +132,7 @@ endif
 !----------------------------
 
 if (ivofmt.ge.0) then
-  ivar = ivolf1
+  ivar = ivolf2
   if (ipass .eq. 1) then
     call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
     call field_init_bc_coeffs(ivarfl(ivar))

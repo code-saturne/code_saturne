@@ -450,7 +450,7 @@ endif
 if (isno2t.gt.0) then
   call add_source_term_prev_field(ivarfl(iu))
   if (ivofmt.ge.0) then
-    call add_source_term_prev_field(ivarfl(ivolf1))
+    call add_source_term_prev_field(ivarfl(ivolf2))
   endif
 endif
 

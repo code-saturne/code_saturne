@@ -398,7 +398,7 @@ if (abs(vcopt%blencv+999.d0).lt.epzero) then
 endif
 
 if (icavit.ge.0) then
-  ii = ivolf1
+  ii = ivolf2
   call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   if (abs(vcopt%blencv+999.d0).lt.epzero) then
     if (abs(vcopt%blencv+999.d0).gt.epzero) &

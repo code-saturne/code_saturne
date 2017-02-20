@@ -1243,10 +1243,10 @@ enddo
 
 if (ivofmt.ge.0) then
 
-  call field_get_coefa_s(ivarfl(ivolf1), coefap)
-  call field_get_coefb_s(ivarfl(ivolf1), coefbp)
-  call field_get_coefaf_s(ivarfl(ivolf1), cofafp)
-  call field_get_coefbf_s(ivarfl(ivolf1), cofbfp)
+  call field_get_coefa_s(ivarfl(ivolf2), coefap)
+  call field_get_coefb_s(ivarfl(ivolf2), coefbp)
+  call field_get_coefaf_s(ivarfl(ivolf2), cofafp)
+  call field_get_coefbf_s(ivarfl(ivolf2), cofbfp)
 
   do ifac = 1, nfabor
 
@@ -1256,10 +1256,10 @@ if (ivofmt.ge.0) then
     ! dirichlet boundary condition
     !-----------------------------
 
-    if (icodcl(ifac,ivolf1).eq.1) then
+    if (icodcl(ifac,ivolf2).eq.1) then
 
-      pimp = rcodcl(ifac,ivolf1,1)
-      hext = rcodcl(ifac,ivolf1,2)
+      pimp = rcodcl(ifac,ivolf2,1)
+      hext = rcodcl(ifac,ivolf2,2)
 
       call set_dirichlet_scalar &
     ( coefap(ifac), cofafp(ifac),                        &
@@ -1271,9 +1271,9 @@ if (ivofmt.ge.0) then
     ! neumann boundary conditions
     !----------------------------
 
-    if (icodcl(ifac,ivolf1).eq.3) then
+    if (icodcl(ifac,ivolf2).eq.3) then
 
-      qimp = rcodcl(ifac,ivolf1,3)
+      qimp = rcodcl(ifac,ivolf2,3)
 
       call set_neumann_scalar &
     ( coefap(ifac), cofafp(ifac),                        &
@@ -1283,10 +1283,10 @@ if (ivofmt.ge.0) then
       ! convective boundary conditions
       !-------------------------------
 
-    elseif (icodcl(ifac,ivolf1).eq.2) then
+    elseif (icodcl(ifac,ivolf2).eq.2) then
 
-      pimp = rcodcl(ifac,ivolf1,1)
-      cfl = rcodcl(ifac,ivolf1,2)
+      pimp = rcodcl(ifac,ivolf2,1)
+      cfl = rcodcl(ifac,ivolf2,2)
 
       call set_convective_outlet_scalar &
     ( coefap(ifac), cofafp(ifac),                        &

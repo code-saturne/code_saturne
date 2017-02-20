@@ -119,12 +119,12 @@ type(var_cal_opt) :: vcopt
 ! 1. Initialization
 !===============================================================================
 
-ivar = ivolf1
+ivar = ivolf2
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-call field_get_val_s(ivarfl(ivolf1), cvar_voidf)
-call field_get_val_prev_s(ivarfl(ivolf1), cvara_voidf)
+call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
+call field_get_val_prev_s(ivarfl(ivolf2), cvara_voidf)
 
 ! implicitation in pressure of the vaporization/condensation model (cavitation)
 if (icavit.ge.0.and.itscvi.eq.1) then
@@ -161,7 +161,7 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 ! Theta related to explicit source terms
 thets  = thetsn
 if (isno2t.gt.0) then
-  call field_get_key_int(ivarfl(ivolf1), kstprv, f_id)
+  call field_get_key_int(ivarfl(ivolf2), kstprv, f_id)
   call field_get_val_s(f_id, c_st_voidf)
 else
   c_st_voidf => null()

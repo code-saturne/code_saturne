@@ -293,8 +293,8 @@ call field_get_val_s(ivarfl(ipr), cvar_pr)
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 if (ivofmt.ge.0) then
-  call field_get_val_s(ivarfl(ivolf1), cvar_voidf)
-  call field_get_val_prev_s(ivarfl(ivolf1), cvara_voidf)
+  call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
+  call field_get_val_prev_s(ivarfl(ivolf2), cvara_voidf)
 endif
 
 ! Allocate work arrays
@@ -726,8 +726,8 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
     if (idtten.ge.0) call field_get_val_v(idtten, dttens)
 
     if (ivofmt.ge.0) then
-      call field_get_val_s(ivarfl(ivolf1), cvar_voidf)
-      call field_get_val_prev_s(ivarfl(ivolf1), cvara_voidf)
+      call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
+      call field_get_val_prev_s(ivarfl(ivolf2), cvara_voidf)
     endif
 
   endif
@@ -1169,13 +1169,13 @@ if (ivofmt.ge.0) then
 
   ! Get the void fraction boundary conditions
 
-  call field_get_coefa_s(ivarfl(ivolf1), coavoi)
-  call field_get_coefb_s(ivarfl(ivolf1), cobvoi)
+  call field_get_coefa_s(ivarfl(ivolf2), coavoi)
+  call field_get_coefb_s(ivarfl(ivolf2), cobvoi)
 
   ! Get the convective flux of the void fraction
 
-  call field_get_key_int(ivarfl(ivolf1), kimasf, iflvoi)
-  call field_get_key_int(ivarfl(ivolf1), kbmasf, iflvob)
+  call field_get_key_int(ivarfl(ivolf2), kimasf, iflvoi)
+  call field_get_key_int(ivarfl(ivolf2), kbmasf, iflvob)
   call field_get_val_s(iflvoi, ivoifl)
   call field_get_val_s(iflvob, bvoifl)
 
