@@ -328,8 +328,8 @@ iesize = 1
 if (ivofmt.ge.0) then
   ! The pressure correction is done through the volumetric flux (that is
   ! the convective flux of the void fraction), not the mass flux
-  call field_get_key_int(ivarfl(ivolf1), kimasf, iflmas)
-  call field_get_key_int(ivarfl(ivolf1), kbmasf, iflmab)
+  call field_get_key_int(ivarfl(ivolf2), kimasf, iflmas)
+  call field_get_key_int(ivarfl(ivolf2), kbmasf, iflmab)
   call field_get_val_s(iflmas, imasfl)
   call field_get_val_s(iflmab, bmasfl)
 endif

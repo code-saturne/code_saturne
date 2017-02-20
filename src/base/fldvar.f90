@@ -203,10 +203,10 @@ call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 if (icavit.ge.0.and.ivofmt.lt.0) ivofmt = 0
 if (ivofmt.ge.0) then
-  call add_variable_field('void_fraction', 'Void Fraction', 1, ivolf1)
-  call field_get_key_struct_var_cal_opt(ivarfl(ivolf1), vcopt)
+  call add_variable_field('void_fraction', 'Void Fraction', 1, ivolf2)
+  call field_get_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
   vcopt%idiff = 0
-  call field_set_key_struct_var_cal_opt(ivarfl(ivolf1), vcopt)
+  call field_set_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
 endif
 
 ! --- Turbulence

@@ -582,7 +582,7 @@ if (icavit.ge.0 .and. icvevm.eq.1) then
   if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60 .or. iturb.eq.70) then
 
     call field_get_val_s(icrom, crom)
-    call field_get_val_s(ivarfl(ivolf1), cvar_voidf)
+    call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
     call field_get_val_s(ivisct, visct)
 
     call cavitation_correct_visc_turb (crom, cvar_voidf, visct)
