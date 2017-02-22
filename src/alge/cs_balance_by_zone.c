@@ -974,13 +974,13 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   const int kivisl
     = cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
   if (kivisl != -1) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       c_visc[c_id] = cs_field_by_id(kivisl)->val[c_id];
   }
   else {
     const double visls0
       = cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"));
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       c_visc[c_id] = visls0;
     }
   }
@@ -991,9 +991,10 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   if (var_cal_opt.idifft == 1) {
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
     cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/turb_schmidt;
   }
+
   cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
 
   /* Get user-selected zone
@@ -1387,10 +1388,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   /* Free memory */
 
   BFT_FREE(grad);
-  if (gradup != NULL)
-    BFT_FREE(gradup);
-  if (gradst != NULL)
-    BFT_FREE(gradst);
+  BFT_FREE(gradup);
+  BFT_FREE(gradst);
   BFT_FREE(f_reconstructed);
 
   if (!itemperature || icp == -1)
@@ -2375,7 +2374,6 @@ cs_flux_through_surface(const char         *scalar_name,
   const int *bc_type = cs_glob_bc_type;
 
   const cs_field_t *f = cs_field_by_name_try(scalar_name);
-  const int field_id = cs_field_id_by_name(scalar_name);
 
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
@@ -2459,7 +2457,7 @@ cs_flux_through_surface(const char         *scalar_name,
   const int kivisl
     = cs_field_get_key_int(f, cs_field_key_id("scalar_diffusivity_id"));
   if (kivisl != -1) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       c_visc[c_id] = cs_field_by_id(kivisl)->val[c_id];
   }
   else {
@@ -2476,11 +2474,11 @@ cs_flux_through_surface(const char         *scalar_name,
   if (var_cal_opt.idifft == 1) {
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
     const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/turb_schmidt;
 
   }
-  cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
+
   cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
 
   /* Internal coupling*/
@@ -2530,7 +2528,7 @@ cs_flux_through_surface(const char         *scalar_name,
     }
     /* Slope test gradient */
     if (var_cal_opt.iconv > 0)
-      cs_slope_test_gradient(field_id,
+      cs_slope_test_gradient(f->id,
                              1, /* inc */
                              halo_type,
                              (const cs_real_3_t *)grad,
@@ -2554,7 +2552,7 @@ cs_flux_through_surface(const char         *scalar_name,
     }
 
     if (var_cal_opt.iconv > 0)
-      cs_upwind_gradient(field_id,
+      cs_upwind_gradient(f->id,
                          1, /* inc */
                          halo_type,
                          a_F,
@@ -2570,34 +2568,38 @@ cs_flux_through_surface(const char         *scalar_name,
 
   cs_lnum_2_t *bi_face_cells = NULL;
 
-  BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    bi_face_cells[f_id][0] = -999;
-    bi_face_cells[f_id][1] = -999;
-  }
+  if (n_i_faces_sel > 0) {
 
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces_sel; f_id++) {
-    cs_lnum_t f_id_sel = i_face_sel_ids[f_id];
-    cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
-    cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
+    BFT_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+      bi_face_cells[f_id][0] = -999;
+      bi_face_cells[f_id][1] = -999;
+    }
 
-    cs_real_t dot_pro = cs_math_3_dot_product(normal, i_face_normal[f_id_sel]);
-    if (fabs(dot_pro) < 1.0e-14)//FIXME
-      dot_pro = 0;
-    if(dot_pro > 0.)
-      bi_face_cells[f_id_sel][0] = c_id1;
-    else if (dot_pro < 0.)
-      bi_face_cells[f_id_sel][1] = c_id2;
-  }
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces_sel; f_id++) {
+      cs_lnum_t f_id_sel = i_face_sel_ids[f_id];
+      cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
+      cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
-  if (flux_i_faces != NULL) {
-    for (cs_lnum_t f_id = 0; f_id < n_i_faces_sel; f_id++)
-      flux_i_faces[f_id] = 0.;
-  }
+      cs_real_t dot_pro = cs_math_3_dot_product(normal, i_face_normal[f_id_sel]);
+      if (fabs(dot_pro) < 1.0e-14)//FIXME
+        dot_pro = 0;
+      if(dot_pro > 0.)
+        bi_face_cells[f_id_sel][0] = c_id1;
+      else if (dot_pro < 0.)
+        bi_face_cells[f_id_sel][1] = c_id2;
+    }
 
-  if (flux_b_faces != NULL) {
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces_sel; f_id++)
-      flux_b_faces[f_id] = 0.;
+    if (flux_i_faces != NULL) {
+      for (cs_lnum_t f_id = 0; f_id < n_i_faces_sel; f_id++)
+        flux_i_faces[f_id] = 0.;
+    }
+
+    if (flux_b_faces != NULL) {
+      for (cs_lnum_t f_id = 0; f_id < n_b_faces_sel; f_id++)
+        flux_b_faces[f_id] = 0.;
+    }
+
   }
 
   /* Boundary faces contribution
@@ -2722,14 +2724,6 @@ cs_flux_through_surface(const char         *scalar_name,
                                       pvar_local);
 
     /* Flux contribution */
-
-    /* Faces tag for preventing add the contribution of the two opposite */
-    /* coupled faces */
-    cs_lnum_t *cpl_faces_tag = NULL;
-    BFT_MALLOC(cpl_faces_tag, n_b_faces, cs_lnum_t);
-    for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
-      cpl_faces_tag[ii] = 0;
-    }
 
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
 
@@ -2865,14 +2859,14 @@ cs_flux_through_surface(const char         *scalar_name,
 
   /* Free memory */
 
+  BFT_FREE(bi_face_cells);
   BFT_FREE(grad);
-  if (gradup != NULL)
-    BFT_FREE(gradup);
-  if (gradst != NULL)
-    BFT_FREE(gradst);
+  BFT_FREE(gradup);
+  BFT_FREE(gradst);
 
   if (!itemperature || icp == -1)
     BFT_FREE(cpro_cp);
+  BFT_FREE(cpro_cp);
   BFT_FREE(c_visc);
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
