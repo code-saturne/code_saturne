@@ -55,6 +55,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_convection_diffusion.h"
 #include "cs_ctwr.h"
 #include "cs_fan.h"
 #include "cs_field.h"
@@ -79,9 +80,11 @@
 #include "cs_rotation.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_thermal_model.h"
 #include "cs_time_moment.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
+#include "cs_turbulence_model.h"
 #include "cs_selector.h"
 #include "cs_rad_transfer.h"
 
@@ -139,6 +142,31 @@ _simple_data_sum(const void  *input,
   }
 }
 /*! [tmom_simple_sum_data] */
+
+/*----------------------------------------------------------------------------
+ * User function which computes the thermal flux through a boundary.
+ *
+ * parameters:
+ *   input <-- pointer to simple data array (ignored here)
+ *   vals  --> pointer to values (size: n_local elements*dimension)
+ *             radial velocity for input 0, tangential for input 1, and
+ *             axial for input 2
+ *----------------------------------------------------------------------------*/
+
+/*! [tmom_b_thermal_flux_data] */
+static void
+_boundary_thermal_flux(const void  *input,
+                       cs_real_t   *vals)
+{
+  const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+  const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
+
+  cs_field_t *f = cs_thermal_model_field();
+
+  cs_post_boundary_flux(f->name, n_elts, NULL, vals);
+}
+
+/*! [tmom_b_thermal_flux_data] */
 
 /*----------------------------------------------------------------------------
  * User function for velocity  values for moments computation.
@@ -336,6 +364,31 @@ cs_user_time_moments(void)
                                     NULL);
     }
     /*! [tmom_simple_sum] */
+  }
+
+  /* Moments for the boundary thermal flux. */
+
+  {
+    /*! [tmom_b_thermal_flux] */
+    const char *sum_comp_name[] = {"thermal_flux_mean", "thermal_flux_variance"};
+    cs_time_moment_type_t m_type[] = {CS_TIME_MOMENT_MEAN,
+                                      CS_TIME_MOMENT_VARIANCE};
+
+    for (int i = 0; i < 2; i++) {
+      cs_time_moment_define_by_func(sum_comp_name[i],
+                                    CS_MESH_LOCATION_BOUNDARY_FACES,
+                                    1,                      /* field dimension */
+                                    _boundary_thermal_flux, /* data_func */
+                                    NULL,                   /* data_input */
+                                    NULL,                   /* w_data_func */
+                                    NULL,                   /* w_data_input */
+                                    m_type[i],
+                                    1,                      /* nt_start */
+                                    -1,                     /* t_start */
+                                    CS_TIME_MOMENT_RESTART_AUTO,
+                                    NULL);
+    }
+    /*! [tmom_b_thermal_flux] */
   }
 
   /* Moments for radial, tangential, and axial velocity components

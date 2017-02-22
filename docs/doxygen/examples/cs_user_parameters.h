@@ -292,12 +292,25 @@
 
   \snippet cs_user_parameters-time_moments.c tmom_simple_sum_data
 
-  In \ref cs_user_time_moments, we can not assign that function to a moments
+  In \ref cs_user_time_moments, we can now assign that function to a moments
   definition:
 
   \snippet cs_user_parameters-time_moments.c tmom_simple_sum
 
   \subsection cs_user_parameters_h_example_5 Example 5
+
+  This next example illustrates the use of another user-defined function
+  to evaluate expressions. Here, we compute the moment of the thermal flux
+  at the boundary. We also that we compute both means and variances here.
+
+  \snippet cs_user_parameters-time_moments.c tmom_b_thermal_flux_data
+
+  In \ref cs_user_time_moments, we assign that function to a moments
+  definition:
+
+  \snippet cs_user_parameters-time_moments.c tmom_b_thermal_flux
+
+  \subsection cs_user_parameters_h_example_6 Example 6
 
   In this last example, we compute components of the mean velocity
   in the case of a rotating mesh. As the mesh orientation changes
