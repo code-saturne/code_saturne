@@ -141,13 +141,12 @@ static double *_clips_vmin = NULL;
 static double *_clips_vmax = NULL;
 static cs_log_clip_t  *_clips = NULL;
 
+static int _l2residual_header = 0;
+
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
-
-void
-cs_f_log_iteration(void);
 
 /*============================================================================
  * Fortran function prototypes for subroutines from field.f90.
@@ -398,7 +397,7 @@ _log_array_info(const char        *prefix,
                     vmax[c_id],
                     vsum[c_id] / n_g_elts);
 
-    /* Checlk Nan and exit */
+    /* Check Nan and exit */
     if (isnan(vsum[c_id]))
       bft_error(__FILE__, __LINE__, 0,
                 _("Invalid (not-a-number) values detected for array %s."),
@@ -1626,6 +1625,53 @@ cs_log_iteration_clipping_field(int               f_id,
   _add_clipping(-1, f_id, f->dim,
                 n_clip_min, n_clip_max,
                 min_pre_clip, max_pre_clip,n_clip_min_comp,n_clip_max_comp);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log L2 time residual for every variable fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_l2residual(void)
+{
+  cs_time_step_t *ts = cs_glob_time_step;
+  const int n_fields = cs_field_n_fields();
+
+  cs_solving_info_t sinfo;
+
+  /* write header */
+
+  if (!_l2residual_header) {
+    cs_log_printf(CS_LOG_RESIDUAL, "time step, time");
+    for (int f_id = 0 ; f_id < n_fields ; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (f->type & CS_FIELD_VARIABLE) {
+        cs_log_printf(CS_LOG_RESIDUAL, ", %s", cs_field_by_id(f_id)->name);
+      }
+    }
+    cs_log_printf(CS_LOG_RESIDUAL, "\n");
+    _l2residual_header = 1;
+  }
+
+  /* write residual vals for every variable */
+
+  /* write iteration */
+  cs_log_printf(CS_LOG_RESIDUAL, " %8d", ts->nt_cur);
+
+  /* write time */
+  cs_log_printf(CS_LOG_RESIDUAL, ", %14.7e", ts->t_cur);
+
+  /* write residual vals */
+  for (int f_id = 0 ; f_id < n_fields ; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE) {
+      cs_field_get_key_struct(f, cs_field_key_id("solving_info"), &sinfo);
+      cs_log_printf(CS_LOG_RESIDUAL, ", %14.7e", sinfo.l2residual);
+    }
+  }
+  cs_log_printf(CS_LOG_RESIDUAL, "\n");
 }
 
 /*----------------------------------------------------------------------------*/
