@@ -111,7 +111,7 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Enable the particle-tracking module (particle and droplets tracking).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IILAGR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable the particle-tracking module (particle and droplets tracking):&lt;/p&gt;&lt;p&gt;- One-way coupling: no influence of the particles on the continuous phase,&lt;br/&gt;- Two-way coupling: influence of the particles on the dynamics of the continuous phase. Dynamics, temperature and mass may be coupled independently.&lt;br/&gt;- Frozen carrier flow: all the Eulerian fields are frozen (including the scalar fields); this option can only be used in case of a calculation restart.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="statusTip">
            <string>Select the flow treatment</string>
