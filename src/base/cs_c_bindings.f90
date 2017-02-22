@@ -236,6 +236,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function logging L2 time residual at relevant time steps.
+
+    ! \brief Log field and other array statistics for a given time step.
+
+    subroutine log_l2residual()  &
+      bind(C, name='cs_log_l2residual')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine log_l2residual
+
+    !---------------------------------------------------------------------------
+
     !> \brief Compute filters for dynamic models.
 
 

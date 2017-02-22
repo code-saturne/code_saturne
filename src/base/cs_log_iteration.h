@@ -138,6 +138,13 @@ cs_log_iteration_clipping_field(int               f_id,
                                 cs_lnum_t         n_clip_min_comp[],
                                 cs_lnum_t         n_clip_max_comp[]);
 
+/*----------------------------------------------------------------------------
+ * Log L2 time residual for every variable fields.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_log_l2residual(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

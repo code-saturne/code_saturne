@@ -1032,6 +1032,8 @@ if (modntl.eq.0) then
 
   call log_iteration
 
+  call log_l2residual
+
 endif
 
 call timer_stats_stop(post_stats_id)
