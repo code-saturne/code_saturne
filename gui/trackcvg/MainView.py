@@ -449,7 +449,13 @@ class MyMplCanvas(FigureCanvas):
                 lbl = name + "_s" + str(j)
 
                 self.axes[lstProbes[j].subplot_id - 1].plot(self.xAxe, self.yAxe, label = lbl)
-                self.axes[lstProbes[j].subplot_id - 1].legend()
+                self.axes[lstProbes[j].subplot_id - 1].legend(loc="upper left",
+                                                              bbox_to_anchor=(1.02,1.0),
+                                                              borderaxespad=0.0,
+                                                              ncol=1,
+                                                              fancybox=True,
+                                                              shadow=True,
+                                                              prop={'size':'x-small', 'style': 'italic'})
 
 
     def update_figure_listing(self, name, data, nb_probes, lstProbes):
@@ -461,12 +467,21 @@ class MyMplCanvas(FigureCanvas):
                 lbl = "t res. " + name[j]
 
                 self.axes[lstProbes[j].subplot_id - 1].plot(self.xAxe, self.yAxe, label = lbl)
-                self.axes[lstProbes[j].subplot_id - 1].legend()
+                self.axes[lstProbes[j].subplot_id - 1].legend(loc="upper left",
+                                                              bbox_to_anchor=(1.02,1.0),
+                                                              borderaxespad=0.0,
+                                                              ncol=1,
+                                                              fancybox=True,
+                                                              shadow=True,
+                                                              prop={'size':'x-small', 'style': 'italic'})
+
 
 
     def drawFigure(self):
         for it in range(len(self.axes)):
             self.axes[it].grid(True)
+            self.axes[it].set_xlabel("time (s)")
+        self.axes[0].set_yscale('log')
 
         self.fig.canvas.draw()
 
@@ -629,6 +644,7 @@ class MainView(object):
         l = QVBoxLayout(self.widget)
         self.dc = MyMplCanvas(self.widget, subplotNb=self.subplotNumber, width=5, height=4, dpi=50)
         l.addWidget(self.dc)
+
         # this is the Navigation widget
         # it takes the Canvas widget and a parent
         self.toolbar = NavigationToolbar(self.dc, self.widget)
@@ -645,19 +661,20 @@ class MainView(object):
 
         try to quit all the current MainWindow
         """
-        title = self.tr("Quit")
-        msg   = self.tr("Save current state?")
-        reply = QMessageBox.question(self, title, msg,
-                                     QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            self.SaveState()
+        if self.caseName != None:
+            title = self.tr("Quit")
+            msg   = self.tr("Save current state?")
+            reply = QMessageBox.question(self, title, msg,
+                                         QMessageBox.Yes | QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.SaveState()
 
-        settings = QSettings()
+            settings = QSettings()
 
-        settings.setValue("MainWindow/Geometry",
-                          self.saveGeometry())
-        settings.setValue("MainWindow/State",
-                          self.saveState())
+            settings.setValue("MainWindow/Geometry",
+                              self.saveGeometry())
+            settings.setValue("MainWindow/State",
+                              self.saveState())
 
         event.accept()
 
@@ -794,20 +811,20 @@ class MainView(object):
                         # read number of probes
                         if ext == ".csv" and (base.find("_coords") != -1):
                             size = self.ReadCsvFileHeader(os.path.abspath(os.path.join(rep, ffl)))
-                            self.fileList.append([ffl, os.path.abspath(os.path.join(rep, ffl)), "off", 1, size])
+                            self.fileList.append([ffl, os.path.abspath(os.path.join(rep, ffl)), "off", 2, size])
                             ll = []
                             for idx in range(size - 1):
                                 nameItem = "probe_" + str(idx)
-                                item = item_class(idx, nameItem, "off", 1)
+                                item = item_class(idx, nameItem, "off", 2)
                                 ll.append(item)
                             self.listFileProbes[ffl] = ll
                         elif ext == ".dat":
                             size = self.ReadDatFileHeader(os.path.abspath(os.path.join(rep, ffl)))
-                            self.fileList.append([ffl, os.path.abspath(os.path.join(rep, ffl)), "off", 1, size])
+                            self.fileList.append([ffl, os.path.abspath(os.path.join(rep, ffl)), "off", 2, size])
                             ll = []
                             for idx in range(size - 1):
                                 nameItem = "probe_" + str(idx)
-                                item = item_class(idx, nameItem, "off", 1)
+                                item = item_class(idx, nameItem, "off", 2)
                                 ll.append(item)
                             self.listFileProbes[ffl] = ll
             else:
@@ -1194,7 +1211,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         else:
             self.caseName = cmd_case
         self.timeRefresh = 10.
-        self.subplotNumber = 1
+        self.subplotNumber = 2
         self.fileList = []
         self.listingVariable = []
         self.listFileProbes = {}
