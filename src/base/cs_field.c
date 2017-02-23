@@ -3457,8 +3457,8 @@ cs_field_get_key_struct_ptr(cs_field_t  *f,
 /*----------------------------------------------------------------------------*/
 
 const void *
-cs_field_get_key_struct_const_ptr(cs_field_t  *f,
-                                  int          key_id)
+cs_field_get_key_struct_const_ptr(const cs_field_t  *f,
+                                  int                key_id)
 {
   int errcode = CS_FIELD_OK;
 

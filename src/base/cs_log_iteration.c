@@ -57,6 +57,7 @@
 #include "cs_prototypes.h"
 #include "cs_range_set.h"
 #include "cs_time_moment.h"
+#include "cs_time_plot.h"
 #include "cs_time_step.h"
 #include "cs_lagr_stat.h"
 #include "cs_lagr_log.h"
@@ -141,7 +142,7 @@ static double *_clips_vmin = NULL;
 static double *_clips_vmax = NULL;
 static cs_log_clip_t  *_clips = NULL;
 
-static int _l2residual_header = 0;
+static cs_time_plot_t  *_l2_residual_plot = NULL;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -1382,6 +1383,9 @@ cs_log_iteration_destroy_all(void)
 
   if (_name_map != NULL)
     cs_map_name_to_id_destroy(&_name_map);
+
+  if (_l2_residual_plot != NULL)
+    cs_time_plot_finalize(&_l2_residual_plot);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1636,42 +1640,69 @@ cs_log_iteration_clipping_field(int               f_id,
 void
 cs_log_l2residual(void)
 {
-  cs_time_step_t *ts = cs_glob_time_step;
+  const cs_time_step_t *ts = cs_glob_time_step;
   const int n_fields = cs_field_n_fields();
-
-  cs_solving_info_t sinfo;
 
   /* write header */
 
-  if (!_l2residual_header) {
-    cs_log_printf(CS_LOG_RESIDUAL, "time step, time");
+  if (_l2_residual_plot == NULL) {
+
+    int                    _plot_buffer_steps = -1;
+    double                 _plot_flush_wtime = 3600;
+    cs_time_plot_format_t  _plot_format = CS_TIME_PLOT_CSV;
+    bool                   use_iteration = (ts->is_local) ? true : false;
+
+    const char **labels;
+    BFT_MALLOC(labels, n_fields + 1, const char *);
+
+    int n_variables = 0;
     for (int f_id = 0 ; f_id < n_fields ; f_id++) {
-      cs_field_t *f = cs_field_by_id(f_id);
+      const cs_field_t *f = cs_field_by_id(f_id);
       if (f->type & CS_FIELD_VARIABLE) {
-        cs_log_printf(CS_LOG_RESIDUAL, ", %s", cs_field_by_id(f_id)->name);
+        labels[n_variables] = f->name;
+        n_variables++;
       }
     }
-    cs_log_printf(CS_LOG_RESIDUAL, "\n");
-    _l2residual_header = 1;
+
+    _l2_residual_plot = cs_time_plot_init_probe("residuals",
+                                                "",
+                                                _plot_format,
+                                                use_iteration,
+                                                _plot_flush_wtime,
+                                                _plot_buffer_steps,
+                                                n_variables,
+                                                NULL,
+                                                NULL,
+                                                labels);
+
+    BFT_FREE(labels);
   }
 
-  /* write residual vals for every variable */
+  {
+    cs_real_t *vals;
+    BFT_MALLOC(vals, n_fields, cs_real_t);
 
-  /* write iteration */
-  cs_log_printf(CS_LOG_RESIDUAL, " %8d", ts->nt_cur);
+    int si_k_id = cs_field_key_id("solving_info");
 
-  /* write time */
-  cs_log_printf(CS_LOG_RESIDUAL, ", %14.7e", ts->t_cur);
-
-  /* write residual vals */
-  for (int f_id = 0 ; f_id < n_fields ; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_VARIABLE) {
-      cs_field_get_key_struct(f, cs_field_key_id("solving_info"), &sinfo);
-      cs_log_printf(CS_LOG_RESIDUAL, ", %14.7e", sinfo.l2residual);
+    int n_variables = 0;
+    for (int f_id = 0 ; f_id < n_fields ; f_id++) {
+      const cs_field_t *f = cs_field_by_id(f_id);
+      if (f->type & CS_FIELD_VARIABLE) {
+        const cs_solving_info_t *sinfo
+          = cs_field_get_key_struct_const_ptr(f, si_k_id);
+        vals[n_variables] = sinfo->l2residual;
+        n_variables += 1;
+      }
     }
+
+    cs_time_plot_vals_write(_l2_residual_plot,
+                            ts->nt_cur,
+                            ts->t_cur,
+                            n_variables,
+                            vals);
+
+    BFT_FREE(vals);
   }
-  cs_log_printf(CS_LOG_RESIDUAL, "\n");
 }
 
 /*----------------------------------------------------------------------------*/
