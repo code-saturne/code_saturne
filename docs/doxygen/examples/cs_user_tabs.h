@@ -61,7 +61,6 @@ Here is a list of user examples. Thorougly documented snippets are provided.
    - \subpage cs_user_atmospheric_model
    - \subpage cs_user_modules
    - \subpage user_solver
-   - \subpage us_hist
    - \subpage cs_user_cooling_towers "Cooling towers definition"
    - \subpage us_thht
    - \subpage us_vosy

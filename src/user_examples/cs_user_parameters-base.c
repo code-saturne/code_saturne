@@ -80,9 +80,11 @@
 #include "cs_rotation.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_thermal_model.h"
 #include "cs_time_moment.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
+#include "cs_turbulence_model.h"
 #include "cs_selector.h"
 #include "cs_rad_transfer.h"
 
