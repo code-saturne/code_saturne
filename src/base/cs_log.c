@@ -71,11 +71,10 @@ BEGIN_C_DECLS
 
 static bool  _cs_log_atexit_set = false;
 
-static FILE* _cs_log[] = {NULL, NULL, NULL, NULL};
+static FILE* _cs_log[] = {NULL, NULL, NULL};
 static const char* _cs_log_name[] = {"",
                                      "setup.log",
-                                     "performance.log",
-                                     "residual.csv"};
+                                     "performance.log"};
 int cs_glob_log_frequency = 1;
 
 /*============================================================================
