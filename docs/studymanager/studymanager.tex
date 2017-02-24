@@ -789,27 +789,9 @@ with a layout of frames; the attributes are:
 \item \texttt{format}: format of the file to be written on the disk,
 \texttt{"pdf"} (default) or \texttt{"png"} \footnote{Other format could
 be choosen (eps, ps, svg,...), but the pdf generation with pdflatex will failed.};
-\item standard options of figure can be added (table \ref{table:fig}),
-for example \texttt{figsize="(3,4)"}.
-
-\begin{table}[htbp]
-\begin{center}
-\begin{tabular}{|l|l|}
-\hline
-\textbf{Property} & \textbf{Value Type} \\
-\hline
-figsize   & width x height in inches; defaults to (4,4) \\
-dpi       & resolution; defaults to 200 \\
-\hline
-\end{tabular}
-\end{center}
-\caption{Options authorized as attributes of the markup \texttt{figure}.}
-\label{table:fig}
-\end{table}
-
-Details can be found in the matplotlib documentation.
-For more advanced options see section \ref{sec:raw}.
-
+\item \texttt{figsize}: width x height in inches; defaults to (4,4);
+\item \texttt{dpi}: resolution; defaults to 200 if format is set to pdf;
+or to 800 if format is set to png; only customizable for png format.
 \end{list}
 
 The attributes \texttt{name} and \texttt{idlist} are mandatory.
