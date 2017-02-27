@@ -973,6 +973,8 @@ _lagesd(cs_real_t     dtp,
 
     for (cs_lnum_t id = 1; id < 3; id++) {
 
+      cs_lnum_t i0 = id-1;
+
       cs_real_t tci   = piilp[id] * tlp + vflui[id];
       cs_real_t force = (- gdpr[id] / romp[*ip] + ggp[id]) * taup[*ip];
       cs_real_t aux1  = exp ( -dtp / taup[*ip]);
@@ -1031,12 +1033,12 @@ _lagesd(cs_real_t     dtp,
 
       }
 
-      cs_real_t ter5x = p21 * vagaus[*ip][id][0] + p22 * vagaus[*ip][id][1];
+      cs_real_t ter5x = p21 * vagaus[*ip][i0][0] + p22 * vagaus[*ip][i0][1];
 
       /* --> Integral for the flow-seen velocity  */
 
       p11   = sqrt(gama2 * aux6);
-      cs_real_t ter3f = p11 * vagaus[*ip][id][0];
+      cs_real_t ter3f = p11 * vagaus[*ip][i0][0];
 
       /* --> Integral for particles velocity */
 
@@ -1065,9 +1067,9 @@ _lagesd(cs_real_t     dtp,
       p33 = grga2 - pow(p31, 2) - pow(p32, 2);
       p33 = sqrt (CS_MAX(0.0, p33));
 
-      cs_real_t ter5p =   p31 * vagaus[*ip][id][0]
-                        + p32 * vagaus[*ip][id][1]
-                        + p33 * vagaus[*ip][id][2];
+      cs_real_t ter5p =   p31 * vagaus[*ip][i0][0]
+                        + p32 * vagaus[*ip][i0][1]
+                        + p33 * vagaus[*ip][i0][2];
 
       /* --> trajectory  */
       depl[id] = ter1x + ter2x + ter3x + ter4x + ter5x;
@@ -1085,6 +1087,8 @@ _lagesd(cs_real_t     dtp,
 
     for (cs_lnum_t id = 1; id < 3; id++) {
 
+      cs_lnum_t i0 = id-1;
+
       cs_real_t tci   = piilp[id] * tlp + vflui[id];
       cs_real_t aux2  = exp ( -dtp / tlp);
       cs_real_t aux6  = bxp * bxp * tlp;
@@ -1098,7 +1102,7 @@ _lagesd(cs_real_t     dtp,
 
       /* --> Integral for the flow-seen velocity  */
       cs_real_t p11   = sqrt (gama2 * aux6);
-      cs_real_t ter3f = p11 * vagaus[*ip][id][0];
+      cs_real_t ter3f = p11 * vagaus[*ip][i0][0];
 
       /* --> flow-seen velocity    */
       vvue[id] = ter1f + ter2f + ter3f;
