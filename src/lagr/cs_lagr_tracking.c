@@ -2488,9 +2488,9 @@ _local_propagation(void                           *particle,
 
         cs_real_t flow_velo_x, flow_velo_y, flow_velo_z;
 
-        const cs_real_33_t *rot_m
-          = (const cs_real_33_t *)(  cs_glob_lagr_b_face_proj
-                                   + *neighbor_face_id);
+        const cs_real_3_t *rot_m
+          = (const cs_real_3_t *)(  cs_glob_lagr_b_face_proj
+                                  + *neighbor_face_id);
 
         flow_velo_x = u->val[cur_cell_id*3];
         flow_velo_y = u->val[cur_cell_id*3 + 1];
@@ -2502,14 +2502,14 @@ _local_propagation(void                           *particle,
         cs_real_t e1_z = cs_glob_lagr_b_u_normal[*neighbor_face_id][2];
 
         /* e2 vector coordinates */
-        cs_real_t e2_x = *rot_m[1][0];
-        cs_real_t e2_y = *rot_m[1][1];
-        cs_real_t e2_z = *rot_m[1][2];
+        cs_real_t e2_x = rot_m[1][0];
+        cs_real_t e2_y = rot_m[1][1];
+        cs_real_t e2_z = rot_m[1][2];
 
         /* e3 vector coordinates */
-        cs_real_t e3_x = *rot_m[2][0];
-        cs_real_t e3_y = *rot_m[2][1];
-        cs_real_t e3_z = *rot_m[2][2];
+        cs_real_t e3_x = rot_m[2][0];
+        cs_real_t e3_y = rot_m[2][1];
+        cs_real_t e3_z = rot_m[2][2];
 
         /* V_n * e1 */
 
@@ -2775,9 +2775,9 @@ reloop_cen:;
               const cs_real_t *old_bdy_normal
                 = fvq->b_face_normal + 3*save_close_face_id;
 
-              const cs_real_33_t *rot_m
-                = (const cs_real_33_t *)(  cs_glob_lagr_b_face_proj
-                                           + *neighbor_face_id);
+              const cs_real_3_t *rot_m
+                = (const cs_real_3_t *)(  cs_glob_lagr_b_face_proj
+                                        + *neighbor_face_id);
 
               /* e1 (normal) vector coordinates */
               cs_real_t e1_x = cs_glob_lagr_b_u_normal[*neighbor_face_id][0];
@@ -2785,14 +2785,14 @@ reloop_cen:;
               cs_real_t e1_z = cs_glob_lagr_b_u_normal[*neighbor_face_id][2];
 
               /* e2 vector coordinates */
-              cs_real_t e2_x = *rot_m[1][0];
-              cs_real_t e2_y = *rot_m[1][1];
-              cs_real_t e2_z = *rot_m[1][2];
+              cs_real_t e2_x = rot_m[1][0];
+              cs_real_t e2_y = rot_m[1][1];
+              cs_real_t e2_z = rot_m[1][2];
 
               /* e3 vector coordinates */
-              cs_real_t e3_x = *rot_m[2][0];
-              cs_real_t e3_y = *rot_m[2][1];
-              cs_real_t e3_z = *rot_m[2][2];
+              cs_real_t e3_x = rot_m[2][0];
+              cs_real_t e3_y = rot_m[2][1];
+              cs_real_t e3_z = rot_m[2][2];
 
               cs_real_t old_fl_seen_norm
                 =   particle_velocity_seen[0] * e1_x

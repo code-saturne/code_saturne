@@ -5,6 +5,9 @@ Release 4.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Lagrangian module: fix issues due to local coordiante handling
+  in particle deposition model.
+
 - Fix crash or errors in Lagrangian module when some inlet zones
   are distributed overs several parallel ranks.
 
