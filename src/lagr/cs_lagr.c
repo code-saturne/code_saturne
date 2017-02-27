@@ -416,15 +416,6 @@ void
 cs_f_lagr_dim_pointers(cs_int_t     **p_ntersl);
 
 void
-cs_f_lagr_reentrained_model_pointers(cs_int_t         **ireent,
-                                     cs_int_t         **iflow,
-                                     cs_real_t        **espasg,
-                                     cs_real_t        **denasp,
-                                     cs_real_t        **modyeq,
-                                     cs_real_t        **rayasp,
-                                     cs_real_t        **rayasg);
-
-void
 cs_f_lagr_clogging_model_pointers(cs_real_t **jamlim,
                                   cs_real_t **mporos,
                                   cs_real_t **csthpp);
@@ -532,24 +523,6 @@ void
 cs_f_lagr_dim_pointers(cs_int_t   **p_ntersl)
 {
   *p_ntersl = &(_lagr_dim.ntersl);
-}
-
-void
-cs_f_lagr_reentrained_model_pointers(cs_int_t         **ireent,
-                                     cs_int_t         **iflow,
-                                     cs_real_t        **espasg,
-                                     cs_real_t        **denasp,
-                                     cs_real_t        **modyeq,
-                                     cs_real_t        **rayasp,
-                                     cs_real_t        **rayasg)
-{
-  *ireent = &cs_glob_lagr_reentrained_model->ireent;
-  *iflow  = &cs_glob_lagr_reentrained_model->iflow;
-  *espasg = &cs_glob_lagr_reentrained_model->espasg;
-  *denasp = &cs_glob_lagr_reentrained_model->denasp;
-  *modyeq = &cs_glob_lagr_reentrained_model->modyeq;
-  *rayasp = &cs_glob_lagr_reentrained_model->rayasp;
-  *rayasg = &cs_glob_lagr_reentrained_model->rayasg;
 }
 
 void
@@ -2399,11 +2372,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
           if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_DEPOSITION_FLAG) > 0) {
 
-            cs_real_t p_depo_time = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
-            cs_real_t p_consol_height =
-              CS_MIN( cs_lagr_particles_get_real(p_set, npt, CS_LAGR_HEIGHT),
-                   cs_glob_lagr_consolidation_model->rate_consol * p_depo_time );
-            cs_lagr_particles_set_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT, p_consol_height);
+            cs_real_t p_depo_time
+              = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
+            cs_real_t p_consol_height
+              = CS_MIN(cs_lagr_particles_get_real(p_set, npt, CS_LAGR_HEIGHT),
+                       cs_glob_lagr_consolidation_model->rate_consol * p_depo_time );
+            cs_lagr_particles_set_real(p_set, npt,
+                                       CS_LAGR_CONSOL_HEIGHT, p_consol_height);
             cs_lagr_particles_set_real(p_set, npt, CS_LAGR_DEPO_TIME,
                                        p_depo_time + cs_glob_lagr_time_step->dtp);
           }

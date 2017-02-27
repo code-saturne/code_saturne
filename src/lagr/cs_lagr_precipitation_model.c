@@ -115,7 +115,6 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
                           cs_real_t *cvar_scal,
                           cs_real_t  crvexp[])
 {
-
   cs_real_t pis6 = cs_math_pi / 6.0;
 
   cs_lagr_precipitation_model_t *preci = cs_get_lagr_precipitation_model();
@@ -248,9 +247,6 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
 
   BFT_FREE(mp_preci);
   BFT_FREE(part_tot);
-
-  return;
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -269,10 +265,9 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
 /*----------------------------------------------------------------------------*/
 
 void
-precdi (cs_real_t   *vela,
-        cs_real_t   *val)
+cs_lagr_precipitation_injection(cs_real_t   *vela,
+                                cs_real_t   *val)
 {
-
   cs_real_t pis6 = cs_math_pi / 6.0;
 
   cs_lagr_precipitation_model_t *preci = cs_get_lagr_precipitation_model();
@@ -479,3 +474,7 @@ precdi (cs_real_t   *vela,
   BFT_FREE(mp);
   BFT_FREE(mp_diss_t);
 }
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS

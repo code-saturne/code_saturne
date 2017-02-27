@@ -43,9 +43,18 @@ CS_PROCF(precst, PRECST)(cs_real_t *dtref,
                          cs_real_t *cvar_scal,
                          cs_real_t  crvexp[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Management of the injection of particles formed by precipitation.
+ *
+ * \param[in]   vela       pointer to fluid velocity array (per cell)
+ * \param[out]  val        number of particles to inject (with weight)
+ */
+/*----------------------------------------------------------------------------*/
+
 void
-precdi(cs_real_t   *vela,
-       cs_real_t   *val);
+cs_lagr_precipitation_injection(cs_real_t   *vela,
+                                cs_real_t   *val);
 
 /*----------------------------------------------------------------------------*/
 

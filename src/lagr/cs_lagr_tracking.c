@@ -1608,17 +1608,16 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                   * pow(cur_part_diameter, 4);
 
           if (*surface_coverage >= limit) {
-
             cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_HEIGHT,
-                                          cur_part_height
-                                      +  (  pow(particle_diameter,3)
-                                          / pow(cur_part_diameter,2)
-                                            * particle_stat_weight
-                                            / cur_part_stat_weight) );
+                                      cur_part_height
+                                      +  (  pow(particle_diameter, 3)
+                                          / cs_math_sq(cur_part_diameter)
+                                          * particle_stat_weight
+                                          / cur_part_stat_weight));
           }
           else {
             *surface_coverage -= (pi * pow(cur_part_diameter,2)/4.)
-              *  cur_part_stat_weight / face_area;
+              * cur_part_stat_weight / face_area;
 
             cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_DIAMETER,
                                       pow (  pow(cur_part_diameter,3)
@@ -1626,8 +1625,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                            * particle_stat_weight
                                              / cur_part_stat_weight , 1./3.));
 
-            cur_part_diameter    = cs_lagr_particle_get_real(cur_part, p_am,
-                                                             CS_LAGR_DIAMETER);
+            cur_part_diameter = cs_lagr_particle_get_real(cur_part, p_am,
+                                                          CS_LAGR_DIAMETER);
 
             *surface_coverage +=   (pi * pow(cur_part_diameter,2)/4.)
                                  * cur_part_stat_weight / face_area;
@@ -1934,7 +1933,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
       for (k = 0; k < 3; k++) {
         particle_velocity_seen[k] -= tmp * face_norm[k];
-//        particle_velocity_seen[k] = 0.0;//FIXME
+        // particle_velocity_seen[k] = 0.0; //FIXME
       }
 
     }

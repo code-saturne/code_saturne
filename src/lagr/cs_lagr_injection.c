@@ -830,7 +830,7 @@ cs_lagr_injection(int        time_id,
    * ============================================================================== */
 
   if (cs_glob_lagr_model->precipitation == 1)
-    precdi(vela, &dnbpnw_preci);
+    cs_lagr_precipitation_injection(vela, &dnbpnw_preci);
 
   /* --> Limite du nombre de particules  */
   cs_lnum_t tmp = cs_lagr_particle_set_resize(p_set->n_particles + p_set->n_part_new);
