@@ -1478,6 +1478,7 @@ _internal_treatment(cs_lagr_particle_set_t    *particles,
       move_particle = CS_LAGR_PART_MOVE_OFF;
       cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
                                 CS_LAGR_PART_IMPOSED_MOTION);
+      assert(0);
 
       /* Specific treatment in case of particle resuspension modeling */
 
@@ -1628,6 +1629,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
             fabs(disp[1]/pow(cell_vol[cur_cell_id],1.0/3.0)) < 1e-15 &&
             fabs(disp[2]/pow(cell_vol[cur_cell_id],1.0/3.0)) < 1e-15));
 
+  printf("%d: %d / %d (%f %f %f)\n", cs_glob_time_step->nt_cur, boundary_zone,
+         bdy_conditions->b_zone_natures[boundary_zone],
+         particle_coord[0],
+         particle_coord[1],
+         particle_coord[2]);
+
   /* Save particle impacting velocity */
   if (   cs_glob_lagr_boundary_interactions->iangbd > 0
       || cs_glob_lagr_boundary_interactions->ivitbd > 0) {
@@ -1649,9 +1656,11 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO1) {
       particles->n_part_dep += 1;
       particles->weight_dep += particle_stat_weight;
-      if (cs_glob_lagr_model->deposition == 1)
+      if (cs_glob_lagr_model->deposition == 1) {
+        printf("here b\n");
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
                                   CS_LAGR_PART_DEPOSITED);
+      }
     }
 
     bdy_conditions->particle_flow_rate[boundary_zone]
@@ -1687,6 +1696,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                                 p_am,
                                                 CS_LAGR_CELL_NUM);
 
+    printf("here c\n");
     cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
                               CS_LAGR_PART_DEPOSITED);
 
