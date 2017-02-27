@@ -784,7 +784,6 @@ _lagesd(cs_real_t           dtp,
                          cs_glob_physical_constants->gravity[1],
                          cs_glob_physical_constants->gravity[2]};
 
-
   /* particle data */
   unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
@@ -792,8 +791,6 @@ _lagesd(cs_real_t           dtp,
                                                CS_LAGR_MASS);
   cs_real_t p_diam = cs_lagr_particle_get_real(particle, p_am,
                                                CS_LAGR_DIAMETER);
-  cs_real_t p_height = cs_lagr_particle_get_real(particle, p_am,
-                                               CS_LAGR_HEIGHT);
   cs_real_t p_stat_w = cs_lagr_particle_get_real(particle, p_am,
                                                  CS_LAGR_STAT_WEIGHT);
 
@@ -1131,6 +1128,9 @@ _lagesd(cs_real_t           dtp,
   }
 
   if (cs_glob_lagr_reentrained_model->ireent == 1) {
+
+    cs_real_t p_height = cs_lagr_particle_get_real(particle, p_am,
+                                                   CS_LAGR_HEIGHT);
 
     cs_lnum_t iresusp = 0;
 

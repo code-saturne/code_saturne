@@ -1256,8 +1256,7 @@ do while (iterns.le.nterup)
 
   ! Compute y+ if needed
 
-  if (     (itytur.eq.4 .and. idries.eq.1)                 &
-      .or. (iilagr.ge.1 .and. idepst.gt.0)) then
+  if (itytur.eq.4 .and. idries.eq.1) then
 
     if (infpar.gt.0) then
       call distyp(itypfb, dispar, yplpar)
