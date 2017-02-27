@@ -1095,7 +1095,6 @@ _update_mesh_writer_associations(cs_post_mesh_t  *post_mesh)
     fvm_writer_time_dep_t mod_type = (mode == 2) ?
       FVM_WRITER_FIXED_MESH : FVM_WRITER_TRANSIENT_CONNECT;
 
-    post_mesh->ent_flag[3] = mode;
     post_mesh->mod_flag_min = FVM_WRITER_TRANSIENT_CONNECT;
     post_mesh->mod_flag_max = FVM_WRITER_TRANSIENT_CONNECT;
 
@@ -3760,7 +3759,6 @@ cs_post_define_particles_mesh(int          mesh_id,
     BFT_MALLOC(post_mesh->criteria[3], strlen(cell_criteria) + 1, char);
     strcpy(post_mesh->criteria[3], cell_criteria);
   }
-  post_mesh->ent_flag[3] = 1;
 
   post_mesh->add_groups = false;
 
