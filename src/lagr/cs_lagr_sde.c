@@ -976,6 +976,8 @@ _lagesd(cs_real_t           dtp,
                      piilp,
                      depint);
 
+  cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_MARKO_VALUE, marko);
+
   if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
       != CS_LAGR_PART_IN_FLOW) {
     depl[0]  = 0.0;
