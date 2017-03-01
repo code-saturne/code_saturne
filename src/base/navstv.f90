@@ -111,7 +111,7 @@ double precision, pointer, dimension(:,:,:) :: ximpa
 
 ! Local variables
 
-integer          iccocg, inc, iel, iel1, iel2, ifac, imax, imaxt
+integer          iccocg, inc, iel, iel1, iel2, ifac, imax, imaxt, imin, imint
 integer          ii    , inod, itypfl
 integer          isou, ivar, iitsm
 integer          init
@@ -124,7 +124,7 @@ integer          numcpl
 integer          iflvoi, iflvob
 double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, rhom, rovolsdt
-double precision epsrgp, climgp, extrap, xyzmax(3)
+double precision epsrgp, climgp, extrap, xyzmax(3), xyzmin(3)
 double precision thetap, xdu, xdv, xdw
 double precision xxp0 , xyp0 , xzp0
 double precision rhofac, dtfac, ddepx , ddepy, ddepz
@@ -1400,7 +1400,7 @@ if (vcopt_u%iwarni.ge.1) then
 
   rnorm = -1.d0
   do iel = 1, ncel
-    rnorm  = max(rnorm,abs(cvar_pr(iel)))
+    rnorm = max(rnorm,abs(cvar_pr(iel)))
   enddo
   if (irangp.ge.0) call parmax (rnorm)
 
@@ -1432,7 +1432,32 @@ if (vcopt_u%iwarni.ge.1) then
 
   write(nfecra,2200) rnorm,xyzmax(1),xyzmax(2),xyzmax(3)
 
-  ! Pour la periodicite et le parallelisme, rom est echange dans phyvar
+  rnorm = sqrt(vel(1,1)**2+vel(2,1)**2+vel(3,1)**2)
+  imin = 1
+  rnormt = rnorm
+  do iel = 1, ncel
+    vitnor = sqrt(vel(1,iel)**2+vel(2,iel)**2+vel(3,iel)**2)
+    if (vitnor.le.rnormt) then
+      rnormt = vitnor
+      imint  = iel
+    endif
+  enddo
+  if (rnormt .lt. rnorm) then
+    rnorm = rnormt
+    imin = imint
+  endif
+
+  xyzmin(1) = xyzcen(1,imin)
+  xyzmin(2) = xyzcen(2,imin)
+  xyzmin(3) = xyzcen(3,imin)
+
+  if (irangp.ge.0) then
+    nbrval = 3
+    call parmnl (nbrval, rnorm, xyzmin)
+  endif
+
+  write(nfecra,2201) rnorm,xyzmin(1),xyzmin(2),xyzmin(3)
+
 
   ! With porosity
   if (iporos.ge.1) then
@@ -1562,6 +1587,8 @@ deallocate(coefa_dp, coefb_dp)
 ' Pression max.',E12.4   ,' (max. de la valeur absolue)       ',/)
  2200 format(                                                           &
 ' Vitesse  max.',E12.4   ,' en',3E11.3                         ,/)
+ 2201 format(                                                           &
+' Vitesse  min.',E12.4   ,' en',3E11.3                         ,/)
  2300 format(                                                           &
 ' Vitesse  en face interne max.',E12.4   ,' ; min.',E12.4        )
  2400 format(                                                           &
@@ -1599,7 +1626,9 @@ deallocate(coefa_dp, coefb_dp)
  2100 format(                                                           &
 ' Max. pressure',E12.4   ,' (max. absolute value)'             ,/)
  2200 format(                                                           &
-' Max. velocity',E12.4   ,' en',3E11.3                         ,/)
+' Max. velocity',E12.4   ,' in',3E11.3                         ,/)
+ 2201 format(                                                           &
+' Min. velocity',E12.4   ,' in',3E11.3                         ,/)
  2300 format(                                                           &
 ' Max. velocity at interior face',E12.4   ,' ; min.',E12.4       )
  2400 format(                                                           &
