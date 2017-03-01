@@ -505,12 +505,13 @@ if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
                              iccocg,                               &
                              gradro)
 
-  ! gradro stores: rho grad(theta)/theta
+  ! gradro stores: - rho grad(theta)/theta
+  ! grad(ro) and grad(teta) have opposite sign
   do iel = 1, ncel
     rhothe = cromo(iel)/cvara_scalt(iel)
-    gradro(1, iel) = rhothe*gradro(1, iel)
-    gradro(2, iel) = rhothe*gradro(2, iel)
-    gradro(3, iel) = rhothe*gradro(3, iel)
+    gradro(1, iel) = -rhothe*gradro(1, iel)
+    gradro(2, iel) = -rhothe*gradro(2, iel)
+    gradro(3, iel) = -rhothe*gradro(3, iel)
   enddo
 
 else if (igrari.eq.1) then
