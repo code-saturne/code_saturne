@@ -768,7 +768,7 @@ class Plotter(object):
         if fmt == "png":
             plt.savefig(f, format=fmt, dpi=800)
         else:
-            plt.savefig(f, format=fmt, bbox_inches="tight", pad_inches=0.)
+            plt.savefig(f, format=fmt)
         plt.close()
 
 #-------------------------------------------------------------------------------
