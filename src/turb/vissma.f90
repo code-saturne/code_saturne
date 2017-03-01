@@ -73,10 +73,10 @@ implicit none
 integer          iel, inc
 integer          iprev
 
-double precision coef, deux, delta
+double precision coef, delta
 double precision s11, s22, s33
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
-double precision xfil, xa  , xb  , radeux
+double precision xfil, xa  , xb
 
 double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:,:), pointer :: coefau
@@ -103,8 +103,6 @@ call field_get_val_s(icrom, crom)
 xfil   = xlesfl
 xa     = ales
 xb     = bles
-deux   = 2.d0
-radeux = sqrt(deux)
 
 !===============================================================================
 ! 2.  Calculation of velocity gradient and of
@@ -142,7 +140,7 @@ deallocate(gradv)
 ! 3.  Calcualtion of (dynamic) velocity
 !===============================================================================
 
-coef = csmago**2 * radeux
+coef = csmago**2 * sqrt(2.d0)
 
 do iel = 1, ncel
   delta  = xfil* (xa*volume(iel))**xb
