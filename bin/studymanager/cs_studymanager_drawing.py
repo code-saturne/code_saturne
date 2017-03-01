@@ -782,6 +782,6 @@ class Plotter(object):
                 dpi = figure.dpi
             plt.savefig(f, format=fmt, dpi=dpi)
         else:
-            plt.savefig(f, format=fmt, bbox_inches="tight", pad_inches=0.)
+            plt.savefig(f, format=fmt)
 
 #-------------------------------------------------------------------------------
