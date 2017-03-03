@@ -3106,7 +3106,7 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
 
     for (j = 0; j < 2; j++) {
 
-      vertex_id = this_section->vertex_num[i*this_section->stride] - 1;
+      vertex_id = this_section->vertex_num[i*this_section->stride + j] - 1;
 
       if (parent_vertex_num == NULL)
         edge_coords[j] = vertex_coords[vertex_id];

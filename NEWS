@@ -5,6 +5,8 @@ Release 4.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for 1D point location.
+
 - Fix detection of writer format availability for plugins.
 
 - GUI: fix further issues when loading some old case files due
