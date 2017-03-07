@@ -64,17 +64,17 @@ double precision w1(ncelet)
 ! Local variables
 
 integer          iel, ifac, inc, iprev
-integer          isou, ii, jj
+integer          isou, ii, jj, i, j ,k
 
-double precision w1f, w2f, w3f
-double precision pnd, flux, somsur
+double precision w_temp, pnd
 
-double precision, allocatable, dimension(:) :: w7
+double precision, allocatable, dimension(:,:,:) :: w7
 double precision, allocatable, dimension(:,:,:) :: gradv
 
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 
+double precision :: duidxk(3),njsj(3)
 !===============================================================================
 
 !===============================================================================
@@ -85,7 +85,7 @@ double precision, dimension(:,:,:), pointer :: coefbu
 allocate(gradv(3, 3, ncelet))
 
 ! Allocate work arrays
-allocate(w7(ncelet))
+allocate(w7(ncelet, 3, 3))
 
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
@@ -108,7 +108,11 @@ call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
 do isou = 1, 3
 
   do iel = 1, ncel
-    w7(iel) = 0.0d0
+    do k = 1,3
+      do j = 1,3
+        w7(iel,j,k) = .0d0
+      enddo
+    enddo
   enddo
 
   do ifac = 1, nfac
@@ -116,33 +120,46 @@ do isou = 1, 3
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
     pnd = pond(ifac)
-    w1f = pnd * gradv(1, isou, ii) + (1.0d0 - pnd) * gradv(1, isou, jj)
-    w2f = pnd * gradv(2, isou, ii) + (1.0d0 - pnd) * gradv(2, isou, jj)
-    w3f = pnd * gradv(3, isou, ii) + (1.0d0 - pnd) * gradv(3, isou, jj)
-
-    somsur = surfac(1,ifac) + surfac(2,ifac) + surfac(3,ifac)
-
-    flux = (w1f + w2f + w3f)*somsur
-
-    w7(ii) = w7(ii) + flux
-    w7(jj) = w7(jj) - flux
+    duidxk(1) = pnd * gradv(1, isou, ii) + (1.0d0 - pnd) * gradv(1, isou, jj)
+    duidxk(2) = pnd * gradv(2, isou, ii) + (1.0d0 - pnd) * gradv(2, isou, jj)
+    duidxk(3) = pnd * gradv(3, isou, ii) + (1.0d0 - pnd) * gradv(3, isou, jj)
+    njsj(1)   = surfac(1,ifac)
+    njsj(2)   = surfac(2,ifac)
+    njsj(3)   = surfac(3,ifac)
+    do k = 1,3
+      do j = 1,3
+        w7(ii,j,k) =  w7(ii,j,k) + duidxk(k)*njsj(j)
+        w7(jj,j,k) =  w7(jj,j,k) - duidxk(k)*njsj(j)
+      end do
+    end do
 
   enddo
 
   do ifac = 1, nfabor
 
     ii = ifabor(ifac)
-    w1f = gradv(1, isou, ii)
-    w2f = gradv(2, isou, ii)
-    w3f = gradv(3, isou, ii)
-    somsur = surfbo(1,ifac) + surfbo(2,ifac) + surfbo(3,ifac)
-    flux = (w1f + w2f + w3f)*somsur
-    w7(ii) = w7(ii) + flux
+    duidxk(1) = gradv(1, isou, ii)
+    duidxk(2) = gradv(2, isou, ii)
+    duidxk(3) = gradv(3, isou, ii)
+    njsj(1)   = surfbo(1,ifac)
+    njsj(2)   = surfbo(2,ifac)
+    njsj(3)   = surfbo(3,ifac)
+    do k = 1,3
+      do j = 1,3
+        w7(ii,j,k) =  w7(ii,j,k) + duidxk(k)*njsj(j)
+      end do
+    end do
 
   enddo
 
   do iel = 1, ncel
-    w1(iel) = w1(iel) + (w7(iel)/volume(iel))**2
+    w_temp = .0d0
+    do k = 1,3
+      do j = 1,3
+        w_temp = w_temp + (w7(iel,j,k)/volume(iel))**2.d0
+      end do
+    end do
+    w1(iel) = w1(iel) + w_temp
   enddo
 
 enddo
