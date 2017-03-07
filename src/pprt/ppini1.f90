@@ -30,7 +30,7 @@ subroutine ppini1
 
 ! INIT DES OPTIONS DES VARIABLES SELON
 !   LE TYPE DE PHYSIQUE PARTICULIERE
-!   EN COMPLEMENT DE CE QUI A ETTE DEJA FAIT DANS USINI1
+!   EN COMPLEMENT DE CE QUI A ETE DEJA FAIT DANS USINI1
 
 !-------------------------------------------------------------------------------
 ! Arguments
