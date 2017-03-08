@@ -300,6 +300,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                       ObjectTR.tr("INFO_CFDSTUDY_TIP"),\
                                       ObjectTR.tr("INFO_CFDSTUDY_SB"),\
                                       ObjectTR.tr("INFO_CFDSTUDY_ICON"))
+
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[InfoCFDSTUDYAction] = action_id
@@ -943,6 +944,15 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(EditAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["POSTFile"]:
             popup.addAction(self.commonAction(ViewAction))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["SyrthesFile"]:
+            popup.addAction(self.commonAction(ViewAction))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["CouplingFilePy"]:
+            popup.addAction(self.commonAction(EditAction))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["CouplingRuncase"]:
+            popup.addAction(self.commonAction(EditAction))
+            popup.addAction(self.commonAction(RunScriptAction))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["USRSRCSYRFile"]:
+            popup.addAction(self.commonAction(EditAction))
         elif id == "VTKViewer":
             popup.addAction(self.commonAction(DisplayTypeSHADED))
             popup.addAction(self.commonAction(DisplayTypeWIREFRAME))
