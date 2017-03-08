@@ -184,6 +184,17 @@ dict_object["UnvFile"]        = 100081
 dict_object["POSTFolder"]     = 100090
 dict_object["POSTFile"]       = 100091
 
+#Model objects for COUPLING with SYRTHES CODE
+dict_object["CouplingFilePy"]           = 100100
+dict_object["RESU_COUPLINGFolder"]      = 100101
+dict_object["SYRCaseFolder"]            = 100102
+dict_object["SyrthesFile"]              = 100103
+dict_object["CouplingRuncase"]          = 100104
+dict_object["RESU_COUPLINGSubFolder"]   = 100105
+dict_object["RESUSubFolderSYR"]         = 100106
+dict_object["SRCSYRFolder"]             = 100107
+dict_object["USRSRCSYRFile"]            = 100108
+
 #-------------------------------------------------------------------------------
 # Definition of the icon of objects to represent in the Object Browser.
 # Attribut "AttributePixMap" for the related SObject.
@@ -201,6 +212,9 @@ icon_collection[dict_object["DATAFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["DATAFile"]]       = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["DRAFTFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["REFERENCEDATAFolder"]] = "CFDSTUDY_FOLDER_OBJ_ICON"
+#Icons for coupling with SYRTHES CODE
+
+
 icon_collection[dict_object["DATADRAFTFile"]]  = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 
 icon_collection[dict_object["REFERENCEDATAFile"]] = "CFDSTUDY_DOCUMENT_OBJ_ICON"
@@ -251,6 +265,15 @@ icon_collection[dict_object["UnvFile"]]        = "MESH_OBJ_ICON"
 
 icon_collection[dict_object["POSTFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["POSTFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["SYRCaseFolder"]]  = "SYRTHES_CASE_ICON"
+icon_collection[dict_object["SyrthesFile"]]    = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["CouplingFilePy"]] = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["CouplingRuncase"]]= "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["RESU_COUPLINGFolder"]]= "CFDSTUDY_FOLDER_OBJ_ICON"
+icon_collection[dict_object["RESU_COUPLINGSubFolder"]]= "CFDSTUDY_FOLDER_OBJ_ICON"
+icon_collection[dict_object["RESUSubFolderSYR"]]= "CFDSTUDY_FOLDER_OBJ_ICON"
+icon_collection[dict_object["SRCSYRFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
+icon_collection[dict_object["USRSRCSYRFile"]]    = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 
 #-------------------------------------------------------------------------------
 # ObjectTR is a convenient object for traduction purpose
@@ -434,6 +457,12 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
                                     theCopyOpt, theNameRef)
         if iok :
             UpdateSubTree(studyObject)
+            if "coupling_parameters.py" in os.listdir(theStudyPath):
+                #MP Update SYRTHES PATH into coupling_parameters.py file
+                replaceOrInsertCouplingPath(os.path.join(theStudyPath,"coupling_parameters.py"))
+            if "runcase" in os.listdir(theStudyPath):
+                #MP Update the coupling study PATH into runcase file
+                updateRuncaseCoupling(os.path.join(theStudyPath,"runcase"))
     else :
         CreateStudy = True
         if os.path.exists(theStudyPath):
@@ -443,6 +472,59 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
 
         UpdateSubTree(studyObject)
     return iok
+
+def replaceOrInsertCouplingPath(The_coupling_parameters_path):
+    """
+    coupling_parameters.py file is updated according to syrthes path needed
+    """
+    f = open(The_coupling_parameters_path,"r")
+    l = f.readlines()
+    f.close()
+    boo = False
+    if not os.getenv("SYRTHES4_HOME"):
+        mess = cfdstudyMess.trMessage(ObjectTR.tr("COUPLING_SYRTHES4_HOME_MISSING"),[])
+        cfdstudyMess.criticalMessage(mess)
+        return
+    lineToInsert = "sys.path.insert(1,"+"'"+os.path.join(os.path.join(os.environ["SYRTHES4_HOME"],"share"),"syrthes")+os.sep+"')\n"
+    for i in l :
+        if  i.startswith("sys.path.insert"):
+            ind = l.index(i)
+            l[ind] = lineToInsert
+            boo = True
+    if not boo:
+        l.insert(1,lineToInsert)
+    f = open(The_coupling_parameters_path,"w")
+    f.writelines(l)
+    f.close()
+
+def updateRuncaseCoupling(The_runcase_coupling_path):
+    """
+    Pathes into runcase file for coupling are updated
+    """
+    f = open(The_runcase_coupling_path,"r")
+    l = f.readlines()
+    f.close()
+    ind = -1
+    for i in l :
+        if  i.startswith("export PATH"):
+            ind = l.index(i)
+            l[ind] = 'export PATH='+'"'+os.path.join(os.path.join(os.getenv("CS_ROOT_DIR"),'bin'))+'":$PATH\n'
+        if  i.startswith("\code_saturne run"):
+            ir = l.index(i)
+            lComRun = string.split(i[1:])
+            for j in lComRun:
+                if j == '--coupling':
+                   ic = lComRun.index(j)
+                   lComRun[ic+1] = os.path.join(os.path.dirname(The_runcase_coupling_path),"coupling_parameters.py")
+                   comRun = string.join(lComRun," ")
+            l[ir] = "\\"+comRun+"\n"
+    if ind >=0:
+        lineToInsert = "cd "+os.path.dirname(The_runcase_coupling_path)+"\n"
+        if lineToInsert not in l :
+            l.insert(ind+1,"cd "+os.path.dirname(The_runcase_coupling_path)+"\n")
+    f = open(The_runcase_coupling_path,"w")
+    f.writelines(l)
+    f.close()
 
 def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
                       theCopyOpt, theNameRef):
@@ -772,13 +854,38 @@ def _FillObject(theObject, theParent, theBuilder):
                dirList.count("RESU") and \
                dirList.count("SCRIPTS"):
                 objectId = dict_object["Case"]
+
             else:
-                if name == "MESH":
-                    objectId = dict_object["MESHFolder"]
-                elif name == "POST":
-                    objectId = dict_object["POSTFolder"]
+                boo = False
+                for i in dirList:
+                    if re.match(".*\.syd$", i) or re.match(".*\.syd_example$", i): boo = True
+                if boo :
+                    objectId = dict_object["SYRCaseFolder"]
                 else:
-                    objectId = dict_object["OtherFolder"]
+                    if name == "MESH":
+                        objectId = dict_object["MESHFolder"]
+                    elif name == "POST":
+                        objectId = dict_object["POSTFolder"]
+                    else:
+                        objectId = dict_object["OtherFolder"]
+
+        if name == "coupling_parameters.py":
+            objectId = dict_object["CouplingFilePy"]
+        elif name == "runcase":
+            objectId = dict_object["CouplingRuncase"]
+        elif name == "RESU_COUPLING":
+            objectId = dict_object["RESU_COUPLINGFolder"]
+    #parent is Syrthes Case
+    elif parentId == dict_object["SYRCaseFolder"]:
+        if os.path.isdir(path):
+            if name == "usr_examples":
+                objectId = dict_object["SRCSYRFolder"]
+        if name in ["Makefile","syrthes.py","user_cond.c"] or re.match(".*\.syd$", name) or re.match(".*\.syd_example$", name) :
+            objectId = dict_object["SyrthesFile"]
+    #parent is Syrthes user examples
+    elif parentId == dict_object["SRCSYRFolder"]:
+        if re.match(".*\.c$", name):
+            objectId = dict_object["USRSRCSYRFile"]
 
     #parent is Case
     elif parentId == dict_object["Case"]:
@@ -1010,6 +1117,44 @@ def _FillObject(theObject, theParent, theBuilder):
         if os.path.isfile(path):
             if re.match(".*\.dat$", name) or re.match(".*\.csv$", name):
                 objectId = dict_object["HISTFile"]
+
+    # parent is RESU_COUPLING folder
+    elif parentId == dict_object["RESU_COUPLINGFolder"]:
+        if os.path.isdir(path):
+            objectId = dict_object["RESU_COUPLINGSubFolder"]
+
+    # parent is RESU_COUPLING sub folder
+    elif parentId == dict_object["RESU_COUPLINGSubFolder"]:
+        if os.path.isdir(path):
+            if os.path.isfile(os.path.join(path,"syrthes")):
+                objectId = dict_object["RESUSubFolderSYR"]
+            else:
+                # test if folder is a result cfd folder?
+                objectId = dict_object["RESUSubFolder"]
+
+        else:
+            if name == "coupling_parameters.py":
+                objectId = dict_object["CouplingFilePy"]
+
+    elif parentId == dict_object["RESUSubFolderSYR"]:
+        if re.match(".*\.log$", name):
+            objectId = dict_object["RESUFile"]
+        if re.match(".*\.dat$", name):
+            objectId = dict_object["RESUFile"]
+        if re.match(".*\.rdt$", name):
+            objectId = dict_object["RESUFile"]
+        if re.match(".*\.res$", name):
+            objectId = dict_object["RESUFile"]
+        if re.match(".*\.syr$", name):
+            objectId = dict_object["RESUFile"]
+        if re.match(".*\.data$", name):
+            objectId = dict_object["RESUFile"]
+        if re.match(".*\.add$", name):
+            objectId = dict_object["RESUFile"]
+        if re.match(".*\.c$", name):
+            objectId = dict_object["RESUFile"]
+        elif re.match("listing$", name):
+            objectId = dict_object["RESUFile"]
 
     if objectId == dict_object["OtherFile"]:
         if re.match(".*\.[fF]$", name) or \

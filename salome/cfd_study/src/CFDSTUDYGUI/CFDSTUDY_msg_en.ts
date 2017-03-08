@@ -507,6 +507,10 @@
             <source>CHECK_PYTHON_PATH</source>
             <translation>; Check PYTHONPATH then your installation.</translation>
         </message>
+        <message>
+            <source>COUPLING_SYRTHES4_HOME_MISSING</source>
+            <translation>; SYRTHES4_HOME environment variable is missing.</translation>
+        </message>
     </context>
     <context>
         <name>InfoDialogHandler</name>
