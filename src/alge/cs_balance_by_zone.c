@@ -2866,7 +2866,6 @@ cs_flux_through_surface(const char         *scalar_name,
 
   if (!itemperature || icp == -1)
     BFT_FREE(cpro_cp);
-  BFT_FREE(cpro_cp);
   BFT_FREE(c_visc);
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
