@@ -5,6 +5,8 @@ Release 4.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix missing reading and writing of mass fluxes in checkpoint/restart.
+
 - Fix for 1D point location.
 
 - Lagrangian module: fix issues due to local coordiante handling
