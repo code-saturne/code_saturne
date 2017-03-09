@@ -3498,8 +3498,8 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
                             int                           inc,
                             const cs_real_3_t   *restrict coefav,
                             const cs_real_33_t  *restrict coefbv,
-                            cs_real_3_t         *restrict pvar,
-                            const cs_real_t              *c_weight,
+                            const cs_real_3_t   *restrict pvar,
+                            const cs_real_t     *restrict c_weight,
                             cs_real_33_t        *restrict gradv)
 {
   int g_id, t_id;
@@ -3529,15 +3529,6 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
-
-  /* By default, handle the gradient as a tensor
-     (i.e. we assume it is the gradient of a vector field) */
-
-  if (m->halo != NULL) {
-    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 3);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)pvar, 3);
-  }
 
   /* Computation without reconstruction */
   /*------------------------------------*/
@@ -4361,7 +4352,7 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
                      const cs_real_3_t   *restrict coefav,
                      const cs_real_33_t  *restrict coefbv,
                      const cs_real_3_t   *restrict pvar,
-                     cs_real_t                    *c_weight,
+                     const cs_real_t     *restrict c_weight,
                      cs_real_33_t        *restrict gradv)
 {
   const cs_lnum_t n_cells = m->n_cells;
@@ -4647,7 +4638,7 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
                             int                           inc,
                             const cs_real_6_t   *restrict coefat,
                             const cs_real_66_t  *restrict coefbt,
-                            cs_real_6_t         *restrict pvar,
+                            const cs_real_6_t   *restrict pvar,
                             cs_real_63_t        *restrict grad)
 {
   int g_id, t_id;
@@ -4673,15 +4664,6 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
-
-  /* By default, handle the gradient as a tensor
-     (i.e. we assume it is the gradient of a vector field) */
-
-  if (m->halo != NULL) {
-    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 6);
-    if (cs_glob_mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)pvar);
-  }
 
   /* Computation without reconstruction */
   /*------------------------------------*/
@@ -5707,6 +5689,468 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   BFT_FREE(rhs);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell gradient of scalar field or component of vector or
+ *         tensor field.
+ *
+ * This variant of the \ref cs_gradient_scalar function assumes ghost cell
+ * values for input arrays (var and optionally c_weight)
+ * have already been synchronized.
+ *
+ * \param[in]       var_name        variable name
+ * \param[in]       gradient_type   gradient type
+ * \param[in]       halo_type       halo type
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
+ * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
+ * \param[in]       tr_dim          2 for tensor with periodicity of rotation,
+ *                                  0 otherwise
+ * \param[in]       hyd_p_flag      flag for hydrostatic pressure
+ * \param[in]       w_stride        stride for weighting coefficient
+ * \param[in]       verbosity       verbosity level
+ * \param[in]       clip_mode       clipping mode
+ * \param[in]       epsilon         precision for iterative gradient calculation
+ * \param[in]       extrap          boundary gradient extrapolation coefficient
+ * \param[in]       clip_coeff      clipping coefficient
+ * \param[in]       f_ext           exterior force generating
+ *                                  the hydrostatic pressure
+ * \param[in]       bc_coeff_a      boundary condition term a
+ * \param[in]       bc_coeff_b      boundary condition term b
+ * \param[in]       var             gradient's base variable
+ * \param[in]       c_weight        weighted gradient coefficient variable,
+ *                                  or NULL
+ * \param[in]       cpl             structure associated with internal coupling,
+ *                                  or NULL
+ * \param[out]      grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_gradient_scalar(const char                    *var_name,
+                 cs_gradient_type_t             gradient_type,
+                 cs_halo_type_t                 halo_type,
+                 int                            inc,
+                 bool                           recompute_cocg,
+                 int                            n_r_sweeps,
+                 int                            tr_dim,
+                 int                            hyd_p_flag,
+                 int                            w_stride,
+                 int                            verbosity,
+                 int                            clip_mode,
+                 double                         epsilon,
+                 double                         extrap,
+                 double                         clip_coeff,
+                 cs_real_t                      f_ext[][3],
+                 const cs_real_t                bc_coeff_a[],
+                 const cs_real_t                bc_coeff_b[],
+                 const cs_real_t                var[restrict],
+                 const cs_real_t                c_weight[restrict],
+                 const cs_internal_coupling_t  *cpl,
+                 cs_real_t                      grad[restrict][3])
+{
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  cs_real_4_t  *restrict rhsv;
+
+  cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+
+  static int last_fvm_count = 0;
+
+  if (n_r_sweeps > 0) {
+    int prev_fvq_count = last_fvm_count;
+    last_fvm_count = cs_mesh_quantities_compute_count();
+    if (last_fvm_count != prev_fvq_count)
+      recompute_cocg = true;
+  }
+
+  /* Allocate work arrays */
+
+  BFT_MALLOC(rhsv, n_cells_ext, cs_real_4_t);
+
+  /* Compute gradient */
+
+  if (gradient_type == CS_GRADIENT_ITER) {
+
+    _initialize_scalar_gradient(mesh,
+                                fvq,
+                                cpl,
+                                tr_dim,
+                                hyd_p_flag,
+                                inc,
+                                (const cs_real_3_t *)f_ext,
+                                bc_coeff_a,
+                                bc_coeff_b,
+                                var,
+                                c_weight,
+                                grad);
+
+    _iterative_scalar_gradient(mesh,
+                               fvq,
+                               cpl,
+                               var_name,
+                               n_r_sweeps,
+                               tr_dim,
+                               hyd_p_flag,
+                               verbosity,
+                               inc,
+                               epsilon,
+                               (const cs_real_3_t *)f_ext,
+                               bc_coeff_a,
+                               bc_coeff_b,
+                               var,
+                               c_weight,
+                               grad);
+
+  } else if (gradient_type == CS_GRADIENT_ITER_OLD) {
+
+    _initialize_scalar_gradient_old(mesh,
+                                    fvq,
+                                    tr_dim,
+                                    hyd_p_flag,
+                                    inc,
+                                    (const cs_real_3_t *)f_ext,
+                                    bc_coeff_a,
+                                    bc_coeff_b,
+                                    var,
+                                    c_weight,
+                                    grad,
+                                    rhsv);
+
+    _iterative_scalar_gradient_old(mesh,
+                                   fvq,
+                                   var_name,
+                                   recompute_cocg,
+                                   n_r_sweeps,
+                                   tr_dim,
+                                   hyd_p_flag,
+                                   verbosity,
+                                   inc,
+                                   epsilon,
+                                   extrap,
+                                   (const cs_real_3_t *)f_ext,
+                                   bc_coeff_a,
+                                   bc_coeff_b,
+                                   grad,
+                                   rhsv);
+
+  } else if (gradient_type == CS_GRADIENT_LSQ) {
+
+    _lsq_scalar_gradient(mesh,
+                         fvq,
+                         halo_type,
+                         cpl,
+                         recompute_cocg,
+                         n_r_sweeps,
+                         tr_dim,
+                         hyd_p_flag,
+                         w_stride,
+                         inc,
+                         extrap,
+                         (const cs_real_3_t *)f_ext,
+                         bc_coeff_a,
+                         bc_coeff_b,
+                         var,
+                         c_weight,
+                         grad,
+                         rhsv);
+
+  } else if (gradient_type == CS_GRADIENT_LSQ_ITER) {
+
+    const cs_int_t  _imlini = 1;
+    const cs_real_t _climin = 1.5;
+
+    cs_real_3_t  *restrict r_grad;
+    BFT_MALLOC(r_grad, n_cells_ext, cs_real_3_t);
+
+    _lsq_scalar_gradient(mesh,
+                         fvq,
+                         halo_type,
+                         cpl,
+                         recompute_cocg,
+                         n_r_sweeps,
+                         tr_dim,
+                         hyd_p_flag,
+                         w_stride,
+                         inc,
+                         extrap,
+                         (const cs_real_3_t *)f_ext,
+                         bc_coeff_a,
+                         bc_coeff_b,
+                         var,
+                         c_weight,
+                         r_grad,
+                         rhsv);
+
+    _scalar_gradient_clipping(halo_type, _imlini, verbosity, tr_dim, _climin,
+                              var, r_grad);
+
+    _initialize_scalar_gradient(mesh,
+                                fvq,
+                                cpl,
+                                tr_dim,
+                                hyd_p_flag,
+                                inc,
+                                (const cs_real_3_t *)f_ext,
+                                bc_coeff_a,
+                                bc_coeff_b,
+                                var,
+                                c_weight,
+                                grad);
+
+    _reconstruct_scalar_gradient(mesh,
+                                 fvq,
+                                 cpl,
+                                 tr_dim,
+                                 hyd_p_flag,
+                                 (const cs_real_3_t *)f_ext,
+                                 bc_coeff_b,
+                                 r_grad,
+                                 grad);
+
+    BFT_FREE(r_grad);
+
+  }
+
+  _scalar_gradient_clipping(halo_type, clip_mode, verbosity, tr_dim, clip_coeff,
+                            var, grad);
+
+  BFT_FREE(rhsv);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell gradient of vector field.
+ *
+ * \param[in]       var_name        variable name
+ * \param[in]       gradient_type   gradient type
+ * \param[in]       halo_type       halo type
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
+ * \param[in]       verbosity       verbosity level
+ * \param[in]       clip_mode       clipping mode
+ * \param[in]       epsilon         precision for iterative gradient calculation
+ * \param[in]       clip_coeff      clipping coefficient
+ * \param[in]       bc_coeff_a      boundary condition term a
+ * \param[in]       bc_coeff_b      boundary condition term b
+ * \param[in]       var             gradient's base variable
+ * \param[in]       c_weight        weighted gradient coefficient variable,
+ *                                  or NULL
+ * \param[out]      gradv           gradient
+                                    (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_gradient_vector(const char                    *var_name,
+                 cs_gradient_type_t             gradient_type,
+                 cs_halo_type_t                 halo_type,
+                 int                            inc,
+                 int                            n_r_sweeps,
+                 int                            verbosity,
+                 int                            clip_mode,
+                 double                         epsilon,
+                 double                         clip_coeff,
+                 const cs_real_3_t              bc_coeff_a[],
+                 const cs_real_33_t             bc_coeff_b[],
+                 const cs_real_3_t    *restrict var,
+                 const cs_real_t      *restrict c_weight,
+                 cs_real_33_t         *restrict gradv)
+{
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+
+  /* Compute gradient */
+
+  if (  gradient_type == CS_GRADIENT_ITER
+     || gradient_type == CS_GRADIENT_ITER_OLD) {
+
+    _initialize_vector_gradient(mesh,
+                                fvq,
+                                halo_type,
+                                inc,
+                                bc_coeff_a,
+                                bc_coeff_b,
+                                var,
+                                c_weight,
+                                gradv);
+
+    /* If reconstructions are required */
+
+    if (n_r_sweeps > 1)
+      _iterative_vector_gradient(mesh,
+                                 fvq,
+                                 var_name,
+                                 halo_type,
+                                 inc,
+                                 n_r_sweeps,
+                                 verbosity,
+                                 epsilon,
+                                 bc_coeff_a,
+                                 bc_coeff_b,
+                                 (const cs_real_3_t *)var,
+                                 c_weight,
+                                 gradv);
+
+  } else if (gradient_type == CS_GRADIENT_LSQ) {
+
+    /* If NO reconstruction are required */
+
+    if (n_r_sweeps <= 1)
+      _initialize_vector_gradient(mesh,
+                                  fvq,
+                                  halo_type,
+                                  inc,
+                                  bc_coeff_a,
+                                  bc_coeff_b,
+                                  var,
+                                  c_weight,
+                                  gradv);
+
+    /* Reconstruction with least squares method */
+
+    else
+      _lsq_vector_gradient(mesh,
+                           cs_glob_mesh_adjacencies,
+                           fvq,
+                           halo_type,
+                           inc,
+                           bc_coeff_a,
+                           bc_coeff_b,
+                           (const cs_real_3_t *)var,
+                           c_weight,
+                           gradv);
+
+  } else if (gradient_type == CS_GRADIENT_LSQ_ITER) {
+
+    /* Clipping algorithm and clipping factor */
+
+    const cs_int_t  _imlini = 1;
+    const cs_real_t _climin = 1.5;
+
+    cs_real_33_t  *restrict r_gradv;
+    BFT_MALLOC(r_gradv, n_cells_ext, cs_real_33_t);
+
+    _lsq_vector_gradient(mesh,
+                         cs_glob_mesh_adjacencies,
+                         fvq,
+                         halo_type,
+                         inc,
+                         bc_coeff_a,
+                         bc_coeff_b,
+                         (const cs_real_3_t *)var,
+                         c_weight,
+                         r_gradv);
+
+    _vector_gradient_clipping(mesh,
+                              fvq,
+                              halo_type,
+                              _imlini,
+                              verbosity,
+                              _climin,
+                              (const cs_real_3_t *)var,
+                              r_gradv);
+
+    _initialize_vector_gradient(mesh,
+                                fvq,
+                                halo_type,
+                                inc,
+                                bc_coeff_a,
+                                bc_coeff_b,
+                                var,
+                                c_weight,
+                                gradv);
+
+    _reconstruct_vector_gradient(mesh,
+                                 fvq,
+                                 halo_type,
+                                 bc_coeff_b,
+                                 r_gradv,
+                                 gradv);
+
+    BFT_FREE(r_gradv);
+  }
+
+  _vector_gradient_clipping(mesh,
+                            fvq,
+                            halo_type,
+                            clip_mode,
+                            verbosity,
+                            clip_coeff,
+                            (const cs_real_3_t *)var,
+                            gradv);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell gradient of tensor.
+ *
+ * \param[in]       var_name        variable name
+ * \param[in]       gradient_type   gradient type
+ * \param[in]       halo_type       halo type
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
+ * \param[in]       verbosity       verbosity level
+ * \param[in]       clip_mode       clipping mode
+ * \param[in]       epsilon         precision for iterative gradient calculation
+ * \param[in]       clip_coeff      clipping coefficient
+ * \param[in]       bc_coeff_a      boundary condition term a
+ * \param[in]       bc_coeff_b      boundary condition term b
+ * \param[in]       var             gradient's base variable
+ * \param[out]      grad           gradient
+                                    (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_gradient_tensor(const char                *var_name,
+                 cs_gradient_type_t         gradient_type,
+                 cs_halo_type_t             halo_type,
+                 int                        inc,
+                 int                        n_r_sweeps,
+                 int                        verbosity,
+                 int                        clip_mode,
+                 double                     epsilon,
+                 double                     clip_coeff,
+                 const cs_real_6_t          bc_coeff_a[],
+                 const cs_real_66_t         bc_coeff_b[],
+                 const cs_real_6_t      *restrict var,
+                 cs_real_63_t           *restrict grad)
+{
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  /* Compute gradient */
+
+  _initialize_tensor_gradient(mesh,
+                              fvq,
+                              halo_type,
+                              inc,
+                              bc_coeff_a,
+                              bc_coeff_b,
+                              var,
+                              grad);
+
+  /* If reconstructions are required */
+
+  if (n_r_sweeps > 1)
+    _iterative_tensor_gradient(mesh,
+                               fvq,
+                               var_name,
+                               halo_type,
+                               inc,
+                               n_r_sweeps,
+                               verbosity,
+                               epsilon,
+                               bc_coeff_a,
+                               bc_coeff_b,
+                               (const cs_real_6_t *)var,
+                               grad);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -6016,32 +6460,10 @@ cs_gradient_scalar(const char                *var_name,
                    cs_real_3_t      *restrict grad)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_halo_t  *halo = mesh->halo;
-  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
   cs_gradient_info_t *gradient_info = NULL;
   cs_timer_t t0, t1;
 
-  cs_real_4_t  *restrict rhsv;
-
-  cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
-
   bool update_stats = true;
-
-  static int last_fvm_count = 0;
-
-  if (n_r_sweeps > 0) {
-    int prev_fvq_count = last_fvm_count;
-    last_fvm_count = cs_mesh_quantities_compute_count();
-    if (last_fvm_count != prev_fvq_count)
-      recompute_cocg = true;
-  }
-
-  /* Allocate work arrays */
-
-  BFT_MALLOC(rhsv, n_cells_ext, cs_real_4_t);
-
-  /* Choose gradient type */
 
   t0 = cs_timer_time();
 
@@ -6050,175 +6472,51 @@ cs_gradient_scalar(const char                *var_name,
 
   /* Synchronize variable */
 
-  if (halo != NULL) {
+  if (mesh->halo != NULL) {
 
     if (tr_dim > 0)
-      cs_halo_sync_component(halo, halo_type, CS_HALO_ROTATION_IGNORE, var);
+      cs_halo_sync_component(mesh->halo, halo_type,
+                             CS_HALO_ROTATION_IGNORE, var);
     else
-      cs_halo_sync_var(halo, halo_type, var);
+      cs_halo_sync_var(mesh->halo, halo_type, var);
 
     if (c_weight != NULL) {
       if (w_stride == 6) {
-        cs_halo_sync_var_strided(halo, halo_type, c_weight, 6);
-        cs_halo_perio_sync_var_sym_tens(halo, halo_type, c_weight);
+        cs_halo_sync_var_strided(mesh->halo, halo_type, c_weight, 6);
+        cs_halo_perio_sync_var_sym_tens(mesh->halo, halo_type, c_weight);
       }
       else
-        cs_halo_sync_var(halo, halo_type, c_weight);
+        cs_halo_sync_var(mesh->halo, halo_type, c_weight);
     }
 
     if (hyd_p_flag == 1) {
-      cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)f_ext, 3);
-      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)f_ext, 3);
+      cs_halo_sync_var_strided(mesh->halo, halo_type, (cs_real_t *)f_ext, 3);
+      cs_halo_perio_sync_var_vect(mesh->halo, halo_type, (cs_real_t *)f_ext, 3);
     }
 
   }
 
-  /* Compute gradient */
-
-  if (gradient_type == CS_GRADIENT_ITER) {
-
-    _initialize_scalar_gradient(mesh,
-                                fvq,
-                                cpl,
-                                tr_dim,
-                                hyd_p_flag,
-                                inc,
-                                (const cs_real_3_t *)f_ext,
-                                bc_coeff_a,
-                                bc_coeff_b,
-                                var,
-                                c_weight,
-                                grad);
-
-    _iterative_scalar_gradient(mesh,
-                               fvq,
-                               cpl,
-                               var_name,
-                               n_r_sweeps,
-                               tr_dim,
-                               hyd_p_flag,
-                               verbosity,
-                               inc,
-                               epsilon,
-                               (const cs_real_3_t *)f_ext,
-                               bc_coeff_a,
-                               bc_coeff_b,
-                               var,
-                               c_weight,
-                               grad);
-
-  } else if (gradient_type == CS_GRADIENT_ITER_OLD) {
-
-    _initialize_scalar_gradient_old(mesh,
-                                    fvq,
-                                    tr_dim,
-                                    hyd_p_flag,
-                                    inc,
-                                    (const cs_real_3_t *)f_ext,
-                                    bc_coeff_a,
-                                    bc_coeff_b,
-                                    var,
-                                    c_weight,
-                                    grad,
-                                    rhsv);
-
-    _iterative_scalar_gradient_old(mesh,
-                                   fvq,
-                                   var_name,
-                                   recompute_cocg,
-                                   n_r_sweeps,
-                                   tr_dim,
-                                   hyd_p_flag,
-                                   verbosity,
-                                   inc,
-                                   epsilon,
-                                   extrap,
-                                   (const cs_real_3_t *)f_ext,
-                                   bc_coeff_a,
-                                   bc_coeff_b,
-                                   grad,
-                                   rhsv);
-
-  } else if (gradient_type == CS_GRADIENT_LSQ) {
-
-    _lsq_scalar_gradient(mesh,
-                         fvq,
-                         halo_type,
-                         cpl,
-                         recompute_cocg,
-                         n_r_sweeps,
-                         tr_dim,
-                         hyd_p_flag,
-                         w_stride,
-                         inc,
-                         extrap,
-                         (const cs_real_3_t *)f_ext,
-                         bc_coeff_a,
-                         bc_coeff_b,
-                         var,
-                         c_weight,
-                         grad,
-                         rhsv);
-
-  } else if (gradient_type == CS_GRADIENT_LSQ_ITER) {
-
-    const cs_int_t  _imlini = 1;
-    const cs_real_t _climin = 1.5;
-
-    cs_real_3_t  *restrict r_grad;
-    BFT_MALLOC(r_grad, n_cells_ext, cs_real_3_t);
-
-    _lsq_scalar_gradient(mesh,
-                         fvq,
-                         halo_type,
-                         cpl,
-                         recompute_cocg,
-                         n_r_sweeps,
-                         tr_dim,
-                         hyd_p_flag,
-                         w_stride,
-                         inc,
-                         extrap,
-                         (const cs_real_3_t *)f_ext,
-                         bc_coeff_a,
-                         bc_coeff_b,
-                         var,
-                         c_weight,
-                         r_grad,
-                         rhsv);
-
-    _scalar_gradient_clipping(halo_type, _imlini, verbosity, tr_dim, _climin,
-                              var, r_grad);
-
-    _initialize_scalar_gradient(mesh,
-                                fvq,
-                                cpl,
-                                tr_dim,
-                                hyd_p_flag,
-                                inc,
-                                (const cs_real_3_t *)f_ext,
-                                bc_coeff_a,
-                                bc_coeff_b,
-                                var,
-                                c_weight,
-                                grad);
-
-    _reconstruct_scalar_gradient(mesh,
-                                 fvq,
-                                 cpl,
-                                 tr_dim,
-                                 hyd_p_flag,
-                                 (const cs_real_3_t *)f_ext,
-                                 bc_coeff_b,
-                                 r_grad,
-                                 grad);
-
-    BFT_FREE(r_grad);
-
-  }
-
-  _scalar_gradient_clipping(halo_type, clip_mode, verbosity, tr_dim, clip_coeff,
-                            var, grad);
+  _gradient_scalar(var_name,
+                   gradient_type,
+                   halo_type,
+                   inc,
+                   recompute_cocg,
+                   n_r_sweeps,
+                   tr_dim,
+                   hyd_p_flag,
+                   w_stride,
+                   verbosity,
+                   clip_mode,
+                   epsilon,
+                   extrap,
+                   clip_coeff,
+                   f_ext,
+                   bc_coeff_a,
+                   bc_coeff_b,
+                   var,
+                   c_weight,
+                   cpl,
+                   grad);
 
   t1 = cs_timer_time();
 
@@ -6229,8 +6527,6 @@ cs_gradient_scalar(const char                *var_name,
 
   if (_gradient_stat_id > -1)
     cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
-
-  BFT_FREE(rhsv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6273,9 +6569,6 @@ cs_gradient_vector(const char                *var_name,
                    cs_real_33_t     *restrict gradv)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-
-  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
   cs_gradient_info_t *gradient_info = NULL;
   cs_timer_t t0, t1;
@@ -6287,130 +6580,36 @@ cs_gradient_vector(const char                *var_name,
     gradient_info = _find_or_add_system(var_name, gradient_type);
   }
 
+  /* By default, handle the gradient as a tensor
+     (i.e. we assume it is the gradient of a vector field) */
+
   if (mesh->halo != NULL) {
+
+    cs_halo_sync_var_strided(mesh->halo, halo_type, (cs_real_t *)var, 3);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect(mesh->halo, halo_type, (cs_real_t *)var, 3);
+
     if (c_weight != NULL)
       cs_halo_sync_var(mesh->halo, halo_type, c_weight);
+
   }
 
   /* Compute gradient */
 
-  if (  gradient_type == CS_GRADIENT_ITER
-     || gradient_type == CS_GRADIENT_ITER_OLD) {
-
-    _initialize_vector_gradient(mesh,
-                                fvq,
-                                halo_type,
-                                inc,
-                                bc_coeff_a,
-                                bc_coeff_b,
-                                var,
-                                c_weight,
-                                gradv);
-
-    /* If reconstructions are required */
-
-    if (n_r_sweeps > 1)
-      _iterative_vector_gradient(mesh,
-                                 fvq,
-                                 var_name,
-                                 halo_type,
-                                 inc,
-                                 n_r_sweeps,
-                                 verbosity,
-                                 epsilon,
-                                 bc_coeff_a,
-                                 bc_coeff_b,
-                                 (const cs_real_3_t *)var,
-                                 c_weight,
-                                 gradv);
-
-  } else if (gradient_type == CS_GRADIENT_LSQ) {
-
-    /* If NO reconstruction are required */
-
-    if (n_r_sweeps <= 1)
-      _initialize_vector_gradient(mesh,
-                                  fvq,
-                                  halo_type,
-                                  inc,
-                                  bc_coeff_a,
-                                  bc_coeff_b,
-                                  var,
-                                  c_weight,
-                                  gradv);
-
-    /* Reconstruction with least squares method */
-
-    else
-      _lsq_vector_gradient(mesh,
-                           cs_glob_mesh_adjacencies,
-                           fvq,
-                           halo_type,
-                           inc,
-                           bc_coeff_a,
-                           bc_coeff_b,
-                           (const cs_real_3_t *)var,
-                           c_weight,
-                           gradv);
-
-  } else if (gradient_type == CS_GRADIENT_LSQ_ITER) {
-
-    /* Clipping algorithm and clipping factor */
-
-    const cs_int_t  _imlini = 1;
-    const cs_real_t _climin = 1.5;
-
-    cs_real_33_t  *restrict r_gradv;
-    BFT_MALLOC(r_gradv, n_cells_ext, cs_real_33_t);
-
-    _lsq_vector_gradient(mesh,
-                         cs_glob_mesh_adjacencies,
-                         fvq,
-                         halo_type,
-                         inc,
-                         bc_coeff_a,
-                         bc_coeff_b,
-                         (const cs_real_3_t *)var,
-                         c_weight,
-                         r_gradv);
-
-    _vector_gradient_clipping(mesh,
-                              fvq,
-                              halo_type,
-                              _imlini,
-                              verbosity,
-                              _climin,
-                              (const cs_real_3_t *)var,
-                              r_gradv);
-
-    _initialize_vector_gradient(mesh,
-                                fvq,
-                                halo_type,
-                                inc,
-                                bc_coeff_a,
-                                bc_coeff_b,
-                                var,
-                                c_weight,
-                                gradv);
-
-    _reconstruct_vector_gradient(mesh,
-                                 fvq,
-                                 halo_type,
-                                 bc_coeff_b,
-                                 r_gradv,
-                                 gradv);
-
-    BFT_FREE(r_gradv);
-  }
-
-  _vector_gradient_clipping(mesh,
-                            fvq,
-                            halo_type,
-                            clip_mode,
-                            verbosity,
-                            clip_coeff,
-                            (const cs_real_3_t *)var,
-                            gradv);
+  _gradient_vector(var_name,
+                   gradient_type,
+                   halo_type,
+                   inc,
+                   n_r_sweeps,
+                   verbosity,
+                   clip_mode,
+                   epsilon,
+                   clip_coeff,
+                   bc_coeff_a,
+                   bc_coeff_b,
+                   (const cs_real_3_t *)var,
+                   (const cs_real_t *)c_weight,
+                   gradv);
 
   if (update_stats == true) {
     gradient_info->n_calls += 1;
@@ -6456,8 +6655,195 @@ cs_gradient_tensor(const char                *var_name,
                    cs_real_63_t     *restrict grad)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
+  cs_gradient_info_t *gradient_info = NULL;
+  cs_timer_t t0, t1;
+
+  bool update_stats = true;
+
+  if (update_stats == true) {
+    t0 = cs_timer_time();
+    gradient_info = _find_or_add_system(var_name, gradient_type);
+  }
+
+  /* By default, handle the gradient as a tensor
+     (i.e. we assume it is the gradient of a vector field) */
+
+  if (mesh->halo != NULL) {
+    cs_halo_sync_var_strided(mesh->halo, halo_type, (cs_real_t *)var, 6);
+    if (mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_sym_tens(mesh->halo, halo_type, (cs_real_t *)var);
+  }
+
+  /* Compute gradient */
+
+  _gradient_tensor(var_name,
+                   gradient_type,
+                   halo_type,
+                   inc,
+                   n_r_sweeps,
+                   verbosity,
+                   clip_mode,
+                   epsilon,
+                   clip_coeff,
+                   bc_coeff_a,
+                   bc_coeff_b,
+                   (const cs_real_6_t *)var,
+                   grad);
+
+  if (update_stats == true) {
+    gradient_info->n_calls += 1;
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell gradient of scalar field or component of vector or
+ *         tensor field.
+ *
+ * This variant of the \ref cs_gradient_scalar function assumes ghost cell
+ * values for input arrays (var and optionally c_weight)
+ * have already been synchronized.
+ *
+ * \param[in]       var_name        variable name
+ * \param[in]       gradient_type   gradient type
+ * \param[in]       halo_type       halo type
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
+ * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
+ * \param[in]       tr_dim          2 for tensor with periodicity of rotation,
+ *                                  0 otherwise
+ * \param[in]       hyd_p_flag      flag for hydrostatic pressure
+ * \param[in]       w_stride        stride for weighting coefficient
+ * \param[in]       verbosity       verbosity level
+ * \param[in]       clip_mode       clipping mode
+ * \param[in]       epsilon         precision for iterative gradient calculation
+ * \param[in]       extrap          boundary gradient extrapolation coefficient
+ * \param[in]       clip_coeff      clipping coefficient
+ * \param[in]       f_ext           exterior force generating
+ *                                  the hydrostatic pressure
+ * \param[in]       bc_coeff_a      boundary condition term a
+ * \param[in]       bc_coeff_b      boundary condition term b
+ * \param[in]       var             gradient's base variable
+ * \param[in]       c_weight        weighted gradient coefficient variable,
+ *                                  or NULL
+ * \param[in, out]  cpl             structure associated with internal coupling,
+ *                                  or NULL
+ * \param[out]      grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_scalar_synced_input(const char                 *var_name,
+                                cs_gradient_type_t          gradient_type,
+                                cs_halo_type_t              halo_type,
+                                int                         inc,
+                                bool                        recompute_cocg,
+                                int                         n_r_sweeps,
+                                int                         tr_dim,
+                                int                         hyd_p_flag,
+                                int                         w_stride,
+                                int                         verbosity,
+                                int                         clip_mode,
+                                double                      epsilon,
+                                double                      extrap,
+                                double                      clip_coeff,
+                                cs_real_t                   f_ext[][3],
+                                const cs_real_t             bc_coeff_a[],
+                                const cs_real_t             bc_coeff_b[],
+                                const cs_real_t             var[restrict],
+                                const cs_real_t             c_weight[restrict],
+                                const cs_internal_coupling_t  *cpl,
+                                cs_real_t                   grad[restrict][3])
+{
+  cs_gradient_info_t *gradient_info = NULL;
+  cs_timer_t t0, t1;
+
+  bool update_stats = true;
+
+  t0 = cs_timer_time();
+
+  if (update_stats == true)
+    gradient_info = _find_or_add_system(var_name, gradient_type);
+
+  _gradient_scalar(var_name,
+                   gradient_type,
+                   halo_type,
+                   inc,
+                   recompute_cocg,
+                   n_r_sweeps,
+                   tr_dim,
+                   hyd_p_flag,
+                   w_stride,
+                   verbosity,
+                   clip_mode,
+                   epsilon,
+                   extrap,
+                   clip_coeff,
+                   f_ext,
+                   bc_coeff_a,
+                   bc_coeff_b,
+                   var,
+                   c_weight,
+                   cpl,
+                   grad);
+
+  t1 = cs_timer_time();
+
+  if (update_stats == true) {
+    gradient_info->n_calls += 1;
+    cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
+  }
+
+  if (_gradient_stat_id > -1)
+    cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell gradient of vector field.
+ *
+ * This variant of the \ref cs_gradient_vector function assumes ghost cell
+ * values for input arrays (var and optionally c_weight)
+ * have already been synchronized.
+ *
+ * \param[in]       var_name        variable name
+ * \param[in]       gradient_type   gradient type
+ * \param[in]       halo_type       halo type
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
+ * \param[in]       verbosity       verbosity level
+ * \param[in]       clip_mode       clipping mode
+ * \param[in]       epsilon         precision for iterative gradient calculation
+ * \param[in]       clip_coeff      clipping coefficient
+ * \param[in]       bc_coeff_a      boundary condition term a
+ * \param[in]       bc_coeff_b      boundary condition term b
+ * \param[in, out]  var             gradient's base variable
+ * \param[in, out]  c_weight        weighted gradient coefficient variable,
+ *                                  or NULL
+ * \param[out]      gradv           gradient
+                                    (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_vector_synced_input(const char                *var_name,
+                                cs_gradient_type_t         gradient_type,
+                                cs_halo_type_t             halo_type,
+                                int                        inc,
+                                int                        n_r_sweeps,
+                                int                        verbosity,
+                                int                        clip_mode,
+                                double                     epsilon,
+                                double                     clip_coeff,
+                                const cs_real_t            bc_coeff_a[][3],
+                                const cs_real_t            bc_coeff_b[][3][3],
+                                const cs_real_t            var[restrict][3],
+                                const cs_real_t            c_weight[restrict],
+                                cs_real_33_t     *restrict gradv)
+{
   cs_gradient_info_t *gradient_info = NULL;
   cs_timer_t t0, t1;
 
@@ -6470,30 +6856,89 @@ cs_gradient_tensor(const char                *var_name,
 
   /* Compute gradient */
 
-  _initialize_tensor_gradient(mesh,
-                              fvq,
-                              halo_type,
-                              inc,
-                              bc_coeff_a,
-                              bc_coeff_b,
-                              var,
-                              grad);
+  _gradient_vector(var_name,
+                   gradient_type,
+                   halo_type,
+                   inc,
+                   n_r_sweeps,
+                   verbosity,
+                   clip_mode,
+                   epsilon,
+                   clip_coeff,
+                   bc_coeff_a,
+                   bc_coeff_b,
+                   var,
+                   c_weight,
+                   gradv);
 
-  /* If reconstructions are required */
+  if (update_stats == true) {
+    gradient_info->n_calls += 1;
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
+  }
+}
 
-  if (n_r_sweeps > 1)
-    _iterative_tensor_gradient(mesh,
-                               fvq,
-                               var_name,
-                               halo_type,
-                               inc,
-                               n_r_sweeps,
-                               verbosity,
-                               epsilon,
-                               bc_coeff_a,
-                               bc_coeff_b,
-                               (const cs_real_6_t *)var,
-                               grad);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell gradient of tensor.
+ *
+ * \param[in]       var_name        variable name
+ * \param[in]       gradient_type   gradient type
+ * \param[in]       halo_type       halo type
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
+ * \param[in]       verbosity       verbosity level
+ * \param[in]       clip_mode       clipping mode
+ * \param[in]       epsilon         precision for iterative gradient calculation
+ * \param[in]       clip_coeff      clipping coefficient
+ * \param[in]       bc_coeff_a      boundary condition term a
+ * \param[in]       bc_coeff_b      boundary condition term b
+ * \param[in, out]  var             gradient's base variable
+ * \param[out]      grad            gradient
+                                    (\f$ \der{t_ij}{x_k} \f$ is grad[][ij][k])
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_tensor_synced_input(const char                *var_name,
+                                cs_gradient_type_t         gradient_type,
+                                cs_halo_type_t             halo_type,
+                                int                        inc,
+                                int                        n_r_sweeps,
+                                int                        verbosity,
+                                int                        clip_mode,
+                                double                     epsilon,
+                                double                     clip_coeff,
+                                const cs_real_t            bc_coeff_a[][6],
+                                const cs_real_t            bc_coeff_b[][6][6],
+                                const cs_real_t            var[restrict][6],
+                                cs_real_63_t     *restrict grad)
+{
+  cs_gradient_info_t *gradient_info = NULL;
+  cs_timer_t t0, t1;
+
+  bool update_stats = true;
+
+  if (update_stats == true) {
+    t0 = cs_timer_time();
+    gradient_info = _find_or_add_system(var_name, gradient_type);
+  }
+
+  /* Compute gradient */
+
+  _gradient_tensor(var_name,
+                   gradient_type,
+                   halo_type,
+                   inc,
+                   n_r_sweeps,
+                   verbosity,
+                   clip_mode,
+                   epsilon,
+                   clip_coeff,
+                   bc_coeff_a,
+                   bc_coeff_b,
+                   var,
+                   grad);
 
   if (update_stats == true) {
     gradient_info->n_calls += 1;

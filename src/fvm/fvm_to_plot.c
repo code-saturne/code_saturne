@@ -157,6 +157,8 @@ _field_output(void           *context,
               cs_gnum_t       block_end,
               void           *buffer)
 {
+  CS_UNUSED(datatype);
+
   _plot_context_t *c = context;
 
   fvm_to_plot_writer_t  *w = c->writer;
@@ -313,6 +315,8 @@ fvm_to_plot_init_writer(const char             *name,
                         fvm_writer_time_dep_t   time_dependency)
 #endif
 {
+  CS_UNUSED(time_dependency);
+
   fvm_to_plot_writer_t  *w = NULL;
 
   /* Initialize writer */

@@ -49,6 +49,7 @@
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
 #include "cs_halo.h"
+#include "cs_halo_perio.h"
 #include "cs_mesh.h"
 #include "cs_log.h"
 #include "cs_map.h"
@@ -156,7 +157,7 @@ void cs_f_field_gradient_tensor(int                     f_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_field_interpolate_by_mean(cs_field_t         *f,
+_field_interpolate_by_mean(const cs_field_t   *f,
                            cs_lnum_t           n_points,
                            const cs_lnum_t     point_location[],
                            cs_real_t          *val)
@@ -186,7 +187,7 @@ _field_interpolate_by_mean(cs_field_t         *f,
  *----------------------------------------------------------------------------*/
 
 static void
-_field_interpolate_by_gradient(cs_field_t         *f,
+_field_interpolate_by_gradient(const cs_field_t   *f,
                                cs_lnum_t           n_points,
                                const cs_lnum_t     point_location[],
                                const cs_real_3_t   point_coords[],
@@ -282,10 +283,10 @@ _field_interpolate_by_gradient(cs_field_t         *f,
  *----------------------------------------------------------------------------*/
 
 static void
-_local_extrema_scalar(cs_real_t *restrict pvar,
-                      cs_halo_type_t      halo_type,
-                      cs_real_t          *local_max,
-                      cs_real_t          *local_min)
+_local_extrema_scalar(const cs_real_t *restrict pvar,
+                      cs_halo_type_t            halo_type,
+                      cs_real_t                *local_max,
+                      cs_real_t                *local_min)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
@@ -848,7 +849,9 @@ cs_field_interpolate(cs_field_t              *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief find local extrema of a given scalar field at each cell
+ * \brief Find local extrema of a given scalar field at each cell
+ *
+ * This assumes the field values have been synchronized.
  *
  * \param[in]     field id    The scalar field id
  * \param[in]     halo_type   Halo type
@@ -858,7 +861,7 @@ cs_field_interpolate(cs_field_t              *f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_field_local_extrema_scalar(const int        f_id,
+cs_field_local_extrema_scalar(int              f_id,
                               cs_halo_type_t   halo_type,
                               cs_real_t       *local_max,
                               cs_real_t       *local_min)
@@ -887,6 +890,58 @@ cs_field_local_extrema_scalar(const int        f_id,
   for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
     local_max[ii] = CS_MIN(local_max[ii], scalar_max);
     local_min[ii] = CS_MAX(local_min[ii], scalar_min);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize current parallel and periodic field values.
+ *
+ * This function currently only upates fields based on CS_MESH_LOCATION_CELLS.
+ *
+ * \param[in, out]   f           pointer to field
+ * \param[in]        halo_type   halo type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_synchronize(cs_field_t      *f,
+                     cs_halo_type_t   halo_type)
+{
+  if (f->location_id == CS_MESH_LOCATION_CELLS) {
+
+    const cs_halo_t *halo = cs_glob_mesh->halo;
+
+    if (halo != NULL) {
+
+      if (f->dim == 1)
+        cs_halo_sync_var(halo, halo_type, f->val);
+
+      else {
+
+        cs_halo_sync_var_strided(halo, halo_type, f->val, f->dim);
+
+        if (cs_glob_mesh->n_init_perio > 0) {
+          switch(f->dim) {
+          case 9:
+            cs_halo_perio_sync_var_tens(halo, halo_type, f->val);
+            break;
+          case 6:
+            cs_halo_perio_sync_var_sym_tens(halo, halo_type, f->val);
+            break;
+          case 3:
+            cs_halo_perio_sync_var_vect(halo, halo_type, f->val, 3);
+            break;
+          default:
+            break;
+          }
+
+        }
+
+      }
+
+    }
+
   }
 }
 

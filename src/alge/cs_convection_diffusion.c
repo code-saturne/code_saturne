@@ -142,8 +142,9 @@ _sync_scalar_halo(const cs_mesh_t  *m,
  *   pointer to local values array, or NULL;
  *----------------------------------------------------------------------------*/
 
-static cs_real_t  *_get_v_slope_test(int                       f_id,
-                                     const cs_var_cal_opt_t    var_cal_opt)
+static cs_real_t *
+_get_v_slope_test(int                       f_id,
+                  const cs_var_cal_opt_t    var_cal_opt)
 {
   const int iconvp = var_cal_opt.iconv;
   const int isstpp = var_cal_opt.isstpc;
@@ -1116,7 +1117,7 @@ void CS_PROCF (itrgrp, ITRGRP)
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- const cs_real_t          visel[],
+ cs_real_t                visel[],
  cs_real_t                diverg[]
 )
 {
@@ -1222,7 +1223,10 @@ void CS_PROCF (itrgrv, ITRGRV)
 /*!
  * \brief Compute the upwind gradient used in the slope tests.
  *
- * \param[in]     f_id         field index
+ * This function assumes the input gradient and pvar values have already
+ * been synchronized.
+ *
+ * \param[in]     f_id         field id
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
  * \param[in]     grad         standard gradient
@@ -1237,12 +1241,12 @@ void CS_PROCF (itrgrv, ITRGRV)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_slope_test_gradient(const int               f_id,
-                       const int               inc,
-                       const cs_halo_type_t    halo_type,
-                       cs_real_3_t            *grad,
+cs_slope_test_gradient(int                     f_id,
+                       int                     inc,
+                       cs_halo_type_t          halo_type,
+                       const cs_real_3_t      *grad,
                        cs_real_3_t            *grdpa,
-                       cs_real_t              *pvar,
+                       const cs_real_t        *pvar,
                        const cs_real_t        *coefap,
                        const cs_real_t        *coefbp,
                        const cs_real_t        *i_massflux)
@@ -1332,7 +1336,7 @@ cs_slope_test_gradient(const int               f_id,
         cs_real_t pfac =   inc*coefap[face_id]
                          + coefbp[face_id] * (pvar[ii] + diipbx*grad[ii][0]
                                                        + diipby*grad[ii][1]
-                                                      + diipbz*grad[ii][2]);
+                                                       + diipbz*grad[ii][2]);
         grdpa[ii][0] = grdpa[ii][0] + pfac*b_face_normal[face_id][0];
         grdpa[ii][1] = grdpa[ii][1] + pfac*b_face_normal[face_id][1];
         grdpa[ii][2] = grdpa[ii][2] + pfac*b_face_normal[face_id][2];
@@ -1501,6 +1505,9 @@ cs_upwind_gradient(const int                     f_id,
 /*!
  * \brief Compute the upwind gradient used in the slope tests.
  *
+ * This function assumes the input gradient and pvar values have already
+ * been synchronized.
+ *
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
  * \param[in]     grad         standard gradient
@@ -1517,9 +1524,9 @@ cs_upwind_gradient(const int                     f_id,
 void
 cs_slope_test_gradient_vector(const int              inc,
                               const cs_halo_type_t   halo_type,
-                              cs_real_33_t          *grad,
+                              const cs_real_33_t    *grad,
                               cs_real_33_t          *grdpa,
-                              cs_real_3_t           *pvar,
+                              const cs_real_3_t     *pvar,
                               const cs_real_3_t     *coefa,
                               const cs_real_33_t    *coefb,
                               const cs_real_t       *i_massflux)
@@ -1653,6 +1660,9 @@ cs_slope_test_gradient_vector(const int              inc,
 /*!
  * \brief Compute the upwind gradient used in the slope tests.
  *
+ * This function assumes the input gradient and pvar values have already
+ * been synchronized.
+ *
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
  * \param[in]     grad         standard gradient
@@ -1669,9 +1679,9 @@ cs_slope_test_gradient_vector(const int              inc,
 void
 cs_slope_test_gradient_tensor(const int              inc,
                               const cs_halo_type_t   halo_type,
-                              cs_real_63_t          *grad,
+                              const cs_real_63_t    *grad,
                               cs_real_63_t          *grdpa,
-                              cs_real_6_t           *pvar,
+                              const cs_real_6_t     *pvar,
                               const cs_real_6_t     *coefa,
                               const cs_real_66_t    *coefb,
                               const cs_real_t       *i_massflux)
@@ -2092,6 +2102,18 @@ cs_convection_diffusion_scalar(int                       idtvar,
                              &gradient_type,
                              &halo_type);
 
+  /* Handle cases where only the previous values (already synchronized)
+     or current values are provided */
+
+  if (pvar != NULL)
+    _sync_scalar_halo(m, tr_dim, pvar);
+  else if (pvara == NULL)
+    pvara = (const cs_real_t *restrict)pvar;
+
+  const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
+
+  /* Slope limiters */
+
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
     cs_gradient_perio_init_rij(f, &tr_dim, grad);
@@ -2176,36 +2198,35 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
             w_stride = weight_f->dim;
+            cs_field_synchronize(weight_f, halo_type);
           }
         }
       }
     }
 
-    cs_gradient_scalar(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       recompute_cocg,
-                       nswrgp,
-                       tr_dim,
-                       0, /* hyd_p_flag */
-                       w_stride,
-                       iwarnp,
-                       imligp,
-                       epsrgp,
-                       extrap,
-                       climgp,
-                       NULL, /* f_ext exterior force */
-                       coefap,
-                       coefbp,
-                       pvar,
-                       gweight, /* Weighted gradient */
-                       cpl,
-                       grad);
+    cs_gradient_scalar_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    recompute_cocg,
+                                    nswrgp,
+                                    tr_dim,
+                                    0, /* hyd_p_flag */
+                                    w_stride,
+                                    iwarnp,
+                                    imligp,
+                                    epsrgp,
+                                    extrap,
+                                    climgp,
+                                    NULL, /* f_ext exterior force */
+                                    coefap,
+                                    coefbp,
+                                    _pvar,
+                                    gweight, /* Weighted gradient */
+                                    cpl,
+                                    grad);
 
   } else {
-
-    _sync_scalar_halo(m, tr_dim, pvar); /* for safety */
 
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -2233,9 +2254,9 @@ cs_convection_diffusion_scalar(int                       idtvar,
     cs_slope_test_gradient(f_id,
                            inc,
                            halo_type,
-                           grad,
+                           (const cs_real_3_t *)grad,
                            gradst,
-                           pvar,
+                           _pvar,
                            coefap,
                            coefbp,
                            i_massflux);
@@ -2262,7 +2283,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                        coefbp,
                        i_massflux,
                        b_massflux,
-                       pvar,
+                       _pvar,
                        gradup);
 
   }
@@ -2317,8 +2338,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                   dijpf[face_id],
                                   grad[ii],
                                   grad[jj],
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pvara[ii],
                                   pvara[jj],
                                   &pifri,
@@ -2333,8 +2354,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_i_conv_flux(iconvp,
                            1.,
                            1,
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pifri,
                            pifrj,
                            pjfri,
@@ -2391,8 +2412,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                     dijpf[face_id],
                                     grad[ii],
                                     grad[jj],
-                                    pvar[ii],
-                                    pvar[jj],
+                                    _pvar[ii],
+                                    _pvar[jj],
                                     &pif,
                                     &pjf,
                                     &pip,
@@ -2401,8 +2422,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_i_conv_flux(iconvp,
                            thetap,
                            imasac,
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pif,
                            pif, /* no relaxation */
                            pjf,
@@ -2471,8 +2492,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                            grad[jj],
                            gradup[ii],
                            gradup[jj],
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pvara[ii],
                            pvara[jj],
                            &pifri,
@@ -2487,8 +2508,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_i_conv_flux(iconvp,
                            1.,
                            1,
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pifri,
                            pifrj,
                            pjfri,
@@ -2551,8 +2572,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                              grad[jj],
                              gradup[ii],
                              gradup[jj],
-                             pvar[ii],
-                             pvar[jj],
+                             _pvar[ii],
+                             _pvar[jj],
                              &pif,
                              &pjf,
                              &pip,
@@ -2561,8 +2582,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_i_conv_flux(iconvp,
                            thetap,
                            imasac,
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pif,
                            pif, /* no relaxation */
                            pjf,
@@ -2644,8 +2665,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                       gradup[jj],
                                       gradst[ii],
                                       gradst[jj],
-                                      pvar[ii],
-                                      pvar[jj],
+                                      _pvar[ii],
+                                      _pvar[jj],
                                       pvara[ii],
                                       pvara[jj],
                                       &pifri,
@@ -2660,8 +2681,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_i_conv_flux(iconvp,
                            1.,
                            1,
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pifri,
                            pifrj,
                            pjfri,
@@ -2742,8 +2763,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                           gradup[jj],
                                           gradst[ii],
                                           gradst[jj],
-                                          pvar[ii],
-                                          pvar[jj],
+                                          _pvar[ii],
+                                          _pvar[jj],
                                           &pif,
                                           &pjf,
                                           &pip,
@@ -2752,8 +2773,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
               cs_i_conv_flux(iconvp,
                              thetap,
                              imasac,
-                             pvar[ii],
-                             pvar[jj],
+                             _pvar[ii],
+                             _pvar[jj],
                              pif,
                              pif, /* no relaxation */
                              pjf,
@@ -2789,16 +2810,16 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                       dijpf[face_id],
                                       grad[ii],
                                       grad[jj],
-                                      pvar[ii],
-                                      pvar[jj],
+                                      _pvar[ii],
+                                      _pvar[jj],
                                       &recoi,
                                       &recoj,
                                       &pip,
                                       &pjp);
 
               /* Determine the properties central and downwind the face */
-              p_c = pvar[ic];
-              p_d = pvar[id];
+              p_c = _pvar[ic];
+              p_d = _pvar[id];
 
               /* Compute the distance between the face and the
                  centroid of the central cell */
@@ -2885,8 +2906,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
               cs_i_conv_flux(iconvp,
                              thetap,
                              imasac,
-                             pvar[ii],
-                             pvar[jj],
+                             _pvar[ii],
+                             _pvar[jj],
                              pif,
                              pif, /* no relaxation */
                              pjf,
@@ -2966,7 +2987,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                            relaxp,
                            diipb[face_id],
                            grad[ii],
-                           pvar[ii],
+                           _pvar[ii],
                            pvara[ii],
                            &pir,
                            &pipr);
@@ -2976,7 +2997,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                              1,
                              inc,
                              bc_type[face_id],
-                             pvar[ii],
+                             _pvar[ii],
                              pir,
                              pipr,
                              coefap[face_id],
@@ -3018,7 +3039,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_b_cd_unsteady(ircflp,
                              diipb[face_id],
                              grad[ii],
-                             pvar[ii],
+                             _pvar[ii],
                              &pip);
 
             cs_b_upwind_flux(iconvp,
@@ -3026,8 +3047,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                              imasac,
                              inc,
                              bc_type[face_id],
-                             pvar[ii],
-                             pvar[ii], /* no relaxation */
+                             _pvar[ii],
+                             _pvar[ii], /* no relaxation */
                              pip,
                              coefap[face_id],
                              coefbp[face_id],
@@ -3063,7 +3084,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
           cs_b_cd_unsteady(ircflp,
                            diipb[face_id],
                            grad[jj],
-                           pvar[jj],
+                           _pvar[jj],
                            &pip);
           pvar_distant[ii] = pip;
         }
@@ -3085,7 +3106,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
           cs_b_cd_unsteady(ircflp,
                            diipb[face_id],
                            grad[jj],
-                           pvar[jj],
+                           _pvar[jj],
                            &pip);
 
           pjp = pvar_local[ii];
@@ -3141,7 +3162,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                            relaxp,
                            diipb[face_id],
                            grad[ii],
-                           pvar[ii],
+                           _pvar[ii],
                            pvara[ii],
                            &pir,
                            &pipr);
@@ -3152,7 +3173,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                    inc,
                                    bc_type[face_id],
                                    icvfli[face_id],
-                                   pvar[ii],
+                                   _pvar[ii],
                                    pir,
                                    pipr,
                                    coefap[face_id],
@@ -3196,7 +3217,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
             cs_b_cd_unsteady(ircflp,
                              diipb[face_id],
                              grad[ii],
-                             pvar[ii],
+                             _pvar[ii],
                              &pip);
 
             cs_b_imposed_conv_flux(iconvp,
@@ -3205,8 +3226,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                    inc,
                                    bc_type[face_id],
                                    icvfli[face_id],
-                                   pvar[ii],
-                                   pvar[ii], /* no relaxation */
+                                   _pvar[ii],
+                                   _pvar[ii], /* no relaxation */
                                    pip,
                                    coefap[face_id],
                                    coefbp[face_id],
@@ -3414,6 +3435,22 @@ cs_convection_diffusion_vector(int                         idtvar,
                              &gradient_type,
                              &halo_type);
 
+  /* Handle cases where only the previous values (already synchronized)
+     or current values are provided */
+
+  if (pvar != NULL && halo != NULL) {
+    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, 3);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, 3);
+  }
+  else if (pvara == NULL)
+    pvara = (const cs_real_3_t *restrict)pvar;
+
+  const cs_real_3_t  *restrict _pvar
+    = (pvar != NULL) ? (const cs_real_3_t  *restrict)pvar : pvara;
+
+  /* Slope limiters */
+
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
     snprintf(var_name, 31, "%s", f->name);
@@ -3464,25 +3501,26 @@ cs_convection_diffusion_vector(int                         idtvar,
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
+            cs_field_synchronize(weight_f, halo_type);
           }
         }
       }
     }
 
-    cs_gradient_vector(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       nswrgp,
-                       iwarnp,
-                       imligp,
-                       epsrgp,
-                       climgp,
-                       coefav,
-                       coefbv,
-                       pvar,
-                       gweight, /* weighted gradient */
-                       grad);
+    cs_gradient_vector_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    nswrgp,
+                                    iwarnp,
+                                    imligp,
+                                    epsrgp,
+                                    climgp,
+                                    coefav,
+                                    coefbv,
+                                    _pvar,
+                                    gweight, /* weighted gradient */
+                                    grad);
 
   } else {
 #   pragma omp parallel for
@@ -3510,9 +3548,9 @@ cs_convection_diffusion_vector(int                         idtvar,
 
     cs_slope_test_gradient_vector(inc,
                                   halo_type,
-                                  grad,
+                                  (const cs_real_33_t *)grad,
                                   grdpa,
-                                  pvar,
+                                  _pvar,
                                   coefav,
                                   coefbv,
                                   i_massflux);
@@ -3574,8 +3612,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                          dijpf[face_id],
                                          (const cs_real_3_t *)grad[ii],
                                          (const cs_real_3_t *)grad[jj],
-                                         pvar[ii],
-                                         pvar[jj],
+                                         _pvar[ii],
+                                         _pvar[jj],
                                          pvara[ii],
                                          pvara[jj],
                                          pifri,
@@ -3591,8 +3629,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_i_conv_flux_vector(iconvp,
                                   1.,
                                   1,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pifri,
                                   pifrj,
                                   pjfri,
@@ -3655,8 +3693,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                            dijpf[face_id],
                                            (const cs_real_3_t *)grad[ii],
                                            (const cs_real_3_t *)grad[jj],
-                                           pvar[ii],
-                                           pvar[jj],
+                                           _pvar[ii],
+                                           _pvar[jj],
                                            pif,
                                            pjf,
                                            pip,
@@ -3665,8 +3703,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_i_conv_flux_vector(iconvp,
                                   thetap,
                                   imasac,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pif,
                                   pif, /* no relaxation */
                                   pjf,
@@ -3739,8 +3777,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   dijpf[face_id],
                                   (const cs_real_3_t *)grad[ii],
                                   (const cs_real_3_t *)grad[jj],
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pvara[ii],
                                   pvara[jj],
                                   pifri,
@@ -3755,8 +3793,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_i_conv_flux_vector(iconvp,
                                   1.,
                                   1,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pifri,
                                   pifrj,
                                   pjfri,
@@ -3817,8 +3855,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     dijpf[face_id],
                                     (const cs_real_3_t *)grad[ii],
                                     (const cs_real_3_t *)grad[jj],
-                                    pvar[ii],
-                                    pvar[jj],
+                                    _pvar[ii],
+                                    _pvar[jj],
                                     pif,
                                     pjf,
                                     pip,
@@ -3827,8 +3865,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_i_conv_flux_vector(iconvp,
                                   thetap,
                                   imasac,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pif,
                                   pif, /* no relaxation */
                                   pjf,
@@ -3909,8 +3947,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                              (const cs_real_3_t *)grad[jj],
                                              (const cs_real_3_t *)grdpa[ii],
                                              (const cs_real_3_t *)grdpa[jj],
-                                             pvar[ii],
-                                             pvar[jj],
+                                             _pvar[ii],
+                                             _pvar[jj],
                                              pvara[ii],
                                              pvara[jj],
                                              pifri,
@@ -3925,8 +3963,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_i_conv_flux_vector(iconvp,
                                   1.,
                                   1,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pifri,
                                   pifrj,
                                   pjfri,
@@ -3994,8 +4032,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                                (const cs_real_3_t *)grad[jj],
                                                (const cs_real_3_t *)grdpa[ii],
                                                (const cs_real_3_t *)grdpa[jj],
-                                               pvar[ii],
-                                               pvar[jj],
+                                               _pvar[ii],
+                                               _pvar[jj],
                                                pif,
                                                pjf,
                                                pip,
@@ -4004,8 +4042,8 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_i_conv_flux_vector(iconvp,
                                   thetap,
                                   imasac,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pif,
                                   pif, /* no relaxation */
                                   pjf,
@@ -4088,7 +4126,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   relaxp,
                                   diipb[face_id],
                                   (const cs_real_3_t *)grad[ii],
-                                  pvar[ii],
+                                  _pvar[ii],
                                   pvara[ii],
                                   pir,
                                   pipr);
@@ -4098,7 +4136,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     1, /* imasac */
                                     inc,
                                     bc_type[face_id],
-                                    pvar[ii],
+                                    _pvar[ii],
                                     pir,
                                     pipr,
                                     coefav[face_id],
@@ -4144,7 +4182,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_b_cd_unsteady_vector(ircflp,
                                     diipb[face_id],
                                     (const cs_real_3_t *)grad[ii],
-                                    pvar[ii],
+                                    _pvar[ii],
                                     pip);
 
             cs_b_upwind_flux_vector(iconvp,
@@ -4152,8 +4190,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     imasac,
                                     inc,
                                     bc_type[face_id],
-                                    pvar[ii],
-                                    pvar[ii], /* no relaxation */
+                                    _pvar[ii],
+                                    _pvar[ii], /* no relaxation */
                                     pip,
                                     coefav[face_id],
                                     coefbv[face_id],
@@ -4213,7 +4251,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   relaxp,
                                   diipb[face_id],
                                   (const cs_real_3_t *)grad[ii],
-                                  pvar[ii],
+                                  _pvar[ii],
                                   pvara[ii],
                                   pir,
                                   pipr);
@@ -4224,7 +4262,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                           inc,
                                           bc_type[face_id],
                                           icvfli[face_id],
-                                          pvar[ii],
+                                          _pvar[ii],
                                           pir,
                                           pipr,
                                           coefav[face_id],
@@ -4272,7 +4310,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             cs_b_cd_unsteady_vector(ircflp,
                                     diipb[face_id],
                                     (const cs_real_3_t *)grad[ii],
-                                    pvar[ii],
+                                    _pvar[ii],
                                     pip);
 
             cs_b_imposed_conv_flux_vector(iconvp,
@@ -4281,8 +4319,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                           inc,
                                           bc_type[face_id],
                                           icvfli[face_id],
-                                          pvar[ii],
-                                          pvar[ii], /* no relaxation */
+                                          _pvar[ii],
+                                          _pvar[ii], /* no relaxation */
                                           pip,
                                           coefav[face_id],
                                           coefbv[face_id],
@@ -4545,6 +4583,22 @@ cs_convection_diffusion_tensor(int                         idtvar,
                              &gradient_type,
                              &halo_type);
 
+  /* Handle cases where only the previous values (already synchronized)
+     or current values are provided */
+
+  if (pvar != NULL && m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 6);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)pvar);
+  }
+  else if (pvara == NULL)
+    pvara = (const cs_real_6_t *restrict)pvar;
+
+  const cs_real_6_t  *restrict _pvar
+    = (pvar != NULL) ? (const cs_real_6_t  *restrict)pvar : pvara;
+
+  /* Logging info */
+
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
     cs_gradient_perio_init_rij_tensor(&tr_dim, grad);
@@ -4587,19 +4641,19 @@ cs_convection_diffusion_tensor(int                         idtvar,
      || (   iconvp != 0 && iupwin == 0
          && (ischcp == 0 || ircflp == 1 || isstpp == 0))) {
 
-    cs_gradient_tensor(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       nswrgp,
-                       iwarnp,
-                       imligp,
-                       epsrgp,
-                       climgp,
-                       coefa,
-                       coefb,
-                       pvar,
-                       grad);
+    cs_gradient_tensor_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    nswrgp,
+                                    iwarnp,
+                                    imligp,
+                                    epsrgp,
+                                    climgp,
+                                    coefa,
+                                    coefb,
+                                    _pvar,
+                                    grad);
 
   } else {
 #   pragma omp parallel for
@@ -4627,9 +4681,9 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
     cs_slope_test_gradient_tensor(inc,
                                   halo_type,
-                                  grad,
+                                  (const cs_real_63_t *)grad,
                                   grdpa,
-                                  pvar,
+                                  _pvar,
                                   coefa,
                                   coefb,
                                   i_massflux);
@@ -4688,8 +4742,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                          dijpf[face_id],
                                          (const cs_real_3_t *)grad[ii],
                                          (const cs_real_3_t *)grad[jj],
-                                         pvar[ii],
-                                         pvar[jj],
+                                         _pvar[ii],
+                                         _pvar[jj],
                                          pvara[ii],
                                          pvara[jj],
                                          pifri,
@@ -4705,8 +4759,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_i_conv_flux_tensor(iconvp,
                                   1.,
                                   1,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pifri,
                                   pifrj,
                                   pjfri,
@@ -4768,8 +4822,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                            dijpf[face_id],
                                            (const cs_real_3_t *)grad[ii],
                                            (const cs_real_3_t *)grad[jj],
-                                           pvar[ii],
-                                           pvar[jj],
+                                           _pvar[ii],
+                                           _pvar[jj],
                                            pif,
                                            pjf,
                                            pip,
@@ -4778,8 +4832,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_i_conv_flux_tensor(iconvp,
                                   thetap,
                                   imasac,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pif,
                                   pif, /* no relaxation */
                                   pjf,
@@ -4854,8 +4908,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   dijpf[face_id],
                                   (const cs_real_3_t *)grad[ii],
                                   (const cs_real_3_t *)grad[jj],
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pvara[ii],
                                   pvara[jj],
                                   pifri,
@@ -4870,8 +4924,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_i_conv_flux_tensor(iconvp,
                                   1.,
                                   1,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pifri,
                                   pifrj,
                                   pjfri,
@@ -4931,8 +4985,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                     dijpf[face_id],
                                     (const cs_real_3_t *)grad[ii],
                                     (const cs_real_3_t *)grad[jj],
-                                    pvar[ii],
-                                    pvar[jj],
+                                    _pvar[ii],
+                                    _pvar[jj],
                                     pif,
                                     pjf,
                                     pip,
@@ -4941,8 +4995,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_i_conv_flux_tensor(iconvp,
                                   thetap,
                                   imasac,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pif,
                                   pif, /* no relaxation */
                                   pjf,
@@ -5021,8 +5075,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                              (const cs_real_3_t *)grad[jj],
                                              (const cs_real_3_t *)grdpa[ii],
                                              (const cs_real_3_t *)grdpa[jj],
-                                             pvar[ii],
-                                             pvar[jj],
+                                             _pvar[ii],
+                                             _pvar[jj],
                                              pvara[ii],
                                              pvara[jj],
                                              pifri,
@@ -5037,8 +5091,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_i_conv_flux_tensor(iconvp,
                                   1.,
                                   1,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pifri,
                                   pifrj,
                                   pjfri,
@@ -5106,8 +5160,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                                (const cs_real_3_t *)grad[jj],
                                                (const cs_real_3_t *)grdpa[ii],
                                                (const cs_real_3_t *)grdpa[jj],
-                                               pvar[ii],
-                                               pvar[jj],
+                                               _pvar[ii],
+                                               _pvar[jj],
                                                pif,
                                                pjf,
                                                pip,
@@ -5116,8 +5170,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_i_conv_flux_tensor(iconvp,
                                   thetap,
                                   imasac,
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pif,
                                   pif, /* no relaxation */
                                   pjf,
@@ -5196,7 +5250,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   relaxp,
                                   diipb[face_id],
                                   (const cs_real_3_t *)grad[ii],
-                                  pvar[ii],
+                                  _pvar[ii],
                                   pvara[ii],
                                   pir,
                                   pipr);
@@ -5206,7 +5260,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                     1, /* imasac */
                                     inc,
                                     bc_type[face_id],
-                                    pvar[ii],
+                                    _pvar[ii],
                                     pir,
                                     pipr,
                                     coefa[face_id],
@@ -5251,7 +5305,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
             cs_b_cd_unsteady_tensor(ircflp,
                                     diipb[face_id],
                                     (const cs_real_3_t *)grad[ii],
-                                    pvar[ii],
+                                    _pvar[ii],
                                     pip);
 
             cs_b_upwind_flux_tensor(iconvp,
@@ -5259,8 +5313,8 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                     imasac,
                                     inc,
                                     bc_type[face_id],
-                                    pvar[ii],
-                                    pvar[ii], /* no relaxation */
+                                    _pvar[ii],
+                                    _pvar[ii], /* no relaxation */
                                     pip,
                                     coefa[face_id],
                                     coefb[face_id],
@@ -5464,6 +5518,18 @@ cs_convection_diffusion_thermal(int                       idtvar,
                              &gradient_type,
                              &halo_type);
 
+  /* Handle cases where only the previous values (already synchronized)
+     or current values are provided */
+
+  if (pvar != NULL)
+    _sync_scalar_halo(m, tr_dim, pvar);
+  else if (pvara == NULL)
+    pvara = (const cs_real_t *restrict)pvar;
+
+  const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
+
+  /* Slope limiters */
+
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
     /* Get option from the field */
@@ -5546,32 +5612,33 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
             w_stride = weight_f->dim;
+            cs_field_synchronize(weight_f, halo_type);
           }
         }
       }
     }
 
-    cs_gradient_scalar(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       recompute_cocg,
-                       nswrgp,
-                       tr_dim,
-                       0, /* hyd_p_flag */
-                       w_stride,
-                       iwarnp,
-                       imligp,
-                       epsrgp,
-                       extrap,
-                       climgp,
-                       NULL, /* f_ext exterior force */
-                       coefap,
-                       coefbp,
-                       pvar,
-                       gweight, /* Weighted gradient */
-                       cpl, /* internal coupling */
-                       grad);
+    cs_gradient_scalar_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    recompute_cocg,
+                                    nswrgp,
+                                    tr_dim,
+                                    0, /* hyd_p_flag */
+                                    w_stride,
+                                    iwarnp,
+                                    imligp,
+                                    epsrgp,
+                                    extrap,
+                                    climgp,
+                                    NULL, /* f_ext exterior force */
+                                    coefap,
+                                    coefbp,
+                                    _pvar,
+                                    gweight, /* Weighted gradient */
+                                    cpl, /* internal coupling */
+                                    grad);
 
   } else {
 #   pragma omp parallel for
@@ -5603,9 +5670,9 @@ cs_convection_diffusion_thermal(int                       idtvar,
     cs_slope_test_gradient(f_id,
                            inc,
                            halo_type,
-                           grad,
+                           (const cs_real_3_t *)grad,
                            gradst,
-                           pvar,
+                           _pvar,
                            coefap,
                            coefbp,
                            i_massflux);
@@ -5632,7 +5699,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
                        coefbp,
                        i_massflux,
                        b_massflux,
-                       pvar,
+                       _pvar,
                        gradup);
 
   }
@@ -5685,8 +5752,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                   dijpf[face_id],
                                   grad[ii],
                                   grad[jj],
-                                  pvar[ii],
-                                  pvar[jj],
+                                  _pvar[ii],
+                                  _pvar[jj],
                                   pvara[ii],
                                   pvara[jj],
                                   &pifri,
@@ -5701,8 +5768,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_i_conv_flux(iconvp,
                            1.,
                            1,
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pifri,
                            pifrj,
                            pjfri,
@@ -5758,8 +5825,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                     dijpf[face_id],
                                     grad[ii],
                                     grad[jj],
-                                    pvar[ii],
-                                    pvar[jj],
+                                    _pvar[ii],
+                                    _pvar[jj],
                                     &pif,
                                     &pjf,
                                     &pip,
@@ -5768,8 +5835,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_i_conv_flux(iconvp,
                            thetap,
                            imasac,
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pif,
                            pif, /* no relaxation */
                            pjf,
@@ -5838,8 +5905,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                            grad[jj],
                            gradup[ii],
                            gradup[jj],
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pvara[ii],
                            pvara[jj],
                            &pifri,
@@ -5854,8 +5921,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_i_conv_flux(iconvp,
                            1.,
                            1,
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pifri,
                            pifrj,
                            pjfri,
@@ -5918,8 +5985,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                              grad[jj],
                              gradup[ii],
                              gradup[jj],
-                             pvar[ii],
-                             pvar[jj],
+                             _pvar[ii],
+                             _pvar[jj],
                              &pif,
                              &pjf,
                              &pip,
@@ -5928,8 +5995,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_i_conv_flux(iconvp,
                            thetap,
                            imasac,
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pif,
                            pif, /* no relaxation */
                            pjf,
@@ -6012,8 +6079,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                       gradup[jj],
                                       gradst[ii],
                                       gradst[jj],
-                                      pvar[ii],
-                                      pvar[jj],
+                                      _pvar[ii],
+                                      _pvar[jj],
                                       pvara[ii],
                                       pvara[jj],
                                       &pifri,
@@ -6028,8 +6095,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_i_conv_flux(iconvp,
                            1.,
                            1,
-                           pvar[ii],
-                           pvar[jj],
+                           _pvar[ii],
+                           _pvar[jj],
                            pifri,
                            pifrj,
                            pjfri,
@@ -6110,8 +6177,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                           gradup[jj],
                                           gradst[ii],
                                           gradst[jj],
-                                          pvar[ii],
-                                          pvar[jj],
+                                          _pvar[ii],
+                                          _pvar[jj],
                                           &pif,
                                           &pjf,
                                           &pip,
@@ -6120,8 +6187,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
               cs_i_conv_flux(iconvp,
                              thetap,
                              imasac,
-                             pvar[ii],
-                             pvar[jj],
+                             _pvar[ii],
+                             _pvar[jj],
                              pif,
                              pif, /* no relaxation */
                              pjf,
@@ -6159,8 +6226,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                       dijpf[face_id],
                                       grad[ii],
                                       grad[jj],
-                                      pvar[ii],
-                                      pvar[jj],
+                                      _pvar[ii],
+                                      _pvar[jj],
                                       &recoi,
                                       &recoj,
                                       &pip,
@@ -6168,8 +6235,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
               /* Determine the properties central and downwind
                  the face */
-              p_c = pvar[ic];
-              p_d = pvar[id];
+              p_c = _pvar[ic];
+              p_d = _pvar[id];
 
               /* Compute the distance between the face and the
                  centroid of the central cell */
@@ -6240,8 +6307,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
               cs_i_conv_flux(iconvp,
                              thetap,
                              imasac,
-                             pvar[ii],
-                             pvar[jj],
+                             _pvar[ii],
+                             _pvar[jj],
                              pif,
                              pif, /* no relaxation */
                              pjf,
@@ -6318,7 +6385,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
                          relaxp,
                          diipb[face_id],
                          grad[ii],
-                         pvar[ii],
+                         _pvar[ii],
                          pvara[ii],
                          &pir,
                          &pipr);
@@ -6328,7 +6395,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
                            1,
                            inc,
                            bc_type[face_id],
-                           pvar[ii],
+                           _pvar[ii],
                            pir,
                            pipr,
                            coefap[face_id],
@@ -6370,7 +6437,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
           cs_b_cd_unsteady(ircflp,
                            diipb[face_id],
                            grad[ii],
-                           pvar[ii],
+                           _pvar[ii],
                            &pip);
 
           cs_b_upwind_flux(iconvp,
@@ -6378,8 +6445,8 @@ cs_convection_diffusion_thermal(int                       idtvar,
                            imasac,
                            inc,
                            bc_type[face_id],
-                           pvar[ii],
-                           pvar[ii], /* no relaxation */
+                           _pvar[ii],
+                           _pvar[ii], /* no relaxation */
                            pip,
                            coefap[face_id],
                            coefbp[face_id],
@@ -6415,7 +6482,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
         cs_b_cd_unsteady(ircflp,
                          diipb[face_id],
                          grad[jj],
-                         pvar[jj],
+                         _pvar[jj],
                          &pip);
         pvar_distant[ii] = pip;
       }
@@ -6437,7 +6504,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
         cs_b_cd_unsteady(ircflp,
                          diipb[face_id],
                          grad[jj],
-                         pvar[jj],
+                         _pvar[jj],
                          &pip);
 
         pjp = pvar_local[ii];
@@ -6624,6 +6691,18 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                              &gradient_type,
                              &halo_type);
 
+  /* Handle cases where only the previous values (already synchronized)
+     or current values are provided */
+
+  if (pvar != NULL)
+    _sync_scalar_halo(m, tr_dim, pvar);
+  else if (pvara == NULL)
+    pvara = (const cs_real_t *restrict)pvar;
+
+  const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
+
+  /* Logging */
+
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
     snprintf(var_name, 31, "%s", f->name);
@@ -6708,32 +6787,33 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
             w_stride = weight_f->dim;
+            cs_field_synchronize(weight_f, halo_type);
           }
         }
       }
     }
 
-    cs_gradient_scalar(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       recompute_cocg,
-                       nswrgp,
-                       tr_dim,
-                       0, /* hyd_p_flag */
-                       w_stride,
-                       iwarnp,
-                       imligp,
-                       epsrgp,
-                       extrap,
-                       climgp,
-                       NULL, /* f_ext exterior force */
-                       coefap,
-                       coefbp,
-                       pvar,
-                       gweight, /* Weighted gradient */
-                       cpl, /* internal coupling */
-                       grad);
+    cs_gradient_scalar_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    recompute_cocg,
+                                    nswrgp,
+                                    tr_dim,
+                                    0, /* hyd_p_flag */
+                                    w_stride,
+                                    iwarnp,
+                                    imligp,
+                                    epsrgp,
+                                    extrap,
+                                    climgp,
+                                    NULL, /* f_ext exterior force */
+                                    coefap,
+                                    coefbp,
+                                    _pvar,
+                                    gweight, /* Weighted gradient */
+                                    cpl, /* internal coupling */
+                                    grad);
 
   } else {
 #   pragma omp parallel for
@@ -6774,8 +6854,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
             n_upwind++;
           }
 
-          cs_real_t pi = pvar[ii];
-          cs_real_t pj = pvar[jj];
+          cs_real_t pi = _pvar[ii];
+          cs_real_t pj = _pvar[jj];
           cs_real_t pia = pvara[ii];
           cs_real_t pja = pvara[jj];
 
@@ -6875,8 +6955,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
             n_upwind++;
           }
 
-          cs_real_t pi = pvar[ii];
-          cs_real_t pj = pvar[jj];
+          cs_real_t pi = _pvar[ii];
+          cs_real_t pj = _pvar[jj];
 
           /* Recompute II" and JJ"
              ----------------------*/
@@ -6961,7 +7041,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
           cs_lnum_t ii = b_face_cells[face_id];
 
-          cs_real_t pi = pvar[ii];
+          cs_real_t pi = _pvar[ii];
           cs_real_t pia = pvara[ii];
 
           cs_real_t pir = pi/relaxp - (1.-relaxp)/relaxp*pia;
@@ -7019,7 +7099,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
           cs_lnum_t ii = b_face_cells[face_id];
 
-          cs_real_t pi = pvar[ii];
+          cs_real_t pi = _pvar[ii];
 
           /* Recompute II"
              --------------*/
@@ -7070,36 +7150,36 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
       BFT_MALLOC(pvar_local, n_local, cs_real_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                1, /* Dimension */
-                                               (const cs_real_t*) pvar,
+                                               _pvar,
                                                pvar_local);
 
       /* Exchange grad */
       BFT_MALLOC(grad_local, n_local, cs_real_3_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                3, /* Dimension */
-                                               (const cs_real_t*) grad,
-                                               (cs_real_t*) grad_local);
+                                               (const cs_real_t*)grad,
+                                               (cs_real_t *)grad_local);
 
       /* Exchange viscce */
       BFT_MALLOC(viscce_local, n_local, cs_real_6_t);
       cs_internal_coupling_exchange_by_cell_id(cpl,
                                                6, /* Dimension */
-                                               (const cs_real_t*) viscce,
-                                               (cs_real_t*) viscce_local);
+                                               (const cs_real_t*)viscce,
+                                               (cs_real_t *)viscce_local);
 
       /* Exchange weighb */
       BFT_MALLOC(weighb_local, n_local, cs_real_t);
       cs_internal_coupling_exchange_by_face_id(cpl,
                                                1, /* Dimension */
-                                               (const cs_real_t*) weighb,
-                                               weighb_local);
+                                               (const cs_real_t*)weighb,
+                                               (cs_real_t *)weighb_local);
 
       /* Flux contribution */
       for (cs_lnum_t jj = 0; jj < n_local; jj++) {
         cs_lnum_t face_id = faces_local[jj];
         cs_lnum_t ii = b_face_cells[face_id];
 
-        cs_real_t pi = pvar[ii];
+        cs_real_t pi = _pvar[ii];
         cs_real_t pj = pvar_local[jj];
 
         /* Recompute II" and JJ" */
@@ -7307,12 +7387,29 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                              &gradient_type,
                              &halo_type);
 
+  /* Handle cases where only the previous values (already synchronized)
+     or current values are provided */
+
+  if (pvar != NULL && halo != NULL) {
+    cs_halo_sync_var_strided(halo, halo_type, (cs_real_t *)pvar, 3);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_vect(halo, halo_type, (cs_real_t *)pvar, 3);
+  }
+  else if (pvara == NULL)
+    pvara = (const cs_real_3_t *restrict)pvar;
+
+  const cs_real_3_t  *restrict _pvar
+    = (pvar != NULL) ? (const cs_real_3_t  *restrict)pvar : pvara;
+
+  /* logging info */
+
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array"); var_name[31] = '\0';
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   /* 2. Compute the diffusive part with reconstruction technics */
 
@@ -7320,20 +7417,20 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
 
   if (ircflp == 1 || ivisep == 1) {
 
-    cs_gradient_vector(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       nswrgp,
-                       iwarnp,
-                       imligp,
-                       epsrgp,
-                       climgp,
-                       coefav,
-                       coefbv,
-                       pvar,
-                       NULL, /* weighted gradient */
-                       gradv);
+    cs_gradient_vector_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    nswrgp,
+                                    iwarnp,
+                                    imligp,
+                                    epsrgp,
+                                    climgp,
+                                    coefav,
+                                    coefbv,
+                                    _pvar,
+                                    NULL, /* weighted gradient */
+                                    gradv);
 
   } else {
 #   pragma omp parallel for
@@ -7406,8 +7503,8 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
               dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
             }
 
-            cs_real_t pi  = pvar [ii][isou];
-            cs_real_t pj  = pvar [jj][isou];
+            cs_real_t pi  = _pvar[ii][isou];
+            cs_real_t pj  = _pvar[jj][isou];
 
             cs_real_t pia = pvara[ii][isou];
             cs_real_t pja = pvara[jj][isou];
@@ -7495,8 +7592,8 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
               dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
             }
 
-            cs_real_t pi = pvar[ii][isou];
-            cs_real_t pj = pvar[jj][isou];
+            cs_real_t pi = _pvar[ii][isou];
+            cs_real_t pj = _pvar[jj][isou];
 
             pip[isou] = pi + ircflp*(  dpvf[0]*diipfv[0]
                                      + dpvf[1]*diipfv[1]
@@ -7555,7 +7652,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
 
             /*coefu and cofuf are matrices */
             for (int jsou = 0; jsou < 3; jsou++) {
-              cs_real_t pir  =   pvar[ii][jsou]/relaxp
+              cs_real_t pir  =   _pvar[ii][jsou]/relaxp
                                - (1.-relaxp)/relaxp*pvara[ii][jsou];
 
               pipr[jsou] = pir +ircflp*(  gradv[ii][jsou][0]*diipbv[0]
@@ -7598,7 +7695,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
 
             /*coefu and cofuf are matrices */
             for (int jsou = 0; jsou < 3; jsou++) {
-              cs_real_t pir =   pvar[ii][jsou]
+              cs_real_t pir =   _pvar[ii][jsou]
                               + ircflp*(  gradv[ii][jsou][0]*diipbv[0]
                                         + gradv[ii][jsou][1]*diipbv[1]
                                         + gradv[ii][jsou][2]*diipbv[2]);
@@ -7836,6 +7933,22 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                              &gradient_type,
                              &halo_type);
 
+  /* Handle cases where only the previous values (already synchronized)
+     or current values are provided */
+
+  if (pvar != NULL && m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 6);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)pvar);
+  }
+  else if (pvara == NULL)
+    pvara = (const cs_real_6_t *restrict)pvar;
+
+  const cs_real_6_t  *restrict _pvar
+    = (pvar != NULL) ? (const cs_real_6_t  *restrict)pvar : pvara;
+
+  /* Logging info */
+
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
     snprintf(var_name, 31, "%s", f->name);
@@ -7898,19 +8011,19 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
   if (ircflp == 1) {
 
-    cs_gradient_tensor(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       nswrgp,
-                       iwarnp,
-                       imligp,
-                       epsrgp,
-                       climgp,
-                       coefa,
-                       coefb,
-                       pvar,
-                       grad);
+    cs_gradient_tensor_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    nswrgp,
+                                    iwarnp,
+                                    imligp,
+                                    epsrgp,
+                                    climgp,
+                                    coefa,
+                                    coefb,
+                                    _pvar,
+                                    grad);
 
   } else {
 #   pragma omp parallel for
@@ -7961,8 +8074,8 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           cs_real_t  pi[6], pj[6], pia[6], pja[6];
 
           for (int isou = 0; isou < 6; isou++) {
-            pi[isou] = pvar[ii][isou];
-            pj[isou] = pvar[jj][isou];
+            pi[isou] = _pvar[ii][isou];
+            pj[isou] = _pvar[jj][isou];
             pia[isou] = pvara[ii][isou];
             pja[isou] = pvara[jj][isou];
           }
@@ -8066,8 +8179,8 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           cs_real_t pi[6], pj[6];
 
           for (int isou = 0; isou < 6; isou++) {
-            pi[isou] = pvar[ii][isou];
-            pj[isou] = pvar[jj][isou];
+            pi[isou] = _pvar[ii][isou];
+            pj[isou] = _pvar[jj][isou];
           }
 
           /* Recompute II" and JJ"
@@ -8155,7 +8268,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           cs_real_t diippf[3];
 
           for (int isou = 0; isou < 6; isou++) {
-            pi[isou] = pvar[ii][isou];
+            pi[isou] = _pvar[ii][isou];
             pia[isou] = pvara[ii][isou];
             pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp*pia[isou];
           }
@@ -8217,7 +8330,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
           cs_real_t diippf[3], pi[6], pipp[6];
 
           for (int isou = 0; isou < 6; isou++) {
-            pi[isou] = pvar[ii][isou];
+            pi[isou] = _pvar[ii][isou];
           }
 
           /* Recompute II"
@@ -8465,7 +8578,7 @@ cs_face_diffusion_potential(const int                 f_id,
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
 
-          i_massflux[face_id] += i_visc[face_id]*(pvar[ii] -pvar[jj]);
+          i_massflux[face_id] += i_visc[face_id]*(pvar[ii] - pvar[jj]);
 
         }
       }
@@ -8502,8 +8615,11 @@ cs_face_diffusion_potential(const int                 f_id,
     BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     /* Compute gradient */
-    if (iwgrp > 0)
+    if (iwgrp > 0) {
       gweight = visel;
+      if (halo != NULL)
+        cs_halo_sync_var(halo, halo_type, gweight);
+    }
 
     else if (f_id > -1) {
       /* Get the calculation option from the field */
@@ -8518,32 +8634,33 @@ cs_face_diffusion_potential(const int                 f_id,
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
             w_stride = weight_f->dim;
+            cs_field_synchronize(weight_f, halo_type);
           }
         }
       }
     }
 
-    cs_gradient_scalar(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       recompute_cocg,
-                       nswrgp,
-                       tr_dim,
-                       iphydp,
-                       w_stride,
-                       iwarnp,
-                       imligp,
-                       epsrgp,
-                       extrap,
-                       climgp,
-                       frcxt,
-                       coefap,
-                       coefbp,
-                       pvar,
-                       gweight, /* Weighted gradient */
-                       NULL, /* internal coupling */
-                       grad);
+    cs_gradient_scalar_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    recompute_cocg,
+                                    nswrgp,
+                                    tr_dim,
+                                    iphydp,
+                                    w_stride,
+                                    iwarnp,
+                                    imligp,
+                                    epsrgp,
+                                    extrap,
+                                    climgp,
+                                    frcxt,
+                                    coefap,
+                                    coefbp,
+                                    (const cs_real_t *)pvar,
+                                    gweight, /* Weighted gradient */
+                                    NULL, /* internal coupling */
+                                    grad);
 
     /* Handle parallelism and periodicity */
 
@@ -8603,8 +8720,8 @@ cs_face_diffusion_potential(const int                 f_id,
           double diipbz = diipb[face_id][2];
 
           double pip = pvar[ii] + grad[ii][0]*diipbx
-                                + grad[ii][1]*diipby
-                                + grad[ii][2]*diipbz;
+                                 + grad[ii][1]*diipby
+                                 + grad[ii][2]*diipbz;
           double pfac = inc*cofafp[face_id] + cofbfp[face_id]*pip;
 
           b_massflux[face_id] += b_visc[face_id]*pfac;
@@ -8913,8 +9030,14 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
     BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     /* Compute gradient */
-    if (iwgrp > 0)
+    if (iwgrp > 0) {
       gweight = (cs_real_t *)viscce;
+      if (halo != NULL) {
+        cs_halo_sync_var_strided(halo, halo_type, gweight, 6);
+        if (cs_glob_mesh->n_init_perio > 0)
+          cs_halo_perio_sync_var_sym_tens(halo, halo_type, gweight);
+      }
+    }
 
     else if (f_id > -1) {
       /* Get the calculation option from the field */
@@ -8929,33 +9052,34 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
             w_stride = weight_f->dim;
+            cs_field_synchronize(weight_f, halo_type);
           }
         }
       }
     }
 
     /* Compute gradient */
-    cs_gradient_scalar(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       recompute_cocg,
-                       nswrgp,
-                       tr_dim,
-                       iphydp,
-                       w_stride,
-                       iwarnp,
-                       imligp,
-                       epsrgp,
-                       extrap,
-                       climgp,
-                       frcxt,
-                       coefap,
-                       coefbp,
-                       pvar,
-                       gweight, /* Weighted gradient */
-                       NULL, /* internal coupling */
-                       grad);
+    cs_gradient_scalar_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    recompute_cocg,
+                                    nswrgp,
+                                    tr_dim,
+                                    iphydp,
+                                    w_stride,
+                                    iwarnp,
+                                    imligp,
+                                    epsrgp,
+                                    extrap,
+                                    climgp,
+                                    frcxt,
+                                    coefap,
+                                    coefbp,
+                                    pvar,
+                                    gweight, /* Weighted gradient */
+                                    NULL, /* internal coupling */
+                                    grad);
 
     /* Mass flow through interior faces */
 
@@ -9175,7 +9299,7 @@ cs_diffusion_potential(const int                 f_id,
                        const cs_real_t           cofbfp[],
                        const cs_real_t           i_visc[],
                        const cs_real_t           b_visc[],
-                       const cs_real_t           visel[],
+                       cs_real_t                 visel[],
                        cs_real_t       *restrict diverg)
 {
   const cs_halo_t  *halo = m->halo;
@@ -9282,7 +9406,7 @@ cs_diffusion_potential(const int                 f_id,
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
 
-          double i_massflux = i_visc[face_id]*(pvar[ii] -pvar[jj]);
+          double i_massflux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
           diverg[ii] += i_massflux;
           diverg[jj] -= i_massflux;
 
@@ -9335,32 +9459,33 @@ cs_diffusion_potential(const int                 f_id,
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
             w_stride = weight_f->dim;
+            cs_field_synchronize(weight_f, halo_type);
           }
         }
       }
     }
 
-    cs_gradient_scalar(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       recompute_cocg,
-                       nswrgp,
-                       tr_dim,
-                       iphydp,
-                       w_stride,
-                       iwarnp,
-                       imligp,
-                       epsrgp,
-                       extrap,
-                       climgp,
-                       frcxt,
-                       coefap,
-                       coefbp,
-                       pvar,
-                       gweight, /* Weighted gradient */
-                       NULL, /* internal coupling */
-                       grad);
+    cs_gradient_scalar_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    recompute_cocg,
+                                    nswrgp,
+                                    tr_dim,
+                                    iphydp,
+                                    w_stride,
+                                    iwarnp,
+                                    imligp,
+                                    epsrgp,
+                                    extrap,
+                                    climgp,
+                                    frcxt,
+                                    coefap,
+                                    coefbp,
+                                    pvar,
+                                    gweight, /* Weighted gradient */
+                                    NULL, /* internal coupling */
+                                    grad);
 
     /* Handle parallelism and periodicity */
 
@@ -9781,33 +9906,34 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
             w_stride = weight_f->dim;
+            cs_field_synchronize(weight_f, halo_type);
           }
         }
       }
     }
 
     /* Compute gradient */
-    cs_gradient_scalar(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       recompute_cocg,
-                       nswrgp,
-                       tr_dim,
-                       iphydp,
-                       w_stride,
-                       iwarnp,
-                       imligp,
-                       epsrgp,
-                       extrap,
-                       climgp,
-                       frcxt,
-                       coefap,
-                       coefbp,
-                       pvar,
-                       gweight, /* Weighted gradient */
-                       NULL, /* internal coupling */
-                       grad);
+    cs_gradient_scalar_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    recompute_cocg,
+                                    nswrgp,
+                                    tr_dim,
+                                    iphydp,
+                                    w_stride,
+                                    iwarnp,
+                                    imligp,
+                                    epsrgp,
+                                    extrap,
+                                    climgp,
+                                    frcxt,
+                                    coefap,
+                                    coefbp,
+                                    pvar,
+                                    gweight, /* Weighted gradient */
+                                    NULL, /* internal coupling */
+                                    grad);
 
     /* Mass flow through interior faces */
 

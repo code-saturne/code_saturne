@@ -639,7 +639,7 @@ cs_matrix_anisotropic_diffusion_wrapper_tensor(int                  iconvp,
                                                const cs_real_66_t   fimp[],
                                                const cs_real_t      i_massflux[],
                                                const cs_real_t      b_massflux[],
-                                               cs_real_t            i_visc[],
+                                               const cs_real_66_t   i_visc[],
                                                const cs_real_t      b_visc[],
                                                cs_real_66_t         da[],
                                                cs_real_662_t        xa[])
@@ -660,10 +660,10 @@ cs_matrix_anisotropic_diffusion_wrapper_tensor(int                  iconvp,
                                                thetap,
                                                cofbfts,
                                                fimp,
-                                               (const cs_real_66_t *)i_visc,
+                                               i_visc,
                                                b_visc,
                                                da,
-                                               (const cs_real_66_t *)xa);
+                                               xa);
 
   /* Non-symmetric matrix */
   } else {
@@ -676,10 +676,10 @@ cs_matrix_anisotropic_diffusion_wrapper_tensor(int                  iconvp,
                                            fimp,
                                            i_massflux,
                                            b_massflux,
-                                           (const cs_real_66_t *)i_visc,
+                                           i_visc,
                                            b_visc,
                                            da,
-                                           (const cs_real_662_t *)xa);
+                                           xa);
   }
 
   /* Penalization if non invertible matrix */

@@ -4541,7 +4541,7 @@ void CS_PROCF (itrgrp, ITRGRP)
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
  const cs_real_t          b_visc[],
- const cs_real_t          visel[],
+ cs_real_t                visel[],
  cs_real_t                diverg[]
 );
 
@@ -4586,7 +4586,10 @@ void CS_PROCF (itrgrv, ITRGRV)
 /*!
  * \brief Compute the upwind gradient used in the slope tests.
  *
- * \param[in]     f_id         field index
+ * This function assumes the input gradient and pvar values have already
+ * been synchronized.
+ *
+ * \param[in]     f_id         field id
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
  * \param[in]     grad         standard gradient
@@ -4601,12 +4604,12 @@ void CS_PROCF (itrgrv, ITRGRV)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_slope_test_gradient(const int               f_id,
-                       const int               inc,
-                       const cs_halo_type_t    halo_type,
-                       cs_real_3_t            *grad,
+cs_slope_test_gradient(int                     f_id,
+                       int                     inc,
+                       cs_halo_type_t          halo_type,
+                       const cs_real_3_t      *grad,
                        cs_real_3_t            *grdpa,
-                       cs_real_t              *pvar,
+                       const cs_real_t        *pvar,
                        const cs_real_t        *coefap,
                        const cs_real_t        *coefbp,
                        const cs_real_t        *i_massflux);
@@ -4644,6 +4647,9 @@ cs_upwind_gradient(const int                     f_id,
 /*!
  * \brief Compute the upwind gradient used in the slope tests.
  *
+ * This function assumes the input gradient and pvar values have already
+ * been synchronized.
+ *
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
  * \param[in]     grad         standard gradient
@@ -4660,9 +4666,9 @@ cs_upwind_gradient(const int                     f_id,
 void
 cs_slope_test_gradient_vector(const int              inc,
                               const cs_halo_type_t   halo_type,
-                              cs_real_33_t          *grad,
+                              const cs_real_33_t    *grad,
                               cs_real_33_t          *grdpa,
-                              cs_real_3_t           *pvar,
+                              const cs_real_3_t     *pvar,
                               const cs_real_3_t     *coefa,
                               const cs_real_33_t    *coefb,
                               const cs_real_t       *i_massflux);
@@ -4670,6 +4676,9 @@ cs_slope_test_gradient_vector(const int              inc,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the upwind gradient used in the slope tests.
+ *
+ * This function assumes the input gradient and pvar values have already
+ * been synchronized.
  *
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
@@ -4687,9 +4696,9 @@ cs_slope_test_gradient_vector(const int              inc,
 void
 cs_slope_test_gradient_tensor(const int               inc,
                               const cs_halo_type_t    halo_type,
-                              cs_real_63_t           *grad,
+                              const cs_real_63_t     *grad,
                               cs_real_63_t           *grdpa,
-                              cs_real_6_t            *pvar,
+                              const cs_real_6_t      *pvar,
                               const cs_real_6_t      *coefa,
                               const cs_real_66_t     *coefb,
                               const cs_real_t        *i_massflux);
@@ -4867,6 +4876,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_real_t             b_visc[],
                                const cs_real_t             secvif[],
                                cs_real_3_t       *restrict rhs);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add the explicit part of the convection/diffusion terms of a transport
@@ -5131,6 +5141,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                                 const cs_real_t             b_visc[],
                                 const cs_real_t             secvif[],
                                 cs_real_3_t       *restrict rhs);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add the explicit part of the diffusion terms with a symmetric tensor
@@ -5190,10 +5201,10 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
                                 const cs_real_66_t          cofbf[],
                                 const cs_real_t             i_visc[],
                                 const cs_real_t             b_visc[],
-                                cs_real_6_t     *restrict   viscel,
+                                cs_real_6_t       *restrict viscel,
                                 const cs_real_2_t           weighf[],
                                 const cs_real_t             weighb[],
-                                cs_real_6_t     *restrict   rhs);
+                                cs_real_6_t       *restrict rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -5470,7 +5481,7 @@ cs_diffusion_potential(const int                 f_id,
                        const cs_real_t           cofbfp[],
                        const cs_real_t           i_visc[],
                        const cs_real_t           b_visc[],
-                       const cs_real_t           visel[],
+                       cs_real_t                 visel[],
                        cs_real_t       *restrict diverg);
 
 /*----------------------------------------------------------------------------*/

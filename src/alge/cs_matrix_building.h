@@ -228,7 +228,7 @@ cs_matrix_anisotropic_diffusion_wrapper_tensor(int                  iconvp,
                                                const cs_real_66_t   fimp[],
                                                const cs_real_t      i_massflux[],
                                                const cs_real_t      b_massflux[],
-                                               cs_real_t            i_visc[],
+                                               const cs_real_66_t   i_visc[],
                                                const cs_real_t      b_visc[],
                                                cs_real_66_t         da[],
                                                cs_real_662_t        xa[]);

@@ -181,6 +181,8 @@ _inlet_sum(int                          var_id,
            cs_real_t                    rcodcl[],
            cs_real_t                    inlet_sum[])
 {
+  CS_UNUSED(nvar);
+
   const int dim = f->dim;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_real_t *f_surf = mq->b_f_face_surf;
@@ -348,7 +350,7 @@ cs_boundary_conditions_error(const int       *bc_flag,
 
   int have_errors
     = cs_flag_check(_("face with boundary condition definition error"),
-                    type_name,
+                    _type_name,
                     _("BC type"),
                     _("Faces with B.C. error"),
                     _("Faces with valid B.C.'s"),

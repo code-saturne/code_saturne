@@ -525,7 +525,7 @@ cs_log_separator(cs_log_t log)
 
   for (i = 0; i < 80; i++)
     separator[i] = '-';
-    separator[80] = '\0';
+  separator[80] = '\0';
 
   cs_log_printf(log, "%s\n", separator);
 }

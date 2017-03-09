@@ -299,6 +299,8 @@ _field_output(void           *context,
               cs_gnum_t       block_end,
               void           *buffer)
 {
+  CS_UNUSED(datatype);
+
   cs_time_plot_t *p;
 
   _time_plot_context_t       *c = context;
