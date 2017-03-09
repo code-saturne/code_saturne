@@ -170,6 +170,8 @@ Architectural changes
 Bug fixes
 ---------
 
+- Fix missing reading and writing of mass fluxes in checkpoint/restart.
+
 - Allow mesh joining when no vertices are modified.
 
 - Allow use of Modak absorption using the GUI for gas combustion.
