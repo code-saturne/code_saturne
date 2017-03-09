@@ -1875,8 +1875,10 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t *f = cs_field_by_id(f_id);
-    if (key_flag != 0 && !(f->type & key_flag))
-      continue;
+    if (key_flag != 0) {
+      if (key_flag == -1 || !(f->type & key_flag))
+        continue;
+    }
     if (cs_field_get_key_int(f, key_id) > -1)
       n_required += 1;
   }
@@ -1933,8 +1935,10 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
 
       const cs_field_t *f = cs_field_by_id(f_id);
 
-      if (key_flag != 0 && !(f->type & key_flag))
-        continue;
+      if (key_flag != 0) {
+        if (key_flag == -1 || !(f->type & key_flag))
+          continue;
+      }
 
       const int lnk_f_id = cs_field_get_key_int(f, key_id);
 
@@ -1965,6 +1969,8 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
             if (old_lnk_f_id > -1)
               f_lnk_name
                 = cs_map_name_to_id_reverse(old_field_map, old_lnk_f_id);
+            else
+              f_lnk_name = f_lnk->name;
           }
         }
 
@@ -2055,8 +2061,10 @@ cs_restart_write_linked_fields(cs_restart_t  *r,
   for (int f_id = 0; f_id < n_fields; f_id++) {
     key_val[f_id] = -1;
     const cs_field_t *f = cs_field_by_id(f_id);
-    if (key_flag != 0 && !(f->type & key_flag))
-      continue;
+    if (key_flag != 0) {
+      if (key_flag == -1 || !(f->type & key_flag))
+        continue;
+    }
     key_val[f_id] = cs_field_get_key_int(f, key_id);
   }
 

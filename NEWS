@@ -5,6 +5,8 @@ Release 4.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Fix missing reading and writing of mass fluxes in checkpoint/restart.
+
 - Fix for 1D point location.
 
 - Fix detection of writer format availability for plugins.
