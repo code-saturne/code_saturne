@@ -5,6 +5,8 @@ Release 4.2.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix missing reading and writing of mass fluxes in checkpoint/restart.
+
 - Fix double symmetric 3x3 matrix product, used in anisotropic
   heterogeneous diffusion.
 

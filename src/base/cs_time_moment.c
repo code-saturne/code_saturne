@@ -292,15 +292,22 @@ _restart_info_read_auxiliary_legacy(cs_restart_t  *r)
 
   const cs_time_step_t  *ts = cs_glob_time_step;
 
-  retcode = cs_restart_read_section(r,
-                                    "nombre_moyennes_temps",
-                                    CS_MESH_LOCATION_NONE,
-                                    1,
-                                    CS_TYPE_cs_int_t,
-                                    sizes);
+  const char sec_name[] = "nombre_moyennes_temps";
+
+  retcode = cs_restart_check_section(r,
+                                     sec_name,
+                                     CS_MESH_LOCATION_NONE,
+                                     1,
+                                     CS_TYPE_cs_real_t);
 
   if (retcode == CS_RESTART_SUCCESS) {
     legacy_mode = 1;
+    retcode = cs_restart_read_section(r,
+                                      sec_name,
+                                      CS_MESH_LOCATION_NONE,
+                                      1,
+                                      CS_TYPE_cs_int_t,
+                                      sizes);
     sizes[1] = (strlen("cumul_ce_moment0000") + 1)*sizes[0];
   }
   else if (retcode == CS_RESTART_ERR_EXISTS) {
