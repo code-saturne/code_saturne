@@ -886,7 +886,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         file = os.path.basename(file)
         if file not in os.listdir(rep):
             title = self.tr("WARNING")
-            msg   = self.tr("This selected file is not in the POST directory of te study")
+            msg   = self.tr("This selected file is not in the POST directory of the study")
             QMessageBox.information(self, title, msg)
         else:
             self.lineEditPost.setText(str(file))

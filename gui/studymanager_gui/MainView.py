@@ -422,8 +422,6 @@ class MainView(object):
         # faire le detect du nom study et charger tous les cases du repertoire par defaut
         # peut etre chrge les nouveau cas lorsqu'on re-ouvre avec status a off
 
-
-
     def fileAlreadyLoaded(self, f):
         """
         private method

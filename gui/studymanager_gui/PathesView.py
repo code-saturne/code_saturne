@@ -123,7 +123,7 @@ class PathesView(QWidget, Ui_PathesForm):
 
         if self.mdl.getStudyNumber() == 0:
             title = self.tr("Loading study/case")
-            msg   = self.tr("Do you want to use automatic load ?")
+            msg   = self.tr("Do you want to use automatic load?")
 
             reply = QMessageBox.question(self,
                                          title,
