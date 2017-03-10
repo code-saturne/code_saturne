@@ -773,8 +773,10 @@ cs_sles_free_native(int          f_id,
 
     cs_sles_free(sc);
     for (int i = 0; i < 3; i++) {
-      if (_matrix_setup[setup_id][i] != NULL)
+      if (_matrix_setup[setup_id][i] != NULL) {
+        cs_matrix_set_extend(_matrix_setup[setup_id][i], NULL, NULL, NULL);
         cs_matrix_release_coefficients(_matrix_setup[setup_id][i]);
+      }
     }
     for (int i = 1; i < 3; i++) { /* Remove "copied" matrixes */
       if (_matrix_setup[setup_id][i] != NULL)
