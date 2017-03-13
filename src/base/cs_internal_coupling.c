@@ -1175,8 +1175,6 @@ cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       dc[ll] = ci_cj_vect[ii][ll];
 
-    cs_real_t pond = g_weight[ii];
-
     if (tensor_diff) {
       /* (P_j - P_i)*/
       cs_real_t p_diff = (pvar_local[ii] - rhsv[cell_id][3]);
@@ -1185,7 +1183,7 @@ cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
                              &weight[6*ii],
                              p_diff,
                              dc,
-                             pond,
+                             g_weight[ii],
                              &rhsv[cell_id][0]);
     } else if (scalar_diff) {
       /* (P_j - P_i) / ||d||^2 */
@@ -1195,11 +1193,10 @@ cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         fctb[ll] = dc[ll] * pfac;
 
-      cs_real_t denom = 1. / ( pond * c_weight[cell_id]
-                              + (1. - pond) * weight[ii]);
-
+      /* Compared with _lsq_scalar_gradient, weight from 
+       * _compute_physical_face_weight already contains denom */
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        rhsv[ii][ll] +=  weight[ii] * denom * fctb[ll];
+        rhsv[cell_id][ll] +=  weight[ii] * fctb[ll];
     } else {
       /* (P_j - P_i) / ||d||^2 */
       pfac = (pvar_local[ii] - rhsv[cell_id][3])
@@ -1209,7 +1206,7 @@ cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
         fctb[ll] = dc[ll] * pfac;
 
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        rhsv[ii][ll] +=  fctb[ll];
+        rhsv[cell_id][ll] +=  fctb[ll];
     }
 
   }
