@@ -141,28 +141,30 @@ BEGIN_C_DECLS
 
  \var  cs_var_cal_opt_t::iconv
         \anchor iconv
-        For each unknown variable to calculate, indicates if the convection is taken
-        into account (1) or not (0). By default, \ref cs_var_cal_opt_t::iconv "iconv" is set
-        to 0 for the pressure (variable \ref ipr) or f in v2f modelling (variable \ref ifb)
+        For each unknown variable to calculate, indicates if the convection is
+        taken into account (1) or not (0). By default,
+        \ref cs_var_cal_opt_t::iconv "iconv" is set to 0 for the pressure
+        (variable \ref ipr) or f in v2f modelling (variable \ref ifb)
         and set to 1 for the other unknowns.
 
   \var  cs_var_cal_opt_t::istat
         \anchor istat
-        For each unknown variable to calculate, indicates whether unsteady terms
-        are present (1) or not (0) in the matrices. By default, \ref cs_var_cal_opt_t::istat "istat"
-        is set to 0 for the pressure (variable \ref ipr) or f in v2f modelling
-        (variable \ref ifb) and set to 1 for the other unknowns.
+        For each unknown variable to calculate, indicates whether unsteady
+        terms are present (1) or not (0) in the matrices. By default,
+        \ref cs_var_cal_opt_t::istat "istat" is set to 0 for the pressure
+        (variable \ref ipr) or f in v2f modelling (variable \ref ifb) and
+        set to 1 for the other unknowns.
 
   \var  cs_var_cal_opt_t::idiff
         \anchor idiff
-        For each unknown variable to calculate, indicates whether the diffusion
-        is taken into account (1) or not (0).
+        For each unknown variable to calculate, indicates whether the
+        diffusion is taken into account (1) or not (0).
 
   \var  cs_var_cal_opt_t::idifft
         \anchor idifft
         For each unknown variable to calculate, when diffusion is taken into
-        account (\ref idiff = 1), \ref idifft indicates if the turbulent diffusion
-        is taken into account (\ref idifft = 1) or not (0).
+        account (\ref idiff = 1), \ref idifft indicates if the turbulent
+        diffusion is taken into account (\ref idifft = 1) or not (0).
 
   \var  cs_var_cal_opt_t::idften
         \anchor idften
@@ -185,8 +187,9 @@ BEGIN_C_DECLS
         second-order convective scheme
         - 0: Second Order Linear Upwind
         - 1: Centered \n
-        Useful for all the unknowns variables which are convected (\ref iconv = 1)
-        and for which a second-order scheme is used (\ref blencv > 0).
+        Useful for all the unknowns variables which are convected
+        (\ref iconv = 1) and for which a second-order scheme is used
+        (\ref blencv > 0).
 
   \var  cs_var_cal_opt_t::ibdtso
         \anchor ibdtso
@@ -210,18 +213,18 @@ BEGIN_C_DECLS
         are not reconstructed
          - if \ref imrgra = 0 or 4, \ref nswrgr is the number of iterations for
          the gradient reconstruction
-         - if \ref imrgra = 1, 2 or 3, \ref nswrgr > 1 indicates that the gradients
-         are reconstructed (but the method is not iterative, so any value larger
-         than 1 for \ref nswrgr yields the same result).\n
+         - if \ref imrgra = 1, 2 or 3, \ref nswrgr > 1 indicates that the
+         gradients are reconstructed (but the method is not iterative, so any
+         value larger than 1 for \ref nswrgr yields the same result).\n
 
   \var  cs_var_cal_opt_t::nswrsm
         \anchor nswrsm
-        For each unknown variable, nswrsm indicates the number of iterations for the
-        reconstruction of the right-hand sides of the equations with a first-order
-        scheme in time (standard case), the default values are 2 for pressure
-        and 1 for the other variables. With a second-order scheme in time
-        (\ref optcal::ischtp "ischtp" = 2) or LES, the default values are 5 for
-        pressure and 10 for the other variables.
+        For each unknown variable, nswrsm indicates the number of iterations for
+        the reconstruction of the right-hand sides of the equations with a
+        first-order scheme in time (standard case), the default values are 2 for
+        pressure and 1 for the other variables. With a second-order scheme in
+        time (\ref optcal::ischtp "ischtp" = 2) or LES, the default values are
+        5 for pressure and 10 for the other variables.
 
   \var  cs_var_cal_opt_t::imrgra
         \anchor imrgra
@@ -288,41 +291,43 @@ BEGIN_C_DECLS
         For each variable variable, thetav is the value of \f$ \theta \f$ used to
         express at the second-order the terms of convection, diffusion and the
         source terms which are linear functions of the solved variable (according
-        to the formula \f$ \phi^{n+\theta} = (1-\theta) \phi^n + \theta \phi^{n+1}\f$.
+        to the formula \f$ \phi^{n+\theta}
+        = (1-\theta) \phi^n + \theta \phi^{n+1}\f$.
         Generally, only the values 1 and 0.5 are used. The user is not allowed to
         modify this variable.
            - 1: first-order
            - 0.5: second-order \n
         Concerning the pressure, the value of \ref thetav is always 1. Concerning
-        the other variables, the value \ref thetav = 0.5 is used when the second-order
-        time scheme is activated by \ref ischtp = 2 (standard value for LES calculations),
-        otherwise \ref thetav is set to 1.
+        the other variables, the value \ref thetav = 0.5 is used when the
+        second-order time scheme is activated by \ref ischtp = 2 (standard value
+        for LES calculations), otherwise \ref thetav is set to 1.
 
   \var  cs_var_cal_opt_t::blencv
         \anchor blencv
-        For each unknown variable to calculate, blencv indicates the proportion of
-        second-order convective scheme (0 corresponds to an upwind first-order scheme);
-        in case of LES calculation, a second-order scheme is recommended and activated
-        by default (\ref blencv = 1).\n
+        For each unknown variable to calculate, blencv indicates the proportion
+        of second-order convective scheme (0 corresponds to an upwind first-order
+        scheme); in case of LES calculation, a second-order scheme is
+        recommended and activated by default (\ref blencv = 1).\n
         Useful for all the unknowns variable for which \ref iconv = 1.
 
   \var  cs_var_cal_opt_t::epsilo
         \anchor epsilo
         <a name="epsilo"></a>
-        For each unknown variable, relative precision for the solution of the linear
-        system. The default value is \ref epsilo = \f$ 10^-8 \f$ . This value is set
-        low on purpose. When there are enough iterations on the reconstruction of the
-        right-hand side of the equation, the value may be increased (by default, in case
-        of second-order in time, with \ref nswrsm = 5 or 10, \ref epsilo is increased
-        to \f$ 10^-5 \f$.
+        For each unknown variable, relative precision for the solution of the
+        linear system. The default value is \ref epsilo = \f$ 10^-8 \f$ . This
+        value is set low on purpose. When there are enough iterations on the
+        reconstruction of the right-hand side of the equation, the value may be
+        increased (by default, in case of second-order in time, with
+        \ref nswrsm = 5 or 10, \ref epsilo is increased  to \f$ 10^-5 \f$.
 
   \var  cs_var_cal_opt_t::epsrsm
         \anchor epsrsm
-        For each unknown variable, relative precision on the reconstruction of the right
-        hand-side. The default value is \ref epsrsm = \f$ 10^-8 \f$. This value is set
-        low on purpose. When there are not enough iterations on the reconstruction of the
-        right-hand side of the equation, the value may be increased (by default, in case
-        of second-order in time, with \ref nswrsm = 5 or 10, \ref epsrsm is increased to
+        For each unknown variable, relative precision on the reconstruction of
+        the right hand-side. The default value is \ref epsrsm = \f$ 10^-8 \f$.
+        This value is set low on purpose. When there are not enough iterations on
+        the reconstruction of the right-hand side of the equation, the value may
+        be increased (by default, in case of second-order in time, with
+        \ref nswrsm = 5 or 10, \ref epsrsm is increased to
         \f$ 10^-5 \f$ ).
 
   \var  cs_var_cal_opt_t::epsrgr
@@ -342,32 +347,35 @@ BEGIN_C_DECLS
         gradients at the boundaries. It affects only the Neumann conditions.
         The only possible values of \ref extrag are:
              - 0: homogeneous Neumann calculated at first-order
-             - 0.5: improved homogeneous Neumann, calculated at second-order in the
-        case of an orthogonal mesh and at first-order otherwise
+             - 0.5: improved homogeneous Neumann, calculated at second-order in
+        the case of an orthogonal mesh and at first-order otherwise
              - 1: gradient extrapolation (gradient at the boundary face equal to
-        the gradient in the neighbour cell), calculated at second-order in the case
-        of an orthogonal mesh and at first-order otherwise extrag often allows to
-        correct the non-physical velocities that appear on horizontal walls when
-        density is variable and there is gravity. It is strongly advised to keep
-        \ref extrag = 0 for the variables apart from pressure. See also
-        \ref cs_stokes_model_t::iphydr "iphydr". In practice, only the values 0
-        and 1 are allowed. The value 0.5 is not allowed by default (but the lock
-        can be overridden if necessary, contact the development team).
+        the gradient in the neighbour cell), calculated at second-order in the
+        case of an orthogonal mesh and at first-order otherwise extrag often
+        allows to correct the non-physical velocities that appear on horizontal
+        walls when density is variable and there is gravity. It is strongly
+        advised to keep \ref extrag = 0 for the variables apart from pressure.
+        See also \ref cs_stokes_model_t::iphydr "iphydr". In practice, only the
+        values 0 and 1 are allowed. The value 0.5 is not allowed by default (but
+        the lock can be overridden if necessary, contact the development team).
 
   \var  cs_var_cal_opt_t::relaxv
         \anchor relaxv
-        For each variable ivar, relaxation coefficient of the variable. This relaxation
-        parameter is only useful for the pressure with the unsteady algorithm (so as to
-        improve the convergence in case of meshes of insufficient quality or and for some
-        of the turbulent models (\ref iturb = 20, 21, 50 or 60 and \ref optcal::ikecou "ikecou" = 0;
-        if \ref optcal::ikecou "ikecou" = 1, \ref relaxv is not used, whatever its value may be).
-        Default values are 0.7 for turbulent variables and 1. for pressure.\ref relaxv also
-        stores the value of the relaxation coefficient when using the steady algorithm, deduced
-        from the value of \ref optcal::relxst "relxst" (defaulting to \ref relaxv = 1.
-        - \ref optcal::relxst "relxst"). Useful only for the pressure and for turbulent
-        variables if and only if (\f$ k-\epsilon \f$, v2f or \f$ k-\omega \f$ models without
-        coupling) with the unsteady algorithm. Always useful with the steady algorithm.
-
+        For each variable ivar, relaxation coefficient of the variable. This
+        relaxation parameter is only useful for the pressure with the unsteady
+        algorithm (so as to improve the convergence in case of meshes of
+        insufficient quality or and for some of the turbulent models
+        (\ref iturb = 20, 21, 50 or 60 and \ref optcal::ikecou "ikecou" = 0;
+        if \ref optcal::ikecou "ikecou" = 1, \ref relaxv is not used, whatever
+        its value may be).
+        Default values are 0.7 for turbulent variables and 1. for pressure.
+        \ref relaxv also stores the value of the relaxation coefficient when
+        using the steady algorithm, deduced from the value of
+        \ref optcal::relxst "relxst" (defaulting to \ref relaxv = 1.
+        - \ref optcal::relxst "relxst"). Useful only for the pressure and
+        for turbulent variables if and only if (\f$ k-\epsilon \f$, v2f
+        or \f$ k-\omega \f$ models without coupling) with the unsteady
+        algorithm. Always useful with the steady algorithm.
 */
 
 /*----------------------------------------------------------------------------*/
@@ -534,31 +542,31 @@ _log_func_var_cal_opt(const void *t)
   const char fmt_i[] = N_("      %-19s  %-4d\n");
   const char fmt_r[] = N_("      %-19s  %-12.3g\n");
   const cs_var_cal_opt_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iwarni", _t->iwarni);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iconv ", _t->iconv );
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "istat ", _t->istat );
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idiff ", _t->idiff );
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idifft", _t->idifft);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idften", _t->idften);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iswdyn", _t->iswdyn);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ischcv", _t->ischcv);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ibdtso", _t->ibdtso);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "isstpc", _t->isstpc);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "nswrgr", _t->nswrgr);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "nswrsm", _t->nswrsm);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imrgra", _t->imrgra);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imligr", _t->imligr);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ircflu", _t->ircflu);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iwgrec", _t->iwgrec);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "icoupl", _t->icoupl);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "thetav", _t->thetav);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "blencv", _t->blencv);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsilo", _t->epsilo);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsrsm", _t->epsrsm);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsrgr", _t->epsrgr);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "climgr", _t->climgr);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "extrag", _t->extrag);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "relaxv", _t->relaxv);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "iwarni", _t->iwarni);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "iconv ", _t->iconv );
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "istat ", _t->istat );
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "idiff ", _t->idiff );
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "idifft", _t->idifft);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "idften", _t->idften);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "iswdyn", _t->iswdyn);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "ischcv", _t->ischcv);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "ibdtso", _t->ibdtso);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "isstpc", _t->isstpc);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "nswrgr", _t->nswrgr);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "nswrsm", _t->nswrsm);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "imrgra", _t->imrgra);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "imligr", _t->imligr);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "ircflu", _t->ircflu);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "iwgrec", _t->iwgrec);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "icoupl", _t->icoupl);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "thetav", _t->thetav);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "blencv", _t->blencv);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "epsilo", _t->epsilo);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrsm", _t->epsrsm);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrgr", _t->epsrgr);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "climgr", _t->climgr);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "extrag", _t->extrag);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "relaxv", _t->relaxv);
 }
 
 /* Log default values of the structure */
@@ -566,78 +574,77 @@ _log_func_var_cal_opt(const void *t)
 static void
 _log_func_default_var_cal_opt(const void *t)
 {
-  const char fmt_i[] = N_("      %-19s  %-12d %s\n");
-  const char fmt_r[] = N_("      %-19s  %-12.3g %s\n");
+  const char fmt_i[] = "      %-19s  %-12d %s\n";
+  const char fmt_r[] = "      %-19s  %-12.3g %s\n";
   const cs_var_cal_opt_t *_t = (const void *)t;
   cs_log_printf(CS_LOG_SETUP,"  var_cal_opt\n");
 
   cs_log_printf(CS_LOG_SETUP,_("    Printing\n"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iwarni", _t->iwarni,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "iwarni", _t->iwarni,
                 _("Verbosity level: 0, 1 or 2"));
 
   cs_log_printf(CS_LOG_SETUP,"    Time stepping\n");
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "istat ", _t->istat,
-                _("Take unsteady terms into account: 1 for unsteady"));
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "istat ", _t->istat,
+                _("Take unsteady terms into account."));
 
   cs_log_printf(CS_LOG_SETUP,"    Convection/Diffusion\n");
 
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iconv ", _t->iconv,
-                _("Take convection into account: 1 for convection active"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idiff ", _t->idiff,
-                _("Take diffusion into account: 1 for total diffusion active"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idifft", _t->idifft,
-                _("Take turbulent diffusion into account: 1 for turbulent "
-                  "diffusion active"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "idften", _t->idften,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "iconv ", _t->iconv,
+                _("Take convection into account."));
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "idiff ", _t->idiff,
+                _("Take diffusion into account."));
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "idifft", _t->idifft,
+                _("Take turbulent diffusion into account."));
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "idften", _t->idften,
                 _("Type of diffusivity: scalar (1), orthotropic (3) or symmetric "
                   "tensor (6)"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ischcv", _t->ischcv,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "ischcv", _t->ischcv,
                 _("Type of convective scheme: 2nd order linear upwind (0), "
                   "centered (1), SOLU (2)"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "isstpc", _t->isstpc,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "isstpc", _t->isstpc,
                 _("0 for slope test, 1 for no slope test, 2 for min/max limiter "
                   "and 3 for NVD/TVD scheme"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "blencv", _t->blencv,
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "blencv", _t->blencv,
                 _("[0.;1.] (1-upwind proportion (0: upwind))"));
 
   cs_log_printf(CS_LOG_SETUP,"    Gradients calculation\n");
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imrgra", _t->imrgra,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "imrgra", _t->imrgra,
                 _("Reconstruction mode"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "nswrgr", _t->nswrgr,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "nswrgr", _t->nswrgr,
                 _("Number of sweeps gradient reconstruction"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsrgr", _t->epsrgr,
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrgr", _t->epsrgr,
                 _("Gradient reconstruction precision"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "extrag", _t->extrag,
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "extrag", _t->extrag,
                 _("[0.;1.] (gradients extrapolation)"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "imligr", _t->imligr,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "imligr", _t->imligr,
                 _("< 0, 0 or 1 (gradient limitation method)"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "climgr", _t->climgr,
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "climgr", _t->climgr,
                 _("> 1 or 1 (gradient limitation coefficient)"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iwgrec", _t->iwgrec,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "iwgrec", _t->iwgrec,
                 _("Gradient calculation: standard (0) or weighted (1)"));
 
   cs_log_printf(CS_LOG_SETUP,"    Rhs reconstruction\n");
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ircflu", _t->ircflu,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "ircflu", _t->ircflu,
                 _("0 or 1 (flux reconstruction)"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "nswrsm", _t->nswrsm,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "nswrsm", _t->nswrsm,
                 _("Number of sweeps rhs reconstruction"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsrsm", _t->epsrsm,
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrsm", _t->epsrsm,
                 _("Rhs reconstruction precision"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "iswdyn", _t->iswdyn,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "iswdyn", _t->iswdyn,
                 _("Dynamic relaxation type"));
 
   cs_log_printf(CS_LOG_SETUP,"    Iterative solvers\n");
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "epsilo", _t->epsilo,
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "epsilo", _t->epsilo,
                 _("Resolution precision"));
 
   cs_log_printf(CS_LOG_SETUP,"    Time-scheme\n");
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "thetav", _t->thetav,
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "thetav", _t->thetav,
                 _("[0.;1.] theta-scheme for the main variables (0.5 for "
                   "Crank-Nicolson)"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "ibdtso", _t->ibdtso,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "ibdtso", _t->ibdtso,
                 _("Backward differential scheme in time order"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "relaxv", _t->relaxv,
-                _("Relaxation of variables (1 stands fo no relaxation)"));
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "relaxv", _t->relaxv,
+                _("Relaxation of variables (1 for no relaxation)"));
 }
 
 /* Log values of the structure */
@@ -647,19 +654,19 @@ _log_func_gas_mix_species_prop(const void *t)
 {
   const char fmt[] = N_("      %-19s  %-12.3g\n");
   const cs_gas_mix_species_prop_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "mol_mas ", _t->mol_mas);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "cp      ", _t->cp);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "vol_diff", _t->vol_dif);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "mu_a    ", _t->mu_a);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "mu_b    ", _t->mu_b);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "lambda_a", _t->lambda_a);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "lambda_b", _t->lambda_b);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "muref   ", _t->muref);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "lamref  ", _t->lamref);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "trefmu  ", _t->trefmu);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "treflam ", _t->treflam);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "smu     ", _t->smu);
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "slam    ", _t->slam);
+  cs_log_printf(CS_LOG_SETUP, fmt, "mol_mas ", _t->mol_mas);
+  cs_log_printf(CS_LOG_SETUP, fmt, "cp      ", _t->cp);
+  cs_log_printf(CS_LOG_SETUP, fmt, "vol_diff", _t->vol_dif);
+  cs_log_printf(CS_LOG_SETUP, fmt, "mu_a    ", _t->mu_a);
+  cs_log_printf(CS_LOG_SETUP, fmt, "mu_b    ", _t->mu_b);
+  cs_log_printf(CS_LOG_SETUP, fmt, "lambda_a", _t->lambda_a);
+  cs_log_printf(CS_LOG_SETUP, fmt, "lambda_b", _t->lambda_b);
+  cs_log_printf(CS_LOG_SETUP, fmt, "muref   ", _t->muref);
+  cs_log_printf(CS_LOG_SETUP, fmt, "lamref  ", _t->lamref);
+  cs_log_printf(CS_LOG_SETUP, fmt, "trefmu  ", _t->trefmu);
+  cs_log_printf(CS_LOG_SETUP, fmt, "treflam ", _t->treflam);
+  cs_log_printf(CS_LOG_SETUP, fmt, "smu     ", _t->smu);
+  cs_log_printf(CS_LOG_SETUP, fmt, "slam    ", _t->slam);
 }
 
 /* Log default values of the structure */
@@ -667,33 +674,33 @@ _log_func_gas_mix_species_prop(const void *t)
 static void
 _log_func_default_gas_mix_species_prop(const void *t)
 {
-  const char fmt[] = N_("      %-19s  %-12.3g %s\n");
+  const char fmt[] = "      %-19s  %-12.3g %s\n";
   const cs_gas_mix_species_prop_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "mol_mas ", _t->mol_mas,
+  cs_log_printf(CS_LOG_SETUP, fmt, "mol_mas ", _t->mol_mas,
                 _("Molar mass"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "cp      ", _t->cp,
+  cs_log_printf(CS_LOG_SETUP, fmt, "cp      ", _t->cp,
                 _("Specific heat"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "vol_diff", _t->vol_dif,
+  cs_log_printf(CS_LOG_SETUP, fmt, "vol_diff", _t->vol_dif,
                 _("Volume diffusion"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "mu_a    ", _t->mu_a,
+  cs_log_printf(CS_LOG_SETUP, fmt, "mu_a    ", _t->mu_a,
                 _("Dynamic viscosity a"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "mu_b    ", _t->mu_b,
+  cs_log_printf(CS_LOG_SETUP, fmt, "mu_b    ", _t->mu_b,
                 _("Dynamic viscosity b"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "lambda_a", _t->lambda_a,
+  cs_log_printf(CS_LOG_SETUP, fmt, "lambda_a", _t->lambda_a,
                 _("Thermal conductivity a"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "lambda_b", _t->lambda_b,
+  cs_log_printf(CS_LOG_SETUP, fmt, "lambda_b", _t->lambda_b,
                 _("Thermal conductivity b"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "muref   ", _t->muref,
+  cs_log_printf(CS_LOG_SETUP, fmt, "muref   ", _t->muref,
                 _("Reference thermal viscosity (Sutherland)"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "lamref  ", _t->lamref,
+  cs_log_printf(CS_LOG_SETUP, fmt, "lamref  ", _t->lamref,
                 _("Reference thermal conductivity (Sutherland)"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "trefmu  ", _t->trefmu,
+  cs_log_printf(CS_LOG_SETUP, fmt, "trefmu  ", _t->trefmu,
                 _("Reference temperature (Sutherland for viscosity)"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "treflam ", _t->treflam,
+  cs_log_printf(CS_LOG_SETUP, fmt, "treflam ", _t->treflam,
                 _("Reference temperature (Sutherland conductivity)"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "smu     ", _t->smu,
+  cs_log_printf(CS_LOG_SETUP, fmt, "smu     ", _t->smu,
                 _("Sutherland temperature for viscosity"));
-  cs_log_printf(CS_LOG_SETUP, _(fmt), "slam    ", _t->slam,
+  cs_log_printf(CS_LOG_SETUP, fmt, "slam    ", _t->slam,
                 _("Sutherland temperature for conductivity"));
 }
 
