@@ -333,9 +333,9 @@
 
   \snippet cs_user_parameters-time_moments.c tmom_velocity_rotation
 
-  \section cs_user_parameters_h_cs_user_fans  Fan modeling options
+  \section cs_user_parameters_h_cs_user_fans  Fan modelling options
 
-  Code_Saturne allows modeling of some circular fans as volume
+  Code_Saturne allows modelling of some circular fans as volume
   regions, defined by simple geometric characteristics, and modeled
   as explicit momentum source terms in those regions.
 
@@ -347,5 +347,17 @@
   The following example shows how a fan may be defined:
 
   \snippet cs_user_parameters-fans.c fan_user_1
+
+  \section cs_user_parameters_h_postprocess Activate some automatic post-processings
+
+  You can activate the post-processing of the Q-critertion on the whole domain
+  mesh with:
+
+  \snippet cs_user_parameters.c param_var_q_criterion
+
+  You can activate the post-processing of clipping on turbulent quantities
+  on the whole domain mesh with:
+
+  \snippet cs_user_parameters.c param_var_rij_clipping
 
 */
