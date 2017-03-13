@@ -258,6 +258,8 @@ def get_build_flags(pkg, flag, install=False, destdir=None):
 
     # Build the command line, and split possible multiple arguments in lists.
     for lib in pkg.config.deplibs:
+        print(lib, pkg.config.libs[lib].have, pkg.config.libs[lib].dynamic_load)
+
         if (pkg.config.libs[lib].have == "yes"
             and (not pkg.config.libs[lib].dynamic_load)):
             cmd_line += separate_args(pkg.config.libs[lib].flags[flag])

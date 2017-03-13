@@ -22,12 +22,13 @@ dnl-----------------------------------------------------------------------------
 
 # CS_AC_TEST_CATALYST
 #--------------------
-# modifies or sets cs_have_catalyst, CATALYST_CPPFLAGS, CATALYST_LDFLAGS, and CATALYST_LIBS
-# depending on libraries found
+# modifies or sets cs_have_catalyst, CATALYST_CPPFLAGS, CATALYST_LDFLAGS,
+# and CATALYST_LIBS depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_CATALYST], [
 
 cs_have_catalyst=no
+cs_have_plugin_catalyst=yes
 
 # Configure options
 #------------------
@@ -39,6 +40,22 @@ AC_ARG_WITH(catalyst,
                with_catalyst=no
              fi],
             [with_catalyst=no])
+
+AC_ARG_ENABLE(catalyst-as-plugin,
+  [AS_HELP_STRING([--disable-catalyst-as-plugin], [do not use Catalyst as plugin])],
+  [
+    case "${enableval}" in
+      yes) cs_have_plugin_catalyst=yes ;;
+      no)  cs_have_plugin_catalyst=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-catalyst-as-plugin]) ;;
+    esac
+  ],
+  [ cs_have_plugin_catalyst=yes ]
+)
+
+if test x$cs_have_dlloader = xno ; then
+  cs_have_plugin_catalyst=no
+fi
 
 # Check for CMake first
 #----------------------
@@ -115,6 +132,9 @@ if test "x$with_catalyst" != "xno" ; then
 
   if test "x$cs_have_catalyst" = "xyes" ; then
     AC_DEFINE([HAVE_CATALYST], 1, [Catalyst co-processing support])
+    if test x$cs_have_plugin_catalyst = xyes ; then
+      AC_DEFINE([HAVE_PLUGIN_CATALYST], 1, [Catalyst co-processing support as plugin])
+    fi
   elif test "x$cs_have_catalyst" = "xno" ; then
     if test "x$with_catalyst" != "xcheck" ; then
       AC_MSG_FAILURE([Catalyst co-processing support requested, but test for Catalyst failed!])
@@ -137,10 +157,20 @@ if test "x$with_catalyst" != "xno" ; then
 
 fi
 
+if test x$cs_have_catalyst = xno ; then
+  cs_have_plugin_catalyst=no
+fi
+
 AM_CONDITIONAL(HAVE_CATALYST, test x$cs_have_catalyst = xyes)
-AM_CONDITIONAL(LINK_CATALYST, test x$cs_link_catalyst = xyes)
+AM_CONDITIONAL(HAVE_PLUGIN_CATALYST, test x$cs_have_plugin_catalyst = xyes)
+
+cs_py_have_plugin_catalyst=False
+if test x$cs_have_plugin_catalyst = xyes ; then
+  cs_py_have_plugin_catalyst=True
+fi
 
 AC_SUBST(cs_have_catalyst)
+AC_SUBST(cs_py_have_plugin_catalyst)
 AC_SUBST(CATALYST_CPPFLAGS)
 AC_SUBST(CATALYST_CXXFLAGS)
 AC_SUBST(CATALYST_LDFLAGS)

@@ -263,7 +263,7 @@ class config:
         self.libs['catalyst'] = \
             prerequisite("CATALYST",
                          have = "@cs_have_catalyst@",
-                         dynamic_load = @cs_py_have_plugins@,
+                         dynamic_load = @cs_py_have_plugin_catalyst@,
                          flags = {'cppflags': "@CATALYST_CPPFLAGS@",
                                   'ldflags': "@CATALYST_LDFLAGS@",
                                   'libs': "@CATALYST_LIBS@"})
