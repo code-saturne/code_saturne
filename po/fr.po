@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-02-15 18:13+0100\n"
+"POT-Creation-Date: 2017-03-13 11:26+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -6551,31 +6551,23 @@ msgstr ""
 msgid "      %-19s  %-12.3g\n"
 msgstr ""
 
-#, c-format
-msgid "      %-19s  %-12d %s\n"
-msgstr ""
-
-#, c-format
-msgid "      %-19s  %-12.3g %s\n"
-msgstr ""
-
 msgid "    Printing\n"
 msgstr "    Impression :\n"
 
 msgid "Verbosity level: 0, 1 or 2"
 msgstr "Niveau d'impression : 0, 1 ou 2"
 
-msgid "Take unsteady terms into account: 1 for unsteady"
-msgstr "Prise en compte des termes instationnaires : 1 pour active"
+msgid "Take unsteady terms into account."
+msgstr "Prise en compte des termes instationnaires."
 
-msgid "Take convection into account: 1 for convection active"
-msgstr "Prise en compte des termes de convection : 1 pour active"
+msgid "Take convection into account."
+msgstr "Prise en compte des termes de convection."
 
-msgid "Take diffusion into account: 1 for total diffusion active"
-msgstr "Prise en compte de la diffusion : 1 pour active"
+msgid "Take diffusion into account."
+msgstr "Prise en compte de la diffusion."
 
-msgid "Take turbulent diffusion into account: 1 for turbulent diffusion active"
-msgstr "Prise en compte de la diffusion turbulente : 1 pour active"
+msgid "Take turbulent diffusion into account."
+msgstr "Prise en compte de la diffusion turbulente."
 
 msgid ""
 "Type of diffusivity: scalar (1), orthotropic (3) or symmetric tensor (6)"
@@ -6641,7 +6633,7 @@ msgstr ""
 msgid "Backward differential scheme in time order"
 msgstr "Ordre du schéma temporel backward"
 
-msgid "Relaxation of variables (1 stands fo no relaxation)"
+msgid "Relaxation of variables (1 for no relaxation)"
 msgstr "Relaxation des variables (1 pour pas de relaxation)"
 
 msgid "Molar mass"
