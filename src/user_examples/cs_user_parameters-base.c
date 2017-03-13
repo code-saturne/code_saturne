@@ -254,6 +254,16 @@ cs_user_parameters(void)
 
   /*! [param_var_boundary_vals_1] */
 
+  /* Example: post-process clippings for Rij tensor */
+  /*------------------------------------------------*/
+
+  /*! [param_var_rij_clipping] */
+
+  cs_field_set_key_int(CS_F_(rij), cs_field_key_id("clipping_id"), 1);
+  cs_field_set_key_int(CS_F_(eps), cs_field_key_id("clipping_id"), 1);
+
+  /*! [param_var_rij_clipping */
+
   /* Example: post-process the Q-critertion on the whole domain mesh */
   /*-----------------------------------------------------------------*/
 
