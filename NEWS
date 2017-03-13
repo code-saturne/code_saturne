@@ -122,6 +122,9 @@ GUI changes
 Architectural changes
 ---------------------
 
+- Remove dependency to Qt of GUI XMLengine.Case class, used by studymanager.
+  This dependency was introduced in version 3.0.
+
 - Paths needed for Catalyst are now sourced automatically in most cases;
   for movable builds, a CATALYST_ROOT_DIR environment variable may be used.
 

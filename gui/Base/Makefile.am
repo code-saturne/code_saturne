@@ -42,6 +42,7 @@ CommandMgrDialogView.py \
 Common.py \
 IdView.py \
 MainView.py \
+QtCase.py \
 QtPage.py \
 Toolbox.py \
 XMLengine.py \

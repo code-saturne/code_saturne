@@ -76,7 +76,7 @@ except:
 
 from code_saturne.Base.IdView import IdView
 from code_saturne.Base.BrowserView import BrowserView
-from code_saturne.Base import XMLengine
+from code_saturne.Base import XMLengine, QtCase
 from code_saturne.Base.XMLinitialize import *
 from code_saturne.Base.XMLmodel import *
 from code_saturne.Base.Toolbox import GuiParam, displaySelectedPage
@@ -678,7 +678,7 @@ class MainView(object):
         if not hasattr(self, 'case') or not self.case['xmlfile']:
             dialog = NewCaseDialogView(self, self.package)
             if dialog.exec_():
-                self.case = XMLengine.Case(package=self.package)
+                self.case = QtCase.QtCase(package=self.package)
                 self.case.root()['version'] = self.XML_DOC_VERSION
                 self.initCase()
                 title = self.tr("New parameters set") + \
@@ -785,7 +785,7 @@ class MainView(object):
         # Instantiate a new case
 
         try:
-            self.case = XMLengine.Case(package=self.package, file_name=file_name)
+            self.case = QtCase.QtCase(package=self.package, file_name=file_name)
         except:
             msg = self.tr("This file is not in accordance with XML specifications.")
             self.loadingAborted(msg, fn)

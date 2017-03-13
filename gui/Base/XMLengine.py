@@ -50,12 +50,6 @@ from xml.sax import make_parser
 from code_saturne.Base.Toolbox import GuiParam
 
 #-------------------------------------------------------------------------------
-# Third-party modules
-#-------------------------------------------------------------------------------
-
-from code_saturne.Base.QtCore    import *
-
-#-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
 
@@ -1235,8 +1229,7 @@ class XMLDocument(XMLElement):
 # XML utility functions
 #-------------------------------------------------------------------------------
 
-class Case(Dico, XMLDocument, QObject):
-    undo_signal = pyqtSignal()
+class Case(Dico, XMLDocument):
 
     def __init__(self, package=None, file_name="", studymanager=False):
         """
@@ -1244,7 +1237,6 @@ class Case(Dico, XMLDocument, QObject):
         """
         Dico.__init__(self)
         XMLDocument.__init__(self, case=self)
-        QObject.__init__(self)
 
         if package:
             self['package'] = package
@@ -1507,76 +1499,6 @@ class Case(Dico, XMLDocument, QObject):
             msg = "Error: unable to save the python file." ,
             "(XMLengine module, Case class, pythonSaveDocument method)"
             print(msg)
-
-
-    def undoStop(self):
-        self.record_local = True
-
-
-    def undoStart(self):
-        self.record_local = False
-
-
-    def undoStopGlobal(self):
-        self.record_global = False
-
-
-    def undoStartGlobal(self):
-        self.record_global = True
-
-
-    def undoGlobal(self, f, c):
-        if self['current_page'] != '' and self.record_local == False and self.record_global == True:
-            if sys.version[0] == '2':
-                self['dump_python'].append([f.__module__, f.func_name, c])
-            else:
-                self['dump_python'].append([f.__module__, f.__name__, c])
-            if self.xml_prev != self.toString() or self.xml_prev == "":
-                # control if function have same arguments
-                # last argument is value
-                same = True
-                if self.record_argument_prev == None:
-                    same = False
-                elif (len(c) == len(self.record_argument_prev) and len(c) >= 2):
-                    for i in range(0, len(c)-1):
-                        if c[i] != self.record_argument_prev[i]:
-                            same = False
-
-                if same:
-                    pass
-                else:
-                    self['undo'].append([self['current_page'], self.toString(), self['current_index'], self['current_tab']])
-                    self.xml_prev = self.toString()
-                    self.record_func_prev = None
-                    self.record_argument_prev = c
-                    self.undo_signal.emit()
-
-
-    def undo(self, f, c):
-        if self['current_page'] != '' and self.record_local == False and self.record_global == True:
-            if sys.version[0] == '2':
-                self['dump_python'].append([f.__module__, f.func_name, c])
-            else:
-                self['dump_python'].append([f.__module__, f.__name__, c])
-            if self.xml_prev != self.toString():
-                # control if function have same arguments
-                # last argument is value
-                same = True
-                if self.record_argument_prev == None:
-                    same = False
-                elif (len(c) == len(self.record_argument_prev) and len(c) >= 2):
-                    for i in range(0, len(c)-1):
-                        if c[i] != self.record_argument_prev[i]:
-                            same = False
-
-                if self.record_func_prev == f and same:
-                    pass
-                else:
-                    self.record_func_prev = f
-                    self.record_argument_prev = c
-                    self['undo'].append([self['current_page'], self.toString(), self['current_index'], self['current_tab']])
-                    self.xml_prev = self.toString()
-                    self.undo_signal.emit()
 
 
 #-------------------------------------------------------------------------------
