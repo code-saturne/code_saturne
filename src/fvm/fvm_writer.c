@@ -72,8 +72,8 @@
 #include "fvm_to_plot.h"
 #include "fvm_to_time_plot.h"
 
-#if !defined(HAVE_PLUGINS)
 #if defined(HAVE_CATALYST)
+#if !defined(HAVE_PLUGIN_CATALYST)
 #include "fvm_to_catalyst.h"
 #endif
 #endif
@@ -207,7 +207,7 @@ static fvm_writer_format_t _fvm_writer_format_list[8] = {
      | FVM_WRITER_FORMAT_HAS_POLYGON
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
     FVM_WRITER_TRANSIENT_CONNECT,
-#if !defined(HAVE_CATALYST) || defined(HAVE_PLUGINS)
+#if !defined(HAVE_CATALYST) || defined(HAVE_PLUGIN_CATALYST)
     0,                                 /* dynamic library count */
     NULL,                              /* dynamic library */
 #if defined(HAVE_CATALYST)

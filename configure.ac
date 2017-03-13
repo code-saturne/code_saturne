@@ -584,6 +584,44 @@ AC_SUBST(cs_version_full)
 AC_SUBST(cs_version_short)
 
 #------------------------------------------------------------------------------
+# Optional shared library and plugin support
+#------------------------------------------------------------------------------
+
+cs_have_dlloader=no
+
+AC_ARG_ENABLE(dlloader,
+  [AS_HELP_STRING([--disable-dlloader], [disable dynamic shared library loading])],
+  [
+    case "${enableval}" in
+      yes) cs_have_dlloader=yes ;;
+      no)  cs_have_dlloader=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-dlloader]) ;;
+    esac
+  ],
+  [ cs_have_dlloader=yes ]
+)
+
+if test "x$cs_have_dlloader" = "xyes" ; then
+
+  saved_LIBS="$LIBS"
+  LIBS="$LIBS -ldl"
+
+  AC_MSG_CHECKING([for dlopen])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <dlfcn.h>]],
+                 [[ dlopen("none.so", RTLD_LAZY);]])],
+                 [cs_have_dlloader=dlopen],
+                 [cs_have_dlloader=no])
+  AC_MSG_RESULT($cs_have_dlloader)
+  if test "x$cs_have_dlloader" = "xdlopen" ; then
+    AC_DEFINE([HAVE_DLOPEN], 1, [dlopen support])
+  else
+    LIBS="$saved_LIBS"
+    cs_have_dlloader=no
+  fi
+
+fi
+
+#------------------------------------------------------------------------------
 # Checks for libraries.
 #------------------------------------------------------------------------------
 
@@ -625,8 +663,10 @@ elif test x$cs_have_eos = xyes ; then
   cs_have_link_cxx=yes
 elif test x$cs_have_coolprop = xyes ; then
   cs_have_link_cxx=yes
-elif test x$cs_have_catalyst = xyes -a x$enable_shared = xno ; then
-  cs_have_link_cxx=yes
+elif test x$cs_have_catalyst = xyes ; then
+  if test x$enable_shared = xno -o x$cs_have_plugin_catalyst = xno ; then
+    cs_have_link_cxx=yes
+  fi
 fi
 if test $cs_have_link_cxx = yes ; then
   CS_LD=$CXX
@@ -999,43 +1039,6 @@ if test "x$have_socket" = "xyes" ; then
   AC_DEFINE([HAVE_SOCKET], 1, [sockets support])
 fi
 
-# Optional shared library support
-#--------------------------------
-
-cs_have_dlloader=no
-
-AC_ARG_ENABLE(dlloader,
-  [AS_HELP_STRING([--disable-dlloader], [disable dynamic shared library loading])],
-  [
-    case "${enableval}" in
-      yes) cs_have_dlloader=yes ;;
-      no)  cs_have_dlloader=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-dlloader]) ;;
-    esac
-  ],
-  [ cs_have_dlloader=yes ]
-)
-
-if test "x$cs_have_dlloader" = "xyes" ; then
-
-  saved_LIBS="$LIBS"
-  LIBS="$LIBS -ldl"
-
-  AC_MSG_CHECKING([for dlopen])
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <dlfcn.h>]],
-                 [[ dlopen("none.so", RTLD_LAZY);]])],
-                 [cs_have_dlloader=dlopen],
-                 [cs_have_dlloader=no])
-  AC_MSG_RESULT($cs_have_dlloader)
-  if test "x$cs_have_dlloader" = "xdlopen" ; then
-    AC_DEFINE([HAVE_DLOPEN], 1, [dlopen support])
-  else
-    LIBS="$saved_LIBS"
-    cs_have_dlloader=no
-  fi
-
-fi
-
 # Plugin modules support
 #-----------------------
 
@@ -1046,7 +1049,7 @@ if test "x$enable_shared" = "xyes" ; then
     # Test for different plugins here
     if test x$cs_have_medcoupling = xyes ; then
       cs_have_plugins=yes
-    elif test x$cs_have_catalyst = xyes ; then
+    elif test x$cs_have_plugin_catalyst = xyes ; then
       cs_have_plugins=yes
     elif test x$cs_have_ccm = xyes ; then
       cs_have_plugins=yes
@@ -1196,6 +1199,9 @@ if test x$cs_have_medcoupling = xyes ; then
   echo " ParaMEDMEM support: "$cs_have_paramedmem""
 fi
 echo " Catalyst (ParaView co-processing) support: "$cs_have_catalyst""
+if (test x$cs_have_catalyst = xyes) ; then
+  echo "   Catalyst as plugin: "$cs_have_plugin_catalyst""
+fi
 echo " EOS support: "$cs_have_eos""
 echo " freesteam support: "$cs_have_freesteam""
 echo " CoolProp support: "$cs_have_coolprop""

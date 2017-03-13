@@ -175,7 +175,7 @@ endif
 
 if HAVE_CATALYST
 
-if HAVE_PLUGINS
+if HAVE_PLUGIN_CATALYST
 
 fvm_catalyst_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
