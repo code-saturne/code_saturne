@@ -70,10 +70,11 @@ double precision smbr(6,ncelet)
 
 ! Local variables
 
-integer          iel, dimrij, isou
+integer          iel, dimrij, isou, i, j, dij
 
 double precision uns3, const, kseps, csttmp
 double precision prdtur, r1t, r2t, r3t
+double precision rit(3), gij(3, 3), rij(3, 3), grav(3)
 double precision g11, g22, g33, g12, g13, g23, gkks3
 double precision phit11, phit22, phit33, phit12, phit13, phit23
 double precision turb_schmidt
@@ -104,6 +105,10 @@ endif
 const = -1.5d0*cmu/prdtur
 uns3  = 1.d0/3.d0
 
+grav(1) = gx
+grav(2) = gy
+grav(3) = gz
+
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 call field_get_val_prev_v(ivarfl(irij), cvara_rij)
@@ -113,163 +118,67 @@ call field_get_dim(ivarfl(irij), dimrij)
 !===============================================================================
 ! 2. Terms for Rij:
 !      rom*volume*dRij/dt =
-!                     ... + (Gij - CRIJ3*(Gij-Delta ij Gkk/3))*volume
+!                     ... + (Gij - crij3*(Gij-Delta ij Gkk/3))*volume
 !            With Gij = -(1.5 cmu/prdtur) (k/eps) (Rit Gj + Rjt Gi)
 !                 Rit = Rik drom/dxk (sum on k)
+!            Note that in tensorial notation Gij is:
+!                 G = a [R.( Grho x g) + (g x Grho).R]
 !===============================================================================
-do isou = 1, dimrij
-  if     (isou.eq.1) then
+do iel = 1, ncel
+  rit(1) = cvara_rij(1,iel)*gradro(1,iel)                            &
+         + cvara_rij(4,iel)*gradro(2,iel)                            &
+         + cvara_rij(6,iel)*gradro(3,iel)
+  rit(2) = cvara_rij(4,iel)*gradro(1,iel)                            &
+         + cvara_rij(2,iel)*gradro(2,iel)                            &
+         + cvara_rij(5,iel)*gradro(3,iel)
+  rit(3) = cvara_rij(6,iel)*gradro(1,iel)                            &
+         + cvara_rij(5,iel)*gradro(2,iel)                            &
+         + cvara_rij(3,iel)*gradro(3,iel)
 
-    do iel = 1, ncel
-
-      r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
-          + cvara_rij(4,iel)*gradro(2,iel)                            &
-          + cvara_rij(6,iel)*gradro(3,iel)
-      r2t = cvara_rij(4,iel)*gradro(1,iel)                            &
-          + cvara_rij(2,iel)*gradro(2,iel)                            &
-          + cvara_rij(5,iel)*gradro(3,iel)
-      r3t = cvara_rij(6,iel)*gradro(1,iel)                            &
-          + cvara_rij(5,iel)*gradro(2,iel)                            &
-          + cvara_rij(3,iel)*gradro(3,iel)
-
-      kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
+  kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
              /(2.d0*cvara_ep(iel))
 
-      g11 = const*kseps*2.d0*(r1t*gx       )
-      g22 = const*kseps*2.d0*(r2t*gy       )
-      g33 = const*kseps*2.d0*(r3t*gz       )
-      gkks3 = uns3*(g11+g22+g33)
-
-      phit11 = -csttmp*(g11-gkks3)
-
-      smbr(isou,iel) = smbr(isou,iel) + (g11+phit11)*volume(iel)
-
+  do i = 1, 3
+    do j = 1, 3
+      gij(i,j) = const*kseps* (rit(i) * grav(j) + rit(j) * grav(i))
     enddo
+  enddo
 
-  elseif (isou.eq.2) then
+  gkks3 = uns3*(gij(1,1) + gij(2,2) + gij(3,3))
 
-    do iel = 1, ncel
+  do isou = 1, dimrij
 
-      r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
-          + cvara_rij(4,iel)*gradro(2,iel)                            &
-          + cvara_rij(6,iel)*gradro(3,iel)
-      r2t = cvara_rij(4,iel)*gradro(1,iel)                            &
-          + cvara_rij(2,iel)*gradro(2,iel)                            &
-          + cvara_rij(5,iel)*gradro(3,iel)
-      r3t = cvara_rij(6,iel)*gradro(1,iel)                            &
-          + cvara_rij(5,iel)*gradro(2,iel)                            &
-          + cvara_rij(3,iel)*gradro(3,iel)
+    if     (isou.eq.1) then
+      i = 1
+      j = 1
+      dij = 1
+    elseif (isou.eq.2) then
+      i = 2
+      j = 2
+      dij = 1
+    elseif (isou.eq.3) then
+      i = 3
+      j = 3
+      dij = 1
+    elseif (isou.eq.4) then
+      i = 1
+      j = 2
+      dij = 0
+    elseif (isou.eq.5) then
+      i = 2
+      j = 3
+      dij = 0
+    elseif (isou.eq.6) then
+      i = 1
+      j = 3
+      dij = 0
+    endif
 
-      kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
-             /(2.d0*cvara_ep(iel))
+    smbr(isou,iel) = smbr(isou,iel)+ ( gij(i,j) * (1.d0 - csttmp) &
+                                     + csttmp * dij * gkks3       &
+                                     )* volume(iel)
 
-      g11 = const*kseps*2.d0*(r1t*gx       )
-      g22 = const*kseps*2.d0*(r2t*gy       )
-      g33 = const*kseps*2.d0*(r3t*gz       )
-      gkks3 = uns3*(g11+g22+g33)
-
-      phit22 = -csttmp*(g22-gkks3)
-
-      smbr(isou,iel) = smbr(isou,iel) + (g22+phit22)*volume(iel)
-
-    enddo
-
-  elseif (isou.eq.3) then
-
-    do iel = 1, ncel
-
-      r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
-          + cvara_rij(4,iel)*gradro(2,iel)                            &
-          + cvara_rij(6,iel)*gradro(3,iel)
-      r2t = cvara_rij(4,iel)*gradro(1,iel)                            &
-          + cvara_rij(2,iel)*gradro(2,iel)                            &
-          + cvara_rij(5,iel)*gradro(3,iel)
-      r3t = cvara_rij(6,iel)*gradro(1,iel)                            &
-          + cvara_rij(5,iel)*gradro(2,iel)                            &
-          + cvara_rij(3,iel)*gradro(3,iel)
-
-      kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
-             /(2.d0*cvara_ep(iel))
-
-      g11 = const*kseps*2.d0*(r1t*gx       )
-      g22 = const*kseps*2.d0*(r2t*gy       )
-      g33 = const*kseps*2.d0*(r3t*gz       )
-      gkks3 = uns3*(g11+g22+g33)
-
-      phit33 = -csttmp*(g33-gkks3)
-
-      smbr(isou,iel) = smbr(isou,iel) + (g33+phit33)*volume(iel)
-
-    enddo
-
-  elseif (isou.eq.4) then
-
-    do iel = 1, ncel
-
-      r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
-          + cvara_rij(4,iel)*gradro(2,iel)                            &
-          + cvara_rij(6,iel)*gradro(3,iel)
-      r2t = cvara_rij(4,iel)*gradro(1,iel)                            &
-          + cvara_rij(2,iel)*gradro(2,iel)                            &
-          + cvara_rij(5,iel)*gradro(3,iel)
-
-      kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
-             /(2.d0*cvara_ep(iel))
-
-      g12 = const*kseps*     (r1t*gy+r2t*gx)
-
-      phit12 = -csttmp* g12
-
-      smbr(isou,iel) = smbr(isou,iel) + (g12+phit12)*volume(iel)
-
-    enddo
-
-  elseif (isou.eq.6) then
-
-    do iel = 1, ncel
-
-      r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
-          + cvara_rij(4,iel)*gradro(2,iel)                            &
-          + cvara_rij(6,iel)*gradro(3,iel)
-      r3t = cvara_rij(6,iel)*gradro(1,iel)                            &
-          + cvara_rij(5,iel)*gradro(2,iel)                            &
-          + cvara_rij(3,iel)*gradro(3,iel)
-
-      kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
-             /(2.d0*cvara_ep(iel))
-
-      g13 = const*kseps*     (r1t*gz+r3t*gx)
-
-      phit13 = -csttmp* g13
-
-      smbr(isou,iel) = smbr(isou,iel) + (g13+phit13)*volume(iel)
-
-    enddo
-
-  elseif (isou.eq.5) then
-
-    do iel = 1, ncel
-
-      r2t = cvara_rij(4,iel)*gradro(1,iel)                            &
-          + cvara_rij(2,iel)*gradro(2,iel)                            &
-          + cvara_rij(5,iel)*gradro(3,iel)
-      r3t = cvara_rij(6,iel)*gradro(1,iel)                            &
-          + cvara_rij(5,iel)*gradro(2,iel)                            &
-          + cvara_rij(3,iel)*gradro(3,iel)
-
-      kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
-             /(2.d0*cvara_ep(iel))
-
-      g23 = const*kseps*(r2t*gz+r3t*gy)
-
-      phit23 = -csttmp* g23
-
-      smbr(isou,iel) = smbr(isou,iel) + (g23+phit23)*volume(iel)
-
-    enddo
-
-
-  endif
+  enddo
 enddo
 
 return

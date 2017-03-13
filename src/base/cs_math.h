@@ -415,39 +415,37 @@ static inline void
 cs_math_reduce_sym_prod_33_to_66(const cs_real_t s[3][3],
                                  cs_real_t       sout[restrict 6][6])
 {
-  cs_real_33_t tens2vect;
+  cs_int_33_t tens2vect;
   cs_real_6_t iindex;
   cs_real_6_t jindex;
 
-  /* ------------------------- */
   tens2vect[0][0] = 0; tens2vect[0][1] = 3; tens2vect[0][2] = 5;
   tens2vect[1][0] = 3; tens2vect[1][1] = 1; tens2vect[1][2] = 4;
   tens2vect[2][0] = 5; tens2vect[2][1] = 4; tens2vect[2][2] = 2;
-  /* ------------------------- */
+
   iindex[0] = 0; iindex[1] = 1; iindex[2] = 2;
   iindex[3] = 0; iindex[4] = 1; iindex[5] = 0;
-  /* ------------------------- */
+
   jindex[0] = 0; jindex[1] = 1; jindex[2] = 2;
   jindex[3] = 1; jindex[4] = 2; jindex[5] = 2;
-  /* ------------------------- */
 
   /* Consider : W = R*s^t + s*R.
    *            W_ij = Sum_{k<3} [s_jk*r_ik + s_ik*r_jk]
    * We look for A such as
    */
-  for (int iR = 0; iR < 6; iR++) {
+  for (int i = 0; i < 6; i++) {
     int ii;
     int jj;
 
-    ii = iindex[iR];
-    jj = jindex[iR];
+    ii = iindex[i];
+    jj = jindex[i];
     for (int k = 0; k < 3; k++) {
-      int ikR = tens2vect[k][ii];
-      int jkR = tens2vect[k][jj];
+      int ik = tens2vect[k][ii];
+      int jk = tens2vect[k][jj];
 
-      sout[ikR][iR] += s[k][jj];
+      sout[ik][i] += s[k][jj];
 
-      sout[jkR][iR] += s[k][ii];
+      sout[jk][i] += s[k][ii];
     }
   }
 }

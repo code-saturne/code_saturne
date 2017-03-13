@@ -581,17 +581,17 @@ if (irijco.eq.1) then
   ! Rij-epsilon SSG or EBRSM
   elseif (iturb.eq.31.or.iturb.eq.32) then
 
-      call resssg2 &
-      !==========
-    ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-      ivar   ,                                                       &
-      icepdc , icetsm , itypsm ,                                     &
-      dt     ,                                                       &
-      gradv  , gradro ,                                              &
-      ckupdc , smacel ,                                              &
-      viscf  , viscb  ,                                              &
-      tslage , tslagi ,                                              &
-      smbrts   , rovsdtts )
+    call resssg2 &
+    !==========
+  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+    ivar   ,                                                       &
+    icepdc , icetsm , itypsm ,                                     &
+    dt     ,                                                       &
+    gradv  , gradro ,                                              &
+    ckupdc , smacel ,                                              &
+    viscf  , viscb  ,                                              &
+    tslage , tslagi ,                                              &
+    smbrts   , rovsdtts )
   endif
 else
   do isou = 1, 6

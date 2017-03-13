@@ -861,55 +861,59 @@ if (igrari.eq.1) then
     endif
   enddo
 
-  ! Implicit buoyancy term
-  if (st_prv_id .ge. 0) then
-    if (iscalt.gt.0 .AND. nscal.ge.iscalt) then
-      call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
-      if (iturb .eq. 32) then
-        gradro_impl = -1.5d0*cmu/turb_schmidt * (1.0d0-cebmr6)
-      else
-        gradro_impl = -1.5d0*cmu/turb_schmidt * (1.0d0-crij3)
-      end if
-    else
-      if (iturb .eq. 32) then
-        gradro_impl = -1.5d0*cmu*(1.0d0-cebmr6)
-      else
-        gradro_impl = -1.5d0*cmu*(1.0d0-crij3)
-      end if
-    end if
-
-    do iel = 1, ncel
-      gradchk = gx*gradro(1,iel) + gy*gradro(2,iel) + gz*gradro(3,iel)
-      if (gradchk .lt. 0.0d0) then
-        kseps = (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel)) &
-                / (2.0d0*cvara_ep(iel))
-
-        do jsou = 1, 6
-          do isou = 1, 6
-            impl_drsm(isou,jsou) = 0.0d0
-          end do
-        end do
-        implmat2add(:,:) = 0.0d0
-
-        do jsou = 1, 3
-          implmat2add(1,jsou) = kseps * gradro_impl * gx * gradro(jsou,iel)
-          implmat2add(2,jsou) = kseps * gradro_impl * gy * gradro(jsou,iel)
-          implmat2add(3,jsou) = kseps * gradro_impl * gz * gradro(jsou,iel)
-        end do
-
-        call reduce_symprod33_to_66(implmat2add, impl_drsm)
-
-        do isou = 1, dimrij
-          do jsou = 1, dimrij
-            rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) - volume(iel) &
-                                    * impl_drsm(isou,jsou)
-          end do
-        end do
-      end if
-    end do
-  end if
   ! Free memory
   deallocate(w7)
+
+  ! Implicit buoyancy term
+  if (iscalt.gt.0 .and. nscal.ge.iscalt) then
+    call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
+    if (iturb .eq. 32) then
+      gradro_impl = -1.5d0*cmu/turb_schmidt * (1.0d0-cebmr6)
+    else
+      gradro_impl = -1.5d0*cmu/turb_schmidt * (1.0d0-crij3)
+    end if
+  else
+    if (iturb .eq. 32) then
+      gradro_impl = -1.5d0*cmu*(1.0d0-cebmr6)
+    else
+      gradro_impl = -1.5d0*cmu*(1.0d0-crij3)
+    end if
+  end if
+
+  do iel = 1, ncel
+
+    do jsou = 1, 6
+      do isou = 1, 6
+        impl_drsm(isou,jsou) = 0.0d0
+      end do
+    end do
+    implmat2add(:,:) = 0.0d0
+
+    gradchk = gx*gradro(1,iel) + gy*gradro(2,iel) + gz*gradro(3,iel)
+    if (gradchk .gt. 0.0d0) then
+      kseps = (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel)) &
+              / (2.0d0*cvara_ep(iel))
+
+      do jsou = 1, 3
+        implmat2add(1,jsou) = kseps * gradro_impl * gx * gradro(jsou,iel)
+        implmat2add(2,jsou) = kseps * gradro_impl * gy * gradro(jsou,iel)
+        implmat2add(3,jsou) = kseps * gradro_impl * gz * gradro(jsou,iel)
+      end do
+
+    end if
+
+    ! Compute the 6x6 matrix A which verifies
+    ! A . R = M . R + R . M^t
+    call reduce_symprod33_to_66(implmat2add, impl_drsm)
+
+    do isou = 1, dimrij
+      do jsou = 1, dimrij
+        rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) - volume(iel) &
+                                * impl_drsm(isou,jsou)
+      end do
+    end do
+
+  end do
 
 endif
 
