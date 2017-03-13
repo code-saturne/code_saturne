@@ -159,8 +159,8 @@ The SALOME platform is currently only compatible with Python 2,
 so Python 3 should only be used when not building with SALOME support.
 
 In practice, the code is known to build and function properly at least with the
-GNU compilers 4.4 and above (up to 6.1 at this date), Intel compilers 11 and
-above (up to 16 at this date), IBM XL Fortran 14 and C 12 compilers, and Clang
+GNU compilers 4.4 and above (up to 6.3 at this date), Intel compilers 11 and
+above (up to 17 at this date), IBM XL Fortran 14 and C 12 compilers, and Clang
 (tested with 3.7 or above).
 
 Note also that while \CS makes heavy use of Python, this is for scripts and
@@ -672,20 +672,37 @@ to. A recommended cmake command for this build contains:
 \textbackslash \\
 \textcolor{Violet}{-DVTK\_USE\_X}=OFF
 \textbackslash \\
-\textcolor{Violet}{-DOPENGL\_INCLUDE\_DIR}=\textcolor{OliveGreen}{\$MESA\_INSTALL\_PREFIX}/include
+\textcolor{Violet}{-DOPENGL\_INCLUDE\_DIR}=IGNORE
 \textbackslash \\
-\textcolor{Violet}{-DOPENGL\_gl\_LIBRARY}=\textbackslash"\textbackslash"
+\textcolor{Violet}{-DOPENGL\_xmesa\_INCLUDE\_DIR}=IGNORE
 \textbackslash \\
-\textcolor{Violet}{-DOPENGL\_glu\_LIBRARY}=\textcolor{OliveGreen}{\$MESA\_INSTALL\_PREFIX}/lib/libGLU.so
-\textbackslash \\
-\textcolor{Violet}{-DVTK\_OPENGL\_HAS\_OSMESA}=ON
+\textcolor{Violet}{-DOPENGL\_gl\_LIBRARY}=IGNORE
 \textbackslash \\
 \textcolor{Violet}{-DOSMESA\_INCLUDE\_DIR}=\textcolor{OliveGreen}{\$MESA\_INSTALL\_PREFIX}/include
 \textbackslash \\
 \textcolor{Violet}{-DOSMESA\_LIBRARY}=\textcolor{OliveGreen}{\$MESA\_INSTALL\_PREFIX}/lib/libOSMesa.so
 \textbackslash \\
+\textcolor{Violet}{-DVTK\_OPENGL\_HAS\_OSMESA}=ON
+\textbackslash \\
+\textcolor{Violet}{-DVTK\_USE\_OFFSCREEN}=OFF
+\textbackslash \\
 \textcolor{OliveGreen}{\$PARAVIEW\_SRC\_PATH}
 }\end{minipage}}
+
+More info may also be found on the ParaView Wiki:
+(\url{http://www.paraview.org/Wiki/ParaView/ParaView_And_Mesa_3D}).
+
+Catalyst editions
+(\url{http://www.paraview.org/Wiki/ParaView/Catalyst/BuildCatalyst})
+may be used instead of a full ParaView build, but some
+coprocessing scripts may not work depending on what is included in the
+editions, so this is recommended only for advanced users.
+
+On some systems, loading the Catalyst module as a plug-in (which is the
+default) seems to interfere with the detection of required OpenGL2 features
+or extensions. In this case, Catalyst support may be linked in the standard
+manner by using the \texttt{--disable-catalyst-as-plugin}
+configuration option.
 
 \section{Preparing for build\label{sec:prepare}}
 
@@ -766,7 +783,7 @@ Select configuration options, then run {\tt configure}, for example:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ /home/user/Code\_Saturne/\verscs/src/code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/4.3/arch/prod
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/\verscs/arch/prod
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.2 \textbackslash \\
 \textcolor{red}{CC}=/home/user/opt/mpich-3.2/bin/mpicc \textcolor{red}{FC}=gfortran
@@ -798,7 +815,7 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 \$ mkdir dbg\\
 \$ cd dbg\\
 \$ ../../code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/4.3/arch/\textcolor{Magenta}{dbg}
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/\verscs/arch/\textcolor{Magenta}{dbg}
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.2 \textbackslash \\
 \textcolor{Magenta}{--enable-debug} \textbackslash \\
@@ -1040,7 +1057,7 @@ libraries are installed:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/\verscs \\
-\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/4.3 \\
+\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/\verscs \\
 \$ \textcolor{OliveGreen}{CS\_OPT}=/home/projects/opt
 }\end{minipage}}
 
@@ -1052,12 +1069,12 @@ build on a cluster named \texttt{athos}, using the Intel compilers
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{Magenta}{module purge} \\
-\$ \textcolor{Magenta}{module load} intel\_compilers/14.0.0.080 \\
-\$ \textcolor{Magenta}{module load} open\_mpi/gcc/1.6.5 \\
+\$ \textcolor{Magenta}{module load} intel\_compilers/2016.0.047 \\
+\$ \textcolor{Magenta}{module load} open\_mpi/gcc/2.0.1 \\
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/athos\_ompi
 \textbackslash \\
-\textcolor{Violet}{--with-blas}=/opt/intel/l\_ics2013.1.039/composerxe\_xe\_2013\_sp1/mkl \textbackslash \\
+\textcolor{Violet}{--with-blas}=/opt/mkl-2016.0.047/mkl \textbackslash \\
 \textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/athos \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.17/arch/athos
 \textbackslash \\
@@ -1204,8 +1221,7 @@ compute nodes:
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq
 \textbackslash \\
-\textcolor{Violet}{--with-blas}=/opt/ibmmath/essl/5.1 \textbackslash \\
-\textcolor{Violet}{--with-blas-type}=ESSL \textbackslash \\
+\textcolor{Violet}{--without-blas} \\
 \textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.13/arch/bgq \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.1/arch/bgq \textbackslash \\
@@ -1407,7 +1423,7 @@ or \texttt{.bash\_profile} file.
 
 \subsubsection{Moving an existing installation}
 
-\textcolor{Red}{\emph{Never move an non-relocatable installation}} of \CS.
+\textcolor{Red}{\emph{Never move a non-relocatable installation}} of \CS.
 Using \texttt{LD\_LIBRARY\_PATH} or \texttt{LD\_PRELOAD}
 may allow the executable to run despite \emph{rpath} info
 not being up-to-date, but in environments where different library,
