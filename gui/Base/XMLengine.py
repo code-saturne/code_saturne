@@ -1501,6 +1501,47 @@ class Case(Dico, XMLDocument):
             print(msg)
 
 
+    def undoStop(self):
+        """
+        Method to be overloaded for undo/redo in GUI.
+        """
+        return
+
+
+    def undoStart(self):
+        """
+        Method to be overloaded for undo/redo in GUI.
+        """
+        return
+
+
+    def undoStopGlobal(self):
+        """
+        Method to be overloaded for undo/redo in GUI.
+        """
+        return
+
+    def undoStartGlobal(self):
+        """
+        Method to be overloaded for undo/redo in GUI.
+        """
+        return
+
+
+    def undoGlobal(self, f, c):
+        """
+        Method to be overloaded for undo/redo in GUI.
+        """
+        return
+
+
+    def undo(self, f, c):
+        """
+        Method to be overloaded for undo/redo in GUI.
+        """
+        return
+
+
 #-------------------------------------------------------------------------------
 # XMLengine test case
 #-------------------------------------------------------------------------------
