@@ -118,12 +118,7 @@ class StandardItemModelAverage(QStandardItemModel):
         imom = row + 1
         item = [imom, label, ntdmom, ttdmom, imoold, lst]
         self.dataAverage.append(item)
-        if row +1 > 50:
-            title = self.tr("Information")
-            msg = self.tr("The maximal number of time averages cannot exceed 50. ")
-            QMessageBox.information(self.parent, title, msg)
-        else:
-            self.setRowCount(row+1)
+        self.setRowCount(row+1)
 
 
     def replaceItem(self, row, label, ntdmom, ttdmom, imoold, lst):
