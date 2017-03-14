@@ -1151,14 +1151,13 @@ cs_base_mpi_init(int    *argc,
 
 #if   defined(__bg__) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 
-  /* Notes: Blue Gene/L also defines the BGLMPI_SIZE environment variable.
-   *        Blue Gene/P defines BG_SIZE (plus BG_MAPPING, and BG_RELEASE). */
+  /* Blue Gene/Q or Cray: assume MPI is always used. */
 
   use_mpi = true;
 
 #elif defined(MPICH) || defined(MPICH2) || defined(MSMPI_VER)
 
-  /* Notes: Microsoft MPI is based on standard MPICH2 */
+  /* Notes: Microsoft MPI is based on MPICH */
 
   if (getenv("PMI_RANK") != NULL)
     use_mpi = true;
@@ -1166,44 +1165,18 @@ cs_base_mpi_init(int    *argc,
   else if (getenv("PCMPI") != NULL) /* Platform MPI */
     use_mpi = true;
 
-#if defined(MPICH_NAME)
-#if (MPICH_NAME == 1)
-
-  /*
-    Using standard MPICH1 1.2.x with the p4 (default) mechanism,
-    the information required by MPI_Init() are transferred through
-    the command line, which is then modified by MPI_Init();
-    in this case, only rank 0 knows the "user" command line arguments
-    at program startup, the other processes obtaining them only upon
-    calling  MPI_Init(). In this case, it is thus necessary to initialize
-    MPI before parsing the command line.
-  */
-
-  for (arg_id = 0 ; arg_id < *argc ; arg_id++) {
-    if (   !strcmp((*argv)[arg_id], "-p4pg")         /* For process 0 */
-        || !strcmp((*argv)[arg_id], "-p4rmrank")) {  /* For other processes */
-      use_mpi = true;
-      break;
-    }
-  }
-
-  if (getenv("GMPI_ID") != NULL) /* In case we are using MPICH-GM */
-    use_mpi = true;
-
-#endif /* End for MPICH-1 or variants */
-#endif
-
-#elif defined(LAM_MPI)
-  if (getenv("LAMRANK") != NULL)
-    use_mpi = true;
-
 #elif defined(OPEN_MPI)
   if (getenv("OMPI_MCA_ns_nds_vpid") != NULL)         /* OpenMPI 1.2 */
     use_mpi = true;
-  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 */
+  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 + */
     use_mpi = true;
 
 #endif /* Tests for known MPI variants */
+
+  /* Test for run through SLURM's srun */
+
+  if (getenv("SLURM_PROCID") != NULL)
+    use_mpi = true;
 
   /* If we have determined from known MPI environment variables
      of command line arguments that we are running under MPI,
