@@ -2647,12 +2647,12 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
   cs_lagr_particle_set_t         *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am  = p_set->p_am;
 
-  int ltsvar;
+  int ltsvar = 0;
 
-  if (p_set->p_am->source_term_displ[attr] >= 0)
-    ltsvar = 1;
-  else
-    ltsvar = 0;
+  if (p_set->p_am->source_term_displ != NULL) {
+    if (p_set->p_am->source_term_displ[attr] >= 0)
+      ltsvar = 1;
+  }
 
   int nor = cs_glob_lagr_time_step->nor;
 
@@ -2676,7 +2676,7 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 
         cs_real_t aux1 = cs_glob_lagr_time_step->dtp/tcarac[ip];
         cs_real_t aux2 = exp(-aux1);
-        cs_real_t ter1 = cs_lagr_particle_get_real(particle, p_am, attr);
+        cs_real_t ter1 = cs_lagr_particle_get_real(particle, p_am, attr)*aux2;
         cs_real_t ter2 = pip[ip] * (1.0 - aux2);
 
         /* Pour le cas NORDRE= 1 ou s'il y a rebond,     */
