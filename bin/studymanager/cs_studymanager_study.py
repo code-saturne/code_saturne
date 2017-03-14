@@ -904,7 +904,7 @@ class Study(object):
                     for _file in _files:
                         _ref_file = os.path.join(_ref_dir, _file)
                         _dest_file = os.path.join(_dest_dir, _file)
-                        if _dest_file:
+                        if os.path.isfile(_dest_file):
                             os.remove(_dest_file)
                         shutil.copy2(_ref_file, _dest_dir)
 
