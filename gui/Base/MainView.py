@@ -647,7 +647,7 @@ class MainView(object):
         create new Code_Saturne case
         """
         if not hasattr(self, 'case'):
-            self.case = XMLengine.Case(package=self.package)
+            self.case = QtCase.QtCase(package=self.package)
             self.case.root()['version'] = self.XML_DOC_VERSION
             self.initCase()
             title = self.tr("New parameters set") + \
