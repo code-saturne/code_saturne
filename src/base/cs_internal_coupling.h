@@ -93,8 +93,7 @@ typedef struct {
 
   /* Gradient reconstruction */
   cs_real_33_t *cocgb_s_lsq;
-  cs_real_33_t *cocgb_s_it;
-  cs_real_33_t *cocg_s_it;
+  cs_real_33_t *cocg_it;
 
   /* User information */
   char *namesca;

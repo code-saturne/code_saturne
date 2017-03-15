@@ -313,8 +313,7 @@ _destroy_entity(cs_internal_coupling_t  *cpl)
   BFT_FREE(cpl->offset_vect);
   BFT_FREE(cpl->coupled_faces);
   BFT_FREE(cpl->cocgb_s_lsq);
-  BFT_FREE(cpl->cocgb_s_it);
-  BFT_FREE(cpl->cocg_s_it);
+  BFT_FREE(cpl->cocg_it);
   BFT_FREE(cpl->cells_criteria);
   BFT_FREE(cpl->faces_criteria);
   BFT_FREE(cpl->namesca);
@@ -595,8 +594,7 @@ _cpl_initialize(cs_internal_coupling_t *cpl)
   cpl->idiff = 0;
 
   cpl->cocgb_s_lsq = NULL;
-  cpl->cocgb_s_it = NULL;
-  cpl->cocg_s_it = NULL;
+  cpl->cocg_it = NULL;
 
   cpl->namesca = NULL;
 }
@@ -815,8 +813,7 @@ _locator_initialize(cs_mesh_t               *m,
   BFT_MALLOC(cpl->coupled_faces, m->n_b_faces, bool);
 
   cpl->cocgb_s_lsq = NULL;
-  cpl->cocgb_s_it = NULL;
-  cpl->cocg_s_it = NULL;
+  cpl->cocg_it = NULL;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1193,7 +1190,7 @@ cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         fctb[ll] = dc[ll] * pfac;
 
-      /* Compared with _lsq_scalar_gradient, weight from 
+      /* Compared with _lsq_scalar_gradient, weight from
        * _compute_physical_face_weight already contains denom */
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         rhsv[cell_id][ll] +=  weight[ii] * fctb[ll];
@@ -1332,7 +1329,6 @@ cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
 {
   int ll, mm;
   cs_lnum_t cell_id, face_id;
-  cs_real_t dvol;
 
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
@@ -1353,19 +1349,10 @@ cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
 
     for (ll = 0; ll < 3; ll++) {
       for (mm = 0; mm < 3; mm++)
-        cocg[cell_id][ll][mm] -= 0.5 * offset_vect[ii][ll] * b_f_face_normal[face_id][mm];
+        cocg[cell_id][ll][mm] -= 0.5 * offset_vect[ii][ll]
+                               * b_f_face_normal[face_id][mm] / cell_vol[cell_id];
     }
   }
-
-# pragma omp parallel for private(dvol, ll, mm)
-  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    dvol = 1. / cell_vol[cell_id];
-    for (ll = 0; ll < 3; ll++) {
-      for (mm = 0; mm < 3; mm++)
-         cocg[cell_id][ll][mm] *= dvol;
-    }
-  }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1679,9 +1666,9 @@ cs_internal_coupling_initialize(void)
         /* Initialize cocg & cocgb */
         switch(CS_ABS(var_cal_opt.imrgra)){
           case 0:
-            cs_compute_cell_cocg_s_it_coupling(cs_glob_mesh,
-                                               cs_glob_mesh_quantities,
-                                               cpl);
+            cs_compute_cell_cocg_it_coupling(cs_glob_mesh,
+                                             cs_glob_mesh_quantities,
+                                             cpl);
             break;
           case 1:
           case 4:

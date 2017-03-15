@@ -121,13 +121,11 @@ static int _n_computations = 0;
  * parameters:
  *   m    <--  mesh
  *   fvq  <->  mesh quantities
- *   ce   <->  coupling entity
  *----------------------------------------------------------------------------*/
 
 static void
 _compute_cell_cocg_s_it(const cs_mesh_t         *m,
-                        cs_mesh_quantities_t    *fvq,
-                        cs_internal_coupling_t  *ce)
+                        cs_mesh_quantities_t    *fvq)
 {
   const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
@@ -146,13 +144,8 @@ _compute_cell_cocg_s_it(const cs_mesh_t         *m,
 
   cs_real_33_t   *restrict cocgb;
   cs_real_33_t   *restrict cocg;
-  if (ce == NULL) {
-    cocg = fvq->cocg_s_it;
-    cocgb = fvq->cocgb_s_it;
-  } else {
-    cocg = ce->cocg_s_it;
-    cocgb = ce->cocgb_s_it;
-  }
+  cocg = fvq->cocg_s_it;
+  cocgb = fvq->cocgb_s_it;
 
   cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
@@ -165,13 +158,8 @@ _compute_cell_cocg_s_it(const cs_mesh_t         *m,
   if (cocg == NULL) {
     BFT_MALLOC(cocg, n_cells_ext, cs_real_33_t);
     BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
-    if (ce == NULL) {
-      fvq->cocgb_s_it = cocgb;
-      fvq->cocg_s_it = cocg;
-    } else {
-      ce->cocg_s_it = cocg;
-      ce->cocgb_s_it = cocgb;
-    }
+    fvq->cocgb_s_it = cocgb;
+    fvq->cocg_s_it = cocg;
   }
 
   /* Compute cocg */
@@ -216,11 +204,6 @@ _compute_cell_cocg_s_it(const cs_mesh_t         *m,
     } /* loop on threads */
 
   } /* loop on thread groups */
-
-  /* Contribution for internal coupling */
-  if (ce != NULL) {
-    cs_internal_coupling_it_cocg_contribution(ce, cocg);
-  }
 
   /* Save partial cocg at interior faces of boundary cells */
 
@@ -289,8 +272,8 @@ _compute_cell_cocg_s_it(const cs_mesh_t         *m,
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_cell_cocg_lsq(const cs_mesh_t      *m,
-                       cs_mesh_quantities_t *fvq,
+_compute_cell_cocg_lsq(const cs_mesh_t        *m,
+                       cs_mesh_quantities_t   *fvq,
                        cs_internal_coupling_t *ce)
 {
   const int n_cells = m->n_cells;
@@ -526,11 +509,13 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
  * parameters:
  *   m               <--  mesh
  *   fvq             <->  mesh quantities
+ *   ce              <->  coupling entity
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_cell_cocg_it(const cs_mesh_t      *m,
-                      cs_mesh_quantities_t *fvq)
+_compute_cell_cocg_it(const cs_mesh_t        *m,
+                      cs_mesh_quantities_t   *fvq,
+                      cs_internal_coupling_t *ce)
 {
   /* Local variables */
 
@@ -549,6 +534,12 @@ _compute_cell_cocg_it(const cs_mesh_t      *m,
   cs_real_33_t *restrict cocg
     = fvq->cocg_it;
 
+  if (ce == NULL) {
+    cocg = fvq->cocg_it;
+  } else {
+    cocg = ce->cocg_it;
+  }
+
   cs_lnum_t  cell_id, face_id, i, j, cell_id1, cell_id2;
   cs_real_t  pfac, vecfac, ddet;
   cs_real_t  dvol1, dvol2;
@@ -556,6 +547,14 @@ _compute_cell_cocg_it(const cs_mesh_t      *m,
   cs_real_t  cocg11, cocg12, cocg13, cocg21, cocg22, cocg23;
   cs_real_t  cocg31, cocg32, cocg33;
   cs_real_t  a11, a12, a13, a21, a22, a23, a31, a32, a33;
+
+  if (cocg == NULL) {
+    BFT_MALLOC(cocg, n_cells_with_ghosts, cs_real_33_t);
+    if (ce == NULL)
+      fvq->cocg_it = cocg;
+    else
+      ce->cocg_it = cocg;
+  }
 
   /* compute the dimensionless matrix COCG for each cell*/
 
@@ -591,6 +590,12 @@ _compute_cell_cocg_it(const cs_mesh_t      *m,
       }
     }
   }
+
+  /* Contribution for internal coupling */
+  if (ce != NULL) {
+    cs_internal_coupling_it_cocg_contribution(ce, cocg);
+  }
+
 
   /* 3x3 Matrix inversion*/
 
@@ -2312,13 +2317,13 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   /* Compute 3x3 cocg matrixes */
 
   if (_compute_cocg_s_it == 1)
-    _compute_cell_cocg_s_it(mesh, mesh_quantities, NULL);
+    _compute_cell_cocg_s_it(mesh, mesh_quantities);
 
   if (_compute_cocg_lsq == 1)
     _compute_cell_cocg_lsq(mesh, mesh_quantities, NULL);
 
   if (_compute_cocg_it == 1)
-    _compute_cell_cocg_it(mesh, mesh_quantities);
+    _compute_cell_cocg_it(mesh, mesh_quantities, NULL);
 
   /* Print some information on the control volumes, and check min volume */
 
@@ -2799,11 +2804,11 @@ cs_compute_cell_cocg_lsq_coupling(const cs_mesh_t         *m,
  *----------------------------------------------------------------------------*/
 
 void
-cs_compute_cell_cocg_s_it_coupling(const cs_mesh_t         *m,
-                                   cs_mesh_quantities_t    *fvq,
-                                   cs_internal_coupling_t  *ce)
+cs_compute_cell_cocg_it_coupling(const cs_mesh_t         *m,
+                                 cs_mesh_quantities_t    *fvq,
+                                 cs_internal_coupling_t  *ce)
 {
-  _compute_cell_cocg_s_it(m, fvq, ce);
+  _compute_cell_cocg_it(m, fvq, ce);
 }
 
 /*----------------------------------------------------------------------------*/

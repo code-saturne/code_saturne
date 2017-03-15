@@ -5362,7 +5362,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *restrict)fvq->dofij;
 
   cs_real_33_t *restrict cocg = (cpl == NULL) ?
-    fvq->cocg_it : cpl->cocg_s_it;
+    fvq->cocg_it : cpl->cocg_it;
 
   cs_lnum_t  face_id;
   int        g_id, t_id;
