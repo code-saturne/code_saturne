@@ -409,9 +409,9 @@ cs_compute_cell_cocg_lsq_coupling(const cs_mesh_t         *m,
  *----------------------------------------------------------------------------*/
 
 void
-cs_compute_cell_cocg_s_it_coupling(const cs_mesh_t         *m,
-                                   cs_mesh_quantities_t    *fvq,
-                                   cs_internal_coupling_t  *ce);
+cs_compute_cell_cocg_it_coupling(const cs_mesh_t         *m,
+                                 cs_mesh_quantities_t    *fvq,
+                                 cs_internal_coupling_t  *ce);
 
 /*----------------------------------------------------------------------------*/
 
