@@ -69,14 +69,24 @@ integer          ncel
 ! Local variables
 
 integer          iclpnu(1),iel, iclmx(1)
+integer          kclipp, clip_nusa_id
 double precision xnu, var, epz2
 double precision vmin(1), vmax(1)
 
 double precision, dimension(:), pointer :: cvar_nusa
+double precision, dimension(:), pointer :: cpro_nusa_clipped
 
 !===============================================================================
 
 call field_get_val_s(ivarfl(inusa), cvar_nusa)
+
+call field_get_key_id("clipping_id", kclipp)
+
+! Postprocess clippings?
+call field_get_key_int(ivarfl(inusa), kclipp, clip_nusa_id)
+if (clip_nusa_id.ge.0) then
+  call field_get_val_s(clip_nusa_id, cpro_nusa_clipped)
+endif
 
 ! Une petite valeur pour eviter des valeurs exactement nulles.
 
@@ -94,6 +104,11 @@ do iel = 1, ncel
   vmax(1) = max(vmax(1),var)
 enddo
 
+do iel = 1, ncel
+  if (clip_nusa_id.ge.0) &
+    cpro_nusa_clipped(iel) = 0.d0
+enddo
+
 !===============================================================================
 ! ---> Clipping "standard" NUSA>0
 !===============================================================================
@@ -102,6 +117,7 @@ iclpnu(1) = 0
 do iel = 1, ncel
   xnu = cvar_nusa(iel)
   if (xnu.lt.0.d0) then
+    cpro_nusa_clipped(iel) = - xnu
     iclpnu(1) = iclpnu(1) + 1
     cvar_nusa(iel) = 0.d0
   endif

@@ -20,30 +20,26 @@
 
 !-------------------------------------------------------------------------------
 
+!> \file clpv2f.f90
+!> \brief Clipping of \f$ v^2\f$ and \f$ \phi \f$ for the Bl v2/k
+!> turbulence model (no clipping on \f$ f \f$).
+!>
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     ncel          number of cells
+!> \param[in]     iwaphi        verbosity level
+!______________________________________________________________________________
+
+
 subroutine clpv2f &
  ( ncel   ,                                                       &
    iwaphi )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CLIPPING DE PHI EN V2F (PAS DE CLIPPING SUR F_BARRE)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncel             ! e  ! <-- ! nombre de cellules                             !
-! iwaphi           ! e  ! <-- ! niveau d'impression                            !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -71,15 +67,34 @@ integer          iwaphi
 ! Local variables
 
 integer          iel
+integer          kclipp, clip_a_id, clip_phi_id
 integer          nclpmx(1), nclpmn(1)
 double precision xphi, xal, vmin(1), vmax(1), var
 
 double precision, dimension(:), pointer :: cvar_al, cvar_phi
+double precision, dimension(:), pointer :: cpro_phi_clipped
+double precision, dimension(:), pointer :: cpro_a_clipped
 
 !===============================================================================
 
 call field_get_val_s(ivarfl(iphi), cvar_phi)
-if (iturb.eq.51) call field_get_val_s(ivarfl(ial), cvar_al)
+
+call field_get_key_id("clipping_id", kclipp)
+
+! Postprocess clippings?
+call field_get_key_int(ivarfl(iphi), kclipp, clip_phi_id)
+if (clip_phi_id.ge.0) then
+  call field_get_val_s(clip_phi_id, cpro_phi_clipped)
+endif
+
+clip_a_id = -1
+if (iturb.eq.51) then
+  call field_get_val_s(ivarfl(ial), cvar_al)
+  call field_get_key_int(ivarfl(ial), kclipp, clip_a_id)
+  if (clip_a_id.ge.0) then
+    call field_get_val_s(clip_a_id, cpro_a_clipped)
+  endif
+endif
 
 !===============================================================================
 !  1. Pour le phi-fbar et BL-v2/k model, reperage des valeurs de phi
@@ -98,6 +113,14 @@ do iel = 1, ncel
   vmin(1) = min(vmin(1),var)
   vmax(1) = max(vmax(1),var)
 enddo
+
+do iel = 1, ncel
+  if (clip_phi_id.ge.0) &
+    cpro_phi_clipped(iel) = 0.d0
+  if (clip_a_id.ge.0) &
+    cpro_a_clipped(iel) = 0.d0
+enddo
+
 
 !==============================================================================
 !     1.b Reperage des valeurs superieures a 2, pour affichage seulement
@@ -120,6 +143,8 @@ nclpmn(1) = 0
 do iel = 1, ncel
   xphi = cvar_phi(iel)
   if (xphi.lt.0.d0) then
+    if (clip_phi_id.ge.0) &
+      cpro_phi_clipped(iel) = -xphi
     cvar_phi(iel) = -xphi
     nclpmn(1) = nclpmn(1) + 1
   endif
@@ -156,10 +181,14 @@ if (iturb.eq.51) then
   do iel = 1, ncel
     xal = cvar_al(iel)
     if (xal.lt.0.d0) then
+      if (clip_a_id.ge.0) &
+        cpro_a_clipped(iel) = -xal
       cvar_al(iel) = 0.d0
       nclpmn(1) = nclpmn(1) + 1
     endif
     if (xal.gt.1.d0) then
+      if (clip_a_id.ge.0) &
+        cpro_a_clipped(iel) = 1.d0 - xal
       cvar_al(iel) = 1.d0
       nclpmx(1) = nclpmx(1) + 1
     endif
