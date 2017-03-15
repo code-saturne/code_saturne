@@ -71,13 +71,23 @@ double precision alpha_min(ncelet)
 
 integer          iel
 integer          iclpmn(1), iclpmx(1)
+integer          kclipp, clip_a_id
 double precision vmin(1), vmax(1), var
 
 double precision, dimension(:), pointer :: cvar_al
+double precision, dimension(:), pointer :: cpro_a_clipped
 
 !===============================================================================
 
 call field_get_val_s(f_id, cvar_al)
+
+call field_get_key_id("clipping_id", kclipp)
+
+! Postprocess clippings?
+call field_get_key_int(f_id, kclipp, clip_a_id)
+if (clip_a_id.ge.0) then
+  call field_get_val_s(clip_a_id, cpro_a_clipped)
+endif
 
 !===============================================================================
 !  ---> Stockage Min et Max pour listing
@@ -91,15 +101,24 @@ do iel = 1, ncel
   vmax(1) = max(vmax(1),var)
 enddo
 
+do iel = 1, ncel
+  if (clip_a_id.ge.0) &
+    cpro_a_clipped(iel) = 0.d0
+enddo
+
 ! ---> Clipping (modif pour eviter les valeurs exactement nulles)
 
 iclpmn(1) = 0
 iclpmx(1) = 0
 do iel = 1, ncel
   if (cvar_al(iel).lt.alpha_min(iel)) then
+    if (clip_a_id.ge.0) &
+      cpro_a_clipped(iel) = alpha_min(iel) - cvar_al(iel)
     iclpmn(1) = iclpmn(1) + 1
     cvar_al(iel) = alpha_min(iel)
   elseif(cvar_al(iel).gt.1.d0) then
+    if (clip_a_id.ge.0) &
+      cpro_a_clipped(iel) = cvar_al(iel) - 1.d0
     iclpmx(1) = iclpmx(1) + 1
     cvar_al(iel) = 1.d0
   endif

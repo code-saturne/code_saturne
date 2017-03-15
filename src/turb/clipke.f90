@@ -103,7 +103,7 @@ epz2 = epzero**2
 call field_get_key_id("clipping_id", kclipp)
 
 ! Postprocess clippings?
-call field_get_key_int(ivarfl(iep), kclipp, clip_k_id)
+call field_get_key_int(ivarfl(ik), kclipp, clip_k_id)
 if (clip_k_id.ge.0) then
   call field_get_val_s(clip_k_id, cpro_k_clipped)
 endif
