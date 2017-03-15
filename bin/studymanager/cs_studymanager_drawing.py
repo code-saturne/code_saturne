@@ -354,7 +354,7 @@ class Figure(object):
         for k, v in parser.getAttributes(node).items():
             if k == "figsize":
                 v_spl = v.strip("() ").split(",")
-                self.figsize = tuple([int(co) for co in v_spl])
+                self.figsize = tuple([float(co) for co in v_spl])
             elif k == "dpi":
                 self.dpi = int(v)
 
