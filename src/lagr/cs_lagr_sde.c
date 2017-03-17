@@ -2677,7 +2677,7 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 
         cs_real_t aux1 = cs_glob_lagr_time_step->dtp/tcarac[ip];
         cs_real_t aux2 = exp(-aux1);
-        cs_real_t ter1 = cs_lagr_particle_get_real(particle, p_am, attr)*aux2;
+        cs_real_t ter1 = cs_lagr_particle_get_real_n(particle, p_am, 1, attr)*aux2;
         cs_real_t ter2 = pip[ip] * (1.0 - aux2);
 
         /* Pour le cas NORDRE= 1 ou s'il y a rebond,     */
@@ -2716,8 +2716,8 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 
         cs_real_t aux1   = cs_glob_lagr_time_step->dtp / tcarac [ip];
         cs_real_t aux2   = exp(-aux1);
-        cs_real_t ter1   = 0.5 * cs_lagr_particle_get_real(particle,
-                                                           p_am, attr) * aux2;
+        cs_real_t ter1   = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                             attr) * aux2;
         cs_real_t ter2   = pip [ip] * (1.0 - (1.0 - aux2) / aux1);
 
         /* Pour le cas NORDRE= 2, le ETTP suivant est le resultat final */

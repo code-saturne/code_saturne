@@ -33,6 +33,7 @@
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
+
 #include <limits.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -266,12 +267,8 @@ cs_lagr_resuspension(void)
             /* at the current sub-time-step assuming linear variation  */
             /* (constant acceleration)   */
 
-            cs_real_t v_part_t    = sqrt(  pow(prev_part_vel[0], 2)
-                                           + pow(prev_part_vel[1], 2)
-                                           + pow(prev_part_vel[2], 2));
-            cs_real_t v_part_t_dt = sqrt(  pow(part_vel[0], 2)
-                                           + pow(part_vel[1], 2)
-                                           + pow(part_vel[2], 2));
+            cs_real_t v_part_t    = cs_math_3_norm(prev_part_vel);
+            cs_real_t v_part_t_dt = cs_math_3_norm(part_vel);
 
             cs_real_t sub_dt = cs_glob_lagr_time_step->dtp / ndiam;
 
@@ -279,7 +276,7 @@ cs_lagr_resuspension(void)
                                     / cs_glob_lagr_time_step->dtp;
 
             if (   test_colli == 1
-                   && cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) > 0) {
+                && cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) > 0) {
 
               cs_real_t kinetic_energy =  0.5 * p_mass
                 * (    pow(part_vel[0], 2)
@@ -409,7 +406,7 @@ cs_lagr_resuspension(void)
                     face_id, ip);
 
         }
-        else if (bound_stat[face_id + n_faces * lag_bi->inclg] == 0 )
+        else if (bound_stat[face_id + n_faces * lag_bi->inclg] == 0)
           cluster_spacing = sqrt(norm_face);
 
         else

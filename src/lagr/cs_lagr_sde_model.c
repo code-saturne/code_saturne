@@ -340,7 +340,7 @@ _lagtmp(cs_lnum_t        npt,
                          + _tkelvi
                          + tpscara * (phirayo * cs_math_pi * diamp2 + phith[0])
                          / (p_mass * part_cp);
-    cs_real_t aux2      = exp ( -dtp / tpscara);
+    cs_real_t aux2      = exp (-dtp / tpscara);
 
     /* Source term */
 
@@ -975,8 +975,9 @@ _lagitf(cs_lagr_attribute_t  *iattr)
         cs_real_t aux1 = -cs_glob_lagr_time_step->dtp / auxl1[npt];
         cs_real_t aux2 = exp(aux1);
 
-        cs_real_t ter1   = cs_lagr_particle_get_real(particle, p_am,CS_LAGR_FLUID_TEMPERATURE) * aux2;
-        cs_real_t ter2   = tempf[cell_id] * (1.0 - aux2);
+        cs_real_t ter1 = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                     CS_LAGR_FLUID_TEMPERATURE) * aux2;
+        cs_real_t ter2 = tempf[cell_id] * (1.0 - aux2);
 
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE, ter1 + ter2);
 
@@ -1003,9 +1004,10 @@ _lagitf(cs_lagr_attribute_t  *iattr)
       if (   cell_id  >= 0
           && cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_REBOUND_ID) != 0 ) {
 
-        cs_real_t aux1   =  -cs_glob_lagr_time_step->dtp / auxl1[npt];
+        cs_real_t aux1   = -cs_glob_lagr_time_step->dtp / auxl1[npt];
         cs_real_t aux2   = exp(aux1);
-        cs_real_t ter1   = 0.5 * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE) * aux2;
+        cs_real_t ter1   = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                             CS_LAGR_FLUID_TEMPERATURE) * aux2;
         cs_real_t ter2   = tempf[cell_id] * (1.0 - (aux2 - 1.0) / aux1);
         cs_real_t *part_ts_fluid_t = cs_lagr_particles_source_terms(p_set, npt, CS_LAGR_FLUID_TEMPERATURE);
 
@@ -1287,7 +1289,7 @@ _lagich(const cs_real_t   tempct[],
 
       for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++) {
 
-        if (part_coal_mass[l_id] > 0.0)
+        if (prev_part_coal_mass[l_id] > 0.0)
           l_id_het = l_id;
 
       }
@@ -1295,7 +1297,7 @@ _lagich(const cs_real_t   tempct[],
       /* On verifie cherche s'il reste du ck sur une couche plus externe */
       for (cs_lnum_t l_id = l_id_het; l_id < nlayer; l_id++) {
 
-        if (part_coke_mass[l_id] > 0.0)
+        if (prev_part_coke_mass[l_id] > 0.0)
           l_id_het = l_id;
 
       }
@@ -1413,8 +1415,8 @@ _lagich(const cs_real_t   tempct[],
         for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++)
           aux1 += fwat[l_id] * dtp;
 
-        cs_real_t mwat = cs_lagr_particle_get_real(particle, p_am,
-                                                   CS_LAGR_WATER_MASS) - aux1;
+        cs_real_t mwat = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                     CS_LAGR_WATER_MASS) - aux1;
 
         /* Clipping   */
         if (mwat < precis)
@@ -1469,7 +1471,7 @@ _lagich(const cs_real_t   tempct[],
           aux1 = exp ( -(skp1[l_id] + skp2[l_id]) * dtp);
 
           part_coal_mass[l_id] = 0.5 * (  part_coal_mass[l_id]
-                                          + prev_part_coal_mass[l_id] * aux1);
+                                        + prev_part_coal_mass[l_id] * aux1);
 
           /* Clipping   */
           if (part_coal_mass[l_id] < precis)
@@ -1498,7 +1500,7 @@ _lagich(const cs_real_t   tempct[],
                                  * (1.0 - lag_cc->y2ch[co_id]))
                 / (skp1[l_id] + skp2[l_id]);
           aux2 = exp(-(skp1[l_id] + skp2[l_id]) * dtp);
-          aux3 =  aux1 * prev_part_coal_mass[l_id] * (1.0 - aux2) / dtp;
+          aux3 = aux1 * prev_part_coal_mass[l_id] * (1.0 - aux2) / dtp;
 
           if ( l_id == l_id_het ) {
 
@@ -1590,7 +1592,9 @@ _lagich(const cs_real_t   tempct[],
       /* ==============================================================================
        * 14. Mise a jour du diametre du coeur retrecissant
        * ==============================================================================*/
+
       /* On repere la couche avec du ch la plus externe */
+
       l_id_het = 0;
       for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++) {
 
