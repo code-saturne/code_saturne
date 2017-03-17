@@ -200,10 +200,10 @@ do iel = 1, ncel
   l2 = xlldrb**2
 
   ! Explicit term
-  smbr(iel) = volume(iel)*(1.d0 -cvara_al(iel)) / l2
+  smbr(iel) = cell_f_vol(iel)*(1.d0 -cvara_al(iel)) / l2
 
   ! Implicit term
-  rovsdt(iel) = (rovsdt(iel) + volume(iel)*thetap) / l2
+  rovsdt(iel) = (rovsdt(iel) + cell_f_vol(iel)*thetap) / l2
 
 enddo
 

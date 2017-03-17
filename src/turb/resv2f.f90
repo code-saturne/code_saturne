@@ -109,10 +109,11 @@ integer          ivoid(1)
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision epsrsp
 double precision tuexpe, thets , thetv , thetap, thetp1
-double precision d2s3, d1s4, d3s2
+double precision d2s3
 double precision xk, xe, xnu, xrom, ttke, ttmin, llke, llmin, tt
 double precision fhomog
 double precision hint
+double precision l2, time_scale
 
 double precision rvoid(1)
 
@@ -121,7 +122,7 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:,:) :: gradp, gradk
 double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5
+double precision, allocatable, dimension(:) :: w5
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
@@ -148,7 +149,7 @@ allocate(smbr(ncelet), rovsdt(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet))
+allocate(w5(ncelet))
 allocate(dpvar(ncelet))
 
 call field_get_val_s(icrom, crom)
@@ -193,8 +194,6 @@ if (istprv.ge.0) then
 endif
 
 d2s3 = 2.0d0/3.0d0
-d1s4 = 1.0d0/4.0d0
-d3s2 = 3.0d0/2.0d0
 
 call field_get_key_struct_var_cal_opt(ivarfl(iphi), vcopt)
 
@@ -317,7 +316,7 @@ endif
 
 
 !===============================================================================
-! 3.2 Source term of f_barre/alpha
+! 3.2 Source term of f_barre or alpha
 !   For f_barre (phi_fbar)
 !     \f[ smbr =\dfrac{1}{L^2*(f_b + \dfrac{1}{T(C1-1)(phi-2/3)}
 !                                               - \dfrac{C2 Pk}{k \rho}
@@ -386,85 +385,75 @@ call itrgrp &
    w3     ,                                                          &
    w2     )
 
-!      We store T in W3 et L^2 in W4
-!      In this case of the second-order in time, T is calculated in n
-!      (it will be extrapolated) and L^2 in n+theta
-!      (even if k and eps stay in n)
-do iel = 1, ncel
-  xk = cvara_k(iel)
-  xe = cvara_ep(iel)
-  xnu  = cpro_pcvlo(iel)/cromo(iel)
-  ttke = xk / xe
-  if (iturb.eq.50) then
-    ttmin = cv2fct*sqrt(xnu/xe)
-    w3(iel) = max(ttke,ttmin)
-  elseif (iturb.eq.51) then
-    ttmin = cpalct*sqrt(xnu/xe)
-    w3(iel) = sqrt(ttke**2 + ttmin**2)
-  endif
-
-  xnu  = viscl(iel)/crom(iel)
-  llke = xk**d3s2/xe
-  if (iturb.eq.50) then
-    llmin = cv2fet*(xnu**3/xe)**d1s4
-    w4(iel) = ( cv2fcl*max(llke,llmin) )**2
-  elseif (iturb.eq.51) then
-    llmin = cpalet*(xnu**3/xe)**d1s4
-    w4(iel) = cpalcl**2*(llke**2 + llmin**2)
-  endif
-enddo
-
 !     Explicit term, stores ke temporarily in w5
 !     w2 is already multipicated by the volume which already contains
 !     a mark "-" (coming from itrgrp)
 do iel = 1, ncel
-  xrom = cromo(iel)
-  xnu  = cpro_pcvlo(iel)/xrom
+  ! Compute the time scale
   xk = cvara_k(iel)
   xe = cvara_ep(iel)
+  xrom = cromo(iel)
+  xnu  = cpro_pcvlo(iel)/xrom
+  ttke = xk / xe
+  if (iturb.eq.50) then
+    ttmin = cv2fct*sqrt(xnu/xe)
+    time_scale = max(ttke,ttmin)
+  elseif (iturb.eq.51) then
+    ttmin = cpalct*sqrt(xnu/xe)
+    time_scale = sqrt(ttke**2 + ttmin**2)
+  endif
+
   if (iturb.eq.50) then
     w5(iel) = - cell_f_vol(iel)*                                    &
-         ( (cv2fc1-1.d0)*(cvara_phi(iel)-d2s3)/w3(iel)              &
+         ( (cv2fc1-1.d0)*(cvara_phi(iel)-d2s3)/time_scale           &
                -cv2fc2*prdv2f(iel)/xrom/xk                          &
-          -2.0d0*xnu/xe/w3(iel)*w1(iel) ) - xnu*w2(iel)
+          -2.0d0*xnu/xe/time_scale * w1(iel) ) - xnu*w2(iel)
   elseif (iturb.eq.51) then
     w5(iel) = cell_f_vol(iel)
   endif
 enddo
-!     If we extrapolate the source term:
+
+! If we extrapolate the source term:
 if (istprv.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    c_st_phi_p(iel) = c_st_phi_p(iel) + w5(iel)
+    c_st_phi_p(iel) = c_st_phi_p(iel) + w5(iel) !FIXME alpha
     smbr(iel) = smbr(iel) + thetp1*c_st_phi_p(iel)
   enddo
-!     Otherwise: smbr
+! Otherwise: smbr
 else
   do iel = 1, ncel
     smbr(iel) = smbr(iel) + w5(iel)
   enddo
 endif
 
-!     Implicit term
-do iel = 1, ncel
-  if (iturb.eq.50) then
-    smbr(iel) = ( - cell_f_vol(iel)*cvara_fb(iel) + smbr(iel) ) / w4(iel)
-  elseif (iturb.eq.51) then
-    smbr(iel) = ( - cell_f_vol(iel)*cvara_al(iel) + smbr(iel) ) / w4(iel)
-  endif
-enddo
-
-! ---> Matrix
-
 if (istprv.ge.0) then
   thetap = thetv
 else
   thetap = 1.d0
 endif
-do iel = 1, ncel
-  rovsdt(iel) = (rovsdt(iel) + cell_f_vol(iel)*thetap)/w4(iel)
-enddo
 
+! Implicit term
+do iel = 1, ncel
+
+  ! Compute L^2
+  xk = cvara_k(iel)
+  xe = cvara_ep(iel)
+  xnu  = viscl(iel)/crom(iel)
+
+  llke = xk**1.5d0/xe
+  if (iturb.eq.50) then
+    llmin = cv2fet*(xnu**3/xe)**0.25d0
+    l2 = ( cv2fcl*max(llke,llmin) )**2
+  elseif (iturb.eq.51) then
+    llmin = cpalet*(xnu**3/xe)**0.25d0
+    l2 = cpalcl**2*(llke**2 + llmin**2)
+  endif
+
+  smbr(iel) = ( - cell_f_vol(iel)*cvara_var(iel) + smbr(iel) ) / l2
+  ! ---> Matrix
+  rovsdt(iel) = (rovsdt(iel) + cell_f_vol(iel)*thetap) / l2
+enddo
 
 !===============================================================================
 ! 3.3 Effective resolution in the equation of f_barre or alpha
@@ -645,8 +634,7 @@ enddo
 do iel = 1, ncel
   xk = cvara_k(iel)
   xe = cvara_ep(iel)
-  xrom = cromo(iel)
-  xnu  = cpro_pcvlo(iel)/xrom
+  xnu  = viscl(iel)/crom(iel)
   if (iturb.eq.50) then
     ! The term in f_bar is taken at the current and not previous time step
     ! ... a priori better
@@ -847,7 +835,7 @@ call clpv2f(ncel, vcopt%iwarni)
 deallocate(viscf, viscb)
 deallocate(smbr, rovsdt)
 deallocate(w1, w2, w3)
-deallocate(w4, w5)
+deallocate(w5)
 deallocate(dpvar)
 
 !--------
