@@ -300,7 +300,7 @@ deallocate(gradv)
 
 do iel = 1, ncel
   rho = crom(iel)
-  romvsd = rho*volume(iel)/dt(iel)
+  romvsd = rho*cell_f_vol(iel)/dt(iel)
   tinstk(iel) = vcopt_k%istat*romvsd
   tinste(iel) = vcopt_e%istat*romvsd
 enddo
@@ -433,7 +433,7 @@ else if (igrake.eq.1) then
            / (rho*prdtur)
 
     ! Implicit Buoyant terms when negativ
-    tinstk(iel) = tinstk(iel) + max(-rho*volume(iel)*cmu*ttke*gravke, 0.d0)
+    tinstk(iel) = tinstk(iel) + max(-rho*cell_f_vol(iel)*cmu*ttke*gravke, 0.d0)
 
     ! Explicit Buoyant terms
     smbre(iel) = smbre(iel) + visct*max(gravke, zero)
@@ -585,12 +585,12 @@ if (itytur.eq.2) then
 
     rho   = cromo(iel)
 
-    smbrk(iel) = volume(iel)*                                     &
+    smbrk(iel) = cell_f_vol(iel)*                                     &
                ( smbrk(iel) - rho*cvara_ep(iel)                       &
                - d2s3*rho*cvara_k(iel)*divu(iel)                      &
                )
 
-    smbre(iel) = volume(iel)*                                              &
+    smbre(iel) = cell_f_vol(iel)*                                              &
                ( cvara_ep(iel)/cvara_k(iel)*( ce1*smbre(iel)                       &
                                             - ce2rc(iel)*rho*cvara_ep(iel)     &
                                             )                              &
@@ -606,10 +606,10 @@ if (itytur.eq.2) then
       xk   = cvara_k(iel)
       rho = crom(iel)
       ttke = xk / xeps
-      tinstk(iel) = tinstk(iel) + rho*volume(iel)/ttke            &
-                  + max(d2s3*rho*volume(iel)*divu(iel), 0.d0)
-      tinste(iel) = tinste(iel) + ce2rc(iel)*rho*volume(iel)/ttke &
-                  + max(d2s3*ce1*rho*volume(iel)*divu(iel), 0.d0)
+      tinstk(iel) = tinstk(iel) + rho*cell_f_vol(iel)/ttke            &
+                  + max(d2s3*rho*cell_f_vol(iel)*divu(iel), 0.d0)
+      tinste(iel) = tinste(iel) + ce2rc(iel)*rho*cell_f_vol(iel)/ttke &
+                  + max(d2s3*ce1*rho*cell_f_vol(iel)*divu(iel), 0.d0)
     enddo
   endif
 
@@ -630,12 +630,12 @@ else if (iturb.eq.50) then
     tt = max(ttke, ttmin)
 
     ! Explicit part
-    smbrk(iel) = volume(iel)*                                     &
+    smbrk(iel) = cell_f_vol(iel)*                                     &
                ( smbrk(iel) - rho*cvara_ep(iel)                       &
                - d2s3*rho*cvara_k(iel)*divu(iel)                      &
                )
 
-    smbre(iel) = volume(iel)*                                       &
+    smbre(iel) = cell_f_vol(iel)*                                       &
                ( 1.d0/tt*(ceps1*smbre(iel) - ce2rc(iel)*rho*xeps)   &
                - d2s3*rho*ceps1*xk*divu(iel)                        &
                )
@@ -668,14 +668,14 @@ else if (iturb.eq.51) then
     tt = sqrt(ttke**2.d0+ttmin**2.d0)
 
     ! Explicit part
-    smbrk(iel) = volume(iel)*                                     &
+    smbrk(iel) = cell_f_vol(iel)*                                     &
                ( smbrk(iel)                                       &
                - rho*xeps                                         &
                - rho*w11(iel)*xk                                  &
                - d2s3*rho*xk*divu(iel)                            &
                )
 
-    smbre(iel) = volume(iel)*                                               &
+    smbre(iel) = cell_f_vol(iel)*                                               &
                ( 1.d0/tt*(cpale1*smbre(iel) - w10(iel)*rho*xeps)            &
                - d2s3*rho*cpale1*xk/tt*divu(iel)                            &
                )
@@ -689,10 +689,10 @@ else if (iturb.eq.51) then
 
     tinstk(iel) = tinstk(iel) + max(d2s3*rho*cell_f_vol(iel)*divu(iel), 0.d0)
     ! Note that w11 is positiv
-    tinstk(iel) = tinstk(iel) + w11(iel)*rho*volume(iel)
+    tinstk(iel) = tinstk(iel) + w11(iel)*rho*cell_f_vol(iel)
     ! Note that w10 is positiv
-    tinste(iel) = tinste(iel) + w10(iel)*rho*volume(iel)/tt                  &
-                + max(d2s3*cpale1*ttke/tt*rho*volume(iel)*divu(iel), 0.d0)
+    tinste(iel) = tinste(iel) + w10(iel)*rho*cell_f_vol(iel)/tt                  &
+                + max(d2s3*cpale1*ttke/tt*rho*cell_f_vol(iel)*divu(iel), 0.d0)
 
   enddo
 
@@ -1070,7 +1070,7 @@ if (ikecou.eq.1) then
       delte = (-a21*smbrk(iel) +a11*smbre(iel) )*unsdet
 
       ! New source term for the iterative process
-      romvsd = rho*volume(iel)/dt(iel)
+      romvsd = rho*cell_f_vol(iel)/dt(iel)
 
       smbrk(iel) = romvsd*deltk
       smbre(iel) = romvsd*delte
