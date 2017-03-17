@@ -67,15 +67,12 @@ class ThermalRadiationModel(Variables, Model):
         self.c_prop = {}
         self.b_prop = {}
 
-        self.c_prop['qrad_x']                     = self.tr("Qrad_x")
-        self.c_prop['qrad_y']                     = self.tr("Qrad_y")
-        self.c_prop['qrad_z']                     = self.tr("Qrad_z")
+        self.c_prop['qrad']                       = self.tr("Qrad")
         self.c_prop['radiative_source_term']      = self.tr("Radiative_source_term")
         self.c_prop['absorption']                 = self.tr("Absorption")
         self.c_prop['emission']                   = self.tr("Emission")
         self.c_prop['absorption_coefficient']     = self.tr("Absorption_coefficient")
 
-        self.b_prop['wall_temp']              = self.tr("Wall_temperature")
         self.b_prop['flux_incident']          = self.tr("Flux_incident")
         self.b_prop['thickness']              = self.tr("Thickness")
         self.b_prop['thermal_conductivity']   = self.tr("Thermal_conductivity")
@@ -130,15 +127,15 @@ class ThermalRadiationModel(Variables, Model):
         """
         dico = {}
         rayName = ['srad',     'qrad',     'absorp',  'emiss',    'coefAb',
-                   'wall_temp', 'flux_incident', 'thermal_conductivity', 'thickness',
+                   'flux_incident', 'thermal_conductivity', 'thickness',
                    'emissivity', 'flux_net',      'flux_convectif',  'coeff_ech_conv']
 
         raylabF = ['Srad',       'Qrad',          'Absorp',     'Emiss',    'CoefAb',
-                   'Temp_paroi', 'Flux_incident', 'Conductivite_th', 'Epaisseur',
+                   'Flux_incident', 'Conductivite_th', 'Epaisseur',
                    'Emissivite', 'Flux_net',      'Flux_convectif',  'Coeff_ech_conv']
 
         raylabE = ['Srad',      'Qrad',      'Absorp',          'Emiss',    'CoefAb',
-                   'Wall_temp', 'Incident_flux', 'Th_conductivity', 'Thickness',
+                   'Incident_flux', 'Th_conductivity', 'Thickness',
                    'Emissivity','Net_flux',      'Convective_flux',  'Conv_exch_coeff']
 
         dico['name'] = rayName
@@ -440,7 +437,6 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Absorp" name="absorp"/>
                     <property label="Emiss" name="emiss"/>
                     <property label="CoefAb" name="coefAb"/>
-                    <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
                     <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
@@ -472,7 +468,6 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Absorp" name="absorp"/>
                     <property label="Emiss" name="emiss"/>
                     <property label="CoefAb" name="coefAb"/>
-                    <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
                     <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
@@ -504,7 +499,6 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Absorp" name="absorp"/>
                     <property label="Emiss" name="emiss"/>
                     <property label="CoefAb" name="coefAb"/>
-                    <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
                     <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
@@ -536,7 +530,6 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Absorp" name="absorp"/>
                     <property label="Emiss" name="emiss"/>
                     <property label="CoefAb" name="coefAb"/>
-                    <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
                     <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
@@ -568,7 +561,6 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Absorp" name="absorp"/>
                     <property label="Emiss" name="emiss"/>
                     <property label="CoefAb" name="coefAb"/>
-                    <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
                     <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
@@ -601,7 +593,6 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Absorp" name="absorp"/>
                     <property label="Emiss" name="emiss"/>
                     <property label="CoefAb" name="coefAb"/>
-                    <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
                     <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
@@ -634,7 +625,6 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Absorp" name="absorp"/>
                     <property label="Emiss" name="emiss"/>
                     <property label="CoefAb" name="coefAb"/>
-                    <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
                     <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
@@ -667,7 +657,6 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="Absorp" name="absorp"/>
                     <property label="Emiss" name="emiss"/>
                     <property label="CoefAb" name="coefAb"/>
-                    <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
                     <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>

@@ -158,6 +158,40 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         return spec
 
 
+    def setThermalModelOutputs(self, thermal_scalar):
+        """
+        Update the thermal model outputs in the XML document.
+        """
+        self.isInList(thermal_scalar, self.thermalModel)
+
+        self.node_therm['model'] = thermal_scalar
+
+        t_outputs = (("tplus", "Tplus", False),
+                     ("thermal_flux", "Thermal flux", True),
+                     ("boundary_temperature", "Boundary temperature", True),
+                     ("boundary_layer_nusselt", "Dimensionless Thermal flux", False))
+
+        if thermal_scalar != 'off' or self.isSpecificPhysicActiv():
+            for v in t_outputs:
+
+                n = self.node_therm.xmlGetChildNode('property',
+                                                    name=v[0],
+                                                    support="boundary")
+                if not n:
+                    n = self.node_therm.xmlInitChildNode('property',
+                                                         name=v[0],
+                                                         support="boundary")
+                    if not n['label']:
+                        n['label'] = v[1]
+                    if not v[2]:
+                        n.xmlInitNode('postprocessing_recording')['status']= "off"
+
+        else:
+            for v in t_outputs:
+                self.node_therm.xmlRemoveChild('property',
+                                               name=v[0],
+                                               support="boundary")
+
     @Variables.undoGlobal
     def setThermalModel(self, thermal_scalar):
         """
@@ -188,26 +222,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
             ThermalRadiationModel(self.case).setRadiativeModel('off')
             ConjugateHeatTransferModel(self.case).deleteConjugateHeatTransfer()
 
-        t_outputs = (("tplus", "Tplus", False),
-                     ("thermal_flux", "Thermal flux", True),
-                     ("boundary_temperature", "Boundary temperature", True),
-                     ("boundary_layer_nusselt", "Dimensionless Thermal flux", False))
-
-        if thermal_scalar != 'off' or self.isSpecificPhysicActiv():
-            for v in t_outputs:
-                n = self.node_therm.xmlInitChildNode('property',
-                                                     name=v[0],
-                                                     support="boundary")
-                if not n['label']:
-                    n['label'] = v[1]
-                if not v[2]:
-                    n.xmlInitNode('postprocessing_recording')['status']= "off"
-
-        else:
-            for v in t_outputs:
-                self.node_therm.xmlRemoveChild('property',
-                                               name=v[0],
-                                               support="boundary")
+        self.setThermalModelOutputs(thermal_scalar)
 
     @Variables.noUndo
     def getThermalScalarModel(self):

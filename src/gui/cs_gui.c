@@ -4944,7 +4944,6 @@ void CS_PROCF (uiexop, UIEXOP)(void)
     cs_gui_pressure_drop_by_zone();
 }
 
-
 /*----------------------------------------------------------------------------
  * groundwater model : read laws for capacity, saturation and permeability
  *
