@@ -658,7 +658,7 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
     return;
 
   assert(halo != NULL);
-        assert(incvar == 3);
+  assert(incvar == 3);
 
   _test_halo_compatibility(halo);
 
