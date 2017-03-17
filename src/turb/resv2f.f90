@@ -292,11 +292,11 @@ call cs_user_turbulence_source_terms &
 if (istprv.ge.0) then
   do iel = 1, ncel
     !       Save for exchange
-    tuexpe = c_st_phi_p(iel)
+    tuexpe = c_st_a_p(iel)
     !       For the futur and the next step time
     !       We put a mark "-" because in fact we solve
     !       \f$-\div{\grad {\dfrac{\overline{f}}{\alpha}}} = ... \f$
-    c_st_phi_p(iel) = - smbr(iel)
+    c_st_a_p(iel) = - smbr(iel)
     !       Second member of the previous step time
     !       we implicit the user source term (the rest)
     smbr(iel) = - rovsdt(iel)*cvara_var(iel) - thets*tuexpe
@@ -417,8 +417,8 @@ enddo
 if (istprv.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    c_st_phi_p(iel) = c_st_phi_p(iel) + w5(iel) !FIXME alpha
-    smbr(iel) = smbr(iel) + thetp1*c_st_phi_p(iel)
+    c_st_a_p(iel) = c_st_a_p(iel) + w5(iel)
+    smbr(iel) = smbr(iel) + thetp1*c_st_a_p(iel)
   enddo
 ! Otherwise: smbr
 else
@@ -555,9 +555,9 @@ call cs_user_turbulence_source_terms &
 if (istprv.ge.0) then
   do iel = 1, ncel
     !       Save for exchange
-    tuexpe = c_st_a_p(iel)
+    tuexpe = c_st_phi_p(iel)
     !       For the future and the next time step
-    c_st_a_p(iel) = smbr(iel)
+    c_st_phi_p(iel) = smbr(iel)
     !       Second member of previous time step
     !       We suppose -rovsdt > 0: we implicit
     !       the user source term (the rest)
@@ -592,7 +592,7 @@ if (ncesmp.gt.0) then
   ! If we extrapolate the source term we put Gamma Pinj in the prev. TS
   if (istprv.ge.0) then
     do iel = 1, ncel
-      c_st_a_p(iel) = c_st_a_p(iel) + w2(iel)
+      c_st_phi_p(iel) = c_st_phi_p(iel) + w2(iel)
     enddo
   !       Otherwise we put it directly in smbr
   else
@@ -662,8 +662,8 @@ enddo
 if (istprv.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    c_st_a_p(iel) = c_st_a_p(iel) + w2(iel)
-    smbr(iel) = smbr(iel) + thetp1*c_st_a_p(iel)
+    c_st_phi_p(iel) = c_st_phi_p(iel) + w2(iel)
+    smbr(iel) = smbr(iel) + thetp1*c_st_phi_p(iel)
   enddo
 !     Otherwise: smbr
 else
@@ -774,7 +774,7 @@ endif
 if (istprv.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbr(iel) = smbr(iel) + thetp1*c_st_a_p(iel)
+    smbr(iel) = smbr(iel) + thetp1*c_st_phi_p(iel)
   enddo
 endif
 
