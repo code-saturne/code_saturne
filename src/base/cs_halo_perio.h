@@ -170,9 +170,9 @@ cs_halo_perio_sync_var_tens_ni(const cs_halo_t *halo,
  *----------------------------------------------------------------------------*/
 
 void
-cs_halo_perio_sync_var_tens(const cs_halo_t *halo,
-                            cs_halo_type_t   sync_mode,
-                            cs_real_t        var[]);
+cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
+                            cs_halo_type_t    sync_mode,
+                            cs_real_t         var[]);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real tensor (symmetric interleaved) between

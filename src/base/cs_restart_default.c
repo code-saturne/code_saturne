@@ -48,8 +48,11 @@
 
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_halo.h"
+#include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_map.h"
+#include "cs_mesh.h"
 #include "cs_parall.h"
 #include "cs_mesh_location.h"
 #include "cs_turbulence_model.h"
@@ -255,6 +258,52 @@ _read_legacy_field_info(cs_restart_t  *r)
 }
 
 /*----------------------------------------------------------------------------
+ * Synchronize cell-based field values.
+ *
+ * parameters:
+ *   f    <-> field whose values should be synchronized
+ *   t_id <-- time id (0 for current, 1 for previous, ...)
+ *----------------------------------------------------------------------------*/
+
+static void
+_sync_field_vals(cs_field_t  *f,
+                 int          t_id)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  if (m->halo != NULL) {
+
+    cs_halo_type_t  halo_type = CS_HALO_EXTENDED;
+    cs_real_t      *v = f->vals[t_id];
+
+    cs_halo_sync_var_strided(m->halo, halo_type, v, f->dim);
+
+    if (m->n_init_perio > 0) {
+      if (m->dim == 3)
+        cs_halo_perio_sync_var_vect(m->halo, halo_type, v, 3);
+      else if (m->dim == 6)
+        cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, v);
+      else if (m->dim == 9)
+        cs_halo_perio_sync_var_tens(m->halo, halo_type, v);
+      else if (m->dim == 1 && f == CS_F_(r13)) {
+        cs_halo_perio_sync_var_tens_ni(m->halo,
+                                       halo_type,
+                                       CS_F_(r11)->vals[t_id],
+                                       CS_F_(r12)->vals[t_id],
+                                       CS_F_(r13)->vals[t_id],
+                                       CS_F_(r12)->vals[t_id],
+                                       CS_F_(r22)->vals[t_id],
+                                       CS_F_(r23)->vals[t_id],
+                                       CS_F_(r13)->vals[t_id],
+                                       CS_F_(r23)->vals[t_id],
+                                       CS_F_(r33)->vals[t_id]);
+      }
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Read field values from checkpoint.
  *
  * Values are found using the default rules based on the field's name
@@ -264,7 +313,7 @@ _read_legacy_field_info(cs_restart_t  *r)
  *   r            <-- associated restart file pointer
  *   restart_name <-- base name with which read is attempted
  *   t_id         <-- time id (0 for current, 1 for previous, ...)
- *   f            <-> file whose values should be read
+ *   f            <-> field whose values should be read
  *
  * returns:
  *   CS_RESTART_SUCCESS in case of success, CS_RESTART_ERR_... otherwise
@@ -337,6 +386,10 @@ _read_field_vals(cs_restart_t  *r,
 
   if (sec_name != _sec_name)
     BFT_FREE(sec_name);
+
+  if (   retcode == CS_RESTART_SUCCESS
+      && f->location_id == CS_MESH_LOCATION_CELLS)
+    _sync_field_vals(f, t_id);
 
   return retcode;
 }
@@ -586,6 +639,11 @@ _read_field_vals_legacy(cs_restart_t  *r,
                                                   (cs_real_6_t *)(f->vals[t_id]));
     }
   }
+
+  if (   retcode == CS_RESTART_SUCCESS
+      && f->location_id == CS_MESH_LOCATION_CELLS)
+    _sync_field_vals(f, t_id);
+
   return retcode;
 }
 
@@ -1694,10 +1752,10 @@ cs_restart_read_variables(cs_restart_t               *r,
                                 "gwf_sorbed_concentration_id",
                                 _read_flag);
 
-    cs_restart_read_linked_fields(r,
-                                  old_field_map,
-                                  "gwf_precip_concentration_id",
-                                  _read_flag);
+  cs_restart_read_linked_fields(r,
+                                old_field_map,
+                                "gwf_precip_concentration_id",
+                                _read_flag);
 
   /* Read and convert turbulence variables in case of model change */
 
