@@ -437,6 +437,7 @@ typedef enum {
  *----------------------------------------------------------------------------*/
 
 #define CS_UNUSED(x) (void)(x)
+#define CS_NO_WARN_IF_UNUSED(x) (void)(x)
 
 /*----------------------------------------------------------------------------
  * Macros for compilation with a C++ compiler
