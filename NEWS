@@ -5,6 +5,9 @@ Release 4.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix dependency of radiative model results on activation of boundary
+  temperature postprocessing in som cases.
+
 - Fix missing reading and writing of mass fluxes in checkpoint/restart.
 
 - Fix for 1D point location.
