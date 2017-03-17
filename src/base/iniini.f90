@@ -239,9 +239,11 @@ ntlist = 1
 
 ! ---> Post traitement automatique (bord)
 
-do ii = 1, 5
-  ipstdv(ii) = 0
-enddo
+ipstdv(ipstfo) = 0 ! should be 1 by default for Navier-Stokes cases
+ipstdv(ipstyp) = 1
+ipstdv(ipsttp) = 0
+ipstdv(ipstft) = 1
+ipstdv(ipstnu) = 0
 
 ! ---> CPU
 !      TMARUS : marge (Arret du calcul avant limite CPU)

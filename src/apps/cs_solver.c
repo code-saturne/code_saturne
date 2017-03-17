@@ -65,6 +65,7 @@
 #include "cs_gui.h"
 #include "cs_gui_output.h"
 #include "cs_gui_particles.h"
+#include "cs_gui_radiative_transfer.h"
 #include "cs_io.h"
 #include "cs_join.h"
 #include "cs_lagr.h"
@@ -479,6 +480,7 @@ cs_run(void)
 
   /* Free field info */
 
+  cs_gui_radiative_transfers_finalize();
   cs_gui_finalize();
 
   cs_field_pointer_destroy_all();

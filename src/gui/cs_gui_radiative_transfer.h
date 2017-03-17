@@ -38,23 +38,15 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- * Public function prototypes for Fortran API
+ * Public function definitions
  *============================================================================*/
 
 /*-----------------------------------------------------------------------------
- * Free memory: clean global private variables.
- *
- * Fortran Interface:
- *
- * subroutine memui2
- * *****************
+ * Free GUI-defined radiative transfer parameters
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (memui2, MEMUI2) (void);
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
+void
+cs_gui_radiative_transfers_finalize(void);
 
 /*----------------------------------------------------------------------------
  * Read GUI-defined radiative transfer parameters

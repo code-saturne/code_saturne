@@ -1314,6 +1314,38 @@ class XMLinit(Variables):
                     if node:
                         node.xmlRemoveNode()
 
+        # Update some postprocessing outputs
+
+        npr = XMLThermoPhysicalModelNode.xmlGetNode('thermal_scalar')
+        if npr:
+            if npr['model'] != 'off':
+                node = npr.xmlGetNode('property', name="input_thermal_flux")
+                node2 = npr.xmlGetNode('property', name="thermal_flux")
+                if node2 and node:
+                    node.xmlRemoveNode()
+                elif node:
+                    node['name'] = "thermal_flux"
+            if npr['model']:
+                ThermalScalarModel(self.case).setThermalModelOutputs(npr['model'])
+
+        npr = XMLThermoPhysicalModelNode.xmlGetNode('radiative_transfer')
+        if npr:
+            for name in ("wall_temp", "qrad_y", "qrad_z"):
+                node = npr.xmlGetNode('property', name=name)
+                if node:
+                    node.xmlRemoveNode()
+            node = npr.xmlGetNode('property', name="qrad_x")
+            if node:
+                node['name'] = "qrad"
+                node['label'] = "Qrad"
+
+        npr = XMLThermoPhysicalModelNode.xmlGetNode('velocity_pressure')
+        if npr:
+            node = npr.xmlGetNode('property', name="all_variables")
+            if node:
+                node.xmlRemoveNode()
+
+
         # renames
 
         self.__renameSingle('thermophysical_models', 'heads_losses', 'head_losses')

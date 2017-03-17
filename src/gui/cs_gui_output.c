@@ -912,9 +912,9 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
       ipstdv[1] = 1;
     if (_surfacic_variable_post("tplus", false))
       ipstdv[2] = 1;
-    if (_surfacic_variable_post("thermal_flux", false))
+    if (_surfacic_variable_post("thermal_flux", true))
       ipstdv[3] = 1;
-    if (_surfacic_variable_post("boundary_temperature", false)) {
+    if (_surfacic_variable_post("boundary_temperature", true)) {
       cs_field_t *bf = cs_parameters_add_boundary_temperature();
       if (bf != NULL) {
         int k_vis = cs_field_key_id("post_vis");
@@ -973,15 +973,6 @@ void CS_PROCF (csenso, CSENSO) (cs_int_t  *iecaux)
   bft_printf("==>CSENSO\n");
   bft_printf("--iecaux = %i\n", *iecaux);
   bft_printf("--ntlist = %i\n", cs_glob_log_frequency);
-  bft_printf("--nthist = %i\n", *nthist);
-  bft_printf("--frhist = %f\n", *frhist);
-  bft_printf("--ncapt  = %i\n", *ncapt);
-  bft_printf("--tplfmt = %i\n", *tplfmt);
-  for (i=0; i < *ncapt; i++) {
-    bft_printf("--xyzcap[%i][0] = %f\n", i, xyzcap[0 +i*3]);
-    bft_printf("--xyzcap[%i][1] = %f\n", i, xyzcap[1 +i*3]);
-    bft_printf("--xyzcap[%i][2] = %f\n", i, xyzcap[2 +i*3]);
-  }
 #endif
 }
 

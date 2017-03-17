@@ -1171,7 +1171,6 @@ endif
 !     Liberation des structures liees a la lecture du fichier xml
 
 if (iihmpr.eq.1) then
-  call memui2
   call memui1(ncharb)
 endif
 
