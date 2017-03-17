@@ -645,12 +645,11 @@ else if (iturb.eq.50) then
                 - d2s3*rho*cvara_k(iel)*divu(iel)!FIXME this term should be removed
 
     ! Implicit part
-    if (xk.gt.1.d-12) then !FIXME make it dimensionless
-      tinstk(iel) = tinstk(iel) + rho*volume(iel)/ttke
-    endif
-    tinstk(iel) = tinstk(iel) + max(d2s3*rho*volume(iel)*divu(iel), 0.d0)
-    tinste(iel) = tinste(iel) + ce2rc(iel)*rho*volume(iel)/tt                &
-                + max(d2s3*ceps1*ttke/tt*rho*volume(iel)*divu(iel), 0.d0)
+    tinstk(iel) = tinstk(iel) + rho*cell_f_vol(iel)/max(ttke, epzero * ttmin)
+
+    tinstk(iel) = tinstk(iel) + max(d2s3*rho*cell_f_vol(iel)*divu(iel), 0.d0)
+    tinste(iel) = tinste(iel) + ce2rc(iel)*rho*cell_f_vol(iel)/tt                &
+                + max(d2s3*ceps1*ttke/tt*rho*cell_f_vol(iel)*divu(iel), 0.d0)
 
   enddo
 
@@ -686,10 +685,9 @@ else if (iturb.eq.51) then
                 - d2s3*rho*cvara_k(iel)*divu(iel)!FIXME this term should be removed
 
     ! Implicit part
-    if (xk.gt.1.d-12) then !FIXME make it dimensionless
-      tinstk(iel) = tinstk(iel) + rho*volume(iel)/ttke
-    endif
-    tinstk(iel) = tinstk(iel) + max(d2s3*rho*volume(iel)*divu(iel), 0.d0)
+    tinstk(iel) = tinstk(iel) + rho*cell_f_vol(iel)/max(ttke, epzero * ttmin)
+
+    tinstk(iel) = tinstk(iel) + max(d2s3*rho*cell_f_vol(iel)*divu(iel), 0.d0)
     ! Note that w11 is positiv
     tinstk(iel) = tinstk(iel) + w11(iel)*rho*volume(iel)
     ! Note that w10 is positiv
