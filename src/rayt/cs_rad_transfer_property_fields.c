@@ -52,6 +52,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 
+#include "cs_parameters.h"
 #include "cs_post.h"
 
 #include "cs_rad_transfer.h"
@@ -252,11 +253,7 @@ cs_rad_transfer_prp(void)
     {
       f = cs_field_by_name_try("boundary_temperature");
       if (f == NULL)
-        f = cs_field_create("boundary_temperature",
-                            field_type,
-                            location_id,
-                            1,
-                            false);
+        f = cs_parameters_add_boundary_temperature();
 
       if (!cs_field_is_key_set(f, keylog))
         cs_field_set_key_int(f, keylog, 1);
