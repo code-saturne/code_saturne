@@ -3611,6 +3611,8 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     c_xa0ij[3*c_face]    = 0.;
     c_xa0ij[3*c_face +1] = 0.;
     c_xa0ij[3*c_face +2] = 0.;
+    c_xa_conv[2*c_face]    = 0.;
+    c_xa_conv[2*c_face +1] = 0.;
   }
 
   for (face_id = 0; face_id < f_n_faces; face_id++) {
