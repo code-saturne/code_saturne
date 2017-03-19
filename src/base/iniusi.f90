@@ -290,7 +290,7 @@ if (iihmpr.eq.1) then
   call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 !     Gravite, prop. phys
-  call csphys(nmodpp, viscv0, visls0, itempk)
+  call csphys(viscv0, visls0, itempk)
 
 !     Scamin, scamax, turbulent flux model
   call cssca2(iturt)

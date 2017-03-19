@@ -213,9 +213,9 @@ void CS_PROCF (csnum2, CSNUM2) (double *relaxp,
                                 double *extrag,
                                    int *imrgra);
 
-void CS_PROCF (csphys, CSPHYS) (const    int *nmodpp,
-                                      double *viscv0,
-                                      double *visls0,
+void CS_PROCF (csphys, CSPHYS) (
+                                double       *viscv0,
+                                double       *visls0,
                                 const    int *itempk);
 
 /*----------------------------------------------------------------------------
