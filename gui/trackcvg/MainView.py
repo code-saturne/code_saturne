@@ -1057,7 +1057,7 @@ class MainView(object):
             for el in content[1:]:
                 lst.append(el)
         elif self.package.name == 'neptune_cfd':
-            print "to complete"
+            print("to complete")
         ficIn.close()
         return lst
 
@@ -1074,7 +1074,7 @@ class MainView(object):
             for el in content[1:]:
                 lst.append(el)
         elif self.package.name == 'neptune_cfd':
-            print "to complete"
+            print("to complete")
         ficIn.close()
         return lst
 
