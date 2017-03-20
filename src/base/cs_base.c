@@ -1175,7 +1175,7 @@ cs_base_mpi_init(int    *argc,
 
   /* Test for run through SLURM's srun */
 
-  if (getenv("SLURM_PROCID") != NULL)
+  if (getenv("SLURM_SRUN_COMM_HOST") != NULL)
     use_mpi = true;
 
   /* If we have determined from known MPI environment variables
