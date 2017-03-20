@@ -460,7 +460,7 @@ class MyMplCanvas(FigureCanvas):
 
     def update_figure_listing(self, name, data, nb_probes, lstProbes):
         self.xAxe = data[0].tolist()
-        for j in range(nb_probes):
+        for j in range(nb_probes - 1):
             if (lstProbes[j].status == "on"):
                 self.yAxe = data[j + 1].tolist()
 
@@ -809,7 +809,7 @@ class MainView(object):
                     base, ext = os.path.splitext(ffl)
                     if ext in ['.dat', '.csv']:
                         # read number of probes
-                        if ext == ".csv" and (base.find("_coords") != -1):
+                        if ext == ".csv" and (base.find("_coords") == -1):
                             size = self.ReadCsvFileHeader(os.path.abspath(os.path.join(rep, ffl)))
                             self.fileList.append([ffl, os.path.abspath(os.path.join(rep, ffl)), "off", 2, size])
                             ll = []
@@ -818,7 +818,7 @@ class MainView(object):
                                 item = item_class(idx, nameItem, "off", 2)
                                 ll.append(item)
                             self.listFileProbes[ffl] = ll
-                        elif ext == ".dat":
+                        elif ext == ".dat" and (base.find("_coords") == -1):
                             size = self.ReadDatFileHeader(os.path.abspath(os.path.join(rep, ffl)))
                             self.fileList.append([ffl, os.path.abspath(os.path.join(rep, ffl)), "off", 2, size])
                             ll = []
@@ -828,11 +828,21 @@ class MainView(object):
                                 ll.append(item)
                             self.listFileProbes[ffl] = ll
             else:
-                if fl == 'listing':
-                    self.listingVariable = self.readListVariableList(rep)
-                    self.fileList.append([fl, rep, "on", 1, len(self.listingVariable)])
+                if fl == 'residuals.csv':
+                    self.listingVariable = self.readResidualsVariableListCSV(rep)
+                    self.fileList.append([fl, rep, "on", 1, len(self.listingVariable) + 1])
                     # read variable list for Time residual
-                    self.listingVariable = self.readListVariableList(rep)
+                    idx = 0
+                    ll = []
+                    for var in self.listingVariable:
+                        item = item_class(idx, var, "on", 1)
+                        idx = idx + 1
+                        ll.append(item)
+                    self.listFileProbes[fl] = ll
+                elif fl == 'residuals.dat':
+                    self.listingVariable = self.readResidualsVariableListDAT(rep)
+                    self.fileList.append([fl, rep, "on", 1, len(self.listingVariable) + 1])
+                    # read variable list for Time residual
                     idx = 0
                     ll = []
                     for var in self.listingVariable:
@@ -913,14 +923,17 @@ class MainView(object):
         """
         self.dc.clear()
         for (name, fle, status, subplot_id, probes_number) in self.fileList:
-                if name == "listing":
-                    data, self.IterationTime = self.ReadListingFile(fle)
-                    if status == "on" or status == "onoff":
-                        self.dc.update_figure_listing(self.listingVariable, data, probes_number, self.listFileProbes[name])
-        for (name, fle, status, subplot_id, probes_number) in self.fileList:
             if status == "on" or status == "onoff":
                 base, ext = os.path.splitext(fle)
-                if ext == ".csv" and (base.find("_coords") == -1):
+                if name == 'residuals.csv':
+                    data = self.ReadCsvFile(fle, probes_number)
+                    if status == "on" or status == "onoff":
+                        self.dc.update_figure_listing(self.listingVariable, data, probes_number, self.listFileProbes[name])
+                elif name == 'residuals.dat':
+                    data = self.ReadDatFile(fle, probes_number)
+                    if status == "on" or status == "onoff":
+                        self.dc.update_figure_listing(self.listingVariable, data, probes_number, self.listFileProbes[name])
+                elif ext == ".csv":
                     data = self.ReadCsvFile(fle, probes_number)
                     nm, ext = os.path.splitext(name)
                     nm = nm[7:]
@@ -941,6 +954,7 @@ class MainView(object):
         ficIn= open(name, 'r')
         typ = 0 # O time / 1 iteration
         for line in ficIn.readlines():
+            line = line.strip('\n')
             if comp > 0:
                 content = line.split(',')
 
@@ -950,10 +964,14 @@ class MainView(object):
 
                 if typ == 0:
                     for el in content:
+                        el = el.lstrip()
+                        el = el.rstrip()
                         data.append(el)
                 else:
-                    data.append(self.IterationTime[content[0]])
+                    data.append(float(content[0]))
                     for el in content[1:]:
+                        el = el.lstrip()
+                        el = el.rstrip()
                         data.append(el)
             comp = comp + 1
         ficIn.close()
@@ -970,11 +988,12 @@ class MainView(object):
         size = 0
         ficIn= open(name, 'r')
         # first line x, y, z
-        for line in ficIn.readlines():
-            size = size + 1
+        line = ficIn.readline()
+        line = line.strip('\n')
+        content = line.split(',')
         ficIn.close()
 
-        return size
+        return len(content)
 
 
     def ReadDatFile(self, name, probes_number):
@@ -998,7 +1017,7 @@ class MainView(object):
                     for el in content:
                         data.append(el)
                 else:
-                    data.append(self.IterationTime[content[0]])
+                    data.append(float(content[0]))
                     for el in content[1:]:
                         data.append(el)
         ficIn.close()
@@ -1013,79 +1032,51 @@ class MainView(object):
         """
         """
         size = 0
-        comp = 0
         ficIn= open(name, 'r')
         for line in ficIn.readlines():
             if not line.startswith("#"):
                 line = line.lstrip()
                 content = line.split()
                 lst = []
-                if comp == 0:
-                    size = len(content)
+                size = len(content)
         ficIn.close()
 
         return size
 
 
-    def readListVariableList(self, name):
+    def readResidualsVariableListCSV(self, name):
         """
         """
         ficIn= open(name, 'r')
         lst = []
-        read = False
-        end = False
         if self.package.name == 'code_saturne':
-            for line in ficIn.readlines():
-                if not (line.find("IRCFLU IMLIGR") == -1):
-                    read = True
-                elif line.startswith("---------") and read and not end:
-                    end = True
-                elif line.startswith("---------") and read and end:
-                    read = False
-                    end = False
-                elif read and end:
-                    line = line.lstrip()
-                    content = line.split()
-                    lst.append(content[0])
-        # TODO traiter NEPTUNE
+            line  = ficIn.readline()
+            line = line.strip('\n')
+            line = line.lstrip()
+            content = line.split(',')
+            for el in content[1:]:
+                lst.append(el)
+        elif self.package.name == 'neptune_cfd':
+            print("to complete")
         ficIn.close()
         return lst
 
 
-    def ReadListingFile(self, name):
+    def readResidualsVariableListDAT(self, name):
         """
         """
         ficIn= open(name, 'r')
-        data = []
         lst = []
-        dico = {}
-        for line in ficIn.readlines():
-            if line.startswith(" INSTANT") and (line.find("ALE ")) == -1:
-                if len(lst) == len(self.listingVariable) + 1:
-                    data.append(lst)
-                    lst = []
-                elif len(lst) == 1: # case without listing output is not each iteration
-                    lst = []
-                line = line.lstrip()
-                content = line.split()
-                iteration_time = content[1]
-                iteration = content[len(content)-1]
-                lst.append(iteration_time)
-                dico[iteration] = iteration_time
-            if self.package.name == 'code_saturne':
-                for var in self.listingVariable:
-                    if line.startswith("c  " + var) and line.find("[") == -1:
-                        line = line.lstrip()
-                        content = line.split()
-                        residual = content[len(content)-1]
-                        lst.append(residual)
-            # TODO Traitement NEPTUNE
+        if self.package.name == 'code_saturne':
+            line  = ficIn.readline()
+            line = line.lstrip()
+            content = line.split()
+            for el in content[1:]:
+                lst.append(el)
+        elif self.package.name == 'neptune_cfd':
+            print("to complete")
         ficIn.close()
-
-        A = numpy.array(data)
-        B = numpy.reshape(A,(-1, len(self.listingVariable) + 1))
-        C = numpy.transpose(B)
-        return C, dico
+        return lst
 
 
     def SaveState(self):
@@ -1215,7 +1206,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.fileList = []
         self.listingVariable = []
         self.listFileProbes = {}
-        self.IterationTime = {}
         self.timer = QTimer()
         self.timer.start(self.timeRefresh * 1000)
 
