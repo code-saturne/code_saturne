@@ -3628,7 +3628,7 @@ cs_post_define_surface_mesh(int          mesh_id,
   }
 
   post_mesh->add_groups = (add_groups != 0) ? true : false;
-  if (auto_variables)
+  if (auto_variables && post_mesh->ent_flag[1] == 0)
     post_mesh->cat_id = CS_POST_MESH_BOUNDARY;
 }
 
