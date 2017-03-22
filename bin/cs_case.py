@@ -169,23 +169,12 @@ class case:
             self.name = os.path.split(case_dir)[1]
             self.script_dir = self.case_dir
 
-        if staging_dir:
-            for d in self.domains:
-                d_staging_dir = staging_dir
-                if n_domains > 1:
-                    d_staging_dir = os.path.join(staging_dir, d.name)
-                d.set_case_dir(self.case_dir, d_staging_dir)
-            for d in self.syr_domains:
-                d.set_case_dir(self.case_dir, os.path.join(staging_dir, d.name))
-            for d in self.ast_domains:
-                d.set_case_dir(self.case_dir, os.path.join(staging_dir, d.name))
-        else:
-            for d in self.domains:
-                d.set_case_dir(self.case_dir)
-            for d in self.syr_domains:
-                d.set_case_dir(self.case_dir)
-            for d in self.ast_domains:
-                d.set_case_dir(self.case_dir)
+        for d in self.domains:
+            d.set_case_dir(self.case_dir, staging_dir)
+        for d in self.syr_domains:
+            d.set_case_dir(self.case_dir, staging_dir)
+        for d in self.ast_domains:
+            d.set_case_dir(self.case_dir, staging_dir)
 
         # Working directory
 

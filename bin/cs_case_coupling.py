@@ -195,15 +195,23 @@ domains = [
         if not d_first:
             coupling_parameters += ",\n\n"
         d_first = False
-        s_p_weight = str(d.get('n_procs_weight'))
-        s_p_min = str(d.get('n_procs_min'))
-        s_p_max = str(d.get('n_procs_max'))
-        coupling_parameters += "    {'solver': '" + d.get('solver') + "',\n"
-        coupling_parameters += "     'domain': '" + d.get('domain') + "',\n"
-        coupling_parameters += "     'script': '" + d.get('script') + "',\n"
-        coupling_parameters += "     'n_procs_weight': " + s_p_weight + ",\n"
-        coupling_parameters += "     'n_procs_min': " + s_p_min + ",\n"
-        coupling_parameters += "     'n_procs_max': " + s_p_max + "}"
+        k_first = True
+        for k in ('solver', 'domain', 'script', 'n_procs_weight', 'n_procs_min',
+                  'coupler', 'max_time_steps', 'n_sub_iterations', 'time_step',
+                  'start_time', 'epsilon'):
+            v = d.get(k)
+            if v:
+                if type(v) == str:
+                    s_v = "'" + v + "'"
+                else:
+                    s_v = str(v)
+                if k_first:
+                    coupling_parameters += "    {"
+                    k_first = False
+                else:
+                    coupling_parameters += ",\n     "
+                coupling_parameters += "'" + k + "': " + s_v
+        coupling_parameters += "}"
     coupling_parameters += "\n\n    ]\n\n"
 
     c = case(package,
