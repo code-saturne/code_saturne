@@ -260,170 +260,13 @@ _get_cell_vec_from_array_cm(const cs_cell_mesh_t   *cm,
   else if ((desc.location & cs_cdo_dual_face_byc) == cs_cdo_dual_face_byc)
 
     /* Reconstruct (or interpolate) value at the current cell center */
-    cs_reco_dfbyc_in_cell(cm, array, vect_val);
+    cs_reco_dfbyc_in_cell(cm,
+                          array + cs_cdo_connect->c2e->idx[cm->c_id],
+                          vect_val);
 
   else
     bft_error(__FILE__, __LINE__, 0,
               " Invalid support for evaluating the vector from an array.");
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value using a law with one variable
- *         Version using a cs_cell_mesh_t structure
- *
- * \param[in]       cm       pointer to a cs_cell_mesh_t structure
- * \param[in]       pty      pointer to a cs_property_t structure
- * \param[in]       law      function pointer to the law
- * \param[in]       context  pointer to a structure
- * \param[in, out]  result   array storing the result
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_get_cell_tensor_onevar_law_cm(const cs_cell_mesh_t     *cm,
-                               const cs_property_t      *pty,
-                               cs_onevar_law_func_t     *law,
-                               const void               *context,
-                               cs_real_t                *result)
-{
-  assert(pty->array1 != NULL); /* Sanity check */
-
-  cs_real_t  val_xc = _get_cell_val_from_array_cm(cm, pty->desc1, pty->array1);
-
-  law(1, NULL, &val_xc, context, result);
-
-  if (pty->type == CS_PROPERTY_ISO)
-    result[4] = result[8] = result[0]; // res[1][1] = res[2][2] = res[0][0]
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value using a law with two scalar variables
- *         Version using a cs_cell_mesh_t structure
- *
- * \param[in]       cm       pointer to a cs_cell_mesh_t structure
- * \param[in]       pty      pointer to a cs_property_t structure
- * \param[in]       law      function pointer to the law
- * \param[in]       context  pointer to a structure
- * \param[in, out]  result   array storing the result
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_get_cell_tensor_twovar_law_cm(const cs_cell_mesh_t     *cm,
-                               const cs_property_t      *pty,
-                               cs_twovar_law_func_t     *law,
-                               const void               *context,
-                               cs_real_t                *result)
-{
-  assert(pty->array1 != NULL && pty->array2 != NULL); /* Sanity check */
-
-  cs_real_t  val1 = _get_cell_val_from_array_cm(cm, pty->desc1, pty->array1);
-
-  if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
-      (pty->desc2.location & CS_FLAG_SCALAR)) {
-
-    cs_real_t  val2 = _get_cell_val_from_array_cm(cm, pty->desc2, pty->array2);
-
-    /* Compute the value of the law for this cell */
-    law(1, NULL, &val1, &val2, context, result);
-
-  }
-  else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
-           (pty->desc2.location & CS_FLAG_VECTOR)) {
-
-    cs_real_t  vect_val[3] = {0, 0, 0};
-    _get_cell_vec_from_array_cm(cm, pty->desc2, pty->array2, vect_val);
-
-    /* Retrieve the result of the law function for this cell */
-    law(1, NULL, &val1, vect_val, context, result);
-
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid case. Stop evaluating the property %s\n", pty->name);
-
-  if (pty->type == CS_PROPERTY_ISO)
-    result[4] = result[8] = result[0]; // res[1][1] = res[2][2] = res[0][0]
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value using a law with one variable
- *         Version using a cs_cell_mesh_t structure
- *
- * \param[in]       cm       pointer to a cs_cell_mesh_t structure
- * \param[in]       pty      pointer to a cs_property_t structure
- * \param[in]       law      function pointer to the law
- * \param[in]       context  pointer to a structure
- * \param[in, out]  result   array storing the result
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_get_cell_val_onevar_law_cm(const cs_cell_mesh_t     *cm,
-                            const cs_property_t      *pty,
-                            cs_onevar_law_func_t     *law,
-                            const void               *context,
-                            cs_real_t                *result)
-{
-  /* Sanity checks */
-  assert(pty->array1 != NULL);
-  assert(pty->type == CS_PROPERTY_ISO);
-
-  cs_real_t  val_xc = _get_cell_val_from_array_cm(cm, pty->desc1, pty->array1);
-
-  law(1, NULL, &val_xc, context, result);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value using a law with two scalar variables
- *
- * \param[in]       cm       pointer to a cs_cell_mesh_t structure
- * \param[in]       pty      pointer to a cs_property_t structure
- * \param[in]       law      function pointer to the law
- * \param[in]       context  pointer to a structure
- * \param[in, out]  result   array storing the result
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_get_cell_val_twovar_law_cm(const cs_cell_mesh_t     *cm,
-                            const cs_property_t      *pty,
-                            cs_twovar_law_func_t     *law,
-                            const void               *context,
-                            cs_real_t                *result)
-{
-   /* Sanity checks */
-  assert(pty->array1 != NULL && pty->array2 != NULL);
-  assert(pty->type == CS_PROPERTY_ISO);
-
-  cs_real_t  val1 = _get_cell_val_from_array_cm(cm, pty->desc1, pty->array1);
-
-  if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
-      (pty->desc2.location & CS_FLAG_SCALAR)) {
-
-    cs_real_t  val2 = _get_cell_val_from_array_cm(cm, pty->desc2, pty->array2);
-
-    /* Compute the value of the law for this cell */
-    law(1, NULL, &val1, &val2, context, result);
-
-  }
-  else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
-           (pty->desc2.location & CS_FLAG_VECTOR)) {
-
-    cs_real_t  vect_val[3] = {0, 0, 0};
-    _get_cell_vec_from_array_cm(cm, pty->desc2, pty->array2, vect_val);
-
-    /* Retrieve the result of the law function for this cell */
-    law(1, NULL, &val1, vect_val, context, result);
-
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid case. Stop evaluating the property %s\n", pty->name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -499,152 +342,6 @@ _get_cell_vec_from_array(cs_lnum_t         c_id,
   else
     bft_error(__FILE__, __LINE__, 0,
               " Invalid support for evaluating the vector from an array.");
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value using a law with one variable
- *
- * \param[in]       c_id     cell id
- * \param[in]       pty      pointer to a cs_property_t structure
- * \param[in]       law      function pointer to the law
- * \param[in]       context  pointer to a structure
- * \param[in, out]  result   array storing the result
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_get_cell_tensor_onevar_law(cs_lnum_t                 c_id,
-                            const cs_property_t      *pty,
-                            cs_onevar_law_func_t     *law,
-                            const void               *context,
-                            cs_real_t                *result)
-{
-  assert(pty->array1 != NULL); /* Sanity check */
-
-  cs_real_t  val_xc = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
-
-  law(1, NULL, &val_xc, context, result);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value using a law with two scalar variables
- *
- * \param[in]       c_id     cell id
- * \param[in]       pty      pointer to a cs_property_t structure
- * \param[in]       law      function pointer to the law
- * \param[in]       context  pointer to a structure
- * \param[in, out]  result   array storing the result
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_get_cell_tensor_twovar_law(cs_lnum_t                 c_id,
-                            const cs_property_t      *pty,
-                            cs_twovar_law_func_t     *law,
-                            const void               *context,
-                            cs_real_t                *result)
-{
-  assert(pty->array1 != NULL && pty->array2 != NULL); /* Sanity check */
-
-  cs_real_t  val1 = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
-
-  if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
-      (pty->desc2.location & CS_FLAG_SCALAR)) {
-
-    cs_real_t  val2 = _get_cell_val_from_array(c_id, pty->desc2, pty->array2);
-
-    /* Compute the value of the law for this cell */
-    law(1, NULL, &val1, &val2, context, result);
-
-  }
-  else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
-           (pty->desc2.location & CS_FLAG_VECTOR)) {
-
-    cs_real_t  vect_val[3] = {0, 0, 0};
-    _get_cell_vec_from_array(c_id, pty->desc2, pty->array2, vect_val);
-
-    /* Retrieve the result of the law function for this cell */
-    law(1, NULL, &val1, vect_val, context, result);
-
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid case. Stop evaluating the property %s\n", pty->name);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value using a law with one variable
- *
- * \param[in]       c_id     cell id
- * \param[in]       pty      pointer to a cs_property_t structure
- * \param[in]       law      function pointer to the law
- * \param[in]       context  pointer to a structure
- * \param[in, out]  result   array storing the result
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_get_cell_val_onevar_law(cs_lnum_t                 c_id,
-                         const cs_property_t      *pty,
-                         cs_onevar_law_func_t     *law,
-                         const void               *context,
-                         cs_real_t                *result)
-{
-  assert(pty->array1 != NULL); /* Sanity check */
-
-  cs_real_t  val_xc = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
-
-  law(1, NULL, &val_xc, context, result);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value using a law with two scalar variables
- *
- * \param[in]       c_id     cell id
- * \param[in]       pty      pointer to a cs_property_t structure
- * \param[in]       law      function pointer to the law
- * \param[in]       context  pointer to a structure
- * \param[in, out]  result   array storing the result
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_get_cell_val_twovar_law(cs_lnum_t                 c_id,
-                         const cs_property_t      *pty,
-                         cs_twovar_law_func_t     *law,
-                         const void               *context,
-                         cs_real_t                *result)
-{
-  assert(pty->array1 != NULL && pty->array2 != NULL); /* Sanity check */
-
-  cs_real_t  val1 = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
-
-  if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
-      (pty->desc2.location & CS_FLAG_SCALAR)) {
-
-    cs_real_t  val2 = _get_cell_val_from_array(c_id, pty->desc2, pty->array2);
-
-    /* Compute the value of the law for this cell */
-    law(1, NULL, &val1, &val2, context, result);
-
-  }
-  else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
-           (pty->desc2.location & CS_FLAG_VECTOR)) {
-
-    cs_real_t  vect_val[3] = {0, 0, 0};
-    _get_cell_vec_from_array(c_id, pty->desc2, pty->array2, vect_val);
-
-    /* Retrieve the result of the law function for this cell */
-    law(1, NULL, &val1, vect_val, context, result);
-
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid case. Stop evaluating the property %s\n", pty->name);
 }
 
 /*============================================================================
@@ -1339,13 +1036,51 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
     break;
 
   case CS_PARAM_DEF_BY_ONEVAR_LAW:
-    _get_cell_tensor_onevar_law(c_id, pty, sub->def.law1_func, sub->context,
-                                (cs_real_t *)tensor);
+    {
+      assert(pty->array1 != NULL); /* Sanity check */
+
+      cs_real_t  val_xc = _get_cell_val_from_array(c_id,
+                                                   pty->desc1, pty->array1);
+
+      sub->def.law1_func(1, NULL, &val_xc, sub->context, (cs_real_t *)tensor);
+
+    }
     break;
 
   case CS_PARAM_DEF_BY_TWOVAR_LAW:
-    _get_cell_tensor_twovar_law(c_id, pty, sub->def.law2_func, sub->context,
-                                (cs_real_t *)tensor);
+    {
+      assert(pty->array1 != NULL && pty->array2 != NULL); /* Sanity check */
+
+      cs_real_t  val1 = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
+
+      if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
+          (pty->desc2.location & CS_FLAG_SCALAR)) {
+
+        cs_real_t  val2 = _get_cell_val_from_array(c_id,
+                                                   pty->desc2, pty->array2);
+
+        /* Compute the value of the law for this cell */
+        sub->def.law2_func(1, NULL, &val1, &val2, sub->context,
+                           (cs_real_t *)tensor);
+
+      }
+      else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
+               (pty->desc2.location & CS_FLAG_VECTOR)) {
+
+        cs_real_t  vect_val[3] = {0, 0, 0};
+        _get_cell_vec_from_array(c_id, pty->desc2, pty->array2, vect_val);
+
+        /* Retrieve the result of the law function for this cell */
+        sub->def.law2_func(1, NULL, &val1, vect_val, sub->context,
+                           (cs_real_t *)tensor);
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " Invalid case. Stop evaluating the property %s\n",
+                  pty->name);
+
+    }
     break;
 
   default:
@@ -1444,13 +1179,48 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
     break;
 
   case CS_PARAM_DEF_BY_ONEVAR_LAW:
-    _get_cell_val_onevar_law(c_id, pty, sub->def.law1_func, sub->context,
-                             &result);
+    {
+      assert(pty->array1 != NULL); /* Sanity check */
+
+      cs_real_t  val_xc = _get_cell_val_from_array(c_id,
+                                                   pty->desc1, pty->array1);
+
+      sub->def.law1_func(1, NULL, &val_xc, sub->context, &result);
+    }
     break;
 
   case CS_PARAM_DEF_BY_TWOVAR_LAW:
-    _get_cell_val_twovar_law(c_id, pty, sub->def.law2_func, sub->context,
-                             &result);
+    {
+      assert(pty->array1 != NULL && pty->array2 != NULL); /* Sanity check */
+
+      cs_real_t  val1 = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
+
+      if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
+          (pty->desc2.location & CS_FLAG_SCALAR)) {
+
+        cs_real_t  val2 = _get_cell_val_from_array(c_id,
+                                                   pty->desc2, pty->array2);
+
+        /* Compute the value of the law for this cell */
+        sub->def.law2_func(1, NULL, &val1, &val2, sub->context, &result);
+
+      }
+      else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
+               (pty->desc2.location & CS_FLAG_VECTOR)) {
+
+        cs_real_t  vect_val[3] = {0, 0, 0};
+        _get_cell_vec_from_array(c_id, pty->desc2, pty->array2, vect_val);
+
+        /* Retrieve the result of the law function for this cell */
+        sub->def.law2_func(1, NULL, &val1, vect_val, sub->context, &result);
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " Invalid case. Stop evaluating the property %s\n",
+                  pty->name);
+
+    }
     break;
 
   case CS_PARAM_DEF_BY_ARRAY:
@@ -1547,13 +1317,57 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
     break;
 
   case CS_PARAM_DEF_BY_ONEVAR_LAW:
-    _get_cell_tensor_onevar_law_cm(cm, pty, sub->def.law1_func, sub->context,
-                                   (cs_real_t *)tensor);
+    {
+      assert(pty->array1 != NULL); /* Sanity check */
+
+      cs_real_t  val_xc =
+        _get_cell_val_from_array_cm(cm, pty->desc1, pty->array1);
+
+      sub->def.law1_func(1, NULL, &val_xc, sub->context, (cs_real_t *)tensor);
+
+      if (pty->type == CS_PROPERTY_ISO)
+        tensor[2][2] = tensor[1][1] = tensor[0][0];
+    }
     break;
 
   case CS_PARAM_DEF_BY_TWOVAR_LAW:
-    _get_cell_tensor_twovar_law_cm(cm, pty, sub->def.law2_func, sub->context,
-                                   (cs_real_t *)tensor);
+    {
+      assert(pty->array1 != NULL && pty->array2 != NULL); /* Sanity check */
+
+      cs_real_t  val1 =
+        _get_cell_val_from_array_cm(cm, pty->desc1, pty->array1);
+
+      if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
+          (pty->desc2.location & CS_FLAG_SCALAR)) {
+
+        cs_real_t  val2 =
+          _get_cell_val_from_array_cm(cm, pty->desc2, pty->array2);
+
+        /* Compute the value of the law for this cell */
+        sub->def.law2_func(1, NULL, &val1, &val2, sub->context,
+                           (cs_real_t *)tensor);
+
+      }
+      else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
+               (pty->desc2.location & CS_FLAG_VECTOR)) {
+
+        cs_real_t  vect_val[3] = {0, 0, 0};
+        _get_cell_vec_from_array_cm(cm, pty->desc2, pty->array2, vect_val);
+
+        /* Retrieve the result of the law function for this cell */
+        sub->def.law2_func(1, NULL, &val1, vect_val, sub->context,
+                           (cs_real_t *)tensor);
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " Invalid case. Stop evaluating the property %s\n",
+                  pty->name);
+
+      if (pty->type == CS_PROPERTY_ISO)
+        tensor[2][2] = tensor[1][1] = tensor[0][0];
+
+    }
     break;
 
   default:
@@ -1650,13 +1464,51 @@ cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
     break;
 
   case CS_PARAM_DEF_BY_ONEVAR_LAW:
-    _get_cell_val_onevar_law_cm(cm, pty, sub->def.law1_func, sub->context,
-                                &result);
+    {
+      /* Sanity checks */
+      assert((pty->array1 != NULL) && (pty->type == CS_PROPERTY_ISO));
+
+      cs_real_t  val_xc =
+        _get_cell_val_from_array_cm(cm, pty->desc1, pty->array1);
+
+      sub->def.law1_func(1, NULL, &val_xc, sub->context, &result);
+    }
     break;
 
   case CS_PARAM_DEF_BY_TWOVAR_LAW:
-    _get_cell_val_twovar_law_cm(cm, pty, sub->def.law2_func, sub->context,
-                                &result);
+    {
+      /* Sanity checks */
+      assert(pty->array1 != NULL && pty->array2 != NULL);
+      assert(pty->type == CS_PROPERTY_ISO);
+
+      cs_real_t  val1 = _get_cell_val_from_array_cm(cm,
+                                                    pty->desc1, pty->array1);
+
+      if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
+          (pty->desc2.location & CS_FLAG_SCALAR)) {
+
+        cs_real_t  val2 = _get_cell_val_from_array_cm(cm,
+                                                      pty->desc2, pty->array2);
+
+        /* Compute the value of the law for this cell */
+        sub->def.law2_func(1, NULL, &val1, &val2, sub->context, &result);
+
+      }
+      else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
+               (pty->desc2.location & CS_FLAG_VECTOR)) {
+
+        cs_real_t  vect_val[3] = {0, 0, 0};
+        _get_cell_vec_from_array_cm(cm, pty->desc2, pty->array2, vect_val);
+
+        /* Retrieve the result of the law function for this cell */
+        sub->def.law2_func(1, NULL, &val1, vect_val, sub->context, &result);
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " Invalid case. Stop evaluating the property %s\n",
+                  pty->name);
+    }
     break;
 
   case CS_PARAM_DEF_BY_ARRAY:
