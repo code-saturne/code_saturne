@@ -923,7 +923,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
 
       /* Assemble the cellwise contribution to the rank contribution */
       for (short int v = 0; v < cm->n_vc; v++)
-# pragma omp atomic
+#       pragma omp atomic
         b->source_terms[cm->v_ids[v]] += csys->source[v];
 
     } // Loop on cells
@@ -1027,6 +1027,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
   if (b->sys_flag & CS_FLAG_SYS_SOURCETERM) {
     if (b->sys_flag & CS_FLAG_SYS_TIME) {
       cs_timer_t  ta = cs_timer_time();
+
       cs_cdo_time_update_rhs_with_array(b->sys_flag,
                                         b->eqp->time_info,
                                         b->n_dofs,

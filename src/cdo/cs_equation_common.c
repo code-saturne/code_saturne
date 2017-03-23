@@ -626,7 +626,7 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t          *mesh,
                          quant->n_vertices,
                          1,            // stride
                          false,        // interlace (not useful here)
-                         CS_UINT16,    // unsigned short int
+                         CS_FLAG_TYPE, // unsigned short int
                          counter);
 
     cs_interface_set_sum(cs_shared_connect->v_rs->ifs,
@@ -647,6 +647,7 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t          *mesh,
     if (flag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
       dir_val[v_id] = 0.;
     else if (flag[v_id] & CS_CDO_BC_DIRICHLET) {
+      assert(counter[v_id] > 0);
       if (counter[v_id] > 1)
         dir_val[v_id] /= counter[v_id];
     }
@@ -702,12 +703,13 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
     const double  *mval_i = csys->mat->val + i*n_vc;
     const cs_lnum_t  vi_id = v_ids[i];
 
-# pragma omp atomic
+#   pragma omp atomic
     rhs[vi_id] += csys->rhs[i];
 
-    if (sys_flag & CS_FLAG_SYS_SOURCETERM)
-# pragma omp atomic
+    if (sys_flag & CS_FLAG_SYS_SOURCETERM) {
+#     pragma omp atomic
       sources[vi_id] += csys->source[i];
+    }
 
     cs_gnum_t  grow_id = rset->g_id[vi_id];
 

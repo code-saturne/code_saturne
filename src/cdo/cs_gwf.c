@@ -2276,7 +2276,7 @@ cs_gwf_compute(const cs_mesh_t                      *mesh,
 
       /* Update pressure head */
       if (gw->with_gravitation)
-      _update_pressure_head(cdoq, richards, gw);
+        _update_pressure_head(cdoq, richards, gw);
 
       /* Compute the darcian flux */
       cs_equation_compute_diff_flux(richards, gw->darcian_flux);
