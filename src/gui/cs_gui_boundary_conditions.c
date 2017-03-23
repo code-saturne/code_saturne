@@ -2971,6 +2971,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
     /* treatment of mapped inlet for each field */
 
     if (boundaries->locator[izone] != NULL && ts->nt_cur > 1) {
+      icalke[zone_nbr-1] = 0;
 
       for (int f_id = 0; f_id < n_fields; f_id++) {
         const cs_field_t  *f = cs_field_by_id(f_id);
