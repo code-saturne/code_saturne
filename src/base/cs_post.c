@@ -5637,7 +5637,7 @@ cs_post_write_probe_values(int                              mesh_id,
     if (_interpolate_func != cs_interpolate_from_location_p0) {
       BFT_MALLOC(point_coords, n_points*3, cs_coord_t);
       fvm_nodal_get_vertex_coords(post_mesh->exp_mesh,
-                                  true,
+                                  CS_INTERLACE,
                                   point_coords);
     }
 
