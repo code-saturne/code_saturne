@@ -92,6 +92,17 @@ cs_domain_post_update(double    dt);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Activate writers and output meshes if needed
+ *
+ * \param[in]  time_step    pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_post_activate(cs_time_step_t    *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update the hidden view of the domain dedicated for post-processing
  *
  * \param[in]  time_step    pointer to a cs_time_step_t structure

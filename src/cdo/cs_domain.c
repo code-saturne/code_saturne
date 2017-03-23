@@ -2091,6 +2091,9 @@ cs_domain_process_after_solve(cs_domain_t  *domain)
 {
   cs_timer_t  t0 = cs_timer_time();
 
+  /* Pre-stage for post-processing for the current time step */
+  cs_domain_post_activate(domain->time_step);
+
   /* Extra-operations */
   /* ================ */
 
