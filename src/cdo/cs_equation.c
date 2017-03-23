@@ -76,7 +76,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_EQUATION_DBG  3
+#define CS_EQUATION_DBG  1
 
 /*============================================================================
  * Type definitions
@@ -1889,7 +1889,6 @@ cs_equation_solve(cs_equation_t   *eq)
   cs_real_t  *b = NULL; //x + eq->sles_size[1];
 
   BFT_MALLOC(x, n_max_elts, cs_real_t);
-  BFT_MALLOC(b, n_max_elts, cs_real_t);
 
   cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
@@ -1911,6 +1910,8 @@ cs_equation_solve(cs_equation_t   *eq)
     /* The right-hand side stems from a cellwise building on this rank.
        Other contributions from distant ranks may contribute to an element
        owned by the local rank */
+      BFT_MALLOC(b, n_max_elts, cs_real_t);
+
 #if defined(HAVE_OPENMP)
 #   pragma omp parallel for if (eq->sles_size[1] > CS_THR_MIN)
     for (cs_lnum_t  i = 0; i < eq->sles_size[1]; i++)
