@@ -323,6 +323,19 @@ cs_probe_set_associate_writers(cs_probe_set_t   *pset,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set to true or false the automatic post-processing of variables
+ *
+ * \param[in, out] pset     pointer to a cs_probe_set_t structure
+ * \param[in]      mode     true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_auto_var(cs_probe_set_t   *pset,
+                      bool              mode);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set snap mode related to the management of a set of probes.
  *
  * \param[in, out] pset        pointer to a cs_probe_set_t structure
