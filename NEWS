@@ -5,6 +5,8 @@ Release 4.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix crash with Code_Aster coupling when running in parallel.
+
 - Fix dependency of radiative model results on activation of boundary
   temperature postprocessing in som cases.
 
