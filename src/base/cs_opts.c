@@ -350,16 +350,18 @@ cs_opts_define(int         argc,
        are not destined to be used directly by a user) */
 
     else if (strncmp(s, moduleoptbase, strlen(moduleoptbase)) == 0) {
-      const char *_s = s + strlen(moduleoptbase);
+      if (cs_glob_rank_id <= 0) {
+        const char *_s = s + strlen(moduleoptbase);
 #if defined(HAVE_DLOPEN)
-      BFT_MALLOC(opts->yacs_module, strlen(_s) + 1, char);
-      strcpy(opts->yacs_module, _s);
+        BFT_MALLOC(opts->yacs_module, strlen(_s) + 1, char);
+        strcpy(opts->yacs_module, _s);
 #else
-      fprintf(stderr, _("%s was built without dynamic loader support,\n"
-                        "so module file \"%s\" may not be loaded.\n"),
-              argv[0], _s);
-      cs_exit(EXIT_FAILURE);
+        fprintf(stderr, _("%s was built without dynamic loader support,\n"
+                          "so module file \"%s\" may not be loaded.\n"),
+                argv[0], _s);
+        cs_exit(EXIT_FAILURE);
 #endif /* defined(HAVE_DLOPEN) */
+      }
     }
 
     /* Version number */
