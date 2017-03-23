@@ -799,9 +799,9 @@ _update_pressure_head(const cs_cdo_quantities_t   *cdoq,
   case CS_SPACE_SCHEME_CDOVB:
   case CS_SPACE_SCHEME_CDOVCB:
     assert(hydraulic_head->location_id ==
-           cs_mesh_location_get_id_by_name(N_("vertices")));
+           cs_mesh_location_get_id_by_name("vertices"));
 
-# pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+#   pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
 
       const cs_real_t  gpot = cs_math_3_dot_product(cdoq->vtx_coord + 3*i,
@@ -815,9 +815,9 @@ _update_pressure_head(const cs_cdo_quantities_t   *cdoq,
   case CS_SPACE_SCHEME_CDOFB:
   case CS_SPACE_SCHEME_HHO:
     assert(hydraulic_head->location_id ==
-           cs_mesh_location_get_id_by_name(N_("cells")));
+           cs_mesh_location_get_id_by_name("cells"));
 
-# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+#   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
 
       const cs_real_t  gpot = cs_math_3_dot_product(cdoq->cell_centers + 3*i,
@@ -826,7 +826,7 @@ _update_pressure_head(const cs_cdo_quantities_t   *cdoq,
       pressure_head->val[i] = hydraulic_head->val[i] - gpot;
 
     }
-    break; // Nothing to do (h_head is a pointer to richards field
+    break; // Nothing to do (h_head is a pointer to richards field)
 
   default:
     bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
@@ -899,14 +899,14 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
     case CS_GWF_HYDRAULIC_SATURATED:
       if (elt_ids == NULL) {
 
-# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+#       pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id <  cdoq->n_cells; c_id++)
           moisture->val[c_id] = soil->saturated_moisture;
 
       }
       else {
 
-# pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
+#       pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts[0]; i++)
           moisture->val[elt_ids[i]] = soil->saturated_moisture;
 
@@ -2436,7 +2436,7 @@ cs_gwf_compute(const cs_mesh_t                      *mesh,
       /* Update the moisture content */
       _update_moisture_content(connect, cdoq, richards, gw);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 0
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
       cs_dump_array_to_listing("DARCIAN_FLUX",
                                connect->c2e->idx[cdoq->n_cells],
                                gw->darcian_flux, 8);
@@ -2526,14 +2526,14 @@ cs_gwf_extra_post(void                      *input,
     cs_post_write_var(CS_POST_MESH_VOLUME,
                       CS_POST_WRITER_ALL_ASSOCIATED,
                       f->name,
-                      1,               // dim
-                      true,            // interlace
-                      true,            // true = original mesh
+                      1,              // dim
+                      true,           // interlace
+                      true,           // true = original mesh
                       CS_POST_TYPE_cs_real_t,
-                      f->val,          // values on cells
-                      NULL,            // values at internal faces
-                      NULL,            // values at border faces
-                      time_step);      // time step structure
+                      f->val,         // values on cells
+                      NULL,           // values at internal faces
+                      NULL,           // values at border faces
+                      time_step);     // time step structure
   }
 
   if (gw->with_gravitation) { /* Post-process pressure head */
@@ -2544,25 +2544,25 @@ cs_gwf_extra_post(void                      *input,
       cs_post_write_var(CS_POST_MESH_VOLUME,
                         CS_POST_WRITER_ALL_ASSOCIATED,
                         f->name,
-                        1,               // dim
-                        true,            // interlace
-                        true,            // true = original mesh
+                        1,              // dim
+                        true,           // interlace
+                        true,           // true = original mesh
                         CS_POST_TYPE_cs_real_t,
-                        f->val,          // values on cells
-                        NULL,            // values at internal faces
-                        NULL,            // values at border faces
-                        time_step);      // time step structure
+                        f->val,         // values on cells
+                        NULL,           // values at internal faces
+                        NULL,           // values at border faces
+                        time_step);     // time step structure
 
     else if (f->location_id == cs_mesh_location_get_id_by_name("vertices"))
       cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                                CS_POST_WRITER_ALL_ASSOCIATED,
                                f->name,
-                               1,               // dim
-                               false,           // interlace
-                               true,            // true = original mesh
+                               1,              // dim
+                               false,          // interlace
+                               true,           // true = original mesh
                                CS_POST_TYPE_cs_real_t,
-                               f->val,          // values on vertices
-                               time_step);      // time step management structure
+                               f->val,         // values on vertices
+                               time_step);     // time step management structure
 
 
   } // Post pressure head

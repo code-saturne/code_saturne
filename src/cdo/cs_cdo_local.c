@@ -654,64 +654,93 @@ cs_cell_mesh_dump(cs_cell_mesh_t     *cm)
                 " c_id:%d; vol: %9.6e; xc (% .5e % .5e % .5e)\n",
                 (void *)cm, cm->flag, cm->c_id, cm->vol_c,
                 cm->xc[0], cm->xc[1], cm->xc[2]);
-  cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-38s %-9s\n",
-                "v", "id", "coord", "wvc");
-  for (short int v = 0; v < cm->n_vc; v++)
-    cs_log_printf(CS_LOG_DEFAULT, "%2d |%8d |% .5e % .5e % .5e| %.5e\n",
-                  v, cm->v_ids[v], cm->xv[3*v], cm->xv[3*v+1], cm->xv[3*v+2],
-                  cm->wvc[v]);
 
-  cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-9s %-38s %-38s %-11s %-38s\n",
-                "e", "id", "length", "unit", "coords", "df.meas", "df.unit");
-  for (short int e = 0; e < cm->n_ec; e++) {
-    cs_quant_t  peq = cm->edge[e];
-    cs_nvec3_t  dfq = cm->dface[e];
-    cs_log_printf(CS_LOG_DEFAULT, "%2d |%8d |%.3e|% .5e % .5e % .5e|"
-                  "% .5e % .5e % .5e|%.5e|% .5e % .5e % .5e\n",
-                  e, cm->e_ids[e], peq.meas, peq.unitv[0], peq.unitv[1],
-                  peq.unitv[2], peq.center[0], peq.center[1], peq.center[2],
-                  dfq.meas, dfq.unitv[0], dfq.unitv[1], dfq.unitv[2]);
+  /* Information related to primal vertices */
+  if (cm->flag & cs_cdo_local_flag_v) {
+
+    cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-38s %-9s\n",
+                  "v", "id", "coord", "wvc");
+    for (short int v = 0; v < cm->n_vc; v++)
+      cs_log_printf(CS_LOG_DEFAULT, "%2d |%8d |% .5e % .5e % .5e| %.5e\n",
+                    v, cm->v_ids[v], cm->xv[3*v], cm->xv[3*v+1], cm->xv[3*v+2],
+                    cm->wvc[v]);
+
+  } /* Vertex quantities */
+
+  /* Information related to primal edges */
+  if (cm->flag & cs_cdo_local_flag_e) {
+
+    cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-9s %-38s %-38s %-11s %-38s\n",
+                  "e", "id", "length", "unit", "coords", "df.meas", "df.unit");
+    for (short int e = 0; e < cm->n_ec; e++) {
+      cs_quant_t  peq = cm->edge[e];
+      cs_nvec3_t  dfq = cm->dface[e];
+      cs_log_printf(CS_LOG_DEFAULT, "%2d |%8d |%.3e|% .5e % .5e % .5e|"
+                    "% .5e % .5e % .5e|%.5e|% .5e % .5e % .5e\n",
+                    e, cm->e_ids[e], peq.meas, peq.unitv[0], peq.unitv[1],
+                    peq.unitv[2], peq.center[0], peq.center[1], peq.center[2],
+                    dfq.meas, dfq.unitv[0], dfq.unitv[1], dfq.unitv[2]);
+    }
+
+  } /* Edge quantities */
+
+  /* Information related to primal faces */
+  if (cm->flag & cs_cdo_local_flag_f) {
+
+    cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-9s %-4s %-38s %-38s %-11s"
+                  "%-11s %-38s\n",
+                  "f", "id", "surf", "sgn", "unit", "coords", "hfc", "dlen",
+                  "dunitv");
+    for (short int f = 0; f < cm->n_fc; f++) {
+      cs_quant_t  fq = cm->face[f];
+      cs_nvec3_t  eq = cm->dedge[f];
+      cs_log_printf(CS_LOG_DEFAULT, "%2d |%8d |%.3e| %2d|% .5e % .5e % .5e|"
+                    "% .5e % .5e % .5e|%.5e|%.5e|% .5e % .5e % .5e\n",
+                    f, cm->f_ids[f], fq.meas, cm->f_sgn[f], fq.unitv[0],
+                    fq.unitv[1], fq.unitv[2], fq.center[0], fq.center[1],
+                    fq.center[2], cm->hfc[f], eq.meas, eq.unitv[0], eq.unitv[1],
+                    eq.unitv[2]);
+    }
+
+  } /* Face quantities */
+
+  if (cm->flag & CS_CDO_LOCAL_EV) {
+
+    cs_log_printf(CS_LOG_DEFAULT, "%-2s (v1, v2) sgn\n", "e");
+    for (short int e = 0; e < cm->n_ec; e++)
+      cs_log_printf(CS_LOG_DEFAULT, "%2d (%2d, %2d) %2d\n",
+                    e, cm->e2v_ids[2*e], cm->e2v_ids[2*e+1], cm->e2v_sgn[e]);
+
   }
 
-  cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-9s %-4s %-38s %-38s %-11s"
-                "%-11s %-38s\n",
-                "f", "id", "surf", "sgn", "unit", "coords", "hfc", "dlen",
-                "dunitv");
-  for (short int f = 0; f < cm->n_fc; f++) {
-    cs_quant_t  fq = cm->face[f];
-    cs_nvec3_t  eq = cm->dedge[f];
-    cs_log_printf(CS_LOG_DEFAULT, "%2d |%8d |%.3e| %2d|% .5e % .5e % .5e|"
-                  "% .5e % .5e % .5e|%.5e|%.5e|% .5e % .5e % .5e\n",
-                  f, cm->f_ids[f], fq.meas, cm->f_sgn[f], fq.unitv[0],
-                  fq.unitv[1], fq.unitv[2], fq.center[0], fq.center[1],
-                  fq.center[2], cm->hfc[f], eq.meas, eq.unitv[0], eq.unitv[1],
-                  eq.unitv[2]);
+  if (cm->flag & cs_cdo_local_flag_fe) {
+
+    cs_log_printf(CS_LOG_DEFAULT, " n_ef | f: pef\n");
+    for (short int f = 0; f < cm->n_fc; f++) {
+      cs_log_printf(CS_LOG_DEFAULT, " %4d |",
+                    cm->f2e_idx[f+1] - cm->f2e_idx[f]);
+      for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++)
+        cs_log_printf(CS_LOG_DEFAULT, " %2d:%.5e|", cm->f2e_ids[i], cm->tef[i]);
+      cs_log_printf(CS_LOG_DEFAULT, "\n");
+    }
+
   }
 
-  cs_log_printf(CS_LOG_DEFAULT, "%-2s (v1, v2) sgn\n", "e");
-  for (short int e = 0; e < cm->n_ec; e++)
-    cs_log_printf(CS_LOG_DEFAULT, "%2d (%2d, %2d) %2d\n",
-                  e, cm->e2v_ids[2*e], cm->e2v_ids[2*e+1], cm->e2v_sgn[e]);
+  if (cm->flag & cs_cdo_local_flag_ef) {
 
-  cs_log_printf(CS_LOG_DEFAULT, " n_ef | f: pef\n");
-  for (short int f = 0; f < cm->n_fc; f++) {
-    cs_log_printf(CS_LOG_DEFAULT, " %4d |", cm->f2e_idx[f+1] - cm->f2e_idx[f]);
-    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++)
-      cs_log_printf(CS_LOG_DEFAULT, " %2d:%.5e|", cm->f2e_ids[i], cm->tef[i]);
-    cs_log_printf(CS_LOG_DEFAULT, "\n");
+    cs_log_printf(CS_LOG_DEFAULT, "%-4s | f0 | %-53s | f1 | %-53s\n",
+                  "e", "sef0c: meas, unitv", "sef1c: meas, unitv");
+    for (short int e = 0; e < cm->n_ec; e++)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " %3d | %2d | % .5e (% .5e % .5e % .5e) |"
+                    " %2d | % .5e (% .5e % .5e % .5e)\n",
+                    e, cm->e2f_ids[2*e], cm->sefc[2*e].meas,
+                    cm->sefc[2*e].unitv[0], cm->sefc[2*e].unitv[1],
+                    cm->sefc[2*e].unitv[2], cm->e2f_ids[2*e+1],
+                    cm->sefc[2*e+1].meas, cm->sefc[2*e+1].unitv[0],
+                    cm->sefc[2*e+1].unitv[1], cm->sefc[2*e+1].unitv[2]);
+
   }
-
-  cs_log_printf(CS_LOG_DEFAULT, "%-4s | f0 | %-53s | f1 | %-53s\n",
-                "e", "sef0c: meas, unitv", "sef1c: meas, unitv");
-  for (short int e = 0; e < cm->n_ec; e++)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  " %3d | %2d | % .5e (% .5e % .5e % .5e) |"
-                  " %2d | % .5e (% .5e % .5e % .5e)\n",
-                  e, cm->e2f_ids[2*e], cm->sefc[2*e].meas,
-                  cm->sefc[2*e].unitv[0], cm->sefc[2*e].unitv[1],
-                  cm->sefc[2*e].unitv[2], cm->e2f_ids[2*e+1],
-                  cm->sefc[2*e+1].meas, cm->sefc[2*e+1].unitv[0],
-                  cm->sefc[2*e+1].unitv[1], cm->sefc[2*e+1].unitv[2]);
 
 }
 
@@ -792,16 +821,22 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   for (int k = 0; k < 3; k++)
     cm->xc[k] = quant->cell_centers[3*c_id+k];
 
+  const cs_lnum_t  *c2v_idx = connect->c2v->idx + c_id;
+  const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
+  const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
+
+  cm->n_vc = c2v_idx[1] - c2v_idx[0];
+  cm->n_ec = c2e_idx[1] - c2e_idx[0];
+  cm->n_fc = c2f_idx[1] - c2f_idx[0];
+
   if (flag == 0)
     return;
 
   /* Information related to primal vertices */
   if (flag & cs_cdo_local_flag_v) {
 
-    const cs_lnum_t  *c2v_idx = connect->c2v->idx + c_id;
     const cs_lnum_t  *c2v_ids = connect->c2v->ids + c2v_idx[0];
 
-    cm->n_vc = c2v_idx[1] - c2v_idx[0];
     for (short int v = 0; v < cm->n_vc; v++) {
       const cs_lnum_t  v_id = c2v_ids[v];
       cm->v_ids[v] = v_id;
@@ -824,10 +859,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   /* Information related to primal edges */
   if (flag & cs_cdo_local_flag_e) {
 
-    const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
     const cs_lnum_t  *c2e_ids = connect->c2e->ids + c2e_idx[0];
 
-    cm->n_ec = c2e_idx[1] - c2e_idx[0];
     for (short int e = 0; e < cm->n_ec; e++)
       cm->e_ids[e] = c2e_ids[e];
 
@@ -887,15 +920,14 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } // edge-vertices information
 
+  /* Information related to primal faces */
   if (flag & cs_cdo_local_flag_f) {
 
-    const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
     const cs_lnum_t  *c2f_lst = connect->c2f->col_id + c2f_idx[0];
     const short int  *c2f_sgn = connect->c2f->sgn + c2f_idx[0];
 
-    cm->n_fc = c2f_idx[1] - c2f_idx[0];
     for (short int f = 0; f < cm->n_fc; f++) {
-      cm->f_ids[f] =  c2f_lst[f];
+      cm->f_ids[f] = c2f_lst[f];
       cm->f_sgn[f] = c2f_sgn[f];
     } // Loop on cell faces
 

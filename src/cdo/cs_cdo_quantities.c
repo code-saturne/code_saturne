@@ -690,7 +690,7 @@ _saturn_algorithm(const cs_mesh_t             *mesh,
   BFT_MALLOC(cdoq->cell_centers, 3*n_cells, cs_real_t);
   BFT_MALLOC(cdoq->cell_vol, n_cells, cs_real_t);
 
-  /* Copy cell volumes and compute vol_tot */
+  /* Copy cell volumes and cell centers */
   memcpy(cdoq->cell_centers, mq->cell_cen, 3*n_cells*sizeof(cs_real_t));
   memcpy(cdoq->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
 
@@ -730,7 +730,7 @@ _vtx_algorithm(const cs_mesh_t             *mesh,
   BFT_MALLOC(quant->cell_centers, 3*n_cells, cs_real_t);
   BFT_MALLOC(quant->cell_vol, n_cells, cs_real_t);
 
-  /* Copy cell volumes and compute vol_tot */
+  /* Copy cell volumes */
   memcpy(quant->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
 
   /* Concatenate face centers for interior and border faces */

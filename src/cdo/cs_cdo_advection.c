@@ -643,9 +643,9 @@ _build_cell_vpfd_upw(const cs_param_advection_t     a_info,
 
 static void
 _build_cell_vpfd_cen(const cs_param_advection_t     a_info,
-                      const cs_cell_mesh_t          *cm,
-                      const cs_real_t                fluxes[],
-                      cs_locmat_t                   *adv)
+                     const cs_cell_mesh_t          *cm,
+                     const cs_real_t                fluxes[],
+                     cs_locmat_t                   *adv)
 {
   CS_UNUSED(a_info);
 
