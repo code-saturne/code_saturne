@@ -150,8 +150,6 @@ typedef enum {
 
   PSETKEY_TRANSIENT_LOC,
   PSETKEY_BOUNDARY,
-  PSETKEY_SNAP_MODE,
-  PSETKEY_AUTO_VAR,
   PSETKEY_SELECT_CRIT,
   PSETKEY_TOLERANCE,
   PSETKEY_ERROR
@@ -195,8 +193,6 @@ _print_psetkey(psetkey_t  key)
 
   case PSETKEY_TRANSIENT_LOC:
     return "transient_location";
-  case PSETKEY_SNAP_MODE:
-    return "snap_mode";
   case PSETKEY_BOUNDARY:
     return "boundary";
   case PSETKEY_SELECT_CRIT:
@@ -230,8 +226,6 @@ _get_psetkey(const char  *keyname)
     key = PSETKEY_TRANSIENT_LOC;
   else if (strcmp(keyname, "boundary") == 0)
     key = PSETKEY_BOUNDARY;
-  else if (strcmp(keyname, "snap_mode") == 0)
-    key = PSETKEY_SNAP_MODE;
   else if (strcmp(keyname, "selection_criteria") == 0)
     key = PSETKEY_SELECT_CRIT;
   else if (strcmp(keyname, "tolerance") == 0)
@@ -870,6 +864,30 @@ cs_probe_set_associate_writers(cs_probe_set_t   *pset,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set to true or false the automatic post-processing of variables
+ *
+ * \param[in, out] pset     pointer to a cs_probe_set_t structure
+ * \param[in]      mode     true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_auto_var(cs_probe_set_t   *pset,
+                      bool              mode)
+{
+  if (pset == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pset));
+
+  if (mode == false) {
+    if (pset->flags & CS_PROBE_AUTO_VAR)
+      pset->flags -= CS_PROBE_AUTO_VAR;
+  }
+  else
+    pset->flags |= CS_PROBE_AUTO_VAR;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set snap mode related to the management of a set of probes.
  *
  * \param[in, out] pset        pointer to a cs_probe_set_t structure
@@ -942,17 +960,6 @@ cs_probe_set_option(cs_probe_set_t   *pset,
 
   switch(key) {
 
-  case PSETKEY_AUTO_VAR:
-    if (strcmp(keyval, "true") == 0)
-      pset->flags |= CS_PROBE_AUTO_VAR;
-    else if (strcmp(keyval, "false") == 0) { // remove the flags if it is set
-      if (pset->flags & CS_PROBE_AUTO_VAR)
-        pset->flags ^= CS_PROBE_AUTO_VAR;
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0, _err_truefalse_key, keyval, keyname);
-    break;
-
   case PSETKEY_BOUNDARY:
     if (strcmp(keyval, "true") == 0)
       pset->flags |= CS_PROBE_BOUNDARY;
@@ -962,21 +969,6 @@ cs_probe_set_option(cs_probe_set_t   *pset,
     }
     else
       bft_error(__FILE__, __LINE__, 0, _err_truefalse_key, keyval, keyname);
-    break;
-
-  case PSETKEY_SNAP_MODE:
-    if (strcmp(keyval, "none") == 0)
-      pset->snap_mode = CS_PROBE_SNAP_NONE;
-    else if (strcmp(keyval, "element_center") == 0)
-      pset->snap_mode = CS_PROBE_SNAP_ELT_CENTER;
-    else if (strcmp(keyval, "vertex") == 0)
-      pset->snap_mode = CS_PROBE_SNAP_VERTEX;
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value %s for setting key %s.\n"
-                  " Valid choices are exact, nearest_center or"
-                  " nearest_vertex\n"
-                  " Please check your settings."), keyval, keyname);
     break;
 
   case PSETKEY_SELECT_CRIT:
