@@ -163,6 +163,7 @@ class base_domain:
 
         if self.name != None:
             self.case_dir = os.path.join(self.case_dir, self.name)
+            self.case_root_dir = os.path.join(case_dir, self.name)
 
         self.data_dir = os.path.join(self.case_dir, 'DATA')
         self.result_dir = os.path.join(self.case_dir, 'RESU')
@@ -173,6 +174,8 @@ class base_domain:
 
         if staging_dir:
             self.case_dir = staging_dir
+            if self.name != None:
+                self.case_dir = os.path.join(self.case_dir, self.name)
             self.data_dir = self.case_dir
             self.src_dir = None
 
