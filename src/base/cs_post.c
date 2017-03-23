@@ -2406,6 +2406,71 @@ _cs_post_write_displacements(int     nt_cur_abs,
   BFT_FREE(deplacements);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if post-processing is activated and then update post-processing
+ *        of meshes if there is a time-dependent mesh
+ *
+ * \param[in]  ts  time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_meshes(const cs_time_step_t  *ts)
+{
+  bool  active;
+
+  /* Loop on writers to check if something must be done */
+  /*----------------------------------------------------*/
+
+  int  w;
+  for (w = 0; w < _cs_post_n_writers; w++) {
+    cs_post_writer_t  *writer = _cs_post_writers + w;
+    if (writer->active == 1)
+      break;
+  }
+  if (w == _cs_post_n_writers)
+    return;
+
+  int t_top_id = cs_timer_stats_switch(_post_out_stat_id);
+
+  const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
+  const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
+
+  /* Possible modification of post-processing meshes */
+  /*-------------------------------------------------*/
+
+  for (int i = 0; i < _cs_post_n_meshes; i++) {
+
+    cs_post_mesh_t  *post_mesh = _cs_post_meshes + i;
+
+    active = false;
+
+    for (int j = 0; j < post_mesh->n_writers; j++) {
+      cs_post_writer_t  *writer = _cs_post_writers + post_mesh->writer_id[j];
+      if (writer->active == 1)
+        active = true;
+    }
+
+    /* Modifiable user mesh, active at this time step */
+
+    if (   active == true
+        && post_mesh->mod_flag_min == FVM_WRITER_TRANSIENT_CONNECT)
+      _redefine_mesh(post_mesh, ts);
+
+  }
+
+  /* Output of meshes or vertex displacement field if necessary */
+  /*------------------------------------------------------------*/
+
+  cs_post_write_meshes(ts);
+
+  if (_cs_post_deformable == true)
+    _cs_post_write_displacements(nt_cur, t_cur);
+
+  cs_timer_stats_switch(t_top_id);
+}
+
 /*----------------------------------------------------------------------------
  * Generate global group flags array from local family flags
  *
@@ -6103,6 +6168,36 @@ cs_post_init_meshes(int check_mask)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if post-processing is activated and then update post-processing
+ *        of meshes if there is a need to update time-dependent meshes
+ *
+ * \param[in]  ts  time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_time_step_begin(const cs_time_step_t  *ts)
+{
+  assert(ts != NULL); /* Sanity check */
+
+  /* Activation or not of each writer according to the time step */
+
+  cs_post_activate_by_time_step(ts);
+
+  /* User-defined activation of writers for a fine-grained control */
+
+  cs_user_postprocess_activate(ts->nt_max,
+                               ts->nt_cur,
+                               ts->t_cur);
+
+  /* Possible modification of post-processing meshes */
+  /*-------------------------------------------------*/
+
+  _update_meshes(ts);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Loop on post-processing meshes to output variables.
  *
  * This handles all default fields output, as well as all
@@ -6114,25 +6209,16 @@ cs_post_init_meshes(int check_mask)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_write_vars(const cs_time_step_t  *ts)
+cs_post_time_step_output(const cs_time_step_t  *ts)
 {
-  /* local variables */
-
-  int i, j;
-  int dim_ent;
-  cs_lnum_t   ind_fac, b_f_num_shift;
-  cs_lnum_t   n_elts, n_elts_max;
-
-  bool       active;
-
-  cs_post_mesh_t  *post_mesh;
-  cs_post_writer_t  *writer;
+  int  j;
+  bool  active;
 
   /* Loop on writers to check if something must be done */
   /*----------------------------------------------------*/
 
   for (j = 0; j < _cs_post_n_writers; j++) {
-    writer = _cs_post_writers + j;
+    cs_post_writer_t  *writer = _cs_post_writers + j;
     if (writer->active == 1)
       break;
   }
@@ -6141,46 +6227,10 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
   int t_top_id = cs_timer_stats_switch(_post_out_stat_id);
 
-  const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
-  const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
-
-  /* Possible modification of post-processing meshes */
-  /*-------------------------------------------------*/
-
-  n_elts_max = 0;
-
-  for (i = 0; i < _cs_post_n_meshes; i++) {
-
-    post_mesh = _cs_post_meshes + i;
-
-    active = false;
-
-    for (j = 0; j < post_mesh->n_writers; j++) {
-      writer = _cs_post_writers + post_mesh->writer_id[j];
-      if (writer->active == 1)
-        active = true;
-    }
-
-    /* Modifiable user mesh, active at this time step */
-
-    if (   active == true
-        && post_mesh->mod_flag_min == FVM_WRITER_TRANSIENT_CONNECT)
-      _redefine_mesh(post_mesh, ts);
-
-  }
-
-  /* Output of meshes or vertex displacement field if necessary */
-  /*------------------------------------------------------------*/
-
-  cs_post_write_meshes(ts);
-
-  if (_cs_post_deformable == true)
-    _cs_post_write_displacements(nt_cur, t_cur);
-
-  /* Output of variables by registered function instances */
+    /* Output of variables by registered function instances */
   /*------------------------------------------------------*/
 
-  for (i = 0; i < _cs_post_n_output_tp; i++)
+  for (int i = 0; i < _cs_post_n_output_tp; i++)
     _cs_post_f_output_tp[i](_cs_post_i_output_tp[i], ts);
 
   /* Output of variables associated with post-processing meshes */
@@ -6191,17 +6241,18 @@ cs_post_write_vars(const cs_time_step_t  *ts)
      and parent_ids allocated if n_elts_max > 0 */
 
   cs_lnum_t  *parent_ids = NULL;
+  cs_lnum_t  n_elts_max = 0;
 
   /* Main loop on post-processing meshes */
 
-  for (i = 0; i < _cs_post_n_meshes; i++) {
+  for (int i = 0; i < _cs_post_n_meshes; i++) {
 
-    post_mesh = _cs_post_meshes + i;
+    cs_post_mesh_t  *post_mesh = _cs_post_meshes + i;
 
     active = false;
 
     for (j = 0; j < post_mesh->n_writers; j++) {
-      writer = _cs_post_writers + post_mesh->writer_id[j];
+      cs_post_writer_t  *writer = _cs_post_writers + post_mesh->writer_id[j];
       if (writer->active == 1)
         active = true;
     }
@@ -6216,8 +6267,8 @@ cs_post_write_vars(const cs_time_step_t  *ts)
       if (exp_mesh == NULL)
         continue;
 
-      dim_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
-      n_elts = fvm_nodal_get_n_entities(exp_mesh, dim_ent);
+      int  dim_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
+      cs_lnum_t  n_elts = fvm_nodal_get_n_entities(exp_mesh, dim_ent);
 
       if (n_elts > n_elts_max) {
         n_elts_max = n_elts;
@@ -6250,9 +6301,9 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
       else if (dim_ent == 2 && n_elts > 0) {
 
-        b_f_num_shift = cs_glob_mesh->n_b_faces;
+        cs_lnum_t  b_f_num_shift = cs_glob_mesh->n_b_faces;
 
-        for (ind_fac = 0; ind_fac < n_elts; ind_fac++) {
+        for (cs_lnum_t ind_fac = 0; ind_fac < n_elts; ind_fac++) {
           if (parent_ids[ind_fac] >= b_f_num_shift)
             n_i_faces++;
           else
@@ -6266,7 +6317,7 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
         /* interior faces only: parents FVM face numbers shifted */
         else if (n_b_faces == 0) {
-          for (ind_fac = 0; ind_fac < n_elts; ind_fac++)
+          for (cs_lnum_t ind_fac = 0; ind_fac < n_elts; ind_fac++)
             parent_ids[ind_fac] -= b_f_num_shift;
           i_face_ids = parent_ids;
         }
@@ -6280,7 +6331,7 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
           n_i_faces = 0, n_b_faces = 0;
 
-          for (ind_fac = 0; ind_fac < n_elts; ind_fac++) {
+          for (cs_lnum_t ind_fac = 0; ind_fac < n_elts; ind_fac++) {
             if (parent_ids[ind_fac] >= b_f_num_shift)
               i_face_ids[n_i_faces++] = parent_ids[ind_fac] - b_f_num_shift;
             else
@@ -6365,6 +6416,7 @@ cs_post_write_vars(const cs_time_step_t  *ts)
         const cs_lnum_t *vertex_ids = NULL;
         cs_probe_set_t  *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
         const char *mesh_name = cs_probe_set_get_name(pset);
+
         cs_probe_set_get_post_info(pset,
                                    NULL,
                                    &on_boundary,
@@ -6372,6 +6424,7 @@ cs_post_write_vars(const cs_time_step_t  *ts)
                                    NULL,
                                    NULL,
                                    NULL);
+
         if (on_boundary) {
           n_b_faces = n_vertices; /* n_probes */
           _b_face_ids = cs_probe_set_get_elt_ids(pset,
@@ -6409,10 +6462,25 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
   BFT_FREE(parent_ids);
 
+  cs_timer_stats_switch(t_top_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Flush writers and free time-varying and Lagragian mesh if needed
+ *        of meshes if there is a time-dependent mesh
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_time_step_end(void)
+{
+  int t_top_id = cs_timer_stats_switch(_post_out_stat_id);
+
   /* Flush writers if necessary */
 
-  for (i = 0; i < _cs_post_n_writers; i++) {
-    writer = _cs_post_writers + i;
+  for (int i = 0; i < _cs_post_n_writers; i++) {
+    cs_post_writer_t  *writer = _cs_post_writers + i;
     if (writer->active == 1) {
       if (writer->writer != NULL)
         fvm_writer_flush(writer->writer);
@@ -6422,8 +6490,8 @@ cs_post_write_vars(const cs_time_step_t  *ts)
   /* Free time-varying and Lagrangian meshes unless they
      are mapped to an existing mesh */
 
-  for (i = 0; i < _cs_post_n_meshes; i++) {
-    post_mesh = _cs_post_meshes + i;
+  for (int i = 0; i < _cs_post_n_meshes; i++) {
+    cs_post_mesh_t  *post_mesh = _cs_post_meshes + i;
     if (post_mesh->_exp_mesh != NULL) {
       if (   post_mesh->ent_flag[3]
           || post_mesh->mod_flag_min == FVM_WRITER_TRANSIENT_CONNECT) {
@@ -6434,6 +6502,35 @@ cs_post_write_vars(const cs_time_step_t  *ts)
   }
 
   cs_timer_stats_switch(t_top_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Loop on post-processing meshes to output variables.
+ *
+ * This handles all default fields output, as well as all
+ * registered output functions and outputs defined in
+ * \ref cs_user_postprocess_values
+ *
+ * \param[in]  ts  time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_write_vars(const cs_time_step_t  *ts)
+{
+  /* Output meshes if needed */
+
+  _update_meshes(ts);
+
+  /* Loop on post-processing meshes to output variables */
+
+  cs_post_time_step_output(ts);
+
+  /* Flush writers and free time-varying and Lagragian mesh if needed */
+
+  cs_post_time_step_end();
+
 }
 
 /*----------------------------------------------------------------------------*/

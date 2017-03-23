@@ -1224,6 +1224,43 @@ cs_post_init_meshes(int check_mask);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if post-processing is activated and then update post-processing
+ *        of meshes if there is a need to update time-dependent meshes
+ *
+ * \param[in]  ts  time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_time_step_begin(const cs_time_step_t  *ts);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Loop on post-processing meshes to output variables.
+ *
+ * This handles all default fields output, as well as all
+ * registered output functions and outputs defined in
+ * \ref cs_user_postprocess_values
+ *
+ * \param[in]  ts  time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_time_step_output(const cs_time_step_t  *ts);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Flush writers and free time-varying and Lagragian mesh if needed
+ *        of meshes if there is a time-dependent mesh
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_time_step_end(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Loop on post-processing meshes to output variables.
  *
  * This handles all default fields output, as well as all

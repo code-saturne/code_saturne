@@ -386,6 +386,20 @@ cs_domain_post_update(double    dt)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Activate writers and output meshes if needed
+ *
+ * \param[in]  time_step    pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_post_activate(cs_time_step_t    *time_step)
+{
+  cs_post_time_step_begin(time_step);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update the hidden view of the domain dedicated for post-processing
  *
  * \param[in]  time_step    pointer to a cs_time_step_t structure
@@ -397,14 +411,6 @@ cs_domain_post(cs_time_step_t    *time_step)
 {
   assert(domain_post != NULL);
 
-  /* Activation or not of each writer according to the time step */
-  cs_post_activate_by_time_step(time_step);
-
-  /* User-defined activation of writers for a fine-grained control */
-  cs_user_postprocess_activate(time_step->nt_max,
-                               time_step->nt_cur,
-                               time_step->t_cur);
-
   /* Predefined extra-operations related to
       - the domain (advection fields and properties),
       - equations
@@ -412,8 +418,9 @@ cs_domain_post(cs_time_step_t    *time_step)
      are also handled during the call of this function thanks to
      cs_post_add_time_mesh_dep_output() function pointer
   */
-  cs_post_write_vars(time_step);
+  cs_post_time_step_output(time_step);
 
+  cs_post_time_step_end();
 }
 
 /*----------------------------------------------------------------------------*/
