@@ -445,14 +445,12 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
  * \param[in]       desc      information about this array
- * \param[in]       array     pointer to an array
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_def_by_array(cs_adv_field_t     *adv,
-                                cs_desc_t           desc,
-                                const cs_real_t    *array)
+                                cs_desc_t           desc)
 {
   if (adv == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
@@ -460,11 +458,32 @@ cs_advection_field_def_by_array(cs_adv_field_t     *adv,
   adv->def_type = CS_PARAM_DEF_BY_ARRAY;
   adv->array_desc.location = desc.location;
   adv->array_desc.state = desc.state;
-  adv->array = array;
 
   if (cs_test_flag(desc.location, cs_cdo_dual_face_byc) ||
       cs_test_flag(desc.location, cs_cdo_primal_cell))
     adv->desc.state |= CS_FLAG_STATE_CELLWISE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the array related to the definition of a cs_adv_field_t
+ *         structure
+ *
+ * \param[in, out]  adv       pointer to a cs_adv_field_t structure
+ * \param[in]       array     pointer to an array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_set_array(cs_adv_field_t     *adv,
+                             const cs_real_t    *array)
+{
+  if (adv == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
+
+  assert(adv->def_type == CS_PARAM_DEF_BY_ARRAY);
+
+  adv->array = array;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -500,10 +519,10 @@ cs_advection_field_create_field(cs_adv_field_t   *adv)
                                        3,    // always a vector-valued field
                                        has_previous);
 
-    adv->vtx_field_id = cs_field_id_by_name(field_name);
+    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
 
-    /* Allocate and initialize values */
-    cs_field_allocate_values(fld);
+    adv->vtx_field_id = cs_field_id_by_name(field_name);
 
     BFT_FREE(field_name);
 
@@ -522,10 +541,10 @@ cs_advection_field_create_field(cs_adv_field_t   *adv)
                                        3,    // always a vector-valued field
                                        has_previous);
 
-    adv->cell_field_id = cs_field_id_by_name(field_name);
+    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
 
-    /* Allocate and initialize values */
-    cs_field_allocate_values(fld);
+    adv->cell_field_id = cs_field_id_by_name(field_name);
 
     BFT_FREE(field_name);
 

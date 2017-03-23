@@ -224,6 +224,9 @@ typedef void
  * Global variables
  *============================================================================*/
 
+/* Activation of the CDO/HHO module */
+extern _Bool  cs_cdo_is_activated;
+
 /* Separation lines: long, medium, short */
 extern const char lsepline[80];
 extern const char msepline[60];

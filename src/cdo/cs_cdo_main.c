@@ -74,34 +74,40 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Local Macro definitions and structure definitions
+ * Local definitions
  *============================================================================*/
 
-/*=============================================================================
- * Local constant and enum definitions
- *============================================================================*/
-
-static const char cs_cdoversion[] = "0.9";
+static const char cs_cdoversion[] = "0.9.1";
+static int  cs_cdo_ts_id;
 
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
 
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup a computational domain within the CDO framework
- *
- * \param[in, out]  m     pointer to a cs_mesh_t struct.
- * \param[in]       mq    pointer to a cs_quantities_t struct.
- *
- * \return a pointer to a cs_domain_t structure
+ * \brief  Initialize the computational domain when CDO/HHO schemes are
+ *         activated
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_domain_t *
-_setup_domain(cs_mesh_t             *m,
-              cs_mesh_quantities_t  *mq)
+void
+cs_cdo_initialize_setup(void)
 {
+  /* Timer statistics */
+  cs_cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
+  cs_timer_stats_start(cs_cdo_ts_id);
+
+  /* Store the fact that the CDO/HHO module is activated */
+  cs_cdo_is_activated = true;
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\n -msg- CDO/HHO module is activated *** Experimental ***");
+  cs_log_printf(CS_LOG_DEFAULT, "\n -msg- CDO.tag  %s\n", cs_cdoversion);
+
   cs_timer_t t0 = cs_timer_time();
 
   /* Initialization of several modules */
@@ -111,53 +117,76 @@ _setup_domain(cs_mesh_t             *m,
   /* User-defined settings and default initializations
      WARNING: Change the order of call to the following routines with care
               This may incur bugs */
-
-  /* Determine which location are already built */
-  int n_mesh_locations_ini = cs_mesh_location_n_locations();
-
-  /* Potentially add new mesh locations */
   cs_user_cdo_add_mesh_locations();
 
-  /* Build all new mesh locations which are not set yet */
-  int n_mesh_locations = cs_mesh_location_n_locations();
-  for (int  i = n_mesh_locations_ini; i < n_mesh_locations; i++)
-    cs_mesh_location_build(m, i);
-  n_mesh_locations_ini = cs_mesh_location_n_locations();
+  /* Create a new structure for the computational domain */
+  cs_glob_domain = cs_domain_create();
 
-  /* - Create and initialize a new computational domain
+  /* Initialize the new computational domain
      - Set the default boundary and potentially add new boundary to the
        computational domain
      - Add predefined and user-defined equations
+     - Activate CDO-related submodules
      - Set the time step
   */
-  cs_domain_t  *domain = cs_domain_init(m, mq);
+  cs_user_cdo_init_domain(cs_glob_domain);
 
-  /* Build all new mesh locations which are not set yet */
-  n_mesh_locations = cs_mesh_location_n_locations();
-  for (int  i = n_mesh_locations_ini; i < n_mesh_locations; i++)
-    cs_mesh_location_build(m, i);
-
-  cs_volume_zone_build_all(true);
+  /* Update mesh locations */
+  cs_domain_update_mesh_locations(cs_glob_domain);
 
   /* Advanced settings (numerical scheme, hodge operators, solvers...).
      This call must be done before the field creation since the support
      of variable field depends on the choice of the numerical scheme. */
-  cs_user_cdo_numeric_settings(domain);
+  cs_user_cdo_numeric_settings(cs_glob_domain);
 
   /* Add variables related to user-defined and predefined equations */
-  cs_domain_create_fields(domain);
+  cs_domain_create_fields(cs_glob_domain);
 
   /* According to the settings, add or not predefined equations:
       >> Wall distance
       >> Groundwater flows
   */
-  cs_domain_setup_predefined_equations(domain);
-  cs_user_cdo_numeric_settings(domain); /* Overwrite predefined settings
-                                           if this is what user wants */
+  cs_domain_setup_predefined_equations(cs_glob_domain);
+
+  /* Overwrite predefined settings if this is what user wants */
+  cs_user_cdo_numeric_settings(cs_glob_domain);
 
   /* Set the definition of user-defined properties and/or advection
      fields */
-  cs_user_cdo_set_domain(domain);
+  cs_user_cdo_set_domain(cs_glob_domain);
+
+  /* Monitoring */
+  cs_timer_stats_stop(cs_cdo_ts_id);
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
+
+  CS_TIMER_COUNTER_ADD(cs_glob_domain->tcs, cs_glob_domain->tcs, time_count);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the structures related to the computational domain when
+ *         CDO/HHO schemes are activated
+ *
+ * \param[in, out]  m     pointer to a cs_mesh_t struct.
+ * \param[in]       mq    pointer to a cs_quantities_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_initialize_structures(cs_mesh_t             *m,
+                             cs_mesh_quantities_t  *mq)
+{
+  if (cs_cdo_is_activated == false)
+    return;
+
+  cs_timer_t  t0 = cs_timer_time();
+
+  /* Timer statistics */
+  cs_timer_stats_start(cs_cdo_ts_id);
+
+  /* Last setup stage */
+  cs_domain_initialize(cs_glob_domain, m, mq);
 
   /* Initialize post-processing */
   cs_post_activate_writer(-1,     /* default writer (volume mesh)*/
@@ -165,37 +194,39 @@ _setup_domain(cs_mesh_t             *m,
   cs_post_write_meshes(NULL);     /* time step management structure set to NULL
                                      => Time-independent output is considered */
 
-  /* Last setup stage */
-  cs_domain_last_setup(domain);
-
   /* Initialization for user-defined extra operations */
-  cs_user_cdo_start_extra_op(domain);
-
-  /* Sumary of the settings */
-  cs_cdo_connect_summary(domain->connect);
-  cs_cdo_quantities_summary(domain->cdo_quantities);
-  cs_domain_summary(domain);
+  cs_user_cdo_start_extra_op(cs_glob_domain);
 
   /* Monitoring */
+  cs_timer_stats_stop(cs_cdo_ts_id);
+
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                "<CDO/Setup> Runtime", time_count.wall_nsec*1e-9);
 
-  return domain;
+  CS_TIMER_COUNTER_ADD(cs_glob_domain->tcs, cs_glob_domain->tcs, time_count);
+
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
+                "<CDO/Setup> Runtime", cs_glob_domain->tcs.wall_nsec*1e-9);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Free all structure allocated during the resolution with CDO schemes
- *
- * \param[in, out]  domain  pointer to a cs_domain_t structure pointer
+ * \brief   Free all structures allocated during the resolution of CDO/HHO
+ *          schemes
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_finalize(cs_domain_t  *domain)
+void
+cs_cdo_finalize(void)
 {
+  if (cs_cdo_is_activated == false)
+    return;
+
+  cs_domain_t  *domain = cs_glob_domain;
+
+  /* Timer statistics */
+  cs_timer_stats_start(cs_cdo_ts_id);
+
   /* Finalize user-defined extra operations */
   cs_user_cdo_end_extra_op(domain);
 
@@ -205,44 +236,43 @@ _finalize(cs_domain_t  *domain)
   /* Free cs_domain_structure (imply severals operation to free memory) */
   domain = cs_domain_free(domain);
   assert(domain == NULL);
-}
+  cs_glob_domain = NULL;
 
-/*============================================================================
- * Public function prototypes
- *============================================================================*/
+  cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+  cs_log_printf(CS_LOG_DEFAULT, "#\tExit CDO Module\n");
+  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
+  cs_log_printf_flush(CS_LOG_DEFAULT);
+
+  cs_timer_stats_stop(cs_cdo_ts_id);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Main program for running a simulation with CDO kernel
- *
- * \param[in, out]  m     pointer to a cs_mesh_t struct.
- * \param[in]       mq    pointer to a cs_quantities_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_main(cs_mesh_t             *m,
-            cs_mesh_quantities_t  *mq)
+cs_cdo_main(void)
 {
-  /* Timer statistics */
-  const int  cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
-
-  /* Output information */
-  cs_log_printf(CS_LOG_DEFAULT, "\n");
-  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
-  cs_log_printf(CS_LOG_DEFAULT, "\tStart CDO Module  *** Experimental ***\n");
-  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
-  cs_log_printf(CS_LOG_DEFAULT, "\n -msg- Version.Tag  %s\n", cs_cdoversion);
-  cs_log_printf(CS_LOG_SETUP,"\n <cdo-settings>\n");
+  assert(cs_cdo_is_activated == true);
 
   cs_timer_t t0 = cs_timer_time();
-  cs_timer_stats_start(cdo_ts_id);
+
+  /* Timer statistics */
+  cs_timer_stats_start(cs_cdo_ts_id);
 
   /*  Build high-level structures and create algebraic systems */
-  cs_domain_t  *domain = _setup_domain(m, mq);
+  cs_domain_t  *domain = cs_glob_domain;
 
+  /* Sumary of the settings */
+  cs_cdo_connect_summary(domain->connect);
+  cs_cdo_quantities_summary(domain->cdo_quantities);
+  cs_domain_summary(domain);
+
+  /* Output information */
   cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
-  cs_log_printf(CS_LOG_DEFAULT, "      Start main loop on time iteration\n");
+  cs_log_printf(CS_LOG_DEFAULT, "#      Start main loop\n");
   cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
 
   /* Flush listing and setup.log files */
@@ -269,21 +299,14 @@ cs_cdo_main(cs_mesh_t             *m,
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
                 "<CDO/Post> Runtime", domain->tcp.wall_nsec*1e-9);
 
-  /* Free main CDO structures */
-  _finalize(domain);
-
-  cs_log_printf(CS_LOG_SETUP,"\n<cdo-settings>\n");
-  cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
-  cs_log_printf(CS_LOG_DEFAULT, "\tExit CDO Module\n");
-  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
-  cs_log_printf_flush(CS_LOG_DEFAULT);
-
-  cs_timer_stats_stop(cdo_ts_id);
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
+
+  CS_TIMER_COUNTER_ADD(time_count, cs_glob_domain->tcs, time_count);
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
                 "<CDO> Total runtime", time_count.wall_nsec*1e-9);
 
+  cs_timer_stats_stop(cs_cdo_ts_id);
   if (cs_glob_rank_id <= 0)
     printf("\n  --> Exit CDO module: simulation completed.\n\n");
 

@@ -227,10 +227,7 @@ cs_run(void)
 
   /* Initialize Fortran API and calculation setup */
 
-  if (opts.cdo)
-    halo_type = CS_HALO_STANDARD; // temporary
-
-  else if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
+  if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
 
     cs_int_t _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
 
@@ -238,13 +235,24 @@ cs_run(void)
 
     cs_gui_init();
 
-    CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
+    if (opts.cdo) {
 
-    CS_PROCF(initi1, INITI1)();
+      halo_type = CS_HALO_STANDARD;
 
-    CS_PROCF (haltyp, HALTYP) (&ivoset);
-    if (ivoset)
-      halo_type = CS_HALO_EXTENDED;
+      cs_cdo_initialize_setup();
+
+    }
+    else {
+
+      CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
+
+      CS_PROCF(initi1, INITI1)();
+
+      CS_PROCF (haltyp, HALTYP) (&ivoset);
+      if (ivoset)
+        halo_type = CS_HALO_EXTENDED;
+
+    }
 
     cs_base_fortran_bft_printf_to_c();
 
@@ -342,6 +350,10 @@ cs_run(void)
 
     cs_mesh_adjacencies_update_mesh();
 
+    /* Initialization related to CDO/HHO schemes */
+
+    cs_cdo_initialize_structures(cs_glob_mesh, cs_glob_mesh_quantities);
+
     /* Initialize gradient computation */
 
     cs_gradient_initialize();
@@ -374,7 +386,7 @@ cs_run(void)
            * Call main calculation function (CDO Kernel)
            *----------------------------------------------*/
 
-          cs_cdo_main(cs_glob_mesh, cs_glob_mesh_quantities);
+          cs_cdo_main();
 
           /* Return to the default behavior */
 
@@ -442,6 +454,10 @@ cs_run(void)
 
   bft_printf(_("\n Destroying structures and ending computation\n"));
   bft_printf_flush();
+
+  /* Final stage for CDO/HHO schemes */
+
+  cs_cdo_finalize();
 
   /* Free coupling-related data */
 

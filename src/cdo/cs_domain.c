@@ -76,16 +76,16 @@
 
 BEGIN_C_DECLS
 
-/*-----------------------------------------------------------------------------
- * Local type definitions
- *----------------------------------------------------------------------------*/
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
 
-typedef struct {
+cs_domain_t  *cs_glob_domain = NULL; /* Pointer to the main computational
+                                        domain used in CDO/HHO schemes */
 
-  int     n_ids;   // number of related (sub) mesh location attached
-  int    *ids;     // list of mesh location ids
-
-} _ml_list_t;
+/*============================================================================
+ * Local structure definitions
+ *============================================================================*/
 
 struct _cs_domain_boundary_t {
 
@@ -94,28 +94,26 @@ struct _cs_domain_boundary_t {
   cs_lnum_t                   n_b_faces;        // number of boundary faces
   cs_param_boundary_type_t   *b_face_types;     // type of each boundary face
 
-  /* Number of border faces related to each type of boundary */
-  cs_lnum_t                   n_type_elts[CS_PARAM_N_BOUNDARY_TYPES];
-
   /*
      A mesh location attached to a domain boundary can be compound of several
      existing mesh locations, hereafter called sub mesh locations
   */
 
-  /* Mesh location id related to a domain boundary (-1 if not used)
-     Reserved names are the followings:
-     >> "domain_walls"
-     >> "domain_inlets"
-     >> "domain_outlets"
-     >> "domain_symmetries"   */
-  int          ml_ids[CS_PARAM_N_BOUNDARY_TYPES];
-  _ml_list_t   sub_ml[CS_PARAM_N_BOUNDARY_TYPES];
+  /* Mesh location id related to a domain boundary (-1 if not useful)
+     Mesh locations are generated automatically with the following reserved
+     names: "domain_walls",
+            "domain_inlets",
+            "domain_outlets",
+            "domain_symmetries"
+   */
+  int        autogen_ml_ids[CS_PARAM_N_BOUNDARY_TYPES];
+  int        n_sub_ml_ids[CS_PARAM_N_BOUNDARY_TYPES];
+  int       *sub_ml_id_lst[CS_PARAM_N_BOUNDARY_TYPES];
+
+  /* Number of border faces related to each type of boundary */
+  cs_lnum_t  n_type_elts[CS_PARAM_N_BOUNDARY_TYPES];
 
 };
-
-/*============================================================================
- * Static global variables
- *============================================================================*/
 
 /*============================================================================
  * Local variables
@@ -140,6 +138,35 @@ static double  cs_domain_kahan_time_compensation = 0.0;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Allocate a new cs_domain_boundary_t structure
+ *
+ * \return a pointer to a new allocated cs_domain_boundary_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_domain_boundary_t *
+_create_domain_boundaries(void)
+{
+  cs_domain_boundary_t  *dby = NULL;
+
+  BFT_MALLOC(dby, 1, cs_domain_boundary_t);
+
+  dby->default_boundary = CS_PARAM_N_BOUNDARY_TYPES;
+  dby->n_b_faces = -1;
+  dby->b_face_types = NULL;
+
+  for (int i = 0; i < CS_PARAM_N_BOUNDARY_TYPES; i++) {
+    dby->autogen_ml_ids[i] = -1;
+    dby->n_sub_ml_ids[i] = 0;
+    dby->sub_ml_id_lst[i] = NULL;
+    dby->n_type_elts[i] = 0;
+  }
+
+  return dby;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate and initialize a cs_domain_boundary_t structure
  *
  * \param[in]   n_b_faces   number of boundary faces
@@ -148,28 +175,54 @@ static double  cs_domain_kahan_time_compensation = 0.0;
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_domain_boundary_t *
-_init_domain_boundaries(cs_lnum_t     n_b_faces)
+static void
+_build_domain_boundaries(cs_lnum_t               n_b_faces,
+                         cs_domain_boundary_t   *dby)
 {
-  cs_domain_boundary_t  *dby = NULL;
-
-  BFT_MALLOC(dby, 1, cs_domain_boundary_t);
+  /* Sanity check */
+  assert(dby !=NULL);
 
   dby->n_b_faces = n_b_faces;
-  dby->default_boundary = CS_PARAM_N_BOUNDARY_TYPES;
 
+  /* Define the b_face_types array */
   BFT_MALLOC(dby->b_face_types, n_b_faces, cs_param_boundary_type_t);
   for (int i = 0; i < n_b_faces; i++)
-    dby->b_face_types[i] = CS_PARAM_N_BOUNDARY_TYPES;
+    dby->b_face_types[i] = dby->default_boundary;
 
-  for (int i = 0; i < CS_PARAM_N_BOUNDARY_TYPES; i++) {
-    dby->ml_ids[i] = -1;
-    dby->sub_ml[i].n_ids = 0;
-    dby->sub_ml[i].ids = NULL;
-    dby->n_type_elts[i] = 0;
+  for (unsigned int type = 0; type < CS_PARAM_N_BOUNDARY_TYPES; type++) {
+    if (dby->autogen_ml_ids[type] > -1 && type != dby->default_boundary) {
+
+      const int  ml_id = dby->autogen_ml_ids[type];
+      const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
+      const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
+
+      if (elt_ids == NULL)
+        for (cs_lnum_t i = 0; i < n_elts[0]; i++)
+          dby->b_face_types[i] = type;
+      else
+        for (cs_lnum_t i = 0; i < n_elts[0]; i++)
+          dby->b_face_types[elt_ids[i]] = type;
+
+    }
   }
 
-  return dby;
+  /* Count how many border faces are associated to each type of boundary */
+  cs_gnum_t  error_count = 0;
+
+  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+    if (dby->b_face_types[i] == CS_PARAM_N_BOUNDARY_TYPES)
+      error_count++;
+    else
+      dby->n_type_elts[dby->b_face_types[i]] += 1;
+  }
+
+  if (cs_glob_n_ranks > 1)
+    cs_parall_counter(&error_count, 1);
+
+  if (error_count > 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Problem detected during the setup.\n"
+                " %lu boundary faces have no boundary type."), error_count);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -191,137 +244,11 @@ _free_domain_boundaries(cs_domain_boundary_t   *dby)
   BFT_FREE(dby->b_face_types);
 
   for (int type = 0; type < CS_PARAM_N_BOUNDARY_TYPES; type++)
-    BFT_FREE(dby->sub_ml[type].ids);
+    BFT_FREE(dby->sub_ml_id_lst[type]);
 
   BFT_FREE(dby);
 
   return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the boundary type by default
- *
- * \param[in, out]   domain        pointer to a cs_domain_t structure
- * \param[in]        bdy_name      key name of the default boundary
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_set_default_boundary(cs_domain_t     *domain,
-                      const char      *bdy_name)
-{
-  cs_domain_boundary_t  *dby = domain->boundaries;
-  cs_param_boundary_type_t  default_type = CS_PARAM_N_BOUNDARY_TYPES;
-
-  /* Sanity check */
-  assert(dby != NULL);
-
-  /* Find boundary type associated to bdy_name */
-  if (strcmp(bdy_name, "wall") == 0)
-    default_type = CS_PARAM_BOUNDARY_WALL;
-  else if (strcmp(bdy_name, "symmetry") == 0)
-    default_type = CS_PARAM_BOUNDARY_SYMMETRY;
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key name \"%s\" for setting a boundary by default.\n"
-                " Available choices are: wall or symmetry."),
-              bdy_name);
-
-  dby->default_boundary = default_type;
-  for (int i = 0; i < dby->n_b_faces; i++)
-    dby->b_face_types[i] = default_type;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add new mesh locations related to domain boundaries from existing
- *         mesh locations
- *
- * \param[in]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_add_mesh_locations(cs_domain_t   *domain)
-{
-  cs_domain_boundary_t  *dby = domain->boundaries;
-  cs_param_boundary_type_t  default_type = dby->default_boundary;
-
-  /* Store all mesh locations not associated to the default type */
-  int  n_sub_ids = 0;
-  int  *sub_ids = NULL;
-
-  for (unsigned int type = 0; type < CS_PARAM_N_BOUNDARY_TYPES; type++) {
-
-    int _n_sub_ids = dby->sub_ml[type].n_ids;
-    int  *_sub_ids = dby->sub_ml[type].ids;
-
-    if (_n_sub_ids > 0 && type != default_type) {
-      // There is at least one mesh location
-
-      dby->ml_ids[type] =
-        cs_mesh_location_add_by_union(_domain_boundary_ml_name[type],
-                                      CS_MESH_LOCATION_BOUNDARY_FACES,
-                                      _n_sub_ids,
-                                      _sub_ids,
-                                      false);  // complement ?
-
-      /* Increment the list of mesh locations */
-      BFT_REALLOC(sub_ids, n_sub_ids + _n_sub_ids, int);
-      for (int i = 0; i < _n_sub_ids; i++)
-        sub_ids[n_sub_ids + i] = _sub_ids[i];
-      n_sub_ids += _n_sub_ids;
-
-    }
-
-  } /* Loop on boundary types */
-
-  /* Treatment of the default boundary type */
-  dby->ml_ids[default_type] =
-    cs_mesh_location_add_by_union(_domain_boundary_ml_name[default_type],
-                                  CS_MESH_LOCATION_BOUNDARY_FACES,
-                                  n_sub_ids,
-                                  sub_ids,
-                                  true);
-
-  BFT_FREE(sub_ids);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Check if the setup of boundary is reliable
- *
- * \param[in]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_check_boundary_setup(cs_domain_t   *domain)
-{
-  int  error_count = 0;
-
-  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-
-  cs_domain_boundary_t  *dby = domain->boundaries;
-
-  for (unsigned int k = 0; k < CS_PARAM_N_BOUNDARY_TYPES; k++)
-    dby->n_type_elts[k] = 0;
-
-  /* Sanity check */
-  assert(dby !=NULL);
-
-  for (int i = 0; i < dby->n_b_faces; i++) {
-    if (dby->b_face_types[i] == CS_PARAM_N_BOUNDARY_TYPES)
-      error_count++;
-    else
-      dby->n_type_elts[dby->b_face_types[i]] += 1;
-  }
-
-  if (error_count > 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Problem detected during the setup.\n"
-                " %d boundary faces have no boundary type."), error_count);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -438,68 +365,30 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set shared pointers for the main domain members
- *
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a time step structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                     const cs_cdo_connect_t       *connect,
-                     const cs_time_step_t         *time_step)
-{
-  /* Avoid the declaration of global variables by sharing pointers */
-  cs_source_term_set_shared_pointers(quant, connect, time_step);
-  cs_evaluate_set_shared_pointers(quant, connect, time_step);
-  cs_property_set_shared_pointers(quant, connect, time_step);
-  cs_advection_field_set_shared_pointers(quant, connect, time_step);
-}
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a cs_domain_t structure
- *
- * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
- * \param[in]       mesh_quantities   pointer to a cs_mesh_quantities_t struct.
+ * \brief  Create and initialize by default a cs_domain_t structure
  *
  * \return a pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_domain_t *
-cs_domain_init(cs_mesh_t                   *mesh,
-               const cs_mesh_quantities_t  *mesh_quantities)
+cs_domain_create(void)
 {
   cs_real_t  default_time_step = -1e13;
   cs_domain_t  *domain = NULL;
 
   BFT_MALLOC(domain, 1, cs_domain_t);
 
-  domain->mesh = mesh;
-  domain->mesh_quantities = mesh_quantities;
-
-  /* Build additional connectivity structures
-     Update mesh structure with range set structures */
-  domain->connect = cs_cdo_connect_init(mesh);
-
-  /* Default = CS_CDO_CC_SATURNE but can be modify by the user */
-  cs_cdo_cell_center_algo_t  cc_algo =
-    cs_user_cdo_geometric_settings();
-
-  /* Build additional mesh quantities in a seperate structure */
-  domain->cdo_quantities =  cs_cdo_quantities_build(cc_algo,
-                                                    mesh,
-                                                    mesh_quantities,
-                                                    domain->connect);
+  domain->mesh = NULL;
+  domain->mesh_quantities = NULL;
+  domain->connect = NULL;
+  domain->cdo_quantities = NULL;
 
   /* Default initialization of the time step */
   domain->is_last_iter = false;
@@ -530,11 +419,6 @@ cs_domain_init(cs_mesh_t                   *mesh,
   domain->time_options.dtmax = default_time_step;
   domain->time_options.relxst = 0.7; // Not useful in CDO schemes
 
-  /* Shared main generic structure */
-  _set_shared_pointers(domain->cdo_quantities,
-                       domain->connect,
-                       domain->time_step);
-
   /* Equations */
   domain->n_equations = 0;
   domain->n_predef_equations = 0;
@@ -546,7 +430,6 @@ cs_domain_init(cs_mesh_t                   *mesh,
 
   /* Other options */
   domain->output_nt = -1;
-  domain->output_dt = 0.;
   domain->verbosity = 1;
   domain->profiling = false;
 
@@ -557,7 +440,7 @@ cs_domain_init(cs_mesh_t                   *mesh,
 
   /* Specify the "physical" domain boundaries. Define a mesh location for
      each boundary type */
-  domain->boundaries = _init_domain_boundaries(mesh->n_b_faces);
+  domain->boundaries = _create_domain_boundaries();
 
   /* Initialize properties */
   domain->n_properties = 0;
@@ -565,29 +448,15 @@ cs_domain_init(cs_mesh_t                   *mesh,
 
   /* Add predefined properties */
   cs_property_t  *pty = cs_domain_add_property(domain, "unity", "isotropic", 1);
-  cs_property_iso_def_by_value(pty, N_("cells"), 1.0);
+  cs_property_iso_def_by_value(pty, "cells", 1.0);
 
   /* Advection fields */
   domain->n_adv_fields = 0;
   domain->adv_fields = NULL;
 
   /* Monitoring */
-  CS_TIMER_COUNTER_INIT(domain->tcp); // build system
-
-  /* User-defined settings for this domain
-      - time step
-      - boundary of the domain  */
-  cs_user_cdo_init_domain(domain);
-
-  /* Update mesh locations */
-  _add_mesh_locations(domain);
-  _check_boundary_setup(domain);
-
-  /* Set the default verbosity for the equations which are already defined */
-  char  verb[10];
-  sprintf(verb, "%d", domain->verbosity);
-  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
-    cs_equation_set_param(domain->equations[eq_id], CS_EQKEY_VERBOSITY, verb);
+  CS_TIMER_COUNTER_INIT(domain->tcp); // domain post
+  CS_TIMER_COUNTER_INIT(domain->tcs); // domain setup
 
   return domain;
 }
@@ -662,395 +531,27 @@ cs_domain_free(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set auxiliary parameters related to a cs_domain_t structure
+ * \brief  Add a boundary type defined on a mesh location
  *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
- * \param[in]       key       key related to the parameter to set
- * \param[in]       value     value related to the parameter to set
+ * \param[in, out]   domain       pointer to a cs_domain_t structure
+ * \param[in]        type         type of boundary to set
+ * \param[in]        ml_name      mesh location name
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_double_param(cs_domain_t       *domain,
-                           cs_domain_key_t    key,
-                           double             value)
-{
-  if (domain == NULL)  bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-
-  /* Switch on keys related to a parameter associated to a double */
-  switch(key) {
-
-  case CS_DOMAIN_OUTPUT_DT:
-    domain->output_dt = value;
-    break;
-
-  case CS_DOMAIN_TMAX:
-    domain->time_step->t_max = value;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting a cs_domain_t structure."
-                " This key is not associated to a \"double\" type."));
-
-  } /* Switch on keys */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set auxiliary parameters related to a cs_domain_t structure
- *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
- * \param[in]       key       key related to the parameter to set
- * \param[in]       value     value related to the parameter to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_int_param(cs_domain_t       *domain,
-                        cs_domain_key_t    key,
-                        int                value)
+cs_domain_set_default_boundary(cs_domain_t                *domain,
+                               cs_param_boundary_type_t    type)
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
-  /* Switch on keys related to a parameter associated to a double */
-  switch(key) {
-
-  case CS_DOMAIN_OUTPUT_NT:
-    if (value == 0)
-      domain->output_nt = -1;
-    else
-      domain->output_nt = value;
-    break;
-
-  case CS_DOMAIN_NTMAX:
-    domain->time_step->nt_max = value;
-    break;
-
-  case CS_DOMAIN_VERBOSITY:
-    domain->verbosity = value;
-    break;
-
-  default:
+  if (type == CS_PARAM_BOUNDARY_WALL || type == CS_PARAM_BOUNDARY_SYMMETRY)
+    domain->boundaries->default_boundary = type;
+  else
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting a cs_domain_t structure."
-                " This key is not associated to a \"int\" type."));
-
-  } /* Switch on keys */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set auxiliary parameters related to a cs_domain_t structure
- *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
- * \param[in]       key       key related to the parameter to set
- * \param[in]       keyval    value related to the parameter to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_param(cs_domain_t       *domain,
-                    cs_domain_key_t    key,
-                    const char        *keyval)
-{
-  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-
-  /* Conversion of the string to lower case */
-  char val[CS_BASE_STRING_LEN];
-  for (size_t i = 0; i < strlen(keyval); i++)
-    val[i] = tolower(keyval[i]);
-  val[strlen(keyval)] = '\0';
-
-  switch(key) {
-
-  case CS_DOMAIN_DEFAULT_BOUNDARY:
-    _set_default_boundary(domain, val);
-    break;
-
-  case CS_DOMAIN_OUTPUT_NT:
-    {
-      int  freq = atoi(val);
-
-      if (freq == 0) freq = -1;
-      domain->output_nt = freq;
-    }
-    break;
-
-  case CS_DOMAIN_OUTPUT_DT:
-    domain->output_dt = atof(val);
-    break;
-
-  case CS_DOMAIN_PROFILING:
-    domain->profiling = true;
-    break;
-
-  case CS_DOMAIN_NTMAX:
-    domain->time_step->nt_max = atoi(val);
-    break;
-
-  case CS_DOMAIN_TMAX:
-    domain->time_step->t_max = atof(val);
-    break;
-
-  case CS_DOMAIN_VERBOSITY:
-    domain->verbosity = atoi(val);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key for setting a cs_domain_t structure."));
-
-  } /* Switch on keys */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Check if an ouput is requested according to the domain setting
- *
- * \param[in]   domain    pointer to a cs_domain_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_domain_needs_log(const cs_domain_t      *domain)
-{
-  const cs_time_step_t   *ts = domain->time_step;
-
-  if (domain->verbosity < 0)
-    return false;
-
-  if (domain->only_steady)
-    return true;
-
-  if (domain->output_nt > -1)
-    if (ts->nt_cur % domain->output_nt == 0)
-      return true;
-
-  if (domain->output_dt > 0) {
-    if (ts->t_cur - floor(ts->t_cur/domain->output_dt)*domain->output_dt > 0)
-      return false;
-    else
-      return true;
-  }
-
-  if (domain->is_last_iter)
-    return true;
-
-  return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Summary of a cs_domain_t structure
- *
- * \param[in]   domain    pointer to the cs_domain_t structure to summarize
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_summary(const cs_domain_t   *domain)
-{
-  if (domain == NULL)
-    return;
-
-  /* Output information */
-  cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
-  cs_log_printf(CS_LOG_SETUP, "\tSummary of domain settings\n");
-  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
-
-  cs_log_printf(CS_LOG_SETUP, " -msg- n_cdo_equations          %d\n",
-                domain->n_equations);
-  cs_log_printf(CS_LOG_SETUP, " -msg- n_predefined_equations   %d\n",
-                domain->n_predef_equations);
-  cs_log_printf(CS_LOG_SETUP, " -msg- n_user_equations         %d\n",
-                domain->n_user_equations);
-  cs_log_printf(CS_LOG_SETUP, " -msg- n_properties             %d\n",
-                domain->n_properties);
-
-  /* Boundary */
-  cs_domain_boundary_t  *bdy = domain->boundaries;
-
-  cs_log_printf(CS_LOG_SETUP, "\n  Domain boundary by default: ");
-  switch (bdy->default_boundary) {
-  case CS_PARAM_BOUNDARY_WALL:
-    cs_log_printf(CS_LOG_SETUP, " wall\n");
-    break;
-  case CS_PARAM_BOUNDARY_SYMMETRY:
-    cs_log_printf(CS_LOG_SETUP, " symmetry\n");
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid boundary by default.\n"
-                " Please modify your settings."));
-  }
-
-  /* Number of border faces for each type of boundary */
-  cs_gnum_t  counter[4] = { bdy->n_type_elts[CS_PARAM_BOUNDARY_WALL],
-                            bdy->n_type_elts[CS_PARAM_BOUNDARY_INLET],
-                            bdy->n_type_elts[CS_PARAM_BOUNDARY_OUTLET],
-                            bdy->n_type_elts[CS_PARAM_BOUNDARY_SYMMETRY] };
-  if (cs_glob_n_ranks > 1)
-    cs_parall_counter(counter, 4);
-
-  cs_log_printf(CS_LOG_SETUP,
-                "  >> Number of faces with a wall boundary:      %lu\n",
-                counter[0]);
-  cs_log_printf(CS_LOG_SETUP,
-                "  >> Number of faces with an inlet boundary:    %lu\n",
-                counter[1]);
-  cs_log_printf(CS_LOG_SETUP,
-                "  >> Number of faces with an outlet boundary:   %lu\n",
-                counter[2]);
-  cs_log_printf(CS_LOG_SETUP,
-                "  >> Number of faces with a symmetry boundary:  %lu\n",
-                counter[3]);
-
-  /* Time step summary */
-  cs_log_printf(CS_LOG_SETUP, "\n  Time step information\n");
-  if (domain->only_steady)
-    cs_log_printf(CS_LOG_SETUP, "  >> Steady-state computation");
-
-  else { /* Time information */
-
-    cs_log_printf(CS_LOG_SETUP, "  >> Time step status:");
-    if (domain->time_options.idtvar == 0)
-      cs_log_printf(CS_LOG_SETUP, "  constant\n");
-    else if (domain->time_options.idtvar == 1)
-      cs_log_printf(CS_LOG_SETUP, "  variable in time\n");
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid idtvar value for the CDO module.\n"));
-    cs_log_printf(CS_LOG_SETUP, "  >> Type of definition: %s",
-                  cs_param_get_def_type_name(domain->time_step_def_type));
-    if (domain->time_step_def_type == CS_PARAM_DEF_BY_VALUE)
-      cs_log_printf(CS_LOG_SETUP, " => %5.3e\n", domain->dt_cur);
-    else
-      cs_log_printf(CS_LOG_SETUP, "\n");
-
-    if (domain->time_step->t_max > 0.)
-      cs_log_printf(CS_LOG_SETUP, "%-30s %5.3e\n",
-                    "  >> Final simulation time:", domain->time_step->t_max);
-    if (domain->time_step->nt_max > 0)
-      cs_log_printf(CS_LOG_SETUP, "%-30s %9d\n",
-                    "  >> Final time step:", domain->time_step->nt_max);
-
-  }
-  cs_log_printf(CS_LOG_SETUP, "\n");
-
-  if (domain->verbosity > 0) {
-
-    /* Properties */
-    cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
-    cs_log_printf(CS_LOG_SETUP, "\tSummary of the definition of properties\n");
-    cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
-
-    for (int i = 0; i < domain->n_properties; i++)
-      cs_property_summary(domain->properties[i]);
-
-    /* Advection fields */
-    if (domain->n_adv_fields > 0) {
-
-      cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
-      cs_log_printf(CS_LOG_SETUP, "\tSummary of the advection field\n");
-      cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
-
-      for (int i = 0; i < domain->n_adv_fields; i++)
-        cs_advection_field_summary(domain->adv_fields[i]);
-
-    }
-
-    /* Summary of the groundwater module */
-    cs_gwf_summary(domain->gwf);
-
-    /* Summary for each equation */
-    for (int  eq_id = 0; eq_id < domain->n_equations; eq_id++)
-      cs_equation_summary(domain->equations[eq_id]);
-
-  } /* Domain->verbosity > 0 */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Proceed to the last settings of a cs_domain_t structure
- *
- * \param[in, out]  domain    pointer to the cs_domain_t structure to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_last_setup(cs_domain_t    *domain)
-{
-  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-
-  /* Initialization default post-processing for the computational domain */
-  cs_domain_post_init(domain->dt_cur,
-                      domain->cdo_quantities,
-                      domain->n_adv_fields, domain->adv_fields,
-                      domain->n_properties, domain->properties,
-                      domain->n_equations, domain->equations);
-
-  /* Define a scheme flag for the current domain */
-  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
-
-    cs_equation_t  *eq = domain->equations[eq_id];
-    cs_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
-    cs_param_var_type_t  vartype = cs_equation_get_var_type(eq);
-
-    if (vartype == CS_PARAM_VAR_SCAL)
-      domain->scheme_flag |= CS_SCHEME_FLAG_SCALAR;
-
-    if (scheme == CS_SPACE_SCHEME_CDOVB)
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVB;
-    else if (scheme == CS_SPACE_SCHEME_CDOVCB)
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVCB;
-    else if (scheme == CS_SPACE_SCHEME_CDOFB)
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOFB;
-    else if (scheme == CS_SPACE_SCHEME_HHO)
-      domain->scheme_flag |= CS_SCHEME_FLAG_HHO;
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Undefined type of equation to solve for eq. %s."
-                  " Please check your settings."), cs_equation_get_name(eq));
-
-  } // Loop on equations
-
-  /* Allocate common structures for solving equations */
-  cs_equation_allocate_common_structures(domain->connect,
-                                         domain->cdo_quantities,
-                                         domain->time_step,
-                                         domain->scheme_flag);
-
-  /* Proceed to the last settings of a cs_equation_t structure
-     - Assign to a cs_equation_t structure a list of function to manage this
-       structure during the computation.
-     - The set of functions chosen for each equation depends on the parameters
-       specifying the cs_equation_t structure
-     - Setup the structure related to cs_sles_*
-  */
-
-  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
-
-    cs_equation_t  *eq = domain->equations[eq_id];
-
-    if (domain->profiling)
-      cs_equation_set_timer_stats(eq);
-
-    cs_equation_last_setup(domain->connect, eq);
-
-    if (!cs_equation_is_steady(eq))
-      domain->only_steady = false;
-
-  } // Loop on domain equations
-
-  if (domain->only_steady)
-    domain->is_last_iter = true;
+              _(" Invalid type of boundary by default.\n"
+                " Valid choice is CS_PARAM_BOUNDARY_WALL or"
+                " CS_PARAM_BOUNDARY_SYMMETRY."));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1058,15 +559,15 @@ cs_domain_last_setup(cs_domain_t    *domain)
  * \brief  Add a boundary type defined on a mesh location
  *
  * \param[in, out]   domain       pointer to a cs_domain_t structure
+ * \param[in]        type         type of boundary to set
  * \param[in]        ml_name      mesh location name
- * \param[in]        bdy_name     key name of boundary to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_add_boundary(cs_domain_t               *domain,
-                       const char                *ml_name,
-                       const char                *bdy_name)
+cs_domain_add_boundary(cs_domain_t                *domain,
+                       cs_param_boundary_type_t    type,
+                       const char                 *ml_name)
 {
   if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
 
@@ -1082,41 +583,94 @@ cs_domain_add_boundary(cs_domain_t               *domain,
 
   /* Add this mesh location id to a list of mesh location ids of
      the same type */
-  cs_param_boundary_type_t  type = CS_PARAM_N_BOUNDARY_TYPES;
   cs_domain_boundary_t  *dby = domain->boundaries;
 
-  /* Find boundary type associated to bdy_name */
-  if (strcmp(bdy_name, "wall") == 0)
-    type = CS_PARAM_BOUNDARY_WALL;
-  else if (strcmp(bdy_name, "inlet") == 0)
-    type = CS_PARAM_BOUNDARY_INLET;
-  else if (strcmp(bdy_name, "outlet") == 0)
-    type = CS_PARAM_BOUNDARY_OUTLET;
-  else if (strcmp(bdy_name, "symmetry") == 0)
-    type = CS_PARAM_BOUNDARY_SYMMETRY;
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key name \"%s\" for setting a boundary.\n"
-                " Available choices are: wall, inlet, outlet or symmetry."),
-              bdy_name);
-
   /* Number of mesh locations already defined for this type of boundary */
-  int  n_ml_ids = dby->sub_ml[type].n_ids;
+  int  n_ml_ids = dby->n_sub_ml_ids[type];
 
   /* Add a new mesh location for this type of boundary */
-  BFT_REALLOC(dby->sub_ml[type].ids, n_ml_ids + 1, int);
-  dby->sub_ml[type].ids[n_ml_ids] = ml_id;
-  dby->sub_ml[type].n_ids += 1;
+  BFT_REALLOC(dby->sub_ml_id_lst[type], n_ml_ids + 1, int);
+  dby->sub_ml_id_lst[type][n_ml_ids] = ml_id;
+  dby->n_sub_ml_ids[type] += 1;
+}
 
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
-  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set parameters for unsteady computations: the max number of time
+ *         steps or the final physical time of the simulation
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in]       nt_max    max. number of time step iterations
+ * \param[in]       t_max     final physical time of the simulation
+ */
+/*----------------------------------------------------------------------------*/
 
-  if (elt_ids == NULL)
-    for (cs_lnum_t i = 0; i < n_elts[0]; i++)
-      dby->b_face_types[i] = type;
-  else
-    for (cs_lnum_t i = 0; i < n_elts[0]; i++)
-      dby->b_face_types[elt_ids[i]] = type;
+void
+cs_domain_set_time_param(cs_domain_t       *domain,
+                         int                nt_max,
+                         double             t_max)
+{
+  if (domain == NULL)  bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+
+  domain->time_step->nt_max = nt_max;
+  domain->time_step->t_max = t_max;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set auxiliary parameters related to the way output is done
+ *
+ * \param[in, out]  domain      pointer to a cs_domain_t structure
+ * \param[in]       nt_list     output frequency into the listing
+ * \param[in]       verbosity   level of information displayed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_output_param(cs_domain_t       *domain,
+                           int                nt_list,
+                           int                verbosity)
+{
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+
+  domain->output_nt = nt_list;
+  if (domain->output_nt == 0)
+    domain->output_nt = -1;
+
+  domain->verbosity = verbosity;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set auxiliary parameters related to a cs_domain_t structure
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in]       key       key related to the parameter to set
+ * \param[in]       keyval    value related to the parameter to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_advanced_param(cs_domain_t       *domain,
+                             cs_domain_key_t    key,
+                             const char        *keyval)
+{
+  CS_UNUSED(keyval);
+
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+
+  switch(key) {
+
+  case CS_DOMAIN_PROFILING:
+    domain->profiling = true;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid key for setting a cs_domain_t structure."));
+
+  } /* Switch on keys */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1178,122 +732,6 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if one needs to continue iterations in time
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_domain_needs_iterate(cs_domain_t  *domain)
-{
-  bool  one_more_iter = true;
-
-  cs_time_step_t  *ts = domain->time_step;
-
-  if (ts->nt_max > 0) // nt_max has been set
-    if (ts->nt_cur > ts->nt_max)
-      one_more_iter = false;
-
-  if (ts->t_max > 0) // t_max has been set
-    if (ts->t_cur > ts->t_max)
-      one_more_iter = false;
-
-  if (domain->only_steady && ts->nt_cur > 0)
-    one_more_iter = false;
-
-  if (!domain->only_steady && ts->nt_max <= 0 && ts->t_max <= 0)
-    one_more_iter = false;
-
-  return one_more_iter;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the current time step for this new time iteration
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_define_current_time_step(cs_domain_t   *domain)
-{
-  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
-
-  if (domain->only_steady)
-    return;
-
-  const cs_time_step_t  *ts = domain->time_step;
-  const double  t_cur = ts->t_cur;
-  const int  nt_cur = ts->nt_cur;
-
-  cs_param_def_type_t  def_type = domain->time_step_def_type;
-
-  if (def_type != CS_PARAM_DEF_BY_VALUE) {
-
-    if (def_type == CS_PARAM_DEF_BY_TIME_FUNCTION) {
-
-      domain->dt_cur = domain->time_step_def.time_func(nt_cur, t_cur);
-
-      /* Update time_options */
-      double  dtmin = CS_MIN(domain->time_options.dtmin, domain->dt_cur);
-      double  dtmax = CS_MAX(domain->time_options.dtmax, domain->dt_cur);
-
-      domain->time_options.dtmin = dtmin;
-      domain->time_options.dtmax = dtmax;
-      // TODO: Check how the following value is set in FORTRAN
-      // domain->time_options.dtref = 0.5*(dtmin + dtmax);
-      if (domain->time_options.dtref < 0) // Should be the initial val.
-        domain->time_options.dtref = domain->dt_cur;
-
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                " Invalid way of defining the current time step.\n"
-                " Please modify your settings.");
-
-    cs_domain_post_update(domain->dt_cur);
-  }
-
-  /* Check if this is the last iteration */
-  if (ts->t_max > 0) // t_max has been set
-    if (t_cur + domain->dt_cur > ts->t_max)
-      domain->is_last_iter = true;
-  if (ts->nt_max > 0) // nt_max has been set
-    if (nt_cur + 1 > ts->nt_max)
-      domain->is_last_iter = true;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update time step after one temporal iteration
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_increment_time(cs_domain_t  *domain)
-{
-  cs_time_step_t  *ts = domain->time_step;
-
-  /* Increment time iteration */
-  ts->nt_cur++;
-  ts->t_prev = ts->t_cur;
-
-  /* Use Kahan's trick to limit the truncation error */
-  double  z = domain->dt_cur - cs_domain_kahan_time_compensation;
-  double  t = ts->t_cur + z;
-
-  cs_domain_kahan_time_compensation = (t - ts->t_cur) - z;
-  ts->t_cur = t;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add a new property to the current computational domain
  *
  * \param[in, out]  domain        pointer to a cs_domain_t structure
@@ -1337,32 +775,6 @@ cs_domain_add_property(cs_domain_t     *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Find the related property definition from its name
- *
- * \param[in]  domain      pointer to a domain structure
- * \param[in]  ref_name    name of the property to find
- *
- * \return NULL if not found otherwise the associated pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_property_t *
-cs_domain_get_property(const cs_domain_t    *domain,
-                       const char           *ref_name)
-{
-  for (int i = 0; i < domain->n_properties; i++) {
-
-    cs_property_t  *pty = domain->properties[i];
-    if (cs_property_check_name(pty, ref_name))
-      return pty;
-
-  }
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add a new advection field to the current computational domain
  *
  * \param[in, out]   domain       pointer to a cs_domain_t structure
@@ -1398,63 +810,6 @@ cs_domain_add_advection_field(cs_domain_t     *domain,
   domain->adv_fields[adv_id] = adv;
 
   return adv;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Find the related advection field definition from its name
- *
- * \param[in]  domain      pointer to a domain structure
- * \param[in]  ref_name    name of the adv_field to find
- *
- * \return NULL if not found otherwise the associated pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_adv_field_t *
-cs_domain_get_advection_field(const cs_domain_t    *domain,
-                              const char           *ref_name)
-{
-  for (int i = 0; i < domain->n_adv_fields; i++) {
-
-    cs_adv_field_t  *adv = domain->adv_fields[i];
-    if (cs_advection_field_check_name(adv, ref_name))
-      return adv;
-
-  }
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Find the cs_equation_t structure whith name eqname
- *         Return NULL if not find
- *
- * \param[in]  domain    pointer to a cs_domain_t structure
- * \param[in]  eqname    name of the equation to find
- *
- * \return a pointer to a cs_equation_t structure or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_t *
-cs_domain_get_equation(const cs_domain_t  *domain,
-                       const char         *eqname)
-{
-  cs_equation_t  *eq = NULL;
-
-  for (int i = 0; i < domain->n_equations; i++) {
-
-    cs_equation_t  *_eq = domain->equations[i];
-    if (strcmp(eqname, cs_equation_get_name(_eq)) == 0) {
-      eq = _eq;
-      break;
-    }
-
-  }
-
-  return eq;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1550,8 +905,7 @@ cs_domain_activate_gwf(cs_domain_t   *domain,
   cs_advection_field_set_option(adv_field, CS_ADVKEY_POST, "field");
 
   /* Create a new equation for solving the Richards equation */
-  cs_equation_t  *richards_eq = cs_gwf_initialize(domain->connect,
-                                                  richards_eq_id,
+  cs_equation_t  *richards_eq = cs_gwf_initialize(richards_eq_id,
                                                   n_soils,
                                                   n_tracers,
                                                   permeability,
@@ -1573,26 +927,6 @@ cs_domain_activate_gwf(cs_domain_t   *domain,
   domain->n_equations += 1;
   BFT_REALLOC(domain->equations, domain->n_equations, cs_equation_t *);
   domain->equations[richards_eq_id] = richards_eq;
-
-  return domain->gwf;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to a cs_gwf_t structure related to this
- *         domain
- *
- * \param[in]   domain         pointer to a cs_domain_t structure
- *
- * \return a pointer to a cs_gwf_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_gwf_t *
-cs_domain_get_gwf_struct(const cs_domain_t    *domain)
-{
-  if (domain == NULL)
-    return NULL;
 
   return domain->gwf;
 }
@@ -1713,6 +1047,63 @@ cs_domain_set_gwf_tracer_eq(cs_domain_t   *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add new mesh locations related to domain boundaries from existing
+ *         mesh locations
+ *
+ * \param[in]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_update_mesh_locations(cs_domain_t   *domain)
+{
+  cs_domain_boundary_t  *dby = domain->boundaries;
+  cs_param_boundary_type_t  default_type = dby->default_boundary;
+
+  /* Store all mesh locations not associated to the default type */
+  int  n_sub_ids = 0;
+  int  *sub_ids = NULL;
+
+  for (unsigned int type = 0; type < CS_PARAM_N_BOUNDARY_TYPES; type++) {
+
+    int  _n_sub_ids = dby->n_sub_ml_ids[type];
+    int  *_sub_ids = dby->sub_ml_id_lst[type];
+
+    if (_n_sub_ids > 0 && type != default_type) {
+
+      // There is at least one mesh location
+      assert(_sub_ids != NULL);
+
+      dby->autogen_ml_ids[type] =
+        cs_mesh_location_add_by_union(_domain_boundary_ml_name[type],
+                                      CS_MESH_LOCATION_BOUNDARY_FACES,
+                                      _n_sub_ids,
+                                      _sub_ids,
+                                      false);  // complement ?
+
+      /* Increment the list of mesh locations */
+      BFT_REALLOC(sub_ids, n_sub_ids + _n_sub_ids, int);
+      for (int i = 0; i < _n_sub_ids; i++)
+        sub_ids[n_sub_ids + i] = _sub_ids[i];
+      n_sub_ids += _n_sub_ids;
+
+    }
+
+  } /* Loop on boundary types */
+
+  /* Treatment of the default boundary type */
+  dby->autogen_ml_ids[default_type] =
+    cs_mesh_location_add_by_union(_domain_boundary_ml_name[default_type],
+                                  CS_MESH_LOCATION_BOUNDARY_FACES,
+                                  n_sub_ids,
+                                  sub_ids,
+                                  true);
+
+  BFT_FREE(sub_ids);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Setup predefined equations which are activated
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
@@ -1734,11 +1125,9 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 
     eq = domain->equations[domain->wall_distance_eq_id];
 
-    int  wall_ml_id = bdy->ml_ids[CS_PARAM_BOUNDARY_WALL];
-
     cs_walldistance_setup(eq,
                           cs_domain_get_property(domain, "unity"),
-                          wall_ml_id);
+                          bdy->autogen_ml_ids[CS_PARAM_BOUNDARY_WALL]);
 
   } // Wall distance is activated
 
@@ -1881,6 +1270,109 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Find the related property definition from its name
+ *
+ * \param[in]  domain      pointer to a domain structure
+ * \param[in]  ref_name    name of the property to find
+ *
+ * \return NULL if not found otherwise the associated pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_domain_get_property(const cs_domain_t    *domain,
+                       const char           *ref_name)
+{
+  for (int i = 0; i < domain->n_properties; i++) {
+
+    cs_property_t  *pty = domain->properties[i];
+    if (cs_property_check_name(pty, ref_name))
+      return pty;
+
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the related advection field definition from its name
+ *
+ * \param[in]  domain      pointer to a domain structure
+ * \param[in]  ref_name    name of the adv_field to find
+ *
+ * \return NULL if not found otherwise the associated pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_domain_get_advection_field(const cs_domain_t    *domain,
+                              const char           *ref_name)
+{
+  for (int i = 0; i < domain->n_adv_fields; i++) {
+
+    cs_adv_field_t  *adv = domain->adv_fields[i];
+    if (cs_advection_field_check_name(adv, ref_name))
+      return adv;
+
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the cs_equation_t structure whith name eqname
+ *         Return NULL if not find
+ *
+ * \param[in]  domain    pointer to a cs_domain_t structure
+ * \param[in]  eqname    name of the equation to find
+ *
+ * \return a pointer to a cs_equation_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_domain_get_equation(const cs_domain_t  *domain,
+                       const char         *eqname)
+{
+  cs_equation_t  *eq = NULL;
+
+  for (int i = 0; i < domain->n_equations; i++) {
+
+    cs_equation_t  *_eq = domain->equations[i];
+    if (strcmp(eqname, cs_equation_get_name(_eq)) == 0) {
+      eq = _eq;
+      break;
+    }
+
+  }
+
+  return eq;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to a cs_gwf_t structure related to this
+ *         domain
+ *
+ * \param[in]   domain         pointer to a cs_domain_t structure
+ *
+ * \return a pointer to a cs_gwf_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_t *
+cs_domain_get_gwf_struct(const cs_domain_t    *domain)
+{
+  if (domain == NULL)
+    return NULL;
+
+  return domain->gwf;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create cs_field_t structures attached to equation unknowns and
  *         advection fields
  *
@@ -1898,6 +1390,288 @@ cs_domain_create_fields(cs_domain_t  *domain)
   /* Loop on all advection fields */
   for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
     cs_advection_field_create_field(domain->adv_fields[adv_id]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a cs_domain_t structure
+ *
+ * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
+ * \param[in]       mesh_quantities   pointer to a cs_mesh_quantities_t struct.
+ *
+ * \return a pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_initialize(cs_domain_t                 *domain,
+                     cs_mesh_t                   *mesh,
+                     const cs_mesh_quantities_t  *mesh_quantities)
+{
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+
+  domain->mesh = mesh;
+  domain->mesh_quantities = mesh_quantities;
+
+  /* Build additional connectivity structures
+     Update mesh structure with range set structures */
+  domain->connect = cs_cdo_connect_init(mesh);
+
+  /* Default = CS_CDO_CC_SATURNE but can be modify by the user */
+  cs_cdo_cell_center_algo_t  cc_algo =
+    cs_user_cdo_geometric_settings();
+
+  /* Build additional mesh quantities in a seperate structure */
+  domain->cdo_quantities =  cs_cdo_quantities_build(cc_algo,
+                                                    mesh,
+                                                    mesh_quantities,
+                                                    domain->connect);
+
+  /* Allocate all fields created during the setup stage */
+  cs_field_allocate_or_map_all();
+
+  /* Specify the "physical" domain boundaries. Define a mesh location for
+     each boundary type */
+  _build_domain_boundaries(mesh->n_b_faces, domain->boundaries);
+
+  /* Shared main generic structure
+     Avoid the declaration of global variables by sharing pointers */
+  cs_source_term_set_shared_pointers(domain->cdo_quantities,
+                                     domain->connect,
+                                     domain->time_step);
+
+  cs_evaluate_set_shared_pointers(domain->cdo_quantities,
+                                  domain->connect,
+                                  domain->time_step);
+
+  cs_property_set_shared_pointers(domain->cdo_quantities,
+                                  domain->connect,
+                                  domain->time_step);
+
+  cs_advection_field_set_shared_pointers(domain->cdo_quantities,
+                                         domain->connect,
+                                         domain->time_step);
+
+  /* Last stage to define properties (when complex definition is requested) */
+  for (int i = 0; i < domain->n_properties; i++)
+    cs_property_last_definition_stage(domain->properties[i]);
+
+  /* Initialization default post-processing for the computational domain */
+  cs_domain_post_init(domain->dt_cur,
+                      domain->cdo_quantities,
+                      domain->n_adv_fields, domain->adv_fields,
+                      domain->n_properties, domain->properties,
+                      domain->n_equations, domain->equations);
+
+  /* Define a scheme flag for the current domain */
+  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
+
+    cs_equation_t  *eq = domain->equations[eq_id];
+    cs_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
+    cs_param_var_type_t  vartype = cs_equation_get_var_type(eq);
+
+    if (vartype == CS_PARAM_VAR_SCAL)
+      domain->scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+
+    if (scheme == CS_SPACE_SCHEME_CDOVB)
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVB;
+    else if (scheme == CS_SPACE_SCHEME_CDOVCB)
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVCB;
+    else if (scheme == CS_SPACE_SCHEME_CDOFB)
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOFB;
+    else if (scheme == CS_SPACE_SCHEME_HHO)
+      domain->scheme_flag |= CS_SCHEME_FLAG_HHO;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Undefined type of equation to solve for eq. %s."
+                  " Please check your settings."), cs_equation_get_name(eq));
+
+  } // Loop on equations
+
+  /* Allocate common structures for solving equations */
+  cs_equation_allocate_common_structures(domain->connect,
+                                         domain->cdo_quantities,
+                                         domain->time_step,
+                                         domain->scheme_flag);
+
+  if (domain->richards_eq_id > -1)
+    cs_gwf_final_initialization(domain->connect,
+                                domain->n_equations,
+                                domain->equations,
+                                domain->gwf);
+
+  /* Proceed to the last settings of a cs_equation_t structure
+     - Assign to a cs_equation_t structure a list of function to manage this
+       structure during the computation.
+     - The set of functions chosen for each equation depends on the parameters
+       specifying the cs_equation_t structure
+     - Setup the structure related to cs_sles_*
+  */
+
+  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
+
+    cs_equation_t  *eq = domain->equations[eq_id];
+
+    if (domain->profiling)
+      cs_equation_set_timer_stats(eq);
+
+    cs_equation_last_setup(domain->connect, eq);
+
+    if (!cs_equation_is_steady(eq))
+      domain->only_steady = false;
+
+  } // Loop on domain equations
+
+  if (domain->only_steady)
+    domain->is_last_iter = true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if one needs to continue iterations in time
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_domain_needs_iterate(cs_domain_t  *domain)
+{
+  bool  one_more_iter = true;
+
+  cs_time_step_t  *ts = domain->time_step;
+
+  if (ts->nt_max > 0) // nt_max has been set
+    if (ts->nt_cur > ts->nt_max)
+      one_more_iter = false;
+
+  if (ts->t_max > 0) // t_max has been set
+    if (ts->t_cur > ts->t_max)
+      one_more_iter = false;
+
+  if (domain->only_steady && ts->nt_cur > 0)
+    one_more_iter = false;
+
+  if (!domain->only_steady && ts->nt_max <= 0 && ts->t_max <= 0)
+    one_more_iter = false;
+
+  return one_more_iter;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if an ouput is requested according to the domain setting
+ *
+ * \param[in]   domain    pointer to a cs_domain_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_domain_needs_log(const cs_domain_t      *domain)
+{
+  const cs_time_step_t  *ts = domain->time_step;
+
+  if (domain->verbosity < 0)
+    return false;
+
+  if (domain->only_steady)
+    return true;
+
+  if (domain->output_nt > 0)
+    if (ts->nt_cur % domain->output_nt == 0)
+      return true;
+
+  if (domain->is_last_iter)
+    return true;
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the current time step for this new time iteration
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_define_current_time_step(cs_domain_t   *domain)
+{
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+
+  if (domain->only_steady)
+    return;
+
+  const cs_time_step_t  *ts = domain->time_step;
+  const double  t_cur = ts->t_cur;
+  const int  nt_cur = ts->nt_cur;
+
+  cs_param_def_type_t  def_type = domain->time_step_def_type;
+
+  if (def_type != CS_PARAM_DEF_BY_VALUE) {
+
+    if (def_type == CS_PARAM_DEF_BY_TIME_FUNCTION) {
+
+      domain->dt_cur = domain->time_step_def.time_func(nt_cur, t_cur);
+
+      /* Update time_options */
+      double  dtmin = CS_MIN(domain->time_options.dtmin, domain->dt_cur);
+      double  dtmax = CS_MAX(domain->time_options.dtmax, domain->dt_cur);
+
+      domain->time_options.dtmin = dtmin;
+      domain->time_options.dtmax = dtmax;
+      // TODO: Check how the following value is set in FORTRAN
+      // domain->time_options.dtref = 0.5*(dtmin + dtmax);
+      if (domain->time_options.dtref < 0) // Should be the initial val.
+        domain->time_options.dtref = domain->dt_cur;
+
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                " Invalid way of defining the current time step.\n"
+                " Please modify your settings.");
+
+    cs_domain_post_update(domain->dt_cur);
+  }
+
+  /* Check if this is the last iteration */
+  if (ts->t_max > 0) // t_max has been set
+    if (t_cur + domain->dt_cur > ts->t_max)
+      domain->is_last_iter = true;
+  if (ts->nt_max > 0) // nt_max has been set
+    if (nt_cur + 1 > ts->nt_max)
+      domain->is_last_iter = true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update time step after one temporal iteration
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_increment_time(cs_domain_t  *domain)
+{
+  cs_time_step_t  *ts = domain->time_step;
+
+  /* Increment time iteration */
+  ts->nt_cur++;
+  ts->t_prev = ts->t_cur;
+
+  /* Use Kahan's trick to limit the truncation error */
+  double  z = domain->dt_cur - cs_domain_kahan_time_compensation;
+  double  t = ts->t_cur + z;
+
+  cs_domain_kahan_time_compensation = (t - ts->t_cur) - z;
+  ts->t_cur = t;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1920,7 +1694,7 @@ cs_domain_solve(cs_domain_t  *domain)
     /* Output information */
     if (domain->only_steady) {
       cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
-      cs_log_printf(CS_LOG_DEFAULT, "      Solve steady-state problem(s)\n");
+      cs_log_printf(CS_LOG_DEFAULT, "#      Solve steady-state problem(s)\n");
       cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
     }
     else if (do_output) {
@@ -1988,6 +1762,45 @@ cs_domain_solve(cs_domain_t  *domain)
 
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Process the computational domain after the resolution
+ *
+ * \param[in]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_process_after_solve(cs_domain_t  *domain)
+{
+  cs_timer_t  t0 = cs_timer_time();
+
+  /* Pre-stage for post-processing for the current time step */
+  cs_domain_post_activate(domain->time_step);
+
+  /* Extra-operations */
+  /* ================ */
+
+  /* Predefined extra-operations related to advection fields */
+  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
+    cs_advection_field_update(domain->adv_fields[adv_id]);
+
+  /* User-defined extra operations */
+  cs_user_cdo_extra_op(domain);
+
+  /* Log output */
+  if (cs_domain_needs_log(domain))
+    cs_log_iteration();
+
+  /* Post-processing */
+  /* =============== */
+
+  cs_domain_post(domain->time_step);
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(domain->tcp), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2080,41 +1893,133 @@ cs_domain_write_restart(const cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Process the computational domain after the resolution
+ * \brief  Summary of a cs_domain_t structure
  *
- * \param[in]  domain     pointer to a cs_domain_t structure
+ * \param[in]   domain    pointer to the cs_domain_t structure to summarize
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_process_after_solve(cs_domain_t  *domain)
+cs_domain_summary(const cs_domain_t   *domain)
 {
-  cs_timer_t  t0 = cs_timer_time();
+  if (domain == NULL)
+    return;
 
-  /* Pre-stage for post-processing for the current time step */
-  cs_domain_post_activate(domain->time_step);
+  /* Output information */
+  cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, "\tSummary of domain settings\n");
+  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
 
-  /* Extra-operations */
-  /* ================ */
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_cdo_equations          %d\n",
+                domain->n_equations);
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_predefined_equations   %d\n",
+                domain->n_predef_equations);
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_user_equations         %d\n",
+                domain->n_user_equations);
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_properties             %d\n",
+                domain->n_properties);
 
-  /* Predefined extra-operations related to advection fields */
-  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
-    cs_advection_field_update(domain->adv_fields[adv_id]);
+  /* Boundary */
+  cs_domain_boundary_t  *bdy = domain->boundaries;
 
-  /* User-defined extra operations */
-  cs_user_cdo_extra_op(domain);
+  cs_log_printf(CS_LOG_SETUP, "\n  Domain boundary by default: ");
+  switch (bdy->default_boundary) {
+  case CS_PARAM_BOUNDARY_WALL:
+    cs_log_printf(CS_LOG_SETUP, " wall\n");
+    break;
+  case CS_PARAM_BOUNDARY_SYMMETRY:
+    cs_log_printf(CS_LOG_SETUP, " symmetry\n");
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid boundary by default.\n"
+                " Please modify your settings."));
+  }
 
-  /* Log output */
-  if (cs_domain_needs_log(domain))
-    cs_log_iteration();
+  /* Number of border faces for each type of boundary */
+  cs_gnum_t  counter[4] = { bdy->n_type_elts[CS_PARAM_BOUNDARY_WALL],
+                            bdy->n_type_elts[CS_PARAM_BOUNDARY_INLET],
+                            bdy->n_type_elts[CS_PARAM_BOUNDARY_OUTLET],
+                            bdy->n_type_elts[CS_PARAM_BOUNDARY_SYMMETRY] };
+  if (cs_glob_n_ranks > 1)
+    cs_parall_counter(counter, 4);
 
-  /* Post-processing */
-  /* =============== */
+  cs_log_printf(CS_LOG_SETUP,
+                "  >> Number of faces with a wall boundary:      %lu\n",
+                counter[0]);
+  cs_log_printf(CS_LOG_SETUP,
+                "  >> Number of faces with an inlet boundary:    %lu\n",
+                counter[1]);
+  cs_log_printf(CS_LOG_SETUP,
+                "  >> Number of faces with an outlet boundary:   %lu\n",
+                counter[2]);
+  cs_log_printf(CS_LOG_SETUP,
+                "  >> Number of faces with a symmetry boundary:  %lu\n",
+                counter[3]);
 
-  cs_domain_post(domain->time_step);
+  /* Time step summary */
+  cs_log_printf(CS_LOG_SETUP, "\n  Time step information\n");
+  if (domain->only_steady)
+    cs_log_printf(CS_LOG_SETUP, "  >> Steady-state computation");
 
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(domain->tcp), &t0, &t1);
+  else { /* Time information */
+
+    cs_log_printf(CS_LOG_SETUP, "  >> Time step status:");
+    if (domain->time_options.idtvar == 0)
+      cs_log_printf(CS_LOG_SETUP, "  constant\n");
+    else if (domain->time_options.idtvar == 1)
+      cs_log_printf(CS_LOG_SETUP, "  variable in time\n");
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid idtvar value for the CDO module.\n"));
+    cs_log_printf(CS_LOG_SETUP, "  >> Type of definition: %s",
+                  cs_param_get_def_type_name(domain->time_step_def_type));
+    if (domain->time_step_def_type == CS_PARAM_DEF_BY_VALUE)
+      cs_log_printf(CS_LOG_SETUP, " => %5.3e\n", domain->dt_cur);
+    else
+      cs_log_printf(CS_LOG_SETUP, "\n");
+
+    if (domain->time_step->t_max > 0.)
+      cs_log_printf(CS_LOG_SETUP, "%-30s %5.3e\n",
+                    "  >> Final simulation time:", domain->time_step->t_max);
+    if (domain->time_step->nt_max > 0)
+      cs_log_printf(CS_LOG_SETUP, "%-30s %9d\n",
+                    "  >> Final time step:", domain->time_step->nt_max);
+
+  }
+  cs_log_printf(CS_LOG_SETUP, "\n");
+
+  if (domain->verbosity > 0) {
+
+    /* Properties */
+    cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_SETUP, "\tSummary of the definition of properties\n");
+    cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
+
+    for (int i = 0; i < domain->n_properties; i++)
+      cs_property_summary(domain->properties[i]);
+
+    /* Advection fields */
+    if (domain->n_adv_fields > 0) {
+
+      cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
+      cs_log_printf(CS_LOG_SETUP, "\tSummary of the advection field\n");
+      cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
+
+      for (int i = 0; i < domain->n_adv_fields; i++)
+        cs_advection_field_summary(domain->adv_fields[i]);
+
+    }
+
+    /* Summary of the groundwater module */
+    cs_gwf_summary(domain->gwf);
+
+    /* Summary for each equation */
+    for (int  eq_id = 0; eq_id < domain->n_equations; eq_id++)
+      cs_equation_summary(domain->equations[eq_id]);
+
+  } /* Domain->verbosity > 0 */
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -70,7 +70,6 @@ typedef struct {
      - cs_cdo_connect_t contains additional information about connectivity
      - cs_cdo_quantities_t contains additional information on mesh quantities
   */
-
   cs_cdo_connect_t              *connect;
   cs_cdo_quantities_t           *cdo_quantities;
 
@@ -110,7 +109,6 @@ typedef struct {
      of numerical schemes is requested to solve these equations */
   cs_flag_t        scheme_flag;
 
-
   /* Pre-defined equations to solve
      If xxxxx_eq_id = -1, then this equation is not activated */
 
@@ -125,7 +123,6 @@ typedef struct {
 
   /* Output options */
   int        output_nt;  /* Log information every nt iteration(s) */
-  cs_real_t  output_dt;  /* Log information every dt elapsed simulated time */
   int        verbosity;  /* Level of details given in log */
   bool       profiling;  /* Activate a set of timer statistics (details differ
                             according to the verbosity level) */
@@ -133,19 +130,14 @@ typedef struct {
   /* Monitoring */
   cs_timer_counter_t    tcp; /* Cumulated elapsed time for extra-operations
                                 and post-processing */
+  cs_timer_counter_t    tcs; /* Cumulated elapsed time for setup operations */
 
 } cs_domain_t;
 
 /* List of available keys for setting a property */
 typedef enum {
 
-  CS_DOMAIN_DEFAULT_BOUNDARY, // set the default boundary
-  CS_DOMAIN_OUTPUT_NT,        // set the output frequency (number of iterations)
-  CS_DOMAIN_OUTPUT_DT,        // set the output frequency (simulation time)
   CS_DOMAIN_PROFILING,        // activate the profiling
-  CS_DOMAIN_NTMAX,            // set the max number of iterations to perform
-  CS_DOMAIN_TMAX,             // set the maximum simulated time
-  CS_DOMAIN_VERBOSITY,        // set the verbosity
   CS_DOMAIN_N_KEYS
 
 } cs_domain_key_t;
@@ -154,24 +146,23 @@ typedef enum {
  * Static global variables
  *============================================================================*/
 
+extern cs_domain_t *cs_glob_domain; /* Pointer to main computational domain
+                                       used in CDO/HHO schmes */
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize of cs_domain_t structure
- *
- * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
- * \param[in]       mesh_quantities   pointer to a cs_mesh_quantities_t struct.
+ * \brief  Create and initialize by default a cs_domain_t structure
  *
  * \return a pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_domain_t *
-cs_domain_init(cs_mesh_t                   *mesh,
-               const cs_mesh_quantities_t  *mesh_quantities);
+cs_domain_create(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -188,33 +179,63 @@ cs_domain_free(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set auxiliary parameters related to a cs_domain_t structure
+ * \brief  Add a boundary type defined on a mesh location
  *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
- * \param[in]       key       key related to the parameter to set
- * \param[in]       value     value related to the parameter to set
+ * \param[in, out]   domain       pointer to a cs_domain_t structure
+ * \param[in]        type         type of boundary to set
+ * \param[in]        ml_name      mesh location name
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_double_param(cs_domain_t       *domain,
-                           cs_domain_key_t    key,
-                           double             value);
+cs_domain_set_default_boundary(cs_domain_t                *domain,
+                               cs_param_boundary_type_t    type);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set auxiliary parameters related to a cs_domain_t structure
+ * \brief  Add a boundary type defined on a mesh location
  *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
- * \param[in]       key       key related to the parameter to set
- * \param[in]       value     value related to the parameter to set
+ * \param[in, out]   domain       pointer to a cs_domain_t structure
+ * \param[in]        type         type of boundary to set
+ * \param[in]        ml_name      mesh location name
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_int_param(cs_domain_t       *domain,
-                        cs_domain_key_t    key,
-                        int                value);
+cs_domain_add_boundary(cs_domain_t                *domain,
+                       cs_param_boundary_type_t    type,
+                       const char                 *ml_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set parameters for unsteady computations: the max number of time
+ *         steps or the final physical time of the simulation
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ * \param[in]       nt_max    max. number of time step iterations
+ * \param[in]       t_max     final physical time of the simulation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_time_param(cs_domain_t       *domain,
+                         int                nt_max,
+                         double             t_max);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set auxiliary parameters related to the way output is done
+ *
+ * \param[in, out]  domain      pointer to a cs_domain_t structure
+ * \param[in]       nt_list     output frequency into the listing
+ * \param[in]       verbosity   level of information displayed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_output_param(cs_domain_t       *domain,
+                           int                nt_list,
+                           int                verbosity);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -227,59 +248,9 @@ cs_domain_set_int_param(cs_domain_t       *domain,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_param(cs_domain_t       *domain,
-                    cs_domain_key_t    key,
-                    const char        *keyval);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Check if an ouput is requested according to the domain setting
- *
- * \param[in]   domain    pointer to a cs_domain_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_domain_needs_log(const cs_domain_t      *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Summary of a cs_domain_t structure
- *
- * \param[in]   domain    pointer to the cs_domain_t structure to summarize
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_summary(const cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Proceed to the last settings of a cs_domain_t structure
- *
- * \param[in, out]  domain    pointer to the cs_domain_t structure to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_last_setup(cs_domain_t    *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add a boundary type defined on a mesh location
- *
- * \param[in, out]   domain       pointer to a cs_domain_t structure
- * \param[in]        ml_name      mesh location name
- * \param[in]        bdy_name     key name of boundary to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_add_boundary(cs_domain_t               *domain,
-                       const char                *ml_name,
-                       const char                *bdy_name);
+cs_domain_set_advanced_param(cs_domain_t       *domain,
+                             cs_domain_key_t    key,
+                             const char        *keyval);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -309,41 +280,6 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if one needs to continue iterations in time
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_domain_needs_iterate(cs_domain_t  *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the current time step for this new time iteration
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_define_current_time_step(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update time step after one temporal iteration
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_increment_time(cs_domain_t  *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add a new property to the current computational domain
  *
  * \param[in, out]  domain        pointer to a cs_domain_t structure
@@ -363,21 +299,6 @@ cs_domain_add_property(cs_domain_t     *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Find the related property definition from its name
- *
- * \param[in]  domain      pointer to a domain structure
- * \param[in]  ref_name    name of the property to find
- *
- * \return NULL if not found otherwise the associated pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_property_t *
-cs_domain_get_property(const cs_domain_t    *domain,
-                       const char           *ref_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add a new advection field to the current computational domain
  *
  * \param[in, out]   domain       pointer to a cs_domain_t structure
@@ -390,38 +311,6 @@ cs_domain_get_property(const cs_domain_t    *domain,
 cs_adv_field_t *
 cs_domain_add_advection_field(cs_domain_t     *domain,
                               const char      *adv_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Find the related advection field definition from its name
- *
- * \param[in]  domain      pointer to a domain structure
- * \param[in]  ref_name    name of the adv_field to find
- *
- * \return NULL if not found otherwise the associated pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_adv_field_t *
-cs_domain_get_advection_field(const cs_domain_t    *domain,
-                              const char           *ref_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Find the cs_equation_t structure whith name eqname
- *         Return NULL if not find
- *
- * \param[in]  domain    pointer to a cs_domain_t structure
- * \param[in]  eqname    name of the equation to find
- *
- * \return a pointer to a cs_equation_t structure or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_t *
-cs_domain_get_equation(const cs_domain_t  *domain,
-                       const char         *eqname);
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -466,20 +355,6 @@ cs_domain_activate_gwf(cs_domain_t   *domain,
                        const char    *kw_time,
                        int            n_soils,
                        int            n_tracers);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to a cs_gwf_t structure related to this
- *         domain
- *
- * \param[in]   domain         pointer to a cs_domain_t structure
- *
- * \return a pointer to a cs_gwf_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_gwf_t *
-cs_domain_get_gwf_struct(const cs_domain_t    *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -528,17 +403,6 @@ cs_domain_set_gwf_tracer_eq(cs_domain_t   *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup predefined equations which are activated
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_setup_predefined_equations(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add a new user equation to a domain
  *
  * \param[in, out] domain         pointer to a cs_domain_t structure
@@ -559,6 +423,89 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add new mesh locations related to domain boundaries from existing
+ *         mesh locations
+ *
+ * \param[in]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_update_mesh_locations(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Setup predefined equations which are activated
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_setup_predefined_equations(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the related property definition from its name
+ *
+ * \param[in]  domain      pointer to a domain structure
+ * \param[in]  ref_name    name of the property to find
+ *
+ * \return NULL if not found otherwise the associated pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_domain_get_property(const cs_domain_t    *domain,
+                       const char           *ref_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the related advection field definition from its name
+ *
+ * \param[in]  domain      pointer to a domain structure
+ * \param[in]  ref_name    name of the adv_field to find
+ *
+ * \return NULL if not found otherwise the associated pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_domain_get_advection_field(const cs_domain_t    *domain,
+                              const char           *ref_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the cs_equation_t structure whith name eqname
+ *         Return NULL if not find
+ *
+ * \param[in]  domain    pointer to a cs_domain_t structure
+ * \param[in]  eqname    name of the equation to find
+ *
+ * \return a pointer to a cs_equation_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_domain_get_equation(const cs_domain_t  *domain,
+                       const char         *eqname);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to a cs_gwf_t structure related to this
+ *         domain
+ *
+ * \param[in]   domain         pointer to a cs_domain_t structure
+ *
+ * \return a pointer to a cs_gwf_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_t *
+cs_domain_get_gwf_struct(const cs_domain_t    *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create a cs_field_t structure for each equation defined in the
  *         domain
  *
@@ -568,6 +515,71 @@ cs_domain_add_user_equation(cs_domain_t         *domain,
 
 void
 cs_domain_create_fields(cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a cs_domain_t structure
+ *
+ * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
+ * \param[in]       mesh_quantities   pointer to a cs_mesh_quantities_t struct.
+ *
+ * \return a pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_initialize(cs_domain_t                 *domain,
+                     cs_mesh_t                   *mesh,
+                     const cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if one needs to continue iterations in time
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_domain_needs_iterate(cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if an ouput is requested according to the domain setting
+ *
+ * \param[in]   domain    pointer to a cs_domain_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_domain_needs_log(const cs_domain_t      *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the current time step for this new time iteration
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_define_current_time_step(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update time step after one temporal iteration
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_increment_time(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -582,6 +594,17 @@ cs_domain_solve(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Process the computational domain after the resolution
+ *
+ * \param[in]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_process_after_solve(cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Write a restart file for the CDO module
  *
  * \param[in]  domain     pointer to a cs_domain_t structure
@@ -593,14 +616,14 @@ cs_domain_write_restart(const cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Process the computational domain after the resolution
+ * \brief  Summary of a cs_domain_t structure
  *
- * \param[in]  domain     pointer to a cs_domain_t structure
+ * \param[in]   domain    pointer to the cs_domain_t structure to summarize
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_process_after_solve(cs_domain_t  *domain);
+cs_domain_summary(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 

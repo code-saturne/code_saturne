@@ -261,14 +261,26 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
  * \param[in]       desc      information about this array
- * \param[in]       array     pointer to an array
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_def_by_array(cs_adv_field_t     *adv,
-                                cs_desc_t           desc,
-                                const cs_real_t    *array);
+                                cs_desc_t           desc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the array related to the definition of a cs_adv_field_t
+ *         structure
+ *
+ * \param[in, out]  adv       pointer to a cs_adv_field_t structure
+ * \param[in]       array     pointer to an array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_set_array(cs_adv_field_t     *adv,
+                             const cs_real_t    *array);
 
 /*----------------------------------------------------------------------------*/
 /*!

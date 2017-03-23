@@ -1750,9 +1750,6 @@ cs_equation_create_field(cs_equation_t     *eq)
   /* Store the related field id */
   eq->field_id = cs_field_id_by_name(eq->varname);
 
-  /* Allocate and initialize values */
-  cs_field_allocate_values(fld);
-
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
 }
@@ -1778,6 +1775,9 @@ cs_equation_init_system(const cs_mesh_t        *mesh,
     cs_timer_stats_start(eq->main_ts_id);
 
   const cs_equation_param_t  *eqp = eq->param;
+
+  /* Allocate and initialize values */
+  cs_field_t  *f = cs_field_by_name(eq->varname);
 
   /* Allocate and initialize a system builder */
   eq->builder = eq->init_builder(eqp, mesh);

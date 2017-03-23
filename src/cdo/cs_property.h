@@ -149,6 +149,18 @@ cs_property_create(const char    *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Last stage of the definition of a property based on several
+ *         subdomains
+ *
+ * \param[in, out] pty       pointer to cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_last_definition_stage(cs_property_t  *pty);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free a cs_property_t structure
  *
  * \param[in, out]  pty      pointer to a cs_property_t structure to free

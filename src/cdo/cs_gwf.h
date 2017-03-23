@@ -173,7 +173,6 @@ cs_gwf_summary(const cs_gwf_t   *gw);
 /*!
  * \brief  Initialize the module dedicated to groundwater flows
  *
- * \param[in]      connect          pointer to a cs_cdo_connect_t structure
  * \param[in]      richards_eq_id   id related to the Richards equation
  * \param[in]      n_soils          number of soils to consider
  * \param[in]      n_tracers        number of tracers to consider
@@ -187,8 +186,7 @@ cs_gwf_summary(const cs_gwf_t   *gw);
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_gwf_initialize(const cs_cdo_connect_t  *connect,
-                  int                      richards_eq_id,
+cs_gwf_initialize(int                      richards_eq_id,
                   int                      n_soils,
                   int                      n_tracer_eqs,
                   cs_property_t           *permeability,
@@ -385,6 +383,23 @@ void
 cs_gwf_tracer_setup(int               tracer_eq_id,
                     cs_equation_t    *eq,
                     cs_gwf_t         *gw);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last initialization step of the groundwater flow module
+ *
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      n_equations  number of equations in the list
+ * \param[in, out] equations    pointer to a list of cs_equation_t structures
+ * \param[in, out] gw           pointer to a cs_gwf_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_final_initialization(const cs_cdo_connect_t    *connect,
+                            int                        n_equations,
+                            cs_equation_t            **equations,
+                            cs_gwf_t                  *gw);
 
 /*----------------------------------------------------------------------------*/
 /*!
