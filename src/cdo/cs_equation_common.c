@@ -722,6 +722,7 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
       block_size += 1;
 
       if (block_size == CS_CDO_ASSEMBLE_BUF_SIZE) {
+#       pragma omp critical
         cs_matrix_assembler_values_add_g(mav,
                                          CS_CDO_ASSEMBLE_BUF_SIZE,
                                          grows, gcols, vals);
@@ -732,8 +733,10 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
 
   } /* Loop on cell vertices (local rows) */
 
-  if (block_size > 0)
+  if (block_size > 0) {
+#   pragma omp critical
     cs_matrix_assembler_values_add_g(mav, block_size, grows, gcols, vals);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

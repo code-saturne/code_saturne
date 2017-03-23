@@ -3539,6 +3539,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
         /* Now add values to send coefficients */
 
         for (cs_lnum_t l = 0; l < stride; l++)
+#         pragma omp atomic
           mav->coeff_send[e_id*stride + l] += val[k*stride + l];
 
       }
