@@ -610,6 +610,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
       switch (a_info.scheme) {
 
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+        b->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
         b->get_advection_matrix = cs_cdo_advection_get_vb_cencsv;
         break;
 
@@ -1569,8 +1570,6 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
 #endif
     double  *pot = NULL;
 
-    BFT_MALLOC(pot, connect->n_max_vbyc, double);
-
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
@@ -1585,20 +1584,24 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
+      BFT_MALLOC(pot, connect->n_max_vbyc, double);
       get_diffusion_hodge = cs_hodge_epfd_cost_get;
       msh_flag = CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
         CS_CDO_LOCAL_PVQ;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
+      BFT_MALLOC(pot, connect->n_max_vbyc, double);
       get_diffusion_hodge = cs_hodge_epfd_voro_get;
       msh_flag = CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
         CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_PVQ;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
-      msh_flag = CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
-        CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_EFQ;
+      BFT_MALLOC(pot, connect->n_max_vbyc + 1, double);
+      msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PEQ |
+        CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
+        CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_EFQ;
       break;
 
     default:

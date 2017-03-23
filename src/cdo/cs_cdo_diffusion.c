@@ -835,7 +835,6 @@ cs_cdo_diffusion_get_wbs_flux(const cs_cell_mesh_t   *cm,
     p_f *= 0.5/pfq.meas;
 
     const double  dp_cf = p_c - p_f;
-    const cs_lnum_t  f_id = cm->f_ids[f];
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
@@ -859,10 +858,10 @@ cs_cdo_diffusion_get_wbs_flux(const cs_cell_mesh_t   *cm,
 
       cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, grd_pef, mgrd);
 
-      if (f_id == cm->e2f_ids[ee])
+      if (f == cm->e2f_ids[ee])
         flx[e] -= cm->sefc[ee].meas * _dp3(cm->sefc[ee].unitv, mgrd);
       else {
-        assert(f_id == cm->e2f_ids[ee+1]);
+        assert(f == cm->e2f_ids[ee+1]);
         flx[e] -= cm->sefc[ee+1].meas * _dp3(cm->sefc[ee+1].unitv, mgrd);
       }
 
