@@ -204,8 +204,6 @@ void CS_PROCF(astgeo, ASTGEO)
 
   }
 
-  fsi_mesh = fvm_nodal_destroy(fsi_mesh);
-
   /* In parallel, all YACS/Calcium I/O goes through rank 0;
      This is about 1990's level technology/scalability, but to do better
      (for example switch to PLE or MedCoupling), we'll need to wait for
@@ -259,7 +257,7 @@ void CS_PROCF(astgeo, ASTGEO)
     ast_coupling->n_g_vertices = fvm_nodal_get_n_g_vertices(fsi_mesh);
 
     BFT_MALLOC(s_vtx_gnum, ast_coupling->n_vertices, cs_gnum_t);
-    fvm_nodal_get_global_element_num(fsi_mesh, 0, s_vtx_gnum);
+    fvm_nodal_get_global_vertex_num(fsi_mesh, s_vtx_gnum);
 
     cs_block_dist_info_t  vtx_bi;
 
@@ -283,6 +281,8 @@ void CS_PROCF(astgeo, ASTGEO)
   }
 
 #endif
+
+  fsi_mesh = fvm_nodal_destroy(fsi_mesh);
 
   if (cs_glob_rank_id <= 0) {
 
