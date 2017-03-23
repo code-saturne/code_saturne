@@ -282,8 +282,14 @@ cs_cdo_bc_define(const cs_param_bc_t  *param_bc,
 
   cs_cdo_bc_t  *bc = _cdo_bc_create(n_b_faces);
 
-  if (n_b_faces == 0)
+  if (n_b_faces == 0) {
+
+    bc->dir = cs_cdo_bc_list_create(0, 0);
+    bc->neu = cs_cdo_bc_list_create(0, 0);
+    bc->rob = cs_cdo_bc_list_create(0, 0);
+
     return  bc;
+  }
 
   /* Loop on the definition of each boundary condition */
   for (int ii = 0; ii < param_bc->n_defs; ii++) {
