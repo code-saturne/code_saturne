@@ -366,11 +366,19 @@ cs_run(void)
 
         if (opts.cdo) {
 
+          /* Only C language is called within CDO */
+
+          cs_base_fortran_bft_printf_to_c();
+
           /*----------------------------------------------
            * Call main calculation function (CDO Kernel)
            *----------------------------------------------*/
 
           cs_cdo_main(cs_glob_mesh, cs_glob_mesh_quantities);
+
+          /* Return to the default behavior */
+
+          cs_base_fortran_bft_printf_to_f();
 
         }
         else {

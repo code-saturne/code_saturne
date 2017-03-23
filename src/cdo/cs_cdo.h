@@ -225,9 +225,9 @@ typedef void
  *============================================================================*/
 
 /* Separation lines: long, medium, short */
-extern const char lsepline[];
-extern const char msepline[];
-extern const char ssepline[];
+extern const char lsepline[80];
+extern const char msepline[60];
+extern const char ssepline[40];
 
 /* Default locations */
 extern const cs_flag_t  cs_cdo_primal_vtx;

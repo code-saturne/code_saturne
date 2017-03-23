@@ -276,6 +276,7 @@ cs_cdo_main(cs_mesh_t             *m,
   cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
   cs_log_printf(CS_LOG_DEFAULT, "\tExit CDO Module\n");
   cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
+  cs_log_printf_flush(CS_LOG_DEFAULT);
 
   cs_timer_stats_stop(cdo_ts_id);
   cs_timer_t  t1 = cs_timer_time();

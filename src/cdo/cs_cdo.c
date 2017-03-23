@@ -61,11 +61,11 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Separation lines: long, medium, short */
-const char lsepline[] =
+const char lsepline[80] =
   "# =======================================================================\n";
-const char msepline[] =
+const char msepline[60] =
   "# =========================================\n";
-const char ssepline[] =
+const char ssepline[40] =
   "# =================\n";
 
 /* Default locations */
