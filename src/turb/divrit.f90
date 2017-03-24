@@ -259,13 +259,15 @@ if (ityturt(iscal).ne.3) then
 
         ! AFM and EB-AFM models
         !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
-        if (ityturt(iscal).eq.2.and.ibeta.ge.0) then
-          if (itt.gt.0) then
+        if (ityturt(iscal).eq.2) then
+          if (itt.gt.0.and.ibeta.ge.0) then
             temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
                        etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
           endif
 
           do jj = 1, 3
+            ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
+            ! Only the i.ne.j  components are added.
             if (ii.ne.jj) then
               temp(ii) = temp(ii)                                              &
                        - ctheta(iscal)*xtt*xiafm*gradv(jj,ii,iel)*xut(jj,iel)
@@ -273,19 +275,23 @@ if (ityturt(iscal).ne.3) then
           enddo
         endif
 
-        ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
-        if (iturt(iscal).eq.20) then
-          temp(ii) = temp(ii)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel))
-        endif
-
       enddo
 
-      ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
-      !  "-C_theta*k/eps* R.grad T"
       do ii = 1, 3
+        ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
+        !  "-C_theta*k/eps* R.grad T"
+        ! The resulting XUT array is only use for post processing purpose in GGDH & AFM
         xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(1,iel)  &
                                                    + xrij(ii,2)*gradt(2,iel)  &
                                                    + xrij(ii,3)*gradt(3,iel))
+
+
+        ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )" in case of AFM
+        if (iturt(iscal).eq.20) then
+          xut(ii,iel) = xut(ii,iel)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel))
+          temp(ii)    = temp(ii)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel))
+        endif
+
         ! In the next step, we compute the divergence of:
         !  "-Cp*C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
         !  The part "-C_theta*k/eps* R.Grad T" is computed by the GGDH part
@@ -326,13 +332,15 @@ if (ityturt(iscal).ne.3) then
 
         ! AFM and EB-AFM models
         !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
-        if (ityturt(iscal).eq.2.and.ibeta.ge.0) then
-          if (itt.gt.0) then
+        if (ityturt(iscal).eq.2) then
+          if (itt.gt.0.and.ibeta.ge.0) then
             temp(ii) = temp(ii) - ctheta(iscal)*xtt*                            &
                        etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
           endif
 
           do jj = 1, 3
+            ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
+            ! Only the i.ne.j  components are added.
             if (ii.ne.jj) then
               temp(ii) = temp(ii)                                               &
                        - ctheta(iscal)*xtt*xiafm*gradv(jj,ii,iel)*xut(jj,iel)
@@ -340,19 +348,23 @@ if (ityturt(iscal).ne.3) then
           enddo
         endif
 
-        ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )"
-        if (iturt(iscal).eq.20) then
-          temp(ii) = temp(ii)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel))
-        endif
-
       enddo
 
-      ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
-      !  "-C_theta*k/eps* R.grad T"
       do ii = 1, 3
+        ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
+        !  "-C_theta*k/eps* R.grad T"
+        ! The resulting XUT array is only use for post processing purpose in GGDH & AFM
         xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(1,iel)  &
                                                    + xrij(ii,2)*gradt(2,iel)  &
                                                    + xrij(ii,3)*gradt(3,iel))
+
+
+        ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )" in case of AFM
+        if (iturt(iscal).eq.20) then
+          xut(ii,iel) = xut(ii,iel)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel))
+          temp(ii)    = temp(ii)/(1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel))
+        endif
+
         ! In the next step, we compute the divergence of:
         !  "-Cp*C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
         !  The part "-C_theta*k/eps* R.Grad T" is computed by the GGDH part
