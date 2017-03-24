@@ -70,7 +70,8 @@ double precision smbr(6,ncelet)
 
 ! Local variables
 
-integer          iel, dimrij, isou, i, j, dij
+integer          iel, dimrij, isou, i, j
+double precision dij
 
 double precision uns3, const, kseps, csttmp
 double precision prdtur, r1t, r2t, r3t
@@ -151,27 +152,27 @@ do iel = 1, ncel
     if     (isou.eq.1) then
       i = 1
       j = 1
-      dij = 1
+      dij = 1.0d0
     elseif (isou.eq.2) then
       i = 2
       j = 2
-      dij = 1
+      dij = 1.0d0
     elseif (isou.eq.3) then
       i = 3
       j = 3
-      dij = 1
+      dij = 1.0d0
     elseif (isou.eq.4) then
       i = 1
       j = 2
-      dij = 0
+      dij = 0.0d0
     elseif (isou.eq.5) then
       i = 2
       j = 3
-      dij = 0
+      dij = 0.0d0
     elseif (isou.eq.6) then
       i = 1
       j = 3
-      dij = 0
+      dij = 0.0d0
     endif
 
     smbr(isou,iel) = smbr(isou,iel)+ ( gij(i,j) * (1.d0 - csttmp) &
