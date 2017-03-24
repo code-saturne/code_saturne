@@ -343,17 +343,20 @@ class Figure(object):
         Constructor of a figure.
         """
         self.file_name = node.attributes["name"].value
-        self.format = parser.getAttribute(node, "format", default_fmt)
+        self.fmt = parser.getAttribute(node, "format", default_fmt)
 
         for tag in ("title", "nbrow", "nbcol"):
             self.__dict__[tag] = parser.getAttribute(node, tag, False)
 
-        self.cmd = []
-        for k, v in parser.getAttributes(node).items():
-            if k not in ("name", "idlist", "title", "nbrow", "nbcol", "format"):
-                self.cmd.append("plt.figure(" + k + "=" + v + ")")
+        self.figsize = None
+        self.dpi = None
 
-        self.cmd += parser.getPltCommands(node)
+        for k, v in parser.getAttributes(node).items():
+            if k == "figsize":
+                v_spl = v.strip("() ").split(",")
+                self.figsize = tuple([float(co) for co in v_spl])
+            elif k == "dpi":
+                self.dpi = int(v)
 
         # Store te list of subplot objects associated to the current figure
         self.subplots = []
@@ -588,6 +591,10 @@ class Plotter(object):
                                        subplots,
                                        default_fmt))
 
+        # create one figure and use it for all figures
+        # this figure is the current figure
+        fig = plt.figure()
+
         for figure in self.figures:
             # Plot curve
             self.plot_figure(figure)
@@ -602,7 +609,10 @@ class Plotter(object):
             study_object.matplotlib_figures.append(f)
 
             # save the figure
-            self.__save(f, figure.format)
+            self.__save(f, figure)
+
+        # close current figure
+        plt.close()
 
     #---------------------------------------------------------------------------
 
@@ -635,7 +645,7 @@ class Plotter(object):
         line = lines[0]
         for cmd in curve.cmd:
             try:
-                eval(cmd)
+                exec(cmd)
             except:
                 print("Error with the matplotlib command: %s" % cmd)
 
@@ -706,14 +716,14 @@ class Plotter(object):
         """
         Plotter of a single figure with several subplots.
         """
-        fig = plt.figure()
 
-        # additional matplotlib raw commands for figure
-        for cmd in figure.cmd:
-            try:
-                eval(cmd)
-            except:
-                print("Error with the matplotlib command: %s" % cmd)
+        # clears the entire current figure
+        plt.clf()
+
+        # get current figure and set size
+        if figure.figsize:
+            fig = plt.gcf()
+            fig.set_size_inches(figure.figsize)
 
         # Layout
         nbrow, nbcol, hs, ri, le, ws = figure.layout()
@@ -756,19 +766,22 @@ class Plotter(object):
             ax = plt.subplot(nbrow, nbcol, idx + 1)
             for cmd in p.cmd:
                 try:
-                    eval(cmd)
+                    exec(cmd)
                 except:
                     print("Error with the matplotlib command: %s" % cmd)
 
     #---------------------------------------------------------------------------
 
-    def __save(self, f, fmt):
+    def __save(self, f, figure):
         """method used to save the figure"""
+        fmt = figure.fmt
         f = f + "." + fmt
         if fmt == "png":
-            plt.savefig(f, format=fmt, dpi=800)
+            dpi = 800
+            if figure.dpi:
+                dpi = figure.dpi
+            plt.savefig(f, format=fmt, dpi=dpi)
         else:
             plt.savefig(f, format=fmt)
-        plt.close()
 
 #-------------------------------------------------------------------------------
