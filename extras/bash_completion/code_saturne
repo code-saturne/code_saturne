@@ -148,6 +148,18 @@ _code_saturne() {
                 *) cmdOpts="-p --param -n --new -z --no-splash";;
             esac
             ;;
+        studymanagergui)
+            case ${prev} in
+                -p|--param)  _filedir; return 0;;
+                *) cmdOpts="-p --param -n --new";;
+            esac
+            ;;
+	smgrgui)
+            case ${prev} in
+                -p|--param)  _filedir; return 0;;
+                *) cmdOpts="-p --param -n --new";;
+            esac
+            ;;
         info)
             case ${prev} in
                 -r|--reader)
