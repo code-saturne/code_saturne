@@ -144,8 +144,7 @@ _code_saturne() {
             ;;
         gui)
             case ${prev} in
-                -p|--file)  _filedir; return 0;;
-                -b|--batch) COMPREPLY=( ); return 0;;
+                -p|--param)  _filedir; return 0;;
                 *) cmdOpts="-p --param -n --new -z --no-splash";;
             esac
             ;;
