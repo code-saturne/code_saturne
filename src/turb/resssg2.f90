@@ -623,6 +623,8 @@ do iel=1,ncel
 
   else ! EBRSM
 
+    alpha3 = cvar_al(iel)**3
+
     ! Phi3 constant
     cphi3impl = abs(cebmr2 - cebmr3*sqrt(aii))
 
@@ -631,28 +633,28 @@ do iel=1,ncel
 
 
     ! Identity constant
-    impl_id_cst = - d2s3*cebmr1*min(trprod,0.0d0)        &
-                  + cphi3impl * trrij * eigen_max        &
-                  + 2.0d0*d2s3*cebmr4*trrij*eigen_max    &
-                  + d2s3*trrij*cebmr4*max(aklskl,0.d0)
+    impl_id_cst = alpha3 * (                             &
+                  - d2s3*cebmr1*min(trprod,0.0d0)        & ! Phi1
+                  + cphi3impl * trrij * eigen_max        & ! Phi3
+                  + 2.0d0*d2s3*cebmr4*trrij*eigen_max    & ! Phi4
+                  + d2s3*trrij*cebmr4*max(aklskl,0.d0) )   ! Phi4
 
-    impl_id_cst = alpha3*impl_id_cst
 
     ! Linear constant
-    impl_lin_cst = alpha3 * eigen_max * (             &
+    impl_lin_cst = eigen_max * (                      &
                    1.0d0                              & ! Production
-                   + cebmr4                           & ! Phi4 Linear part
-                   + cebmr5             )             & ! Phi5 Linear part
+                   + cebmr4 * alpha3                  & ! Phi4 Linear part
+                   + cebmr5 * alpha3            )     & ! Phi5 Linear part
                  + (1.0d0-alpha3)*cvara_ep(iel)/trrij   ! Epsilon wall
 
 
     do jsou = 1, 3
       do isou = 1, 3
         iii = t2v(isou,jsou)
-        implmat2add(isou,jsou) = alpha3 * xrotac(isou,jsou)         &
+        implmat2add(isou,jsou) = xrotac(isou,jsou)                  &
                                + impl_lin_cst*deltij(iii)           &
                                + impl_id_cst*d1s2*oo_matrn(iii)     &
-                               + ceps_impl*oo_matrn(iii)            &
+                               + alpha3*ceps_impl*oo_matrn(iii)     &
                                + cphiw_impl*xnal(isou)*xnal(jsou)
       end do
     end do
