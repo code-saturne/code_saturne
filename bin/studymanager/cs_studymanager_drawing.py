@@ -154,7 +154,7 @@ class Plot(object):
         for k, v in parser.getAttributes(node).items():
             if k not in ('fig', 'fmt', 'legend', 'xcol', 'ycol', \
                          'xplus', 'yplus', 'xfois', 'yfois', \
-                         'xerr', 'yerr', 'xerrp', 'yerrp'):
+                         'xerr', 'yerr', 'xerrp', 'yerrp', 'id'):
                 self.cmd.append("plt.setp(lines, " + k + "=" + v + ")")
 
         self.cmd += parser.getPltCommands(node)
