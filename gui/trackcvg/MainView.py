@@ -455,7 +455,7 @@ class MyMplCanvas(FigureCanvas):
                                                               ncol=1,
                                                               fancybox=True,
                                                               shadow=True,
-                                                              prop={'size':'x-small', 'style': 'italic'})
+                                                              prop={'size':'medium', 'style': 'italic'})
 
 
     def update_figure_listing(self, name, data, nb_probes, lstProbes):
@@ -473,7 +473,7 @@ class MyMplCanvas(FigureCanvas):
                                                               ncol=1,
                                                               fancybox=True,
                                                               shadow=True,
-                                                              prop={'size':'x-small', 'style': 'italic'})
+                                                              prop={'size':'medium', 'style': 'italic'})
 
 
 
