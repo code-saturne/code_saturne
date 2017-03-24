@@ -415,9 +415,8 @@ static inline void
 cs_math_reduce_sym_prod_33_to_66(const cs_real_t s[3][3],
                                  cs_real_t       sout[restrict 6][6])
 {
-  cs_int_33_t tens2vect;
-  cs_real_6_t iindex;
-  cs_real_6_t jindex;
+  int tens2vect[3][3];
+  int iindex[6], jindex[6];
 
   tens2vect[0][0] = 0; tens2vect[0][1] = 3; tens2vect[0][2] = 5;
   tens2vect[1][0] = 3; tens2vect[1][1] = 1; tens2vect[1][2] = 4;

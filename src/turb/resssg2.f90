@@ -598,8 +598,8 @@ do iel=1,ncel
     ! Identity constant
     impl_id_cst = - d2s3*cssgr1*min(trprod,0.0d0)         & ! Phi1
                   - d1s3*cssgs2*cvara_ep(iel)*aii         & ! Phi2
-                  + cphi3impl * trrij * eigen_max     & ! Phi3
-                  + 2.0d0*d2s3*cssgr4*trrij*eigen_max & ! Phi4
+                  + cphi3impl * trrij * eigen_max         & ! Phi3
+                  + 2.0d0*d2s3*cssgr4*trrij*eigen_max     & ! Phi4
                   + d2s3*trrij*cssgr4*max(aklskl,0.0d0)     ! Phi4
 
     ! Linear constant
