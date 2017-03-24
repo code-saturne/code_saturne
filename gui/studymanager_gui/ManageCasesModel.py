@@ -23,10 +23,14 @@
 #-------------------------------------------------------------------------------
 
 """
+This module manages studies and cases :
+
+This module defines the following classes:
+- ManageCasesModel
 """
 
 #-------------------------------------------------------------------------------
-# Library odules import
+# Library modules import
 #-------------------------------------------------------------------------------
 
 import os, string, unittest
@@ -61,7 +65,7 @@ class ManageCasesModel(Model):
 
     def _defaultValues(self):
         """
-        Return in a dictionnary which contains default values
+        Return in a dictionary which contains default values
         """
         default = {}
         default['compute']        = "on"
