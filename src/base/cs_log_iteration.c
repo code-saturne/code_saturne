@@ -605,6 +605,9 @@ _log_fields(void)
       }
     }
 
+    if (n_g_elts == 0)
+      continue;
+
     /* First loop on fields */
 
     log_count = 0;
