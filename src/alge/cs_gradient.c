@@ -285,7 +285,7 @@ _gradient_info_create(const char          *name,
 }
 
 /*----------------------------------------------------------------------------
- * Destroy gradient computationw info structure.
+ * Destroy gradient computation info structure.
  *
  * parameters:
  *   this_info <-> pointer to linear system info structure pointer
