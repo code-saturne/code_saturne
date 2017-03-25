@@ -3506,6 +3506,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
   cs_lnum_t face_id;
   cs_real_t pond;
 
+  const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
@@ -3628,7 +3629,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
   } /* loop on thread groups */
 
 # pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t dvol;
     /* Is the cell fully solid? */
     if (c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] == 0)
@@ -3673,6 +3674,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
 {
   int g_id, t_id;
 
+  const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
@@ -3782,7 +3784,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   } /* loop on thread groups */
 
 # pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t dvol;
     /* Is the cell fully solid? */
     if (c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] == 0)
