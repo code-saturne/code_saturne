@@ -3549,6 +3549,8 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
         fvq->i_f_face_surf[face_id] = cs_math_3_norm(fvq->i_f_face_normal + 3*face_id);
       }
     }
+    /* Free memory */
+    BFT_FREE(covered_surface);
   }
 
   _finalize_displacement(particles, part_b_mass_flux);
