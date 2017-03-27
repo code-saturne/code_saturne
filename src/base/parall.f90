@@ -48,26 +48,6 @@ module parall
   !> number of processes (=1 if sequental)
   integer, save ::  nrangp
 
-  !> maximum number of independent boundary face subsets in a group
-  integer, save ::  nthrdi
-
-  ! TODO
-  integer, save ::  nthrdb
-
-  !> number of interior face groups (> 1 with OpenMP, 1 otherwise)
-  integer, save ::  ngrpi
-
-  !> number of boundary face groups (> 1 with OpenMP, 1 otherwise)
-  integer, save ::  ngrpb
-
-  !> per-thread bounds for interior faces
-  integer, dimension(:,:,:), allocatable :: iompli
-
-  !> per-thread bounds for boundary faces
-  !> (for group j and thread i, loops
-  !> from iompl.(1, j, i) to iompl.(2, j, i)
-  integer, dimension(:,:,:), allocatable :: iomplb
-
   ! Global dimensions (i.e. independent of parallel partitioning)
 
   !> global number of cells
@@ -461,112 +441,6 @@ contains
     real(c_double), dimension(:), intent(inout) :: g_array
     call cs_parall_allgather_r(n_elts, n_g_elts, array(:), g_array(:))
   end subroutine paragv
-
-  !---------------------------------------------------------------------------
-
-  ! Initialize OpenMP-related values
-
-  subroutine init_fortran_omp &
-             (nfac, nfabor, nthrdi_in, nthrdb_in, &
-              ngrpi_in, ngrpb_in, idxfi, idxfb)
-
-    ! Arguments
-
-    integer, intent(in) :: nfac, nfabor
-    integer, intent(in) :: nthrdi_in, nthrdb_in, ngrpi_in, ngrpb_in
-    integer, dimension(*), intent(in) :: idxfi, idxfb
-
-    ! Local variables
-
-    integer ii, jj
-    integer err
-
-    ! Set numbers of threads and groups
-
-    nthrdi = nthrdi_in
-    nthrdb = nthrdb_in
-    ngrpi  = ngrpi_in
-    ngrpb  = ngrpb_in
-
-    err = 0
-
-    if (allocated(iompli)) deallocate(iompli)
-    if (allocated(iomplb)) deallocate(iomplb)
-
-    allocate(iompli(2, ngrpi, nthrdi), stat=err)
-
-    if (err .eq. 0) then
-      allocate(iomplb(2, ngrpb, nthrdb), stat=err)
-    endif
-
-    if (err /= 0) then
-      write (*, *) "Error allocating thread/group index array."
-      call csexit(err)
-    endif
-
-    ! For group j and thread i, loops on faces from
-    ! iompl.(1, j, i) to iompl.(2, j, i).
-
-    ! By default (i.e. without Open MP), 1 thread and one group
-
-    iompli(1, 1, 1) = 1
-    iompli(2, 1, 1) = nfac
-
-    iomplb(1, 1, 1) = 1
-    iomplb(2, 1, 1) = nfabor
-
-    ! Numberings for OpenMP loops on interior faces
-
-    if (nthrdi.gt.1 .or. ngrpi.gt.1) then
-
-      do ii = 1, nthrdi
-        do jj = 1, ngrpi
-          iompli(1, jj, ii) = idxfi((ii-1)*ngrpi*2 + 2*jj - 1) + 1
-          iompli(2, jj, ii) = idxfi((ii-1)*ngrpi*2 + 2*jj)
-        enddo
-      enddo
-
-    endif
-
-    ! Numberings for OpenMP loops on boundary faces
-
-    if (nthrdb.gt.1 .or. ngrpb.gt.1) then
-
-      do ii = 1, nthrdb
-        do jj = 1, ngrpb
-          iomplb(1, jj, ii) = idxfb((ii-1)*ngrpb*2 + 2*jj - 1) + 1
-          iomplb(2, jj, ii) = idxfb((ii-1)*ngrpb*2 + 2*jj)
-        enddo
-      enddo
-
-    endif
-
-    return
-
-  end subroutine init_fortran_omp
-
-  !=============================================================================
-
-  ! Free OpenMP-related arrays
-
-  subroutine finalize_fortran_omp
-
-    nthrdi = 0
-    nthrdb = 0
-    ngrpi  = 0
-    ngrpb  = 0
-
-    if (allocated(iompli)) then
-      deallocate(iompli)
-    endif
-
-    if (allocated(iomplb)) then
-      deallocate(iomplb)
-    endif
-
-    return
-
-  end subroutine finalize_fortran_omp
 
   !=============================================================================
 

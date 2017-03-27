@@ -428,10 +428,12 @@ cs_run(void)
 
   }
 
+  /* Switch logging back to C (may be moved depending on Fortran dependencies) */
+
+  cs_base_fortran_bft_printf_to_c();
+
   bft_printf(_("\n Destroying structures and ending computation\n"));
   bft_printf_flush();
-
-  CS_PROCF(memfin, MEMFIN)();
 
   /* Free coupling-related data */
 
@@ -471,10 +473,6 @@ cs_run(void)
   cs_probe_finalize();
   cs_post_finalize();
   cs_log_iteration_destroy_all();
-
-  /* Switch logging back to C (may be moved depending on Fortran dependencies) */
-
-  cs_base_fortran_bft_printf_to_c();
 
   /* Free moments info */
 

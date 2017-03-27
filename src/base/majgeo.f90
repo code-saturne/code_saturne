@@ -21,11 +21,8 @@
 !-------------------------------------------------------------------------------
 
 subroutine majgeo &
-!================
-
  ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2  ,                   &
-   lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 ,          &
-   nfml2  , nthdi2 , nthdb2 , ngrpi2 , ngrpb2 , idxfi  , idxfb  , &
+   lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 , nfml2  , &
    iface2 , ifabo2 , ifmfb2 , ifmce2 ,                            &
    ipnfa2 , nodfa2 , ipnfb2 , nodfb2 , isymp2 , isoli2 ,          &
    volmn2 , volmx2 , voltt2 ,                                     &
@@ -124,10 +121,6 @@ integer, intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
 integer, intent(in) :: lndfa2, lndfb2
 integer(kind=8), intent(in) :: ncelg2, nfacg2 , nfbrg2, nsomg2
 integer, intent(in) :: nfml2
-integer, intent(in) :: nthdi2, nthdb2
-integer, intent(in) :: ngrpi2, ngrpb2
-
-integer, dimension(*), intent(in) :: idxfi, idxfb
 
 integer, dimension(2,nfac2), target :: iface2
 integer, dimension(ncele2), target :: ifmce2
@@ -190,14 +183,7 @@ nfbrgb = nfbrg2
 nsomgb = nsomg2
 
 !===============================================================================
-! 3. Initialization of thread information
-!===============================================================================
-
-call init_fortran_omp(nfac, nfabor, &
-                      nthdi2, nthdb2, ngrpi2, ngrpb2, idxfi, idxfb)
-
-!===============================================================================
-! 4. Define pointers on mesh structure
+! 3. Define pointers on mesh structure
 !===============================================================================
 
 ifacel_0 => iface2(1:2,1:nfac)
@@ -214,7 +200,7 @@ nodfbr_0 => nodfb2(1:lndfbr)
 xyzcen => xyzce2(1:3,1:ncelet)
 
 !===============================================================================
-! 5. Define pointers on mesh quantities
+! 4. Define pointers on mesh quantities
 !===============================================================================
 
 isympa => isymp2(1:nfabor)
@@ -251,7 +237,7 @@ diipb => diipb2(1:3,1:nfabor)
 dofij => dofij2(1:3,1:nfac)
 
 !===============================================================================
-! 6. Define cstphy variables
+! 5. Define cstphy variables
 !===============================================================================
 
 volmin = volmn2

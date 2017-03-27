@@ -340,7 +340,6 @@ lecamo.f90 \
 lecamp.f90 \
 lecamx.f90 \
 majgeo.f90 \
-memfin.f90 \
 metal_structures_copain_model.f90 \
 modini.f90 \
 mmtycl.f90 \

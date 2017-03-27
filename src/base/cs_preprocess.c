@@ -119,12 +119,6 @@ extern void cs_f_majgeo(const cs_int_t     *ncel,
                         const int64_t      *nfbrgb,
                         const int64_t      *nsomgb,
                         const cs_int_t     *nfml,
-                        const cs_int_t     *nthrdi,
-                        const cs_int_t     *nthrdb,
-                        const cs_int_t     *ngrpi,
-                        const cs_int_t     *ngrpb,
-                        const cs_int_t     *idxfi,
-                        const cs_int_t     *idxfb,
                         const cs_lnum_2_t   ifacel[],
                         const cs_int_t      ifabor[],
                         const cs_int_t      ifmfbr[],
@@ -390,26 +384,6 @@ cs_preprocess_mesh_update_fortran(void)
   int64_t n_g_i_faces = m->n_g_i_faces;
   int64_t n_g_b_faces = m->n_g_b_faces;
   int64_t n_g_vertices = m->n_g_vertices;
-  cs_int_t nthrdi = 1;
-  cs_int_t nthrdb = 1;
-  cs_int_t ngrpi = 1;
-  cs_int_t ngrpb = 1;
-  const cs_int_t *idxfi = NULL;
-  const cs_int_t *idxfb = NULL;
-
-  if (m->i_face_numbering != NULL) {
-    const cs_numbering_t *_n = m->i_face_numbering;
-    nthrdi = _n->n_threads;
-    ngrpi = _n->n_groups;
-    idxfi = _n->group_index;
-  }
-
-  if (m->b_face_numbering != NULL) {
-    const cs_numbering_t *_n = m->b_face_numbering;
-    nthrdb = _n->n_threads;
-    ngrpb = _n->n_groups;
-    idxfb = _n->group_index;
-  }
 
   cs_f_majgeo(&(m->n_cells),
               &(m->n_cells_with_ghosts),
@@ -423,12 +397,6 @@ cs_preprocess_mesh_update_fortran(void)
               &n_g_b_faces,
               &n_g_vertices,
               &(m->n_families),
-              &nthrdi,
-              &nthrdb,
-              &ngrpi,
-              &ngrpb,
-              idxfi,
-              idxfb,
               (const cs_lnum_2_t *)(m->i_face_cells),
               m->b_face_cells,
               m->b_face_family,
