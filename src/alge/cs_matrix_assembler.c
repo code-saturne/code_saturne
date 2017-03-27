@@ -436,6 +436,9 @@ _l_id_binary_search(cs_lnum_t        l_id_array_size,
                     cs_lnum_t        l_id,
                     const cs_lnum_t  l_id_array[])
 {
+  if (l_id_array_size < 1)
+    return -1;
+
   cs_lnum_t start_id = 0;
   cs_lnum_t end_id = l_id_array_size - 1;
   cs_lnum_t mid_id = (end_id -start_id) / 2;
