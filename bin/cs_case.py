@@ -65,6 +65,29 @@ def adaptation(adaptation, saturne_script, case_dir):
     if cs_exec_environment.run_command(cmd) != 0:
         sys.exit(0)
 
+#-------------------------------------------------------------------------------
+
+def check_exec_dir_stamp(d):
+
+    """
+    Return path to execution directory if present in a given directory.
+    Otherwise, return given directory path
+    """
+
+    retval = d
+
+    p = os.path.join(d, 'run_status.exec_dir')
+
+    if os.path.isfile(p):
+        f = open(p, 'r')
+        l = f.readlines()
+        f.close()
+        d = l[0].rstrip()
+        if os.path.isdir(d):
+            retval = d
+
+    return retval
+
 #===============================================================================
 # Main class
 #===============================================================================
@@ -168,6 +191,9 @@ class case:
             self.study_dir = case_dir
             self.name = os.path.split(case_dir)[1]
             self.script_dir = self.case_dir
+
+        if staging_dir:
+            staging_dir = check_exec_dir_stamp(staging_dir)
 
         for d in self.domains:
             d.set_case_dir(self.case_dir, staging_dir)
@@ -1339,6 +1365,8 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         dest_tmp_name = None
 
         base_path = os.path.join(self.exec_dir, 'run_status.')
+        if not os.path.isdir(base_path):
+            base_path = os.path.join(self.result_dir, 'run_status.')
 
         if src != None:
             if type(src) == tuple:
@@ -1365,6 +1393,33 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
             else:
                 os.remove(src_tmp_name)
 
+        except Exception:
+            pass
+
+    #---------------------------------------------------------------------------
+
+    def add_exec_dir_stamp(self):
+
+        """
+        Create a file with the execution directory path in the results directory.
+        """
+        p = os.path.join(self.result_dir, 'run_status.exec_dir')
+
+        f = open(p, 'w')
+        f.write(self.exec_dir + '\n')
+        f.close()
+
+    #---------------------------------------------------------------------------
+
+    def clear_exec_dir_stamp(self):
+
+        """
+        Remove file with the execution directory path from the results directory.
+        """
+        p = os.path.join(self.result_dir, 'run_status.exec_dir')
+
+        try:
+            os.remove(p)
         except Exception:
             pass
 
@@ -1460,12 +1515,6 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
             s = open('coupling_parameters.py', 'w')
             s.write(self.coupling_parameters)
             s.close()
-
-        # Rename temporary file to indicate new status
-
-        # Remove the Salome temporary file
-
-        self.update_scripts_tmp('preparing', None)
 
         # Rename temporary file to indicate new status
 
@@ -1863,6 +1912,7 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         if self.exec_dir != self.result_dir:
             msg += ' Working directory (to be periodically cleaned):\n' \
                 + '   ' +  str(self.exec_dir) + '\n'
+            self.add_exec_dir_stamp()
 
         msg += '\n'
 
@@ -1887,6 +1937,7 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
 
             if stages['save_results'] == True:
                 self.save_results()
+                self.clear_exec_dir_stamp()
 
         finally:
             if self.run_id != None:

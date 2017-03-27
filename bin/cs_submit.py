@@ -38,7 +38,7 @@ import os, sys, subprocess
 import types, string
 
 import cs_batch
-from cs_exec_environment import enquote_arg
+from cs_exec_environment import enquote_arg, get_shell_type
 import cs_run
 import cs_runcase
 
@@ -111,10 +111,7 @@ def main(argv, pkg):
     submit_cmd = batch.submit_command_prefix()
 
     if not submit_cmd:
-        err_str = ' no batch system is configured:\n' \
-                  '   check ' + os.path.join(pkg.get_dir("sysconfdir"),
-                                             pkg.configfile) + '.'
-        raise Exception(err_str)
+        submit_cmd = get_shell_type()
 
     runcase_path = process_cmd_line(argv, submit_cmd, pkg)
 
