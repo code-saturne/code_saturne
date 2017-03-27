@@ -1436,7 +1436,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
         /* Assemble the resulting vector */
         for (short int v = 0; v < cm->n_vc; v++)
-#pragma omp atomic
+#         pragma omp atomic
           result[cm->v_ids[v]] += cb->values[v];
         break;
 
@@ -1449,7 +1449,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
         /* Assemble the resulting vector */
         for (short int e = 0; e < cm->n_ec; e++)
-#pragma omp atomic
+#         pragma omp atomic
           result[cm->e_ids[e]] += cb->values[e];
         break;
 

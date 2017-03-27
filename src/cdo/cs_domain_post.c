@@ -115,12 +115,6 @@ _post_advection_field(const cs_adv_field_t       *adv,
   const bool post_courant =
     (adv->post_flag & CS_ADVECTION_FIELD_POST_COURANT) ? true : false;
 
-#if CS_ADVECTION_FIELD_DBG && defined(DEBUG) && !defined(NDEBUG)
-  cs_log_printf(CS_LOG_SETUP,
-                " <post/advection_field %s> iter: %d\n",
-                adv->name, time_step->nt_cur);
-#endif
-
   /* Field is defined at vertices ? */
   cs_field_t  *fld = NULL;
   if (adv->vtx_field_id > -1)

@@ -610,6 +610,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
       switch (a_info.scheme) {
 
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
+        b->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ;
         b->get_advection_matrix = cs_cdo_advection_get_vb_cencsv;
         break;
 
@@ -923,7 +924,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
 
       /* Assemble the cellwise contribution to the rank contribution */
       for (short int v = 0; v < cm->n_vc; v++)
-# pragma omp atomic
+#       pragma omp atomic
         b->source_terms[cm->v_ids[v]] += csys->source[v];
 
     } // Loop on cells
@@ -1027,6 +1028,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
   if (b->sys_flag & CS_FLAG_SYS_SOURCETERM) {
     if (b->sys_flag & CS_FLAG_SYS_TIME) {
       cs_timer_t  ta = cs_timer_time();
+
       cs_cdo_time_update_rhs_with_array(b->sys_flag,
                                         b->eqp->time_info,
                                         b->n_dofs,
@@ -1148,6 +1150,19 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
             cb->pty_val = cb->pty_mat[0][0];
 
         }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+        if (!eqp->diffusion_hodge.is_iso) {
+          if (c_id % 100 == 0) {
+            bft_printf(" [% 6.3e % 6.3e % 6.3e]\n"
+                       " [% 6.3e % 6.3e % 6.3e]\n"
+                       " [% 6.3e % 6.3e % 6.3e]\n",
+                       cb->pty_mat[0][0], cb->pty_mat[0][1], cb->pty_mat[0][2],
+                       cb->pty_mat[1][0], cb->pty_mat[1][1], cb->pty_mat[1][2],
+                       cb->pty_mat[2][0], cb->pty_mat[2][1], cb->pty_mat[2][2]);
+          }
+        }
+#endif
 
         // local matrix owned by the cellwise builder (store in cb->loc)
         b->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
@@ -1539,6 +1554,8 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
                                    void              *builder,
                                    cs_real_t         *diff_flux)
 {
+  assert(diff_flux != NULL); /* Sanity check */
+
   cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t  *)builder;
 
   const cs_equation_param_t  *eqp = b->eqp;
@@ -1549,7 +1566,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
   if ((b->sys_flag & CS_FLAG_SYS_DIFFUSION) == 0) { // No diffusion
 
     size_t  size = c2e->idx[quant->n_cells];
-# pragma omp parallel for if (size > CS_THR_MIN)
+#   pragma omp parallel for if (size > CS_THR_MIN)
     for (size_t i = 0; i < size; i++)
       diff_flux = 0;
     return;
@@ -1568,8 +1585,6 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
 #endif
     double  *pot = NULL;
 
-    BFT_MALLOC(pot, connect->n_max_vbyc, double);
-
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
@@ -1584,20 +1599,24 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
     switch (eqp->diffusion_hodge.algo) {
 
     case CS_PARAM_HODGE_ALGO_COST:
+      BFT_MALLOC(pot, connect->n_max_vbyc, double);
       get_diffusion_hodge = cs_hodge_epfd_cost_get;
       msh_flag = CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
         CS_CDO_LOCAL_PVQ;
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
+      BFT_MALLOC(pot, connect->n_max_vbyc, double);
       get_diffusion_hodge = cs_hodge_epfd_voro_get;
       msh_flag = CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
         CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_PVQ;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
-      msh_flag = CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
-        CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_EFQ;
+      BFT_MALLOC(pot, connect->n_max_vbyc + 1, double);
+      msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PEQ |
+        CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
+        CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_EFQ;
       break;
 
     default:
@@ -1623,7 +1642,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
     case CS_PARAM_HODGE_ALGO_COST:
     case CS_PARAM_HODGE_ALGO_VORONOI:
 
-#pragma omp for CS_CDO_OMP_SCHEDULE
+#     pragma omp for CS_CDO_OMP_SCHEDULE
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
         /* Set the local mesh structure for the current cell */
@@ -1662,7 +1681,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
 
     case CS_PARAM_HODGE_ALGO_WBS:
 
-#pragma omp for CS_CDO_OMP_SCHEDULE
+#     pragma omp for CS_CDO_OMP_SCHEDULE
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
         /* Set the local mesh structure for the current cell */

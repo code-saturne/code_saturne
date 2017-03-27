@@ -204,68 +204,46 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      ====================== */
 
   /* Choose a boundary by default.
-     keyval is one of the following keyword: "wall" or "symmetry"  */
+     Valid choice is CS_PARAM_BOUNDARY_WALL or CS_PARAM_BOUNDARY_SYMMETRY */
+  cs_domain_set_default_boundary(domain, CS_PARAM_BOUNDARY_SYMMETRY);
 
-  cs_domain_set_param(domain, CS_DOMAIN_DEFAULT_BOUNDARY, "symmetry");
-
-  /* Add a boundary:
+  /* Add a new boundary
      >> cs_domain_add_boundary(domain,
-                               mesh location name,
-                               boundary keyword)
+                               type_of_boundary,
+                               mesh_location_name);
 
-     mesh location name is either a predefined mesh location or one defined
-     by user
-
-     boundary keyword is one of the following keyword
-     >> wall, inlet, outlet, symmetry
+     * mesh_location_name is either a predefined mesh location or one defined
+     by the user
+     * type_of_boundary is one of the following keyword
+        CS_PARAM_BOUNDARY_WALL,
+        CS_PARAM_BOUNDARY_INLET,
+        CS_PARAM_BOUNDARY_OUTLET,
+        CS_PARAM_BOUNDARY_SYMMETRY
   */
 
-  cs_domain_add_boundary(domain, "left", "inlet");
-  cs_domain_add_boundary(domain, "right", "outlet");
+  cs_domain_add_boundary(domain, CS_PARAM_BOUNDARY_INLET, "left");
+  cs_domain_add_boundary(domain, CS_PARAM_BOUNDARY_OUTLET, "right");
 
   /* =========================
      Generic output management
      ========================= */
 
-  /* Set the output frequency for log either in terms of number of iteration
-     >> cs_domain_set_param(domain, CS_DOMAIN_OUTPUT_NT, keyval);
-     keyval is for instance "10"
-
-     either in terms of simulated time
-     >>  cs_domain_set_param(domain, CS_DOMAIN_OUTPUT_DT, keyval);
-     keyval is for instance "0.1"  */
-
-  cs_domain_set_param(domain, CS_DOMAIN_OUTPUT_NT, "10");
-
-  /* Set the level of verbosity (a fine-grained setting is also available if
-     one uses the function cs_user_cdo_numerics_settings())
-     >> cs_domain_set_param(domain, CS_DOMAIN_VERBOSITY, keyval);
-     keyval is for instance "-1" --> the lowest-level of information
-                             "0" --> reduced level of information
-                             "1" --> standard level of information
-                             "2" --> higher level of information  */
-
-  cs_domain_set_param(domain, CS_DOMAIN_VERBOSITY, "2");
+  cs_domain_set_output_param(domain,
+                             10,     // output log frequency
+                             2);     // verbosity (-1: no, 0, ...)
 
   /* ====================
      Time step management
-     ==================== */
-
-  /* Set the final time of the simulation
-     >> cs_domain_set_param(domain, CS_DOMAIN_TMAX, keyval);
-     keyval is for instance "1.5"
-
-     Set the max. number of time steps
-     >> cs_domain_set_param(domain, CS_DOMAIN_NTMAX, keyval);
-     keyval is for instance "100"
+     ====================
 
      If there is an inconsistency between the max. number of iteration in
      time and the final physical time, the first condition encountered stops
      the calculation.
   */
 
-  cs_domain_set_param(domain, CS_DOMAIN_TMAX, "864000.");
-  cs_domain_set_param(domain, CS_DOMAIN_NTMAX, "200");
+  cs_domain_set_time_param(domain,
+                           200,       // nt_max or -1 (automatic)
+                           86400.);   // t_max or < 0. (automatic)
 
   /* Define the value of the time step
      >> cs_domain_def_time_step_by_value(domain, dt_val);

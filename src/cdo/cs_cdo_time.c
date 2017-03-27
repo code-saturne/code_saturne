@@ -158,7 +158,7 @@ cs_cdo_time_update_rhs_with_array(const cs_flag_t         sys_flag,
       const double  tcoef = 1 - t_info.theta;
 
 # pragma omp parallel for if (n_dofs > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < n_dofs; i++) rhs[i] = tcoef * values[i];
+      for (cs_lnum_t i = 0; i < n_dofs; i++) rhs[i] += tcoef * values[i];
     }
     break;
 

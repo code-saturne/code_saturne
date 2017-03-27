@@ -1355,7 +1355,7 @@ cs_equation_set_ic_by_value(cs_equation_t    *eq,
 
   /* Set the definition */
   ic_def->def_type = CS_PARAM_DEF_BY_VALUE;
-  ic_def->ml_id = _check_ml_name(ml_name, N_("cells"));
+  ic_def->ml_id = _check_ml_name(ml_name, "cells");
   cs_param_set_def_by_value(eqp->var_type, get, &(ic_def->def));
 
   /* Update the parameters */
@@ -1396,7 +1396,7 @@ cs_equation_set_ic_by_qov(cs_equation_t    *eq,
 
   /* Set the definition */
   ic_def->def_type = CS_PARAM_DEF_BY_QOV;
-  ic_def->ml_id = _check_ml_name(ml_name, N_("cells"));
+  ic_def->ml_id = _check_ml_name(ml_name, "cells");
   ic_def->def.get.val = quantity;
 
   /* Update the parameters */
@@ -1435,7 +1435,7 @@ cs_equation_set_ic_by_analytic(cs_equation_t        *eq,
 
   /* Set the definition */
   ic_def->def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
-  ic_def->ml_id = _check_ml_name(ml_name, N_("cells"));
+  ic_def->ml_id = _check_ml_name(ml_name, "cells");
   ic_def->def.analytic = analytic;
 
   /* Update the parameters */
@@ -1471,7 +1471,7 @@ cs_equation_add_bc_by_value(cs_equation_t              *eq,
   const int def_id = _add_bc_def(bc);
 
   /* Get the mesh location id from its name */
-  const int  ml_id = _check_ml_name(ml_name, N_("boundary faces"));
+  const int  ml_id = _check_ml_name(ml_name, "boundary faces");
 
   /* Update the BC structure */
   bc->ml_ids[def_id] = ml_id;
@@ -1512,7 +1512,7 @@ cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
   const int def_id = _add_bc_def(bc);
 
   /* Get the mesh location id from its name */
-  const int  ml_id = _check_ml_name(ml_name, N_("boundary faces"));
+  const int  ml_id = _check_ml_name(ml_name, "boundary faces");
 
   /* Update the BC structure */
   bc->ml_ids[def_id] = ml_id;
@@ -1612,7 +1612,7 @@ cs_equation_add_source_term_by_val(cs_equation_t   *eq,
   cs_source_term_t  *st = eqp->source_terms + st_id;
 
   /* Get the mesh location id from its name */
-  const int  ml_id = _check_ml_name(ml_name, N_("cells"));
+  const int  ml_id = _check_ml_name(ml_name, "cells");
 
   /* Define a flag according to the kind of space discretization */
   cs_flag_t  st_flag = cs_source_term_set_default_flag(eqp->space_scheme);
@@ -1658,7 +1658,7 @@ cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
   cs_source_term_t  *st = eqp->source_terms + st_id;
 
   /* Get the mesh location id from its name */
-  const int  ml_id = _check_ml_name(ml_name, N_("cells"));
+  const int  ml_id = _check_ml_name(ml_name, "cells");
 
   /* Define a flag according to the kind of space discretization */
   cs_flag_t  st_flag = cs_source_term_set_default_flag(eqp->space_scheme);
@@ -1719,11 +1719,11 @@ cs_equation_create_field(cs_equation_t     *eq)
   switch (eqp->space_scheme) {
   case CS_SPACE_SCHEME_CDOVB:
   case CS_SPACE_SCHEME_CDOVCB:
-    location_id = cs_mesh_location_get_id_by_name(N_("vertices"));
+    location_id = cs_mesh_location_get_id_by_name("vertices");
     break;
   case CS_SPACE_SCHEME_CDOFB:
   case CS_SPACE_SCHEME_HHO:
-    location_id = cs_mesh_location_get_id_by_name(N_("cells"));
+    location_id = cs_mesh_location_get_id_by_name("cells");
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
@@ -1750,9 +1750,6 @@ cs_equation_create_field(cs_equation_t     *eq)
   /* Store the related field id */
   eq->field_id = cs_field_id_by_name(eq->varname);
 
-  /* Allocate and initialize values */
-  cs_field_allocate_values(fld);
-
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
 }
@@ -1778,6 +1775,9 @@ cs_equation_init_system(const cs_mesh_t        *mesh,
     cs_timer_stats_start(eq->main_ts_id);
 
   const cs_equation_param_t  *eqp = eq->param;
+
+  /* Allocate and initialize values */
+  cs_field_t  *f = cs_field_by_name(eq->varname);
 
   /* Allocate and initialize a system builder */
   eq->builder = eq->init_builder(eqp, mesh);
@@ -2376,7 +2376,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
   }
 
   /* Get the mesh location id from its name */
-  const int  ml_id = _check_ml_name(ml_name, N_("none"));
+  const int  ml_id = _check_ml_name(ml_name, "none");
 
   /* Retrieve the field from its id */
   cs_field_t  *fld = cs_field_by_id(eq->field_id);

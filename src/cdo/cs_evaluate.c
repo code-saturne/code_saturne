@@ -40,7 +40,9 @@
 
 #include <bft_mem.h>
 
+#include "cs_halo.h"
 #include "cs_math.h"
+#include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_parall.h"
 #include "cs_range_set.h"
@@ -776,6 +778,44 @@ _pfsp_by_value(const double       const_val,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Unmarked vertices belonging to the frontier of the cell selection
+ *
+ * \param[in]      c_id          id of the cell to treat
+ * \param[in]      cell_tag      tag for each cell
+ * \param[in, out] vtx_tag       tag for each vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_untag_frontier_vertices(cs_lnum_t         c_id,
+                         const bool        cell_tag[],
+                         cs_lnum_t         vtx_tag[])
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_lnum_t  *f2v_idx = m->i_face_vtx_idx;
+  const cs_lnum_t  *f2v_lst = m->i_face_vtx_lst;
+  const cs_sla_matrix_t  *c2f = cs_cdo_connect->c2f;
+
+  for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+    const cs_lnum_t  f_id = c2f->col_id[j];
+    if (f_id < m->n_i_faces) { /* interior face */
+
+      if (cell_tag[m->i_face_cells[f_id][0]] == false ||
+          cell_tag[m->i_face_cells[f_id][1]] == false) {
+
+        for (cs_lnum_t i = f2v_idx[f_id]; i < f2v_idx[f_id+1]; i++)
+          vtx_tag[f2v_lst[i]] = 0;
+
+      }
+    } // This face belongs to the frontier of the selection (only interior)
+
+  } // Looop on cell faces
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define a value to each DoF such that a given quantity is put inside
  *         the volume associated to the list of cells
  *
@@ -792,104 +832,130 @@ _pvsp_by_qov(const double       quantity_val,
              const cs_lnum_t   *elt_ids,
              double             values[])
 {
+  const cs_mesh_t  *m = cs_glob_mesh;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_lnum_t  n_cells = quant->n_cells;
+  const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_real_t  *dc_vol = quant->dcell_vol;
   const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
-  const cs_sla_matrix_t  *c2f = cs_cdo_connect->c2f;
-  const cs_sla_matrix_t  *f2c = cs_cdo_connect->f2c;
-  const cs_sla_matrix_t  *f2e = cs_cdo_connect->f2e;
-  const cs_sla_matrix_t  *e2v = cs_cdo_connect->e2v;
 
-  /* Initialize todo array */
+  double  volume_marked = 0.;
+  cs_lnum_t  *vtx_tag = NULL;
   bool  *cell_tag = NULL;
-  int  *vtx_tag = NULL;
 
-  BFT_MALLOC(cell_tag, quant->n_cells, bool);
-  BFT_MALLOC(vtx_tag, quant->n_vertices, int);
+  BFT_MALLOC(vtx_tag, n_vertices, cs_lnum_t);
+  BFT_MALLOC(cell_tag, m->n_cells_with_ghosts, bool);
 
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
-    vtx_tag[v_id] = 0;
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-    cell_tag[c_id] = false;
+  if (elt_ids != NULL) { /* Only some cells are selected */
+
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+      vtx_tag[v_id] = 0;
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++)
+      cell_tag[c_id] = false;
 
   /* First pass: flag cells and vertices */
-# pragma omp parallel for if (n_elts > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
 
-    const cs_lnum_t  c_id = elt_ids[i];
+      const cs_lnum_t  c_id = elt_ids[i];
 
-    cell_tag[c_id] = true;
-    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-      vtx_tag[c2v->ids[j]] = -1; // activated
+      cell_tag[c_id] = true;
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        vtx_tag[c2v->ids[j]] = -1; // activated
 
-  } // Loop on selected cells
+    } // Loop on selected cells
+  }
+  else { /* elt_ids == NULL => all cells are selected */
+
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+      vtx_tag[v_id] = -1;
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      cell_tag[c_id] = true;
+    for (cs_lnum_t c_id = n_cells; c_id < m->n_cells_with_ghosts; c_id++)
+      cell_tag[c_id] = false;
+
+  }
+
+  if (m->halo != NULL)
+    cs_halo_sync_untyped(m->halo, CS_HALO_STANDARD, sizeof(bool), cell_tag);
 
   /* Second pass: detect cells at the frontier of the selection */
-# pragma omp parallel for if (n_elts > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+  if (elt_ids != NULL) { /* Only some cells are selected */
 
-    const cs_lnum_t  c_id = elt_ids[i];
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      _untag_frontier_vertices(elt_ids[i], cell_tag, vtx_tag);
 
-    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+  }
+  else {
 
-      const cs_lnum_t  f_id = c2f->col_id[j];
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      _untag_frontier_vertices(i, cell_tag, vtx_tag);
 
-      bool is_ext_face = false;
-      for (cs_lnum_t l = f2c->idx[f_id]; l < f2c->idx[f_id+1]; l++)
-        if (!cell_tag[f2c->col_id[l]]) is_ext_face = true;
-
-      if (is_ext_face) {
-        for (cs_lnum_t l = f2e->idx[f_id]; l < f2e->idx[f_id+1]; l++) {
-
-          const cs_lnum_t  e_id = f2e->col_id[l];
-          const cs_lnum_t  *v_ids = e2v->col_id + 2*e_id;
-
-          vtx_tag[v_ids[0]] = 0;
-          vtx_tag[v_ids[1]] = 0;
-
-        } // Loop on face edges
-      } // This face belongs to the frontier of the selection (only interior)
-
-    } // Loop on cell faces
-
-  } // Loop on selected cells
+  }
 
   /* Handle parallelism */
   if (cs_glob_n_ranks > 1)
     cs_interface_set_max(cs_cdo_connect->v_rs->ifs,
-                         quant->n_vertices,
+                         n_vertices,
                          1,           // stride
                          true,        // interlace, not useful here
-                         CS_INT32,
+                         CS_LNUM_TYPE,
                          (void *)vtx_tag);
 
   /* Third pass: compute the (really) available volume */
-  double  volume = 0.;
-# pragma omp parallel for reduction(+:volume) if (n_elts > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
+  if (elt_ids != NULL) { /* Only some cells are selected */
 
-    const cs_lnum_t  c_id = elt_ids[i];
+#   pragma omp parallel for reduction(+:volume_marked) if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
 
-    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-      if (vtx_tag[c2v->ids[j]] == -1) // activated
-        volume += dc_vol[j]; // | dual_cell cap cell |
+      const cs_lnum_t  c_id = elt_ids[i];
 
-  } // Loop on selected cells
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        if (vtx_tag[c2v->ids[j]] == -1) // activated
+          volume_marked += dc_vol[j]; // | dual_cell cap cell |
+
+    } // Loop on selected cells
+
+  }
+  else { /* elt_ids == NULL => all cells are selected */
+
+# pragma omp parallel for reduction(+:volume_marked) if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        if (vtx_tag[c2v->ids[j]] == -1) // activated
+          volume_marked += dc_vol[j]; // | dual_cell cap cell |
+    }
+
+  }
 
   /* Handle parallelism */
   if (cs_glob_n_ranks > 1)
-    cs_parall_sum(1, CS_DOUBLE, &volume);
+    cs_parall_sum(1, CS_DOUBLE, &volume_marked);
 
   double val_to_set = quantity_val;
-  if (volume > 0)
-    val_to_set /= volume;
+  if (volume_marked > 0)
+    val_to_set /= volume_marked;
 
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
-  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
-    if (vtx_tag[v_id])
+  if (elt_ids != NULL) { /* Only some cells are selected */
+
+#  pragma omp parallel for if (n_vertices > CS_THR_MIN)
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+      if (vtx_tag[v_id] == -1)
+        values[v_id] = val_to_set;
+
+  }
+  else { /* elt_ids == NULL => all cells are selected */
+
+#  pragma omp parallel for if (n_vertices > CS_THR_MIN)
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
       values[v_id] = val_to_set;
+
+  }
 
   BFT_FREE(cell_tag);
   BFT_FREE(vtx_tag);
@@ -1197,7 +1263,7 @@ cs_evaluate_potential_by_qov(cs_flag_t       dof_flag,
   /* Sanity checks */
   assert(n_elts != NULL);
   cs_mesh_location_type_t  ml_type = cs_mesh_location_get_type(ml_id);
-  if (elt_ids != NULL && ml_type != CS_MESH_LOCATION_CELLS)
+  if (ml_type != CS_MESH_LOCATION_CELLS)
     bft_error(__FILE__, __LINE__, 0, _err_not_handled);
 
   /* Perform the evaluation */
@@ -1205,10 +1271,8 @@ cs_evaluate_potential_by_qov(cs_flag_t       dof_flag,
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     if (cs_test_flag(dof_flag, cs_cdo_primal_vtx))
-      if (elt_ids != NULL) {
-        _pvsp_by_qov(get.val, n_elts[0], elt_ids, retval);
-        check = true;
-      }
+      _pvsp_by_qov(get.val, n_elts[0], elt_ids, retval);
+    check = true;
 
   } /* Located at primal vertices */
 

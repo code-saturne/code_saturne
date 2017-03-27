@@ -60,12 +60,15 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+/* Activation of the CDO/HHO module */
+_Bool  cs_cdo_is_activated = false;
+
 /* Separation lines: long, medium, short */
-const char lsepline[] =
+const char lsepline[80] =
   "# =======================================================================\n";
-const char msepline[] =
+const char msepline[60] =
   "# =========================================\n";
-const char ssepline[] =
+const char ssepline[40] =
   "# =================\n";
 
 /* Default locations */

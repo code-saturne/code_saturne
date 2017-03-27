@@ -53,7 +53,18 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Main program for running a simulation with CDO kernel
+ * \brief  Initialize the computational domain when CDO/HHO schemes are
+ *         activated
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_initialize_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the structures related to the computational domain when
+ *         CDO/HHO schemes are activated
  *
  * \param[in, out]  m     pointer to a cs_mesh_t struct.
  * \param[in]       mq    pointer to a cs_quantities_t struct.
@@ -61,8 +72,27 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_main(cs_mesh_t             *m,
-            cs_mesh_quantities_t  *mq);
+cs_cdo_initialize_structures(cs_mesh_t             *m,
+                             cs_mesh_quantities_t  *mq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Free all structures allocated during the resolution of CDO/HHO
+ *          schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Main program for running a simulation with the CDO kernel
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_main(void);
 
 /*----------------------------------------------------------------------------*/
 
