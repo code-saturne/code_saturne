@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-03-13 19:53+0100\n"
+"POT-Creation-Date: 2017-03-23 19:06+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7541,13 +7541,6 @@ msgstr ""
 msgid ""
 " Invalid key for probe options %s.\n"
 " Please read listing for more details and modify your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid value %s for setting key %s.\n"
-" Valid choices are exact, nearest_center or nearest_vertex\n"
-" Please check your settings."
 msgstr ""
 
 #, c-format

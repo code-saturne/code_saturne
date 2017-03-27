@@ -31,7 +31,7 @@ import os
 def domain_auto_restart(domain, n_add):
     """
     Select latest valid checkpoint for restart, and
-    create ficstp file to add n_add time steps.
+    create control_file to add n_add time steps.
     """
 
     from cs_exec_environment import get_command_output
@@ -216,16 +216,12 @@ def define_domain_parameters(domain):
     # Debugging options
     #------------------
 
-    # The solver may be run through Debug if this memory-checking tool
-    # is available. In this case, domain.debug should contain the matching
-    # command-line arguments, such as:
-    #   domain.debug = '--debugger=dddvalgrind --tool=memcheck'
+    # To run the solver through a debugger, domain.debug should contain
+    # the matching command-line arguments, such as:
+    #   domain.debug = '--debugger=gdb'
+    # or (for Valgrind):
     #   domain.debug = 'valgrind --tool=memcheck'
-    # or (for Valgrind < 3.11):
-    #   domain.debug = 'valgrind --tool=memcheck --db-attach=yes'
-    # or (for Valgrind > 3.6):
-    #   domain.debug = 'valgrind --tool=memcheck --vgdb-error=1'
-    # or (for Valgrind > 3.6 and ddd ):
+    # or (for Valgrind and ddd):
     #   domain.debug = '--debugger=ddd valgrind --tool=memcheck --vgdb-error=1'
 
     if domain.param == None:
