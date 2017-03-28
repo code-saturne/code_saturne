@@ -2337,7 +2337,7 @@ if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 if (icalhy.eq.1) deallocate(frchy, dfrchy, hydro_pres)
 if (ivofmt.ge.0.or.idilat.eq.4) then
-  deallocate(xdtsro)
+  if (allocated(xdtsro)) deallocate(xdtsro)
   if (allocated(xunsro)) deallocate(xunsro)
   if (allocated(tpusro)) deallocate(tpusro)
 endif
