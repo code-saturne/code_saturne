@@ -4148,7 +4148,6 @@ cs_field_log_all_key_vals(bool  log_defaults)
  *   "label"        (string)
  *   "log"          (integer)
  *   "post_vis"     (integer)
- *   "post_probes"  (integer)
  *   "coupled"      (integer, restricted to CS_FIELD_VARIABLE)
  *   "moment_id"    (integer, restricted to
  *                   CS_FIELD_ACCUMULATOR | CS_FIELD_POSTPROCESS);
@@ -4166,7 +4165,6 @@ cs_field_define_keys_base(void)
 
   cs_field_define_key_int("log", 0, 0);
   cs_field_define_key_int("post_vis", 0, 0);
-  cs_field_define_key_int("post_probes", 0, 0);
   cs_field_define_key_int("coupled", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("moment_id", -1,
                           CS_FIELD_ACCUMULATOR | CS_FIELD_POSTPROCESS);

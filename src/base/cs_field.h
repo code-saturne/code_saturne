@@ -998,7 +998,6 @@ cs_field_log_all_key_vals(bool  log_defaults);
  *   "label"        (string)
  *   "log"          (integer)
  *   "post_vis"     (integer)
- *   "post_probes"  (integer)
  *   "coupled"      (integer, restricted to CS_FIELD_VARIABLE)
  *   "moment_id"    (integer, restricted to
  *                   CS_FIELD_ACCUMULATOR | CS_FIELD_POSTPROCESS);
