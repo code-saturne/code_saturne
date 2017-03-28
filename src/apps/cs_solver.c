@@ -235,13 +235,9 @@ cs_run(void)
 
     cs_gui_init();
 
-    if (opts.cdo) {
-
-      halo_type = CS_HALO_STANDARD;
-
+    if (opts.cdo)
       cs_cdo_initialize_setup();
 
-    }
     else {
 
       CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
