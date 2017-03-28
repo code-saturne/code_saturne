@@ -579,7 +579,7 @@ do iel=1,ncel
   ! Inversing the matrix
   call symmetric_matrix_inverse(matrn, oo_matrn)
   do isou = 1, dimrij
-    oo_matrn(isou) = cvara_ep(iel)*oo_matrn(isou)
+    oo_matrn(isou) = oo_matrn(isou)/cvara_ep(iel)
   end do
 
   ! Computing the maximal eigenvalue (in terms of norm!) of S
