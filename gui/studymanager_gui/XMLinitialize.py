@@ -23,12 +23,10 @@
 #-------------------------------------------------------------------------------
 
 """
-This module defines the XML data model in which the user defines the physical
-options of the treated case.
+This module defines the XML data model.
 
-This module contains the following classe:
+This module contains the following class:
 - XMLinit
-- XMLinitTestCase
 """
 
 #-------------------------------------------------------------------------------
@@ -67,7 +65,7 @@ class XMLinit(Variables):
         if msg:
             return msg
 
-        self.__backwardCompatibility()
+        self.__reinitIndices()
 
         return msg
 
@@ -98,7 +96,7 @@ class XMLinit(Variables):
         return msg
 
 
-    def __backwardCompatibility(self):
+    def __reinitIndices(self):
         """
         Change XML in order to ensure backward compatibility.
         """

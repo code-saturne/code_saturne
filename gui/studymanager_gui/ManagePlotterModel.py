@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 """
-This module manages figures :
+This module manages plots :
 
 This module defines the following classes:
 - ManagePlotterModel
@@ -87,7 +87,7 @@ class ManagePlotterModel(Model):
 
     def getSubplotList(self, study):
         """
-        Return list of subplot for a study
+        Return list of subplots for a study
         """
         study_node = self.case.xmlGetNode("study", label = study)
         lst = []
@@ -98,7 +98,7 @@ class ManagePlotterModel(Model):
 
     def getFigureList(self, study):
         """
-        Return list of subplot for a study
+        Return list of figures for a study
         """
         study_node = self.case.xmlGetNode("study", label = study)
         lst = []
@@ -109,7 +109,7 @@ class ManagePlotterModel(Model):
 
     def getMeasurementList(self, study):
         """
-        Return list of subplot for a study
+        Return list of measurements for a study
         """
         study_node = self.case.xmlGetNode("study", label = study)
         lst = []
