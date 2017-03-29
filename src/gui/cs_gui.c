@@ -4525,10 +4525,15 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
           strcpy(tmp2, f->name);
           strcat(tmp2, "_diffusivity_ref");
 
+          /* get DYNAMIC scalar diffusivity reference and divide by reference
+           * density to get the reference KINEMATIC viscosity */
+          cs_real_t scal_diff_ref =
+            cs_field_get_key_double(f, cs_field_key_id("scalar_diffusivity_ref"))
+            / cs_glob_fluid_properties->ro0;
           mei_tree_insert(ev_law,"x",0.0);
           mei_tree_insert(ev_law,"y",0.0);
           mei_tree_insert(ev_law,"z",0.0);
-          mei_tree_insert(ev_law,tmp2,*visls0);
+          mei_tree_insert(ev_law,tmp2, scal_diff_ref);
 
           /* add variable from notebook */
           _add_notebook_variables(ev_law);
