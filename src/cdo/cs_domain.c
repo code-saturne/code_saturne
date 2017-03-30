@@ -427,6 +427,7 @@ cs_domain_create(void)
 
   domain->scheme_flag = 0;
   domain->only_steady = true;
+  domain->force_advfield_update = false;
 
   /* Other options */
   domain->output_nt = -1;
@@ -638,6 +639,22 @@ cs_domain_set_output_param(cs_domain_t       *domain,
     domain->output_nt = -1;
 
   domain->verbosity = verbosity;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set to true the automatic update of all advection fields
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_update_advfield(cs_domain_t       *domain)
+{
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+
+  domain->force_advfield_update = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -902,7 +919,6 @@ cs_domain_activate_gwf(cs_domain_t   *domain,
                                                              "darcian_flux");
 
   cs_advection_field_set_option(adv_field, CS_ADVKEY_DEFINE_AT, "cells");
-  cs_advection_field_set_option(adv_field, CS_ADVKEY_POST, "field");
 
   /* Create a new equation for solving the Richards equation */
   cs_equation_t  *richards_eq = cs_gwf_initialize(richards_eq_id,
@@ -1784,8 +1800,10 @@ cs_domain_process_after_solve(cs_domain_t  *domain)
   /* ================ */
 
   /* Predefined extra-operations related to advection fields */
-  for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
-    cs_advection_field_update(domain->adv_fields[adv_id]);
+  if (domain->force_advfield_update) {
+    for (int adv_id = 0; adv_id < domain->n_adv_fields; adv_id++)
+      cs_advection_field_update(domain->adv_fields[adv_id]);
+  }
 
   /* User-defined extra operations */
   cs_user_cdo_extra_op(domain);

@@ -104,6 +104,7 @@ typedef struct {
   cs_equation_t  **equations;
 
   bool             only_steady;
+  bool             force_advfield_update;
 
   /* Flag to know if scalar or vector equations are requested and which kind
      of numerical schemes is requested to solve these equations */
@@ -236,6 +237,17 @@ void
 cs_domain_set_output_param(cs_domain_t       *domain,
                            int                nt_list,
                            int                verbosity);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set to true the automatic update of all advection fields
+ *
+ * \param[in, out]  domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_update_advfield(cs_domain_t       *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

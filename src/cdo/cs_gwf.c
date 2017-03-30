@@ -73,12 +73,6 @@ BEGIN_C_DECLS
 
 #define CS_GWF_DBG 0
 
-/* Tag dedicated to build a flag for the groundwater module */
-/*   1: post the moisture content */
-#define CS_GWF_POST_MOISTURE  (1 <<  0)
-/*   2: an array has been allocated to be an input for laws */
-#define CS_GWF_FREE_HEAD_LAW  (1 <<  1)
-
 /*============================================================================
  * Structure definitions
  *============================================================================*/
@@ -127,7 +121,6 @@ typedef struct {
 /* --------------------------------------------------- */
 struct _gwf_t {
 
-  cs_flag_t                  flag;         /* Compact information */
   cs_gwf_hydraulic_model_t   global_model;
 
   /* Physical parameters related to each kind of soil considered.
@@ -153,6 +146,7 @@ struct _gwf_t {
                                         hydraulic head (solved in Richards eq.)
                                         is denoted by H.
                                         h = H - gravity_potential */
+
   cs_real_t       *head_in_law;       /* Array used as an input in laws */
 
   /* Set of equations associated to this module */
@@ -165,10 +159,10 @@ struct _gwf_t {
      this property plays also a role in the diffusion of tracer equations */
   cs_property_t   *permeability;  /* shared with a cs_domain_t structure */
 
-  /* Scan the c2e connectivity index to get the darcian flux related to
-     each dual face when CDO vertex-based scheme is activated */
-  cs_real_t       *darcian_flux;
-  cs_adv_field_t  *adv_field;    /* shared with a cs_domain_t structure */
+  /* Settings related to the advection field stemming from the darcian flux */
+  cs_flag_t        flux_location; /* indicate where the array is defined */
+  cs_real_t       *darcian_flux;  /* array defining the advection field */
+  cs_adv_field_t  *adv_field;     /* shared with a cs_domain_t structure */
 
 };
 
@@ -764,118 +758,161 @@ _tracy_moisture_from_c_head(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the pressure head from the value of the hydraulic head
+ * \brief  Update the groundwater system (pressure head, head in law, moisture
+ *         content, darcian velocity)
  *
  * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
  * \param[in]      richards    pointer to the Richards equation structure
+ * \param[in]      cur2prev    true or false
  * \param[in, out] gw          pointer to a cs_gwf_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_pressure_head(const cs_cdo_quantities_t   *cdoq,
-                      const cs_equation_t         *richards,
-                      cs_gwf_t                    *gw)
+_update_system(const cs_cdo_quantities_t   *cdoq,
+               const cs_cdo_connect_t      *connect,
+               const cs_equation_t         *richards,
+               bool                         cur2prev,
+               cs_gwf_t                    *gw)
 {
   /* Sanity checks */
   if (richards == NULL || gw == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " Groundwater module or Richards eq. is not allocated.");
 
+  const cs_field_t  *hydraulic_head = cs_equation_get_field(richards);
   cs_field_t  *pressure_head = gw->pressure_head;
 
-  /* Sanity checks */
-  if (pressure_head == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              " The field related to the pressure head is not allocated.");
+  if (gw->with_gravitation) { /* Update the pressure head */
 
-  /* Copy current field values to previous values */
-  cs_field_current_to_previous(pressure_head);
+    /* Sanity checks */
+    if (pressure_head == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                " The field related to the pressure head is not allocated.");
 
-  const cs_field_t  *hydraulic_head = cs_equation_get_field(richards);
+    /* Copy current field values to previous values */
+    if (cur2prev)
+      cs_field_current_to_previous(gw->pressure_head);
 
-  switch (cs_equation_get_space_scheme(richards)) {
+    switch (cs_equation_get_space_scheme(richards)) {
 
-  case CS_SPACE_SCHEME_CDOVB:
-  case CS_SPACE_SCHEME_CDOVCB:
-    assert(hydraulic_head->location_id ==
-           cs_mesh_location_get_id_by_name("vertices"));
+    case CS_SPACE_SCHEME_CDOVB:
+      assert(hydraulic_head->location_id ==
+             cs_mesh_location_get_id_by_name("vertices"));
 
-#   pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
+#     pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
 
-      const cs_real_t  gpot = cs_math_3_dot_product(cdoq->vtx_coord + 3*i,
-                                                    gw->gravity);
+        const cs_real_t  gpot = cs_math_3_dot_product(cdoq->vtx_coord + 3*i,
+                                                      gw->gravity);
 
-      pressure_head->val[i] = hydraulic_head->val[i] - gpot;
+        pressure_head->val[i] = hydraulic_head->val[i] - gpot;
 
-    }
-    break;
+      }
 
-  case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO:
-    assert(hydraulic_head->location_id ==
-           cs_mesh_location_get_id_by_name("cells"));
+      /* Update head_in_law */
+      cs_reco_pv_at_cell_centers(connect->c2v,
+                                 cdoq,
+                                 pressure_head->val,
+                                 gw->head_in_law);
+      break;
 
-#   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
+    case CS_SPACE_SCHEME_CDOVCB:
+      {
+        assert(hydraulic_head->location_id ==
+               cs_mesh_location_get_id_by_name("vertices"));
 
-      const cs_real_t  gpot = cs_math_3_dot_product(cdoq->cell_centers + 3*i,
-                                                    gw->gravity);
+#       pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
 
-      pressure_head->val[i] = hydraulic_head->val[i] - gpot;
+          const cs_real_t  gpot = cs_math_3_dot_product(cdoq->vtx_coord + 3*i,
+                                                        gw->gravity);
 
-    }
-    break; // Nothing to do (h_head is a pointer to richards field)
+          pressure_head->val[i] = hydraulic_head->val[i] - gpot;
 
-  default:
-    bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
+        }
 
-  } // Switch on space scheme
+        /* Update head_in_law */
+        const cs_real_t  *hydraulic_head_cells =
+          cs_equation_get_cell_values(richards);
 
-}
+#       pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the moisture content from the value of the hydraulic head
- *
- * \param[in]      connect     pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
- * \param[in]      richards    pointer to the Richards equation structure
- * \param[in, out] gw          pointer to a cs_gwf_t structure
- */
-/*----------------------------------------------------------------------------*/
+          const cs_real_t  gpot =
+            cs_math_3_dot_product(cdoq->cell_centers + 3*i, gw->gravity);
 
-static void
-_update_moisture_content(const cs_cdo_connect_t      *connect,
-                         const cs_cdo_quantities_t   *cdoq,
-                         const cs_equation_t         *richards,
-                         cs_gwf_t                    *gw)
-{
-  CS_UNUSED(richards);
+          gw->head_in_law[i] = hydraulic_head_cells[i] - gpot;
 
+        }
+
+      }
+      break;
+
+    case CS_SPACE_SCHEME_CDOFB:
+    case CS_SPACE_SCHEME_HHO:
+      assert(hydraulic_head->location_id ==
+             cs_mesh_location_get_id_by_name("cells"));
+
+#     pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
+
+        const cs_real_t  gpot = cs_math_3_dot_product(cdoq->cell_centers + 3*i,
+                                                      gw->gravity);
+
+        pressure_head->val[i] = hydraulic_head->val[i] - gpot;
+
+      }
+      break; // Nothing to do (h_head is a pointer to richards field)
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
+
+    } // Switch on space scheme
+
+  }
+  else { // No gravity effect id taken into account
+
+    /* Update head_in_law */
+    switch(cs_equation_get_space_scheme(richards)) {
+
+    case CS_SPACE_SCHEME_CDOVB:
+      cs_reco_pv_at_cell_centers(connect->c2v,
+                                 cdoq,
+                                 hydraulic_head->val,
+                                 gw->head_in_law);
+      break;
+
+    case CS_SPACE_SCHEME_CDOVCB:
+      {
+        const cs_real_t  *hydraulic_head_cells =
+          cs_equation_get_cell_values(richards);
+
+        memcpy(gw->head_in_law, hydraulic_head_cells,
+               sizeof(cs_real_t)*cdoq->n_cells);
+      }
+      break;
+
+    default:
+      break; // Nothing to do
+
+    } // Switch on the space scheme related to the Richards equation
+
+  } /* Gravity is activated or not */
+
+  /* Update the moisture content */
   cs_field_t  *moisture = gw->moisture_content;
 
   if (moisture == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " The field related to the moisture content is not allocated.");
 
-  /* Copy current field values to previous values */
-  cs_field_current_to_previous(moisture);
+  if (cur2prev)
+    cs_field_current_to_previous(moisture);
 
   /* Moisture content is define in each cell along with the hydraulic (or
      pressure head */
-
-  const cs_field_t  *h;
-  if (gw->with_gravitation)
-    h = gw->pressure_head;
-  else
-    h = cs_equation_get_field(richards);
-
-  cs_mesh_location_type_t  ml_type = cs_mesh_location_get_type(h->location_id);
-  if (ml_type == CS_MESH_LOCATION_VERTICES)
-    cs_reco_pv_at_cell_centers(connect->c2v, cdoq, h->val, gw->head_in_law);
-
   for (int soil_id = 0; soil_id < gw->n_soils; soil_id++) {
 
     const cs_gwf_soil_t  *soil = gw->soil_param + soil_id;
@@ -922,6 +959,55 @@ _update_moisture_content(const cs_cdo_connect_t      *connect,
     } // Switch on the type of soil modelling
 
   } // Loop on soils
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
+  cs_dump_array_to_listing("MOISTURE_CONTENT",
+                           cdoq->n_cells,
+                           gw->moisture_content->val, 8);
+#endif
+
+  /* Update the advection field related to the groundwater flow module */
+  cs_field_t  *vel = cs_advection_field_get_field(gw->adv_field,
+                                                  CS_MESH_LOCATION_CELLS);
+
+  if (cur2prev)
+    cs_field_current_to_previous(vel);
+
+  /* Compute the darcian flux and the darcian velocity inside each cell */
+  switch (cs_equation_get_space_scheme(richards)) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+  case CS_SPACE_SCHEME_CDOVCB:
+
+    /* Update the array gw->darcian_flux associated to the advection field */
+    cs_equation_compute_diff_flux_cellwise(richards,
+                                           gw->flux_location,
+                                           gw->darcian_flux);
+
+    /* Set the new values */
+    cs_advection_field_at_cells(gw->adv_field, vel->val);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
+    if (cs_test_flag(location, cs_cdo_dual_face_byc))
+      cs_dump_array_to_listing("DARCIAN_FLUX_DFbyC",
+                               connect->c2e->idx[cdoq->n_cells],
+                               gw->darcian_flux, 8);
+    else if (cs_test_flag(location, cs_cdo_primal_cell))
+      cs_dump_array_to_listing("DARCIAN_FLUX_CELL",
+                               3*cdoq->n_cells,
+                               gw->darcian_flux, 3);
+#endif
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO:
+    bft_error(__FILE__, __LINE__, 0, " TODO.");
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
+
+  } // End of switch
 
 }
 
@@ -1042,8 +1128,6 @@ cs_gwf_create(void)
   BFT_MALLOC(gw, 1, cs_gwf_t);
 
   /* Default initialization */
-  gw->flag = 0;
-
   gw->n_soils = 0;
   gw->n_max_soils = 0;
   gw->soil_param = NULL;
@@ -1061,6 +1145,7 @@ cs_gwf_create(void)
   gw->n_max_tracers = 0;
   gw->tracer_eq_ids = NULL;
 
+  gw->flux_location = cs_cdo_primal_cell;
   gw->darcian_flux = NULL;
   gw->adv_field = NULL;
 
@@ -1085,7 +1170,7 @@ cs_gwf_finalize(cs_gwf_t   *gw)
 
   BFT_FREE(gw->tracer_eq_ids);
   BFT_FREE(gw->darcian_flux);
-  if (gw->flag & CS_GWF_FREE_HEAD_LAW)
+  if (gw->head_in_law != NULL)
     BFT_FREE(gw->head_in_law);
 
   for (int i = 0; i < gw->n_soils; i++) {
@@ -1125,55 +1210,43 @@ cs_gwf_get_n_soils(const cs_gwf_t    *gw)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set parameters related to a cs_gwf_t structure
+ * \brief  Activate the gravity and set the gravitaty vector
  *
  * \param[in, out]  gw        pointer to a cs_gwf_t structure
- * \param[in]       key       key related to the member of gw to set
- * \param[in]       keyval    accessor to the value to set
+ * \param[in]       gvec      values of the gravity vector
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_param(cs_gwf_t       *gw,
-                 cs_gwf_key_t    key,
-                 const char     *keyval)
+cs_gwf_set_gravity_vector(cs_gwf_t              *gw,
+                          const cs_real_3_t      gvec)
 {
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
-  /* Conversion of the string to lower case */
-  char val[CS_BASE_STRING_LEN];
-  for (size_t i = 0; i < strlen(keyval); i++)
-    val[i] = tolower(keyval[i]);
-  val[strlen(keyval)] = '\0';
+  gw->with_gravitation = true;
+  gw->gravity[0] = gvec[0];
+  gw->gravity[1] = gvec[1];
+  gw->gravity[2] = gvec[2];
+}
 
-  switch(key) {
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Advanced setting: indicate where the darcian flux is stored
+ *         cs_cdo_primal_cell is the default setting
+ *         cs_cdo_dual_face_byc is a valid choice for vertex-based schemes
+ *
+ * \param[in, out]  gw              pointer to a cs_gwf_t structure
+ * \param[in]       location_flag   where the flux is defined
+ */
+/*----------------------------------------------------------------------------*/
 
-  case CS_GWFKEY_GRAVITATION:
-    gw->with_gravitation = true;
-    gw->gravity[0] = gw->gravity[1] = gw->gravity[2] = 0.;
-    if (strcmp(val, "x") == 0)       gw->gravity[0] =  1.;
-    else if (strcmp(val, "-x") == 0) gw->gravity[0] = -1.;
-    else if (strcmp(val, "y") == 0)  gw->gravity[1] =  1.;
-    else if (strcmp(val, "-y") == 0) gw->gravity[1] = -1.;
-    else if (strcmp(val, "z") == 0)  gw->gravity[2] =  1.;
-    else if (strcmp(val, "-z") == 0) gw->gravity[2] = -1.;
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid choice of gravitation axis: %s.\n"
-                  " Available choices are 'x', 'y' and 'z'\n"
-                  " Please check your settings."), val);
-    break;
+void
+cs_gwf_set_darcian_flux_location(cs_gwf_t      *gw,
+                                 cs_flag_t      location_flag)
+{
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
-  case CS_GWFKEY_OUTPUT_MOISTURE:
-    if (strcmp(val, "false")) // not "false"
-      gw->flag |= CS_GWF_POST_MOISTURE;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _(" Key not implemented yet."));
-
-  } /* Switch on keys */
-
+  gw->flux_location = location_flag;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1778,6 +1851,9 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
   int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
   int  v_loc_id = cs_mesh_location_get_id_by_name("vertices");
 
+  const cs_space_scheme_t  space_scheme =
+    cs_equation_get_space_scheme(richards);
+
   /* Create a moisture field attached to cells */
   gw->moisture_content = cs_field_create("moisture_content",
                                          field_mask,
@@ -1788,7 +1864,7 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
   cs_field_set_key_int(gw->moisture_content, cs_field_key_id("log"), 1);
   cs_field_set_key_int(gw->moisture_content, cs_field_key_id("post_vis"), 1);
 
-  switch (cs_equation_get_space_scheme(richards)) {
+  switch (space_scheme) {
   case CS_SPACE_SCHEME_CDOVB:
   case CS_SPACE_SCHEME_CDOVCB:
     {
@@ -1801,7 +1877,7 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
 
       /* Define and then link the advection field to each tracer equations */
       cs_desc_t  flux_desc =
-        {.location = CS_FLAG_SCALAR | cs_cdo_dual_face_byc,
+        {.location = CS_FLAG_SCALAR | gw->flux_location,
          .state = CS_FLAG_STATE_FLUX};
 
       cs_advection_field_def_by_array(gw->adv_field, flux_desc);
@@ -2123,13 +2199,12 @@ cs_gwf_final_initialization(const cs_cdo_connect_t    *connect,
      TODO: Face-based schemes */
   switch (ric_scheme) {
   case CS_SPACE_SCHEME_CDOVB:
-  case CS_SPACE_SCHEME_CDOVCB:
     {
       const cs_connect_index_t  *c2e = connect->c2e;
 
       BFT_MALLOC(gw->head_in_law, n_cells, cs_real_t);
-      gw->flag |= CS_GWF_FREE_HEAD_LAW;
 
+      /* Darcian flux settings */
       BFT_MALLOC(gw->darcian_flux, c2e->idx[n_cells], cs_real_t);
 
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -2140,21 +2215,39 @@ cs_gwf_final_initialization(const cs_cdo_connect_t    *connect,
     }
     break;
 
+  case CS_SPACE_SCHEME_CDOVCB:
+
+    BFT_MALLOC(gw->head_in_law, n_cells, cs_real_t);
+
+    /* Darcian flux settings */
+    BFT_MALLOC(gw->darcian_flux, 3*n_cells, cs_real_t);
+
+#   pragma omp parallel for if (3*n_cells > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < 3*n_cells; i++)
+      gw->darcian_flux[i] = 0;
+
+    cs_advection_field_set_array(gw->adv_field, gw->darcian_flux);
+    break;
+
   case CS_SPACE_SCHEME_CDOFB:
   case CS_SPACE_SCHEME_HHO:
-    {
-      if (gw->with_gravitation)
-        gw->head_in_law = gw->pressure_head->val;
-      else
-        gw->head_in_law = hydraulic_head->val;
+    if (gw->with_gravitation)
+      gw->head_in_law = gw->pressure_head->val;
+    else
+      gw->head_in_law = hydraulic_head->val;
 
-      /* TODO: Set the darcian flux */
-    }
+    /* Darcian flux settings */
+    BFT_MALLOC(gw->darcian_flux, 3*n_cells, cs_real_t);
+
+#   pragma omp parallel for if (3*n_cells > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < 3*n_cells; i++)
+      gw->darcian_flux[i] = 0;
+    cs_advection_field_set_array(gw->adv_field, gw->darcian_flux);
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
-
+    break;
   }
 
   if (gw->n_soils > 1) { /* Default initialization of soil_id */
@@ -2286,24 +2379,10 @@ cs_gwf_final_initialization(const cs_cdo_connect_t    *connect,
 
           cs_property_set_array(diff_pty, c_desc, gw->moisture_content->val);
 
-          switch (ric_scheme) {
-          case CS_SPACE_SCHEME_CDOVB:
-          case CS_SPACE_SCHEME_CDOVCB:
-            {
-              cs_desc_t  df_desc =
-                {.location = CS_FLAG_SCALAR | cs_cdo_dual_face_byc,
-                 .state = CS_FLAG_STATE_FLUX};
-              cs_property_set_second_array(diff_pty, df_desc, gw->darcian_flux);
-            }
-            break;
-
-          case CS_SPACE_SCHEME_CDOFB:
-          case CS_SPACE_SCHEME_HHO:
-            break;
-
-          default:
-            bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
-          }
+          cs_desc_t  desc2 =
+            {.location = CS_FLAG_SCALAR | gw->flux_location,
+             .state = CS_FLAG_STATE_FLUX};
+          cs_property_set_second_array(diff_pty, desc2, gw->darcian_flux);
 
         } // Diffusion part
 
@@ -2363,8 +2442,8 @@ cs_gwf_compute(const cs_mesh_t                      *mesh,
        - initialize source term */
     cs_equation_init_system(mesh, richards);
 
-    if (gw->with_gravitation) /* Initialize pressure head */
-      _update_pressure_head(cdoq, richards, gw);
+    /* Take into the initialization */
+    _update_system(cdoq, connect, richards, false, gw);
 
     /* Build and solve the linear system related to the Richards equations */
     if (cs_equation_is_steady(richards)) {
@@ -2375,24 +2454,9 @@ cs_gwf_compute(const cs_mesh_t                      *mesh,
       /* Solve the algebraic system */
       cs_equation_solve(richards);
 
-      /* Update pressure head */
-      if (gw->with_gravitation)
-        _update_pressure_head(cdoq, richards, gw);
+      /* Update the variables related to the groundwater flow system */
+      _update_system(cdoq, connect, richards, true, gw);
 
-      /* Compute the darcian flux */
-      cs_equation_compute_diff_flux(richards, gw->darcian_flux);
-
-      /* Update the moisture content */
-      _update_moisture_content(connect, cdoq, richards, gw);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
-      cs_dump_array_to_listing("DARCIAN_FLUX",
-                               connect->c2e->idx[cdoq->n_cells],
-                               gw->darcian_flux, 8);
-      cs_dump_array_to_listing("MOISTURE_CONTENT",
-                               cdoq->n_cells,
-                               gw->moisture_content->val, 8);
-#endif
     }
 
     for (int i = 0; i < gw->n_tracers; i++) {
@@ -2426,24 +2490,9 @@ cs_gwf_compute(const cs_mesh_t                      *mesh,
       /* Solve the algebraic system */
       cs_equation_solve(richards);
 
-      /* Update pressure head */
-      if (gw->with_gravitation)
-        _update_pressure_head(cdoq, richards, gw);
+      /* Update the variables related to the groundwater flow system */
+      _update_system(cdoq, connect, richards, true, gw);
 
-      /* Compute the darcian flux */
-      cs_equation_compute_diff_flux(richards, gw->darcian_flux);
-
-      /* Update the moisture content */
-      _update_moisture_content(connect, cdoq, richards, gw);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
-      cs_dump_array_to_listing("DARCIAN_FLUX",
-                               connect->c2e->idx[cdoq->n_cells],
-                               gw->darcian_flux, 8);
-      cs_dump_array_to_listing("MOISTURE_CONTENT",
-                               cdoq->n_cells,
-                               gw->moisture_content->val, 8);
-#endif
     }
 
     for (int i = 0; i < gw->n_tracers; i++) {
@@ -2520,21 +2569,6 @@ cs_gwf_extra_post(void                      *input,
     return;
 
   const cs_gwf_t  *gw = (const cs_gwf_t *)input;
-
-  if (gw->flag & CS_GWF_POST_MOISTURE) {
-    cs_field_t  *f = gw->moisture_content;
-    cs_post_write_var(CS_POST_MESH_VOLUME,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      f->name,
-                      1,              // dim
-                      true,           // interlace
-                      true,           // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      f->val,         // values on cells
-                      NULL,           // values at internal faces
-                      NULL,           // values at border faces
-                      time_step);     // time step structure
-  }
 
   if (gw->with_gravitation) { /* Post-process pressure head */
 
