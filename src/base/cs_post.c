@@ -1071,10 +1071,8 @@ _update_mesh_writer_associations(cs_post_mesh_t  *post_mesh)
     for (i = 0; i < n_writers; i++) {
 
       fvm_writer_time_dep_t mod_flag;
-      int _writer_id = post_mesh->writer_id[i];
+      const int _writer_id = post_mesh->writer_id[i];
       cs_post_writer_t  *writer = _cs_post_writers + _writer_id;
-
-      post_mesh->writer_id[i] = _writer_id;
 
       if (writer->wd != NULL)
         mod_flag = writer->wd->time_dep;
@@ -1101,7 +1099,7 @@ _update_mesh_writer_associations(cs_post_mesh_t  *post_mesh)
     for (i = 0, j = 0; i < n_writers; i++) {
 
       fvm_writer_time_dep_t mod_flag;
-      int _writer_id = post_mesh->writer_id[i];
+      const int _writer_id = post_mesh->writer_id[i];
       cs_post_writer_t  *writer = _cs_post_writers + _writer_id;
 
       if (writer->wd != NULL)
@@ -1290,6 +1288,18 @@ _free_mesh(int _mesh_id)
   BFT_FREE(post_mesh->name);
 
   /* Shift remaining meshes */
+
+  for (i = 0; i < _cs_post_n_meshes; i++) {
+    post_mesh = _cs_post_meshes + i;
+    if (post_mesh->locate_ref > _mesh_id)
+      post_mesh->locate_ref -= 1;
+    else if (post_mesh->locate_ref == _mesh_id)
+      post_mesh->locate_ref = -1;
+    if (post_mesh->edges_ref >= _mesh_id) {
+      assert(post_mesh->edges_ref != _mesh_id);
+      post_mesh->edges_ref -= 1;
+    }
+  }
 
   for (i = _mesh_id + 1; i < _cs_post_n_meshes; i++) {
     post_mesh = _cs_post_meshes + i;
@@ -1719,8 +1729,8 @@ _define_probe_export_mesh(cs_post_mesh_t  *post_mesh)
                              &n_writers,
                              &writer_id);
 
-  if (time_varying == true)
-    post_mesh->locate_ref = 0;
+  if (time_varying == false)
+    post_mesh->locate_ref = -1;
 }
 
 /*----------------------------------------------------------------------------
