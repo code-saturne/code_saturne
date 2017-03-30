@@ -2547,7 +2547,7 @@ _cs_real_sstats_nd(cs_lnum_t         n,
 
       if (vl == NULL) {
 
-        const cs_real_t *_v = v + s_id;
+        const cs_real_t *_v = v + s_id*dim;
 
         for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
           cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
@@ -2695,7 +2695,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
 
       if (vl == NULL && wl == NULL) {
 
-        const cs_real_t *_v = v + s_id;
+        const cs_real_t *_v = v + s_id*dim;
         const cs_real_t *_w = w + s_id;
 
         for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
@@ -2724,7 +2724,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
       else if (vl == NULL) {
 
         const cs_lnum_t *_wl = wl + s_id;
-        const cs_real_t *_v = v + s_id;
+        const cs_real_t *_v = v + s_id*dim;
 
         for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
           cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
