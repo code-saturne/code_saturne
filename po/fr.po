@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-03-23 19:06+0100\n"
+"POT-Creation-Date: 2017-03-27 19:25+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -9456,43 +9456,13 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid key name \"%s\" for setting a boundary by default.\n"
-" Available choices are: wall or symmetry."
-msgstr ""
-
-#, c-format
-msgid ""
 " Problem detected during the setup.\n"
-" %d boundary faces have no boundary type."
-msgstr ""
-
-msgid "cells"
-msgstr "cellules"
-
-msgid ""
-" Invalid key for setting a cs_domain_t structure. This key is not associated "
-"to a \"double\" type."
+" %lu boundary faces have no boundary type."
 msgstr ""
 
 msgid ""
-" Invalid key for setting a cs_domain_t structure. This key is not associated "
-"to a \"int\" type."
-msgstr ""
-
-msgid " Invalid key for setting a cs_domain_t structure."
-msgstr ""
-
-msgid ""
-" Invalid boundary by default.\n"
-" Please modify your settings."
-msgstr ""
-
-msgid " Invalid idtvar value for the CDO module.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Undefined type of equation to solve for eq. %s. Please check your settings."
+" Invalid type of boundary by default.\n"
+" Valid choice is CS_PARAM_BOUNDARY_WALL or CS_PARAM_BOUNDARY_SYMMETRY."
 msgstr ""
 
 #, c-format
@@ -9501,10 +9471,7 @@ msgid ""
 " This mesh location is not already defined.\n"
 msgstr ""
 
-#, c-format
-msgid ""
-" Invalid key name \"%s\" for setting a boundary.\n"
-" Available choices are: wall, inlet, outlet or symmetry."
+msgid " Invalid key for setting a cs_domain_t structure."
 msgstr ""
 
 #, c-format
@@ -9541,6 +9508,19 @@ msgstr ""
 msgid ""
 " Invalid type of boundary condition by default: %s\n"
 " Choices are zero_value or zero_flux."
+msgstr ""
+
+#, c-format
+msgid ""
+" Undefined type of equation to solve for eq. %s. Please check your settings."
+msgstr ""
+
+msgid ""
+" Invalid boundary by default.\n"
+" Please modify your settings."
+msgstr ""
+
+msgid " Invalid idtvar value for the CDO module.\n"
 msgstr ""
 
 msgid ""
@@ -9667,9 +9647,6 @@ msgid ""
 "structure.\n"
 msgstr ""
 
-msgid "vertices"
-msgstr "sommets"
-
 #, c-format
 msgid ""
 " Space scheme for eq. %s is incompatible with a field.\n"
@@ -9785,13 +9762,13 @@ msgstr ""
 msgid " Groundwater module is activated but no soil is defined."
 msgstr ""
 
-msgid " Richards eq. is only available for vertex-based schemes."
-msgstr ""
-
 msgid " Invalid type of property."
 msgstr ""
 
 msgid " Invalid type of model for groundwater module.."
+msgstr ""
+
+msgid " Richards eq. is only available for vertex-based schemes."
 msgstr ""
 
 msgid "by analytic function"
@@ -9867,14 +9844,14 @@ msgid ""
 " Please modify your settings."
 msgstr ""
 
-msgid " Invalid type of definition for a property."
-msgstr ""
-
 #, c-format
 msgid ""
 " Invalid value %s for setting key CS_PTYKEY_POST\n"
 " Valid choices are \"fourier\".\n"
 " Please modify your setting.\n"
+msgstr ""
+
+msgid " Invalid type of definition for a property."
 msgstr ""
 
 msgid "barycentric"
@@ -14481,6 +14458,12 @@ msgstr "    Création du halo distant\n"
 
 msgid "    Updating the faces -> cells connectivity\n"
 msgstr "    Mise à jour de la connectivité faces -> cellules\n"
+
+msgid "cells"
+msgstr "cellules"
+
+msgid "vertices"
+msgstr "sommets"
 
 msgid "faces"
 msgstr ""
