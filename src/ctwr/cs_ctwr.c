@@ -900,7 +900,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
                                       t_h[cell_id]);
 
     /* Initialise the liquid vertical velocity component
-     * this is correct for dorplet and extended for other packing zones
+     * this is correct for droplet and extended for other packing zones
      * NB: this value is derived from the drag coef:
      * C_D = 24 / Re * (1 + 0.15 * Re^0.687)
      * See ZOPLU HT-31-08-06 */
