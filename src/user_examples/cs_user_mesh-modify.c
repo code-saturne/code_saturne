@@ -140,7 +140,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   {
     int n_layers = 2;
     double thickness = 1.0;
-    double reason = 1.5;
+    double expansion_factor = 1.5;
 
     const char criteria[] = "outlet";
 
@@ -158,10 +158,10 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     /* Extrude selected boundary */
 
     cs_mesh_extrude_constant(mesh,
-                             false,
+                             false, /* Maintain groups on interio faces? */
                              n_layers,
                              thickness,
-                             reason,
+                             expansion_factor,
                              n_selected_faces,
                              selected_faces);
 

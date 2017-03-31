@@ -718,7 +718,7 @@ class StandardItemModelExtrude(QStandardItemModel):
         self.headers = [ self.tr("zone id"),
                          self.tr("n layers"),
                          self.tr("thickness"),
-                         self.tr("reason"),
+                         self.tr("expansion factor"),
                          self.tr("selector")]
 
         self.setColumnCount(len(self.headers))
