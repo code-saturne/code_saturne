@@ -104,6 +104,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
 
         # 1/ Combo box models
 
+        # FIXME really useful to duplicate this comboBox for ground water flow?
         self.modelSpecies  = ComboModel(self.comboBoxSpecies, 1, 1)
         self.modelSpecies2 = ComboModel(self.comboBoxSpecies2, 1, 1)
         self.modelZone     = ComboModel(self.comboBoxZone, 1, 1)
@@ -125,6 +126,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
 
             if GroundwaterModel(self.case).getGroundwaterModel() != "off":
                 self.groupBoxStandard.hide()
+                # FIXME really useful to duplicate this groupBox for ground water flow?
                 self.groupBoxTransport.show()
                 if (zone.getNature()['momentum_source_term'] == "on"):
                     self.groupBoxRichards.show()
@@ -153,7 +155,9 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             for scalar in scalar_list:
                 self.scalar = scalar
                 self.modelSpecies.addItem(self.tr(scalar),self.scalar)
+                self.modelSpecies2.addItem(self.tr(scalar),self.scalar)
             self.modelSpecies.setItem(str_model = self.scalar)
+            self.modelSpecies2.setItem(str_model = self.scalar)
 
         # 2/ Connections
 
