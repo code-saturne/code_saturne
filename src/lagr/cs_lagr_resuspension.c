@@ -213,16 +213,16 @@ cs_lagr_resuspension(void)
 
 
               cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                      CS_LAGR_PART_IN_FLOW);
+                                        CS_LAGR_PART_IN_FLOW);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, 0.0);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, 0.0);
               cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES, 0);
               cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, 0);
               cs_lagr_particle_set_real(part, p_am, CS_LAGR_DISPLACEMENT_NORM, 0.0);
 
-            cs_real_t norm_face = fvq->b_face_surf[face_id];
+              cs_real_t norm_face = fvq->b_face_surf[face_id];
 
-              cs_real_t norm_velocity = sqrt(pow(part_vel[0], 2) + pow (part_vel[1], 2) + pow (part_vel[2], 2));
+              cs_real_t norm_velocity = cs_math_3_norm(part_vel);
 
               cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)*2.0/p_mass);
               cs_real_t angle_reent =
@@ -282,9 +282,7 @@ cs_lagr_resuspension(void)
                    && cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) > 0) {
 
               cs_real_t kinetic_energy =  0.5 * p_mass
-                * (    pow(part_vel[0], 2)
-                     + pow(part_vel[1], 2)
-                     + pow(part_vel[2], 2));
+                * cs_math_3_square_norm(part_vel);
 
               if (kinetic_energy > adhesion_energ) {
 
@@ -301,7 +299,7 @@ cs_lagr_resuspension(void)
 
                 cs_real_t norm_face = cs_glob_mesh_quantities->b_face_surf[face_id];
 
-                cs_real_t norm_velocity = sqrt(pow(part_vel[0], 2) + pow (part_vel[1], 2) + pow (part_vel[2], 2));
+                cs_real_t norm_velocity = cs_math_3_norm(part_vel);
 
                 cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)*2.0/p_mass);
                 cs_real_t angle_reent =
@@ -428,12 +426,10 @@ cs_lagr_resuspension(void)
           /* Reconstruct an estimate of the kinetic energy   */
           /* at the current sub-time-step assuming a linear variation  */
 
-          cs_real_t kinetic_energy_prev = 0.5 * p_mass * ( pow(prev_part_vel[0], 2) +
-                                                           pow(prev_part_vel[1], 2) +
-                                                           pow(prev_part_vel[2], 2));
-          cs_real_t kinetic_energy_cur = 0.5 * p_mass * ( pow(part_vel[0], 2) +
-                                                           pow(part_vel[1], 2) +
-                                                           pow(part_vel[2], 2));
+          cs_real_t kinetic_energy_prev = 0.5 * p_mass
+            * cs_math_3_square_norm(prev_part_vel);
+          cs_real_t kinetic_energy_cur = 0.5 * p_mass
+            * cs_math_3_square_norm(part_vel);
 
           cs_real_t kinetic_energy = kinetic_energy_prev
             + ii / ndiam * (kinetic_energy_cur - kinetic_energy_prev);

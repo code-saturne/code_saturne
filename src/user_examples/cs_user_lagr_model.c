@@ -179,7 +179,7 @@ cs_user_lagr_model(void)
    *   ------------------------
    *
    *   Additional variables may be accessed using the (CS_LAGR_USER + i)
-   *   attribute, where 0 < i < lagr_params->n_user_variables
+   *   attribute, where 0 <= i < lagr_params->n_user_variables
    *   is the additional variable index.
    *
    *   The integration of the associated differential stochastic equation

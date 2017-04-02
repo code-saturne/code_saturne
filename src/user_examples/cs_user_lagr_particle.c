@@ -739,9 +739,9 @@ cs_user_lagr_sde(const cs_real_t  dt[],
 
   /* Loop on the additional variables */
 
-  for (int iiii = 0;
-       iiii < cs_glob_lagr_model->n_user_variables;
-       iiii++) {
+  for (int i = 0;
+       i < cs_glob_lagr_model->n_user_variables;
+       i++) {
 
     for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 
@@ -762,12 +762,12 @@ cs_user_lagr_sde(const cs_real_t  dt[],
         /* Prediction at the first substep;
            This example must be adapted to the case */
         if (cs_glob_lagr_time_step->nor == 1)
-          pip[npt] = prev_usr_var[iiii];
+          pip[npt] = prev_usr_var[i];
 
         /* Correction at the second substep;
            This example must be adapted to the case */
         else
-          pip[npt] = usr_var[iiii];
+          pip[npt] = usr_var[i];
 
       }
 

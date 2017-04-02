@@ -150,8 +150,6 @@ cs_lagr_car(int              iprev,
   cs_real_t bbi[3] = {0.0, 0.0, 0.0};
   cs_real_t ktil   = 0.0;
 
-  cs_real_t cd1    = 0.15;
-  cs_real_t cd2    = 0.687;
   cs_real_t rec    = 1000.0;
   cs_real_t c0     = 2.1;
   cs_real_t cl     = 1.0 / (0.5 + (3.0 / 4.0) * c0);
@@ -159,7 +157,6 @@ cs_lagr_car(int              iprev,
   cs_real_t cbcb   = 0.64;
   cs_real_t d6spi  = 6.0 / cs_math_pi;
   cs_real_t d1s3   = 1.0 / 3.0;
-  cs_real_t d3s444 = 0.44 * 3.0 / 4.0;
 
   cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
                          cs_glob_physical_constants->gravity[1],
@@ -185,25 +182,25 @@ cs_lagr_car(int              iprev,
       cs_real_t  xnul          = extra->viscl->val[cell_id] / rom;
       cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
       cs_real_t *part_vel      = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
-      cs_real_t  uvwr          = 0.0;
 
-      for (cs_lnum_t i = 0; i < 3; i++)
-        uvwr += pow((part_vel_seen[i] - part_vel[i]),2.0);
+      cs_real_t rel_vel[3] = {part_vel_seen[0] - part_vel[0],
+                              part_vel_seen[1] - part_vel[1],
+                              part_vel_seen[2] - part_vel[2]};
 
-      uvwr = sqrt(uvwr);
+      cs_real_t rel_vel_norm = cs_math_3_norm(rel_vel);
 
-      /* -->  CALCUL DU REYNOLDS LOCAL  */
-      cs_real_t rep = uvwr * p_diam / xnul;
+      /* Compute the local Reynolds number */
+      cs_real_t rep = rel_vel_norm * p_diam / xnul;
 
-      /* -->  CALCUL DU COEFFICIENT DE TRAINEE    */
+      /* Compute the drag coefficient */
       cs_real_t d2 = pow(p_diam, 2.0);
 
       cs_real_t fdr;
       if (rep <= rec)
-        fdr = 18.0 * xnul * (1.0 + cd1 * pow (rep, cd2)) / d2;
+        fdr = 18.0 * xnul * (1.0 + 0.15 * pow (rep, 0.687)) / d2;
 
       else
-        fdr = d3s444 * uvwr / p_diam;
+        fdr = 0.44 * 3.0 / 4.0 * rel_vel_norm / p_diam;
 
       /* Tp computation */
       taup[ip] = p_rom / rom / fdr;
@@ -216,7 +213,7 @@ cs_lagr_car(int              iprev,
 
       /* Tp user computation */
 
-      cs_user_lagr_rt(ip, rep, uvwr, rom, p_rom, xnul, taup, dt);
+      cs_user_lagr_rt(ip, rep, rel_vel_norm, rom, p_rom, xnul, taup, dt);
 
       /**************************
        *    Tc computation      *
@@ -254,7 +251,7 @@ cs_lagr_car(int              iprev,
           = d2 * p_rom * p_cp / (fnus * 6.0 * rom * xcp * xrkl);
 
         /* User computation for Tc */
-        cs_user_lagr_rt_t(ip, rep, uvwr, rom, p_rom,
+        cs_user_lagr_rt_t(ip, rep, rel_vel_norm, rom, p_rom,
                           xnul, xcp, xrkl, tempct, dt);
 
         /* Implicit source term for return thermal coupling */

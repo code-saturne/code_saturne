@@ -111,7 +111,6 @@ typedef enum {
   CS_LAGR_PART_TREATED,
   CS_LAGR_PART_STUCK,
   CS_LAGR_PART_OUT,
-  CS_LAGR_PART_TO_DELETE,
   CS_LAGR_PART_ERR
 } cs_lagr_tracking_state_t;
 
@@ -3097,6 +3096,12 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
       = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM);
     cs_real_t r_truncate
       = cs_lagr_particles_get_real(particles, i, CS_LAGR_TR_TRUNCATE);
+
+    if (cs_lagr_particles_get_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG)
+        == CS_LAGR_PART_TO_DELETE) {
+      _tracking_info(particles, i)->state = CS_LAGR_PART_OUT;
+      return;
+    }
 
     if (cur_part_cell_num < 0)
       _tracking_info(particles, i)->state = CS_LAGR_PART_STUCK;

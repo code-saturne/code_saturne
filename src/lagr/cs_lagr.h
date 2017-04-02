@@ -67,6 +67,7 @@ typedef enum {
   CS_LAGR_PART_IN_FLOW        = 0,
   CS_LAGR_PART_DEPOSITED      = 1,
   CS_LAGR_PART_ROLLING        = 2,
+  CS_LAGR_PART_TO_DELETE      = 3,
   CS_LAGR_PART_NO_MOTION      = 10,
   CS_LAGR_PART_IMPOSED_MOTION = 11
 } cs_lagr_deposition_state_t;
