@@ -1223,8 +1223,9 @@ cs_lagr_injection(int        time_id,
 
               cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CP,
                                         userdata->cp);
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_EMISSIVITY,
-                                        userdata->emissivity);
+              if (extra->iirayo > 0)
+                cs_lagr_particle_set_real(particle, p_am, CS_LAGR_EMISSIVITY,
+                                          userdata->emissivity);
 
             }
 
