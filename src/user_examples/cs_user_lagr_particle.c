@@ -400,6 +400,15 @@ cs_user_lagr_new_p_attr(unsigned char                  *particle,
 
   if (attr_id == CS_LAGR_STAT_WEIGHT)
     cs_lagr_particle_set_real(particle, p_am, CS_LAGR_STAT_WEIGHT, 0.01);
+
+  /* User variables */
+  if (attr_id >= CS_LAGR_USER
+      && (attr_id < CS_LAGR_USER + cs_glob_lagr_model->n_user_variables)) {
+
+    cs_real_t *user_var = cs_lagr_particle_attr(particle, p_am, attr_id);
+    *user_var = 0.;
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
