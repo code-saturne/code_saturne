@@ -477,9 +477,11 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         if self.LSM.getGroupOfParticlesValue() > 0:
             igroup = self.model.getParticleGroupNumberValue(self.label, self.iclass)
             self.lineEditICLST.setText(str(igroup))
+            self.labelICLST.show()
+            self.lineEditICLST.show()
         else:
-            self.labelICLST.setDisabled(True)
-            self.lineEditICLST.setDisabled(True)
+            self.labelICLST.hide()
+            self.lineEditICLST.hide()
 
         # Rate / stat. weight
         self.groupBoxRate.show()
