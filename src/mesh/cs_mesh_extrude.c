@@ -1662,15 +1662,16 @@ cs_mesh_extrude(cs_mesh_t          *m,
  * \brief Extrude mesh boundary faces in the normal direction by a constant
  *        thickness.
  *
- * \param[in, out]  m            mesh
- * \param[in]       interior_gc  if true, maintain group classes of
- *                               interior faces previously on boundary
- * \param[in]       n_layers     number of layers
- * \param[in]       thickness    extrusion thickness
- * \param[in]       reason       geometric reason for extrusion refinement
- * \param[in]       n_faces      number of selected boundary faces
- * \param[in]       faces        list of selected boundary faces (0 to n-1),
- *                               or NULL if no indirection is needed
+ * \param[in, out]  m                 mesh
+ * \param[in]       interior_gc       if true, maintain group classes of
+ *                                    interior faces previously on boundary
+ * \param[in]       n_layers          number of layers
+ * \param[in]       thickness         extrusion thickness
+ * \param[in]       expansion_factor  geometric expansion factor for
+ *                                    extrusion refinement
+ * \param[in]       n_faces           number of selected boundary faces
+ * \param[in]       faces             list of selected boundary faces (0 to n-1),
+ *                                    or NULL if no indirection is needed
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1679,7 +1680,7 @@ cs_mesh_extrude_constant(cs_mesh_t        *m,
                          bool              interior_gc,
                          cs_lnum_t         n_layers,
                          double            thickness,
-                         double            reason,
+                         double            expansion_factor,
                          cs_lnum_t         n_faces,
                          const cs_lnum_t   faces[])
 {
@@ -1708,7 +1709,7 @@ cs_mesh_extrude_constant(cs_mesh_t        *m,
   if (n_sel_v > 0) {
     sel_distribution[0] = 1;
     for (cs_lnum_t l_id = 1; l_id < n_layers; l_id++)
-      sel_distribution[l_id] = sel_distribution[l_id-1]*reason;
+      sel_distribution[l_id] = sel_distribution[l_id-1]*expansion_factor;
     double d_tot = 0;
     for (cs_lnum_t i = 0; i < n_layers; i++)
       d_tot += sel_distribution[i];

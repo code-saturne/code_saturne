@@ -93,15 +93,16 @@ cs_mesh_extrude(cs_mesh_t          *m,
  * \brief Extrude mesh boundary faces in the normal direction by a constant
  *        thickness.
  *
- * \param[in, out]  m            mesh
- * \param[in]       interior_gc  if true, maintain group classes of
- *                               interior faces previously on boundary
- * \param[in]       n_layers     number of layers
- * \param[in]       thickness    extrusion thickness
- * \param[in]       expansion_factor expansion factor for extrusion refinement
- * \param[in]       n_faces      number of selected boundary faces
- * \param[in]       faces        list of selected boundary faces (0 to n-1),
- *                               or NULL if no indirection is needed
+ * \param[in, out]  m                 mesh
+ * \param[in]       interior_gc       if true, maintain group classes of
+ *                                    interior faces previously on boundary
+ * \param[in]       n_layers          number of layers
+ * \param[in]       thickness         extrusion thickness
+ * \param[in]       expansion_factor  geometric expansion factor for
+ *                                    extrusion refinement
+ * \param[in]       n_faces           number of selected boundary faces
+ * \param[in]       faces             list of selected boundary faces (0 to n-1),
+ *                                    or NULL if no indirection is needed
  */
 /*----------------------------------------------------------------------------*/
 
