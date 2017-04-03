@@ -75,9 +75,6 @@ typedef struct {
   /* face i is coupled in this entity if coupled_faces[i] = true */
   bool *coupled_faces;
 
-  cs_real_t *h_int; /* hint coefficient */
-  cs_real_t *h_ext; /* hext coefficient */
-
   /* Geometrical weights around coupling interface */
   cs_real_t *g_weight;
 
@@ -86,10 +83,6 @@ typedef struct {
 
   /* OF vectors  */
   cs_real_3_t *offset_vect;
-
-  /* Calculation parameters */
-  cs_real_t thetav;
-  int       idiff;
 
   /* Gradient reconstruction */
   cs_real_33_t *cocgb_s_lsq;

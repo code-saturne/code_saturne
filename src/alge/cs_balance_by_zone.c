@@ -1292,8 +1292,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
         pjp = pvar_local[ii];
 
-        hint = cpl->h_int[ii];
-        hext = cpl->h_ext[ii];
+        hint = f->bc_coeffs->hint[f_id];
+        hext = f->bc_coeffs->hext[f_id];
         heq = hint * hext / (hint + hext);
 
         cs_b_diff_flux_coupling(idiffp,
@@ -2746,8 +2746,8 @@ cs_flux_through_surface(const char         *scalar_name,
 
       pjp = pvar_local[ii];
 
-      hint = cpl->h_int[ii];
-      hext = cpl->h_ext[ii];
+      hint = f->bc_coeffs->hint[f_id];
+      hext = f->bc_coeffs->hext[f_id];
       heq = hint * hext / (hint + hext);
 
       cs_b_diff_flux_coupling(idiffp,
