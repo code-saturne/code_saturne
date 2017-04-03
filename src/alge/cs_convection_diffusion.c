@@ -4063,11 +4063,12 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   fluxi,
                                   fluxj);
 
+            if (ii < n_cells && (upwind_switch[0] || upwind_switch[1] || upwind_switch[2]))
+              n_upwind++;
+
             for (int isou = 0; isou < 3; isou++) {
 
               if (upwind_switch[isou]) {
-                if (ii < n_cells)
-                  n_upwind++;
                 if (v_slope_test != NULL) {
                   v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
                   v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
@@ -5191,11 +5192,18 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   fluxi,
                                   fluxj);
 
+            if (ii < n_cells &&
+                (   upwind_switch[0]
+                 || upwind_switch[1]
+                 || upwind_switch[2]
+                 || upwind_switch[3]
+                 || upwind_switch[4]
+                 || upwind_switch[5]))
+              n_upwind++;
+
             for (int isou = 0; isou < 6; isou++) {
 
               if (upwind_switch[isou]) {
-                if (ii < n_cells)
-                  n_upwind++;
                 if (v_slope_test != NULL) {
                   v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
                   v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
