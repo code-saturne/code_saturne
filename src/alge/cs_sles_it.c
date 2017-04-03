@@ -3928,6 +3928,16 @@ cs_sles_it_define(int                 f_id,
                   int                 poly_degree,
                   int                 n_max_iter)
 {
+  /* Test for environment variables here */
+
+  const char *s = getenv("CS_THREAD_DEBUG");
+  if (s != NULL) {
+    if (atoi(s) > 0)
+      _thread_debug = true;
+  }
+
+  /* Now define solver */
+
   cs_sles_it_t *
     c = cs_sles_it_create(solver_type,
                           poly_degree,
