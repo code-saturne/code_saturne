@@ -247,8 +247,7 @@ cs_lagr_car(int              iprev,
         cs_real_t p_cp = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_CP);
 
         /* Thermal characteristic time Tc computation */
-        tempct[p_set->n_particles + ip]
-          = d2 * p_rom * p_cp / (fnus * 6.0 * rom * xcp * xrkl);
+        tempct[ip] = d2 * p_rom * p_cp / (fnus * 6.0 * rom * xcp * xrkl);
 
         /* User computation for Tc */
         cs_user_lagr_rt_t(ip, rep, rel_vel_norm, rom, p_rom,
