@@ -1375,6 +1375,21 @@ cs_lagr_injection(int        time_id,
 
           }
 
+          /* Loop on the additional user variables */
+
+          for (int i = 0;
+              i < cs_glob_lagr_model->n_user_variables;
+              i++) {
+
+            cs_real_t *user_var = cs_lagr_particle_attr(particle, p_am, CS_LAGR_USER + i);
+            *user_var = 0.;
+
+            cs_user_lagr_new_p_attr(particle,
+                                    p_am,
+                                    ifac,
+                                    CS_LAGR_USER + i);
+          }
+
         }
 
         npt = npt + local_userdata->nb_part;

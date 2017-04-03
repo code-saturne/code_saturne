@@ -2320,7 +2320,8 @@ _lagdep(cs_real_t           dtp,
        *   Otherwise, the deposition submodel is applied :
        * =====================================================================  */
 
-      else {
+      else if (cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
+          != CS_LAGR_PART_TO_DELETE) {
 
         if (  cs_lagr_particle_get_real(particle, p_am,
                                         CS_LAGR_YPLUS)
