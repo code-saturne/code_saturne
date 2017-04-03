@@ -158,9 +158,7 @@ cs_lagr_car(int              iprev,
   cs_real_t d6spi  = 6.0 / cs_math_pi;
   cs_real_t d1s3   = 1.0 / 3.0;
 
-  cs_real_3_t grav    = {cs_glob_physical_constants->gravity[0],
-                         cs_glob_physical_constants->gravity[1],
-                         cs_glob_physical_constants->gravity[2]};
+  const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
   /* Compute Tp and Tc in case of thermal model
      -------------------------------------------*/
@@ -183,17 +181,12 @@ cs_lagr_car(int              iprev,
       cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
       cs_real_t *part_vel      = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
 
-      cs_real_t rel_vel[3] = {part_vel_seen[0] - part_vel[0],
-                              part_vel_seen[1] - part_vel[1],
-                              part_vel_seen[2] - part_vel[2]};
-
-      cs_real_t rel_vel_norm = cs_math_3_norm(rel_vel);
+      cs_real_t rel_vel_norm = cs_math_3_length(part_vel_seen, part_vel);
 
       /* Compute the local Reynolds number */
-      cs_real_t rep = rel_vel_norm * p_diam / xnul;
+      cs_real_t rep = rel_vel_norm * p_diam / xnul; /* local Reynolds number */
 
-      /* Compute the drag coefficient */
-      cs_real_t d2 = pow(p_diam, 2.0);
+      cs_real_t d2 = cs_math_sq(p_diam); /* drag coefficient */
 
       cs_real_t fdr;
       if (rep <= rec)
@@ -256,7 +249,6 @@ cs_lagr_car(int              iprev,
         /* Implicit source term for return thermal coupling */
         tempct[p_set->n_particles + ip]
           = fnus * cs_math_pi * p_diam * xrkl * rom;
-
       }
 
     }
@@ -300,7 +292,8 @@ cs_lagr_car(int              iprev,
 
       for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
         energi[cell_id] = extra->cvar_k->vals[iprev][cell_id];
-        dissip[cell_id] = extra->cmu * energi[cell_id] * extra->cvar_omg->vals[iprev][cell_id];
+        dissip[cell_id] = extra->cmu * energi[cell_id]
+                                     * extra->cvar_omg->vals[iprev][cell_id];
 
       }
 

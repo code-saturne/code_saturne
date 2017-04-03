@@ -732,13 +732,12 @@ _lagidp(void)
 }
 
 /*------------------------------------------------------------------------
- *     INTEGRATION DES EDS POUR LA TEMPERATURE DES PARTICULES
+ * Integration of SDE's for particle temperature.
  *------------------------------------------------------------------------*/
 
 static void
 _lagitp(const cs_real_t  tempct[])
 {
-
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
@@ -751,7 +750,6 @@ _lagitp(const cs_real_t  tempct[])
 
   BFT_MALLOC(tcarac, p_set->n_particles, cs_real_t);
   BFT_MALLOC(pip,    p_set->n_particles, cs_real_t);
-
 
   /* ==========================================================================
    * REMPLISSAGE DU TEMPS CARACTERISTIQUE ET DU "PSEUDO SECOND MEMBRE"
@@ -767,11 +765,8 @@ _lagitp(const cs_real_t  tempct[])
 
       tcarac[npt] = tempct[npt];
 
-      /* pip[npt] = cs_lagr_particle_get_real_n(particle, p_am, 2 - nor, CS_LAGR_FLUID_TEMPERATURE); */
-      if (nor == 1)
-        pip[npt] = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_FLUID_TEMPERATURE);
-      else
-        pip[npt] = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_FLUID_TEMPERATURE);
+      pip[npt] = cs_lagr_particle_get_real_n(particle, p_am, 2 - nor,
+                                             CS_LAGR_FLUID_TEMPERATURE);
 
     }
 
@@ -835,8 +830,7 @@ _lagitp(const cs_real_t  tempct[])
 }
 
 /*------------------------------------------------------------------------
- *     INTEGRATION DES EDS POUR LA TEMPERATURE FLUIDE
- *     VU PAR LES PARTICULES.
+ * Integration of SDEs for fluid temperature seen by particles.
  *------------------------------------------------------------------------*/
 
 static void
@@ -850,10 +844,7 @@ _lagitf(cs_lagr_attribute_t  *iattr)
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
-
   cs_real_t  energ, dissip;
-
-  int ltsvar;
 
   int nor = cs_glob_lagr_time_step->nor;
 
@@ -861,19 +852,20 @@ _lagitf(cs_lagr_attribute_t  *iattr)
   BFT_MALLOC(auxl1, p_set->n_particles, cs_real_t);
   BFT_MALLOC(tempf, mesh->n_cells_with_ghosts, cs_real_t);
 
-
   /* Initialize variables to avoid compiler warnings    */
 
   cs_real_t ct   = 1.0;
   cs_lnum_t mode = 1;
 
-  if (p_set->p_am->source_term_displ[*iattr] >= 0)
-    ltsvar   = 1;
-  else
-    ltsvar   = 0;
+  int ltsvar = 0;
+
+  if (p_set->p_am->source_term_displ != NULL) {
+    if (p_set->p_am->source_term_displ[*iattr] >= 0)
+      ltsvar   = 1;
+  }
 
   /* =========================================================================
-   * 2. Temperature moyenne Fluide en degres Celsius
+   * Mean fluid temperature in degrees C
    * =========================================================================*/
 
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
@@ -938,14 +930,17 @@ _lagitf(cs_lagr_attribute_t  *iattr)
         }
         else if (extra->itytur == 3) {
 
-          energ    = 0.5 * (extra->cvar_r11->val[cell_id] + extra->cvar_r22->val[cell_id] + extra->cvar_r33->val[cell_id]);
+          energ    = 0.5 * (  extra->cvar_r11->val[cell_id]
+                            + extra->cvar_r22->val[cell_id]
+                            + extra->cvar_r33->val[cell_id]);
           dissip   = extra->cvar_ep->val[cell_id];
 
         }
         else if (extra->iturb == 60) {
 
           energ    = extra->cvar_k->val[cell_id];
-          dissip   = extra->cmu * extra->cvar_k->val[cell_id] * extra->cvar_omg->val[cell_id];
+          dissip   = extra->cmu * extra->cvar_k->val[cell_id]
+                                * extra->cvar_omg->val[cell_id];
 
         }
 

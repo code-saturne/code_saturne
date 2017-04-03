@@ -365,7 +365,8 @@ cs_user_lagr_in(int                         time_id,
  * \param[in]     face_id   id of particle injection face
  * \param[in]     attr_id   id of variable modifiable by this call. called for
                             CS_LAGR_VELOCITY, CS_LAGR_DIAMETER,
-                            CS_LAGR_TEMPERATURE, CS_LAGR_STAT_WEIGHT
+                            CS_LAGR_TEMPERATURE, CS_LAGR_STAT_WEIGHT,
+                            CS_LAGR_USER
  */
 /*----------------------------------------------------------------------------*/
 
@@ -379,7 +380,8 @@ cs_user_lagr_new_p_attr(unsigned char                  *particle,
 
   if (attr_id == CS_LAGR_VELOCITY) {
 
-    cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
+    cs_real_t *part_vel
+      = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
     part_vel[0] = 1.0;
     part_vel[1] = 0.0;
     part_vel[2] = 0.0;

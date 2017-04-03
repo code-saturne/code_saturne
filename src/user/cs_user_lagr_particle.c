@@ -227,7 +227,8 @@ cs_user_lagr_in(int                         time_id,
  * \param[in]     face_id   id of particle injection face
  * \param[in]     attr_id   id of variable modifiable by this call. called for
                             CS_LAGR_VELOCITY, CS_LAGR_DIAMETER,
-                            CS_LAGR_TEMPERATURE, CS_LAGR_STAT_WEIGHT
+                            CS_LAGR_TEMPERATURE, CS_LAGR_STAT_WEIGHT,
+                            CS_LAGR_USER
  */
 /*----------------------------------------------------------------------------*/
 
