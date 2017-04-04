@@ -464,13 +464,13 @@ double cs_turb_sigmae;
  * Constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
  * Useful if and only if \ref iturb=30 (\f$R_{ij}-\varepsilon\f$ LRR).
  */
-const double cs_turb_crij1 = 1.80;
+double cs_turb_crij1;
 
 /*
  * Constant \f$C_2\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
  * Useful if and only if \ref iturb=30 (\f$R_{ij}-\varepsilon\f$ LRR).
  */
-const double cs_turb_crij2 = 0.60;
+double cs_turb_crij2;
 
 /*!
  * Constant \f$C_3\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
@@ -1145,6 +1145,10 @@ cs_f_turb_complete_constants(void)
                   + 1./cs_turb_csasig*(1. + cs_turb_csab2);
   cs_turb_smagmx = cs_turb_csmago*cs_turb_csmago;
   cs_turb_smagmn = 0.;
+
+  /* LRR constants */
+  cs_turb_crij1 = 1.80;
+  cs_turb_crij2 = 0.60;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
