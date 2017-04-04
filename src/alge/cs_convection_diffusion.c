@@ -9738,8 +9738,6 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
 
   bool recompute_cocg = (iccocg) ? true : false;
 
-  double diippf[3], djjppf[3];
-
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
   cs_real_3_t *grad;
@@ -9977,6 +9975,9 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
           cs_real_t fikdvi = weighf[face_id][0];
 
           /* II" = IF + FI" */
+
+          double diippf[3], djjppf[3];
+
           for (int i = 0; i < 3; i++) {
             diippf[i] = i_face_cog[face_id][i]-cell_cen[ii][i]
                       - fikdvi*( visci[0][i]*i_face_normal[face_id][0]
@@ -10052,6 +10053,8 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
 
           /* IF.Ki.S / ||Ki.S||^2 */
           double fikdvi = weighb[face_id];
+
+          double diippf[3];
 
           /* II" = IF + FI" */
           for (int i = 0; i < 3; i++) {

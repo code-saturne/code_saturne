@@ -1116,7 +1116,7 @@ if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
 
   if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t3)
 
-  !$omp parallel do private(iel1, iel2, rhofac)
+  !$omp parallel do private(iel1, iel2, rhofac, vr1, vr2)
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
@@ -1132,7 +1132,7 @@ if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
                         + surfac(3,ifac)*(vr1(3) + vr2(3)) )
     endif
   enddo
-  !$omp parallel do private(iel, rhofac) if(nfabor > thr_n_min)
+  !$omp parallel do private(iel, rhofac, vr) if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     if (irotce(iel).ne.0) then
