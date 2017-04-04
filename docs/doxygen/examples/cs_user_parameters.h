@@ -105,6 +105,13 @@
 
   \snippet cs_user_parameters-linear_solvers.c sles_verbosity_1
 
+  \subsection cs_user_parameters_h_sles_viz_1 Example: error visualization
+
+  The following example shows how to activate local error visualization
+  output (here for velocity and pressure).
+
+  \snippet cs_user_parameters-linear_solvers.c sles_viz_1
+
   \subsection cs_user_parameters_h_sles_mgp_1 Example: advanced multigrid settings
 
   The following example shows how to set advanced settings for the

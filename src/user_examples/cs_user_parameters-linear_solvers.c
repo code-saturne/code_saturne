@@ -309,13 +309,23 @@ cs_user_linear_solvers(void)
 
   /*! [sles_verbosity_1] */
   {
-
     cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, NULL);
     cs_sles_set_verbosity(sles_p, 4);
-
   }
   /*! [sles_verbosity_1] */
 
+  /* Example: visualize local error for velocity and pressure */
+  /*----------------------------------------------------------*/
+
+  /*! [sles_viz_1] */
+  {
+    cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, NULL);
+    cs_sles_set_post_output(sles_p, CS_POST_WRITER_DEFAULT);
+
+    cs_sles_t *sles_u = cs_sles_find_or_add(CS_F_(u)->id, NULL);
+    cs_sles_set_post_output(sles_u, CS_POST_WRITER_DEFAULT);
+  }
+  /*! [sles_viz_1] */
 
   /* Example: change multigrid parameters for pressure */
   /*---------------------------------------------------*/
