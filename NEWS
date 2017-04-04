@@ -16,6 +16,11 @@ User changes
 
 - Add option for postprocessing output of linear solver residuals.
 
+Architectural changes
+---------------------
+
+- Remove support for restart files older than version 4.0.
+
 Release 5.0.0 (unreleased)
 ==========================
 

@@ -181,10 +181,6 @@ typedef struct {
 
 typedef struct {
 
-  int                     legacy_mode;    /* Use legacy file content ?
-                                           0: current, 1: Code_Saturne,
-                                           2: NEPTUNE_CFD */
-
   int                     nt_prev;        /* Restart time step */
   int                     t_prev;         /* Restart time */
 
@@ -275,193 +271,6 @@ _assert_restart_success(int retcode)
 }
 
 /*----------------------------------------------------------------------------
- * Read legacy (old-form) restart metadata.
- *
- * parameters:
- *   r <-- pointer to restart file
- *----------------------------------------------------------------------------*/
-
-static void
-_restart_info_read_auxiliary_legacy(cs_restart_t  *r)
-{
-  char s[64];
-  int retcode;
-
-  int legacy_mode = 0; /* Code_Saturne or NEPTUNE_CFD */
-  cs_lnum_t sizes[2] = {0, 0};
-
-  const cs_time_step_t  *ts = cs_glob_time_step;
-
-  const char sec_name[] = "nombre_moyennes_temps";
-
-  retcode = cs_restart_check_section(r,
-                                     sec_name,
-                                     CS_MESH_LOCATION_NONE,
-                                     1,
-                                     CS_TYPE_cs_real_t);
-
-  if (retcode == CS_RESTART_SUCCESS) {
-    legacy_mode = 1;
-    retcode = cs_restart_read_section(r,
-                                      sec_name,
-                                      CS_MESH_LOCATION_NONE,
-                                      1,
-                                      CS_TYPE_cs_int_t,
-                                      sizes);
-    sizes[1] = (strlen("cumul_ce_moment0000") + 1)*sizes[0];
-  }
-  else if (retcode == CS_RESTART_ERR_EXISTS) {
-    while (true) {
-      snprintf(s, 63, "TimeAverage_%d", (int)sizes[0] + 1);
-      s[63] = '\0';
-      retcode = cs_restart_check_section(r,
-                                         s,
-                                         CS_MESH_LOCATION_CELLS,
-                                         1,
-                                         CS_TYPE_cs_real_t);
-      if (retcode == CS_RESTART_SUCCESS) {
-        legacy_mode = 2;
-        sizes[0] += 1;
-        sizes[1] += strlen(s) + 1;
-      }
-      else
-        break;
-    };
-  }
-
-  if (sizes[0] < 1)
-    return;
-
-  /* Now read main metadata */
-
-  BFT_MALLOC(_restart_info, 1, cs_time_moment_restart_info_t);
-
-  cs_time_moment_restart_info_t  *ri = _restart_info;
-
-  ri->legacy_mode = legacy_mode;
-
-  ri->nt_prev = ts->nt_prev;
-  ri->t_prev = ts->t_prev;
-
-  ri->n_wa = 0;
-  ri->n_moments = sizes[0];
-
-  BFT_MALLOC(ri->name, ri->n_moments, const char*);
-  BFT_MALLOC(ri->name_buf, sizes[1], char);
-
-  BFT_MALLOC(ri->m_type, ri->n_moments, int);
-  BFT_MALLOC(ri->location_id, ri->n_moments, int);
-  BFT_MALLOC(ri->dimension, ri->n_moments, int);
-  BFT_MALLOC(ri->wa_id, ri->n_moments, int);
-  BFT_MALLOC(ri->l_id, ri->n_moments, int);
-
-  if (legacy_mode == 1) {
-
-    size_t l = sizes[1] / sizes[0];
-
-    /* Read moment data */
-
-    for (int i = 0; i < ri->n_moments; i++) {
-
-      cs_lnum_t wa_id;
-      ri->name[i] = ri->name_buf + l*i;
-      snprintf(ri->name_buf + l*i, l, "cumul_ce_moment%04d", i+1);
-      ri->name_buf[l*i + l-1] = '\0';
-
-      ri->m_type[i] = CS_MESH_LOCATION_NONE;
-      ri->location_id[i] = CS_MESH_LOCATION_CELLS;
-      ri->dimension[i] = 1;
-
-      snprintf(s, 64, "numero_cumul_temps_moment%04d", i+1);
-      retcode = cs_restart_read_section(r,
-                                        s,
-                                        CS_MESH_LOCATION_NONE,
-                                        1,
-                                        CS_TYPE_cs_int_t,
-                                        &wa_id);
-      _assert_restart_success(retcode);
-
-      wa_id = -wa_id - 1;
-      ri->wa_id[i] = wa_id;
-      ri->l_id[i] = -1;
-
-      if (wa_id >= ri->n_wa)
-        ri->n_wa = wa_id + 1;
-
-    }
-
-    /* Read time accumulator data */
-
-    BFT_MALLOC(ri->wa_location_id, ri->n_wa, int);
-    BFT_MALLOC(ri->wa_nt_start, ri->n_wa, int);
-    BFT_MALLOC(ri->wa_t_start, ri->n_wa, cs_real_t);
-    ri->wa_val0 = NULL;
-
-    for (int i = 0; i < ri->n_wa; i++) {
-      cs_real_t t_sum;
-      ri->wa_nt_start[i] = -1;
-      ri->wa_t_start[i] = -1;
-      snprintf(s, 64, "cumul_temps_%04d", i+1);
-      retcode = cs_restart_read_section(r,
-                                        s,
-                                        CS_MESH_LOCATION_NONE,
-                                        1,
-                                        CS_TYPE_cs_real_t,
-                                        &t_sum);
-      if (retcode == CS_RESTART_SUCCESS) {
-        ri->wa_location_id[i] = CS_MESH_LOCATION_NONE;
-        if (ri->wa_val0 == NULL)
-          BFT_MALLOC(ri->wa_val0, ri->n_wa, cs_real_t);
-        ri->wa_val0[i] = t_sum;
-      }
-      else if (retcode == CS_RESTART_ERR_EXISTS) {
-        ri->wa_location_id[i] = CS_MESH_LOCATION_CELLS;
-      }
-    }
-
-  }
-  else if (legacy_mode == 2) {
-
-    /* Read moment data */
-
-    ri->n_wa = ri->n_moments;
-    sizes[1] = 0;
-
-    for (int i = 0; i < ri->n_moments; i++) {
-
-      snprintf(s, 64, "TimeAverage_%d", i+1);
-      s[63] = '\0';
-      ri->name[i] = ri->name_buf + sizes[1];
-      strcpy(ri->name_buf + sizes[1], s);
-      size_t l = strlen(s);
-      ri->name_buf[sizes[1] + l] = '\0';
-      sizes[1] += l + 1;
-
-      ri->m_type[i] = CS_MESH_LOCATION_NONE;
-      ri->location_id[i] = CS_MESH_LOCATION_CELLS;
-      ri->dimension[i] = 1;
-      ri->wa_id[i] = i;
-      ri->l_id[i] = -1;
-
-    }
-
-    /* Read time accumulator data */
-
-    BFT_MALLOC(ri->wa_location_id, ri->n_wa, int);
-    BFT_MALLOC(ri->wa_nt_start, ri->n_wa, int);
-    BFT_MALLOC(ri->wa_t_start, ri->n_wa, cs_real_t);
-    ri->wa_val0 = NULL;
-
-    for (int i = 0; i < ri->n_wa; i++) {
-      ri->wa_nt_start[i] = -1;
-      ri->wa_t_start[i] = -1;
-      ri->wa_location_id[i] = CS_MESH_LOCATION_CELLS;
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Read restart metadata.
  *
  * parameters:
@@ -483,18 +292,14 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     CS_TYPE_cs_int_t,
                                     sizes);
 
-  if (retcode == CS_RESTART_ERR_EXISTS) {
-    _restart_info_read_auxiliary_legacy(r);
+  if (retcode == CS_RESTART_ERR_EXISTS)
     return;
-  }
 
   /* Now read main metadata */
 
   BFT_MALLOC(_restart_info, 1, cs_time_moment_restart_info_t);
 
   cs_time_moment_restart_info_t  *ri = _restart_info;
-
-  ri->legacy_mode = 0;
 
   ri->nt_prev = ts->nt_prev;
   ri->t_prev = ts->t_prev;
@@ -790,14 +595,6 @@ _check_restart(const char                     *name,
                     _("Restart data for time moment \"%s\"\n"
                       " (previously \"%s\") does not match."),
                     name, _r_name);
-      }
-      /* If match seems good and we have a legacy file,
-         the start time data is not known, so we assume the
-         data provided by the user here is good */
-      else if (ri->legacy_mode > 0) {
-        ri->wa_nt_start[prev_wa_id] = *nt_start;
-        if (!ts->is_local)
-          ri->wa_t_start[prev_wa_id] = *t_start;
       }
       if (matching_restart == false)
         prev_id = -1;
@@ -1624,85 +1421,6 @@ _ensure_init_moment(cs_time_moment_t  *mt)
   }
 }
 
-/*----------------------------------------------------------------------------
- * Read restart moment data for legacy file
- *
- * parameters:
- *   restart <-- associated restart file pointer
- *----------------------------------------------------------------------------*/
-
-static void
-_restart_read_legacy(cs_restart_t  *restart)
-{
-  char s[64];
-  int retcode;
-
-  /* Initialize */
-
-  cs_time_moment_restart_info_t  *ri = _restart_info;
-  const cs_time_step_t  *ts = cs_glob_time_step;
-  _t_prev_iter = ts->t_prev;
-
-  const cs_lnum_t
-    n_cells = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_CELLS)[0];
-
-  /* Read weight accumuator data */
-
-  for (int i = 0; i < _n_moment_wa; i++) {
-    cs_time_moment_wa_t *mwa = _moment_wa + i;
-    if (mwa->restart_id > -1 && mwa->location_id == CS_MESH_LOCATION_CELLS) {
-      if (ri->legacy_mode == 1)
-        snprintf(s, 64, "cumul_temps_ce_%04d", mwa->restart_id+1);
-      else /* if (ri->legacy_mode == 2) */
-        snprintf(s, 64, "TimeAverage_%d_dt", mwa->restart_id+1);
-      _ensure_init_weight_accumulator(mwa);
-      retcode = cs_restart_read_section(restart,
-                                        s,
-                                        mwa->location_id,
-                                        1,
-                                        CS_TYPE_cs_real_t,
-                                        mwa->val);
-      _assert_restart_success(retcode);
-    }
-  }
-
-  /* Read moment data */
-
-  for (int i = 0; i < _n_moments; i++) {
-    cs_time_moment_t *mt = _moment + i;
-    cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
-    if (mt->restart_id > -1) {
-      _ensure_init_moment(mt);
-      cs_real_t *val = mt->val;
-      if (mt->f_id > -1) {
-        cs_field_t *f = cs_field_by_id(mt->f_id);
-        val = f->val;
-      }
-      if (ri->legacy_mode == 1)
-        snprintf(s, 64, "cumul_ce_moment%04d", mt->restart_id+1);
-      else /* if (ri->legacy_mode == 2) */
-        snprintf(s, 64, "TimeAverage_%d", mt->restart_id + 1);
-      retcode = cs_restart_read_section(restart,
-                                        s,
-                                        mt->location_id,
-                                        mt->dim,
-                                        CS_TYPE_cs_real_t,
-                                        val);
-      _assert_restart_success(retcode);
-      if (mwa->location_id == CS_MESH_LOCATION_NONE) {
-        for (cs_lnum_t j = 0; j < n_cells; j++)
-          val[j] /= mwa->val0;
-      }
-      else {
-        assert(mwa->location_id == CS_MESH_LOCATION_CELLS);
-        for (cs_lnum_t j = 0; j < n_cells; j++)
-          val[j] /= mwa->val[j];
-      }
-    }
-  }
-
-}
-
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -2045,10 +1763,6 @@ cs_time_moment_restart_options_by_id(int                         restart_id,
     *restart_mode = CS_TIME_MOMENT_RESTART_AUTO;
     if (_restart_info_checked == false)
       _restart_info_read();
-    if (_restart_info != NULL) {
-      if (_restart_info->legacy_mode > 0)
-        *restart_name = cs_time_moment_restart_name(_n_moments);
-    }
   }
   else if (restart_id == -1)
     *restart_mode = CS_TIME_MOMENT_RESTART_RESET;
@@ -2767,46 +2481,39 @@ cs_time_moment_restart_read(cs_restart_t  *restart)
 
   /* Read information proper */
 
-  if (ri->legacy_mode > 0)
-    _restart_read_legacy(restart);
-
-  else {
-
-    for (int i = 0; i < _n_moment_wa; i++) {
-      cs_time_moment_wa_t *mwa = _moment_wa + i;
-      if (mwa->restart_id > -1 && mwa->location_id > CS_MESH_LOCATION_NONE) {
-        char s[64];
-        snprintf(s, 64, "time_moments:wa:%02d:val", mwa->restart_id);
-        _ensure_init_weight_accumulator(mwa);
-        retcode = cs_restart_read_section(restart,
-                                          s,
-                                          mwa->location_id,
-                                          1,
-                                          CS_TYPE_cs_real_t,
-                                          mwa->val);
-        _assert_restart_success(retcode);
-      }
+  for (int i = 0; i < _n_moment_wa; i++) {
+    cs_time_moment_wa_t *mwa = _moment_wa + i;
+    if (mwa->restart_id > -1 && mwa->location_id > CS_MESH_LOCATION_NONE) {
+      char s[64];
+      snprintf(s, 64, "time_moments:wa:%02d:val", mwa->restart_id);
+      _ensure_init_weight_accumulator(mwa);
+      retcode = cs_restart_read_section(restart,
+                                        s,
+                                        mwa->location_id,
+                                        1,
+                                        CS_TYPE_cs_real_t,
+                                        mwa->val);
+      _assert_restart_success(retcode);
     }
+  }
 
-    for (int i = 0; i < _n_moments; i++) {
-      cs_time_moment_t *mt = _moment + i;
-      if (mt->restart_id > -1) {
-        _ensure_init_moment(mt);
-        cs_real_t *val = mt->val;
-        if (mt->f_id > -1) {
-          cs_field_t *f = cs_field_by_id(mt->f_id);
-          val = f->val;
-        }
-        retcode = cs_restart_read_section(restart,
-                                          ri->name[mt->restart_id],
-                                          mt->location_id,
-                                          mt->dim,
-                                          CS_TYPE_cs_real_t,
-                                          val);
-        _assert_restart_success(retcode);
+  for (int i = 0; i < _n_moments; i++) {
+    cs_time_moment_t *mt = _moment + i;
+    if (mt->restart_id > -1) {
+      _ensure_init_moment(mt);
+      cs_real_t *val = mt->val;
+      if (mt->f_id > -1) {
+        cs_field_t *f = cs_field_by_id(mt->f_id);
+        val = f->val;
       }
+      retcode = cs_restart_read_section(restart,
+                                        ri->name[mt->restart_id],
+                                        mt->location_id,
+                                        mt->dim,
+                                        CS_TYPE_cs_real_t,
+                                        val);
+      _assert_restart_success(retcode);
     }
-
   }
 
   /* Free info */
