@@ -511,7 +511,31 @@
         </message>
         <message>
             <source>COUPLING_SYRTHES4_HOME_MISSING</source>
-            <translation>; SYRTHES4_HOME environment variable is missing.</translation>
+            <translation>; La variable SYRTHES4_HOME est manquante dans l'environnement.</translation>
+        </message>
+        <message>
+            <source>STUDY_SUB_DIRECTORY_MISSING</source>
+            <translation>Les répertoires %s et/ou %s sont manquant dans le répertoire de l'étude CFD.</translation>
+        </message>
+        <message>
+            <source>COUPLING_SAT_SYR_STUDY_SUB_DIRECTORY_MISSING</source>
+            <translation>Les répertoires %s et/ou %s et/ou %s sont manquant dans le répertoire de l'étude couplée SYRTHES-SATURNE.</translation>
+        </message>
+        <message>
+            <source>MUST_BE_A_DIRECTORY</source>
+            <translation>%s doit être un répertoire.</translation>
+        </message>
+        <message>
+            <source>EMPTY_SYRTHES_CASENAME_MESS</source>
+            <translation>Le nom du répertoire de cas SYRTHES est manquant.</translation>
+        </message>
+        <message>
+            <source>STUDY_DIRECTORY_ALREADY_EXISTS</source>
+            <translation>Le répertoire d'étude que vous voulez créer existe déjà.</translation>
+        </message>
+        <message>
+            <source>NOT_A_STUDY_DIRECTORY</source>
+            <translation>Le répertoire d'étude : %s, n'est ni une étude %s ni une étude couplée avec %s.</translation>
         </message>
     </context>
     <context>

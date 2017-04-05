@@ -806,7 +806,14 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         if sobj != None:
             self.updateActionsXmlFile(sobj)
-
+            if CFDSTUDYGUI_DataModel.checkType(sobj.GetFather(), CFDSTUDYGUI_DataModel.dict_object["CouplingStudy"]) and \
+               CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):
+                self.commonAction(RemoveAction).setEnabled(False)
+                self.commonAction(RemoveAction).setVisible(False)
+            if CFDSTUDYGUI_DataModel.checkType(sobj.GetFather(), CFDSTUDYGUI_DataModel.dict_object["Study"]) and \
+               CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):
+                self.commonAction(RemoveAction).setEnabled(True)
+                self.commonAction(RemoveAction).setVisible(True)
 
     def updateActionsXmlFile(self, XMLSobj) :
 
@@ -847,6 +854,9 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         log.debug("customPopup")
         if id == CFDSTUDYGUI_DataModel.dict_object["Study"]:
             popup.addAction(self.commonAction(AddCaseAction))
+            popup.addAction(self.commonAction(CloseStudyAction))
+            popup.addAction(self.commonAction(UpdateObjBrowserAction))
+        if id == CFDSTUDYGUI_DataModel.dict_object["CouplingStudy"]:
             popup.addAction(self.commonAction(CloseStudyAction))
             popup.addAction(self.commonAction(UpdateObjBrowserAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["Case"]:
@@ -953,6 +963,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(RunScriptAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["USRSRCSYRFile"]:
             popup.addAction(self.commonAction(EditAction))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["SYRCaseFolder"]:
+            popup.addAction(self.commonAction(UpdateObjBrowserAction))
         elif id == "VTKViewer":
             popup.addAction(self.commonAction(DisplayTypeSHADED))
             popup.addAction(self.commonAction(DisplayTypeWIREFRAME))
@@ -991,6 +1003,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         Loads the CFD study location. If the name of the CFD study
         does not exists, the corresponding folder is created.
+        dialog.CreateOption boolean indicates that Create Study button is checked
         """
         log.debug("slotStudyLocation")
         dialog = self.DialogCollector.SetTreeLocationDialog
@@ -1002,18 +1015,20 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         QApplication.setOverrideCursor(cursor)
 
         _SetCFDCode(dialog.code)
-
-        iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath = dialog.StudyPath,
-                                                      theCaseNames = dialog.CaseNames,
-                                                      theCreateOpt = dialog.CreateOption,
-                                                      theCopyOpt   = dialog.CopyFromOption,
-                                                      theNameRef   = dialog.CaseRefName)
+        iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath   = dialog.StudyPath,
+                                                      theCaseNames   = dialog.CaseNames,
+                                                      theCreateOpt   = dialog.CreateOption,
+                                                      theCopyOpt     = dialog.CopyFromOption,
+                                                      theNameRef     = dialog.CaseRefName,
+                                                      theSyrthesOpt  = dialog.CouplingSaturneSyrthes,
+                                                      theSyrthesCase = dialog.SyrthesCase,
+                                                      theNprocs      = dialog.Nprocs)
         if iok:
             studyId = sgPyQt.getStudyId()
             sgPyQt.updateObjBrowser(studyId, 1)
             self.updateActions()
         QApplication.restoreOverrideCursor()
-
+        return
 
     def slotAddCase(self):
         """
@@ -1031,7 +1046,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         dialog.StudyPath = CFDSTUDYGUI_DataModel._GetPath(studyObj)
         dialog.StudyDirName.setText(os.path.dirname(CFDSTUDYGUI_DataModel._GetPath(studyObj)))
         dialog.StudyLineEdit.setText(studyObj.GetName())
-
         if not os.path.exists(dialog.StudyPath):
             mess = cfdstudyMess.trMessage(self.tr("ENV_DLG_INVALID_DIRECTORY"),[dialog.StudyPath])+self.tr("STMSG_UPDATE_STUDY_INCOMING")
             cfdstudyMess.aboutMessage(mess)
@@ -1052,21 +1066,27 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                     mess = cfdstudyMess.trMessage(self.tr("CASE_ALREADY_EXISTS"),[i,CFDSTUDYGUI_DataModel._GetPath(studyObj)])
                     cfdstudyMess.aboutMessage(mess)
                 else :
-                    iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath = dialog.StudyPath,
-                                                                  theCaseNames = i,
-                                                                  theCreateOpt = dialog.CreateOption,
-                                                                  theCopyOpt   = dialog.CopyFromOption,
-                                                                  theNameRef   = dialog.CaseRefName)
+                    iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath   = dialog.StudyPath,
+                                                                  theCaseNames   = i,
+                                                                  theCreateOpt   = dialog.CreateOption,
+                                                                  theCopyOpt     = dialog.CopyFromOption,
+                                                                  theNameRef     = dialog.CaseRefName,
+                                                                  theSyrthesOpt  = False,
+                                                                  theSyrthesCase = "",
+                                                                  theNprocs      = "")
         if string.strip(dialog.CaseNames) == "" :
             if "CASE1" in ExistingCaseNameList:
                 mess = cfdstudyMess.trMessage(self.tr("DEFAULT_CASE_ALREADY_EXISTS"),["CASE1",CFDSTUDYGUI_DataModel._GetPath(studyObj)])
                 cfdstudyMess.aboutMessage(mess)
             else :
                 iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath = dialog.StudyPath,
-                                                              theCaseNames = "CASE1",
-                                                              theCreateOpt = dialog.CreateOption,
-                                                              theCopyOpt   = dialog.CopyFromOption,
-                                                              theNameRef   = dialog.CaseRefName)
+                                                              theCaseNames   = "CASE1",
+                                                              theCreateOpt   = dialog.CreateOption,
+                                                              theCopyOpt     = dialog.CopyFromOption,
+                                                              theNameRef     = dialog.CaseRefName,
+                                                              theSyrthesOpt  = False,
+                                                              theSyrthesCase = "",
+                                                              theNprocs      = "")
         self.updateObjBrowser()
 
 
@@ -1620,11 +1640,14 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         boo,StudyPath,CasePath = self.checkCFDCaseDir(xmlfileName)
         if boo and StudyPath != "" and CasePath != "" :
             CaseName = os.path.basename(CasePath)
-            iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath = StudyPath,
-                                                          theCaseNames = CasePath,
-                                                          theCreateOpt = False,
-                                                          theCopyOpt   = False,
-                                                          theNameRef   = "")
+            iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath   = StudyPath,
+                                                          theCaseNames   = CasePath,
+                                                          theCreateOpt   = False,
+                                                          theCopyOpt     = False,
+                                                          theNameRef     = "",
+                                                          theSyrthesOpt  = False,
+                                                          theSyrthesCase = "",
+                                                          theNprocs      = "")
             studyObj = CFDSTUDYGUI_DataModel.FindStudyByPath(StudyPath)
             caseObj  = CFDSTUDYGUI_DataModel.getSObject(studyObj,CaseName)
             DATAObj  = CFDSTUDYGUI_DataModel.getSObject(caseObj,"DATA")
@@ -2005,11 +2028,14 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
        # Open the save as CFD xml GUI
         boo,StudyPath,CasePath = self.checkCFDCaseDir(xmlfileName)
         if boo and StudyPath != "" and CasePath != "" :
-            iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath = StudyPath,
-                                                          theCaseNames = CasePath,
-                                                          theCreateOpt = False,
-                                                          theCopyOpt   = False,
-                                                          theNameRef   = "")
+            iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath   = StudyPath,
+                                                          theCaseNames   = CasePath,
+                                                          theCreateOpt   = False,
+                                                          theCopyOpt     = False,
+                                                          theNameRef     = "",
+                                                          theSyrthesOpt  = False,
+                                                          theSyrthesCase = "",
+                                                          theNprocs      = "")
             CaseName = os.path.basename(CasePath)
             studyObj = CFDSTUDYGUI_DataModel.FindStudyByPath(StudyPath)
             caseObj  = CFDSTUDYGUI_DataModel.getSObject(studyObj,CaseName)

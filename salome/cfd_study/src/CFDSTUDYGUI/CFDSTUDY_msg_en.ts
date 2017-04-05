@@ -511,6 +511,30 @@
             <source>COUPLING_SYRTHES4_HOME_MISSING</source>
             <translation>; SYRTHES4_HOME environment variable is missing.</translation>
         </message>
+        <message>
+            <source>STUDY_SUB_DIRECTORY_MISSING</source>
+            <translation>Directories %s and/or %s are missing into the CFD study directory.</translation>
+        </message>
+        <message>
+            <source>COUPLING_SAT_SYR_STUDY_SUB_DIRECTORY_MISSING</source>
+            <translation>Directories %s and/or %s, %s are missing into the coupling SYRTHES-SATURNE study directory.</translation>
+        </message>
+        <message>
+            <source>MUST_BE_A_DIRECTORY</source>
+            <translation>%s must be a directory.</translation>
+        </message>
+        <message>
+            <source>EMPTY_SYRTHES_CASENAME_MESS</source>
+            <translation>SYRTHES case name is missing.</translation>
+        </message>
+        <message>
+            <source>STUDY_DIRECTORY_ALREADY_EXISTS</source>
+            <translation>Study directory you want to create already exists.</translation>
+        </message>
+        <message>
+            <source>NOT_A_STUDY_DIRECTORY</source>
+            <translation>Study directory: %s, is neither a %s study nor a CFD study coupling with %s.</translation>
+        </message>
     </context>
     <context>
         <name>InfoDialogHandler</name>

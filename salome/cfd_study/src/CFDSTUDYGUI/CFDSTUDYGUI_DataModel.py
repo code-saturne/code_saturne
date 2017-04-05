@@ -98,6 +98,7 @@ from CFDSTUDYGUI_Commons import CFD_Code, BinCode, Trace, sgPyQt, sg
 from CFDSTUDYGUI_Commons import CaseInProcessStart, CaseInProcessEnd
 from CFDSTUDYGUI_Commons import CFD_Saturne, CFD_Neptune
 import CFDSTUDYGUI_SolverGUI
+import CFDSTUDYGUI_Commons
 from CFDSTUDYGUI_CommandMgr import runCommand
 from CFDSTUDYGUI_Message import cfdstudyMess
 from cs_exec_environment import separate_args
@@ -109,6 +110,7 @@ from cs_exec_environment import separate_args
 logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI_DataModel")
 log.setLevel(logging.NOTSET)
+
 
 #-------------------------------------------------------------------------------
 # Module name. Attribut "AttributeName" for the related SObject.
@@ -194,7 +196,7 @@ dict_object["RESU_COUPLINGSubFolder"]   = 100105
 dict_object["RESUSubFolderSYR"]         = 100106
 dict_object["SRCSYRFolder"]             = 100107
 dict_object["USRSRCSYRFile"]            = 100108
-
+dict_object["CouplingStudy"]            = 100109
 #-------------------------------------------------------------------------------
 # Definition of the icon of objects to represent in the Object Browser.
 # Attribut "AttributePixMap" for the related SObject.
@@ -212,8 +214,6 @@ icon_collection[dict_object["DATAFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["DATAFile"]]       = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["DRAFTFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["REFERENCEDATAFolder"]] = "CFDSTUDY_FOLDER_OBJ_ICON"
-#Icons for coupling with SYRTHES CODE
-
 
 icon_collection[dict_object["DATADRAFTFile"]]  = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 
@@ -244,7 +244,6 @@ icon_collection[dict_object["RESXMLFile"]]     = "CFDSTUDY_EXECUTABLE_OBJ_ICON"
 icon_collection[dict_object["POSTPROFolder"]]  = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESENSIGHTFile"]] = "VISU_OBJ_ICON"
 
-
 icon_collection[dict_object["SCRPTFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["SCRPTLanceFile"]] = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["SCRPTScriptFile"]]= "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
@@ -265,15 +264,18 @@ icon_collection[dict_object["UnvFile"]]        = "MESH_OBJ_ICON"
 
 icon_collection[dict_object["POSTFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["POSTFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
-icon_collection[dict_object["SYRCaseFolder"]]  = "SYRTHES_CASE_ICON"
-icon_collection[dict_object["SyrthesFile"]]    = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
-icon_collection[dict_object["CouplingFilePy"]] = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
-icon_collection[dict_object["CouplingRuncase"]]= "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
-icon_collection[dict_object["RESU_COUPLINGFolder"]]= "CFDSTUDY_FOLDER_OBJ_ICON"
+
+#Icons for coupling with SYRTHES CODE
+icon_collection[dict_object["SYRCaseFolder"]]         = "SYRTHES_CASE_ICON"
+icon_collection[dict_object["SyrthesFile"]]           = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["CouplingFilePy"]]        = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["CouplingRuncase"]]       = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["RESU_COUPLINGFolder"]]   = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESU_COUPLINGSubFolder"]]= "CFDSTUDY_FOLDER_OBJ_ICON"
-icon_collection[dict_object["RESUSubFolderSYR"]]= "CFDSTUDY_FOLDER_OBJ_ICON"
-icon_collection[dict_object["SRCSYRFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
-icon_collection[dict_object["USRSRCSYRFile"]]    = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["RESUSubFolderSYR"]]      = "CFDSTUDY_FOLDER_OBJ_ICON"
+icon_collection[dict_object["SRCSYRFolder"]]          = "CFDSTUDY_FOLDER_OBJ_ICON"
+icon_collection[dict_object["USRSRCSYRFile"]]         = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["CouplingStudy"]]         = "CFDSTUDY_STUDY_OBJ_ICON"
 
 #-------------------------------------------------------------------------------
 # ObjectTR is a convenient object for traduction purpose
@@ -409,8 +411,9 @@ def _findOrCreateComponent():
 
     return father
 
+
 def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
-                      theCopyOpt, theNameRef = ""):
+                      theCopyOpt, theNameRef = "", theSyrthesOpt =False, theSyrthesCase = "",theNprocs=""):
     """
     Constructs the tree representation of a CFD study (with the
     associated cases) for the Object Browser. All branch of the tree is
@@ -421,11 +424,24 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
     @type theCaseNames: C{String}
     @param theCaseNames: unix pathes of the new CFD cases to be build.
     """
+    iok = True
+    if theCopyOpt:
+        if not os.path.exists(theNameRef):
+            raise ValueError, "reference case is not a repository"
+    if os.path.exists(theStudyPath) :
+        if theCreateOpt:
+            mess = cfdstudyMess.trMessage(ObjectTR.tr("STUDY_DIRECTORY_ALREADY_EXISTS"),[""])
+            cfdstudyMess.criticalMessage(mess)
+            return False
+
+    iok = _CallCreateScript(theStudyPath, theCreateOpt, theCaseNames,
+                                theCopyOpt, theNameRef, theSyrthesOpt, theSyrthesCase)
+
     study   = _getStudy()
     builder = study.NewBuilder()
     father  = _findOrCreateComponent()
     studyObject = FindStudyByPath(theStudyPath)
-    iok = True
+
     if studyObject == None:
         #obtain name and dir for new study
         lst = os.path.split(theStudyPath)
@@ -438,40 +454,29 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
 
         studyObject  = builder.NewObject(father)
         attr = builder.FindOrCreateAttribute(studyObject, "AttributeLocalID")
-        attr.SetValue(dict_object["Study"])
+        if CFDSTUDYGUI_Commons.isaSaturneSyrthesCouplingStudy(theStudyPath):
+            attr.SetValue(dict_object["CouplingStudy"])
+        elif CFDSTUDYGUI_Commons.isaCFDStudy(theStudyPath):
+            attr.SetValue(dict_object["Study"])
+        else:
+            return False
         attr = builder.FindOrCreateAttribute(studyObject, "AttributePixMap")
         attr.SetPixMap(str(ObjectTR.tr("CFDSTUDY_STUDY_OBJ_ICON")))
         attr = builder.FindOrCreateAttribute(studyObject, "AttributeName")
         attr.SetValue(aStudyName)
         attr = builder.FindOrCreateAttribute(studyObject, "AttributeComment")
         attr.SetValue(aStudyDir)
-
-        CreateStudy = True
-        if os.path.exists(theStudyPath):
-            CreateStudy = False
-        if theCopyOpt:
-            if not os.path.exists(theNameRef):
-                raise ValueError, "reference case is not a repository"
-        if CreateStudy == True :
-            iok = _CallCreateScript(theStudyPath, CreateStudy, theCaseNames,
-                                    theCopyOpt, theNameRef)
-        if iok :
-            UpdateSubTree(studyObject)
-            if "coupling_parameters.py" in os.listdir(theStudyPath):
-                #MP Update SYRTHES PATH into coupling_parameters.py file
-                replaceOrInsertCouplingPath(os.path.join(theStudyPath,"coupling_parameters.py"))
-            if "runcase" in os.listdir(theStudyPath):
-                #MP Update the coupling study PATH into runcase file
-                updateRuncaseCoupling(os.path.join(theStudyPath,"runcase"))
-    else :
-        CreateStudy = True
-        if os.path.exists(theStudyPath):
-            CreateStudy = False
-            iok = _CallCreateScript(theStudyPath, CreateStudy, theCaseNames,
-                                    theCopyOpt, theNameRef)
-
+    if iok:
         UpdateSubTree(studyObject)
+        if "coupling_parameters.py" in os.listdir(theStudyPath):
+            # Update SYRTHES PATH into coupling_parameters.py file
+            replaceOrInsertCouplingPath(os.path.join(theStudyPath,"coupling_parameters.py"))
+        if "runcase" in os.listdir(theStudyPath):
+            # Update the coupling study PATH into runcase file
+            updateRuncaseCoupling(os.path.join(theStudyPath,"runcase"),theNprocs)
+
     return iok
+
 
 def replaceOrInsertCouplingPath(The_coupling_parameters_path):
     """
@@ -497,7 +502,7 @@ def replaceOrInsertCouplingPath(The_coupling_parameters_path):
     f.writelines(l)
     f.close()
 
-def updateRuncaseCoupling(The_runcase_coupling_path):
+def updateRuncaseCoupling(The_runcase_coupling_path,theNprocs):
     """
     Pathes into runcase file for coupling are updated
     """
@@ -505,6 +510,7 @@ def updateRuncaseCoupling(The_runcase_coupling_path):
     l = f.readlines()
     f.close()
     ind = -1
+    lineToInsert = "cd "+os.path.dirname(The_runcase_coupling_path)+"\n"
     for i in l :
         if  i.startswith("export PATH"):
             ind = l.index(i)
@@ -512,22 +518,27 @@ def updateRuncaseCoupling(The_runcase_coupling_path):
         if  i.startswith("\code_saturne run"):
             ir = l.index(i)
             lComRun = string.split(i[1:])
-            for j in lComRun:
-                if j == '--coupling':
-                   ic = lComRun.index(j)
-                   lComRun[ic+1] = os.path.join(os.path.dirname(The_runcase_coupling_path),"coupling_parameters.py")
-                   comRun = string.join(lComRun," ")
+            j = '--coupling'
+            if lComRun.count(j):
+               ic = lComRun.index(j)
+               lComRun[ic+1] = os.path.join(os.path.dirname(The_runcase_coupling_path),"coupling_parameters.py")
+               if theNprocs != "":
+                   if int(theNprocs) > 1:
+                       lComRun[ic]= string.join(["--nprocs",theNprocs,j]," ")
+               comRun = string.join(lComRun," ")
             l[ir] = "\\"+comRun+"\n"
+        if i.startswith("cd "):
+            ir = l.index(i)
+            l[ir] = lineToInsert
     if ind >=0:
-        lineToInsert = "cd "+os.path.dirname(The_runcase_coupling_path)+"\n"
         if lineToInsert not in l :
-            l.insert(ind+1,"cd "+os.path.dirname(The_runcase_coupling_path)+"\n")
+            l.insert(ind+1,lineToInsert)
     f = open(The_runcase_coupling_path,"w")
     f.writelines(l)
     f.close()
 
 def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
-                      theCopyOpt, theNameRef):
+                      theCopyOpt, theNameRef, theSyrthesOpt, theSyrthesCase):
     """
     Builds new CFD study, and/or new cases on the file system.
 
@@ -539,9 +550,7 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
     @param theCaseNames: unix pathes of the new CFD cases to be build.
     """
     mess = ""
-
     scrpt, c ,mess = BinCode()
-
     if mess == "" :
         curd = os.getcwd()
 
@@ -566,6 +575,9 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
             args.append("--copy-from")
             args.append(theNameRef)
 
+        if theSyrthesOpt:
+            args.append("--syrthes")
+            args.append(os.path.join(theStudyPath,theSyrthesCase))
         runCommand(args, start_dir, "")
 
     else:
@@ -637,7 +649,6 @@ def _RebuildTreeRecursively(theObject):
     if theObject == None:
         return
     log.debug("_RebuildTreeRecursively -> %s childs: %s" % (theObject.GetName(), ScanChildNames(theObject,  ".*")))
-
     theObjectPath = _GetPath(theObject)
     log.debug("_RebuildTreeRecursively -> path: %s" % theObjectPath)
 
@@ -844,7 +855,7 @@ def _FillObject(theObject, theParent, theBuilder):
     #log.debug("_FillObject: %s" % name)
 
     # Parent is study
-    if parentId == dict_object["Study"]:
+    if parentId == dict_object["Study"] or parentId == dict_object["CouplingStudy"]:
         if Trace(): print "_FillObject : parent is Study ", theParent.GetName()
         #check for case
         if os.path.isdir(path):
@@ -854,7 +865,6 @@ def _FillObject(theObject, theParent, theBuilder):
                dirList.count("RESU") and \
                dirList.count("SCRIPTS"):
                 objectId = dict_object["Case"]
-
             else:
                 boo = False
                 for i in dirList:
@@ -1252,7 +1262,7 @@ def _GetPath(theObject):
     path = str(theObject.GetName())
 
     attr = builder.FindOrCreateAttribute(theObject, "AttributeLocalID")
-    if attr.Value() == dict_object["Study"]:
+    if attr.Value() == dict_object["Study"] or attr.Value() == dict_object["CouplingStudy"]:
         dir = builder.FindOrCreateAttribute(theObject, "AttributeComment")
         return os.path.join(dir.Value(), path)
 
@@ -1362,7 +1372,7 @@ def GetCase(theObject):
         value = attr.Value()
         if value == dict_object["Case"]:
             return cur
-        elif value == dict_object["Study"] \
+        elif value == dict_object["Study"] or value == dict_object["CouplingStudy"] \
              or value == __MODULE_ID__ \
              or value == 0:
             return None
@@ -1408,7 +1418,7 @@ def GetStudyByObj(theObject):
     while cur:
         attr = builder.FindOrCreateAttribute(cur, "AttributeLocalID")
         value = attr.Value()
-        if value == dict_object["Study"]:
+        if value == dict_object["Study"] or value == dict_object["CouplingStudy"]:
             return cur
         elif value == __MODULE_ID__ or value == 0:
             return None
@@ -1437,7 +1447,7 @@ def FindStudyByPath(theStudyPath):
     iter  = study.NewChildIterator(component)
     while iter.More():
         attr = builder.FindOrCreateAttribute(iter.Value(), "AttributeLocalID")
-        if attr.Value() == dict_object["Study"]:
+        if attr.Value() == dict_object["Study"] or attr.Value() == dict_object["CouplingStudy"] :
             #compare study path
             aCurStudyPath = _GetPath(iter.Value())
             if aCurStudyPath == theStudyPath:
@@ -1447,66 +1457,10 @@ def FindStudyByPath(theStudyPath):
     return None
 
 
-def GetStudyNameList():
-    """
-    Returns the list of the existing CFD studies in the Object Browser.
-
-    @return: list of names of the loaded CFD studies.
-    @rtype: C{List} or C{String}
-    """
-    component = _getComponent()
-    if component == None:
-        return None
-
-    study   = _getStudy()
-    builder = study.NewBuilder()
-
-    StudyList = []
-
-    iter  = study.NewChildIterator(component)
-
-    while iter.More():
-        anObject = iter.Value()
-        attr = builder.FindOrCreateAttribute(anObject, "AttributeLocalID")
-        if attr.Value() == dict_object["Study"]:
-            StudyList.append(anObject.GetName())
-        iter.Next()
-
-    return StudyList
-
-
-def GetStudyList():
-    """
-    Returns the list of the existing CFD studies in the Object Browser.
-
-    @return: list of the loaded CFD studies.
-    @rtype: C{List} or C{SObject}
-    """
-    component = _getComponent()
-    if component == None:
-        return None
-
-    study   = _getStudy()
-    builder = study.NewBuilder()
-
-    StudyList = []
-
-    iter  = study.NewChildIterator(component)
-
-    while iter.More():
-        anObject = iter.Value()
-        attr = builder.FindOrCreateAttribute(anObject, "AttributeLocalID")
-        if attr.Value() == dict_object["Study"]:
-            StudyList.append(anObject)
-        iter.Next()
-
-    return StudyList
-
-
 def GetCaseNameList(theStudy):
     """
     Returns the list of the existing cases from a CFD study in the Object Browser.
-
+    Used into slotAddCase to verify the existing cases
     @type theStudy: C{SObject}
     @param theStudy: CFD study data in the Object Browser.
     @return: list of names of the loaded CFD studies.
@@ -1518,7 +1472,7 @@ def GetCaseNameList(theStudy):
     builder = study.NewBuilder()
 
     attr = builder.FindOrCreateAttribute(theStudy, "AttributeLocalID")
-    if attr.Value() != dict_object["Study"]:
+    if attr.Value() != dict_object["Study"] or attr.Value() != dict_object["CouplingStudy"]:
         return CaseList
 
     iter  = study.NewChildIterator(theStudy)
@@ -1548,8 +1502,9 @@ def GetCaseList(theStudy):
     builder = study.NewBuilder()
 
     attr = builder.FindOrCreateAttribute(theStudy, "AttributeLocalID")
-    if attr.Value() != dict_object["Study"]:
-        return CaseList
+    if attr.Value() != dict_object["Study"] :
+        if attr.Value() != dict_object["CouplingStudy"]:
+            return CaseList
 
     iter  = study.NewChildIterator(theStudy)
 
@@ -1871,39 +1826,6 @@ def getSObject(theParent,Name) :
         if i.GetName() == Name :
             SObj = i
     return SObj
-
-def findMaxDeepObject(thePath):
-    """
-    Returns data from tree by real path.
-
-    @type thePath: C{String}
-    @param thePath: absolute unix path of an object from the Object Browser.
-    @return: object corresponding the I{thePath}
-    @rtype: C{SObject}
-    """
-    study   = _getStudy()
-    builder = study.NewBuilder()
-
-    obj_list = GetStudyList()
-
-    parent = None
-
-    while len(obj_list) > 0:
-        found = False
-        for obj in obj_list:
-            obj_path = _GetPath(obj)
-            if os.path.commonprefix([obj_path, thePath]) == obj_path:
-                #parent found
-                if obj_path == thePath:
-                    return obj
-                parent = obj
-                found = True
-                break
-        if found:
-            obj_list = ScanChildren(parent, ".*") #all children
-        else:
-            break
-    return parent
 
 
 #def publishInStudySalome(SO_father, objName, idElem):
