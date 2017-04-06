@@ -126,7 +126,7 @@ cs_user_extra_operations(void)
   //!< [example_2]
 
   //!< [example_3]
-  cs_real_3_t normal = {0., 0., 0,};
+  cs_real_3_t normal = {0., 0., 1.,};
 
   cs_surface_balance("selection_criterion", "scalar1", normal);
   //!< [example_3]
