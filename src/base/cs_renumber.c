@@ -616,6 +616,10 @@ _cs_renumber_update_cells(cs_mesh_t  *mesh,
   BFT_FREE(new_cell_id);
   BFT_FREE(face_cells_tmp);
 
+  /* Update list of boundary cells */
+
+  cs_mesh_update_b_cells(mesh);
+
   /* Update cell families and global numbering */
 
   _update_family(n_cells, new_to_old, mesh->cell_family);
