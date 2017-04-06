@@ -428,6 +428,16 @@ void
 cs_mesh_discard_free_faces(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
+ * Generate or update list of mesh boundary cells.
+ *
+ * parameters:
+ *   mesh  <->  pointer to a cs_mesh_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_update_b_cells(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
  * Compute or update mesh structure members that depend on other members,
  * but whose results may be reused, such as global number of elements
  * (cells, vertices, interior and boundary faces) and sync cell family.

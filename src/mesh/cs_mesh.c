@@ -2519,6 +2519,47 @@ cs_mesh_g_face_vertices_sizes(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Generate or update list of mesh boundary cells.
+ *
+ * parameters:
+ *   mesh  <->  pointer to a cs_mesh_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_update_b_cells(cs_mesh_t  *mesh)
+{
+  cs_lnum_t  i;
+
+  cs_lnum_t n_b_cells = 0;
+  _Bool *flag = NULL;
+
+  BFT_MALLOC(flag, mesh->n_cells, _Bool);
+
+  for (i = 0; i < mesh->n_cells; i++)
+    flag[i] = false;
+
+  for (i = 0; i < mesh->n_b_faces; i++) {
+    if (mesh->b_face_cells[i] > -1)
+      flag[mesh->b_face_cells[i]] = true;
+  }
+
+  for (i = 0, n_b_cells = 0; i < mesh->n_cells; i++) {
+    if (flag[i] == true)
+      n_b_cells++;
+  }
+
+  mesh->n_b_cells = n_b_cells;
+  BFT_REALLOC(mesh->b_cells, mesh->n_b_cells, cs_lnum_t);
+
+  for (i = 0, n_b_cells = 0; i < mesh->n_cells; i++) {
+    if (flag[i] == true)
+      mesh->b_cells[n_b_cells++] = i;
+  }
+
+  BFT_FREE(flag);
+}
+
+/*----------------------------------------------------------------------------
  * Compute or update mesh structure members that depend on other members,
  * but whose results may be reused, such as global number of elements
  * (cells, vertices, internal and border faces) and sync cell family.
@@ -2591,35 +2632,7 @@ cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
 
   /* Number of boundary cells */
 
-  {
-    cs_lnum_t n_b_cells = 0;
-    _Bool *flag = NULL;
-
-    BFT_MALLOC(flag, mesh->n_cells, _Bool);
-
-    for (i = 0; i < mesh->n_cells; i++)
-      flag[i] = false;
-
-    for (i = 0; i < mesh->n_b_faces; i++) {
-      if (mesh->b_face_cells[i] > -1)
-        flag[mesh->b_face_cells[i]] = true;
-    }
-
-    for (i = 0, n_b_cells = 0; i < mesh->n_cells; i++) {
-      if (flag[i] == true)
-        n_b_cells++;
-    }
-
-    mesh->n_b_cells = n_b_cells;
-    BFT_REALLOC(mesh->b_cells, mesh->n_b_cells, cs_lnum_t);
-
-    for (i = 0, n_b_cells = 0; i < mesh->n_cells; i++) {
-      if (flag[i] == true)
-        mesh->b_cells[n_b_cells++] = i;
-    }
-
-    BFT_FREE(flag);
-  }
+  cs_mesh_update_b_cells(mesh);
 }
 
 /*----------------------------------------------------------------------------
