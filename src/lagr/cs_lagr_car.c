@@ -178,10 +178,11 @@ cs_lagr_car(int              iprev,
 
       cs_real_t  rom           = extra->cromf->val[cell_id];
       cs_real_t  xnul          = extra->viscl->val[cell_id] / rom;
-      cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
+      cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
+                                                       CS_LAGR_VELOCITY_SEEN);
       cs_real_t *part_vel      = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
 
-      cs_real_t rel_vel_norm = cs_math_3_length(part_vel_seen, part_vel);
+      cs_real_t rel_vel_norm = cs_math_3_distance(part_vel_seen, part_vel);
 
       /* Compute the local Reynolds number */
       cs_real_t rep = rel_vel_norm * p_diam / xnul; /* local Reynolds number */

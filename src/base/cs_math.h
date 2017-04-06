@@ -77,7 +77,7 @@ extern const cs_real_t cs_math_pi;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the square of a real value
+ * \brief  Compute the square of a real value.
  *
  * \param[in]  x  value
  *
@@ -93,8 +93,8 @@ cs_math_sq(cs_real_t  x)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the (euclidean) length between two points xa and xb in
- *         a cartesian coordinate system of dimension 3
+ * \brief  Compute the (euclidean) distance between two points xa and xb in
+ *         a cartesian coordinate system of dimension 3.
  *
  * \param[in]  xa   first coordinate
  * \param[in]  xb   second coordinate
@@ -104,8 +104,8 @@ cs_math_sq(cs_real_t  x)
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t
-cs_math_3_length(const cs_real_t  xa[3],
-                 const cs_real_t  xb[3])
+cs_math_3_distance(const cs_real_t  xa[3],
+                   const cs_real_t  xb[3])
 {
   cs_real_t  v[3];
 
@@ -119,7 +119,7 @@ cs_math_3_length(const cs_real_t  xa[3],
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the squared distance between two points xa and xb in
- *         a cartesian coordinate system of dimension 3
+ *         a cartesian coordinate system of dimension 3.
  *
  * \param[in]  xa   first coordinate
  * \param[in]  xb   second coordinate
@@ -311,8 +311,8 @@ cs_math_3_cross_product(const cs_real_t u[3],
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_33_inv(const cs_real_t   in[3][3],
-               cs_real_t         out[3][3])
+cs_math_33_inv_cramer(const cs_real_t  in[3][3],
+                      cs_real_t        out[3][3])
 {
   out[0][0] = in[1][1]*in[2][2] - in[2][1]*in[1][2];
   out[0][1] = in[2][1]*in[0][2] - in[0][1]*in[2][2];
@@ -347,8 +347,8 @@ cs_math_33_inv(const cs_real_t   in[3][3],
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_math_sym_33_inv_cramer(const cs_real_t s[6],
-                          cs_real_t       sout[restrict 6])
+cs_math_sym_33_inv_cramer(const cs_real_t  s[6],
+                          cs_real_t        sout[restrict 6])
 {
   double detinv;
 
@@ -447,90 +447,6 @@ cs_math_reduce_sym_prod_33_to_66(const cs_real_t s[3][3],
       sout[jk][i] += s[k][ii];
     }
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the all eigenvalue of a 3x3 matrix which is symmetric and real
- *        -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
- *        Communication of the ACM (April 1961)
- *        -> Wikipedia article entitled "Eigenvalue algorithm"
- *
- * \param[in]  m          3x3 matrix
- * \param[out] eig_vals   size 3 vector
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_math_33_eigen_vals(const cs_real_t   m[3][3],
-                     cs_real_t          eig_vals[3])
-{
-  cs_real_t  e, e1, e2, e3;
-
-#if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
-  e1 = m[0][1]-m[1][0], e2 = m[0][2]-m[2][0], e3 = m[1][2]-m[2][1];
-  if (e1*e1 + e2*e2 + e3*e3 > 0.0)
-    bft_error(__FILE__, __LINE__, 0,
-              " The given 3x3 matrix is not symmetric.\n"
-              " Stop computing eigenvalues of a 3x3 matrix since the"
-              " algorithm is only dedicated to symmetric matrix.");
-#endif
-
-  cs_real_t  p1 = m[0][1]*m[0][1] + m[0][2]*m[0][2] + m[1][2]*m[1][2];
-
-  if (p1 > 0.0) { // m is not diagonal
-
-    cs_real_t  theta;
-    cs_real_t  n[3][3];
-    cs_real_t  tr = cs_math_onethird*(m[0][0] + m[1][1] + m[2][2]);
-
-    e1 = m[0][0] - tr, e2 = m[1][1] - tr, e3 = m[2][2] - tr;
-    cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2*p1;
-
-    assert(p2 > 0);
-    cs_real_t  p = sqrt(p2*cs_math_onesix);
-    cs_real_t  ovp = 1./p;
-
-    for (int  i = 0; i < 3; i++) {
-      n[i][i] = ovp * (m[i][i] - tr);
-      for (int j = i + 1; j < 3; j++) {
-        n[i][j] = ovp*m[i][j];
-        n[j][i] = n[i][j];
-      }
-    }
-
-    /* r should be between -1 and 1 but truncation error and bad conditionning
-       can lead to slighty under/over-shoot */
-    cs_real_t  r = 0.5 * cs_math_33_determinant((const cs_real_t (*)[3])n);
-
-    if (r <= -1)
-      theta = cs_math_onethird*cs_math_pi;
-    else if (r >= 1)
-      theta = 0.;
-    else
-      theta = cs_math_onethird*acos(r);
-
-    // eigenvalues computed should satisfy e1 < e2 < e3
-    e3 = tr + 2*p*cos(theta);
-    e1 = tr + 2*p*cos(theta + 2*cs_math_pi*cs_math_onethird);
-    e2 = 3*tr - e1 -e3; // since tr(m) = e1 + e2 + e3
-
-  }
-  else { // m is diagonal
-
-    e1 = m[0][0], e2 = m[1][1], e3 = m[2][2];
-
-  } /* diagonal or not */
-
-  if (e3 < e2) e = e3, e3 = e2, e2 = e;
-  if (e3 < e1) e = e3, e3 = e1, e1 = e2, e2 = e;
-  else {
-    if (e2 < e1) e = e2, e2 = e1, e1 = e;
-  }
-  /* Return values */
-  eig_vals[0] = e1;
-  eig_vals[1] = e2;
-  eig_vals[2] = e3;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -635,10 +551,28 @@ cs_math_3_length_unitv(const cs_real_t    xa[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the eigenvalues of a 3x3 matrix which is symmetric and real
- *         -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
- *         Communication of the ACM (April 1961)
- *         -> Wikipedia article entitled "Eigenvalue algorithm"
+ * \brief Compute the all eigenvalue of a 3x3 symmetric matrix.
+ *
+ * Based on: Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
+ *           Communication of the ACM (April 1961)
+ *           (Wikipedia article entitled "Eigenvalue algorithm")
+ *
+ * \param[in]  m          3x3 matrix
+ * \param[out] eig_vals   size 3 vector
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_math_33_eigen_vals(const cs_real_t   m[3][3],
+                      cs_real_t         eig_vals[3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the eigenvalues of a 3x3 symmetric matrix.
+ *
+ * Based on: Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
+ *           Communication of the ACM (April 1961)
+ *           (Wikipedia article entitled "Eigenvalue algorithm")
  *
  * \param[in]  m          3x3 matrix
  * \param[out] eig_ratio  max/min

@@ -881,8 +881,8 @@ _manage_error(cs_lnum_t                       failsafe_mode,
   const cs_real_t  *prev_location
     = ((const cs_lagr_tracking_info_t *)particle)->start_coords;
 
-  cs_real_t d0 = cs_math_3_length(part_coord, prev_part_coord);
-  cs_real_t d1 = cs_math_3_length(part_coord, prev_location);
+  cs_real_t d0 = cs_math_3_distance(part_coord, prev_part_coord);
+  cs_real_t d1 = cs_math_3_distance(part_coord, prev_location);
 
   cs_lagr_particle_set_real(particle, attr_map, CS_LAGR_TR_TRUNCATE, d1/d0);
 

@@ -1111,7 +1111,7 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
 
       cs_real_33_t  invmat;
 
-      cs_math_33_inv((const cs_real_3_t (*))tensor, invmat);
+      cs_math_33_inv_cramer((const cs_real_3_t (*))tensor, invmat);
       for (int k = 0; k < 3; k++)
         for (int l = 0; l < 3; l++)
           tensor[k][l] = invmat[k][l];
@@ -1398,7 +1398,7 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
 
       cs_real_33_t  invmat;
 
-      cs_math_33_inv((const cs_real_3_t (*))tensor, invmat);
+      cs_math_33_inv_cramer((const cs_real_3_t (*))tensor, invmat);
       for (int k = 0; k < 3; k++)
         for (int l = 0; l < 3; l++)
           tensor[k][l] = invmat[k][l];

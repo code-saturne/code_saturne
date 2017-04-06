@@ -3507,7 +3507,7 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
 
             const cs_lnum_t  v_id = section->vertex_num[k] - 1;
             const cs_coord_t  *v_coord = vtx_coords + 3*v_id;
-            double  length = cs_math_3_length(p_coord, v_coord);
+            double  length = cs_math_3_distance(p_coord, v_coord);
 
             if (length < min_length) {
               min_length = length;
@@ -3526,7 +3526,7 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
 
           const cs_lnum_t  v_id = section->vertex_num[j] - 1;
           const cs_coord_t  *v_coord = vtx_coords + 3*v_id;
-          double  length = cs_math_3_length(p_coord, v_coord);
+          double  length = cs_math_3_distance(p_coord, v_coord);
 
           if (length < min_length) {
             min_length = length;
@@ -3547,7 +3547,7 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
 
           const cs_lnum_t  v_id = section->vertex_num[elt_id*stride + j] - 1;
           const cs_coord_t  *v_coord = vtx_coords + 3*v_id;
-          double  length = cs_math_3_length(p_coord, v_coord);
+          double  length = cs_math_3_distance(p_coord, v_coord);
 
           if (length < min_length) {
             min_length = length;
