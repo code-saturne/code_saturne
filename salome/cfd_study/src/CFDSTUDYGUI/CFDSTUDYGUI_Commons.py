@@ -200,6 +200,68 @@ def BinCode():
     log.debug("BinCode -> \n    %s\n    %s" % (b, c))
     return b, c, mess
 
+def isaCFDCase(theCasePath):
+    log.debug("isaCFDCase")
+    iok = True
+    boo = os.path.isdir(theCasePath)
+    if os.path.isdir(theCasePath):
+        dirList = os.walk(theCasePath).next()[1]
+        if not (dirList.count("DATA") and \
+           dirList.count("SRC")  and \
+           dirList.count("RESU") and \
+           dirList.count("SCRIPTS")):
+            iok = False
+    return iok
+
+def isaCFDStudy(theStudyPath):
+    log.debug("isaCFDStudy")
+    iok = True
+    if os.path.isdir(theStudyPath):
+        dirList = os.walk(theStudyPath).next()[1]
+
+        if not (dirList.count("MESH") and dirList.count("POST")):
+            iok = False
+        else:
+            for i in dirList:
+                if i not in ["MESH","POST"]:
+                    if isaCFDCase(os.path.join(theStudyPath,i)) :
+                        return True
+                    iok = iok and isaCFDCase(os.path.join(theStudyPath,i))
+    return iok
+
+def isSyrthesCase(theCasePath):
+    log.debug("isSyrthesCase")
+#a minima
+    iok = True
+    if os.path.isdir(theCasePath):
+        dirList = os.listdir(theCasePath)
+        if not dirList.count("Makefile") and not dirList.count("syrthes.py"):
+            iok = False
+    return iok
+
+def isaSaturneSyrthesCouplingStudy(theStudyPath):
+    log.debug("isaSaturneSyrthesCouplingStudy")
+    iok = False
+    hasCFDCase     = False
+    hasSyrthesCase = False
+    if not os.path.isdir(theStudyPath):
+        mess = cfdstudyMess.trMessage(ObjectTR.tr("MUST_BE_A_DIRECTORY"),[theStudyPath])
+        cfdstudyMess.criticalMessage(mess)
+        return False
+    dirList = os.listdir(theStudyPath)
+    if not (dirList.count("MESH") and dirList.count("POST") and dirList.count("RESU_COUPLING") and dirList.count("coupling_parameters.py") and dirList.count("runcase")):
+        return False
+    for i in dirList:
+        ipath = os.path.join(theStudyPath,i)
+        if os.path.isdir(ipath):
+            if i not in ["MESH","POST","RESU_COUPLING"]:
+                if isaCFDCase(ipath):
+                    hasCFDCase = True
+                if isSyrthesCase(ipath):
+                    hasSyrthesCase = True
+    if hasCFDCase and hasSyrthesCase :
+       iok = True
+    return iok
 #-------------------------------------------------------------------------------
 # Classes definitions
 #-------------------------------------------------------------------------------
