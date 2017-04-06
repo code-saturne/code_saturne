@@ -877,8 +877,9 @@ write(nfecra,9900)
  5030 format(                                                     &
 '------------------------------------',                         /,&
                                                                 /,&
+'       EPSILO =                (precision de la resolution)',  /,&
 '       IDIRCL = 0 ou 1         (decalage de la diagonale si',  /,&
-'                                ISTAT=0 et pas de Dirichlet )',/)
+'                                ISTAT=0 et pas de Dirichlet)', /)
 
 #else
 
@@ -894,16 +895,10 @@ write(nfecra,9900)
  1x,    a16,    e12.4,    i7                                      )
  5030 format(                                                     &
 '------------------------------------',                          /,&
-                                                                /,&
-'       IRESOL =            -1  (automatic solver choice     )',/,&
-'                IPOL*1000 + 0  (p conjuguate gradient       )',/,&
-'                            1  (Jacobi                      )',/,&
-'                IPOL*1000 + 2  (bicgstab                    )',/,&
-'                  avec IPOL    (preconditioning degree      )',/,&
-'       NITMAX =                (max number of iterations    )',/,&
-'       EPSILO =                (resolution precision        )',/,&
-'       IDIRCL = 0 ou 1         (shift diagonal if   ',         /,&
-'                                ISTAT=0 and no Dirichlet    )',/)
+                                                                 /,&
+'       EPSILO =                (resolution precision)',         /,&
+'       IDIRCL = 0 ou 1         (shift diagonal if',             /,&
+'                                ISTAT=0 and no Dirichlet)',     /)
 
 #endif
 
