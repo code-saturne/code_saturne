@@ -1081,7 +1081,7 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
       fprintf(f, "time values:\n");
 
       for (j = 0 ; j < ts->n_time_values ; j++)
-        fprintf(f, "            %g\n", ts->time_value[j]);
+        fprintf(f, "            %f\n", ts->time_value[j]);
 
     }
 
