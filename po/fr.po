@@ -14582,7 +14582,7 @@ msgid ""
 "\n"
 msgstr ""
 "\n"
-"  Histogramme du gauchissement des faces de bord:\n"
+"  Histogramme de l'épaisseur des cellules de bord:\n"
 "\n"
 
 msgid ""
