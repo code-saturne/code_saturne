@@ -185,6 +185,26 @@ cs_file_t *
 cs_file_open_default(const char        *name,
                      cs_file_mode_t     mode);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a file descriptor and open the associated file, using the
+ *        serial IO on the root rank.
+ *
+ * By default, data is written or read as native data. This behavior may be
+ * modified by cs_file_set_swap_endian().
+ *
+ * \param[in]  name   file name
+ * \param[in]  mode   file acces mode: read, write, or append
+ *
+ * \return pointer to cs_file_t file descriptor (NULL in case of failure);
+ *   currently, errors are fatal.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_file_t *
+cs_file_open_serial(const char      *name,
+                    cs_file_mode_t   mode);
+
 /*----------------------------------------------------------------------------
  * Destroy a file descriptor and close the associated file.
  *
