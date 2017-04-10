@@ -1080,8 +1080,18 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
       fprintf(f, "filename increment:    1\n");
       fprintf(f, "time values:\n");
 
-      for (j = 0 ; j < ts->n_time_values ; j++)
-        fprintf(f, "            %f\n", ts->time_value[j]);
+      for (j = 0 ; j < ts->n_time_values ; j++) {
+        char tmp[64];
+        snprintf(tmp, 63, "%.12f", ts->time_value[j]);
+        tmp[63] = '\0';
+        for (int k = strlen(tmp)-1; k > 0; k--) {
+          if (tmp[k] == '0')
+            tmp[k] = '\0';
+          else
+            break;
+        }
+        fprintf(f, "            %s\n", tmp);
+      }
 
     }
 
