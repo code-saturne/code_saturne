@@ -173,6 +173,9 @@ Architectural changes
 Bug fixes
 ---------
 
+- Modify EnSight time output format to workarount ParaView reader bug for
+  small time steps.
+
 - Fix dependency of radiative model results on activation of boundary
   temperature postprocessing in som cases.
 
