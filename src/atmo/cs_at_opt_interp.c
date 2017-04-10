@@ -1701,20 +1701,14 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
   bft_printf("\n   * Computing (HBHT + R)^-1*I\n");
 #endif
 
-  cs_real_t *zeros = NULL;
-  BFT_MALLOC(zeros, a_l_size, cs_real_t);
-  for (cs_lnum_t ii = 0; ii < a_l_size; ii++)
-    zeros[ii] = 0.;
-
   cs_real_t *vect = NULL;
   BFT_MALLOC(vect, a_l_size, cs_real_t);
 
   /* Forward and backward */
 
-  cs_math_fw_and_bw_lu(alu, a_l_size, vect, zeros, inc);
+  cs_math_fw_and_bw_lu(alu, a_l_size, vect, inc);
 
   BFT_FREE(alu);
-  BFT_FREE(zeros);
   BFT_FREE(inc);
 
   const cs_real_t ir_xy2 = cs_math_sq(oi->ir[0]);

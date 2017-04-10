@@ -74,10 +74,9 @@ integer          iel, dimrij, isou, i, j
 double precision dij
 
 double precision uns3, const, kseps, csttmp
-double precision prdtur, r1t, r2t, r3t
-double precision rit(3), gij(3, 3), rij(3, 3), grav(3)
-double precision g11, g22, g33, g12, g13, g23, gkks3
-double precision phit11, phit22, phit33, phit12, phit13, phit23
+double precision prdtur
+double precision rit(3), gij(3, 3), grav(3)
+double precision gkks3
 double precision turb_schmidt
 
 double precision, dimension(:), pointer :: cvara_ep

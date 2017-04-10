@@ -783,7 +783,7 @@ cs_file_listdir(const char *path);
 /*----------------------------------------------------------------------------
  * Return the size of a file.
  *
- * If the file does not exit, 0 is returned.
+ * If the file does not exist, 0 is returned.
  *
  * Note that for some special files, such as files in the Linux /proc
  * directory, this may return 0.

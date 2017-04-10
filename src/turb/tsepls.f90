@@ -64,7 +64,7 @@ double precision w1(ncelet)
 ! Local variables
 
 integer          iel, ifac, inc, iprev
-integer          isou, ii, jj, i, j ,k
+integer          isou, ii, jj, j ,k
 
 double precision w_temp, pnd
 

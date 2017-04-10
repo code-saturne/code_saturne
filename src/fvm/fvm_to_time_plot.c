@@ -430,6 +430,8 @@ fvm_to_time_plot_init_writer(const char             *name,
                              fvm_writer_time_dep_t   time_dependency)
 #endif
 {
+  CS_NO_WARN_IF_UNUSED(time_dependency);
+
   fvm_to_time_plot_writer_t  *w = NULL;
 
   /* Initialize writer */

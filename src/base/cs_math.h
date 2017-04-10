@@ -336,6 +336,72 @@ cs_math_33_inv_cramer(const cs_real_t  in[3][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Inverse a 3x3 matrix in place, using Cramer's rule
+ *
+ * \param[in, out]  a   matrix to inverse
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_33_inv_cramer_in_place(cs_real_t  a[3][3])
+{
+  cs_real_t a00 = a[1][1]*a[2][2] - a[2][1]*a[1][2];
+  cs_real_t a01 = a[2][1]*a[0][2] - a[0][1]*a[2][2];
+  cs_real_t a02 = a[0][1]*a[1][2] - a[1][1]*a[0][2];
+  cs_real_t a10 = a[2][0]*a[1][2] - a[1][0]*a[2][2];
+  cs_real_t a11 = a[0][0]*a[2][2] - a[2][0]*a[0][2];
+  cs_real_t a12 = a[1][0]*a[0][2] - a[0][0]*a[1][2];
+  cs_real_t a20 = a[1][0]*a[2][1] - a[2][0]*a[1][1];
+  cs_real_t a21 = a[2][0]*a[0][1] - a[0][0]*a[2][1];
+  cs_real_t a22 = a[0][0]*a[1][1] - a[1][0]*a[0][1];
+
+  double det_inv = 1. / (a[0][0]*a00 + a[1][0]*a01 + a[2][0]*a02);
+
+  a[0][0] = a00 * det_inv;
+  a[0][1] = a01 * det_inv;
+  a[0][2] = a02 * det_inv;
+  a[1][0] = a10 * det_inv;
+  a[1][1] = a11 * det_inv;
+  a[1][2] = a12 * det_inv;
+  a[2][0] = a20 * det_inv;
+  a[2][1] = a21 * det_inv;
+  a[2][2] = a22 * det_inv;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Inverse a 3x3 symmetric matrix (with non-symmetric storage)
+ *         in place, using Cramer's rule
+ *
+ * \param[in, out]  a   matrix to inverse
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_33_inv_cramer_sym_in_place(cs_real_t  a[3][3])
+{
+  cs_real_t a00 = a[1][1]*a[2][2] - a[2][1]*a[1][2];
+  cs_real_t a01 = a[2][1]*a[0][2] - a[0][1]*a[2][2];
+  cs_real_t a02 = a[0][1]*a[1][2] - a[1][1]*a[0][2];
+  cs_real_t a11 = a[0][0]*a[2][2] - a[2][0]*a[0][2];
+  cs_real_t a12 = a[1][0]*a[0][2] - a[0][0]*a[1][2];
+  cs_real_t a22 = a[0][0]*a[1][1] - a[1][0]*a[0][1];
+
+  double det_inv = 1. / (a[0][0]*a00 + a[1][0]*a01 + a[2][0]*a02);
+
+  a[0][0] = a00 * det_inv;
+  a[0][1] = a01 * det_inv;
+  a[0][2] = a02 * det_inv;
+  a[1][0] = a01 * det_inv;
+  a[1][1] = a11 * det_inv;
+  a[1][2] = a12 * det_inv;
+  a[2][0] = a02 * det_inv;
+  a[2][1] = a12 * det_inv;
+  a[2][2] = a22 * det_inv;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the inverse of a symmetric matrix using Cramer's rule.
  *
  * \remark Symmetric matrix coefficients are stored as follows:
@@ -623,39 +689,41 @@ cs_math_voltet(const cs_real_t   xv[3],
                const cs_real_t   xf[3],
                const cs_real_t   xc[3]);
 
-/*----------------------------------------------------------------------------
- * Compute inverse of an array of dense matrices of same size.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute LU factorization of an array of dense matrices
+ *        of identical size.
  *
- * parameters:
- *  n_blocks  <--  number of blocks
- *  db_size   <-- matrix size
- *  ad        <--  diagonal part of linear equation matrix
- *  ad_inv    -->  inverse of the diagonal part of linear equation matrix
- *----------------------------------------------------------------------------*/
+ * \param[in]   n_blocks  number of blocks
+ * \param[in]   b_size    block size
+ * \param[in]   a         matrix blocks
+ * \param[out]  a_lu      LU factorizations of matrix blocks
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_math_fact_lu(cs_lnum_t         n_blocks,
-                const int         db_size,
-                const cs_real_t  *ad,
-                cs_real_t        *ad_inv);
+                const int         b_size,
+                const cs_real_t  *a,
+                cs_real_t        *a_lu);
 
-/*----------------------------------------------------------------------------
- *  Compute forward and backward to solve an LU system of size db_size.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Block Jacobi utilities.
+ *         Compute forward and backward to solve an LU P*P system.
  *
- * parameters
- *  mat     <-- P*P*dim matrix
- *  db_size <-- matrix size
- *  x       --> solution
- *  b       --> 1st part of RHS (c - b)
- *  c       --> 2nd part of RHS (c - b)
- *----------------------------------------------------------------------------*/
+ * \param[in]   a_lu   matrix LU factorization
+ * \param[in]   n      matrix size
+ * \param[out]  x      solution
+ * \param[out]  b      right hand side
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_math_fw_and_bw_lu(const cs_real_t  mat[],
-                     const int        db_size,
+cs_math_fw_and_bw_lu(const cs_real_t  a_lu[],
+                     const int        n,
                      cs_real_t        x[],
-                     const cs_real_t  b[],
-                     const cs_real_t  c[]);
+                     const cs_real_t  b[]);
 
 /*----------------------------------------------------------------------------*/
 

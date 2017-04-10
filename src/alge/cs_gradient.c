@@ -533,24 +533,14 @@ _compute_ani_weighting(const cs_real_t  wi[],
   for (ii = 0; ii < 6; ii++)
     sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
 
-  cs_math_sym_33_inv_cramer(wi,
-                            inv_wi);
+  cs_math_sym_33_inv_cramer(wi, inv_wi);
 
-  cs_math_sym_33_inv_cramer(wj,
-                            inv_wj);
+  cs_math_sym_33_inv_cramer(wj, inv_wj);
 
-  cs_math_sym_33_3_product(inv_wj,
-                           d,
-                           _d);
-  cs_math_sym_33_3_product(sum,
-                           _d,
-                           ki_d);
-  cs_math_sym_33_3_product(inv_wi,
-                           d,
-                           _d);
-  cs_math_sym_33_3_product(sum,
-                           _d,
-                           kj_d);
+  cs_math_sym_33_3_product(inv_wj, d,  _d);
+  cs_math_sym_33_3_product(sum, _d, ki_d);
+  cs_math_sym_33_3_product(inv_wi, d, _d);
+  cs_math_sym_33_3_product(sum, _d, kj_d);
 
   /* 1 / ||Ki. K_f^-1. IJ||^2 */
   cs_real_t normi = 1. / cs_math_3_dot_product(ki_d, ki_d);
@@ -814,35 +804,8 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t              *m,
   /* The cocg term for interior cells only changes if the mesh does */
 
 # pragma omp parallel for
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-
-    cs_real_t cocg11 = cocg[cell_id][0][0];
-    cs_real_t cocg12 = cocg[cell_id][0][1];
-    cs_real_t cocg13 = cocg[cell_id][0][2];
-    cs_real_t cocg22 = cocg[cell_id][1][1];
-    cs_real_t cocg23 = cocg[cell_id][1][2];
-    cs_real_t cocg33 = cocg[cell_id][2][2];
-
-    cs_real_t a11 = cocg22*cocg33 - cocg23*cocg23;
-    cs_real_t a12 = cocg23*cocg13 - cocg12*cocg33;
-    cs_real_t a13 = cocg12*cocg23 - cocg22*cocg13;
-    cs_real_t a22 = cocg11*cocg33 - cocg13*cocg13;
-    cs_real_t a23 = cocg12*cocg13 - cocg11*cocg23;
-    cs_real_t a33 = cocg11*cocg22 - cocg12*cocg12;
-
-    cs_real_t det_inv = 1. / (cocg11*a11 + cocg12*a12 + cocg13*a13);
-
-    cocg[cell_id][0][0] = a11 * det_inv;
-    cocg[cell_id][0][1] = a12 * det_inv;
-    cocg[cell_id][0][2] = a13 * det_inv;
-    cocg[cell_id][1][0] = a12 * det_inv;
-    cocg[cell_id][1][1] = a22 * det_inv;
-    cocg[cell_id][1][2] = a23 * det_inv;
-    cocg[cell_id][2][0] = a13 * det_inv;
-    cocg[cell_id][2][1] = a23 * det_inv;
-    cocg[cell_id][2][2] = a33 * det_inv;
-
-  }
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+    cs_math_33_inv_cramer_in_place(cocg[cell_id]);
 }
 
 /*----------------------------------------------------------------------------
@@ -2019,9 +1982,6 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
   cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
   cs_real_t  rnorm;
-  cs_real_t  a11, a12, a13, a21, a22, a23, a31, a32, a33;
-  cs_real_t  cocg11, cocg12, cocg13, cocg21, cocg22, cocg23;
-  cs_real_t  cocg31, cocg32, cocg33;
   cs_real_t  pfac, pfac0, pfac1, pip, det_inv;
   cs_real_3_t  fexd;
   cs_real_4_t  fctb;
@@ -2074,46 +2034,10 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
 
     } /* loop on thread groups */
 
-#   pragma omp parallel for private(cell_id, cocg11, cocg12, cocg13, cocg21, \
-                                    cocg22, cocg23, cocg31, cocg32, cocg33, \
-                                    a11, a12, a13, a21, a22, a23, a31, a32, \
-                                    a33, det_inv)
+#   pragma omp parallel for private(cell_id)
     for (ii = 0; ii < m->n_b_cells; ii++) {
-
       cell_id = m->b_cells[ii];
-
-      cocg11 = cocg[cell_id][0][0];
-      cocg12 = cocg[cell_id][0][1];
-      cocg13 = cocg[cell_id][0][2];
-      cocg21 = cocg[cell_id][1][0];
-      cocg22 = cocg[cell_id][1][1];
-      cocg23 = cocg[cell_id][1][2];
-      cocg31 = cocg[cell_id][2][0];
-      cocg32 = cocg[cell_id][2][1];
-      cocg33 = cocg[cell_id][2][2];
-
-      a11 = cocg22*cocg33 - cocg32*cocg23;
-      a12 = cocg32*cocg13 - cocg12*cocg33;
-      a13 = cocg12*cocg23 - cocg22*cocg13;
-      a21 = cocg31*cocg23 - cocg21*cocg33;
-      a22 = cocg11*cocg33 - cocg31*cocg13;
-      a23 = cocg21*cocg13 - cocg11*cocg23;
-      a31 = cocg21*cocg32 - cocg31*cocg22;
-      a32 = cocg31*cocg12 - cocg11*cocg32;
-      a33 = cocg11*cocg22 - cocg21*cocg12;
-
-      det_inv = 1.0/(cocg11*a11 + cocg21*a12 + cocg31*a13);
-
-      cocg[cell_id][0][0] = a11 * det_inv;
-      cocg[cell_id][0][1] = a12 * det_inv;
-      cocg[cell_id][0][2] = a13 * det_inv;
-      cocg[cell_id][1][0] = a21 * det_inv;
-      cocg[cell_id][1][1] = a22 * det_inv;
-      cocg[cell_id][1][2] = a23 * det_inv;
-      cocg[cell_id][2][0] = a31 * det_inv;
-      cocg[cell_id][2][1] = a32 * det_inv;
-      cocg[cell_id][2][2] = a33 * det_inv;
-
+      cs_math_33_inv_cramer_in_place(cocg[cell_id]);
     }
 
   } /* End of test on ale, mobile mesh, or call counter */
@@ -2488,8 +2412,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
   cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
-  cs_real_t  a11, a12, a13, a22, a23, a33;
-  cs_real_t  cocg11, cocg12, cocg13, cocg22, cocg23, cocg33;
   cs_real_t  pfac, det_inv;
   cs_real_t  extrab, unddij, umcbdd, udbfs;
   cs_real_3_t  dc, dddij, dsij;
@@ -2599,39 +2521,10 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     } /* loop on thread groups */
 
-#   pragma omp parallel for private(cell_id, cocg11, cocg12, cocg13, cocg22, \
-                                    cocg23, cocg33, a11, a12, a13, a22, \
-                                    a23, a33, det_inv)
+#   pragma omp parallel for private(cell_id)
     for (ii = 0; ii < m->n_b_cells; ii++) {
-
       cell_id = m->b_cells[ii];
-
-      cocg11 = cocg[cell_id][0][0];
-      cocg12 = cocg[cell_id][0][1];
-      cocg13 = cocg[cell_id][0][2];
-      cocg22 = cocg[cell_id][1][1];
-      cocg23 = cocg[cell_id][1][2];
-      cocg33 = cocg[cell_id][2][2];
-
-      a11 = cocg22*cocg33 - cocg23*cocg23;
-      a12 = cocg23*cocg13 - cocg12*cocg33;
-      a13 = cocg12*cocg23 - cocg22*cocg13;
-      a22 = cocg11*cocg33 - cocg13*cocg13;
-      a23 = cocg12*cocg13 - cocg11*cocg23;
-      a33 = cocg11*cocg22 - cocg12*cocg12;
-
-      det_inv = 1. / (cocg11*a11 + cocg12*a12 + cocg13*a13);
-
-      cocg[cell_id][0][0] = a11 * det_inv;
-      cocg[cell_id][0][1] = a12 * det_inv;
-      cocg[cell_id][0][2] = a13 * det_inv;
-      cocg[cell_id][1][0] = a12 * det_inv;
-      cocg[cell_id][1][1] = a22 * det_inv;
-      cocg[cell_id][1][2] = a23 * det_inv;
-      cocg[cell_id][2][0] = a13 * det_inv;
-      cocg[cell_id][2][1] = a23 * det_inv;
-      cocg[cell_id][2][2] = a33 * det_inv;
-
+      cs_math_33_inv_cramer_sym_in_place(cocg[cell_id]);
     }
 
   } /* End of recompute_cocg */

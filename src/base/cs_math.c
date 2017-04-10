@@ -464,60 +464,58 @@ cs_math_voltet(const cs_real_t   xv[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute inverses of dense matrices.
+ * \brief Compute LU factorization of an array of dense matrices
+ *        of identical size.
  *
  * \param[in]   n_blocks  number of blocks
- * \param[in]   db_size   matrix size
- * \param[in]   ad        diagonal part of linear equation matrix
- * \param[out]  ad_inv    inverse of the diagonal part of linear equation matrix
+ * \param[in]   b_size    block size
+ * \param[in]   a         matrix blocks
+ * \param[out]  a_lu      LU factorizations of matrix blocks
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_math_fact_lu(cs_lnum_t         n_blocks,
-                int               db_size,
-                const cs_real_t  *ad,
-                cs_real_t        *ad_inv)
+                int               b_size,
+                const cs_real_t  *a,
+                cs_real_t        *a_lu)
 {
 # pragma omp parallel for if(n_blocks > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_blocks; i++) {
 
-    cs_real_t *restrict _ad_inv = &ad_inv[db_size*db_size*i];
-    const cs_real_t *restrict  _ad = &ad[db_size*db_size*i];
+    cs_real_t *restrict _a_lu = &a_lu[b_size*b_size*i];
+    const cs_real_t *restrict  _a = &a[b_size*b_size*i];
 
-    _ad_inv[0] = _ad[0];
-    // ad_inv(1,j) = ad(1,j)
-    // ad_inv(j,1) = ad(j,1)/a(1,1)
-    for (cs_lnum_t ii = 1; ii < db_size; ii++) {
-      _ad_inv[ii] = _ad[ii];
-      _ad_inv[ii*db_size] = _ad[ii*db_size]/_ad[0];
+    _a_lu[0] = _a[0];
+    for (cs_lnum_t ii = 1; ii < b_size; ii++) {
+      _a_lu[ii] = _a[ii];
+      _a_lu[ii*b_size] = _a[ii*b_size]/_a[0];
     }
-    // ad_inv(i,i) = ad(i,i) - Sum( ad_inv(i,k)*ad_inv(k,i)) k=1 to i-1
-    for (cs_lnum_t ii = 1; ii < db_size - 1; ii++) {
-      _ad_inv[ii + ii*db_size] = _ad[ii + ii*db_size];
+    for (cs_lnum_t ii = 1; ii < b_size - 1; ii++) {
+      _a_lu[ii + ii*b_size] = _a[ii + ii*b_size];
       for (cs_lnum_t kk = 0; kk < ii; kk++) {
-        _ad_inv[ii + ii*db_size] -= _ad_inv[ii*db_size + kk]
-                                   *_ad_inv[kk*db_size + ii];
+        _a_lu[ii + ii*b_size] -= _a_lu[ii*b_size + kk]
+                                *_a_lu[kk*b_size + ii];
       }
 
-      for (cs_lnum_t jj = ii + 1; jj < db_size; jj++) {
-        _ad_inv[ii*db_size + jj] = _ad[ii*db_size + jj];
-        _ad_inv[jj*db_size + ii] =   _ad[jj*db_size + ii]
-                                   / _ad_inv[ii*db_size + ii];
+      for (cs_lnum_t jj = ii + 1; jj < b_size; jj++) {
+        _a_lu[ii*b_size + jj] = _a[ii*b_size + jj];
+        _a_lu[jj*b_size + ii] =   _a[jj*b_size + ii]
+                                / _a_lu[ii*b_size + ii];
         for (cs_lnum_t kk = 0; kk < ii; kk++) {
-          _ad_inv[ii*db_size + jj] -=  _ad_inv[ii*db_size + kk]
-                                      *_ad_inv[kk*db_size + jj];
-          _ad_inv[jj*db_size + ii] -=  _ad_inv[jj*db_size + kk]
-                                      *_ad_inv[kk*db_size + ii]
-                                      /_ad_inv[ii*db_size + ii];
+          _a_lu[ii*b_size + jj] -=  _a_lu[ii*b_size + kk]
+                                   *_a_lu[kk*b_size + jj];
+          _a_lu[jj*b_size + ii] -=  _a_lu[jj*b_size + kk]
+                                   *_a_lu[kk*b_size + ii]
+                                   /_a_lu[ii*b_size + ii];
         }
       }
     }
-    _ad_inv[db_size*db_size -1] = _ad[db_size*db_size - 1];
+    _a_lu[b_size*b_size -1] = _a[b_size*b_size - 1];
 
-    for (cs_lnum_t kk = 0; kk < db_size - 1; kk++) {
-      _ad_inv[db_size*db_size - 1] -=  _ad_inv[(db_size-1)*db_size + kk]
-                                      *_ad_inv[kk*db_size + db_size -1];
+    for (cs_lnum_t kk = 0; kk < b_size - 1; kk++) {
+      _a_lu[b_size*b_size - 1] -=  _a_lu[(b_size-1)*b_size + kk]
+                                  *_a_lu[kk*b_size + b_size -1];
     }
   }
 }
@@ -527,42 +525,44 @@ cs_math_fact_lu(cs_lnum_t         n_blocks,
  * \brief  Block Jacobi utilities.
  *         Compute forward and backward to solve an LU P*P system.
  *
- * \param[in]   mat      P*P*dim matrix
- * \param[in]   db_size  matrix size
- * \param[out]  x        solution
- * \param[out]  b        1st part of RHS (c - b)
- * \param[out]  c        2nd part of RHS (c - b)
+ * \param[in]   a_lu   matrix LU factorization
+ * \param[in]   n      matrix size
+ * \param[out]  x      solution
+ * \param[out]  b      right hand side
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_math_fw_and_bw_lu(const cs_real_t  mat[],
-                     int              db_size,
+cs_math_fw_and_bw_lu(const cs_real_t  a_lu[],
+                     int              n,
                      cs_real_t        x[],
-                     const cs_real_t  b[],
-                     const cs_real_t  c[])
+                     const cs_real_t  b[])
 {
-  cs_real_t  *aux;
-  BFT_MALLOC(aux, db_size, cs_real_t);
+  cs_real_t  _aux[256];
+  cs_real_t  *aux = _aux;
+
+  if (n > 256)
+    BFT_MALLOC(aux, n, cs_real_t);
 
   /* forward */
-  for (int ii = 0; ii < db_size; ii++) {
-    aux[ii] = (c[ii] - b[ii]);
+  for (int ii = 0; ii < n; ii++) {
+    aux[ii] = b[ii];
     for (int jj = 0; jj < ii; jj++) {
-      aux[ii] -= aux[jj]*mat[ii*db_size + jj];
+      aux[ii] -= aux[jj]*a_lu[ii*n + jj];
     }
   }
 
   /* backward */
-  for (int ii = db_size - 1; ii >= 0; ii-=1) {
+  for (int ii = n - 1; ii >= 0; ii-=1) {
     x[ii] = aux[ii];
-    for (int jj = db_size - 1; jj > ii; jj-=1) {
-      x[ii] -= x[jj]*mat[ii*db_size + jj];
+    for (int jj = n - 1; jj > ii; jj-=1) {
+      x[ii] -= x[jj]*a_lu[ii*n + jj];
     }
-    x[ii] /= mat[ii*(db_size + 1)];
+    x[ii] /= a_lu[ii*(n + 1)];
   }
 
-  BFT_FREE(aux);
+  if (n > 256)
+    BFT_FREE(aux);
 }
 
 /*----------------------------------------------------------------------------*/
