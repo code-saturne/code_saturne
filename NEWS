@@ -5,6 +5,8 @@ Release 4.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Fix an issue with SGE batch manager support.
+
 - Fix crash with Code_Aster coupling when running in parallel.
 
 - Fix missing reading and writing of mass fluxes in checkpoint/restart.

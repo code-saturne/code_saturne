@@ -943,6 +943,7 @@ class resource_info(batch_info):
             else:
                 s = os.getenv('PE_HOSTFILE')
                 if s != None:
+                    self.manager = 'SGE'
                     self.hosts_file = '$PE_HOSTFILE'
 
         # Check hosts file presence
