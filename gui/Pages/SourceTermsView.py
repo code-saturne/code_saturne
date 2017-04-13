@@ -286,10 +286,14 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
 dSudu = 0;\ndSudv = 0;\ndSudw = 0;\n
 dSvdu = 0;\ndSvdv = 0;\ndSvdw = 0;\n
 dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
-        exa = """#example: """
-        req = [('Su', "x velocity"),
-               ('Sv', "y velocity"),
-               ('Sw', "z velocity"),
+        exa = """#example:\n
+tau = 10.; # relaxation time (s)\n
+vel_x_imp = 1.5; #target velocity (m/s)\n
+Su = rho * (vel_x_imp - velocity[0]) / tau;\n
+dSudu = - rho / tau; # Jacobian of the source term"""
+        req = [('Su', "x component of the momentum source term"),
+               ('Sv', "y component of the momentum source term"),
+               ('Sw', "z component of the momentum source term"),
                ('dSudu', "x component x velocity derivative"),
                ('dSudv', "x component y velocity derivative"),
                ('dSudw', "x component z velocity derivative"),
@@ -303,9 +307,10 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate')]
 
-        sym.append( ("velocity[0]", 'X velocity component'))
-        sym.append( ("velocity[1]", 'Y velocity component'))
-        sym.append( ("velocity[2]", 'Z velocity component'))
+        sym.append( ("velocity[0]", 'x velocity component'))
+        sym.append( ("velocity[1]", 'y velocity component'))
+        sym.append( ("velocity[2]", 'z velocity component'))
+        sym.append( ("rho", 'local density (kg/m^3)'))
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
