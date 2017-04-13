@@ -3416,6 +3416,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
 
   int n_zones = cs_volume_zone_n_zones();
 
+  cs_field_t *c_rho = CS_F_(rho);
   for (int z_id = 0; z_id < n_zones; z_id++) {
     const cs_volume_zone_t *z = cs_volume_zone_by_id(z_id);
     if (! (z->type & CS_VOLUME_ZONE_SOURCE_TERM))
@@ -3441,6 +3442,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
         mei_tree_insert(ev_formula, "velocity[0]", 0.0);
         mei_tree_insert(ev_formula, "velocity[1]", 0.0);
         mei_tree_insert(ev_formula, "velocity[2]", 0.0);
+        mei_tree_insert(ev_formula, "rho", 0.0);
 
         /* add variable from notebook */
         _add_notebook_variables(ev_formula);
@@ -3469,6 +3471,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
           mei_tree_insert(ev_formula, "velocity[0]", vel[iel][0]);
           mei_tree_insert(ev_formula, "velocity[1]", vel[iel][1]);
           mei_tree_insert(ev_formula, "velocity[2]", vel[iel][2]);
+          mei_tree_insert(ev_formula, "rho", c_rho->val[iel]);
           mei_evaluate(ev_formula);
 
           dSudu = mei_tree_lookup(ev_formula,"dSudu");
