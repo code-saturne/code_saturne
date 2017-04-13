@@ -5,6 +5,9 @@ Release 4.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Modify EnSight time output format to workarount ParaView reader bug for
+  small time steps.
+
 - Fix an issue with SGE batch manager support.
 
 - Fix crash with Code_Aster coupling when running in parallel.
