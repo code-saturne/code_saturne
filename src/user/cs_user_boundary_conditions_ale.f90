@@ -322,7 +322,7 @@
 !>                                 -# for a scalar \f$ cp \left( K +
 !>                                     \dfrac{K_T}{\sigma_T} \right)
 !>                                     \grad T \cdot \vect{n} \f$
-!> \param[in,out] disale        nodes displacement
+!> \param[in,out] disale        nodes total displacement (from time 0 to n)
 !> \param[in]     xyzno0        vertex coordinates of initial mesh
 !_______________________________________________________________________________
 
