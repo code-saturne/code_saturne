@@ -1277,8 +1277,11 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
       if (y_p[cell_id] < 0.0)
         y_p[cell_id] = 0; //TODO count it
 
-      if (y_p[cell_id] >= 1.0)
-        y_p[cell_id] = 1. - cs_math_epzero; //TODO count it
+      if ((y_p[cell_id] + y_w[cell_id]) >= 1.0)
+        y_p[cell_id] = 1. - y_w[cell_id] - cs_math_epzero; //TODO count it
+
+      /* Continuous phase mass fraction */
+      cpro_x1[cell_id] = 1. - y_p[cell_id];//TODO not one for rain zones
     }
 
     /* Update humidity field */
