@@ -185,6 +185,7 @@ double precision rinfiv(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
+double precision rttb, alpha_rnn
 double precision roughness
 
 double precision, dimension(:), pointer :: crom
@@ -534,6 +535,8 @@ nlogla = 0
 nsubla = 0
 iuiptn = 0
 
+! Alpha constant for a realisable BC for R12 with the SSG model
+alpha_rnn = 0.47d0
 
 ! With v2f type model, (phi-fbar et BL-v2/k) u=0 is set directly, so
 ! uiptmx and uiptmn are necessarily 0
@@ -735,31 +738,28 @@ do ifac = 1, nfabor
     else if (itytur.eq.3) then
       if (irijco.eq.1) then
         ek = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-        if (iwallf == 5) then
-          rxx = cvar_rij(1,iel)
-          rxy = cvar_rij(4,iel)
-          rxz = cvar_rij(6,iel)
-          ryy = cvar_rij(2,iel)
-          ryz = cvar_rij(5,iel)
-          rzz = cvar_rij(3,iel)
-          rnnb =   rnx * (rxx * rnx + rxy * rny + rxz * rnz) &
-                 + rny * (rxy * rnx + ryy * rny + ryz * rnz) &
-                 + rnz * (rxz * rnx + ryz * rny + rzz * rnz)
-        endif
+        rxx = cvar_rij(1,iel)
+        rxy = cvar_rij(4,iel)
+        rxz = cvar_rij(6,iel)
+        ryy = cvar_rij(2,iel)
+        ryz = cvar_rij(5,iel)
+        rzz = cvar_rij(3,iel)
       else
         ek = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-        if (iwallf == 5) then
-          rxx = cvar_r11(iel)
-          rxy = cvar_r12(iel)
-          rxz = cvar_r13(iel)
-          ryy = cvar_r22(iel)
-          ryz = cvar_r23(iel)
-          rzz = cvar_r33(iel)
-          rnnb =   rnx * (rxx * rnx + rxy * rny + rxz * rnz) &
-                 + rny * (rxy * rnx + ryy * rny + ryz * rnz) &
-                 + rnz * (rxz * rnx + ryz * rny + rzz * rnz)
-        endif
+        rxx = cvar_r11(iel)
+        rxy = cvar_r12(iel)
+        rxz = cvar_r13(iel)
+        ryy = cvar_r22(iel)
+        ryz = cvar_r23(iel)
+        rzz = cvar_r33(iel)
       endif
+      rnnb =   rnx * (rxx * rnx + rxy * rny + rxz * rnz) &
+             + rny * (rxy * rnx + ryy * rny + ryz * rnz) &
+             + rnz * (rxz * rnx + ryz * rny + rzz * rnz)
+
+      rttb =   tx * (rxx * tx + rxy * ty + rxz * tz) &
+             + ty * (rxy * tx + ryy * ty + ryz * tz) &
+             + tz * (rxz * tx + ryz * ty + rzz * tz)
     endif
 
     if (f_id_rough.ge.0) then
