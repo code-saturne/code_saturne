@@ -2861,9 +2861,8 @@ void CS_PROCF (csnum2, CSNUM2)(double *relaxp,
  * Initialize reference pressure and temperature if present
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
-                                    double *viscv0,
-                                    double *visls0,
+void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
+                                double     *visls0,
                                 const int  *itempk)
 {
   int choice;
@@ -2900,13 +2899,11 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
   cs_gui_reference_initialization("pressure", &(phys_pp->p0));
 
   /* Variable rho and viscl */
-  if (*nmodpp == 0) {
-    if (_properties_choice_id("density", &choice))
-      phys_pp->irovar = choice;
+  if (_properties_choice_id("density", &choice))
+    phys_pp->irovar = choice;
 
-    if (_properties_choice_id("molecular_viscosity", &choice))
-      phys_pp->ivivar = choice;
-  }
+  if (_properties_choice_id("molecular_viscosity", &choice))
+    phys_pp->ivivar = choice;
   if (cs_gui_strcmp(vars->model, "compressible_model"))
     if (_properties_choice_id("molecular_viscosity", &choice))
       phys_pp->ivivar = choice;
