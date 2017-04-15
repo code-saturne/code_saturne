@@ -3097,10 +3097,11 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles,
     cs_real_t r_truncate
       = cs_lagr_particles_get_real(particles, i, CS_LAGR_TR_TRUNCATE);
 
-    if (cs_lagr_particles_get_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG)
-        == CS_LAGR_PART_TO_DELETE) {
-      _tracking_info(particles, i)->state = CS_LAGR_PART_OUT;
-      return;
+    if (am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
+      if (    cs_lagr_particles_get_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG)
+           == CS_LAGR_PART_TO_DELETE) {
+        _tracking_info(particles, i)->state = CS_LAGR_PART_OUT;
+      }
     }
 
     if (cur_part_cell_num < 0)
