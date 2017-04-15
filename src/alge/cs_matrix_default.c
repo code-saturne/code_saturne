@@ -272,7 +272,7 @@ cs_matrix_vector_native_multiply(int               isym,
 
     /* Set extended contribution for domain coupling */
     if (f_id != -1) {
-      const cs_field_t* f = cs_field_by_id(f_id);
+      const cs_field_t *f = cs_field_by_id(f_id);
       int coupling_id = cs_field_get_key_int(f,
                                              cs_field_key_id("coupling_entity"));
 
@@ -281,7 +281,7 @@ cs_matrix_vector_native_multiply(int               isym,
           (a,
            cs_internal_coupling_spmv_contribution,
            cs_matrix_preconditionning_add_coupling_contribution,
-           cs_internal_coupling_by_id(coupling_id));
+           f);
       }
     }
   }

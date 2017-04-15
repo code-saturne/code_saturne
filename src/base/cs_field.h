@@ -113,6 +113,9 @@ typedef struct {
   cs_real_t         *ac;           /* Explicit coefficient for convection */
   cs_real_t         *bc;           /* Implicit coefficient for convection */
 
+  cs_real_t         *hint;         /* coefficient for internal coupling */
+  cs_real_t         *hext;         /* coefficient for internal coupling */
+
 } cs_field_bc_coeffs_t;
 
 /* Field descriptor */

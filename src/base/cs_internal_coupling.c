@@ -306,8 +306,6 @@ _destroy_entity(cs_internal_coupling_t  *cpl)
   BFT_FREE(cpl->c_tag);
   BFT_FREE(cpl->faces_local);
   BFT_FREE(cpl->faces_distant);
-  BFT_FREE(cpl->h_int);
-  BFT_FREE(cpl->h_ext);
   BFT_FREE(cpl->g_weight);
   BFT_FREE(cpl->ci_cj_vect);
   BFT_FREE(cpl->offset_vect);
@@ -583,15 +581,15 @@ _cpl_initialize(cs_internal_coupling_t *cpl)
 
   cpl->coupled_faces = NULL;
 
-  cpl->h_int = NULL;
-  cpl->h_ext = NULL;
+  /* cpl->h_int = NULL; */
+  /* cpl->h_ext = NULL; */
 
   cpl->g_weight = NULL;
   cpl->ci_cj_vect = NULL;
   cpl->offset_vect = NULL;
 
-  cpl->thetav = 0;
-  cpl->idiff = 0;
+  /* cpl->thetav = 0; */
+  /* cpl->idiff = 0; */
 
   cpl->cocgb_s_lsq = NULL;
   cpl->cocg_it = NULL;
@@ -804,11 +802,6 @@ _locator_initialize(cs_mesh_t               *m,
   BFT_MALLOC(cpl->offset_vect, cpl->n_local, cs_real_3_t);
 
   _compute_ci_cj_vect(cpl);
-
-  /* Allocate coupling exchange coefficients */
-
-  BFT_MALLOC(cpl->h_int, cpl->n_local, cs_real_t);
-  BFT_MALLOC(cpl->h_ext, cpl->n_local, cs_real_t);
 
   BFT_MALLOC(cpl->coupled_faces, m->n_b_faces, bool);
 
@@ -1335,7 +1328,7 @@ cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
   const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
 
   const cs_mesh_t* m = cs_glob_mesh;
-  const int n_cells_ext = m->n_cells_with_ghosts;
+  /* const int n_cells_ext = m->n_cells_with_ghosts; */
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
@@ -1551,12 +1544,26 @@ cs_internal_coupling_spmv_contribution(bool              exclude_diag,
 
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)cs_glob_mesh->b_face_cells;
-  const cs_internal_coupling_t* cpl = (const cs_internal_coupling_t *)input;
+
+  const cs_field_t *f = (const cs_field_t *)input;
+  int coupling_id = cs_field_get_key_int(f,
+                                         cs_field_key_id("coupling_entity"));
+  const cs_internal_coupling_t *cpl
+    = cs_internal_coupling_by_id(coupling_id);
 
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
-  const cs_real_t thetap = cpl->thetav;
-  const int       idiffp = cpl->idiff;
+
+  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_real_t thetap = 0.0;
+  int idiffp = 0;
+
+  if (var_cal_opt.icoupl > 0) {
+    thetap = var_cal_opt.thetav;
+    idiffp = var_cal_opt.idiff;
+  }
 
   /* Exchange x */
 
@@ -1569,6 +1576,9 @@ cs_internal_coupling_spmv_contribution(bool              exclude_diag,
 
   /* Compute heq and update y */
 
+  cs_real_t *hintp = f->bc_coeffs->hint;
+  cs_real_t *hextp = f->bc_coeffs->hext;
+
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
     face_id = faces_local[ii];
     cell_id = b_face_cells[face_id];
@@ -1578,8 +1588,8 @@ cs_internal_coupling_spmv_contribution(bool              exclude_diag,
       0. : x[cell_id]; /* If exclude_diag, no diagonal term */
     cs_real_t pj = x_j[ii];
 
-    cs_real_t hint = cpl->h_int[ii];
-    cs_real_t hext = cpl->h_ext[ii];
+    cs_real_t hint = hintp[face_id];
+    cs_real_t hext = hextp[face_id];
     cs_real_t heq = hint * hext / (hint + hext);
 
     cs_b_diff_flux_coupling(idiffp,
@@ -1601,6 +1611,9 @@ cs_internal_coupling_spmv_contribution(bool              exclude_diag,
 void
 cs_internal_coupling_initialize(void)
 {
+  if (_n_internal_couplings < 1)
+    return;
+
   int field_id;
   cs_field_t* f, *f_diff;
   const int coupling_key_id = cs_field_key_id("coupling_entity");
@@ -1620,6 +1633,8 @@ cs_internal_coupling_initialize(void)
   }
 
   /* Definition of coupling_ids as keys of variable fields */
+
+  coupling_id = 0;
   for (field_id = 0; field_id < n_fields; field_id++) {
     f = cs_field_by_id(field_id);
     if (f->type & CS_FIELD_VARIABLE) {
@@ -1632,39 +1647,39 @@ cs_internal_coupling_initialize(void)
           f_diff = cs_field_by_id(diffusivity_id);
           cs_field_set_key_int(f_diff, coupling_key_id, coupling_id);
         }
-        coupling_id++;
+        // coupling_id++;
       }
     }
   }
 
   /* Initialization of coupling entities */
+
   coupling_id = 0;
+  cs_internal_coupling_t *cpl = _internal_coupling;
   for (field_id = 0; field_id < n_fields; field_id++) {
     f = cs_field_by_id(field_id);
     if (f->type & CS_FIELD_VARIABLE) {
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       if (var_cal_opt.icoupl > 0) {
-        cs_internal_coupling_t *cpl
-          = _internal_coupling + coupling_id;
 
-        /* Definition of var_cal_opt options
-         * (needed for matrix.vector multiply) */
-        cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-        cpl->thetav = var_cal_opt.thetav;
-        cpl->idiff = var_cal_opt.idiff;
+        if (coupling_id==0) {
+          /* Definition of var_cal_opt options
+           * (needed for matrix.vector multiply) */
+          /* cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt); */
 
-        /* Check the case is without hydrostatic pressure */
-        cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
-        if (stokes->iphydr == 1)
-           bft_error(__FILE__, __LINE__, 0,
-                     "Hydrostatic pressure \
+          /* Check the case is without hydrostatic pressure */
+          cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
+          if (stokes->iphydr == 1)
+            bft_error(__FILE__, __LINE__, 0,
+                      "Hydrostatic pressure \
                       not implemented with internal coupling.");
 
-        /* Initialize coupled_faces */
-        _initialize_coupled_faces(cpl);
+          /* Initialize coupled_faces */
+          _initialize_coupled_faces(cpl);
 
-        /* Initialize cocg & cocgb */
-        switch(CS_ABS(var_cal_opt.imrgra)){
+
+          /* Initialize cocg & cocgb */
+          switch(CS_ABS(var_cal_opt.imrgra)){
           case 0:
             cs_compute_cell_cocg_it_coupling(cs_glob_mesh,
                                              cs_glob_mesh_quantities,
@@ -1689,12 +1704,12 @@ cs_internal_coupling_initialize(void)
                       "Parameter imrgra above 6 is \
                        not implemented with internal coupling.");
             break;
+          }
+
+          /* Update user information */
+          BFT_MALLOC(cpl->namesca, strlen(f->name) + 1, char); // FIXME:= Leaves the name of the first coupled scalar
+          strcpy(cpl->namesca, f->name);
         }
-
-        /* Update user information */
-        BFT_MALLOC(cpl->namesca, strlen(f->name) + 1, char);
-        strcpy(cpl->namesca, f->name);
-
         coupling_id++;
       }
     }
@@ -1872,9 +1887,8 @@ void
 cs_ic_set_exchcoeff(const int         field_id,
                     const cs_real_t  *hbord)
 {
-  cs_lnum_t face_id;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-  cs_real_t surf;
   const cs_real_t* b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
   const cs_field_t* f = cs_field_by_id(field_id);
@@ -1885,24 +1899,38 @@ cs_ic_set_exchcoeff(const int         field_id,
 
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
-  cs_real_t *h_int = cpl->h_int;
-  cs_real_t *h_ext = cpl->h_ext;
+  cs_real_t *hint = f->bc_coeffs->hint;
+  cs_real_t *hext = f->bc_coeffs->hext;
+
+  if (hint == NULL && n_b_faces > 0) {
+    BFT_REALLOC(f->bc_coeffs->hint, n_b_faces, cs_real_t);
+    BFT_REALLOC(f->bc_coeffs->hext, n_b_faces, cs_real_t);
+    hint = f->bc_coeffs->hint;
+    hext = f->bc_coeffs->hext;
+    for (cs_lnum_t ii = 0; ii < n_b_faces; ii++) {
+      hint[ii] = 0;
+      hext[ii] = 0;
+    }
+  }
+
+  cs_real_t *hextloc = NULL;
+  BFT_MALLOC(hextloc, n_local, cs_real_t);
 
   /* Exchange hbord */
-
   cs_internal_coupling_exchange_by_face_id(cpl,
                                            1,
                                            hbord,
-                                           h_ext);
+                                           hextloc);
 
   /* Compute hint and hext */
-
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    face_id = faces_local[ii];
-    surf = b_face_surf[face_id];
-    h_int[ii] = hbord[face_id] * surf;
-    h_ext[ii] *= surf;
+    cs_lnum_t face_id = faces_local[ii];
+    cs_real_t surf = b_face_surf[face_id];
+    hint[face_id] = hbord[face_id] * surf;
+    hext[face_id] = hextloc[ii] * surf;
   }
+
+  BFT_FREE(hextloc);
 }
 
 /*----------------------------------------------------------------------------
@@ -1920,7 +1948,12 @@ void
 cs_matrix_preconditionning_add_coupling_contribution(void       *input,
                                                      cs_real_t  *ad)
 {
-  const cs_internal_coupling_t* cpl = (const cs_internal_coupling_t *)input;
+  const cs_field_t *f = (const cs_field_t *)input;
+  int coupling_id = cs_field_get_key_int(f,
+                                         cs_field_key_id("coupling_entity"));
+  const cs_internal_coupling_t *cpl
+    = cs_internal_coupling_by_id(coupling_id);
+
   if (cpl != NULL) {
     cs_lnum_t face_id, cell_id;
 
@@ -1930,12 +1963,15 @@ cs_matrix_preconditionning_add_coupling_contribution(void       *input,
     const cs_lnum_t *restrict b_face_cells
       = (const cs_lnum_t *restrict)cs_glob_mesh->b_face_cells;
 
+    cs_real_t *hintp = f->bc_coeffs->hint;
+    cs_real_t *hextp = f->bc_coeffs->hext;
+
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
       face_id = faces_local[ii];
       cell_id = b_face_cells[face_id];
 
-      cs_real_t hint = cpl->h_int[ii];
-      cs_real_t hext = cpl->h_ext[ii];
+      cs_real_t hint = hintp[face_id];
+      cs_real_t hext = hextp[face_id];
       cs_real_t heq = hint * hext / (hint + hext);
 
       ad[cell_id] += heq;
