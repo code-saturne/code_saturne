@@ -1457,19 +1457,26 @@ do ifac = 1, nfabor
       ! see turbkw.f90 (So the flux is not the one we impose!)
       hint = (visclc+visctc/ckwsw2)/distbf
 
-      ! Si on est hors de la sous-couche visqueuse (reellement ou via les
-      ! scalable wall functions)
-      ! Comme iuntur=1 yplus est forcement >0
-      pimp_turb = distbf*4.d0*uk**3*romc**2/           &
-                 (sqrcmu*xkappa*visclc**2*(yplus+dplus)**2)
-
       ! In viscous sub layer
       pimp_lam  = 120.d0*8.d0*visclc/(romc*ckwbt1*distbf**2)
 
-      ! Use gamma function of Kader to weight between high and low Reynolds meshes
-      gammap    = -0.01d0*(yplus+dplus)**4.d0/(1.d0+5.d0*(yplus+dplus))
+      ! If we are outside the viscous sub-layer (either naturally, or
+      ! artificialy using scalable wall functions)
 
-      pimp      = pimp_lam*exp(gammap) + exp(1.d0/gammap)*pimp_turb
+      if (yplus > epzero) then
+        pimp_turb = distbf*4.d0*uk**3*romc**2/           &
+                   (sqrcmu*xkappa*visclc**2*(yplus+dplus)**2)
+
+        ! Use gamma function of Kader to weight
+        !between high and low Reynolds meshes
+
+        gammap    = -0.01d0*(yplus+dplus)**4.d0/(1.d0+5.d0*(yplus+dplus))
+
+        pimp      = pimp_lam*exp(gammap) + exp(1.d0/gammap)*pimp_turb
+      else
+        pimp      = pimp_lam
+      endif
+
       qimp      = -pimp*hint !TODO transform it, it is only to be fully equivalent
 
       call set_neumann_scalar &

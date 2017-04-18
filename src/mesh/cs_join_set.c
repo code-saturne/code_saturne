@@ -556,13 +556,15 @@ cs_join_gset_create(cs_lnum_t  n_elts)
   cs_join_gset_t  *new_set = NULL;
 
   BFT_MALLOC(new_set, 1, cs_join_gset_t);
-  BFT_MALLOC(new_set->g_elts, n_elts, cs_gnum_t);
 
   new_set->n_elts = n_elts;
-  new_set->index = NULL;
+  new_set->n_g_elts = 0;
+
+  BFT_MALLOC(new_set->g_elts, n_elts, cs_gnum_t);
+  for (i = 0; i < n_elts; i++)
+    new_set->g_elts[i] = 0;
 
   BFT_MALLOC(new_set->index, n_elts + 1, cs_lnum_t);
-
   for (i = 0; i < n_elts + 1; i++)
     new_set->index[i] = 0;
 
