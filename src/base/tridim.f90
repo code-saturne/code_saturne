@@ -1474,7 +1474,7 @@ if (ippmod(idarcy).eq.1) then
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
     itypfb, izfppp, icodcl,                                        &
-    dtref,  ttcabs, surfbo, cdgfbo,                                &
+    surfbo, cdgfbo,                                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
     timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
 
