@@ -303,6 +303,14 @@ cs_turb_model_t *
 cs_get_glob_turb_model(void);
 
 /*----------------------------------------------------------------------------
+ * Compute turbulence model constants,
+ * some of which may depend on the model choice.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_turb_compute_constants(void);
+
+/*----------------------------------------------------------------------------
  * Provide acces to cs_glob_turb_ref_values
  *
  * needed to initialize structure with GUI
@@ -310,7 +318,6 @@ cs_get_glob_turb_model(void);
 
 cs_turb_ref_values_t *
 cs_get_glob_turb_ref_values(void);
-
 
 /*----------------------------------------------------------------------------
  * Provide acces to cs_glob_turb_rans_model
