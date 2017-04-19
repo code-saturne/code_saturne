@@ -834,7 +834,7 @@ module cstphy
     ! turbulence model
 
     subroutine cs_f_turb_complete_constants() &
-      bind(C, name='cs_f_turb_complete_constants')
+      bind(C, name='cs_turb_compute_constants')
       use, intrinsic :: iso_c_binding
     end subroutine cs_f_turb_complete_constants
 

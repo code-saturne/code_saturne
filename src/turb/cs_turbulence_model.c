@@ -409,7 +409,7 @@ const double cs_turb_apow = 8.3;
 const double cs_turb_bpow = 1.0/7.0;
 
 /*! Werner and Wengle coefficient */
-double cs_turb_dpow;
+double cs_turb_dpow = -1.;
 
 /*!
  * Constant \f$C_\mu\f$ for all the RANS turbulence models except for the
@@ -458,19 +458,19 @@ const double cs_turb_sigmak = 1.0;
  * Useful if and only if \ref iturb= 20, 21, 30, 31 or 50
  * (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or v2f).
  */
-double cs_turb_sigmae;
+double cs_turb_sigmae = -1.;
 
 /*!
  * Constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
  * Useful if and only if \ref iturb=30 (\f$R_{ij}-\varepsilon\f$ LRR).
  */
-double cs_turb_crij1;
+double cs_turb_crij1 = 1.80;
 
 /*
  * Constant \f$C_2\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
  * Useful if and only if \ref iturb=30 (\f$R_{ij}-\varepsilon\f$ LRR).
  */
-double cs_turb_crij2;
+double cs_turb_crij2 = 0.60;
 
 /*!
  * Constant \f$C_3\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
@@ -659,7 +659,7 @@ const double cs_turb_ckwbt2 = 0.0828;
  * \f$\sigma_{\omega 1}\f$ is modified in \ref usipsu,
  * \ref cs_turb_ckwgm1 must also be modified in accordance.
  */
-double cs_turb_ckwgm1;
+double cs_turb_ckwgm1 = -1.;
 
 /*!
  * \f$\frac{\beta_2}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 2}}\f$.
@@ -670,7 +670,7 @@ double cs_turb_ckwgm1;
  * modified in \ref usipsu, \ref cs_turb_ckwgm2 must also be modified
  * in accordance.
  */
-double cs_turb_ckwgm2;
+double cs_turb_ckwgm2 = -1.;
 
 /*!
  * Specific constant of k-omega SST.
@@ -709,7 +709,7 @@ const double cs_turb_csav1 = 7.1;
 /*!
  * Specific constant of Spalart-Allmaras.
  */
-double cs_turb_csaw1;
+double cs_turb_csaw1 = -1.;
 
 /*!
  * Specific constant of Spalart-Allmaras.
@@ -826,7 +826,7 @@ const double cs_turb_xlesfd = 1.5;
  *
  * Useful if and only if \ref iturb = 41.
  */
-double cs_turb_smagmx;
+double cs_turb_smagmx = -1.;
 
 /*!
  * Minimum allowed value for the variable \f$C\f$ appearing in the LES dynamic
@@ -836,7 +836,7 @@ double cs_turb_smagmx;
  *
  * Useful if and only if \ref iturb = 41.
  */
-double cs_turb_smagmn;
+double cs_turb_smagmn = 0.;
 
 /*!
  * Van Driest constant appearing in the van Driest damping function applied to
@@ -978,9 +978,6 @@ cs_f_turb_reference_values(double  **almax,
                            double  **uref,
                            double  **xlomlg);
 
-void
-cs_f_turb_complete_constants(void);
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1110,12 +1107,36 @@ cs_f_turb_reference_values(double  **almax,
   *xlomlg = &(_turb_rans_model.xlomlg);
 }
 
-/*----------------------------------------------------------------------------
- * Initialize tubulence constants
- *----------------------------------------------------------------------------*/
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide acces to cs_glob_turb_model
+ *
+ * needed to initialize structure with GUI
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_turb_model_t *
+cs_get_glob_turb_model(void)
+{
+  return &_turb_model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute turbulence model constants,
+ *        some of which may depend on the model choice.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_f_turb_complete_constants(void)
+cs_turb_compute_constants(void)
 {
   cs_turb_dpow   = 1/(1.+cs_turb_bpow);
   cs_turb_cmu025 = pow(cs_turb_cmu,0.25);
@@ -1151,32 +1172,13 @@ cs_f_turb_complete_constants(void)
   cs_turb_crij2 = 0.60;
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*=============================================================================
- * Public function definitions
- *============================================================================*/
-
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Provide acces to cs_glob_turb_model
- *
- * needed to initialize structure with GUI
- *----------------------------------------------------------------------------*/
-
-cs_turb_model_t *
-cs_get_glob_turb_model(void)
-{
-  return &_turb_model;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Provide acces to cs_glob_turb_ref_values
  *
  * needed to initialize structure with GUI
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_turb_ref_values_t *
 cs_get_glob_turb_ref_values(void)
@@ -1189,7 +1191,8 @@ cs_get_glob_turb_ref_values(void)
  * \brief Provide acces to cs_glob_turb_rans_model
  *
  * needed to initialize structure with GUI
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_turb_rans_model_t *
 cs_get_glob_turb_rans_model(void)
@@ -1202,7 +1205,8 @@ cs_get_glob_turb_rans_model(void)
  * \brief Provide acces to cs_glob_turb_les_model
  *
  * needed to initialize structure with GUI
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_turb_les_model_t *
 cs_get_glob_turb_les_model(void)
@@ -1213,8 +1217,8 @@ cs_get_glob_turb_les_model(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Print the turbulence model parameters to setup.log.
- *
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_turb_model_log_setup(void)
