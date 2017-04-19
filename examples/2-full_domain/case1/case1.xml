@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="case1" solver_version="4.0-alpha" study="full_domain" version="2.0">
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="case1" solver_version="5.0" study="2-full_domain" version="2.0">
 	<additional_scalars>
 		<variable label="scalar2" name="scalar2" type="user">
 			<blending_factor>1</blending_factor>
@@ -101,7 +101,7 @@
 		<boundary label="Wall_4" name="7" nature="wall">6 and y &gt; 1</boundary>
 		<boundary label="Wall_5" name="8" nature="wall">6 and y &lt;= 1</boundary>
 		<boundary label="Wall_6" name="9" nature="wall">31 or 33</boundary>
-		<inlet label="Inlet">
+		<inlet field_id="none" label="Inlet">
 			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
 				<dirichlet>200</dirichlet>
 			</scalar>
@@ -118,7 +118,7 @@
 				<norm>1</norm>
 			</velocity_pressure>
 		</inlet>
-		<outlet label="Outlet">
+		<outlet field_id="none" label="Outlet">
 			<scalar choice="neumann" label="scalar2" name="scalar2" type="user">
 				<neumann>0</neumann>
 			</scalar>
@@ -126,9 +126,9 @@
 				<neumann>0</neumann>
 			</scalar>
 		</outlet>
-		<symmetry label="Symmetry"/>
+		<symmetry field_id="none" label="Symmetry"/>
 		<variable/>
-		<wall label="Wall_1">
+		<wall field_id="none" label="Wall_1">
 			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
 				<dirichlet>0</dirichlet>
 			</scalar>
@@ -141,7 +141,7 @@
 				<dirichlet component="2" name="velocity">0</dirichlet>
 			</velocity_pressure>
 		</wall>
-		<wall label="Wall_2">
+		<wall field_id="none" label="Wall_2">
 			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
 				<dirichlet>5</dirichlet>
 			</scalar>
@@ -150,7 +150,7 @@
 			</scalar>
 			<velocity_pressure choice="off"/>
 		</wall>
-		<wall label="Wall_3">
+		<wall field_id="none" label="Wall_3">
 			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
 				<dirichlet>0</dirichlet>
 			</scalar>
@@ -159,7 +159,7 @@
 			</scalar>
 			<velocity_pressure choice="off"/>
 		</wall>
-		<wall label="Wall_4">
+		<wall field_id="none" label="Wall_4">
 			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
 				<dirichlet>25</dirichlet>
 			</scalar>
@@ -168,7 +168,7 @@
 			</scalar>
 			<velocity_pressure choice="off"/>
 		</wall>
-		<wall label="Wall_5">
+		<wall field_id="none" label="Wall_5">
 			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
 				<dirichlet>320</dirichlet>
 			</scalar>
@@ -177,7 +177,7 @@
 			</scalar>
 			<velocity_pressure choice="off"/>
 		</wall>
-		<wall label="Wall_6">
+		<wall field_id="none" label="Wall_6">
 			<scalar choice="dirichlet" label="scalar2" name="scalar2" type="user">
 				<dirichlet>40</dirichlet>
 			</scalar>
@@ -264,6 +264,7 @@
 			<external_coupling/>
 		</conjugate_heat_transfer>
 		<gas_combustion model="off" option="off"/>
+		<groundwater_model model="off"/>
 		<joule_effect model="off"/>
 		<radiative_transfer model="off"/>
 		<reference_values>
@@ -277,7 +278,7 @@
 				<postprocessing_recording status="off"/>
 			</property>
 			<property label="Boundary temperature" name="boundary_temperature" support="boundary"/>
-			<property label="Thermal flux" name="input_thermal_flux" support="boundary"/>
+			<property label="Thermal flux" name="thermal_flux" support="boundary"/>
 			<property label="Tplus" name="tplus" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
@@ -308,15 +309,15 @@
 velocity[1] = 0.;
 velocity[2] = 0.;</formula>
 			</initialization>
-			<property label="Efforts" name="effort" support="boundary"/>
-			<property label="Efforts, normal" name="effort_normal" support="boundary">
+			<property label="Stress" name="stress" support="boundary"/>
+			<property label="Stress, normal" name="stress_normal" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
-			<property label="Efforts, tangential" name="effort_tangential" support="boundary">
+			<property label="Stress, tangential" name="stress_tangential" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
 			<property label="total_pressure" name="total_pressure">
-				<probes choice="0"/>
+				<probes_recording status="off"/>
 			</property>
 			<property label="Yplus" name="yplus" support="boundary"/>
 			<variable label="Pressure" name="pressure">

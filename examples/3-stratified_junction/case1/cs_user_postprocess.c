@@ -32,6 +32,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include "stdlib.h"
+#include "string.h"
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -39,14 +42,22 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 
-#include "fvm_writer.h"
-
 #include "cs_base.h"
 #include "cs_field.h"
+#include "cs_geom.h"
+#include "cs_interpolate.h"
 #include "cs_mesh.h"
 #include "cs_selector.h"
-
+#include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_post_util.h"
+#include "cs_probe.h"
+#include "cs_time_plot.h"
+
+#include "cs_field_pointer.h"
+#include "cs_parameters.h"
+#include "cs_physical_constants.h"
+#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -119,57 +130,21 @@ _t_lt_21_select(void        *input,
  * User function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Define post-processing writers.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define post-processing writers.
  *
  * The default output format and frequency may be configured, and additional
  * post-processing writers allowing outputs in different formats or with
  * different format options and output frequency than the main writer may
  * be defined.
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_postprocess_writers(void)
 {
-  /* Every writer has a a strictly positive or negative id. Negative ids
-   * are for predefined writers, positive ids for user writers.
-   * All predefined writers use the settings from writer -1, and
-   * redefining that writer here allows changing from the default or GUI
-   * settings.
-   *
-   * Defining or configuring a writer is done by calling the
-   * cs_post_define_writer() function, whose arguments are:
-   *   writer_id     <-- number of writer to create (< 0 reserved, > 0 for user)
-   *   case_name     <-- associated case name
-   *   dir_name      <-- associated directory name
-   *   fmt_name      <-- associated format name
-   *   fmt_opts      <-- associated format options string
-   *   time_dep      <-- FVM_WRITER_FIXED_MESH if mesh definitions are fixed,
-   *                     FVM_WRITER_TRANSIENT_COORDS if coordinates change,
-   *                     FVM_WRITER_TRANSIENT_CONNECT if connectivity changes
-   *   output_at_end <-- force output at calculation end if not 0
-   *   frequency_n   <-- default output frequency in time-steps, or < 0
-   *   frequency_t   <-- default output frequency in seconds, or < 0
-   *                     (has priority over frequency_n)
-   *
-   * Allowed output format names: "EnSight Gold", "MED", or "CGNS".
-   * (EnSight output is built-in; MED or CGNS are only available if the
-   * code was built with these optional libraries)
-   *
-   * An output options string may contain options (separated by whitespace
-   * or commas) from the following list:
-   *   'text'              (text format, for EnSight)
-   *   'big_endian'        (forces binary EnSight output to 'big-endian' mode)
-   *   'adf'               (use ADF file type, for CGNS)
-   *   'hdf5'              (force HDF5 file type, usual the default for CGNS)
-   *   'discard_polygons'  (ignore polygon-type faces)
-   *   'discard_polyhedra' (ignore polyhedron-type cells)
-   *   'divide_polygons'   (subdivides polygon-type faces)
-   *   'divide_polyhedra'  (subdivides polyhedron-type cells)
-   *   'split_tensors'     (writes tensors as separate scalars) */
-
   /* Define additional writers */
-  /* ------------------------- */
 
   cs_post_define_writer(1,                            /* writer_id */
                         "user",                       /* writer name */
@@ -177,38 +152,25 @@ cs_user_postprocess_writers(void)
                         "EnSight Gold",               /* format name */
                         "",                           /* format options */
                         FVM_WRITER_TRANSIENT_CONNECT, /* time dependency */
+                        false,                        /* output at start */
                         true,                         /* output at end */
                         5,                            /* time step frequency */
                         -1);                          /* Time value frequency */
 }
 
-/*----------------------------------------------------------------------------
- * Define post-processing meshes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define post-processing meshes.
  *
  * The main post-processing meshes may be configured, and additional
  * post-processing meshes may be defined as a subset of the main mesh's
  * cells or faces (both interior and boundary).
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_postprocess_meshes(void)
 {
-  /* Advanced volume mesh element selection is possible using
-   * cs_post_define_volume_mesh_by_func(), which allows defining
-   * meshes using user-defined element lists.
-   *
-   * parameters for cs_post_define_volume_mesh_by_func():
-   *   mesh_id           <-- id of mesh to define (< 0 reserved, > 0 for user)
-   *   mesh_name         <-- associated mesh name
-   *   cell_select_func  <-- pointer to cells selection function
-   *   cell_select_input <-> pointer to optional input data for the cell
-   *                         selection function, or NULL
-   *   time_varying      <-- if true, try to redefine mesh at each output time
-   *   add_groups        <-- if true, add group information if present
-   *   auto_variables    <-- if true, automatic output of main variables
-   *   n_writers         <-- number of associated writers
-   *   writer_ids          <-- ids of associated writers */
-
   /* Build a (time varying) volume mesh containing cells
      with values of field named "temperature" > < 21 */
 
@@ -228,22 +190,86 @@ cs_user_postprocess_meshes(void)
                                      writer_ids);
 }
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User function for output of values on a post-processing mesh.
+ *
+ * \param[in]       mesh_name    name of the output mesh for the current call
+ * \param[in]       mesh_id      id of the output mesh for the current call
+ * \param[in]       cat_id       category id of the output mesh for the
+ *                               current call
+ * \param[in]       probes       pointer to associated probe set structure if
+ *                               the mesh is a probe set, NULL otherwise
+ * \param[in]       n_cells      local number of cells of post_mesh
+ * \param[in]       n_i_faces    local number of interior faces of post_mesh
+ * \param[in]       n_b_faces    local number of boundary faces of post_mesh
+ * \param[in]       n_vertices   local number of vertices faces of post_mesh
+ * \param[in]       cell_list    list of cells (0 to n-1) of post-processing
+ *                               mesh
+ * \param[in]       i_face_list  list of interior faces (0 to n-1) of
+ *                               post-processing mesh
+ * \param[in]       b_face_list  list of boundary faces (0 to n-1) of
+ *                               post-processing mesh
+ * \param[in]       vertex_list  list of vertices (0 to n-1) of
+ *                               post-processing mesh
+ * \param[in]       ts           time step status structure, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_postprocess_values(const char            *mesh_name,
+                           int                    mesh_id,
+                           int                    cat_id,
+                           cs_probe_set_t        *probes,
+                           cs_lnum_t              n_cells,
+                           cs_lnum_t              n_i_faces,
+                           cs_lnum_t              n_b_faces,
+                           cs_lnum_t              n_vertices,
+                           const cs_lnum_t        cell_list[],
+                           const cs_lnum_t        i_face_list[],
+                           const cs_lnum_t        b_face_list[],
+                           const cs_lnum_t        vertex_list[],
+                           const cs_time_step_t  *ts)
+{
+  /* Output of the temperature on output mesh 1 */
+
+  if (mesh_id == 1) {
+
+    cs_field_t *f = cs_field_by_name("temperature"); /* Get access to field */
+
+    cs_post_write_var(mesh_id,
+                      CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
+                      "Turb energy",                  /* var_name */
+                      1,                              /* var_dim */
+                      true,                           /* interlace, */
+                      true,                           /* use_parent */
+                      CS_POST_TYPE_cs_real_t,         /* var_type */
+                      f->val,                         /* cel_vals */
+                      NULL,                           /* i_face_vals */
+                      NULL,                           /* b_face_vals */
+                      ts);
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * Override default frequency or calculation end based output.
  *
  * This allows fine-grained control of activation or deactivation,
  *
- * parameters:
- *   nt_max_abs <-- maximum time step number
- *   nt_cur_abs <-- current time step number
- *   t_cur_abs  <-- absolute time at the current time step
- *----------------------------------------------------------------------------*/
+ * \param  nt_max_abs  maximum time step number
+ * \param  nt_cur_abs  current time step number
+ * \param  t_cur_abs   absolute time at the current time step
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_postprocess_activate(int     nt_max_abs,
                              int     nt_cur_abs,
                              double  t_cur_abs)
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
