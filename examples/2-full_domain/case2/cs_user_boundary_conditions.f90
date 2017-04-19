@@ -31,6 +31,7 @@
 !> \brief User subroutine which fills boundary conditions arrays
 !> (\c icodcl, \c rcodcl) for unknown variables.
 !>
+!> See \subpage cs_user_boundary_conditions_examples for examples.
 !>
 !> \section cs_user_boundary_conditions_intro Introduction
 !>
@@ -213,11 +214,11 @@
 !>     - For the pressure P,              in  s/m:
 !>        \c rcodcl(ifac, ivar, 2) =                     dt / d
 !>     - For temperatures T,              in Watt/(m2 degres):
-!>        \c rcodcl(ifac, ivar, 2) = Cp*(viscls+visct/sigmas) / d
+!>        \c rcodcl(ifac, ivar, 2) = Cp*(viscls+visct/turb_schmidt) / d
 !>     - For enthalpies H,                in kg /(m2 s):
-!>        \c rcodcl(ifac, ivar, 2) =    (viscls+visct/sigmas) / d
+!>        \c rcodcl(ifac, ivar, 2) =    (viscls+visct/turb_schmidt) / d
 !>     - For other scalars F              in:
-!>        \c rcodcl(ifac, ivar, 2) =    (viscls+visct/sigmas) / d
+!>        \c rcodcl(ifac, ivar, 2) =    (viscls+visct/turb_schmidt) / d
 !>            (d has the dimension of a distance in m)
 !>
 !>  - \c rcodcl(ifac, ivar, 3) if \c icodcl(ifac, ivar) = 3 or 13:
@@ -227,11 +228,11 @@
 !>     - For pressure P,                  in kg/(m2 s):
 !>        \c rcodcl(ifac, ivar, 3) =                    -dt * (grad P).n
 !>     - For temperatures T,              in Watt/m2:
-!>        \c rcodcl(ifac, ivar, 3) = -Cp*(viscls+visct/sigmas) * (grad T).n
+!>        \c rcodcl(ifac, ivar, 3) = -Cp*(viscls+visct/turb_schmidt) * (grad T).n
 !>     - For enthalpies H,                in Watt/m2:
-!>        \c rcodcl(ifac, ivar, 3) = -(viscls+visct/sigmas) * (grad H).n
+!>        \c rcodcl(ifac, ivar, 3) = -(viscls+visct/turb_schmidt) * (grad H).n
 !>     - For other scalars F              in:
-!>        \c rcodcl(ifac, ivar, 3) = -(viscls+visct/sigmas) * (grad F).n
+!>        \c rcodcl(ifac, ivar, 3) = -(viscls+visct/turb_schmidt) * (grad F).n
 !>
 !>  - \c rcodcl(ifac, ivar, 3) if \c icodcl(ifac, ivar) = 6:
 !>      Roughness for the rough wall law
@@ -329,10 +330,10 @@
 !>
 !> Cell value field ids
 !>
-!> - Density:                        \c iprpfl(irom)
-!> - Dynamic molecular viscosity:    \c iprpfl(iviscl)
-!> - Turbulent viscosity:            \c iprpfl(ivisct)
-!> - Specific heat:                  \c iprpfl(icp)
+!> - Density:                        \c irom
+!> - Dynamic molecular viscosity:    \c iviscl
+!> - Turbulent viscosity:            \c ivisct
+!> - Specific heat:                  \c icp
 !> - Diffusivity(lambda):            \c field_get_key_int(ivarfl(isca(iscal)), &
 !>                                      kivisl, ...)
 !>
@@ -345,6 +346,10 @@
 !>     using \c field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
 !> - For other values: take as an approximation the value in the adjacent cell
 !>                     i.e. as above with \c iel = ifabor(ifac).
+!>
+!> Please refer to the
+!> <a href="../../theory.pdf#boundary"><b>boundary conditions</b></a>
+!> section of the theory guide for more informations.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -418,7 +423,6 @@ use ppcpfu
 use atincl
 use atsoil
 use ctincl
-use elincl
 use cs_fuel_incl
 use mesh
 use field
@@ -445,8 +449,6 @@ double precision rcodcl(nfabor,nvar,3)
 
 integer ilelt, ifac, nlelt
 
-! INSERT_VARIABLE_DEFINITIONS_HERE
-
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
@@ -457,8 +459,6 @@ integer, allocatable, dimension(:) :: lstelt
 !===============================================================================
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
-
-! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here

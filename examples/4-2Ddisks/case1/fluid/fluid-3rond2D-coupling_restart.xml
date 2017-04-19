@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="fluid" solver_version="4.1-alpha" study="case1" version="2.0">
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="fluid" solver_version="5.0" study="case1" version="2.0">
 	<additional_scalars/>
 	<analysis_control>
 		<output>
@@ -39,9 +39,9 @@
 	<boundary_conditions>
 		<boundary label="BC_1" name="1" nature="wall">1</boundary>
 		<boundary label="BC_2" name="2" nature="symmetry">2 or 3</boundary>
-		<symmetry label="BC_2"/>
+		<symmetry field_id="none" label="BC_2"/>
 		<variable/>
-		<wall label="BC_1">
+		<wall field_id="none" label="BC_1">
 			<scalar choice="exchange_coefficient" label="TempC" name="temperature" type="thermal">
 				<dirichlet>30</dirichlet>
 				<exchange_coefficient>10</exchange_coefficient>
@@ -80,7 +80,7 @@
 			<material choice="user_material"/>
 			<method choice="user_properties"/>
 			<property choice="variable" label="Density" name="density">
-				<formula>density = p0 /(287*(TempC + 273.0));</formula>
+				<formula>density = p0 /(287*(temperature + 273.0));</formula>
 				<initial_value>1.17862</initial_value>
 			</property>
 			<property choice="constant" label="LamVisc" name="molecular_viscosity">
@@ -115,7 +115,7 @@
 		</meshes_list>
 		<periodicity/>
 		<volumic_conditions>
-			<zone darcy_law="off" head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
+			<zone darcy_law="off" groundwater_law="off" head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
 		</volumic_conditions>
 	</solution_domain>
 	<thermophysical_models>
@@ -133,8 +133,8 @@
 				</syrthes>
 			</external_coupling>
 		</conjugate_heat_transfer>
-		<darcy_model model="off"/>
 		<gas_combustion model="off" option="off"/>
+		<groundwater_model model="off"/>
 		<joule_effect model="off"/>
 		<radiative_transfer model="off"/>
 		<reference_values>
@@ -178,13 +178,13 @@
 velocity[1] = 0.;
 velocity[2] = 0.;</formula>
 			</initialization>
-			<property label="Efforts" name="effort" support="boundary">
+			<property label="Stress" name="stress" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
-			<property label="Efforts, normal" name="effort_normal" support="boundary">
+			<property label="Stress, normal" name="stress_normal" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
-			<property label="Efforts, tangential" name="effort_tangential" support="boundary">
+			<property label="Stress, tangential" name="stress_tangential" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
 			<property label="total_pressure" name="total_pressure"/>

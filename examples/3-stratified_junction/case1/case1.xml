@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="case1" solver_version="4.1-alpha" study="3-stratified_junction" version="2.0">
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="case1" solver_version="5.0" study="3-stratified_junction" version="2.0">
 	<additional_scalars/>
 	<analysis_control>
 		<output>
@@ -44,7 +44,7 @@
 			</writer>
 		</output>
 		<profiles>
-			<profile label="profile16" title="profile1p6">
+			<profile label="profile16">
 				<format name="CSV"/>
 				<formula>x = 1.6;
 y = 0;
@@ -54,7 +54,7 @@ z = -0.2 + s*0.4;</formula>
 				<points>50</points>
 				<var_prop component="0" name="temperature"/>
 			</profile>
-			<profile label="profile32" title="profile3p2">
+			<profile label="profile32">
 				<format name="CSV"/>
 				<formula>x = 3.2;
 y = 0;
@@ -75,7 +75,7 @@ z = -0.2 + s*0.4;</formula>
 			<property label="FourierNb" name="fourier_number"/>
 			<property label="LocalTime" name="local_time_step">
 				<postprocessing_recording status="off"/>
-				<probes choice="0"/>
+				<probes_recording status="off"/>
 			</property>
 			<thermal_time_step status="on"/>
 			<time_passing>1</time_passing>
@@ -91,7 +91,7 @@ z = -0.2 + s*0.4;</formula>
 		<boundary label="wall" name="2" nature="wall">5</boundary>
 		<boundary label="hot_inlet" name="3" nature="inlet">6</boundary>
 		<boundary label="outlet" name="4" nature="outlet">7</boundary>
-		<inlet label="cold_inlet">
+		<inlet field_id="none" label="cold_inlet">
 			<scalar choice="dirichlet" label="TempC" name="temperature" type="thermal">
 				<dirichlet>18.6</dirichlet>
 			</scalar>
@@ -102,7 +102,7 @@ z = -0.2 + s*0.4;</formula>
 				<norm>0.03183</norm>
 			</velocity_pressure>
 		</inlet>
-		<inlet label="hot_inlet">
+		<inlet field_id="none" label="hot_inlet">
 			<scalar choice="dirichlet" label="TempC" name="temperature" type="thermal">
 				<dirichlet>38.5</dirichlet>
 			</scalar>
@@ -113,13 +113,13 @@ z = -0.2 + s*0.4;</formula>
 				<norm>0.03183</norm>
 			</velocity_pressure>
 		</inlet>
-		<outlet label="outlet">
+		<outlet field_id="none" label="outlet">
 			<scalar choice="neumann" label="TempC" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
 		</outlet>
 		<variable/>
-		<wall label="wall">
+		<wall field_id="none" label="wall">
 			<scalar choice="neumann" label="TempC" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
@@ -159,7 +159,7 @@ z = -0.2 + s*0.4;</formula>
 				<formula>A = -4.0668e-3;
 B = -5.0754e-2;
 C = 1000.9;
-density = TempC * (A*TempC + B) + C ;</formula>
+density = temperature * (A*temperature + B) + C ;</formula>
 				<initial_value>998.671</initial_value>
 			</property>
 			<property choice="variable" label="LamVisc" name="molecular_viscosity">
@@ -167,7 +167,7 @@ density = TempC * (A*TempC + B) + C ;</formula>
 BM = 6.2332e-7;
 CM= -4.557e-5;
 DM = 1.6935e-3;
-molecular_viscosity = TempC * (TempC *(AM*TempC + BM) + CM) +DM;</formula>
+molecular_viscosity = temperature * (temperature *(AM*temperature + BM) + CM) +DM;</formula>
 				<initial_value>0.001445</initial_value>
 			</property>
 			<property choice="constant" label="SpecHeat" name="specific_heat">
@@ -202,7 +202,7 @@ molecular_viscosity = TempC * (TempC *(AM*TempC + BM) + CM) +DM;</formula>
 		</meshes_list>
 		<periodicity/>
 		<volumic_conditions>
-			<zone darcy_law="off" head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
+			<zone darcy_law="off" groundwater_law="off" head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
 		</volumic_conditions>
 	</solution_domain>
 	<thermophysical_models>
@@ -212,8 +212,8 @@ molecular_viscosity = TempC * (TempC *(AM*TempC + BM) + CM) +DM;</formula>
 		<conjugate_heat_transfer>
 			<external_coupling/>
 		</conjugate_heat_transfer>
-		<darcy_model model="off"/>
 		<gas_combustion model="off" option="off"/>
+		<groundwater_model model="off"/>
 		<joule_effect model="off"/>
 		<radiative_transfer model="off"/>
 		<reference_values>
@@ -258,11 +258,11 @@ molecular_viscosity = TempC * (TempC *(AM*TempC + BM) + CM) +DM;</formula>
 velocity[1] = 0.;
 velocity[2] = 0.;</formula>
 			</initialization>
-			<property label="Efforts" name="effort" support="boundary"/>
-			<property label="Efforts, normal" name="effort_normal" support="boundary">
+			<property label="Stress" name="stress" support="boundary"/>
+			<property label="Stress, normal" name="stress_normal" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
-			<property label="Efforts, tangential" name="effort_tangential" support="boundary">
+			<property label="Stress, tangential" name="stress_tangential" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
 			<property label="total_pressure" name="total_pressure"/>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="case1" solver_version="4.0-alpha" study="simple_junction" version="2.0">
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="case1" solver_version="5.0" study="1-simple_junction" version="2.0">
 	<additional_scalars/>
 	<analysis_control>
 		<output>
@@ -41,7 +41,7 @@
 		<boundary label="Outlet" name="2" nature="outlet">5</boundary>
 		<boundary label="Symmetry" name="3" nature="symmetry">8 or 9</boundary>
 		<boundary label="Walls" name="4" nature="wall">2 or 3 or 4 or 6 or 7</boundary>
-		<inlet label="Inlet">
+		<inlet field_id="none" label="Inlet">
 			<scalar choice="dirichlet" label="TempC" name="temperature" type="thermal">
 				<dirichlet>300</dirichlet>
 			</scalar>
@@ -55,14 +55,14 @@
 				<norm>1</norm>
 			</velocity_pressure>
 		</inlet>
-		<outlet label="Outlet">
+		<outlet field_id="none" label="Outlet">
 			<scalar choice="neumann" label="TempC" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
 		</outlet>
-		<symmetry label="Symmetry"/>
+		<symmetry field_id="none" label="Symmetry"/>
 		<variable/>
-		<wall label="Walls">
+		<wall field_id="none" label="Walls">
 			<scalar choice="neumann" label="TempC" name="temperature" type="thermal">
 				<neumann>0</neumann>
 			</scalar>
@@ -144,6 +144,7 @@
 			<external_coupling/>
 		</conjugate_heat_transfer>
 		<gas_combustion model="off" option="off"/>
+		<groundwater_model model="off"/>
 		<joule_effect model="off"/>
 		<radiative_transfer model="off"/>
 		<reference_values>
@@ -157,7 +158,7 @@
 				<postprocessing_recording status="off"/>
 			</property>
 			<property label="Boundary temperature" name="boundary_temperature" support="boundary"/>
-			<property label="Thermal flux" name="input_thermal_flux" support="boundary"/>
+			<property label="Thermal flux" name="thermal_flux" support="boundary"/>
 			<property label="Tplus" name="tplus" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
@@ -167,6 +168,7 @@
 				<max_value>400</max_value>
 				<min_value>20</min_value>
 				<rhs_reconstruction>1</rhs_reconstruction>
+				<turbulent_flux_model>SGDH</turbulent_flux_model>
 			</variable>
 		</thermal_scalar>
 		<turbulence model="k-epsilon">
@@ -185,11 +187,11 @@
 velocity[1] = 0.;
 velocity[2] = 0.;</formula>
 			</initialization>
-			<property label="Efforts" name="effort" support="boundary"/>
-			<property label="Efforts, normal" name="effort_normal" support="boundary">
+			<property label="Stress" name="stress" support="boundary"/>
+			<property label="Stress, normal" name="stress_normal" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
-			<property label="Efforts, tangential" name="effort_tangential" support="boundary">
+			<property label="Stress, tangential" name="stress_tangential" support="boundary">
 				<postprocessing_recording status="off"/>
 			</property>
 			<property label="total_pressure" name="total_pressure"/>
