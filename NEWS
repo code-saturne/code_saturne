@@ -105,6 +105,8 @@ GUI changes
 Architectural changes
 ---------------------
 
+- Renamed Autovnv to studymanager.
+
 - Remove dependency to Qt of GUI XMLengine.Case class, used by studymanager.
   This dependency was introduced in version 3.0.
 
