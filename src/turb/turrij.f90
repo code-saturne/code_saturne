@@ -242,8 +242,7 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
 
   call field_get_val_s(ivarfl(iep), cvar_ep)
   call field_get_val_s(ivarfl(ial), cvar_al)
-  call field_get_val_prev_v(ivarfl(iu), vel)
-
+  call field_get_val_v(ivarfl(iu), vel)
 
   nu0 = viscl0/ro0
 
@@ -252,9 +251,9 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
     xunorm = vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2
     xunorm = sqrt(xunorm)
 
-    ! y+ is bounded by 400, because in the Reichard profile, it corresponds to saturation (u>uref)
-    cvar_al(iel) = max(min(cvar_al(iel),(1.d0-exp(-400.d0/50.d0))) &
-    ,0.d0)
+    ! y+ is bounded by 400, because in the Reichard profile,
+    ! it corresponds to saturation (u>uref)
+    cvar_al(iel) = max(min(cvar_al(iel),(1.d0-exp(-400.d0/50.d0))),0.d0)
     ! Compute the magnitude of the Alpha gradient
     xnoral = ( grad(1,iel)*grad(1,iel)          &
            +   grad(2,iel)*grad(2,iel)          &
@@ -273,7 +272,6 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
 
     alpha = cvar_al(iel)
 
-
     ! Compute YA, therefore alpha is given by 1-exp(-YA/(50 nu/utau))
     ! NB: y^+ = 50 give the best compromise
     ya = -dlog(1.d0-cvar_al(iel))*50.d0*nu0/utaurf
@@ -283,10 +281,10 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
     if (xunorm.le.1.d-12*uref) then
       limiter = 1.d0
     else
-      limiter = min(utaurf/xunorm*(2.5d0*dlog(1.d0+0.4d0*ypa)            &
-      +7.8d0*(1.d0-dexp(-ypa/11.d0)          &
-      -(ypa/11.d0)*dexp(-0.33d0*ypa))),      &
-      1.d0)
+      limiter = min( utaurf/xunorm*(2.5d0*dlog(1.d0+0.4d0*ypa) &
+                    +7.8d0*(1.d0-dexp(-ypa/11.d0)              &
+                    -(ypa/11.d0)*dexp(-0.33d0*ypa))),          &
+                    1.d0)
     endif
 
     vel(1,iel) = limiter*vel(1,iel)
@@ -295,10 +293,10 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
 
     ut2 = 0.05d0*uref
     cvar_ep(iel) = utaurf**3*min(1.d0/(xkappa*15.d0*nu0/utaurf), &
-    1.d0/(xkappa*ya))
-    tke = cvar_ep(iel)/2.d0/nu0*ya**2             &
-    * exp(-ypa/25.d0)**2                         &
-    + ut2**2/0.3d0*(1.d0-exp(-ypa/25.d0))**2
+                                 1.d0/(xkappa*ya))
+    tke =  cvar_ep(iel)/2.d0/nu0*ya**2                  &
+           * exp(-ypa/25.d0)**2                         &
+          + ut2**2/0.3d0*(1.d0-exp(-ypa/25.d0))**2
 
     if (irijco.eq.0) then
       cvar_r11(iel) = alpha**3       *2.d0/3.d0        *tke &
@@ -323,23 +321,17 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
     end if
   enddo
 
-  do iel = 1, ncel
-    if (irijco.eq.0) then
-      cvara_r11(iel) = cvar_r11(iel)
-      cvara_r22(iel) = cvar_r22(iel)
-      cvara_r33(iel) = cvar_r33(iel)
-      cvara_r12(iel) = cvar_r12(iel)
-      cvara_r23(iel) = cvar_r23(iel)
-      cvara_r13(iel) = cvar_r13(iel)
-    else
-      cvara_rij(1,iel) = cvar_rij(1,iel)
-      cvara_rij(2,iel) = cvar_rij(2,iel)
-      cvara_rij(3,iel) = cvar_rij(3,iel)
-      cvara_rij(4,iel) = cvar_rij(4,iel)
-      cvara_rij(5,iel) = cvar_rij(5,iel)
-      cvara_rij(6,iel) = cvar_rij(6,iel)
-    end if
-  enddo
+  call field_current_to_previous(ivarfl(iu))
+  if (irijco.eq.0) then
+    call field_current_to_previous(ivarfl(ir11))
+    call field_current_to_previous(ivarfl(ir22))
+    call field_current_to_previous(ivarfl(ir33))
+    call field_current_to_previous(ivarfl(ir12))
+    call field_current_to_previous(ivarfl(ir23))
+    call field_current_to_previous(ivarfl(ir13))
+  else
+    call field_current_to_previous(ivarfl(irij))
+  endif
 
   deallocate(grad)
 end if

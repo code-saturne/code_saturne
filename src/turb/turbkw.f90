@@ -1101,19 +1101,19 @@ call log_iteration_clipping_field(ivarfl(iomg), iclipw, 0,  &
 !===============================================================================
 
 ! Automatic reinitialization at the end of the first iteration:
-! wall distance y^+ is computed with -C log(1-alpha), where C=CL*Ceta*L*kappa, then y
-! so we have an idea of the wall distance in complexe geometries.
-! Then U is initialized with a Reichard lay
+! wall distance y^+ is computed with -C log(1-alpha), where C=CL*Ceta*L*kappa,
+! then y so we have an idea of the wall distance in complexe geometries.
+! Then U is initialized with a Reichard layer
 ! Epsilon by 1/(kappa y), clipped next to the wall at its value for y^+=15
 ! k is given by a blending between eps/(2 nu)*y^2 and utau/sqrt(Cmu)
 ! The blending function is chosen so that the asymptotic behavior
 ! and give the correct pic of k (not the same blending than for the EBRSM
 ! because k profile is not the same for k-omega)
-! For omega, far from the wall we take eps/Cmu/k, but next to the wall, omega solution is enforced
+! For omega, far from the wall we take eps/Cmu/k, but next to the wall,
+! omega solution is enforced
 !TODO FIXME: why not just before? Are the BC uncompatible?
 if (ntcabs.eq.1.and.reinit_turb.eq.1) then
-
-  call field_get_val_prev_v(ivarfl(iu), vel)
+  call field_get_val_v(ivarfl(iu), vel)
 
   utaurf = 0.05d0*uref
   nu0 = viscl0 / ro0
@@ -1150,9 +1150,7 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1) then
     cvar_omg(iel) = ut2**3/(xkappa*15.d0*nu0/ut2)/(ut2**2/sqrt(cmu))/cmu
 
   enddo
-end if
-
-
+endif
 
 ! Free memory
 deallocate(viscf, viscb)
