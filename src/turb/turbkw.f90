@@ -1112,8 +1112,7 @@ call log_iteration_clipping_field(ivarfl(iomg), iclipw, 0,  &
 ! For omega, far from the wall we take eps/Cmu/k, but next to the wall, omega solution is enforced
 !TODO FIXME: why not just before? Are the BC uncompatible?
 if (ntcabs.eq.1.and.reinit_turb.eq.1) then
-
-  call field_get_val_prev_v(ivarfl(iu), vel)
+  call field_get_val_v(ivarfl(iu), vel)
 
   utaurf = 0.05d0*uref
   nu0 = viscl0 / ro0

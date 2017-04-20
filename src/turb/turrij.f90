@@ -242,8 +242,7 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
 
   call field_get_val_s(ivarfl(iep), cvar_ep)
   call field_get_val_s(ivarfl(ial), cvar_al)
-  call field_get_val_prev_v(ivarfl(iu), vel)
-
+  call field_get_val_v(ivarfl(iu), vel)
 
   nu0 = viscl0/ro0
 
@@ -323,23 +322,17 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
     end if
   enddo
 
-  do iel = 1, ncel
-    if (irijco.eq.0) then
-      cvara_r11(iel) = cvar_r11(iel)
-      cvara_r22(iel) = cvar_r22(iel)
-      cvara_r33(iel) = cvar_r33(iel)
-      cvara_r12(iel) = cvar_r12(iel)
-      cvara_r23(iel) = cvar_r23(iel)
-      cvara_r13(iel) = cvar_r13(iel)
-    else
-      cvara_rij(1,iel) = cvar_rij(1,iel)
-      cvara_rij(2,iel) = cvar_rij(2,iel)
-      cvara_rij(3,iel) = cvar_rij(3,iel)
-      cvara_rij(4,iel) = cvar_rij(4,iel)
-      cvara_rij(5,iel) = cvar_rij(5,iel)
-      cvara_rij(6,iel) = cvar_rij(6,iel)
-    end if
-  enddo
+  call field_current_to_previous(ivarfl(iu))
+  if (irijco.eq.0) then
+    call field_current_to_previous(ivarfl(ir11))
+    call field_current_to_previous(ivarfl(ir22))
+    call field_current_to_previous(ivarfl(ir33))
+    call field_current_to_previous(ivarfl(ir12))
+    call field_current_to_previous(ivarfl(ir23))
+    call field_current_to_previous(ivarfl(ir13))
+  else
+    call field_current_to_previous(ivarfl(irij))
+  endif
 
   deallocate(grad)
 end if
