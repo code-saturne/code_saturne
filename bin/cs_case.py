@@ -885,6 +885,10 @@ export SALOME_INSTANCE=$3
                                          self.exec_dir)
             else:
                 s_path = s_args[1]
+            cmd = '%d-%d\n' % (rank_id, rank_id + d.n_procs - 1) \
+                   + s_path + s_args[2] \
+                   + ' -wdir ' + os.path.basename(s_args[0]) + '\n'
+            e.write(cmd)
             rank_id += d.n_procs
 
         for d in self.domains:

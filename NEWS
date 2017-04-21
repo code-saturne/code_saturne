@@ -5,6 +5,8 @@ Release 4.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for program launch when Coupling with Syrthes using srun launcher.
+
 - Modify EnSight time output format to workarount ParaView reader bug for
   small time steps.
 
