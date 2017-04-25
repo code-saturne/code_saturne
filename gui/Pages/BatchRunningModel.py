@@ -164,7 +164,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         self.case = Case(None)
         XMLinit(self.case).initialize()
 
-        self.case['batch_type'] = None
         self.case['scripts_path'] = os.getcwd()
         self.case['runcase'] = cs_runcase.runcase('runcase')
 
@@ -203,7 +202,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
 
     def checkReadBatchPBS(self):
         """ Check whether the BatchRunningModel class could be read file"""
-        self.case['batch_type'] = 'PBS'
+        # TODO update: self.case['batch_type'] = 'PBS'
         mdl = BatchRunningModel(self.case)
 
         dico_PBS = {\
