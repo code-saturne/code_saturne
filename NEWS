@@ -5,6 +5,10 @@ Release 4.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix radiative source term for EBU and fast chemistry flame models.
+  Bug impacted fire modelling validation cases. Now uses again average of
+  T^4 and T^3 instead of power of averaged temperature for these 2 models.
+
 - Fix incident flux formula for P1 radiative tr. model (if ADF disabled).
   Caused divergence of 18_CERCHAR/CASE2. Here, we fall back to old formula.
 

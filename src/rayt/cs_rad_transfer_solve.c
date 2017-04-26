@@ -1311,12 +1311,25 @@ cs_rad_transfer_solve(int               bc_type[],
     else if (rt_params->iirayo == 1) {
 
       /* -> Gas phase: Explicit source term of the ETR */
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        smbrs[cell_id] =  c_stefan * cpro_cak0[cell_id]
-                                   * (pow (tempk[cell_id], 4.0))
-                                   * agi[cell_id + n_cells * ngg]
-                                   * cell_vol[cell_id]
-                                   * unspi;
+
+      if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == -1
+          && cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == -1) {
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          smbrs[cell_id] =  c_stefan * cpro_cak0[cell_id]
+                                     * (pow (tempk[cell_id], 4.0))
+                                     * agi[cell_id + n_cells * ngg]
+                                     * cell_vol[cell_id]
+                                     * unspi;
+      } else {
+        cs_real_t *cpro_t4m = cs_field_by_name_try("temperature_4")->val;
+
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          smbrs[cell_id] =  c_stefan * cpro_cak0[cell_id]
+                                     * cpro_t4m[cell_id]
+                                     * agi[cell_id + n_cells * ngg]
+                                     * cell_vol[cell_id]
+                                     * unspi;
+      }
 
       /* -> Solid phase: */
       /* Coal particles: Explicit source term of the ETR    */
@@ -1464,14 +1477,32 @@ cs_rad_transfer_solve(int               bc_type[],
 
     /* Emission   */
 
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      iemgex[cell_id] -=   cpro_cak0[cell_id] * agi[cell_id + n_cells * ngg]
-                         * 4.0 * c_stefan * pow(tempk[cell_id + n_cells * 0], 4.0)
-                         * wq[ngg];
-      iemgim[cell_id] -=   16.0 * dcp[cell_id] * cpro_cak0[cell_id]
-                         * agi[cell_id + ngg * n_cells]
-                         * c_stefan * pow(tempk[cell_id + n_cells * 0], 3.0)
-                         * wq[ngg];
+    if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == -1
+        && cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == -1) {
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        iemgex[cell_id] -=   cpro_cak0[cell_id] * agi[cell_id + n_cells * ngg]
+                           * 4.0 * c_stefan
+                           * pow(tempk[cell_id + n_cells * 0], 4.0) * wq[ngg];
+
+        iemgim[cell_id] -=   16.0 * dcp[cell_id] * cpro_cak0[cell_id]
+                           * agi[cell_id + ngg * n_cells]
+                           * c_stefan * pow(tempk[cell_id + n_cells * 0], 3.0)
+                           * wq[ngg];
+      }
+    } else {
+      cs_real_t *cpro_t4m = cs_field_by_name_try("temperature_4")->val;
+      cs_real_t *cpro_t3m = cs_field_by_name_try("temperature_3")->val;
+
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        iemgex[cell_id] -=   cpro_cak0[cell_id] * agi[cell_id + n_cells * ngg]
+                           * 4.0 * c_stefan * cpro_t4m[cell_id]
+                           * wq[ngg];
+
+        iemgim[cell_id] -=   16.0 * dcp[cell_id] * cpro_cak0[cell_id]
+                           * agi[cell_id + ngg * n_cells]
+                           * c_stefan * cpro_t3m[cell_id]
+                           * wq[ngg];
+      }
     }
 
     if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
