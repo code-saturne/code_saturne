@@ -736,7 +736,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         self.lineEditNALIMX.textChanged[str].connect(self.__slotNalimx)
 
         self.lineEditEPALIM.textChanged[str].connect(self.__slotEpalim)
-        self.pushButtonAdvanced.clicked[bool].connect(self.__slotAdvanced)
+        self.pushButtonAdvanced.clicked.connect(self.__slotAdvanced)
 
 
     def __addValidators(self):
@@ -822,8 +822,8 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
             self.__model.setPrecision(epalim)
 
 
-    @pyqtSlot(str)
-    def __slotAdvanced(self, text):
+    @pyqtSlot()
+    def __slotAdvanced(self):
         """
         Private slot.
         Ask one popup for advanced specifications
