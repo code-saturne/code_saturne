@@ -304,6 +304,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
   for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
     f_sa->val[iel] = aa * f_theta4->val[iel];
 
+  const cs_real_t *b_dist = cs_glob_mesh_quantities->b_dist;
 
   /*     Calcul du flux incident Qincid  */
   for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
@@ -312,34 +313,22 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
     if (   bc_type[ifac] == CS_SMOOTHWALL
         || bc_type[ifac] == CS_ROUGHWALL) {
 
-      /* -> First version more costly, slightly more precise
-       * FIXME
-       *   aaaa = twall(ifac)**4
-       *
-       *   aaa  = 1.5d0 * distb(ifac) / ckmel(iel)
-       * ! * ( 2.d0 /(2.d0-f_eps->val(ifac)) -1.d0 )
-       *
-       *   aa   = ( aaa * aaaa + f_theta4->val(iel) ) / (1.d0 + aaa)
-       *
-       *  qincid(ifac) = stephn * (2.d0 * aa - f_eps->val(ifac) * aaaa)
-       * ! / (2.d0 - f_eps->val(ifac))
-       *
-       * Second version cheaper, but less precise
-       *    This expression can be found in the documentation of the P1 model
-       *    written by S. DAL-SECCO, A. DOUCE, N. MECHITOUA.     */
-
-      if (cs_glob_rad_transfer_params->imoadf >= 1)
+      if (cs_glob_rad_transfer_params->imoadf >= 1) {
         f_qinspe->val[iband + ifac * f_qinspe->dim] =
             stephn * (  (2.0 * f_theta4->val[iel])
                       + (  abo[ifac + (iband) * cs_glob_mesh->n_b_faces]
                          * f_eps->val[ifac] * (pow (twall[ifac], 4))))
           / (2.0 - f_eps->val[ifac]);
+      } else {
+        cs_real_t tw4 = pow(twall[ifac], 4.);
+        cs_real_t aaa = 1.5*b_dist[ifac]/ckmel[iel]
+                        * ( 2. /(2.-f_eps->val[ifac])-1.);
+        cs_real_t aa = (aaa*tw4+f_theta4->val[iel])/(1.+aaa);
 
-      else
         f_qinci->val[ifac]
-          =  stephn * (  (2.0 * f_theta4->val[iel])
-                       + (f_eps->val[ifac] * (pow (twall[ifac], 4))))
+          =  stephn * ( 2.0 * aa - f_eps->val[ifac] * tw4)
                     / (2.0 - f_eps->val[ifac]);
+      }
     }
 
     else {
