@@ -428,6 +428,7 @@ _property_post(int  f_id)
   cs_field_t  *f = cs_field_by_id(f_id);
 
   int f_post = -999, f_log = -999, f_monitor = -999;
+  bool in_tree = false;
   const int k_log  = cs_field_key_id("log");
   const int k_lbl = cs_field_key_id("label");
   const int k_post = cs_field_key_id("post_vis");
@@ -438,6 +439,8 @@ _property_post(int  f_id)
                           &f_log);
   if (f_log != -999)
     cs_field_set_key_int(f, k_log, f_log);
+  else if (_get_property_label(f->name) != NULL)
+    in_tree = true;
 
   /* Postprocessing outputs */
 
@@ -448,6 +451,8 @@ _property_post(int  f_id)
     cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
   else if (f_post == 0)
     cs_field_clear_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
+  else if (in_tree)
+    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
 
   _property_output_status(f->name,
                           "probes_recording",
@@ -456,6 +461,9 @@ _property_post(int  f_id)
     cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
   else if (f_monitor == 0)
     cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
+  else if (in_tree)
+    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
+
   /* Take into account labels */
 
   label = _get_property_label(f->name);
