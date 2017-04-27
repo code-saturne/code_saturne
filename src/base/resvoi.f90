@@ -320,13 +320,13 @@ call codits &
    rvoid  , rvoid  )
 
 !===============================================================================
-! 3. Clipping: only if min/max principle is not satisfied
+! 3. Clipping: only if min/max principle is not satisfied for cavitation
 !===============================================================================
 
 iclmax(1) = 0
 iclmin(1) = 0
 
-if (icavit.ge.0.and.dt(1).gt.dtmaxg) then
+if ((icavit.gt.0.and.dt(1).gt.dtmaxg).or.icavit.le.0) then
 
   ! --- Calcul du min et max
   vmin(1) = cvar_voidf(1)

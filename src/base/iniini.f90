@@ -51,6 +51,7 @@ use ppincl
 use ppcpfu
 use mesh
 use field
+use vof
 use cavitation
 use darcy_module
 use radiat
@@ -1106,11 +1107,11 @@ ifaccp = 0
 tslagr => rvoid2
 
 !===============================================================================
-! 13. Cavitation module
+! 13. VOF/Cavitation module
 !===============================================================================
 
+call init_vof
 call init_cavitation
-!===================
 
 !===============================================================================
 ! 14. Exit

@@ -47,6 +47,7 @@ use ppincl
 use rotation
 use cs_c_bindings
 use darcy_module
+use vof
 
 !===============================================================================
 
@@ -148,7 +149,7 @@ endif
 
 ! Logging and postprocessing output
 
-if (irovar.eq.0) then
+if (irovar.eq.0.and.ivofmt.lt.0) then
   call hide_property(icrom)
   call field_set_key_int(ibrom, keylog, 0)
 else
@@ -1081,7 +1082,22 @@ if (nbrcpl.ge.1) then
 endif
 
 !===============================================================================
-! 8. STOP SI PB
+! 8. Parameters of VOF/cavitation modules
+!===============================================================================
+
+if (ivofmt.ge.0) then
+  if (clvfmn.lt.-grand) then
+    clvfmn = 0.d0
+    if (icavit.gt.0) clvfmn = epzero
+  endif
+  if (clvfmx.gt.grand) then
+    clvfmx = 1.d0
+    if (icavit.gt.0) clvfmx = 1.d0-epzero
+  endif
+endif
+
+!===============================================================================
+! 9. STOP SI PB
 !===============================================================================
 
 if (iok.ne.0) then
