@@ -137,6 +137,7 @@ endif
 if (ivofmt.ge.0.or.idilat.gt.1) then
   call add_property_field_1d('density_old', 'Density Old', iromaa)
   icroaa = iromaa
+  call hide_property(iromaa)
 endif
 
 ! ALE mesh viscosity

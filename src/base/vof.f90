@@ -88,9 +88,7 @@ contains
 
   subroutine init_vof
 
-    use cstphy
-    use field
-    use numvar
+    use cstnum
 
     ! Mixture physical properties
     !----------------------------
@@ -104,8 +102,8 @@ contains
     !---------------------
 
     ! min/max clippings for the volume fraction
-    clvfmn = 0.d0 ! TODO check why it was 1e-12 for cavitation
-    clvfmx = 1.d0 - clvfmn
+    clvfmn = -grand*10.d0
+    clvfmx = grand*10.d0
 
   end subroutine init_vof
 
@@ -180,8 +178,7 @@ contains
     ! Update mixture density and viscocity on cells
 
     do iel = 1, ncelet
-      evof = min(max(voidf(iel),clvfmn),clvfmx) ! TODO really necessary?
-      ! or move to clipping part in resvoi?
+      evof = voidf(iel)
       crom(iel) = rho2*evof + rho1*(1.d0 - evof)
       viscl(iel) = mu2*evof + mu1*(1.d0 - evof)
     enddo
@@ -190,11 +187,8 @@ contains
 
     do ifac = 1, nfabor
       iel = ifabor(ifac)
-      evof = min(max(voidf(iel),clvfmn),clvfmx) ! TODO really necessary?
-      ! or move to clipping part in resvoi?
+      evof = voidf(iel)
       bvoidf = coavoi(ifac) + cobvoi(ifac)*evof
-      bvoidf = min(max(bvoidf,clvfmn),clvfmx) ! TODO really necessary?
-      ! or move to clipping part in resvoi?
       brom(ifac) = rho2*bvoidf + rho1*(1.d0 - bvoidf)
     enddo
 
