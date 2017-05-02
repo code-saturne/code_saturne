@@ -260,7 +260,7 @@ endif
 
 !   4 - in order to economize computation time, CO2 and O3 absorption are calculated only
 !       at the first time step and stocked in tables
-ico2=1
+
 if(ico2.eq.1) then
 
   do k = k1,kmray
