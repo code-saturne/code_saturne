@@ -264,8 +264,8 @@ class TimeAveragesModel(Model):
         if StartRestartModel(self.case).getRestartPath():
             if restart != -2:
                 node.xmlSetData('restart_from_time_average', restart)
-        else:
-            node.xmlRemoveChild('restart_from_time_average')
+            else:
+                node.xmlRemoveChild('restart_from_time_average')
 
 
     @Variables.noUndo
