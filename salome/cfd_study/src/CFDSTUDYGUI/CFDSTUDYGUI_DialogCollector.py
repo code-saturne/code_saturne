@@ -194,9 +194,9 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
         self.findChild(QLineEdit, "NprocsLineEdit").setText("1")
         self.findChild(QCheckBox,"checkBoxLoad").setChecked(False)
         self.findChild(QDialogButtonBox,"buttonBox").button(QDialogButtonBox.Ok).setEnabled(False)
-
         self.findChild(QLineEdit, "CaseLineEdit").setEnabled(False)
-
+        if "neptune_cfd" not in os.listdir(os.path.join(os.getenv("CS_ROOT_DIR"),"bin")):
+            self.findChild(QRadioButton,"radioButtonNeptune").setVisible(False)
         self.CaseNames              = ""
         self.CreateOption           = False
         self.code                   = None
