@@ -699,7 +699,7 @@ _maillage__liste_fac_err(const ecs_tab_int_t  *typ_fac,
   /*------------------------------------------*/
 
   for (ifac = 0; ifac < typ_fac->nbr; ifac++) {
-    if (typ_fac->val[ifac] == 4)
+    if (typ_fac->val[ifac] >= 4)
       cpt_fac_erreur++;
   }
 
@@ -714,7 +714,7 @@ _maillage__liste_fac_err(const ecs_tab_int_t  *typ_fac,
   cpt_fac_erreur  = 0;
 
   for (ifac = 0; ifac < typ_fac->nbr; ifac++) {
-    if (typ_fac->val[ifac] == 4)
+    if (typ_fac->val[ifac] >= 4)
       liste_fac_erreur->val[cpt_fac_erreur++] = ifac;
   }
 }
@@ -726,7 +726,7 @@ _maillage__liste_fac_err(const ecs_tab_int_t  *typ_fac,
  *  et sortante pour une cellule) et de faces isolées.
  *
  *  Un tableau indiquant le type associé à chaque face (0 pour face isolée,
- *  1 ou 2 pour face de bord, 3 pour face interne, et 4 pour tous les autres
+ *  1 ou 2 pour face de bord, 3 pour face interne, et >= 4 pour tous les autres
  *  cas (faces voyant au moins deux cellules sur un même côté, d'ou erreur
  *  de connectivité) doit être fourni en entrée.
  *----------------------------------------------------------------------------*/
