@@ -961,6 +961,11 @@ module optcal
   !    - 0: boussinesq algorithm with constant density
   integer(c_int), pointer, save :: idilat
 
+  !> Option to switch on massflux predcition befor momentum solving
+  !> to be fully conservative in momentum over time for variable density flows.
+  !> This option is to be removed.
+  integer, save :: ipredfl
+
   !> parameter of diagonal pressure strengthening
   real(c_double), pointer, save :: epsdp
 

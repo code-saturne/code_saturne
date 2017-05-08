@@ -648,6 +648,9 @@ iporos = 0
 
 ipthrm = 0
 
+! Call predfl subroutine?
+ipredfl = 0
+
 !     by default:
 !     ----------
 !      - the thermodynamic pressure (pther) is initialized with p0 = p_atmos

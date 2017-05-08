@@ -375,7 +375,7 @@ t4 = 0.d0
 !===============================================================================
 
 if ((idilat.eq.2.or.idilat.eq.3).and. &
-    (ntcabs.gt.1.or.isuite.gt.0)) then
+    (ntcabs.gt.1.or.isuite.gt.0).and.ipredfl.ne.0) then
 
   call predfl(nvar, ncetsm, icetsm, dt, smacel)
 
