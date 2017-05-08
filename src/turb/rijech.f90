@@ -143,8 +143,6 @@ d2s3   = 2.d0/3.d0
 ! 2.Calculation in the orthogonal straights cells in corresponding walls
 !===============================================================================
 
-!  We store the components in the work tables W2, W3 and W4
-
 !     The orthogonal straght is defined as -gradient of the distance
 !       to the wall
 
@@ -486,7 +484,7 @@ double precision aa    , bb    , xnorme
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: produk, epsk
-double precision, allocatable, dimension(:) :: w2, w3, w4, w6
+double precision, allocatable, dimension(:) :: w6
 double precision, allocatable, dimension(:) :: coefax, coefbx
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: cvara_ep
@@ -500,7 +498,8 @@ double precision, allocatable, dimension(:,:,:) :: cvara_rij
 
 ! Allocate temporary arrays
 allocate(produk(ncelet), epsk(ncelet))
-allocate(w2(ncelet), w3(ncelet), w4(ncelet), w6(ncelet))
+allocate(w6(ncelet))
+allocate(grad(3,ncelet))
 allocate(cvara_rij(3,3,ncel))
 ! Initialize variables to avoid compiler warnings
 
@@ -554,8 +553,6 @@ d2s3   = 2.d0/3.d0
 ! 2.Calculation in the orthogonal straights cells in corresponding walls
 !===============================================================================
 
-!  We store the components in the work tables W2, W3 and W4
-
 !     The orthogonal straght is defined as -gradient of the distance
 !       to the wall
 
@@ -578,7 +575,6 @@ enddo
 !       Calculation of gradient
 
 ! Allocate a temporary array for the gradient calculation
-allocate(grad(3,ncelet))
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(dispar)
@@ -597,17 +593,13 @@ call gradient_s                                                  &
 ! Free memory
 deallocate(coefax, coefbx)
 
-!     Normalization (warning, the gradient may be sometimes equal to 0)
-
+! Normalization (warning, the gradient may be sometimes equal to 0)
 do iel = 1 ,ncel
-  xnorme = max(sqrt(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2),epzero)
-  w2(iel) = -grad(1,iel)/xnorme
-  w3(iel) = -grad(2,iel)/xnorme
-  w4(iel) = -grad(3,iel)/xnorme
+  xnorme = max(sqrt(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2), epzero)
+  grad(1, iel) = -grad(1,iel)/xnorme
+  grad(2, iel) = -grad(2,iel)/xnorme
+  grad(3, iel) = -grad(3,iel)/xnorme
 enddo
-
-! Free memory
-deallocate(grad)
 
 !===============================================================================
 ! 3. Calculation of work variables
@@ -620,8 +612,6 @@ do iel = 1 , ncel
   xk          = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
   epsk(iel)   = cvara_ep(iel)/xk
 enddo
-
-
 
 ! ---> Tension rating
 do isou = 1, 6
@@ -680,22 +670,8 @@ do isou = 1, 6
       !  --> Terms with R km and Phi km
 
       do iel = 1, ncel
-
-        if    (kk.eq.1) then
-          vnk    = w2(iel)
-        elseif(kk.eq.2) then
-          vnk    = w3(iel)
-        elseif(kk.eq.3) then
-          vnk    = w4(iel)
-        endif
-
-        if    (mm.eq.1) then
-          vnm    = w2(iel)
-        elseif(mm.eq.2) then
-          vnm    = w3(iel)
-        elseif(mm.eq.3) then
-          vnm    = w4(iel)
-        endif
+        vnk    = grad(kk, iel)
+        vnm    = grad(mm, iel)
 
         w6(iel) = w6(iel) + vnk*vnm*deltij(isou)*(                        &
                crijp1*cvara_rij(kk,mm,iel)*epsk(iel)                      &
@@ -758,29 +734,9 @@ do isou = 1, 6
 
     do iel = 1, ncel
 
-        if    (kk.eq.1) then
-          vnk    = w2(iel)
-        elseif(kk.eq.2) then
-          vnk    = w3(iel)
-        elseif(kk.eq.3) then
-          vnk    = w4(iel)
-        endif
-
-        if    (ii.eq.1) then
-          vni    = w2(iel)
-        elseif(ii.eq.2) then
-          vni    = w3(iel)
-        elseif(ii.eq.3) then
-          vni    = w4(iel)
-        endif
-
-        if    (jj.eq.1) then
-          vnj    = w2(iel)
-        elseif(jj.eq.2) then
-          vnj    = w3(iel)
-        elseif(jj.eq.3) then
-          vnj    = w4(iel)
-        endif
+        vnk    = grad(kk, iel)
+        vni    = grad(ii, iel)
+        vnj    = grad(jj, iel)
 
       w6(iel) = w6(iel) + 1.5d0*vnk*(                               &
       -crijp1*(cvara_rij(kk,ii,iel)*vnj+cvara_rij(kk,jj,iel)*vni)*epsk(iel)     &
@@ -798,25 +754,21 @@ enddo
 !      Apart from the loop
 
 do iel = 1, ncel
-  distxn =  max(dispar(iel),epzero)
+  distxn =  max(dispar(iel), epzero)!FIXME
   trrij  = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
-  aa = 1.d0
   bb = cmu075*trrij**1.5d0/(xkappa*cvara_ep(iel)*distxn)
-  w3(iel) = min(aa, bb)
-enddo
+  bb = min(bb, 1.d0)
 
-! ---> Increment of source term
-
-do iel = 1, ncel
+  ! ---> Increment of source term
   do isou = 1, 6
-    smbr(isou,iel) = smbr(isou,iel) + cromo(iel)*volume(iel)*w6(iel)*w3(iel)
+    smbr(isou,iel) = smbr(isou,iel) + cromo(iel)*cell_f_vol(iel)*w6(iel)*bb
   enddo
 enddo
 
-! Allocate temporary arrays
+! Free memory
 deallocate(produk, epsk)
-deallocate(w2, w3, w4, w6)
-
+deallocate(w6)
+deallocate(grad)
 
 return
 end subroutine rijech2
