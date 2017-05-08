@@ -59,6 +59,7 @@ use parall
 use period
 use mesh
 use field
+use field_operator
 use cs_c_bindings
 
 !===============================================================================
@@ -77,7 +78,7 @@ double precision smbr(ncelet)
 integer          iel   , ii    , jj    , kk    , mm
 integer          iskm  , iski  , iskj
 integer          ifac
-integer          inc   , iccocg, f_id0
+integer          inc   , iccocg, f_id
 
 double precision cmu075, distxn, d2s3  , trrij , xk
 double precision vnk   , vnm   , vni   , vnj
@@ -87,8 +88,8 @@ double precision aa    , bb    , xnorme
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: produk, epsk
 double precision, allocatable, dimension(:) :: w2, w3, w4, w6
-double precision, allocatable, dimension(:) :: coefax, coefbx
 double precision, dimension(:), pointer :: crom, cromo
+double precision, dimension(:), pointer :: w_dist
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:), pointer :: cvara_rkm, cvara_rki, cvara_rkj
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
@@ -146,45 +147,18 @@ d2s3   = 2.d0/3.d0
 !     The orthogonal straght is defined as -gradient of the distance
 !       to the wall
 
-!       The distance to the wall worth 0 at the wall
-!         by definition and obey a flux nowhere else
-
-! Allocate temporary arrays
-allocate(coefax(nfabor), coefbx(nfabor))
-
-do ifac = 1, nfabor
-  if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
-    coefax(ifac) = 0.0d0
-    coefbx(ifac) = 0.0d0
-  else
-    coefax(ifac) = 0.0d0
-    coefbx(ifac) = 1.0d0
-  endif
-enddo
-
-!       Calculation of gradient
-
-! Allocate a temporary array for the gradient calculation
 allocate(grad(3,ncelet))
-
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(dispar)
-endif
 
 inc    = 1
 iccocg = 1
-f_id0  = -1
 
-call gradient_s                                                  &
-( f_id0  , imrgra , inc    , iccocg , nswrgy , imligy , iwarny , &
-  epsrgy , climgy , extray ,                                     &
-  dispar , coefax , coefbx ,                                     &
-  grad   )
+call field_get_id("wall_distance", f_id)
+call field_get_val_s(f_id, w_dist)
 
-! Free memory
-deallocate(coefax, coefbx)
+! Current gradient: iprev = 0
+call field_gradient_scalar(f_id, 0, imrgra, inc, iccocg, grad)
 
-!     Normalization (warning, the gradient may be sometimes equal to 0)
+! Normalization (warning, the gradient may be sometimes equal to 0)
 
 do iel = 1 ,ncel
   xnorme = max(sqrt(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2),epzero)
@@ -400,7 +374,7 @@ enddo
 !      Apart from the loop
 
 do iel = 1, ncel
-  distxn =  max(dispar(iel),epzero)
+  distxn =  max(w_dist(iel),epzero)
   trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
   aa = 1.d0
   bb = cmu075*trrij**1.5d0/(xkappa*cvara_ep(iel)*distxn)
@@ -457,6 +431,7 @@ use parall
 use period
 use mesh
 use field
+use field_operator
 use cs_c_bindings
 
 !===============================================================================
@@ -475,7 +450,7 @@ double precision smbr(6,ncelet)
 integer          iel   , ii    , jj    , kk    , mm
 integer          iskm  , iski  , iskj
 integer          ifac
-integer          inc   , iccocg, f_id0
+integer          inc   , iccocg, f_id
 
 double precision cmu075, distxn, d2s3  , trrij , xk
 double precision vnk   , vnm   , vni   , vnj
@@ -485,8 +460,8 @@ double precision aa    , bb    , xnorme
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: produk, epsk
 double precision, allocatable, dimension(:) :: w6
-double precision, allocatable, dimension(:) :: coefax, coefbx
 double precision, dimension(:), pointer :: crom, cromo
+double precision, dimension(:), pointer :: w_dist
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:,:), pointer :: cvara_var
 double precision, allocatable, dimension(:,:,:) :: cvara_rij
@@ -556,42 +531,17 @@ d2s3   = 2.d0/3.d0
 !     The orthogonal straght is defined as -gradient of the distance
 !       to the wall
 
-!       The distance to the wall worth 0 at the wall
-!         by definition and obey a flux nowhere else
-
-! Allocate temporary arrays
-allocate(coefax(nfabor), coefbx(nfabor))
-
-do ifac = 1, nfabor
-  if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
-    coefax(ifac) = 0.0d0
-    coefbx(ifac) = 0.0d0
-  else
-    coefax(ifac) = 0.0d0
-    coefbx(ifac) = 1.0d0
-  endif
-enddo
-
 !       Calculation of gradient
-
-! Allocate a temporary array for the gradient calculation
-
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(dispar)
-endif
 
 inc    = 1
 iccocg = 1
-f_id0  = -1
 
-call gradient_s                                                  &
-( f_id0  , imrgra , inc    , iccocg , nswrgy , imligy , iwarny , &
-  epsrgy , climgy , extray ,                                     &
-  dispar , coefax , coefbx ,                                     &
-  grad   )
+call field_get_id("wall_distance", f_id)
 
-! Free memory
-deallocate(coefax, coefbx)
+call field_get_val_s(f_id, w_dist)
+
+! Current gradient: iprev = 0
+call field_gradient_scalar(f_id, 0, imrgra, inc, iccocg, grad)
 
 ! Normalization (warning, the gradient may be sometimes equal to 0)
 do iel = 1 ,ncel
@@ -754,7 +704,7 @@ enddo
 !      Apart from the loop
 
 do iel = 1, ncel
-  distxn =  max(dispar(iel), epzero)!FIXME
+  distxn =  max(w_dist(iel), epzero)!FIXME
   trrij  = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
   bb = cmu075*trrij**1.5d0/(xkappa*cvara_ep(iel)*distxn)
   bb = min(bb, 1.d0)

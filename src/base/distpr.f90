@@ -41,11 +41,9 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     itypfb        boundary face types
-!> \param[out]    distpa        distance to wall
 !______________________________________________________________________________
 
-subroutine distpr &
- ( itypfb , distpa )
+subroutine distpr(itypfb)
 
 !===============================================================================
 ! Module files
@@ -61,6 +59,8 @@ use ppppar
 use parall
 use period
 use mesh
+use field
+use field_operator
 use cs_c_bindings
 
 !===============================================================================
@@ -71,36 +71,37 @@ implicit none
 
 integer          itypfb(nfabor)
 
-double precision distpa(ncelet)
 
 ! Local variables
 
-integer          ndircp, iconvp, idiffp, isym, imasac
+integer          ndircp, iconvp, idiffp
 integer          ipp
 integer          niterf
 integer          iinvpe
 integer          iel   , ifac
-integer          inc   , iccocg, f_id0, f_id
-integer          isweep, nittot, idtva0
-integer          ibsize, iesize, mmprpl, nswrsl
+integer          inc   , iccocg, f_id
+integer          isweep
+integer          ibsize, iesize, mmprpl, nswrsp
 integer          imucpp, idftnp
-
-integer          icvflb
+integer          nswrgp
+integer          icvflb, iescap, imligp, imrgrp, ircflp, iswdyp, isstpp, ischcp, iwarnp
 integer          ivoid(1)
 
-double precision relaxp, thetap, rnorm, residu, rnoini
-double precision dismax, dismin, hint, pimp, qimp
+double precision relaxp, blencp, climgp, epsilp, epsrgp, epsrsp, extrap
+double precision dismax, dismin, hint, pimp, qimp, norm_grad, thetap
 
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: viscf, viscb
-double precision, allocatable, dimension(:) :: coefad, coefbd
-double precision, allocatable, dimension(:) :: cofafd, cofbfd
-double precision, allocatable, dimension(:) :: dam, xam
-double precision, allocatable, dimension(:) :: dvarp, smbdp, rovsdp
+double precision, allocatable, dimension(:) :: dpvar, smbrp, rovsdt
 double precision, allocatable, dimension(:,:) :: grad
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w1
+double precision, allocatable, dimension(:) :: imasfl, bmasfl
+double precision, pointer, dimension(:)   :: cvar_var
+double precision, pointer, dimension(:)   :: cvara_var
+double precision, pointer, dimension(:) :: coefap, coefbp
+double precision, pointer, dimension(:) :: cofafp, cofbfp
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
@@ -111,20 +112,25 @@ double precision, allocatable, dimension(:) :: w7, w8, w9
 
 ! Allocate temporary arrays for the species resolution
 allocate(viscf(nfac), viscb(nfabor))
-allocate(coefad(nfabor), coefbd(nfabor))
-allocate(cofafd(nfabor), cofbfd(nfabor))
-allocate(dam(ncelet), xam(nfac))
-allocate(dvarp(ncelet), smbdp(ncelet), rovsdp(ncelet))
+allocate(imasfl(nfac), bmasfl(nfabor))
+
+do ifac = 1, nfac
+  imasfl(ifac) = 0.d0
+enddo
+
+do ifac = 1, nfabor
+  bmasfl(ifac) = 0.d0
+enddo
+
+allocate(dpvar(ncelet), smbrp(ncelet), rovsdt(ncelet))
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w1(ncelet))
 
 ! Initialize variables to avoid compiler warnings
+call field_get_id("wall_distance", f_id)
 
-rnoini = 0.d0
-
-nittot = 0
+call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
 !===============================================================================
 ! 2. Boundary conditions
@@ -137,6 +143,11 @@ nittot = 0
 
 ndircp = 0
 
+call field_get_coefa_s( f_id, coefap)
+call field_get_coefb_s( f_id, coefbp)
+call field_get_coefaf_s(f_id, cofafp)
+call field_get_coefbf_s(f_id, cofbfp)
+
 do ifac = 1, nfabor
   if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
 
@@ -148,12 +159,12 @@ do ifac = 1, nfabor
 
     call set_dirichlet_scalar &
          !====================
-       ( coefad(ifac), cofafd(ifac),             &
-         coefbd(ifac), cofbfd(ifac),             &
+       ( coefap(ifac), cofafp(ifac),             &
+         coefbp(ifac), cofbfp(ifac),             &
          pimp        , hint        , rinfin )
 
 
-    ndircp = 1
+    ndircp = ndircp + 1
   else
 
     ! Neumann Boundary Conditions
@@ -164,12 +175,14 @@ do ifac = 1, nfabor
 
     call set_neumann_scalar &
          !==================
-       ( coefad(ifac), cofafd(ifac),             &
-         coefbd(ifac), cofbfd(ifac),             &
+       ( coefap(ifac), cofafp(ifac),             &
+         coefbp(ifac), cofbfp(ifac),             &
          qimp        , hint )
 
   endif
 enddo
+
+if (irangp.ge.0) call parcpt(ndircp)
 
 !===============================================================================
 ! 3. Prepare system to solve
@@ -178,7 +191,7 @@ enddo
 ! -- Diagonal
 
 do iel = 1, ncel
-  rovsdp(iel) = 0.d0
+  rovsdt(iel) = 0.d0
 enddo
 
 ! -- Diffusion at faces
@@ -193,21 +206,6 @@ call viscfa                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
 
-iconvp = 0
-imasac = 0
-idiffp = 1
-isym   = 1
-thetap = 1.d0
-imucpp = 0
-
-call matrix &
-!==========
- ( iconvp , idiffp , ndircp , isym   ,                            &
-   thetap , imucpp ,                                              &
-   coefbd , cofbfd , rovsdp ,                                     &
-   viscf  , viscb  , viscf  , viscb  ,                            &
-   rvoid  , dam    , xam    )
-
 !===============================================================================
 ! 4. Solve system
 !===============================================================================
@@ -219,108 +217,90 @@ iinvpe = 0
 if(iperio.eq.1) iinvpe = 1
 ibsize = 1
 iesize = 1
-nswrsl = nswrsy
-110 continue
 
 ! Distance to wall is initialized to 0 for reconstruction
 
+call field_get_val_s_by_name("wall_distance", cvar_var)
+
 do iel = 1, ncelet
-  distpa(iel) = 0.d0
-  dvarp(iel)  = 0.d0
+  cvar_var(iel) = 0.d0
+  dpvar(iel)  = 0.d0
 enddo
 
 ! -- RHS
 
 do iel = 1, ncel
-  smbdp(iel)  = volume(iel)
+  rovsdt(iel) = 0.d0
+  smbrp(iel)  = cell_f_vol(iel)
 enddo
 
-! -- Reconstruction loop;
-!   if NSWRSY = 1, we must solve twice
+iconvp = vcopt%iconv
+idiffp = vcopt%idiff
+idftnp = vcopt%idften
+nswrsp = vcopt%nswrsm
+nswrgp = vcopt%nswrgr
+imligp = vcopt%imligr
+ircflp = vcopt%ircflu
+ischcp = vcopt%ischcv
+isstpp = vcopt%isstpc
+iescap = 0
+imucpp = 0
+iswdyp = vcopt%iswdyn
+iwarnp = vcopt%iwarni
+blencp = vcopt%blencv
+epsilp = vcopt%epsilo
+epsrsp = vcopt%epsrsm
+epsrgp = vcopt%epsrgr
+climgp = vcopt%climgr
+extrap = vcopt%extrag
+relaxp = vcopt%relaxv
+thetap = vcopt%thetav
+! all boundary convective flux with upwind
+icvflb = 0
 
-do isweep = 0, nswrsl
+110 continue
 
-  rnorm = sqrt(cs_gdot(ncel,smbdp,smbdp))
-  if (iwarny.ge.2) then
-     write(nfecra,5000) nomva0,isweep,rnorm
-  endif
-  if (isweep.le.1) rnoini = rnorm
-  ! Convergence test
-  if (rnorm.le.10.d0*epsily*rnoini) goto 100
-
-  do iel = 1, ncelet
-    dvarp(iel) = 0.d0
-  enddo
-
-  call sles_solve_native(-1, nomva0,                                   &
-                         isym, ibsize, iesize, dam, xam, iinvpe,       &
-                         epsily, rnorm, niterf, residu, smbdp, dvarp)
-
-  nittot = nittot + niterf
-  do iel = 1, ncel
-    distpa(iel) = distpa(iel) + dvarp(iel)
-  enddo
-
-  ! - Synchronization for parallelism
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(dvarp)
-    !==========
-  endif
-
-  if (isweep.lt.nswrsl) then
-    inc    = 0
-    iccocg = 1
-    imucpp = 0
-    idftnp = 1 ! no tensorial diffusivity
-    f_id0= -1
-    idtva0 = 0
-    relaxp = 1.d0
-
-    ! all boundary convective flux with upwind
-    icvflb = 0
-
-    call bilsca &
-    !==========
- ( idtva0 , f_id0  , iconvp , idiffp , nswrgy , imligy , ircfly , &
-   ischcy , isstpy , inc    , imrgra , iccocg ,                   &
-   iwarny , imucpp , idftnp , imasac ,                            &
-   blency , epsrgy , climgy , extray , relaxp , thetap ,          &
-   dvarp  , dvarp  , coefad , coefbd , coefad , cofbfd ,          &
-   viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &
+call codits &
+ ( idtvar , f_id   , iconvp , idiffp , ndircp ,                   &
+   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
+   iwarnp ,                                                       &
+   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
+   relaxp , thetap ,                                              &
+   cvara_var       , cvara_var       ,                            &
+   coefap , coefbp , cofafp , cofbfp ,                            &
+   imasfl , bmasfl ,                                              &
+   viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   smbdp  )
+   rovsdt , smbrp  , cvar_var        , dpvar  ,                   &
+   rvoid  , rvoid  )
 
-  endif
-enddo
-
-call sles_free_native(-1, nomva0)
-
+! Count clippings
 mmprpl = 0
 do iel = 1, ncel
-  if (distpa(iel).lt.0.d0) then
-    mmprpl = 1
+  if (cvar_var(iel).lt.0.d0) then
+    mmprpl = mmprpl + 1
+    cvar_var(iel) = epzero*(cell_f_vol(iel))**(1.d0/3.d0)
     exit
   endif
 enddo
 
-if (irangp.ge.0) call parcmx(mmprpl)
+if (irangp.ge.0) call parcpt(mmprpl)
 
+! Recompute wall distance without reconstruction (that ensure that it is positive)
 if (mmprpl.eq.1) then
-  if (nswrsl.gt.0) then
-    nswrsl = 0
+  if (nswrsp.gt.0) then
+    nswrsp = 0
     write(nfecra,9000)
     goto 110
   else
-    write(nfecra,9001) distpa(iel)
+    write(nfecra,9001) cvar_var(iel)
   endif
 endif
 
- 100  continue
-
 do iel=1,ncel
-  dvarp(iel)  = distpa(iel)
+  dpvar(iel) = max(cvar_var(iel), 0.d0)
 enddo
 
 !===============================================================================
@@ -330,22 +310,17 @@ enddo
 ! Allocate a temporary array for the gradient calculation
 allocate(grad(3,ncelet))
 
-! - Compute gradient
+! Compute current gradient
 
 inc    = 1
 iccocg = 1
-f_id   = -1
 
-call gradient_s                                                   &
- ( f_id   , imrgra , inc    , iccocg , nswrgy , imligy , iwarny , &
-   epsrgy , climgy , extray ,                                     &
-   dvarp  , coefad , coefbd ,                                     &
-   grad   )
+call field_gradient_scalar(f_id, 0, imrgrp, inc, iccocg, grad)
 
 do iel = 1, ncel
-  w1(iel) = grad(1,iel)**2.d0+grad(2,iel)**2.d0+grad(3,iel)**2.d0
-  if (w1(iel)+2.d0*dvarp(iel).gt.0.d0) then
-    distpa(iel) = - sqrt(w1(iel)) + sqrt(w1(iel)+2.d0*dvarp(iel))
+  norm_grad = grad(1,iel)**2.d0+grad(2,iel)**2.d0+grad(3,iel)**2.d0
+  if (norm_grad+2.d0*dpvar(iel).gt.0.d0) then
+    cvar_var(iel) = sqrt(norm_grad + 2.d0*dpvar(iel)) - sqrt(norm_grad)
   else
     write(nfecra,8000)iel, xyzcen(1,iel),xyzcen(2,iel),xyzcen(3,iel)
   endif
@@ -362,8 +337,8 @@ dismax = -grand
 dismin =  grand
 
 do iel = 1, ncel
-  dismin = min(distpa(iel),dismin)
-  dismax = max(distpa(iel),dismax)
+  dismin = min(cvar_var(iel),dismin)
+  dismax = max(cvar_var(iel),dismax)
 enddo
 
 if (irangp.ge.0) then
@@ -371,16 +346,13 @@ if (irangp.ge.0) then
   call parmax(dismax)
 endif
 
-write(nfecra,1000) dismin, dismax, nittot
+write(nfecra,1000) dismin, dismax
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(coefad, coefbd)
-deallocate(cofafd, cofbfd)
-deallocate(dam, xam)
-deallocate(dvarp, smbdp, rovsdp)
-deallocate(w1, w2, w3)
-deallocate(w7, w8, w9)
+deallocate(dpvar, smbrp, rovsdt)
+deallocate(imasfl, bmasfl)
+deallocate(w1)
 
 !===============================================================================
 ! 7. Formats
@@ -393,11 +365,7 @@ deallocate(w7, w8, w9)
 ' ** DISTANCE A LA PAROI                                      ',/,&
 '    -------------------                                      ',/,&
 '                                                             ',/,&
-'   Distance min = ',E14.5    ,'  Distance max = ',E14.5       ,/,&
-'                                                             ',/,&
-'     (Calcul de la distance realise en ',I10   ,' iterations)',/)
-
- 5000 format(1X,A8,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6)
+'   Distance min = ',E14.5    ,'  Distance max = ',E14.5       ,/)
 
  8000   format(                                                         &
 '@                                                            ',/,&
@@ -430,11 +398,7 @@ deallocate(w7, w8, w9)
 ' ** WALL DISTANCE                                            ',/,&
 '    -------------                                            ',/,&
 '                                                             ',/,&
-'  Min distance = ',E14.5    ,' Max distance = ',E14.5         ,/,&
-'                                                             ',/,&
-'     (Distance calculation done in ',I10   ,' iterations)'    ,/)
-
- 5000 format(1X,A8,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6)
+'  Min distance = ',E14.5    ,' Max distance = ',E14.5         ,/)
 
  8000   format(                                                         &
 '@                                                            ',/,&

@@ -36,11 +36,10 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     itypfb        boundary face types
-!> \param[out]    distpa        distance to wall
 !______________________________________________________________________________
 
 subroutine distpr2 &
- ( itypfb , distpa )
+ ( itypfb )
 
 !===============================================================================
 ! Module files
@@ -56,6 +55,8 @@ use ppppar
 use mesh
 use parall
 use period
+use field
+use field_operator
 use cs_c_bindings
 
 !===============================================================================
@@ -66,13 +67,15 @@ implicit none
 
 integer          itypfb(nfabor)
 
-double precision distpa(ncelet)
 
 ! Local variables
 
+integer          f_id
 integer          ifac  , iel
 
 double precision xdis, dismax, dismin
+
+double precision, dimension(:), pointer :: distpa
 
 !===============================================================================
 
@@ -80,6 +83,9 @@ double precision xdis, dismax, dismin
 if (irangp.ge.0 .or. iperio.gt.0) then
   call csexit(1)
 endif
+
+call field_get_id("wall_distance", f_id)
+call field_get_val_s(f_id, distpa)
 
 !===============================================================================
 ! Deprecated model to compute wall distance

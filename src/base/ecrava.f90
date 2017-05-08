@@ -514,11 +514,8 @@ if (iecaux.eq.1) then
   iecr = 0
 
   if (ineedy.eq.1) then
-    iecr   = 1
-    itysup = 1
-    nbval  = 1
-    rubriq = 'dist_fac_par_ce_phase01'
-    call restart_write_section_real_t(rp,rubriq,itysup,nbval,dispar)
+    call field_get_id('wall_distance', f_id)
+    call restart_write_field_vals(rp, f_id, 0)
   endif
 
   if (iecr.ne.0) then

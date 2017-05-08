@@ -736,16 +736,8 @@ endif
 if (icdpar.eq.-1 .and. ikw.eq.1 .and. isuite.eq.1)                &
      write(nfecra,2001)
 
-! ---> INEEDY, IMLIGY
+! ---> IMLIGY
 !      Calcul de la distance a la paroi
-!       (une seule phase ...)
-
-ineedy = 0
-if ((iturb.eq.30.and.irijec.eq.1).or.              &
-     (itytur.eq.4.and.idries.eq.1).or.              &
-     iturb.eq.60.or.iturb.eq.70      ) then
-  ineedy = 1
-endif
 
 if (imrgrp.eq.0 .or. imrgrp.ge.4) then
   if (imligy.eq.-999) then

@@ -136,19 +136,6 @@ if (numtyp .eq. -1) then
   !  Automatic additional variables
   !  ------------------------------
 
-  ! Wall distance (if LES+VanDriest or Rij+Echo or K-w SST)
-
-  if (ineedy.eq.1) then
-
-    idimt = 1
-    ientla = .true.
-    ivarpr = .true.
-
-    call post_write_var(nummai, 'DistWall', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, dispar, rbid, rbid)
-
-  endif
-
   ! Yplus (if LES+VanDriest)
 
   if (ineedy.eq.1) then

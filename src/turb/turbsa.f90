@@ -75,7 +75,6 @@ use mesh
 use field
 use field_operator
 use parall
-use pointe, only: dispar
 use cs_c_bindings
 
 !===============================================================================
@@ -108,6 +107,7 @@ integer          iwarnp
 integer          istprv
 integer          ipatrg
 integer          imucpp, idftnp, iswdyp
+integer          f_id
 
 double precision romvsd
 double precision visct , rom
@@ -139,6 +139,7 @@ double precision, dimension(:), pointer :: cpro_pcvto
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: c_st_nusa_p
+double precision, dimension(:), pointer :: w_dist
 
 type(var_cal_opt) :: vcopt_nusa
 
@@ -171,6 +172,9 @@ call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
+
+call field_get_id("wall_distance", f_id)
+call field_get_val_s(f_id, w_dist)
 
 ivar   = inusa
 
@@ -337,7 +341,7 @@ do iel = 1, ncel
   ! kinematic viscosity
   nu0   = viscl(iel)/rom
   ! We have to know if there is any rough wall
-  distbf= dispar(iel)
+  distbf= w_dist(iel)
   ! viscosity of SA
   nusa  = cvara_nusa(iel)
   chi   = nusa/nu0

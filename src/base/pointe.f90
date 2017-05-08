@@ -96,13 +96,6 @@ module pointe
 
   !... Auxiliaires
 
-  !> distance between the center of a given volume and the closest wall,
-  !> when it is necessary (\f$R_{ij}-\varepsilon\f$ with wall echo,
-  !> LES with van Driest-wall damping, or \f$k-\omega\f$ (SST) turbulence model).
-  !> The distance between the center of the cell
-  !> \c iel and the closest wall is \c dispar(iel)
-  double precision, allocatable, dimension(:)   :: dispar
-
   !> non-dimensional distance \f$y^+\f$ between a given volume and the closest
   !> wall, when it is necessary (LES with van Driest-wall damping).
   !> The adimensional distance \f$y^+\f$ between the center of the cell \c iel
@@ -368,7 +361,6 @@ contains
     ! Wall-distance calculation
 
     if (ineedy.eq.1) then
-      allocate(dispar(ncelet))
       if (itytur.eq.4 .and. idries.eq.1) then
         allocate(yplpar(ncelet))
       endif
@@ -404,20 +396,6 @@ contains
     ! Resize/copy arrays
 
     allocate(buffer(ncelet))
-
-    ! Wall-distance calculation
-
-    if (allocated(dispar)) then
-      do iel = 1, ncel
-        buffer(iel) = dispar(iel)
-      enddo
-      deallocate(dispar)
-      call synsca (buffer)
-      allocate(dispar(ncelet))
-      do iel = 1, ncelet
-        dispar(iel) = buffer(iel)
-      enddo
-    endif
 
     if (allocated(yplpar)) then
       do iel = 1, ncel
@@ -472,7 +450,6 @@ contains
     if (allocated(idfstr)) deallocate(idfstr)
     if (allocated(izcpdc)) deallocate(izcpdc)
     if (allocated(izctsm)) deallocate(izctsm)
-    if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)
     if (allocated(b_head_loss)) deallocate(b_head_loss)
     if (allocated(gamcav)) deallocate(gamcav, dgdpca)

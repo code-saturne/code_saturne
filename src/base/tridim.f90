@@ -161,6 +161,7 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cpro_prtot
 double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt
+double precision, dimension(:), pointer :: w_dist
 
 ! Darcy
 integer mbrom
@@ -270,11 +271,13 @@ if ((nfpt1t.gt.0).and.(nbccou.le.0)) then
   isvhb = iscalt
 endif
 
-!     Si la distance a la paroi doit etre mise a jour, on l'initialise a GRAND
-!     des maintenant (pour le premier passage dans phyvar en k-omega)
+! If wall distance has to be updated, we initialize it to a big value,
+! so that it is OK in phyvar for the k-omega turbulence model
 if (ipass.eq.1 .and. ineedy.eq.1 .and. imajdy.eq.0) then
+  call field_get_id("wall_distance", f_id)
+  call field_get_val_s(f_id, w_dist)
   do iel = 1, ncel
-    dispar(iel) = grand
+    w_dist(iel) = grand
   enddo
 endif
 
@@ -1203,7 +1206,7 @@ do while (iterns.le.nterup)
     endif
 
 
-    ! On ne fait le calcul que s'il y a des parois, 'dispar'  est reserve
+    ! On ne fait le calcul que s'il y a des parois, 'w_dist'  est reserve
     ! et initialise a GRAND avant. S'il n'y a pas de paroi, il restera = GRAND)
 
     ! Pour le moment, on suppose que l'on peut se contenter de faire
@@ -1238,9 +1241,10 @@ do while (iterns.le.nterup)
         ! If we have walls, we must compute
       else
         if (abs(icdpar).eq.1) then
-          call distpr(itypfb, dispar)
+          call distpr(itypfb)
+        ! Deprecated algorithm
         else if (abs(icdpar).eq.2) then
-          call distpr2(itypfb, dispar)
+          call distpr2(itypfb)
         endif
         !     La distance n'a plus a etre mise a jour sauf en ALE
         if (iale.eq.0) imajdy = 1
@@ -1259,7 +1263,7 @@ do while (iterns.le.nterup)
   if (itytur.eq.4 .and. idries.eq.1) then
 
     if (infpar.gt.0) then
-      call distyp(itypfb, dispar, yplpar)
+      call distyp(itypfb, yplpar)
     else
       do iel = 1, ncelet
         yplpar(iel) = grand

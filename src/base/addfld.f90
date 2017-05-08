@@ -93,7 +93,7 @@ integer          ivar
 logical          iprev, inoprv, is_set
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
-type(var_cal_opt) :: vcopt_dfm, vcopt_alpha
+type(var_cal_opt) :: vcopt_dfm, vcopt_alpha, vcopt
 
 !===============================================================================
 
@@ -304,6 +304,27 @@ if (iwallf.ge.5) then
   call add_boundary_property_field_owner('boundary_roughness', 'Boundary Roughness', &
                                          iflid)
 endif
+
+! Wall distance for some turbulence models
+
+if ((iturb.eq.30.and.irijec.eq.1).or.              &
+     (itytur.eq.4.and.idries.eq.1).or.              &
+     iturb.eq.60.or.iturb.eq.70      ) then
+  ineedy = 1
+  f_name  = 'wall_distance'
+  f_label = 'Wall distance'
+  call add_variable_field(f_name, f_label, 1, ivar)
+  iflid = ivarfl(ivar)
+
+  ! Elliptic equation (no convection, no time term)
+  call field_get_key_struct_var_cal_opt(iflid, vcopt)
+  vcopt%iconv = 0
+  vcopt%istat = 0
+  call field_set_key_struct_var_cal_opt(iflid, vcopt)
+
+endif
+
+
 
 !===============================================================================
 ! 3. Additional postprocessing fields

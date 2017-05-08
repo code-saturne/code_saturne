@@ -692,11 +692,9 @@ nberro = 0
 if (ineedy.eq.1) then
   if (icdpar.gt.0 .or. inpdt0.eq.1) then
     if (nfabok.eqv..true.) then
-      itysup = 1
-      nbval  = 1
-      rubriq = 'dist_fac_par_ce_phase01'
-      call restart_read_section_real_t(rp,rubriq,itysup,nbval,dispar,  &
-                                       ierror)
+      call field_get_id('wall_distance', f_id)
+      call restart_read_field_vals(rp, f_id, 0, ierror)
+
       nberro=nberro+ierror
       if (ierror.eq.0 .and. iale.eq.0 ) then
         imajdy = 1

@@ -69,7 +69,6 @@ use cstnum
 use cstphy
 use optcal
 use lagran
-use pointe, only: dispar
 use parall
 use mesh
 use field
@@ -149,6 +148,7 @@ double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: c_st_k_p, c_st_omg_p
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cpro_divukw, cpro_s2kw
+double precision, dimension(:), pointer :: w_dist
 
 type(var_cal_opt) :: vcopt_w, vcopt_k
 
@@ -232,6 +232,9 @@ if (istprv.ge.0) then
   endif
 endif
 
+call field_get_id("wall_distance", f_id)
+call field_get_val_s(f_id, w_dist)
+
 if (vcopt_k%iwarni.ge.1) then
   write(nfecra,1000)
 endif
@@ -272,7 +275,7 @@ deallocate(gradk, grado)
 !===============================================================================
 
 do iel = 1, ncel
-  w2(iel) = max(dispar(iel),epzero)
+  w2(iel) = max(w_dist(iel),epzero)
 enddo
 
 ! En cas d'ordre 2 on utilise les valeurs en n car le terme en (1-f1)*gdkgdw
@@ -1123,7 +1126,7 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1) then
     xunorm = vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2
     xunorm = sqrt(xunorm)
 
-    ya = dispar(iel)
+    ya = w_dist(iel)
     ypa = ya*utaurf/nu0
     ! Velocity magnitude is imposed (limitted only), the direction is
     ! conserved

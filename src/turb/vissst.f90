@@ -61,7 +61,6 @@ subroutine vissst
 
 use paramx
 use cstnum
-use pointe, only: dispar
 use numvar
 use optcal
 use cstphy
@@ -69,6 +68,7 @@ use entsor
 use mesh
 use field
 use field_operator
+use cs_c_bindings
 
 !===============================================================================
 
@@ -80,11 +80,11 @@ implicit none
 
 integer          iel, inc
 integer          iprev
+integer          f_id
 
 double precision d1s3, d2s3
 double precision xk, xw, rom, xmu, xdist, xarg2, xf2
 
-double precision, allocatable, dimension(:) :: w1
 double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
@@ -92,6 +92,7 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:), pointer :: cvar_k, cvar_omg
 double precision, dimension(:), pointer :: cpro_s2kw, cpro_divukw
+double precision, dimension(:), pointer :: w_dist
 
 !===============================================================================
 
@@ -107,6 +108,9 @@ call field_get_val_s(ivisct, visct)
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ivarfl(ik), cvar_k)
 call field_get_val_s(ivarfl(iomg), cvar_omg)
+
+call field_get_id("wall_distance", f_id)
+call field_get_val_s(f_id, w_dist)
 
 d1s3 = 1.d0/3.d0
 d2s3 = 2.d0/3.d0
@@ -156,18 +160,7 @@ enddo
 deallocate(gradv)
 
 !===============================================================================
-! 3.  Calculation of the distance to the wall
-!===============================================================================
-
-! Allocate a work array
-allocate(w1(ncelet))
-
-do iel = 1 , ncel
-  w1(iel) =  max(dispar(iel), epzero)
-enddo
-
-!===============================================================================
-! 4.  Calculation of viscosity
+! 3.  Calculation of viscosity
 !===============================================================================
 
 do iel = 1, ncel
@@ -176,7 +169,9 @@ do iel = 1, ncel
   xw = cvar_omg(iel)
   rom = crom(iel)
   xmu = viscl(iel)
-  xdist = w1(iel)
+
+  ! Wall distance
+  xdist = max(w_dist(iel), epzero)
   if (xk > 0.d0) then
     xarg2 = max (2.d0*sqrt(xk)/cmu/xw/xdist,                  &
                  500.d0*xmu/rom/xw/xdist**2)
@@ -188,9 +183,6 @@ do iel = 1, ncel
   endif
 
 enddo
-
-! Free memory
-deallocate(w1)
 
 !-------
 ! Format

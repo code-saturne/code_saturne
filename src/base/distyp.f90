@@ -62,13 +62,12 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     itypfb        boundary face types
-!> \param[in]     distpa        tab des distances a la paroi
 !> \param[out]    disty         dimensionless distance \f$ y^+ \f$
 !_______________________________________________________________________________
 
 subroutine distyp &
  ( itypfb ,                                                       &
-   distpa , disty  )
+   disty  )
 
 !===============================================================================
 
@@ -88,6 +87,7 @@ use parall
 use period
 use mesh
 use field
+use field_operator
 use cs_c_bindings
 
 !===============================================================================
@@ -98,7 +98,6 @@ implicit none
 
 integer          itypfb(nfabor)
 
-double precision distpa(ncelet)
 double precision disty(ncelet)
 
 ! Local variables
@@ -128,6 +127,7 @@ double precision, allocatable, dimension(:,:) :: coefav
 double precision, allocatable, dimension(:,:,:) :: coefbv
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: dpvar
+double precision, dimension(:), pointer :: w_dist
 double precision, dimension(:), pointer :: crom, uetbor
 double precision, dimension(:), pointer :: viscl
 
@@ -167,6 +167,9 @@ if (f_id.ge.0) then
   call field_get_val_s(f_id, uetbor)
 endif
 
+call field_get_id("wall_distance", f_id)
+call field_get_val_s(f_id, w_dist)
+
 !===============================================================================
 ! 2. At the first time step
 !===============================================================================
@@ -195,42 +198,17 @@ endif
 ! 3. Compute  V = Grad(DISTPA)/|Grad(DISTPA)|
 !===============================================================================
 
-! La distance a la paroi vaut 0 en paroi
-!   par definition et obeit a un flux nul ailleurs
-
-do ifac = 1, nfabor
-  if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
-
-    ! Dirichlet Boundary Condition for gradients
-    !-------------------------------------------
-
-    coefap(ifac) = 0.0d0
-    coefbp(ifac) = 0.0d0
-  else
-
-    ! Neumann Boundary Condition for gradients
-    !-----------------------------------------
-
-    coefap(ifac) = 0.0d0
-    coefbp(ifac) = 1.0d0
-
-  endif
-enddo
-
 ! Compute the gradient of the distance to the wall
 
 inc    = 1
 iccocg = 1
-f_id   = -1
 
-call gradient_s                                                   &
- ( f_id   , imrgra , inc    , iccocg , nswrgy , imligy , iwarny , &
-   epsrgy , climgy , extray ,                                     &
-   distpa , coefap , coefbp ,                                     &
-   q      )
+call field_get_id("wall_distance", f_id)
 
-! Normalisation (attention, le gradient peut etre nul, parfois)
+! Current gradient: iprev = 0
+call field_gradient_scalar(f_id, 0, imrgra, inc, iccocg, q)
 
+! Normalization (warning, the gradient may be sometimes equal to 0)
 do iel = 1, ncel
   xnorme = max(sqrt(q(1,iel)**2+q(2,iel)**2+q(3,iel)**2),epzero)
   do isou = 1, 3
@@ -430,7 +408,7 @@ if(ipass.eq.1) then
   enddo
 else
   do iel = 1, ncel
-    usna = disty(iel)/max(distpa(iel),epzero)
+    usna = disty(iel)/max(w_dist(iel),epzero)
     usna = max(usna,xusnmn)
     usna = min(usna,xusnmx)
     dvarp(iel) = usna
@@ -560,7 +538,7 @@ do isweep = 1, ntcmxy
 
   xnorme = -grand
   do iel = 1, ncel
-    if(distpa(iel)*xusnmn.le.yplmxy) then
+    if(w_dist(iel)*xusnmn.le.yplmxy) then
       xnorme = max(xnorme,(dvarp(iel)-w1(iel))**2)
     endif
   enddo
@@ -585,9 +563,8 @@ write(nfecra,8000) xnorme, xnorm0, xnorme/xnorm0, ntcmxy
 ! 9. Finalization and printing
 !===============================================================================
 
-
 do iel = 1, ncel
-  disty(iel) = dvarp(iel)*distpa(iel)
+  disty(iel) = dvarp(iel)*w_dist(iel)
 enddo
 
 dismax = -grand
