@@ -117,6 +117,7 @@ integer          irangd
 integer          ifadir
 integer          iut  , ivt   , iwt, iscal
 integer          keyvar
+integer          iivar
 integer          f_id, i_dim, f_type, nfld, f_dim
 
 double precision pref, pipb
@@ -1238,38 +1239,52 @@ ideb = idebty(ientre)
 ifin = ifinty(ientre)
 
 iok = 0
+iivar = 0
 do ivar = 1, nvar
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
 
-      if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw)      &
-           then
+      call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+      ! For not convected variables, if nothing is defined: homogeneous Neumann
+      if (vcopt%iconv .eq. 0 .and. rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
+        icodcl(ifac,ivar)   = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      else if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
         if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
           itypfb(ifac) = - abs(itypfb(ifac))
-          if (iok.eq.0.or.iok.eq.2) iok = iok + 1
+          if (iok.eq.0.or.iok.eq.2) then
+            iok = iok + 1
+          endif
         else
           icodcl(ifac,ivar) = 1
-          !           rcodcl(ifac,ivar,1) = Utilisateur
+          ! rcodcl(ifac,ivar,1) = given by the user
           rcodcl(ifac,ivar,2) = rinfin
           rcodcl(ifac,ivar,3) = 0.d0
         endif
 
-      elseif (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
+      else if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
 
         flumbf = bmasfl(ifac)
-        if( flumbf.ge.-epzero) then
+        ! Outgoing flux
+        if (flumbf.ge.-epzero) then
           icodcl(ifac,ivar)   = 3
           rcodcl(ifac,ivar,1) = 0.d0
           rcodcl(ifac,ivar,2) = rinfin
           rcodcl(ifac,ivar,3) = 0.d0
         else
           itypfb(ifac) = - abs(itypfb(ifac))
-          if (iok.lt.2) iok = iok + 2
+          if (iok.lt.2) then
+            iok = iok + 2
+            iivar = max(iivar, ivar)
+          endif
         endif
       else
         icodcl(ifac,ivar) = 1
-        !         rcodcl(ifac,ivar,1) = Utilisateur
+        ! rcodcl(ifac,ivar,1) = given by the user
         rcodcl(ifac,ivar,2) = rinfin
         rcodcl(ifac,ivar,3) = 0.d0
       endif
@@ -1278,10 +1293,16 @@ do ivar = 1, nvar
   enddo
 enddo
 
-if (irangp.ge.0) call parcmx(iok)
+if (irangp.ge.0) then
+  call parcmx(iok)
+  call parcmx(iivar)
+endif
 if (iok.gt.0) then
   if (iok.eq.1 .or. iok.eq.3) write(nfecra,6060)
-  if (iok.eq.2 .or. iok.eq.3) write(nfecra,6070)
+  if (iok.eq.2 .or. iok.eq.3) then
+    call field_get_name(ivarfl(iivar), fname)
+    write(nfecra,6070) trim(fname)
+  endif
   call boundary_conditions_error(itypfb)
 endif
 
@@ -1297,12 +1318,22 @@ ideb = idebty(i_convective_inlet)
 ifin = ifinty(i_convective_inlet)
 
 iok = 0
+iivar = 0
 do ivar = 1, nvar
   do ii = ideb, ifin
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
 
-      if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
+      call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+      ! For not convected variables, if nothing is defined: homogeneous Neumann
+      if (vcopt%iconv .eq. 0 .and. rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
+        icodcl(ifac,ivar)   = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+
+      else if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
         if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
           itypfb(ifac) = - abs(itypfb(ifac))
           if (iok.eq.0.or.iok.eq.2) iok = iok + 1
@@ -1313,17 +1344,21 @@ do ivar = 1, nvar
           rcodcl(ifac,ivar,3) = 0.d0
         endif
 
-      elseif (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
+      else if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
 
         flumbf = bmasfl(ifac)
-        if( flumbf.ge.-epzero) then
+        ! Outgoing flux
+        if (flumbf.ge.-epzero) then
           icodcl(ifac,ivar)   = 3
           rcodcl(ifac,ivar,1) = 0.d0
           rcodcl(ifac,ivar,2) = rinfin
           rcodcl(ifac,ivar,3) = 0.d0
         else
           itypfb(ifac) = - abs(itypfb(ifac))
-          if (iok.lt.2) iok = iok + 2
+          if (iok.lt.2) then
+            iok = iok + 2
+            iivar = max(iivar, ivar)
+          endif
         endif
       else
         icodcl(ifac,ivar) = 13
@@ -1336,10 +1371,16 @@ do ivar = 1, nvar
   enddo
 enddo
 
-if (irangp.ge.0) call parcmx(iok)
+if (irangp.ge.0) then
+  call parcmx(iok)
+  call parcmx(iivar)
+endif
 if (iok.gt.0) then
   if (iok.eq.1 .or. iok.eq.3) write(nfecra,6060)
-  if (iok.eq.2 .or. iok.eq.3) write(nfecra,6070)
+  if (iok.eq.2 .or. iok.eq.3) then
+    call field_get_name(ivarfl(iivar), fname)
+    write(nfecra,6070) trim(fname)
+  endif
   call boundary_conditions_error(itypfb)
 endif
 
@@ -1935,20 +1976,20 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
 '@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
-'@    =========                                               ',/,&
-'@    CONDITIONS AUX LIMITES INCORRECTES OU INCOMPLETES       ',/,&
-'@                                                            ',/,&
-'@    Au moins une face de bord declaree en entree            ',/,&
-'@      (ou sortie) a vitesse imposee avec un flux rentrant   ',/,&
-'@      pour laquelle la valeur d''une variable n''a pas ete  ',/,&
-'@      specifiee (condition de Dirichlet).                   ',/,&
-'@    Le calcul ne sera pas execute                           ',/,&
-'@                                                            ',/,&
-'@    Verifier les conditions aux limites dans l''Interface   ',/,&
-'@    ou dans le sous-programme utilisateur correspondant.    ',/,&
-'@                                                            ',/,&
+'@    ========='                                               ,/,&
+'@    CONDITIONS AUX LIMITES INCORRECTES OU INCOMPLETES'       ,/,&
+'@'                                                            ,/,&
+'@    Au moins une face de bord declaree en entree'            ,/,&
+'@      (ou sortie) a vitesse imposee avec un flux rentrant'   ,/,&
+'@      pour laquelle la valeur de', a,' n''a pas ete'         ,/,&
+'@      specifiee (condition de Dirichlet).'                   ,/,&
+'@    Le calcul ne sera pas execute'                           ,/,&
+'@'                                                            ,/,&
+'@    Verifier les conditions aux limites dans l''Interface'   ,/,&
+'@    ou dans le sous-programme utilisateur correspondant.'    ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
 
 
  7010 format ( /,/,                                               &
@@ -2090,7 +2131,7 @@ endif
 '@'                                                            ,/,&
 '@    At least one boundary face declared as inlet (or'        ,/,&
 '@      outlet) with prescribed velocity with an entering'     ,/,&
-'@      flow for which the value of a variable has not been'   ,/,&
+'@      flow for which the value of ',a,' has not been'        ,/,&
 '@      specified (Dirichlet condition).'                      ,/,&
 '@    The calculation will not be run.                        ',/,&
 '@'                                                            ,/,&
