@@ -129,12 +129,12 @@ integer          ilelt, nlelt
 double precision uref2, d2s3
 double precision rhomoy, dhy
 double precision z1   , z2
-integer          ipotr, ipoti, f_id, ipotva1, ipotva2, ipotva3
+integer          ipotr, ipoti, f_id, ipotva
 character(len=80) :: f_name
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: bfpro_rom
-double precision, dimension(:), pointer :: cvara_potva
+double precision, dimension(:,:), pointer :: cvara_potva
 integer :: keyvar
 !< [loc_var_dec]
 
@@ -157,12 +157,8 @@ if (ippmod(ieljou).ge. 2) then
   call field_get_key_int(f_id, keyvar, ipoti)
 endif
 if (ippmod(ielarc).ge.2) then
-  call field_get_id('vec_potential_01', f_id)
-  call field_get_key_int(f_id, keyvar, ipotva1)
-  call field_get_id('vec_potential_02', f_id)
-  call field_get_key_int(f_id, keyvar, ipotva2)
-  call field_get_id('vec_potential_03', f_id)
-  call field_get_key_int(f_id, keyvar, ipotva3)
+  call field_get_id('vec_potential', f_id)
+  call field_get_key_int(f_id, keyvar, ipotva)
 endif
 
 !===============================================================================
@@ -295,12 +291,12 @@ do ilelt = 1, nlelt
   ! the electrodes (see above)
 
   if (ippmod(ielarc).ge.2) then
-      icodcl(ifac,ipotva1)   = 3
-      rcodcl(ifac,ipotva1,3) = 0.d0
-      icodcl(ifac,ipotva2)   = 3
-      rcodcl(ifac,ipotva2,3) = 0.d0
-      icodcl(ifac,ipotva3)   = 3
-      rcodcl(ifac,ipotva3,3) = 0.d0
+      icodcl(ifac,ipotva    )   = 3
+      rcodcl(ifac,ipotva    ,3) = 0.d0
+      icodcl(ifac,ipotva + 1)   = 3
+      rcodcl(ifac,ipotva + 1,3) = 0.d0
+      icodcl(ifac,ipotva + 2)   = 3
+      rcodcl(ifac,ipotva + 2,3) = 0.d0
   endif
 
 enddo
@@ -514,18 +510,16 @@ do ilelt = 1, nlelt
         cdgfbo(1,ifac) .ge.  2.249d-2  .or.                      &
         cdgfbo(3,ifac) .le. -2.249d-2  .or.                      &
         cdgfbo(3,ifac) .ge.  2.249d-2      ) then
+      call field_get_val_prev_v_by_name('vec_potential', cvara_potva)
       iel = ifabor(ifac)
-      icodcl(ifac,ipotva1)   = 1
-      call field_get_val_prev_s_by_name('vec_potential_01', cvara_potva)
-      rcodcl(ifac,ipotva1,1) = cvara_potva(iel)
+      icodcl(ifac,ipotva)   = 1
+      rcodcl(ifac,ipotva,1) = cvara_potva(1, iel)
 
-      icodcl(ifac,ipotva2)   = 1
-      call field_get_val_prev_s_by_name('vec_potential_02', cvara_potva)
-      rcodcl(ifac,ipotva2,1) = cvara_potva(iel)
+      icodcl(ifac,ipotva + 1)   = 1
+      rcodcl(ifac,ipotva + 1,1) = cvara_potva(2, iel)
 
-      icodcl(ifac,ipotva3)   = 1
-      call field_get_val_prev_s_by_name('vec_potential_0', cvara_potva)
-      rcodcl(ifac,ipotva3,1) = cvara_potva(iel)
+      icodcl(ifac,ipotva + 2)   = 1
+      rcodcl(ifac,ipotva + 2,1) = cvara_potva(3, iel)
     endif
   endif
 
@@ -597,12 +591,12 @@ do ilelt = 1, nlelt
   ! Vector potential : Zero flux
 
   if (ippmod(ielarc).ge.2) then
-      icodcl(ifac,ipotva1)   = 3
-      rcodcl(ifac,ipotva1,3) = 0.d0
-      icodcl(ifac,ipotva2)   = 3
-      rcodcl(ifac,ipotva2,3) = 0.d0
-      icodcl(ifac,ipotva3)   = 3
-      rcodcl(ifac,ipotva3,3) = 0.d0
+      icodcl(ifac,ipotva    )   = 3
+      rcodcl(ifac,ipotva    ,3) = 0.d0
+      icodcl(ifac,ipotva + 1)   = 3
+      rcodcl(ifac,ipotva + 1,3) = 0.d0
+      icodcl(ifac,ipotva + 2)   = 3
+      rcodcl(ifac,ipotva + 2,3) = 0.d0
   endif
 
 enddo
