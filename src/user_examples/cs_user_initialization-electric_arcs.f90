@@ -97,7 +97,8 @@ character(len=80) :: f_name
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: cvar_scalt, cvar_ycoel
-double precision, dimension(:), pointer :: cvar_potr, cvar_poti, cvar_potva
+double precision, dimension(:), pointer :: cvar_potr, cvar_poti
+double precision, dimension(:,:), pointer :: cvar_potva
 !< [loc_var_dec]
 
 !===============================================================================
@@ -191,18 +192,12 @@ if ( isuite.eq.0 ) then
   endif
 
 !     -- Vector potential (3D electric arc 3D)
-  if ( ippmod(ielarc).ge.2 ) then
-    call field_get_val_s_by_name('vec_potential_01', cvar_potva)
+  if (ippmod(ielarc).ge.2) then
+    call field_get_val_v_by_name('vec_potential', cvar_potva)
     do iel = 1, ncel
-      cvar_potva(iel) = 0.d0
-    enddo
-    call field_get_val_s_by_name('vec_potential_02', cvar_potva)
-    do iel = 1, ncel
-      cvar_potva(iel) = 0.d0
-    enddo
-    call field_get_val_s_by_name('vec_potential_03', cvar_potva)
-    do iel = 1, ncel
-      cvar_potva(iel) = 0.d0
+      cvar_potva(1, iel) = 0.d0
+      cvar_potva(2, iel) = 0.d0
+      cvar_potva(3, iel) = 0.d0
     enddo
   endif
 
