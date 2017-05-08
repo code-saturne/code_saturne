@@ -141,6 +141,9 @@ end interface
 
 call add_property_field_1d('density', 'Density', irom)
 icrom = irom
+! Postprocessed and in th log file by default, hidden in modini if not variable.
+call field_set_key_int(icrom, keylog, 1)
+call field_set_key_int(icrom, keyvis, 1)
 
 call add_boundary_property_field_owner('boundary_density', 'Boundary Density', &
                                        ibrom)
