@@ -76,11 +76,9 @@ integer          itypfb(nfabor)
 
 integer          ndircp, iconvp, idiffp
 integer          ipp
-integer          niterf
 integer          iinvpe
 integer          iel   , ifac
 integer          inc   , iccocg, f_id
-integer          isweep
 integer          ibsize, iesize, mmprpl, nswrsp
 integer          imucpp, idftnp
 integer          nswrgp
@@ -97,10 +95,9 @@ double precision, allocatable, dimension(:) :: dpvar, smbrp, rovsdt
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: imasfl, bmasfl
+double precision, allocatable, dimension(:) :: coefap, coefbp
+double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, pointer, dimension(:)   :: cvar_var
-double precision, pointer, dimension(:)   :: cvara_var
-double precision, pointer, dimension(:) :: coefap, coefbp
-double precision, pointer, dimension(:) :: cofafp, cofbfp
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
@@ -143,10 +140,8 @@ call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
 ndircp = 0
 
-call field_get_coefa_s( f_id, coefap)
-call field_get_coefb_s( f_id, coefbp)
-call field_get_coefaf_s(f_id, cofafp)
-call field_get_coefbf_s(f_id, cofbfp)
+allocate(coefap(nfabor), coefbp(nfabor))
+allocate(cofafp(nfabor), cofbfp(nfabor))
 
 do ifac = 1, nfabor
   if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
@@ -211,7 +206,6 @@ call viscfa                                                       &
 !===============================================================================
 
 ipp = 1
-nomva0 = 'wall_distance'
 ! Periodicity
 iinvpe = 0
 if(iperio.eq.1) iinvpe = 1
@@ -220,7 +214,7 @@ iesize = 1
 
 ! Distance to wall is initialized to 0 for reconstruction
 
-call field_get_val_s_by_name("wall_distance", cvar_var)
+call field_get_val_s(f_id, cvar_var)
 
 do iel = 1, ncelet
   cvar_var(iel) = 0.d0
@@ -267,7 +261,7 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   cvara_var       , cvara_var       ,                            &
+   cvar_var        , cvar_var        ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
@@ -315,7 +309,11 @@ allocate(grad(3,ncelet))
 inc    = 1
 iccocg = 1
 
-call field_gradient_scalar(f_id, 0, imrgrp, inc, iccocg, grad)
+call gradient_s                                                   &
+ ( -1     , imrgra , inc    , iccocg , nswrgy , imligy , iwarny , &
+   epsrgy , climgy , extray ,                                     &
+   dpvar  , coefap , coefbp ,                                     &
+   grad   )
 
 do iel = 1, ncel
   norm_grad = grad(1,iel)**2.d0+grad(2,iel)**2.d0+grad(3,iel)**2.d0
@@ -349,6 +347,8 @@ endif
 write(nfecra,1000) dismin, dismax
 
 ! Free memory
+deallocate(coefap, coefbp)
+deallocate(cofafp, cofbfp)
 deallocate(viscf, viscb)
 deallocate(dpvar, smbrp, rovsdt)
 deallocate(imasfl, bmasfl)
