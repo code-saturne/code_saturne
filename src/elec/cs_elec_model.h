@@ -232,8 +232,8 @@ cs_electrical_properties_read(int   ielarc,
  *----------------------------------------------------------------------------*/
 
 void
-cs_compute_electric_field(const cs_mesh_t  *mesh,
-                          int               call_id);
+cs_elec_compute_fields(const cs_mesh_t  *mesh,
+                       int               call_id);
 
 /*----------------------------------------------------------------------------
  * convert enthalpy-temperature

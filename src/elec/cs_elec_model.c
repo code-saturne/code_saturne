@@ -479,12 +479,11 @@ _field_pointer_properties_map_electric_arcs(void)
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (elini1, ELINI1) (      cs_real_t *visls0,
-                                 cs_real_t *diftl0,
-                                 cs_int_t  *idircl,
-                                 cs_int_t  *isca)
+CS_PROCF (elini1, ELINI1) (cs_real_t *visls0,
+                           cs_real_t *diftl0,
+                           cs_int_t  *idircl,
+                           cs_int_t  *isca)
 {
-  /* initialization */
   cs_electrical_model_specific_initialization(visls0, diftl0, idircl,
                                               isca);
 }
@@ -492,8 +491,8 @@ CS_PROCF (elini1, ELINI1) (      cs_real_t *visls0,
 void
 CS_PROCF (elflux, ELFLUX) (cs_int_t *iappel)
 {
-  cs_compute_electric_field(cs_glob_mesh,
-                            *iappel);
+  cs_elec_compute_fields(cs_glob_mesh,
+                         *iappel);
 }
 
 void
@@ -1017,8 +1016,8 @@ cs_elec_convert_h_t(int        mode,
           }
 
           *enthal = eh0 + (eh1 - eh0) * (*temp - cs_glob_elec_properties->th[itt]) /
-                          (   cs_glob_elec_properties->th[itt + 1]
-                            - cs_glob_elec_properties->th[itt]);
+                          (  cs_glob_elec_properties->th[itt + 1]
+                           - cs_glob_elec_properties->th[itt]);
 
           break;
         }
@@ -1397,8 +1396,8 @@ cs_elec_physical_properties(const cs_mesh_t             *mesh,
  *----------------------------------------------------------------------------*/
 
 void
-cs_compute_electric_field(const cs_mesh_t  *mesh,
-                          int               call_id)
+cs_elec_compute_fields(const cs_mesh_t  *mesh,
+                       int               call_id)
 {
   cs_lnum_t  n_cells   = mesh->n_cells;
   cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
@@ -2281,7 +2280,8 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
     if (coepot < 0.75)
       coepot = 0.75;
 
-    bft_printf("imposed power / sum(jE) %14.5E, scaling coef. %14.5E\n", coefav, coepot);
+    bft_printf("imposed power / sum(jE) %14.5E, scaling coef. %14.5E\n",
+               coefav, coepot);
 
     /* scaling electric fields */
     _elec_option.pot_diff *= coepot;
