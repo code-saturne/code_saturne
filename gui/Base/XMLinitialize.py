@@ -239,7 +239,7 @@ class XMLinit(Variables):
         elif j > 0:
             vers = known_versions[j]
         return vers
-            
+
 
     def __backwardCompatibility(self):
         """

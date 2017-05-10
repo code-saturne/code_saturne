@@ -1280,6 +1280,14 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
                                                    'PYTHONPATH',
                                                    d)
 
+        # Add paths for local libraries
+        if self.package_compute.config.features['relocatable'] == "yes":
+            d = self.package_compute.get_dir('libdir')
+            if d != '/usr/lib' and d != '/usr/local/lib':
+                cs_exec_environment.write_prepend_path(s,
+                                                       'LD_LIBRARY_PATH',
+                                                       d)
+
         s.write('\n')
 
         # Handle rcfile and environment modules if used
