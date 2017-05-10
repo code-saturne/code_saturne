@@ -2349,7 +2349,7 @@ _solve_33_test(double  t_measure)
 
   /* Tell IBM compiler not to alias */
 # if defined(__xlc__)
-# pragma disjoint(*x, *y)
+# pragma disjoint(*x, *a, *b)
 # endif
 
   /* Gaussian elimination */
