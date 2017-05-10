@@ -109,6 +109,7 @@ mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
 
 check_PROGRAMS += \
 cs_blas_test \
+cs_check_cdo \
 cs_core_test \
 cs_file_test \
 cs_interface_test \
@@ -142,6 +143,24 @@ cs_blas_test_LDADD    = $(BLASRUNPATH) $(BLAS_LIBS) $(LDADD_CS_TESTS)
 if HAVE_ESSL
 cs_blas_test_LDADD    += $(FCLIBS)
 endif
+
+cs_check_cdo_SOURCES  = cs_check_cdo.c
+cs_check_cdo_CPPFLAGS = $(AM_CPPFLAGS) $(PETSC_CPPFLAGS)
+cs_check_cdo_LDADD = $(top_builddir)/src/apps/libsaturne.la
+
+if HAVE_CATALYST
+if HAVE_PLUGINS
+else
+cs_check_cdo_LDADD += $(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
+$(CATALYSTRUNPATH)
+endif
+endif
+if HAVE_PETSC
+cs_check_cdo_LDADD += $(PETSC_LDFLAGS) $(PETSC_LIBS)
+else
+cs_check_cdo_LDADD += -lm
+endif
+cs_check_cdo_LDFLAGS = -no-undefined
 
 cs_core_test_SOURCES  = cs_core_test.c
 cs_core_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
