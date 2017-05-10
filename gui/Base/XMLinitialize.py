@@ -215,27 +215,62 @@ class XMLinit(Variables):
                 newnode.xmlChildsCopy(oldnode)
                 oldnode.xmlRemoveNode()
 
+
+    def __clean_version(self, vers):
+        """
+        Simplify version history number, replacing "alpha" or "beta"
+        version with previous version  to force ensuring of backward
+        compatibility.
+        """
+        known_versions = ["3.0", "3.1", "3.2", "3.3",
+                          "4.0", "4.1", "4.2", "4.3",
+                          "5.0", "5.1"]
+        j = -2
+        for i in range(0, len(known_versions)):
+            if vers.find(known_versions[i]) == 0:
+                j = i
+                for e in ("-alpha", "-beta"):
+                    if vers.find(e) > -1:
+                        j = i-1
+                break
+        if j == -1:
+            if not vers:
+                vers = "-1.0"
+        elif j > 0:
+            vers = known_versions[j]
+        return vers
+            
+
     def __backwardCompatibility(self):
         """
         Change XML in order to ensure backward compatibility.
         """
+        cur_vers = self.__clean_version(self.case['package'].version)
+
         if self.case.root()["solver_version"]:
-            vers = self.case.root()["solver_version"]
-            history = vers.split(";")
-            cur_vers = history[len(history) - 1]
-            if history[len(history) - 1] == self.case['package'].version:
+            his_r = self.case.root()["solver_version"]
+            history = his_r.split(";")
+            last_vers = history[len(history) - 1]
+            if last_vers == cur_vers:
                 self.__backwardCompatibilityCurrentVersion()
             else:
-                self.__backwardCompatibilityOldVersion(cur_vers)
+                self.__backwardCompatibilityOldVersion(last_vers)
                 self.__backwardCompatibilityCurrentVersion()
-                his = ""
-                for v in history:
-                    his = his + v + ";"
-                his = his + self.case['package'].version
+            his = ""
+            vp = ""
+            for v in history:
+                vc = self.__clean_version(v)
+                if vc != vp:
+                    his += vc + ";"
+                    vp = vc
+            if cur_vers != vp:
+                his += cur_vers + ";"
+            his = his[:-1]
+            if his != his_r:
                 self.case.root().xmlSetAttribute(solver_version = his)
 
         else:
-            vers = self.case['package'].version
+            vers = cur_vers
             self.case.root().xmlSetAttribute(solver_version = vers)
 
             # apply all backwardCompatibility we don't know when it was created
@@ -247,13 +282,6 @@ class XMLinit(Variables):
         """
         Change XML in order to ensure backward compatibility for old version
         """
-        # Add "-zero" extension to non alpha or beta versions
-        # for correct handling of those variants.
-        pf = ".0"
-        for e in ("-alpha", "-beta"):
-            if from_vers.find(e) > -1:
-                pf = ""
-        from_vers += pf
         if from_vers <= "-1.0":
             self.__backwardCompatibilityBefore_3_0()
 
@@ -274,6 +302,8 @@ class XMLinit(Variables):
                 self.__backwardCompatibilityFrom_4_1()
             if from_vers[:3] < "4.3.0":
                 self.__backwardCompatibilityFrom_4_2()
+            if from_vers[:3] < "5.0.0":
+                self.__backwardCompatibilityFrom_4_3()
 
 
     def __backwardCompatibilityBefore_3_0(self):
@@ -1204,7 +1234,7 @@ class XMLinit(Variables):
                 node['field_id'] = 'none'
 
 
-    def __backwardCompatibilityCurrentVersion(self):
+    def __backwardCompatibilityFrom_4_3(self):
         """
         Change XML in order to ensure backward compatibility.
         """
@@ -1366,6 +1396,13 @@ class XMLinit(Variables):
                 if not node['name']:
                     node['name'] = node['label']
 
+
+    def __backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+
+        return
 
 #-------------------------------------------------------------------------------
 # XMLinit test case
