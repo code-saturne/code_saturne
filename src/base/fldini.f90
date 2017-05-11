@@ -446,55 +446,36 @@ call field_get_key_id("convection_limiter_id", kcvlim)
 
 itycat = FIELD_PROPERTY
 
-do ii = 1, nvar
-  f_id = ivarfl(ii)
+do f_id = 0, nfld - 1
 
-  call field_get_key_struct_var_cal_opt(f_id, vcopt)
+  call field_get_type(f_id, f_type)
 
-  ! Beta limiter
-  if (vcopt%isstpc.eq.2) then
-    ! Now create matching field
-    ! Build name and label
-    call field_get_name(f_id, f_name)
-    if (ii.eq.iu) then
-      name = trim(f_name) // '_x_conv_lim'
-    else if (ii.eq.iv) then
-      name = trim(f_name) // '_y_conv_lim'
-    else if (ii.eq.iw) then
-      name = trim(f_name) // '_z_conv_lim'
-    else
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+    ! Beta limiter or Roe-Sweby limiter
+    if (vcopt%isstpc.eq.2 .or. vcopt%isstpc.eq.3) then
+      ! Now create matching field
+      ! Build name and label
+      call field_get_name(f_id, f_name)
+
+      call field_get_dim(f_id, f_dim)
       name = trim(f_name) // '_conv_lim'
+
+      if (vcopt%isstpc.eq.2) then
+        ityloc = 1 ! cells
+      else
+        ityloc = 2 ! Interior faces
+      endif
+
+      call field_create(name, itycat, ityloc, f_dim, inoprv, ifctsl)
+      call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
+      call field_set_key_int(ifctsl, keylog, 1)
+
+      call field_set_key_int(f_id, kcvlim, ifctsl)
     endif
-
-    ityloc = 1 ! cells
-
-    call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
-    call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
-    call field_set_key_int(ifctsl, keylog, 1)
-
-    call field_set_key_int(f_id, kcvlim, ifctsl)
-  !Roe-Sweby limiter
-  else if (vcopt%isstpc.eq.3) then
-    ! Now create matching field
-    ! Build name and label
-    call field_get_name(f_id, f_name)
-    if (ii.eq.iu) then
-      name = trim(f_name) // '_x_conv_lim'
-    else if (ii.eq.iv) then
-      name = trim(f_name) // '_y_conv_lim'
-    else if (ii.eq.iw) then
-      name = trim(f_name) // '_z_conv_lim'
-    else
-      name = trim(f_name) // '_conv_lim'
-    endif
-
-    ityloc = 2 ! Interior faces
-
-    call field_create(name, itycat, ityloc, idim1, inoprv, ifctsl)
-    call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
-    call field_set_key_int(ifctsl, keylog, 1)
-
-    call field_set_key_int(f_id, kcvlim, ifctsl)
   endif
 enddo
 
