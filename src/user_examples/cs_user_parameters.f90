@@ -1129,15 +1129,22 @@ enddo
 ! isstpc is the slope test, Min/Max limiter or Roe and Sweby limiters
 !   - 0: swich on the slope test
 !   - 1: swich off the slope test (default)
-!   - 2: continuous limiter ensuring positivness
-!   - 3: Roe-Sweby limiter
-!        (ensuring  Decreasing Total Variation)
+!   - 2: continuous limiter ensuring boundedness (beta limiter)
+!   - 3: NVD/TVD Scheme
 !        Then "limiter_choice" keyword must be set:
-!       * 0: minmod
-!       * 1: Van-Leer
-!       * 2: Van-Albada
-!       * 3: Superbee
-
+!        * 0: Gamma
+!        * 1: SMART
+!        * 2: CUBISTA
+!        * 3: SUPERBEE
+!        * 4: MUSCL
+!        * 5: MINMOD
+!        * 6: CLAM
+!        * 7: STOIC
+!        * 8: OSHER
+!        * 9: WASEB
+!        * --- VOF scheme ---
+!        * 10: M-HRIC
+!        * 11: M-CICSAM
 
 ! Get the Key for the Sup and Inf for the convective scheme
 call field_get_key_id("min_scalar", kccmin)
