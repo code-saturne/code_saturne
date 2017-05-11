@@ -1023,7 +1023,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function initializing codensation-related field key.
+    ! Interface to C function initializing condensation-related field key.
 
     subroutine cs_parameters_define_field_key_gas_mix()  &
       bind(C, name='cs_parameters_define_field_key_gas_mix')
