@@ -80,7 +80,7 @@ integer          inc   , iccocg, f_id
 integer          mmprpl, nswrsp
 integer          imucpp, idftnp
 integer          nswrgp
-integer          icvflb, iescap, imligp, imrgrp, ircflp, iswdyp, isstpp, ischcp, iwarnp
+integer          icvflb, iescap, imligp, ircflp, iswdyp, isstpp, ischcp, iwarnp
 integer          ivoid(1)
 
 double precision relaxp, blencp, climgp, epsilp, epsrgp, epsrsp, extrap
@@ -301,7 +301,7 @@ allocate(grad(3,ncelet))
 inc    = 1
 iccocg = 1
 
-call field_gradient_scalar(f_id, 0, imrgrp, inc, iccocg, grad)
+call field_gradient_scalar(f_id, 0, imrgra, inc, iccocg, grad)
 
 do iel = 1, ncel
   norm_grad = grad(1,iel)**2.d0+grad(2,iel)**2.d0+grad(3,iel)**2.d0
