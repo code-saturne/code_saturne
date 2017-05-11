@@ -201,7 +201,23 @@ BEGIN_C_DECLS
         test should be used to switch from a second-order to an upwind convective
         scheme under certain conditions, to ensure stability.
         - 0: slope test activated for the considered unknown
-        - 1: slope test deactivated for the considered unknown \n
+        - 1: slope test deactivated for the considered unknown
+        - 2: continuous limiter ensuring boundedness (beta limiter)
+        - 3: NVD/TVD Scheme
+             Then "limiter_choice" keyword must be set:
+             * 0: Gamma
+             * 1: SMART
+             * 2: CUBISTA
+             * 3: SUPERBEE
+             * 4: MUSCL
+             * 5: MINMOD
+             * 6: CLAM
+             * 7: STOIC
+             * 8: OSHER
+             * 9: WASEB
+             * --- VOF scheme ---
+             * 10: M-HRIC
+             * 11: M-CICSAM
         Useful for all the unknowns variable which are convected (\ref iconv = 1)
         and for which a second-order scheme is used (\ref blencv > 0).
         The use of the slope test stabilises the calculation but may bring
