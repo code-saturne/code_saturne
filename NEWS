@@ -12,7 +12,7 @@ Bug fixes:
 - Fix incident flux formula for P1 radiative tr. model (if ADF disabled).
   Caused divergence of 18_CERCHAR/CASE2. Here, we fall back to old formula.
 
-- Fix for program launch when Coupling with Syrthes using srun launcher.
+- Fix for program launch when Coupling with Syrthes or self using srun launcher.
 
 - Fix crash with Code_Aster coupling when running in parallel.
 
