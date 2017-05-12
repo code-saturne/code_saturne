@@ -36,7 +36,7 @@
 #include <string.h>
 #include <time.h>
 
-#if defined(__bgq__)
+#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 
@@ -142,7 +142,7 @@ _arg_env_help(const char  *name)
   fprintf
     (e, _(" --version         print version number\n"));
 
-#if defined(__bgq__)
+#if defined(HAVE_UNISTD_H)
   fprintf
     (e, _(" -wdir, --wdir     <path> working directory\n"));
 #endif
@@ -267,7 +267,7 @@ cs_opts_define(int         argc,
       }
     }
 
-#if defined(__bgq__)
+#if defined(HAVE_UNISTD_H)
 
     else if (strcmp(s, "-wdir") == 0 || strcmp(s, "--wdir") == 0) {
       if (arg_id + 1 < argc) {
