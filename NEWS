@@ -1,9 +1,13 @@
 
-Release 4.2.4 (unreleased)
-==========================
+Release 4.2.4 (May 17 2017)
+===========================
+
+This is the last release of the 4.2 series.
 
 Bug fixes:
 ----------
+
+- Fix for program launch when Coupling with Syrthes or self using srun launcher.
 
 - Fix crash with Code_Aster coupling when running in parallel.
 
