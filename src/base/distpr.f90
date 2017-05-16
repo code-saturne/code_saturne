@@ -209,17 +209,6 @@ call viscfa                                                       &
 
 call field_get_val_s(f_id, cvar_var)
 
-do iel = 1, ncelet
-  dpvar(iel)  = 0.d0
-enddo
-
-! -- RHS
-
-do iel = 1, ncel
-  rovsdt(iel) = 0.d0
-  smbrp(iel)  = cell_f_vol(iel)
-enddo
-
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
 idftnp = vcopt%idften
@@ -246,6 +235,17 @@ icvflb = 0
 
 110 continue
 
+do iel = 1, ncelet
+  dpvar(iel)  = 0.d0
+enddo
+
+! -- RHS
+
+do iel = 1, ncel
+  rovsdt(iel) = 0.d0
+  smbrp(iel)  = cell_f_vol(iel)
+enddo
+
 call codits &
  ( idtvar , f_id   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
@@ -264,24 +264,42 @@ call codits &
 
 ! Count clippings
 mmprpl = 0
+dismin =  grand
 do iel = 1, ncel
   if (cvar_var(iel).lt.0.d0) then
     mmprpl = mmprpl + 1
+    dismin = min(cvar_var(iel),dismin)
     cvar_var(iel) = epzero*(cell_f_vol(iel))**(1.d0/3.d0)
-    exit
   endif
 enddo
 
-if (irangp.ge.0) call parcpt(mmprpl)
+if (irangp.ge.0) then
+  call parcpt(mmprpl)
+  call parmin(dismin)
+endif
 
 ! Recompute wall distance without reconstruction (that ensure that it is positive)
-if (mmprpl.eq.1) then
+if (mmprpl.ge.1) then
   if (nswrsp.gt.0) then
     nswrsp = 0
-    write(nfecra,9000)
+    ircflp = 0
+    ! Reset also in var_cal_opt structure because some basic routines
+    ! directly use the field options in vcopt...
+    vcopt%nswrsm = nswrsp
+    vcopt%ircflu = ircflp
+    call field_set_key_struct_var_cal_opt(f_id, vcopt)
+    write(nfecra,9000) mmprpl
+
+    ! Reset wall distance
+    do iel = 1, ncelet
+      cvar_var(iel)  = 0.d0
+    enddo
+
     goto 110
   else
-    write(nfecra,9001) cvar_var(iel)
+
+    write(nfecra,9001) dismin
+
   endif
 endif
 
@@ -362,12 +380,12 @@ deallocate(w1)
 '@ ',3E13.5                                                    ,/)
 
  9000   format(                                                         &
-'@                                                            ',/,&
-'@ @@ ATTENTION : Calcul de la distance a la paroi            ',/,&
-'@    =========                                               ',/,&
-'@  La solution du laplacien ne respecte pas le principe du   ',/,&
-'@  maximum. On recalcule le laplacien sans les               ',/,&
-'@  reconstructions.                                          ',/)
+'@'                                                            ,/,&
+'@ @@ ATTENTION : Calcul de la distance a la paroi'            ,/,&
+'@    ========='                                               ,/,&
+'@  La solution du laplacien ne respecte pas le principe du'   ,/,&
+'@  maximum en ', i10' cellules. On recalcule le laplacien'    ,/,&
+'@  sans les reconstructions.',/)
 
  9001   format(                                                         &
 '@                                                            ',/,&
@@ -395,12 +413,12 @@ deallocate(w1)
 '@ ',3E13.5                                                    ,/)
 
  9000   format(                                                         &
-'@                                                            ',/,&
-'@ @@ WARNING: Wall distance calculation                      ',/,&
-'@    =========                                               ',/,&
-'@  The laplacian solution does not respect the maximum       ',/,&
-'@  principle. We recompute the laplacien without             ',/,&
-'@  reconstructions.                                          ',/)
+'@'                                                            ,/,&
+'@ @@ WARNING: Wall distance calculation'                      ,/,&
+'@    ========='                                               ,/,&
+'@  The laplacian solution does not respect the maximum'       ,/,&
+'@  principle in ', i10,' cells. We recompute the laplacien'   ,/,&
+'@  without reconstructions.',/)
 
  9001   format(                                                         &
 '@                                                            ',/,&
