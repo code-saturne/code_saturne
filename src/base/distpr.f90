@@ -384,7 +384,7 @@ deallocate(w1)
 '@ @@ ATTENTION : Calcul de la distance a la paroi'            ,/,&
 '@    ========='                                               ,/,&
 '@  La solution du laplacien ne respecte pas le principe du'   ,/,&
-'@  maximum en ', i10' cellules. On recalcule le laplacien'    ,/,&
+'@  maximum en ', i10, ' cellules. On recalcule le laplacien'  ,/,&
 '@  sans les reconstructions.',/)
 
  9001   format(                                                         &
