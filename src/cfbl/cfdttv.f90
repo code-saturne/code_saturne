@@ -208,13 +208,13 @@ if (iporos.ge.1) then
       wcf(iel) = epzero
     else
       wcf(iel) =  w1(iel) * c2(iel) * crom(iel)                      &
-                / (cvar_pr(iel)*cell_f_vol(iel))
+                / ((cvar_pr(iel) + psginf)*cell_f_vol(iel))
     endif
   enddo
 else
   do iel = 1, ncel
     wcf(iel) =  w1(iel) * c2(iel) * crom(iel)                        &
-              / (cvar_pr(iel)*cell_f_vol(iel))
+              / ((cvar_pr(iel) + psginf)*cell_f_vol(iel))
   enddo
 endif
 
