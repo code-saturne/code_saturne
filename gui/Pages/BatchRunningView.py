@@ -456,11 +456,9 @@ class ListingDialogView(CommandMgrDialogView):
 
 class BatchRunningView(QWidget, Ui_BatchRunningForm):
     """
-    This class is devoted to the Computer selection.
-    When a new computer is selected, The old data frame is deleted and
-    a new apropriate frame is open.
-    If the batch script file name is known, informations are display
-    in the apropiate widget.
+    This class is devoted to the queue selection.
+    If the batch script file name is known, informations are displayed
+    in the appropiate widget.
     """
     def __init__(self, parent, case):
         """
@@ -609,12 +607,13 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.modelArg_cs_verif.addItem(self.tr("Import mesh only"), 'none')
         self.modelArg_cs_verif.addItem(self.tr("Mesh preprocessing"), 'mesh preprocess')
         self.modelArg_cs_verif.addItem(self.tr("Mesh quality criteria"), 'mesh quality')
-        self.modelArg_cs_verif.addItem(self.tr("Standard"), 'standard')
-        if self.case['prepro'] == False:
-            self.modelArg_cs_verif.enableItem(3)
+        if self.case['prepro'] == True:
+            self.modelArg_cs_verif.setItem(str_model=self.mdl.getRunType(self.case['prepro']))
+            self.labelRunType.show()
+            self.comboBoxRunType.show()
         else:
-            self.modelArg_cs_verif.disableItem(3)
-        self.modelArg_cs_verif.setItem(str_model=self.mdl.getRunType(self.case['prepro']))
+            self.labelRunType.hide()
+            self.comboBoxRunType.hide()
 
         # initialize Widgets
 

@@ -61,18 +61,27 @@ class ScriptRunningModel(Model):
 
 
     @Variables.noUndo
+    def getPreproMode(self):
+        """
+        Get run type.
+        """
+        val = self.node_mgt.xmlGetString('run_type')
+
+        if not val or val == 'standard':
+            return False
+        else:
+            return True
+
+
+    @Variables.noUndo
     def getRunType(self, preproview = None):
         """
         Get run type.
         """
         val = self.node_mgt.xmlGetString('run_type')
 
-        if preproview == None:
-            prepro = self.case.xmlGetNode('additional_scalars')
-            if prepro:
-                preproview = False
-            else:
-                preproview = True
+        if not preproview:
+            val = 'standard'
 
         if not val:
             if not preproview:
