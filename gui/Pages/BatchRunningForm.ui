@@ -659,12 +659,12 @@
         <item>
          <layout class="QGridLayout" name="gridLayout">
           <item row="0" column="0">
-           <widget class="QLabel" name="label">
+           <widget class="QLabel" name="labelRunType">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the Run type between:&lt;br/&gt;- Import mesh only: prepare the mesh for the computation without modifying it and create the mesh_input file which contains data describing the mesh,&lt;br/&gt;- Mesh preprocessing: the kernel of Code_Saturne will performs the following steps:&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Face joining&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Warped face subdividing&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Periodic boundaries definition&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Execution of the modification defined in &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_mesh.c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Creation of the mesh_ouput file,&lt;br/&gt;- Mesh quality criteria : run only the mesh verification step,&lt;br/&gt;- Standard: run all the above operations and eventually run the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>Run type</string>
+             <string>Preprocessing type</string>
             </property>
            </widget>
           </item>
@@ -684,7 +684,7 @@
           <item row="0" column="2">
            <widget class="QComboBox" name="comboBoxRunType">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the Run type between:&lt;br/&gt;- Import mesh only: prepare the mesh for the computation without modifying it and create the mesh_input file which contains data describing the mesh,&lt;br/&gt;- Mesh preprocessing: the kernel of Code_Saturne will performs the following steps:&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Face joining&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Warped face subdividing&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Periodic boundaries definition&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Execution of the modification defined in &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_mesh.c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;&lt;br/&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;- Creation of the mesh_ouput file,&lt;br/&gt;- Mesh quality criteria : run only the mesh verification step,&lt;br/&gt;- Standard: run all the above operations and eventually run the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the Run type between:&lt;br/&gt;- Import mesh only: prepare the mesh for the computation without modifying it and create the mesh_input file which contains data describing the mesh,&lt;br/&gt;- Mesh preprocessing: the Code_Saturne solver will performs the following steps:&lt;br/&gt;    - Face joining&lt;br/&gt;    - Periodic boundaries definition&lt;br/&gt;    - Mesh smoothing and extrusion&lt;br/&gt;    - Execution of the modification defined in &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_mesh.c&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;&lt;br/&gt;    - Creation of the mesh_ouput file,&lt;br/&gt;- Mesh quality criteria : preprocess mesh then verify quality,&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -813,7 +813,7 @@
     <widget class="QGroupBox" name="groupBox">
      <property name="sizeHint" stdset="0">
       <size>
-       <width>202</width>
+       <width>198</width>
        <height>67</height>
       </size>
      </property>

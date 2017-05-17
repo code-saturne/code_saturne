@@ -90,6 +90,7 @@ except:
 from code_saturne.Pages.WelcomeView import WelcomeView
 from code_saturne.Pages.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView
+from code_saturne.Pages.ScriptRunningModel import ScriptRunningModel
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
 
@@ -810,8 +811,9 @@ class MainView(object):
         # Cleaning the '\n' and '\t' from file_name (except in formula)
         self.case.xmlCleanAllBlank(self.case.xmlRootNode())
 
-        # we consider we are in calculation mode when we open an xml file
-        self.case['prepro'] = False
+        # we determine if we are in calculation mode when we open an xml file
+        mdl = ScriptRunningModel(self.case)
+        self.case['prepro'] = mdl.getPreproMode()
 
         msg = self.initCase()
         if msg:
@@ -838,6 +840,7 @@ class MainView(object):
         self.scrollArea.setWidget(self.displayFisrtPage())
 
         self.case['saved'] = "yes"
+
 
         # Update the Tree Navigator layout
 
@@ -1326,7 +1329,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         Initializes a Main Window for a new document:
           1. finish the Main Window layout
-          2. connection betwenn signal and slot
+          2. connection between signal and slot
           3. Ctrl+C signal handler
           4. create some instance variables
           5. restore system settings
@@ -1538,18 +1541,39 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         mode prepro slot
         """
+        mdl = ScriptRunningModel(self.case)
+        rt = mdl.getRunType(self.case['prepro'])
         self.case['prepro'] = True
         self.initCase()
+        mdl.setRunType(rt)
         self.Browser.configureTree(self.case)
+        if self.case['current_page'] == 'Prepare batch calculation':
+            p = displaySelectedPage(self.case['current_page'],
+                                    self,
+                                    self.case,
+                                    stbar=self.statusbar,
+                                    study=self.Id,
+                                    tree=self.Browser)
+            self.scrollArea.setWidget(p)
 
 
     def slotCalculationMode(self):
         """
         mode calculation slot
         """
+        mdl = ScriptRunningModel(self.case)
         self.case['prepro'] = False
         self.initCase()
+        mdl.setRunType('standard')
         self.Browser.configureTree(self.case)
+        if self.case['current_page'] == 'Prepare batch calculation':
+            p = displaySelectedPage(self.case['current_page'],
+                                    self,
+                                    self.case,
+                                    stbar=self.statusbar,
+                                    study=self.Id,
+                                    tree=self.Browser)
+            self.scrollArea.setWidget(p)
 
 
     def slotUndoRedoView(self):
