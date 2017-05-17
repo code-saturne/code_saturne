@@ -116,8 +116,7 @@ integer          itsqdm, imasac
 double precision epsrgp, climgp, extrap, thetap, blencp, relaxp
 double precision rom
 
-double precision, allocatable, dimension(:) :: w1, w8, w9
-double precision, allocatable, dimension(:) :: w10, w11, w12
+double precision, allocatable, dimension(:) :: w1
 double precision, dimension(:), pointer :: crom, brom
 double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:,:), allocatable :: tsexp, gavinj
@@ -146,8 +145,7 @@ call field_get_coefaf_v(ivarfl(iu), cofafu)
 call field_get_coefbf_v(ivarfl(iu), cofbfu)
 
 ! Allocate work arrays
-allocate(w1(ncelet), w8(ncelet), w9(ncelet))
-allocate(w10(ncelet), w11(ncelet), w12(ncelet))
+allocate(w1(ncelet))
 allocate(tsexp(3,ncelet))
 allocate(gavinj(3,ncelet))
 allocate(tsimp(3,3,ncelet))
@@ -201,16 +199,6 @@ call field_get_val_s(ibrom, brom)
 !     (Without these terms we are in the configuration Euler + gravity)
 
 ! --- Initialization
-do iel = 1, ncel
-  w10(iel) = 0.d0
-enddo
-do iel = 1, ncel
-  w11(iel) = 0.d0
-enddo
-do iel = 1, ncel
-  w12(iel) = 0.d0
-enddo
-
 do iel = 1, ncel
   do isou = 1, 3
     tsexp(isou,iel) = 0.d0
@@ -456,8 +444,7 @@ call inimav                                                      &
   flumas , flumab )
 
 ! Free memory
-deallocate(w1, w8, w9)
-deallocate(w10, w11, w12)
+deallocate(w1)
 deallocate(tsexp)
 deallocate(gavinj)
 deallocate(tsimp)

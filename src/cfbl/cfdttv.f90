@@ -61,11 +61,6 @@ subroutine cfdttv &
 ! viscb(nfabor     ! tr ! --- ! tab de trav aux faces de bord                  !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -189,7 +184,6 @@ do ifac = 1, nfabor
 enddo
 
 call matrdt &
-!==========
  ( iconvp  , idiffp  , isym   , coefbt , cofbft , wflmas ,          &
    wflmab , viscf  , viscb  , w1 )
 
@@ -198,7 +192,6 @@ call matrdt &
 allocate(c2(ncelet))
 
 call cs_cf_thermo_c_square(cpro_cp, cpro_cv, cvar_pr, crom, c2, ncel)
-!=========================
 
 ! Compute the coefficient CFL/dt
 
