@@ -2029,7 +2029,6 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   /* Balance porous model */
   if (cs_glob_porous_model == 3) {
-
     if (mesh_quantities->i_f_face_surf == NULL)
       BFT_MALLOC(mesh_quantities->i_f_face_surf, n_i_faces, cs_real_t);
 
@@ -2235,6 +2234,20 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
       bft_printf(_("\nAbort due to the detection of a negative control "
                    "volume.\n"));
     }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute fluid mesh quantities
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
+                                 cs_mesh_quantities_t  *mesh_quantities)
+{
 }
 
 /*----------------------------------------------------------------------------

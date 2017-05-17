@@ -89,6 +89,10 @@ typedef struct {
   cs_real_t      max_vol;        /* Maximum cell volume */
   cs_real_t      tot_vol;        /* Total volume */
 
+  cs_real_t      min_f_vol;        /* Minimum cell volume */
+  cs_real_t      max_f_vol;        /* Maximum cell volume */
+  cs_real_t      tot_f_vol;        /* Total volume */
+
   cs_real_33_t  *cocgb_s_it;     /* coupling of gradient components for
                                     iterative reconstruction at boundary */
   cs_real_33_t  *cocg_s_it;      /* coupling of gradient components for
@@ -246,6 +250,18 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities);
 void
 cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                            cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------
+ * Compute fluid mesh quantities
+ *
+ * parameters:
+ *   mesh            <-- pointer to a cs_mesh_t structure
+ *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
+                                 cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
  * Compute fluid section mesh quantities at the initial step
