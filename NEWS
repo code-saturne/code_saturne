@@ -5,6 +5,8 @@ Release 4.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Fix issue #183 (conjugate heat transfer with porosity).
+
 - Fix for program launch when Coupling with Syrthes or self using srun launcher.
 
 - Modify EnSight time output format to workarount ParaView reader bug for

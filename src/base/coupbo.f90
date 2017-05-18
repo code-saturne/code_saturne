@@ -63,6 +63,7 @@ use entsor
 use cstphy
 use mesh
 use field
+use optcal, only: iporos
 
 !===============================================================================
 
@@ -88,7 +89,7 @@ double precision enthal, temper, energ, cvt
 integer, dimension(:), allocatable :: lfcou
 double precision, dimension(:), allocatable :: tfluid, hparoi, wa
 double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:), pointer :: cpro_cp
+double precision, dimension(:), pointer :: cpro_cp, porosi
 
 !===============================================================================
 
@@ -234,6 +235,18 @@ do inbcou = 1, nbccou
         endif
       enddo
 
+    endif
+
+    ! Adjust for porosity if adjacent to coupled boundary
+
+    if (iporos.ge.1) then
+      call field_get_val_s(ipori, porosi)
+      do iloc = 1, nbfcou
+        ifac = lfcou(iloc)
+        iel = ifabor(ifac)
+        ! Fluxes are multiplied by porosity 
+        hparoi(iloc) = hparoi(iloc)*porosi(iel)
+      enddo
     endif
 
     ! Send fluid temperature and exchange coefficient
