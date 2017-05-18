@@ -196,6 +196,8 @@ Bug fixes
 - Fix initialisation of flux and divergence boundary coefficients for coupled
   vector variables (field with dim=3).
 
+- Many more bug changes (see ChangeLog for details)
+
 Release 4.3.0 (July 29 2016)
 ============================
 

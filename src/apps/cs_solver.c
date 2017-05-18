@@ -235,6 +235,9 @@ cs_run(void)
 
     cs_gui_init();
 
+    cs_gui_zones();
+    cs_user_zones();
+
     if (opts.cdo)
       cs_cdo_initialize_setup();
 
@@ -252,8 +255,6 @@ cs_run(void)
 
     cs_base_fortran_bft_printf_to_c();
 
-    cs_gui_zones();
-    cs_user_zones();
     cs_ctwr_build_zones();
 
     cs_timer_stats_set_start_time(cs_glob_time_step->nt_cur);
