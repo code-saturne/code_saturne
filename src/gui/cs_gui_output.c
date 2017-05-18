@@ -427,6 +427,13 @@ _property_post(int  f_id)
 
   cs_field_t  *f = cs_field_by_id(f_id);
 
+  /* Some properties are not handled by the GUI */
+
+  if (strcmp(f->name, "porosity") == 0)
+    return;
+
+  /* Now check for options */
+
   int f_post = -999, f_log = -999, f_monitor = -999;
   bool in_tree = false;
   const int k_log  = cs_field_key_id("log");
