@@ -5,6 +5,8 @@ Release 4.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix issue #183 (conjugate heat transfer with porosity).
+
 - Fix radiative source term for EBU and fast chemistry flame models.
   Bug impacted fire modelling validation cases. Now uses again average of
   T^4 and T^3 instead of power of averaged temperature for these 2 models.

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-01-04 17:26+0100\n"
+"POT-Creation-Date: 2017-05-16 11:05+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -10532,12 +10532,6 @@ msgid ""
 "  the zone id associated to face %d must be an integer >= 0 and < nflagm = "
 "%d.\n"
 "  This number is here %d."
-msgstr ""
-
-#, c-format
-msgid ""
-"Lagrangian module: \n"
-" the maximum number of user defined boundary zones nflagm = %d is reached."
 msgstr ""
 
 #, c-format

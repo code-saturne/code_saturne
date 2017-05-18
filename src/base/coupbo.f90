@@ -60,6 +60,7 @@ use entsor
 use cstphy
 use mesh
 use field
+use optcal, only: iporos
 use cs_cf_bindings
 
 !===============================================================================
@@ -86,6 +87,7 @@ integer, dimension(:), allocatable :: lfcou
 double precision, dimension(:), allocatable :: tfluid, hparoi, wa
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv, cpro_rho
+double precision, dimension(:), pointer :: porosi
 
 !===============================================================================
 ! Interfaces
@@ -270,6 +272,19 @@ do inbcou = 1, nbccou
         endif
       enddo
 
+    endif
+
+    ! Fluxes are multiplied by porosity if present.
+    ! Here as the flux is expressed as h.(Tw-Tf), the exchange coefficient
+    ! is multipled by the porosity.
+
+    if (iporos.ge.1) then
+      call field_get_val_s(ipori, porosi)
+      do iloc = 1, nbfcou
+        ifac = lfcou(iloc)
+        iel = ifabor(ifac)
+        hparoi(iloc) = hparoi(iloc)*porosi(iel)
+      enddo
     endif
 
     ! Send fluid temperature and exchange coefficient
