@@ -78,7 +78,7 @@ class ThermalRadiationModel(Variables, Model):
         self.b_prop['wall_temp']              = self.tr("Wall_temperature")
         self.b_prop['flux_incident']          = self.tr("Flux_incident")
         self.b_prop['thickness']              = self.tr("Thickness")
-        self.b_prop['thermal_conductivity']   = self.tr("Thermal_conductivity")
+        self.b_prop['wall_thermal_conductivity']   = self.tr("Thermal_conductivity")
         self.b_prop['emissivity']             = self.tr("Emissivity")
         self.b_prop['flux_net']               = self.tr("Flux_net")
         self.b_prop['flux_convectif']         = self.tr("Flux_convectif")
@@ -130,7 +130,7 @@ class ThermalRadiationModel(Variables, Model):
         """
         dico = {}
         rayName = ['srad',     'qrad',     'absorp',  'emiss',    'coefAb',
-                   'wall_temp', 'flux_incident', 'thermal_conductivity', 'thickness',
+                   'wall_temp', 'flux_incident', 'wall_thermal_conductivity', 'thickness',
                    'emissivity', 'flux_net',      'flux_convectif',  'coeff_ech_conv']
 
         raylabF = ['Srad',       'Qrad',          'Absorp',     'Emiss',    'CoefAb',
@@ -442,7 +442,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -474,7 +474,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -506,7 +506,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -538,7 +538,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -570,7 +570,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -603,7 +603,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -636,7 +636,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
@@ -669,7 +669,7 @@ class ThermalRadiationTestCase(ModelTest):
                     <property label="CoefAb" name="coefAb"/>
                     <property label="Wall_temp" name="wall_temp" support="boundary"/>
                     <property label="Flux_incident" name="flux_incident" support="boundary"/>
-                    <property label="Th_conductivity" name="thermal_conductivity" support="boundary"/>
+                    <property label="Th_conductivity" name="wall_thermal_conductivity" support="boundary"/>
                     <property label="Thickness" name="thickness" support="boundary"/>
                     <property label="Emissivity" name="emissivity" support="boundary"/>
                     <property label="Flux_net" name="flux_net" support="boundary"/>
