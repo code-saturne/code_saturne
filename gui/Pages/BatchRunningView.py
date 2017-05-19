@@ -1094,7 +1094,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Layout of the second part of this page.
         """
-
         if self.jmdl.batch.rm_type == None:
             if self.have_mpi:
                 self.labelNProcs.show()
@@ -1122,7 +1121,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 else:
                     n_procs = 1
                 self.spinBoxNProcs.setValue(n_procs)
-            if self.have_openmp == 'yes':
+            if self.have_openmp:
                 n_threads_s = self.jmdl.dictValues['run_nthreads']
                 if n_threads_s:
                     n_threads = int(n_threads_s)
