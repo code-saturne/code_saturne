@@ -89,7 +89,6 @@ class MeshModel:
                     'msh':'gmsh',
                     'neu':'gambit',
                     'ccm':'ccm',
-                    'ngeom':'ngeom',
                     'unv':'ideas'}
 
 
@@ -149,7 +148,6 @@ class MeshModel:
                ('gmsh',    'Gmsh',             ' (*.msh)'  ),
                ('gambit',  'GAMBIT Neutral',   ' (*.neu)'  ),
                ('ccm',     'STAR-CCM+',        ' (*.ccm)'  ),
-               ('ngeom',   'pro-STAR/STAR4',   ' (*.ngeom)'),
                ('ideas',   'I-deas universal', ' (*.unv)'  )]
 
         return lst
@@ -170,7 +168,6 @@ class MeshModel:
                ("GMSH files",                "*.msh"  ),
                ("GAMBIT Neutral files",      "*.neu"  ),
                ("STAR-CCM+",                 "*.ccm"  ),
-               ("pro-STAR/STAR4 files",      "*.ngeom"),
                ("I-deas universal files",    "*.unv"  )]
 
         return lst
@@ -1921,7 +1918,6 @@ class MeshModelTestCase(unittest.TestCase):
                        ("toto.med",      "med")  ,
                        ("toto.msh.gz",   "msh")  ,
                        ("toto.neu",      "neu")  ,
-                       ("toto.ngeom.gz", "ngeom"),
                        ("toto.unv.gz",   "unv")  ,
                        ("toto",          "")     ,
                        ("toto.gz",       "")     ]
