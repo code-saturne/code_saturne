@@ -1403,6 +1403,9 @@ class XMLinit(Variables):
         """
         Change XML in order to ensure backward compatibility.
         """
+
+        XMLThermoPhysicalModelNode = self.case.xmlInitNode('thermophysical_models')
+
         # fix name of thermal conductivity in radiative transfer node
         npr = XMLThermoPhysicalModelNode.xmlGetNode('radiative_transfer')
         if npr:
