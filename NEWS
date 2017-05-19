@@ -175,6 +175,8 @@ Architectural changes
 Bug fixes
 ---------
 
+- Fix a constant in cavitation theory doc.
+
 - Modify EnSight time output format to workarount ParaView reader bug for
   small time steps.
 
