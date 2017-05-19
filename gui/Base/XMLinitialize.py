@@ -1397,10 +1397,19 @@ class XMLinit(Variables):
                     node['name'] = node['label']
 
 
+
+
     def __backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
         """
+        # fix name of thermal conductivity in radiative transfer node
+        npr = XMLThermoPhysicalModelNode.xmlGetNode('radiative_transfer')
+        if npr:
+            node = npr.xmlGetNode('property', name="thermal_conductivity")
+            if node:
+                node['name'] = "wall_thermal_conductivity"
+
 
         return
 
