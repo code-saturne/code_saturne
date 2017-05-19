@@ -117,7 +117,7 @@ class MeshFormatDelegate(QItemDelegate):
         self.lst = MeshModel().getBuildFormatList()
         # Compute width based on longest possible string and font metrics
         fm = self.parent.fontMetrics()
-        self.textSize = fm.size(Qt.TextSingleLine, 'pro-STAR/STAR4 (*.ngeom)')
+        self.textSize = fm.size(Qt.TextSingleLine, 'I-deas universal')
         self.textSize.setHeight(1)
         for i in range(len(self.lst)):
             w = fm.size(Qt.TextSingleLine, str(self.lst[i][1])).width()

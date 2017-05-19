@@ -663,8 +663,13 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Increment, decrement and colorize the input argument entry
         """
+        n = int(self.spinBoxNodes.text())
         self.jmdl.batch.params['job_nodes'] = str(self.spinBoxNodes.text())
         self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_nodes')
+        if self.job_ppn:
+            ppn = int(self.jmdl.batch.params['job_ppn'])
+            tot_ranks = n*ppn
+            self.lineEditTotMPI.setText(str(tot_ranks))
 
 
     @pyqtSlot(int)
@@ -672,10 +677,19 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        self.jmdl.batch.params['job_ppn']  = str(self.spinBoxPpn.text())
+        ppn = int(self.spinBoxPpn.text())
+        self.jmdl.batch.params['job_ppn']  = str(ppn)
         self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_ppn')
+        if self.job_nodes:
+            n = int(self.jmdl.batch.params['job_nodes'])
+            tot_ranks = n*ppn
+            self.lineEditTotMPI.setText(str(tot_ranks))
+        if self.job_threads:
+            n_threads = int(self.jmdl.batch.params['job_threads'])
+            node_threads = n_threads*ppn
+            self.lineEditThreadsPerNode.setText(str(node_threads))
 
-
+            
     @pyqtSlot(int)
     def slotJobProcs(self, v):
         """
@@ -690,8 +704,13 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        self.jmdl.batch.params['job_threads']  = str(self.spinBoxThreads.text())
+        n_threads = int(self.spinBoxThreads.text())
+        self.jmdl.batch.params['job_threads']  = str(n_threads)
         self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_threads')
+        if self.job_ppn:
+            ppn = int(self.jmdl.batch.params['job_ppn'])
+            node_threads = n_threads*ppn
+            self.lineEditThreadsPerNode.setText(str(node_threads))
 
 
     @pyqtSlot()
@@ -950,6 +969,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.spinBoxProcs.hide()
         self.labelThreads.hide()
         self.spinBoxThreads.hide()
+        self.labelTotMPI.hide()
+        self.lineEditTotMPI.hide()
+        self.labelThreadsPerNode.hide()
+        self.lineEditThreadsPerNode.hide()
         self.labelClass.hide()
         self.labelWTime.hide()
         self.spinBoxDays.hide()
@@ -1001,11 +1024,21 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.labelProcs.show()
             self.spinBoxProcs.setValue(int(self.job_procs))
             self.spinBoxProcs.show()
+        elif self.job_nodes != None and self.job_ppn != None:
+            self.labelTotMPI.show()
+            self.lineEditTotMPI.show()
+            tot_ranks = int(self.job_nodes)*int(self.job_ppn)
+            self.lineEditTotMPI.setText(str(tot_ranks))
 
         if self.job_threads != None:
             self.labelThreads.show()
             self.spinBoxThreads.setValue(int(self.job_threads))
             self.spinBoxThreads.show()
+            if self.job_ppn != None:
+                self.labelThreadsPerNode.show()
+                self.lineEditThreadsPerNode.show()
+                th_per_node = int(self.job_threads)*int(self.job_ppn)
+                self.lineEditThreadsPerNode.setText(str(th_per_node))
 
         if self.job_walltime != None:
             seconds = self.job_walltime
