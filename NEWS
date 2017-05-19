@@ -5,6 +5,8 @@ Release 4.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- GUI: fix name of wall thermal conductivity in radiative transfer node.
+
 - Fix issue #183 (conjugate heat transfer with porosity).
 
 - Fix radiative source term for EBU and fast chemistry flame models.

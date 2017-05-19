@@ -1182,6 +1182,13 @@ class XMLinit(Variables):
             for node in XMLBoundaryNode.xmlGetNodeList(nature):
                 node['field_id'] = 'none'
 
+        # fix name of thermal conductivity in radiative transfer node
+        npr = XMLThermoPhysicalModelNode.xmlGetNode('radiative_transfer')
+        if npr:
+            node = npr.xmlGetNode('property', name="thermal_conductivity")
+            if node:
+                node['name'] = "wall_thermal_conductivity"
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case
