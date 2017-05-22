@@ -1175,7 +1175,7 @@ class syrthes_domain(base_domain):
 
         # Build command-line arguments
 
-        args = '-d ' + os.path.join(self.case_dir, self.param)
+        args = '-d ' + os.path.join(self.case_root_dir, self.param)
         args += ' --name ' + self.name
 
         if self.n_procs != None and self.n_procs != 1:
