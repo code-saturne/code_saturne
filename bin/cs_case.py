@@ -1516,7 +1516,8 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         # Output coupling parameters for staging
 
         if self.coupling_parameters:
-            s = open('coupling_parameters.py', 'w')
+            s = open(os.path.join(self.result_dir,
+                                  'coupling_parameters.py'), 'w')
             s.write(self.coupling_parameters)
             s.close()
 
