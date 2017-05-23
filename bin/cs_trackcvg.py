@@ -86,7 +86,7 @@ def process_cmd_line(argv):
     if sys.argv[0][-3:] == '.py':
         usage = "usage: %prog [options]"
     else:
-        usage = "usage: %prog gui [options]"
+        usage = "usage: %prog trackcvg [options]"
 
     parser = OptionParser(usage=usage)
 
@@ -95,7 +95,6 @@ def process_cmd_line(argv):
                       help="open a result directory at the interface start")
 
     (options, args) = parser.parse_args(argv)
-
 
     if len(args) > 0:
         if options.file_name or len(args) > 1:

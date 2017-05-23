@@ -420,24 +420,17 @@ class ListingDialogView(CommandMgrDialogView):
         """
         import subprocess
 
-        if self.case['package'].code_name == 'Code_Saturne':
-            import cs_package
-            cmd = os.path.join(cs_package.package().dirs['bindir'][1], "code_saturne")
-            cmd = cmd + " trackcvg "
-            if self.scratch_dir:
-                cmd = cmd + "-r " + self.scratch_dir
-            elif self.result_dir:
-                cmd = cmd + "-r " + self.result_dir
-            self.runProcess = subprocess.Popen(cmd, shell=True)
-        elif self.case['package'].code_name == 'NEPTUNE_CFD':
-            import nc_package
-            cmd = os.path.join(nc_package.package().dirs['bindir'][1], "neptune_cfd")
-            cmd = cmd + " trackcvg "
-            if self.scratch_dir:
-                cmd = cmd + "-r " + self.scratch_dir
-            elif self.result_dir:
-                cmd = cmd + "-r " + self.result_dir
-            self.runProcess = subprocess.Popen(cmd, shell=True)
+        cmd = [self.case['package'].config.python]
+        cmd.append(os.path.join(self.case['package'].dirs['bindir'][1],
+                                self.case['package'].name))
+        cmd.append("trackcvg")
+        if self.scratch_dir:
+            cmd.append("-r")
+            cmd.append(self.scratch_dir)
+        elif self.result_dir:
+            cmd.append("-r")
+            cmd.append(self.result_dir)
+        self.runProcess = subprocess.Popen(cmd)
 
 
     @pyqtSlot("QProcess::ProcessState")
