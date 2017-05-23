@@ -47,4 +47,4 @@ if HAVE_MPI
 libple_la_SOURCES += ple_coupling.c
 endif
 
-libple_la_LDFLAGS = $(MPI_LDFLAGS) -no-undefined -version-info 1:0:0
+libple_la_LDFLAGS = $(MPI_LDFLAGS) -no-undefined -version-info 2:0:0

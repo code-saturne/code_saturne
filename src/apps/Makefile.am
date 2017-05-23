@@ -141,7 +141,7 @@ $(LIBXML2_LDFLAGS) $(LIBXML2_LIBS) \
 $(LDADD_BLAS) \
 $(LTLIBINTL) \
 $(FCLIBS)
-libsaturne_la_LDFLAGS = -no-undefined -version 1:0:0
+libsaturne_la_LDFLAGS = -no-undefined -version-info 5:0:0
 
 # Main program
 #pkglibexecdir = $(libexecdir)/$(PACKAGE)
