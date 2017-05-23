@@ -218,11 +218,11 @@ deallocate(c2)
 deallocate(coefbt,cofbft)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !----
-! FIN
+! End
 !----
 
 return
