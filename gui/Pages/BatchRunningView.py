@@ -682,7 +682,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             node_threads = n_threads*ppn
             self.lineEditThreadsPerNode.setText(str(node_threads))
 
-            
+
     @pyqtSlot(int)
     def slotJobProcs(self, v):
         """
