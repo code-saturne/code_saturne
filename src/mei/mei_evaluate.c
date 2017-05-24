@@ -517,35 +517,37 @@ _find_symbol(mei_tree_t  *ev,
 /*----------------------------------------------------------------------------*/
 
 mei_tree_t*
-mei_tree_new(const char *const expr)
+mei_tree_new(const char *expr)
 {
-    mei_tree_t *ev = NULL;
-    size_t length;
+  mei_tree_t *ev = NULL;
+  size_t length;
 
-    assert(expr != NULL);
+  if (expr == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: mathematical expression string is empty."));
 
-    BFT_MALLOC(ev, 1, mei_tree_t);
+  BFT_MALLOC(ev, 1, mei_tree_t);
 
-    BFT_MALLOC(ev->symbol, 1, hash_table_t);
+  BFT_MALLOC(ev->symbol, 1, hash_table_t);
 
-    length = strlen(expr)+1;
-    BFT_MALLOC(ev->string, length, char);
+  length = strlen(expr)+1;
+  BFT_MALLOC(ev->string, length, char);
 
-    strncpy(ev->string, expr, length);
+  strncpy(ev->string, expr, length);
 
-    mei_hash_table_create(ev->symbol, HASHSIZE);
-    ev->symbol->n_inter = 1;
-    mei_hash_table_init(ev->symbol);
+  mei_hash_table_create(ev->symbol, HASHSIZE);
+  ev->symbol->n_inter = 1;
+  mei_hash_table_init(ev->symbol);
 
-    /* Default initializations */
+  /* Default initializations */
 
-    ev->errors  = 0;
-    ev->columns = NULL;
-    ev->lines   = NULL;
-    ev->labels  = NULL;
-    ev->node    = NULL;
+  ev->errors  = 0;
+  ev->columns = NULL;
+  ev->lines   = NULL;
+  ev->labels  = NULL;
+  ev->node    = NULL;
 
-    return ev;
+  return ev;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -565,34 +567,37 @@ mei_tree_t*
 mei_tree_new_with_shared_symbols(const char   *const expr,
                                  hash_table_t *const symbol_table)
 {
-    mei_tree_t *ev = NULL;
-    size_t length;
+  mei_tree_t *ev = NULL;
+  size_t length;
 
-    assert(expr != NULL);
-    assert(symbol_table != NULL);
+  assert(symbol_table != NULL);
 
-    BFT_MALLOC(ev, 1, mei_tree_t);
+  if (expr == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: mathematical expression string is empty."));
 
-    length = strlen(expr)+1;
-    BFT_MALLOC(ev->string, length, char);
+  BFT_MALLOC(ev, 1, mei_tree_t);
 
-    strncpy(ev->string, expr, length);
+  length = strlen(expr)+1;
+  BFT_MALLOC(ev->string, length, char);
 
-    /* copy the adress of the shared table of symbols and
-      incremente the number of interpreters that share this table */
+  strncpy(ev->string, expr, length);
 
-    ev->symbol = symbol_table;
-    ev->symbol->n_inter++;
+  /* copy the adress of the shared table of symbols and
+     incremente the number of interpreters that share this table */
 
-    /* Default initializations */
+  ev->symbol = symbol_table;
+  ev->symbol->n_inter++;
 
-    ev->errors  = 0;
-    ev->columns = NULL;
-    ev->lines   = NULL;
-    ev->labels  = NULL;
-    ev->node    = NULL;
+  /* Default initializations */
 
-    return ev;
+  ev->errors  = 0;
+  ev->columns = NULL;
+  ev->lines   = NULL;
+  ev->labels  = NULL;
+  ev->node    = NULL;
+
+  return ev;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -631,89 +636,86 @@ mei_table_symbols_new(void)
 int
 mei_tree_builder(mei_tree_t *ev)
 {
-    int i;
+  int i;
 
-    assert(ev != NULL);
+  assert(ev != NULL);
 
-    /* Initialize the global variables of the parser */
-    /*-----------------------------------------------*/
+  /* Initialize the global variables of the parser */
+  /*-----------------------------------------------*/
 
-    /* Initialize the pointer on the node returned by the parser */
+  /* Initialize the pointer on the node returned by the parser */
 
-    mei_glob_root = NULL;
+  mei_glob_root = NULL;
 
-    /* Begin/end of the expression is set in these global variables */
+  /* Begin/end of the expression is set in these global variables */
 
-    mei_glob_string_begin = ev->string;
-    mei_glob_string_end   = ev->string + strlen(ev->string);
+  mei_glob_string_begin = ev->string;
+  mei_glob_string_end   = ev->string + strlen(ev->string);
 
-    /* Initialize line and column counters,
-       incrementation is done in scanner.l */
+  /* Initialize line and column counters,
+     incrementation is done in scanner.l */
 
-    mei_glob_line   = 1;
-    mei_glob_column = 1;
+  mei_glob_line   = 1;
+  mei_glob_column = 1;
 
-    /* Initialize error counter
-       incrementation is done in parser.y (yyerror function) */
+  /* Initialize error counter
+     incrementation is done in parser.y (yyerror function) */
 
-    mei_glob_ierr_list = 0;
+  mei_glob_ierr_list = 0;
 
-    /* Parse the expression string and construct the interpreter */
-    /*-----------------------------------------------------------*/
+  /* Parse the expression string and construct the interpreter */
+  /*-----------------------------------------------------------*/
 
-    yyparse();
+  yyparse();
 
-    if (mei_glob_ierr_list)
-    {
+  if (mei_glob_ierr_list) {
 
-        /* Parsing error: copy informations for display */
+    /* Parsing error: copy informations for display */
 
-        _manage_error(ev);
+    _manage_error(ev);
 
-       /* Free memory. Warning: if there is more than one error,
-          not all pointers are cleaning */
+    /* Free memory. Warning: if there is more than one error,
+       not all pointers are cleaning */
 
-        mei_free_node(mei_glob_root);
-    }
-    else
-    {
-        /* If the parsing is ok, copy the data in the current interpreter */
+    mei_free_node(mei_glob_root);
+  }
+  else {
+    /* If the parsing is ok, copy the data in the current interpreter */
 
-        ev->node = mei_glob_root;
+    ev->node = mei_glob_root;
 
-        /* For all nodes of the interpreter, copy the symbols table pointer */
+    /* For all nodes of the interpreter, copy the symbols table pointer */
 
-        _init_symbol_table(ev->node, ev->symbol);
+    _init_symbol_table(ev->node, ev->symbol);
 
-        /* Check if all new symbols are defined in the expression string */
+    /* Check if all new symbols are defined in the expression string */
 
-        mei_glob_ierr_list = _check_symbol(ev->node);
+    mei_glob_ierr_list = _check_symbol(ev->node);
 
-        if (mei_glob_ierr_list)
-        {
+    if (mei_glob_ierr_list) {
 
-            /* Check symbol error: copy informations for display */
+      /* Check symbol error: copy informations for display */
 
-            /* if (mei_glob_ierr_list == 1) */
-            /*   bft_printf("Warning: there is %i error.\n",  mei_glob_ierr_list); */
-            /* else if (mei_glob_ierr_list > 1) */
-            /*   bft_printf("Warning: there are %i errors.\n", mei_glob_ierr_list); */
+      /* if (mei_glob_ierr_list == 1) */
+      /*   bft_printf("Warning: there is %i error.\n",  mei_glob_ierr_list); */
+      /* else if (mei_glob_ierr_list > 1) */
+      /*   bft_printf("Warning: there are %i errors.\n", mei_glob_ierr_list); */
 
-          _manage_error(ev);
-        }
-
+      _manage_error(ev);
     }
 
-    /* Free memory of the parser global variables if necessary */
+  }
 
-    for (i=0; i < mei_glob_ierr_list; i++)
-        BFT_FREE(mei_glob_label_list[i]);
+  /* Free memory of the parser global variables if necessary */
 
-    BFT_FREE(mei_glob_label_list);
-    BFT_FREE(mei_glob_line_list);
-    BFT_FREE(mei_glob_column_list);
+  for (i=0; i < mei_glob_ierr_list; i++)
+    BFT_FREE(mei_glob_label_list[i]);
 
-    return mei_glob_ierr_list;
+  BFT_FREE(mei_glob_label_list);
+  BFT_FREE(mei_glob_line_list);
+  BFT_FREE(mei_glob_column_list);
+
+  return mei_glob_ierr_list;
 }
 
 /*----------------------------------------------------------------------------*/

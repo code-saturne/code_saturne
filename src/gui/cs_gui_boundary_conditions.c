@@ -420,6 +420,12 @@ _inlet_formula(const char  *label,
 
   form = cs_gui_get_text_value(path);
   BFT_FREE(path);
+
+  if (form == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: inlet formula for %s, %s is not defined."),
+              label, choice);
+
   return form;
 }
 
@@ -1421,19 +1427,19 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
           const char *sym[] = {"u_norm"};
-          boundaries->velocity[izone] =
-              _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
+          boundaries->velocity[izone]
+            = _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
         }
         else if (cs_gui_strcmp(choice_v, "flow1_formula")) {
           const char *sym[] = {"q_m"};
-          boundaries->velocity[izone] =
-              _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
+          boundaries->velocity[izone]
+            = _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
           boundaries->iqimp[izone] = 1;
         }
         else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
           const char *sym[] = {"q_v"};
-          boundaries->velocity[izone] =
-              _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
+          boundaries->velocity[izone]
+            = _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
           boundaries->iqimp[izone] = 2;
         }
 
@@ -1446,8 +1452,9 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
         }
         else if (cs_gui_strcmp(choice_d, "formula")) {
           const char *sym[] = {"dir_x", "dir_y", "dir_z"};
-          boundaries->direction[izone] =
-              _boundary_init_mei_tree(_inlet_formula(label, "direction_formula"), sym, 3);
+          boundaries->direction[izone]
+            = _boundary_init_mei_tree(_inlet_formula(label, "direction_formula"),
+                                      sym, 3);
         }
         BFT_FREE(choice_v);
         BFT_FREE(choice_d);
