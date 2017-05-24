@@ -2850,8 +2850,8 @@ _givens_rot_update(cs_real_t    *restrict a,
 
   for (i = update_rank; i < end_update; ++i) {
 
-    norm = pow(a[i*a_size + i], 2) + pow(a[i*a_size + i+1], 2);
-    norm = sqrt(norm);
+    norm = sqrt(  a[i*a_size + i]   * a[i*a_size + i]
+                + a[i*a_size + i+1] * a[i*a_size + i+1]);
 
     givens_coeff[a_size + i] = a[i*a_size + i+1]/norm;
     givens_coeff[i] = a[i*a_size + i]/norm;
@@ -3137,22 +3137,11 @@ _gmres(cs_sles_it_t              *c,
 
         /* compute residue = | Ax - b |_1 */
 
-        residue = 0.;
-#       pragma omp parallel for reduction(+:residue) if(n_rows > CS_THR_MIN)
+#       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (jj = 0; jj < n_rows; jj++)
-          residue += pow(rhs[jj] - bk[jj], 2);
+          bk[jj] -= rhs[jj];
 
-#if defined(HAVE_MPI)
-
-        if (c->comm != MPI_COMM_NULL) {
-          MPI_Allreduce(&residue, &_residue, 1, MPI_DOUBLE, MPI_SUM,
-                        c->comm);
-          residue = _residue;
-        }
-
-#endif
-
-        residue = sqrt(residue);
+        residue = sqrt(_dot_product_xx(c, bk));
 
         cvg = _convergence_test(c, n_iter, residue, convergence);
 
