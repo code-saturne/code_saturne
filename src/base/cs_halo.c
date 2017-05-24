@@ -762,6 +762,9 @@ cs_halo_destroy(cs_halo_t  **halo)
   if (halo == NULL)
     return;
 
+  if (*halo == NULL)
+    return;
+
   cs_halo_t  *_halo = *halo;
 
   BFT_FREE(_halo->c_domain_rank);

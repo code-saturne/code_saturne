@@ -1646,7 +1646,7 @@ cs_mesh_extrude(cs_mesh_t          *m,
 
   /* Rebuild ghosts */
 
-  if (m->halo != NULL || m->cell_cells_lst != NULL) {
+  if (m->halo != NULL || m->halo_type == CS_HALO_EXTENDED) {
     cs_halo_type_t halo_type = m->halo_type;
     cs_halo_destroy(&(m->halo));
     assert(m == cs_glob_mesh);
