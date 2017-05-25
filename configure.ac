@@ -216,6 +216,7 @@ if test "x$auto_flags" = "xyes" ; then
   CPPFLAGS="$cppflags_default $user_CPPFLAGS"
   CFLAGS="$cflags_default $user_CFLAGS"
   CXXFLAGS="$cxxflags_default $user_CXXFLAGS"
+  CXXFLAGS_STD="$cxxflags_default_std"
   FCFLAGS="$fcflags_default $user_FCFLAGS"
   LDFLAGS="$ldflags_default $user_LDFLAGS"
   LIBS="$libs_default $user_LIBS"
@@ -255,6 +256,7 @@ if test "x$auto_flags" = "xyes" ; then
   AC_SUBST(CXXFLAGS_DBG)
   AC_SUBST(CXXFLAGS_OPT)
   AC_SUBST(CXXFLAGS_HOT)
+  AC_SUBST(CXXFLAGS_STD)
 
   AC_SUBST(FCFLAGS_DBG)
   AC_SUBST(FCFLAGS_OPT)
