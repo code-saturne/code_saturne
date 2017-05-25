@@ -29,7 +29,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
 $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-AM_CXXFLAGS = $(CXXFLAGS_DBG) $(CXXFLAGS_OPT)
+AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT)
 AM_LDFLAGS = $(CCM_LDFLAGS) $(CGNS_LDFLAGS) $(MED_LDFLAGS) \
 $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
 
@@ -159,7 +159,7 @@ if HAVE_MEDCOUPLING
 fvm_medcoupling_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
-$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
+$(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
 $(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
 pkglib_LTLIBRARIES += fvm_medcoupling.la
 
@@ -180,8 +180,10 @@ if HAVE_PLUGIN_CATALYST
 fvm_catalyst_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
+$(CATALYST_CPPFLAGS) $(MPI_CPPFLAGS)
+fvm_catalyst_la_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
-$(CATALYST_CPPFLAGS) $(CATALYST_CXXFLAGS) $(MPI_CPPFLAGS)
+$(CATALYST_CXXFLAGS)
 fvm_catalyst_la_LIBADD = \
 $(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
 $(CATALYSTRUNPATH)
@@ -194,8 +196,10 @@ else
 libfvm_catalyst_la_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
+$(CATALYST_CPPFLAGS) $(MPI_CPPFLAGS)
+libfvm_catalyst_la_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
-$(CATALYST_CPPFLAGS) $(CATALYST_CXXFLAGS) $(MPI_CPPFLAGS)
+$(CATALYST_CXXFLAGS)
 libfvm_catalyst_la_LIBADD = \
 $(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
 $(CATALYSTRUNPATH)

@@ -102,7 +102,6 @@ if HAVE_PLUGINS
 
 ecs_ccm_la_CPPFLAGS = \
 -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/util \
-$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
 $(CCM_CPPFLAGS) $(CCM_CXXFLAGS) $(MPI_CPPFLAGS)
 ecs_ccm_la_LIBADD = $(CCM_LDFLAGS) $(CCM_LIBS) $(CCMRUNPATH)
 ecs_ccm_la_SOURCES = ecs_pre_ccm.c
@@ -113,7 +112,6 @@ else
 
 libecs_ccm_la_CPPFLAGS = \
 -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/util \
-$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
 $(CCM_CPPFLAGS) $(CCM_CXXFLAGS) $(MPI_CPPFLAGS)
 libecs_ccm_la_LIBADD = $(CCM_LDFLAGS) $(CCM_LIBS) $(CCMRUNPATH)
 libecs_ccm_la_SOURCES = ecs_pre_ccm.c

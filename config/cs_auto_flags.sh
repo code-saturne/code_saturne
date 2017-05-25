@@ -41,6 +41,7 @@
 # cxxflags_default_hot   # Optimization for specific files     (default: "-O")
 # cxxflags_default_prf   # Added to $CXXFLAGS for profiling    (default: "")
 # cxxflags_default_omp   # Added to $CXXFLAGS for OpenMP       (default: "")
+# cxxflags_default_std   # C++ standard variant                (default: "")
 
 # fcflags_default        # Base FCFLAGS                       (default: "")
 # fcflags_default_dbg    # Added to $FCFLAGS for debugging    (default: "-g")
@@ -530,12 +531,13 @@ if test "x$cs_gxx" = "xg++"; then
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
 
   # Default compiler flags
-  cxxflags_default="-ansi -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wunused -Wno-long-long -Wfloat-equal"
+  cxxflags_default="-W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wunused -Wfloat-equal"
   cxxflags_default_dbg="-g"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_prf="-pg"
   cxxflags_default_omp="-fopenmp"
+  cxxflags_default_std="-ansi -funsigned-char"
 
   # Modify default flags on certain systems
 
@@ -599,12 +601,13 @@ elif test "x$cs_gxx" = "xicc"; then
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
 
   # Default compiler flags
-  cxxflags_default="-strict-ansi -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default="-Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cxxflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_prf="-p"
   cxxflags_default_omp="-qopenmp"
+  cxxflags_default_std="-strict-ansi -funsigned-char"
 
   case "$cs_cxx_vers_major" in
     1[0123456])
@@ -628,12 +631,13 @@ elif test "x$cs_gxx" = "xclang"; then
 
   # Default compiler flags
   # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
-  cxxlags_default="-strict-ansi -funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxlags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cxxflags_default_dbg="-g -O0"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_prf="-p"
   cxxflags_default_omp="-fopenmp=libomp"
+  cxxflags_default_std="-strict-ansi -funsigned-char"
 
 # Otherwise, are we using pgcc ?
 #-------------------------------
@@ -651,11 +655,12 @@ else
     cs_cxx_compiler_known=yes
 
     # Default compiler flags
-    cxxflags_default="-Xa -noswitcherror"
+    cxxflags_default="-noswitcherror"
     cxxflags_default_dbg="-g -Mbounds"
     cxxflags_default_opt="-fast -fastsse"
     cxxflags_default_prf="-Mprof=func,lines"
     cxxflags_default_omp="-mp"
+    cxxflags_default_std="-Xa"
 
   fi
 
@@ -683,6 +688,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_dbg="-g"
     cxxflags_default_prf="-pg"
     cxxflags_default_omp="-qsmp=omp -qthreaded"
+    cxxflags_default_std=""
 
     # Adjust options for IBM Blue Gene cross-compiler
 
@@ -721,6 +727,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_dbg="-g"
     cfxxlags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
     cfxxlags_default_omp="-h omp"              # default: use "-h noomp" to disable
+    cxxflags_default_std=""
 
   fi
 
@@ -748,6 +755,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_hot="-Ofast"
     cxxflags_default_prf=""
     cxxflags_default_omp="-openmp"
+    cxxflags_default_std=""
 
   fi
 
@@ -770,6 +778,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
       cxxflags_default_dbg="-g"
       cxxflags_default_prf=""
       cxxflags_default_omp=""
+      cxxflags_default_std=""
       ;;
 
   esac
