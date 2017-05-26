@@ -139,8 +139,8 @@ cs_user_lagr_model(void)
   if (cs_glob_lagr_model->physical_model == 2) {
     /* iencra = 0 no fouling (default)
        = 1 fouling
-       * In uslag2.f90, the boundary on which the fouling can occur must
-       be given
+       The boundary on which the fouling can occur must be specified with
+       boundary condition definitions.
 
        * Post-processing:
        * iencnbbd = 1 / iencmabd = 1 / iencdibd = 1 /iencckbd = 1 (10.2) */
