@@ -611,10 +611,10 @@ physics)
     \begin{list}{}{}
         \item {\em compulsory without Graphical User Interface:}
         \begin{list}{-}{}
-            \item \texttt{uslag1} to manage the calculation conditions
+            \item \texttt{cs\_user\_lagr\_model} to manage the calculation conditions
 
-            \item \texttt{uslag2} to manage the boundary conditions for the
-             dispersed phase
+            \item \texttt{cs\_user\_lagr\_boundary\_conditions} to manage the
+              boundary conditions for the dispersed phase
 
         \end{list}
 
@@ -2513,7 +2513,7 @@ define a subset of the mesh, for example:
 
 \begin{list}{-}{}
 \item boundary regions (cf. \texttt{cs\_user\_boundary\_conditions}, \texttt{usalcl},
-\texttt{cs\_user\_radiative\_transfer\_bcs.f90}, \texttt{uslag2}, ...),
+\texttt{cs\_user\_radiative\_transfer\_bcs.f90}, \texttt{cs\_user\_lagr\_boundary\_conditions}, ...),
 \item volume initialization (cf. \texttt{cs\_user\_initialization}, ...),
 \item head-loss region (cf. \texttt{cs\_user\_head\_losses.f90}),
 \item source terms region (cf. \texttt{cs\_user\_source\_terms}),
@@ -6484,7 +6484,7 @@ The activation of the particle-tracking module is performed either:
 %
 \begin{itemize}
  \item [$\bullet$] in the Graphical User Interface (GUI): \texttt{Calculation features} $\rightarrow$ \texttt{Thermophysical models} $\rightarrow$ \texttt{Eulerian-Lagrangian multi-phase treatment}~$\rightarrow$ ~\texttt{particles and droplets tracking}
- \item [$\bullet$] or in the user subroutine \texttt{uslag1}, by setting the \texttt{iilagr} parameter to a non-null value.
+ \item [$\bullet$] or in the user function \texttt{cs\_user\_lagr\_model}.
 \end{itemize}
 
 %==================================
@@ -6503,7 +6503,7 @@ thermal scalar associated with the continuous phase is the temperature in Kelvin
 
 
 %==================================
-\subsubsection{Prescribing the main modelling parameters (GUI and/or \texttt{uslag1})}\label{sec:Ini-lag}
+\subsubsection{Prescribing the main modelling parameters (GUI and/or \texttt{cs\_user\_lagr\_model})}\label{sec:Ini-lag}
 %==================================
 
 \minititre{Use of the GUI}
@@ -6556,10 +6556,10 @@ In the GUI, the selection of the Lagrangian module activates the heading \texttt
 % \end{center}
 % \end{figure}
 
-\minititre{Use of the subroutine \texttt{uslag1}}
+\minititre{Use of the subroutine \texttt{cs\_user\_lagr\_model}}
 
 \noindent
-When the GUI is not used, \texttt{uslag1} must be completed. This subroutine
+When the GUI is not used, \texttt{cs\_user\_lagr\_model} must be completed. This function
 gathers in different headings all the keywords which are
 necessary to configure the Lagrangian module. The different headings refer to:
 \begin{list}{$\bullet$}{}
@@ -6570,14 +6570,11 @@ necessary to configure the Lagrangian module. The different headings refer to:
 \item the numerical parameters
 \item the volumetric statistics
 \item the boundary statistics
-\item the post-processing in trajectory mode
 \end{list}
 %
 \noindent
 For more details about the different parameters, the user may refer to the
 keyword list (\S~\ref{sec:prg_motscles_lagr}).%FIXME
-
-
 
 
 %==================================
@@ -6598,271 +6595,23 @@ In the framework of the multiphase Lagrangian modelling, the management of the b
 \end{center}
 \end{figure}
 
-\minititre{Use of the subroutine \texttt{uslag2}}
-
-The main numerical variables are described below.
-
-\variab{ifrlag}{ifrlag(nfabor)}{ia}{In the Lagrangian module, the user defines
-\texttt{nfrlag\index{nfrlag}} boundary zones from the color of the boundary faces,
-or more generally from their properties (colors, groups...), from the boundary
-conditions defined in \texttt{cs\_user\_boundary\_conditions}, or even from their
-coordinates. To do so, the array \texttt{ifrlag(nfabor)} giving for each face
-\texttt{ifac} the number \texttt{ifrlag(ifac)} corresponding to the zone to
-which it belongs, is completed. The zone numbers ({\em i.e.} the values of
-\texttt{ifrlag(ifac)}) are chosen freely by the user, but must be strictly
-positive integers less than or equal to \texttt{nflagm\index{nflagm}}
-(parameter stored in \texttt{lagpar}, whose default value is 100). A zone type
-is associated with every zone; it will be used to impose global boundary
-conditions. \emph{WARNING: it is essential that every boundary face belongs to a zone.}}
-
-\variab{iusncl}{iusncl(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones previously identified, the number of classes \texttt{nbclas}\footnote{A class is
-a set of particles sharing the same physical properties and the same characteristics concerning the injection in the calculation domain} of entering particles
-is given: \texttt{iusncl(izone)} = \texttt{nbclas}. By default, value for the number of particle classes is zero. The maximum number of classes is
-\texttt{nclagm\index{nclagm}} (parameter stored in \texttt{lagpar}, whose default value is 20).}
-
-\variablist{iusclb}{iusclb(nflagm)}{ia}{For all the \texttt{nfrlag} boundary zones
-previously identified, a particle boundary condition type is
-given. The categories of particle boundary condition types are marked out by the
-keywords \texttt{ientrl\index{ientrl}}, \texttt{isortl\index{isortl}},
-\texttt{irebol\index{irebol}}, \texttt{idepo1\index{idepo1}},
-\texttt{idepo2\index{idepo2}}, \texttt{iencrl\index{iencrl}}).
-
-\begin{list}{$\bullet$}{}
-
- \item if \texttt{iusclb(izone)} = \texttt{ientrl, izone} is a particle injection zone. For each particle class associated with this zone, information must be provided (see below). If a particle trajectory might cross an injection zone, then this particle leaves the calculation domain.
-
- \item if \texttt{iusclb(izone)} = \texttt{isortl}, the particles interacting with the zone \texttt{izone} leave definitely the calculation domain.
-
- \item if \texttt{iusclb(izone)} = \texttt{irebol}, the particles undergo an elastic rebound on the boundary zone \texttt{izone}.
-
- \item if \texttt{iusclb(izone)} = \texttt{idepo1}, the particles settle definitely on the boundary zone \texttt{izone}. These particles leave the calculation domain and are deleted from the calculation
-
- \item if \texttt{iusclb(izone)} = \texttt{idepo2}, the particles settle definitively on the boundary zone \texttt{izone} and they are kept in the calculation
-   domain: the particles do not disappear after touching the boundary zone. However, using \texttt{idepo2} type zones necessitates more memory than using \texttt{idepo1} type zones.
-
- \item if \texttt{iusclb(izone)} = \texttt{iencrl}, the particles which are coal particles
-       (if \texttt{iphyla} = 2) can become fouled up on the zone \texttt{izone}. The
-       slagging is a \texttt{idepo1} type deposit of the coal particle if a certain
-       criterion is respected. Otherwise, the coal particle rebounds
-       (\texttt{irebol} type behaviour). This boundary condition type is available
-       if \texttt{iencra} = 1. A limit temperature \texttt{tprenc\index{tprenc}}, a
-       critical viscosity \texttt{visref\index{visref}} and the coal composition
-       in mineral matters must be given in the
-       \texttt{uslag1} subroutine.
-
-\end{list}
-}
-\variablist{iuslag}{iuslag(nclagm, nflagm, ndlaim)}{ia}{Some pieces of
-information must be given for each particle class associated with an
-injection zone. The first part consists in integers contained in the
-array \texttt{iuslag}. There are at the most \texttt{ndlaim\index{ndlaim}} integers. These
-pieces of information must be provided for each class \texttt{iclas} and each
-particle injection zone \texttt{izone}. They are marked out by means of ``pointers'':
-\begin{list}{$\rightarrow$}{}
-
-\item \texttt{iuslag(iclas,izone,ijnbp)}: number of particles to inject in the
-      calculation domain per class and per zone.
-
-\item \texttt{iuslag(iclas,izone,ijfre)}: injection period (expressed in number
-      of time steps). If the period is null, then there is injection only
-      at the first absolute Lagrangian time step (including the restart
-      calculations).
-
-\item \texttt{iuslag(iclas,izone,ijuvw)}: type of velocity condition:
-
-\begin{list}{-}{}
-
-\item if \texttt{iuslag(iclas,izone,ijuvw)} = 1, the particle velocity vector is
-      imposed, and its components must be given in the array \texttt{ruslag} (see
-      below).
-
-\item if \texttt{iuslag(iclas,izone,ijuvw)} = 0, the particle velocity is imposed
-      perpendicular to the injection boundary face and with the norm
-      \texttt{ruslag(iclas,izone,iuno)}.
-
-\item if \texttt{iuslag(iclas,izone,ijuvw)} = -1, the particle injection velocity
-      is equal to the fluid velocity at the center of the cell
-      neighbouring the injection boundary face.
-
-\end{list}
-
-\item \texttt{iuslag(iclas,izone,inuchl)}: when the particles are coal particles
-      (\texttt{iphyla} = 2), this part of the array contains the coal index-number,
-      between 1 and \texttt{ncharb} (defined by the user in the thermochemical
-      file dp\_FCP, with  \texttt{ncharb$\leqslant$ncharm =
-      3).\index{ncharb}\index{ncharm}}
-
-\end{list}
-}
-\variablist{ruslag}{ruslag(nclagm, nflagm, ndlagm)}{ra}{Some pieces of
-information must be given for each particle class associated with an
-injection zone. The second and last part consists in real numbers
-contained in the array \texttt{ruslag}. There are at the most
-\texttt{ndlagm\index{ndlagm}} such real numbers. These pieces of information must
-be provided for each class \texttt{iclas} and each particle injection zone
-\texttt{izone}. They are marked out by means of ``pointers'':
-\begin{list}{$\rightarrow$}{}
-
-\item \texttt{ruslag(iclas,izone,iuno)}: norm of the injection velocity,
-\\useful if \texttt{iuslag(iclas,izone,ijuvw)}~=~0.
-
-\item \texttt{ruslag(iclas,izone,iupt)}, \texttt{ruslag(iclas,izone,ivpt)},\\
-\texttt{ruslag(iclas,izone,iwpt)}: components of the particle injection vector,
-\\useful if \texttt{iuslag(iclas,izone,ijuvw)}~=~1.
-
-\item \texttt{ruslag(iclas,izone,idebt)}: allows to impose a particle mass
-      flow. According to the number of injected particles, the particle
-      statistical weight \texttt{pepa(jrpoi,npt)} is recalculated in order to
-      respect the required mass flow (the number of injected particles
-      does not change). When the mass flow is null, it is not taken into
-      account.
-
-\item \texttt{ruslag(iclas,izone,ipoit)}: particle statistical weight per class and
-      per zone.
-
-\item \texttt{ruslag(iclas,izone,idpt)}: particle diameter. When the particles
-      are coal particles (\texttt{iphyla} = 2), this diameter is provided by the
-      thermochemical file dp\_FCP {\it via} the array \texttt{diam20(iclg)},
-      where \texttt{iclg} is the ``pointer'' on the total class number ({\em
-      i.e.} for all the coal types). When the standard deviation of the
-      particle diameter is different from zero, this diameter becomes a
-      mean diameter.
-
-\item \texttt{ruslag(iclas,izone,ivdpt)}: standard deviation of the injection
-      diameter. To impose this standard deviation allows to respect
-      granulometric distribution: the diameter of each particle is
-      calculated from the mean diameter, the standard deviation and a
-      Gaussian random number. In this case, it is strongly recommended
-      to intervene in the subroutine \texttt{uslain} to
-      restrict the diameter variation range, in order to avoid
-      aberrant values. If this standard deviation is null, then the
-      particle diameter is constant per class and per zone.
-
-\item \texttt{ruslag(iclas,izone,iropt)}: particle density. When the particles
-      are coal particles (\texttt{iphyla} = 2), this density is set in the
-      thermochemical file dp\_FCP {\em via} the array \texttt{rho0ch(icha)},
-      where \texttt{icha} is the coal number.
-
-\item \texttt{ruslag(iclas,izone,itpt)}: particle injection temperature in
-      \degresC. Useful if \texttt{iphyla} = 1 and if \texttt{itpvar} = 1.
-
-\item \texttt{ruslag(iclas,izone,icpt)}: particle injection specific heat. Useful
-      if \texttt{iphyla} = 1 and if \texttt{itpvar} = 1. When the particles are coal
-      particles (\texttt{iphyla} = 2), the specific heat is set in the
-      thermo-chemical file dp\_FCP {\em via} the array \texttt{cp2ch(icha)}.
-
-\item \texttt{ruslag(iclas,izone,iepsi)}: particle emissivity. Useful if
-      \texttt{iphyla} = 1 and if \texttt{itpvar} = 1, and if the radiation
-      module is activated for the continuous phase (note: when \texttt{iphyla} = 2,
-      the coal particle emissivity is given the value 1).
-
-\item \texttt{ruslag(iclas,izone,ihpt)}: particle injection temperature in
-      \degresC\ when these particles are coal
-      particles. The array \texttt{ruslag(iclas,izone,itpt)} is then no longer
-      active. Useful if \texttt{iphyla} = 2.
-
-\item \texttt{ruslag(iclas,izone,imcht)}: mass of reactive coal. Useful if \texttt{iphyla} = 2.
-
-\item \texttt{ruslag(iclas,izone,imckt)}:  mass of coke. This mass is null
-      if the coal did not begin to burn before its injection. Useful if
-      \texttt{iphyla} = 2.
-
-\end{list}
-}
-\variab{iusvis}{iusvis(nflagm)}{ia}{In order to display the variables at
-the boundaries defined in the subroutine \texttt{uslag1}, this array
-allows to select the boundary zones on which a display is wanted. To do
-so, a number is associated with each zone \texttt{izone}. If this number is
-strictly positive, the corresponding zone is selected; if it is null,
-the corresponding zone is eliminated. If several zones are associated
-with the same number, they will be displayed together in the same
-selection with \textit{EnSight}. Each selection will be split in
-\textit{EnSight} parts according to the geometric types of the present
-boundary faces ((\textit{i.e.} 'tria3', 'quad4' and 'nsided').}
-
-
 %==================================
 \subsubsection{Advanced particle-tracking set-up}
 %==================================
 
 In this section, some information is provided for a more advanced numerical set-up of a particle-tracking simulation.
 
-%==================================
-\minititre{User-defined inlet particle profile}
-%==================================
-
-\noindent
-The user subroutine \texttt{uslain} can be used to complete \texttt{uslag2} when the particles must be injected in the domain according to fine constraints (profile, position, ...): the arrays \texttt{eptp}, \texttt{pepa} and \texttt{ipepa} can be modified here for the new particles (these arrays were previously completed automatically by the code from the data provided by the user in \texttt{uslag2}).
-
-\noindent
-In the case of a more advanced use, it is possible to modify here all the arrays \texttt{eptp}, \texttt{pepa} and \texttt{ipepa}. The particles already present in the calculation domain are marked out by an index varying between 1 and \texttt{nbpart}. The particles entering the calculation domain at the current iteration are marked out by an index varying between \texttt{nbpart}+1 and \texttt{nbpnew}.
-
-% --> to go to theory guide
-%--------------------------
-% \minititre{Note: order of the numerical scheme after a particle/boundary
-% interaction}
-%
-% When a particle interacts with a boundary face, the integration order of
-% the associated stochastic equations is always a first-order, even if a
-% second-order scheme is used elsewhere.
-
-%==================================
-\minititre{User-defined volume statistics: \texttt{uslast} and \texttt{uslaen}}
-%==================================
-\noindent
-An intervention in both \texttt{uslast} and \texttt{uslaen} subroutines
-is required if the user wishes to obtain supplementary volumetric statistics.
-
-\noindent
-The subroutine \texttt{uslast} is called at the end of every Lagrangian
-iteration, it allows therefore the modification of particless-related variables, or the extraction and preparation of data to display in
-the listing or the post-processing.
-
-
-\noindent
-The volumetric statistics are calculated by means of the array \texttt{statis}. Two
-situations may happen:
-\begin{list}{-}{}
-\item the calculation of the statistics is unsteady: \texttt{statis} is
-      reset at every Lagrangian iteration;
-\item the calculation of the statistics is steady: the array
-      \texttt{statis} is used to store cumulated values of variables, which will
-      be averaged at the end of the calculation in the subroutine
-      \texttt{uslaen}.
-\end{list}
-
-According to the user parameter settings, it may happen that during the
-same calculation, the statistics will be unsteady in a first part and
-steady in second part.
-
-\noindent
-In the subroutine \texttt{uslaen}, the variable whose volumetric statistic is wanted is
-stored in the array \texttt{statis}. In the framework of steady statistics,
-the average itself is calculated in the subroutine \texttt{uslaen}. This
-average is obtained through the division of the cumulated value by: \\
-\hspace*{1cm}- either the duration of the steady statistics
-     calculation stored in the variable \texttt{tstat\index{tstat}}, \\
-\hspace*{1cm}- or the number of particles in statistical weight. \\
-This method of averaging is applied to every piece in the listing and
-     to the post-processing outputs.
-
-\noindent
-This subroutine is also used for the calculation of the average corresponding to the
-cumulated value obtained in the subroutine \texttt{uslast} and for standard volumetric statistics. Several examples are
-therefore provided.
-
-
 \minititre{User-defined stochastic differential equations}
 %-------------------------------------------------
 
 \noindent
-An intervention in the \texttt{uslaed} subroutine is required if supplementary user
-variables are added to the particle state vector (arrays \texttt{eptp}
-and \texttt{eptpa}). This subroutine is called at each Lagrangian sub-step.
+An intervention in the \texttt{cs\_user\_lagr\_sded} function is required if
+supplementary user variables are added to the particle state vector.
+This function is called at each Lagrangian sub-step.
 
 \noindent
 The integration of the stochastic differential equations associated with
-supplementary particulate variables is done in this subroutine. \\
+supplementary particulate variables is done in this function. \\
 When the integration scheme of the stochastic differential equations is
 a first-order (\texttt{nordre} = 1), this subroutine is called once every
 Lagrangian iteration, if it is a second-order (\texttt{nordre} = 2), it is called
@@ -6874,12 +6623,10 @@ form:
 \begin{displaymath}
 \frac{d \Phi_p}{dt} \,=\, - \frac{\Phi_p - \Pi}{\tau_\phi}
 \end{displaymath}
-where $\Phi_p$ is the I\textit{th} supplementary user variable (\texttt{nvls} in
-total) available in \texttt{eptp(jvls(i),nbpmax)} and in
- \texttt{eptpa(jvls(i),nbpmax)},
+where $\Phi_p$ is the I\textit{th} supplementary user variable,
 $\tau_\phi$ is a quantity homogeneous to a characteristic time, and $\Pi$ is
 a coefficient which may be expressed as a function of the other
-particulate variables contained in \texttt{eptp} and \texttt{eptpa}. \\
+particulate variables. \\
 In order to do the integration of this equation, the following
 parameters must be provided:
 \begin{list}{-}{}
@@ -6897,15 +6644,14 @@ parameters must be provided:
 \end{list}
 
 \noindent
-If necessary, the thermal characteristic time $\tau_c$, whose calculation can be modified by the user in the subroutine
-\texttt{uslatc}, is stored for each particle in the part \texttt{tempct(nbpmax,1)} of the array \texttt{tempct}.
+If necessary, the thermal characteristic time $\tau_c$, whose calculation can be modified by the user in the function
+\texttt{cs\_user\_lagr\_rt\_t}, is stored for each particle in the first part of the array \texttt{tempct}.
 
 \minititre{User-defined particle relaxation time}
 %-------------------------------------------------
 
 \noindent
-The particle relaxation time may be modified in the subroutine \texttt{uslatp} according to the chosen formulation of the drag coefficient. The particle relaxation time, modified or not by the user, is available in the array \texttt{taup}.
-
+The particle relaxation time may be modified in the \texttt{cs\_user\_lagr\_rt} function according to the chosen formulation of the drag coefficient. The particle relaxation time, modified or not by the user, is available in the array \texttt{taup}.
 
 \minititre{User-defined particle thermal characteristic time}
 %-------------------------------------------
@@ -6914,42 +6660,6 @@ The particle relaxation time may be modified in the subroutine \texttt{uslatp} a
 The particle thermal characteristic time may be modified in the subroutine \texttt{uslatc} according to the chosen correlation for the calculation of the
 Nusselt number. This subroutine is called at each Lagrangian sub-step. The thermal characteristic time, modified or not by the user, is available in the zone \texttt{tempct(nbpmax,1)} of the array \texttt{tempct}.
 
-
-
-\minititre{Particle cloning/merging technic}
-%-------------------------------------------
-
-\noindent
-An intervention in the \texttt{uslaru}subroutine is required when the particle
-cloning/merging option is activated {\em via} the keyword \texttt{iroule}. The
-importance function '\texttt{croule}' must then be completed. \\
-The values given to the importance function are strictly positive real
-numbers allowing to classify the zones according to their
-importance. The higher the value given to the importance function, the
-more important the zone. \\
-The aim of this technique is to reduce the number of particles to treat in
-the whole flow and to refine the description of the particle cloud only
-where the user wants to get more accurate volumetric statistics than in the
-rest of the calculation domain. \\
-
-\noindent
-For instance, when a particle moves from a zone of importance 1 to a
-zone of importance 2, it will  undergo a splitting process (clonning): the particle is replaced by two
-identical but idependant particles, each having one-half the statistical weight of the initial
-particle. When a particle moves from a zone of importance 2 to a zone of
-importance 1, it undergoes a fusion: the particle survives to its passing
-through with a probability of 1/2. A random dawing is used to
-determine if the particle will survive or disappear.\\
-In the same way, when a particle moves from a zone of importance 3 to a
-zone of importance 7, it undergoes a cloning. The particle is cloned in
-Int(7/3)=2 or Int(7/3)+1=3 particles with a probability of respectively
-1-(7/3-Int(7/3))=2/3 and 7/3-Int(7/3)=1/3. If the particle moves from a
-zone of importance 7 to a zone of importance 3, it undergoes a fusion:
-it survives with a probability of 3/7.
-
-\noindent
-\emph{WARNING: The importance function must be a strictly positive real
-number in every cell}
 
 %==================================
 \subsection{Compressible module}
