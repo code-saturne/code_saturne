@@ -5,6 +5,10 @@ Release 3.10 (unreleased)
 Bug fixes:
 ----------
 
+- Fix launch error due to bad generation of hostsfile using SLURM in some
+  cases (only when the MPI library used does not include SLURM support,
+  which is seldom the case).
+
 - Fix for some environment module variants.
 
 Release 3.0.9 (04 Jan 2017)
