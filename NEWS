@@ -5,6 +5,10 @@ Release 4.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Fix launch error due to bad generation of hostsfile using SLURM in some
+  cases (only when the MPI library used does not include SLURM support,
+  which is seldom the case).
+
 - GUI: fix name of wall thermal conductivity in radiative transfer node.
 
 - Fix issue #183 (conjugate heat transfer with porosity).
