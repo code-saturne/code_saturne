@@ -1,9 +1,11 @@
 
-Release 5.0 (unreleased)
-========================
+Release 5.0.0-rc1 (May 26 2017)
+===============================
 
 User changes
 ------------
+
+- Many minor changes (see detailed ChangeLog).
 
 - Allow user definitions of head losses by zones (see cs_user_head_losses.c).
 
