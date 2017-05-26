@@ -410,7 +410,7 @@ if (iilagr .eq. 2) then
   if ((itherm.eq.1 .and. itpscl.eq.1) .or. itherm.eq.2) then
     if (thetss(iscalt).gt.0.d0 .or. isso2t(iscalt).gt.0) then
       write(nfecra,2148)                                           &
-        'lagrangian ',iscal,thetss(iscalt),isso2t(iscalt), 'uslag1'
+        'lagrangian ',iscal,thetss(iscalt),isso2t(iscalt), 'cs_user_lagr_model'
       iok = iok + 1
     endif
   endif
@@ -1405,7 +1405,7 @@ endif
 '@   l''ordre 2)',                                              /,&
 '@',                                                            /,&
 '@  Verifier les parametres donnes via l''interface,',          /,&
-'@    cs_user_parameters.f90, et uslag1.',                      /,&
+'@    cs_user_parameters.f90, et cs_user_lagr_model.',          /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -2772,7 +2772,7 @@ endif
 '@             )',                                              /,&
 '@',                                                            /,&
 '@  Verify   the parameters.',                                  /,&
-'@  and uslag1.',                                               /,&
+'@  and cs_user_lagr_model.',                                   /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

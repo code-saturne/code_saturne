@@ -1081,9 +1081,6 @@ _lagich(const cs_real_t   tempct[],
                 "@\n"
                 "@  Le calcul ne sera pas execute.\n"
                 "@\n"
-                "@  Verifier la valeur de IPHYLA dans la subroutine USLAG1 et\n"
-                "@  verifier la valeur de IPPMOD dans la subroutine USPPMO.\n"
-                "@\n"
                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                 "@"),
               cs_glob_lagr_model->physical_model,

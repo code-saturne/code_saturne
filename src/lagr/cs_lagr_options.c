@@ -415,8 +415,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IILAGR dans la subroutine USLAG1 et\n"
-               "@  verifier la valeur de IDTVAR dans la subroutine USINI1.\n"
+               "@  Verifier les valeurs de IILAGR et IDTVAR.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -441,7 +440,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IILAGR dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de IILAGR.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -466,7 +465,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de ISUILA dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de ISUILA.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n");
@@ -494,7 +493,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de ISUIST dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de ISUIST.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -523,7 +522,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IPHYLA dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de IPHYLA.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -554,7 +553,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de IDPVAR dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de IDPVAR.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -579,7 +578,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de ITPVAR dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de ITPVAR.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -604,7 +603,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de IMPVAR dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de IMPVAR.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -631,14 +630,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@  La valeur de ISCALT est renseignee automatiquement\n"
                  "@    si une physique particuliere est activee dans USPPMO.\n"
                  "@\n"
-                 "@  L'utilisateur doit renseigner ISCALT dans USINI1 si\n"
-                 "@    aucune physique particuliere n'est activee dans USPPMO.\n"
-                 "@\n"
                  "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de ITPVAR dans la subroutine USLAG1,\n"
-                 "@  verifier la valeur de ISCALT dans la subroutine USINI1 et\n"
-                 "@  verifier la valeur de IPPMOD dans la subroutine USPPMO.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -677,7 +669,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de CPPART dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de CPPART.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -702,7 +694,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@       IL VAUT ICI TPART = %14.5E@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de TPART dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de TPART.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -740,7 +732,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de NORDRE dans la subroutine USLAG1\n"
+                 "@  Verifier la valeur de NORDRE\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -769,7 +761,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de LTSTHE dans la subroutine USLAG1\n"
+                 "@  Verifier la valeur de LTSTHE\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -795,7 +787,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de IENCRA dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de IENCRA.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -824,7 +816,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                    "@\n"
                    "@  Le calcul ne sera pas execute.\n"
                    "@\n"
-                   "@  Verifier la valeur de VISREF dans la subroutine USLAG1.\n"
+                   "@  Verifier la valeur de VISREF.\n"
                    "@\n"
                    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                    "@\n",
@@ -857,7 +849,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                    "@  zero lors du calcul de la viscosite du charbon dans\n"
                    "@  cs_lagr_tracking\n"
                    "@\n"
-                   "@  Verifier la valeur de TPRENC dans la subroutine USLAG1.\n"
+                   "@  Verifier la valeur de TPRENC.\n"
                    "@\n"
                    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                    "@\n",
@@ -899,7 +891,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IPHYLA dans la subroutine USLAG1 et\n"
+               "@  Verifier la valeur de IPHYLA et\n"
                "@  verifier la valeur de IPPMOD dans la subroutine USPPMO.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -933,7 +925,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IILAGR dans la subroutine USLAG1 et\n"
+               "@  Verifier la valeur de IILAGR et\n"
                "@  verifier la valeur de IPPMOD dans la subroutine USPPMO.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -961,7 +953,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IILAGR dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de IILAGR.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -986,7 +978,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de ISUILA dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de ISUILA.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n");
@@ -1014,7 +1006,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de ISUIST dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de ISUIST.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1043,7 +1035,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IPHYLA dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de IPHYLA.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -1075,7 +1067,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de IDPVAR dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de IDPVAR.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1100,7 +1092,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de ITPVAR dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de ITPVAR.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1125,7 +1117,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de IMPVAR dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de IMPVAR.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "",
@@ -1152,14 +1144,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@  La valeur de ISCALT est renseignee automatiquement\n"
                  "@    si une physique particuliere est activee dans USPPMO.\n"
                  "@\n"
-                 "@  L'utilisateur doit renseigner ISCALT dans USINI1 si\n"
-                 "@    aucune physique particuliere n'est activee dans USPPMO.\n"
-                 "@\n"
                  "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de ITPVAR dans la subroutine USLAG1,\n"
-                 "@  verifier la valeur de ISCALT dans la subroutine USINI1 et\n"
-                 "@  verifier la valeur de IPPMOD dans la subroutine USPPMO.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1198,7 +1183,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de CPPART dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de CPPART.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1223,7 +1208,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@       IL VAUT ICI TPART = %14.5E@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de TPART dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de TPART.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1263,7 +1248,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de NORDRE dans la subroutine USLAG1\n"
+                 "@  Verifier la valeur de NORDRE\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1292,7 +1277,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de LTSTHE dans la subroutine USLAG1\n"
+                 "@  Verifier la valeur de LTSTHE\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1318,7 +1303,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de IENCRA dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de IENCRA.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1348,7 +1333,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                    "@\n"
                    "@  Le calcul ne sera pas execute.\n"
                    "@\n"
-                   "@  Verifier la valeur de VISREF dans la subroutine USLAG1.\n"
+                   "@  Verifier la valeur de VISREF.\n"
                    "@\n"
                    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                    "@\n",
@@ -1381,7 +1366,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                    "@  zero lors du calcul de la viscosite du charbon dans\n"
                    "@  cs_lagr_tracking\n"
                    "@\n"
-                   "@  Verifier la valeur de TPRENC dans la subroutine USLAG1.\n"
+                   "@  Verifier la valeur de TPRENC.\n"
                    "@\n"
                    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                    "@\n",
@@ -1424,7 +1409,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IPHYLA dans la subroutine USLAG1 et\n"
+               "@  Verifier la valeur de IPHYLA et\n"
                "@  verifier la valeur de IPPMOD dans la subroutine USPPMO.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -1459,7 +1444,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IPHYLA dans la subroutine USLAG1 et\n"
+               "@  Verifier la valeur de IPHYLA et\n"
                "@  verifier la valeur de IPPMOD dans la subroutine USPPMO.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -1561,7 +1546,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de ISTTIO dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de ISTTIO.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -1589,7 +1574,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de NSTITS dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de NSTITS.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1614,7 +1599,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de LTSDYN dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de LTSDYN.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1643,7 +1628,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                    "@\n"
                    "@  Le calcul ne sera pas execute.\n"
                    "@\n"
-                   "@  Verifier la valeur de LTSMAS dans la subroutine USLAG1.\n"
+                   "@  Verifier la valeur de LTSMAS.\n"
                    "@\n"
                    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                    "@\n",
@@ -1675,7 +1660,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                    "@\n"
                    "@  Le calcul ne sera pas execute.\n"
                    "@\n"
-                   "@  Verifier la valeur de LTSTHE dans la subroutine USLAG1.\n"
+                   "@  Verifier la valeur de LTSTHE.\n"
                    "@\n"
                    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                    "@\n",
@@ -1698,12 +1683,12 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@    L'INDICATEUR SUR LE COUPLAGE RETOUR SUR LA DYNAMIQUE\n"
                  "@       EST ACTIVE (LTSDYN = %d) (LAGOPT)\n"
                  "@       ALORS QUE LA PHASE PORTEUSE EST CALCULEE AVEC\n"
-                 "@       L'OPTION CHAMP FIGE  (ICCVFG = %d) (USINI1).\n"
+                 "@       L'OPTION CHAMP FIGE  (ICCVFG = %d).\n"
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de LTSDYN dans la subroutine USLAG1 et\n"
-                 "@  verifier la valeur de ICCVFG dans la subroutine USINI1.\n"
+                 "@  Verifier la valeur de LTSDYN et\n"
+                 "@  verifier la valeur de ICCVFG.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1735,8 +1720,8 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de IILAGR dans la subroutine USLAG1.\n"
-                 "@  Verifier la valeur de IPHYLA dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de IILAGR.\n"
+                 "@  Verifier la valeur de IPHYLA.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1776,7 +1761,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de IDSTNT dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de IDSTNT.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -1803,7 +1788,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                    "@\n"
                    "@  Le calcul ne sera pas execute.\n"
                    "@\n"
-                   "@  Verifier la valeur de NSTIST dans la subroutine USLAG1.\n"
+                   "@  Verifier la valeur de NSTIST.\n"
                    "@\n"
                    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                    "@\n",
@@ -1838,7 +1823,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de NORDRE dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de NORDRE.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -1865,7 +1850,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IDISTU dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de IDISTU.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -1899,9 +1884,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IILAGR et IDISTU dans la subroutine\n"
-               "@  USLAG1 et verifier la valeur de ITURB  dans la subroutine\n"
-               "@  USINI1.\n"
+               "@  Verifier la valeur de IILAGR, IDISTU, et ITURB.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -1936,10 +1919,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IILAGR et IDISTU dans la subroutine\n"
-               "@  USLAG1 et verifier la valeur de ITURB  dans la subroutine\n"
-               "@  USINI1.\n"
-               "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
                lagr_time_scheme->iilagr,
@@ -1966,7 +1945,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de IDIFFL dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de IDIFFL.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -1991,7 +1970,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de MODCPL dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de MODCPL.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -2023,8 +2002,8 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de MODCPL dans la subroutine USLAG1.\n"
-                 "@  Verifier la valeur de IDSTNT dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de MODCPL.\n"
+                 "@  Verifier la valeur de IDSTNT.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -2057,7 +2036,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                  "@\n"
                  "@  Le calcul ne sera pas execute.\n"
                  "@\n"
-                 "@  Verifier la valeur de IDIRLA dans la subroutine USLAG1.\n"
+                 "@  Verifier la valeur de IDIRLA.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                  "@\n",
@@ -2087,7 +2066,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                "@\n"
                "@  Le calcul ne sera pas execute.\n"
                "@\n"
-               "@  Verifier la valeur de ILAPOI dans la subroutine USLAG1.\n"
+               "@  Verifier la valeur de ILAPOI.\n"
                "@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                "@\n",
@@ -2466,10 +2445,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                 "@\n"
                 "@  Le calcul ne sera pas execute.\n"
                 "@\n"
-                "@  Verifier la valeur de IILAGR et IDISTU dans la subroutine\n"
-                "@  USLAG1 et verifier la valeur de ITURB  dans la subroutine\n"
-                "@  USINI1.\n"
-                "@\n"
                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
                 "@\n",
                 lagr_time_scheme->iilagr,
@@ -2495,9 +2470,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
               "@\n"
               "@\n"
               "@  Le calcul ne sera pas execute.\n"
-              "@\n"
-              "@  Verifier les valeurs de idepst et nordre dans la\n"
-              "@  subroutine USLAG1.\n"
               "@\n"
               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
               "@\n");
