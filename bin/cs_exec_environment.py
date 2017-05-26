@@ -1120,58 +1120,8 @@ class resource_info(batch_info):
         # Check for resource manager and eventual hostsfile
 
         elif self.manager == 'SLURM':
-            s = os.getenv('SLURM_TASKS_PER_NODE')
-            hosts_count = None
-            if s != None:
-                # Syntax may be similar to SLURM_TASKS_PER_NODE=2(x3),1"
-                # indicating three nodes will each execute 2 tasks and
-                # the  fourth node will execute 1 task.
-                hosts_count = []
-                for s0 in s.split(','):
-                    i = s0.find('(')
-                    if i > -1:
-                        for j in range(int(s0[i+2:-1])):
-                            hosts_count.append(int(s0[0:i]))
-                    else:
-                        hosts_count.append(int(s0))
-            s = os.getenv('SLURM_NODELIST')
-            if s != None:
-                hosts_list = []
-                l = 0
-                # List uses a compact representation
-                for s0 in s.split(','):
-                    i = s0.find('[')
-                    if i > -1:
-                        basename = s0[0:i]
-                        for s1 in s0[i+1:-1].split(','):
-                            s2 = s1.split('-')
-                            if len(s2) > 1:
-                                fmt_s = basename + '%0' + str(len(s2[0])) + 'd'
-                                for j in range(int(s2[0]), int(s2[1])+1):
-                                    host_name = fmt_s % j
-                                    if hosts_count:
-                                        for k in range(hosts_count[l]):
-                                            hosts_list.append(host_name)
-                                        l += 1
-                                    else:
-                                        hosts_list.append(host_name)
-                            else:
-                                if hosts_count:
-                                    for k in range(hosts_count[l]):
-                                        hosts_list.append(s2[0])
-                                    l += 1
-                                else:
-                                    hosts_list.append(s2[0])
-                    else:
-                        if hosts_count:
-                            for k in range(hosts_count[l]):
-                                hosts_list.append(s0)
-                            l += 1
-                        else:
-                            hosts_list.append(s0)
-            else:
-                hosts_list = get_command_output('srun hostname -s').split()
-                hosts_list.sort()
+            hosts_list = get_command_output('srun hostname -s').split()
+            hosts_list.sort()
 
         elif self.manager == 'LSF':
             s = os.getenv('LSB_MCPU_HOSTS')
