@@ -32,7 +32,7 @@ This module contains the following classes and function:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import string, unittest
+import unittest
 
 #-------------------------------------------------------------------------------
 # Application modules import

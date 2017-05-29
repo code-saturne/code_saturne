@@ -33,7 +33,7 @@ This module defines the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import os, sys, string, unittest, logging
+import os, sys, unittest, logging
 
 #-------------------------------------------------------------------------------
 # Application modules import

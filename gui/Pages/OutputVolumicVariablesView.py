@@ -31,7 +31,7 @@ This module contains the following classes and function:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import string, logging
+import logging
 
 #-------------------------------------------------------------------------------
 # Third-party modules

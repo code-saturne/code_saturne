@@ -31,7 +31,7 @@ This module modifies the parameters used by the script file
 #-------------------------------------------------------------------------------
 
 import sys, unittest
-import os, os.path, shutil, sys, string, types, re
+import os, os.path, shutil, sys, types, re
 
 #-------------------------------------------------------------------------------
 # Library modules import

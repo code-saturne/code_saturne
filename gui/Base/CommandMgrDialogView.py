@@ -37,7 +37,7 @@ Generic Dialog window to handle execution of a list of external scripts.
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import os, string, logging
+import os, logging
 import signal, subprocess
 
 #-------------------------------------------------------------------------------

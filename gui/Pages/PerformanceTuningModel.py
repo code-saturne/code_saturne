@@ -34,7 +34,7 @@ This module defines the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import os, sys, string, types
+import os, sys, types
 import unittest
 
 #-------------------------------------------------------------------------------

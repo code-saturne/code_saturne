@@ -34,7 +34,7 @@ This module contains the following classes and function:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import os, sys, string, logging
+import os, sys, logging
 try:
     import ConfigParser
     configparser = ConfigParser

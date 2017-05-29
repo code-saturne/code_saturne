@@ -34,7 +34,7 @@ This module contains the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import os, string
+import os
 import logging
 
 from code_saturne.Base.QtCore    import *

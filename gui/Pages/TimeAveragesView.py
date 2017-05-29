@@ -32,7 +32,6 @@ This module contains the following classes:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import string
 import logging
 
 #-------------------------------------------------------------------------------

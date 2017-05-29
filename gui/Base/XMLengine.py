@@ -38,7 +38,7 @@ This module defines the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import os, sys, string, unittest, logging
+import os, sys, unittest, logging
 from xml.dom.minidom import Document, parse, parseString, Node
 from xml.sax.handler import ContentHandler
 from xml.sax import make_parser
@@ -1459,7 +1459,7 @@ class Case(Dico, XMLDocument):
         try:
             file = open(self['pythonfile'], 'w')
             file.write("#automatic python script\n")
-            file.write('import os, sys, string\n')
+            file.write('import os, sys\n')
             file.write('sys.path.insert(0, "' + self['package'].dirs['pythondir'][1] + '")\n')
             file.write('sys.path.insert(0, "' + os.path.join(self['package'].dirs['pythondir'][1], self['package'].name) + '")\n\n')
 

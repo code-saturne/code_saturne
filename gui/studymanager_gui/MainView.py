@@ -39,7 +39,7 @@ This module defines the following classes:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import os, sys, string, shutil, signal, logging
+import os, sys, shutil, signal, logging
 import subprocess, platform
 
 try:

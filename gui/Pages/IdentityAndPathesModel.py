@@ -35,7 +35,7 @@ This module contents the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import os, string, unittest
+import os, unittest
 
 #-------------------------------------------------------------------------------
 # Application modules import

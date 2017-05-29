@@ -33,7 +33,7 @@ This module modify the batch file
 from __future__ import print_function
 
 import sys, unittest
-import os, os.path, shutil, sys, string, types, re
+import os, os.path, shutil, sys, types, re
 
 import cs_batch
 

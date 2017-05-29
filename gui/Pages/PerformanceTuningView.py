@@ -33,7 +33,7 @@ This module contains the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import os, sys, string, types, shutil
+import os, sys, types, shutil
 import logging
 
 #-------------------------------------------------------------------------------

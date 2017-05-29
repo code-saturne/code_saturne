@@ -34,7 +34,7 @@ This module contains the following classes and function:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import sys, string
+import sys
 import logging
 
 #-------------------------------------------------------------------------------

@@ -33,7 +33,6 @@ This module defines the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import string
 import unittest
 
 #-------------------------------------------------------------------------------

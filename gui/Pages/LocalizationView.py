@@ -42,7 +42,7 @@ This module contains the following classes:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import string, logging
+import logging
 
 #-------------------------------------------------------------------------------
 # Third-party modules

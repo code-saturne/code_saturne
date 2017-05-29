@@ -36,7 +36,7 @@ This module contains the following classes and function:
 #-------------------------------------------------------------------------------
 
 import os, sys
-import string, types
+import types
 import re
 import logging
 import subprocess

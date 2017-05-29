@@ -34,7 +34,7 @@ This module contents the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import sys, string, unittest
+import sys, unittest
 from math import pow
 
 #-------------------------------------------------------------------------------

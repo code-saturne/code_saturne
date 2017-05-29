@@ -27,7 +27,7 @@ This module contains the following classes and function:
 #-------------------------------------------------------------------------------
 
 import sys, unittest
-import os, sys, string, types
+import os, sys, types
 
 #-------------------------------------------------------------------------------
 # Application modules import
