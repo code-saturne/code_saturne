@@ -892,11 +892,34 @@ fvm_to_ensight_case_get_var_file(fvm_to_ensight_case_t       *const this_case,
 
   /* First, find if variable is already defined */
 
+  char _lw_name[128], _clw_name[128];
+  char *lw_name = _lw_name, *clw_name = _clw_name;
+
+  size_t l_n = strlen(name);
+  if (l_n > 128)
+    BFT_MALLOC(lw_name, l_n + 1, char);
+  for (size_t j = 0; j < l_n; j++)
+    lw_name[j] = tolower(name[j]);
+  lw_name[l_n] = '\0';
+
   for (i = 0 ; i < this_case->n_vars ; i++) {
 
     var = this_case->var[i];
 
-    if (strcmp(var->name, name) == 0) {
+    char _clw_name[128];
+
+    size_t l_c = strlen(var->name);
+    if (l_c > 128) {
+      if (clw_name == _clw_name)
+        BFT_MALLOC(clw_name, l_c + 1, char);
+      else
+        BFT_REALLOC(clw_name, l_c + 1, char);
+    }
+    for (size_t j = 0; j < l_c; j++)
+      clw_name[j] = tolower(var->name[j]);
+    clw_name[l_c] = '\0';
+
+    if (strcmp(clw_name, lw_name) == 0) {
 
       /* Variable is already defined, so check consistency */
 
@@ -928,6 +951,11 @@ fvm_to_ensight_case_get_var_file(fvm_to_ensight_case_t       *const this_case,
     }
 
   }
+
+  if (lw_name != _lw_name)
+    BFT_FREE(lw_name);
+  if (clw_name != _clw_name)
+    BFT_FREE(clw_name);
 
   /* Second, update time step */
 
