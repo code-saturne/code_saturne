@@ -976,8 +976,13 @@ class MainView(object):
             comp = comp + 1
         ficIn.close()
         A = numpy.array(data)
-        B = numpy.reshape(A,(-1, probes_number))
-        C = numpy.transpose(B)
+        n = A.shape[0]
+        r = n % probes_number
+        if r > 0:
+            n -= r
+            A = numpy.resize(A, n)
+        B = A.reshape(-1, probes_number)
+        C = B.transpose()
 
         return C
 
@@ -1022,8 +1027,13 @@ class MainView(object):
                         data.append(el)
         ficIn.close()
         A = numpy.array(data)
-        B = numpy.reshape(A,(-1, probes_number))
-        C = numpy.transpose(B)
+        n = A.shape[0]
+        r = n % probes_number
+        if r > 0:
+            n -= r
+            A = numpy.resize(A, n)
+        B = A.reshape(-1, probes_number)
+        C = B.transpose()
 
         return C
 
