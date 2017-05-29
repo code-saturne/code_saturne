@@ -367,9 +367,15 @@ class CoalCombustionModel(Variables, Model):
         Private method
         Create scalars and properties when coal combustion is selected
         """
-        self.node_fuel.xmlInitNode('CO2_kinetics', status = self.defaultValues()['CO2_Kinetics'])
-        self.node_fuel.xmlInitNode('H2O_kinetics', status = self.defaultValues()['H2O_Kinetics'])
-        self.node_fuel.xmlInitNode('NOx_formation', status = self.defaultValues()['NOx_formation'])
+        if not self.node_fuel.xmlGetNode('CO2_kinetics'):
+            self.node_fuel.xmlInitNode('CO2_kinetics',
+                                       status = self.defaultValues()['CO2_Kinetics'])
+        if not self.node_fuel.xmlGetNode('H2O_kinetics'):
+            self.node_fuel.xmlInitNode('H2O_kinetics',
+                                       status = self.defaultValues()['H2O_Kinetics'])
+        if not self.node_fuel.xmlGetNode('NOx_formation'):
+            self.node_fuel.xmlInitNode('NOx_formation',
+                                       status = self.defaultValues()['NOx_formation'])
         self.__createModelScalars()
         self.__createModelProperties()
 
@@ -500,7 +506,20 @@ class CoalCombustionModel(Variables, Model):
         """
         self.isInList(model, self.__coalCombustionModelsList())
 
+        if self.node_fuel['model'] == model:
+            return
+
+        # Avoid changing model settings for regular and Lagrangian
+        # variants of homogeneous fuel moisture combustion model
+        if model in ('homogeneous_fuel_moisture',
+                     'homogeneous_fuel_moisture_lagr'):
+            if self.node_fuel['model'] in ('homogeneous_fuel_moisture',
+                                           'homogeneous_fuel_moisture_lagr'):
+                self.node_fuel['model']  = model
+                return
+
         self.node_fuel['model']  = model
+
         self.__updateScalarAndProperty(model)
 
         if model == 'off':
