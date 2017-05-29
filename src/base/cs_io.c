@@ -2805,9 +2805,9 @@ cs_io_write_global(const char     *sec_name,
     _write_padding(outp->body_align, outp);
 
     n_written = cs_file_write_global(outp->f,
-                                      elts,
-                                      cs_datatype_size[elt_type],
-                                      n_vals);
+                                     elts,
+                                     cs_datatype_size[elt_type],
+                                     n_vals);
 
     if (n_vals != (cs_gnum_t)n_written)
       bft_error(__FILE__, __LINE__, 0,
