@@ -705,6 +705,7 @@ cs_f_lagr_coal_comb(cs_int_t   *ih2o,
   cs_glob_lagr_coal_comb->xwatch = xwatch;
   cs_glob_lagr_coal_comb->xashch = xashch;
   cs_glob_lagr_coal_comb->thcdch = thcdch;
+
 }
 
 /*=============================================================================
