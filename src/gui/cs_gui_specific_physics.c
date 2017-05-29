@@ -116,7 +116,8 @@ _set_scalar_name_label(cs_field_t  *f,
 
   BFT_FREE(path);
 
-  cs_field_set_key_str(f, klbl, label);
+  if (label != NULL)
+    cs_field_set_key_str(f, klbl, label);
 
   BFT_FREE(label);
 }
@@ -149,7 +150,8 @@ _set_thermal_scalar_name_label(cs_field_t  *f,
 
   BFT_FREE(path);
 
-  cs_field_set_key_str(f, klbl, label);
+  if (label != NULL)
+    cs_field_set_key_str(f, klbl, label);
 
   BFT_FREE(label);
 }
