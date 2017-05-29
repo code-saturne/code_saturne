@@ -312,7 +312,7 @@ class StandardItemModelCoals(QStandardItemModel):
         self.case = case
         self.model = model
 
-        self.coalModel = CoalCombustionModel.CoalCombustionModel(self.case)
+        self.coalModel = CoalCombustionModel(self.case)
         CoalsNumber = self.coalModel.getCoalNumber()
 
         for icoal in range(CoalsNumber):
