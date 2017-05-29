@@ -118,7 +118,7 @@ _lagr_section_name(cs_lagr_attribute_t  attr,
     snprintf(sec_name, 127, "particle_%s::vals::0",
              cs_lagr_attribute_name[attr]);
   else
-    snprintf(sec_name, 127, "particle%s::vals::%d::0",
+    snprintf(sec_name, 127, "particle_%s::vals::%d::0",
              cs_lagr_attribute_name[attr], comp_id);
 }
 
@@ -900,6 +900,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
       for (int s_id = 0; s_id < n_sections; s_id++) {
 
         int comp_id = (n_sections == 1) ? -1 : s_id;
+        int c_stride = (n_sections == 1) ? stride : 1;
 
         cs_lagr_get_particle_values(p_set,
                                     attr,
@@ -928,13 +929,13 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
         cs_restart_write_section(r,
                                  sec_name,
                                  particles_location_id,
-                                 stride,
+                                 c_stride,
                                  restart_type,
                                  vals);
 
         retval += 1;
 
-        }
+      }
 
     }
 

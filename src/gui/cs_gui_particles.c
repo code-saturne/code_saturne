@@ -984,19 +984,19 @@ cs_gui_particles_bcs(void)
           BFT_FREE(choice);
 
           /* density */
-          if (iphyla != 2)
-            _get_double(&rtmp0, 2, path2, "density");
-          else
-            rtmp0 = 0.0;
+          if (iphyla != 2) {
 
-          cs_lagr_set_zone_class_density(iclas,
-                                         izone,
-                                         rtmp0);
+            _get_double(&rtmp0, 2, path2, "density");
+
+            cs_lagr_set_zone_class_density(iclas,
+                                           izone,
+                                           rtmp0);
 
 #if _XML_DEBUG_
-          if (iphyla != 2)
             bft_printf("---density = %f \n", rtmp0);
 #endif
+
+          }
 
           /* Fouling index*/
           _get_double(&rtmp0, 2, path2, "fouling_index");
@@ -1091,9 +1091,9 @@ cs_gui_particles_bcs(void)
                                         NULL,
                                         NULL,
                                         NULL,
-                                        0.,
-                                        0.,
-                                        0.);
+                                        -cs_math_big_r,
+                                        -cs_math_big_r,
+                                        -cs_math_big_r);
 
             BFT_FREE(choice);
 

@@ -566,7 +566,7 @@ cs_lagr_injection(int        time_id,
       /* Charbon    */
       if (cs_glob_lagr_model->physical_model == 2) {
 
-        if (   userdata->coal_number < 0.0
+        if (   userdata->coal_number < 1
             && userdata->coal_number > extra->ncharb)
           bft_error(__FILE__, __LINE__, 0,
                     _("Lagrangian boundary zone %d, class %d:\n"
@@ -576,6 +576,8 @@ cs_lagr_injection(int        time_id,
                     (int)iclas,
                     (int)userdata->coal_number,
                     (int)extra->ncharb);
+
+        int coal_id = userdata->coal_number - 1;
 
         /* Properties of coal particles */
         if (   userdata->coal_profile < 0
@@ -628,10 +630,8 @@ cs_lagr_injection(int        time_id,
 
         }
 
-        /* --> Proprietes des particules de Charbon.     */
-        /* irawcl = 0 --> Composition du charbon definie par l'utilisateur
-           dans cs_user_lagr_boundary_conditions
-         * on verifie les donnes contenues dans la structure cs_lagr_zone_class_data_t */
+        /* Properties of coal particles */
+
         if (userdata->coal_profile == 0) {
 
           if (   userdata->density < 0.0
@@ -692,12 +692,12 @@ cs_lagr_injection(int        time_id,
          * on verifie les donnes contenues dans le XML   */
         else if (userdata->coal_profile == 1) {
 
-          if (   rho0ch[userdata->coal_number] < 0.0
-              || cp2ch[userdata->coal_number]  < 0.0
-              || xwatch[userdata->coal_number] < 0.0
-              || xwatch[userdata->coal_number] > 1.0
-              || xashch[userdata->coal_number] < 0.0
-              || xashch[userdata->coal_number] > 1.0)
+          if (   rho0ch[coal_id] < 0.0
+              || cp2ch[coal_id]  < 0.0
+              || xwatch[coal_id] < 0.0
+              || xwatch[coal_id] > 1.0
+              || xashch[coal_id] < 0.0
+              || xashch[coal_id] > 1.0)
             bft_error(__FILE__, __LINE__, 0,
                       _("Lagrangian boundary zone %d, class %d:\n"
                         "  wrong conditions for coal number %d.\n"
@@ -707,13 +707,13 @@ cs_lagr_injection(int        time_id,
                         "    ashes mass fraction XASHCH = %e10.3."),
                       (int)izone + 1,
                       (int)iclas,
-                      (int)userdata->coal_number,
-                      (double)rho0ch[userdata->coal_number],
-                      (double)cp2ch[userdata->coal_number],
-                      (double)xwatch[userdata->coal_number],
-                      (double)xashch[userdata->coal_number]);
+                      (int)coal_id,
+                      (double)rho0ch[coal_id],
+                      (double)cp2ch[coal_id],
+                      (double)xwatch[coal_id],
+                      (double)xashch[coal_id]);
 
-          if (xwatch[userdata->coal_number] + xashch[userdata->coal_number] > 1.0)
+          if (xwatch[coal_id] + xashch[coal_id] > 1.0)
             bft_error(__FILE__, __LINE__, 0,
                       _("Lagrangian boundary zone %d, class %d:\n"
                         "  wrong conditions for coal number %d.\n"
@@ -723,10 +723,10 @@ cs_lagr_injection(int        time_id,
                       (int)izone + 1,
                       (int)iclas,
                       (int)userdata->coal_number,
-                      (double)xwatch[userdata->coal_number],
-                      (double)xashch[userdata->coal_number],
-                      (double)(  xwatch[userdata->coal_number]
-                               + xashch[userdata->coal_number]));
+                      (double)xwatch[coal_id],
+                      (double)xashch[coal_id],
+                      (double)(  xwatch[coal_id]
+                               + xashch[coal_id]));
 
           if (   userdata->density >= 0.0
               || userdata->water_mass_fraction >= 0.0
@@ -996,7 +996,8 @@ cs_lagr_injection(int        time_id,
 
   }
 
-  /* ->TEST DE CONTROLE (NE PAS MODIFIER)     */
+  /* Injected particles count check */
+
   if ((p_set->n_particles + nlocnew) != npt) {
 
     bft_printf(_("\n Lagrangian module: \n"));
@@ -1011,7 +1012,7 @@ cs_lagr_injection(int        time_id,
 
   }
 
-  /* reinitialisation du compteur de nouvelles particules    */
+  /* reinitialisation du compteur de nouvelles particules */
   npt = p_set->n_particles;
 
   /* pour chaque zone de bord: */
@@ -1024,7 +1025,8 @@ cs_lagr_injection(int        time_id,
 
       cs_lagr_zone_class_data_t *local_userdata
         = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
-      cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
+      cs_lagr_zone_class_data_t *userdata
+        = cs_lagr_get_zone_class_data(iclas, izone);
 
       /* si de nouvelles particules doivent entrer */
       if (ts->nt_cur % local_userdata->injection_frequency == 0) {
@@ -1233,8 +1235,9 @@ cs_lagr_injection(int        time_id,
 
           else if (cs_glob_lagr_model->physical_model == 2) {
 
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_COAL_NUM,
-                                      userdata->coal_number);
+            int coal_id = userdata->coal_number - 1;
+
+            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_COAL_NUM, coal_id);
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
                                       temp1[cell_id] - tkelvi);
 
@@ -1253,11 +1256,16 @@ cs_lagr_injection(int        time_id,
                                         userdata->density * pis6 * d3);
               cs_lagr_particle_set_real(particle, p_am, CS_LAGR_WATER_MASS,
                                           userdata->water_mass_fraction
-                                        * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS));
+                                        * cs_lagr_particle_get_real(particle, p_am,
+                                                                    CS_LAGR_MASS));
 
-              cs_real_t *particle_coal_mass = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COAL_MASS);
-              cs_real_t *particle_coke_mass = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COKE_MASS);
-              for (int ilayer = 0; ilayer < cs_glob_lagr_model->n_temperature_layers; ilayer++) {
+              cs_real_t *particle_coal_mass
+                = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COAL_MASS);
+              cs_real_t *particle_coke_mass
+                = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COKE_MASS);
+              for (int ilayer = 0;
+                   ilayer < cs_glob_lagr_model->n_temperature_layers;
+                   ilayer++) {
 
                 particle_coal_mass[ilayer] = userdata->coal_mass_fraction[ilayer]
                   * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
@@ -1289,12 +1297,13 @@ cs_lagr_injection(int        time_id,
             else if (userdata->coal_profile == 1) {
 
               cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CP,
-                                        cp2ch[userdata->coal_number]);
+                                        cp2ch[coal_id]);
               cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
-                                        rho0ch[userdata->coal_number] * pis6 * d3);
+                                        rho0ch[coal_id] * pis6 * d3);
               cs_lagr_particle_set_real(particle, p_am, CS_LAGR_WATER_MASS,
-                                        xwatch[userdata->coal_number]
-                                        * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS));
+                                        xwatch[coal_id]
+                                        * cs_lagr_particle_get_real(particle, p_am,
+                                                                    CS_LAGR_MASS));
 
               cs_real_t *particle_coal_mass
                 = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COAL_MASS);
@@ -1305,8 +1314,8 @@ cs_lagr_injection(int        time_id,
                    ilayer++) {
 
                 particle_coal_mass[ilayer]
-                  =    (1.0 - xwatch[userdata->coal_number]
-                            - xashch[userdata->coal_number])
+                  =    (1.0 - xwatch[coal_id]
+                            - xashch[coal_id])
                     * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
                    / cs_glob_lagr_model->n_temperature_layers;
                 particle_coke_mass[ilayer] = 0.0;
@@ -1328,7 +1337,7 @@ cs_lagr_injection(int        time_id,
               for (int ilayer = 0;
                    ilayer < cs_glob_lagr_model->n_temperature_layers;
                    ilayer++)
-                particle_coal_density[ilayer] = rho0ch[userdata->coal_number];
+                particle_coal_density[ilayer] = rho0ch[coal_id];
 
             }
           }
