@@ -549,7 +549,7 @@ class batch:
         for i in range(len(batch_lines)):
             if batch_lines[i][0:4] == '#PBS':
                 batch_args = ' ' + self.__pre_parse__(batch_lines[i][4:])
-                index = string.rfind(batch_args, ' -')
+                index = batch_args.rfind(' -')
                 while index > -1:
                     arg = batch_args[index+1:]
                     batch_args = batch_args[0:index]
@@ -584,7 +584,7 @@ class batch:
                                 = int(wt[0])
                     elif arg[0:2] == '-q':
                             self.params['job_class'] = arg.split()[1]
-                    index = string.rfind(batch_args, ' -')
+                    index = batch_args.rfind(' -')
 
     #---------------------------------------------------------------------------
 
@@ -598,7 +598,7 @@ class batch:
             if batch_lines[i][0:4] == '#PBS':
                 ch = ''
                 batch_args = ' ' + self.__pre_parse__(batch_lines[i][4:])
-                index = string.rfind(batch_args, ' -')
+                index = batch_args.rfind(' -')
                 while index > -1:
                     arg = batch_args[index+1:]
                     batch_args = batch_args[0:index]
@@ -636,7 +636,7 @@ class batch:
                         ch = ' -q ' + self.params['job_class'] + ch
                     else:
                         ch = ' ' + arg + ch
-                    index = string.rfind(batch_args, ' -')
+                    index = batch_args.rfind(' -')
                 ch = '#PBS' + ch
                 batch_lines[i] = ch
 
@@ -651,7 +651,7 @@ class batch:
         for i in range(len(batch_lines)):
             if batch_lines[i][0:2] == '#$':
                 batch_args = ' ' + self.__pre_parse__(batch_lines[i][2:])
-                index = string.rfind(batch_args, ' -')
+                index = batch_args.rfind(' -')
                 while index > -1:
                     arg = batch_args[index+1:]
                     batch_args = batch_args[0:index]
@@ -675,7 +675,7 @@ class batch:
                             self.params['job_walltime'] = int(wt[0])
                     elif arg[0:2] == '-q':
                         self.params['job_class'] = arg.split()[1]
-                    index = string.rfind(batch_args, ' -')
+                    index = batch_args.rfind(' -')
 
     #---------------------------------------------------------------------------
 
@@ -689,7 +689,7 @@ class batch:
             if batch_lines[i][0:2] == '#$':
                 ch = ''
                 batch_args = ' ' + self.__pre_parse__(batch_lines[i][2:])
-                index = string.rfind(batch_args, ' -')
+                index = batch_args.rfind(' -')
                 while index > -1:
                     arg = batch_args[index+1:]
                     batch_args = batch_args[0:index]
@@ -712,7 +712,7 @@ class batch:
                         ch = ' -q ' + self.params['job_class'] + ch
                     else:
                         ch = ' ' + arg + ch
-                    index = string.rfind(batch_args, ' -')
+                    index = batch_args.rfind(' -')
                     ch = '#$' + ch
                     batch_lines[i] = ch
 

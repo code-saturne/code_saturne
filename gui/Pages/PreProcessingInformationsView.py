@@ -32,7 +32,7 @@ This module contains the following classes and function:
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import sys, re, os, string, logging
+import sys, re, os, logging
 import os.path
 
 #-------------------------------------------------------------------------------
@@ -80,7 +80,7 @@ def preprocessorFile(parent, initdir):
 
         j=-1
         for i in range(len(lines)):
-            index = string.rfind(lines[i], "Code_Saturne")
+            index = lines[i].rfind("Code_Saturne")
             if index != -1:
                 j = i
                 break
@@ -132,7 +132,7 @@ class Informations:
 
             lang = ""
             for i in range(len(lines)):
-                index = string.find(lines[i], "familles de faces et cellules")
+                index = lines[i].find("familles de faces et cellules")
                 if index > 0:
                     lang = 'fr'
                     break
