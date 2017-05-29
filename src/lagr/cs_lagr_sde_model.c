@@ -1184,7 +1184,7 @@ _lagich(const cs_real_t   tempct[],
     cs_real_t layer_vol  = dpis6 * _pow3(init_diam) / f_nlayer;
 
     /* Reynolds number */
-    aux1 = cs_math_3_distance(part_vel_seen, part_vel);
+    aux1 = cs_math_3_length(part_vel_seen, part_vel);
 
     cs_real_t rom  = extra->cromf->val[cell_id];
     cs_real_t xnul = extra->viscl->val[cell_id] / rom;
