@@ -623,7 +623,8 @@ cs_gui_get_attribute_value(char  *path)
   BFT_MALLOC(attr, strlen(array[0])+1, char);
   strcpy(attr, array[0]);
 
-  BFT_FREE(array[0]);
+  for (int i = 0; i < size; i++)
+    BFT_FREE(array[i]);
   BFT_FREE(array);
 
   return attr;

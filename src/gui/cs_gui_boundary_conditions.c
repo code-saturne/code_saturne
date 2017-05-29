@@ -699,7 +699,7 @@ _inlet_coal(const int         izone,
 {
   int    icoal;
   int    iclass;
-  int    size = 0;
+  int    _n_coals = 0;
   double value;
   char  *path0 = NULL;
   char  *path1 = NULL;
@@ -718,20 +718,20 @@ _inlet_coal(const int         izone,
   BFT_MALLOC(path1, strlen(path0) + 1, char);
   strcpy(path1, path0);
   cs_xpath_add_attribute(&path1, "name");
-  list_of_coals = cs_gui_get_attribute_values(path1, &size);
+  list_of_coals = cs_gui_get_attribute_values(path1, &_n_coals);
   BFT_FREE(path1);
 
   /* if there is no coal, it is an inlet only for oxydant */
-  if (size == 0) {
+  if (_n_coals == 0) {
     boundaries->ientat[izone] = 1;
     boundaries->ientcp[izone] = 0;
     BFT_FREE(path0);
   }
   else {
-    if (size != *ncharb)
+    if (_n_coals != *ncharb)
       bft_error(__FILE__, __LINE__, 0,
           _("Invalid number of coal-> dp_FCP: %i xml: %i\n"),
-          *ncharb, size);
+          *ncharb, _n_coals);
 
     boundaries->ientat[izone] = 0;
     boundaries->ientcp[izone] = 1;
@@ -770,7 +770,8 @@ _inlet_coal(const int         izone,
       BFT_MALLOC(path1, strlen(path2) + 1, char);
       strcpy(path1, path2);
       cs_xpath_add_attribute(&path1, "name");
-      list_of_classes = cs_gui_get_attribute_values(path1, &size);
+      int _n_classes = 0;
+      list_of_classes = cs_gui_get_attribute_values(path1, &_n_classes);
       BFT_FREE(path1);
 
       for (iclass = 0; iclass < nclpch[icoal]; iclass++) {
@@ -787,7 +788,7 @@ _inlet_coal(const int         izone,
         BFT_FREE(path5);
       }
 
-      for (iclass = 0; iclass < nclpch[icoal]; iclass++)
+      for (iclass = 0; iclass < _n_classes; iclass++)
         BFT_FREE(list_of_classes[iclass]);
       BFT_FREE(list_of_classes);
 
@@ -796,12 +797,12 @@ _inlet_coal(const int         izone,
       BFT_FREE(path4);
     }
 
-    for (icoal = 0; icoal < *ncharb; icoal++)
-      BFT_FREE(list_of_coals[icoal]);
-    BFT_FREE(list_of_coals);
-
     BFT_FREE(path0);
   }
+
+  for (icoal = 0; icoal < _n_coals; icoal++)
+    BFT_FREE(list_of_coals[icoal]);
+  BFT_FREE(list_of_coals);
 }
 
 /*-----------------------------------------------------------------------------
@@ -1409,6 +1410,9 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     if (cs_gui_strcmp(nature, "inlet")) {
 
       if (*idarcy < 0) {
+
+        char *i_formula = NULL;
+
         /* Inlet: VELOCITY */
         choice_v = _boundary_choice("inlet", label, "velocity_pressure", "choice");
         choice_d = _boundary_choice("inlet", label, "velocity_pressure", "direction");
@@ -1427,19 +1431,22 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
         }
         else if (cs_gui_strcmp(choice_v, "norm_formula")) {
           const char *sym[] = {"u_norm"};
+          i_formula = _inlet_formula(label, choice_v);
           boundaries->velocity[izone]
-            = _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
+            = _boundary_init_mei_tree(i_formula, sym, 1);
         }
         else if (cs_gui_strcmp(choice_v, "flow1_formula")) {
           const char *sym[] = {"q_m"};
+          i_formula = _inlet_formula(label, choice_v);
           boundaries->velocity[izone]
-            = _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
+            = _boundary_init_mei_tree(i_formula, sym, 1);
           boundaries->iqimp[izone] = 1;
         }
         else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
           const char *sym[] = {"q_v"};
+          i_formula = _inlet_formula(label, choice_v);
           boundaries->velocity[izone]
-            = _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
+            = _boundary_init_mei_tree(i_formula, sym, 1);
           boundaries->iqimp[izone] = 2;
         }
 
@@ -1452,10 +1459,11 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
         }
         else if (cs_gui_strcmp(choice_d, "formula")) {
           const char *sym[] = {"dir_x", "dir_y", "dir_z"};
+          i_formula = _inlet_formula(label, "direction_formula");
           boundaries->direction[izone]
-            = _boundary_init_mei_tree(_inlet_formula(label, "direction_formula"),
-                                      sym, 3);
+            = _boundary_init_mei_tree(i_formula, sym, 3);
         }
+        BFT_FREE(i_formula);
         BFT_FREE(choice_v);
         BFT_FREE(choice_d);
       }
