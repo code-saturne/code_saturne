@@ -118,7 +118,7 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
         """
         Input relaxation coefficient.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self. lineEditRELXST.validator().state == QValidator.Acceptable:
             relax_coef = from_qvariant(text, float)
             self.mdl.setRelaxCoefficient(relax_coef)
 
@@ -128,7 +128,7 @@ class SteadyManagementView(QWidget, Ui_SteadyManagementForm):
         """
         Input itarations number.
         """
-        if self.sender().validator().state == QValidator.Acceptable:
+        if self. lineEditNTMABS.validator().state == QValidator.Acceptable:
             nb_iter = from_qvariant(text, int)
             self.mdl.setNbIter(nb_iter)
 

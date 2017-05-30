@@ -1,4 +1,14 @@
 
+Release 5.0.0 (unreleased)
+==========================
+
+Bug fixes
+---------
+
+- GUI: fix some validator issues in steady management page.
+
+- Fix various issues with Lagrangian coal combustion.
+
 Release 5.0.0-rc1 (May 26 2017)
 ===============================
 
