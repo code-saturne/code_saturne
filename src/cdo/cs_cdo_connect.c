@@ -921,6 +921,9 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   /* Max number of entities (vertices, edges and faces) by cell */
   _compute_max_ent(mesh, connect);
 
+  connect->v_rs = NULL;
+  connect->f_rs = NULL;
+
   if ((scheme_flag & CS_SCHEME_FLAG_CDOVB) ||
       (scheme_flag & CS_SCHEME_FLAG_CDOVCB)) {
 

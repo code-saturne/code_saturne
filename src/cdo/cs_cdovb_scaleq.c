@@ -1572,7 +1572,8 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
               "Incompatible location.\n"
               " Stop computing a cellwise diffusive flux.");
 
-  if ((b->sys_flag & CS_FLAG_SYS_DIFFUSION) == 0) { // No diffusion
+  /* If no diffusion, return after resetting */
+  if ((b->sys_flag & CS_FLAG_SYS_DIFFUSION) == 0) {
 
     size_t  size = 0;
     if (cs_test_flag(location, cs_cdo_primal_cell))
@@ -1622,6 +1623,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
 
       /* Set function pointers */
       if (cs_test_flag(location, cs_cdo_primal_cell)) {
+        msh_flag |= CS_CDO_LOCAL_EV;
         compute_flux = cs_cdo_diffusion_vcost_get_pc_flux;
       }
       else if (cs_test_flag(location, cs_cdo_dual_face_byc)) {
