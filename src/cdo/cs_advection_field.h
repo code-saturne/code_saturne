@@ -35,6 +35,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
+#include "cs_mesh_location.h"
 #include "cs_param.h"
 #include "cs_property.h"
 #include "cs_time_step.h"
@@ -292,6 +293,22 @@ cs_advection_field_set_array(cs_adv_field_t     *adv,
 
 void
 cs_advection_field_create_field(cs_adv_field_t   *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a cs_field_t structure related to an advection field and a mesh
+ *         location
+ *
+ * \param[in]  adv         pointer to a cs_adv_field_t structure
+ * \param[in]  ml_type     type of mesh location (cells or vertices)
+ *
+ * \return a pointer to a cs_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_advection_field_get_field(cs_adv_field_t           *adv,
+                             cs_mesh_location_type_t   ml_type);
 
 /*----------------------------------------------------------------------------*/
 /*!

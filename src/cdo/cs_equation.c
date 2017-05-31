@@ -208,15 +208,17 @@ typedef void
  * \brief  Cellwise computation of the diffusive flux across all faces.
  *         Primal or dual faces are considered according to the space scheme
  *
- * \param[in]       f_vals     pointer to an array of field values
- * \param[in, out]  builder    pointer to a builder structure
- * \param[in, out]  diff_flux  pointer to the value of the diffusive flux
+ * \param[in]       f_vals      pointer to an array of field values
+ * \param[in, out]  builder     pointer to a builder structure
+ * \param[in, out]  location    where the flux is defined
+ * \param[in, out]  diff_flux   pointer to the value of the diffusive flux
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_equation_cell_difflux_t)(const cs_real_t    *f_vals,
                              void               *builder,
+                             cs_flag_t           location,
                              cs_real_t          *d_flux);
 
 /*----------------------------------------------------------------------------*/
@@ -2395,13 +2397,15 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
  *         Primal or dual faces are considered according to the space scheme.
  *
  * \param[in]      eq          pointer to a cs_equation_t structure
+ * \param[in]      location    indicate where the flux has to be computed
  * \param[in, out] diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_diff_flux(const cs_equation_t   *eq,
-                              cs_real_t             *diff_flux)
+cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
+                                       cs_flag_t              location,
+                                       cs_real_t             *diff_flux)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
@@ -2419,6 +2423,7 @@ cs_equation_compute_diff_flux(const cs_equation_t   *eq,
   /* Perform the computation */
   eq->compute_cellwise_diff_flux(fld->val,
                                  eq->builder,
+                                 location,
                                  diff_flux);
 
 }

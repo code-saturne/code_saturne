@@ -110,43 +110,8 @@ _post_advection_field(const cs_adv_field_t       *adv,
   if (adv->post_flag == 0)
     return;
 
-  const bool post_field =
-    (adv->post_flag & CS_ADVECTION_FIELD_POST_FIELD) ? true : false;
   const bool post_courant =
     (adv->post_flag & CS_ADVECTION_FIELD_POST_COURANT) ? true : false;
-
-  /* Field is defined at vertices ? */
-  cs_field_t  *fld = NULL;
-  if (adv->vtx_field_id > -1)
-    fld = cs_field_by_id(adv->vtx_field_id);
-
-  if (fld != NULL && post_field)
-    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
-                             CS_POST_WRITER_ALL_ASSOCIATED,
-                             fld->name,
-                             3,               // dim
-                             true,            // interlace
-                             true,            // true = original mesh
-                             CS_POST_TYPE_cs_real_t,
-                             fld->val,        // values on vertices
-                             time_step);      // time step structure
-
-  /* Field is defined at cells ? */
-  fld = NULL;
-  if (adv->cell_field_id > -1)
-    fld = cs_field_by_id(adv->cell_field_id);
-
-  if (fld != NULL && post_field)
-    cs_post_write_var(CS_POST_MESH_VOLUME,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      fld->name,
-                      3,               // dim
-                      true,            // interlace
-                      true,            // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      fld->val,        // values in cells
-                      NULL, NULL,      // values at internal/border faces
-                      time_step);      // time step structure
 
   if (post_courant) { /* Compute and postprocess the Courant number */
 
@@ -161,19 +126,25 @@ _post_advection_field(const cs_adv_field_t       *adv,
     BFT_MALLOC(label, len, char);
     sprintf(label, "%s.Courant", adv->name);
 
-    if (fld != NULL) { /* field is defined at cell centers */
+    if (adv->cell_field_id > -1) { /* field is defined at cell centers */
+
+      cs_field_t  *fld = cs_field_by_id(adv->cell_field_id);
+
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
         cs_nvec3(fld->val + 3*c_id, &adv_c);
         hc = pow(quant->cell_vol[c_id], cs_math_onethird);
         courant[c_id] = dt_cur * adv_c.meas / hc;
       }
+
     }
     else {
+
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
         cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
         hc = pow(quant->cell_vol[c_id], cs_math_onethird);
         courant[c_id] = dt_cur * adv_c.meas / hc;
       }
+
     }
 
     cs_post_write_var(CS_POST_MESH_VOLUME,

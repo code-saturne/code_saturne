@@ -67,12 +67,29 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdo_diffusion_flux_op_t)(const cs_face_mesh_t     *fm,
-                             const cs_cell_mesh_t     *cm,
-                             const cs_real_3_t         mnu,
-                             double                    beta,
-                             cs_cell_builder_t        *cb,
-                             cs_locmat_t              *ntrgrd);
+(cs_cdo_diffusion_flux_trace_t)(const cs_face_mesh_t     *fm,
+                                const cs_cell_mesh_t     *cm,
+                                const cs_real_3_t         mnu,
+                                double                    beta,
+                                cs_cell_builder_t        *cb,
+                                cs_locmat_t              *ntrgrd);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Cellwise computation of the diffusive flux
+ *
+ * \param[in]      cm       pointer to a cs_face_mesh_t structure
+ * \param[in]      pot      values of the potential fields at vertices
+ * \param[in, out] cb       auxiliary structure for computing the flux
+ * \param[in, out] flx      flux across dual faces inside this cell
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdo_cellwise_diffusion_flux_t)(const cs_cell_mesh_t     *cm,
+                                   const cs_real_t          *pot,
+                                   cs_cell_builder_t        *cb,
+                                   cs_real_t                *flx);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -82,7 +99,7 @@ typedef void
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
  * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux operator
+ * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
@@ -90,13 +107,13 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdo_diffusion_enforce_dir_t)(const cs_param_hodge_t       h_info,
-                                 const cs_cell_bc_t          *cbc,
-                                 const cs_cell_mesh_t        *cm,
-                                 cs_cdo_diffusion_flux_op_t  *flux_op,
-                                 cs_face_mesh_t              *fm,
-                                 cs_cell_builder_t           *cb,
-                                 cs_cell_sys_t               *csys);
+(cs_cdo_diffusion_enforce_dir_t)(const cs_param_hodge_t          h_info,
+                                 const cs_cell_bc_t             *cbc,
+                                 const cs_cell_mesh_t           *cm,
+                                 cs_cdo_diffusion_flux_trace_t  *flux_op,
+                                 cs_face_mesh_t                 *fm,
+                                 cs_cell_builder_t              *cb,
+                                 cs_cell_sys_t                  *csys);
 
 /*============================================================================
  * Public function prototypes
@@ -180,7 +197,7 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
  * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux operator
+ * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
@@ -188,13 +205,13 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_pena_dirichlet(const cs_param_hodge_t        h_info,
-                                  const cs_cell_bc_t           *cbc,
-                                  const cs_cell_mesh_t         *cm,
-                                  cs_cdo_diffusion_flux_op_t   *flux_op,
-                                  cs_face_mesh_t               *fm,
-                                  cs_cell_builder_t            *cb,
-                                  cs_cell_sys_t                *csys);
+cs_cdovb_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
+                                  const cs_cell_bc_t              *cbc,
+                                  const cs_cell_mesh_t            *cm,
+                                  cs_cdo_diffusion_flux_trace_t   *flux_op,
+                                  cs_face_mesh_t                  *fm,
+                                  cs_cell_builder_t               *cb,
+                                  cs_cell_sys_t                   *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -204,7 +221,7 @@ cs_cdovb_diffusion_pena_dirichlet(const cs_param_hodge_t        h_info,
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
  * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux operator
+ * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
@@ -212,13 +229,13 @@ cs_cdovb_diffusion_pena_dirichlet(const cs_param_hodge_t        h_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t        h_info,
-                                  const cs_cell_bc_t           *cbc,
-                                  const cs_cell_mesh_t         *cm,
-                                  cs_cdo_diffusion_flux_op_t   *flux_op,
-                                  cs_face_mesh_t               *fm,
-                                  cs_cell_builder_t            *cb,
-                                  cs_cell_sys_t                *csys);
+cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
+                                  const cs_cell_bc_t              *cbc,
+                                  const cs_cell_mesh_t            *cm,
+                                  cs_cdo_diffusion_flux_trace_t   *flux_op,
+                                  cs_face_mesh_t                  *fm,
+                                  cs_cell_builder_t               *cb,
+                                  cs_cell_sys_t                   *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -228,7 +245,7 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t        h_info,
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
  * \param[in]       cbc       pointer to a cs_cell_bc_t structure
  * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in]       flux_op   function pointer to the flux operator
+ * \param[in]       flux_op   function pointer to the flux trace operator
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
@@ -236,33 +253,53 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t        h_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t       h_info,
-                                  const cs_cell_bc_t          *cbc,
-                                  const cs_cell_mesh_t        *cm,
-                                  cs_cdo_diffusion_flux_op_t  *flux_op,
-                                  cs_face_mesh_t              *fm,
-                                  cs_cell_builder_t           *cb,
-                                  cs_cell_sys_t               *csys);
+cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
+                                  const cs_cell_bc_t             *cbc,
+                                  const cs_cell_mesh_t           *cm,
+                                  cs_cdo_diffusion_flux_trace_t  *flux_op,
+                                  cs_face_mesh_t                 *fm,
+                                  cs_cell_builder_t              *cb,
+                                  cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the diffusive flux across dual faces for a given cell
  *          Use the COST algo. for computing the discrete Hodge op.
- *          Flux = -Hdg * GRAD(pot)
+ *          This function is dedicated to vertex-based schemes.
+ *                       Flux = -Hdg * GRAD(pot)
  *
- * \param[in]      cm      pointer to a cs_face_mesh_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      pot     values of the potential fields at specific locations
  * \param[in, out] cb      auxiliary structure for computing the flux
- * \param[in, out] flx     values of the flux across specific entities (primal
- *                         faces, dual faces...)
+ * \param[in, out] flx     values of the flux across specific entities
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_get_hodge_flux(const cs_cell_mesh_t      *cm,
-                                  const double              *pot,
-                                  cs_cell_builder_t         *cb,
-                                  double                    *flx);
+cs_cdo_diffusion_vcost_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
+                                      const double              *pot,
+                                      cs_cell_builder_t         *cb,
+                                      double                    *flx);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the diffusive flux inside a (primal) cell
+ *          Use the COST algo. for computing the discrete Hodge op.
+ *          This function is dedicated to vertex-based schemes.
+ *                       Flux = -Hdg * GRAD(pot)
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot     values of the potential fields at specific locations
+ * \param[in, out] cb      auxiliary structure for computing the flux
+ * \param[in, out] flx     values of the flux across specific entities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_vcost_get_pc_flux(const cs_cell_mesh_t      *cm,
+                                   const double              *pot,
+                                   cs_cell_builder_t         *cb,
+                                   double                    *flx);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -271,7 +308,7 @@ cs_cdovb_diffusion_get_hodge_flux(const cs_cell_mesh_t      *cm,
  *          The computation takes into account a subdivision into tetrahedra of
  *          the current cell based on p_{ef,c}
  *
- * \param[in]      cm       pointer to a cs_face_mesh_t structure
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      pot      values of the potential fields at vertices
  * \param[in, out] cb       auxiliary structure for computing the flux
  * \param[in, out] flx      flux across dual faces inside this cell
@@ -279,10 +316,30 @@ cs_cdovb_diffusion_get_hodge_flux(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_get_wbs_flux(const cs_cell_mesh_t   *cm,
-                              const double           *pot,
-                              cs_cell_builder_t      *cb,
-                              double                 *flx);
+cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
+                                    const cs_real_t        *pot,
+                                    cs_cell_builder_t      *cb,
+                                    cs_real_t              *flx);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the diffusive flux inside a given primal cell
+ *          Use the WBS algo. for approximating the gradient
+ *          The computation takes into account a subdivision into tetrahedra of
+ *          the current cell based on p_{ef,c}
+ *
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot      values of the potential fields at vertices
+ * \param[in, out] cb       auxiliary structure for computing the flux
+ * \param[in, out] flx      flux vector inside this cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_wbs_get_pc_flux(const cs_cell_mesh_t   *cm,
+                                 const cs_real_t        *pot,
+                                 cs_cell_builder_t      *cb,
+                                 cs_real_t              *flx);
 
 /*----------------------------------------------------------------------------*/
 /*!

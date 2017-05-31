@@ -226,10 +226,11 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux across all dual faces.
+ * \brief  Cellwise computation of the diffusive flux
  *
  * \param[in]       values      discrete values for the potential
  * \param[in, out]  builder     pointer to builder structure
+ * \param[in, out]  location    where the flux is defined
  * \param[in, out]  diff_flux   value of the diffusive flux
   */
 /*----------------------------------------------------------------------------*/
@@ -237,6 +238,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
 void
 cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
                                    void              *builder,
+                                   cs_flag_t          location,
                                    cs_real_t         *diff_flux);
 
 /*----------------------------------------------------------------------------*/

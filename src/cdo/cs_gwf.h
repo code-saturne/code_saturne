@@ -46,15 +46,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* List of available keys for setting the groundwater flow module */
-typedef enum {
-
-  CS_GWFKEY_GRAVITATION,       // Take into acount gravitation effect
-  CS_GWFKEY_OUTPUT_MOISTURE,   // Activate post-processing for the moisture
-  CS_GWFKEY_N_KEYS
-
-} cs_gwf_key_t;
-
 typedef enum {
 
   CS_SOILKEY_SAT_MOISTURE,  // Set the saturated moisture content
@@ -145,18 +136,31 @@ cs_gwf_get_n_soils(const cs_gwf_t    *gw);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set parameters related to a cs_gwf_t structure
+ * \brief  Activate the gravity and set the gravitaty vector
  *
  * \param[in, out]  gw        pointer to a cs_gwf_t structure
- * \param[in]       key       key related to the member of gw to set
- * \param[in]       keyval    accessor to the value to set
+ * \param[in]       gvec      values of the gravity vector
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_param(cs_gwf_t       *gw,
-                 cs_gwf_key_t    key,
-                 const char     *keyval);
+cs_gwf_set_gravity_vector(cs_gwf_t              *gw,
+                          const cs_real_3_t      gvec);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Advanced setting: indicate where the darcian flux is stored
+ *         cs_cdo_primal_cell is the default setting
+ *         cs_cdo_dual_face_byc is a valid choice for vertex-based schemes
+ *
+ * \param[in, out]  gw              pointer to a cs_gwf_t structure
+ * \param[in]       location_flag   where the flux is defined
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_set_darcian_flux_location(cs_gwf_t      *gw,
+                                 cs_flag_t      location_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

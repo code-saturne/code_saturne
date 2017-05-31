@@ -135,8 +135,10 @@ cs_advection_field_create(const char   *name)
   /* Default initialization */
   adv->desc.location = adv->desc.state = 0;
   adv->post_flag = 0;
+
   adv->vtx_field_id = -1;
   adv->cell_field_id = -1;
+
   adv->def_type = CS_PARAM_N_DEF_TYPES;
   adv->def.get.val = 0;
 
@@ -377,9 +379,7 @@ cs_advection_field_set_option(cs_adv_field_t            *adv,
     break;
 
   case CS_ADVKEY_POST:
-    if (strcmp(val, "field") == 0)
-      adv->post_flag |= CS_ADVECTION_FIELD_POST_FIELD;
-    else if (strcmp(val, "courant") == 0)
+    if (strcmp(val, "courant") == 0)
       adv->post_flag |= CS_ADVECTION_FIELD_POST_COURANT;
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -550,6 +550,45 @@ cs_advection_field_create_field(cs_adv_field_t   *adv)
 
   } // Add a field attached to vertices
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a cs_field_t structure related to an advection field and a mesh
+ *         location
+ *
+ * \param[in]  adv         pointer to a cs_adv_field_t structure
+ * \param[in]  ml_type     type of mesh location (cells or vertices)
+ *
+ * \return a pointer to a cs_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_advection_field_get_field(cs_adv_field_t           *adv,
+                             cs_mesh_location_type_t   ml_type)
+{
+  cs_field_t  *f = NULL;
+  if (adv == NULL)
+    return f;
+
+  switch (ml_type) {
+  case CS_MESH_LOCATION_CELLS:
+    assert(adv->cell_field_id > -1);
+    f = cs_field_by_id(adv->cell_field_id);
+    break;
+
+  case CS_MESH_LOCATION_VERTICES:
+    assert(adv->cell_field_id > -1);
+    f = cs_field_by_id(adv->vtx_field_id);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid mesh location type to retrieve an advection field.\n");
+  }
+
+  return f;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -829,6 +868,12 @@ cs_advection_field_at_cells(const cs_adv_field_t  *adv,
           for (int k = 0; k < 3; k++) cell_val[k] = recoval[k];
 
         } // Loop on cells
+
+      }
+      else if (cs_test_flag(adv->array_desc.location, cs_cdo_primal_cell)) {
+
+        memcpy(cell_values, (const cs_real_t *)adv->array,
+               3*quant->n_cells*sizeof(cs_real_t));
 
       }
       else
@@ -1508,7 +1553,7 @@ cs_advection_field_update(cs_adv_field_t   *adv)
     /* Copy current field values to previous values */
     cs_field_current_to_previous(fld);
 
-    /* Set new values */
+    /* Set the new values */
     cs_advection_field_at_vertices(adv, fld->val);
 
   }
@@ -1520,7 +1565,7 @@ cs_advection_field_update(cs_adv_field_t   *adv)
     /* Copy current field values to previous values */
     cs_field_current_to_previous(fld);
 
-    /* Set new values */
+    /* Set the new values */
     cs_advection_field_at_cells(adv, fld->val);
 
   }

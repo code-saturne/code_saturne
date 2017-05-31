@@ -291,15 +291,6 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
                                           1,           // number of soils
                                           0);          // number of tracers
 
-  /* Set additional parameters related to the groundwater flow module
-     >> cs_gwf_set_param(gw, key, keyval);
-
-     CS_GWFKEY_GRAVITATION with "x", "-x", "z", "-z"...
-     CS_GWFKEY_OUTPUT_MOISTURE with "true" or "false" (default)
-  */
-
-  cs_gwf_set_param(gwf, CS_GWFKEY_OUTPUT_MOISTURE, "true");
-
   /* =========
      Add soils
      ========= */
