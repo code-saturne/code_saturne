@@ -117,10 +117,10 @@ struct _cs_cdovcb_scaleq_t {
   bool         reac_pty_uniform[CS_CDO_N_MAX_REACTIONS];
 
   /* Source terms */
-  cs_real_t     *source_terms; /* Array storing the value arising from the
-                                  contribution of all source terms */
-  cs_mask_t     *source_mask;  /* NULL if at least one source term is not
-                                  defined for all cells (size = n_cells) */
+  cs_real_t   *source_terms; /* Array storing the value arising from the
+                                contribution of all source terms */
+  cs_mask_t   *source_mask;  /* NULL if at least one source term is not
+                                defined for all cells (size = n_cells) */
 
   /* Pointer to functions which compute the value of the source term */
   cs_source_term_cellwise_t  *compute_source[CS_N_MAX_SOURCE_TERMS];

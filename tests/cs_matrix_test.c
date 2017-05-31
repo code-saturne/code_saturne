@@ -625,7 +625,7 @@ main (int argc, char *argv[])
     cs_halo_dump(cs_matrix_assembler_get_halo(ma), 1);
 #endif
 
-    /* Create associated structures annd matrices
+    /* Create associated structures and matrices
        (2 matrices are created simultaneously, to exercice
        the const/shareable aspect of the assembler) */
 

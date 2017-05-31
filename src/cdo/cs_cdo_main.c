@@ -202,7 +202,6 @@ cs_cdo_initialize_structures(cs_mesh_t             *m,
 
   /* Monitoring */
   cs_timer_stats_stop(cs_cdo_ts_id);
-
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
 
@@ -236,7 +235,7 @@ cs_cdo_finalize(void)
   /* Write a restart file */
   cs_domain_write_restart(domain);
 
-  /* Free cs_domain_structure (imply severals operation to free memory) */
+  /* Free cs_domain_structure (imply several operations to free memory) */
   domain = cs_domain_free(domain);
   assert(domain == NULL);
   cs_glob_domain = NULL;
@@ -281,6 +280,7 @@ cs_cdo_main(void)
   /* Flush listing and setup.log files */
   cs_log_printf_flush(CS_LOG_DEFAULT);
   cs_log_printf_flush(CS_LOG_SETUP);
+  cs_log_printf_flush(CS_LOG_PERFORMANCE);
 
   while (cs_domain_needs_iterate(domain)) { // Main time loop
 

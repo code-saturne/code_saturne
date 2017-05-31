@@ -782,7 +782,7 @@ _cut_warped_faces(cs_mesh_t      *mesh,
 
   triangle_state = fvm_triangulate_state_create(n_max_face_vertices);
 
-  /* Second loop : define the new connectivity after triangulation */
+  /* Second loop: define the new connectivity after triangulation */
 
   new_face_vtx_idx[0] = 0;
   connect_size = 0;
@@ -834,7 +834,7 @@ _cut_warped_faces(cs_mesh_t      *mesh,
         new_face_family[n_new_faces] = (*p_face_family)[face_id];
 
         /* Update "face -> vertices" connectivity index
-           (list has alread been defined by fvm_triangulate_polygon) */
+           (list has already been defined by fvm_triangulate_polygon) */
 
         n_new_faces++;
         connect_size += 3;
