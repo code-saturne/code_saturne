@@ -151,6 +151,9 @@ cs_cdo_initialize_setup(void)
   /* Overwrite predefined settings if this is what user wants */
   cs_user_cdo_numeric_settings(cs_glob_domain);
 
+  /* Set the scheme flag for the computational domain */
+  cs_domain_set_scheme_flag(cs_glob_domain);
+
   /* Set the definition of user-defined properties and/or advection
      fields */
   cs_user_cdo_set_domain(cs_glob_domain);

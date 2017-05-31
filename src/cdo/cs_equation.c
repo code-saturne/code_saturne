@@ -959,11 +959,13 @@ cs_equation_set_param(cs_equation_t       *eq,
   case CS_EQKEY_SPACE_SCHEME:
     if (strcmp(val, "cdo_vb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
+      eqp->space_scheme_poly = 0;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
     }
     else if (strcmp(val, "cdo_vcb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVCB;
+      eqp->space_scheme_poly = 0;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
       eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_VC;
@@ -971,12 +973,14 @@ cs_equation_set_param(cs_equation_t       *eq,
     }
     else if (strcmp(val, "cdo_fb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
+      eqp->space_scheme_poly = 0;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
       eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
     }
     else if (strcmp(val, "hho") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_HHO;
+      eqp->space_scheme_poly = 1;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
       eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
@@ -2236,6 +2240,26 @@ cs_equation_get_space_scheme(const cs_equation_t    *eq)
     return CS_SPACE_N_SCHEMES;
   else
     return eq->param->space_scheme;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the max. degree used in the polynomial basis for the space
+ *         discretization
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  the polynomial order
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_get_space_poly_degree(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return -1;
+  else
+    return eq->param->space_poly_degree;
 }
 
 /*----------------------------------------------------------------------------*/

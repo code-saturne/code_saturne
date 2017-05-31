@@ -112,6 +112,8 @@ typedef struct {
 
   /* Numerical settings */
   cs_space_scheme_t     space_scheme;
+  int                   space_poly_degree; /* Max. degree of the polynomial
+                                              basis */
 
   /* Boundary conditions */
   cs_param_bc_t        *bc;

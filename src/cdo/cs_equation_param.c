@@ -338,6 +338,7 @@ cs_equation_param_create(cs_equation_type_t     type,
   /* Build the equation flag */
   eqp->flag = 0;
   eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
+  eqp->space_poly_degree = 0;
 
   /* Vertex-based schemes imply the two following discrete Hodge operators
      Default initialization is made in accordance with this choice */
@@ -499,6 +500,9 @@ cs_equation_param_summary(const char                  *eqname,
   else
     bft_error(__FILE__, __LINE__, 0,
               " Undefined space scheme for eq. %s", eqname);
+
+  cs_log_printf(CS_LOG_SETUP, "  <%s/space poly degree>  %d\n",
+                eqname, eqp->space_poly_degree);
 
   bool  unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
   bool  convection = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
