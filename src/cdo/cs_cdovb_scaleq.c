@@ -477,7 +477,8 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOVB &&
       eqp->var_type != CS_PARAM_VAR_SCAL)
-    bft_error(__FILE__, __LINE__, 0, " Invalid type of equation.\n"
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid type of equation.\n"
               " Expected: scalar-valued CDO vertex-based equation.");
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -1621,7 +1622,6 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
 
       /* Set function pointers */
       if (cs_test_flag(location, cs_cdo_primal_cell)) {
-
         compute_flux = cs_cdo_diffusion_vcost_get_pc_flux;
       }
       else if (cs_test_flag(location, cs_cdo_dual_face_byc)) {

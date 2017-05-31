@@ -1430,7 +1430,6 @@ cs_gwf_initialize(int                        richards_eq_id,
 
   /* Advection field induced by the hydraulic head */
   gw->adv_field = adv_field;
-  gw->darcian_flux = NULL;
 
   /* Quantities related to soils */
   gw->n_soils = 0;           /* No soil is set at the beginning */
