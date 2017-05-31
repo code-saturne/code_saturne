@@ -1410,13 +1410,67 @@ cs_domain_create_fields(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the scheme flag for the current computational domain
+ *
+ * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_scheme_flag(cs_domain_t                 *domain)
+{
+  if (domain == NULL) bft_error(__FILE__, __LINE__, 0, _err_empty_domain);
+
+  /* Define a scheme flag for the current domain */
+  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
+
+    cs_equation_t  *eq = domain->equations[eq_id];
+    cs_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
+    cs_param_var_type_t  vartype = cs_equation_get_var_type(eq);
+
+    if (vartype == CS_PARAM_VAR_SCAL)
+      domain->scheme_flag |= CS_SCHEME_FLAG_SCALAR;
+    else if (vartype == CS_PARAM_VAR_VECT)
+      domain->scheme_flag |= CS_SCHEME_FLAG_VECTOR;
+
+    if (scheme == CS_SPACE_SCHEME_CDOVB)
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVB | CS_SCHEME_FLAG_POLY0;
+    else if (scheme == CS_SPACE_SCHEME_CDOVCB)
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVCB | CS_SCHEME_FLAG_POLY0;
+    else if (scheme == CS_SPACE_SCHEME_CDOFB)
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOFB | CS_SCHEME_FLAG_POLY0;
+    else if (scheme == CS_SPACE_SCHEME_HHO)
+      domain->scheme_flag |= CS_SCHEME_FLAG_HHO;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Undefined type of equation to solve for eq. %s."
+                  " Please check your settings."), cs_equation_get_name(eq));
+
+    switch (cs_equation_get_space_poly_degree(eq)) {
+    case 0:
+      domain->scheme_flag |= CS_SCHEME_FLAG_POLY0;
+      break;
+    case 1:
+      domain->scheme_flag |= CS_SCHEME_FLAG_POLY1;
+      break;
+    case 2:
+      domain->scheme_flag |= CS_SCHEME_FLAG_POLY2;
+      break;
+    default:
+      bft_error(__FILE__, __LINE__, 0, " Undefined space polynomial order.");
+    }
+
+  } // Loop on equations
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build a cs_domain_t structure
  *
  * \param[in, out]  domain            pointer to a cs_domain_t struct.
  * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
  * \param[in]       mesh_quantities   pointer to a cs_mesh_quantities_t struct.
- *
- * \return a pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1432,7 +1486,7 @@ cs_domain_initialize(cs_domain_t                 *domain,
 
   /* Build additional connectivity structures
      Update mesh structure with range set structures */
-  domain->connect = cs_cdo_connect_init(mesh);
+  domain->connect = cs_cdo_connect_init(mesh, domain->scheme_flag);
 
   /* Default = CS_CDO_CC_SATURNE but can be modify by the user */
   cs_cdo_cell_center_algo_t  cc_algo =
@@ -1479,31 +1533,6 @@ cs_domain_initialize(cs_domain_t                 *domain,
                       domain->n_adv_fields, domain->adv_fields,
                       domain->n_properties, domain->properties,
                       domain->n_equations, domain->equations);
-
-  /* Define a scheme flag for the current domain */
-  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
-
-    cs_equation_t  *eq = domain->equations[eq_id];
-    cs_space_scheme_t  scheme = cs_equation_get_space_scheme(eq);
-    cs_param_var_type_t  vartype = cs_equation_get_var_type(eq);
-
-    if (vartype == CS_PARAM_VAR_SCAL)
-      domain->scheme_flag |= CS_SCHEME_FLAG_SCALAR;
-
-    if (scheme == CS_SPACE_SCHEME_CDOVB)
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVB;
-    else if (scheme == CS_SPACE_SCHEME_CDOVCB)
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVCB;
-    else if (scheme == CS_SPACE_SCHEME_CDOFB)
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOFB;
-    else if (scheme == CS_SPACE_SCHEME_HHO)
-      domain->scheme_flag |= CS_SCHEME_FLAG_HHO;
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Undefined type of equation to solve for eq. %s."
-                  " Please check your settings."), cs_equation_get_name(eq));
-
-  } // Loop on equations
 
   /* Allocate common structures for solving equations */
   cs_equation_allocate_common_structures(domain->connect,

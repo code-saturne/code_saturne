@@ -640,6 +640,20 @@ cs_equation_get_space_scheme(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the max. degree used in the polynomial basis for the space
+ *         discretization
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  the polynomial order
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_get_space_poly_degree(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the type of variable solved by this equation
  *
  * \param[in]  eq       pointer to a cs_equation_t structure

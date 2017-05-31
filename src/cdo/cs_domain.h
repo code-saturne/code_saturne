@@ -530,13 +530,22 @@ cs_domain_create_fields(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the scheme flag for the current computational domain
+ *
+ * \param[in, out]  domain            pointer to a cs_domain_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_scheme_flag(cs_domain_t                 *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build a cs_domain_t structure
  *
  * \param[in, out]  domain            pointer to a cs_domain_t struct.
  * \param[in, out]  mesh              pointer to a cs_mesh_t struct.
  * \param[in]       mesh_quantities   pointer to a cs_mesh_quantities_t struct.
- *
- * \return a pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 

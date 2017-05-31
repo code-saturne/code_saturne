@@ -848,14 +848,16 @@ _get_cell_type(cs_lnum_t                 c_id,
  *        Range sets related to vertices and faces are computed inside and
  *        set as members of the cs_mesh_t structure
  *
- * \param[in, out]  mesh    pointer to a cs_mesh_t structure
+ * \param[in, out]  mesh          pointer to a cs_mesh_t structure
+ * \param[in]       scheme_flag   flag storing requested space schemes
  *
  * \return  a pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_connect_t *
-cs_cdo_connect_init(cs_mesh_t      *mesh)
+cs_cdo_connect_init(cs_mesh_t      *mesh,
+                    cs_flag_t       scheme_flag)
 {
   cs_timer_t t0 = cs_timer_time();
 
@@ -919,17 +921,27 @@ cs_cdo_connect_init(cs_mesh_t      *mesh)
   /* Max number of entities (vertices, edges and faces) by cell */
   _compute_max_ent(mesh, connect);
 
-  /* Vertex range set */
-  cs_range_set_t  *v_rs = cs_range_set_create(mesh->vtx_interfaces,
-                                              NULL,
-                                              n_vertices,
-                                              false,   // TODO: Ask Yvan
-                                              0);      // g_id_base
-  mesh->vtx_range_set = v_rs;
-  connect->v_rs = v_rs;
+  if ((scheme_flag & CS_SCHEME_FLAG_CDOVB) ||
+      (scheme_flag & CS_SCHEME_FLAG_CDOVCB)) {
 
-  /* Face range set */
-  connect->f_rs = NULL; // TODO
+    /* Vertex range set */
+    cs_range_set_t  *v_rs = cs_range_set_create(mesh->vtx_interfaces,
+                                                NULL,
+                                                n_vertices,
+                                                false,   // TODO: Ask Yvan
+                                                0);      // g_id_base
+    mesh->vtx_range_set = v_rs;
+    connect->v_rs = v_rs;
+
+  }
+
+  if ((scheme_flag & CS_SCHEME_FLAG_CDOFB) ||
+      (scheme_flag & CS_SCHEME_FLAG_HHO)) {
+
+    /* Face range set */
+    connect->f_rs = NULL; // TODO
+
+  }
 
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();

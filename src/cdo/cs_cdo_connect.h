@@ -111,14 +111,16 @@ typedef struct {
  *        Range sets related to vertices and faces are computed inside and
  *        set as members of the cs_mesh_t structure
  *
- * \param[in, out]  mesh    pointer to a cs_mesh_t structure
+ * \param[in, out]  mesh          pointer to a cs_mesh_t structure
+ * \param[in]       scheme_flag   flag storing requested space schemes
  *
  * \return  a pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_connect_t *
-cs_cdo_connect_init(cs_mesh_t      *mesh);
+cs_cdo_connect_init(cs_mesh_t      *mesh,
+                    cs_flag_t       scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
