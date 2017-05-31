@@ -306,16 +306,16 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
   const int  n_ec = connect->n_max_ebyc;
   const int  n_fc = connect->n_max_fbyc;
 
+  /* Temporary buffers used during the cellwise construction of operators.
+     The size of the allocation corresponds to the max. possible size
+     according to any numerical options. This means that one could optimize
+     the following allocation if one takes into account the numerical
+     settings */
+
   switch (scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
     {
-      /* Temporary buffers used during the cellwise construction of operators.
-         The size of the allocation corresponds to the max. possible size
-         according to any numerical options. This means that one could optimize
-         the following allocation if one takes into account the numerical
-         settings */
-
       BFT_MALLOC(cb->ids, n_vc, short int);
       for (int i = 0; i < n_vc; i++) cb->ids[i] = 0;
 
@@ -358,6 +358,24 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
       cb->aux = cs_locmat_create(n_vc + 1);
 
     }
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+
+    size = 4*(n_fc + 1);
+    BFT_MALLOC(cb->values, size, double);
+    for (int i = 0; i < size; i++) cb->values[i] = 0;
+
+    size = n_fc;
+    BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+    for (int i = 0; i < size; i++)
+      cb->vectors[i][0] = cb->vectors[i][1] = cb->vectors[i][2] = 0;
+
+    /* Local square dense matrices used during the construction of
+       operators */
+    cb->hdg = cs_locmat_create(n_fc + 1);
+    cb->loc = cs_locmat_create(n_fc + 1);
+    cb->aux = cs_locmat_create(n_fc + 1);
     break;
 
   default:
