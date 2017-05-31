@@ -486,6 +486,10 @@ _load_plugin(fvm_writer_format_t  *wf)
 
   wf->dl_lib = dlopen(lib_path, RTLD_LAZY);
 
+  if (wf->dl_lib == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error loading %s: %s."), lib_path, dlerror());
+
   BFT_FREE(lib_path);
 
   /* Increment reference count */
@@ -493,10 +497,6 @@ _load_plugin(fvm_writer_format_t  *wf)
   wf->dl_count += 1;
 
   /* Load symbols from shared library */
-
-  if (wf->dl_lib == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error loading %s: %s."), lib_path, dlerror());
 
   /* Function pointers need to be double-casted so as to first convert
      a (void *) type to a memory address and then convert it back to the
