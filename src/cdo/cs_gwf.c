@@ -988,11 +988,11 @@ _update_system(const cs_cdo_quantities_t   *cdoq,
     cs_advection_field_at_cells(gw->adv_field, vel->val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
-    if (cs_test_flag(location, cs_cdo_dual_face_byc))
+    if (cs_test_flag(gw->flux_location, cs_cdo_dual_face_byc))
       cs_dump_array_to_listing("DARCIAN_FLUX_DFbyC",
                                connect->c2e->idx[cdoq->n_cells],
                                gw->darcian_flux, 8);
-    else if (cs_test_flag(location, cs_cdo_primal_cell))
+    else if (cs_test_flag(gw->flux_location, cs_cdo_primal_cell))
       cs_dump_array_to_listing("DARCIAN_FLUX_CELL",
                                3*cdoq->n_cells,
                                gw->darcian_flux, 3);
@@ -1855,7 +1855,7 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
 
   /* Create a moisture field attached to cells */
   gw->moisture_content = cs_field_create("moisture_content",
-                                         field_mask,
+                                         CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
                                          c_loc_id,
                                          1,        // dimension
                                          has_previous);
@@ -1880,7 +1880,6 @@ cs_gwf_richards_setup(cs_gwf_t            *gw,
          .state = CS_FLAG_STATE_FLUX};
 
       cs_advection_field_def_by_array(gw->adv_field, flux_desc);
-
     }
     break;
 
@@ -2186,46 +2185,47 @@ cs_gwf_final_initialization(const cs_cdo_connect_t    *connect,
   const cs_equation_t  *richards = equations[gw->richards_eq_id];
   const cs_field_t  *hydraulic_head = cs_equation_get_field(richards);
   const cs_space_scheme_t  ric_scheme = cs_equation_get_space_scheme(richards);
+  const cs_lnum_t  n_cells = connect->n_cells;
 
   if (ric_scheme == CS_SPACE_SCHEME_CDOFB ||
       ric_scheme == CS_SPACE_SCHEME_HHO)
     bft_error(__FILE__, __LINE__, 0,
               _(" Richards eq. is only available for vertex-based schemes."));
 
-  const cs_lnum_t  n_cells = connect->n_cells;
-
-  /* Up to now Richards equation is only set with vertex-based schemes
-     TODO: Face-based schemes */
-  switch (ric_scheme) {
-  case CS_SPACE_SCHEME_CDOVB:
-    {
-      const cs_connect_index_t  *c2e = connect->c2e;
-
-      BFT_MALLOC(gw->head_in_law, n_cells, cs_real_t);
-
-      /* Darcian flux settings */
-      BFT_MALLOC(gw->darcian_flux, c2e->idx[n_cells], cs_real_t);
-
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < c2e->idx[n_cells]; i++)
-        gw->darcian_flux[i] = 0;
-
-      cs_advection_field_set_array(gw->adv_field, gw->darcian_flux);
-    }
-    break;
-
-  case CS_SPACE_SCHEME_CDOVCB:
-
-    BFT_MALLOC(gw->head_in_law, n_cells, cs_real_t);
+  /* Set the Darcian flux */
+  if (cs_test_flag(gw->flux_location, cs_cdo_dual_face_byc)) {
 
     /* Darcian flux settings */
+    const cs_connect_index_t  *c2e = connect->c2e;
+
+    BFT_MALLOC(gw->darcian_flux, c2e->idx[n_cells], cs_real_t);
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < c2e->idx[n_cells]; i++)
+      gw->darcian_flux[i] = 0;
+
+  }
+  else if (cs_test_flag(gw->flux_location, cs_cdo_primal_cell)) {
+
     BFT_MALLOC(gw->darcian_flux, 3*n_cells, cs_real_t);
 
 #   pragma omp parallel for if (3*n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < 3*n_cells; i++)
       gw->darcian_flux[i] = 0;
 
-    cs_advection_field_set_array(gw->adv_field, gw->darcian_flux);
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid location for defining the Darcian flux.");
+
+  cs_advection_field_set_array(gw->adv_field, gw->darcian_flux);
+
+  /* Up to now Richards equation is only set with vertex-based schemes
+     TODO: Face-based schemes */
+  switch (ric_scheme) {
+  case CS_SPACE_SCHEME_CDOVB:
+  case CS_SPACE_SCHEME_CDOVCB:
+    BFT_MALLOC(gw->head_in_law, n_cells, cs_real_t);
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
@@ -2234,14 +2234,6 @@ cs_gwf_final_initialization(const cs_cdo_connect_t    *connect,
       gw->head_in_law = gw->pressure_head->val;
     else
       gw->head_in_law = hydraulic_head->val;
-
-    /* Darcian flux settings */
-    BFT_MALLOC(gw->darcian_flux, 3*n_cells, cs_real_t);
-
-#   pragma omp parallel for if (3*n_cells > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < 3*n_cells; i++)
-      gw->darcian_flux[i] = 0;
-    cs_advection_field_set_array(gw->adv_field, gw->darcian_flux);
     break;
 
   default:

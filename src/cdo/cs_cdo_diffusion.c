@@ -792,8 +792,7 @@ cs_cdo_diffusion_vcost_get_pc_flux(const cs_cell_mesh_t      *cm,
   /* Sanity checks */
   assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
 
-  /* Initialize array */
-  for (int k = 0; k < 3; k++) flx[k] = 0.;
+  cs_real_t  grd[3] = {0., 0., 0.};
 
   /* Cellwise DoFs related to the discrete gradient (size: n_ec) */
   for (short int e = 0; e < cm->n_ec; e++) {
@@ -804,11 +803,11 @@ cs_cdo_diffusion_vcost_get_pc_flux(const cs_cell_mesh_t      *cm,
     const double  ge = cm->e2v_sgn[e]*(pot[v[1]] - pot[v[0]]);
     const double  contrib = ge * cm->dface[e].meas;
     for (int k = 0; k < 3; k++)
-      flx[k] += contrib * cm->dface[e].unitv[k];
+      grd[k] += contrib * cm->dface[e].unitv[k];
 
   } // Loop on cell edges
 
-  cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, flx, flx);
+  cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, grd, flx);
   const double  invvol = 1/cm->vol_c;
   for (int k = 0; k < 3; k++) flx[k] *= invvol;
 }
