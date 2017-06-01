@@ -5,6 +5,8 @@ Release 5.0.0 (unreleased)
 Bug fixes
 ---------
 
+- Fix issues for transient mesh visualization.
+
 - Fix error message handling for plugin load failures.
 
 - GUI: fix some validator issues in steady management page.

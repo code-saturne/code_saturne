@@ -1697,7 +1697,7 @@ _define_probe_export_mesh(cs_post_mesh_t  *post_mesh)
 
   if (post_mesh->locate_ref > -1) {
     cs_post_mesh_t *post_mesh_loc = _cs_post_meshes + post_mesh->locate_ref;
-    if (post_mesh_loc->exp_mesh == false)
+    if (post_mesh_loc->exp_mesh == NULL)
       _define_regular_mesh(post_mesh_loc);
     location_mesh = post_mesh_loc->exp_mesh;
   }
@@ -3575,7 +3575,7 @@ cs_post_define_volume_mesh(int          mesh_id,
 
   cs_post_mesh_t *post_mesh = NULL;
 
-  post_mesh = _predefine_mesh(mesh_id, false, 0, n_writers, writer_ids);
+  post_mesh = _predefine_mesh(mesh_id, true, 0, n_writers, writer_ids);
 
   /* Define mesh based on current arguments */
 
@@ -3683,7 +3683,7 @@ cs_post_define_surface_mesh(int          mesh_id,
 
   cs_post_mesh_t *post_mesh = NULL;
 
-  post_mesh = _predefine_mesh(mesh_id, false, 0, n_writers, writer_ids);
+  post_mesh = _predefine_mesh(mesh_id, true, 0, n_writers, writer_ids);
 
   /* Define mesh based on current arguments */
 
@@ -6148,6 +6148,7 @@ cs_post_init_meshes(int check_mask)
     }
   }
 
+#if 0
   /* Compute connectivity if not already done for delayed definitions */
 
   for (i = 0; i < _cs_post_n_meshes; i++) {
@@ -6155,6 +6156,7 @@ cs_post_init_meshes(int check_mask)
     if (post_mesh->exp_mesh == NULL)
       _define_mesh(post_mesh, NULL);
   }
+#endif
 
   /* If we must compute the vertices displacement field, we need
      to save the initial vertex coordinates */
