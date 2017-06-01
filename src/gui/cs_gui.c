@@ -6309,7 +6309,7 @@ cs_gui_turbomachinery_rotor(void)
         double fraction = (fraction_s != NULL) ? atof(fraction_s) : 0.1;
         double plane = (plane_s != NULL) ? atof(plane_s) : 25.0;
         int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 0;
-        int visualization = (visu_s != NULL) ? atoi(visu_s) : 1;
+        int visualization = (visu_s != NULL) ? atoi(visu_s) : 0;
 
         BFT_FREE(visu_s);
         BFT_FREE(verbosity_s);
