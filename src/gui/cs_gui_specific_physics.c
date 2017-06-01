@@ -484,8 +484,9 @@ _get_solid_fuel_thermal_conductivity(const int icha)
   cs_xpath_add_element(&path, "thermal_conductivity");
   cs_xpath_add_function_text(&path);
 
-  if (!cs_gui_get_double(path, &result))
-    bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
+  if (!cs_gui_get_double(path, &result)) {
+    result = 1.e-5; /* default, used with Lagrangian model only */
+  }
 
   BFT_FREE(path);
   return result;
@@ -1892,8 +1893,8 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const iirayo,
     rho0ch[icha] = _get_solid_fuel_density(icha+1);
 
     /* ---- Thermal conductivity of the coal (W/m/K) */
-    if (vars != NULL)
-      if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture_lagr"))
+    if (vars != NULL && thcdch != NULL)
+      if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture"))
         thcdch[icha] = _get_solid_fuel_thermal_conductivity(icha+1);
 
     /* ---- Caracteristiques cendres */
@@ -2228,10 +2229,8 @@ cs_gui_physical_model_select(cs_int_t  *ieos,
     if (cs_gui_strcmp(vars->model, "solid_fuels")) {
       if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel"))
         cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = 0;
-      else if (   cs_gui_strcmp(vars->model_value,
-                                "homogeneous_fuel_moisture")
-               || cs_gui_strcmp(vars->model_value,
-                                "homogeneous_fuel_moisture_lagr"))
+      else if (cs_gui_strcmp(vars->model_value,
+                             "homogeneous_fuel_moisture"))
         cs_glob_physical_model_flag[CS_COMBUSTION_COAL] = 1;
       else
         bft_error(__FILE__, __LINE__, 0,

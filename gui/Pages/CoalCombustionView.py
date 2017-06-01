@@ -1160,15 +1160,16 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditPCI.setText(str(self.model.getPCIValue(self.fuel)))
         self.lineEditCp.setText(str(self.model.getProperty(self.fuel, "specific_heat_average")))
 
-        if self.model.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
-            self.labelThermalCond.show()
-            self.labelUnitThermalCond.show()
-            self.lineEditThermalCond.show()
-            self.lineEditThermalCond.setText(str(self.model.getProperty(self.fuel, "thermal_conductivity")))
-        else:
-            self.labelThermalCond.hide()
-            self.labelUnitThermalCond.hide()
-            self.lineEditThermalCond.hide()
+        if self.model.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
+            if self.model.node_lagr != 'off':
+                self.labelThermalCond.show()
+                self.labelUnitThermalCond.show()
+                self.lineEditThermalCond.show()
+                self.lineEditThermalCond.setText(str(self.model.getProperty(self.fuel, "thermal_conductivity")))
+            else:
+                self.labelThermalCond.hide()
+                self.labelUnitThermalCond.hide()
+                self.lineEditThermalCond.hide()
 
         self.lineEditDensity.setText(str(self.model.getProperty(self.fuel, "density")))
         self.lineEditMoisture.setText(str(self.model.getProperty(self.fuel, "moisture")))

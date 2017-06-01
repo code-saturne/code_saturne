@@ -136,9 +136,10 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.modelGasCombustionModel.addItem(self.tr("partial premixed flame (Libby_Williams)"), "lwp")
 
         self.modelPulverizedCoal.addItem(self.tr("off"), "off")
-        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach"), "homogeneous_fuel")
-        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach with moisture"), "homogeneous_fuel_moisture")
-        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach with moisture with Lagrangian transport"), "homogeneous_fuel_moisture_lagr")
+        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach"),
+                                         "homogeneous_fuel")
+        self.modelPulverizedCoal.addItem(self.tr("homogeneous approach with moisture"),
+                                         "homogeneous_fuel_moisture")
 
         self.modelJouleEffect.addItem(self.tr("off"), "off")
         self.modelJouleEffect.addItem(self.tr("Joule Effect"), "joule")
@@ -209,23 +210,17 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         coal = self.pcoal.getCoalCombustionModel()
         self.modelPulverizedCoal.setItem(str_model=coal)
 
-        if coal == 'homogeneous_fuel_moisture_lagr':
-            self.modelLagrangian.setItem(str_model='frozen')
-            self.modelLagrangian.disableItem(str_model='off')
+        if coal == 'homogeneous_fuel_moisture':
+            self.modelLagrangian.disableItem(str_model='two_way')
 
         lagr = self.lagr.getLagrangianModel()
         self.modelLagrangian.setItem(str_model=lagr)
         if lagr == 'off':
+            self.modelSteadyFlow.enableItem(str_model='on')
             self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel')
-            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture')
-            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture_lagr')
         else:
+            self.modelSteadyFlow.disableItem(str_model='on')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
-            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture')
-            if lagr == 'frozen':
-                self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture_lagr')
-            else:
-                self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture_lagr')
 
         # Compatibility between turbulence model and multi-phases flow model
 
@@ -257,7 +252,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture')
-            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture_lagr')
 
             self.comboBoxGasCombustionModel.setEnabled(False)
             self.comboBoxPulverizedCoal.setEnabled(False)
@@ -417,16 +411,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         if str(model) == 'off':
             self.modelSteadyFlow.enableItem(str_model='on')
             self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel')
-            self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture')
-            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture_lagr')
         else:
             self.modelSteadyFlow.disableItem(str_model='on')
             self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel')
-            self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture')
-            if str(model) == 'frozen':
-                self.modelPulverizedCoal.enableItem(str_model='homogeneous_fuel_moisture_lagr')
-            else:
-                self.modelPulverizedCoal.disableItem(str_model='homogeneous_fuel_moisture_lagr')
 
         self.lagr.setLagrangianModel(model)
         self.browser.configureTree(self.case)
@@ -478,10 +465,14 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         model = self.__stringModelFromCombo('PulverizedCoal')
         self.pcoal.setCoalCombustionModel(model)
 
-        if model == 'homogeneous_fuel_moisture_lagr':
-            self.modelLagrangian.disableItem(str_model='off')
+        if model == 'homogeneous_fuel_moisture':
+            self.comboBoxLagrangian.setEnabled(True)
+            self.modelLagrangian.disableItem(str_model='two_way')
+        elif model != 'off':
+            self.comboBoxLagrangian.setEnabled(False)
         else:
-            self.modelLagrangian.enableItem(str_model='off')
+            self.comboBoxLagrangian.setEnabled(True)
+            self.modelLagrangian.enableItem(str_model='two_way')
 
         if model != 'off':
             self.__disableComboBox()

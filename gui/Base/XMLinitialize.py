@@ -1397,8 +1397,6 @@ class XMLinit(Variables):
                     node['name'] = node['label']
 
 
-
-
     def __backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
@@ -1413,6 +1411,10 @@ class XMLinit(Variables):
             if node:
                 node['name'] = "wall_thermal_conductivity"
 
+        nch = XMLThermoPhysicalModelNode.xmlGetNode('solid_fuels')
+        if nch:
+            if nch['model'] == 'homogeneous_fuel_moisture_lagr':
+                nch['model'] = 'homogeneous_fuel_moisture'
 
         return
 

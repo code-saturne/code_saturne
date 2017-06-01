@@ -69,8 +69,7 @@ class CoalCombustionModel(Variables, Model):
         self.node_turb   = self.node_models.xmlGetNode('turbulence',   'model')
         self.node_fuel   = self.node_models.xmlInitNode('solid_fuels', 'model')
 
-        self.coalCombustionModel = ('off', 'homogeneous_fuel', 'homogeneous_fuel_moisture',
-                                    'homogeneous_fuel_moisture_lagr')
+        self.coalCombustionModel = ('off', 'homogeneous_fuel', 'homogeneous_fuel_moisture')
 
 
     def defaultValues(self):
@@ -146,9 +145,6 @@ class CoalCombustionModel(Variables, Model):
         """
         coalCombustionList = self.coalCombustionModel
 
-        if self.node_lagr and self.node_lagr['model'] != 'off':
-            coalCombustionList = ('off', 'homogeneous_fuel_moisture_lagr')
-
         if self.node_turb != None:
             if self.node_turb['model'] not in ('k-epsilon',
                                                'k-epsilon-PL',
@@ -171,7 +167,7 @@ class CoalCombustionModel(Variables, Model):
         Create list of variables for a class
         """
         modelVariables =  ["n_p_", "x_p_coal_", "x_p_char_", "x_p_h_"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture' or self.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
+        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
             modelVariables.append("x_p_wt_")
 
         return modelVariables
@@ -184,7 +180,7 @@ class CoalCombustionModel(Variables, Model):
         """
         modelProperties = ["t_p_", "x_p_", "rho_p_", "diam_p_", "dissapear_rate_p_",
                            "m_transfer_v1_p_",  "m_transfer_v2_p_", "het_ts_o2_p_"]
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture' or self.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
+        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
             modelProperties.append("dry_ts_p")
 
         if self.getCO2KineticsStatus() == 'on':
@@ -235,7 +231,7 @@ class CoalCombustionModel(Variables, Model):
             lst.append("x_c_h_ox")
             lst.append("x_c_nh3")
 
-        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture' or self.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
+        if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture':
             lst.append("fr_h2o")
 
         if self.getOxidantNumber() >= 2:
@@ -387,7 +383,7 @@ class CoalCombustionModel(Variables, Model):
         if model isn't 'homogeneous_fuel_moisture'
         """
         # TODO a supprimer doit etre appele si on change le modele uniquement
-        if model != 'homogeneous_fuel_moisture' and self.getCoalCombustionModel() != 'homogeneous_fuel_moisture_lagr':
+        if model != 'homogeneous_fuel_moisture':
             nod = self.node_fuel.xmlGetNode('variable', type="model", name="fr_h2o")
             if nod:
                 nod.xmlRemoveNode()
@@ -509,15 +505,6 @@ class CoalCombustionModel(Variables, Model):
         if self.node_fuel['model'] == model:
             return
 
-        # Avoid changing model settings for regular and Lagrangian
-        # variants of homogeneous fuel moisture combustion model
-        if model in ('homogeneous_fuel_moisture',
-                     'homogeneous_fuel_moisture_lagr'):
-            if self.node_fuel['model'] in ('homogeneous_fuel_moisture',
-                                           'homogeneous_fuel_moisture_lagr'):
-                self.node_fuel['model']  = model
-                return
-
         self.node_fuel['model']  = model
 
         self.__updateScalarAndProperty(model)
@@ -558,7 +545,7 @@ class CoalCombustionModel(Variables, Model):
             self.createOxidant()
             self.createCoalModelScalarsAndProperties()
 
-            if model != 'homogeneous_fuel_moisture' and self.getCoalCombustionModel() != 'homogeneous_fuel_moisture_lagr':
+            if model != 'homogeneous_fuel_moisture':
                 self.__updateWetScalarsAndProperty(model)
 
 

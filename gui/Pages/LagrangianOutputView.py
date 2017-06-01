@@ -129,7 +129,7 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.checkBoxIVISMP.setChecked(False)
 
         if CoalCombustionModel(self.case).getCoalCombustionModel("only") == \
-           "homogeneous_fuel_moisture_lagr":
+           "homogeneous_fuel_moisture":
             status = self.model.getCoalParticleDiameterStatus()
             if status == "on":
                 self.checkBoxIVISDK.setChecked(True)
