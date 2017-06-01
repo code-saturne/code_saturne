@@ -2106,6 +2106,8 @@ _export_families_g(const fvm_writer_section_t  *export_section,
            "Associated MED geometrical element: \"%i\"\n"),
          writer->name, med_mesh->name, med_section_type);
 
+    MEDfilterClose(&filter);
+
   }
   else if (writer->rank == 0) {
 
