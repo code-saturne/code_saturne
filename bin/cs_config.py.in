@@ -342,54 +342,71 @@ class config:
 
     def __get_search_paths_catalyst__(self):
         """
-        return Catalyst library search path and Python search paths if available
+        return Catalyst library search path, Python search paths,
+        and other environment variables if available
         """
 
         catalyst_lib_dir = None
         catalyst_pythonpath_dirs = ()
+        catalyst_env_vars = None
 
         if self.libs['catalyst'].have:
 
-            if self.features['relocatable']:
-                catalyst_lib_dir = os.getenv('CATALYST_ROOT_DIR')
+            libs = self.libs['catalyst'].flags['libs']
+            for l in libs.split('-Wl,'):
+                if l.find('libvtkPVPythonCatalyst') > -1:
+                    catalyst_lib_dir = os.path.dirname(l)
+                    break
 
-            if not catalyst_lib_dir:
-                libs = self.libs['catalyst'].flags['libs']
-                for l in libs.split('-Wl,'):
-                    if l.find('libvtkPVPythonCatalyst') > -1:
-                        catalyst_lib_dir = os.path.dirname(l)
-                        break
 
         if catalyst_lib_dir:
+
+            if self.features['relocatable']:
+                catalyst_root_dir = os.getenv('CATALYST_ROOT_DIR')
+                if catalyst_root_dir:
+                    subdir_idx = catalyst_lib_dir.rfind('lib')
+                    if subdir_idx > 1:
+                        catalyst_lib_dir = os.path.join(catalyst_root_dir,
+                                                        catalyst_lib_dir[subdir_idx:])
+
             sp_dir = os.path.join(catalyst_lib_dir, 'site-packages')
             if os.path.isdir(sp_dir):
                 catalyst_pythonpath_dirs = (os.path.join(sp_dir, 'vtk'),
                                             os.path.join(sp_dir, 'paraview'),
                                             sp_dir)
 
-        return catalyst_lib_dir, catalyst_pythonpath_dirs
+            catalyst_plugin_path = os.getenv('CATALYST_PLUGIN_PATH')
+            if not catalyst_plugin_path:
+               catalyst_plugin_path = ''
+            catalyst_env_vars = {'PV_PLUGIN_PATH':catalyst_plugin_path}
+
+        return catalyst_lib_dir, catalyst_pythonpath_dirs, catalyst_env_vars
 
     def get_plugin_search_paths(self):
         """
-        return plugin library search path and Python search paths if available
+        return plugin library search path, Python search paths,
+        and other environment variables if available
         """
 
         plugin_lib_dirs = []
         plugin_pythonpath_dirs = []
+        plugin_env_vars = {}
 
         for lib in self.deplibs:
-            if (self.libs[lib].have == "yes"
-                and (self.libs[lib].dynamic_load)):
+            if self.libs[lib].have == "yes":
 
                 if lib == 'catalyst':
-                    catalyst_lib_dir, catalyst_pythonpath_dirs \
+                    catalyst_lib_dir, catalyst_pythonpath_dirs, catalyst_env_vars \
                         = self.__get_search_paths_catalyst__()
 
-                    plugin_lib_dirs.append(catalyst_lib_dir)
+                    if self.libs[lib].dynamic_load:
+                        plugin_lib_dirs.append(catalyst_lib_dir)
                     for p in catalyst_pythonpath_dirs:
                         plugin_pythonpath_dirs.append(p)
+                    plugin_env_vars.update(catalyst_env_vars)
 
-        return plugin_lib_dirs, plugin_pythonpath_dirs
+
+        return plugin_lib_dirs, plugin_pythonpath_dirs, plugin_env_vars
 
     def print_config(self):
         """

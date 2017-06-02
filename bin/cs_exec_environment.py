@@ -360,13 +360,18 @@ def write_export_env(fd, var, value):
     Write the correct command so as to export environment variables.
     """
 
+    if not value:
+        value = ''
     if sys.platform.startswith('win'):
         export_cmd = 'set ' + var + '=' + value
     else:
         if get_shell_type()[-3:] == 'csh': # handle C-type shells
             export_cmd = 'setenv ' + var + ' ' + value
         else:                              # handle Bourne-type shells
-            export_cmd = 'export ' + var + '=' + value
+            if value:
+                export_cmd = 'export ' + var + '=' + value
+            else:
+                export_cmd = 'unset ' + var
     export_cmd = export_cmd + '\n'
     fd.write(export_cmd)
 

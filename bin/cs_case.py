@@ -1269,7 +1269,7 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
                                                    salome_libdir)
 
         # Add paths for plugins
-        plugin_lib_dirs, plugin_pythonpath_dirs \
+        plugin_lib_dirs, plugin_pythonpath_dirs, plugin_env_vars \
             = self.package_compute.config.get_plugin_search_paths()
         for d in plugin_lib_dirs:
             cs_exec_environment.write_prepend_path(s,
@@ -1287,6 +1287,11 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
                 cs_exec_environment.write_prepend_path(s,
                                                        'LD_LIBRARY_PATH',
                                                        d)
+
+        # Add additional environment variables
+
+        for v in plugin_env_vars:
+            cs_exec_environment.write_export_env(s, v, plugin_env_vars[v])
 
         s.write('\n')
 
