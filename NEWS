@@ -1,9 +1,11 @@
 
-Release 5.0.0 (unreleased)
-==========================
+Release 5.0.0 (June 2 2017)
+===========================
 
 Bug fixes
 ---------
+
+- Fixes for handling of Catalyst when PV_PLUGIN_PATH may be defined.
 
 - Fix issues for transient mesh visualization.
 
