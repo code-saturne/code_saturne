@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-05-29 03:19+0200\n"
+"POT-Creation-Date: 2017-06-02 12:07+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -9737,17 +9737,6 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid ""
-" Invalid choice of gravitation axis: %s.\n"
-" Available choices are 'x', 'y' and 'z'\n"
-" Please check your settings."
-msgstr ""
-
-#, fuzzy
-msgid " Key not implemented yet."
-msgstr " La clé %s n'est pas encore gérée."
-
-#, c-format
 msgid " Invalid type of property for %s."
 msgstr ""
 
@@ -11049,9 +11038,9 @@ msgid ""
 "Current size = %lu, minimum size required = %lu."
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "Error: inlet formula for %s, %s is not defined."
-msgstr "La grille d'interpolation \"%s\" n'est pas définie."
+msgstr "La formule d'interpolation pour %s, %s n'est pas définie."
 
 #, c-format
 msgid "Error: can not interpret expression: %s\n"

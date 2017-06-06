@@ -1,4 +1,13 @@
 
+Release 5.0.1 (unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Fix space-filling curve based partitioning in some rare cases
+  impacting mostly 1D or 2D meshes.
+
 Release 5.0.0 (June 2 2017)
 ===========================
 
