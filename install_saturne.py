@@ -46,7 +46,7 @@ def run_command(cmd, stage, app, log):
     log.write(output[0])
 
     if p.returncode != 0:
-        sys.stderr.write("Error during " + string.lower(stage) +
+        sys.stderr.write("Error during " + stage.lower() +
                          " stage of " + app + ".\n")
         sys.stderr.write("See " + log.name + " for more information.\n")
         sys.exit(1)
@@ -87,7 +87,7 @@ def check_directory():
     top_srcdir, script_name = os.path.split(script_path)
     abscwd = os.path.abspath(os.getcwd())
 
-    if abscwd.find(top_srcdir) == 0:
+    if not os.path.relpath(abscwd, top_srcdir)[0:2] == '..':
         message = \
 """
 The '%(script_name)s' installer script should not be run from inside the
@@ -133,8 +133,9 @@ def find_executable(names, env_var=None):
     # test it first.
 
     if env_var:
-        if os.environ.has_key(env_var):
-            return os.environ(env_var)
+        k = os.environ.get(env_var)
+        if k:
+            return k
         else:
             for a in sys.argv[1:]:
                 if a.find(env_var) == 0:
@@ -602,9 +603,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.14",
-                    archive="hdf5-1.8.14.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.14/src/%s")
+                    version="1.8.17",
+                    archive="hdf5-1.8.17.tar.gz",
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.17/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -628,12 +629,12 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.1.0",
-                    archive="med-3.1.0.tar.gz",
+                    version="3.2.1",
+                    archive="med-3.2.1.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
-        p.config_opts = "--with-med_int=int --disable-fortran"
+        p.config_opts = "--with-med_int=int --disable-fortran --disable-python"
 
         # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
 
@@ -757,7 +758,7 @@ to start the installation.
         # setup file reading
         #
         try:
-            setupFile = file('setup', mode='r')
+            setupFile = open('setup', mode='r')
         except IOError:
             sys.stderr.write('Error: opening setup file\n')
             sys.exit(1)
@@ -940,7 +941,7 @@ Check the setup file and some utilities presence.
                                  "Please check your setup file.\n\n")
             sys.exit(1)
         else:
-            cmd = python + " -c \'import sys; print sys.version[:3]\'"
+            cmd = python + " -c \'import sys; print(sys.version[:3])\'"
             if verbose == 'yes':
                 sys.stdout.write("     Python version is ")
             p = subprocess.Popen(cmd,
@@ -1182,7 +1183,7 @@ Check the setup file and some utilities presence.
         #
         # setup file update
         #
-        sf = file(os.path.join(os.getcwd(), "setup"), mode='w')
+        sf = open(os.path.join(os.getcwd(), "setup"), mode='w')
 
         setupMain = \
 """#========================================================
@@ -1282,11 +1283,13 @@ salome    %(salome)s
 #
 #   For Linux workstations, HDF5, CGNS, and even MED
 # packages may be available through the package manager.
-# HDF5 is also often available on large systems such as
-# IBM Blue Gene or Cray XT/XE/XC/XK.
+# HDF5 is also often available on large systems.
+# When building with SALOME, the platform distribution's
+# packages may be used, by setting 'salome' in the
+# matching entry under the "Use" column.
 #
 # Scotch and Pt-Scotch are available in some Linux
-# distributtions, but may be built with options
+# distributions, but may be built with options
 # incompatible with non-threaded Code_Saturne runs.
 #
 #   To install CGNS or ParMetis, the CMake
@@ -1373,7 +1376,7 @@ You can have a look at the log file meanwhile.
 Before using Code_Saturne, please update your environment with:
 
   cspath=%(cspath)s
-  alias code_saturne="$cspath/bin"
+  alias code_saturne="$cspath/code_saturne"
 
 The documentation should then be available through the commands:
   code_saturne info -g refcard
