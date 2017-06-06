@@ -89,7 +89,7 @@ def check_directory():
     top_srcdir, script_name = os.path.split(script_path)
     abscwd = os.path.abspath(os.getcwd())
 
-    if abscwd.find(top_srcdir) == 0:
+    if not os.path.relpath(abscwd, top_srcdir)[0:2] == '..':
         message = \
 """
 The '%(script_name)s' installer script should not be run from inside the
@@ -633,8 +633,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.2.0",
-                    archive="med-3.2.0.tar.gz",
+                    version="3.2.1",
+                    archive="med-3.2.1.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
