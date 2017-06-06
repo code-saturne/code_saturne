@@ -21,8 +21,8 @@ Architectural changes
 
 - Remove support for restart files older than version 4.0.
 
-Release 5.0.0 (unreleased)
-==========================
+Release 5.0.0 (June 2 2017)
+===========================
 
 User changes
 ------------
