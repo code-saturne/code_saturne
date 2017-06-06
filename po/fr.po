@@ -11042,9 +11042,9 @@ msgid ""
 "Current size = %lu, minimum size required = %lu."
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "Error: inlet formula for %s, %s is not defined."
-msgstr "La grille d'interpolation \"%s\" n'est pas définie."
+msgstr "La formule d'interpolation pour %s, %s n'est pas définie."
 
 #, c-format
 msgid "Error: can not interpret expression: %s\n"
@@ -15400,5 +15400,3 @@ msgstr ""
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
 
-#~ msgid " Key not implemented yet."
-#~ msgstr " Clé non encore gérée."
