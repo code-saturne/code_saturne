@@ -153,19 +153,19 @@ do iscal = 1, nscal
   call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
   f_id0  = -1
-  iconvp = 0
+  iconvp = 0 ! diffusion term only
+  ischcp = 1
+  isstpp = 1
+  blencp = 0.d0
   imasac = 0
   idiffp = 1
   nswrgp = vcopt%nswrgr
   imligp = vcopt%imligr
   ircflp = vcopt%ircflu
-  ischcp = vcopt%ischcv
-  isstpp = vcopt%isstpc
   inc    = 1
   iccocg = 1
   idftnp = 1 !vcopt%idften !FIXME when activating GGDH
   iwarnp = vcopt%iwarni
-  blencp = vcopt%blencv
   epsrgp = vcopt%epsrgr
   climgp = vcopt%climgr
   extrap = vcopt%extrag
