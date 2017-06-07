@@ -2141,8 +2141,12 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
     snprintf(var_name, 31, "%s", f->name);;
   }
-  else
+  else if (isstpp > 1) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("invalid value of isstpp for a work array"));
+  } else {
     strcpy(var_name, "Work array");
+  }
   var_name[31] = '\0';
 
   if (iwarnp >= 2) {

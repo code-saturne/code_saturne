@@ -8,6 +8,8 @@ Bug fixes
 - Fix space-filling curve based partitioning in some rare cases
   impacting mostly 1D or 2D meshes.
 
+- Fix for idilat>3 algo. and isstpp>1 (beta or NVD/TVD limiters) compatibility.
+
 Release 5.0.0 (June 2 2017)
 ===========================
 
