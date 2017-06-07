@@ -344,7 +344,6 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
       cs_real_t temp[nlayer] ;
       for (int ilayer = 0; ilayer < nlayer; ilayer++)
         temp[ilayer] = 800.0 ;
-      cs_real_t cp;
 
       /* Number of the coal   */
       int icoal = 0;
@@ -355,7 +354,7 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
 
         /* Example of user-defined injection, coal after devolatilisation */
         /* Specific heat   */
-        cp = lag_cc->cp2ch[icoal];
+        cs_real_t cp = lag_cc->cp2ch[icoal];
 
         /* water mass fraction in the particle */
         cs_real_t water_mass_fraction  = 0.0;
@@ -404,11 +403,11 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
                                     shrinking_diameter,
                                     initial_diameter);
 
-      }
+        cs_lagr_set_zone_class_cp(iclas,
+                                  izone,
+                                  cp);
 
-      cs_lagr_set_zone_class_cp(iclas,
-                                izone,
-                                cp);
+      }
 
     }
 
