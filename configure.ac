@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2016 EDF S.A.
+# Copyright (C) 1998-2017 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -49,7 +49,7 @@ m4_define([cs_licence_c_comment],
 
 m4_define([cs_major_version], [3])
 m4_define([cs_minor_version], [0])
-m4_define([cs_release_version], [9])
+m4_define([cs_release_version], [10])
 m4_define([cs_version_extra], [])
 m4_define([cs_version_string],
           [cs_major_version.cs_minor_version.cs_release_version@&t@cs_version_extra])
