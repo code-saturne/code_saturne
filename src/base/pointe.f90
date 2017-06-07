@@ -360,10 +360,8 @@ contains
 
     ! Wall-distance calculation
 
-    if (ineedy.eq.1) then
-      if (itytur.eq.4 .and. idries.eq.1) then
-        allocate(yplpar(ncelet))
-      endif
+    if (itytur.eq.4 .and. idries.eq.1) then
+      allocate(yplpar(ncelet))
     endif
 
     ! liquid-vapour mass transfer term for cavitating flows
