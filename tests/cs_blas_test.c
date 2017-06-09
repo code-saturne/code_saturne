@@ -2174,6 +2174,32 @@ _dense_3_3_sv_lu(const cs_real_t   a[restrict 3][3],
 }
 
 /*----------------------------------------------------------------------------
+ * Invert 3x3 matrix using Cramer's rule / Cayley Hamilton theorem
+ *
+ * This assumes the matrix is invertible
+ *
+ * parameters:
+ *   a      <-- block matrix
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_dense_3_3_ci(cs_real_t   a[3][3])
+{
+  double _a[3][3];
+  cs_real_t t[3], di;
+
+  /* Copy array */
+
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      _a[i][j] = a[i][j];
+    }
+  }
+
+  cs_math_33_inv(_a, a);
+}
+
+/*----------------------------------------------------------------------------
  * Compute matrix-vector product for dense blocks: y[i] = a[i].x[i]
  *
  * This variant uses a fixed 3x3 block, for better compiler optimization,
@@ -2664,7 +2690,7 @@ _solve_33_test(double  t_measure)
         wt3 = cs_timer_wtime();
 #       pragma omp parallel for
         for (ii = 0; ii < n; ii++)
-          cs_math_33_inv_cramer_in_place(a[ii]);
+          _dense_3_3_ci(a[ii]);
         test_sum += test_sum_mult*a[run_id%n][0][0];
         run_id++;
       }
