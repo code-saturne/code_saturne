@@ -910,7 +910,7 @@ if (igrari.eq.1) then
 
     do isou = 1, dimrij
       do jsou = 1, dimrij
-        rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) - volume(iel) &
+        rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) - cell_f_vol(iel) &
                                 * impl_drsm(isou,jsou)
       end do
     end do
