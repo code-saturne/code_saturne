@@ -709,8 +709,8 @@ cs_balance_tensor(int                 idtvar,
   }
   /* Symmetric tensor diffusivity */
   else if (idftnp == 6) {
-    /* Nor diffusive part neither secondary viscosity or transpose of gradient */
-    var_cal_opt_loc.idiff  = 0;
+    /* No diffusive part */
+    var_cal_opt_loc.idiff = 0;
     /* Convective part */
     if (iconvp == 1) {
       cs_convection_diffusion_tensor(idtvar,

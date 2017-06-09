@@ -2018,7 +2018,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
                       imasac,
                       inc,
                       var_cal_opt,
-                      NULL, /* pvara */
+                      NULL, /* pvar == pvara */
                       pvara,
                       coefats,
                       coefbts,
@@ -2036,7 +2036,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
                       smbrp);
 
     var_cal_opt->thetav = thetap;
-
   }
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
@@ -2228,11 +2227,12 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
       lvar = -1;
 
 #     pragma omp parallel for private(isou)
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
         for (isou = 0 ; isou < 6 ; isou++) {
           adxkm1[iel][isou] = adxk[iel][isou];
           adxk[iel][isou] = - rhs0[iel][isou];
         }
+      }
 
       cs_balance_tensor(idtvar,
                         lvar,
