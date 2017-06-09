@@ -312,9 +312,9 @@ _cs_lagr_post(void                  *input,
         for (cs_lnum_t i = 0; i < n_b_faces; i++) {
           cs_lnum_t f_id = b_face_ids[i];
           if (_f_count[f_id] > seuilf)
-            val[f_id] = _b_stats[f_id] / _f_count[f_id];
+            val[i] = _b_stats[f_id] / _f_count[f_id];
           else
-            val[f_id] = 0.;
+            val[i] = 0.;
         }
 
       }
@@ -324,7 +324,7 @@ _cs_lagr_post(void                  *input,
 
         for (cs_lnum_t i = 0; i < n_b_faces; i++) {
           cs_lnum_t f_id = b_face_ids[i];
-          val[f_id] = _b_stats[f_id] / tstatp;
+          val[i] = _b_stats[f_id] / tstatp;
         }
 
       }
@@ -336,9 +336,9 @@ _cs_lagr_post(void                  *input,
         for (cs_lnum_t i = 0; i < n_b_faces; i++) {
           cs_lnum_t f_id = b_face_ids[i];
           if (_f_count[f_id] > seuilf)
-            val[f_id] = _b_stats[f_id];
+            val[i] = _b_stats[f_id];
           else
-            val[f_id] = 0.;
+            val[i] = 0.;
         }
 
       }
