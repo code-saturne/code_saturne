@@ -1339,9 +1339,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
       for (isou = 0 ; isou < 3 ; isou++) {
         rhs0[iel][isou] = smbrp[iel][isou];
         smbini[iel][isou] = smbini[iel][isou]
-                          -fimp[iel][0][isou]*(pvar[iel][0] - pvara[iel][0])
-                          -fimp[iel][1][isou]*(pvar[iel][1] - pvara[iel][1])
-                          -fimp[iel][2][isou]*(pvar[iel][2] - pvara[iel][2]);
+                          -fimp[iel][isou][0]*(pvar[iel][0] - pvara[iel][0])
+                          -fimp[iel][isou][1]*(pvar[iel][1] - pvara[iel][1])
+                          -fimp[iel][isou][2]*(pvar[iel][2] - pvara[iel][2]);
         smbrp[iel][isou] += smbini[iel][isou];
 
         adxkm1[iel][isou] = 0.;
@@ -1356,9 +1356,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
       for (isou = 0 ; isou < 3 ; isou++) {
         smbini[iel][isou] = smbini[iel][isou]
-                          -fimp[iel][0][isou]*(pvar[iel][0] - pvara[iel][0])
-                          -fimp[iel][1][isou]*(pvar[iel][1] - pvara[iel][1])
-                          -fimp[iel][2][isou]*(pvar[iel][2] - pvara[iel][2]);
+                          -fimp[iel][isou][0]*(pvar[iel][0] - pvara[iel][0])
+                          -fimp[iel][isou][1]*(pvar[iel][1] - pvara[iel][1])
+                          -fimp[iel][isou][2]*(pvar[iel][2] - pvara[iel][2]);
         smbrp[iel][isou] += smbini[iel][isou];
     }
   }
@@ -1582,9 +1582,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
        * of the RHS updated at each sweep */
         for (isou = 0 ; isou < 3 ; isou++) {
           smbini[iel][isou] = smbini[iel][isou]
-                            - fimp[iel][0][isou]*dpvar[iel][0]
-                            - fimp[iel][1][isou]*dpvar[iel][1]
-                            - fimp[iel][2][isou]*dpvar[iel][2];
+                            - fimp[iel][isou][0]*dpvar[iel][0]
+                            - fimp[iel][isou][1]*dpvar[iel][1]
+                            - fimp[iel][isou][2]*dpvar[iel][2];
           smbrp[iel][isou] = smbini[iel][isou];
         }
       }
@@ -1595,9 +1595,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
        * of the RHS updated at each sweep */
         for (isou = 0 ; isou < 3 ; isou++) {
           smbini[iel][isou] = smbini[iel][isou]
-                            - fimp[iel][0][isou]*alph*dpvar[iel][0]
-                            - fimp[iel][1][isou]*alph*dpvar[iel][1]
-                            - fimp[iel][2][isou]*alph*dpvar[iel][2];
+                            - fimp[iel][isou][0]*alph*dpvar[iel][0]
+                            - fimp[iel][isou][1]*alph*dpvar[iel][1]
+                            - fimp[iel][isou][2]*alph*dpvar[iel][2];
           smbrp[iel][isou] = smbini[iel][isou];
         }
       }
@@ -1608,11 +1608,11 @@ cs_equation_iterative_solve_vector(int                   idtvar,
        * of the RHS updated at each sweep */
         for (isou = 0 ; isou < 3 ; isou++) {
           smbini[iel][isou] = smbini[iel][isou]
-                            - fimp[iel][0][isou]*(alph*dpvar[iel][0]
+                            - fimp[iel][isou][0]*(alph*dpvar[iel][0]
                                                 + beta*dpvarm1[iel][0])
-                            - fimp[iel][1][isou]*(alph*dpvar[iel][1]
+                            - fimp[iel][isou][1]*(alph*dpvar[iel][1]
                                                 + beta*dpvarm1[iel][1])
-                            - fimp[iel][2][isou]*(alph*dpvar[iel][2]
+                            - fimp[iel][isou][2]*(alph*dpvar[iel][2]
                                                 + beta*dpvarm1[iel][2]);
           smbrp[iel][isou] = smbini[iel][isou];
         }
@@ -1703,9 +1703,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 #   pragma omp parallel for private(isou)
     for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
       for (isou = 0 ; isou < 3 ; isou++)
-        smbrp[iel][isou] = smbini[iel][isou] - fimp[iel][0][isou]*dpvar[iel][0]
-                                             - fimp[iel][1][isou]*dpvar[iel][1]
-                                             - fimp[iel][2][isou]*dpvar[iel][2];
+        smbrp[iel][isou] = smbini[iel][isou] - fimp[iel][isou][0]*dpvar[iel][0]
+                                             - fimp[iel][isou][1]*dpvar[iel][1]
+                                             - fimp[iel][isou][2]*dpvar[iel][2];
 
     inc = 1;
 
@@ -2129,12 +2129,12 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
       for (isou = 0 ; isou < 6 ; isou++) {
         rhs0[iel][isou] = smbrp[iel][isou];
         smbini[iel][isou] = smbini[iel][isou]
-                          -fimp[iel][0][isou]*(pvar[iel][0] - pvara[iel][0])
-                          -fimp[iel][1][isou]*(pvar[iel][1] - pvara[iel][1])
-                          -fimp[iel][2][isou]*(pvar[iel][2] - pvara[iel][2])
-                          -fimp[iel][3][isou]*(pvar[iel][3] - pvara[iel][3])
-                          -fimp[iel][4][isou]*(pvar[iel][4] - pvara[iel][4])
-                          -fimp[iel][5][isou]*(pvar[iel][5] - pvara[iel][5]);
+                          -fimp[iel][isou][0]*(pvar[iel][0] - pvara[iel][0])
+                          -fimp[iel][isou][1]*(pvar[iel][1] - pvara[iel][1])
+                          -fimp[iel][isou][2]*(pvar[iel][2] - pvara[iel][2])
+                          -fimp[iel][isou][3]*(pvar[iel][3] - pvara[iel][3])
+                          -fimp[iel][isou][4]*(pvar[iel][4] - pvara[iel][4])
+                          -fimp[iel][isou][5]*(pvar[iel][5] - pvara[iel][5]);
         smbrp[iel][isou] += smbini[iel][isou];
 
         adxkm1[iel][isou] = 0.;
@@ -2149,12 +2149,12 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
     for (isou = 0 ; isou < 6 ; isou++) {
       smbini[iel][isou] = smbini[iel][isou]
-                          -fimp[iel][0][isou]*(pvar[iel][0] - pvara[iel][0])
-                          -fimp[iel][1][isou]*(pvar[iel][1] - pvara[iel][1])
-                          -fimp[iel][2][isou]*(pvar[iel][2] - pvara[iel][2])
-                          -fimp[iel][3][isou]*(pvar[iel][3] - pvara[iel][3])
-                          -fimp[iel][4][isou]*(pvar[iel][4] - pvara[iel][4])
-                          -fimp[iel][5][isou]*(pvar[iel][5] - pvara[iel][5]);
+                          -fimp[iel][isou][0]*(pvar[iel][0] - pvara[iel][0])
+                          -fimp[iel][isou][1]*(pvar[iel][1] - pvara[iel][1])
+                          -fimp[iel][isou][2]*(pvar[iel][2] - pvara[iel][2])
+                          -fimp[iel][isou][3]*(pvar[iel][3] - pvara[iel][3])
+                          -fimp[iel][isou][4]*(pvar[iel][4] - pvara[iel][4])
+                          -fimp[iel][isou][5]*(pvar[iel][5] - pvara[iel][5]);
       smbrp[iel][isou] += smbini[iel][isou];
     }
   }
@@ -2377,12 +2377,12 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
        * of the RHS updated at each sweep */
         for (isou = 0 ; isou < 6 ; isou++) {
           smbini[iel][isou] = smbini[iel][isou]
-                            - fimp[iel][0][isou]*dpvar[iel][0]
-                            - fimp[iel][1][isou]*dpvar[iel][1]
-                            - fimp[iel][2][isou]*dpvar[iel][2]
-                            - fimp[iel][3][isou]*dpvar[iel][3]
-                            - fimp[iel][4][isou]*dpvar[iel][4]
-                            - fimp[iel][5][isou]*dpvar[iel][5];
+                            - fimp[iel][isou][0]*dpvar[iel][0]
+                            - fimp[iel][isou][1]*dpvar[iel][1]
+                            - fimp[iel][isou][2]*dpvar[iel][2]
+                            - fimp[iel][isou][3]*dpvar[iel][3]
+                            - fimp[iel][isou][4]*dpvar[iel][4]
+                            - fimp[iel][isou][5]*dpvar[iel][5];
           smbrp[iel][isou] = smbini[iel][isou];
         }
       }
@@ -2393,12 +2393,12 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
        * of the RHS updated at each sweep */
         for (isou = 0 ; isou < 6 ; isou++) {
           smbini[iel][isou] = smbini[iel][isou]
-                            - fimp[iel][0][isou]*alph*dpvar[iel][0]
-                            - fimp[iel][1][isou]*alph*dpvar[iel][1]
-                            - fimp[iel][2][isou]*alph*dpvar[iel][2]
-                            - fimp[iel][3][isou]*alph*dpvar[iel][3]
-                            - fimp[iel][4][isou]*alph*dpvar[iel][4]
-                            - fimp[iel][5][isou]*alph*dpvar[iel][5];
+                            - fimp[iel][isou][0]*alph*dpvar[iel][0]
+                            - fimp[iel][isou][1]*alph*dpvar[iel][1]
+                            - fimp[iel][isou][2]*alph*dpvar[iel][2]
+                            - fimp[iel][isou][3]*alph*dpvar[iel][3]
+                            - fimp[iel][isou][4]*alph*dpvar[iel][4]
+                            - fimp[iel][isou][5]*alph*dpvar[iel][5];
           smbrp[iel][isou] = smbini[iel][isou];
         }
       }
@@ -2409,17 +2409,17 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
        * of the RHS updated at each sweep */
         for (isou = 0 ; isou < 6 ; isou++) {
           smbini[iel][isou] = smbini[iel][isou]
-                            - fimp[iel][0][isou]*(alph*dpvar[iel][0]
+                            - fimp[iel][isou][0]*(alph*dpvar[iel][0]
                                                 + beta*dpvarm1[iel][0])
-                            - fimp[iel][1][isou]*(alph*dpvar[iel][1]
+                            - fimp[iel][isou][1]*(alph*dpvar[iel][1]
                                                 + beta*dpvarm1[iel][1])
-                            - fimp[iel][2][isou]*(alph*dpvar[iel][2]
+                            - fimp[iel][isou][2]*(alph*dpvar[iel][2]
                                                 + beta*dpvarm1[iel][2])
-                            - fimp[iel][3][isou]*(alph*dpvar[iel][3]
+                            - fimp[iel][isou][3]*(alph*dpvar[iel][3]
                                                 + beta*dpvarm1[iel][3])
-                            - fimp[iel][4][isou]*(alph*dpvar[iel][4]
+                            - fimp[iel][isou][4]*(alph*dpvar[iel][4]
                                                 + beta*dpvarm1[iel][4])
-                            - fimp[iel][5][isou]*(alph*dpvar[iel][5]
+                            - fimp[iel][isou][5]*(alph*dpvar[iel][5]
                                                 + beta*dpvarm1[iel][5]);
           smbrp[iel][isou] = smbini[iel][isou];
         }
