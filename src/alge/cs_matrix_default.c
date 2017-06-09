@@ -205,95 +205,56 @@ _build_block_row_g_id(cs_lnum_t         n_rows,
  * Matrix (native format) vector product
  *
  * parameters:
- *   isym       <-- Symmetry indicator:
- *                  1: symmetric; 2: not symmetric
- *   ibsize     <-- Block size of element ii
- *   iesize     <-- Block size of element ij
- *   iinvpe     <-- Indicator to cancel increments
- *                  in rotational periodicty (2) or
- *                  to exchange them as scalars (1)
- *   dam        <-- Matrix diagonal
- *   xam        <-- Matrix extra-diagonal terms
- *   vx         <-- A*vx
- *   vy         <-> vy = A*vx
+ *   symmetric     <-- Symmetry indicator:
+ *   db_size       <-- block sizes for diagonal
+ *   eb_size       <-- block sizes for extra diagonal
+ *   rotation_mode <-- halo update option for rotational periodicity
+ *   dam           <-- Matrix diagonal
+ *   xam           <-- Matrix extra-diagonal terms
+ *   vx            <-- A*vx
+ *   vy            <-> vy = A*vx
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_vector_native_multiply(int               isym,
-                                 int               ibsize,
-                                 int               iesize,
-                                 int               iinvpe,
-                                 int               f_id,
-                                 const cs_real_t  *dam,
-                                 const cs_real_t  *xam,
-                                 cs_real_t        *vx,
-                                 cs_real_t        *vy)
+cs_matrix_vector_native_multiply(bool               symmetric,
+                                 int                db_size[4],
+                                 int                eb_size[4],
+                                 cs_halo_rotation_t rotation_mode,
+                                 int                 f_id,
+                                 const cs_real_t    *dam,
+                                 const cs_real_t    *xam,
+                                 cs_real_t          *vx,
+                                 cs_real_t          *vy)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   cs_matrix_t *a;
 
-  bool symmetric = (isym == 1) ? true : false;
-  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
+  a = cs_matrix_native(symmetric,
+                       db_size,
+                       eb_size);
 
-  if (iinvpe == 2)
-    rotation_mode = CS_HALO_ROTATION_ZERO;
-  else if (iinvpe == 3)
-    rotation_mode = CS_HALO_ROTATION_IGNORE;
+  cs_matrix_set_coefficients(a,
+                             symmetric,
+                             db_size,
+                             eb_size,
+                             m->n_i_faces,
+                             (const cs_lnum_2_t *)m->i_face_cells,
+                             dam,
+                             xam);
 
-  if (ibsize > 1 || symmetric) {
+  /* Set extended contribution for domain coupling */
+  if (f_id != -1) {
+    const cs_field_t *f = cs_field_by_id(f_id);
+    int coupling_id = cs_field_get_key_int(f,
+                                           cs_field_key_id("coupling_entity"));
 
-    int _diag_block_size[4] = {1, 1, 1, 1};
-    int _extra_diag_block_size[4] = {1, 1, 1, 1};
-
-    _diag_block_size[0] = ibsize;
-    _diag_block_size[1] = ibsize;
-    _diag_block_size[2] = ibsize;
-    _diag_block_size[3] = ibsize*ibsize;
-
-    if (iesize > 1) {
-      _extra_diag_block_size[0] = iesize;
-      _extra_diag_block_size[1] = iesize;
-      _extra_diag_block_size[2] = iesize;
-      _extra_diag_block_size[3] = iesize*iesize;
+    if (coupling_id > -1) {
+      cs_matrix_set_extend
+        (a,
+         cs_internal_coupling_spmv_contribution,
+         cs_matrix_preconditionning_add_coupling_contribution,
+         f);
     }
-
-    a = cs_matrix_native(symmetric,
-                         _diag_block_size,
-                         _extra_diag_block_size);
-
-    cs_matrix_set_coefficients(a,
-                               symmetric,
-                               _diag_block_size,
-                               _extra_diag_block_size,
-                               m->n_i_faces,
-                               (const cs_lnum_2_t *)m->i_face_cells,
-                               dam,
-                               xam);
-
-    /* Set extended contribution for domain coupling */
-    if (f_id != -1) {
-      const cs_field_t *f = cs_field_by_id(f_id);
-      int coupling_id = cs_field_get_key_int(f,
-                                             cs_field_key_id("coupling_entity"));
-
-      if (coupling_id > -1) {
-        cs_matrix_set_extend
-          (a,
-           cs_internal_coupling_spmv_contribution,
-           cs_matrix_preconditionning_add_coupling_contribution,
-           f);
-      }
-    }
-  }
-  else {
-
-    a = cs_matrix_native(symmetric, NULL, NULL);
-
-    cs_matrix_set_coefficients(a, false, NULL, NULL,
-                               m->n_i_faces,
-                               (const cs_lnum_2_t *)m->i_face_cells,
-                               dam, xam);
-
   }
 
   cs_matrix_vector_multiply(rotation_mode,

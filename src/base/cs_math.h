@@ -496,14 +496,11 @@ cs_math_reduce_sym_prod_33_to_66(const cs_real_t s[3][3],
 
   /* Consider : W = R*s^t + s*R.
    *            W_ij = Sum_{k<3} [s_jk*r_ik + s_ik*r_jk]
-   * We look for A such as
+   * We look for A such as A*R = W
    */
   for (int i = 0; i < 6; i++) {
-    int ii;
-    int jj;
-
-    ii = iindex[i];
-    jj = jindex[i];
+    int ii = iindex[i];
+    int jj = jindex[i];
     for (int k = 0; k < 3; k++) {
       int ik = tens2vect[k][ii];
       int jk = tens2vect[k][jj];

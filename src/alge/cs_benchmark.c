@@ -944,10 +944,10 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
     /* Reference */
 
-    cs_matrix_vector_native_multiply(2,      /* isym */
-                                     stride, /* ibsize */
-                                     1,      /* iesize */
-                                     0,
+    cs_matrix_vector_native_multiply(false,  /* symmetric */
+                                     _d_block_size,
+                                     NULL,   /* extra diag block size */
+                                     CS_HALO_ROTATION_COPY,
                                      -1,     /* field id or -1 */
                                      da,
                                      xa,

@@ -62,30 +62,26 @@ BEGIN_C_DECLS
  * Matrix (native format) vector product
  *
  * parameters:
- *   isym       <-- Symmetry indicator:
- *                  1: symmetric; 2: not symmetric
- *   ibsize     <-- Block size of element ii
- *   iesize     <-- Block size of element ij
- *   iinvpe     <-- Indicator to cancel increments
- *                  in rotational periodicty (2) or
- *                  to exchange them as scalars (1)
- *   f_id       <-- field id
- *   dam        <-- Matrix diagonal
- *   xam        <-- Matrix extra-diagonal terms
- *   vx         <-- A*vx
- *   vy         <-> vy = A*vx
+ *   symmetric     <-- Symmetry indicator:
+ *   db_size       <-- block sizes for diagonal
+ *   eb_size       <-- block sizes for extra diagonal
+ *   rotation_mode <-- halo update option for rotational periodicity
+ *   dam           <-- Matrix diagonal
+ *   xam           <-- Matrix extra-diagonal terms
+ *   vx            <-- A*vx
+ *   vy            <-> vy = A*vx
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_vector_native_multiply(int               isym,
-                                 int               ibsize,
-                                 int               iesize,
-                                 int               iinvpe,
-                                 int               f_id,
-                                 const cs_real_t  *dam,
-                                 const cs_real_t  *xam,
-                                 cs_real_t        *vx,
-                                 cs_real_t        *vy);
+cs_matrix_vector_native_multiply(bool               symmetric,
+                                 int                db_size[4],
+                                 int                eb_size[4],
+                                 cs_halo_rotation_t rotation_mode,
+                                 int                 f_id,
+                                 const cs_real_t    *dam,
+                                 const cs_real_t    *xam,
+                                 cs_real_t          *vx,
+                                 cs_real_t          *vy);
 
 /*----------------------------------------------------------------------------
  * Initialize sparse matrix API.

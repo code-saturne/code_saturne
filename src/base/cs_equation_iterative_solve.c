@@ -251,7 +251,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   int iinvpp, lvar, ibsize, iesize, imasac, key_sinfo_id;
   double residu, rnorm, ressol, rnorm2;
   double thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta;
-  bool symmetric;
 
   cs_halo_rotation_t rotation_mode;
 
@@ -308,6 +307,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /* Symmetric matrix, except if advection */
   isym = 1;
   if (iconvp > 0) isym = 2;
+
+  bool symmetric = (isym == 1) ? true : false;
 
   BFT_MALLOC(xam,isym*n_faces,cs_real_t);
   if (conv_diff_mg) {
@@ -568,20 +569,22 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
      Caution, when calling matrix-vector product, here for a variable which is
      not "by increments" and is assumed initialized, including for ghost values:
-     For Reynolds stresses (IINVPE=2), the rotational periodicity
+     For Reynolds stresses components (iinvpe=2), the rotational periodicity
      ghost values should not be cancelled, but rather left unchanged.
-     For other variables, IINVPE=1 will also a standard exchange. */
+     For other variables, iinvpe=1 will also a standard exchange. */
 
   /* Allocate a temporary array */
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
 
-  if (iinvpe == 2) iinvpp = 3;
-  else iinvpp = iinvpe;
+  if (iinvpe == 2)
+    rotation_mode = CS_HALO_ROTATION_IGNORE;
+  else
+    rotation_mode = CS_HALO_ROTATION_COPY;
 
-  cs_matrix_vector_native_multiply(isym,
-                                   ibsize,
-                                   iesize,
-                                   iinvpp,
+  cs_matrix_vector_native_multiply(symmetric,
+                                   db_size,
+                                   eb_size,
+                                   rotation_mode,
                                    f_id,
                                    dam,
                                    xam,
@@ -625,15 +628,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     /* Solver residual */
     ressol = residu;
 
-    if (isym == 1)
-      symmetric = true;
-    else
-      symmetric = false;
-
     if (iinvpe == 2)
       rotation_mode = CS_HALO_ROTATION_ZERO;
-    else if (iinvpe == 3)
-      rotation_mode = CS_HALO_ROTATION_IGNORE;
     else
       rotation_mode = CS_HALO_ROTATION_COPY;
 
@@ -1107,14 +1103,13 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   const cs_lnum_t n_faces = cs_glob_mesh->n_i_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  int isym, inc, isweep, niterf, nswmod, iinvpe, ibsize, isou, jsou;
+  int isym, inc, isweep, niterf, nswmod, ibsize, isou, jsou;
   int key_sinfo_id;
   int iesize, lvar, imasac;
   double residu, rnorm, ressol, rnorm2, thetex, alph, beta;
   double paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax;
-  bool symmetric;
 
-  cs_halo_rotation_t rotation_mode;
+  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
   int eb_size[4],db_size[4];
 
@@ -1171,14 +1166,13 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   isym = 1;
   if (iconvp > 0) isym = 2;
 
+  bool symmetric = (isym == 1) ? true : false;
+
   /*  be carefull here, xam is interleaved*/
   if (iesize == 1)
     BFT_MALLOC(xam, isym*n_faces, cs_real_t);
   if (iesize == 3)
     BFT_MALLOC(xam, 3*3*isym*n_faces, cs_real_t);
-
-  /* iinvpe is useless in the vectorial framework */
-  iinvpe = 0;
 
   /*============================================================================
    * 1.  Building of the "simplified" matrix
@@ -1372,10 +1366,10 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   /* Allocate a temporary array */
   BFT_MALLOC(w1, n_cells_ext, cs_real_3_t);
 
-  cs_matrix_vector_native_multiply(isym,
-                                   ibsize,
-                                   iesize,
-                                   iinvpe,
+  cs_matrix_vector_native_multiply(symmetric,
+                                   db_size,
+                                   eb_size,
+                                   rotation_mode,
                                    f_id,
                                    (cs_real_t *)dam,
                                    xam,
@@ -1421,8 +1415,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
           dpvar[iel][isou] = 0.;
     }
 
-    /* iinvpe is useless in the vectorial framework */
-    iinvpe = 0;
 
     /* Matrix block size */
     ibsize = 3;
@@ -1434,18 +1426,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
     /*  Solver residual */
     ressol = residu;
-
-    if (isym == 1)
-      symmetric = true;
-    else
-      symmetric = false;
-
-    if (iinvpe == 2)
-      rotation_mode = CS_HALO_ROTATION_ZERO;
-    else if (iinvpe == 3)
-      rotation_mode = CS_HALO_ROTATION_IGNORE;
-    else
-      rotation_mode = CS_HALO_ROTATION_COPY;
 
     cs_sles_solve_native(f_id,
                          var_name,
@@ -1654,7 +1634,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     sinfo.n_it = sinfo.n_it + niterf;
 
     /* Writing */
-    if (iwarnp >= 3) {
+    if (iwarnp >= 2) {
       bft_printf("%s : CV_DIF_TS, IT : %d, Res : %12.5e, Norm : %12.5e\n",
                  var_name, isweep, residu, rnorm);
       bft_printf("%s : Current reconstruction sweep : %d, "
@@ -1896,14 +1876,13 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   const cs_lnum_t n_faces = cs_glob_mesh->n_i_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  int isym, inc, isweep, niterf,nswmod, iinvpe, ibsize, isou, jsou;
+  int isym, inc, isweep, niterf, nswmod, ibsize, isou, jsou;
   int key_sinfo_id;
   int iesize, lvar, imasac;
   double residu, rnorm, ressol, rnorm2, thetex, alph, beta;
   double paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax;
-  bool symmetric;
 
-  cs_halo_rotation_t rotation_mode;
+  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
   int eb_size[4],db_size[4];
 
@@ -1960,14 +1939,13 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   isym = 1;
   if (iconvp > 0) isym = 2;
 
+  bool symmetric = (isym == 1) ? true : false;
+
   /*  be carefull here, xam is interleaved*/
   if (iesize == 1)
     BFT_MALLOC(xam, isym*n_faces, cs_real_t);
   if (iesize == 6)
     BFT_MALLOC(xam, 6*6*isym*n_faces, cs_real_t);
-
-  /* iinvpe is useless in the vectorial framework */
-  iinvpe = 0;
 
   /*============================================================================
    * 1.  Building of the "simplified" matrix
@@ -2168,10 +2146,10 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   /* Allocate a temporary array */
   BFT_MALLOC(w1, n_cells_ext, cs_real_6_t);
 
-  cs_matrix_vector_native_multiply(isym,
-                                   ibsize,
-                                   iesize,
-                                   iinvpe,
+  cs_matrix_vector_native_multiply(symmetric,
+                                   db_size,
+                                   eb_size,
+                                   rotation_mode,
                                    f_id,
                                    (cs_real_t *)dam,
                                    xam,
@@ -2217,9 +2195,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
           dpvar[iel][isou] = 0.;
     }
 
-    /* iinvpe is useless in the vectorial framework */
-    iinvpe = 0;
-
     /* Matrix block size */
     ibsize = 6;
 
@@ -2230,18 +2205,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
     /*  Solver residual */
     ressol = residu;
-
-    if (isym == 1)
-      symmetric = true;
-    else
-      symmetric = false;
-
-    if (iinvpe == 2)
-      rotation_mode = CS_HALO_ROTATION_ZERO;
-    else if (iinvpe == 3)
-      rotation_mode = CS_HALO_ROTATION_IGNORE;
-    else
-      rotation_mode = CS_HALO_ROTATION_COPY;
 
     cs_sles_solve_native(f_id,
                          var_name,

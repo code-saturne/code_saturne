@@ -537,7 +537,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1 &
   if (iturb.eq.32.and.iggafm.eq.1) then
     call field_create('anisotropic_turbulent_viscosity_scalar', itycat, &
                       ityloc, idim6, inoprv, ivstes)
- endif
+  endif
 endif
 
 !===============================================================================
