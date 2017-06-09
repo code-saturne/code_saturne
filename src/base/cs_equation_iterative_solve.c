@@ -739,7 +739,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       }
 
       /* Writing */
-      if (iwarnp >= 2)
+      if (iwarnp >= 3)
         bft_printf("%s Sweep: %d Dynamic relaxation: alpha = %12.5e, "
                    "beta = %12.5e,\n< dI^k :  R^k >   = %12.5e, "
                    "||dI^k  ||^2 = %12.5e,\n< dI^k-1 : R^k >  = %12.5e, "
@@ -2424,7 +2424,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     sinfo.n_it = sinfo.n_it + niterf;
 
     /* Writing */
-    if (iwarnp >= 3) {
+    if (iwarnp >= 2) {
       bft_printf("%s : CV_DIF_TS, IT : %d, Res : %12.5e, Norm : %12.5e\n",
                  var_name, isweep, residu, rnorm);
       bft_printf("%s : Current reconstruction sweep : %d, "
