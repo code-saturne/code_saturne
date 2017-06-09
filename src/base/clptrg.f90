@@ -1037,7 +1037,27 @@ do ifac = 1, nfabor
           kk = 3
         endif
 
-        if (iclptr.eq.1) then
+        ! Coupled version: we implicit as much as possible
+        if (irijco.eq.1) then
+          coefa_rij(isou, ifac) = - (  eloglo(jj,1)*eloglo(kk,2)         &
+                                     + eloglo(jj,2)*eloglo(kk,1))        &
+                                    * alpha_rnn * sqrt(rnnb * rttb) * cfnnk
+          coefaf_rij(isou, ifac)      = -hint * coefa_rij(isou, ifac)
+          coefad_rij(isou, ifac)      = 0.d0
+          do ii = 1, 6
+            coefb_rij(isou,ii, ifac)  = alpha(isou,ii)
+            if (ii.eq.isou) then
+              coefbf_rij(isou,ii, ifac) = hint &
+                                        * (1.d0 - coefb_rij(isou,ii, ifac))
+            else
+              coefbf_rij(isou,ii, ifac) = - hint &
+                                        * coefb_rij(isou,ii, ifac)
+            endif
+            coefbd_rij(isou,ii, ifac) = coefb_rij(isou,ii, ifac)
+          enddo
+
+        else if (iclptr.eq.1) then
+
           do ii = 1, 6
             if (ii.ne.isou) then
               fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ifac,ii)
@@ -1050,6 +1070,7 @@ do ifac = 1, nfabor
           enddo
           fcoefb(isou) = 0.d0
         endif
+
         ! Boundary conditions for the momentum equation
         fcofad(isou) = fcoefa(isou)
         fcofbd(isou) = fcoefb(isou)
@@ -1062,15 +1083,9 @@ do ifac = 1, nfabor
         fcofaf(isou) = -hint*fcoefa(isou)
         fcofbf(isou) = hint*(1.d0-fcoefb(isou))
       enddo
-      do isou = 1, 6
-        if (irijco.eq.1) then
-          coefa_rij(isou, ifac)       = fcoefa(isou)
-          coefb_rij(isou,isou, ifac)  = fcoefb(isou)
-          coefaf_rij(isou, ifac)      = fcofaf(isou)
-          coefbf_rij(isou,isou, ifac) = fcofbf(isou)
-          coefad_rij(isou, ifac)      = fcofad(isou)
-          coefbd_rij(isou,isou, ifac) = fcofbd(isou)
-        else
+
+      if (irijco.ne.1) then
+        do isou = 1, 6
           if (isou.eq.1) then
             coefa_r11(ifac) = fcoefa(isou)
             coefb_r11(ifac) = fcoefb(isou)
@@ -1114,8 +1129,8 @@ do ifac = 1, nfabor
             coefad_r13(ifac) = fcofad(isou)
             coefbd_r13(ifac) = fcofbd(isou)
           endif
-        endif
-      enddo
+        enddo
+      endif
 
       ! ---> Epsilon
       ! same treatment as k-epsilon

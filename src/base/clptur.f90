@@ -1097,7 +1097,24 @@ do ifac = 1, nfabor
         ! LRR and the Standard SGG.
         if ((iturb.eq.30).or.(iturb.eq.31).and.iuntur.eq.1) then
 
-          if (iclptr.eq.1) then
+          if (irijco.eq.1) then
+            coefa_rij(isou, ifac) = - (  eloglo(jj,1)*eloglo(kk,2)         &
+                                       + eloglo(jj,2)*eloglo(kk,1))        &
+                                      * alpha_rnn * sqrt(rnnb * rttb)
+            coefaf_rij(isou, ifac)      = -hint * coefa_rij(isou, ifac)
+            coefad_rij(isou, ifac)      = 0.d0
+            do ii = 1, 6
+              coefb_rij(isou,ii, ifac)  = alpha(isou,ii)
+              if (ii.eq.isou) then
+                coefbf_rij(isou,ii, ifac) = hint * (1.d0 - coefb_rij(isou,ii, ifac))
+              else
+                coefbf_rij(isou,ii, ifac) = - hint * coefb_rij(isou,ii, ifac)
+              endif
+              coefbd_rij(isou,ii, ifac) = coefb_rij(isou,ii, ifac)
+            enddo
+
+          else if ((iclptr.eq.1)) then
+
             do ii = 1, 6
               if (ii.ne.isou) then
                 fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ifac,ii)
@@ -1121,10 +1138,28 @@ do ifac = 1, nfabor
 
         ! In the viscous sublayer or for EBRSM: zero Reynolds' stresses
         else
-          fcoefa(isou) = 0.d0
-          fcofad(isou) = 0.d0
-          fcoefb(isou) = 0.d0
-          fcofbd(isou) = 0.d0
+          if (irijco.eq.1) then
+            coefa_rij(isou, ifac) = 0.d0
+            coefaf_rij(isou, ifac) = 0.d0
+            coefad_rij(isou, ifac) = 0.d0
+            do ii = 1, 6
+              coefb_rij(isou,ii, ifac)  = 0.d0
+              if (ii.eq.isou) then
+                coefbf_rij(isou,ii, ifac) = hint
+              else
+                coefbf_rij(isou,ii, ifac) = 0.d0
+              endif
+              coefbd_rij(isou,ii, ifac) = 0.d0
+            enddo
+
+          else
+
+            fcoefa(isou) = 0.d0
+            fcofad(isou) = 0.d0
+            fcoefb(isou) = 0.d0
+            fcofbd(isou) = 0.d0
+          endif
+
         endif
 
         ! Translate into Diffusive flux BCs
@@ -1132,15 +1167,8 @@ do ifac = 1, nfabor
         fcofbf(isou) = hint*(1.d0-fcoefb(isou))
       enddo
 
-      do isou = 1, 6
-        if (irijco.eq.1) then
-          coefa_rij(isou, ifac)       = fcoefa(isou)
-          coefb_rij(isou,isou, ifac)  = fcoefb(isou)
-          coefaf_rij(isou, ifac)      = fcofaf(isou)
-          coefbf_rij(isou,isou, ifac) = fcofbf(isou)
-          coefad_rij(isou, ifac)      = fcofad(isou)
-          coefbd_rij(isou,isou, ifac) = fcofbd(isou)
-        else
+      if (irijco.ne.1) then
+        do isou = 1, 6
           if (isou.eq.1) then
             coefa_r11(ifac) = fcoefa(isou)
             coefb_r11(ifac) = fcoefb(isou)
@@ -1184,8 +1212,9 @@ do ifac = 1, nfabor
             coefad_r13(ifac) = fcofad(isou)
             coefbd_r13(ifac) = fcofbd(isou)
           endif
-        endif
-      enddo
+        enddo
+      endif
+
       ! ---> Epsilon
       !      NB: no reconstruction, possibility of partial implicitation
 
