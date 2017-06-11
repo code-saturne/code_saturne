@@ -5,6 +5,8 @@ Release 5.0.1 (unreleased)
 Bug fixes
 ---------
 
+- GUI: fix opening of advanced turbulence model options for new cases.
+
 - Lagrangian module: fix numbering issue leading to incorrect postprocessing
   output of boundary statistics.
 

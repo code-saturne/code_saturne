@@ -346,6 +346,8 @@ class TurbulenceModel(Variables, Model):
         Return wall function from advanced options.
         """
         wall_function = self.node_turb.xmlGetInt('wall_function')
+        if not wall_function:
+            wall_function = -1 # for next test
         if wall_function < 0 or wall_function > 5:
             wall_function = self.defaultTurbulenceValues()['wall_function']
             self.setWallFunction(wall_function)
