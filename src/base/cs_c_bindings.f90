@@ -859,14 +859,16 @@ module cs_c_bindings
     ! Interface to C function returning the product of a matrix (native format)
     ! by a vector
 
-    subroutine promav(isym, ibsize, iesize, iinvpe, f_id, dam, xam, vx, vy)  &
+    subroutine cs_matrix_vector_native_multiply(symmetric, db_size, eb_size, rotation_mode, f_id, dam, xam, vx, vy)  &
       bind(C, name='cs_matrix_vector_native_multiply')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: isym, ibsize, iesize, iinvpe, f_id
+      logical(c_bool), value :: symmetric
+      integer(c_int), dimension(4), intent(in) :: db_size, eb_size
+      integer(c_int), value :: rotation_mode, f_id
       real(kind=c_double), dimension(*), intent(in) :: dam, xam, vx
       real(kind=c_double), dimension(*), intent(out) :: vy
-    end subroutine promav
+    end subroutine cs_matrix_vector_native_multiply
 
     !---------------------------------------------------------------------------
 
@@ -2172,6 +2174,56 @@ contains
     return
 
   end subroutine pressure_drop_by_zone
+
+  !=============================================================================
+
+  ! Interface to C function returning the product of a matrix (native format)
+  ! by a vector
+
+  subroutine promav(isym, ibsize, iesize, iinvpe, f_id, dam, xam, vx, vy)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, value :: isym, ibsize, iesize, iinvpe, f_id
+    real(kind=c_double), dimension(*), intent(in) :: dam, xam, vx
+    real(kind=c_double), dimension(*), intent(out) :: vy
+
+    ! Local variables
+
+    integer(c_int), dimension(4) :: c_db_size, c_eb_size
+    integer(c_int) :: c_rotation_mode
+    logical(c_bool) :: c_symmetric
+
+    if (isym.eq.1) then
+      c_symmetric = .true.
+    else
+      c_symmetric = .false.
+    endif
+
+    if (iinvpe == 2) then
+      c_rotation_mode = 1 ! CS_HALO_ROTATION_ZERO
+    else
+      c_rotation_mode = 0 ! CS_HALO_ROTATION_COPY
+    endif
+
+    c_db_size(0+1) = ibsize;
+    c_db_size(1+1) = ibsize;
+    c_db_size(2+1) = ibsize;
+    c_db_size(3+1) = ibsize*ibsize;
+
+    c_eb_size(0+1) = iesize;
+    c_eb_size(1+1) = iesize;
+    c_eb_size(2+1) = iesize;
+    c_eb_size(3+1) = iesize*iesize;
+
+    call cs_matrix_vector_native_multiply(c_symmetric, c_db_size, c_eb_size, &
+      c_rotation_mode, f_id, dam, xam, vx, vy)
+
+    return
+
+  end subroutine promav
 
   !=============================================================================
 
