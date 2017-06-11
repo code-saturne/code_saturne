@@ -339,6 +339,7 @@ _find_clip(int  f_id,
  *   vmax         <-- maximum values of each component or norm
  *   vsum         <-- sum of each component or norm
  *   wsum         <-- weighted sum of each component or norm, or NULL
+ *   exit         <-- exit if Nan
  *----------------------------------------------------------------------------*/
 
 static void
@@ -351,7 +352,8 @@ _log_array_info(const char        *prefix,
                 double             vmin[],
                 const double       vmax[],
                 const double       vsum[],
-                const double      *wsum)
+                const double      *wsum,
+                bool              *exit)
 {
   const int _dim = (dim == 3) ? 4 : dim;
 
@@ -400,9 +402,7 @@ _log_array_info(const char        *prefix,
 
     /* Check Nan and exit */
     if (isnan(vsum[c_id]))
-      bft_error(__FILE__, __LINE__, 0,
-                _("Invalid (not-a-number) values detected for array %s."),
-                name);
+      *exit = true;
   }
 
 }
@@ -516,6 +516,7 @@ _log_fields(void)
   int f_id, li, log_count;
 
   int log_count_max = 0;
+  bool exit = false;
   int     *log_id = NULL, *moment_id = NULL;
   double  *vmin = NULL, *vmax = NULL, *vsum = NULL, *wsum = NULL;
 
@@ -824,13 +825,19 @@ _log_fields(void)
                       vmin + log_count,
                       vmax + log_count,
                       vsum + log_count,
-                      wsum + log_count);
+                      wsum + log_count,
+                      &exit);
 
       log_count += _dim;
 
     } /* End of loop on fields */
 
   } /* End of loop on mesh locations */
+
+  /* Check Nan and exit */
+  if (exit)
+    bft_error(__FILE__, __LINE__, 0,
+                _("Invalid (not-a-number) values detected for a field."));
 
   BFT_FREE(moment_id);
   BFT_FREE(wsum);
@@ -850,6 +857,7 @@ static void
 _log_sstats(void)
 {
   int     stat_id;
+  bool exit = false;
   double _boundary_surf = -1;
   double _interior_surf = -1;
   double  *vmin = NULL, *vmax = NULL, *vsum = NULL, *wsum = NULL;
@@ -1048,7 +1056,8 @@ _log_sstats(void)
                         vmin + stat_id,
                         vmax + stat_id,
                         vsum + stat_id,
-                        wsum + stat_id);
+                        wsum + stat_id,
+                        &exit);
 
       } /* End of loop on stats */
 
@@ -1057,6 +1066,11 @@ _log_sstats(void)
     sstat_cat_start = sstat_cat_end;
 
   } /* End of loop on mesh categories */
+
+  /* Check Nan and exit */
+  if (exit)
+    bft_error(__FILE__, __LINE__, 0,
+                _("Invalid (not-a-number) values detected for a statistic."));
 
   BFT_FREE(wsum);
   BFT_FREE(vsum);
