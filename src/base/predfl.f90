@@ -108,7 +108,6 @@ integer          isweep, niterf
 integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
-integer          iinvpe
 integer          ibsize, iesize, iphydp
 integer          imucpp, f_id0
 double precision residu
@@ -308,12 +307,8 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
   epsilp = vcopt%epsilo
 
-  ! The potential is a scalar => no problem for the periodicity of rotation
-  ! (iinvpe=1)
-  iinvpe = 1
-
   call sles_solve_native(-1, chaine,                                &
-                         isym, ibsize, iesize, dam, xam, iinvpe,    &
+                         isym, ibsize, iesize, dam, xam,            &
                          epsilp, rnorm, niterf, residu, rhs, dpot)
 
   ! Update the increment of potential

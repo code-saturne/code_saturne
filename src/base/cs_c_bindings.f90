@@ -859,7 +859,9 @@ module cs_c_bindings
     ! Interface to C function returning the product of a matrix (native format)
     ! by a vector
 
-    subroutine cs_matrix_vector_native_multiply(symmetric, db_size, eb_size, rotation_mode, f_id, dam, xam, vx, vy)  &
+    subroutine cs_matrix_vector_native_multiply(symmetric, db_size, eb_size,   &
+                                                rotation_mode, f_id, dam, xam, &
+                                                vx, vy)  &
       bind(C, name='cs_matrix_vector_native_multiply')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -2180,13 +2182,13 @@ contains
   ! Interface to C function returning the product of a matrix (native format)
   ! by a vector
 
-  subroutine promav(isym, ibsize, iesize, iinvpe, f_id, dam, xam, vx, vy)
+  subroutine promav(isym, ibsize, iesize, f_id, dam, xam, vx, vy)
     use, intrinsic :: iso_c_binding
     implicit none
 
     ! Arguments
 
-    integer, value :: isym, ibsize, iesize, iinvpe, f_id
+    integer, value :: isym, ibsize, iesize, f_id
     real(kind=c_double), dimension(*), intent(in) :: dam, xam, vx
     real(kind=c_double), dimension(*), intent(out) :: vy
 
@@ -2202,11 +2204,7 @@ contains
       c_symmetric = .false.
     endif
 
-    if (iinvpe == 2) then
-      c_rotation_mode = 1 ! CS_HALO_ROTATION_ZERO
-    else
-      c_rotation_mode = 0 ! CS_HALO_ROTATION_COPY
-    endif
+    c_rotation_mode = 0 ! CS_HALO_ROTATION_COPY
 
     c_db_size(0+1) = ibsize;
     c_db_size(1+1) = ibsize;
@@ -2219,7 +2217,7 @@ contains
     c_eb_size(3+1) = iesize*iesize;
 
     call cs_matrix_vector_native_multiply(c_symmetric, c_db_size, c_eb_size, &
-      c_rotation_mode, f_id, dam, xam, vx, vy)
+                                          c_rotation_mode, f_id, dam, xam, vx, vy)
 
     return
 
@@ -3631,8 +3629,6 @@ contains
   !> param[in]       iesize   block sizes for extra diagonal
   !> param[in]       dam      matrix diagonal
   !> param[in]       xam      matrix extra-diagonal terms
-  !> param[in]       iinvpe   Indicator to cancel increments in rotational
-  !>                          periodicty (2) or to exchange them as scalars (1)
   !> param[in]       epsilp   precision for iterative resolution
   !> param[in]       rnorm    residue normalization
   !> param[out]      niter    number of "equivalent" iterations
@@ -3641,14 +3637,14 @@ contains
   !> param[in, out]  vx       system solution
 
   subroutine sles_solve_native(f_id, name, isym, ibsize, iesize, dam, xam,     &
-                               iinvpe, epsilp, rnorm, niter, residue, rhs, vx)
+                               epsilp, rnorm, niter, residue, rhs, vx)
     use, intrinsic :: iso_c_binding
     implicit none
 
     ! Arguments
 
     character(len=*), intent(in)      :: name
-    integer, intent(in)               :: f_id, isym, ibsize, iesize, iinvpe
+    integer, intent(in)               :: f_id, isym, ibsize, iesize
     double precision, intent(in)      :: rnorm, epsilp
     integer, intent(out)              :: niter
     double precision, intent(out)     :: residue
@@ -3670,13 +3666,7 @@ contains
       c_sym = .false.
     endif
 
-    if (iinvpe.eq.2) then
-      rotation_mode = 1 ! CS_HALO_ROTATION_ZERO
-    else if (iinvpe.eq.3) then
-      rotation_mode = 2 ! CS_HALO_ROTATION_IGNORE
-    else
-      rotation_mode = 0 ! CS_HALO_ROTATION_COPY, might not be called
-    endif
+    rotation_mode = 0 ! CS_HALO_ROTATION_COPY, might not be called
 
     db_size(1) = ibsize
     db_size(2) = ibsize

@@ -88,6 +88,10 @@
 BEGIN_C_DECLS
 
 /*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -252,7 +256,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   double residu, rnorm, ressol, rnorm2;
   double thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta;
 
-  cs_halo_rotation_t rotation_mode;
+  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
   int eb_size[4],db_size[4];
 
@@ -578,8 +582,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   if (iinvpe == 2)
     rotation_mode = CS_HALO_ROTATION_IGNORE;
-  else
-    rotation_mode = CS_HALO_ROTATION_COPY;
 
   cs_matrix_vector_native_multiply(symmetric,
                                    db_size,
@@ -592,7 +594,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    w1);
 
 # pragma omp parallel for
-  for (cs_lnum_t iel = 0; iel < n_cells ; iel++)
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++)
     w1[iel] += smbrp[iel];
 
   rnorm2 = cs_gdot(n_cells,w1,w1);
@@ -630,8 +632,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     if (iinvpe == 2)
       rotation_mode = CS_HALO_ROTATION_ZERO;
-    else
-      rotation_mode = CS_HALO_ROTATION_COPY;
 
     if (conv_diff_mg)
       cs_sles_setup_native_conv_diff(f_id,

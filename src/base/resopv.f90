@@ -179,7 +179,7 @@ integer          iflmb0, ifcsor
 integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
-integer          iinvpe, indhyd
+integer          indhyd
 integer          itypfl
 integer          isou  , ibsize, iesize
 integer          imucpp, idftnp, iswdyp
@@ -1585,15 +1585,11 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
   iwarnp = vcopt_p%iwarni
   epsilp = vcopt_p%epsilo
 
-  ! The pressure is a scalar => no problem for the periodicity of rotation
-  ! (iinvpe=1)
-  iinvpe = 1
-
-  ! Solver reisudal
+  ! Solver resiudal
   ressol = residu
 
   call sles_solve_native(ivarfl(ipr), '',                            &
-                         isym, ibsize, iesize, dam, xam, iinvpe,     &
+                         isym, ibsize, iesize, dam, xam,             &
                          epsilp, rnormp, niterf, ressol, rhs, dpvar)
 
   ! Dynamic relaxation of the system

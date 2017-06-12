@@ -216,10 +216,10 @@ _build_block_row_g_id(cs_lnum_t         n_rows,
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_vector_native_multiply(bool               symmetric,
-                                 int                db_size[4],
-                                 int                eb_size[4],
-                                 cs_halo_rotation_t rotation_mode,
+cs_matrix_vector_native_multiply(bool                symmetric,
+                                 int                 db_size[4],
+                                 int                 eb_size[4],
+                                 cs_halo_rotation_t  rotation_mode,
                                  int                 f_id,
                                  const cs_real_t    *dam,
                                  const cs_real_t    *xam,

@@ -103,7 +103,6 @@ integer          nswmpr
 integer          isweep, niterf
 integer          iphydp
 integer          nswrgp, imligp, iwarnp
-integer          iinvpe
 integer          idiffp, iconvp, ndircp
 integer          ibsize, iesize
 integer          imucpp, f_id0
@@ -311,12 +310,11 @@ do isweep = 1, nswmpr
 
   iwarnp = vcopt_pr%iwarni
   epsilp = vcopt_pr%epsilo
-  iinvpe = 1
   ibsize = 1
   iesize = 1
 
   call sles_solve_native(f_id, chaine,                            &
-                         isym, ibsize, iesize, dam, xam, iinvpe,  &
+                         isym, ibsize, iesize, dam, xam,          &
                          epsilp, rnorm, niterf, residu, smbr, dpvar)
 
   if( isweep.eq.nswmpr ) then

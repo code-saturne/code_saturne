@@ -117,7 +117,7 @@ integer iccocg, inc   , iel, isou, init
 integer nswrgp, imligp, iwarnp
 integer imucpp, ircflp, isweep, isym, lchain
 integer ndircp, niterf, nswmpr
-integer iinvpe, iflmas, iflmab, iesize, idiffp, iconvp, ibsize
+integer iflmas, iflmab, iesize, idiffp, iconvp, ibsize
 integer fid
 integer iflid , iflwgr, f_dim, f_id0, iwgrp, iprev, iitsm
 
@@ -423,8 +423,7 @@ sinfo%rnsmbr = residu
 ! taking into account the boundary conditions.
 ! This part is inspired from codits (call to promav)
 allocate(w1(ncelet))
-iinvpe = 1 ! for processing communication before calculation
-call promav(isym, ibsize, iesize, iinvpe, ivarfl(ipr), dam, xam, cvar_pr, w1)
+call promav(isym, ibsize, iesize, ivarfl(ipr), dam, xam, cvar_pr, w1)
 
 !$omp parallel do
 do iel = 1, ncel
@@ -449,11 +448,10 @@ do while ( (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) &
 
   iwarnp = vcopt_p%iwarni
   epsilp = vcopt_p%epsilo
-  iinvpe = 1
   ressol = residu
 
   call sles_solve_native(ivarfl(ipr), chaine,                         &
-                         isym, ibsize, iesize, dam, xam, iinvpe,      &
+                         isym, ibsize, iesize, dam, xam,              &
                          epsilp, rnormp, niterf, ressol, rhs, dpvar)
 
   if (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) then
