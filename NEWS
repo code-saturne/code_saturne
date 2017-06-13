@@ -5,6 +5,9 @@ Release 5.0.1 (unreleased)
 Bug fixes
 ---------
 
+- Major fix in parallel when activating head losses and improved
+  hydrostatic pressure algorithm.
+
 - GUI: fix opening of advanced turbulence model options for new cases.
 
 - Lagrangian module: fix numbering issue leading to incorrect postprocessing
