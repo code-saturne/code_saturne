@@ -82,6 +82,10 @@ integer          iel, inc
 integer          iprev
 integer          f_id
 
+integer          ipass
+data             ipass /0/
+save             ipass
+
 double precision d1s3, d2s3
 double precision xk, xw, rom, xmu, xdist, xarg2, xf2
 
@@ -114,6 +118,8 @@ call field_get_val_s(f_id, w_dist)
 
 d1s3 = 1.d0/3.d0
 d2s3 = 2.d0/3.d0
+
+ipass = ipass + 1
 
 !===============================================================================
 ! 2. Compute the scalar s2kw rate SijSij and the trace of the velocity
@@ -172,10 +178,17 @@ do iel = 1, ncel
 
   ! Wall distance
   xdist = max(w_dist(iel), epzero)
+
+  ! FIXME should be a check on xw...
   if (xk > 0.d0) then
-    xarg2 = max (2.d0*sqrt(xk)/cmu/xw/xdist,                  &
-                 500.d0*xmu/rom/xw/xdist**2)
-    xf2 = tanh(xarg2**2)
+    ! Wall distance has no value at the first pass, we consider it as infinite
+    if (ipass.eq.1) then
+      xf2 = 0.d0
+    else
+      xarg2 = max (2.d0*sqrt(xk)/cmu/xw/xdist,                  &
+                   500.d0*xmu/rom/xw/xdist**2)
+      xf2 = tanh(xarg2**2)
+    endif
     visct(iel) =   rom*ckwa1*xk                               &
                  / max(ckwa1*xw, sqrt(cpro_s2kw(iel))*xf2)
   else

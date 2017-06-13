@@ -271,16 +271,6 @@ if ((nfpt1t.gt.0).and.(nbccou.le.0)) then
   isvhb = iscalt
 endif
 
-! If wall distance has to be updated, we initialize it to a big value,
-! so that it is OK in phyvar for the k-omega turbulence model
-if (ipass.eq.1 .and. ineedy.eq.1 .and. imajdy.eq.0) then
-  call field_get_id("wall_distance", f_id)
-  call field_get_val_s(f_id, w_dist)
-  do iel = 1, ncel
-    w_dist(iel) = grand
-  enddo
-endif
-
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
@@ -1195,68 +1185,37 @@ do while (iterns.le.nterup)
   !     ON N'A PLUS BESOIN DE ISVHB OU ISVHT (POUR HBORD ET TBORD)
   !     A PARTIR D'ICI
 
+  ! Compute wall distance
+  ! TODO it has to be moved before phyvar, for that bc types have to be known
+  ! (itypfb)
 
-
-  !     CALCUL DE LA DISTANCE A LA PAROI
   !       (Nouvel algorithme. L'ancien est dans condli)
-  !     En ALE on ne fait ce calcul qu'a la premiere des
-  !       sous-iterations d'implicitation ITALIM, car le maillage
-  !       n'est pas modifie dans les sous-iterations suivantes
-
+  ! In ALE, this computation is done only for the first step.
   if (italim.eq.1) then
 
-    if(ineedy.eq.1.and.iwarny.ge.1) then
-      call dmtmps(tdist1)
-    endif
-
-
-    ! On ne fait le calcul que s'il y a des parois, 'w_dist'  est reserve
-    ! et initialise a GRAND avant. S'il n'y a pas de paroi, il restera = GRAND)
 
     ! Pour le moment, on suppose que l'on peut se contenter de faire
     !  cela au premier passage, sauf avec les maillages mobiles. Attention donc
     !  aux conditions aux limites variables (faces qui deviennent des parois ou
     !  parois qui deviennent autre chose)
 
-    ! Nombre de faces de paroi
-    if (ipass.eq.1) then
-      if (ineedy.eq.1) then
-        infpar = 0
-        do ifac = 1, nfabor
-          if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
-            infpar = infpar+1
-          endif
-        enddo
-        if (irangp.ge.0) then
-          call parcpt(infpar)
-        endif
-      endif
-    endif
-
-    !     On calcule la distance a la paroi
-    !          si elle doit etre mise a jour
-    !       et si on en a besoin,
-    !       et si on a choisi ce mode de calcul,
+    ! Wall distance is computed if:
+    !   - it has to be updated
+    !   - we need it
+    ! In cas there is no wall, distance is a big value.
     if (imajdy.eq.0 .and. ineedy.eq.1) then
 
-      !  S'il n'y a pas de paroi, on garde l'initialisation a GRAND
-      if (infpar.eq.0) then
-        imajdy = 1
-        ! If we have walls, we must compute
-      else
-        if (abs(icdpar).eq.1) then
-          call distpr(itypfb)
-        ! Deprecated algorithm
-        else if (abs(icdpar).eq.2) then
-          call distpr2(itypfb)
-        endif
-        !     La distance n'a plus a etre mise a jour sauf en ALE
-        if (iale.eq.0) imajdy = 1
+      if (abs(icdpar).eq.1) then
+        call distpr(itypfb)
+      ! Deprecated algorithm
+      else if (abs(icdpar).eq.2) then
+        call distpr2(itypfb)
       endif
+      ! Wall distance is not updated except if ALE is switched on
+      if (iale.eq.0) imajdy = 1
     endif
 
   endif
-
 
   !     CALCUL DE L'AMORTISSEMENT DE VAN DRIEST
   !     OU CALCUL DE Y+ POUR LE LAGRANGIEN
@@ -1265,6 +1224,18 @@ do while (iterns.le.nterup)
   ! Compute y+ if needed
 
   if (itytur.eq.4 .and. idries.eq.1) then
+    ! Compute the number of walls
+    if (ipass.eq.1) then
+      infpar = 0
+      do ifac = 1, nfabor
+        if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
+          infpar = infpar+1
+        endif
+      enddo
+      if (irangp.ge.0) then
+        call parcpt(infpar)
+      endif
+    endif
 
     if (infpar.gt.0) then
       call distyp(itypfb, yplpar)
@@ -1283,12 +1254,6 @@ do while (iterns.le.nterup)
       call vandri(visvdr, yplpar)
     endif
 
-  endif
-
-  if (ineedy.eq.1.and.iwarny.ge.1) then
-    call dmtmps(tdist2)
-    tditot = tdist2-tdist1
-    write(nfecra,4010)tditot
   endif
 
 !===============================================================================
@@ -1778,7 +1743,7 @@ endif
 !===============================================================================
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)
@@ -1823,9 +1788,6 @@ endif
                                                               /,/,&
  ' RESOLUTION DES TRANSFERTS THERMIQUES RADIATIFS             ',/,&
 '  ==============================================             ',/)
- 4010 format(/,                                                   &
-' ** TEMPS POUR LA DISTANCE A LA PAROI : ',E14.5               ,/,&
-'    ---------------------------------                        ',/)
 
 #else
 
@@ -1870,14 +1832,10 @@ endif
  ' SOLVING THERMAL RADIATIVE TRANSFER                         ',/,&
 '  ==================================                         ',/)
 
- 4010 format(/,                                                   &
-' ** TIME FOR THE WALL DISTANCE: ',E14.5                       ,/,&
-'    ---------------------------                              ',/)
-
 #endif
 
 !----
-! FIN
+! End
 !----
 
 end subroutine

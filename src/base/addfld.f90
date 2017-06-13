@@ -320,6 +320,9 @@ if ((iturb.eq.30.and.irijec.eq.1).or.              &
   call field_get_key_struct_var_cal_opt(iflid, vcopt)
   vcopt%iconv = 0
   vcopt%istat = 0
+  vcopt%nswrsm = 2
+  vcopt%idifft = 0
+  vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
   call field_set_key_struct_var_cal_opt(iflid, vcopt)
 
 endif

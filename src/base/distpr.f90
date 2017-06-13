@@ -94,6 +94,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: imasfl, bmasfl
 double precision, pointer, dimension(:)   :: cvar_var
+double precision, pointer, dimension(:)   :: cvara_var
 double precision, pointer, dimension(:) :: coefap, coefbp
 double precision, pointer, dimension(:) :: cofafp, cofbfp
 type(var_cal_opt) :: vcopt
@@ -126,6 +127,9 @@ allocate(w1(ncelet))
 call field_get_id("wall_distance", f_id)
 
 call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+call field_get_val_s(f_id, cvar_var)
+call field_get_val_prev_s(f_id, cvara_var)
 
 !===============================================================================
 ! 2. Boundary conditions
@@ -179,6 +183,14 @@ enddo
 
 if (irangp.ge.0) call parcpt(ndircp)
 
+! If no wall initialization to a big value
+if (ndircp.eq.0) then
+  do iel = 1, ncel
+    cvar_var(iel) = grand
+  enddo
+  return
+endif
+
 !===============================================================================
 ! 3. Prepare system to solve
 !===============================================================================
@@ -206,8 +218,6 @@ call viscfa                                                       &
 !===============================================================================
 
 ! Distance to wall is initialized to 0 for reconstruction
-
-call field_get_val_s(f_id, cvar_var)
 
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
@@ -253,7 +263,7 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   cvar_var        , cvar_var        ,                            &
+   cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscf  , viscb  , rvoid  ,                   &
