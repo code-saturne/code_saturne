@@ -2765,24 +2765,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           itypfb[ifbr] = CS_OUTLET;
       }
 
-      {
-        // imposed outlet pressure
-        const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
-        const int var_key_id = cs_field_key_id("variable_id");
-        int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-        char *_choice_d = _boundary_choice(boundaries->nature[izone],
-                                           boundaries->label[izone],
-                                           "pressure", "choice");
-
-        if (cs_gui_strcmp(_choice_d, "dirichlet")) {
-          for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-            ifbr = face_ids[ifac] -1;
-            icodcl[ivar1 * n_b_faces + ifbr] = 1;
-            rcodcl[ivar1 * n_b_faces + ifbr] = boundaries->preout[izone];
-          }
-        }
-      }
-
       if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
         iprofm[zone_nbr-1] = boundaries->meteo[izone].read_data;
         if (boundaries->meteo[izone].automatic) {
@@ -2850,6 +2832,30 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
         BFT_FREE(choice_d);
       }
+    }
+    else if (cs_gui_strcmp(boundaries->nature[izone], "imposed_p_outlet")) {
+      for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
+        ifbr = face_ids[ifac];
+        izfppp[ifbr] = zone_nbr;
+        itypfb[ifbr] = CS_OUTLET;
+      }
+
+      /* imposed outlet pressure */
+      const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
+      const int var_key_id = cs_field_key_id("variable_id");
+      int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
+      char *_choice_d = _boundary_choice(boundaries->nature[izone],
+                                         boundaries->label[izone],
+                                         "pressure", "choice");
+
+      if (cs_gui_strcmp(_choice_d, "dirichlet")) {
+        for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
+          ifbr = face_ids[ifac] -1;
+          icodcl[ivar1 * n_b_faces + ifbr] = 1;
+          rcodcl[ivar1 * n_b_faces + ifbr] = boundaries->preout[izone];
+        }
+      }
+
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
       for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
@@ -3171,7 +3177,8 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
       if (boundaries->rough[izone] < 0.0)
         inature = CS_SMOOTHWALL;
     }
-    else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")) {
+    else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")
+        || cs_gui_strcmp(boundaries->nature[izone], "imposed_p_outlet")) {
       inature = CS_OUTLET;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {

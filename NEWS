@@ -5,6 +5,8 @@ Release 5.0.1 (unreleased)
 Bug fixes
 ---------
 
+- GUI: fix imposed pressure outlet.
+
 - Major fix in parallel when activating head losses and improved
   hydrostatic pressure algorithm.
 
