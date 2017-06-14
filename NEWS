@@ -1,11 +1,13 @@
 
-Release 5.0.1 (unreleased)
-==========================
+Release 5.0.1 (June 14 2017)
+============================
 
 Bug fixes
 ---------
 
 - GUI: fix imposed pressure outlet.
+
+- Major fixes for coupled Rij solver (irijico = 1).
 
 - Major fix in parallel when activating head losses and improved
   hydrostatic pressure algorithm.

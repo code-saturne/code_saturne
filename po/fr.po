@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-06-02 12:07+0200\n"
+"POT-Creation-Date: 2017-06-11 15:23+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3076,6 +3076,10 @@ msgstr ""
 "\n"
 "Optimisation des matrices symétriques\n"
 "=====================================\n"
+
+#, fuzzy
+msgid "invalid value of isstpp for a work array"
+msgstr "valeur invalide pour isstpc"
 
 #, c-format
 msgid " %s: Convection in centered blending with %f percent of upwind\n"
