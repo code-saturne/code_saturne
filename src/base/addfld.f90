@@ -305,6 +305,16 @@ if (iwallf.ge.5) then
                                          iflid)
 endif
 
+
+! Van Driest damping
+if (idries.eq.-1) then
+  if (iturb.eq.40) then
+    idries = 1
+  elseif (iturb.eq.41.or.iturb.eq.42) then
+    idries = 0
+  endif
+endif
+
 ! Wall distance for some turbulence models
 
 if ((iturb.eq.30.and.irijec.eq.1).or.              &

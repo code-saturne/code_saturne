@@ -618,22 +618,6 @@ if (ypluli.lt.-grand) then
   endif
 endif
 
-
-! ---> Van Driest
-if (idries.eq.-1) then
-  !   On met 1 en supposant qu'en periodicite ou parallele on utilise le
-  !     mode de calcul de la distance a la paroi qui les prend en charge
-  !     (ICDPAR=+/-1, valeur par defaut)
-  if (iturb.eq.40) then
-    idries = 1
-  elseif (iturb.eq.41) then
-    idries = 0
-  elseif (iturb.eq.42) then
-    idries = 0
-  endif
-endif
-
-
 ! ---> ICPSYR
 !      Si l'utilisateur n'a pas modifie ICPSYR, on prend par defaut :
 !        s'il n y a pas de couplage
