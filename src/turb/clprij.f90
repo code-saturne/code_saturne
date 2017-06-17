@@ -317,7 +317,7 @@ integer          kclipp, clip_e_id, clip_r_id
 double precision vmin(7), vmax(7), rijmin, varrel, und0, epz2,cvar_var1, cvar_var2
 double precision eigen_min
 double precision eigen_vals(3)
-double precision tensor(3,3)
+double precision tensor(6)
 
 double precision, dimension(:), pointer :: cvar_ep, cvara_ep
 double precision, dimension(:,:), pointer :: cvar_rij, cvara_rij
@@ -481,19 +481,13 @@ do iel = 1, ncel
 
   ! Check if R is positive
 
-  tensor(1,1) = cvar_rij(1,iel)
-  tensor(1,2) = cvar_rij(4,iel)
-  tensor(1,3) = cvar_rij(6,iel)
-  tensor(2,1) = cvar_rij(4,iel)
-  tensor(2,2) = cvar_rij(2,iel)
-  tensor(2,3) = cvar_rij(5,iel)
-  tensor(3,1) = cvar_rij(6,iel)
-  tensor(3,2) = cvar_rij(5,iel)
-  tensor(3,3) = cvar_rij(3,iel)
+  do isou = 1, 6
+    tensor(isou) = cvar_rij(isou,iel)
+  enddo
   call calc_symtens_eigvals(tensor,eigen_vals)
   eigen_min = minval(eigen_vals(1:3))
 
-  if (eigen_min .LE. 0.0d0) then
+  if (eigen_min .le. 0.0d0) then
     is_clipped = 1
     do isou = 1, 3
       if (clip_r_id.ge.0) &

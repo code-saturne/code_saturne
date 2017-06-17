@@ -2046,10 +2046,10 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function cs_f_math_33_eigen_vals
+    ! Interface to C function cs_math_sym_33_eigen
 
     subroutine calc_symtens_eigvals(m, eig_vals)                   &
-      bind(C, name='cs_math_33_eigen_vals')
+      bind(C, name='cs_math_sym_33_eigen')
       use, intrinsic :: iso_c_binding
       implicit none
       real(kind=c_double), dimension(*), intent(in) :: m

@@ -279,6 +279,27 @@ cs_math_33_determinant(const cs_real_t   m[3][3])
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the determinant of a 3x3 symmetric matrix
+ *
+ * \param[in]  m    3x3 symmetric matrix
+ *
+ * \return the determinant
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_sym_33_determinant(const cs_real_6_t   m)
+{
+  const cs_real_t  com0 = m[1]*m[2] - m[4]*m[4];
+  const cs_real_t  com1 = m[4]*m[5] - m[3]*m[2];
+  const cs_real_t  com2 = m[3]*m[4] - m[1]*m[5];
+
+  return m[0]*com0 + m[3]*com1 + m[5]*com2;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the cross product of two vectors of 3 real values.
  *
  * \param[in]     u             vector of 3 real values

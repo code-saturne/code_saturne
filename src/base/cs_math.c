@@ -204,35 +204,27 @@ cs_math_get_machine_epsilon(void)
  *           Communication of the ACM (April 1961)
  *           (Wikipedia article entitled "Eigenvalue algorithm")
  *
- * \param[in]  m          3x3 matrix
+ * \param[in]  m          3x3 symmetric matrix (m11, m22, m33, m12, m23, m13)
  * \param[out] eig_vals   size 3 vector
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_math_33_eigen_vals(const cs_real_t   m[3][3],
-                     cs_real_t          eig_vals[3])
+cs_math_sym_33_eigen(const cs_real_t  m[6],
+                     cs_real_t        eig_vals[3])
 {
   cs_real_t  e, e1, e2, e3;
 
-#if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
-  e1 = m[0][1]-m[1][0], e2 = m[0][2]-m[2][0], e3 = m[1][2]-m[2][1];
-  if (e1*e1 + e2*e2 + e3*e3 > 0.0)
-    bft_error(__FILE__, __LINE__, 0,
-              " The given 3x3 matrix is not symmetric.\n"
-              " Stop computing eigenvalues of a 3x3 matrix since the"
-              " algorithm is only dedicated to symmetric matrix.");
-#endif
+  cs_real_t  p1 = m[3]*m[3] + m[4]*m[4] + m[5]*m[5];
 
-  cs_real_t  p1 = m[0][1]*m[0][1] + m[0][2]*m[0][2] + m[1][2]*m[1][2];
-
-  if (p1 > 0.0) { // m is not diagonal
+  if (p1 > 0.0) { /* m is not diagonal */
 
     cs_real_t  theta;
-    cs_real_t  n[3][3];
-    cs_real_t  tr = cs_math_onethird*(m[0][0] + m[1][1] + m[2][2]);
+    cs_real_6_t  n;
+    cs_real_t  tr = (m[0] + m[1] + m[2]);
+    cs_real_t  tr_third = cs_math_onethird * tr;
 
-    e1 = m[0][0] - tr, e2 = m[1][1] - tr, e3 = m[2][2] - tr;
+    e1 = m[0] - tr_third, e2 = m[1] - tr_third, e3 = m[2] - tr_third;
     cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2*p1;
 
     assert(p2 > 0);
@@ -240,16 +232,15 @@ cs_math_33_eigen_vals(const cs_real_t   m[3][3],
     cs_real_t  ovp = 1./p;
 
     for (int  i = 0; i < 3; i++) {
-      n[i][i] = ovp * (m[i][i] - tr);
-      for (int j = i + 1; j < 3; j++) {
-        n[i][j] = ovp*m[i][j];
-        n[j][i] = n[i][j];
-      }
+      /* Diagonal */
+      n[i] = ovp * (m[i] - tr_third);
+      /* Extra diagonal */
+      n[3 + i] = ovp * m[3 + i];
     }
 
     /* r should be between -1 and 1 but truncation error and bad conditionning
        can lead to slighty under/over-shoot */
-    cs_real_t  r = 0.5 * cs_math_33_determinant((const cs_real_t (*)[3])n);
+    cs_real_t  r = 0.5 * cs_math_sym_33_determinant(n);
 
     if (r <= -1)
       theta = cs_math_onethird*cs_math_pi;
@@ -259,14 +250,14 @@ cs_math_33_eigen_vals(const cs_real_t   m[3][3],
       theta = cs_math_onethird*acos(r);
 
     // eigenvalues computed should satisfy e1 < e2 < e3
-    e3 = tr + 2*p*cos(theta);
-    e1 = tr + 2*p*cos(theta + 2*cs_math_pi*cs_math_onethird);
-    e2 = 3*tr - e1 -e3; // since tr(m) = e1 + e2 + e3
+    e3 = tr_third + 2*p*cos(theta);
+    e1 = tr_third + 2*p*cos(theta + 2*cs_math_pi*cs_math_onethird);
+    e2 = tr - e1 -e3; // since tr(m) = e1 + e2 + e3
 
   }
   else { // m is diagonal
 
-    e1 = m[0][0], e2 = m[1][1], e3 = m[2][2];
+    e1 = m[0], e2 = m[1], e3 = m[2];
 
   } /* diagonal or not */
 

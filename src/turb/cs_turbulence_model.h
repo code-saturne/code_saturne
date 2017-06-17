@@ -151,7 +151,7 @@ typedef struct {
 
 } cs_turb_rans_model_t;
 
-/* les turbulence model descriptor */
+/* LES turbulence model descriptor */
 /*---------------------------------*/
 
 typedef struct {
