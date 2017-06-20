@@ -7,6 +7,8 @@ Bug fixes
 
 - Fix user example for wall 1d thermal model.
 
+- Fix for time averages in GUI if a start time is given.
+
 Release 5.0.1 (June 14 2017)
 ============================
 

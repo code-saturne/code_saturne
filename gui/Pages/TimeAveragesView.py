@@ -303,7 +303,7 @@ class StandardItemModelAverage(QStandardItemModel):
                         self.mdl.setTimeStart(name, -1.0)
                     else:
                         stime = self.mdl.defaultValues()['timestart']
-                        self.mdl.setTimeStepStart(name, 1)
+                        self.mdl.setTimeStepStart(name, -1)
                         self.mdl.setTimeStart(name, stime)
                     self.dataAverage[row][3] = stime
                     self.dataAverage[row][col] = s_value
