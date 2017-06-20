@@ -116,7 +116,7 @@ cs_user_1d_wall_thermal(int iappel,
 {
 /*! [loc_var_dec] */
   int izone, ifbt1d;
-  cs_lnum_t ii, ifac, ilelt, nlelt, iel;
+  cs_lnum_t nlelt;
   cs_lnum_t *lstelt;
   cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
@@ -177,15 +177,15 @@ cs_user_1d_wall_thermal(int iappel,
 
     /* Get the list of boundary faces that will be coupled */
 
-    cs_selector_get_b_face_list("2 or 3 or 5 or 6 or 7 or 8 or 9 or 10",
-                                &nlelt, lstelt);
+    cs_selector_get_b_face_num_list("2 or 3 or 5 or 6 or 7 or 8 or 9 or 10",
+                                    &nlelt, lstelt);
 
     izone++;
 
     /* Fill the ifpt1d array, and compute nfpt1d */
 
-    for (ilelt = 0 ; ilelt < nlelt ; ilelt++) {
-      ifac = lstelt[ilelt];
+    for (cs_lnum_t ilelt = 0 ; ilelt < nlelt ; ilelt++) {
+      cs_lnum_t ifac = lstelt[ilelt];
       wall_thermal->izft1d[ifac-1] = izone;
       if (iappel == 2) wall_thermal->ifpt1d[ifbt1d] = ifac;
       ifbt1d++;
@@ -228,7 +228,7 @@ cs_user_1d_wall_thermal(int iappel,
    *----------------------------------------------------------------------------*/
 
   if (iappel == 2) {
-    for (ii = 0 ; ii < wall_thermal->nfpt1d ; ii++) {
+    for (cs_lnum_t ii = 0 ; ii < wall_thermal->nfpt1d ; ii++) {
       wall_thermal->local_models[ii].nppt1d = 8;
       wall_thermal->local_models[ii].eppt1d = 0.01144;
       wall_thermal->local_models[ii].rgpt1d = 1.;
@@ -260,13 +260,13 @@ cs_user_1d_wall_thermal(int iappel,
    *----------------------------------------------------------------------------*/
 
   if (iappel == 3) {
-    for (ii = 0 ; ii < wall_thermal->nfpt1d ; ii++) {
+    for (cs_lnum_t ii = 0 ; ii < wall_thermal->nfpt1d ; ii++) {
       wall_thermal->local_models[ii].iclt1d = 1;
       wall_thermal->local_models[ii].tept1d = cs_glob_fluid_properties->t0;
       /* Physical parameters */
-      ifac = wall_thermal->ifpt1d[ii] - 1;
+      cs_lnum_t face_id = wall_thermal->ifpt1d[ii] - 1;
       /* Floor: plate */
-      if (cdgfbo[ifac][2] <= 1.e-3) {
+      if (cdgfbo[face_id][2] <= 1.e-3) {
         wall_thermal->local_models[ii].xlmbt1 = 0.16;
         wall_thermal->local_models[ii].rcpt1d = 790.*900.;
       /* Wall and ceiling: marinite */
@@ -274,8 +274,8 @@ cs_user_1d_wall_thermal(int iappel,
         wall_thermal->local_models[ii].xlmbt1 = 0.11;
         wall_thermal->local_models[ii].rcpt1d = 670.*778.;
       }
-      iel = b_face_cells[ifac];
-      wall_thermal->local_models[ii].dtpt1d = CS_F_(dt)->val[iel];
+      cs_lnum_t c_id = b_face_cells[face_id];
+      wall_thermal->local_models[ii].dtpt1d = CS_F_(dt)->val[c_id];
     }
   }
 
