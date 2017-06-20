@@ -1,4 +1,12 @@
 
+Release 5.0.2 (unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Fix user example for wall 1d thermal model.
+
 Release 5.0.1 (June 14 2017)
 ============================
 
