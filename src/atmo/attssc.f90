@@ -133,7 +133,7 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
 
     do iel = 1, ncel
       crvexp(iel) = crvexp(iel) +                                   &
-           cp0*volume(iel)*crom(iel)*(-ray3Di(iel) + ray3Dst(iel))
+           cp0*cell_f_vol(iel)*crom(iel)*(-ray3Di(iel) + ray3Dst(iel))
     enddo
 
     deallocate(ray3Di)
@@ -231,14 +231,14 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
         endif
 
         crvexp(iel) = crvexp(iel) -clatev*(ps/pp)**(rair/cp0)           &
-                    *(volume(iel)*grad1(3,iel)/crom(iel))
+                    *(cell_f_vol(iel)*grad1(3,iel)/crom(iel))
       enddo
       treated_scalars=treated_scalars + 1
 
     elseif (ivar.eq.isca(iscapp(2))) then
 
       do iel = 1, ncel
-        crvexp(iel) = crvexp(iel) - volume(iel)*grad1(3,iel)          &
+        crvexp(iel) = crvexp(iel) - cell_f_vol(iel)*grad1(3,iel)          &
                     / crom(iel)
       enddo
 
@@ -246,7 +246,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
     elseif(ivar.eq.isca(iscapp(3)))then
 
       do iel = 1, ncel
-        crvexp(iel) = crvexp(iel) + volume(iel)*grad2(3,iel)
+        crvexp(iel) = crvexp(iel) + cell_f_vol(iel)*grad2(3,iel)
       enddo
 
       treated_scalars = treated_scalars + 1
