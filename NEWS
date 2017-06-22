@@ -5,6 +5,9 @@ Release 5.0.2 (unreleased)
 Bug fixes
 ---------
 
+- Fix bug in the GUI example of the initialisation of alpha in the Bl-v2/k
+    turbulence model.
+
 - Fix user example for wall 1d thermal model.
 
 - Fix for time averages in GUI if a start time is given.

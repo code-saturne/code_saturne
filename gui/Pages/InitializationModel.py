@@ -163,7 +163,7 @@ alpha = 1.;"""
 k = 1.5*(0.02*uref)^2;
 epsilon = k^1.5*cmu/almax;
 phi = 2./3.;
-alpha = 0.;"""
+alpha = 1.;"""
         elif turb_model == 'k-omega-SST':
             formula = """k = 1.5*(0.02*uref)^2;
 omega = k^0.5/almax;"""
