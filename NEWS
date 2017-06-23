@@ -7,6 +7,9 @@ Bug fixes
 
 - Complete reinit_turb for Bl-v2-k model.
 
+- Fix robustness issue of eigen values comput. for sym. tensors for close to
+  diagonal tensors.
+
 - Fix bug in the GUI example of the initialisation of alpha in the Bl-v2/k
   turbulence model.
 
