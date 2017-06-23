@@ -30,6 +30,7 @@
 #-------------------------------------------------------------------------------
 
 Makefile.in
+.gitignore
 
 # /
 /ABOUT-NLS
@@ -217,3 +218,5 @@ Makefile.in
 # /src/rayt/
 
 # /tests/
+/patches/*.patch
+/src/TAGS
