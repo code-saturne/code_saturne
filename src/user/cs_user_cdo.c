@@ -87,10 +87,10 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+int
 cs_user_cdo_activated(void)
 {
-  return false; /* By default, the CDO module is not activated */
+  return  CS_CDO_OFF; /* By default, the CDO module is not activated */
 }
 
 /*----------------------------------------------------------------------------*/

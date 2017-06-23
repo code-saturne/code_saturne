@@ -55,11 +55,13 @@ BEGIN_C_DECLS
 /*!
  * \brief  Initialize the computational domain when CDO/HHO schemes are
  *         activated
+ *
+ * \param[in]  activation_mode   integer for tagging a mode
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_initialize_setup(void);
+cs_cdo_initialize_setup(int  activation_mode);
 
 /*----------------------------------------------------------------------------*/
 /*!

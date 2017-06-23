@@ -92,18 +92,24 @@ static int  cs_cdo_ts_id;
 /*!
  * \brief  Initialize the computational domain when CDO/HHO schemes are
  *         activated
+ *
+ * \param[in]  activation_mode   integer for tagging a mode
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_initialize_setup(void)
+cs_cdo_initialize_setup(int  activation_mode)
 {
+  cs_cdo_activation_mode = activation_mode;
+
+  if (activation_mode == CS_CDO_OFF)
+    return;
+
   /* Timer statistics */
   cs_cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
   cs_timer_stats_start(cs_cdo_ts_id);
 
   /* Store the fact that the CDO/HHO module is activated */
-  cs_cdo_is_activated = true;
   cs_log_printf(CS_LOG_DEFAULT,
                 "\n -msg- CDO/HHO module is activated *** Experimental ***");
   cs_log_printf(CS_LOG_DEFAULT, "\n -msg- CDO.tag  %s\n", cs_cdoversion);
@@ -180,7 +186,7 @@ void
 cs_cdo_initialize_structures(cs_mesh_t             *m,
                              cs_mesh_quantities_t  *mq)
 {
-  if (cs_cdo_is_activated == false)
+  if (cs_cdo_activation_mode == CS_CDO_OFF)
     return;
 
   cs_timer_t  t0 = cs_timer_time();
@@ -199,6 +205,21 @@ cs_cdo_initialize_structures(cs_mesh_t             *m,
 
   /* Initialization for user-defined extra operations */
   cs_user_cdo_start_extra_op(cs_glob_domain);
+
+  /* Sumary of the settings */
+  cs_cdo_connect_summary(cs_glob_domain->connect);
+  cs_cdo_quantities_summary(cs_glob_domain->cdo_quantities);
+  cs_domain_summary(cs_glob_domain);
+
+  /* Output information */
+  cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
+  cs_log_printf(CS_LOG_DEFAULT, "#      Start main loop\n");
+  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
+
+  /* Flush listing and setup.log files */
+  cs_log_printf_flush(CS_LOG_DEFAULT);
+  cs_log_printf_flush(CS_LOG_SETUP);
+  cs_log_printf_flush(CS_LOG_PERFORMANCE);
 
   /* Monitoring */
   cs_timer_stats_stop(cs_cdo_ts_id);
@@ -221,7 +242,7 @@ cs_cdo_initialize_structures(cs_mesh_t             *m,
 void
 cs_cdo_finalize(void)
 {
-  if (cs_cdo_is_activated == false)
+  if (cs_cdo_activation_mode == CS_CDO_OFF)
     return;
 
   cs_domain_t  *domain = cs_glob_domain;
@@ -257,7 +278,7 @@ cs_cdo_finalize(void)
 void
 cs_cdo_main(void)
 {
-  assert(cs_cdo_is_activated == true);
+  assert(cs_cdo_activation_mode != CS_CDO_OFF);
 
   cs_timer_t t0 = cs_timer_time();
 
@@ -266,21 +287,6 @@ cs_cdo_main(void)
 
   /*  Build high-level structures and create algebraic systems */
   cs_domain_t  *domain = cs_glob_domain;
-
-  /* Sumary of the settings */
-  cs_cdo_connect_summary(domain->connect);
-  cs_cdo_quantities_summary(domain->cdo_quantities);
-  cs_domain_summary(domain);
-
-  /* Output information */
-  cs_log_printf(CS_LOG_DEFAULT, "\n%s", lsepline);
-  cs_log_printf(CS_LOG_DEFAULT, "#      Start main loop\n");
-  cs_log_printf(CS_LOG_DEFAULT, "%s", lsepline);
-
-  /* Flush listing and setup.log files */
-  cs_log_printf_flush(CS_LOG_DEFAULT);
-  cs_log_printf_flush(CS_LOG_SETUP);
-  cs_log_printf_flush(CS_LOG_PERFORMANCE);
 
   while (cs_domain_needs_iterate(domain)) { // Main time loop
 

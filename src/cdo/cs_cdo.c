@@ -61,7 +61,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Activation of the CDO/HHO module */
-_Bool  cs_cdo_is_activated = false;
+int  cs_cdo_activation_mode = CS_CDO_OFF;
 
 /* Separation lines: long, medium, short */
 const char lsepline[80] =

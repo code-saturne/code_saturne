@@ -40,6 +40,11 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Flag related to the activation (or not) of the CDO schemes */
+#define CS_CDO_OFF      -1 // CDO schemes are not used (no activation)
+#define CS_CDO_WITH_FV   0 // CDO schemes are used as well as finite volume
+#define CS_CDO_ONLY      1 // CDO schemes are exclusively used
+
 /* Flag associated to each cell */
 #define CS_FLAG_BOUNDARY     (1 << 0)  //  1: cell with at least one border face
 
@@ -228,7 +233,7 @@ typedef void
  *============================================================================*/
 
 /* Activation of the CDO/HHO module */
-extern _Bool  cs_cdo_is_activated;
+extern int  cs_cdo_activation_mode;
 
 /* Separation lines: long, medium, short */
 extern const char lsepline[80];

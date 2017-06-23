@@ -222,8 +222,9 @@ cs_run(void)
 
   cs_preprocessor_data_read_headers(cs_glob_mesh,
                                     cs_glob_mesh_builder);
-  if (!opts.cdo)
-    opts.cdo = cs_user_cdo_activated();
+
+  /* Activation of the CDO module */
+  opts.cdo = cs_user_cdo_activated();
 
   /* Initialize Fortran API and calculation setup */
 
@@ -238,10 +239,9 @@ cs_run(void)
     cs_gui_zones();
     cs_user_zones();
 
-    if (opts.cdo)
-      cs_cdo_initialize_setup();
+    cs_cdo_initialize_setup(opts.cdo);
 
-    else {
+    if (opts.cdo == CS_CDO_OFF || opts.cdo == CS_CDO_WITH_FV) {
 
       CS_PROCF(csinit, CSINIT)(&_rank_id, &_n_ranks);
 
@@ -373,7 +373,7 @@ cs_run(void)
 
       if (cs_user_solver_set() == 0) {
 
-        if (opts.cdo) {
+        if (opts.cdo == CS_CDO_ONLY) {
 
           /* Only C language is called within CDO */
 

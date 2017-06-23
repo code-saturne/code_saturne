@@ -71,7 +71,10 @@ typedef struct {
 
   bool           preprocess;    /* Mesh preprocessing mode */
   bool           verif;         /* Mesh quality verification mode */
-  bool           cdo;           /* mode with only the CDO kernel */
+  int            cdo;           /* CDO mode:
+                                   -1: not used
+                                    0: used with Finite Volume schemes
+                                    1: only the CDO kernel */
 
   int            benchmark;     /* Benchmark mode:
                                    0: not used;

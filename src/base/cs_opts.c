@@ -251,7 +251,7 @@ cs_opts_define(int         argc,
 
   opts->preprocess = false;
   opts->verif = false;
-  opts->cdo = false;
+  opts->cdo = -1; /* Not used */
   opts->benchmark = 0;
 
   opts->yacs_module = NULL;
@@ -357,7 +357,7 @@ cs_opts_define(int         argc,
       opts->preprocess = true;
 
     else if (strcmp(s, "--cdo") == 0)
-      opts->cdo = true;
+      opts->cdo = 1; /* CDO schemes are exclusively used */
 
     else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0)
       opts->verif = true;

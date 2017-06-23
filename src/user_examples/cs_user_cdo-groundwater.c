@@ -141,16 +141,14 @@ get_ic(cs_real_t           time,
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Activate or not the CDO module
- */
-/*----------------------------------------------------------------------------*/
-
-bool
+int
 cs_user_cdo_activated(void)
 {
-  return  true;
+  /* CS_CDO_OFF     = -1 --> CDO schemes are not used (no activation)
+     CS_CDO_WITH_FV =  0 --> CDO schemes are used as well as finite volume
+     CS_CDO_ONLY    =  1 --> CDO schemes are exclusively used */
+
+  return  CS_CDO_ONLY;
 }
 
 /*----------------------------------------------------------------------------*/
