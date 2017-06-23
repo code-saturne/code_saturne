@@ -52,18 +52,30 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup an new equation related to the wall distance
- *
- * \param[in]  eq          pointer to the associated cs_equation_t structure
- * \param[in]  diff_pty    pointer to a cs_property_t structure
- * \param[in]  wall_ml_id  id of the mesh location related to wall boundaries
+ * \brief  Test if the computation of the wall distance is activated
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_walldistance_is_activated(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the future computation of the wall distance
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_walldistance_setup(cs_equation_t   *eq,
-                      cs_property_t   *diff_pty,
-                      int              wall_ml_id);
+cs_walldistance_activate(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Setup the equation related to the wall distance
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_walldistance_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -74,7 +86,6 @@ cs_walldistance_setup(cs_equation_t   *eq,
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in, out] eq         pointer to the related cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -83,8 +94,7 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
                         const cs_time_step_t         *time_step,
                         double                        dt_cur,
                         const cs_cdo_connect_t       *connect,
-                        const cs_cdo_quantities_t    *cdoq,
-                        cs_equation_t                *eq);
+                        const cs_cdo_quantities_t    *cdoq);
 
 /*----------------------------------------------------------------------------*/
 

@@ -31,6 +31,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "assert.h"
+
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
@@ -109,34 +111,6 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
                           const cs_cdo_quantities_t   *quant,
                           const double                *array,
                           cs_real_t                   *val_xc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct the value at the face center from an array of values
- *         defined on primal vertices.
- *
- *  \param[in]      fm     pointer to cs_face_mesh_t structure
- *  \param[in]      p_v    pointer to an array of values (local to this face)
- *  \param[in, out] p_f    value of the reconstruction at the face center
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_reco_pv_at_face_center(const cs_face_mesh_t    *fm,
-                          const double            *p_v,
-                          double                  *p_f)
-{
-  *p_f = 0.;
-
-  if (p_v == NULL)
-    return;
-
-  const cs_quant_t  pfq = fm->face;
-
-  for (short int e = 0; e < fm->n_ef; e++)
-    *p_f += (p_v[fm->e2v_ids[2*e]] + p_v[fm->e2v_ids[2*e+1]]) * fm->tef[e];
-  *p_f *= 0.5 / pfq.meas;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -222,28 +196,6 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct the value of a scalar potential at a point inside a cell
- *         The scalar potential has DoFs located at primal vertices
- *
- * \param[in]      cm           pointer to a cs_cell_mesh_t structure
- * \param[in]      pdi          array of DoF values at vertices
- * \param[in]      length_xcxp  lenght of the segment [x_c, x_p]
- * \param[in]      unitv_xcxp   unitary vector pointed from x_c to x_p
- * \param[in, out] wbuf         pointer to a temporary buffer
- *
- * \return the value of the reconstructed potential at the evaluation point
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_reco_pv_inside_cell(const cs_cell_mesh_t    *cm,
-                       const cs_real_t          pdi[],
-                       const cs_real_t          length_xcxp,
-                       const cs_real_t          unitv_xcxp[],
-                       cs_real_t                wbuf[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Reconstruct by a constant vector a field of edge-based DoFs
  *         in a volume surrounding an edge
  *
@@ -319,6 +271,105 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
                        const cs_cdo_quantities_t  *quant,
                        const double               *dof,
                        double                     *p_ccrec[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value of a scalar potential at a point inside a cell
+ *         The scalar potential has DoFs located at primal vertices
+ *
+ * \param[in]      cm             pointer to a cs_cell_mesh_t structure
+ * \param[in]      pdi            array of DoF values at vertices
+ * \param[out]     cell_gradient  gradient inside the cell
+ *
+ * \return the value of the reconstructed potential at the evaluation point
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_cell_grad_from_scalar_pv(const cs_cell_mesh_t    *cm,
+                                    const cs_real_t          pdi[],
+                                    cs_real_t               *cell_gradient);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value of a scalar potential at a point inside a cell
+ *         The scalar potential has DoFs located at primal vertices
+ *
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      pdi          array of DoF values at vertices
+ * \param[in]      length_xcxp  lenght of the segment [x_c, x_p]
+ * \param[in]      unitv_xcxp   unitary vector pointed from x_c to x_p
+ * \param[in, out] wbuf         pointer to a temporary buffer
+ *
+ * \return the value of the reconstructed potential at the evaluation point
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_reco_cw_scalar_pv_inside_cell(const cs_cell_mesh_t    *cm,
+                                 const cs_real_t          pdi[],
+                                 const cs_real_t          length_xcxp,
+                                 const cs_real_t          unitv_xcxp[],
+                                 cs_real_t                wbuf[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value at the face center from an array of values
+ *         defined on primal vertices.
+ *
+ *  \param[in]      fm     pointer to cs_face_mesh_t structure
+ *  \param[in]      p_v    pointer to an array of values (local to this face)
+ *
+ * \return the value of the reconstruction at the face center
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_reco_fw_scalar_pv_at_face_center(const cs_face_mesh_t    *fm,
+                                    const cs_real_t         *p_v)
+{
+  cs_real_t  p_f = 0.;
+
+  if (p_v == NULL)
+    return p_f;
+
+  const cs_quant_t  pfq = fm->face;
+
+  for (short int e = 0; e < fm->n_ef; e++)
+    p_f += (p_v[fm->e2v_ids[2*e]] + p_v[fm->e2v_ids[2*e+1]]) * fm->tef[e];
+  p_f *= 0.5 / pfq.meas;
+
+  return p_f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value of a scalar potential at the cell center from
+ *         an array of values defined on primal vertices.
+ *         Algorithm based on the cs_cell_mesh_t structure.
+ *
+ *  \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ *  \param[in]      array    pointer to the array of values
+ *
+ *  \return the value of the reconstruction at the cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_reco_cw_scalar_pv_at_cell_center(const cs_cell_mesh_t     *cm,
+                                    const cs_real_t          *array)
+{
+  /* Sanity checks */
+  assert(cm != NULL && array != NULL);
+  assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ));
+
+  /* Reconstruct the value at the cell center */
+  cs_real_t  pc = 0.;
+  for (short int v = 0; v < cm->n_vc; v++)
+    pc += cm->wvc[v] * array[cm->v_ids[v]];
+
+  return pc;
+}
 
 /*----------------------------------------------------------------------------*/
 

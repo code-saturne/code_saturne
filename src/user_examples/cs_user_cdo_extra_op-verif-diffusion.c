@@ -102,26 +102,66 @@ static FILE  *resume = NULL;
  * Private function prototypes
  *============================================================================*/
 
-/* ---------------------------------------------------------------------------
- * Retrieve the analytical solution for a given problem
- * ---------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Give the explicit definition of the exact solution
+ *         pt_ids is optional. If not NULL, it enables to access in coords
+ *         at the right location and the same thing to fill retval if compact
+ *         is set to false
+ *         Rely on a generic function pointer for an analytic function
+ *
+ * \param[in]      time       when ?
+ * \param[in]      n_elts     number of elements to consider
+ * \param[in]      pt_ids     list of elements ids (to access coords and fill)
+ * \param[in]      coords     where ?
+ * \param[in]      commpact   true:no indirection, false:indirection for filling
+ * \param[in, out] retval     result of the function
+ */
+/*----------------------------------------------------------------------------*/
 
 static inline void
 _get_sol(cs_real_t          time,
          cs_lnum_t          n_pts,
+         const cs_lnum_t    pt_ids[],
          const cs_real_t   *xyz,
+         bool               compact,
          cs_real_t         *retval)
 {
   CS_UNUSED(time);
 
   const double  pi = 4.0*atan(1.0);
+  if (pt_ids != NULL && !compact) {
 
-  for (cs_lnum_t p = 0; p < n_pts; p++) {
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-    const cs_real_t  *_xyz = xyz + 3*p;
-    const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
+      const cs_lnum_t  id = pt_ids[p];
+      const cs_real_t  *_xyz = xyz + 3*id;
+      const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
 
-    retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+      retval[id] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+
+    }
+
+  }
+  else if (pt_ids != NULL && compact) {
+
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
+      const cs_real_t  *_xyz = xyz + 3*pt_ids[p];
+      const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
+
+      retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+    }
+
+  }
+  else {
+
+    assert(pt_ids == NULL);
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
+      const cs_real_t  *_xyz = xyz + 3*p;
+      const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
+
+      retval[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+    }
 
   }
 
@@ -211,7 +251,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 
     BFT_MALLOC(rpex, n_vertices, double);
     BFT_MALLOC(ddip, n_vertices, double);
-    get_sol(tcur, n_vertices, cdoq->vtx_coord, rpex);
+    get_sol(tcur, n_vertices, NULL, cdoq->vtx_coord, true, rpex);
     for (int i = 0; i < n_vertices; i++)
       ddip[i] = rpex[i] - pdi[i];
 
@@ -269,7 +309,7 @@ cs_user_cdo_extra_op(const cs_domain_t          *domain)
   const cs_cdo_quantities_t  *cdoq = domain->cdo_quantities;
   const cs_time_step_t  *time_step = domain->time_step;
 
-  cs_equation_t  *eq = cs_domain_get_equation(domain, "FVCA6.1");
+  cs_equation_t  *eq = cs_equation_by_name("FVCA6.1");
   const char *eqname = cs_equation_get_name(eq);
   const cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 

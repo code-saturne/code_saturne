@@ -500,7 +500,7 @@ cs_equation_free_common_structures(cs_flag_t   scheme_flag)
  *          and attached to vertices
  *
  * \param[in]      mesh         pointer to a cs_mesh_t structure
- * \param[in]      bc_param     pointer to a cs_param_bc_t structure
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      dir          pointer to a cs_cdo_bc_list_t structure
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
  *
@@ -509,10 +509,10 @@ cs_equation_free_common_structures(cs_flag_t   scheme_flag)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_compute_dirichlet_sv(const cs_mesh_t          *mesh,
-                                 const cs_param_bc_t      *bc_param,
-                                 const cs_cdo_bc_list_t   *dir,
-                                 cs_cell_builder_t        *cb)
+cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
+                                 const cs_equation_param_t  *eqp,
+                                 const cs_cdo_bc_list_t     *dir,
+                                 cs_cell_builder_t          *cb)
 {
   cs_flag_t  *flag = NULL, *counter = NULL;
   cs_real_t  *dir_val = NULL;
@@ -544,19 +544,18 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t          *mesh,
     const cs_lnum_t  *f2v_lst = face_vtx_lst + f2v_idx[0];
 
     const short int  def_id = dir->def_ids[i];
-    const cs_param_def_type_t  def_type = bc_param->def_types[def_id];
-    const cs_def_t  def = bc_param->defs[def_id];
+    const cs_xdef_t  *def = eqp->bc_desc[def_id];
 
-    switch(def_type) {
+    switch(def->type) {
 
-    case CS_PARAM_DEF_BY_VALUE:
+    case CS_XDEF_BY_VALUE:
       {
-        const double  val = def.get.val;
+        const cs_real_t  *constant_val = (cs_real_t *)def->input;
 
         for (short int v = 0; v < n_vf; v++) {
 
           const cs_lnum_t  v_id = f2v_lst[v];
-          dir_val[v_id] += val;
+          dir_val[v_id] += constant_val[0];
           flag[v_id] |= CS_CDO_BC_DIRICHLET;
           counter[v_id] += 1;
 
@@ -565,19 +564,20 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t          *mesh,
       }
       break;
 
-    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
       {
         cs_real_t  *eval = cb->values;
-        cs_real_3_t  *xyz = cb->vectors;
 
         /* Evaluate the boundary condition at each boundary vertex */
-        for (short int v = 0; v < n_vf; v++) {
-          const cs_real_t  *v_xyz = quant->vtx_coord + 3*f2v_lst[v];
-          for (int k = 0; k < 3; k++) xyz[v][k] = v_xyz[k];
-        }
-
-        def.analytic(cs_shared_time_step->t_cur, n_vf, (const cs_real_t *)xyz,
-                     eval);
+        cs_xdef_eval_at_vertices_by_analytic(n_vf,
+                                             f2v_lst,
+                                             true, // compact ouput
+                                             cs_glob_mesh,
+                                             cs_shared_connect,
+                                             cs_shared_quant,
+                                             cs_shared_time_step,
+                                             def->input,
+                                             eval);
 
         for (short int v = 0; v < n_vf; v++) {
 
@@ -641,7 +641,7 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t          *mesh,
   /* Homogeneous Dirichlet are always enforced (even in case of multiple BCs).
      If multiple Dirichlet BCs are set, a weighted sum is used to set the
      Dirichlet value at each corresponding vertex */
-#pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
   for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
 
     if (flag[v_id] & CS_CDO_BC_HMG_DIRICHLET)

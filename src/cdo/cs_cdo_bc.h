@@ -35,6 +35,7 @@
 
 #include "cs_param.h"
 #include "cs_cdo_quantities.h"
+#include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -117,6 +118,41 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Convert a cs_param_bc_type_t into a flag (enable multiple type for
+ *          a same entity as required for vertices and edges)
+ *
+ * \param[in] bc_type   predefined type of boundary condition
+ *
+ * \return  a flag corresponding to the given type of boundary condition
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_flag_t
+cs_cdo_bc_get_flag(cs_param_bc_type_t   bc_type)
+{
+  cs_flag_t  ret_flag;
+  switch (bc_type) {
+  case CS_PARAM_BC_HMG_DIRICHLET:
+    ret_flag = CS_CDO_BC_HMG_DIRICHLET;
+    break;
+  case CS_PARAM_BC_DIRICHLET:
+    ret_flag = CS_CDO_BC_DIRICHLET;
+    break;
+  case CS_PARAM_BC_HMG_NEUMANN:
+    ret_flag = CS_CDO_BC_HMG_NEUMANN;
+    break;
+  case CS_PARAM_BC_NEUMANN:
+    ret_flag = CS_CDO_BC_NEUMANN;
+    break;
+  default:
+    ret_flag = 0;
+    break;
+  }
+  return ret_flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Create a cs_cdo_bc_list_t structure
  *
  * \param[in]  n_elts      number of entries of the list
@@ -146,19 +182,22 @@ cs_cdo_bc_list_free(cs_cdo_bc_list_t   *bcl);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the structure which translates the BC definition from the
- *         user viewpoint into a ready-to-use structure
- *         - Prepare the treatment of the boundary conditions.
- *         - Compile the information detailed in a cs_param_bc_t structure
+ *         user viewpoint into a ready-to-use structure for setting the arrays
+ *         keeping the values of the boundary condition to set.
  *
- * \param[in] param_bc    pointer to the parameters related to BCs of an eq.
- * \param[in] n_b_faces   number of border faces
+ * \param[in] default_bc   type of boundary condition to set by default
+ * \param[in] n_desc       number of boundary definitions
+ * \param[in] desc         list of boundary condition definition
+ * \param[in] n_b_faces    number of border faces
  *
  * \return a pointer to a new allocated cs_cdo_bc_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_bc_t *
-cs_cdo_bc_define(const cs_param_bc_t  *param_bc,
+cs_cdo_bc_define(cs_param_bc_type_t    default_bc,
+                 int                   n_desc,
+                 cs_xdef_t           **desc,
                  cs_lnum_t             n_b_faces);
 
 /*----------------------------------------------------------------------------*/

@@ -99,7 +99,6 @@ typedef struct {
                                       with time ? */
   bool              allow_overlay;  /*!< allow overlaying of this zone ? */
 
-
 } cs_volume_zone_t;
 
 /*=============================================================================

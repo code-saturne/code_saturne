@@ -39,7 +39,8 @@
 #include "cs_volume_zone.h"
 
 #include "cs_domain.h"
-
+#include "cs_gwf_tracer.h"
+#include "cs_gwf_soil.h"
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -670,6 +671,17 @@ cs_user_turbomachinery_rotor(void);
 void
 cs_user_zones(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define scaling parameter for electric model
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_scaling_elec(const cs_mesh_t             *mesh,
+                     const cs_mesh_quantities_t  *mesh_quantities,
+                     cs_real_t                   *dt);
+
 /*============================================================================
  *  CDO User function prototypes
  *============================================================================*/
@@ -694,29 +706,45 @@ cs_user_cdo_add_mesh_locations(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify for the computational domain:
- *         -- which type of boundaries closed the computational domain
- *         -- the settings for the time step
+ * \brief  Start setting up the computational domain:
+ *         - which type of boundaries closed the computational domain
+ *         - the settings for the time step
+ *         - activate module(s)
+ *         - add equations to solve, properties, advection fields
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_init_domain(cs_domain_t   *domain);
+cs_user_cdo_init_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate material property and/or convection field to user-defined
- *         equations and specify boundary conditions, source terms, initial
- *         values for these additional equations
+ * \brief  After the first step: cs_user_cdo_init_setup(), this second step
+ *         concludes the setup of properties, equations, source terms...
+ *         At this step, mesh quantities and connectivities are build as well
+ *         as the field arrays.
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_set_domain(cs_domain_t   *domain);
+cs_user_cdo_finalize_setup(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify for each soil and tracer how is defined each term of the
+ *         the tracer equation. Soils and tracer equations have to be added
+ *         previously
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_setup_gwf(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -734,13 +762,11 @@ cs_user_cdo_geometric_settings(void);
 /*!
  * \brief  Setup advanced features concerning the numerical parameters
  *         of the equation resolved during the computation
- *
- * \param[in, out]  domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_numeric_settings(cs_domain_t   *domain);
+cs_user_cdo_numeric_settings(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -780,14 +806,16 @@ cs_user_cdo_end_extra_op(const cs_domain_t     *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define scaling parameter for electric model
-*/
+ * \brief  Retrieve the bulk density related to a soil structure
+ *
+ * \param[in]  soil      pointer to a cs_gwf_soil_t structure
+ * \param[out] density   return value for the density
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_scaling_elec(const cs_mesh_t             *mesh,
-                     const cs_mesh_quantities_t  *mesh_quantities,
-                     cs_real_t                   *dt);
+cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
+                             cs_real_t             *density);
 
 /*----------------------------------------------------------------------------*/
 

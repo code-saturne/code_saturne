@@ -313,7 +313,7 @@ _petsc_setup_hook(void   *context,
  * \brief  Create a cs_equation_param_t
  *
  * \param[in] type             type of equation
- * \param[in] var_type         type of variable (scalar, vector, tensor...)
+ * \param[in] dim              dim of the variable associated to this equation
  * \param[in] default_bc       type of boundary condition set by default
  *
  * \return a pointer to a new allocated cs_equation_param_t structure
@@ -322,7 +322,7 @@ _petsc_setup_hook(void   *context,
 
 cs_equation_param_t *
 cs_equation_param_create(cs_equation_type_t     type,
-                         cs_param_var_type_t    var_type,
+                         int                    dim,
                          cs_param_bc_type_t     default_bc)
 {
   cs_equation_param_t  *eqp = NULL;
@@ -330,7 +330,7 @@ cs_equation_param_create(cs_equation_type_t     type,
   BFT_MALLOC(eqp, 1, cs_equation_param_t);
 
   eqp->type = type;
-  eqp->var_type = var_type;
+  eqp->dim = dim;
   eqp->verbosity = 0;
   eqp->sles_verbosity = 0;
   eqp->process_flag = 0;
@@ -350,13 +350,13 @@ cs_equation_param_create(cs_equation_type_t     type,
   eqp->time_property = NULL;
 
   /* Description of the time discretization (default values) */
-  eqp->time_info.scheme = CS_TIME_SCHEME_IMPLICIT;
-  eqp->time_info.theta = 1.0;
-  eqp->time_info.do_lumping = false;
+  eqp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
+  eqp->theta = 1.0;
+  eqp->do_lumping = false;
 
   /* Initial condition (zero value by default) */
-  eqp->time_info.n_ic_definitions = 0;
-  eqp->time_info.ic_definitions = NULL;
+  eqp->n_ic_desc = 0;
+  eqp->ic_desc = NULL;
 
   /* Diffusion term */
   eqp->diffusion_property = NULL;
@@ -371,7 +371,6 @@ cs_equation_param_create(cs_equation_type_t     type,
   eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
   eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
   eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
-  eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
   eqp->advection_field = NULL;
 
   /* No reaction term by default */
@@ -382,7 +381,6 @@ cs_equation_param_create(cs_equation_type_t     type,
   eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
 
   eqp->n_reaction_terms = 0;
-  eqp->reaction_info = NULL;
   eqp->reaction_properties = NULL;
 
   /* No source term by default (always in the right-hand side) */
@@ -391,7 +389,10 @@ cs_equation_param_create(cs_equation_type_t     type,
 
   /* Boundary conditions structure.
      One assigns a boundary condition by default */
-  eqp->bc = cs_param_bc_create(default_bc);
+  eqp->default_bc = default_bc;
+  eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
+  eqp->n_bc_desc = 0;
+  eqp->bc_desc = NULL;
 
   /* Settings for driving the linear algebra */
   eqp->algo_info = _algo_info_by_default;
@@ -416,37 +417,41 @@ cs_equation_param_free(cs_equation_param_t     *eqp)
   if (eqp == NULL)
     return NULL;
 
-  if (eqp->bc != NULL) { // Boundary conditions
-    cs_param_bc_t  *bc = eqp->bc;
+  /* Information related to the definition of the boundary conditions */
+  if (eqp->n_bc_desc > 0) {
 
-    BFT_FREE(bc->ml_ids);
-    BFT_FREE(bc->def_types);
-    BFT_FREE(bc->types);
-    BFT_FREE(bc->defs);
+    for (int i = 0; i < eqp->n_bc_desc; i++)
+      eqp->bc_desc[i] = cs_xdef_free(eqp->bc_desc[i]);
+    BFT_FREE(eqp->bc_desc);
 
-    BFT_FREE(bc);
-    eqp->bc = NULL;
   }
 
-  if (eqp->n_reaction_terms > 0) { // reaction terms
+  /* Information related to the definition of reaction terms */
+  if (eqp->n_reaction_terms > 0) {
 
-    for (int i = 0; i< eqp->n_reaction_terms; i++)
-      BFT_FREE(eqp->reaction_info[i].name);
-
-    BFT_FREE(eqp->reaction_info);
     BFT_FREE(eqp->reaction_properties);
 
     /* Remark: properties are freed when the global cs_domain_t structure is
        freed thanks to a call to cs_property_free() */
   }
 
-  if (eqp->n_source_terms > 0)
-    eqp->source_terms = cs_source_term_destroy(eqp->n_source_terms,
-                                               eqp->source_terms);
+  /* Information related to the definition of source terms */
+  if (eqp->n_source_terms > 0) {
 
-  cs_param_time_t  t_info = eqp->time_info;
-  if (t_info.n_ic_definitions > 0)
-    BFT_FREE(t_info.ic_definitions);
+    for (int i = 0; i < eqp->n_source_terms; i++)
+      eqp->source_terms[i] = cs_xdef_free(eqp->source_terms[i]);
+    BFT_FREE(eqp->source_terms);
+
+  }
+
+  /* Information related to the definition of initial conditions */
+  if (eqp->n_ic_desc > 0) {
+
+    for (int i = 0; i < eqp->n_ic_desc; i++)
+      eqp->ic_desc[i] = cs_xdef_free(eqp->ic_desc[i]);
+    BFT_FREE(eqp->ic_desc);
+
+  }
 
   BFT_FREE(eqp);
 
@@ -519,44 +524,33 @@ cs_equation_param_summary(const char                  *eqname,
 
   /* Boundary conditions */
   if (eqp->verbosity > 0) {
-    cs_param_bc_t  *bcp = eqp->bc;
 
-    cs_log_printf(CS_LOG_SETUP, "  <%s/Boundary Conditions>\n", eqname);
-    cs_log_printf(CS_LOG_SETUP, "    <%s/Default.BC> %s\n",
-                  eqname, cs_param_get_bc_name(bcp->default_bc));
-    if (eqp->verbosity > 1)
-      cs_log_printf(CS_LOG_SETUP, "    <%s/BC.Enforcement> %s\n",
-                    eqname, cs_param_get_bc_enforcement_name(bcp->enforcement));
+    cs_log_printf(CS_LOG_SETUP,
+                  "  <%s/Boundary Conditions> default: %s, enforcement: %s\n",
+                  eqname, cs_param_get_bc_name(eqp->default_bc),
+                  cs_param_get_bc_enforcement_name(eqp->enforcement));
     cs_log_printf(CS_LOG_SETUP, "    <%s/n_bc_definitions> %d\n",
-                  eqname, bcp->n_defs);
+                  eqname, eqp->n_bc_desc);
     if (eqp->verbosity > 1) {
-      for (int id = 0; id < bcp->n_defs; id++)
-        cs_log_printf(CS_LOG_SETUP, "      <%s/BC.Def> Location: %s; Type: %s;"
-                      " Definition type: %s\n",
-                      eqname, cs_mesh_location_get_name(bcp->ml_ids[id]),
-                      cs_param_get_bc_name(bcp->types[id]),
-                      cs_param_get_def_type_name(bcp->def_types[id]));
+      for (int id = 0; id < eqp->n_bc_desc; id++)
+        cs_xdef_log(eqp->bc_desc[id]);
     }
   }
 
   if (unsteady) {
 
-    const cs_param_time_t  t_info = eqp->time_info;
     const cs_param_hodge_t  h_info = eqp->time_hodge;
 
     cs_log_printf(CS_LOG_SETUP, "\n  <%s/Unsteady term>\n", eqname);
     cs_log_printf(CS_LOG_SETUP,
                   "  <%s/Initial.Condition> number of definitions %d\n",
-                  eqname, t_info.n_ic_definitions);
-    for (int i = 0; i < t_info.n_ic_definitions; i++) {
-      const cs_param_def_t  *ic = t_info.ic_definitions + i;
-      cs_log_printf(CS_LOG_SETUP,
-                    "    <%s/Initial.Condition> Location %s; Definition %s\n",
-                    eqname, cs_mesh_location_get_name(ic->ml_id),
-                    cs_param_get_def_type_name(ic->def_type));
-    }
+                  eqname, eqp->n_ic_desc);
+
+    for (int i = 0; i < eqp->n_ic_desc; i++)
+      cs_xdef_log(eqp->ic_desc[i]);
+
     cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Scheme> ", eqname);
-    switch (t_info.scheme) {
+    switch (eqp->time_scheme) {
     case CS_TIME_SCHEME_IMPLICIT:
       cs_log_printf(CS_LOG_SETUP, "implicit\n");
       break;
@@ -567,14 +561,14 @@ cs_equation_param_summary(const char                  *eqname,
       cs_log_printf(CS_LOG_SETUP, "Crank-Nicolson\n");
       break;
     case CS_TIME_SCHEME_THETA:
-      cs_log_printf(CS_LOG_SETUP, "theta scheme with value %f\n", t_info.theta);
+      cs_log_printf(CS_LOG_SETUP, "theta scheme with value %f\n", eqp->theta);
       break;
     default:
       bft_error(__FILE__, __LINE__, 0, " Invalid time scheme.");
       break;
     }
     cs_log_printf(CS_LOG_SETUP, "  <%s/Mass.Lumping> %s\n",
-                  eqname, cs_base_strtf(t_info.do_lumping));
+                  eqname, cs_base_strtf(eqp->do_lumping));
     cs_log_printf(CS_LOG_SETUP, "  <%s/Time.Property> %s\n",
                   eqname, cs_property_get_name(eqp->time_property));
 
@@ -685,22 +679,13 @@ cs_equation_param_summary(const char                  *eqname,
 
     }
 
-    for (int r_id = 0; r_id < eqp->n_reaction_terms; r_id++) {
-      cs_param_reaction_t  r_info = eqp->reaction_info[r_id];
-      cs_log_printf(CS_LOG_SETUP,
-                    "    <%s/Reaction.%02d> Property: %s; Operator type: %s\n",
-                    eqname, r_id,
-                    cs_property_get_name(eqp->reaction_properties[r_id]),
-                    cs_param_reaction_get_type_name(r_info.type));
-    }
-
   } // Reaction terms
 
   if (source_term) {
 
     cs_log_printf(CS_LOG_SETUP, "\n  <%s/Source terms>\n", eqname);
     for (int s_id = 0; s_id < eqp->n_source_terms; s_id++)
-      cs_source_term_summary(eqname, eqp->source_terms + s_id);
+      cs_xdef_log(eqp->source_terms[s_id]);
 
   } // Source terms
 
@@ -917,3 +902,7 @@ cs_equation_param_init_sles(const char                 *eqname,
   }
 
 }
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS

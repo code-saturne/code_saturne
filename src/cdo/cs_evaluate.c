@@ -43,9 +43,9 @@
 #include "cs_halo.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
-#include "cs_mesh_location.h"
 #include "cs_parall.h"
 #include "cs_range_set.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -108,7 +108,7 @@ _analytic_quad_tet1(double                 tcur,
   for (k = 0; k < 3; k++)
     xg[k] = 0.25*(xv[k] + xe[k] + xf[k] + xc[k]);
 
-  ana(tcur, 1, xg, &evaluation);
+  ana(tcur, 1, NULL, xg, true, &evaluation);
 
   return vol_tet * evaluation;
 }
@@ -146,7 +146,7 @@ _analytic_quad_tet4(double                tcur,
   /* Compute Gauss points and its unique weight */
   cs_quadrature_tet_4pts(xv, xe, xf, xc, vol_tet, gauss_pts, &weight);
 
-  ana(tcur, 4, (const cs_real_t *)gauss_pts, evaluation);
+  ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, true, evaluation);
 
   double  result = 0.0;
   for (int p = 0; p < 4; p++) result += evaluation[p];
@@ -187,7 +187,7 @@ _analytic_quad_tet5(double                tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_tet_5pts(xv, xe, xf, xc, vol_tet, gauss_pts, weights);
 
-  ana(tcur, 5, (const cs_real_t *)gauss_pts, evaluation);
+  ana(tcur, 5, NULL, (const cs_real_t *)gauss_pts, true, evaluation);
 
   double  result = 0.0;
   for (int p = 0; p < 5; p++) result += evaluation[p] * weights[p];
@@ -210,7 +210,7 @@ _analytic_quad_tet5(double                tcur,
 static void
 _cellwise_dcsd_by_analytic(const cs_cell_mesh_t    *cm,
                            cs_analytic_func_t      *ana,
-                           cs_quadra_type_t         quad_type,
+                           cs_quadrature_type_t     quad_type,
                            double                   values[])
 {
   const double  tcur = cs_time_step->t_cur;
@@ -277,7 +277,7 @@ static void
 _dcsd_by_analytic(cs_analytic_func_t       *ana,
                   const cs_lnum_t           n_elts,
                   const cs_lnum_t          *elt_ids,
-                  cs_quadra_type_t          quad_type,
+                  cs_quadrature_type_t      quad_type,
                   double                    values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
@@ -355,7 +355,7 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
 static double
 _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
                            cs_analytic_func_t      *ana,
-                           cs_quadra_type_t         quad_type)
+                           cs_quadrature_type_t         quad_type)
 {
   const double  tcur = cs_time_step->t_cur;
 
@@ -496,7 +496,7 @@ static void
 _pcsd_by_analytic(cs_analytic_func_t       *ana,
                   const cs_lnum_t           n_elts,
                   const cs_lnum_t          *elt_ids,
-                  cs_quadra_type_t          quad_type,
+                  cs_quadrature_type_t          quad_type,
                   double                    values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
@@ -656,7 +656,6 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
   bool  *todo = NULL;
 
   BFT_MALLOC(todo, quant->n_faces, bool);
-
 # pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
     todo[f_id] = true;
@@ -669,11 +668,11 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
 
       cs_lnum_t  f_id = c2f->col_id[j];
       if (todo[f_id]) {
-        ana(tcur, 1, quant->face[f_id].center, values + f_id);
+        ana(tcur, 1, NULL, quant->face[f_id].center, false,  values + f_id);
         todo[f_id] = false;
       }
 
-    } // Loop on cell vertices
+    } // Loop on cell faces
 
   } // Loop on selected cells
 
@@ -686,7 +685,7 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
  *         defined by an analytical function on a selection of (primal) cells
  *
  * \param[in]      ana         pointer to the analytic function
- * \param[in]      n_loc_elts  number of elements to consider
+ * \param[in]      n_elts      number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in, out] values      pointer to the computed values
  */
@@ -703,31 +702,36 @@ _pvsp_by_analytic(cs_analytic_func_t    *ana,
   const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
 
   /* Initialize todo array */
-  bool  *todo = NULL;
+  cs_lnum_t  *vtx_lst = NULL;
 
-  BFT_MALLOC(todo, quant->n_vertices, bool);
-
+  BFT_MALLOC(vtx_lst, quant->n_vertices, cs_lnum_t);
 # pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
   for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
-    todo[v_id] = true;
+    vtx_lst[v_id] = -1; // No flag
 
   for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
 
     const cs_lnum_t  c_id = elt_ids[i];
-
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
       cs_lnum_t  v_id = c2v->ids[j];
-      if (todo[v_id]) {
-        ana(tcur, 1, quant->vtx_coord + 3*v_id, values + v_id);
-        todo[v_id] = false;
-      }
+      if (vtx_lst[v_id] == -1) // Not encountered yet
+        vtx_lst[v_id] = v_id;
 
     } // Loop on cell vertices
-
   } // Loop on selected cells
 
-  BFT_FREE(todo);
+  /* Count number of selected vertices */
+  cs_lnum_t  n_selected_vertices = 0;
+  for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
+    if (vtx_lst[v_id] == v_id)
+      vtx_lst[n_selected_vertices++] = v_id;
+  }
+
+  /* One call for all selected vertices */
+  ana(tcur, n_selected_vertices, vtx_lst, quant->vtx_coord, false, values);
+
+  BFT_FREE(vtx_lst);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -735,7 +739,7 @@ _pvsp_by_analytic(cs_analytic_func_t    *ana,
  * \brief  Get the values at each primal faces for a scalar potential
  *
  * \param[in]      const_val   constant value
- * \param[in]      n_loc_elts  number of elements to consider
+ * \param[in]      n_elts      number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in, out] values      pointer to the array storing the values
  */
@@ -753,8 +757,7 @@ _pfsp_by_value(const double       const_val,
   /* Initialize todo array */
   bool  *todo = NULL;
 
-  BFT_MALLOC(todo, quant->n_vertices, bool);
-
+  BFT_MALLOC(todo, quant->n_faces, bool);
 # pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
     todo[f_id] = true;
@@ -787,9 +790,9 @@ _pfsp_by_value(const double       const_val,
 /*----------------------------------------------------------------------------*/
 
 static void
-_untag_frontier_vertices(cs_lnum_t         c_id,
-                         const bool        cell_tag[],
-                         cs_lnum_t         vtx_tag[])
+_untag_frontier_vertices(cs_lnum_t      c_id,
+                         const bool     cell_tag[],
+                         cs_lnum_t      vtx_tag[])
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_lnum_t  *f2v_idx = m->i_face_vtx_idx;
@@ -805,12 +808,12 @@ _untag_frontier_vertices(cs_lnum_t         c_id,
           cell_tag[m->i_face_cells[f_id][1]] == false) {
 
         for (cs_lnum_t i = f2v_idx[f_id]; i < f2v_idx[f_id+1]; i++)
-          vtx_tag[f2v_lst[i]] = 0;
+          vtx_tag[f2v_lst[i]] = 0; // untag
 
       }
     } // This face belongs to the frontier of the selection (only interior)
 
-  } // Looop on cell faces
+  } // Loop on cell faces
 
 }
 
@@ -820,7 +823,7 @@ _untag_frontier_vertices(cs_lnum_t         c_id,
  *         the volume associated to the list of cells
  *
  * \param[in]      quantity_val  amount of quantity to distribute
- * \param[in]      n_loc_elts    number of elements to consider
+ * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       pointer to the list od selected ids
  * \param[in, out] values        pointer to the array storing the values
  */
@@ -839,14 +842,13 @@ _pvsp_by_qov(const double       quantity_val,
   const cs_real_t  *dc_vol = quant->dcell_vol;
   const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
 
-  double  volume_marked = 0.;
   cs_lnum_t  *vtx_tag = NULL;
   bool  *cell_tag = NULL;
 
   BFT_MALLOC(vtx_tag, n_vertices, cs_lnum_t);
   BFT_MALLOC(cell_tag, m->n_cells_with_ghosts, bool);
 
-  if (elt_ids != NULL) { /* Only some cells are selected */
+  if (n_elts < n_cells) { /* Only some cells are selected */
 
 #   pragma omp parallel for if (n_vertices > CS_THR_MIN)
     for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
@@ -860,14 +862,16 @@ _pvsp_by_qov(const double       quantity_val,
     for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
 
       const cs_lnum_t  c_id = elt_ids[i];
-
       cell_tag[c_id] = true;
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
         vtx_tag[c2v->ids[j]] = -1; // activated
 
     } // Loop on selected cells
+
   }
-  else { /* elt_ids == NULL => all cells are selected */
+  else { /* All cells are selected */
+
+    assert(n_cells == n_elts);
 
 #   pragma omp parallel for if (n_vertices > CS_THR_MIN)
     for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
@@ -885,7 +889,7 @@ _pvsp_by_qov(const double       quantity_val,
     cs_halo_sync_untyped(m->halo, CS_HALO_STANDARD, sizeof(bool), cell_tag);
 
   /* Second pass: detect cells at the frontier of the selection */
-  if (elt_ids != NULL) { /* Only some cells are selected */
+  if (n_elts < n_cells) { /* Only some cells are selected */
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
       _untag_frontier_vertices(elt_ids[i], cell_tag, vtx_tag);
@@ -908,13 +912,14 @@ _pvsp_by_qov(const double       quantity_val,
                          (void *)vtx_tag);
 
   /* Third pass: compute the (really) available volume */
+  double  volume_marked = 0.;
+
   if (elt_ids != NULL) { /* Only some cells are selected */
 
 #   pragma omp parallel for reduction(+:volume_marked) if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) { // Loop on selected cells
 
       const cs_lnum_t  c_id = elt_ids[i];
-
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
         if (vtx_tag[c2v->ids[j]] == -1) // activated
           volume_marked += dc_vol[j]; // | dual_cell cap cell |
@@ -941,17 +946,17 @@ _pvsp_by_qov(const double       quantity_val,
   if (volume_marked > 0)
     val_to_set /= volume_marked;
 
-  if (elt_ids != NULL) { /* Only some cells are selected */
+  if (n_elts < n_cells) { /* Only some cells are selected */
 
-#  pragma omp parallel for if (n_vertices > CS_THR_MIN)
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
     for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
       if (vtx_tag[v_id] == -1)
         values[v_id] = val_to_set;
 
   }
-  else { /* elt_ids == NULL => all cells are selected */
+  else { /* All cells are selected */
 
-#  pragma omp parallel for if (n_vertices > CS_THR_MIN)
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
     for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
       values[v_id] = val_to_set;
 
@@ -966,14 +971,14 @@ _pvsp_by_qov(const double       quantity_val,
  * \brief  Get the values at each primal vertices for a scalar potential
  *
  * \param[in]      const_val   constant value
- * \param[in]      n_loc_elts  number of elements to consider
+ * \param[in]      n_elts      number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in, out] values      pointer to the array storing the values
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_pvsp_by_value(const double       const_val,
+_pvsp_by_value(cs_real_t          const_val,
                cs_lnum_t          n_elts,
                const cs_lnum_t   *elt_ids,
                double             values[])
@@ -1038,43 +1043,35 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
  *         The value defined by the analytic function is by unity of volume
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
- * \param[in]      ml_id       id related to a cs_mesh_location_t structure
- * \param[in]      ana         accessor to values thanks to a function pointer
- * \param[in]      quad_type   type of quadrature (not always used)
+ * \param[in]      def         pointer to a cs_xdef_t structure
  * \param[in, out] retval      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_density_by_analytic(cs_flag_t              dof_flag,
-                                int                    ml_id,
-                                cs_analytic_func_t    *ana,
-                                cs_quadra_type_t       quad_type,
-                                double                 retval[])
+cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
+                                const cs_xdef_t    *def,
+                                double              retval[])
 {
   /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array);
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
-  /* Retrieve information from mesh location structures */
-  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
-
-  /* Sanity checks */
-  assert(n_elts != NULL);
-  cs_mesh_location_type_t  ml_type = cs_mesh_location_get_type(ml_id);
-  if (elt_ids != NULL && ml_type != CS_MESH_LOCATION_CELLS)
-    bft_error(__FILE__, __LINE__, 0, _err_not_handled);
+    /* Retrieve information from mesh location structures */
+  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
+    cs_analytic_func_t  *ana = (cs_analytic_func_t *)def->input;
+
     if (cs_test_flag(dof_flag, cs_cdo_primal_cell))
-      _pcsd_by_analytic(ana, n_elts[0], elt_ids, quad_type, retval);
+      _pcsd_by_analytic(ana, z->n_cells, z->cell_ids, def->qtype, retval);
 
     else if (cs_test_flag(dof_flag, cs_cdo_dual_cell))
-      _dcsd_by_analytic(ana, n_elts[0], elt_ids, quad_type, retval);
-
+      _dcsd_by_analytic(ana, z->n_cells, z->cell_ids, def->qtype, retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled);
 
@@ -1090,41 +1087,34 @@ cs_evaluate_density_by_analytic(cs_flag_t              dof_flag,
  *         Accessor to the value is by unit of volume
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
- * \param[in]      ml_id     id related to a cs_mesh_location_t structure
- * \param[in]      get       accessor to the constant value to set
+ * \param[in]      def       pointer to a cs_xdef_t structure
  * \param[in, out] retval    pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_density_by_value(cs_flag_t       dof_flag,
-                             int             ml_id,
-                             cs_get_t        get,
-                             double          retval[])
+cs_evaluate_density_by_value(cs_flag_t          dof_flag,
+                             const cs_xdef_t   *def,
+                             double             retval[])
 {
   /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array);
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   /* Retrieve information from mesh location structures */
-  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
-
-  /* Sanity checks */
-  assert(n_elts != NULL);
-  cs_mesh_location_type_t  ml_type = cs_mesh_location_get_type(ml_id);
-  if (elt_ids != NULL && ml_type != CS_MESH_LOCATION_CELLS)
-    bft_error(__FILE__, __LINE__, 0, _err_not_handled);
+  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
+    const cs_real_t  *constant_val = (const cs_real_t *)def->input;
+
     if (cs_test_flag(dof_flag, cs_cdo_primal_cell))
-      _pcsd_by_value(get.val, n_elts[0], elt_ids, retval);
-
+      _pcsd_by_value(constant_val[0], z->n_cells, z->cell_ids, retval);
     else if (cs_test_flag(dof_flag, cs_cdo_dual_cell))
-      _dcsd_by_value(get.val, n_elts[0], elt_ids, retval);
-
+      _dcsd_by_value(constant_val[0], z->n_cells, z->cell_ids, retval);
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled);
 
@@ -1140,46 +1130,38 @@ cs_evaluate_density_by_value(cs_flag_t       dof_flag,
  *         when the definition relies on an analytic expression
  *
  * \param[in]      dof_flag    indicate where the evaluation has to be done
- * \param[in]      ml_id       id related to a cs_mesh_location_t structure
- * \param[in]      ana         accessor to values thanks to a function pointer
+ * \param[in]      def       pointer to a cs_xdef_t pointer
  * \param[in, out] retval      pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
-                                  int                    ml_id,
-                                  cs_analytic_func_t    *ana,
-                                  double                 retval[])
+cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
+                                  const cs_xdef_t    *def,
+                                  double              retval[])
 {
   /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array);
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
+  cs_analytic_func_t  *ana = (cs_analytic_func_t *)def->input;
+  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
   const double  tcur = cs_time_step->t_cur;
-
-  /* Retrieve information from mesh location structures */
-  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
-
-  /* Sanity checks */
-  assert(n_elts != NULL);
-  cs_mesh_location_type_t  ml_type = cs_mesh_location_get_type(ml_id);
-  if (elt_ids != NULL && ml_type != CS_MESH_LOCATION_CELLS)
-    bft_error(__FILE__, __LINE__, 0, _err_not_handled);
 
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     if (cs_test_flag(dof_flag, cs_cdo_primal_vtx)) {
 
-      if (elt_ids == NULL) { /* All the support entities are selected */
-        ana(tcur, quant->n_vertices, quant->vtx_coord, retval);
-      }
+      if (def->meta & CS_FLAG_FULL_LOC)
+        ana(tcur, quant->n_vertices, NULL, quant->vtx_coord, false,
+            retval);
       else
-        _pvsp_by_analytic(ana, n_elts[0], elt_ids, retval);
+        _pvsp_by_analytic(ana, z->n_cells, z->cell_ids, retval);
 
       if (cs_glob_n_ranks > 1)
         cs_range_set_sync(connect->v_rs,
@@ -1191,14 +1173,14 @@ cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
 
     else if (cs_test_flag(dof_flag, cs_cdo_primal_face)) {
 
-      if (elt_ids == NULL) { /* All the support entities are selected */
-# pragma omp parallel for if(quant->n_faces > CS_THR_MIN)
+      if (def->meta & CS_FLAG_FULL_LOC) {
+        /* All the support entities are selected */
+#       pragma omp parallel for if(quant->n_faces > CS_THR_MIN)
         for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
-          ana(tcur, 1, quant->face[f_id].center, retval + f_id);
-
+          ana(tcur, 1, NULL, quant->face[f_id].center, true, retval + f_id);
       }
       else
-        _pfsp_by_analytic(ana, n_elts[0], elt_ids, retval);
+        _pfsp_by_analytic(ana, z->n_cells, z->cell_ids, retval);
 
       if (cs_glob_n_ranks > 1)
         cs_range_set_sync(connect->f_rs,
@@ -1211,17 +1193,12 @@ cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
     else if (cs_test_flag(dof_flag, cs_cdo_primal_cell) ||
              cs_test_flag(dof_flag, cs_cdo_dual_vtx)) {
 
-      if (elt_ids == NULL) { /* All the support entities are selected */
-        ana(tcur, quant->n_cells, quant->cell_centers, retval);
-      }
-      else {
-        for (cs_lnum_t i = 0; i < n_elts[0]; i++) { // Loop on selected cells
-          const cs_lnum_t  c_id = elt_ids[i];
-          ana(tcur, 1, quant->cell_centers + 3*c_id, retval + c_id);
-        }
-      }
+      if (def->meta & CS_FLAG_FULL_LOC) /* All cells are selected */
+        ana(tcur, quant->n_cells, NULL, quant->cell_centers, false, retval);
+      else
+        ana(tcur, z->n_cells, z->cell_ids, quant->cell_centers, false, retval);
 
-      /* No sync since this value is computed by only one rank */
+      /* No sync since theses values are computed by only one rank */
 
     } /* Located at primal cells or dual vertices */
     else
@@ -1236,42 +1213,37 @@ cs_evaluate_potential_by_analytic(cs_flag_t              dof_flag,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define a value to each DoF in the case of a potential field in order
- *         to put a given quantity inside the volume associated to ml_id
+ *         to put a given quantity inside the volume associated to the zone
+ *         attached to the given definition
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
- * \param[in]      ml_id     id related to a cs_mesh_location_t structure
- * \param[in]      get       accessor to the constant value related to the
- *                           quantity to put in the volume spanned by ml_id
+ * \param[in]      def       pointer to a cs_xdef_t pointer
  * \param[in, out] retval    pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_by_qov(cs_flag_t       dof_flag,
-                             int             ml_id,
-                             cs_get_t        get,
-                             double          retval[])
+cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
+                             const cs_xdef_t   *def,
+                             double             retval[])
 {
   /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array);
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
-  /* Retrieve information from mesh location structures */
-  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
-
-  /* Sanity checks */
-  assert(n_elts != NULL);
-  cs_mesh_location_type_t  ml_type = cs_mesh_location_get_type(ml_id);
-  if (ml_type != CS_MESH_LOCATION_CELLS)
-    bft_error(__FILE__, __LINE__, 0, _err_not_handled);
+  const cs_real_t  *input = (cs_real_t *)def->input;
+  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   /* Perform the evaluation */
   bool check = false;
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
+    const cs_real_t  const_val = input[0];
+
     if (cs_test_flag(dof_flag, cs_cdo_primal_vtx))
-      _pvsp_by_qov(get.val, n_elts[0], elt_ids, retval);
+      _pvsp_by_qov(const_val, z->n_cells, z->cell_ids, retval);
     check = true;
 
   } /* Located at primal vertices */
@@ -1287,72 +1259,66 @@ cs_evaluate_potential_by_qov(cs_flag_t       dof_flag,
  * \brief  Evaluate the quantity attached to a potential field for all the DoFs
  *
  * \param[in]      dof_flag  indicate where the evaluation has to be done
- * \param[in]      ml_id     id related to a cs_mesh_location_t structure
- * \param[in]      get       accessor to the constant value to set
+ * \param[in]      def       pointer to a cs_xdef_t pointer
  * \param[in, out] retval    pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_by_value(cs_flag_t       dof_flag,
-                               int             ml_id,
-                               cs_get_t        get,
-                               double          retval[])
+cs_evaluate_potential_by_value(cs_flag_t          dof_flag,
+                               const cs_xdef_t   *def,
+                               double             retval[])
 {
   /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array);
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-
-  /* Retrieve information from mesh location structures */
-  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
-  const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
-
-  /* Sanity checks */
-  assert(n_elts != NULL);
-  cs_mesh_location_type_t  ml_type = cs_mesh_location_get_type(ml_id);
-  if (elt_ids != NULL && ml_type != CS_MESH_LOCATION_CELLS)
-    bft_error(__FILE__, __LINE__, 0, _err_not_handled);
+  const cs_real_t  *input = (cs_real_t *)def->input;
+  const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
+    const cs_real_t  const_val = input[0];
+
     if (cs_test_flag(dof_flag, cs_cdo_primal_vtx)) {
 
-      if (elt_ids == NULL) { /* All the support entities are selected */
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+      if (def->meta & CS_FLAG_FULL_LOC) {
+#       pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
         for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++)
-          retval[v_id] = get.val;
+          retval[v_id] = const_val;
       }
       else
-        _pvsp_by_value(get.val, n_elts[0], elt_ids, retval);
+        _pvsp_by_value(const_val, z->n_cells, z->cell_ids, retval);
 
     } /* Located at primal vertices */
 
     else if (cs_test_flag(dof_flag, cs_cdo_primal_face)) {
 
-      if (elt_ids == NULL) { /* All the support entities are selected */
-# pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+      if (def->meta & CS_FLAG_FULL_LOC) {
+#       pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
         for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
-          retval[f_id] = get.val;
+          retval[f_id] = const_val;
       }
       else
-        _pfsp_by_value(get.val, n_elts[0], elt_ids, retval);
+        _pfsp_by_value(const_val, z->n_cells, z->cell_ids, retval);
 
     } /* Located at primal faces */
 
     else if (cs_test_flag(dof_flag, cs_cdo_primal_cell) ||
              cs_test_flag(dof_flag, cs_cdo_dual_vtx)) {
 
-      if (elt_ids == NULL) { /* All the support entities are selected */
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+      if (def->meta & CS_FLAG_FULL_LOC) {
+#       pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
         for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-          retval[c_id] = get.val;
+          retval[c_id] = const_val;
       }
       else
-        for (cs_lnum_t i = 0; i < n_elts[0]; i++) // Loop on selected cells
-          retval[elt_ids[i]] = get.val;
+        for (cs_lnum_t i = 0; i < z->n_cells; i++) // Loop on selected cells
+          retval[z->cell_ids[i]] = const_val;
 
     } /* Located at primal cells or dual vertices */
 

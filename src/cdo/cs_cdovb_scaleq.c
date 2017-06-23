@@ -475,8 +475,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   /* Sanity checks */
   assert(eqp != NULL);
 
-  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOVB &&
-      eqp->var_type != CS_PARAM_VAR_SCAL)
+  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOVB && eqp->dim != 1)
     bft_error(__FILE__, __LINE__, 0,
               " Invalid type of equation.\n"
               " Expected: scalar-valued CDO vertex-based equation.");
@@ -484,7 +483,6 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_lnum_t  n_vertices = connect->n_vertices;
   const cs_lnum_t  n_b_faces = connect->n_faces[1];
-  const cs_param_bc_t  *bc_param = eqp->bc;
 
   cs_cdovb_scaleq_t  *b = NULL;
 
@@ -517,7 +515,10 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
      non-homogeneous BCs.
      We also compute also the list of Dirichlet vertices along with their
      related definition.  */
-  b->face_bc = cs_cdo_bc_define(bc_param, n_b_faces);
+  b->face_bc = cs_cdo_bc_define(eqp->default_bc,
+                                eqp->n_bc_desc,
+                                eqp->bc_desc,
+                                n_b_faces);
 
   /* Diffusion part */
   /* -------------- */
@@ -559,7 +560,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
     } // Switch on Hodge algo.
 
-    switch (bc_param->enforcement) {
+    switch (eqp->enforcement) {
 
     case CS_PARAM_BC_ENFORCE_WEAK_PENA:
       b->enforce_dirichlet = cs_cdovb_diffusion_pena_dirichlet;
@@ -594,14 +595,14 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
     b->sys_flag |= CS_FLAG_SYS_ADVECTION;
 
     const cs_param_advection_t  a_info = eqp->advection_info;
-    cs_param_def_type_t  adv_deftype =
+    cs_xdef_type_t  adv_deftype =
       cs_advection_field_get_deftype(eqp->advection_field);
 
-    if (adv_deftype == CS_PARAM_DEF_BY_VALUE)
+    if (adv_deftype == CS_XDEF_BY_VALUE)
       b->msh_flag |= CS_CDO_LOCAL_DFQ;
-    else if (adv_deftype == CS_PARAM_DEF_BY_ARRAY)
+    else if (adv_deftype == CS_XDEF_BY_ARRAY)
       b->msh_flag |= CS_CDO_LOCAL_PEQ;
-    else if (adv_deftype == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
+    else if (adv_deftype == CS_XDEF_BY_ANALYTIC_FUNCTION)
       b->msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_PFQ;
 
     switch (a_info.formulation) {
@@ -676,7 +677,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
   }
   else {
 
-    if (bc_param->enforcement != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
+    if (eqp->enforcement != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
       b->sys_flag |= CS_FLAG_SYS_SYM; // Algebraic system is symmetric
 
   }
@@ -727,7 +728,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
       b->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
     }
     else if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
-      if (eqp->time_info.do_lumping) {
+      if (eqp->do_lumping) {
         b->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
       }
       else {
@@ -737,8 +738,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
       }
     }
 
-    b->apply_time_scheme = cs_cdo_time_get_scheme_function(b->sys_flag,
-                                                           eqp->time_info);
+    b->apply_time_scheme = cs_cdo_time_get_scheme_function(b->sys_flag, eqp);
 
   } /* Time part */
 
@@ -757,7 +757,7 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
     b->st_msh_flag = cs_source_term_init(CS_SPACE_SCHEME_CDOVB,
                                          eqp->n_source_terms,
-                                         eqp->source_terms,
+                                         (const cs_xdef_t **)eqp->source_terms,
                                          b->compute_source,
                                          &(b->sys_flag),
                                          &(b->source_mask));
@@ -915,7 +915,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
 
       /* Compute the contribution of all source terms in each cell */
       cs_source_term_compute_cellwise(eqp->n_source_terms,
-                                      eqp->source_terms,
+                                      (const cs_xdef_t **)eqp->source_terms,
                                       cm,
                                       b->sys_flag,
                                       b->source_mask,
@@ -1021,7 +1021,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
   cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t *)builder;
   cs_real_t  *dir_values =
     cs_equation_compute_dirichlet_sv(mesh,
-                                     b->eqp->bc,
+                                     b->eqp,
                                      b->face_bc->dir,
                                      cs_cdovb_cell_bld[0]);
 
@@ -1031,7 +1031,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
       cs_timer_t  ta = cs_timer_time();
 
       cs_cdo_time_update_rhs_with_array(b->sys_flag,
-                                        b->eqp->time_info,
+                                        b->eqp,
                                         b->n_dofs,
                                         b->source_terms,
                                         rhs);
@@ -1082,8 +1082,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
         if (eqp->diffusion_hodge.is_iso)
           cb->pty_val = cb->pty_mat[0][0];
 
-        if (eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-            eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
           cs_math_33_eigen((const cs_real_t (*)[3])cb->pty_mat,
                            &(cb->eig_ratio),
                            &(cb->eig_max));
@@ -1175,8 +1175,8 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
            csys is updated inside (matrix and rhs) */
         if (cell_flag & CS_FLAG_BOUNDARY) {
 
-          if (eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-              eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+          if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+              eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
             cs_math_33_eigen((const cs_real_t (*)[3])cb->pty_mat,
                              &(cb->eig_ratio),
                              &(cb->eig_max));
@@ -1261,7 +1261,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                                        eqp->source_terms,
+                                        (const cs_xdef_t **)eqp->source_terms,
                                         cm,
                                         b->sys_flag,
                                         b->source_mask,
@@ -1305,8 +1305,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
 
         /* Apply the time discretization to the local system.
            Update csys (matrix and rhs) */
-        b->apply_time_scheme(eqp->time_info, tpty_val, mass_mat, b->sys_flag,
-                             cb, csys);
+        b->apply_time_scheme(eqp, tpty_val, mass_mat, b->sys_flag, cb, csys);
 
       } /* END OF TIME CONTRIBUTION */
 
@@ -1559,17 +1558,17 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
 {
   cs_cdovb_scaleq_t  *b = (cs_cdovb_scaleq_t  *)builder;
 
+  /* Sanity checks */
+  assert(diff_flux != NULL && b != NULL);
+
   const cs_equation_param_t  *eqp = b->eqp;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
-  /* Sanity checks */
-  assert(diff_flux != NULL);
-
   if (!cs_test_flag(location, cs_cdo_primal_cell) &&
       !cs_test_flag(location, cs_cdo_dual_face_byc))
     bft_error(__FILE__, __LINE__, 0,
-              "Incompatible location.\n"
+              " Incompatible location.\n"
               " Stop computing a cellwise diffusive flux.");
 
   /* If no diffusion, return after resetting */

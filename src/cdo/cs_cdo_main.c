@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  * Local definitions
  *============================================================================*/
 
-static const char cs_cdoversion[] = "0.9.1";
+static const char cs_cdoversion[] = "0.9.2";
 static int  cs_cdo_ts_id;
 
 /*============================================================================
@@ -133,9 +133,10 @@ cs_cdo_initialize_setup(int  activation_mode)
        computational domain
      - Add predefined and user-defined equations
      - Activate CDO-related submodules
+     - Add user-defined properties and advection fields
      - Set the time step
   */
-  cs_user_cdo_init_domain(cs_glob_domain);
+  cs_user_cdo_init_setup(cs_glob_domain);
 
   /* Update mesh locations */
   cs_domain_update_mesh_locations(cs_glob_domain);
@@ -143,10 +144,11 @@ cs_cdo_initialize_setup(int  activation_mode)
   /* Advanced settings (numerical scheme, hodge operators, solvers...).
      This call must be done before the field creation since the support
      of variable field depends on the choice of the numerical scheme. */
-  cs_user_cdo_numeric_settings(cs_glob_domain);
+  cs_user_cdo_numeric_settings();
 
   /* Add variables related to user-defined and predefined equations */
-  cs_domain_create_fields(cs_glob_domain);
+  cs_equation_create_fields();
+  cs_advection_field_create_fields();
 
   /* According to the settings, add or not predefined equations:
       >> Wall distance
@@ -155,14 +157,10 @@ cs_cdo_initialize_setup(int  activation_mode)
   cs_domain_setup_predefined_equations(cs_glob_domain);
 
   /* Overwrite predefined settings if this is what user wants */
-  cs_user_cdo_numeric_settings(cs_glob_domain);
+  cs_user_cdo_numeric_settings();
 
   /* Set the scheme flag for the computational domain */
   cs_domain_set_scheme_flag(cs_glob_domain);
-
-  /* Set the definition of user-defined properties and/or advection
-     fields */
-  cs_user_cdo_set_domain(cs_glob_domain);
 
   /* Monitoring */
   cs_timer_stats_stop(cs_cdo_ts_id);
@@ -195,7 +193,7 @@ cs_cdo_initialize_structures(cs_mesh_t             *m,
   cs_timer_stats_start(cs_cdo_ts_id);
 
   /* Last setup stage */
-  cs_domain_initialize(cs_glob_domain, m, mq);
+  cs_domain_finalize_setup(cs_glob_domain, m, mq);
 
   /* Initialize post-processing */
   cs_post_activate_writer(-1,     /* default writer (volume mesh)*/
@@ -287,6 +285,8 @@ cs_cdo_main(void)
 
   /*  Build high-level structures and create algebraic systems */
   cs_domain_t  *domain = cs_glob_domain;
+
+  cs_domain_initialize_systems(domain);
 
   while (cs_domain_needs_iterate(domain)) { // Main time loop
 

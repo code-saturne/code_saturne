@@ -63,12 +63,13 @@ BEGIN_C_DECLS
 /* Flags use to identify the nature/status of an object (variable, property) */
 #define CS_FLAG_STATE_UNIFORM     (1 << 0) //    1: uniform (in space)
 #define CS_FLAG_STATE_CELLWISE    (1 << 1) //    2: cellwise uniform
-#define CS_FLAG_STATE_UNSTEADY    (1 << 2) //    4: unsteady
-#define CS_FLAG_STATE_POTENTIAL   (1 << 3) //    8: potential
-#define CS_FLAG_STATE_CIRCULATION (1 << 4) //   16: circulation
-#define CS_FLAG_STATE_FLUX        (1 << 5) //   32: flux
-#define CS_FLAG_STATE_DENSITY     (1 << 6) //   64: density
-#define CS_FLAG_STATE_OWNER       (1 << 7) //  128: owner
+#define CS_FLAG_STATE_FACEWISE    (1 << 2) //    4: uniform on each face
+#define CS_FLAG_STATE_STEADY      (1 << 3) //    8: steady
+#define CS_FLAG_STATE_POTENTIAL   (1 << 4) //   16: potential
+#define CS_FLAG_STATE_CIRCULATION (1 << 5) //   32: circulation
+#define CS_FLAG_STATE_FLUX        (1 << 6) //   64: flux
+#define CS_FLAG_STATE_DENSITY     (1 << 7) //  128: density
+#define CS_FLAG_STATE_OWNER       (1 << 8) //  256: owner
 
 /* Flags use to identify where is located a variable and how to access to
    its values */
@@ -119,16 +120,6 @@ BEGIN_C_DECLS
 
 typedef  unsigned char  cs_mask_t;
 
-/* Description of an object (property, advection field, array..) using
-   mask of bits (i.e flag) */
-
-typedef struct {
-
-  cs_flag_t  location;  /* where is defined this object */
-  cs_flag_t  state;     /* nature and additional information on this object */
-
-} cs_desc_t;
-
 /* Vector-valued quantity stored using its measure (i.e. length) and
    its direction given by a unitary vector */
 typedef struct {
@@ -151,19 +142,26 @@ typedef enum {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generic analytic function
+ * \brief  Generic function pointer for an analytic function
+ *         elt_ids is optional. If not NULL, it enables to access in coords
+ *         at the right location and the same thing to fill retval if compact
+ *         is set to false
  *
  * \param[in]      time       when ?
- * \param[in]      n_points   number of coordinates to consider
- * \param[in]      xyz        where ?
+ * \param[in]      n_elts     number of elements to consider
+ * \param[in]      elt_ids    list of elements ids (to access coords and fill)
+ * \param[in]      coords     where ?
+ * \param[in]      commpact   true:no indirection, false:indirection for filling
  * \param[in, out] retval     result of the function
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_analytic_func_t) (cs_real_t            time,
-                      cs_lnum_t            n_points,
-                      const cs_real_t     *xyz,
+                      cs_lnum_t            n_elts,
+                      const cs_lnum_t     *elt_ids,
+                      const cs_real_t     *coords,
+                      bool                 compact,
                       cs_real_t           *retval);
 
 /*----------------------------------------------------------------------------*/
@@ -181,52 +179,6 @@ typedef void
 typedef cs_real_t
 (cs_timestep_func_t) (int      time_iter,
                       double   time);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value of a quantity according to a law depending only
- *         on one variable.
- *         This law is described by a set of parameters stored in a structure.
- *         result = law(var_value)
- *
- * \param[in]      n_elts      number of elements to treat
- * \param[in]      elt_ids     list of element ids (NULL if no indirection)
- * \param[in]      var_values  values of the variable attached to this law
- * \param[in]      law_param   set of parameters related to the current law
- * \param[in, out] res_array   result of the function
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_onevar_law_func_t) (cs_lnum_t          n_elts,
-                        const cs_lnum_t    elt_ids[],
-                        const cs_real_t    var_values[],
-                        const void        *law_param,
-                        cs_real_t          res_array[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the value of a quantity according to a law depending only
- *         on two variables.
- *         This law is described by a set of parameters stored in a structure.
- *         result = law(var1_value, var2_value)
- *
- * \param[in]      n_elts       number of elements to treat
- * \param[in]      elt_ids      list of element ids (NULL if no indirection)
- * \param[in]      var1_values  values attached to the first variable
- * \param[in]      var2_values  values attached to the second variable
- * \param[in]      law_param    set of parameters related to the current law
- * \param[in, out] res_array    result of the function
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_twovar_law_func_t) (cs_lnum_t          n_elts,
-                        const cs_lnum_t    elt_ids[],
-                        const double       var1_values[],
-                        const double       var2_values[],
-                        const void        *law_param,
-                        cs_real_t          res_array[]);
 
 /*============================================================================
  * Global variables

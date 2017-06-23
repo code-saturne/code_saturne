@@ -34,8 +34,8 @@
 #include "cs_field.h"
 #include "cs_param.h"
 #include "cs_mesh.h"
-#include "cs_source_term.h"
 #include "cs_time_step.h"
+#include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -87,126 +87,110 @@ typedef enum {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
- *         managing temporary usage of memory when dealing with equations
- *         Call specific structure allocation related to a numerical scheme
- *         according the scheme flag
- *         The size of the temporary buffer can be bigger according to the
- *         numerical settings
- *         Set also shared pointers from the main domain members
+ * \brief  Retrieve the number of equations
  *
- * \param[in]  connect       pointer to a cs_cdo_connect_t structure
- * \param[in]  quant         pointer to additional mesh quantities struct.
- * \param[in]  time_step     pointer to a time step structure
- * \param[in]  scheme_flag   flag to identify which kind of numerical scheme is
- *                           requested to solve the computational domain
+ * \return the current number of cs_equation_t structure allocated
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
-                                       const cs_cdo_quantities_t  *quant,
-                                       const cs_time_step_t       *time_step,
-                                       cs_flag_t                   scheme_flag);
+int
+cs_equation_get_n_equations(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate a pointer to a buffer of size at least the 2*n_cells for
- *         managing temporary usage of memory when dealing with equations
- *         Call specific structure allocation related to a numerical scheme
- *         according the scheme flag
- *         The size of the temporary buffer can be bigger according to the
- *         numerical settings
+ * \brief  Find the cs_equation_t structure with name eqname
+ *         Return NULL if not find
  *
- * \param[in]  scheme_flag   flag to identify which kind of numerical scheme is
- *                           requested to solve the computational domain
+ * \param[in]  eqname    name of the equation to find
+ *
+ * \return a pointer to a cs_equation_t structure or NULL if not found
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_free_common_structures(cs_flag_t   scheme_flag);
+cs_equation_t *
+cs_equation_by_name(const char    *eqname);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve a pointer to a buffer of size at least the 2*n_cells
- *         The size of the temporary buffer can be bigger according to the
- *         numerical settings
+ * \brief  Find the cs_equation_t structure with name eqname
+ *         Return NULL if not find
  *
- * \return  a pointer to an array of double
+ * \param[in]  eq_id    id of the equation to find
+ *
+ * \return a pointer to a cs_equation_t structure or NULL if not found
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t *
-cs_equation_get_tmpbuf(void);
+cs_equation_t *
+cs_equation_by_id(int   eq_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the allocation size of the temporary buffer
+ * \brief  Add a new equation structure and set a first set of parameters
  *
- * \return  the size of the temporary buffer
- */
-/*----------------------------------------------------------------------------*/
-
-size_t
-cs_equation_get_tmpbuf_size(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to an equation
- *
- * \param[in] eqname           name of the equation
- * \param[in] varname          name of the variable associated to this equation
- * \param[in] eqtype           type of equation (user, predefined...)
- * \param[in] vartype          type of variable (scalar, vector, tensor...)
- * \param[in] default_bc       type of boundary condition set by default
+ * \param[in] eqname        name of the equation
+ * \param[in] varname       name of the variable associated to this equation
+ * \param[in] eqtype        type of equation (user, predefined...)
+ * \param[in] dim           dimension of the unknow attached to this equation
+ * \param[in] default_bc    type of boundary condition set by default
  *
  * \return  a pointer to the new allocated cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_create(const char            *eqname,
-                   const char            *varname,
-                   cs_equation_type_t     eqtype,
-                   cs_param_var_type_t    vartype,
-                   cs_param_bc_type_t     default_bc);
+cs_equation_add(const char            *eqname,
+                const char            *varname,
+                cs_equation_type_t     eqtype,
+                int                    dim,
+                cs_param_bc_type_t     default_bc);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_equation_t structure
+ * \brief  Add a new user equation structure and set a first set of parameters
  *
- * \param[in, out] eq    pointer to a cs_equation_t structure
+ * \param[in] eqname        name of the equation
+ * \param[in] varname       name of the variable associated to this equation
+ * \param[in] dim           dimension of the unknow attached to this equation
+ * \param[in] default_bc    type of boundary condition set by default
  *
- * \return  a NULL pointer
+ * \return  a pointer to the new allocated cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_free(cs_equation_t  *eq);
+cs_equation_add_user(const char            *eqname,
+                     const char            *varname,
+                     int                    dim,
+                     cs_param_bc_type_t     default_bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy all cs_equation_t structures
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Print a synthesis of the monitoring information in the performance
  *         file
- *
- * \param[in] eq    pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_print_monitoring(const cs_equation_t  *eq);
+cs_equation_log_monitoring(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary of a cs_equation_t structure
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
+ * \brief  Summarize all cs_equation_t structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_summary(const cs_equation_t  *eq);
+cs_equation_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -224,14 +208,16 @@ cs_equation_set_timer_stats(cs_equation_t  *eq);
  * \brief  Assign a set of pointer functions for managing the cs_equation_t
  *         structure during the computation
  *
- * \param[in]       connect  pointer to a cs_cdo_connect_t structure
- * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in]  connect        pointer to a cs_cdo_connect_t structure
+ * \param[in]  do_profiling   true or false
+ *
+ * \return true if all equations are steady-state otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_last_setup(const cs_cdo_connect_t   *connect,
-                       cs_equation_t            *eq);
+bool
+cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
+                           bool                      do_profiling);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -273,16 +259,16 @@ cs_equation_link(cs_equation_t       *eq,
  *         given mesh location
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       ml_name   name of the associated mesh location (if NULL or
+ * \param[in]       z_name    name of the associated zone (if NULL or
  *                            "" all cells are considered)
  * \param[in]       val       pointer to the value
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_ic_by_value(cs_equation_t    *eq,
-                            const char       *ml_name,
-                            cs_get_t          get);
+cs_equation_add_ic_by_value(cs_equation_t    *eq,
+                            const char       *z_name,
+                            cs_real_t        *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -294,15 +280,15 @@ cs_equation_set_ic_by_value(cs_equation_t    *eq,
  *         returns the requested quantity
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       ml_name   name of the associated mesh location (if NULL or
+ * \param[in]       z_name    name of the associated zone (if NULL or
  *                            "" all cells are considered)
  * \param[in]       quantity  quantity to distribute over the mesh location
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_ic_by_qov(cs_equation_t    *eq,
-                          const char       *ml_name,
+cs_equation_add_ic_by_qov(cs_equation_t    *eq,
+                          const char       *z_name,
                           double            quantity);
 
 /*----------------------------------------------------------------------------*/
@@ -313,35 +299,35 @@ cs_equation_set_ic_by_qov(cs_equation_t    *eq,
  *         Here the initial value is set according to an analytical function
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       ml_name   name of the associated mesh location (if NULL or
+ * \param[in]       z_name    name of the associated zone (if NULL or
  *                            "" all cells are considered)
  * \param[in]       analytic  pointer to an analytic function
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_ic_by_analytic(cs_equation_t        *eq,
-                               const char           *ml_name,
+cs_equation_add_ic_by_analytic(cs_equation_t        *eq,
+                               const char           *z_name,
                                cs_analytic_func_t   *analytic);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the givan equation structure
- *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
  * \param[in]       bc_type   type of boundary condition to add
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       get       pointer to a cs_get_t structure storing the value
+ * \param[in]       z_name    name of the related boundary zone
+ * \param[in]       values    pointer to a array storing the values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_add_bc_by_value(cs_equation_t              *eq,
                             const cs_param_bc_type_t    bc_type,
-                            const char                 *ml_name,
-                            const cs_get_t              get);
+                            const char                 *z_name,
+                            cs_real_t                  *values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -351,7 +337,8 @@ cs_equation_add_bc_by_value(cs_equation_t              *eq,
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure
  * \param[in]      bc_type   type of boundary condition to add
- * \param[in]      ml_name   name of the related mesh location
+ * \param[in]       z_name    name of the associated zone (if NULL or
+ *                            "" all cells are considered)
  * \param[in]      analytic  pointer to an analytic function defining the value
  */
 /*----------------------------------------------------------------------------*/
@@ -359,7 +346,7 @@ cs_equation_add_bc_by_value(cs_equation_t              *eq,
 void
 cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
                                const cs_param_bc_type_t    bc_type,
-                               const char                 *ml_name,
+                               const char                 *z_name,
                                cs_analytic_func_t         *analytic);
 
 /*----------------------------------------------------------------------------*/
@@ -369,80 +356,80 @@ cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
  *
  * \param[in, out] eq         pointer to a cs_equation_t structure
  * \param[in]      property   pointer to a cs_property_t struct.
- * \param[in]      r_name     name of the reaction term (optional, i.e. NULL)
+ *
+ * \return the id related to the reaction term
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_add_linear_reaction(cs_equation_t   *eq,
-                                cs_property_t   *property,
-                                const char      *r_name);
+int
+cs_equation_add_reaction(cs_equation_t   *eq,
+                         cs_property_t   *property);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize by value a new structure to store parameters
- *         related to a source term defined by a user
+ * \brief  Define a new source term structure and initialize it by value
  *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       st_name   name of the source term or NULL
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       val       pointer to the value
+ * \param[in, out] eq        pointer to a cs_equation_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or
+ *                            "" all cells are considered)
+ * \param[in]      val       pointer to the value
  *
- * \return a pointer to the new cs_source_term_t structure
+ * \return a pointer to the new cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_source_term_t *
+cs_xdef_t *
 cs_equation_add_source_term_by_val(cs_equation_t   *eq,
-                                   const char      *st_name,
-                                   const char      *ml_name,
-                                   const void      *val);
+                                   const char      *z_name,
+                                   cs_real_t       *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize by an analytical function a new structure
- *         related to a source term defined by a user
+ * \brief  Define a new source term structure and initialize it by an analytical
+ *         function
  *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       st_name   name of the source term or NULL
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       ana       pointer to an analytical function
+ * \param[in, out] eq        pointer to a cs_equation_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or
+ *                            "" all cells are considered)
+ * \param[in]      ana       pointer to an analytical function
  *
  * \return a pointer to the new cs_source_term_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_source_term_t *
+cs_xdef_t *
 cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
-                                        const char           *st_name,
-                                        const char           *ml_name,
+                                        const char           *z_name,
                                         cs_analytic_func_t   *ana);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a field structure related to this cs_equation_t structure
- *         to an equation
- *
- * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \brief  Create a field structure related to all cs_equation_t structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_create_field(cs_equation_t      *eq);
+cs_equation_create_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the values of a field according to the initial condition
- *         related to its equation
+ * \brief  Allocate and initialize the builder of the algebraic system.
+ *         Set the initialize condition to all variable fields associated to
+ *         each cs_equation_t structure.
+ *         Compute the initial source term.
  *
- * \param[in]       mesh       pointer to the mesh structure
- * \param[in, out]  eq         pointer to a cs_equation_t structure
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_init_system(const cs_mesh_t            *mesh,
-                        cs_equation_t              *eq);
+cs_equation_initialize(const cs_mesh_t             *mesh,
+                       const cs_cdo_connect_t      *connect,
+                       const cs_cdo_quantities_t   *quant,
+                       const cs_time_step_t        *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -469,7 +456,7 @@ cs_equation_needs_build(const cs_equation_t    *eq);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_build_system(const cs_mesh_t            *m,
+cs_equation_build_system(const cs_mesh_t            *mesh,
                          const cs_time_step_t       *time_step,
                          double                      dt_cur,
                          cs_equation_t              *eq);
@@ -500,36 +487,7 @@ cs_equation_is_steady(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the values at each face of the mesh for the field unknowns
- *         related to this equation.
- *
- * \param[in]   eq        pointer to a cs_equation_t structure
- *
- * \return a pointer to the face values
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_real_t *
-cs_equation_get_face_values(const cs_equation_t    *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the values at each cell centers for the field unknowns
- *         related to this equation.
- *
- * \param[in]   eq        pointer to a cs_equation_t structure
- *
- * \return a pointer to the cell values
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_real_t *
-cs_equation_get_cell_values(const cs_equation_t    *eq);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Return the name related to the given cs_equation_t structure
- *         to an equation
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
@@ -539,6 +497,19 @@ cs_equation_get_cell_values(const cs_equation_t    *eq);
 
 const char *
 cs_equation_get_name(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the id number related to the given cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return an id (0 ... n-1) or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_get_id(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -565,7 +536,6 @@ cs_equation_get_field(const cs_equation_t    *eq);
 
 cs_flag_t
 cs_equation_get_flag(const cs_equation_t    *eq);
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return the cs_equation_param_t structure associated to a
@@ -583,11 +553,11 @@ cs_equation_get_param(const cs_equation_t    *eq);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return a pointer to the cs_property_t structure associated to the
- *         diffusion term for this equation.
+ *         diffusion term for this equation (NULL if not activated).
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
- * \return a pointer to a cs_property_t structure or NULL if not found
+ * \return a pointer to a cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -597,11 +567,11 @@ cs_equation_get_diffusion_property(const cs_equation_t    *eq);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return a pointer to the cs_property_t structure associated to the
- *         unsteady term for this equation.
+ *         unsteady term for this equation (NULL if not activated).
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
- * \return a pointer to a cs_property_t structure or NULL if not found
+ * \return a pointer to a cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -614,7 +584,8 @@ cs_equation_get_time_property(const cs_equation_t    *eq);
  *         reaction term called r_name and related to this equation
  *
  *
- * \param[in]  eq       pointer to a cs_equation_t structure
+ * \param[in]  eq            pointer to a cs_equation_t structure
+ * \param[in]  reaction_id   id related to this reaction term
  *
  * \return a pointer to a cs_property_t structure or NULL if not found
  */
@@ -622,7 +593,7 @@ cs_equation_get_time_property(const cs_equation_t    *eq);
 
 cs_property_t *
 cs_equation_get_reaction_property(const cs_equation_t    *eq,
-                                  const char             *r_name);
+                                  const int               reaction_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -654,16 +625,16 @@ cs_equation_get_space_poly_degree(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return the type of variable solved by this equation
+ * \brief  Return the dimension of the variable solved by this equation
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
- * \return  the type of variable (sclar, vector...) associated to this equation
+ * \return  an integer corresponding to the dimension of the variable
  */
 /*----------------------------------------------------------------------------*/
 
-cs_param_var_type_t
-cs_equation_get_var_type(const cs_equation_t    *eq);
+int
+cs_equation_get_var_dim(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -680,6 +651,34 @@ cs_equation_get_type(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the values at each face of the mesh for the field unknowns
+ *         related to this equation.
+ *
+ * \param[in]   eq        pointer to a cs_equation_t structure
+ *
+ * \return a pointer to the face values
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_equation_get_face_values(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the values at each cell centers for the field unknowns
+ *         related to this equation.
+ *
+ * \param[in]   eq        pointer to a cs_equation_t structure
+ *
+ * \return a pointer to the cell values
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_equation_get_cell_values(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the diffusive and convective flux accross a plane defined
  *         by a mesh location structure attached to the name ml_name.
  *
@@ -688,7 +687,7 @@ cs_equation_get_type(const cs_equation_t    *eq);
  * \param[in]      direction   vector indicating in which direction flux is > 0
  * \param[in, out] diff_flux   value of the diffusive part of the flux
  * \param[in, out] conv_flux   value of the convective part of the flux
- */
+  */
 /*----------------------------------------------------------------------------*/
 
 void
@@ -716,32 +715,16 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux across all cell faces.
- *         Primal or dual faces are considered according to the space scheme.
+ * \brief  Predefined extra-operations related to all equations
  *
- * \param[in]      eq          pointer to a cs_equation_t structure
- * \param[in, out] diff_flux   value of the diffusive flux
-  */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_compute_diff_flux(const cs_equation_t   *eq,
-                              cs_real_t             *diff_flux);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined extra-operations related to this equation
- *
- * \param[in]  eq      pointer to a cs_equation_t structure
  * \param[in]  ts      pointer to a cs_time_step_t struct.
  * \param[in]  dt      value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_extra_post(const cs_equation_t     *eq,
-                       const cs_time_step_t    *ts,
-                       double                   dt);
+cs_equation_extra_post_all(const cs_time_step_t    *ts,
+                           double                   dt);
 
 /*----------------------------------------------------------------------------*/
 

@@ -59,25 +59,14 @@ BEGIN_C_DECLS
 /*!
  * \brief  Initialize the generic post-processing related to a domain
  *
- * \param[in]  dt             reference time step value
- * \param[in]  n_adv_fields   number of advection fields
- * \param[in]  adv_fields     pointer on advection field pointers
- * \param[in]  n_properties   number of properties
- * \param(in]  properties     pointer on properties pointers
- * \param[in]  n_equations    number of equations
- * \param[in]  equations      pointer on equations pointers
+ * \param[in]  dt        reference time step value
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_post_init(double                dt,
-                    cs_cdo_quantities_t  *quant,
-                    int                   n_adv_fields,
-                    cs_adv_field_t      **adv_fields,
-                    int                   n_properties,
-                    cs_property_t       **properties,
-                    int                   n_equations,
-                    cs_equation_t       **equations);
+                    cs_cdo_quantities_t  *quant);
 
 /*----------------------------------------------------------------------------*/
 /*!

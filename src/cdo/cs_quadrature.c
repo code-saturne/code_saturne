@@ -387,14 +387,14 @@ cs_quadrature_tet_5pts(const cs_real_3_t  xv,
 /*!
  * \brief  Return th name associated to a type of quadrature
  *
- * \param[in]     type     cs_quadra_type_t
+ * \param[in]     type     cs_quadrature_type_t
  *
  * \return the name associated to a given type of quadrature
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_quadrature_get_type_name(const cs_quadra_type_t  type)
+cs_quadrature_get_type_name(const cs_quadrature_type_t  type)
 {
   return cs_quadrature_type_name[type];
 }

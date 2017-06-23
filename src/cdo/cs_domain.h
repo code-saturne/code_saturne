@@ -42,6 +42,7 @@
 #include "cs_property.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
+#include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -55,10 +56,14 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Store information about the kind of boundary attached to the computational
-   domain: inlet, outlet, wall, symmetry... */
+typedef struct {
 
-typedef struct _cs_domain_boundary_t cs_domain_boundary_t;
+  cs_param_boundary_type_t    default_type; // boundary set by default
+  int                         n_zones;
+  int                        *zone_ids;
+  cs_param_boundary_type_t   *type_by_zone;
+
+} cs_domain_boundary_t;
 
 typedef struct {
 
@@ -70,57 +75,27 @@ typedef struct {
      - cs_cdo_connect_t contains additional information about connectivity
      - cs_cdo_quantities_t contains additional information on mesh quantities
   */
-  cs_cdo_connect_t              *connect;
-  cs_cdo_quantities_t           *cdo_quantities;
+  cs_cdo_connect_t         *connect;
+  cs_cdo_quantities_t      *cdo_quantities;
 
-  /* Physical boundary conditions on the computational domain */
-  cs_domain_boundary_t          *boundaries;
+  /* Physical boundary conditions on the computational domain:
+     inlet, outmet, wall, symmetry...
+     Store the type of boundary set on each boundary face */
+  cs_domain_boundary_t     *boundary_def;
 
   /* Time step management */
-  bool                     is_last_iter;       // true or false
-  double                   dt_cur;             // current time step
-  cs_param_def_type_t      time_step_def_type; // Way of defining the time step
-  cs_def_t                 time_step_def;      // Definition of the time_step
-  cs_time_step_t          *time_step;          // time step descriptor
-  cs_time_step_options_t   time_options;       // time step options
+  bool                      is_last_iter;     // true or false
+  double                    dt_cur;           // current time step
+  cs_xdef_t                *time_step_def;    // Definition of the time_step
+  cs_time_step_t           *time_step;        // time step descriptor
+  cs_time_step_options_t    time_options;     // time step options
 
-  /* Properties attached to the computational domain.
-     "unity" is created by default
-  */
-  int               n_properties;
-  cs_property_t   **properties;
-
-  /* Advection fields attached to the computational domain */
-  int               n_adv_fields;
-  cs_adv_field_t  **adv_fields;
-
-  /* Number of equations defined on this domain splitted into
-     predefined equations and user equations.
-     Predefined equations are stored first.
-  */
-  int              n_equations;
-  int              n_predef_equations;
-  int              n_user_equations;
-  cs_equation_t  **equations;
-
-  bool             only_steady;
-  bool             force_advfield_update;
+  bool                      only_steady;
+  bool                      force_advfield_update;
 
   /* Flag to know if scalar or vector equations are requested and which kind
      of numerical schemes is requested to solve these equations */
-  cs_flag_t        scheme_flag;
-
-  /* Pre-defined equations to solve
-     If xxxxx_eq_id = -1, then this equation is not activated */
-
-  /* GROUNDWATER FLOW MODULE */
-  int        richards_eq_id;   // Main equation of the groundwater flow module
-  cs_gwf_t  *gwf;              // NULL is not activated
-
-  /* WALL DISTANCE */
-  int   wall_distance_eq_id;  // Wall distance computation
-
-  /* TODO: NAVIER-STOKES */
+  cs_flag_t                 scheme_flag;
 
   /* Output options */
   int        output_nt;  /* Log information every nt iteration(s) */
@@ -180,11 +155,10 @@ cs_domain_free(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a boundary type defined on a mesh location
+ * \brief  Set the default boundary related to this domain
  *
  * \param[in, out]   domain       pointer to a cs_domain_t structure
  * \param[in]        type         type of boundary to set
- * \param[in]        ml_name      mesh location name
  */
 /*----------------------------------------------------------------------------*/
 
@@ -196,16 +170,16 @@ cs_domain_set_default_boundary(cs_domain_t                *domain,
 /*!
  * \brief  Add a boundary type defined on a mesh location
  *
- * \param[in, out]   domain       pointer to a cs_domain_t structure
- * \param[in]        type         type of boundary to set
- * \param[in]        ml_name      mesh location name
+ * \param[in, out]  domain       pointer to a cs_domain_t structure
+ * \param[in]       type         type of boundary to set
+ * \param[in]       zone_name    name of the zone related to this boundary
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_add_boundary(cs_domain_t                *domain,
                        cs_param_boundary_type_t    type,
-                       const char                 *ml_name);
+                       const char                 *zone_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -292,149 +266,6 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new property to the current computational domain
- *
- * \param[in, out]  domain        pointer to a cs_domain_t structure
- * \param[in]       pty_name      name of the property to add
- * \param[in]       type_name     key name related to the type of property
- * \param[in]       n_subdomains  specify a definition in n_subdomains
- *
- * \return a pointer to the new cs_property_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_property_t *
-cs_domain_add_property(cs_domain_t     *domain,
-                       const char      *pty_name,
-                       const char      *type_name,
-                       int              n_subdomains);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add a new advection field to the current computational domain
- *
- * \param[in, out]   domain       pointer to a cs_domain_t structure
- * \param[in]        adv_name     name of the advection field to add
- *
- * \return a pointer to the new cs_adv_field_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_adv_field_t *
-cs_domain_add_advection_field(cs_domain_t     *domain,
-                              const char      *adv_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Activate the computation of the wall distance
- *         Define a new equation called "WallDistance" and its related field
- *         named "WallDistance"
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
- *
- * \return a pointer to a cs_equation_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_t *
-cs_domain_activate_wall_distance(cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Activate the computation of the Richards' equation
- *         This activation yields severals consequences:
- *         * Add a new equation named "Richards" along with an associated field
- *           named "hydraulic_head". Default boundary condition is set to
- *          "zero_flux".
- *         * Define a new advection field named "darcian_flux"
- *         * Define a new property called "permeability".
- *         * Define a new property called "soil_capacity" if "unsteady" is
- *           chosen
- *
- * \param[in, out]  domain     pointer to a cs_domain_t structure
- * \param[in]       kw_type    "isotropic", "orthotropic or "anisotropic"
- * \param[in]       kw_time    Richards equation is "steady" or "unsteady"
- * \param[in]       n_soils    number of soils to consider
- * \param[in]       n_tracers  number of tracer equations
- *
- * \return a pointer to a cs_grounwater_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_gwf_t *
-cs_domain_activate_gwf(cs_domain_t   *domain,
-                       const char    *kw_type,
-                       const char    *kw_time,
-                       int            n_soils,
-                       int            n_tracers);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add a new equation related to the groundwater flow module
- *         This equation is a particular type of unsteady advection-diffusion
- *         reaction eq.
- *         Tracer is advected thanks to the darcian velocity and
- *         diffusion/reaction parameters result from a physical modelling.
- *
- * \param[in, out]  domain         pointer to a cs_domain_t structure
- * \param[in]       eqname         name of the equation
- * \param[in]       varname        name of the related variable
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_add_gwf_tracer_eq(cs_domain_t   *domain,
-                            const char    *eq_name,
-                            const char    *var_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the parameters related to a tracer equation used in the
- *         groundwater flow module
- *
- * \param[in, out]  domain         pointer to a cs_domain_t structure
- * \param[in]       eqname         name of the equation
- * \param[in]       ml_name        name of the related mesh location
- * \param[in]       wmd            value of the water molecular diffusivity
- * \param[in]       alpha_l        value of the longitudinal dispersivity
- * \param[in]       alpha_t        value of the transversal dispersivity
- * \param[in]       distrib_coef   value of the distribution coefficient
- * \param[in]       reaction_rate  value of the first order rate of reaction
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_set_gwf_tracer_eq(cs_domain_t   *domain,
-                            const char    *eq_name,
-                            const char    *ml_name,
-                            double         wmd,
-                            double         alpha_l,
-                            double         alpha_t,
-                            double         distrib_coef,
-                            double         reaction_rate);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add a new user equation to a domain
- *
- * \param[in, out] domain         pointer to a cs_domain_t structure
- * \param[in]      eqname         name of the equation
- * \param[in]      varname        name of the related variable
- * \param[in]      key_type       type of equation: "scalar", "vector", "tensor"
- * \param[in]      key_bc         type of boundary condition set by default
- *                                "zero_value" or "zero_flux"
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_add_user_equation(cs_domain_t         *domain,
-                            const char          *eqname,
-                            const char          *varname,
-                            const char          *key_type,
-                            const char          *key_bc);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add new mesh locations related to domain boundaries from existing
  *         mesh locations
  *
@@ -458,78 +289,6 @@ cs_domain_setup_predefined_equations(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Find the related property definition from its name
- *
- * \param[in]  domain      pointer to a domain structure
- * \param[in]  ref_name    name of the property to find
- *
- * \return NULL if not found otherwise the associated pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_property_t *
-cs_domain_get_property(const cs_domain_t    *domain,
-                       const char           *ref_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Find the related advection field definition from its name
- *
- * \param[in]  domain      pointer to a domain structure
- * \param[in]  ref_name    name of the adv_field to find
- *
- * \return NULL if not found otherwise the associated pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_adv_field_t *
-cs_domain_get_advection_field(const cs_domain_t    *domain,
-                              const char           *ref_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Find the cs_equation_t structure whith name eqname
- *         Return NULL if not find
- *
- * \param[in]  domain    pointer to a cs_domain_t structure
- * \param[in]  eqname    name of the equation to find
- *
- * \return a pointer to a cs_equation_t structure or NULL if not found
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_t *
-cs_domain_get_equation(const cs_domain_t  *domain,
-                       const char         *eqname);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to a cs_gwf_t structure related to this
- *         domain
- *
- * \param[in]   domain         pointer to a cs_domain_t structure
- *
- * \return a pointer to a cs_gwf_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_gwf_t *
-cs_domain_get_gwf_struct(const cs_domain_t    *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Create a cs_field_t structure for each equation defined in the
- *         domain
- *
- * \param[in, out]  domain    pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_domain_create_fields(cs_domain_t  *domain);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Define the scheme flag for the current computational domain
  *
  * \param[in, out]  domain            pointer to a cs_domain_t struct.
@@ -537,7 +296,7 @@ cs_domain_create_fields(cs_domain_t  *domain);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_set_scheme_flag(cs_domain_t                 *domain);
+cs_domain_set_scheme_flag(cs_domain_t    *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -550,9 +309,21 @@ cs_domain_set_scheme_flag(cs_domain_t                 *domain);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_initialize(cs_domain_t                 *domain,
-                     cs_mesh_t                   *mesh,
-                     const cs_mesh_quantities_t  *mesh_quantities);
+cs_domain_finalize_setup(cs_domain_t                 *domain,
+                         cs_mesh_t                   *mesh,
+                         const cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize systems of equations and their related field values
+ *         according to the user settings
+ *
+ * \param[in, out]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_initialize_systems(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

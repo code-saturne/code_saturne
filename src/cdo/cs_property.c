@@ -45,9 +45,9 @@
 
 #include "cs_defs.h"
 #include "cs_log.h"
-#include "cs_math.h"
-#include "cs_mesh_location.h"
 #include "cs_reco.h"
+#include "cs_volume_zone.h"
+#include "cs_xdef_eval.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -78,6 +78,10 @@ static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
 static const cs_time_step_t  *cs_time_step;
 
+static int  _n_properties = 0;
+static int  _n_max_properties = 0;
+static cs_property_t  **_properties = NULL;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -86,262 +90,151 @@ static const cs_time_step_t  *cs_time_step;
 /*!
  * \brief  Check if the settings are valid
  *
- * \param[in]  pty       pointer to a cs_property_t structure
- * \param[in]  get       accessor to the tensor values
+ * \param[in]  tens      values of the tensor
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_is_tensor_symmetric(const cs_real_3_t      *tens)
+{
+  if ((tens[0][1] - tens[1][0]) > cs_math_zero_threshold ||
+      (tens[0][2] - tens[2][0]) > cs_math_zero_threshold ||
+      (tens[1][2] - tens[2][1]) > cs_math_zero_threshold)
+    return false;
+  else
+    return true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print a tensor
+ *
+ * \param[in]  tensor      values of the tensor
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_check_tensor_symmetry(const cs_property_t    *pty,
-                       cs_get_t                get)
+_print_tensor(const cs_real_3_t   *tensor)
 {
-  if ((get.tens[0][1] - get.tens[1][0]) > cs_math_zero_threshold ||
-      (get.tens[0][2] - get.tens[2][0]) > cs_math_zero_threshold ||
-      (get.tens[1][2] - get.tens[2][1]) > cs_math_zero_threshold)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" The definition of the tensor related to the"
-                " property %s is not symmetric.\n"
-                " This case is not handled. Please check your settings.\n"),
-              pty->name);
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\n  Tensor property: | % 8.4e  % 8.4e  % 8.4e |\n"
+                "                     | % 8.4e  % 8.4e  % 8.4e |\n"
+                "                     | % 8.4e  % 8.4e  % 8.4e |\n",
+                tensor[0][0], tensor[0][1], tensor[0][2],
+                tensor[1][0], tensor[1][1], tensor[1][2],
+                tensor[2][0], tensor[2][1], tensor[2][2]);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a new definition to a cs_property_t structure defined by domain
+ * \brief  Check if the settings are valid and then invert a tensor
+ *
+ * \param[in, out]  tens           values of the tensor
+ * \param[in]       type           type of property to deal with
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_invert_tensor(cs_real_3_t          *tens,
+               cs_property_type_t    type)
+{
+#if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 0 /* Sanity check */
+  bool  is_ok =true;
+  for (int k = 0; k < 3; k++)
+    if (fabs(tensor[k][k]) < cs_math_zero_threshold)
+      is_ok = false;
+
+  if (is_ok)
+    _is_tensor_symmetric(tens);
+
+  if (!is_ok) {
+    _print_tensor((const cs_real_t (*)[3])tens);
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: A problem has been detected during the definition of the"
+              " property %s in the cell %d.\n", __func__, pty->name, c_id);
+  }
+#endif
+
+  if (type == CS_PROPERTY_ISO || type == CS_PROPERTY_ORTHO)
+    for (int k = 0; k < 3; k++)
+      tens[k][k] /= 1.0;
+
+  else { /* anisotropic */
+
+    cs_real_33_t  invmat;
+
+    cs_math_33_inv_cramer((const cs_real_3_t (*))tens, invmat);
+    for (int k = 0; k < 3; k++)
+      for (int l = 0; l < 3; l++)
+        tens[k][l] = invmat[k][l];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new definition to a cs_property_t structure
  *         Sanity checks on the settings related to this definition.
 
  * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
  *
- * \return a pointer to a new definition to set
+ * \return the new definition id
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_param_def_t *
-_init_new_def(cs_property_t     *pty,
-              const char        *ml_name)
+inline static int
+_add_new_def(cs_property_t     *pty)
 {
-  if (pty == NULL)
-    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+  int  new_id = pty->n_definitions;
 
-  int  new_id = pty->n_subdomains;
+  pty->n_definitions += 1;
+  BFT_REALLOC(pty->defs, pty->n_definitions, cs_xdef_t *);
+  BFT_REALLOC(pty->get_eval_at_cell, pty->n_definitions,
+              cs_xdef_eval_t *);
+  BFT_REALLOC(pty->get_eval_at_cell_cw, pty->n_definitions,
+              cs_xdef_eval_cw_t *);
 
-  if (new_id == pty->n_max_subdomains)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Max. number of subdomains has been reached for property %s.\n"
-                " Please check your settings."), pty->name);
-
-  int  ml_id = cs_mesh_location_get_id_by_name(ml_name);
-
-  if (ml_id == -1)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" mesh location %s has not been found.\n"
-                " Please check your settings."), ml_name);
-
-  if (cs_mesh_location_get_type(ml_id) != CS_MESH_LOCATION_CELLS)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of mesh location for mesh location  %s.\n"
-                " The expected type is CS_MESH_LOCATION_CELLS.\n"), ml_name);
-
-  pty->n_subdomains += 1;
-
-  cs_param_def_t  *new_def = pty->defs + new_id;
-
-  new_def->ml_id = ml_id;
-
-  return new_def;
+  return new_id;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value using a law with one argument
+ * \brief  Create and initialize a new property structure
  *
- * \param[in]       pty     pointer to a cs_property_t structure
- * \param[in]       get     accessor to the value
- * \param[in, out]  tensor  result stored in a 3x3 tensor
+ * \param[in]  name          name of the property
+ * \param[in]  key_type      keyname of the type of property
+ * \param[in]  n_subdomains  piecewise definition on n_subdomains
+ *
+ * \return a pointer to a new allocated cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_get_tensor_by_value(const cs_property_t      *pty,
-                     cs_get_t                  get,
-                     cs_real_3_t              *tensor)
+static cs_property_t *
+_create_property(const char           *name,
+                 int                   id,
+                 cs_property_type_t    type)
 {
-  switch (pty->type) {
+  cs_property_t  *pty = NULL;
 
-  case CS_PROPERTY_ISO:
-    tensor[0][0] = tensor[1][1] = tensor[2][2] = get.val;
-    break;
+  BFT_MALLOC(pty, 1, cs_property_t);
 
-  case CS_PROPERTY_ORTHO:
-    for (int k = 0; k < 3; k++)
-      tensor[k][k] = get.vect[k];
-    break;
+  /* Copy name */
+  int  len = strlen(name) + 1;
+  BFT_MALLOC(pty->name, len, char);
+  strncpy(pty->name, name, len);
 
-  case CS_PROPERTY_ANISO:
-    for (int k = 0; k < 3; k++)
-      for (int l = 0; l < 3; l++)
-        tensor[k][l] = get.tens[k][l];
-    break;
+  pty->id = id;
+  pty->type = type;
+  pty->state_flag = 0;
 
-  default:
-    assert(0);
-    break;
+  pty->n_definitions = 0;
+  pty->defs = NULL;
+  pty->def_ids = NULL;
 
-  } // Property type
-}
+  pty->get_eval_at_cell = NULL;
+  pty->get_eval_at_cell_cw = NULL;
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the value for a cell from an array
- *         Version using a cs_cell_mesh_t structure
- *
- * \param[in]  cm        pointer to a cs_cell_mesh_t structure
- * \param[in]  desc      information about the array to handle
- * \param[in]  array     array of values (mesh view not cellwise)
- */
-/*----------------------------------------------------------------------------*/
-
-static double
-_get_cell_val_from_array_cm(const cs_cell_mesh_t    *cm,
-                            const cs_desc_t          desc,
-                            const cs_real_t          array[])
-{
-  double  cell_val = 0.;
-
-  if (!(desc.location & CS_FLAG_SCALAR))
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid type of variable. Stop computing the cell value.");
-
-  /* Test if flag has the pattern of a reference support */
-  if ((desc.location & cs_cdo_primal_cell) == cs_cdo_primal_cell)
-    cell_val = array[cm->c_id];
-
-  else if ((desc.location & cs_cdo_primal_vtx) == cs_cdo_primal_vtx) {
-
-    /* Sanity checks */
-    assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PVQ));
-
-    /* Reconstruct (or interpolate) value at the current cell center */
-    for (short int v = 0; v < cm->n_vc; v++)
-      cell_val += cm->wvc[v] * array[cm->v_ids[v]];
-
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid support for evaluating the value of an array");
-
-  return cell_val;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the vector at the cell center for cell c_id from an array
- *         Version using a cs_cell_mesh_t structure
- *
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
- * \param[in]       desc      information about the array to handle
- * \param[in]       array     values
- * \param[in, out]  vect_val  vector at the cell center
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_get_cell_vec_from_array_cm(const cs_cell_mesh_t   *cm,
-                            const cs_desc_t         desc,
-                            const cs_real_t         array[],
-                            cs_real_3_t             vect_val)
-{
-  /* Test if flag has the pattern of a reference support */
-  if ((desc.location & cs_cdo_primal_cell) == cs_cdo_primal_cell)
-    for (int k = 0; k < 3; k++)
-      vect_val[k] = array[3*cm->c_id+k];
-
-  else if ((desc.location & cs_cdo_dual_face_byc) == cs_cdo_dual_face_byc)
-
-    /* Reconstruct (or interpolate) value at the current cell center */
-    cs_reco_dfbyc_in_cell(cm,
-                          array + cs_cdo_connect->c2e->idx[cm->c_id],
-                          vect_val);
-
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid support for evaluating the vector from an array.");
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the value at the cell center for cell c_id from an array
- *
- * \param[in]  c_id      id of the cell to treat
- * \param[in]  desc      information about the array to handle
- * \param[in]  array     values
- */
-/*----------------------------------------------------------------------------*/
-
-static double
-_get_cell_val_from_array(cs_lnum_t         c_id,
-                         const cs_desc_t   desc,
-                         const cs_real_t   array[])
-{
-  double  cell_val = 0.;
-
-  if (!(desc.location & CS_FLAG_SCALAR))
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid type of variable. Stop computing the cell value.");
-
-  /* Test if flag has the pattern of a reference support */
-  if ((desc.location & cs_cdo_primal_cell) == cs_cdo_primal_cell)
-    cell_val = array[c_id];
-
-  else if ((desc.location & cs_cdo_primal_vtx) == cs_cdo_primal_vtx)
-
-    /* Reconstruct (or interpolate) value at the current cell center */
-    cs_reco_pv_at_cell_center(c_id,
-                              cs_cdo_connect->c2v,
-                              cs_cdo_quant,
-                              array,
-                              &cell_val);
-
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid support for evaluating the value of an array");
-
-  return cell_val;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the vector at the cell center for cell c_id from an array
- *
- * \param[in]       c_id      if of the cell to treat
- * \param[in]       desc      information about the array to handle
- * \param[in]       array     values
- * \param[in, out]  vect_val  vector at the cell center
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_get_cell_vec_from_array(cs_lnum_t         c_id,
-                         const cs_desc_t   desc,
-                         const cs_real_t   array[],
-                         cs_real_3_t       vect_val)
-{
-  /* Test if flag has the pattern of a reference support */
-  if ((desc.location & cs_cdo_primal_cell) == cs_cdo_primal_cell)
-    for (int k = 0; k < 3; k++)
-      vect_val[k] = array[3*c_id+k];
-
-  else if ((desc.location & cs_cdo_dual_face_byc) == cs_cdo_dual_face_byc)
-
-    /* Reconstruct (or interpolate) value at the current cell center */
-    cs_reco_dfbyc_at_cell_center(c_id,
-                                 cs_cdo_connect->c2e, cs_cdo_quant, array,
-                                 vect_val);
-
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              " Invalid support for evaluating the vector from an array.");
+  return pty;
 }
 
 /*============================================================================
@@ -371,10 +264,24 @@ cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the number of properties
+ *
+ * \return the number of properties
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_property_get_n_properties(void)
+{
+  return _n_properties;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create and initialize a new property structure
  *
  * \param[in]  name          name of the property
- * \param[in]  key_type      keyname of the type of property
+ * \param[in]  type          type of property
  * \param[in]  n_subdomains  piecewise definition on n_subdomains
  *
  * \return a pointer to a new allocated cs_property_t structure
@@ -382,172 +289,182 @@ cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_property_create(const char    *name,
-                   const char    *key_type,
-                   int            n_subdomains)
+cs_property_add(const char            *name,
+                cs_property_type_t     type)
 {
-  cs_property_t  *pty = NULL;
+  cs_property_t  *pty = cs_property_by_name(name);
 
-  BFT_MALLOC(pty, 1, cs_property_t);
+  if (pty != NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _(" %s: An existing property has already the name %s.\n"
+                    " Stop adding this property.\n"), __func__, name);
+    return  pty;
+  }
 
-  pty->post_flag = 0;
+  int  pty_id = _n_properties;
 
-  /* Copy name */
-  int  len = strlen(name) + 1;
-  BFT_MALLOC(pty->name, len, char);
-  strncpy(pty->name, name, len);
+  if (pty_id == 0) {
+    _n_max_properties = 3;
+    BFT_MALLOC(_properties, _n_max_properties, cs_property_t *);
+  }
 
-  /* Assign a type */
-  if (strcmp(key_type, "isotropic") == 0)
-    pty->type = CS_PROPERTY_ISO;
-  else if (strcmp(key_type, "orthotropic") == 0)
-    pty->type = CS_PROPERTY_ORTHO;
-  else if (strcmp(key_type, "anisotropic") == 0)
-    pty->type = CS_PROPERTY_ANISO;
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid key \"%s\" for setting the type of property.\n"
-                " Valid keys: \"isotropic\", \"orthotropic\" and"
-                " \"anisotropic\".\n"
-                " Please modify your settings."), key_type);
+  _n_properties += 1;
 
-  /* Default initialization */
-  pty->flag.location = 0;
-  pty->flag.state = 0;
+  if (_n_properties > _n_max_properties) {
+    _n_max_properties *= 2;
+    BFT_REALLOC(_properties, _n_max_properties, cs_property_t *);
+  }
 
-  /* Members useful to define the property by subdomain */
-  assert(n_subdomains > 0);
-  pty->n_max_subdomains = n_subdomains;
-  pty->n_subdomains = 0; // No definition set by default
+  _properties[pty_id] = _create_property(name, pty_id, type);
 
-  BFT_MALLOC(pty->defs, n_subdomains, cs_param_def_t);
-
-  pty->def_ids = NULL;
-
-  /* Specific members for more complex definitions */
-  pty->desc1.location = pty->desc1.state = 0;
-  pty->array1 = NULL;
-  pty->desc2.location = pty->desc2.state = 0;
-  pty->array2 = NULL;
-
-  return pty;
+  return _properties[pty_id];
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last stage of the definition of a property based on several
- *         subdomains
+ * \brief  Find the related property definition from its name
  *
- * \param[in, out] pty       pointer to cs_property_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_last_definition_stage(cs_property_t  *pty)
-{
-  if (pty == NULL)
-    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
-
-  if (pty->n_subdomains > 1) { /* Initialization of def_ids */
-
-    const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
-
-    BFT_MALLOC(pty->def_ids, n_cells, short int);
-
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_cells; i++)
-      pty->def_ids[i] = -1; // Unset by default
-
-    for (int sub_id = 0; sub_id < pty->n_subdomains; sub_id++) {
-
-      const cs_param_def_t  *def = pty->defs + sub_id;
-      const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(def->ml_id);
-      const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(def->ml_id);
-
-      if (elt_ids == NULL) {
-
-        assert(n_elts[0] == n_cells);
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t i = 0; i < n_cells; i++)
-          pty->def_ids[i] = sub_id;
-
-      }
-      else {
-
-#       pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
-        for (cs_lnum_t i = 0; i < n_elts[0]; i++)
-          pty->def_ids[elt_ids[i]] = sub_id;
-
-      }
-
-    } // Loop on subdomains
-
-  } // n_max_subdomains > 1
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a cs_property_t structure
+ * \param[in]  name    name of the property to find
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure to free
- *
- * \return a NULL pointer
+ * \return NULL if not found otherwise the associated pointer
  */
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_property_free(cs_property_t   *pty)
+cs_property_by_name(const char   *name)
 {
-  if (pty == NULL)
-    return pty;
+  if (_n_properties < 0)
+    return NULL;
+  assert(name != NULL);
 
-  BFT_FREE(pty->name);
-  BFT_FREE(pty->def_ids);
-  BFT_FREE(pty->defs);
-
-  if (pty->desc1.state & CS_FLAG_STATE_OWNER)
-    if (pty->array1 != NULL)
-      BFT_FREE(pty->array1);
-
-  if (pty->desc2.state & CS_FLAG_STATE_OWNER)
-    if (pty->array2 != NULL)
-      BFT_FREE(pty->array2);
-
-  BFT_FREE(pty);
+  for (int i = 0; i < _n_properties; i++) {
+    cs_property_t  *pty = _properties[i];
+    assert(pty->name != NULL);
+    if (strcmp(pty->name, name) == 0)
+      return pty;
+  }
 
   return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if the given property has the name ref_name
+ * \brief  Find the related property definition from its id
  *
- * \param[in]  pty         pointer to a cs_property_t structure to test
- * \param[in]  ref_name    name of the property to find
+ * \param[in]  id      id of the property to find
  *
- * \return true if the name of the property is ref_name otherwise false
+ * \return NULL if not found otherwise the associated pointer
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_property_check_name(const cs_property_t   *pty,
-                       const char            *ref_name)
+cs_property_t *
+cs_property_by_id(int         id)
 {
-  if (pty == NULL)
-    return false;
+  if (_n_properties < 0)
+    return NULL;
+  if (id < 0 || id >= _n_max_properties)
+    return NULL;
 
-  int  reflen = strlen(ref_name);
-  int  len = strlen(pty->name);
+  return  _properties[id];
+}
 
-  if (reflen == len) {
-    if (strcmp(ref_name, pty->name) == 0)
-      return true;
-    else
-      return false;
-  }
-  else
-    return false;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free all cs_property_t structures and the array storing all the
+ *         structures
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_destroy_all(void)
+{
+  if (_n_properties == 0)
+    return;
+
+  for (int i = 0; i < _n_properties; i++) {
+
+    cs_property_t  *pty = _properties[i];
+
+    if (pty == NULL)
+      bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+    BFT_FREE(pty->name);
+    BFT_FREE(pty->def_ids);
+
+    for (int j = 0; j < pty->n_definitions; j++)
+      pty->defs[j] = cs_xdef_free(pty->defs[j]);
+
+    BFT_FREE(pty->defs);
+    BFT_FREE(pty->get_eval_at_cell);
+    BFT_FREE(pty->get_eval_at_cell_cw);
+
+    BFT_FREE(pty);
+
+  } // Loop on properties
+
+  BFT_FREE(_properties);
+  _n_properties = 0;
+  _n_max_properties = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last stage of the definition of a property based on several
+ *         definitions (i.e. definition by subdomains)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_finalize_setup(void)
+{
+  if (_n_properties == 0)
+    return;
+
+  for (int i = 0; i < _n_properties; i++) {
+
+    cs_property_t  *pty = _properties[i];
+
+    if (pty == NULL)
+      bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+    if (pty->n_definitions > 1) { /* Initialization of def_ids */
+
+      const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
+
+      BFT_MALLOC(pty->def_ids, n_cells, short int);
+
+#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+      for (cs_lnum_t j = 0; j < n_cells; j++)
+        pty->def_ids[j] = -1; // Unset by default
+
+      for (int id = 0; id < pty->n_definitions; id++) {
+
+        const cs_xdef_t  *def = pty->defs[id];
+
+        assert(def->z_id > 0);
+        assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+
+        const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+        assert(z != NULL);
+
+#       pragma omp parallel for if (z->n_cells > CS_THR_MIN)
+        for (cs_lnum_t j = 0; j < z->n_cells; j++)
+          pty->def_ids[z->cell_ids[j]] = id;
+
+      } // Loop on definitions
+
+    }
+    else { // n_definitions = 1
+
+      if (pty->defs[0]->type == CS_XDEF_BY_VALUE)
+        pty->state_flag |= CS_FLAG_STATE_UNIFORM;
+
+    }
+
+  } // Loop on properties
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -566,7 +483,7 @@ cs_property_is_uniform(const cs_property_t   *pty)
   if (pty == NULL)
     return false;
 
-  if (pty->flag.state & CS_FLAG_STATE_UNIFORM)
+  if (pty->state_flag & CS_FLAG_STATE_UNIFORM)
     return true;
   else
     return false;
@@ -612,197 +529,139 @@ cs_property_get_type(const cs_property_t   *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set optional parameters related to a cs_property_t structure
+ * \brief  Define an isotropic cs_property_t structure by value for entities
+ *         related to a volume zone
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       key       key related to the member of pty to set
- * \param[in]       keyval    accessor to the value to set
+ * \param[in, out]  pty          pointer to a cs_property_t structure
+ * \param[in]       zone_name    name of an already defined zone
+ * \param[in]       val          value to set
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_property_set_option(cs_property_t       *pty,
-                       cs_property_key_t    key,
-                       const char          *keyval)
+cs_xdef_t *
+cs_property_def_iso_by_value(cs_property_t    *pty,
+                             const char       *zone_name,
+                             double            val)
 {
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
-
-  /* Conversion of the string to lower case */
-  char val[CS_BASE_STRING_LEN];
-  for (size_t i = 0; i < strlen(keyval); i++)
-    val[i] = tolower(keyval[i]);
-  val[strlen(keyval)] = '\0';
-
-  switch(key) {
-  case CS_PTYKEY_POST:
-    if (strcmp(val, "fourier") == 0)
-      pty->post_flag |= CS_PROPERTY_POST_FOURIER;
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                N_(" Invalid value %s for setting key CS_PTYKEY_POST\n"
-                   " Valid choices are \"fourier\".\n"
-                   " Please modify your setting.\n"), val);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Key not implemented for setting an advection field."));
-
-  } /* Switch on keys */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a cs_property_t structure by value for entities attached to
- *         the mesh location named ml_name
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       keyval    accessor to the value to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_def_by_value(cs_property_t    *pty,
-                         const char       *ml_name,
-                         const char       *key_val)
-{
-  cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
-
-  new_def->def_type = CS_PARAM_DEF_BY_VALUE;
-  if (pty->n_max_subdomains == 1)
-    pty->flag.state |= CS_FLAG_STATE_UNIFORM;
-
-  switch (pty->type) {
-
-  case CS_PROPERTY_ISO:
-    cs_param_set_get(CS_PARAM_VAR_SCAL, (const void *)key_val,
-                     &(new_def->def.get));
-    break;
-
-  case CS_PROPERTY_ORTHO:
-    cs_param_set_get(CS_PARAM_VAR_VECT, (const void *)key_val,
-                     &(new_def->def.get));
-    break;
-
-  case CS_PROPERTY_ANISO:
-    cs_param_set_get(CS_PARAM_VAR_TENS, (const void *)key_val,
-                     &(new_def->def.get));
-
-    /* Check the symmetry */
-    _check_tensor_symmetry(pty, new_def->def.get);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, _(" Invalid type of property."));
-    break;
-
-  } /* switch on property type */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define an isotropic cs_property_t structure by value for entities
- *         attached to the mesh location named ml_name
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       val       value to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_iso_def_by_value(cs_property_t    *pty,
-                             const char       *ml_name,
-                             double            val)
-{
-  cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
-
   if (pty->type != CS_PROPERTY_ISO)
     bft_error(__FILE__, __LINE__, 0,
               " Invalid setting: property %s is not isotropic.\n"
               " Please check your settings.", pty->name);
 
-  new_def->def_type = CS_PARAM_DEF_BY_VALUE;
-  if (pty->n_max_subdomains == 1)
-    pty->flag.state |= CS_FLAG_STATE_UNIFORM;
-  new_def->def.get.val = val;
+  int  new_id = _add_new_def(pty);
+  const cs_volume_zone_t  *zone = cs_volume_zone_by_name(zone_name);
+  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  meta_flag = 0; // metadata
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        1, // dim
+                                        zone->id,
+                                        state_flag,
+                                        meta_flag,
+                                        &val);
+
+  pty->defs[new_id] = d;
+  pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_by_val;
+  pty->get_eval_at_cell_cw[new_id] = cs_xdef_eval_cw_scalar_by_val;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define orthotropic cs_property_t structure by value for entities
- *         attached to the mesh location named ml_name
+ * \brief  Define an orthotropic cs_property_t structure by value for entities
+ *         related to a volume zone
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       val       values to set (vector of size 3)
+ * \param[in, out]  pty         pointer to a cs_property_t structure
+ * \param[in]       zone_name   name of an already defined zone
+ * \param[in]       val         values to set (vector of size 3)
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_property_ortho_def_by_value(cs_property_t    *pty,
-                               const char       *ml_name,
-                               const double      val[])
+cs_xdef_t *
+cs_property_def_ortho_by_value(cs_property_t    *pty,
+                               const char       *zone_name,
+                               double            val[])
 {
-  cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
-
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if (pty->type != CS_PROPERTY_ORTHO)
     bft_error(__FILE__, __LINE__, 0,
               " Invalid setting: property %s is not orthotropic.\n"
               " Please check your settings.", pty->name);
 
-  new_def->def_type = CS_PARAM_DEF_BY_VALUE;
-  if (pty->n_max_subdomains == 1)
-    pty->flag.state |= CS_FLAG_STATE_UNIFORM;
+  int  new_id = _add_new_def(pty);
+  const cs_volume_zone_t  *zone = cs_volume_zone_by_name(zone_name);
+  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  meta_flag = 0; // metadata
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        3, // dim
+                                        zone->id,
+                                        state_flag,
+                                        meta_flag,
+                                        (void *)val);
 
-  new_def->def.get.vect[0] = val[0];
-  new_def->def.get.vect[1] = val[1];
-  new_def->def.get.vect[2] = val[2];
+  pty->defs[new_id] = d;
+  pty->get_eval_at_cell[new_id] = cs_xdef_eval_vector_by_val;
+  pty->get_eval_at_cell_cw[new_id] = cs_xdef_eval_cw_vector_by_val;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define an anisotropic cs_property_t structure by value for entities
- *         attached to the mesh location named ml_name
+ *         related to a volume zone
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       tens      values to set (3x3 tensor)
+ * \param[in, out]  pty         pointer to a cs_property_t structure
+ * \param[in]       zone_name   name of an already defined zone
+ * \param[in]       tens        values to set (3x3 tensor)
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_property_aniso_def_by_value(cs_property_t    *pty,
-                               const char       *ml_name,
-                               const double      tens[3][3])
+cs_xdef_t *
+cs_property_def_aniso_by_value(cs_property_t    *pty,
+                               const char       *zone_name,
+                               cs_real_t         tens[3][3])
 {
-  cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
-
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if (pty->type != CS_PROPERTY_ANISO)
     bft_error(__FILE__, __LINE__, 0,
               " Invalid setting: property %s is not anisotropic.\n"
               " Please check your settings.", pty->name);
 
-  new_def->def_type = CS_PARAM_DEF_BY_VALUE;
-  if (pty->n_max_subdomains == 1)
-    pty->flag.state |= CS_FLAG_STATE_UNIFORM;
-
-  new_def->def.get.tens[0][0] = tens[0][0];
-  new_def->def.get.tens[0][1] = tens[0][1];
-  new_def->def.get.tens[0][2] = tens[0][2];
-  new_def->def.get.tens[1][0] = tens[1][0];
-  new_def->def.get.tens[1][1] = tens[1][1];
-  new_def->def.get.tens[1][2] = tens[1][2];
-  new_def->def.get.tens[2][0] = tens[2][0];
-  new_def->def.get.tens[2][1] = tens[2][1];
-  new_def->def.get.tens[2][2] = tens[2][2];
-
   /* Check the symmetry */
-  _check_tensor_symmetry(pty, new_def->def.get);
+  if (!_is_tensor_symmetric(tens))
+    bft_error(__FILE__, __LINE__, 0,
+              _(" The definition of the tensor related to the"
+                " property %s is not symmetric.\n"
+                " This case is not handled. Please check your settings.\n"),
+              pty->name);
+
+  int  new_id = _add_new_def(pty);
+  const cs_volume_zone_t  *zone = cs_volume_zone_by_name(zone_name);
+  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  meta_flag = 0; // metadata
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        9, // dim
+                                        zone->id,
+                                        state_flag,
+                                        meta_flag,
+                                        tens);
+
+  pty->defs[new_id] = d;
+  pty->get_eval_at_cell[new_id] = cs_xdef_eval_tensor_by_val;
+  pty->get_eval_at_cell_cw[new_id] = cs_xdef_eval_cw_tensor_by_val;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -810,21 +669,44 @@ cs_property_aniso_def_by_value(cs_property_t    *pty,
  * \brief  Define a cs_property_t structure thanks to an analytic function in
  *         a subdomain attached to the mesh location named ml_name
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       func      pointer to a cs_analytic_func_t function
+ * \param[in, out]  pty         pointer to a cs_property_t structure
+ * \param[in]       zone_name   name of an already defined zone
+ * \param[in]       func        pointer to a cs_analytic_func_t function
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_property_def_by_analytic(cs_property_t        *pty,
-                            const char           *ml_name,
+                            const char           *zone_name,
                             cs_analytic_func_t   *func)
 {
-  cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  new_def->def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
-  new_def->def.analytic = func;
+  int  new_id = _add_new_def(pty);
+  int  dim = 1;
+  if (pty->type == CS_PROPERTY_ORTHO)
+    dim = 3;
+  else if (pty->type == CS_PROPERTY_ANISO)
+    dim = 9;
+
+  const cs_volume_zone_t  *zone = cs_volume_zone_by_name(zone_name);
+  cs_flag_t  state_flag = 0;
+  cs_flag_t  meta_flag = 0; // metadata
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                        dim,
+                                        zone->id,
+                                        state_flag,
+                                        meta_flag,
+                                        (void *)func);
+
+  pty->defs[new_id] = d;
+  pty->get_eval_at_cell[new_id] = cs_xdef_eval_at_cells_by_analytic;
+  pty->get_eval_at_cell_cw[new_id] = cs_xdef_eval_cw_cell_by_analytic;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -833,50 +715,45 @@ cs_property_def_by_analytic(cs_property_t        *pty,
  *         scalar variable in a subdomain attached to the mesh location named
  *         ml_name
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       context   pointer to a structure (may be NULL)
- * \param[in]       func      pointer to a law function defined by subdomain
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_def_by_onevar_law(cs_property_t             *pty,
-                              const char                *ml_name,
-                              const void                *context,
-                              cs_onevar_law_func_t      *func)
-{
-  cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
-
-  new_def->def_type = CS_PARAM_DEF_BY_ONEVAR_LAW;
-  new_def->def.law1_func = func;
-  new_def->context = context;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a cs_property_t structure thanks to a law depending on
- *         two scalars variables in a subdomain attached to the mesh location
- *         named ml_name
+ * \param[in, out] pty                  pointer to a cs_property_t structure
+ * \param[in]      zone_name            name of an already defined zone
+ * \param[in]      context              pointer to a structure (may be NULL)
+ * \param[in]      get_eval_at_cell     pointer to a function (may be NULL)
+ * \param[in]      get_eval_at_cell_cw  pointer to a function
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       context   pointer to a structure (may be NULL)
- * \param[in]       func      pointer to a function
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_property_def_by_twovar_law(cs_property_t          *pty,
-                              const char             *ml_name,
-                              const void             *context,
-                              cs_twovar_law_func_t   *func)
+cs_xdef_t *
+cs_property_def_by_func(cs_property_t         *pty,
+                        const char            *zone_name,
+                        void                  *context,
+                        cs_xdef_eval_t        *get_eval_at_cell,
+                        cs_xdef_eval_cw_t     *get_eval_at_cell_cw)
 {
-  cs_param_def_t  *new_def = _init_new_def(pty, ml_name);
+  int dim = 1;
+  if (pty->type == CS_PROPERTY_ORTHO)
+    dim = 3;
+  else if (pty->type == CS_PROPERTY_ANISO)
+    dim = 9;
 
-  new_def->def_type = CS_PARAM_DEF_BY_TWOVAR_LAW;
-  new_def->def.law2_func = func;
-  new_def->context = context;
+  int  def_id = _add_new_def(pty);
+  const cs_volume_zone_t  *zone = cs_volume_zone_by_name(zone_name);
+  cs_flag_t  state_flag = 0;
+  cs_flag_t  meta_flag = 0; // metadata
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_FUNCTION,
+                                        dim,
+                                        zone->id,
+                                        state_flag,
+                                        meta_flag,
+                                        context);
+
+  pty->defs[def_id] = d;
+  pty->get_eval_at_cell[def_id] = get_eval_at_cell;
+  pty->get_eval_at_cell_cw[def_id] = get_eval_at_cell_cw;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -884,76 +761,157 @@ cs_property_def_by_twovar_law(cs_property_t          *pty,
  * \brief  Define a cs_property_t structure thanks to an array of values
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       desc      information about this array
+ * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       index     optional pointer to the array index
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_property_def_by_array(cs_property_t    *pty,
-                         cs_desc_t         desc,
-                         cs_real_t        *array)
+                         cs_flag_t         loc,
+                         cs_real_t        *array,
+                         cs_lnum_t        *index)
 {
-  cs_param_def_t  *new_def = _init_new_def(pty, "cells");
+  int  id = _add_new_def(pty);
+  assert(id == 0);
+  /* zone->id = 0 since all the support is selected in this case */
 
-  if (pty->n_max_subdomains != 1)
+  int dim = 1;
+  if (pty->type == CS_PROPERTY_ORTHO)
+    dim = 3;
+  else if (pty->type == CS_PROPERTY_ANISO)
+    dim = 9;
+
+  if (pty->n_definitions > 1)
     bft_error(__FILE__, __LINE__, 0,
               " When a definition by array is requested, the max. number"
               " of subdomains to consider should be equal to 1.\n"
               " Current value is %d for property %s.\n"
               " Please modify your settings.",
-              pty->n_max_subdomains, pty->name);
+              pty->n_definitions, pty->name);
 
-  new_def->def_type = CS_PARAM_DEF_BY_ARRAY;
-  pty->desc1.location = desc.location;
-  pty->desc1.state = desc.state;
-  pty->array1 = array;
+  cs_flag_t  state_flag = 0; // Will be updated during the creation
+  cs_flag_t  meta_flag = 0;  // metadata
+  cs_xdef_array_input_t  input = {.stride = dim,
+                                  .loc = loc,
+                                  .values = array,
+                                  .index = index };
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
+                                        dim,
+                                        0, // zone_id
+                                        state_flag,
+                                        meta_flag,
+                                        &input);
+
+  /* Set pointers */
+  pty->defs[id] = d;
+
+  if (dim == 1)
+    pty->get_eval_at_cell[id] = cs_xdef_eval_scalar_at_cells_by_array;
+  else
+    pty->get_eval_at_cell[id] = cs_xdef_eval_nd_at_cells_by_array;
+  pty->get_eval_at_cell_cw[id] = cs_xdef_eval_cw_cell_by_array;
+
+  if (cs_test_flag(loc, cs_cdo_primal_cell)   == false &&
+      cs_test_flag(loc, cs_cdo_primal_vtx)    == false &&
+      cs_test_flag(loc, cs_cdo_dual_face_byc) == false)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: case not available.\n", __func__);
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the "array" member of a cs_property_t structure
+ * \brief  Define a cs_property_t structure thanks to an array of values
  *
- * \param[in, out]  pty          pointer to a cs_property_t structure
- * \param[in]       desc         information about this array
- * \param[in]       array        pointer to an array of values
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       field     pointer to a cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_array(cs_property_t    *pty,
-                      cs_desc_t         desc,
-                      cs_real_t        *array)
+cs_property_def_by_field(cs_property_t    *pty,
+                         cs_field_t       *field)
 {
-  if (pty == NULL)
-    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+  int  id = _add_new_def(pty);
 
-  pty->desc1.location = desc.location;
-  pty->desc1.state = desc.state;
-  pty->array1 = array;
+  int dim = 1;
+  if (pty->type == CS_PROPERTY_ORTHO)
+    dim = 3;
+  else if (pty->type == CS_PROPERTY_ANISO)
+    dim = 9;
+
+  /* Sanity checks */
+  assert(dim == field->dim);
+  assert(id == 0);
+  /* zone->id = 0 since all the support is selected in this case */
+
+  const cs_volume_zone_t  *z = cs_volume_zone_by_id(0);
+  if (field->location_id != z->location_id)
+    bft_error(__FILE__, __LINE__, 0,
+              " Property defined by field requests that the field location"
+              " is supported by cells\n"
+              " Property %s\n", pty->name);
+  if (pty->n_definitions > 1)
+    bft_error(__FILE__, __LINE__, 0,
+              " When a definition by array is requested, the max. number"
+              " of subdomains to consider should be equal to 1.\n"
+              " Current value is %d for property %s.\n"
+              " Please modify your settings.",
+              pty->n_definitions, pty->name);
+
+  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  meta_flag = 0; // metadata
+
+  pty->defs[id] = cs_xdef_volume_create(CS_XDEF_BY_FIELD,
+                                        dim,
+                                        0, // zone_id
+                                        state_flag,
+                                        meta_flag,
+                                        field);
+
+  pty->get_eval_at_cell[id] = cs_xdef_eval_cell_by_field;
+  pty->get_eval_at_cell_cw[id] = cs_xdef_eval_cw_cell_by_field;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the second "array" member of a cs_property_t structure
+ * \brief  Evaluate the value of the property at each cell. Store the
+ *         evaluation in the given array.
  *
- * \param[in, out]  pty        pointer to a cs_property_t structure
- * \param[in]       desc       information about this array
- * \param[in]       array      pointer to an array of values
+ * \param[in]       pty      pointer to a cs_property_t structure
+ * \param[in, out]  array    pointer to an array of values (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_second_array(cs_property_t    *pty,
-                             cs_desc_t         desc,
-                             cs_real_t        *array)
+cs_property_eval_at_cells(const cs_property_t    *pty,
+                          cs_real_t              *array)
 {
-  if (pty == NULL)
-    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+  assert(pty != NULL && array != NULL);
 
-  pty->desc2.location = desc.location;
-  pty->desc2.state = desc.state;
-  pty->array2 = array;
+  for (int i = 0; i < pty->n_definitions; i++) {
+
+    cs_xdef_t  *def = pty->defs[i];
+    const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+    pty->get_eval_at_cell[i](z->n_cells,
+                             z->cell_ids,
+                             false, // without compact output
+                             cs_glob_mesh,
+                             cs_cdo_connect,
+                             cs_cdo_quant,
+                             cs_time_step,
+                             def->input,
+                             array);
+
+  } // Loop on definitions
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -969,10 +927,10 @@ cs_property_set_second_array(cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_get_cell_tensor(cs_lnum_t             c_id,
-                            const cs_property_t  *pty,
-                            bool                  do_inversion,
-                            cs_real_3_t          *tensor)
+cs_property_get_cell_tensor(cs_lnum_t               c_id,
+                            const cs_property_t    *pty,
+                            bool                    do_inversion,
+                            cs_real_3_t            *tensor)
 {
   if (pty == NULL)
     return;
@@ -981,154 +939,76 @@ cs_property_get_cell_tensor(cs_lnum_t             c_id,
   tensor[0][1] = tensor[1][0] = tensor[2][0] = 0;
   tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
 
-  int  def_id = -1;
-  if (pty->n_max_subdomains == 1)
-    def_id = 0;
-  else
+  int  def_id = 0;
+  if (pty->n_definitions > 1)
     def_id = pty->def_ids[c_id];
 
-  cs_param_def_t  *sub = pty->defs + def_id;
+  assert(pty->get_eval_at_cell[def_id] != NULL);
 
-  switch (sub->def_type) {
+  cs_xdef_t  *def = pty->defs[def_id];
 
-  case CS_PARAM_DEF_BY_VALUE:
-    _get_tensor_by_value(pty, sub->def.get, tensor);
-    break;
+  switch (pty->type) {
 
-  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+  case CS_PROPERTY_ISO:
     {
-      const cs_real_t  *xc = cs_cdo_quant->cell_centers + 3*c_id;
-      const double  t_cur = cs_time_step->t_cur;
+      double  eval;
 
-      /* Call the analytic function. result is stored in get and then converted
-         into a 3x3 tensor */
-      switch (pty->type) {
+      pty->get_eval_at_cell[def_id](1,
+                                    &c_id,
+                                    true,  // compact output
+                                    cs_glob_mesh,
+                                    cs_cdo_connect,
+                                    cs_cdo_quant,
+                                    cs_time_step,
+                                    def->input,
+                                    &eval);
 
-      case CS_PROPERTY_ISO:
-        {
-          double  eval;
-
-          sub->def.analytic(t_cur, 1, xc, &eval);
-          tensor[0][0] = tensor[1][1] = tensor[2][2] = eval;
-        }
-        break;
-
-      case CS_PROPERTY_ORTHO:
-        {
-          double  eval[3];
-
-          sub->def.analytic(t_cur, 1, xc, eval);
-          for (int k = 0; k < 3; k++)
-            tensor[k][k] = eval[k];
-        }
-        break;
-
-      case CS_PROPERTY_ANISO:
-        sub->def.analytic(t_cur, 1, xc, (cs_real_t *)tensor);
-        break;
-
-      default:
-        assert(0);
-        break;
-      }
-
+      tensor[0][0] = tensor[1][1] = tensor[2][2] = eval;
     }
     break;
 
-  case CS_PARAM_DEF_BY_ONEVAR_LAW:
+  case CS_PROPERTY_ORTHO:
     {
-      assert(pty->array1 != NULL); /* Sanity check */
+      double  eval[3];
 
-      cs_real_t  val_xc = _get_cell_val_from_array(c_id,
-                                                   pty->desc1, pty->array1);
+      pty->get_eval_at_cell[def_id](1,
+                                    &c_id,
+                                    true,  // compact output
+                                    cs_glob_mesh,
+                                    cs_cdo_connect,
+                                    cs_cdo_quant,
+                                    cs_time_step,
+                                    def->input,
+                                    eval);
 
-      sub->def.law1_func(1, NULL, &val_xc, sub->context, (cs_real_t *)tensor);
-
+      for (int k = 0; k < 3; k++)
+        tensor[k][k] = eval[k];
     }
     break;
 
-  case CS_PARAM_DEF_BY_TWOVAR_LAW:
-    {
-      assert(pty->array1 != NULL && pty->array2 != NULL); /* Sanity check */
-
-      cs_real_t  val1 = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
-
-      if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
-          (pty->desc2.location & CS_FLAG_SCALAR)) {
-
-        cs_real_t  val2 = _get_cell_val_from_array(c_id,
-                                                   pty->desc2, pty->array2);
-
-        /* Compute the value of the law for this cell */
-        sub->def.law2_func(1, NULL, &val1, &val2, sub->context,
-                           (cs_real_t *)tensor);
-
-      }
-      else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
-               (pty->desc2.location & CS_FLAG_VECTOR)) {
-
-        cs_real_t  vect_val[3] = {0, 0, 0};
-        _get_cell_vec_from_array(c_id, pty->desc2, pty->array2, vect_val);
-
-        /* Retrieve the result of the law function for this cell */
-        sub->def.law2_func(1, NULL, &val1, vect_val, sub->context,
-                           (cs_real_t *)tensor);
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  " Invalid case. Stop evaluating the property %s\n",
-                  pty->name);
-
-    }
+  case CS_PROPERTY_ANISO:
+    pty->get_eval_at_cell[def_id](1,
+                                  &c_id,
+                                  true,  // compact output
+                                  cs_glob_mesh,
+                                  cs_cdo_connect,
+                                  cs_cdo_quant,
+                                  cs_time_step,
+                                  def->input,
+                                  (cs_real_t *)tensor);
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              " Stop computing the cell tensor related to property %s.\n"
-              " Type of definition not handled yet.", pty->name);
+    assert(0);
     break;
+  }
 
-  } /* type of definition */
-
-  if (do_inversion) {
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 0 /* Sanity check */
-    for (int k = 0; k < 3; k++)
-      if (fabs(tensor[k][k]) < cs_math_zero_threshold)
-        bft_error(__FILE__, __LINE__, 0,
-                  " Potential problem in the inversion of the tensor attached"
-                  " to property %s in cell %d.\n"
-                  " Tensor[%d][%d] = %5.3e",
-                  pty->name, c_id, k, k, tensor[k][k]);
-#endif
-
-    if (pty->type == CS_PROPERTY_ISO || pty->type == CS_PROPERTY_ORTHO)
-      for (int k = 0; k < 3; k++)
-        tensor[k][k] /= 1.0;
-
-    else { /* anisotropic */
-
-      cs_real_33_t  invmat;
-
-      cs_math_33_inv_cramer((const cs_real_3_t (*))tensor, invmat);
-      for (int k = 0; k < 3; k++)
-        for (int l = 0; l < 3; l++)
-          tensor[k][l] = invmat[k][l];
-
-    }
-
-  } /* Inversion of the tensor */
+  if (do_inversion)
+    _invert_tensor(tensor, pty->type);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 1
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\n  Tensor property for cell %d\n"
-                "   | % 10.6e  % 10.6e  % 10.6e |\n"
-                "   | % 10.6e  % 10.6e  % 10.6e |\n"
-                "   | % 10.6e  % 10.6e  % 10.6e |\n", c_id,
-                tensor[0][0], tensor[0][1], tensor[0][2],
-                tensor[1][0], tensor[1][1], tensor[1][2],
-                tensor[2][0], tensor[2][1], tensor[2][2]);
+  cs_log_printf(CS_LOG_DEFAULT, "\n pty: %s, cell_id: %d\n", pty->name, c_id);
+  _print_tensor(tensor);
 #endif
 }
 
@@ -1148,6 +1028,7 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
                            const cs_property_t   *pty)
 {
   cs_real_t  result = 0;
+  int  def_id = 0;
 
   if (pty == NULL)
     return result;
@@ -1157,83 +1038,22 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
               " Invalid type of property for this function.\n"
               " Property %s has to be isotropic.", pty->name);
 
-  int  def_id = -1;
-  if (pty->n_max_subdomains == 1)
-    def_id = 0;
-  else
+  if (pty->n_definitions > 1)
     def_id = pty->def_ids[c_id];
 
-  cs_param_def_t  *sub = pty->defs + def_id;
+  assert(pty->get_eval_at_cell[def_id] != NULL);
 
-  switch (sub->def_type) {
+  cs_xdef_t  *def = pty->defs[def_id];
 
-  case CS_PARAM_DEF_BY_VALUE:
-    result = sub->def.get.val;
-    break;
-
-  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-    sub->def.analytic(cs_time_step->t_cur,
-                      1,
-                      cs_cdo_quant->cell_centers + 3*c_id,
-                      &result);
-    break;
-
-  case CS_PARAM_DEF_BY_ONEVAR_LAW:
-    {
-      assert(pty->array1 != NULL); /* Sanity check */
-
-      cs_real_t  val_xc = _get_cell_val_from_array(c_id,
-                                                   pty->desc1, pty->array1);
-
-      sub->def.law1_func(1, NULL, &val_xc, sub->context, &result);
-    }
-    break;
-
-  case CS_PARAM_DEF_BY_TWOVAR_LAW:
-    {
-      assert(pty->array1 != NULL && pty->array2 != NULL); /* Sanity check */
-
-      cs_real_t  val1 = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
-
-      if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
-          (pty->desc2.location & CS_FLAG_SCALAR)) {
-
-        cs_real_t  val2 = _get_cell_val_from_array(c_id,
-                                                   pty->desc2, pty->array2);
-
-        /* Compute the value of the law for this cell */
-        sub->def.law2_func(1, NULL, &val1, &val2, sub->context, &result);
-
-      }
-      else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
-               (pty->desc2.location & CS_FLAG_VECTOR)) {
-
-        cs_real_t  vect_val[3] = {0, 0, 0};
-        _get_cell_vec_from_array(c_id, pty->desc2, pty->array2, vect_val);
-
-        /* Retrieve the result of the law function for this cell */
-        sub->def.law2_func(1, NULL, &val1, vect_val, sub->context, &result);
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  " Invalid case. Stop evaluating the property %s\n",
-                  pty->name);
-
-    }
-    break;
-
-  case CS_PARAM_DEF_BY_ARRAY:
-    result = _get_cell_val_from_array(c_id, pty->desc1, pty->array1);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " Stop computing the cell value related to property %s.\n"
-              " Type of definition not handled yet.", pty->name);
-    break;
-
-  } /* type of definition */
+  pty->get_eval_at_cell[def_id](1,
+                                &c_id,
+                                true, // compact output
+                                cs_glob_mesh,
+                                cs_cdo_connect,
+                                cs_cdo_quant,
+                                cs_time_step,
+                                def->input,
+                                &result);
 
   return result;
 }
@@ -1264,158 +1084,54 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
   tensor[0][1] = tensor[1][0] = tensor[2][0] = 0;
   tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
 
-  int  def_id = -1;
-  if (pty->n_max_subdomains == 1)
-    def_id = 0;
-  else
+  int  def_id = 0;
+  if (pty->n_definitions > 1)
     def_id = pty->def_ids[cm->c_id];
 
-  cs_param_def_t  *sub = pty->defs + def_id;
-  switch (sub->def_type) {
+  assert(pty->get_eval_at_cell_cw[def_id] != NULL);
 
-  case CS_PARAM_DEF_BY_VALUE:
-    _get_tensor_by_value(pty, sub->def.get, tensor);
-    break;
+  cs_xdef_t  *def = pty->defs[def_id];
 
-  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+  switch (pty->type) {
+
+  case CS_PROPERTY_ISO:
     {
-      const double  t_cur = cs_time_step->t_cur;
+      double  eval;
 
-      /* Call the analytic function. result is stored in get and then converted
-         into a 3x3 tensor */
-      switch (pty->type) {
+      pty->get_eval_at_cell_cw[def_id](cm, cs_time_step, def->input, &eval);
 
-      case CS_PROPERTY_ISO:
-        {
-          double  eval;
-
-          sub->def.analytic(t_cur, 1, cm->xc, &eval);
-          tensor[0][0] = tensor[1][1] = tensor[2][2] = eval;
-        }
-        break;
-
-      case CS_PROPERTY_ORTHO:
-        {
-          double  eval[3];
-
-          sub->def.analytic(t_cur, 1, cm->xc, eval);
-          for (int k = 0; k < 3; k++)
-            tensor[k][k] = eval[k];
-        }
-        break;
-
-      case CS_PROPERTY_ANISO:
-        sub->def.analytic(t_cur, 1, cm->xc, (cs_real_t *)tensor);
-        break;
-
-      default:
-        assert(0);
-        break;
-      }
-
+      tensor[0][0] = tensor[1][1] = tensor[2][2] = eval;
     }
     break;
 
-  case CS_PARAM_DEF_BY_ONEVAR_LAW:
+  case CS_PROPERTY_ORTHO:
     {
-      assert(pty->array1 != NULL); /* Sanity check */
+      double  eval[3];
 
-      cs_real_t  val_xc =
-        _get_cell_val_from_array_cm(cm, pty->desc1, pty->array1);
+      pty->get_eval_at_cell_cw[def_id](cm, cs_time_step, def->input, eval);
 
-      sub->def.law1_func(1, NULL, &val_xc, sub->context, (cs_real_t *)tensor);
-
-      if (pty->type == CS_PROPERTY_ISO)
-        tensor[2][2] = tensor[1][1] = tensor[0][0];
+      for (int k = 0; k < 3; k++)
+        tensor[k][k] = eval[k];
     }
     break;
 
-  case CS_PARAM_DEF_BY_TWOVAR_LAW:
-    {
-      assert(pty->array1 != NULL && pty->array2 != NULL); /* Sanity check */
-
-      cs_real_t  val1 =
-        _get_cell_val_from_array_cm(cm, pty->desc1, pty->array1);
-
-      if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
-          (pty->desc2.location & CS_FLAG_SCALAR)) {
-
-        cs_real_t  val2 =
-          _get_cell_val_from_array_cm(cm, pty->desc2, pty->array2);
-
-        /* Compute the value of the law for this cell */
-        sub->def.law2_func(1, NULL, &val1, &val2, sub->context,
-                           (cs_real_t *)tensor);
-
-      }
-      else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
-               (pty->desc2.location & CS_FLAG_VECTOR)) {
-
-        cs_real_t  vect_val[3] = {0, 0, 0};
-        _get_cell_vec_from_array_cm(cm, pty->desc2, pty->array2, vect_val);
-
-        /* Retrieve the result of the law function for this cell */
-        sub->def.law2_func(1, NULL, &val1, vect_val, sub->context,
-                           (cs_real_t *)tensor);
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  " Invalid case. Stop evaluating the property %s\n",
-                  pty->name);
-
-      if (pty->type == CS_PROPERTY_ISO)
-        tensor[2][2] = tensor[1][1] = tensor[0][0];
-
-    }
+  case CS_PROPERTY_ANISO:
+    pty->get_eval_at_cell_cw[def_id](cm, cs_time_step, def->input,
+                                     (cs_real_t *)tensor);
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              " Stop computing the cell tensor related to property %s.\n"
-              " Type of definition not handled yet.", pty->name);
+    assert(0);
     break;
+  }
 
-  } /* type of definition */
-
-  if (do_inversion) {
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 0 /* Sanity check */
-    for (int k = 0; k < 3; k++)
-      if (fabs(tensor[k][k]) < cs_math_zero_threshold)
-        bft_error(__FILE__, __LINE__, 0,
-                  " Potential problem in the inversion of the tensor attached"
-                  " to property %s in cell %d.\n"
-                  " Tensor[%d][%d] = %5.3e",
-                  pty->name, cm->c_id, k, k, tensor[k][k]);
-#endif
-
-    if (pty->type == CS_PROPERTY_ISO || pty->type == CS_PROPERTY_ORTHO)
-      for (int k = 0; k < 3; k++)
-        tensor[k][k] /= 1.0;
-
-    else { /* anisotropic */
-
-      cs_real_33_t  invmat;
-
-      cs_math_33_inv_cramer((const cs_real_3_t (*))tensor, invmat);
-      for (int k = 0; k < 3; k++)
-        for (int l = 0; l < 3; l++)
-          tensor[k][l] = invmat[k][l];
-
-    }
-
-  } /* Inversion of the tensor */
+  if (do_inversion)
+    _invert_tensor(tensor, pty->type);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 1
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\n  Tensor property for cell %d\n"
-                "   | % 10.6e  % 10.6e  % 10.6e |\n"
-                "   | % 10.6e  % 10.6e  % 10.6e |\n"
-                "   | % 10.6e  % 10.6e  % 10.6e |\n", cm->c_id,
-                tensor[0][0], tensor[0][1], tensor[0][2],
-                tensor[1][0], tensor[1][1], tensor[1][2],
-                tensor[2][0], tensor[2][1], tensor[2][2]);
+  cs_log_printf(CS_LOG_DEFAULT, "\n pty: %s, cell_id: %d\n",
+                pty->name, cm->c_id);
+  _print_tensor(tensor);
 #endif
 }
 
@@ -1445,83 +1161,13 @@ cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
               " Invalid type of property for this function.\n"
               " Property %s has to be isotropic.", pty->name);
 
-  int  def_id = -1;
-  if (pty->n_max_subdomains == 1)
-    def_id = 0;
-  else
+  int  def_id = 0;
+  if (pty->n_definitions > 1)
     def_id = pty->def_ids[cm->c_id];
+  cs_xdef_t  *def = pty->defs[def_id];
 
-  cs_param_def_t  *sub = pty->defs + def_id;
-
-  switch (sub->def_type) {
-
-  case CS_PARAM_DEF_BY_VALUE:
-    result = sub->def.get.val;
-    break;
-
-  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-    sub->def.analytic(cs_time_step->t_cur, 1, cm->xc, &result);
-    break;
-
-  case CS_PARAM_DEF_BY_ONEVAR_LAW:
-    {
-      /* Sanity checks */
-      assert((pty->array1 != NULL) && (pty->type == CS_PROPERTY_ISO));
-
-      cs_real_t  val_xc =
-        _get_cell_val_from_array_cm(cm, pty->desc1, pty->array1);
-
-      sub->def.law1_func(1, NULL, &val_xc, sub->context, &result);
-    }
-    break;
-
-  case CS_PARAM_DEF_BY_TWOVAR_LAW:
-    {
-      /* Sanity checks */
-      assert(pty->array1 != NULL && pty->array2 != NULL);
-      assert(pty->type == CS_PROPERTY_ISO);
-
-      cs_real_t  val1 = _get_cell_val_from_array_cm(cm,
-                                                    pty->desc1, pty->array1);
-
-      if ((pty->desc2.state & CS_FLAG_STATE_POTENTIAL) &&
-          (pty->desc2.location & CS_FLAG_SCALAR)) {
-
-        cs_real_t  val2 = _get_cell_val_from_array_cm(cm,
-                                                      pty->desc2, pty->array2);
-
-        /* Compute the value of the law for this cell */
-        sub->def.law2_func(1, NULL, &val1, &val2, sub->context, &result);
-
-      }
-      else if ((pty->desc2.state & CS_FLAG_STATE_FLUX) ||
-               (pty->desc2.location & CS_FLAG_VECTOR)) {
-
-        cs_real_t  vect_val[3] = {0, 0, 0};
-        _get_cell_vec_from_array_cm(cm, pty->desc2, pty->array2, vect_val);
-
-        /* Retrieve the result of the law function for this cell */
-        sub->def.law2_func(1, NULL, &val1, vect_val, sub->context, &result);
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  " Invalid case. Stop evaluating the property %s\n",
-                  pty->name);
-    }
-    break;
-
-  case CS_PARAM_DEF_BY_ARRAY:
-    result = _get_cell_val_from_array_cm(cm, pty->desc1, pty->array1);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " Stop computing the cell value related to property %s.\n"
-              " Type of definition not handled yet.", pty->name);
-    break;
-
-  } /* type of definition */
+  assert(pty->get_eval_at_cell_cw[def_id] != NULL);
+  pty->get_eval_at_cell_cw[def_id](cm, cs_time_step, def->input, &result);
 
   return result;
 }
@@ -1596,109 +1242,60 @@ cs_property_get_fourier(const cs_property_t     *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Print a summary of a cs_property_t structure
- *
- * \param[in]  pty      pointer to a cs_property_t structure to summarize
+ * \brief  Print a summary of the settings for all defined cs_property_t
+ *         structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_summary(const cs_property_t   *pty)
+cs_property_log_setup(void)
 {
-  if (pty == NULL)
+  if (_n_properties == 0)
     return;
+  assert(_properties != NULL);
 
-  _Bool  is_uniform = false, is_steady = true;
+  cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, "\tSummary of the definition of properties\n");
+  cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_properties             %d\n",
+                _n_properties);
 
-  if (pty->flag.state & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
-  if (pty->flag.state & CS_FLAG_STATE_UNSTEADY) is_steady = false;
+  for (int i = 0; i < _n_properties; i++) {
 
-  cs_log_printf(CS_LOG_SETUP, "  %s >> uniform [%s], steady [%s], ",
-                pty->name, cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
+    bool  is_uniform = false, is_steady = true;
+    const cs_property_t  *pty = _properties[i];
 
-  switch(pty->type) {
-  case CS_PROPERTY_ISO:
-    cs_log_printf(CS_LOG_SETUP, "type: isotropic\n");
-    break;
-  case CS_PROPERTY_ORTHO:
-    cs_log_printf(CS_LOG_SETUP, "type: orthotropic\n");
-    break;
-  case CS_PROPERTY_ANISO:
-    cs_log_printf(CS_LOG_SETUP, "type: anisotropic\n");
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of property."));
-    break;
-  }
+    if (pty->state_flag & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
+    if (pty->state_flag & CS_FLAG_STATE_STEADY) is_steady = true;
 
-  /* Definition */
-  cs_log_printf(CS_LOG_SETUP,
-                "  %s >> n_subdomains    %d\n", pty->name, pty->n_subdomains);
+    cs_log_printf(CS_LOG_SETUP, "\n <pty> %s uniform [%s], steady [%s], ",
+                  pty->name,
+                  cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
 
-  for (int i = 0; i < pty->n_subdomains; i++) {
-
-    cs_param_def_t  *pdef  = pty->defs + i;
-
-    cs_log_printf(CS_LOG_SETUP,
-                  "  %s >> location  %s,", pty->name,
-                  cs_mesh_location_get_name(pdef->ml_id));
-
-    switch (pdef->def_type) {
-
-    case CS_PARAM_DEF_BY_VALUE:
-      {
-        const cs_get_t  mat = pdef->def.get;
-
-        switch(pty->type) {
-
-        case CS_PROPERTY_ISO:
-          cs_log_printf(CS_LOG_SETUP,
-                        " definition by value: % 5.3e\n", mat.val);
-          break;
-        case CS_PROPERTY_ORTHO:
-          cs_log_printf(CS_LOG_SETUP,
-                        " definition by value: (% 5.3e, % 5.3e, % 5.3e)\n",
-                        mat.vect[0], mat.vect[1], mat.vect[2]);
-          break;
-        case CS_PROPERTY_ANISO:
-          cs_log_printf(CS_LOG_SETUP,
-                        "\n                       |% 5.3e, % 5.3e, % 5.3e|\n"
-                        "  definition by value: |% 5.3e, % 5.3e, % 5.3e|\n"
-                        "                       |% 5.3e, % 5.3e, % 5.3e|\n",
-                        mat.tens[0][0], mat.tens[0][1], mat.tens[0][2],
-                        mat.tens[1][0], mat.tens[1][1], mat.tens[1][2],
-                        mat.tens[2][0], mat.tens[2][1], mat.tens[2][2]);
-          break;
-        default:
-          break;
-
-        } // pty->type
-      }
-      break; // BY_VALUE
-
-    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-      cs_log_printf(CS_LOG_SETUP, "  definition by an analytical function\n");
+    switch(pty->type) {
+    case CS_PROPERTY_ISO:
+      cs_log_printf(CS_LOG_SETUP, "type: isotropic\n");
       break;
-
-    case CS_PARAM_DEF_BY_ONEVAR_LAW:
-      cs_log_printf(CS_LOG_SETUP,
-                    "  definition by a law based on one variable\n");
+    case CS_PROPERTY_ORTHO:
+      cs_log_printf(CS_LOG_SETUP, "type: orthotropic\n");
       break;
-
-    case CS_PARAM_DEF_BY_TWOVAR_LAW:
-      cs_log_printf(CS_LOG_SETUP,
-                    "  definition by law based on two variables\n");
+    case CS_PROPERTY_ANISO:
+      cs_log_printf(CS_LOG_SETUP, "type: anisotropic\n");
       break;
-
     default:
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid type of definition for a property."));
+                _(" Invalid type of property."));
       break;
+    }
 
-    } /* switch on def_type */
+    cs_log_printf(CS_LOG_SETUP, "       %s> n_subdomains    %d\n",
+                  pty->name, pty->n_definitions);
 
-  } // Loop on subdomains
+    for (int j = 0; j < pty->n_definitions; j++)
+      cs_xdef_log(pty->defs[j]);
+
+    cs_log_printf(CS_LOG_SETUP, " </pty>");
+  } // Loop on properties
 
 }
 

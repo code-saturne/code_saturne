@@ -498,62 +498,6 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct the value of a scalar potential at a gpoint inside a cell
- *         The scalar potential has DoFs located at primal vertices
- *
- * \param[in]      cm           pointer to a cs_cell_mesh_t structure
- * \param[in]      pdi          array of DoF values at vertices
- * \param[in]      length_xcxp  lenght of the segment [x_c, x_p]
- * \param[in]      unitv_xcxp   unitary vector pointed from x_c to x_p
- * \param[in, out] wbuf         pointer to a temporary buffer
- *
- * \return the value of the reconstructed potential at the evaluation point
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_reco_pv_inside_cell(const cs_cell_mesh_t    *cm,
-                       const cs_real_t          pdi[],
-                       const cs_real_t          length_xcxp,
-                       const cs_real_t          unitv_xcxp[],
-                       cs_real_t                wbuf[])
-{
-  /* Sanity checks */
-  assert(cm != NULL && pdi != NULL && wbuf != NULL);
-  assert(cs_test_flag(cm->flag,
-                      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
-
-  cs_real_t  *_pv = wbuf;  // Local value of the potential field
-
-  /* Reconstruct the value at the cell center */
-  cs_real_t  pc = 0.;
-  for (short int v = 0; v < cm->n_vc; v++) {
-    _pv[v] = pdi[cm->v_ids[v]];
-    pc += cm->wvc[v] * _pv[v];
-  }
-
-  /* Reconstruct a constant gradient inside the current cell */
-  cs_real_3_t  gcell = {0., 0., 0.};
-  for (short int e = 0; e < cm->n_ec; e++) {
-    const cs_real_t  ge =
-      cm->e2v_sgn[e]*( _pv[cm->e2v_ids[2*e]] - _pv[cm->e2v_ids[2*e+1]]);
-    const cs_real_t  coef_e = ge * cm->dface[e].meas;
-    for (int k = 0; k < 3; k++)
-      gcell[k] += coef_e * cm->dface[e].unitv[k];
-  }
-
-  const cs_real_t  invcell = 1./cm->vol_c;
-  for (int k = 0; k < 3; k++) gcell[k] *= invcell;
-
-  /* Evaluation at the given point */
-  cs_real_t  prec = pc;
-  prec += length_xcxp * cs_math_3_dot_product(gcell, unitv_xcxp);
-
-  return  prec;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Reconstruct the value at the cell center of the gradient of a field
  *         defined on primal vertices.
  *
@@ -682,6 +626,101 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
 
   /* Return pointer */
   *p_ccrec = ccrec;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value of a scalar potential at a point inside a cell
+ *         The scalar potential has DoFs located at primal vertices
+ *
+ * \param[in]      cm             pointer to a cs_cell_mesh_t structure
+ * \param[in]      pdi            array of DoF values at vertices
+ * \param[out]     cell_gradient  gradient inside the cell
+ *
+ * \return the value of the reconstructed potential at the evaluation point
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_cell_grad_from_scalar_pv(const cs_cell_mesh_t    *cm,
+                                    const cs_real_t          pdi[],
+                                    cs_real_t               *cell_gradient)
+{
+  /* Sanity checks */
+  assert(cm != NULL && pdi != NULL);
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
+
+  /* Reconstruct a constant gradient inside the current cell */
+  cell_gradient[0] = cell_gradient[1] = cell_gradient[2] = 0;
+  for (short int e = 0; e < cm->n_ec; e++) {
+
+    const cs_lnum_t  v0 = cm->v_ids[cm->e2v_ids[2*e]];
+    const cs_lnum_t  v1 = cm->v_ids[cm->e2v_ids[2*e+1]];
+    const cs_real_t  coeff = cm->e2v_sgn[e]*(pdi[v0]-pdi[v1])*cm->dface[e].meas;
+    for (int k = 0; k < 3; k++)
+      cell_gradient[k] += coeff * cm->dface[e].unitv[k];
+
+  } // Loop on cell edges
+
+  const cs_real_t  invcell = 1./cm->vol_c;
+  for (int k = 0; k < 3; k++) cell_gradient[k] *= invcell;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value of a scalar potential at a point inside a cell
+ *         The scalar potential has DoFs located at primal vertices
+ *
+ * \param[in]      cm           pointer to a cs_cell_mesh_t structure
+ * \param[in]      pdi          array of DoF values at vertices
+ * \param[in]      length_xcxp  lenght of the segment [x_c, x_p]
+ * \param[in]      unitv_xcxp   unitary vector pointed from x_c to x_p
+ * \param[in, out] wbuf         pointer to a temporary buffer
+ *
+ * \return the value of the reconstructed potential at the evaluation point
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_reco_cw_scalar_pv_inside_cell(const cs_cell_mesh_t    *cm,
+                                 const cs_real_t          pdi[],
+                                 const cs_real_t          length_xcxp,
+                                 const cs_real_t          unitv_xcxp[],
+                                 cs_real_t                wbuf[])
+{
+  /* Sanity checks */
+  assert(cm != NULL && pdi != NULL && wbuf != NULL);
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
+
+  cs_real_t  *_pv = wbuf;  // Local value of the potential field
+
+  /* Reconstruct the value at the cell center */
+  cs_real_t  pc = 0.;
+  for (short int v = 0; v < cm->n_vc; v++) {
+    _pv[v] = pdi[cm->v_ids[v]];
+    pc += cm->wvc[v] * _pv[v];
+  }
+
+  /* Reconstruct a constant gradient inside the current cell */
+  cs_real_3_t  gcell = {0., 0., 0.};
+  for (short int e = 0; e < cm->n_ec; e++) {
+    const cs_real_t  ge =
+      cm->e2v_sgn[e]*( _pv[cm->e2v_ids[2*e]] - _pv[cm->e2v_ids[2*e+1]]);
+    const cs_real_t  coef_e = ge * cm->dface[e].meas;
+    for (int k = 0; k < 3; k++)
+      gcell[k] += coef_e * cm->dface[e].unitv[k];
+  }
+
+  const cs_real_t  invcell = 1./cm->vol_c;
+  for (int k = 0; k < 3; k++) gcell[k] *= invcell;
+
+  /* Evaluation at the given point */
+  cs_real_t  p_rec = pc;
+  p_rec += length_xcxp * cs_math_3_dot_product(gcell, unitv_xcxp);
+
+  return  p_rec;
 }
 
 /*----------------------------------------------------------------------------*/

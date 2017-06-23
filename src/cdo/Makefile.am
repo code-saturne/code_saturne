@@ -70,6 +70,8 @@ cs_equation_common.h \
 cs_equation_param.h \
 cs_evaluate.h \
 cs_gwf.h \
+cs_gwf_soil.h \
+cs_gwf_tracer.h \
 cs_hho_scaleq.h \
 cs_hodge.h \
 cs_param.h \
@@ -78,7 +80,9 @@ cs_quadrature.h \
 cs_reco.h \
 cs_sla.h \
 cs_source_term.h \
-cs_walldistance.h
+cs_walldistance.h \
+cs_xdef.h \
+cs_xdef_eval.h
 
 # Library source files
 
@@ -106,6 +110,8 @@ cs_equation_common.c \
 cs_equation_param.c \
 cs_evaluate.c \
 cs_gwf.c \
+cs_gwf_soil.c \
+cs_gwf_tracer.c \
 cs_hho_scaleq.c \
 cs_hodge.c \
 cs_param.c \
@@ -114,7 +120,9 @@ cs_quadrature.c \
 cs_reco.c \
 cs_sla.c \
 cs_source_term.c \
-cs_walldistance.c
+cs_walldistance.c \
+cs_xdef.c \
+cs_xdef_eval.c
 
 libcscdo_la_LDFLAGS = -no-undefined
 

@@ -47,86 +47,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Values associated to the different ways to retrieve data */
-typedef union {
-
-  cs_flag_t           flag;       // flag
-  int                 id;         // identification number
-  cs_lnum_t           num;        // local number
-  cs_real_t           val;        // value
-  cs_real_2_t         couple;     // two values
-  cs_real_3_t         vect;       // vector: 3 values
-  cs_nvec3_t          nvec3;      // meas + unit vector
-  cs_real_6_t         twovects;   // two vectors
-  cs_real_33_t        tens;       // tensor: 9 values
-
-} cs_get_t;
-
-/* User-defined function */
-typedef void (cs_user_func_t) (const void         *input1,
-                               const void         *input2,
-                               cs_real_t           tcur,
-                               const cs_real_3_t   xyz,
-                               cs_get_t           *output);
-
-typedef union {
-
-  /* For a definition by value */
-  cs_get_t                         get;
-
-  /* For a definition by an analytic function */
-  cs_analytic_func_t              *analytic;
-
-  /* For a definition of the time step by a function */
-  cs_timestep_func_t              *time_func;
-
-  /* For a definition by an user-defined function */
-  cs_user_func_t                  *user_func;
-
-  /* For a definition by law depending on one scalar variable */
-  cs_onevar_law_func_t            *law1_func;
-
-  /* For a definition by law depending on two scalar variables */
-  cs_twovar_law_func_t            *law2_func;
-
-} cs_def_t;
-
-typedef enum {
-
-  CS_PARAM_DEF_BY_ANALYTIC_FUNCTION,
-  CS_PARAM_DEF_BY_ARRAY,
-  CS_PARAM_DEF_BY_ONEVAR_LAW,
-  CS_PARAM_DEF_BY_TWOVAR_LAW,
-  CS_PARAM_DEF_BY_QOV,
-  CS_PARAM_DEF_BY_TIME_FUNCTION,
-  CS_PARAM_DEF_BY_USER_FUNCTION,
-  CS_PARAM_DEF_BY_VALUE,
-  CS_PARAM_N_DEF_TYPES
-
-} cs_param_def_type_t;
-
-typedef struct {
-
-  int                    ml_id;     /* id related to a mesh location */
-  cs_param_def_type_t    def_type;  /* type of definition */
-  cs_def_t               def;       /* definition */
-
-  const void            *context;   /* If this definition hinges on a related
-                                       structure. Always shared */
-
-} cs_param_def_t;
-
-/* Dimension of the variable to deal with */
-typedef enum {
-
-  CS_PARAM_VAR_SCAL,    // scalar variable (dim = 1)
-  CS_PARAM_VAR_VECT,    // vector variable (dim = 3)
-  CS_PARAM_VAR_SYMTENS, // symmetric tensor variable (dim = 6)
-  CS_PARAM_VAR_TENS,    // tensor variable (dim = 9)
-  CS_PARAM_N_VAR_TYPES
-
-} cs_param_var_type_t;
-
 /* DISCRETE HODGE OPERATORS */
 /* ======================== */
 
@@ -180,20 +100,6 @@ typedef enum {
 
 } cs_time_scheme_t;
 
-/* Parameters related to time discretization */
-typedef struct {
-
-  cs_time_scheme_t   scheme;     // numerical scheme
-  cs_real_t          theta;      // used in theta-scheme
-  bool               do_lumping; // perform mass lumping ?
-
-  /* Initial conditions (by default, 0 is set) */
-  int                n_ic_definitions;  /* 0 -> default settings */
-  cs_param_def_t    *ic_definitions;    /* list of definitions (mesh location
-                                           by mesh location) */
-
-} cs_param_time_t;
-
 /* ADVECTION OPERATOR PARAMETRIZATION */
 /* ================================== */
 
@@ -234,26 +140,8 @@ typedef struct {
   cs_param_advection_form_t     formulation; // conservative or not
   cs_param_advection_scheme_t   scheme;
   cs_param_advection_weight_t   weight_criterion;
-  cs_quadra_type_t              quad_type; // barycentric, higher, highest
 
 } cs_param_advection_t;
-
-/* REACTION TERM PARAMETRIZATION */
-/* ============================= */
-
-typedef enum {
-
-  CS_PARAM_REACTION_TYPE_LINEAR,
-  CS_PARAM_N_REACTION_TYPES
-
-} cs_param_reaction_type_t;
-
-typedef struct {
-
-  char                      *name;
-  cs_param_reaction_type_t   type;
-
-} cs_param_reaction_t;
 
 /* BOUNDARY CONDITIONS */
 /* =================== */
@@ -293,37 +181,6 @@ typedef enum {
   CS_PARAM_N_BC_ENFORCEMENTS
 
 } cs_param_bc_enforce_t;
-
-/* Main structure to handle boundary condition */
-typedef struct {
-
-  cs_param_bc_type_t       default_bc;   // BC used by default
-
-  /* How is defined the BC value (arrays are allocated to n_max_defs) */
-  int                      n_max_defs;
-  int                      n_defs;
-
-  cs_param_def_type_t     *def_types;
-  cs_def_t                *defs;
-
-  /* Store the related mesh location (always on boundary faces) */
-  int                     *ml_ids;
-
-  /* What is the type of BC associated to this definition: Dirichlet, Neumann,
-     Robin... (from the mathematical viewpoint, the "physical" BCs are handled
-     in the cs_domain_t structure (wall, symmetry, inlet, outlet...)) */
-  cs_param_bc_type_t      *types;
-
-  /* Advanced parametrization */
-  /* ------------------------ */
-
-  /* Type of boundary enforcement (only useful for essential BCs) */
-  cs_param_bc_enforce_t    enforcement;
-  /* Which algorithm to compute the evaluation
-     (barycentric, higher, highest...) */
-  cs_quadra_type_t         quad_type;
-
-} cs_param_bc_t;
 
 /* ITERATIVE SOLVERS */
 /* ================= */
@@ -379,105 +236,6 @@ typedef struct {
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name related to a type of variable
- *
- * \param[in] type     cs_param_var_type_t
- *
- * \return the name associated to this type
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_get_var_type_name(const cs_param_var_type_t   type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name related to a type of definition
- *
- * \param[in] type     cs_param_def_type_t
- *
- * \return the name associated to this type
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_get_def_type_name(const cs_param_def_type_t   type);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set a definition by value
- *
- * \param[in]      var_type   type of variables (scalar, vector, tensor...)
- * \param[in]      get        value to set
- * \param[in, out] def        pointer to a cs_def_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_set_def_by_value(cs_param_var_type_t      var_type,
-                          const cs_get_t           get,
-                          cs_def_t                *def);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set a cs_def_t structure
- *
- * \param[in]      def_type   type of definition (by value, function...)
- * \param[in]      var_type   type of variables (scalar, vector, tensor...)
- * \param[in]      val        value to set
- * \param[in, out] def        pointer to cs_def_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_set_def(cs_param_def_type_t      def_type,
-                 cs_param_var_type_t      var_type,
-                 const void              *val,
-                 cs_def_t                *def);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set a cs_get_t structure
- *
- * \param[in]      var_type   type of variables (scalar, vector, tensor...)
- * \param[in]      val        value to set
- * \param[in, out] get        pointer to cs_get_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_set_get(cs_param_var_type_t      var_type,
-                 const char              *val,
-                 cs_get_t                *get);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize a new cs_param_bc_t structure
- *
- * \param[in]  default_bc     default boundary condition
- *
- * \return a pointer to the new structure (free with cs_param_eq_t)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_param_bc_t *
-cs_param_bc_create(cs_param_bc_type_t  default_bc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of the type of reaction term
- *
- * \param[in] r_type     type of reaction term
- *
- * \return the name associated with this type of reaction term
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_reaction_get_type_name(cs_param_reaction_type_t  r_info);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -543,6 +301,20 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond);
 
 const char *
 cs_param_get_bc_name(cs_param_bc_type_t  bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the domain boundary condition
+ *          This name is also used as a name for zone definition
+ *
+ * \param[in] type     type of boundary
+ *
+ * \return the associated boundary name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_boundary_domain_name(cs_param_boundary_type_t  type);
 
 /*----------------------------------------------------------------------------*/
 /*!

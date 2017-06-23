@@ -32,11 +32,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_cdo.h"
-#include "cs_cdo_connect.h"
-#include "cs_cdo_local.h"
-#include "cs_cdo_quantities.h"
 #include "cs_param.h"
-#include "cs_time_step.h"
+#include "cs_xdef.h"
+#include "cs_xdef_eval.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -45,8 +43,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Macro definitions
  *============================================================================*/
-
-#define CS_PROPERTY_POST_FOURIER (1 << 1)  // postprocess Fourier number
 
 /*============================================================================
  * Type definitions
@@ -66,36 +62,30 @@ typedef enum {
 typedef struct {
 
   char  *restrict  name;
-  cs_flag_t        post_flag; // Indicate what to postprocess
-
-  /* Short descriptor to know where is defined the property and what kind of
-     property one considers (mask of bits) */
-  cs_desc_t        flag;
+  int              id;
+  cs_flag_t        state_flag;
 
   /* The number of values to set depends on the type of property
-     - isotropic   = 1 => CS_PARAM_VAR_SCAL
-     - orthotropic = 3 => CS_PARAM_VAR_VECT
-     - anisotropic = 9 => CS_PARAM_VAR_TENS
-  */
+      isotropic   = 1, orthotropic = 3, anisotropic = 9  */
+  cs_property_type_t   type;
 
-  cs_property_type_t   type;  // isotropic, anistotropic...
+  /* Property is up to now only defined on the whole domain (volume) */
+  int                  n_definitions;  /* Current number of definions used */
+  cs_xdef_t          **defs;           /* List of definitions */
+  short int           *def_ids;        /* Store the definition id for each cell,
+                                          NULL is only one definition is set */
 
-  /* Members to define the value of the property by subdomains (up to now,
-     only subdomains built from an union of cells are considered) */
+  /* Function pointers to handle generic tasks related to a property. There
+     is one function related to each definition. Some functions may not be
+     allocated according to the kind of property */
 
-  int               n_max_subdomains; // requested number of subdomains
-  int               n_subdomains;     // current number of subddomains defined
-  cs_param_def_t   *defs;             // list of definitions for each subdomain
-  short int        *def_ids;          /* id of the definition related to each
-                                         cell.
-                                         NULL is only one definition is set */
+  /* Retrieve the evaluation of the property at the cell center for each
+     definition */
+  cs_xdef_eval_t     **get_eval_at_cell;
 
-  /* Useful buffers to deal with more complex definitions */
-
-  cs_real_t   *array1;   // if the property hinges on an array
-  cs_desc_t    desc1;    // short description of the related array
-  cs_real_t   *array2;   // if the property hinges on a second array
-  cs_desc_t    desc2;    // short description of the related array
+  /* Same thing as the previous one but now with the usage of cellwise algo.
+     relying on a cs_cell_mesh_t structure */
+  cs_xdef_eval_cw_t  **get_eval_at_cell_cw;
 
 } cs_property_t;
 
@@ -132,10 +122,21 @@ cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the number of properties
+ *
+ * \return the number of properties
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_property_get_n_properties(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create and initialize a new property structure
  *
  * \param[in]  name          name of the property
- * \param[in]  key_type      keyname of the type of property
+ * \param[in]  type          type of property
  * \param[in]  n_subdomains  piecewise definition on n_subdomains
  *
  * \return a pointer to a new allocated cs_property_t structure
@@ -143,49 +144,54 @@ cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_property_create(const char    *name,
-                   const char    *key_type,
-                   int            n_subdomains);
+cs_property_add(const char            *name,
+                cs_property_type_t     type);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Last stage of the definition of a property based on several
- *         subdomains
+ * \brief  Find the related property definition from its name
  *
- * \param[in, out] pty       pointer to cs_property_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_last_definition_stage(cs_property_t  *pty);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a cs_property_t structure
+ * \param[in]  name    name of the property to find
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure to free
- *
- * \return a NULL pointer
+ * \return NULL if not found otherwise the associated pointer
  */
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_property_free(cs_property_t   *pty);
+cs_property_by_name(const char   *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if the given property has the name ref_name
+ * \brief  Find the related property definition from its id
  *
- * \param[in]  pty         pointer to a cs_property_t structure to test
- * \param[in]  ref_name    name of the property to find
+ * \param[in]  id      id of the property to find
  *
- * \return true if the name of the property is ref_name otherwise false
+ * \return NULL if not found otherwise the associated pointer
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_property_check_name(const cs_property_t   *pty,
-                       const char            *ref_name);
+cs_property_t *
+cs_property_by_id(int         id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free all cs_property_t structures and the array storing all the
+ *         structures
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_destroy_all(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Last stage of the definition of a property based on several
+ *         definitions (i.e. definition by subdomains)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_finalize_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -228,108 +234,74 @@ cs_property_get_type(const cs_property_t   *pty);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Print a summary of a cs_property_t structure
- *
- * \param[in]  pty      pointer to a cs_property_t structure to summarize
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_summary(const cs_property_t   *pty);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set optional parameters related to a cs_property_t structure
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       key       key related to the member of pty to set
- * \param[in]       keyval    accessor to the value to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_set_option(cs_property_t       *pty,
-                       cs_property_key_t    key,
-                       const char          *keyval);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a cs_property_t structure by value for entities attached to
- *         the mesh location named ml_name
- *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       keyval    accessor to the value to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_def_by_value(cs_property_t    *pty,
-                         const char       *ml_name,
-                         const char       *key_val);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Define an isotropic cs_property_t structure by value for entities
- *         attached to the mesh location named ml_name
+ *         related to a volume zone
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       val       value to set
+ * \param[in, out]  pty          pointer to a cs_property_t structure
+ * \param[in]       zone_name    name of an already defined zone
+ * \param[in]       val          value to set
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_property_iso_def_by_value(cs_property_t    *pty,
-                             const char       *ml_name,
+cs_xdef_t *
+cs_property_def_iso_by_value(cs_property_t    *pty,
+                             const char       *zone_name,
                              double            val);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define orthotropic cs_property_t structure by value for entities
- *         attached to the mesh location named ml_name
+ * \brief  Define an orthotropic cs_property_t structure by value for entities
+ *         related to a volume zone
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       val       values to set (vector of size 3)
+ * \param[in, out]  pty         pointer to a cs_property_t structure
+ * \param[in]       zone_name   name of an already defined zone
+ * \param[in]       val         values to set (vector of size 3)
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_property_ortho_def_by_value(cs_property_t    *pty,
-                               const char       *ml_name,
-                               const double      val[]);
+cs_xdef_t *
+cs_property_def_ortho_by_value(cs_property_t    *pty,
+                               const char       *zone_name,
+                               double            val[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define an anisotropic cs_property_t structure by value for entities
- *         attached to the mesh location named ml_name
+ *         related to a volume zone
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       tens      values to set (3x3 tensor)
+ * \param[in, out]  pty         pointer to a cs_property_t structure
+ * \param[in]       zone_name   name of an already defined zone
+ * \param[in]       tens        values to set (3x3 tensor)
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_property_aniso_def_by_value(cs_property_t    *pty,
-                               const char       *ml_name,
-                               const double      tens[3][3]);
+cs_xdef_t *
+cs_property_def_aniso_by_value(cs_property_t    *pty,
+                               const char       *zone_name,
+                               cs_real_t         tens[3][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define a cs_property_t structure thanks to an analytic function in
  *         a subdomain attached to the mesh location named ml_name
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       func      pointer to a cs_analytic_func_t function
+ * \param[in, out]  pty         pointer to a cs_property_t structure
+ * \param[in]       zone_name   name of an already defined zone
+ * \param[in]       func        pointer to a cs_analytic_func_t function
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_property_def_by_analytic(cs_property_t        *pty,
-                            const char           *ml_name,
+                            const char           *zone_name,
                             cs_analytic_func_t   *func);
 
 /*----------------------------------------------------------------------------*/
@@ -338,82 +310,68 @@ cs_property_def_by_analytic(cs_property_t        *pty,
  *         scalar variable in a subdomain attached to the mesh location named
  *         ml_name
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       context   pointer to a structure (may be NULL)
- * \param[in]       func      pointer to a law function defined by subdomain
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_property_def_by_onevar_law(cs_property_t             *pty,
-                              const char                *ml_name,
-                              const void                *context,
-                              cs_onevar_law_func_t      *func);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a cs_property_t structure thanks to a law depending on
- *         two scalars variables in a subdomain attached to the mesh location
- *         named ml_name
+ * \param[in, out] pty                  pointer to a cs_property_t structure
+ * \param[in]      zone_name            name of an already defined zone
+ * \param[in]      context              pointer to a structure (may be NULL)
+ * \param[in]      get_eval_at_cell     pointer to a function (may be NULL)
+ * \param[in]      get_eval_at_cell_cw  pointer to a function
  *
- * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       context     pointer to a structure (may be NULL)
- * \param[in]       func      pointer to a function
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_property_def_by_twovar_law(cs_property_t          *pty,
-                              const char             *ml_name,
-                              const void             *context,
-                              cs_twovar_law_func_t   *func);
+cs_xdef_t *
+cs_property_def_by_func(cs_property_t         *pty,
+                        const char            *zone_name,
+                        void                  *context,
+                        cs_xdef_eval_t        *get_eval_at_cell,
+                        cs_xdef_eval_cw_t     *get_eval_at_cell_cw);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define a cs_property_t structure thanks to an array of values
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
- * \param[in]       desc      information about this array
+ * \param[in]       loc       information to know where are located values
  * \param[in]       array     pointer to an array
+ * \param[in]       index     optional pointer to the array index
+ *
+ * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+cs_xdef_t *
 cs_property_def_by_array(cs_property_t    *pty,
-                         cs_desc_t         desc,
-                         cs_real_t        *array);
+                         cs_flag_t         loc,
+                         cs_real_t        *array,
+                         cs_lnum_t        *index);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the "array" member of a cs_property_t structure
+ * \brief  Define a cs_property_t structure thanks to an array of values
  *
- * \param[in, out]  pty          pointer to a cs_property_t structure
- * \param[in]       desc         information about this array
- * \param[in]       array        pointer to an array of values
+ * \param[in, out]  pty       pointer to a cs_property_t structure
+ * \param[in]       field     pointer to a cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_array(cs_property_t    *pty,
-                      cs_desc_t         desc,
-                      cs_real_t        *array);
+cs_property_def_by_field(cs_property_t    *pty,
+                         cs_field_t       *field);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the second "array" member of a cs_property_t structure
+ * \brief  Evaluate the value of the property at each cell. Store the
+ *         evaluation in the given array.
  *
- * \param[in, out]  pty        pointer to a cs_property_t structure
- * \param[in]       desc       information about this array
- * \param[in]       array      pointer to an array of values
+ * \param[in]       pty      pointer to a cs_property_t structure
+ * \param[in, out]  array    pointer to an array of values (must be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_second_array(cs_property_t    *pty,
-                             cs_desc_t         desc,
-                             cs_real_t        *array);
+cs_property_eval_at_cells(const cs_property_t    *pty,
+                          cs_real_t              *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -428,10 +386,10 @@ cs_property_set_second_array(cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_get_cell_tensor(cs_lnum_t             c_id,
-                            const cs_property_t  *pty,
-                            bool                  do_inversion,
-                            cs_real_3_t          *tensor);
+cs_property_get_cell_tensor(cs_lnum_t               c_id,
+                            const cs_property_t    *pty,
+                            bool                    do_inversion,
+                            cs_real_3_t            *tensor);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -480,8 +438,8 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_property_value_in_cell(const cs_cell_mesh_t     *cm,
-                          const cs_property_t      *pty);
+cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
+                          const cs_property_t    *pty);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -497,6 +455,16 @@ void
 cs_property_get_fourier(const cs_property_t     *pty,
                         double                   dt,
                         cs_real_t                fourier[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print a summary of the settings for all defined cs_property_t
+ *         structures
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 

@@ -75,20 +75,20 @@ BEGIN_C_DECLS
  *         to the space scheme
  *
  * \param[in]  sys_flag       metadata about how is set the algebraic system
- * \param[in]  t_info         metadata about the time discretization
+ * \param[in]  eqp            pointer to a cs_equation_param_t
  *
  * \return  a pointer to the function handling the time discretization
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_time_scheme_t *
-cs_cdo_time_get_scheme_function(const cs_flag_t         sys_flag,
-                                const cs_param_time_t   t_info)
+cs_cdo_time_get_scheme_function(const cs_flag_t             sys_flag,
+                                const cs_equation_param_t  *eqp)
 {
   if ((sys_flag & CS_FLAG_SYS_TIME) == 0)
     return NULL;
 
-  switch (t_info.scheme) {
+  switch (eqp->time_scheme) {
 
   case CS_TIME_SCHEME_IMPLICIT:
     if (sys_flag & CS_FLAG_SYS_TIME_DIAG)
@@ -127,7 +127,7 @@ cs_cdo_time_get_scheme_function(const cs_flag_t         sys_flag,
  *         instance the source term)
  *
  * \param[in]     sys_flag    metadata about how is set the algebraic system
- * \param[in]     t_info      metadata about the time discretization
+ * \param[in]     eqp         pointer to a cs_equation_param_t
  * \param[in]     n_dofs      size of the array of values
  * \param[in]     values      array of values
  * \param[in,out] rhs         right-hand side to update
@@ -135,27 +135,27 @@ cs_cdo_time_get_scheme_function(const cs_flag_t         sys_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_update_rhs_with_array(const cs_flag_t         sys_flag,
-                                  const cs_param_time_t   t_info,
-                                  const cs_lnum_t         n_dofs,
-                                  const cs_real_t        *values,
-                                  cs_real_t              *rhs)
+cs_cdo_time_update_rhs_with_array(const cs_flag_t             sys_flag,
+                                  const cs_equation_param_t  *eqp,
+                                  const cs_lnum_t             n_dofs,
+                                  const cs_real_t            *values,
+                                  cs_real_t                  *rhs)
 {
   if (!cs_test_flag(sys_flag, CS_FLAG_SYS_TIME))
     return; /* Nothing to do */
 
   /* Previous values are stored inside values */
-  switch (t_info.scheme) {
+  switch (eqp->time_scheme) {
 
   case CS_TIME_SCHEME_EXPLICIT:
-# pragma omp parallel for if (n_dofs > CS_THR_MIN)
+#   pragma omp parallel for if (n_dofs > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_dofs; i++) rhs[i] += values[i];
     break;
 
   case CS_TIME_SCHEME_CRANKNICO:
   case CS_TIME_SCHEME_THETA:
     {
-      const double  tcoef = 1 - t_info.theta;
+      const double  tcoef = 1 - eqp->theta;
 
 # pragma omp parallel for if (n_dofs > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < n_dofs; i++) rhs[i] += tcoef * values[i];
@@ -176,7 +176,7 @@ cs_cdo_time_update_rhs_with_array(const cs_flag_t         sys_flag,
  *          a CDO scheme is used and the mass matrix related to the time
  *          discretization is diagonal (lumping or Voronoi Hodge)
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in]      system_flag  indicate what is needed to build the system
@@ -186,21 +186,21 @@ cs_cdo_time_update_rhs_with_array(const cs_flag_t         sys_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_diag_imp(const cs_param_time_t      t_info,
-                     const double               tpty_val,
-                     const cs_locmat_t         *mass_mat,
-                     const cs_flag_t            system_flag,
-                     cs_cell_builder_t         *cb,
-                     cs_cell_sys_t             *csys)
+cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
+                     const double                tpty_val,
+                     const cs_locmat_t          *mass_mat,
+                     const cs_flag_t             system_flag,
+                     cs_cell_builder_t          *cb,
+                     cs_cell_sys_t              *csys)
 {
-  CS_UNUSED(t_info);
+  CS_UNUSED(eqp);
   CS_UNUSED(tpty_val);
   CS_UNUSED(cb);
 
   cs_locmat_t  *adr = csys->mat;
 
   /* Sanity checks */
-  assert(t_info.scheme == CS_TIME_SCHEME_IMPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
   assert(csys->n_dofs == adr->n_ent);
   assert(system_flag & CS_FLAG_SYS_TIME_DIAG);
 
@@ -232,7 +232,7 @@ cs_cdo_time_diag_imp(const cs_param_time_t      t_info,
  * \brief   Apply to the local system an implicit time discretization when
  *          a CDO scheme is used
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in]      system_flag  indicate what is needed to build the system
@@ -242,19 +242,19 @@ cs_cdo_time_diag_imp(const cs_param_time_t      t_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_imp(const cs_param_time_t      t_info,
-                const double               tpty_val,
-                const cs_locmat_t         *mass_mat,
-                const cs_flag_t            system_flag,
-                cs_cell_builder_t         *cb,
-                cs_cell_sys_t             *csys)
+cs_cdo_time_imp(const cs_equation_param_t  *eqp,
+                const double                tpty_val,
+                const cs_locmat_t          *mass_mat,
+                const cs_flag_t             system_flag,
+                cs_cell_builder_t          *cb,
+                cs_cell_sys_t              *csys)
 {
-  CS_UNUSED(t_info);
+  CS_UNUSED(eqp);
 
   cs_locmat_t  *adr = csys->mat;
 
   /* Sanity checks */
-  assert(t_info.scheme == CS_TIME_SCHEME_IMPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
   assert(csys->n_dofs == adr->n_ent);
   assert(mass_mat != NULL);
   assert(mass_mat->n_ent == adr->n_ent);
@@ -296,7 +296,7 @@ cs_cdo_time_imp(const cs_param_time_t      t_info,
  *          a CDO scheme is used and the mass matrix related to the time
  *          discretization is diagonal (lumping or Voronoi Hodge)
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
@@ -306,19 +306,19 @@ cs_cdo_time_imp(const cs_param_time_t      t_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_diag_exp(const cs_param_time_t      t_info,
-                     const double               tpty_val,
-                     const cs_locmat_t         *mass_mat,
-                     const cs_flag_t            system_flag,
-                     cs_cell_builder_t         *cb,
-                     cs_cell_sys_t             *csys)
+cs_cdo_time_diag_exp(const cs_equation_param_t  *eqp,
+                     const double                tpty_val,
+                     const cs_locmat_t          *mass_mat,
+                     const cs_flag_t             system_flag,
+                     cs_cell_builder_t          *cb,
+                     cs_cell_sys_t              *csys)
 {
-  CS_UNUSED(t_info);
+  CS_UNUSED(eqp);
   CS_UNUSED(tpty_val);
   CS_UNUSED(system_flag);
 
   /* Sanity checks */
-  assert(t_info.scheme == CS_TIME_SCHEME_EXPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EXPLICIT);
   assert(system_flag & CS_FLAG_SYS_TIME_DIAG);
 
   cs_locmat_t  *adr = csys->mat;
@@ -357,7 +357,7 @@ cs_cdo_time_diag_exp(const cs_param_time_t      t_info,
  * \brief   Apply to the local system an explicit time discretization when
  *          a CDO scheme is used
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
@@ -367,20 +367,20 @@ cs_cdo_time_diag_exp(const cs_param_time_t      t_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_exp(const cs_param_time_t      t_info,
-                const double               tpty_val,
-                const cs_locmat_t         *mass_mat,
-                const cs_flag_t            system_flag,
-                cs_cell_builder_t         *cb,
-                cs_cell_sys_t             *csys)
+cs_cdo_time_exp(const cs_equation_param_t  *eqp,
+                const double                tpty_val,
+                const cs_locmat_t          *mass_mat,
+                const cs_flag_t             system_flag,
+                cs_cell_builder_t          *cb,
+                cs_cell_sys_t              *csys)
 {
-  CS_UNUSED(t_info);
+  CS_UNUSED(eqp);
   CS_UNUSED(system_flag);
 
   cs_locmat_t  *adr = csys->mat;
 
   /* Sanity checks */
-  assert(t_info.scheme == CS_TIME_SCHEME_EXPLICIT);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EXPLICIT);
   assert(csys->n_dofs == adr->n_ent);
   assert(mass_mat != NULL);
 
@@ -418,7 +418,7 @@ cs_cdo_time_exp(const cs_param_time_t      t_info,
  *          a CDO scheme is used and the mass matrix related to the time
  *          discretization is diagonal (lumping or Voronoi Hodge)
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
@@ -428,22 +428,22 @@ cs_cdo_time_exp(const cs_param_time_t      t_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_diag_theta(const cs_param_time_t      t_info,
-                       const double               tpty_val,
-                       const cs_locmat_t         *mass_mat,
-                       const cs_flag_t            system_flag,
-                       cs_cell_builder_t         *cb,
-                       cs_cell_sys_t             *csys)
+cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
+                       const double                tpty_val,
+                       const cs_locmat_t          *mass_mat,
+                       const cs_flag_t             system_flag,
+                       cs_cell_builder_t          *cb,
+                       cs_cell_sys_t              *csys)
 {
   CS_UNUSED(tpty_val);
 
-  const double  tcoef = 1 - t_info.theta;
+  const double  tcoef = 1 - eqp->theta;
 
   cs_locmat_t  *adr = csys->mat;
 
   /* Sanity checks */
-  assert(t_info.scheme == CS_TIME_SCHEME_THETA ||
-         t_info.scheme == CS_TIME_SCHEME_CRANKNICO);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_THETA ||
+         eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO);
   assert(system_flag & CS_FLAG_SYS_TIME_DIAG);
   assert(csys->n_dofs == adr->n_ent);
   assert(mass_mat != NULL);
@@ -451,7 +451,7 @@ cs_cdo_time_diag_theta(const cs_param_time_t      t_info,
   /* STEP1 >> Treatment of the source term */
   if (system_flag & CS_FLAG_SYS_SOURCETERM)
     for (short int i = 0; i < csys->n_dofs; i++)
-      csys->rhs[i] += t_info.theta * csys->source[i];
+      csys->rhs[i] += eqp->theta * csys->source[i];
 
   /* STEP2 >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
   double  *adr_pn = cb->values;
@@ -469,7 +469,7 @@ cs_cdo_time_diag_theta(const cs_param_time_t      t_info,
     double  *adr_i = adr->val + i*csys->n_dofs;
 
     /* Update the cellwise matrix by multiplying by theta */
-    for (short int j = 0; j < csys->n_dofs; j++) adr_i[j] *= t_info.theta;
+    for (short int j = 0; j < csys->n_dofs; j++) adr_i[j] *= eqp->theta;
 
     /* Add the diagonal contribution from time matrix */
     adr_i[i] += dval;
@@ -490,7 +490,7 @@ cs_cdo_time_diag_theta(const cs_param_time_t      t_info,
  * \brief   Apply to the local system a "theta" time discretization when
  *          a CDO scheme is used
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
@@ -500,20 +500,20 @@ cs_cdo_time_diag_theta(const cs_param_time_t      t_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_theta(const cs_param_time_t      t_info,
-                  const double               tpty_val,
-                  const cs_locmat_t         *mass_mat,
-                  const cs_flag_t            system_flag,
-                  cs_cell_builder_t         *cb,
-                  cs_cell_sys_t             *csys)
+cs_cdo_time_theta(const cs_equation_param_t  *eqp,
+                  const double                tpty_val,
+                  const cs_locmat_t          *mass_mat,
+                  const cs_flag_t             system_flag,
+                  cs_cell_builder_t          *cb,
+                  cs_cell_sys_t              *csys)
 {
-  const double  tcoef = 1 - t_info.theta;
+  const double  tcoef = 1 - eqp->theta;
 
   cs_locmat_t  *adr = csys->mat;
 
   /* Sanity checks */
-  assert(t_info.scheme == CS_TIME_SCHEME_THETA ||
-         t_info.scheme == CS_TIME_SCHEME_CRANKNICO);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_THETA ||
+         eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO);
   assert(csys->n_dofs == adr->n_ent);
   assert(mass_mat != NULL);
   assert(mass_mat->n_ent == adr->n_ent);
@@ -521,7 +521,7 @@ cs_cdo_time_theta(const cs_param_time_t      t_info,
   /* STEP1 >> Treatment of the source term */
   if (system_flag & CS_FLAG_SYS_SOURCETERM)
     for (short int i = 0; i < csys->n_dofs; i++)
-      csys->rhs[i] += t_info.theta * csys->source[i];
+      csys->rhs[i] += eqp->theta * csys->source[i];
 
   /* STEP2 >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
   double  *adr_pn = cb->values;
@@ -538,7 +538,7 @@ cs_cdo_time_theta(const cs_param_time_t      t_info,
 
     /* Update the cellwise matrix by multiplying by theta */
     for (short int j = 0; j < csys->n_dofs; j++) {
-      adr_i[j] *= t_info.theta;
+      adr_i[j] *= eqp->theta;
       adr_i[j] += tpty_val * m_i[j];
     }
 

@@ -48,10 +48,12 @@
 #include <bft_mem.h>
 
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_cdo.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovcb_scaleq.h"
 #include "cs_cdofb_scaleq.h"
+#include "cs_equation_common.h"
 #include "cs_evaluate.h"
 #include "cs_hho_scaleq.h"
 #include "cs_log.h"
@@ -59,8 +61,10 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_range_set.h"
+#include "cs_source_term.h"
 #include "cs_sles.h"
 #include "cs_timer_stats.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -260,12 +264,17 @@ typedef double *
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_monitor_t)(const char   *eqname,
-                        const void   *builder);
+(cs_equation_print_monitor_t)(const char   *eqname,
+                              const void   *builder);
 
 /*============================================================================
  * Local variables
  *============================================================================*/
+
+static int  _n_equations = 0;
+static int  _n_predef_equations = 0;
+static int  _n_user_equations = 0;
+static cs_equation_t  **_equations = NULL;
 
 /*=============================================================================
  * Local Macro definitions and structure definitions
@@ -274,6 +283,7 @@ typedef void
 struct _cs_equation_t {
 
   char *restrict         name;    /* Short description */
+  int                    id;
 
   cs_equation_param_t   *param;   /* Set of parameters related to an equation */
 
@@ -322,7 +332,7 @@ struct _cs_equation_t {
   cs_equation_cell_difflux_t       *compute_cellwise_diff_flux;
   cs_equation_extra_op_t           *postprocess;
   cs_equation_get_extra_values_t   *get_extra_values;
-  cs_equation_monitor_t            *display_monitoring;
+  cs_equation_print_monitor_t      *display_monitoring;
 
 };
 
@@ -340,155 +350,109 @@ static const char _err_empty_eq[] =
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Given its name, get the id related to a cs_mesh_location_t structure
+ * \brief  Retrieve the volume zone if from the zone name (If name = NULL or
+ *         has an empty length, all entities are selected)
  *
- * \param[in] ml_name            name of the location
- * \param[in] default_ml_name    name of the location by default
+ * \param[in] z_name            name of the zone
  *
- * \return the id of the related mesh location
+ * \return the id of the related zone
  */
 /*----------------------------------------------------------------------------*/
 
 static inline int
-_check_ml_name(const char   *ml_name,
-               const char   *default_ml_name)
+_get_vzone_id(const char   *z_name)
 {
-  const char *used_ml_name;
-  if (ml_name == NULL)
-    used_ml_name = default_ml_name;
-  else {
-    if (strlen(ml_name) == 0)
-      used_ml_name = default_ml_name;
-    else
-      used_ml_name = ml_name;
+  int z_id = 0;
+  if (z_name != NULL) {
+    if (strlen(z_name) > 0) {
+      const cs_volume_zone_t  *z = cs_volume_zone_by_name(z_name);
+      z_id = z->id;
+    }
   }
-
-  int  ml_id = cs_mesh_location_get_id_by_name(used_ml_name);
-
-  if (ml_id == -1)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid mesh location name %s.\n"
-                " This mesh location is not already defined.\n"), ml_name);
-
-  return ml_id;
+  return z_id;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the structure storing the BC parameters
+ * \brief  Retrieve the boundary zone if from the zone name (If name = NULL or
+ *         has an empty length, all entities are selected)
  *
- * \param[in, out]  bc    pointer to a cs_param_bc_t structure
+ * \param[in] z_name            name of the zone
  *
- * \return the id of the new BC definition
+ * \return the id of the related zone
  */
 /*----------------------------------------------------------------------------*/
 
 static inline int
-_add_bc_def(cs_param_bc_t   *bc)
+_get_bzone_id(const char   *z_name)
 {
-  assert(bc != NULL);  /* Sanity checks */
-
-  int  def_id = bc->n_defs;
-
-  /* Add a new definition */
-  bc->n_defs += 1;
-
-  /* Reallocate the associated arrays is more space is needed */
-  if (bc->n_defs > bc->n_max_defs) {
-
-    bc->n_max_defs += 3;
-    BFT_REALLOC(bc->def_types, bc->n_max_defs, cs_param_def_type_t);
-    BFT_REALLOC(bc->defs, bc->n_max_defs, cs_def_t);
-    BFT_REALLOC(bc->types, bc->n_max_defs, cs_param_bc_type_t);
-    BFT_REALLOC(bc->ml_ids, bc->n_max_defs, int);
-
+  int z_id = 0;
+  if (z_name != NULL) {
+    if (strlen(z_name) > 0) {
+      const cs_boundary_zone_t  *z = cs_boundary_zone_by_name(z_name);
+      z_id = z->id;
+    }
   }
-
-  return def_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add a new definition to set the initial condition (IC)
- *
- * \param[in, out]  t_info    pointer to a cs_param_time_t structure
- *
- * \return the id of the new IC definition
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-_add_ic_def(cs_param_time_t   *t_info)
-{
-  int  def_id = t_info->n_ic_definitions;
-
-  /* Add a new definition */
-  t_info->n_ic_definitions += 1;
-
-  /* Reallocate the array of definitions */
-  BFT_REALLOC(t_info->ic_definitions, t_info->n_ic_definitions, cs_param_def_t);
-
-  return def_id;
+  return z_id;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the initial values for the variable related to an equation
  *
- * \param[in, out]  eq         pointer to a cs_equation_t structure
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_initialize_field_from_ic(cs_equation_t     *eq)
+_initialize_field_from_ic(cs_equation_t  *eq)
 {
+  assert(eq != NULL);
   const cs_equation_param_t  *eqp = eq->param;
-  const cs_param_time_t  t_info = eqp->time_info;
+
+  /* Retrieve the associated field */
+  cs_field_t  *field = cs_field_by_id(eq->field_id);
+  cs_real_t  *values = field->val;
 
   cs_flag_t  dof_flag = 0;
-  switch (eqp->var_type) {
-  case CS_PARAM_VAR_SCAL:
+  switch (eqp->dim) {
+  case 1:
     dof_flag |= CS_FLAG_SCALAR;
     break;
-  case CS_PARAM_VAR_VECT:
+  case 3:
     dof_flag |= CS_FLAG_VECTOR;
     break;
-  case CS_PARAM_VAR_TENS:
+  case 9:
     dof_flag |= CS_FLAG_TENSOR;
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Incompatible type of variable for equation %s."), eq->name);
-    break;
+     break;
   }
-
-  /* Retrieve the associated field */
-  cs_field_t  *field = cs_field_by_id(eq->field_id);
-  cs_real_t  *values = field->val;
 
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB ||
       eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB) {
 
     cs_flag_t  v_flag = dof_flag | cs_cdo_primal_vtx;
 
-    for (int def_id = 0; def_id < t_info.n_ic_definitions; def_id++) {
+    for (int def_id = 0; def_id < eqp->n_ic_desc; def_id++) {
 
       /* Get and then set the definition of the initial condition */
-      const cs_param_def_t  *ic = t_info.ic_definitions + def_id;
+      const cs_xdef_t  *def = eqp->ic_desc[def_id];
 
-      switch(ic->def_type) {
+      switch(def->type) {
 
-      case CS_PARAM_DEF_BY_VALUE:
-        cs_evaluate_potential_by_value(v_flag, ic->ml_id, ic->def.get, values);
+      case CS_XDEF_BY_VALUE:
+        cs_evaluate_potential_by_value(v_flag, def, values);
         break;
 
-      case CS_PARAM_DEF_BY_QOV:
-        cs_evaluate_potential_by_qov(v_flag, ic->ml_id, ic->def.get, values);
+      case CS_XDEF_BY_QOV:
+        cs_evaluate_potential_by_qov(v_flag, def, values);
         break;
 
-      case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-        cs_evaluate_potential_by_analytic(v_flag, ic->ml_id, ic->def.analytic,
-                                          values);
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        cs_evaluate_potential_by_analytic(v_flag, def, values);
         break;
 
       default:
@@ -509,22 +473,20 @@ _initialize_field_from_ic(cs_equation_t     *eq)
     cs_real_t  *f_values = eq->get_extra_values(eq->builder);
     assert(f_values != NULL);
 
-    for (int def_id = 0; def_id < t_info.n_ic_definitions; def_id++) {
+    for (int def_id = 0; def_id < eqp->n_ic_desc; def_id++) {
 
       /* Get and then set the definition of the initial condition */
-      const cs_param_def_t  *ic = t_info.ic_definitions + def_id;
+      const cs_xdef_t  *def = eqp->ic_desc[def_id];
 
       /* Initialize face-based array */
-      switch(ic->def_type) {
+      switch(def->type) {
 
-      case CS_PARAM_DEF_BY_VALUE:
-        cs_evaluate_potential_by_value(f_flag, ic->ml_id, ic->def.get,
-                                       f_values);
+      case CS_XDEF_BY_VALUE:
+        cs_evaluate_potential_by_value(f_flag, def, f_values);
         break;
 
-      case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-        cs_evaluate_potential_by_analytic(f_flag, ic->ml_id, ic->def.analytic,
-                                          f_values);
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        cs_evaluate_potential_by_analytic(f_flag, def, f_values);
         break;
 
       default:
@@ -547,27 +509,24 @@ _initialize_field_from_ic(cs_equation_t     *eq)
     /* Initialize cell-based array */
     cs_flag_t  c_flag = dof_flag | cs_cdo_primal_cell;
     cs_real_t  *c_values = values;
-
     if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
       c_values = eq->get_extra_values(eq->builder);
     assert(c_values != NULL);
 
-    for (int def_id = 0; def_id < t_info.n_ic_definitions; def_id++) {
+    for (int def_id = 0; def_id < eqp->n_ic_desc; def_id++) {
 
       /* Get and then set the definition of the initial condition */
-      const cs_param_def_t  *ic = t_info.ic_definitions + def_id;
+      const cs_xdef_t  *def = eqp->ic_desc[def_id];
 
       /* Initialize cell-based array */
-      switch(ic->def_type) {
+      switch(def->type) {
 
-      case CS_PARAM_DEF_BY_VALUE:
-        cs_evaluate_potential_by_value(c_flag, ic->ml_id, ic->def.get,
-                                       c_values);
+      case CS_XDEF_BY_VALUE:
+        cs_evaluate_potential_by_value(c_flag, def, c_values);
         break;
 
-      case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-        cs_evaluate_potential_by_analytic(c_flag, ic->ml_id, ic->def.analytic,
-                                          c_values);
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        cs_evaluate_potential_by_analytic(c_flag, def, c_values);
         break;
 
       default:
@@ -587,46 +546,139 @@ _initialize_field_from_ic(cs_equation_t     *eq)
  * Public function prototypes
  *============================================================================*/
 
+
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to an equation
+ * \brief  Retrieve the number of equations
  *
- * \param[in] eqname           name of the equation
- * \param[in] varname          name of the variable associated to this equation
- * \param[in] eqtype           type of equation (user, predefined...)
- * \param[in] vartype          type of variable (scalar, vector, tensor...)
- * \param[in] default_bc       type of boundary condition set by default
+ * \return the current number of cs_equation_t structure allocated
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_get_n_equations(void)
+{
+  return _n_equations;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the cs_equation_t structure with name eqname
+ *         Return NULL if not find
+ *
+ * \param[in]  eqname    name of the equation to find
+ *
+ * \return a pointer to a cs_equation_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_equation_by_name(const char    *eqname)
+{
+  cs_equation_t  *eq = NULL;
+  if (eqname == NULL)
+    return eq;
+
+  size_t  len_in = strlen(eqname);
+  for (int i = 0; i < _n_equations; i++) {
+
+    cs_equation_t  *_eq = _equations[i];
+    if (strlen(_eq->name) == len_in)
+      if (strcmp(eqname, _eq->name) == 0)
+        return _eq;
+
+  }
+
+  return eq;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the cs_equation_t structure with name eqname
+ *         Return NULL if not find
+ *
+ * \param[in]  eq_id    id of the equation to find
+ *
+ * \return a pointer to a cs_equation_t structure or NULL if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_equation_by_id(int   eq_id)
+{
+  if (eq_id < 0 || eq_id > _n_equations - 1)
+    return NULL;
+
+  return _equations[eq_id];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new equation structure and set a first set of parameters
+ *
+ * \param[in] eqname        name of the equation
+ * \param[in] varname       name of the variable associated to this equation
+ * \param[in] eqtype        type of equation (user, predefined...)
+ * \param[in] dim           dimension of the unknow attached to this equation
+ * \param[in] default_bc    type of boundary condition set by default
  *
  * \return  a pointer to the new allocated cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_create(const char            *eqname,
-                   const char            *varname,
-                   cs_equation_type_t     eqtype,
-                   cs_param_var_type_t    vartype,
-                   cs_param_bc_type_t     default_bc)
+cs_equation_add(const char            *eqname,
+                const char            *varname,
+                cs_equation_type_t     eqtype,
+                int                    dim,
+                cs_param_bc_type_t     default_bc)
 {
-  int  len = strlen(eqname)+1;
-
-  cs_equation_t  *eq = NULL;
-
-  BFT_MALLOC(eq, 1, cs_equation_t);
-
   /* Sanity checks */
   if (varname == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" No variable name associated to an equation structure.\n"
                 " Check your initialization."));
-
   if (eqname == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" No equation name associated to an equation structure.\n"
                 " Check your initialization."));
+  if (cs_equation_by_name(eqname) != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Stop adding a new equation.\n"
+                " Equation name %s is already defined."), eqname);
+
+  cs_equation_t  *eq = NULL;
+
+  BFT_MALLOC(eq, 1, cs_equation_t);
+
+  int  eq_id = _n_equations;
+  _n_equations++;
+  BFT_REALLOC(_equations, _n_equations, cs_equation_t *);
+  _equations[eq_id] = eq;
+
+  switch (eqtype) {
+
+  case CS_EQUATION_TYPE_USER:
+    _n_user_equations++;
+    break;
+
+  case CS_EQUATION_TYPE_PREDEFINED:
+  case CS_EQUATION_TYPE_GROUNDWATER:
+    _n_predef_equations++;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " This type of equation is not handled.\n"
+              " Stop adding a new equation.");
+    break;
+
+  }
+
+  eq->id = eq_id;
 
   /* Store eqname */
+  int  len = strlen(eqname)+1;
   BFT_MALLOC(eq->name, len, char);
   strncpy(eq->name, eqname, len);
 
@@ -635,7 +687,7 @@ cs_equation_create(const char            *eqname,
   BFT_MALLOC(eq->varname, len, char);
   strncpy(eq->varname, varname, len);
 
-  eq->param = cs_equation_param_create(eqtype, vartype, default_bc);
+  eq->param = cs_equation_param_create(eqtype, dim, default_bc);
 
   eq->field_id = -1;    // field is created in a second step
   eq->do_build = true;  // Force the construction of the algebraic system
@@ -670,80 +722,155 @@ cs_equation_create(const char            *eqname,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_equation_t structure
+ * \brief  Add a new user equation structure and set a first set of parameters
  *
- * \param[in, out] eq    pointer to a cs_equation_t structure
+ * \param[in] eqname        name of the equation
+ * \param[in] varname       name of the variable associated to this equation
+ * \param[in] dim           dimension of the unknow attached to this equation
+ * \param[in] default_bc    type of boundary condition set by default
  *
- * \return  a NULL pointer
+ * \return  a pointer to the new allocated cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_t *
-cs_equation_free(cs_equation_t  *eq)
+cs_equation_add_user(const char            *eqname,
+                     const char            *varname,
+                     int                    dim,
+                     cs_param_bc_type_t     default_bc)
 {
-  if (eq == NULL)
-    return eq;
+  if (eqname == NULL)
+    bft_error(__FILE__, __LINE__, 0, " Empty equation name.");
+  if (varname == NULL)
+    bft_error(__FILE__, __LINE__, 0, " Empty variable name.");
 
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_start(eq->main_ts_id);
+  if ((default_bc != CS_PARAM_BC_HMG_DIRICHLET) &&
+      (default_bc != CS_PARAM_BC_HMG_NEUMANN))
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of boundary condition by default.\n"
+                " Valid choices are CS_PARAM_BC_HMG_DIRICHLET or"
+                " CS_PARAM_BC_HMG_NEUMANN"));
 
-  eq->param = cs_equation_param_free(eq->param);
+  /* Add a new user equation */
+  cs_equation_t  *eq =
+    cs_equation_add(eqname,                // equation name
+                    varname,               // variable name
+                    CS_EQUATION_TYPE_USER, // type of equation
+                    dim,                   // dimension of the variable
+                    default_bc);           // default BC
 
-  /* Sanity check */
-  assert(eq->matrix == NULL && eq->rhs == NULL);
-  /* Since eq->rset is only shared, no free is done at this stage */
+  return eq;
+}
 
-  /* Free the associated builder structure */
-  eq->builder = eq->free_builder(eq->builder);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy all cs_equation_t structures
+ */
+/*----------------------------------------------------------------------------*/
 
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_stop(eq->main_ts_id);
+void
+cs_equation_destroy_all(void)
+{
+  if (_n_equations == 0)
+    return;
 
-  BFT_FREE(eq->name);
-  BFT_FREE(eq->varname);
-  BFT_FREE(eq);
+  for (int i = 0; i < _n_equations; i++) {
 
-  return NULL;
+    cs_equation_t  *eq = _equations[i];
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
+
+    eq->param = cs_equation_param_free(eq->param);
+
+    /* Sanity check */
+    assert(eq->matrix == NULL && eq->rhs == NULL);
+    /* Since eq->rset is only shared, no free is done at this stage */
+
+    /* Free the associated builder structure */
+    eq->builder = eq->free_builder(eq->builder);
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+    BFT_FREE(eq->name);
+    BFT_FREE(eq->varname);
+    BFT_FREE(eq);
+
+  } // Loop on equations
+
+  BFT_FREE(_equations);
+
+  _n_equations = 0;
+  _n_user_equations = 0;
+  _n_predef_equations = 0;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Print a synthesis of the monitoring information in the performance
  *         file
- *
- * \param[in] eq    pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_print_monitoring(const cs_equation_t  *eq)
+cs_equation_log_monitoring(void)
 {
-  /* Display high-level timer counter related to the current equation
-     before deleting the structure */
-  eq->display_monitoring(eq->name, eq->builder);
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "%-36s %9s %9s %9s %9s %9s %9s\n",
+                " ", "SysBuild", "Diffusion", "Advection", "Reaction",
+                "Source", "Extra");
+
+  for (int i = 0; i < _n_equations; i++) {
+
+    cs_equation_t  *eq = _equations[i];
+
+    /* Display high-level timer counter related to the current equation
+       before deleting the structure */
+    eq->display_monitoring(eq->name, eq->builder);
+
+  } // Loop on equations
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Summary of a cs_equation_t structure
- *
- * \param[in]  eq       pointer to a cs_equation_t structure
+ * \brief  Summarize all cs_equation_t structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_summary(const cs_equation_t  *eq)
+cs_equation_log_setup(void)
 {
-  if (eq == NULL)
-    return;
-
   cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
-  cs_log_printf(CS_LOG_SETUP,
-                "\tSummary of settings for %s eq. (variable %s)\n",
-                eq->name, eq->varname);
+  cs_log_printf(CS_LOG_SETUP, "\tSettings for equations\n");
   cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_cdo_equations          %d\n",
+                _n_equations);
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_predefined_equations   %d\n",
+                _n_predef_equations);
+  cs_log_printf(CS_LOG_SETUP, " -msg- n_user_equations         %d\n",
+                _n_user_equations);
 
-  cs_equation_param_summary(eq->name, eq->param);
+  for (int  eq_id = 0; eq_id < _n_equations; eq_id++) {
+
+    cs_equation_t  *eq = _equations[eq_id];
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
+
+    cs_log_printf(CS_LOG_SETUP, "\n%s", lsepline);
+    cs_log_printf(CS_LOG_SETUP,
+                  "\tSummary of settings for %s eq. (variable %s)\n",
+                  eq->name, eq->varname);
+    cs_log_printf(CS_LOG_SETUP, "%s", lsepline);
+
+    cs_equation_param_summary(eq->name, eq->param);
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  } // Loop on equations
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -793,131 +920,152 @@ cs_equation_set_timer_stats(cs_equation_t  *eq)
  * \brief  Assign a set of pointer functions for managing the cs_equation_t
  *         structure during the computation
  *
- * \param[in]       connect  pointer to a cs_cdo_connect_t structure
- * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \param[in]  connect        pointer to a cs_cdo_connect_t structure
+ * \param[in]  do_profiling   true or false
+ *
+ * \return true if all equations are steady-state otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_last_setup(const cs_cdo_connect_t   *connect,
-                       cs_equation_t            *eq)
+bool
+cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
+                           bool                      do_profiling)
 {
-  if (eq == NULL)
-    return;
+  if (_n_equations == 0)
+    return true;
 
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_start(eq->main_ts_id);
+  bool  all_are_steady = true;
 
-  cs_equation_param_t  *eqp = eq->param;
+  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-  /* Set function pointers */
-  switch(eqp->space_scheme) {
+    cs_equation_t  *eq = _equations[eq_id];
+    cs_equation_param_t  *eqp = eq->param;
 
-  case CS_SPACE_SCHEME_CDOVB:
-    eq->init_builder = cs_cdovb_scaleq_init;
-    eq->free_builder = cs_cdovb_scaleq_free;
-    eq->initialize_system = cs_cdovb_scaleq_initialize_system;
-    eq->build_system = cs_cdovb_scaleq_build_system;
-    eq->update_field = cs_cdovb_scaleq_update_field;
-    eq->compute_source = cs_cdovb_scaleq_compute_source;
-    eq->compute_flux_across_plane = cs_cdovb_scaleq_compute_flux_across_plane;
-    eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
-    eq->postprocess = cs_cdovb_scaleq_extra_op;
-    eq->get_extra_values = NULL;
-    eq->display_monitoring = cs_cdovb_scaleq_monitor;
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
 
-    /* Set the cs_range_set_t structure */
-    eq->rset = connect->v_rs;
+    if (eqp->flag & CS_EQUATION_UNSTEADY)
+      all_are_steady = false;
 
-    /* Set the size of the algebraic system arising from the cellwise process */
-    eq->sles_size[0] = eq->sles_size[1] = connect->n_vertices;
-    if (cs_glob_n_ranks > 1)
-      eq->sles_size[0] = connect->v_rs->n_elts[0];
-    break;
+    if (do_profiling)
+      cs_equation_set_timer_stats(eq);
 
-  case CS_SPACE_SCHEME_CDOVCB:
-    eq->init_builder = cs_cdovcb_scaleq_init;
-    eq->free_builder = cs_cdovcb_scaleq_free;
-    eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
-    eq->build_system = cs_cdovcb_scaleq_build_system;
-    eq->update_field = cs_cdovcb_scaleq_update_field;
-    eq->compute_source = cs_cdovcb_scaleq_compute_source;
-    eq->compute_flux_across_plane = cs_cdovcb_scaleq_compute_flux_across_plane;
-    eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
-    eq->postprocess = cs_cdovcb_scaleq_extra_op;
-    eq->get_extra_values = cs_cdovcb_scaleq_get_cell_values;
-    eq->display_monitoring = cs_cdovcb_scaleq_monitor;
+    /* Set function pointers */
+    switch(eqp->space_scheme) {
 
-    /* Set the cs_range_set_t structure */
-    eq->rset = connect->v_rs;
+    case CS_SPACE_SCHEME_CDOVB:
+      eq->init_builder = cs_cdovb_scaleq_init;
+      eq->free_builder = cs_cdovb_scaleq_free;
+      eq->initialize_system = cs_cdovb_scaleq_initialize_system;
+      eq->build_system = cs_cdovb_scaleq_build_system;
+      eq->update_field = cs_cdovb_scaleq_update_field;
+      eq->compute_source = cs_cdovb_scaleq_compute_source;
+      eq->compute_flux_across_plane = cs_cdovb_scaleq_compute_flux_across_plane;
+      eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
+      eq->postprocess = cs_cdovb_scaleq_extra_op;
+      eq->get_extra_values = NULL;
+      eq->display_monitoring = cs_cdovb_scaleq_monitor;
 
-    /* Set the size of the algebraic system arising from the cellwise process */
-    eq->sles_size[0] = eq->sles_size[1] = connect->n_vertices;
-    if (cs_glob_n_ranks > 1)
-      eq->sles_size[0] = connect->v_rs->n_elts[0];
-    break;
+      /* Set the cs_range_set_t structure */
+      eq->rset = connect->v_rs;
 
-  case CS_SPACE_SCHEME_CDOFB:
-    eq->init_builder = cs_cdofb_scaleq_init;
-    eq->free_builder = cs_cdofb_scaleq_free;
-    eq->initialize_system = cs_cdofb_scaleq_initialize_system;
-    eq->build_system = cs_cdofb_scaleq_build_system;
-    eq->update_field = cs_cdofb_scaleq_update_field;
-    eq->compute_source = cs_cdofb_scaleq_compute_source;
-    eq->compute_flux_across_plane = NULL;
-    eq->compute_cellwise_diff_flux = NULL;
-    eq->postprocess = cs_cdofb_scaleq_extra_op;
-    eq->get_extra_values = cs_cdofb_scaleq_get_face_values;
-    eq->display_monitoring = cs_cdofb_scaleq_monitor;
+      /* Set the size of the algebraic system arising from the cellwise
+         process */
+      eq->sles_size[0] = eq->sles_size[1] = connect->n_vertices;
+      if (cs_glob_n_ranks > 1)
+        eq->sles_size[0] = connect->v_rs->n_elts[0];
+      break;
 
-    /* Set the cs_range_set_t structure */
-    eq->rset = connect->f_rs;
+    case CS_SPACE_SCHEME_CDOVCB:
+      eq->init_builder = cs_cdovcb_scaleq_init;
+      eq->free_builder = cs_cdovcb_scaleq_free;
+      eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
+      eq->build_system = cs_cdovcb_scaleq_build_system;
+      eq->update_field = cs_cdovcb_scaleq_update_field;
+      eq->compute_source = cs_cdovcb_scaleq_compute_source;
+      eq->compute_flux_across_plane =
+        cs_cdovcb_scaleq_compute_flux_across_plane;
+      eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
+      eq->postprocess = cs_cdovcb_scaleq_extra_op;
+      eq->get_extra_values = cs_cdovcb_scaleq_get_cell_values;
+      eq->display_monitoring = cs_cdovcb_scaleq_monitor;
 
-    /* Set the size of the algebraic system arising from the cellwise process */
-    eq->sles_size[0] = eq->sles_size[1] = connect->n_faces[0];
-    if (cs_glob_n_ranks > 1)
-      eq->sles_size[0] = connect->f_rs->n_elts[0];
-    break;
+      /* Set the cs_range_set_t structure */
+      eq->rset = connect->v_rs;
 
-  case CS_SPACE_SCHEME_HHO:
-    eq->init_builder = cs_hho_scaleq_init;
-    eq->free_builder = cs_hho_scaleq_free;
-    eq->initialize_system = NULL; //cs_hho_initialize_system;
-    eq->build_system = cs_hho_scaleq_build_system;
-    eq->update_field = cs_hho_scaleq_update_field;
-    eq->compute_source = cs_hho_scaleq_compute_source;
-    eq->compute_flux_across_plane = NULL;
-    eq->compute_cellwise_diff_flux = NULL;
-    eq->postprocess = cs_hho_scaleq_extra_op;
-    eq->get_extra_values = cs_hho_scaleq_get_face_values;
-    eq->display_monitoring = NULL;
+      /* Set the size of the algebraic system arising from the cellwise
+         process */
+      eq->sles_size[0] = eq->sles_size[1] = connect->n_vertices;
+      if (cs_glob_n_ranks > 1)
+        eq->sles_size[0] = connect->v_rs->n_elts[0];
+      break;
 
-    /* Set the cs_range_set_t structure */
-    eq->rset = connect->f_rs;
+    case CS_SPACE_SCHEME_CDOFB:
+      eq->init_builder = cs_cdofb_scaleq_init;
+      eq->free_builder = cs_cdofb_scaleq_free;
+      eq->initialize_system = cs_cdofb_scaleq_initialize_system;
+      eq->build_system = cs_cdofb_scaleq_build_system;
+      eq->update_field = cs_cdofb_scaleq_update_field;
+      eq->compute_source = cs_cdofb_scaleq_compute_source;
+      eq->compute_flux_across_plane = NULL;
+      eq->compute_cellwise_diff_flux = NULL;
+      eq->postprocess = cs_cdofb_scaleq_extra_op;
+      eq->get_extra_values = cs_cdofb_scaleq_get_face_values;
+      eq->display_monitoring = cs_cdofb_scaleq_monitor;
 
-    /* Set the size of the algebraic system arising from the cellwise process */
-    // TODO (update according to the order)
-    eq->sles_size[0] = eq->sles_size[1] = connect->n_faces[0];
-    if (cs_glob_n_ranks > 1)
-      eq->sles_size[0] = connect->f_rs->n_elts[0];
-    break;
+      /* Set the cs_range_set_t structure */
+      eq->rset = connect->f_rs;
 
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid scheme for the space discretization.\n"
-                " Please check your settings."));
-    break;
-  }
+      /* Set the size of the algebraic system arising from the cellwise
+         process */
+      eq->sles_size[0] = eq->sles_size[1] = connect->n_faces[0];
+      if (cs_glob_n_ranks > 1)
+        eq->sles_size[0] = connect->f_rs->n_elts[0];
+      break;
 
-  /* Initialize cs_sles_t structure */
-  cs_equation_param_init_sles(eq->name, eqp, eq->field_id);
+    case CS_SPACE_SCHEME_HHO:
+      eq->init_builder = cs_hho_scaleq_init;
+      eq->free_builder = cs_hho_scaleq_free;
+      eq->initialize_system = NULL; //cs_hho_initialize_system;
+      eq->build_system = cs_hho_scaleq_build_system;
+      eq->update_field = cs_hho_scaleq_update_field;
+      eq->compute_source = cs_hho_scaleq_compute_source;
+      eq->compute_flux_across_plane = NULL;
+      eq->compute_cellwise_diff_flux = NULL;
+      eq->postprocess = cs_hho_scaleq_extra_op;
+      eq->get_extra_values = cs_hho_scaleq_get_face_values;
+      eq->display_monitoring = NULL;
 
-  /* Flag this equation such that parametrization is not modifiable anymore */
-  eqp->flag |= CS_EQUATION_LOCKED;
+      /* Set the cs_range_set_t structure */
+      eq->rset = connect->f_rs;
 
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_stop(eq->main_ts_id);
+      /* Set the size of the algebraic system arising from the cellwise
+         process */
+      // TODO (update according to the order)
+      eq->sles_size[0] = eq->sles_size[1] = connect->n_faces[0];
+      if (cs_glob_n_ranks > 1)
+        eq->sles_size[0] = connect->f_rs->n_elts[0];
+      break;
 
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid scheme for the space discretization.\n"
+                  " Please check your settings."));
+      break;
+    }
+
+    /* Initialize cs_sles_t structure */
+    cs_equation_param_init_sles(eq->name, eqp, eq->field_id);
+
+    /* Flag this equation such that parametrization is not modifiable anymore */
+    eqp->flag |= CS_EQUATION_LOCKED;
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  } // Loop on equations
+
+  return all_are_steady;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -976,14 +1124,14 @@ cs_equation_set_param(cs_equation_t       *eq,
       eqp->space_poly_degree = 0;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
     }
     else if (strcmp(val, "hho") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_HHO;
       eqp->space_poly_degree = 1;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
-      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
     }
     else {
       const char *_val = val;
@@ -1138,13 +1286,13 @@ cs_equation_set_param(cs_equation_t       *eq,
 
   case CS_EQKEY_BC_ENFORCEMENT:
     if (strcmp(val, "strong") == 0)
-      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
     else if (strcmp(val, "penalization") == 0)
-      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
     else if (strcmp(val, "weak_sym") == 0)
-      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
     else if (strcmp(val, "weak") == 0)
-      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -1155,20 +1303,28 @@ cs_equation_set_param(cs_equation_t       *eq,
     break;
 
   case CS_EQKEY_BC_QUADRATURE:
-    if (strcmp(val, "bary") == 0)
-      eqp->bc->quad_type = CS_QUADRATURE_BARY;
-    else if (strcmp(val, "bary_subdiv") == 0)
-      eqp->bc->quad_type = CS_QUADRATURE_BARY_SUBDIV;
-    else if (strcmp(val, "higher") == 0)
-      eqp->bc->quad_type = CS_QUADRATURE_HIGHER;
-    else if (strcmp(val, "highest") == 0)
-      eqp->bc->quad_type = CS_QUADRATURE_HIGHEST;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value \"%s\" for key CS_EQKEY_BC_QUADRATURE\n"
-                  " Valid choices are \"bary\", \"bary_subdiv\", \"higher\""
-                  " and \"highest\"."), _val);
+    {
+      cs_quadrature_type_t  qtype = CS_QUADRATURE_NONE;
+
+      if (strcmp(val, "bary") == 0)
+        qtype = CS_QUADRATURE_BARY;
+      else if (strcmp(val, "bary_subdiv") == 0)
+        qtype = CS_QUADRATURE_BARY_SUBDIV;
+      else if (strcmp(val, "higher") == 0)
+        qtype = CS_QUADRATURE_HIGHER;
+      else if (strcmp(val, "highest") == 0)
+        qtype = CS_QUADRATURE_HIGHEST;
+      else {
+        const char *_val = val;
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Invalid value \"%s\" for key CS_EQKEY_BC_QUADRATURE\n"
+                    " Valid choices are \"bary\", \"bary_subdiv\", \"higher\""
+                    " and \"highest\"."), _val);
+      }
+
+      for (int i = 0; i < eqp->n_bc_desc; i++)
+        cs_xdef_set_quadrature(eqp->bc_desc[i], qtype);
+
     }
     break;
 
@@ -1219,39 +1375,21 @@ cs_equation_set_param(cs_equation_t       *eq,
     }
     break;
 
-  case CS_EQKEY_ADV_FLUX_QUADRA:
-    if (strcmp(val, "bary") == 0)
-      eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
-    else if (strcmp(val, "bary_subdiv") == 0)
-      eqp->advection_info.quad_type = CS_QUADRATURE_BARY_SUBDIV;
-    else if (strcmp(val, "higher") == 0)
-      eqp->advection_info.quad_type = CS_QUADRATURE_HIGHER;
-    else if (strcmp(val, "highest") == 0)
-      eqp->advection_info.quad_type = CS_QUADRATURE_HIGHEST;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid value \"%s\" for CS_EQKEY_ADV_FLUX_QUADRA\n"
-                  " Valid choices are \"bary\", \"higher\" and \"highest\"."),
-                _val);
-    }
-    break;
-
   case CS_EQKEY_TIME_SCHEME:
     if (strcmp(val, "implicit") == 0) {
-      eqp->time_info.scheme = CS_TIME_SCHEME_IMPLICIT;
-      eqp->time_info.theta = 1.;
+      eqp->time_scheme = CS_TIME_SCHEME_IMPLICIT;
+      eqp->theta = 1.;
     }
     else if (strcmp(val, "explicit") == 0) {
-      eqp->time_info.scheme = CS_TIME_SCHEME_EXPLICIT;
-      eqp->time_info.theta = 0.;
+      eqp->time_scheme = CS_TIME_SCHEME_EXPLICIT;
+      eqp->theta = 0.;
     }
     else if (strcmp(val, "crank_nicolson") == 0) {
-      eqp->time_info.scheme = CS_TIME_SCHEME_CRANKNICO;
-      eqp->time_info.theta = 0.5;
+      eqp->time_scheme = CS_TIME_SCHEME_CRANKNICO;
+      eqp->theta = 0.5;
     }
     else if (strcmp(val, "theta_scheme") == 0)
-      eqp->time_info.scheme = CS_TIME_SCHEME_THETA;
+      eqp->time_scheme = CS_TIME_SCHEME_THETA;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -1262,7 +1400,7 @@ cs_equation_set_param(cs_equation_t       *eq,
     break;
 
   case CS_EQKEY_TIME_THETA:
-    eqp->time_info.theta = atof(val);
+    eqp->theta = atof(val);
     break;
 
   default:
@@ -1337,35 +1475,38 @@ cs_equation_link(cs_equation_t       *eq,
  *         given mesh location
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       ml_name   name of the associated mesh location (if NULL or
+ * \param[in]       z_name    name of the associated zone (if NULL or
  *                            "" all cells are considered)
  * \param[in]       val       pointer to the value
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_ic_by_value(cs_equation_t    *eq,
-                            const char       *ml_name,
-                            cs_get_t          get)
+cs_equation_add_ic_by_value(cs_equation_t    *eq,
+                            const char       *z_name,
+                            cs_real_t        *val)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
+  /* Add a new cs_xdef_t structure */
   cs_equation_param_t  *eqp = eq->param;
-  cs_param_time_t  t_info = eqp->time_info;
+  int z_id = _get_vzone_id(z_name);
 
-  /* Get the id of the new definition */
-  const int  def_id = _add_ic_def(&t_info);
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_param_def_t  *ic_def = t_info.ic_definitions + def_id;
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        eqp->dim, z_id,
+                                        CS_FLAG_STATE_UNIFORM, // state flag
+                                        meta_flag,
+                                        val);
 
-  /* Set the definition */
-  ic_def->def_type = CS_PARAM_DEF_BY_VALUE;
-  ic_def->ml_id = _check_ml_name(ml_name, "cells");
-  cs_param_set_def_by_value(eqp->var_type, get, &(ic_def->def));
-
-  /* Update the parameters */
-  eqp->time_info = t_info;
+  int  new_id = eqp->n_ic_desc;
+  eqp->n_ic_desc += 1;
+  BFT_REALLOC(eqp->ic_desc, eqp->n_ic_desc, cs_xdef_t *);
+  eqp->ic_desc[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1378,35 +1519,38 @@ cs_equation_set_ic_by_value(cs_equation_t    *eq,
  *         returns the requested quantity
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       ml_name   name of the associated mesh location (if NULL or
+ * \param[in]       z_name    name of the associated zone (if NULL or
  *                            "" all cells are considered)
  * \param[in]       quantity  quantity to distribute over the mesh location
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_ic_by_qov(cs_equation_t    *eq,
-                          const char       *ml_name,
+cs_equation_add_ic_by_qov(cs_equation_t    *eq,
+                          const char       *z_name,
                           double            quantity)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
+  /* Add a new cs_xdef_t structure */
   cs_equation_param_t  *eqp = eq->param;
-  cs_param_time_t  t_info = eqp->time_info;
+  int z_id = _get_vzone_id(z_name);
 
-  /* Get the id of the new definition */
-  const int  def_id = _add_ic_def(&t_info);
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_param_def_t  *ic_def = t_info.ic_definitions + def_id;
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_QOV,
+                                        eqp->dim, z_id,
+                                        0, // state flag
+                                        meta_flag,
+                                        &quantity);
 
-  /* Set the definition */
-  ic_def->def_type = CS_PARAM_DEF_BY_QOV;
-  ic_def->ml_id = _check_ml_name(ml_name, "cells");
-  ic_def->def.get.val = quantity;
-
-  /* Update the parameters */
-  eqp->time_info = t_info;
+  int  new_id = eqp->n_ic_desc;
+  eqp->n_ic_desc += 1;
+  BFT_REALLOC(eqp->ic_desc, eqp->n_ic_desc, cs_xdef_t *);
+  eqp->ic_desc[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1417,76 +1561,76 @@ cs_equation_set_ic_by_qov(cs_equation_t    *eq,
  *         Here the initial value is set according to an analytical function
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       ml_name   name of the associated mesh location (if NULL or
+ * \param[in]       z_name    name of the associated zone (if NULL or
  *                            "" all cells are considered)
  * \param[in]       analytic  pointer to an analytic function
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_ic_by_analytic(cs_equation_t        *eq,
-                               const char           *ml_name,
+cs_equation_add_ic_by_analytic(cs_equation_t        *eq,
+                               const char           *z_name,
                                cs_analytic_func_t   *analytic)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
+  /* Add a new cs_xdef_t structure */
   cs_equation_param_t  *eqp = eq->param;
-  cs_param_time_t  t_info = eqp->time_info;
+  int z_id = _get_vzone_id(z_name);
 
-  /* Get the id of the new definition */
-  const int  def_id = _add_ic_def(&t_info);
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_param_def_t  *ic_def = t_info.ic_definitions + def_id;
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                        eqp->dim, z_id,
+                                        0, // state flag
+                                        meta_flag,
+                                        (void *)analytic);
 
-  /* Set the definition */
-  ic_def->def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
-  ic_def->ml_id = _check_ml_name(ml_name, "cells");
-  ic_def->def.analytic = analytic;
-
-  /* Update the parameters */
-  eqp->time_info = t_info;
+  int  new_id = eqp->n_ic_desc;
+  eqp->n_ic_desc += 1;
+  BFT_REALLOC(eqp->ic_desc, eqp->n_ic_desc, cs_xdef_t *);
+  eqp->ic_desc[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the givan equation structure
- *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
+ *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
  * \param[in]       bc_type   type of boundary condition to add
- * \param[in]       ml_name   name of the related mesh location
- * \param[in]       get       pointer to a cs_get_t structure storing the value
+ * \param[in]       z_name    name of the related boundary zone
+ * \param[in]       values    pointer to a array storing the values
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_add_bc_by_value(cs_equation_t              *eq,
                             const cs_param_bc_type_t    bc_type,
-                            const char                 *ml_name,
-                            const cs_get_t              get)
+                            const char                 *z_name,
+                            cs_real_t                  *values)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
+  /* Add a new cs_xdef_t structure */
   cs_equation_param_t  *eqp = eq->param;
-  cs_param_bc_t  *bc = eqp->bc;
 
-  /* Get the id of the new BC definition */
-  const int def_id = _add_bc_def(bc);
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                          eqp->dim,
+                                          _get_bzone_id(z_name),
+                                          CS_FLAG_STATE_UNIFORM, // state flag
+                                          cs_cdo_bc_get_flag(bc_type), // meta
+                                          (void *)values);
 
-  /* Get the mesh location id from its name */
-  const int  ml_id = _check_ml_name(ml_name, "boundary faces");
-
-  /* Update the BC structure */
-  bc->ml_ids[def_id] = ml_id;
-  bc->def_types[def_id] = CS_PARAM_DEF_BY_VALUE;
-  bc->types[def_id] = bc_type;
-
-  /* Set the definition */
-  cs_param_set_def_by_value(eqp->var_type, get, bc->defs + def_id);
-
+  int  new_id = eqp->n_bc_desc;
+  eqp->n_bc_desc += 1;
+  BFT_REALLOC(eqp->bc_desc, eqp->n_bc_desc, cs_xdef_t *);
+  eqp->bc_desc[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1497,7 +1641,8 @@ cs_equation_add_bc_by_value(cs_equation_t              *eq,
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure
  * \param[in]      bc_type   type of boundary condition to add
- * \param[in]      ml_name   name of the related mesh location
+ * \param[in]       z_name    name of the associated zone (if NULL or
+ *                            "" all cells are considered)
  * \param[in]      analytic  pointer to an analytic function defining the value
  */
 /*----------------------------------------------------------------------------*/
@@ -1505,29 +1650,26 @@ cs_equation_add_bc_by_value(cs_equation_t              *eq,
 void
 cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
                                const cs_param_bc_type_t    bc_type,
-                               const char                 *ml_name,
+                               const char                 *z_name,
                                cs_analytic_func_t         *analytic)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
+  /* Add a new cs_xdef_t structure */
   cs_equation_param_t  *eqp = eq->param;
-  cs_param_bc_t  *bc = eqp->bc;
 
-  /* Get the id of the new BC definition */
-  const int def_id = _add_bc_def(bc);
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                          eqp->dim,
+                                          _get_bzone_id(z_name),
+                                          0, // state
+                                          cs_cdo_bc_get_flag(bc_type), // meta
+                                          (void *)analytic);
 
-  /* Get the mesh location id from its name */
-  const int  ml_id = _check_ml_name(ml_name, "boundary faces");
-
-  /* Update the BC structure */
-  bc->ml_ids[def_id] = ml_id;
-  bc->def_types[def_id] = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
-  bc->types[def_id] = bc_type;
-
-  /* Set the definition accessor */
-  cs_def_t  *bc_def = bc->defs + def_id;
-  bc_def->analytic = analytic;
+  int  new_id = eqp->n_bc_desc;
+  eqp->n_bc_desc += 1;
+  BFT_REALLOC(eqp->bc_desc, eqp->n_bc_desc, cs_xdef_t *);
+  eqp->bc_desc[new_id] = d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1536,54 +1678,31 @@ cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
  *         to a reaction term
  *
  * \param[in, out] eq         pointer to a cs_equation_t structure
- * \param[in]      property   pointer to a cs_property_t struct.
- * \param[in]      r_name     name of the reaction term (optional, i.e. NULL)
+ * \param[in]      property   pointer to a cs_property_t structure
+ *
+ * \return the id related to the reaction term
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_add_linear_reaction(cs_equation_t   *eq,
-                                cs_property_t   *property,
-                                const char      *r_name)
+int
+cs_equation_add_reaction(cs_equation_t   *eq,
+                         cs_property_t   *property)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
-  /* Only this kind of reaction term is available up to now */
+  /* Only this kind of reaction term is available up to now.
+     Add a new reaction term */
   cs_equation_param_t  *eqp = eq->param;
-
-  int  r_id = eqp->n_reaction_terms;
-
-  /* Add a new reaction term */
+  int  new_id = eqp->n_reaction_terms;
   eqp->n_reaction_terms += 1;
-  BFT_REALLOC(eqp->reaction_info, eqp->n_reaction_terms, cs_param_reaction_t);
-
-  /* Set the type of reaction term to consider */
-  eqp->reaction_info[r_id].type = CS_PARAM_REACTION_TYPE_LINEAR;
-
-  /* Associate a name to this reaction term */
-  if (r_name == NULL) { /* Define a name by default */
-
-    assert(r_id < 100);
-    int  len = strlen("reaction_00") + 1;
-    BFT_MALLOC(eqp->reaction_info[r_id].name, len, char);
-    sprintf(eqp->reaction_info[r_id].name, "reaction_%02d", r_id);
-
-  }
-  else { /* Copy the given name */
-
-    int  len = strlen(r_name) + 1;
-    BFT_MALLOC(eqp->reaction_info[r_id].name, len, char);
-    strncpy(eqp->reaction_info[r_id].name, r_name, len);
-
-  }
-
-  /* Associate a property to this reaction term */
   BFT_REALLOC(eqp->reaction_properties, eqp->n_reaction_terms, cs_property_t *);
-  eqp->reaction_properties[r_id] = property;
+  eqp->reaction_properties[new_id] = property;
 
   /* Flag the equation with "reaction" */
   eqp->flag |= CS_EQUATION_REACTION;
+
+  return new_id;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1591,44 +1710,46 @@ cs_equation_add_linear_reaction(cs_equation_t   *eq,
  * \brief  Define a new source term structure and initialize it by value
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      st_name   name of the source term or NULL
- * \param[in]      ml_name   name of the related mesh location or NULL
+ * \param[in]      z_name    name of the associated zone (if NULL or
+ *                            "" all cells are considered)
  * \param[in]      val       pointer to the value
  *
- * \return a pointer to the new cs_source_term_t structure
+ * \return a pointer to the new cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_source_term_t *
+cs_xdef_t *
 cs_equation_add_source_term_by_val(cs_equation_t   *eq,
-                                   const char      *st_name,
-                                   const char      *ml_name,
-                                   const void      *val)
+                                   const char      *z_name,
+                                   cs_real_t       *val)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
+  /* Add a new cs_xdef_t structure */
   cs_equation_param_t  *eqp = eq->param;
-
-  /* Add a new source term */
-  const int  st_id = eqp->n_source_terms;
-
-  eqp->n_source_terms += 1;
-  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_source_term_t);
-  cs_source_term_t  *st = eqp->source_terms + st_id;
-
-  /* Get the mesh location id from its name */
-  const int  ml_id = _check_ml_name(ml_name, "cells");
+  int z_id = _get_vzone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
-  cs_flag_t  st_flag = cs_source_term_set_default_flag(eqp->space_scheme);
+  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY | CS_FLAG_STATE_UNIFORM;
+  cs_flag_t  meta_flag = cs_source_term_set_default_flag(eqp->space_scheme);
 
-  /* Define the source term structure */
-  cs_source_term_def_by_value(st,
-                              st_id, st_name, eqp->var_type, ml_id, st_flag,
-                              val);
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
 
-  return st;
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        eqp->dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        (void *)val);
+
+  int  new_id = eqp->n_source_terms;
+  eqp->n_source_terms += 1;
+  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
+  eqp->source_terms[new_id] = d;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1637,173 +1758,171 @@ cs_equation_add_source_term_by_val(cs_equation_t   *eq,
  *         function
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      st_name   name of the source term or NULL
- * \param[in]      ml_name   name of the related mesh location
+ * \param[in]      z_name    name of the associated zone (if NULL or
+ *                            "" all cells are considered)
  * \param[in]      ana       pointer to an analytical function
  *
  * \return a pointer to the new cs_source_term_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_source_term_t *
+cs_xdef_t *
 cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
-                                        const char           *st_name,
-                                        const char           *ml_name,
+                                        const char           *z_name,
                                         cs_analytic_func_t   *ana)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
+  /* Add a new cs_xdef_t structure */
   cs_equation_param_t  *eqp = eq->param;
-
-  /* Add a new source term */
-  const int  st_id = eqp->n_source_terms;
-
-  eqp->n_source_terms += 1;
-  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_source_term_t);
-  cs_source_term_t  *st = eqp->source_terms + st_id;
-
-  /* Get the mesh location id from its name */
-  const int  ml_id = _check_ml_name(ml_name, "cells");
+  int z_id = _get_vzone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
-  cs_flag_t  st_flag = cs_source_term_set_default_flag(eqp->space_scheme);
+  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
+  cs_flag_t  meta_flag = cs_source_term_set_default_flag(eqp->space_scheme);
 
-  /* Define the source term structure */
-  cs_source_term_def_by_analytic(st,
-                                 st_id, st_name, eqp->var_type, ml_id, st_flag,
-                                 ana);
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
 
-  return st;
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                        eqp->dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        (void *)ana);
+
+  /* Default setting for quadrature is different in this case */
+  cs_xdef_set_quadrature(d, CS_QUADRATURE_BARY_SUBDIV);
+
+  int  new_id = eqp->n_source_terms;
+  eqp->n_source_terms += 1;
+  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
+  eqp->source_terms[new_id] = d;
+
+  return d;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a field structure related to this cs_equation_t structure
- *         to an equation
- *
- * \param[in, out]  eq       pointer to a cs_equation_t structure
+ * \brief  Create a field structure related to all cs_equation_t structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_create_field(cs_equation_t     *eq)
+cs_equation_create_fields(void)
 {
-  int  dim = 0, location_id = -1; // initialize values to avoid a warning
+  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-  int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
+    int  location_id = -1; // initialize values to avoid a warning
+    int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
 
-  /* Sanity check */
-  assert(eq != NULL);
+    cs_equation_t  *eq = _equations[eq_id];
 
-  const cs_equation_param_t  *eqp = eq->param;
+    /* Sanity check */
+    assert(eq != NULL);
 
-  _Bool has_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
+    const cs_equation_param_t  *eqp = eq->param;
 
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_start(eq->main_ts_id);
+    _Bool has_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
+    if (!has_previous)
+      field_mask |= CS_FIELD_STEADY;
 
-  /* Define dim */
-  switch (eqp->var_type) {
-  case CS_PARAM_VAR_SCAL:
-    dim = 1;
-    break;
-  case CS_PARAM_VAR_VECT:
-    dim = 3;
-    break;
-  case CS_PARAM_VAR_TENS:
-    dim = 9;
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Type of equation for eq. %s is incompatible with the"
-                " creation of a field structure.\n"), eq->name);
-    break;
-  }
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
 
-  /* Associate a predefined mesh_location_id to this field */
-  switch (eqp->space_scheme) {
-  case CS_SPACE_SCHEME_CDOVB:
-  case CS_SPACE_SCHEME_CDOVCB:
-    location_id = cs_mesh_location_get_id_by_name("vertices");
-    break;
-  case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO:
-    location_id = cs_mesh_location_get_id_by_name("cells");
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Space scheme for eq. %s is incompatible with a field.\n"
-                " Stop adding a cs_field_t structure.\n"), eq->name);
-    break;
-  }
+    /* Associate a predefined mesh_location_id to this field */
+    switch (eqp->space_scheme) {
+    case CS_SPACE_SCHEME_CDOVB:
+    case CS_SPACE_SCHEME_CDOVCB:
+      location_id = cs_mesh_location_get_id_by_name("vertices");
+      break;
+    case CS_SPACE_SCHEME_CDOFB:
+    case CS_SPACE_SCHEME_HHO:
+      location_id = cs_mesh_location_get_id_by_name("cells");
+      break;
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Space scheme for eq. %s is incompatible with a field.\n"
+                  " Stop adding a cs_field_t structure.\n"), eq->name);
+      break;
+    }
 
-  if (location_id == -1)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid mesh location id (= -1) for the current field\n"));
+    if (location_id == -1)
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid mesh location id (= -1) for the current field\n"));
 
-  cs_field_t  *fld = cs_field_create(eq->varname,
-                                     field_mask,
-                                     location_id,
-                                     dim,
-                                     has_previous);
+    cs_field_t  *fld = cs_field_create(eq->varname,
+                                       field_mask,
+                                       location_id,
+                                       eqp->dim,
+                                       has_previous);
 
-  /* Set default value for default keys */
-  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-  cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-  cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
+    /* Set default value for default keys */
+    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
 
-  /* Store the related field id */
-  eq->field_id = cs_field_id_by_name(eq->varname);
+    /* Store the related field id */
+    eq->field_id = cs_field_id_by_name(eq->varname);
 
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_stop(eq->main_ts_id);
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  } // Loop on equations
+
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the values of a field according to the initial condition
- *         related to its equation
+ * \brief  Allocate and initialize the builder of the algebraic system.
+ *         Set the initialize condition to all variable fields associated to
+ *         each cs_equation_t structure.
+ *         Compute the initial source term.
  *
- * \param[in]       mesh       pointer to the mesh structure
- * \param[in, out]  eq         pointer to a cs_equation_t structure
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_init_system(const cs_mesh_t        *mesh,
-                        cs_equation_t          *eq)
+cs_equation_initialize(const cs_mesh_t             *mesh,
+                       const cs_cdo_connect_t      *connect,
+                       const cs_cdo_quantities_t   *quant,
+                       const cs_time_step_t        *ts)
 {
-  if (eq == NULL)
-    return;
+  CS_UNUSED(connect);
+  CS_UNUSED(quant);
+  CS_UNUSED(ts);
 
-  if (eq->main_ts_id > -1)
+  for (int i = 0; i < _n_equations; i++) {
+
+    cs_equation_t *eq = _equations[i];
+    assert(eq != NULL); // Sanity check
+
+    if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
 
-  const cs_equation_param_t  *eqp = eq->param;
+    const cs_equation_param_t  *eqp = eq->param;
 
-  /* Allocate and initialize values */
-  cs_field_t  *f = cs_field_by_name(eq->varname);
-
-  /* Allocate and initialize a system builder */
-  eq->builder = eq->init_builder(eqp, mesh);
-
-  /* Initialize the associated field to the initial condition if unsteady */
-  if (eqp->flag & CS_EQUATION_UNSTEADY) {
-
-    /* Compute the (initial) source term */
-    eq->compute_source(eq->builder);
-
-    cs_param_time_t  t_info = eqp->time_info;
+    /* Allocate and initialize a system builder */
+    eq->builder = eq->init_builder(eqp, mesh);
 
     // By default, 0 is set as initial condition
-    if (t_info.n_ic_definitions > 0)
+    if (eqp->n_ic_desc > 0)
       _initialize_field_from_ic(eq);
 
-  }
+    if (eqp->flag & CS_EQUATION_UNSTEADY)
+      /* Compute the (initial) source term */
+      eq->compute_source(eq->builder);
 
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_stop(eq->main_ts_id);
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  } // Loop on equations
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2062,7 +2181,6 @@ cs_equation_is_steady(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return the name related to the given cs_equation_t structure
- *         to an equation
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
@@ -2077,6 +2195,25 @@ cs_equation_get_name(const cs_equation_t    *eq)
     return NULL;
   else
     return eq->name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the id number related to the given cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return an id (0 ... n-1) or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_get_id(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return -1;
+  else
+    return eq->id;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2187,7 +2324,8 @@ cs_equation_get_time_property(const cs_equation_t    *eq)
  *         reaction term called r_name and related to this equation
  *
  *
- * \param[in]  eq       pointer to a cs_equation_t structure
+ * \param[in]  eq            pointer to a cs_equation_t structure
+ * \param[in]  reaction_id   id related to this reaction term
  *
  * \return a pointer to a cs_property_t structure or NULL if not found
  */
@@ -2195,31 +2333,16 @@ cs_equation_get_time_property(const cs_equation_t    *eq)
 
 cs_property_t *
 cs_equation_get_reaction_property(const cs_equation_t    *eq,
-                                  const char             *r_name)
+                                  const int               reaction_id)
 {
   if (eq == NULL)
     return NULL;
 
-  if (r_name == NULL)
+  const cs_equation_param_t  *eqp = eq->param;
+  if (reaction_id < 0 || reaction_id > eqp->n_reaction_terms - 1)
     return NULL;
 
-  const cs_equation_param_t  *eqp = eq->param;
-
-  /* Look for the requested reaction term */
-  int  r_id = -1;
-  for (int i = 0; i < eqp->n_reaction_terms; i++) {
-    if (strcmp(eqp->reaction_info[i].name, r_name) == 0) {
-      r_id = i;
-      break;
-    }
-  }
-
-  if (r_id == -1)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Cannot find the reaction term %s in equation %s.\n"
-                " Please check your settings.\n"), r_name, eq->name);
-
-  return eqp->reaction_properties[r_id];
+  return eqp->reaction_properties[reaction_id];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2264,21 +2387,21 @@ cs_equation_get_space_poly_degree(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return the type of variable solved by this equation
+ * \brief  Return the dimension of the variable solved by this equation
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
- * \return  the type of variable (sclar, vector...) associated to this equation
+ * \return  an integer corresponding to the dimension of the variable
  */
 /*----------------------------------------------------------------------------*/
 
-cs_param_var_type_t
-cs_equation_get_var_type(const cs_equation_t    *eq)
+int
+cs_equation_get_var_dim(const cs_equation_t    *eq)
 {
   if (eq == NULL)
-    return CS_PARAM_N_VAR_TYPES;
+    return 0;
   else
-    return eq->param->var_type;
+    return eq->param->dim;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2346,6 +2469,7 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
 {
   if (eq == NULL)
     return NULL;
+
   if (eq->get_extra_values == NULL) {
     bft_error(__FILE__, __LINE__, 0,
               _(" No function defined for getting the cell values in eq. %s"),
@@ -2402,7 +2526,12 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
   }
 
   /* Get the mesh location id from its name */
-  const int  ml_id = _check_ml_name(ml_name, "none");
+  const int  ml_id = cs_mesh_location_get_id_by_name(ml_name);
+
+  if (ml_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid mesh location name %s.\n"
+                " This mesh location is not already defined.\n"), ml_name);
 
   /* Retrieve the field from its id */
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
@@ -2441,6 +2570,9 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
     return; // Avoid a warning
   }
 
+  if (eq->builder == NULL)
+    return;
+
   /* Retrieve the field from its id */
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
@@ -2454,72 +2586,78 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations related to this equation
+ * \brief  Predefined extra-operations related to all equations
  *
- * \param[in]  eq      pointer to a cs_equation_t structure
  * \param[in]  ts      pointer to a cs_time_step_t struct.
  * \param[in]  dt      value of the current time step
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_extra_post(const cs_equation_t     *eq,
-                       const cs_time_step_t    *ts,
-                       double                   dt)
+cs_equation_extra_post_all(const cs_time_step_t    *ts,
+                           double                   dt)
 {
-  if (eq == NULL)
+  if (_n_equations < 1)
     return;
 
   CS_UNUSED(dt);
 
   int  len;
-  char *postlabel = NULL;
 
-  const cs_field_t  *field = cs_field_by_id(eq->field_id);
-  const cs_equation_param_t  *eqp = eq->param;
+  for (int i = 0; i < _n_equations; i++) {
 
-  /* Cases where a post-processing is not required */
-  if (eqp->process_flag == 0)
-    return;
+    cs_equation_t  *eq = _equations[i];
+    char *postlabel = NULL;
 
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_start(eq->main_ts_id);
+    const cs_field_t  *field = cs_field_by_id(eq->field_id);
+    const cs_equation_param_t  *eqp = eq->param;
 
-  /* Post-processing of a common adimensionnal quantities: the Peclet number */
-  if (eqp->process_flag & CS_EQUATION_POST_PECLET) {
+    /* Cases where a post-processing is not required */
+    if (eqp->process_flag == 0)
+      continue;
 
-    len = strlen(eq->name) + 7 + 1;
-    BFT_MALLOC(postlabel, len, char);
-    sprintf(postlabel, "%s.Peclet", eq->name);
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
 
-    /* Compute the Peclet number in each cell */
-    double  *peclet = cs_equation_get_tmpbuf();
-    cs_advection_get_peclet(eqp->advection_field,
-                            eqp->diffusion_property,
-                            peclet);
+    /* Post-processing of a common adimensionnal quantities: the Peclet
+       number */
+    if (eqp->process_flag & CS_EQUATION_POST_PECLET) {
 
-    /* Post-process */
-    cs_post_write_var(CS_POST_MESH_VOLUME,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      postlabel,
-                      1,
-                      true,           // interlace
-                      true,           // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      peclet,         // values on cells
-                      NULL,           // values at internal faces
-                      NULL,           // values at border faces
-                      ts);            // time step management struct.
+      len = strlen(eq->name) + 7 + 1;
+      BFT_MALLOC(postlabel, len, char);
+      sprintf(postlabel, "%s.Peclet", eq->name);
 
-    BFT_FREE(postlabel);
+      /* Compute the Peclet number in each cell */
+      double  *peclet = cs_equation_get_tmpbuf();
+      cs_advection_get_peclet(eqp->advection_field,
+                              eqp->diffusion_property,
+                              peclet);
 
-  } // Peclet number
+      /* Post-process */
+      cs_post_write_var(CS_POST_MESH_VOLUME,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        postlabel,
+                        1,
+                        true,           // interlace
+                        true,           // true = original mesh
+                        CS_POST_TYPE_cs_real_t,
+                        peclet,         // values on cells
+                        NULL,           // values at internal faces
+                        NULL,           // values at border faces
+                        ts);            // time step management struct.
 
-  /* Perform post-processing specific to a numerical scheme */
-  eq->postprocess(eq->name, field, eq->builder);
+      BFT_FREE(postlabel);
 
-  if (eq->main_ts_id > -1)
-    cs_timer_stats_stop(eq->main_ts_id);
+    } // Peclet number
+
+    /* Perform post-processing specific to a numerical scheme */
+    eq->postprocess(eq->name, field, eq->builder);
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  } // Loop on equations
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -75,6 +75,12 @@ BEGIN_C_DECLS
 #define _dp3 cs_math_3_dot_product
 
 /*============================================================================
+ * Private variables
+ *============================================================================*/
+
+static cs_equation_t  *cs_walldistance_eq = NULL;
+
+/*============================================================================
  * Private function prototypes
  *============================================================================*/
 
@@ -162,30 +168,28 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
                const cs_field_t           *field,
                cs_real_t                   dist[])
 {
-  cs_real_t  *gdi = NULL, *dualcell_vol = NULL, *cell_gradient = NULL;
+  /* Initialize arrays */
+  cs_real_t  *dualcell_vol = NULL;
   cs_real_3_t  *vtx_gradient = NULL;
 
-  const cs_connect_index_t  *c2v = connect->c2v;
-  const cs_real_t  *var = field->val;
-
-  /* Compute a discrete gradient of var along each edge */
-  cs_sla_matvec(connect->e2v, var, &gdi, true);
-
-  /* Reconstruct a vector field at each cell center associated to gdi */
-  cs_reco_ccen_edge_dofs(connect, cdoq, gdi, &cell_gradient);
-
-  /* Reconstruct gradient at vertices from gradient at cells */
   BFT_MALLOC(vtx_gradient, cdoq->n_vertices, cs_real_3_t);
   BFT_MALLOC(dualcell_vol, cdoq->n_vertices, cs_real_t);
+
 # pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
     vtx_gradient[i][0] = vtx_gradient[i][1] = vtx_gradient[i][2] = 0.;
     dualcell_vol[i] = 0.;
   }
 
+  /* Reconstruct gradient at vertices from gradient at cells */
+  const cs_connect_index_t  *c2v = connect->c2v;
+  const cs_real_t  *var = field->val;
+
   for (cs_lnum_t  c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-    cs_lnum_t  cshift = 3*c_id;
+    cs_real_3_t  grd_cell;
+
+    cs_reco_grd_cell_from_pv(c_id, connect, cdoq, var, grd_cell);
 
     for (cs_lnum_t i = c2v->idx[c_id]; i < c2v->idx[c_id+1]; i++) {
 
@@ -193,7 +197,7 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
 
       dualcell_vol[v_id] += cdoq->dcell_vol[i];
       for (int k = 0; k < 3; k++)
-        vtx_gradient[v_id][k] += cdoq->dcell_vol[i]*cell_gradient[cshift+k];
+        vtx_gradient[v_id][k] += cdoq->dcell_vol[i]*grd_cell[k];
 
     } // Loop on cell vertices
 
@@ -226,9 +230,7 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
                            NULL);           // time step management structure
 
   /* Free memory */
-  BFT_FREE(gdi);
   BFT_FREE(dualcell_vol);
-  BFT_FREE(cell_gradient);
   BFT_FREE(vtx_gradient);
 }
 
@@ -238,37 +240,78 @@ _compute_cdovb(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Setup an new equation related to the wall distance
+ * \brief  Test if the computation of the wall distance is activated
  *
- * \param[in]  eq          pointer to the associated cs_equation_t structure
- * \param[in]  diff_pty    pointer to a cs_property_t structure
- * \param[in]  wall_ml_id  id of the mesh location related to wall boundaries
+ * \return true if the wall distance computation is requested, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_walldistance_is_activated(void)
+{
+  if (cs_walldistance_eq != NULL)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the future computation of the wall distance
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_walldistance_setup(cs_equation_t   *eq,
-                      cs_property_t   *diff_pty,
-                      int              wall_ml_id)
+cs_walldistance_activate(void)
 {
   /* Sanity check */
-  assert(!strcmp(cs_equation_get_name(eq), "WallDistance"));
+  assert(cs_walldistance_eq == NULL);
 
-  /* Unity is a material property defined by default */
-  cs_equation_link(eq, "diffusion", diff_pty);
+  cs_walldistance_eq =
+    cs_equation_add("WallDistance",              // equation name
+                    "WallDistance",              // variable name
+                    CS_EQUATION_TYPE_PREDEFINED, // type of the equation
+                    1,                           // dimension of the variable
+                    CS_PARAM_BC_HMG_NEUMANN);    // default BC
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Setup the equation related to the wall distance
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_walldistance_setup(void)
+{
+  cs_equation_t  *eq = cs_walldistance_eq;
+
+  if (cs_walldistance_eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Stop setting the wall distance equation.\n"
+              " The wall distance computation has not been activated.");
+
+  /* Unity is a property defined by default */
+  cs_equation_link(eq, "diffusion", cs_property_by_name("unity"));
 
   /* Add boundary conditions */
-  cs_get_t  get_bc_val = {.val = 0.};
+  cs_real_t  zero_value = 0.;
+  const char *bc_zone_name =
+    cs_param_get_boundary_domain_name(CS_PARAM_BOUNDARY_WALL);
+
   cs_equation_add_bc_by_value(eq,
                               CS_PARAM_BC_HMG_DIRICHLET,
-                              cs_mesh_location_get_name(wall_ml_id),
-                              get_bc_val);
+                              bc_zone_name,
+                              &zero_value);
 
   /* Add source term */
+  const char *st_zone_name =
+    cs_mesh_location_get_name(CS_MESH_LOCATION_CELLS);
+  cs_real_t  unity = 1.0;
+
   cs_equation_add_source_term_by_val(eq,
-                                     "WallDist.st",   // label
-                                     "cells",         // mesh location name
-                                     "1.0");          // value to set
+                                     st_zone_name,   // zone name
+                                     &unity);        // value to set
 
   /* Enforcement of the Dirichlet boundary conditions */
   cs_equation_set_param(eq, CS_EQKEY_BC_ENFORCEMENT, "penalization");
@@ -282,7 +325,6 @@ cs_walldistance_setup(cs_equation_t   *eq,
 #else
   cs_equation_set_param(eq, CS_EQKEY_PRECOND, "jacobi");
 #endif
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -294,7 +336,6 @@ cs_walldistance_setup(cs_equation_t   *eq,
  * \param[in]      dt_cur     current value of the time step
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
  * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
- * \param[in, out] eq         pointer to the related cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -303,20 +344,15 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
                         const cs_time_step_t         *time_step,
                         double                        dt_cur,
                         const cs_cdo_connect_t       *connect,
-                        const cs_cdo_quantities_t    *cdoq,
-                        cs_equation_t                *eq)
+                        const cs_cdo_quantities_t    *cdoq)
 {
   /* First step:
      Solve the equation related to the definition of the wall distance. */
 
+  cs_equation_t  *eq = cs_walldistance_eq;
+
   /* Sanity check */
   assert(cs_equation_is_steady(eq));
-
-  /* Initialize system before resolution for all equations
-     - create system builder
-     - initialize field according to initial conditions
-     - initialize source term */
-  cs_equation_init_system(mesh, eq);
 
   /* Define the algebraic system */
   cs_equation_build_system(mesh, time_step, dt_cur, eq);

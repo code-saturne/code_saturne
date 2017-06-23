@@ -29,10 +29,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_cdo_bc.h"
 #include "cs_param.h"
 #include "cs_property.h"
 #include "cs_advection_field.h"
-#include "cs_source_term.h"
+#include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -99,53 +100,60 @@ typedef struct {
    equation with term sources */
 typedef struct {
 
-  cs_equation_type_t    type;           /* predefined, user... */
-  cs_param_var_type_t   var_type;       /* scalar, vector, tensor... */
-  int                   verbosity;      /* Level of detail to output */
-  int                   sles_verbosity; /* Level of detail to output for SLES */
+  cs_equation_type_t     type;           /* predefined, user... */
+  int                    dim;            /* Dimension of the unknown */
+  int                    verbosity;      /* Level of detail for output */
+  int                    sles_verbosity; /* Level of detail for SLES output */
 
   /* Unsteady-Diffusion-Convection-Source term activated or not */
-  cs_flag_t             flag;
+  cs_flag_t              flag;
 
   /* Post-treatment */
-  cs_flag_t             process_flag;  /* Type of post-treatment to do */
+  cs_flag_t              process_flag;   /* Type of post-treatment to do */
 
   /* Numerical settings */
-  cs_space_scheme_t     space_scheme;
-  int                   space_poly_degree; /* Max. degree of the polynomial
-                                              basis */
+  cs_space_scheme_t      space_scheme;
+  /* Max. degree of the polynomial basis */
+  int                    space_poly_degree;
 
   /* Boundary conditions */
-  cs_param_bc_t        *bc;
+  cs_param_bc_type_t     default_bc;
+  cs_param_bc_enforce_t  enforcement;
+  int                    n_bc_desc;
+  cs_xdef_t            **bc_desc;
 
   /* High-level structure to manage/monitor the resolution of this equation */
-  cs_equation_algo_t    algo_info;
-  cs_param_itsol_t      itsol_info;
+  cs_equation_algo_t     algo_info;
+  cs_param_itsol_t       itsol_info;
 
-  /* Unsteady term parametrization */
-  cs_param_time_t       time_info;
-  cs_param_hodge_t      time_hodge;
-  cs_property_t        *time_property;
+  /* Time-dependent term parameters */
+  cs_param_hodge_t       time_hodge;
+  cs_property_t         *time_property;
+  cs_time_scheme_t       time_scheme;
+  cs_real_t              theta;
+  bool                   do_lumping;
 
-  /* Diffusion term parametrization */
-  cs_param_hodge_t      diffusion_hodge;
-  cs_property_t        *diffusion_property;
+  int                    n_ic_desc;
+  cs_xdef_t            **ic_desc;
 
-  /* Advection term parametrization */
-  cs_param_advection_t  advection_info;
-  cs_adv_field_t       *advection_field;
+  /* Diffusion term parameters */
+  cs_param_hodge_t       diffusion_hodge;
+  cs_property_t         *diffusion_property;
 
-  /* Reaction term parametrization
+  /* Advection term parameters */
+  cs_param_advection_t   advection_info;
+  cs_adv_field_t        *advection_field;
+
+  /* Reaction term parameters
      Belong to the left-hand and/or right-hand side according to the time scheme
   */
-  cs_param_hodge_t      reaction_hodge;
-  int                   n_reaction_terms;
-  cs_property_t       **reaction_properties;
-  cs_param_reaction_t  *reaction_info;
+  cs_param_hodge_t       reaction_hodge;
+  int                    n_reaction_terms;
+  cs_property_t        **reaction_properties;
 
-  /* Parametrization of source terms (Belong to the right-hand side) */
-  int                   n_source_terms;
-  cs_source_term_t     *source_terms;
+  /* Parameters of source terms (Belong to the right-hand side) */
+  int                    n_source_terms;
+  cs_xdef_t            **source_terms;
 
 } cs_equation_param_t;
 
@@ -158,7 +166,7 @@ typedef struct {
  * \brief  Create a cs_equation_param_t
  *
  * \param[in] type             type of equation
- * \param[in] var_type         type of variable (scalar, vector, tensor...)
+ * \param[in] dim              dimension of the variable associated to this eq.
  * \param[in] default_bc       type of boundary condition set by default
  *
  * \return a pointer to a new allocated cs_equation_param_t structure
@@ -167,7 +175,7 @@ typedef struct {
 
 cs_equation_param_t *
 cs_equation_param_create(cs_equation_type_t     type,
-                         cs_param_var_type_t    var_type,
+                         int                    dim,
                          cs_param_bc_type_t     default_bc);
 
 /*----------------------------------------------------------------------------*/

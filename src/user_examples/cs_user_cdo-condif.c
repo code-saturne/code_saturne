@@ -48,10 +48,12 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
+#include "cs_boundary_zone.h"
 #include "cs_mesh_location.h"
 #include "cs_cdo_toolbox.h"
 #include "cs_property.h"
 #include "cs_advection_field.h"
+#include "cs_walldistance.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -71,7 +73,7 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_cdo-condif.c
  *
- * \brief Main user function for setting of a calculation with CDO.
+ * \brief Main user function for setting up a calculation with CDO.
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -86,98 +88,282 @@ static const double  one_third = 1./3.;
  * Private function prototypes
  *============================================================================*/
 
-/* ---------------------------------------------------------------------------
- * TEST 1 -- Boundary conditions
- * -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Give the explicit definition of the advection field.
+ *         pt_ids is optional. If not NULL, it enables to access in coords
+ *         at the right location and the same thing to fill retval if compact
+ *         is set to false
+ *         Rely on a generic function pointer for an analytic function
+ *
+ * \param[in]      time       when ?
+ * \param[in]      n_elts     number of elements to consider
+ * \param[in]      pt_ids     list of elements ids (to access coords and fill)
+ * \param[in]      coords     where ?
+ * \param[in]      commpact   true:no indirection, false:indirection for filling
+ * \param[in, out] retval     result of the function
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _define_adv_field(cs_real_t           time,
                   cs_lnum_t           n_pts,
+                  const cs_lnum_t    *pt_ids,
                   const cs_real_t    *xyz,
+                  bool                compact,
                   cs_real_t          *res)
 {
   CS_UNUSED(time);
 
-  for (cs_lnum_t p = 0; p < n_pts; p++) {
+  if (pt_ids != NULL && !compact) {
 
-    const cs_real_t  *pxyz = xyz + 3*p;
-    cs_real_t  *pres = res + 3*p;
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-    pres[0] = pxyz[1] - 0.5;
-    pres[1] = 0.5 - pxyz[0];
-    pres[2] = pxyz[2];
+      const cs_lnum_t  id = pt_ids[p];
+      const cs_real_t  *pxyz = xyz + 3*id;
+      cs_real_t  *pres = res + 3*id;
+
+      pres[0] = pxyz[1] - 0.5;
+      pres[1] = 0.5 - pxyz[0];
+      pres[2] = pxyz[2];
+
+    }
+
+  }
+  else if (pt_ids != NULL && compact) {
+
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
+
+      const cs_real_t  *pxyz = xyz + 3*pt_ids[p];
+      cs_real_t  *pres = res + 3*p;
+
+      pres[0] = pxyz[1] - 0.5;
+      pres[1] = 0.5 - pxyz[0];
+      pres[2] = pxyz[2];
+
+    }
+
+  }
+  else {
+
+    assert(pt_ids == NULL);
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
+
+      const cs_real_t  *pxyz = xyz + 3*p;
+      cs_real_t  *pres = res + 3*p;
+
+      pres[0] = pxyz[1] - 0.5;
+      pres[1] = 0.5 - pxyz[0];
+      pres[2] = pxyz[2];
+
+    }
 
   }
 }
 
-/* ---------------------------------------------------------------------------
- * TEST 1 -- Boundary conditions
- * -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Give the explicit definition of the dirichlet boundary conditions
+ *         pt_ids is optional. If not NULL, it enables to access in coords
+ *         at the right location and the same thing to fill retval if compact
+ *         is set to false
+ *         Rely on a generic function pointer for an analytic function
+ *
+ * \param[in]      time       when ?
+ * \param[in]      n_elts     number of elements to consider
+ * \param[in]      pt_ids     list of elements ids (to access coords and fill)
+ * \param[in]      coords     where ?
+ * \param[in]      commpact   true:no indirection, false:indirection for filling
+ * \param[in, out] res        result of the function
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _define_bcs(cs_real_t           time,
             cs_lnum_t           n_pts,
+            const cs_lnum_t    *pt_ids,
             const cs_real_t    *xyz,
+            bool                compact,
             cs_real_t          *res)
 {
   CS_UNUSED(time);
 
   const double  pi = 4.0*atan(1.0);
-  for (cs_lnum_t p = 0; p < n_pts; p++) {
+  if (pt_ids != NULL && !compact) {
 
-    const cs_real_t  *pxyz = xyz + 3*p;
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-    res[p] = 1 +
-      sin(pi*pxyz[0]) * sin(pi*(pxyz[1]+0.5)) * sin(pi*(pxyz[2]+one_third));
+      const cs_lnum_t  id = pt_ids[p];
+      const cs_real_t  *_xyz = xyz + 3*id;
+      const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
+
+      res[id] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+
+    }
+
+  }
+  else if (pt_ids != NULL && compact) {
+
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
+      const cs_real_t  *_xyz = xyz + 3*pt_ids[p];
+      const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
+
+      res[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+    }
+
+  }
+  else {
+
+    assert(pt_ids == NULL);
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
+      const cs_real_t  *_xyz = xyz + 3*p;
+      const double  x = _xyz[0], y = _xyz[1], z = _xyz[2];
+
+      res[p] = 1 + sin(pi*x)*sin(pi*(y+0.5))*sin(pi*(z+cs_math_onethird));
+    }
 
   }
 }
 
-/* ---------------------------------------------------------------------------
- * TEST 1 -- Source term
- * -------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Give the explicit definition of the source term
+ *         pt_ids is optional. If not NULL, it enables to access in coords
+ *         at the right location and the same thing to fill retval if compact
+ *         is set to false
+ *         Rely on a generic function pointer for an analytic function
+ *
+ * \param[in]      time       when ?
+ * \param[in]      n_elts     number of elements to consider
+ * \param[in]      pt_ids     list of elements ids (to access coords and fill)
+ * \param[in]      coords     where ?
+ * \param[in]      commpact   true:no indirection, false:indirection for filling
+ * \param[in, out] res        result of the function
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _define_source(cs_real_t           time,
                cs_lnum_t           n_pts,
+               const cs_lnum_t     pt_ids[],
                const cs_real_t    *xyz,
+               bool                compact,
                cs_real_t          *res)
 {
   CS_UNUSED(time);
   const double  pi = 4.0*atan(1.0), pi2 = pi*pi;
+  if (pt_ids != NULL && !compact) {
 
-  for (cs_lnum_t p = 0; p < n_pts; p++) {
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
 
-    const double  x = xyz[3*p], y = xyz[3*p+1], z = xyz[3*p+2];
-    const double  cpx = cos(pi*x), spx = sin(pi*x);
-    const double  cpy = cos(pi*(y+0.5)), spy = sin(pi*(y+0.5));
-    const double  cpz = cos(pi*(z+one_third)), spz = sin(pi*(z+one_third));
+      const cs_lnum_t  id = pt_ids[p];
+      const double  x = xyz[3*id], y = xyz[3*id+1], z = xyz[3*id+2];
+      const double  cpx = cos(pi*x), spx = sin(pi*x);
+      const double  cpy = cos(pi*(y+0.5)), spy = sin(pi*(y+0.5));
+      const double  cpz = cos(pi*(z+one_third)), spz = sin(pi*(z+one_third));
 
-    /* first derivatives */
-    cs_real_t gx = pi*cpx*spy*spz;
-    cs_real_t gy = pi*spx*cpy*spz;
-    cs_real_t gz = pi*spx*spy*cpz;
+      /* first derivatives */
+      cs_real_t gx = pi*cpx*spy*spz;
+      cs_real_t gy = pi*spx*cpy*spz;
+      cs_real_t gz = pi*spx*spy*cpz;
 
-    /* second derivatives */
-    cs_real_t gxx, gyy, gzz, gxy, gxz, gyz;
-    gxx = gyy = gzz = -pi2*spx*spy*spz;
-    gxy = pi2*cpx*cpy*spz, gxz = pi2*cpx*spy*cpz, gyz = pi2*spx*cpy*cpz;
+      /* second derivatives */
+      cs_real_t gxx, gyy, gzz, gxy, gxz, gyz;
+      gxx = gyy = gzz = -pi2*spx*spy*spz;
+      gxy = pi2*cpx*cpy*spz, gxz = pi2*cpx*spy*cpz, gyz = pi2*spx*cpy*cpz;
 
-    /* Material property */
-    cs_real_33_t  cond;
-    cond[0][0] = 1.0, cond[0][1] = 0.5, cond[0][2] = 0.0;
-    cond[1][0] = 0.5, cond[1][1] = 1.0, cond[1][2] = 0.5;
-    cond[2][0] = 0.0, cond[2][1] = 0.5, cond[2][2] = 1.0;
+      /* Material property */
+      cs_real_33_t  cond;
+      cond[0][0] = 1.0, cond[0][1] = 0.5, cond[0][2] = 0.0;
+      cond[1][0] = 0.5, cond[1][1] = 1.0, cond[1][2] = 0.5;
+      cond[2][0] = 0.0, cond[2][1] = 0.5, cond[2][2] = 1.0;
 
-    /* Contribution of the diffusive part */
-    res[p] = cond[0][0]*gxx + cond[1][1]*gyy + cond[2][2]*gzz +
-      2*( cond[0][1]*gxy + cond[0][2]*gxz + cond[1][2]*gyz);
-    res[p] *= -1;
+      /* Contribution of the diffusive part */
+      res[id] = cond[0][0]*gxx + cond[1][1]*gyy + cond[2][2]*gzz +
+        2*( cond[0][1]*gxy + cond[0][2]*gxz + cond[1][2]*gyz);
+      res[id] *= -1;
 
-    /* Contribution of the advection term */
-    res[p] += (y - 0.5)*gx + (0.5 - x)*gy + z*gz + 1 + spx*spy*spz;
+      /* Contribution of the advection term */
+      res[id] += (y - 0.5)*gx + (0.5 - x)*gy + z*gz + 1 + spx*spy*spz;
 
-  } // Loop on evaluation points
+    } // Loop on evaluation points
+
+  }
+  else if (pt_ids != NULL && compact) {
+
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
+
+      const cs_lnum_t  id = pt_ids[p];
+      const double  x = xyz[3*id], y = xyz[3*id+1], z = xyz[3*id+2];
+      const double  cpx = cos(pi*x), spx = sin(pi*x);
+      const double  cpy = cos(pi*(y+0.5)), spy = sin(pi*(y+0.5));
+      const double  cpz = cos(pi*(z+one_third)), spz = sin(pi*(z+one_third));
+
+      /* first derivatives */
+      cs_real_t gx = pi*cpx*spy*spz;
+      cs_real_t gy = pi*spx*cpy*spz;
+      cs_real_t gz = pi*spx*spy*cpz;
+
+      /* second derivatives */
+      cs_real_t gxx, gyy, gzz, gxy, gxz, gyz;
+      gxx = gyy = gzz = -pi2*spx*spy*spz;
+      gxy = pi2*cpx*cpy*spz, gxz = pi2*cpx*spy*cpz, gyz = pi2*spx*cpy*cpz;
+
+      /* Material property */
+      cs_real_33_t  cond;
+      cond[0][0] = 1.0, cond[0][1] = 0.5, cond[0][2] = 0.0;
+      cond[1][0] = 0.5, cond[1][1] = 1.0, cond[1][2] = 0.5;
+      cond[2][0] = 0.0, cond[2][1] = 0.5, cond[2][2] = 1.0;
+
+      /* Contribution of the diffusive part */
+      res[p] = cond[0][0]*gxx + cond[1][1]*gyy + cond[2][2]*gzz +
+        2*( cond[0][1]*gxy + cond[0][2]*gxz + cond[1][2]*gyz);
+      res[p] *= -1;
+
+      /* Contribution of the advection term */
+      res[p] += (y - 0.5)*gx + (0.5 - x)*gy + z*gz + 1 + spx*spy*spz;
+
+    } // Loop on evaluation points
+
+  }
+  else {
+
+    assert(pt_ids == NULL);
+    for (cs_lnum_t p = 0; p < n_pts; p++) {
+
+      const double  x = xyz[3*p], y = xyz[3*p+1], z = xyz[3*p+2];
+      const double  cpx = cos(pi*x), spx = sin(pi*x);
+      const double  cpy = cos(pi*(y+0.5)), spy = sin(pi*(y+0.5));
+      const double  cpz = cos(pi*(z+one_third)), spz = sin(pi*(z+one_third));
+
+      /* first derivatives */
+      cs_real_t gx = pi*cpx*spy*spz;
+      cs_real_t gy = pi*spx*cpy*spz;
+      cs_real_t gz = pi*spx*spy*cpz;
+
+      /* second derivatives */
+      cs_real_t gxx, gyy, gzz, gxy, gxz, gyz;
+      gxx = gyy = gzz = -pi2*spx*spy*spz;
+      gxy = pi2*cpx*cpy*spz, gxz = pi2*cpx*spy*cpz, gyz = pi2*spx*cpy*cpz;
+
+      /* Material property */
+      cs_real_33_t  cond;
+      cond[0][0] = 1.0, cond[0][1] = 0.5, cond[0][2] = 0.0;
+      cond[1][0] = 0.5, cond[1][1] = 1.0, cond[1][2] = 0.5;
+      cond[2][0] = 0.0, cond[2][1] = 0.5, cond[2][2] = 1.0;
+
+      /* Contribution of the diffusive part */
+      res[p] = cond[0][0]*gxx + cond[1][1]*gyy + cond[2][2]*gzz +
+        2*( cond[0][1]*gxy + cond[0][2]*gxz + cond[1][2]*gyz);
+      res[p] *= -1;
+
+      /* Contribution of the advection term */
+      res[p] += (y - 0.5)*gx + (0.5 - x)*gy + z*gz + 1 + spx*spy*spz;
+
+    } // Loop on evaluation points
+
+  }
+
 }
 
 /*============================================================================
@@ -209,20 +395,8 @@ cs_user_cdo_activated(void)
 void
 cs_user_cdo_add_mesh_locations(void)
 {
-  /* ===========================
-     Define mesh locations
-     ===========================
-
-     By default several mesh locations are predefined
-     >> "cells"
-     >> "interior_faces"
-     >> "boundary_faces"
-     >> "vertices"
-
- */
-
-  cs_mesh_location_add("in", CS_MESH_LOCATION_BOUNDARY_FACES, "x < 1e-5");
-  cs_mesh_location_add("out", CS_MESH_LOCATION_BOUNDARY_FACES, "x > 0.9999");
+  cs_boundary_zone_define("in", "x < 1e-5", 0);
+  cs_boundary_zone_define("out", "x > 0.9999", 0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -239,7 +413,7 @@ cs_user_cdo_add_mesh_locations(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_init_domain(cs_domain_t   *domain)
+cs_user_cdo_init_setup(cs_domain_t   *domain)
 {
   /* ======================
      Boundary of the domain
@@ -299,80 +473,37 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
 
   cs_domain_def_time_step_by_value(domain, 1.0);
 
-  /* =============================
-     Activate predefined equations
-     =============================
+  /* ============================
+     Add equations/model to solve
+     ============================
 
-     For the wall distance:
-       cs_domain_activate_wall_distance(domain);
+     Activate predefined equations/modules
 
-  */
-
-  cs_domain_activate_wall_distance(domain);
-
-  /* =========================================
-     Define additional user equations to solve
-     =========================================
-
-     cs_domain_add_user_equation(...)
-
-     >> available type of equation: "scalar", "vector" or "tensor"
-     >> default_bc: "zero_value" or "zero_flux"
+     Add user equation:
+       default boundary condition is among:
+       CS_PARAM_BC_HMG_DIRICHLET or CS_PARAM_BC_HMG_NEUMANN
 
      By default, initial values are set to zero (or the value given by the
      restart file in case of restart).
   */
 
-  cs_domain_add_user_equation(domain,
-                              "AdvDiff",     // equation name
-                              "Potential",   // associated variable field name
-                              "scalar",      // type of equation
-                              "zero_value"); // default boundary condition
+  cs_walldistance_activate();
 
-  /* ================================
-     User-defined material properties
-     ================================
+  cs_equation_add_user("AdvDiff",     // equation name
+                       "Potential",   // associated variable field name
+                       1,             // dimension of the unknown
+                       CS_PARAM_BC_HMG_DIRICHLET); // default boundary
 
-     By default, one material property is defined:
-     >> "unity" (isotropic and value equal 1.0)
+  /* ========================================
+     Add material properties/advection fields
+     ======================================== */
 
-     Users can also define additional material properties
-     cs_domain_add_property(domain,
-                            "name_of_property",
-                            "type_keyword",
-                            n_subdomains);
+  cs_property_add("conductivity",      // property name
+                  CS_PROPERTY_ANISO);  // type of material property
+  cs_property_add("rho.cp",            // property name
+                  CS_PROPERTY_ISO);    // type of material property
 
-      type_keyword has predefined values among:
-        >> "isotropic", "orthotropic" or "anisotropic"
-
-      n_subdomains corresponds to the number of subdomains used to define
-      this property (if 1 is given, use "cells" as mesh location, otherwise
-      give the name of a mesh locations based on a selection of cells which
-      has been previously defined).
-  */
-
-  cs_domain_add_property(domain,
-                         "conductivity",  // property name
-                         "anisotropic",   // type of material property
-                         1);              // definition in n_subdomains
-
-  cs_domain_add_property(domain,
-                         "rho.cp",       // property name
-                         "isotropic",    // type of material property
-                         1);             // definition in n_subdomains
-
-  /* =============================
-     User-defined advection fields
-     =============================
-
-     Users can also define advection fields
-     cs_domain_add_advection_field(domain,
-                                   "name_of_advection_field");
-
-  */
-
-  cs_domain_add_advection_field(domain,
-                                "adv_field");
+  cs_advection_field_add("adv_field"); // name of the new advection field
 }
 
 /*----------------------------------------------------------------------------*/
@@ -386,91 +517,55 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_set_domain(cs_domain_t   *domain)
+cs_user_cdo_finalize_setup(cs_domain_t   *domain)
 {
+  CS_UNUSED(domain);
+
   /* =======================
      User-defined properties
-     =======================
+     ======================= */
 
-     Retrieve the property to set
-     cs_property_t  *pty = cs_domain_get_property(domain, "pty_name");
+  cs_property_t  *conductivity = cs_property_by_name("conductivity");
+  cs_real_33_t  tensor = {{1.0,  0.5, 0.0}, {0.5, 1.0, 0.5}, {0.0, 0.5, 1.0}};
 
-    Several ways exist to define a property
-      >> cs_property_def_by_value(pty, "location_name", value);
-      >> cs_property_def_by_analytic(pty, "location_name", func);
-      >> cs_property_def_by_law(pty, "location_name", func);
+  cs_property_def_aniso_by_value(conductivity, // property structure
+                                 "cells",      // name of the volume zone
+                                 tensor);      // values of the property
 
-      -- pty is the structure related to the property to set
-      -- "location_name" is the name of the mesh location (based on cells)
-      where the given definition has to be applied
+  cs_property_t  *rhocp = cs_property_by_name("rho.cp");
+  cs_real_t  iso_val = 2.0;
 
-      For a definition by value:
-      -- value is "1.0" for instance for an isotropic property
-         or "0.5 0.1 1." for instance for an orthotropic property
-      For a definition by analytical function or law
-      -- func is a function with a predefined prototype
-
-  */
-
-  cs_property_t  *conductivity = cs_domain_get_property(domain, "conductivity");
-
-  cs_property_def_by_value(conductivity,     // property structure
-                           "cells",          // name of the mesh location
-                           "1.0  0.5  0.0\n" // values of the property
-                           "0.5  1.0  0.5\n"
-                           "0.0  0.5  1.0\n");
-
-  cs_property_t  *rhocp = cs_domain_get_property(domain, "rho.cp");
-
-  cs_property_def_by_value(rhocp,    // property structure
-                           "cells",  // name of the mesh location
-                           "1.0");   // value of the property
+  cs_property_def_iso_by_value(rhocp,    // property structure
+                               "cells",  // name of the volume zone
+                               iso_val);   // value of the property
 
   /* =============================
      User-defined advection fields
-     =============================
+     ============================= */
 
-     Retrieve the advection field to set
-     cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, "adv_name");
-
-     Several ways exist to define an advection field
-      >> cs_advection_field_def_by_value(adv, values);
-         -- adv is the structure related to the advection field to set
-         -- values is "0.5 0.1 1." for instance
-
-      >> cs_property_def_by_analytic(adv, func);
-         -- adv is the structure related to the advection field to set
-         -- func is a function with a predefined prototype
-
-  */
-
-  cs_adv_field_t  *adv = cs_domain_get_advection_field(domain, "adv_field");
+  cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
 
   cs_advection_field_def_by_analytic(adv, _define_adv_field);
 
   /* Enable also the defintion of the advection field at mesh vertices */
-  cs_advection_field_set_option(adv, CS_ADVKEY_DEFINE_AT, "vertices");
-
-  /* Activate the post-processing of the advection field */
-  cs_advection_field_set_option(adv, CS_ADVKEY_POST, "field");
+  cs_advection_field_set_option(adv, CS_ADVKEY_DEFINE_AT_VERTICES);
 
   /* Activate the post-processing of the related Courant number */
-  cs_advection_field_set_option(adv, CS_ADVKEY_POST, "courant");
+  cs_advection_field_set_option(adv, CS_ADVKEY_POST_COURANT);
 
   /* ======================
      User-defined equations
      ====================== */
 
   /* Retrieve the equation to set
-     >> cs_equation_t  *eq = cs_domain_get_equation(domain, "eq_name");
-  */
+     >> cs_equation_t  *eq = cs_equation_by_name("eq_name");  */
 
-  cs_equation_t  *eq = cs_domain_get_equation(domain, "AdvDiff");
+  cs_equation_t  *eq = cs_equation_by_name("AdvDiff");
 
   /* Define the boundary conditions
      >> cs_equation_add_bc_by_analytic(eq,
                                        bc_type,
-                                       "mesh_location_name",
+                                       "zone_name",
                                        analytic_function);
 
      -> eq is the structure related to the equation to set
@@ -481,14 +576,12 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
      >> cs_equation_add_bc_by_value(eq,
                                     bc_type,
                                     "mesh_location_name",
-                                    get);
-
-     -> get : accessor to the value
+                                    values); // pointer
   */
 
   cs_equation_add_bc_by_analytic(eq,
                                  CS_PARAM_BC_DIRICHLET,
-                                 "boundary_faces",  // name of the mesh location
+                                 "boundary_faces",  // zone name
                                  _define_bcs);      // pointer to the function
 
   /* Link properties to different terms of this equation
@@ -513,31 +606,22 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
 
   /* Add a source term:
      >> cs_equation_add_source_term_by_val(eq,
-                                           label,
-                                           ml_name,
+                                           volume_zone__name,
                                            val);
      or
      >> cs_equation_add_source_term_by_analytic(eq,
-                                                label,
-                                                ml_name,
+                                                volume_zone_name,
                                                 analytic_func);
 
-     where label of the source term is optional (i.e. NULL is possible)
-     This label is mandatory if additional settings are requested only for
-     this specific source term.
-
-     where ml_name is the name of the mesh location where this source term is
-     defined (a selection of cells)
 
      where val is the value of the source term by m^3
      or where analytic_func is the name of the analytical function
    */
 
-  cs_source_term_t  *st
+  cs_xdef_t  *st
     = cs_equation_add_source_term_by_analytic(eq,
-                                              "SourceTerm",    // label
-                                              "cells",         // ml_name
-                                              _define_source); // function
+                                              "cells",
+                                              _define_source);
 
   /* Optional: specify the quadrature used for computing a source term
 
@@ -547,7 +631,7 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
      CS_QUADRATURE_HIGHEST  used 5 Gauss points for approximating the integral
   */
 
-  cs_source_term_set_quadrature(st, CS_QUADRATURE_BARY);
+  cs_xdef_set_quadrature(st, CS_QUADRATURE_BARY);
 }
 
 /*----------------------------------------------------------------------------*/

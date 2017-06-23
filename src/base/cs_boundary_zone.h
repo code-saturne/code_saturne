@@ -46,6 +46,21 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/*!
+ * @defgroup volume_zone_flags Flags specifying general boundary zone type
+ *
+ * @{
+ */
+
+/*
+ * Zone type
+ */
+
+/*! initialization zone */
+#define CS_BOUNDARY_ZONE_WALL       (1 << 0)
+
+/*! @} */
+
 /*============================================================================
  * Type definitions
  *============================================================================*/

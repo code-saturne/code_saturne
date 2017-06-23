@@ -40,6 +40,7 @@
 
 #include "bft_mem.h"
 
+#include "cs_boundary_zone.h"
 #include "cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
@@ -59,41 +60,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Convert a cs_param_bc_type_t into a flag (enable multiple type for
- *          a same entity as required for vertices and edges)
- *
- * \param[in] bc_type   predefined type of boundary condition
- *
- * \return  a flag corresponding to the given type of boundary condition
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_flag_t
-_get_bc_flag(cs_param_bc_type_t   bc_type)
-{
-  cs_flag_t  ret_flag;
-  switch (bc_type) {
-  case CS_PARAM_BC_HMG_DIRICHLET:
-    ret_flag = CS_CDO_BC_HMG_DIRICHLET;
-    break;
-  case CS_PARAM_BC_DIRICHLET:
-    ret_flag = CS_CDO_BC_DIRICHLET;
-    break;
-  case CS_PARAM_BC_HMG_NEUMANN:
-    ret_flag = CS_CDO_BC_HMG_NEUMANN;
-    break;
-  case CS_PARAM_BC_NEUMANN:
-    ret_flag = CS_CDO_BC_NEUMANN;
-    break;
-  default:
-    ret_flag = 0;
-    break;
-  }
-  return ret_flag;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -251,38 +217,35 @@ cs_cdo_bc_list_free(cs_cdo_bc_list_t   *bcl)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the structure which translates the BC definition from the
- *         user viewpoint into a ready-to-use structure
- *         - Prepare the treatment of the boundary conditions.
- *         - Compile the information detailed in a cs_param_bc_t structure
+ *         user viewpoint into a ready-to-use structure for setting the arrays
+ *         keeping the values of the boundary condition to set.
  *
- * \param[in] param_bc    pointer to the parameters related to BCs of an eq.
- * \param[in] n_b_faces   number of border faces
+ * \param[in] default_bc   type of boundary condition to set by default
+ * \param[in] n_desc       number of boundary definitions
+ * \param[in] desc         list of boundary condition definition
+ * \param[in] n_b_faces    number of border faces
  *
  * \return a pointer to a new allocated cs_cdo_bc_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_bc_t *
-cs_cdo_bc_define(const cs_param_bc_t  *param_bc,
+cs_cdo_bc_define(cs_param_bc_type_t    default_bc,
+                 int                   n_desc,
+                 cs_xdef_t           **desc,
                  cs_lnum_t             n_b_faces)
 {
-  /* Sanity checks */
-  assert(param_bc != NULL);
-
   /* Set the default flag */
-  cs_flag_t  default_flag = 0;
-  if (param_bc->default_bc == CS_PARAM_BC_HMG_DIRICHLET)
-    default_flag = CS_CDO_BC_HMG_DIRICHLET;
-  else if (param_bc->default_bc == CS_PARAM_BC_HMG_NEUMANN)
-    default_flag = CS_CDO_BC_HMG_NEUMANN;
-  else
+  cs_flag_t  default_flag = cs_cdo_bc_get_flag(default_bc);
+  if (!(default_flag & CS_CDO_BC_HMG_DIRICHLET) &&
+      !(default_flag & CS_CDO_BC_HMG_NEUMANN))
     bft_error(__FILE__, __LINE__, 0,
               _(" Incompatible type of boundary condition by default.\n"
                 " Please modify your settings.\n"));
 
   cs_cdo_bc_t  *bc = _cdo_bc_create(n_b_faces);
 
-  if (n_b_faces == 0) {
+  if (n_b_faces == 0) { // In parallel run this situation may occur
 
     bc->dir = cs_cdo_bc_list_create(0, 0);
     bc->neu = cs_cdo_bc_list_create(0, 0);
@@ -292,23 +255,15 @@ cs_cdo_bc_define(const cs_param_bc_t  *param_bc,
   }
 
   /* Loop on the definition of each boundary condition */
-  for (int ii = 0; ii < param_bc->n_defs; ii++) {
+  for (int ii = 0; ii < n_desc; ii++) {
 
-    const int  ml_id = param_bc->ml_ids[ii];
-    const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
-    const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
-    const cs_flag_t  def_flag = _get_bc_flag(param_bc->types[ii]);
+    const cs_xdef_t  *d = desc[ii];
+    const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
 
-    if (elt_ids == NULL) {
-      assert(n_elts[0] == n_b_faces);
-      for (cs_lnum_t i = 0; i < n_elts[0]; i++)
-        bc->flag[i] |= def_flag;
-    }
-    else
-      for (cs_lnum_t i = 0; i < n_elts[0]; i++)
-        bc->flag[elt_ids[i]] |= def_flag;
+    for (cs_lnum_t i = 0; i < z->n_faces; i++)
+      bc->flag[z->face_ids[i]] |= d->meta;
 
-  } // Loop on boundary conditions
+  } // Loop on definitions of boundary conditions
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++)
     if (bc->flag[i] == 0)
@@ -368,41 +323,40 @@ cs_cdo_bc_define(const cs_param_bc_t  *param_bc,
   } // Loop on border faces
 
   /* Loop on the definition of each boundary condition */
-  for (short int def_id = 0; def_id < param_bc->n_defs; def_id++) {
+  for (short int def_id = 0; def_id < n_desc; def_id++) {
 
-    const int  ml_id = param_bc->ml_ids[def_id];
-    const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(ml_id);
-    const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(ml_id);
-    const cs_param_bc_type_t  type = param_bc->types[def_id];
+    const cs_xdef_t  *d = desc[def_id];
+    const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
 
-    switch (type) {
+    for (cs_lnum_t i = 0; i < z->n_faces; i++)
+      bc->flag[z->face_ids[i]] |= d->meta;
 
-    case CS_PARAM_BC_DIRICHLET:
-      _add_def_to_bc(def_id, n_elts[0], elt_ids, shift[type],
+    if (d->meta & CS_CDO_BC_DIRICHLET) {
+
+      _add_def_to_bc(def_id,
+                     z->n_faces, z->face_ids,
+                     shift[CS_PARAM_BC_DIRICHLET],
                      bc->dir->def_ids, bc->dir->elt_ids);
-      shift[type] += n_elts[0];
-      break;
+      shift[CS_PARAM_BC_DIRICHLET] += z->n_faces;
 
-    case CS_PARAM_BC_NEUMANN:
-      _add_def_to_bc(def_id, n_elts[0], elt_ids, shift[type],
+    }
+    else if (d->meta & CS_CDO_BC_NEUMANN) {
+
+      _add_def_to_bc(def_id,
+                     z->n_faces, z->face_ids,
+                     shift[CS_PARAM_BC_NEUMANN],
                      bc->neu->def_ids, bc->neu->elt_ids);
-      shift[type] += n_elts[0];
-      break;
+      shift[CS_PARAM_BC_NEUMANN] += z->n_faces;
 
-    case CS_PARAM_BC_ROBIN:
-      _add_def_to_bc(def_id, n_elts[0], elt_ids, shift[type],
+    }
+    else if (d->meta & CS_CDO_BC_ROBIN) {
+
+      _add_def_to_bc(def_id,
+                     z->n_faces, z->face_ids,
+                     shift[CS_PARAM_BC_ROBIN],
                      bc->rob->def_ids, bc->rob->elt_ids);
-      shift[type] += n_elts[0];
-      break;
+      shift[CS_PARAM_BC_ROBIN] += z->n_faces;
 
-    case CS_PARAM_BC_HMG_NEUMANN:
-    case CS_PARAM_BC_HMG_DIRICHLET:
-      break; // Nothing to do. Already treated.
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid type of boundary condition.\n"
-                  " Stop generating the boundary condition structure."));
     }
 
   } // Loop on definitions of boundary conditions

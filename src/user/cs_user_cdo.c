@@ -118,7 +118,23 @@ cs_user_cdo_add_mesh_locations(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_init_domain(cs_domain_t   *domain)
+cs_user_cdo_init_setup(cs_domain_t   *domain)
+{
+  CS_UNUSED(domain);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify for each soil and tracer how is defined each term of the
+ *         the tracer equation. Soils and tracer equations have to be added
+ *         previously
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_setup_gwf(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 }
@@ -134,9 +150,26 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_set_domain(cs_domain_t   *domain)
+cs_user_cdo_finalize_setup(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the bulk density related to a soil structure
+ *
+ * \param[in]  soil      pointer to a cs_gwf_soil_t structure
+ * \param[out] density   return value for the density
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
+                             cs_real_t             *density)
+{
+  CS_UNUSED(soil);
+  CS_UNUSED(density);
 }
 
 /*----------------------------------------------------------------------------*/

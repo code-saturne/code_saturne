@@ -64,18 +64,6 @@ typedef struct { /* Only shared with a cs_domain_t structure */
 
   const cs_cdo_quantities_t   *quant;
 
-  /* Properties attached to the computational domain */
-  int                          n_properties;
-  cs_property_t              **properties;
-
-  /* Advection fields attached to the computational domain */
-  int                          n_adv_fields;
-  cs_adv_field_t             **adv_fields;
-
-  /* Number of equations defined on this domain */
-  int                          n_equations;
-  cs_equation_t              **equations;
-
 } cs_domain_post_t;
 
 /*============================================================================
@@ -107,11 +95,11 @@ _post_advection_field(const cs_adv_field_t       *adv,
 {
   if (adv == NULL)
     return;
-  if (adv->post_flag == 0)
+  if (adv->flag == 0)
     return;
 
   const bool post_courant =
-    (adv->post_flag & CS_ADVECTION_FIELD_POST_COURANT) ? true : false;
+    (adv->flag & CS_ADVECTION_FIELD_POST_COURANT) ? true : false;
 
   if (post_courant) { /* Compute and postprocess the Courant number */
 
@@ -162,60 +150,6 @@ _post_advection_field(const cs_adv_field_t       *adv,
     BFT_FREE(label);
     BFT_FREE(courant);
   }
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Predefined post-processing output for property structures
- *
- * \param[in]  pty         pointer to the property structure
- * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_step   pointer to a cs_time_step_t structure
- * \param[in]  dt_cur      value of the current time step
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_post_property(const cs_property_t        *pty,
-               const cs_cdo_quantities_t  *quant,
-               const cs_time_step_t       *time_step,
-               double                      dt_cur)
-{
-  if (pty == NULL)
-    return;
-  if (pty->post_flag == 0)
-    return;
-
-  if (pty->post_flag & CS_PROPERTY_POST_FOURIER) {
-
-    char  *label = NULL;
-    double  *fourier = NULL;
-    int len = strlen(pty->name) + 8 + 1;
-
-    BFT_MALLOC(fourier, quant->n_cells, double);
-    BFT_MALLOC(label, len, char);
-    sprintf(label, "%s.Fourier", pty->name);
-
-    /* Compute Fourier number */
-    cs_property_get_fourier(pty, dt_cur, fourier);
-
-    cs_post_write_var(CS_POST_MESH_VOLUME,
-                      CS_POST_WRITER_ALL_ASSOCIATED,
-                      label,
-                      1,
-                      true,           // interlace
-                      true,           // true = original mesh
-                      CS_POST_TYPE_cs_real_t,
-                      fourier,        // values on cells
-                      NULL,           // values at internal faces
-                      NULL,           // values at border faces
-                      time_step);     // time step management struct.
-
-    BFT_FREE(label);
-    BFT_FREE(fourier);
-
-  } // Post Fourier number
 
 }
 
@@ -274,18 +208,15 @@ _domain_post(void                      *input,
   cs_domain_post_t  *dp = (cs_domain_post_t *)input;
 
   /* Post-processing related to advection fields */
-  for (int adv_id = 0; adv_id < dp->n_adv_fields; adv_id++)
-    _post_advection_field(dp->adv_fields[adv_id],
-                          dp->quant, time_step, dp->dt_cur);
-
-  /* Post-processing related to properties */
-  for (int pty_id = 0; pty_id < dp->n_properties; pty_id++)
-    _post_property(dp->properties[pty_id],
-                   dp->quant, time_step, dp->dt_cur);
+  int n_adv_fields = cs_advection_field_get_n_fields();
+  for (int adv_id = 0; adv_id < n_adv_fields; adv_id++)
+    _post_advection_field(cs_advection_field_by_id(adv_id),
+                          dp->quant,
+                          time_step,
+                          dp->dt_cur);
 
   /* Post-processing related to equations */
-  for (int eq_id = 0; eq_id < dp->n_equations; eq_id++)
-    cs_equation_extra_post(dp->equations[eq_id], time_step, dp->dt_cur);
+  cs_equation_extra_post_all(time_step, dp->dt_cur);
 
 }
 
@@ -297,38 +228,20 @@ _domain_post(void                      *input,
 /*!
  * \brief  Initialize the generic post-processing related to a domain
  *
- * \param[in]  dt             reference time step value
- * \param[in]  n_adv_fields   number of advection fields
- * \param[in]  adv_fields     pointer on advection field pointers
- * \param[in]  n_properties   number of properties
- * \param(in]  properties     pointer on properties pointers
- * \param[in]  n_equations    number of equations
- * \param[in]  equations      pointer on equations pointers
+ * \param[in]  dt        reference time step value
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_domain_post_init(double                dt,
-                    cs_cdo_quantities_t  *quant,
-                    int                   n_adv_fields,
-                    cs_adv_field_t      **adv_fields,
-                    int                   n_properties,
-                    cs_property_t       **properties,
-                    int                   n_equations,
-                    cs_equation_t       **equations)
+                    cs_cdo_quantities_t  *quant)
 {
   BFT_MALLOC(domain_post, 1, cs_domain_post_t);
 
-  domain_post->dt_cur = dt;
-
   /* Shared */
+  domain_post->dt_cur = dt;
   domain_post->quant = quant;
-  domain_post->n_adv_fields = n_adv_fields;
-  domain_post->adv_fields = adv_fields;
-  domain_post->n_properties = n_properties;
-  domain_post->properties = properties;
-  domain_post->n_equations = n_equations;
-  domain_post->equations = equations;
 
   /* Set pointers of function if additional postprocessing is requested */
   cs_post_add_time_mesh_dep_output(_domain_post, domain_post);
@@ -377,9 +290,9 @@ cs_domain_post(cs_time_step_t    *time_step)
   assert(domain_post != NULL);
 
   /* Predefined extra-operations related to
-      - the domain (advection fields and properties),
-      - equations
-      - groundwater flows
+     - the domain (advection fields and properties),
+     - equations
+     - groundwater flows
      are also handled during the call of this function thanks to
      cs_post_add_time_mesh_dep_output() function pointer
   */

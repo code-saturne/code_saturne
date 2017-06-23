@@ -72,45 +72,115 @@ static cs_time_step_t  *time_step = NULL;
 static void
 _unity(cs_real_t         time,
        cs_lnum_t         n_pts,
+       const cs_lnum_t  *pt_ids,
        const cs_real_t  *xyz,
+       bool              compact,
        cs_real_t         retval[])
 {
   CS_UNUSED(time);
   CS_UNUSED(xyz);
-  for (cs_lnum_t i = 0; i < n_pts; i++) retval[i] = 1.0;
+  if (pt_ids != NULL && !compact)
+    for (cs_lnum_t i = 0; i < n_pts; i++) retval[pt_ids[i]] = 1.0;
+  else
+    for (cs_lnum_t i = 0; i < n_pts; i++) retval[i] = 1.0;
 }
 
 static void
-_linear_xyz(cs_real_t         time,
-            cs_lnum_t         n_pts,
-            const cs_real_t  *xyz,
-            cs_real_t         retval[])
+_linear_xyz(cs_real_t          time,
+            cs_lnum_t          n_pts,
+            const cs_lnum_t   *pt_ids,
+            const cs_real_t   *xyz,
+            bool               compact,
+            cs_real_t          retval[])
 {
   CS_UNUSED(time);
-  for (cs_lnum_t i = 0; i < n_pts; i++)
-    retval[i] = xyz[3*i] + xyz[3*i+1] + xyz[3*i+2];
+  if (pt_ids != NULL && !compact) {
+
+    for (cs_lnum_t i = 0; i < n_pts; i++) {
+      cs_lnum_t id = pt_ids[i];
+      retval[id] = xyz[3*id] + xyz[3*id+1] + xyz[3*id+2];
+    }
+
+  }
+  else if (pt_ids != NULL && compact) {
+
+    for (cs_lnum_t i = 0; i < n_pts; i++) {
+      cs_lnum_t id = pt_ids[i];
+      retval[i] = xyz[3*id] + xyz[3*id+1] + xyz[3*id+2];
+    }
+
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_pts; i++)
+      retval[i] = xyz[3*i] + xyz[3*i+1] + xyz[3*i+2];
+  }
+
 }
 
 static void
-_quadratic_x2(cs_real_t         time,
-              cs_lnum_t         n_pts,
-              const cs_real_t  *xyz,
-              cs_real_t         retval[])
+_quadratic_x2(cs_real_t          time,
+              cs_lnum_t          n_pts,
+              const cs_lnum_t   *pt_ids,
+              const cs_real_t   *xyz,
+              bool               compact,
+              cs_real_t          retval[])
 {
   CS_UNUSED(time);
-  for (cs_lnum_t i = 0; i < n_pts; i++)
-    retval[i] = xyz[3*i]*xyz[3*i];
+  if (pt_ids != NULL && !compact) {
+
+    for (cs_lnum_t i = 0; i < n_pts; i++) {
+      cs_lnum_t id = pt_ids[i];
+      retval[id] = xyz[3*id]*xyz[3*id];
+    }
+
+  }
+  else if (pt_ids != NULL && compact) {
+
+    for (cs_lnum_t i = 0; i < n_pts; i++) {
+      cs_lnum_t id = pt_ids[i];
+      retval[i] = xyz[3*id]*xyz[3*id];
+    }
+
+  }
+  else {
+
+    for (cs_lnum_t i = 0; i < n_pts; i++)
+      retval[i] = xyz[3*i]*xyz[3*i];
+
+  }
 }
 
 static void
 _nonpoly(cs_real_t         time,
          cs_lnum_t         n_pts,
+         const cs_lnum_t  *pt_ids,
          const cs_real_t  *xyz,
+         bool              compact,
          cs_real_t         retval[])
 {
   CS_UNUSED(time);
-  for (cs_lnum_t i = 0; i < n_pts; i++)
-    retval[i] = exp(xyz[3*i]+xyz[3*i+1]+xyz[3*i+1]-1.5);
+  if (pt_ids != NULL && !compact) {
+
+    for (cs_lnum_t i = 0; i < n_pts; i++) {
+      cs_lnum_t id = pt_ids[i];
+      retval[id] = exp(xyz[3*id]+xyz[3*id+1]+xyz[3*id+1]-1.5);
+    }
+
+  }
+  else if (pt_ids != NULL && compact) {
+
+    for (cs_lnum_t i = 0; i < n_pts; i++) {
+      cs_lnum_t id = pt_ids[i];
+      retval[i] = exp(xyz[3*id]+xyz[3*id+1]+xyz[3*id+1]-1.5);
+    }
+
+  }
+  else {
+
+    for (cs_lnum_t i = 0; i < n_pts; i++)
+      retval[i] = exp(xyz[3*i]+xyz[3*i+1]+xyz[3*i+1]-1.5);
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -890,7 +960,15 @@ _test_cdovb_schemes(FILE             *out,
 
   const int  n_runs = 1000;
   cs_real_t  st0_values[8], st1_values[8], st2_values[8], st3_values[8];
-  cs_source_term_t  *st = NULL;
+  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
+  cs_flag_t  meta_flag = cs_source_term_set_default_flag(CS_SPACE_SCHEME_CDOVB);
+
+  cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC,
+                                         1,
+                                         0, // z_id
+                                         state_flag,
+                                         meta_flag,
+                                         (void *)_unity);
 
   /* Evaluate the performance */
   cs_timer_counter_t  tc0, tc1, tc2, tc3;
@@ -898,20 +976,6 @@ _test_cdovb_schemes(FILE             *out,
   CS_TIMER_COUNTER_INIT(tc1); // build system
   CS_TIMER_COUNTER_INIT(tc2); // build system
   CS_TIMER_COUNTER_INIT(tc3); // build system
-
-  BFT_MALLOC(st, 1, cs_source_term_t);
-
-  /* Test with a constant function */
-  st->def.analytic = _unity;
-  // What followed is useless in the current context
-  st->name = NULL;
-  st->flag = cs_source_term_set_default_flag(CS_SPACE_SCHEME_CDOVB);
-  st->flag |= CS_FLAG_SCALAR;
-  st->def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
-  st->quad_type = CS_QUADRATURE_BARY;
-  st->array_desc.location = 0;
-  st->array_desc.state = 0;
-  st->array = NULL;
 
   // Loop on runs to evaluate the performance of each quadrature
   for (int r = 0; r < n_runs; r++) {
@@ -945,7 +1009,7 @@ _test_cdovb_schemes(FILE             *out,
             i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
 
   /* Test with a linear function */
-  st->def.analytic = _linear_xyz;
+  st->input = (void *)_linear_xyz;
 
   // Loop on runs to evaluate the performance of each quadrature
   for (int r = 0; r < n_runs; r++) {
@@ -979,7 +1043,7 @@ _test_cdovb_schemes(FILE             *out,
             i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
 
   /* Test with a quadratic (x*x) function */
-  st->def.analytic = _quadratic_x2;
+  st->input = (void *)_quadratic_x2;
 
   // Loop on runs to evaluate the performance of each quadrature
   for (int r = 0; r < n_runs; r++) {
@@ -1013,7 +1077,7 @@ _test_cdovb_schemes(FILE             *out,
             i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
 
     /* Test with a non-polynomial function */
-  st->def.analytic = _nonpoly;
+  st->input = (void *)_nonpoly;
   cs_real_t  exact_result[8] = {0.0609162, // V (0.0,0.0,0.0)
                                 0.100434,  // V (1.0,0.0,0.0)
                                 0.165587,  // V (1.0,1.0,0.0)

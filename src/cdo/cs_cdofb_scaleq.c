@@ -114,7 +114,7 @@ struct  _cs_cdofb_scaleq_t {
                                   defined for all cells (size = n_cells) */
   /* Metadata related to where and how is defined a source term */
   cs_flag_t      st_flags[CS_N_MAX_SOURCE_TERMS];
-  cs_desc_t      st_desc[CS_N_MAX_SOURCE_TERMS];
+  cs_xdef_t      st_desc[CS_N_MAX_SOURCE_TERMS];
 
   /* Boundary conditions:
 
@@ -132,7 +132,6 @@ struct  _cs_cdofb_scaleq_t {
 
    */
 
-  cs_param_bc_enforce_t  enforce; // type of enforcement of BCs
   cs_cdo_bc_t           *face_bc; // list of faces sorted by type of BCs
 
   /* Solution of the algebraic system at the last iteration */
@@ -494,7 +493,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
   } // Dirichlet BCs with non-homogeneous values
 
   /* Modify the system according to the type of boundary enforcement */
-  switch (builder->enforce) {
+  switch (eqp->enforcement) {
 
   case CS_PARAM_BC_ENFORCE_STRONG:
     {
@@ -632,8 +631,7 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
   /* Sanity checks */
   assert(eqp != NULL);
 
-  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOFB &&
-      eqp->var_type != CS_PARAM_VAR_SCAL)
+  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOFB && eqp->dim != 1)
     bft_error(__FILE__, __LINE__, 0, " Invalid type of equation.\n"
               " Expected: scalar-valued CDO face-based equation.");
 
@@ -669,17 +667,16 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
     b->sys_flag |= CS_FLAG_SYS_SOURCETERM;
 
 
-  /* Set members and structures related to the management of the BCs */
-  const cs_param_bc_t  *bc_param = eqp->bc;
-
-  /* Translate user-defined information about BC into a structure well-suited
+  /* Set members and structures related to the management of the BCs
+     Translate user-defined information about BC into a structure well-suited
      for computation. We make the distinction between homogeneous and
-     non-homogeneous BCs.
-  */
-  b->face_bc = cs_cdo_bc_define(bc_param, n_b_faces);
-  b->enforce = bc_param->enforcement;
+     non-homogeneous BCs.  */
+  b->face_bc = cs_cdo_bc_define(eqp->default_bc,
+                                eqp->n_bc_desc,
+                                eqp->bc_desc,
+                                n_b_faces);
 
-  if (b->enforce == CS_PARAM_BC_ENFORCE_WEAK_PENA)
+  if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_PENA)
     bft_error(__FILE__, __LINE__, 0,
               " CDO face-based schemes and weak enforcement by a strong"
               " penalization are not compatible yet.\n"
@@ -716,7 +713,7 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
   /* if (b->sys_flag & CS_FLAG_SYS_ADVECTION) */
   /*   b->adv = cs_cdo_advection_builder_init(connect, eqp, b->has[CS_FLAG_SYS_DIFFUSION]); */
   /* else { */
-  /*   if (b->enforce != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE) */
+  /*   if (eqp->enforcement != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE) */
   /*     b->flag |= CS_FLAG_SYS_SYM; // Algebraic system is symmetric */
   /* } */
 
@@ -858,14 +855,14 @@ cs_cdofb_scaleq_compute_source(void            *builder)
     return;
 
   double  *contrib = cs_equation_get_tmpbuf();
-  cs_desc_t  desc = {.location = CS_FLAG_SCALAR | cs_cdo_primal_cell,
-                     .state = CS_FLAG_STATE_DENSITY};
+  cs_flag_t  dof_loc = CS_FLAG_SCALAR | cs_cdo_primal_cell;
 
   for (int  st_id = 0; st_id < eqp->n_source_terms; st_id++) {
 
-    const cs_source_term_t  *st = eqp->source_terms + st_id;
+    const cs_xdef_t  *st = eqp->source_terms[st_id];
 
-    cs_source_term_compute(desc, st, &contrib); // updated inside this function
+    /* contrib is updated inside this function */
+    cs_source_term_compute_from_density(dof_loc, st, &contrib);
 
     /* Update source term array */
     for (cs_lnum_t i = 0; i < b->n_cells; i++)
@@ -1008,7 +1005,7 @@ cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
     memcpy(b->face_values, solu, b->n_faces*sizeof(cs_real_t));
 
   /* Take into account Dirichlet BCs */
-  if (b->enforce == CS_PARAM_BC_ENFORCE_STRONG)
+  if (eqp->enforcement == CS_PARAM_BC_ENFORCE_STRONG)
     for (i = 0; i < dir_faces->n_nhmg_elts; i++) // interior then border faces
       b->face_values[quant->n_i_faces + dir_faces->elt_ids[i]]
         = b->dir_val[i];

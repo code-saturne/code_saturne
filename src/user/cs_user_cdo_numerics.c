@@ -99,15 +99,12 @@ cs_user_cdo_geometric_settings(void)
 /*!
  * \brief  Setup advanced features concerning the numerical parameters
  *         of the equation resolved during the computation
- *
- * \param[in, out]  domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_numeric_settings(cs_domain_t   *domain)
+cs_user_cdo_numeric_settings(void)
 {
-  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/

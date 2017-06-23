@@ -49,6 +49,8 @@
 #include <bft_printf.h>
 
 #include "cs_mesh_location.h"
+#include "cs_boundary_zone.h"
+#include "cs_volume_zone.h"
 #include "cs_cdo_toolbox.h"
 #include "cs_property.h"
 #include "cs_advection_field.h"
@@ -153,7 +155,7 @@ cs_user_cdo_activated(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify additional mesh locations
+ * \brief  Specify additional zones and/or mesh locations
  */
 /*----------------------------------------------------------------------------*/
 
@@ -172,13 +174,12 @@ cs_user_cdo_add_mesh_locations(void)
 
  */
 
-  cs_mesh_location_add("left", CS_MESH_LOCATION_BOUNDARY_FACES, "x < 1e-3");
+  cs_boundary_zone_define("left", "x < 1e-3", 0);
 
   char cmd[20];
-  const double  tol = 1e-5;
+  sprintf(cmd, "x > %10.7e", L - 1e-5);
+  cs_boundary_zone_define("right", cmd, 0);
 
-  sprintf(cmd, "x > %10.7e", L-tol);
-  cs_mesh_location_add("right", CS_MESH_LOCATION_BOUNDARY_FACES, cmd);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -195,7 +196,7 @@ cs_user_cdo_add_mesh_locations(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_init_domain(cs_domain_t   *domain)
+cs_user_cdo_init_setup(cs_domain_t   *domain)
 {
   /* ======================
      Boundary of the domain
@@ -263,86 +264,65 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
      ================================
 
      For the groundwater flow module:
-     >> cs_domain_activate_gwf(domain,
-                               permeability_type,
-                               Richards_time,
-                               n_soils,
-                               n_tracers);
+     >> cs_gwf_activate(permeability_type,
+                        richards_flag);
 
      * permeability_type is one of the following keywords:
-       "isotropic", "orthotropic" or "anisotropic"
-     * Richards_time is one of the following keywords:
-       "steady" or "unsteady"
-     * n_soils should be at least equal to 1.
+       CS_PROPERTY_ISO, CS_POPERTY_ORTHO or CS_PROPERTY_ANISO
+
+     * richards_flag are
+     CS_GWF_GRAVITATION, CS_GWF_RICHARDS_UNSTEADY, CS_GWF_SOIL_PROPERTY_UNSTEADY
+     CS_GWF_SOIL_ALL_SATURATED
 
      * Consequences of the activation of the groundwater flow module are:
      - add a new equation named "Richards" along with an associated field named
-       "hydraulic_head". Default boundary condition is set to "zero_flux".
+       "hydraulic_head". The default boundary condition set is a homogeneous
+       Neumann.
      - define a new advection field named "darcian_flux"
      - define a new property called "permeability".
      - define a new property called "soil_capacity" if "unsteady" is chosen
   */
 
-  cs_gwf_t  *gwf = cs_domain_activate_gwf(domain,
-                                          "isotropic", // type of permeability
-                                          "unsteady",  // steady or unsteady
-                                          1,           // number of soils
-                                          0);          // number of tracers
+  cs_gwf_activate(CS_PROPERTY_ISO,
+                  CS_GWF_RICHARDS_UNSTEADY);
 
   /* =========
      Add soils
      ========= */
 
-  cs_gwf_add_iso_soil_by_value(gwf,
-                               CS_GWF_HYDRAULIC_TRACY, // Hydraulic model to use
-                               "cells",                // mesh location
-                               1.15741e-4,             // saturated permeability
-                               0.45,                   // saturated moisture
-                               1.0);                   // bulk density (useless)
+  cs_gwf_soil_add("cells", CS_GWF_SOIL_USER);
 
-  /* Set additional parameters defining this soil
-     >> cs_gwf_set_soil_param(gw, mesh_location_name, key, keyval);
+}
 
-     If mesh_location_name is set to NULL, all soils are set.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify for each soil and tracer how is defined each term of the
+ *         the tracer equation. Soils and tracer equations have to be added
+ *         previously
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+*/
+/*----------------------------------------------------------------------------*/
 
-     Available keys are:
-     CS_SOILKEY_SAT_MOISTURE,  // Set the saturated moisture content
-     CS_SOILKEY_RES_MOISTURE,  // Set the residual moisture content
+void
+cs_user_cdo_setup_gwf(cs_domain_t   *domain)
+{
+  CS_UNUSED(domain);
 
-     Keys specific to the Tracy model
-     CS_SOILKEY_TRACY_SAT_H,   // Head related to the saturated moisture content
-     CS_SOILKEY_TRACY_RES_H,   // Head related to the residual moisture content
-  */
+  /* =========
+     Set soils
+     ========= */
 
-  cs_gwf_set_soil_param(gwf, "cells", CS_SOILKEY_TRACY_RES_H, -100);
-  cs_gwf_set_soil_param(gwf, NULL, CS_SOILKEY_RES_MOISTURE, 0.15);
+  cs_gwf_soil_t  *soil = cs_gwf_soil_by_name("cells");
+  cs_gwf_set_iso_saturated_soil(soil,
+                                1.15741e-4,  // saturated permeability
+                                0.45,        // saturated moisture
+                                1.0);        // bulk density (useless)
 
-  /* ====================
-     Add tracer equations
-     ====================
+  /* ===========
+     Set tracers
+     =========== */
 
-     Add a tracer equation which is unsteady and convected by the darcean flux
-     >> cs_domain_add_gwf_tracer_eq(domain, eqname, varname);
-
-     This implies the creation of a new equation called eqname and a new
-     field called varname.
-  */
-
-  /* Set parameters related to each tracer equation in each soil
-     >> cs_domain_set_gwf_tracer_eq(domain,
-                                    eqname,
-                                    mesh_location_name,
-                                    water_diff,
-                                    alpha_l,
-                                    alpha_t,
-                                    kd,
-                                    lambda);
-
-     According to the setting, additional properties can be created which are
-     associated to the diffusion and/or reaction terms.
-
-     If mesh_location_name is set to NULL, all soils are set.
-  */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -356,27 +336,17 @@ cs_user_cdo_init_domain(cs_domain_t   *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_set_domain(cs_domain_t   *domain)
+cs_user_cdo_finalize_setup(cs_domain_t   *domain)
 {
-  /* Retrieve the equation to set
-     cs_equation_t  *eq = cs_domain_get_equation(domain, "eq_name");
-  */
-
-  cs_equation_t  *eq = NULL;
+  CS_UNUSED(domain);
 
   /* =================
      Richards equation
      ================= */
 
-  eq = cs_domain_get_equation(domain, "Richards");
+  cs_equation_t  *eq = cs_equation_by_name("Richards");
 
   /* Define the boundary conditions
-     >> cs_equation_add_bc_by_analytic(eq,
-                                       bc_type,
-                                       "mesh_location_name",
-                                       analytic_function);
-
-     -> eq is the structure related to the equation to set
      -> type of boundary condition:
         CS_PARAM_BC_DIRICHLET, CS_PARAM_BC_HMG_DIRICHLET,
         CS_PARAM_BC_NEUMANN, CS_PARAM_BC_HMG_NEUMANN, CS_PARAM_BC_ROBIN
@@ -384,28 +354,42 @@ cs_user_cdo_set_domain(cs_domain_t   *domain)
      >> cs_equation_add_bc_by_value(eq,
                                     bc_type,
                                     "mesh_location_name",
-                                    get);
-
-     -> get : accessor to the value
-  */
+                                    val);  // pointer to cs_real_t  */
 
   cs_equation_add_bc_by_analytic(eq,
                                  CS_PARAM_BC_DIRICHLET,
-                                 "left",    // name of the mesh location
-                                 get_sol);  // analytic function
+                                 "left",            // name of the boundary zone
+                                 (void *)get_sol);  // analytic function
 
   /* Value to set */
-  cs_get_t  get_bc = {.val = -100};
+  cs_real_t  bc_val = -100;
   cs_equation_add_bc_by_value(eq,
                               CS_PARAM_BC_DIRICHLET,
                               "right",  // name of the related mesh location
-                              get_bc);     // value to set
+                              &bc_val); // value to set
 
   /* Define the initial condition by an analytical function
      (By default: zero is set) */
-  cs_equation_set_ic_by_analytic(eq,       // equation
+  cs_equation_add_ic_by_analytic(eq,       // equation
                                  NULL,     // NULL --> all cells
-                                 get_ic);  // pointer to the analytic function
+                                 (void *)get_ic);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the bulk density related to a soil structure
+ *
+ * \param[in]  soil      pointer to a cs_gwf_soil_t structure
+ * \param[out] density   return value for the density
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
+                             cs_real_t             *density)
+{
+  CS_UNUSED(soil);
+  *density = 1.0;
 }
 
 /*----------------------------------------------------------------------------*/

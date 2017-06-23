@@ -35,6 +35,7 @@
 #include "cs_base.h"
 #include "cs_cdo.h"
 #include "cs_cdo_local.h"
+#include "cs_equation_param.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -52,7 +53,7 @@ BEGIN_C_DECLS
 /*!
  * \brief   Apply the time discretization to a local system
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
@@ -62,12 +63,12 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdo_time_scheme_t)(const cs_param_time_t      t_info,
-                       const double               tpty_val,
-                       const cs_locmat_t         *mass_mat,
-                       const cs_flag_t            system_flag,
-                       cs_cell_builder_t         *cb,
-                       cs_cell_sys_t             *csys);
+(cs_cdo_time_scheme_t)(const cs_equation_param_t  *eqp,
+                       const double                tpty_val,
+                       const cs_locmat_t          *mass_mat,
+                       const cs_flag_t             system_flag,
+                       cs_cell_builder_t          *cb,
+                       cs_cell_sys_t              *csys);
 
 /*============================================================================
  * Global variables
@@ -83,15 +84,15 @@ typedef void
  *         to the space scheme
  *
  * \param[in]  sys_flag       metadata about how is set the algebraic system
- * \param[in]  t_info         metadata about the time discretization
+ * \param[in]  eqp            pointer to a cs_equation_param_t
  *
  * \return  a pointer to the function handling the time discretization
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_time_scheme_t *
-cs_cdo_time_get_scheme_function(const cs_flag_t         sys_flag,
-                                const cs_param_time_t   t_info);
+cs_cdo_time_get_scheme_function(const cs_flag_t             sys_flag,
+                                const cs_equation_param_t  *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -99,7 +100,7 @@ cs_cdo_time_get_scheme_function(const cs_flag_t         sys_flag,
  *         instance the source term)
  *
  * \param[in]     sys_flag    metadata about how is set the algebraic system
- * \param[in]     t_info      metadata about the time discretization
+ * \param[in]     eqp         pointer to a cs_equation_param_t
  * \param[in]     n_dofs      size of the array of values
  * \param[in]     values      array of values
  * \param[in,out] rhs         right-hand side to update
@@ -107,11 +108,11 @@ cs_cdo_time_get_scheme_function(const cs_flag_t         sys_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_update_rhs_with_array(const cs_flag_t         sys_flag,
-                                  const cs_param_time_t   t_info,
-                                  const cs_lnum_t         n_dofs,
-                                  const cs_real_t        *values,
-                                  cs_real_t              *rhs);
+cs_cdo_time_update_rhs_with_array(const cs_flag_t             sys_flag,
+                                  const cs_equation_param_t  *eqp,
+                                  const cs_lnum_t             n_dofs,
+                                  const cs_real_t            *values,
+                                  cs_real_t                  *rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -119,7 +120,7 @@ cs_cdo_time_update_rhs_with_array(const cs_flag_t         sys_flag,
  *          a CDO scheme is used and the mass matrix related to the time
  *          discretization is diagonal (lumping or Voronoi Hodge)
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in]      system_flag  indicate what is needed to build the system
@@ -129,19 +130,19 @@ cs_cdo_time_update_rhs_with_array(const cs_flag_t         sys_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_diag_imp(const cs_param_time_t      t_info,
-                     const double               tpty_val,
-                     const cs_locmat_t         *mass_mat,
-                     const cs_flag_t            system_flag,
-                     cs_cell_builder_t         *cb,
-                     cs_cell_sys_t             *csys);
+cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
+                     const double                tpty_val,
+                     const cs_locmat_t          *mass_mat,
+                     const cs_flag_t             system_flag,
+                     cs_cell_builder_t          *cb,
+                     cs_cell_sys_t              *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Apply to the local system an implicit time discretization when
  *          a CDO scheme is used
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in]      system_flag  indicate what is needed to build the system
@@ -151,12 +152,12 @@ cs_cdo_time_diag_imp(const cs_param_time_t      t_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_imp(const cs_param_time_t      t_info,
-                const double               tpty_val,
-                const cs_locmat_t         *mass_mat,
-                const cs_flag_t            system_flag,
-                cs_cell_builder_t         *cb,
-                cs_cell_sys_t             *csys);
+cs_cdo_time_imp(const cs_equation_param_t  *eqp,
+                const double                tpty_val,
+                const cs_locmat_t          *mass_mat,
+                const cs_flag_t             system_flag,
+                cs_cell_builder_t          *cb,
+                cs_cell_sys_t              *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -164,7 +165,7 @@ cs_cdo_time_imp(const cs_param_time_t      t_info,
  *          a CDO scheme is used and the mass matrix related to the time
  *          discretization is diagonal (lumping or Voronoi Hodge)
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
@@ -174,19 +175,19 @@ cs_cdo_time_imp(const cs_param_time_t      t_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_diag_exp(const cs_param_time_t      t_info,
-                     const double               tpty_val,
-                     const cs_locmat_t         *mass_mat,
-                     const cs_flag_t            system_flag,
-                     cs_cell_builder_t         *cb,
-                     cs_cell_sys_t             *csys);
+cs_cdo_time_diag_exp(const cs_equation_param_t  *eqp,
+                     const double                tpty_val,
+                     const cs_locmat_t          *mass_mat,
+                     const cs_flag_t             system_flag,
+                     cs_cell_builder_t          *cb,
+                     cs_cell_sys_t              *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Apply to the local system an explicit time discretization when
  *          a CDO scheme is used
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
@@ -196,12 +197,12 @@ cs_cdo_time_diag_exp(const cs_param_time_t      t_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_exp(const cs_param_time_t      t_info,
-                const double               tpty_val,
-                const cs_locmat_t         *mass_mat,
-                const cs_flag_t            system_flag,
-                cs_cell_builder_t         *cb,
-                cs_cell_sys_t             *csys);
+cs_cdo_time_exp(const cs_equation_param_t  *eqp,
+                const double                tpty_val,
+                const cs_locmat_t          *mass_mat,
+                const cs_flag_t             system_flag,
+                cs_cell_builder_t          *cb,
+                cs_cell_sys_t              *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -209,7 +210,7 @@ cs_cdo_time_exp(const cs_param_time_t      t_info,
  *          a CDO scheme is used and the mass matrix related to the time
  *          discretization is diagonal (lumping or Voronoi Hodge)
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
@@ -219,19 +220,19 @@ cs_cdo_time_exp(const cs_param_time_t      t_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_diag_theta(const cs_param_time_t      t_info,
-                       const double               tpty_val,
-                       const cs_locmat_t         *mass_mat,
-                       const cs_flag_t            system_flag,
-                       cs_cell_builder_t         *cb,
-                       cs_cell_sys_t             *csys);
+cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
+                       const double                tpty_val,
+                       const cs_locmat_t          *mass_mat,
+                       const cs_flag_t             system_flag,
+                       cs_cell_builder_t          *cb,
+                       cs_cell_sys_t              *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Apply to the local system a "theta" time discretization when
  *          a CDO scheme is used
  *
- * \param[in]      t_info       list of attributes specifying the time scheme
+ * \param[in]      eqp          pointer to a cs_equation_param_t
  * \param[in]      tpty_val     current value of the time property
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
@@ -241,12 +242,12 @@ cs_cdo_time_diag_theta(const cs_param_time_t      t_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_theta(const cs_param_time_t      t_info,
-                  const double               tpty_val,
-                  const cs_locmat_t         *mass_mat,
-                  const cs_flag_t            system_flag,
-                  cs_cell_builder_t         *cb,
-                  cs_cell_sys_t             *csys);
+cs_cdo_time_theta(const cs_equation_param_t  *eqp,
+                  const double                tpty_val,
+                  const cs_locmat_t          *mass_mat,
+                  const cs_flag_t             system_flag,
+                  cs_cell_builder_t          *cb,
+                  cs_cell_sys_t              *csys);
 
 /*----------------------------------------------------------------------------*/
 

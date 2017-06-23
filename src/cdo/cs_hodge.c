@@ -1407,7 +1407,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         cb->pty_val = cb->pty_mat[0][0];
     }
 
-#pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */

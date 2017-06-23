@@ -106,13 +106,11 @@ cs_user_cdo_geometric_settings(void)
 /*!
  * \brief  Setup advanced features concerning the numerical parameters
  *         of the equation resolved during the computation
- *
- * \param[in, out]  domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_numeric_settings(cs_domain_t   *domain)
+cs_user_cdo_numeric_settings(void)
 {
   /* Modify the setting of an equation using a generic process
 
@@ -232,7 +230,7 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain)
 
   */
 
-  cs_equation_t  *eq = cs_domain_get_equation(domain, "FVCA6.1");
+  cs_equation_t  *eq = cs_equation_by_name("FVCA6.1");
 
   /* The modification of the space discretization should be apply first */
   cs_equation_set_param(eq, CS_EQKEY_SPACE_SCHEME, "cdo_vb");

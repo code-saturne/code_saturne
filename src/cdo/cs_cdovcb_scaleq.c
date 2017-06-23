@@ -582,8 +582,7 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   /* Sanity checks */
   assert(eqp != NULL);
 
-  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOVCB &&
-      eqp->var_type != CS_PARAM_VAR_SCAL)
+  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOVCB && eqp->dim != 1)
     bft_error(__FILE__, __LINE__, 0, " Invalid type of equation.\n"
               " Expected: scalar-valued CDO vertex+cell-based equation.");
 
@@ -591,7 +590,6 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   const cs_lnum_t  n_vertices = connect->n_vertices;
   const cs_lnum_t  n_b_faces = connect->n_faces[1];
   const cs_lnum_t  n_cells = connect->n_cells;
-  const cs_param_bc_t  *bc_param = eqp->bc;
 
   cs_cdovcb_scaleq_t  *b = NULL;
 
@@ -634,7 +632,10 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
      We also compute also the list of Dirichlet vertices along with their
      related definition.
   */
-  b->face_bc = cs_cdo_bc_define(bc_param, n_b_faces);
+  b->face_bc = cs_cdo_bc_define(eqp->default_bc,
+                                eqp->n_bc_desc,
+                                eqp->bc_desc,
+                                n_b_faces);
 
   /* Store the last computed values of the field at cell centers and the data
      needed to compute the cell values from the vertex values.
@@ -655,7 +656,7 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   b->diff_pty_uniform = cs_property_is_uniform(eqp->diffusion_property);
 
   b->enforce_dirichlet = NULL;
-  switch (bc_param->enforcement) {
+  switch (eqp->enforcement) {
 
   case CS_PARAM_BC_ENFORCE_WEAK_PENA:
     b->enforce_dirichlet = cs_cdovb_diffusion_pena_dirichlet;
@@ -705,7 +706,7 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
       else {
         b->get_advection_matrix = cs_cdo_advection_get_vcb;
         if (cs_advection_field_get_deftype(eqp->advection_field)
-         == CS_PARAM_DEF_BY_ANALYTIC_FUNCTION)
+         == CS_XDEF_BY_ANALYTIC_FUNCTION)
           b->add_advection_bc = cs_cdo_advection_add_vcb_bc_analytic;
         else
           b->add_advection_bc = cs_cdo_advection_add_vcb_bc;
@@ -724,7 +725,7 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   }
   else {
 
-    if (bc_param->enforcement != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
+    if (eqp->enforcement != CS_PARAM_BC_ENFORCE_WEAK_NITSCHE)
       b->sys_flag |= CS_FLAG_SYS_SYM; // Algebraic system is symmetric
 
   }
@@ -755,7 +756,7 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
     if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_VORONOI)
       b->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
     else if (eqp->time_hodge.algo == CS_PARAM_HODGE_ALGO_WBS) {
-      if (eqp->time_info.do_lumping)
+      if (eqp->do_lumping)
         b->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
       else
         b->sys_flag |= CS_FLAG_SYS_HLOC_CONF;
@@ -764,8 +765,7 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   }
 
   b->time_pty_uniform = cs_property_is_uniform(eqp->time_property);
-  b->apply_time_scheme = cs_cdo_time_get_scheme_function(b->sys_flag,
-                                                         eqp->time_info);
+  b->apply_time_scheme = cs_cdo_time_get_scheme_function(b->sys_flag, eqp);
 
   /* Source term part */
   /* ---------------- */
@@ -773,7 +773,7 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   /* Default intialization */
   b->st_msh_flag = cs_source_term_init(CS_SPACE_SCHEME_CDOVCB,
                                        eqp->n_source_terms,
-                                       eqp->source_terms,
+                                       (const cs_xdef_t **)eqp->source_terms,
                                        b->compute_source,
                                        &(b->sys_flag),
                                        &(b->source_mask));
@@ -931,7 +931,7 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
 
       /* Compute the contribution of all source terms in each cell */
       cs_source_term_compute_cellwise(eqp->n_source_terms,
-                                      eqp->source_terms,
+                                      (const cs_xdef_t **)eqp->source_terms,
                                       cm,
                                       b->sys_flag,
                                       b->source_mask,
@@ -1044,7 +1044,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
   cs_cdovcb_scaleq_t  *b = (cs_cdovcb_scaleq_t *)builder;
   cs_real_t  *dir_values =
     cs_equation_compute_dirichlet_sv(mesh,
-                                     b->eqp->bc,
+                                     b->eqp,
                                      b->face_bc->dir,
                                      cs_cdovcb_cell_bld[0]);
 
@@ -1056,14 +1056,14 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
 
       /* Source terms attached to vertices */
       cs_cdo_time_update_rhs_with_array(b->sys_flag,
-                                        b->eqp->time_info,
+                                        b->eqp,
                                         n_v,
                                         b->source_terms,
                                         rhs);
 
       /* Source terms attached to cells */
       cs_cdo_time_update_rhs_with_array(b->sys_flag,
-                                        b->eqp->time_info,
+                                        b->eqp,
                                         quant->n_cells,
                                         b->source_terms + n_v,
                                         b->cell_rhs);
@@ -1111,8 +1111,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
         if (eqp->diffusion_hodge.is_iso)
           cb->pty_val = cb->pty_mat[0][0];
 
-        if (eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-            eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+        if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
           cs_math_33_eigen((const cs_real_t (*)[3])cb->pty_mat,
                            &(cb->eig_ratio),
                            &(cb->eig_max));
@@ -1189,8 +1189,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs) */
         if (cell_flag & CS_FLAG_BOUNDARY) {
-          if (eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-              eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
+          if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+              eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
 
             cs_math_33_eigen((const cs_real_t (*)[3])cb->pty_mat,
                              &(cb->eig_ratio),
@@ -1262,7 +1262,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                                        eqp->source_terms,
+                                        (const cs_xdef_t **)eqp->source_terms,
                                         cm,
                                         b->sys_flag,
                                         b->source_mask,
@@ -1308,8 +1308,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
 
         /* Apply the time discretization to the local system.
            Update csys (matrix and rhs) */
-        b->apply_time_scheme(eqp->time_info, tpty_val, mass_mat, b->sys_flag,
-                             cb, csys);
+        b->apply_time_scheme(eqp, tpty_val, mass_mat, b->sys_flag, cb, csys);
 
       } /* END OF TIME CONTRIBUTION */
 
@@ -1327,7 +1326,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
       /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
       /* ======================================================= */
 
-      if (eqp->bc->enforcement == CS_PARAM_BC_ENFORCE_WEAK_PENA) {
+      if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_PENA) {
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs) */
@@ -1527,7 +1526,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
       for (short int v = 0; v < fm->n_vf; v++)
         p_v[v] = pdi[fm->v_ids[v]];
 
-      cs_reco_pv_at_face_center(fm, p_v, &p_f);
+      p_f = cs_reco_fw_scalar_pv_at_face_center(fm, p_v);
 
       if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
 
@@ -1577,7 +1576,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
         for (short int v = 0; v < fm->n_vf; v++)
           p_v[v] = pdi[fm->v_ids[v]];
 
-        cs_reco_pv_at_face_center(fm, p_v, &p_f);
+        p_f = cs_reco_fw_scalar_pv_at_face_center(fm, p_v);
 
         if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
 

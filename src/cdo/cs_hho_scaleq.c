@@ -138,7 +138,6 @@ struct _cs_hho_scaleq_t {
 
    */
 
-  cs_param_bc_enforce_t  enforce; // type of enforcement of BCs
   cs_cdo_bc_t           *face_bc; // list of faces sorted by type of BCs
   double                *dir_val; // size = vtx_dir->n_nhmg_elts
 
@@ -232,8 +231,7 @@ cs_hho_scaleq_init(const cs_equation_param_t   *eqp,
   /* Sanity checks */
   assert(eqp != NULL);
 
-  if (eqp->space_scheme != CS_SPACE_SCHEME_HHO &&
-      eqp->var_type != CS_PARAM_VAR_SCAL)
+  if (eqp->space_scheme != CS_SPACE_SCHEME_HHO && eqp->dim != 1)
     bft_error(__FILE__, __LINE__, 0, " Invalid type of equation.\n"
               " Expected: scalar-valued HHO equation.");
 
@@ -241,7 +239,6 @@ cs_hho_scaleq_init(const cs_equation_param_t   *eqp,
   const cs_lnum_t  n_b_faces = connect->n_faces[1];
   const cs_lnum_t  n_i_faces = connect->n_faces[2];
   const cs_lnum_t  n_cells = connect->n_cells;
-  const cs_param_bc_t  *bc_param = eqp->bc;
 
   cs_hho_scaleq_t  *b = NULL;
 
@@ -249,7 +246,6 @@ cs_hho_scaleq_init(const cs_equation_param_t   *eqp,
 
   /* Shared pointers */
   b->eqp = eqp;
-  b->enforce = bc_param->enforcement;
 
   /* System dimension */
   b->n_faces = connect->n_faces[0];
@@ -287,7 +283,7 @@ cs_hho_scaleq_init(const cs_equation_param_t   *eqp,
     /* Default intialization */
     b->st_msh_flag = cs_source_term_init(CS_SPACE_SCHEME_HHO,
                                          eqp->n_source_terms,
-                                         eqp->source_terms,
+                                         (const cs_xdef_t **)eqp->source_terms,
                                          b->compute_source,
                                          &(b->sys_flag),
                                          &(b->source_mask));
