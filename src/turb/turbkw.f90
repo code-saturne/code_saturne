@@ -1099,21 +1099,23 @@ call log_iteration_clipping_field(ivarfl(ik), iclipk(1), 0,    &
                                   vrmin(1:1), vrmax(1:1),iclipk(1), iclpkmx(1))
 call log_iteration_clipping_field(ivarfl(iomg), iclipw, 0,  &
                                   vrmin(2:2), vrmax(2:2),iclipk(1), iclpkmx(1))
+
 !===============================================================================
 ! 16. Advanced reinit
 !===============================================================================
 
 ! Automatic reinitialization at the end of the first iteration:
 ! wall distance y^+ is computed with -C log(1-alpha), where C=CL*Ceta*L*kappa,
-! then y so we have an idea of the wall distance in complexe geometries.
-! Then U is initialized with a Reichard layer
+! then y so we have an idea of the wall distance in complex geometries.
+! Then U is initialized with a Reichard layer,
 ! Epsilon by 1/(kappa y), clipped next to the wall at its value for y^+=15
 ! k is given by a blending between eps/(2 nu)*y^2 and utau/sqrt(Cmu)
 ! The blending function is chosen so that the asymptotic behavior
-! and give the correct pic of k (not the same blending than for the EBRSM
-! because k profile is not the same for k-omega)
+! and give the correct peak of k (not the same blending than for the EBRSM
+! because k profile is not the same for k-omega).
 ! For omega, far from the wall we take eps/Cmu/k, but next to the wall,
-! omega solution is enforced
+! omega solution is enforced.
+
 !TODO FIXME: why not just before? Are the BC uncompatible?
 if (ntcabs.eq.1.and.reinit_turb.eq.1) then
   call field_get_val_v(ivarfl(iu), vel)

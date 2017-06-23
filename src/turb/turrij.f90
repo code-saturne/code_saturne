@@ -197,14 +197,15 @@ endif
 !===============================================================================
 ! 1.1 Advanced init for EBRSM
 !===============================================================================
+
 ! Automatic reinitialization at the end of the first iteration:
-! wall distance y^+ is computed with -C log(1-alpha), where C=CL*Ceta*L*kappa, then y
-! so we have an idea of the wall distance in complexe geometries.
-! Then U is initialized with a Reichard lay
+! wall distance y^+ is computed with -C log(1-alpha), where C=CL*Ceta*L*kappa,
+! then y so we have an idea of the wall distance in complex geometries.
+! Then U is initialized with a Reichard layer,
 ! Epsilon by 1/(kappa y), clipped next to the wall at its value for y^+=15
-! k is given by a blending between eps/(2 nu)*y^2 and utau/sqrt(Cmu)
+! k is given by a blending between eps/(2 nu)*y^2 and utau/sqrt(Cmu).
 ! The blending function is chosen so that the asymptotic behavior
-! and give the correct pic of k
+! and give the correct peak of k.
 
 !TODO FIXME Are the BC uncompatible?
 if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
@@ -334,7 +335,7 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
   endif
 
   deallocate(grad)
-end if
+endif
 
 
 !===============================================================================
