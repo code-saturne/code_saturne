@@ -5,8 +5,10 @@ Release 5.0.2 (unreleased)
 Bug fixes
 ---------
 
+- Complete reinit_turb for Bl-v2-k model.
+
 - Fix bug in the GUI example of the initialisation of alpha in the Bl-v2/k
-    turbulence model.
+  turbulence model.
 
 - Fix user example for wall 1d thermal model.
 

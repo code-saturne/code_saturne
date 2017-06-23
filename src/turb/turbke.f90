@@ -130,6 +130,8 @@ double precision tuexpk, tuexpe
 double precision cmueta, sqrcmu, xs
 double precision hint
 double precision turb_schmidt
+double precision xnoral, xnal(3)
+double precision utaurf, ut2, ypa, ya, xunorm, limiter, nu0, alpha
 
 double precision rvoid(1)
 
@@ -158,6 +160,8 @@ double precision, dimension(:), pointer :: cvara_al, cvara_phi
 double precision, dimension(:), pointer :: cpro_pcvto, cpro_pcvlo
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: c_st_k_p, c_st_eps_p
+double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_al
 
 type(var_cal_opt) :: vcopt_k, vcopt_e
 
@@ -203,7 +207,9 @@ call field_get_val_s(ivarfl(ik), cvar_k)
 call field_get_val_prev_s(ivarfl(ik), cvara_k)
 call field_get_val_s(ivarfl(iep), cvar_ep)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
-if (iturb.eq.50.or.iturb.eq.51) call field_get_val_prev_s(ivarfl(iphi), cvara_phi)
+if (iturb.eq.50.or.iturb.eq.51) &
+  call field_get_val_prev_s(ivarfl(iphi), cvara_phi)
+
 if (iturb.eq.51) call field_get_val_prev_s(ivarfl(ial), cvara_al)
 
 thets  = thetst
@@ -253,6 +259,107 @@ sqrcmu = sqrt(cmu)
 
 d2s3 = 2.d0/3.d0
 d1s3 = 1.d0/3.d0
+
+!===============================================================================
+! 1.1 Advanced reinit
+!===============================================================================
+
+! Automatic reinitialization at the end of the first iteration:
+! wall distance y^+ is computed with -C log(1-alpha), where C=CL*Ceta*L*kappa,
+! then y so we have an idea of the wall distance in complex geometries.
+! Then U is initialized with a Reichard layer,
+! Epsilon by 1/(kappa y), clipped next to the wall at its value for y^+=15.
+! k is given by a blending between eps/(2 nu)*y^2 and utau/sqrt(Cmu)
+! The blending function is chosen so that the asymptotic behavior
+! and give the correct peak of k (not the same blending than for the EBRSM
+! because k profile is not the same for k-omega).
+
+!TODO FIXME: Are the BC uncompatible?
+if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.51) then
+
+  allocate(grad(3,ncelet))
+
+  ! Compute the gradient of Alpha
+  iprev  = 0
+  inc    = 1
+  iccocg = 1
+
+  call field_gradient_scalar(ivarfl(ial), iprev, imrgra, inc,     &
+                             iccocg,                              &
+                             grad)
+
+  call field_get_val_s(ivarfl(iep), cvar_ep)
+  call field_get_val_s(ivarfl(ial), cvar_al)
+  call field_get_val_v(ivarfl(iu), vel)
+
+  utaurf = 0.05d0*uref
+  nu0 = viscl0 / ro0
+
+  do iel = 1, ncel
+    ! Compute the velocity magnitude
+    xunorm = vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2
+    xunorm = sqrt(xunorm)
+
+    ! y+ is bounded by 400, because in the Reichard profile,
+    ! it corresponds to saturation (u>uref)
+    cvar_al(iel) = max(min(cvar_al(iel),(1.d0-exp(-400.d0/50.d0))),0.d0)
+
+    call field_current_to_previous(ivarfl(ial))
+
+    ! Compute the magnitude of the alpha gradient
+    xnoral = ( grad(1,iel)*grad(1,iel)          &
+           +   grad(2,iel)*grad(2,iel)          &
+           +   grad(3,iel)*grad(3,iel) )
+    xnoral = sqrt(xnoral)
+   ! Compute the unitary vector of Alpha
+    if (xnoral.le.epzero/cell_f_vol(iel)**(1.d0/3.d0)) then
+      xnal(1) = 1.d0/sqrt(3.d0)
+      xnal(2) = 1.d0/sqrt(3.d0)
+      xnal(3) = 1.d0/sqrt(3.d0)
+    else
+      xnal(1) = grad(1,iel)/xnoral
+      xnal(2) = grad(2,iel)/xnoral
+      xnal(3) = grad(3,iel)/xnoral
+    endif
+
+    alpha = cvar_al(iel)
+
+    ! Compute YA, therefore alpha is given by 1-exp(-YA/(50 nu/utau))
+    ! NB: y^+ = 50 give the best compromise
+    ya = -dlog(1.d0-cvar_al(iel))*50.d0*nu0/utaurf
+    ypa = ya/(nu0/utaurf)
+
+    ! Velocity magnitude is imposed (limited only), the direction is
+    ! conserved
+    if (xunorm.le.1.d-12*uref) then
+      limiter = 1.d0
+    else
+      limiter = min( utaurf/xunorm*(2.5d0*dlog(1.d0+0.4d0*ypa)  &
+                    +7.8d0*(1.d0-dexp(-ypa/11.d0)               &
+                    -(ypa/11.d0)*dexp(-0.33d0*ypa))),           &
+                    1.d0)
+    endif
+
+    vel(1,iel) = limiter*vel(1,iel)
+    vel(2,iel) = limiter*vel(2,iel)
+    vel(3,iel) = limiter*vel(3,iel)
+
+    ut2 = 0.05d0*uref
+
+    cvar_ep(iel) = utaurf**3*min(1.d0/(xkappa*15.d0*nu0/utaurf), &
+                                 1.d0/(xkappa*ya))
+    cvar_k(iel) =  cvar_ep(iel)/2.d0/nu0*ya**2                 &
+                   * exp(-ypa/25.d0)**2                        &
+                 + ut2**2/sqrt(cmu)*(1.d0-exp(-ypa/25.d0))**2
+  enddo
+
+  call field_current_to_previous(ivarfl(iu))
+  call field_current_to_previous(ivarfl(ik))
+  call field_current_to_previous(ivarfl(iep)) !TODO phi ?
+
+  deallocate(grad)
+endif
+
 
 !===============================================================================
 ! 2. Compute the scalar strain rate SijSij and the trace of the velocity
