@@ -635,7 +635,7 @@ cs_math_3_length_unitv(const cs_real_t    xa[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the all eigenvalue of a 3x3 symmetric matrix.
+ * \brief Compute all eigenvalues of a 3x3 symmetric matrix.
  *
  * Based on: Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
  *           Communication of the ACM (April 1961)
@@ -652,7 +652,8 @@ cs_math_33_eigen_vals(const cs_real_t   m[3][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the eigenvalues of a 3x3 symmetric matrix.
+ * \brief  Compute max/min eigenvalues ratio and max. eigenvalue of a 3x3
+ *         symmetric matrix.
  *
  * Based on: Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
  *           Communication of the ACM (April 1961)
