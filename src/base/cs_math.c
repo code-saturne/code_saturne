@@ -121,9 +121,6 @@ void
 cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t  s[3][3],
                                    cs_real_t        sout[6][6]);
 
-void cs_f_math_33_eigen_vals(const cs_real_t  m[3][3],
-                             cs_real_t        eig_vals[3]);
-
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -160,16 +157,6 @@ cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t  s[3][3],
                                    cs_real_t        sout[6][6])
 {
   cs_math_reduce_sym_prod_33_to_66(s, sout);
-}
-
-/*----------------------------------------------------------------------------
- * Wrapper to cs_math_eigen_max
- *----------------------------------------------------------------------------*/
-
-void cs_f_math_33_eigen_vals(const cs_real_t  m[3][3],
-                             cs_real_t        eig_vals[3])
-{
-  cs_math_33_eigen_vals(m, eig_vals);
 }
 
 /*============================================================================
@@ -211,10 +198,95 @@ cs_math_get_machine_epsilon(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the eigenvalues of a 3x3 matrix which is symmetric and real
- *         -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
- *         Communication of the ACM (April 1961)
- *         -> Wikipedia article entitled "Eigenvalue algorithm"
+ * \brief Compute all eigenvalues of a 3x3 symmetric matrix.
+ *
+ * Based on: Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
+ *           Communication of the ACM (April 1961)
+ *           (Wikipedia article entitled "Eigenvalue algorithm")
+ *
+ * \param[in]  m          3x3 symmetric matrix (m11, m22, m33, m12, m23, m13)
+ * \param[out] eig_vals   size 3 vector
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_math_sym_33_eigen(const cs_real_t  m[6],
+                     cs_real_t        eig_vals[3])
+{
+  cs_real_t  e, e1, e2, e3;
+
+  cs_real_t  p1 = cs_math_3_square_norm((cs_real_3_t *)(m+3));
+  cs_real_t  d2 = cs_math_3_square_norm((cs_real_3_t *)m);
+
+  if (p1 > cs_math_epzero*d2) { /* m is not diagonal */
+
+    cs_real_6_t  n;
+    cs_real_t  tr = (m[0] + m[1] + m[2]);
+    cs_real_t  tr_third = cs_math_onethird * tr;
+
+    e1 = m[0] - tr_third, e2 = m[1] - tr_third, e3 = m[2] - tr_third;
+    cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2.*p1;
+
+    cs_real_t  p = sqrt(p2*cs_math_onesix);
+    assert(p > 0.);
+    cs_real_t  ovp = 1./p;
+
+    for (int  i = 0; i < 3; i++) {
+      /* Diagonal */
+      n[i] = ovp * (m[i] - tr_third);
+      /* Extra diagonal */
+      n[3 + i] = ovp * m[3 + i];
+    }
+
+    /* r should be between -1 and 1 but truncation error and bad conditionning
+       can lead to slighty under/over-shoot */
+    cs_real_t  r = 0.5 * cs_math_sym_33_determinant(n);
+
+    cs_real_t  cos_theta, cos_theta_2pi3;
+    if (r <= -1.) {
+      cos_theta = 0.5; // theta = pi/3;
+      cos_theta_2pi3 = -1.;
+    }
+    else if (r >= 1.) {
+      cos_theta = 1.; // theta = 0.;
+      cos_theta_2pi3 = -0.5;
+    }
+    else {
+      cos_theta = cos(cs_math_onethird*acos(r));
+      cos_theta_2pi3 = cos(cs_math_onethird*(acos(r) + 2.*cs_math_pi));
+    }
+
+    /* eigenvalues computed should satisfy e1 < e2 < e3 */
+    e3 = tr_third + 2.*p*cos_theta;
+    e1 = tr_third + 2.*p*cos_theta_2pi3;
+    e2 = tr - e1 -e3; // since tr(m) = e1 + e2 + e3
+
+  }
+  else { // m is diagonal
+
+    e1 = m[0], e2 = m[1], e3 = m[2];
+
+  } /* diagonal or not */
+
+  if (e3 < e2) e = e3, e3 = e2, e2 = e;
+  if (e3 < e1) e = e3, e3 = e1, e1 = e2, e2 = e;
+  else {
+    if (e2 < e1) e = e2, e2 = e1, e1 = e;
+  }
+  /* Return values */
+  eig_vals[0] = e1;
+  eig_vals[1] = e2;
+  eig_vals[2] = e3;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute max/min eigenvalues ratio and max. eigenvalue of a 3x3
+ *         symmetric matrix.
+ *
+ * Based on: Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
+ *           Communication of the ACM (April 1961)
+ *           (Wikipedia article entitled "Eigenvalue algorithm")
  *
  * \param[in]  m          3x3 matrix
  * \param[out] eig_ratio  max/min
