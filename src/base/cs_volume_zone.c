@@ -117,19 +117,21 @@ static int *_zone_id = NULL;
 
 /* Names for logging */
 
-static const int _n_type_flags = 4;
+static const int _n_type_flags = 5;
 
 static const int _type_flag_mask[] = {CS_VOLUME_ZONE_INITIALIZATION,
                                       CS_VOLUME_ZONE_POROSITY,
                                       CS_VOLUME_ZONE_HEAD_LOSS,
                                       CS_VOLUME_ZONE_SOURCE_TERM,
-                                      CS_VOLUME_ZONE_MASS_SOURCE_TERM};
+                                      CS_VOLUME_ZONE_MASS_SOURCE_TERM,
+                                      CS_VOLUME_ZONE_GWF_SOIL};
 
 static const char *_type_flag_name[] = {N_("initialization"),
                                         N_("porosity"),
                                         N_("head loss"),
                                         N_("source term"),
-                                        N_("mass source term")};
+                                        N_("mass source term"),
+                                        N_("groundwater soil")};
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -651,17 +653,17 @@ cs_volume_zone_by_name_try(const char  *name)
  * \brief Set type flag for a given volume zone.
  *
  * \param[in]  id         volume zone id
- * \param[in]  type_flag  true if the zone's definition varies in time
+ * \param[in]  type_flag  volume zone type flag
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_volume_zone_set_type(int   id,
-                        bool  type_flag)
+                        int   type_flag)
 {
   const cs_volume_zone_t *z0 = cs_volume_zone_by_id(id);
 
-  _zones[z0->id]->type = type_flag;
+  _zones[z0->id]->type |= type_flag;
 }
 
 /*----------------------------------------------------------------------------*/

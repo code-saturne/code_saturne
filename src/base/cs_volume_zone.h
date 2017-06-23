@@ -71,6 +71,9 @@ BEGIN_C_DECLS
 /*! source term (mass) */
 #define CS_VOLUME_ZONE_MASS_SOURCE_TERM     (1 << 4)
 
+/*! soil used in the groundwater flow module */
+#define CS_VOLUME_ZONE_GWF_SOIL             (1 << 5)
+
 /*! @} */
 
 /*============================================================================
@@ -255,13 +258,13 @@ cs_volume_zone_by_name_try(const char  *name);
  * \brief Set type flag for a given volume zone.
  *
  * \param[in]  id         volume zone id
- * \param[in]  type_flag  true if the zone's definition varies in time
+ * \param[in]  type_flag  volume zone type flag
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_volume_zone_set_type(int   id,
-                        bool  type_flag);
+                        int   type_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

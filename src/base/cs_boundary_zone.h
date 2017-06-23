@@ -228,13 +228,13 @@ cs_boundary_zone_by_name_try(const char  *name);
  * \brief Set type flag for a given boundary zone.
  *
  * \param[in]  id         boundary zone id
- * \param[in]  type_flag  true if the zone's definition varies in time
+ * \param[in]  type_flag  volume zone type flag
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_boundary_zone_set_type(int   id,
-                          bool  type_flag);
+                          int   type_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
