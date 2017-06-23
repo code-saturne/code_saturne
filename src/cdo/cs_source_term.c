@@ -798,7 +798,7 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
   const cs_real_t  density_value = input[0];
 
   for (int v = 0; v < cm->n_vc; v++)
-    values[v] += density_value * cm->wvc[v];
+    values[v] += density_value * cm->wvc[v] * cm->vol_c;
 }
 
 /*----------------------------------------------------------------------------*/
