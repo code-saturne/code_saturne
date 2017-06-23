@@ -361,8 +361,6 @@ cs_timer_stats_finalize(void)
 void
 cs_timer_stats_set_start_time(int time_id)
 {
-  int id;
-
   if (_time_id <= 0 && _start_time_id <= 0) {
     _time_id = time_id;
     _start_time_id = time_id;
