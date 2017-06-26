@@ -52,6 +52,7 @@
 #include "cs_mesh_quality.h"
 #include "cs_mesh_connect.h"
 #include "cs_order.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 
 /*----------------------------------------------------------------------------
@@ -489,18 +490,6 @@ _cut_warped_i_faces_halo(cs_mesh_t   *mesh,
 
   *p_n_sub_elt_lst = n_sub_elt_lst;
 
-  /* If no faces are cut, we are sure at this stage that we do
-     need to communicate face cutting info on the interfaces for
-     this rank, and do not otherwise call collective MPI operations,
-     so we may return immediately. */
-
-  if (n_cut_faces == 0) {
-    BFT_FREE(cut_flag);
-    BFT_FREE(new_face_shift);
-    cs_interface_set_destroy(&face_ifs);
-    return;
-  }
-
   BFT_MALLOC(new_face_vtx_idx, n_new_faces + 1, cs_lnum_t);
   BFT_MALLOC(new_face_vtx_lst, connect_size, cs_lnum_t);
   BFT_MALLOC(new_face_cells, n_new_faces, cs_lnum_2_t);
@@ -528,23 +517,15 @@ _cut_warped_i_faces_halo(cs_mesh_t   *mesh,
 
     if (cut_flag[face_id] != 0) {
 
-      if (n_face_vertices == 4)
-        n_triangles = fvm_triangulate_quadrangle(dim,
-                                                 0,
-                                                 mesh->vtx_coord,
-                                                 NULL,
-                                                 mesh->i_face_vtx_lst + idx_start,
-                                                 new_face_vtx_lst + connect_size);
-      else
-        n_triangles = fvm_triangulate_polygon(dim,
-                                              0,
-                                              n_face_vertices,
-                                              mesh->vtx_coord,
-                                              NULL,
-                                              mesh->i_face_vtx_lst + idx_start,
-                                              FVM_TRIANGULATE_ELT_DEF,
-                                              new_face_vtx_lst + connect_size,
-                                              triangle_state);
+      n_triangles = fvm_triangulate_polygon(dim,
+                                            0,
+                                            n_face_vertices,
+                                            mesh->vtx_coord,
+                                            NULL,
+                                            mesh->i_face_vtx_lst + idx_start,
+                                            FVM_TRIANGULATE_ELT_DEF,
+                                            new_face_vtx_lst + connect_size,
+                                            triangle_state);
 
       assert(n_triangles == n_face_vertices - 2);
 
@@ -568,8 +549,7 @@ _cut_warped_i_faces_halo(cs_mesh_t   *mesh,
 
         n_new_faces++;
         connect_size += 3;
-        new_face_vtx_idx[n_new_faces]
-          = new_face_vtx_idx[n_new_faces-1] + 3;
+        new_face_vtx_idx[n_new_faces] = new_face_vtx_idx[n_new_faces-1] + 3;
 
       } /* End of loop on triangles */
 
@@ -797,23 +777,15 @@ _cut_warped_faces(cs_mesh_t      *mesh,
 
     if (cut_flag[face_id] != 0) {
 
-      if (n_face_vertices == 4)
-        n_triangles = fvm_triangulate_quadrangle(dim,
-                                                 0,
-                                                 mesh->vtx_coord,
-                                                 NULL,
-                                                 (*p_face_vtx_lst) + idx_start,
-                                                 new_face_vtx_lst + connect_size);
-      else
-        n_triangles = fvm_triangulate_polygon(dim,
-                                              0,
-                                              n_face_vertices,
-                                              mesh->vtx_coord,
-                                              NULL,
-                                              (*p_face_vtx_lst) + idx_start,
-                                              FVM_TRIANGULATE_MESH_DEF,
-                                              new_face_vtx_lst + connect_size,
-                                              triangle_state);
+      n_triangles = fvm_triangulate_polygon(dim,
+                                            0,
+                                            n_face_vertices,
+                                            mesh->vtx_coord,
+                                            NULL,
+                                            (*p_face_vtx_lst) + idx_start,
+                                            FVM_TRIANGULATE_MESH_DEF,
+                                            new_face_vtx_lst + connect_size,
+                                            triangle_state);
 
       assert(n_triangles == n_face_vertices - 2);
 
@@ -826,8 +798,7 @@ _cut_warped_faces(cs_mesh_t      *mesh,
         /* Update "face -> cells" connectivity */
 
         for (j = 0; j < stride; j++)
-          new_face_cells[stride*n_new_faces + j]
-            = (*p_face_cells)[stride*face_id + j];
+          new_face_cells[stride*n_new_faces + j] = (*p_face_cells)[stride*face_id + j];
 
         /* Update family for each face */
 
