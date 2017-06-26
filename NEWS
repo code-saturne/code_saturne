@@ -5,6 +5,8 @@ Release 4.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for triangulation of warped faces issue.
+
 - Fix crash using GUI-defined setup when some property labels re not defined."
 
 - Fix launch error due to bad generation of hostsfile using SLURM in some
