@@ -112,10 +112,11 @@ fvm_triangulate_state_destroy(fvm_triangulate_state_t  *this_state);
  *   base              <-- base numbering (usually 0 or 1)
  *   n_vertices        <-- number of vertices defining the polygon.
  *   coords            <-- coordinates of the triangulation's vertices.
- *   parent_vertex_num <-- optional indirection to vertex coordinates.
+ *   parent_vertex_num <-- optional indirection to vertex coordinates
+ *                         (base to n-base).
  *   polygon_vertices  <-- polygon connectivity; size: n_vertices or empty.
  *   mode              <-- triangles connectivity by vertex number or
- *                         polygon vertex index (1 to n).
+ *                         polygon vertex index.
  *   triangle_vertices --> triangles connectivity;
  *                         size: (n_vertices - 2) * 3.
  *   state             <-> associated triangulation state structure.
@@ -150,6 +151,7 @@ fvm_triangulate_polygon(int                             dim,
  *   base                 <-- base numbering (usually 0 or 1)
  *   coords               <-- coordinates of the triangulation's vertices.
  *   parent_vertex_num    <-- optional indirection to vertex coordinates
+ *                            (base to n-base numbering).
  *   quadrangle_vertices  <-- polygon connectivity; size: n_vertices or empty.
  *   triangle_vertices    --> triangles connectivity; size: 2 * 3.
  *

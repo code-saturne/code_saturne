@@ -1,4 +1,12 @@
 
+Release 5.0.3 (unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Fix for triangulation of warped faces issue (preceding version 4.0).
+
 Release 5.0.2 (June 23 2017)
 ============================
 
