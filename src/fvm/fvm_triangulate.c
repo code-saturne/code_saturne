@@ -800,6 +800,158 @@ _polygon_delaunay_flip(int               n_vertices,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Triangulate a quadrangle.
+ *
+ * A convex quadrangle is divided into two triangles along its shortest
+ * diagonal. A non-convex quadrangle may only be divided along the diagonal
+ * which lies inside the quadrangle.
+ *
+ * If the quadrangle_vertices argument is NULL, 1, 2, ...,n local numbering
+ * is implied.
+ *
+ * parameters:
+ *   dim                  <-- spatial dimension (2 or 3).
+ *   base                 <-- base numbering (usually 0 or 1)
+ *   coords               <-- coordinates of the triangulation's vertices.
+ *   parent_vertex_num    <-- optional indirection to vertex coordinates
+ *                            (base to n-base numbering).
+ *   quadrangle_vertices  <-- polygon connectivity; size: n_vertices or empty.
+ *   mode                 <-- triangles connectivity by vertex number or
+ *                            quadrangle vertex index.
+ *   triangle_vertices    --> triangles connectivity; size: 2 * 3.
+ *
+ * returns:
+ *   number of resulting triangles.
+ *----------------------------------------------------------------------------*/
+
+static int
+_triangulate_quadrangle(int                    dim,
+                        int                    base,
+                        const cs_coord_t       coords[],
+                        const cs_lnum_t        parent_vertex_num[],
+                        const cs_lnum_t        quadrangle_vertices[],
+                        fvm_triangulate_def_t  mode,
+                        cs_lnum_t              triangle_vertices[])
+{
+  int i, j;
+  double d2_02, d2_13;
+  int o_count = 0, o_id = 0;
+  cs_lnum_t   vertex_id[4] = {0, 1, 2, 3};
+  double v1[3] = {0.0, 0.0, 0.0}, v2[3] = {0.0, 0.0, 0.0};
+  double n0[3] = {0.0, 0.0, 0.0}, ni[3] = {0.0, 0.0, 0.0};
+
+  if (quadrangle_vertices != NULL) {
+    for (i = 0; i < 4 ; i++)
+      vertex_id[i] = quadrangle_vertices[i] - base;
+  }
+
+  if (parent_vertex_num != NULL) {
+    for (i = 0; i < 4 ; i++)
+      vertex_id[i] = parent_vertex_num[i] - base;
+  }
+
+  /* Check for an obtuse angle */
+
+  for (i = 0; i < dim; i++) {
+    v1[i] = coords[vertex_id[1]*dim + i] - coords[vertex_id[0]*dim + i];
+    v2[i] = coords[vertex_id[3]*dim + i] - coords[vertex_id[0]*dim + i];
+  }
+
+  _CROSS_PRODUCT_3D(n0, v1, v2);
+
+  for (j = 1; j < 4; j++) {
+    for (i = 0; i < dim; i++) {
+      v1[i] = coords[vertex_id[(j+1)%4]*dim + i] - coords[vertex_id[j]*dim + i];
+      v2[i] = coords[vertex_id[ j-1   ]*dim + i] - coords[vertex_id[0]*dim + i];
+    }
+    _CROSS_PRODUCT_3D(ni, v1, v2);
+    if (_DOT_PRODUCT_3D(n0, ni) < 0) {
+      o_count++;
+      o_id = j;
+    }
+  }
+
+  /* With an obtuse angle, only one diagonal lies inside the quadrangle;
+     we define it as "shorter" */
+
+  if (o_count > 0) {
+
+    if (o_count > 1)
+      o_id = 0;
+
+    if (o_id%2 == 0) {
+      d2_02 = 0.;
+      d2_13 = 1.;
+    }
+    else {
+      d2_02 = 1.;
+      d2_13 = 0.;
+    }
+
+  }
+
+  /* With no obtuse angle, we choose the true shortest diagonal */
+
+  else {
+
+    for (i = 0; i < dim; i++) {
+      v1[i] = coords[vertex_id[2]*dim + i] - coords[vertex_id[0]*dim + i];
+      v2[i] = coords[vertex_id[3]*dim + i] - coords[vertex_id[1]*dim + i];
+    }
+
+    /* Now compute diagonal lengths (squared) */
+
+    d2_02 = v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2];
+    d2_13 = v2[0]*v2[0] + v2[1]*v2[1] + v2[2]*v2[2];
+
+  }
+
+  /* Now define triangulation */
+
+  if (quadrangle_vertices != NULL && mode == FVM_TRIANGULATE_MESH_DEF) {
+    if (d2_02 < d2_13) {
+      triangle_vertices[0] = quadrangle_vertices[0]; /* 1st triangle */
+      triangle_vertices[1] = quadrangle_vertices[1];
+      triangle_vertices[2] = quadrangle_vertices[2];
+      triangle_vertices[3] = quadrangle_vertices[2]; /* 2nd triangle */
+      triangle_vertices[4] = quadrangle_vertices[3];
+      triangle_vertices[5] = quadrangle_vertices[0];
+    }
+    else {
+      triangle_vertices[0] = quadrangle_vertices[0]; /* 1st triangle */
+      triangle_vertices[1] = quadrangle_vertices[1];
+      triangle_vertices[2] = quadrangle_vertices[3];
+      triangle_vertices[3] = quadrangle_vertices[2]; /* 2nd triangle */
+      triangle_vertices[4] = quadrangle_vertices[3];
+      triangle_vertices[5] = quadrangle_vertices[1];
+    }
+  }
+  else { /* if (   quadrangle_vertices == NULL
+                || mode == FVM_TRIANGULATE_ELT_DEF) */
+    if (d2_02 < d2_13) {
+      triangle_vertices[0] = base + 0; /* 1st triangle */
+      triangle_vertices[1] = base + 1;
+      triangle_vertices[2] = base + 2;
+      triangle_vertices[3] = base + 2; /* 2nd triangle */
+      triangle_vertices[4] = base + 3;
+      triangle_vertices[5] = base + 0;
+    }
+    else {
+      triangle_vertices[0] = base + 0; /* 1st triangle */
+      triangle_vertices[1] = base + 1;
+      triangle_vertices[2] = base + 3;
+      triangle_vertices[3] = base + 2; /* 2nd triangle */
+      triangle_vertices[4] = base + 3;
+      triangle_vertices[5] = base + 1;
+    }
+  }
+
+  /* Return number of triangles (for consistency with polygon triangulation) */
+
+  return 2;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -927,6 +1079,17 @@ fvm_triangulate_polygon(int                             dim,
   int  *const list_previous = state->list_previous;
   int  *const list_next = state->list_next;
   _Bool  *const concave = state->concave;
+
+  /* Special case for quadrangle */
+
+  if (n_vertices == 4)
+    return _triangulate_quadrangle(dim,
+                                   base,
+                                   coords,
+                                   parent_vertex_num,
+                                   polygon_vertices,
+                                   mode,
+                                   triangle_vertices);
 
   /* Initialize state structure */
 
@@ -1062,7 +1225,6 @@ fvm_triangulate_polygon(int                             dim,
 
   }
 
-
   /* Now that we have an initial triangulation, apply flip algorithm
      to obtain a Delaunay triangulation */
 
@@ -1119,121 +1281,13 @@ fvm_triangulate_quadrangle(int               dim,
                            const cs_lnum_t   quadrangle_vertices[],
                            cs_lnum_t         triangle_vertices[])
 {
-  int i, j;
-  double d2_02, d2_13;
-  int o_count = 0, o_id = 0;
-  cs_lnum_t   vertex_id[4] = {0, 1, 2, 3};
-  double v1[3] = {0.0, 0.0, 0.0}, v2[3] = {0.0, 0.0, 0.0};
-  double n0[3] = {0.0, 0.0, 0.0}, ni[3] = {0.0, 0.0, 0.0};
-
-  if (quadrangle_vertices != NULL) {
-    for (i = 0; i < 4 ; i++)
-      vertex_id[i] = quadrangle_vertices[i] - base;
-  }
-
-  if (parent_vertex_num != NULL) {
-    for (i = 0; i < 4 ; i++)
-      vertex_id[i] = parent_vertex_num[i] - base;
-  }
-
-  /* Check for an obtuse angle */
-
-  for (i = 0; i < dim; i++) {
-    v1[i] = coords[vertex_id[1]*dim + i] - coords[vertex_id[0]*dim + i];
-    v2[i] = coords[vertex_id[3]*dim + i] - coords[vertex_id[0]*dim + i];
-  }
-
-  _CROSS_PRODUCT_3D(n0, v1, v2);
-
-  for (j = 1; j < 4; j++) {
-    for (i = 0; i < dim; i++) {
-      v1[i] = coords[vertex_id[(j+1)%4]*dim + i] - coords[vertex_id[j]*dim + i];
-      v2[i] = coords[vertex_id[ j-1   ]*dim + i] - coords[vertex_id[0]*dim + i];
-    }
-    _CROSS_PRODUCT_3D(ni, v1, v2);
-    if (_DOT_PRODUCT_3D(n0, ni) < 0) {
-      o_count++;
-      o_id = j;
-    }
-  }
-
-  /* With an obtuse angle, only one diagonal lies inside the quadrangle;
-     we define it as "shorter" */
-
-  if (o_count > 0) {
-
-    if (o_count > 1)
-      o_id = 0;
-
-    if (o_id%2 == 0) {
-      d2_02 = 0.;
-      d2_13 = 1.;
-    }
-    else {
-      d2_02 = 1.;
-      d2_13 = 0.;
-    }
-
-  }
-
-  /* With no obtuse angle, we choose the true shortest diagonal */
-
-  else {
-
-    for (i = 0; i < dim; i++) {
-      v1[i] = coords[vertex_id[2]*dim + i] - coords[vertex_id[0]*dim + i];
-      v2[i] = coords[vertex_id[3]*dim + i] - coords[vertex_id[1]*dim + i];
-    }
-
-    /* Now compute diagonal lengths (squared) */
-
-    d2_02 = v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2];
-    d2_13 = v2[0]*v2[0] + v2[1]*v2[1] + v2[2]*v2[2];
-
-  }
-
-  /* Now define triangulation */
-
-  if (quadrangle_vertices != NULL) {
-    if (d2_02 < d2_13) {
-      triangle_vertices[0] = quadrangle_vertices[0]; /* 1st triangle */
-      triangle_vertices[1] = quadrangle_vertices[1];
-      triangle_vertices[2] = quadrangle_vertices[2];
-      triangle_vertices[3] = quadrangle_vertices[2]; /* 2nd triangle */
-      triangle_vertices[4] = quadrangle_vertices[3];
-      triangle_vertices[5] = quadrangle_vertices[0];
-    }
-    else {
-      triangle_vertices[0] = quadrangle_vertices[0]; /* 1st triangle */
-      triangle_vertices[1] = quadrangle_vertices[1];
-      triangle_vertices[2] = quadrangle_vertices[3];
-      triangle_vertices[3] = quadrangle_vertices[2]; /* 2nd triangle */
-      triangle_vertices[4] = quadrangle_vertices[3];
-      triangle_vertices[5] = quadrangle_vertices[1];
-    }
-  }
-  else { /* if (quadrangle_vertices == NULL) */
-    if (d2_02 < d2_13) {
-      triangle_vertices[0] = base + 0; /* 1st triangle */
-      triangle_vertices[1] = base + 1;
-      triangle_vertices[2] = base + 2;
-      triangle_vertices[3] = base + 2; /* 2nd triangle */
-      triangle_vertices[4] = base + 3;
-      triangle_vertices[5] = base + 0;
-    }
-    else {
-      triangle_vertices[0] = base + 0; /* 1st triangle */
-      triangle_vertices[1] = base + 1;
-      triangle_vertices[2] = base + 3;
-      triangle_vertices[3] = base + 2; /* 2nd triangle */
-      triangle_vertices[4] = base + 3;
-      triangle_vertices[5] = base + 1;
-    }
-  }
-
-  /* Return number of triangles (for consistency with polygon triangulation) */
-
-  return 2;
+  return _triangulate_quadrangle(dim,
+                                 base,
+                                 coords,
+                                 parent_vertex_num,
+                                 quadrangle_vertices,
+                                 FVM_TRIANGULATE_MESH_DEF,
+                                 triangle_vertices);
 }
 
 /*----------------------------------------------------------------------------*/
