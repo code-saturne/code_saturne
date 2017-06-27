@@ -174,11 +174,83 @@ cs_slope_test_vector(const cs_real_3_t   pi,
                      const cs_real_3_t   i_face_normal,
                      const cs_real_33_t  gradi,
                      const cs_real_33_t  gradj,
-                     const cs_real_33_t  grdpai,
-                     const cs_real_33_t  grdpaj,
+                     const cs_real_33_t  gradsti,
+                     const cs_real_33_t  gradstj,
                      const cs_real_t     i_massflux,
-                     cs_real_t         testij[3],
-                     cs_real_t         tesqck[3])
+                     cs_real_t          *testij,
+                     cs_real_t          *tesqck)
+{
+  double testi[3], testj[3];
+  double dcc[3], ddi[3], ddj[3];
+  *testij = 0.;
+  *tesqck = 0.;
+
+  /* Slope test
+     ----------*/
+  for (int i = 0; i < 3; i++) {
+    *testij += gradsti[i][0]*gradstj[i][0]
+             + gradsti[i][1]*gradstj[i][1]
+             + gradsti[i][2]*gradstj[i][2];
+
+    testi[i] = gradsti[i][0]*i_face_normal[0]
+             + gradsti[i][1]*i_face_normal[1]
+             + gradsti[i][2]*i_face_normal[2];
+    testj[i] = gradstj[i][0]*i_face_normal[0]
+             + gradstj[i][1]*i_face_normal[1]
+             + gradstj[i][2]*i_face_normal[2];
+
+    if (i_massflux > 0.) {
+      dcc[i] = gradi[i][0]*i_face_normal[0]
+             + gradi[i][1]*i_face_normal[1]
+             + gradi[i][2]*i_face_normal[2];
+      ddi[i] = testi[i];
+      ddj[i] = (pj[i]-pi[i])/distf *srfan;
+    } else {
+      dcc[i] = gradj[i][0]*i_face_normal[0]
+             + gradj[i][1]*i_face_normal[1]
+             + gradj[i][2]*i_face_normal[2];
+      ddi[i] = (pj[i]-pi[i])/distf *srfan;
+      ddj[i] = testj[i];
+    }
+  }
+
+  *tesqck = cs_math_3_square_norm(dcc) - cs_math_3_square_distance(ddi, ddj);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief DEPRECATED Compute slope test criteria at internal face between cell i
+ *        and j.
+ *
+ * \param[in]     pi              value at cell i
+ * \param[in]     pj              value at cell j
+ * \param[in]     distf           distance IJ.Nij
+ * \param[in]     srfan           face surface
+ * \param[in]     i_face_normal   face normal
+ * \param[in]     gradi           gradient at cell i
+ * \param[in]     gradj           gradient at cell j
+ * \param[in]     grdpai          upwind gradient at cell i
+ * \param[in]     grdpaj          upwind gradient at cell j
+ * \param[in]     i_massflux      mass flux at face (from i to j)
+ * \param[out]    testij          value of slope test first criterion
+ * \param[out]    tesqck          value of slope test second criterion
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_slope_test_vector_old(const cs_real_3_t   pi,
+                         const cs_real_3_t   pj,
+                         const cs_real_t     distf,
+                         const cs_real_t     srfan,
+                         const cs_real_3_t   i_face_normal,
+                         const cs_real_33_t  gradi,
+                         const cs_real_33_t  gradj,
+                         const cs_real_33_t  grdpai,
+                         const cs_real_33_t  grdpaj,
+                         const cs_real_t     i_massflux,
+                         cs_real_t         testij[3],
+                         cs_real_t         tesqck[3])
 {
   double testi[3], testj[3];
   double dcc[3], ddi[3], ddj[3];
@@ -213,6 +285,7 @@ cs_slope_test_vector(const cs_real_3_t   pi,
   }
 }
 
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute slope test criteria at internal face between cell i and j.
@@ -240,42 +313,45 @@ cs_slope_test_tensor(const cs_real_6_t   pi,
                      const cs_real_3_t   i_face_normal,
                      const cs_real_63_t  gradi,
                      const cs_real_63_t  gradj,
-                     const cs_real_63_t  grdpai,
-                     const cs_real_63_t  grdpaj,
+                     const cs_real_63_t  gradsti,
+                     const cs_real_63_t  gradstj,
                      const cs_real_t     i_massflux,
-                     cs_real_t         testij[6],
-                     cs_real_t         tesqck[6])
+                     cs_real_t          *testij,
+                     cs_real_t          *tesqck)
 {
   double testi[6], testj[6];
   double dcc[6], ddi[6], ddj[6];
+  *testij = 0.;
+  *tesqck = 0.;
 
   /* Slope test */
 
-  for (int isou = 0; isou < 6; isou++) {
-    testi[isou] = grdpai[isou][0]*i_face_normal[0]
-                + grdpai[isou][1]*i_face_normal[1]
-                + grdpai[isou][2]*i_face_normal[2];
-    testj[isou] = grdpaj[isou][0]*i_face_normal[0]
-                + grdpaj[isou][1]*i_face_normal[1]
-                + grdpaj[isou][2]*i_face_normal[2];
-    testij[isou] = grdpai[isou][0]*grdpaj[isou][0]
-                 + grdpai[isou][1]*grdpaj[isou][1]
-                 + grdpai[isou][2]*grdpaj[isou][2];
+  for (int ij = 0; ij < 6; ij++) {
+    *testij += gradsti[ij][0]*gradstj[ij][0]
+             + gradsti[ij][1]*gradstj[ij][1]
+             + gradsti[ij][2]*gradstj[ij][2];
+    testi[ij] = gradsti[ij][0]*i_face_normal[0]
+              + gradsti[ij][1]*i_face_normal[1]
+              + gradsti[ij][2]*i_face_normal[2];
+    testj[ij] = gradstj[ij][0]*i_face_normal[0]
+              + gradstj[ij][1]*i_face_normal[1]
+              + gradstj[ij][2]*i_face_normal[2];
 
-    if (i_massflux>0.) {
-      dcc[isou] = gradi[isou][0]*i_face_normal[0]
-                + gradi[isou][1]*i_face_normal[1]
-                + gradi[isou][2]*i_face_normal[2];
-      ddi[isou] = testi[isou];
-      ddj[isou] = (pj[isou]-pi[isou])/distf *srfan;
+    if (i_massflux > 0.) {
+      dcc[ij] = gradi[ij][0]*i_face_normal[0]
+              + gradi[ij][1]*i_face_normal[1]
+              + gradi[ij][2]*i_face_normal[2];
+      ddi[ij] = testi[ij];
+      ddj[ij] = (pj[ij]-pi[ij])/distf *srfan;
     } else {
-      dcc[isou] = gradj[isou][0]*i_face_normal[0]
-          + gradj[isou][1]*i_face_normal[1]
-          + gradj[isou][2]*i_face_normal[2];
-      ddi[isou] = (pj[isou]-pi[isou])/distf *srfan;
-      ddj[isou] = testj[isou];
+      dcc[ij] = gradj[ij][0]*i_face_normal[0]
+              + gradj[ij][1]*i_face_normal[1]
+              + gradj[ij][2]*i_face_normal[2];
+      ddi[ij] = (pj[ij]-pi[ij])/distf *srfan;
+      ddj[ij] = testj[ij];
     }
-    tesqck[isou] = cs_math_sq(dcc[isou]) - cs_math_sq(ddi[isou]-ddj[isou]);
+
+    *tesqck += cs_math_sq(dcc[ij]) - cs_math_sq(ddi[ij]-ddj[ij]);
   }
 }
 
@@ -2413,6 +2489,9 @@ cs_i_cd_unsteady_tensor(const int           ircflp,
  * \param[in]     relaxp          relaxation coefficient
  * \param[in]     blencp          proportion of centered or SOLU scheme,
  *                                (1-blencp) is the proportion of upwind.
+ * \param[in]     blend_st        proportion of centered or SOLU scheme,
+ *                                when the slope test is activated
+ *                                (1-blend_st) is the proportion of upwind.
  * \param[in]     weight          geometrical weight
  * \param[in]     i_dist          distance IJ.Nij
  * \param[in]     i_face_surf     face surface
@@ -2450,6 +2529,7 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
                           const int          ischcp,
                           const double       relaxp,
                           const double       blencp,
+                          const double       blend_st,
                           const cs_real_t    weight,
                           const cs_real_t    i_dist,
                           const cs_real_t    i_face_surf,
@@ -2529,99 +2609,104 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
                   &testij,
                   &tesqck);
 
-    if (tesqck<=0. || testij<=0.) {
+    if (ischcp==1) {
 
-      /* Upwind
+      /* Centered
          --------*/
 
-      cs_upwind_f_val(pi,
-                      pifrj);
-      cs_upwind_f_val(pir,
-                      pifri);
-      cs_upwind_f_val(pj,
-                      pjfri);
-      cs_upwind_f_val(pjr,
-                      pjfrj);
+      cs_centered_f_val(weight,
+                        *pip,
+                        *pjpr,
+                        pifrj);
+      cs_centered_f_val(weight,
+                        *pipr,
+                        *pjp,
+                        pifri);
+      cs_centered_f_val(weight,
+                        *pipr,
+                        *pjp,
+                        pjfri);
+      cs_centered_f_val(weight,
+                        *pip,
+                        *pjpr,
+                        pjfrj);
 
-      *upwind_switch = true;
+    } else if (ischcp == 0) {
+
+      /* Second order
+         ------------*/
+
+      cs_solu_f_val(cell_ceni,
+                    i_face_cog,
+                    gradi,
+                    pi,
+                    pifrj);
+      cs_solu_f_val(cell_ceni,
+                    i_face_cog,
+                    gradi,
+                    pir,
+                    pifri);
+      cs_solu_f_val(cell_cenj,
+                    i_face_cog,
+                    gradj,
+                    pj,
+                    pjfri);
+      cs_solu_f_val(cell_cenj,
+                    i_face_cog,
+                    gradj,
+                    pjr,
+                    pjfrj);
 
     } else {
 
-      if (ischcp==1) {
+      /* SOLU
+         -----*/
 
-        /* Centered
-           --------*/
-
-        cs_centered_f_val(weight,
-                          *pip,
-                          *pjpr,
-                          pifrj);
-        cs_centered_f_val(weight,
-                          *pipr,
-                          *pjp,
-                          pifri);
-        cs_centered_f_val(weight,
-                          *pipr,
-                          *pjp,
-                          pjfri);
-        cs_centered_f_val(weight,
-                          *pip,
-                          *pjpr,
-                          pjfrj);
-
-      } else if (ischcp == 0) {
-
-        /* Second order
-           ------------*/
-
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradi,
-                      pi,
-                      pifrj);
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradi,
-                      pir,
-                      pifri);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradj,
-                      pj,
-                      pjfri);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradj,
-                      pjr,
-                      pjfrj);
-
-      } else {
-
-        /* SOLU
-           -----*/
-
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradupi,
-                      pi,
-                      pifrj);
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradupi,
-                      pir,
-                      pifri);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradupj,
-                      pj,
-                      pjfri);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradupj,
-                      pjr,
-                      pjfrj);
-      }
+      cs_solu_f_val(cell_ceni,
+                    i_face_cog,
+                    gradupi,
+                    pi,
+                    pifrj);
+      cs_solu_f_val(cell_ceni,
+                    i_face_cog,
+                    gradupi,
+                    pir,
+                    pifri);
+      cs_solu_f_val(cell_cenj,
+                    i_face_cog,
+                    gradupj,
+                    pj,
+                    pjfri);
+      cs_solu_f_val(cell_cenj,
+                    i_face_cog,
+                    gradupj,
+                    pjr,
+                    pjfrj);
     }
+
+
+    /* Slope test: Pourcentage of upwind
+       ----------------------------------*/
+
+    if (tesqck <= 0. || testij <= 0.) {
+
+      cs_blend_f_val(blend_st,
+                     pi,
+                     pifrj);
+      cs_blend_f_val(blend_st,
+                     pir,
+                     pifri);
+      cs_blend_f_val(blend_st,
+                     pj,
+                     pjfri);
+      cs_blend_f_val(blend_st,
+                     pjr,
+                     pjfrj);
+
+      *upwind_switch = true;
+
+    }
+
 
     /* Blending
      --------*/
@@ -2694,37 +2779,37 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady_slope_test_vector(bool                upwind_switch[3],
-                                 const int           iconvp,
-                                 const int           ircflp,
-                                 const int           ischcp,
-                                 const double        relaxp,
-                                 const double        blencp,
-                                 const cs_real_t     weight,
-                                 const cs_real_t     i_dist,
-                                 const cs_real_t     i_face_surf,
-                                 const cs_real_3_t   cell_ceni,
-                                 const cs_real_3_t   cell_cenj,
-                                 const cs_real_3_t   i_face_normal,
-                                 const cs_real_3_t   i_face_cog,
-                                 const cs_real_3_t   dijpf,
-                                 const cs_real_t     i_massflux,
-                                 const cs_real_33_t  gradi,
-                                 const cs_real_33_t  gradj,
-                                 const cs_real_33_t  grdpai,
-                                 const cs_real_33_t  grdpaj,
-                                 const cs_real_3_t   pi,
-                                 const cs_real_3_t   pj,
-                                 const cs_real_3_t   pia,
-                                 const cs_real_3_t   pja,
-                                 cs_real_t           pifri[3],
-                                 cs_real_t           pifrj[3],
-                                 cs_real_t           pjfri[3],
-                                 cs_real_t           pjfrj[3],
-                                 cs_real_t           pip[3],
-                                 cs_real_t           pjp[3],
-                                 cs_real_t           pipr[3],
-                                 cs_real_t           pjpr[3])
+cs_i_cd_steady_slope_test_vector_old(bool               *upwind_switch,
+                                     const int           iconvp,
+                                     const int           ircflp,
+                                     const int           ischcp,
+                                     const double        relaxp,
+                                     const double        blencp,
+                                     const cs_real_t     weight,
+                                     const cs_real_t     i_dist,
+                                     const cs_real_t     i_face_surf,
+                                     const cs_real_3_t   cell_ceni,
+                                     const cs_real_3_t   cell_cenj,
+                                     const cs_real_3_t   i_face_normal,
+                                     const cs_real_3_t   i_face_cog,
+                                     const cs_real_3_t   dijpf,
+                                     const cs_real_t     i_massflux,
+                                     const cs_real_33_t  gradi,
+                                     const cs_real_33_t  gradj,
+                                     const cs_real_33_t  grdpai,
+                                     const cs_real_33_t  grdpaj,
+                                     const cs_real_3_t   pi,
+                                     const cs_real_3_t   pj,
+                                     const cs_real_3_t   pia,
+                                     const cs_real_3_t   pja,
+                                     cs_real_t           pifri[3],
+                                     cs_real_t           pifrj[3],
+                                     cs_real_t           pjfri[3],
+                                     cs_real_t           pjfrj[3],
+                                     cs_real_t           pip[3],
+                                     cs_real_t           pjp[3],
+                                     cs_real_t           pipr[3],
+                                     cs_real_t           pjpr[3])
 {
   cs_real_3_t pir, pjr;
   cs_real_3_t recoi, recoj;
@@ -2734,10 +2819,6 @@ cs_i_cd_steady_slope_test_vector(bool                upwind_switch[3],
 
   distf = i_dist;
   srfan = i_face_surf;
-
-  for (isou = 0; isou < 3; isou++) {
-    upwind_switch[isou] = false;
-  }
 
   cs_i_compute_quantities_vector(ircflp,
                                  weight,
@@ -2768,18 +2849,18 @@ cs_i_cd_steady_slope_test_vector(bool                upwind_switch[3],
 
   /* Convection slope test is needed only when iconv >0 */
   if (iconvp > 0) {
-    cs_slope_test_vector(pi,
-                         pj,
-                         distf,
-                         srfan,
-                         i_face_normal,
-                         gradi,
-                         gradj,
-                         grdpai,
-                         grdpaj,
-                         i_massflux,
-                         testij,
-                         tesqck);
+    cs_slope_test_vector_old(pi,
+                             pj,
+                             distf,
+                             srfan,
+                             i_face_normal,
+                             gradi,
+                             gradj,
+                             grdpai,
+                             grdpaj,
+                             i_massflux,
+                             testij,
+                             tesqck);
 
     for (isou = 0; isou < 3; isou++) {
       if (tesqck[isou]<=0. || testij[isou]<=0.) {
@@ -2796,7 +2877,7 @@ cs_i_cd_steady_slope_test_vector(bool                upwind_switch[3],
         cs_upwind_f_val(pjr[isou],
                         &pjfrj[isou]);
 
-        upwind_switch[isou] = true;
+        upwind_switch = true;
 
       } else {
 
@@ -2895,6 +2976,9 @@ cs_i_cd_steady_slope_test_vector(bool                upwind_switch[3],
  * \param[in]     relaxp          relaxation coefficient
  * \param[in]     blencp          proportion of centered or SOLU scheme,
  *                                (1-blencp) is the proportion of upwind.
+ * \param[in]     blend_st        proportion of centered or SOLU scheme,
+ *                                when the slope test is activated
+ *                                (1-blend_st) is the proportion of upwind.
  * \param[in]     weight          geometrical weight
  * \param[in]     i_dist          distance IJ.Nij
  * \param[in]     i_face_surf     face surface
@@ -2924,12 +3008,246 @@ cs_i_cd_steady_slope_test_vector(bool                upwind_switch[3],
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
+cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
                                  const int           iconvp,
                                  const int           ircflp,
                                  const int           ischcp,
                                  const double        relaxp,
                                  const double        blencp,
+                                 const double        blend_st,
+                                 const cs_real_t     weight,
+                                 const cs_real_t     i_dist,
+                                 const cs_real_t     i_face_surf,
+                                 const cs_real_3_t   cell_ceni,
+                                 const cs_real_3_t   cell_cenj,
+                                 const cs_real_3_t   i_face_normal,
+                                 const cs_real_3_t   i_face_cog,
+                                 const cs_real_3_t   dijpf,
+                                 const cs_real_t     i_massflux,
+                                 const cs_real_33_t  gradi,
+                                 const cs_real_33_t  gradj,
+                                 const cs_real_33_t  grdpai,
+                                 const cs_real_33_t  grdpaj,
+                                 const cs_real_3_t   pi,
+                                 const cs_real_3_t   pj,
+                                 const cs_real_3_t   pia,
+                                 const cs_real_3_t   pja,
+                                 cs_real_t           pifri[3],
+                                 cs_real_t           pifrj[3],
+                                 cs_real_t           pjfri[3],
+                                 cs_real_t           pjfrj[3],
+                                 cs_real_t           pip[3],
+                                 cs_real_t           pjp[3],
+                                 cs_real_t           pipr[3],
+                                 cs_real_t           pjpr[3])
+{
+  cs_real_3_t pir, pjr;
+  cs_real_3_t recoi, recoj;
+  cs_real_t distf, srfan;
+  cs_real_t testij, tesqck;
+  int isou;
+
+  distf = i_dist;
+  srfan = i_face_surf;
+
+  cs_i_compute_quantities_vector(ircflp,
+                                 weight,
+                                 cell_ceni,
+                                 cell_cenj,
+                                 i_face_cog,
+                                 dijpf,
+                                 gradi,
+                                 gradj,
+                                 pi,
+                                 pj,
+                                 recoi,
+                                 recoj,
+                                 pip,
+                                 pjp);
+
+  cs_i_relax_c_val_vector(relaxp,
+                          pia,
+                          pja,
+                          recoi,
+                          recoj,
+                          pi,
+                          pj,
+                          pir,
+                          pjr,
+                          pipr,
+                          pjpr);
+
+  /* Convection slope test is needed only when iconv >0 */
+  if (iconvp > 0) {
+    cs_slope_test_vector(pi,
+                         pj,
+                         distf,
+                         srfan,
+                         i_face_normal,
+                         gradi,
+                         gradj,
+                         grdpai,
+                         grdpaj,
+                         i_massflux,
+                         &testij,
+                         &tesqck);
+
+    for (isou = 0; isou < 3; isou++) {
+      if (ischcp==1) {
+
+        /* Centered
+           --------*/
+
+        cs_centered_f_val(weight,
+                          pip[isou],
+                          pjpr[isou],
+                          &pifrj[isou]);
+        cs_centered_f_val(weight,
+                          pipr[isou],
+                          pjp[isou],
+                          &pifri[isou]);
+        cs_centered_f_val(weight,
+                          pipr[isou],
+                          pjp[isou],
+                          &pjfri[isou]);
+        cs_centered_f_val(weight,
+                          pip[isou],
+                          pjpr[isou],
+                          &pjfrj[isou]);
+
+      } else {
+
+        /* Second order
+           ------------*/
+
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradi[isou],
+                      pi[isou],
+                      &pifrj[isou]);
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradi[isou],
+                      pir[isou],
+                      &pifri[isou]);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradj[isou],
+                      pj[isou],
+                      &pjfri[isou]);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradj[isou],
+                      pjr[isou],
+                      &pjfrj[isou]);
+
+      }
+
+    }
+
+    /* Slope test: Pourcentage of upwind
+       ----------------------------------*/
+
+    if (tesqck <= 0. || testij <= 0.) {
+      cs_blend_f_val_vector(blend_st,
+                            pi,
+                            pifrj);
+      cs_blend_f_val_vector(blend_st,
+                            pir,
+                            pifri);
+      cs_blend_f_val_vector(blend_st,
+                            pj,
+                            pjfri);
+      cs_blend_f_val_vector(blend_st,
+                            pjr,
+                            pjfrj);
+
+      *upwind_switch = true;
+    }
+
+
+    /* Blending
+       --------*/
+    cs_blend_f_val_vector(blencp,
+                          pi,
+                          pifrj);
+    cs_blend_f_val_vector(blencp,
+                          pir,
+                          pifri);
+    cs_blend_f_val_vector(blencp,
+                          pj,
+                          pjfri);
+    cs_blend_f_val_vector(blencp,
+                          pjr,
+                          pjfrj);
+
+  /* If iconv=0 p*fr* are useless */
+  } else {
+    for (isou = 0; isou < 3; isou++) {
+        cs_upwind_f_val(pi[isou],
+                        &pifrj[isou]);
+        cs_upwind_f_val(pir[isou],
+                        &pifri[isou]);
+        cs_upwind_f_val(pj[isou],
+                        &pjfri[isou]);
+        cs_upwind_f_val(pjr[isou],
+                        &pjfrj[isou]);
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle preparation of internal face values for the fluxes computation
+ * in case of a steady algorithm and using slope tests.
+ *
+ * \param[out]    upwind_switch   slope test result
+ * \param[in]     iconvp          convection flag
+ * \param[in]     ircflp          recontruction flag
+ * \param[in]     ischcp          second order convection scheme flag
+ * \param[in]     relaxp          relaxation coefficient
+ * \param[in]     blencp          proportion of centered or SOLU scheme,
+ *                                (1-blencp) is the proportion of upwind.
+ * \param[in]     blend_st        proportion of centered or SOLU scheme,
+ *                                when the slope test is activated
+ *                                (1-blend_st) is the proportion of upwind.
+ * \param[in]     weight          geometrical weight
+ * \param[in]     i_dist          distance IJ.Nij
+ * \param[in]     i_face_surf     face surface
+ * \param[in]     cell_ceni       center of gravity coordinates of cell i
+ * \param[in]     cell_cenj       center of gravity coordinates of cell i
+ * \param[in]     i_face_normal   face normal
+ * \param[in]     i_face_cog      center of gravity coordinates of face ij
+ * \param[in]     dijpf           distance I'J'
+ * \param[in]     i_massflux      mass flux at face ij
+ * \param[in]     gradi           gradient at cell i
+ * \param[in]     gradj           gradient at cell j
+ * \param[in]     grdpai          upwind gradient at cell i
+ * \param[in]     grdpaj          upwind gradient at cell j
+ * \param[in]     pi              value at cell i
+ * \param[in]     pj              value at cell j
+ * \param[in]     pia             old value at cell i
+ * \param[in]     pja             old value at cell j
+ * \param[out]    pifri           contribution of i to flux from i to j
+ * \param[out]    pifrj           contribution of i to flux from j to i
+ * \param[out]    pjfri           contribution of j to flux from i to j
+ * \param[out]    pjfrj           contribution of j to flux from j to i
+ * \param[out]    pip             reconstructed value at cell i
+ * \param[out]    pjp             reconstructed value at cell j
+ * \param[out]    pipr            relaxed reconstructed value at cell i
+ * \param[out]    pjpr            relaxed reconstructed value at cell j
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
+                                 const int           iconvp,
+                                 const int           ircflp,
+                                 const int           ischcp,
+                                 const double        relaxp,
+                                 const double        blencp,
+                                 const double        blend_st,
                                  const cs_real_t     weight,
                                  const cs_real_t     i_dist,
                                  const cs_real_t     i_face_surf,
@@ -2959,15 +3277,11 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
   cs_real_6_t pir, pjr;
   cs_real_6_t recoi, recoj;
   cs_real_t distf, srfan;
-  cs_real_6_t testij, tesqck;
+  cs_real_t testij, tesqck;
   int isou;
 
   distf = i_dist;
   srfan = i_face_surf;
-
-  for (isou = 0; isou < 6; isou++) {
-    upwind_switch[isou] = false;
-  }
 
   cs_i_compute_quantities_tensor(ircflp,
                                  weight,
@@ -3008,79 +3322,84 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
                          grdpai,
                          grdpaj,
                          i_massflux,
-                         testij,
-                         tesqck);
+                         &testij,
+                         &tesqck);
 
     for (isou = 0; isou < 6; isou++) {
-      if (tesqck[isou]<=0. || testij[isou]<=0.) {
+      if (ischcp==1) {
 
-        /* Upwind
+        /* Centered
            --------*/
 
-        cs_upwind_f_val(pi[isou],
-                        &pifrj[isou]);
-        cs_upwind_f_val(pir[isou],
-                        &pifri[isou]);
-        cs_upwind_f_val(pj[isou],
-                        &pjfri[isou]);
-        cs_upwind_f_val(pjr[isou],
-                        &pjfrj[isou]);
-
-        upwind_switch[isou] = true;
+        cs_centered_f_val(weight,
+                          pip[isou],
+                          pjpr[isou],
+                          &pifrj[isou]);
+        cs_centered_f_val(weight,
+                          pipr[isou],
+                          pjp[isou],
+                          &pifri[isou]);
+        cs_centered_f_val(weight,
+                          pipr[isou],
+                          pjp[isou],
+                          &pjfri[isou]);
+        cs_centered_f_val(weight,
+                          pip[isou],
+                          pjpr[isou],
+                          &pjfrj[isou]);
 
       } else {
 
-        if (ischcp==1) {
+        /* Second order
+           ------------*/
 
-          /* Centered
-             --------*/
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradi[isou],
+                      pi[isou],
+                      &pifrj[isou]);
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradi[isou],
+                      pir[isou],
+                      &pifri[isou]);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradj[isou],
+                      pj[isou],
+                      &pjfri[isou]);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradj[isou],
+                      pjr[isou],
+                      &pjfrj[isou]);
 
-          cs_centered_f_val(weight,
-                            pip[isou],
-                            pjpr[isou],
-                            &pifrj[isou]);
-          cs_centered_f_val(weight,
-                            pipr[isou],
-                            pjp[isou],
-                            &pifri[isou]);
-          cs_centered_f_val(weight,
-                            pipr[isou],
-                            pjp[isou],
-                            &pjfri[isou]);
-          cs_centered_f_val(weight,
-                            pip[isou],
-                            pjpr[isou],
-                            &pjfrj[isou]);
-
-        } else {
-
-          /* Second order
-             ------------*/
-
-          cs_solu_f_val(cell_ceni,
-                        i_face_cog,
-                        gradi[isou],
-                        pi[isou],
-                        &pifrj[isou]);
-          cs_solu_f_val(cell_ceni,
-                        i_face_cog,
-                        gradi[isou],
-                        pir[isou],
-                        &pifri[isou]);
-          cs_solu_f_val(cell_cenj,
-                        i_face_cog,
-                        gradj[isou],
-                        pj[isou],
-                        &pjfri[isou]);
-          cs_solu_f_val(cell_cenj,
-                        i_face_cog,
-                        gradj[isou],
-                        pjr[isou],
-                        &pjfrj[isou]);
-
-        }
       }
+
     }
+
+    /* Slope test: Pourcentage of upwind
+       ----------------------------------*/
+
+    if (tesqck <= 0. || testij <= 0.) {
+
+      cs_blend_f_val_tensor(blend_st,
+                            pi,
+                            pifrj);
+      cs_blend_f_val_tensor(blend_st,
+                            pir,
+                            pifri);
+      cs_blend_f_val_tensor(blend_st,
+                            pj,
+                            pjfri);
+      cs_blend_f_val_tensor(blend_st,
+                            pjr,
+                            pjfrj);
+
+      *upwind_switch = true;
+
+    }
+
 
     /* Blending
        --------*/
@@ -3125,6 +3444,9 @@ cs_i_cd_steady_slope_test_tensor(bool                upwind_switch[6],
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     blencp          proportion of centered or SOLU scheme,
  *                                (1-blencp) is the proportion of upwind.
+ * \param[in]     blend_st        proportion of centered or SOLU scheme,
+ *                                when the slope test is activated
+ *                                (1-blend_st) is the proportion of upwind.
  * \param[in]     weight          geometrical weight
  * \param[in]     i_dist          distance IJ.Nij
  * \param[in]     i_face_surf     face surface
@@ -3155,6 +3477,7 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
                             const int          ircflp,
                             const int          ischcp,
                             const double       blencp,
+                            const double       blend_st,
                             const cs_real_t    weight,
                             const cs_real_t    i_dist,
                             const cs_real_t    i_face_surf,
@@ -3215,67 +3538,68 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
                   &testij,
                   &tesqck);
 
-    if (tesqck<=0. || testij<=0.) {
+    if (ischcp==1) {
 
-      /* Upwind
+      /* Centered
          --------*/
 
-      cs_upwind_f_val(pi,
-                      pif);
-      cs_upwind_f_val(pj,
-                      pjf);
+      cs_centered_f_val(weight,
+                        *pip,
+                        *pjp,
+                        pif);
+      cs_centered_f_val(weight,
+                        *pip,
+                        *pjp,
+                        pjf);
 
-      *upwind_switch = true;
+    } else if (ischcp == 0) {
+
+      /* Original SOLU
+         --------------*/
+
+      cs_solu_f_val(cell_ceni,
+                    i_face_cog,
+                    gradi,
+                    pi,
+                    pif);
+      cs_solu_f_val(cell_cenj,
+                    i_face_cog,
+                    gradj,
+                    pj,
+                    pjf);
 
     } else {
 
-      if (ischcp==1) {
+      /* SOLU
+         -----*/
 
-        /* Centered
-           --------*/
+      cs_solu_f_val(cell_ceni,
+                    i_face_cog,
+                    gradupi,
+                    pi,
+                    pif);
+      cs_solu_f_val(cell_cenj,
+                    i_face_cog,
+                    gradupj,
+                    pj,
+                    pjf);
 
-        cs_centered_f_val(weight,
-                          *pip,
-                          *pjp,
-                          pif);
-        cs_centered_f_val(weight,
-                          *pip,
-                          *pjp,
-                          pjf);
+    }
 
-      } else if (ischcp == 0) {
+    /* Slope test: Pourcentage of upwind
+       ----------------------------------*/
 
-        /* Original SOLU
-           --------------*/
+    if (tesqck<=0. || testij<=0.) {
 
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradi,
-                      pi,
-                      pif);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradj,
-                      pj,
-                      pjf);
+      cs_blend_f_val(blencp,
+                     pi,
+                     pif);
+      cs_blend_f_val(blencp,
+                     pj,
+                     pjf);
 
-      } else {
+      *upwind_switch = true;
 
-        /* SOLU
-           -----*/
-
-        cs_solu_f_val(cell_ceni,
-                      i_face_cog,
-                      gradupi,
-                      pi,
-                      pif);
-        cs_solu_f_val(cell_cenj,
-                      i_face_cog,
-                      gradupj,
-                      pj,
-                      pjf);
-
-      }
     }
 
     /* Blending
@@ -3300,7 +3624,7 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Handle preparation of internal face values for the fluxes computation
+ * \brief DEPRECATED Handle preparation of internal face values for the fluxes computation
  * in case of a unsteady algorithm and using slope tests.
  *
  * \param[out]    upwind_switch   slope test result
@@ -3332,30 +3656,30 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
-                                   const int           iconvp,
-                                   const int           ircflp,
-                                   const int           ischcp,
-                                   const double        blencp,
-                                   const cs_real_t     weight,
-                                   const cs_real_t     i_dist,
-                                   const cs_real_t     i_face_surf,
-                                   const cs_real_3_t   cell_ceni,
-                                   const cs_real_3_t   cell_cenj,
-                                   const cs_real_3_t   i_face_normal,
-                                   const cs_real_3_t   i_face_cog,
-                                   const cs_real_3_t   dijpf,
-                                   const cs_real_t     i_massflux,
-                                   const cs_real_33_t  gradi,
-                                   const cs_real_33_t  gradj,
-                                   const cs_real_33_t  grdpai,
-                                   const cs_real_33_t  grdpaj,
-                                   const cs_real_3_t   pi,
-                                   const cs_real_3_t   pj,
-                                   cs_real_t           pif[3],
-                                   cs_real_t           pjf[3],
-                                   cs_real_t           pip[3],
-                                   cs_real_t           pjp[3])
+cs_i_cd_unsteady_slope_test_vector_old(bool               *upwind_switch,
+                                       const int           iconvp,
+                                       const int           ircflp,
+                                       const int           ischcp,
+                                       const double        blencp,
+                                       const cs_real_t     weight,
+                                       const cs_real_t     i_dist,
+                                       const cs_real_t     i_face_surf,
+                                       const cs_real_3_t   cell_ceni,
+                                       const cs_real_3_t   cell_cenj,
+                                       const cs_real_3_t   i_face_normal,
+                                       const cs_real_3_t   i_face_cog,
+                                       const cs_real_3_t   dijpf,
+                                       const cs_real_t     i_massflux,
+                                       const cs_real_33_t  gradi,
+                                       const cs_real_33_t  gradj,
+                                       const cs_real_33_t  grdpai,
+                                       const cs_real_33_t  grdpaj,
+                                       const cs_real_3_t   pi,
+                                       const cs_real_3_t   pj,
+                                       cs_real_t           pif[3],
+                                       cs_real_t           pjf[3],
+                                       cs_real_t           pip[3],
+                                       cs_real_t           pjp[3])
 {
   cs_real_3_t recoi, recoj;
   cs_real_t distf, srfan;
@@ -3364,10 +3688,6 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
 
   distf = i_dist;
   srfan = i_face_surf;
-
-  for (isou = 0; isou < 3; isou++) {
-    upwind_switch[isou] = false;
-  }
 
   cs_i_compute_quantities_vector(ircflp,
                                  weight,
@@ -3386,18 +3706,18 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
 
   /* Convection slope test is needed only when iconv >0 */
   if (iconvp > 0) {
-    cs_slope_test_vector(pi,
-                         pj,
-                         distf,
-                         srfan,
-                         i_face_normal,
-                         gradi,
-                         gradj,
-                         grdpai,
-                         grdpaj,
-                         i_massflux,
-                         testij,
-                         tesqck);
+    cs_slope_test_vector_old(pi,
+                             pj,
+                             distf,
+                             srfan,
+                             i_face_normal,
+                             gradi,
+                             gradj,
+                             grdpai,
+                             grdpaj,
+                             i_massflux,
+                             testij,
+                             tesqck);
 
     /* FIXME: slope test should be done for the vector and not component by
      * component. This is conserved for compatibility only. */
@@ -3412,7 +3732,7 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
         cs_upwind_f_val(pj[isou],
                         &pjf[isou]);
 
-        upwind_switch[isou] = true;
+        upwind_switch = true;
 
       } else {
 
@@ -3472,6 +3792,7 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
   }
 }
 
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Handle preparation of internal face values for the fluxes computation
@@ -3483,6 +3804,9 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     blencp          proportion of centered or SOLU scheme,
  *                                (1-blencp) is the proportion of upwind.
+ * \param[in]     blend_st        proportion of centered or SOLU scheme,
+ *                                when the slope test is activated
+ *                                (1-blend_st) is the proportion of upwind.
  * \param[in]     weight          geometrical weight
  * \param[in]     i_dist          distance IJ.Nij
  * \param[in]     i_face_surf     face surface
@@ -3506,11 +3830,187 @@ cs_i_cd_unsteady_slope_test_vector(bool                upwind_switch[3],
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
+cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
                                    const int           iconvp,
                                    const int           ircflp,
                                    const int           ischcp,
                                    const double        blencp,
+                                   const double        blend_st,
+                                   const cs_real_t     weight,
+                                   const cs_real_t     i_dist,
+                                   const cs_real_t     i_face_surf,
+                                   const cs_real_3_t   cell_ceni,
+                                   const cs_real_3_t   cell_cenj,
+                                   const cs_real_3_t   i_face_normal,
+                                   const cs_real_3_t   i_face_cog,
+                                   const cs_real_3_t   dijpf,
+                                   const cs_real_t     i_massflux,
+                                   const cs_real_33_t  gradi,
+                                   const cs_real_33_t  gradj,
+                                   const cs_real_33_t  grdpai,
+                                   const cs_real_33_t  grdpaj,
+                                   const cs_real_3_t   pi,
+                                   const cs_real_3_t   pj,
+                                   cs_real_t           pif[3],
+                                   cs_real_t           pjf[3],
+                                   cs_real_t           pip[3],
+                                   cs_real_t           pjp[3])
+{
+  cs_real_3_t recoi, recoj;
+  cs_real_t distf, srfan;
+  cs_real_t testij, tesqck;
+  int isou;
+
+  distf = i_dist;
+  srfan = i_face_surf;
+
+  cs_i_compute_quantities_vector(ircflp,
+                                 weight,
+                                 cell_ceni,
+                                 cell_cenj,
+                                 i_face_cog,
+                                 dijpf,
+                                 gradi,
+                                 gradj,
+                                 pi,
+                                 pj,
+                                 recoi,
+                                 recoj,
+                                 pip,
+                                 pjp);
+
+  /* Convection slope test is needed only when iconv >0 */
+  if (iconvp > 0) {
+    cs_slope_test_vector(pi,
+                         pj,
+                         distf,
+                         srfan,
+                         i_face_normal,
+                         gradi,
+                         gradj,
+                         grdpai,
+                         grdpaj,
+                         i_massflux,
+                         &testij,
+                         &tesqck);
+
+    for (isou = 0; isou < 3; isou++) {
+      if (ischcp == 1) {
+
+        /* Centered
+           --------*/
+
+        cs_centered_f_val(weight,
+                          pip[isou],
+                          pjp[isou],
+                          &pif[isou]);
+        cs_centered_f_val(weight,
+                          pip[isou],
+                          pjp[isou],
+                          &pjf[isou]);
+
+      } else {
+
+        /* Second order
+           ------------*/
+
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradi[isou],
+                      pi[isou],
+                      &pif[isou]);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradj[isou],
+                      pj[isou],
+                      &pjf[isou]);
+
+      }
+
+    }
+
+    /* Slope test: Pourcentage of upwind
+       ----------------------------------*/
+
+    if (tesqck <= 0. || testij <= 0.) {
+
+      cs_blend_f_val_vector(blend_st,
+                            pi,
+                            pif);
+      cs_blend_f_val_vector(blend_st,
+                            pj,
+                            pjf);
+
+      *upwind_switch = true;
+
+    }
+
+
+    /* Blending
+       --------*/
+    cs_blend_f_val_vector(blencp,
+                          pi,
+                          pif);
+    cs_blend_f_val_vector(blencp,
+                          pj,
+                          pjf);
+
+  /* If iconv=0 p*f are useless */
+  } else {
+
+    for (isou = 0; isou < 3; isou++) {
+      cs_upwind_f_val(pi[isou],
+                      &pif[isou]);
+      cs_upwind_f_val(pj[isou],
+                      &pjf[isou]);
+
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle preparation of internal face values for the fluxes computation
+ * in case of a unsteady algorithm and using slope tests.
+ *
+ * \param[out]    upwind_switch   slope test result
+ * \param[in]     iconvp          convection flag
+ * \param[in]     ircflp          recontruction flag
+ * \param[in]     ischcp          second order convection scheme flag
+ * \param[in]     blencp          proportion of centered or SOLU scheme,
+ *                                (1-blencp) is the proportion of upwind.
+ * \param[in]     blend_st        proportion of centered or SOLU scheme,
+ *                                when the slope test is activated
+ *                                (1-blend_st) is the proportion of upwind.
+ * \param[in]     weight          geometrical weight
+ * \param[in]     i_dist          distance IJ.Nij
+ * \param[in]     i_face_surf     face surface
+ * \param[in]     cell_ceni       center of gravity coordinates of cell i
+ * \param[in]     cell_cenj       center of gravity coordinates of cell i
+ * \param[in]     i_face_normal   face normal
+ * \param[in]     i_face_cog      center of gravity coordinates of face ij
+ * \param[in]     dijpf           distance I'J'
+ * \param[in]     i_massflux      mass flux at face ij
+ * \param[in]     gradi           gradient at cell i
+ * \param[in]     gradj           gradient at cell j
+ * \param[in]     grdpai          upwind gradient at cell i
+ * \param[in]     grdpaj          upwind gradient at cell j
+ * \param[in]     pi              value at cell i
+ * \param[in]     pj              value at cell j
+ * \param[out]    pif             contribution of i to flux from i to j
+ * \param[out]    pjf             contribution of j to flux from i to j
+ * \param[out]    pip             reconstructed value at cell i
+ * \param[out]    pjp             reconstructed value at cell j
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_i_cd_unsteady_slope_test_tensor(bool               *upwind_switch,
+                                   const int           iconvp,
+                                   const int           ircflp,
+                                   const int           ischcp,
+                                   const double        blencp,
+                                   const double        blend_st,
                                    const cs_real_t     weight,
                                    const cs_real_t     i_dist,
                                    const cs_real_t     i_face_surf,
@@ -3533,15 +4033,11 @@ cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
 {
   cs_real_6_t recoi, recoj;
   cs_real_t distf, srfan;
-  cs_real_6_t testij, tesqck;
+  cs_real_t testij, tesqck;
   int isou;
 
   distf = i_dist;
   srfan = i_face_surf;
-
-  for (isou = 0; isou < 6; isou++) {
-    upwind_switch[isou] = false;
-  }
 
   cs_i_compute_quantities_tensor(ircflp,
                                  weight,
@@ -3570,55 +4066,60 @@ cs_i_cd_unsteady_slope_test_tensor(bool                upwind_switch[6],
                          grdpai,
                          grdpaj,
                          i_massflux,
-                         testij,
-                         tesqck);
+                         &testij,
+                         &tesqck);
+
     for (isou = 0; isou < 6; isou++) {
-      if (tesqck[isou]<=0. || testij[isou]<=0.) {
+
+      if (ischcp==1) {
+
+        /* Centered
+           --------*/
+
+        cs_centered_f_val(weight,
+                          pip[isou],
+                          pjp[isou],
+                          &pif[isou]);
+        cs_centered_f_val(weight,
+                          pip[isou],
+                          pjp[isou],
+                          &pjf[isou]);
+
+      } else {
+
+        /* Second order
+           ------------*/
+
+        cs_solu_f_val(cell_ceni,
+                      i_face_cog,
+                      gradi[isou],
+                      pi[isou],
+                      &pif[isou]);
+        cs_solu_f_val(cell_cenj,
+                      i_face_cog,
+                      gradj[isou],
+                      pj[isou],
+                      &pjf[isou]);
+      }
+
+    }
+
+    /* Slope test activated: poucentage of upwind */
+    if (tesqck <= 0. || testij <= 0.) {
 
         /* Upwind
            --------*/
 
-        cs_upwind_f_val(pi[isou],
-                        &pif[isou]);
-        cs_upwind_f_val(pj[isou],
-                        &pjf[isou]);
+      cs_blend_f_val_tensor(blend_st,
+                            pi,
+                            pif);
+      cs_blend_f_val_tensor(blend_st,
+                            pj,
+                            pjf);
 
-        upwind_switch[isou] = true;
-
-      } else {
-
-        if (ischcp==1) {
-
-          /* Centered
-             --------*/
-
-          cs_centered_f_val(weight,
-                            pip[isou],
-                            pjp[isou],
-                            &pif[isou]);
-          cs_centered_f_val(weight,
-                            pip[isou],
-                            pjp[isou],
-                            &pjf[isou]);
-
-        } else {
-
-          /* Second order
-             ------------*/
-
-          cs_solu_f_val(cell_ceni,
-                        i_face_cog,
-                        gradi[isou],
-                        pi[isou],
-                        &pif[isou]);
-          cs_solu_f_val(cell_cenj,
-                        i_face_cog,
-                        gradj[isou],
-                        pj[isou],
-                        &pjf[isou]);
-        }
-      }
+      *upwind_switch = true;
     }
+
 
     /* Blending
        --------*/

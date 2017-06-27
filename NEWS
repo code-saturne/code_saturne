@@ -2,6 +2,16 @@
 Trunk (unreleased)
 ==================
 
+Numerics
+--------
+
+- Make vectorial and tensorial slope tests invariant by rotation and
+  identical for all components (previous version available for the
+  velocity with isstpc = -1 in var_cal_opt structure).
+
+- Add an option to blend with upwind when the slope test is activated. The
+  key word is blend_st in var_cal_opt structure.
+
 User changes
 ------------
 

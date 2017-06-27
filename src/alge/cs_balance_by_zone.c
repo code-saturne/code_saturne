@@ -245,6 +245,9 @@ _balance_boundary_faces(const int          icvflf,
  *   relaxp        -->  relaxation coefficient
  *   blencp        -->  proportion of centered or SOLU scheme,
  *                      (1-blencp) is the proportion of upwind.
+ *   blend_st      -->  proportion of centered or SOLU scheme,
+ *                      after slope test
+ *                      (1-blend_st) is the proportion of upwind.
  *   weight        -->  geometrical weight
  *   i_dist        -->  distance IJ.Nij
  *   i_face_surf   -->  face surface
@@ -282,6 +285,7 @@ _balance_internal_faces(const int         iupwin,
                         const int         isstpp,
                         const cs_real_t   relaxp,
                         const cs_real_t   blencp,
+                        const cs_real_t   blend_st,
                         const cs_real_t   weight,
                         const cs_real_t   i_dist,
                         const cs_real_t   i_face_surf,
@@ -538,6 +542,7 @@ _balance_internal_faces(const int         iupwin,
                                 ischcp,
                                 relaxp,
                                 blencp,
+                                blend_st,
                                 weight,
                                 i_dist,
                                 i_face_surf,
@@ -603,6 +608,7 @@ _balance_internal_faces(const int         iupwin,
                                   ircflp,
                                   ischcp,
                                   blencp,
+                                  blend_st,
                                   weight,
                                   i_dist,
                                   i_face_surf,
@@ -1318,6 +1324,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   int isstpp = var_cal_opt.isstpc;
   int ischcp = var_cal_opt.ischcv;
   double blencp = var_cal_opt.blencv;
+  double blend_st = var_cal_opt.blend_st;
   int iupwin = (blencp > 0.) ? 0 : 1;
 
   for (cs_lnum_t f_id = 0; f_id < n_bi_faces_sel; f_id++) {
@@ -1338,6 +1345,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                             isstpp,
                             relaxp,
                             blencp,
+                            blend_st,
                             weight[f_id_sel],
                             i_dist[f_id_sel],
                             i_face_surf[f_id_sel],
@@ -2774,6 +2782,7 @@ cs_flux_through_surface(const char         *scalar_name,
   int isstpp = var_cal_opt.isstpc;
   int ischcp = var_cal_opt.ischcv;
   double blencp = var_cal_opt.blencv;
+  double blend_st = var_cal_opt.blend_st;
   int iupwin = (blencp > 0.) ? 0 : 1;
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces_sel; f_id++) {
@@ -2794,6 +2803,7 @@ cs_flux_through_surface(const char         *scalar_name,
                             isstpp,
                             relaxp,
                             blencp,
+                            blend_st,
                             weight[f_id_sel],
                             i_dist[f_id_sel],
                             i_face_surf[f_id_sel],

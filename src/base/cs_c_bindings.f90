@@ -98,6 +98,7 @@ module cs_c_bindings
     integer(c_int) :: icoupl
     real(c_double) :: thetav
     real(c_double) :: blencv
+    real(c_double) :: blend_st
     real(c_double) :: epsilo
     real(c_double) :: epsrsm
     real(c_double) :: epsrgr
@@ -4163,9 +4164,10 @@ contains
     vcopt%imrgra = imrgra
     vcopt%imligr = imligp
     vcopt%ircflu = ircflp
-    vcopt%iwgrec = 0
+    vcopt%iwgrec = 0 ! Warning, may be overwritten if a field
     vcopt%thetav = thetap
     vcopt%blencv = blencp
+    vcopt%blend_st = 0 ! Warning, may be overwritten if a field
     vcopt%epsilo = epsilp
     vcopt%epsrsm = epsrsp
     vcopt%epsrgr = epsrgp
@@ -4391,6 +4393,7 @@ contains
     vcopt%iwgrec = 0
     vcopt%thetav = thetap
     vcopt%blencv = blencp
+    vcopt%blend_st = 0 ! Warning, may be overwritten if a field
     vcopt%epsilo = epsilp
     vcopt%epsrsm = epsrsp
     vcopt%epsrgr = epsrgp
@@ -4610,6 +4613,7 @@ contains
     vcopt%iwgrec = 0
     vcopt%thetav = thetap
     vcopt%blencv = blencp
+    vcopt%blend_st = 0 ! Warning, may be overwritten if a field
     vcopt%epsilo = epsilp
     vcopt%epsrsm = epsrsp
     vcopt%epsrgr = epsrgp
@@ -4796,6 +4800,7 @@ contains
     vcopt%iwgrec = 0
     vcopt%thetav = thetap
     vcopt%blencv = blencp
+    vcopt%blend_st = 0 ! Warning, may be overwritten if a field
     vcopt%epsilo = -1
     vcopt%epsrsm = -1
     vcopt%epsrgr = epsrgp
@@ -4974,6 +4979,7 @@ contains
     vcopt%iwgrec = 0
     vcopt%thetav = thetap
     vcopt%blencv = blencp
+    vcopt%blend_st = 0 ! Warning, may be overwritten if a field
     vcopt%epsilo = -1
     vcopt%epsrsm = -1
     vcopt%epsrgr = epsrgp

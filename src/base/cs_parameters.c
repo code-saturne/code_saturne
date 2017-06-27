@@ -200,6 +200,8 @@ BEGIN_C_DECLS
         For each unknown variable to calculate, isstpc indicates whether a slope
         test should be used to switch from a second-order to an upwind convective
         scheme under certain conditions, to ensure stability.
+        - -1: deprecated slope test activated for the considered unknown
+              (for vector variable only)
         - 0: slope test activated for the considered unknown
         - 1: slope test deactivated for the considered unknown
         - 2: continuous limiter ensuring boundedness (beta limiter)
@@ -325,6 +327,16 @@ BEGIN_C_DECLS
         scheme); in case of LES calculation, a second-order scheme is
         recommended and activated by default (\ref blencv = 1).\n
         Useful for all the unknowns variable for which \ref iconv = 1.
+
+  \var  cs_var_cal_opt_t::blend_st
+        \anchor blend_st
+        For each unknown variable to calculate, blend_st indicates the proportion
+        of second-order convective scheme (0 corresponds to an upwind first-order
+        scheme) after the slope test is activated;
+        in case of LES calculation, a second-order scheme is
+        recommended and activated by default (\ref blend_st = 1).\n
+        Useful for all the unknowns variable for which \ref iconv = 1.
+
 
   \var  cs_var_cal_opt_t::epsilo
         \anchor epsilo
@@ -476,6 +488,7 @@ static cs_var_cal_opt_t _var_cal_opt =
   .icoupl = -1,
   .thetav = 1.,
   .blencv = 1.,
+  .blend_st = 0.,
   .epsilo = 1.e-8,
   .epsrsm = 1.e-7,
   .epsrgr = 1.e-5,
@@ -577,6 +590,7 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_i, "icoupl", _t->icoupl);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "thetav", _t->thetav);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "blencv", _t->blencv);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "blend_st", _t->blend_st);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsilo", _t->epsilo);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrsm", _t->epsrsm);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrgr", _t->epsrgr);
@@ -622,6 +636,8 @@ _log_func_default_var_cal_opt(const void *t)
                   "and 3 for NVD/TVD scheme"));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "blencv", _t->blencv,
                 _("[0.;1.] (1-upwind proportion (0: upwind))"));
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "blend_st", _t->blend_st,
+                _("[0.;1.] (1-upwind proportion after slope test (0: upwind))"));
 
   cs_log_printf(CS_LOG_SETUP,"    Gradients calculation\n");
   cs_log_printf(CS_LOG_SETUP, fmt_i, "imrgra", _t->imrgra,

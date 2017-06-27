@@ -228,6 +228,7 @@ cs_balance_scalar(int                idtvar,
     var_cal_opt_loc.icoupl = -1;
     var_cal_opt_loc.thetav = var_cal_opt->thetav;
     var_cal_opt_loc.blencv = var_cal_opt->blencv;
+    var_cal_opt_loc.blend_st = 0.;
     var_cal_opt_loc.epsilo = -1.;
     var_cal_opt_loc.epsrsm = -1.;
     var_cal_opt_loc.epsrgr = var_cal_opt->epsrgr;
@@ -476,6 +477,7 @@ cs_balance_vector(int                  idtvar,
     var_cal_opt_loc.iwgrec = 0;
     var_cal_opt_loc.thetav = var_cal_opt->thetav;
     var_cal_opt_loc.blencv = var_cal_opt->blencv;
+    var_cal_opt_loc.blend_st = 0.;
     var_cal_opt_loc.epsilo = -1.;
     var_cal_opt_loc.epsrsm = -1.;
     var_cal_opt_loc.epsrgr = var_cal_opt->epsrgr;
@@ -674,6 +676,7 @@ cs_balance_tensor(int                 idtvar,
     var_cal_opt_loc.iwgrec = 0;
     var_cal_opt_loc.thetav = var_cal_opt->thetav;
     var_cal_opt_loc.blencv = var_cal_opt->blencv;
+    var_cal_opt_loc.blend_st = 0.;
     var_cal_opt_loc.epsilo = -1.;
     var_cal_opt_loc.epsrsm = -1.;
     var_cal_opt_loc.epsrgr = var_cal_opt->epsrgr;

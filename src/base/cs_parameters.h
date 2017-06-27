@@ -81,6 +81,7 @@ typedef struct {
 
   double  thetav;
   double  blencv;
+  double  blend_st;
   double  epsilo;
   double  epsrsm;
   double  epsrgr;

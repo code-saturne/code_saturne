@@ -2006,6 +2006,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   const int icoupl = var_cal_opt.icoupl;
   int limiter_choice = -1;
   const double blencp = var_cal_opt.blencv;
+  const double blend_st = var_cal_opt.blend_st;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
   const double extrap = var_cal_opt.extrag;
@@ -2644,7 +2645,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
             cs_real_2_t fluxij = {0., 0.};
 
-            bool upwind_switch;
+            bool upwind_switch = false;
             cs_real_t pifri, pjfri, pifrj, pjfrj;
             cs_real_t pip, pjp, pipr, pjpr;
 
@@ -2654,6 +2655,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                       ischcp,
                                       relaxp,
                                       blencp,
+                                      blend_st,
                                       weight[face_id],
                                       i_dist[face_id],
                                       i_face_surf[face_id],
@@ -2752,6 +2754,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                           ircflp,
                                           ischcp,
                                           blencp,
+                                          blend_st,
                                           weight[face_id],
                                           i_dist[face_id],
                                           i_face_surf[face_id],
@@ -2932,15 +2935,14 @@ cs_convection_diffusion_scalar(int                       idtvar,
                            fluxij);
 
             if (upwind_switch) {
-
               /* in parallel, face will be counted by one and only one rank */
               if (ii < n_cells)
                 n_upwind++;
+
               if (v_slope_test != NULL) {
                 v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
                 v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
               }
-
             }
 
             rhs[ii] -= fluxij[0];
@@ -3364,6 +3366,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   const int isstpp = var_cal_opt.isstpc;
   const int iwarnp = var_cal_opt.iwarni;
   const double blencp = var_cal_opt.blencv;
+  const double blend_st = var_cal_opt.blend_st;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
   const double relaxp = var_cal_opt.relaxv;
@@ -3497,7 +3500,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   if (  (idiffp != 0 && ircflp == 1) || ivisep == 1
      || (   iconvp != 0 && iupwin == 0
-         && (ischcp == 0 || ircflp == 1 || isstpp == 0))) {
+         && (ischcp == 0 || ircflp == 1 || isstpp == 0 || isstpp == -1))) {
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
@@ -3551,7 +3554,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     }
   }
 
-  if (iconvp > 0 && iupwin == 0 && isstpp == 0) {
+  if (iconvp > 0 && iupwin == 0 && (isstpp == 0 || isstpp == -1)) {
 
     cs_slope_test_gradient_vector(inc,
                                   halo_type,
@@ -3934,38 +3937,73 @@ cs_convection_diffusion_vector(int                         idtvar,
             }
             cs_real_3_t pip, pjp, pipr, pjpr;
             cs_real_3_t pifri, pifrj, pjfri, pjfrj;
-            bool upwind_switch[3];
-            cs_i_cd_steady_slope_test_vector(upwind_switch,
-                                             iconvp,
-                                             ircflp,
-                                             ischcp,
-                                             relaxp,
-                                             blencp,
-                                             weight[face_id],
-                                             i_dist[face_id],
-                                             i_face_surf[face_id],
-                                             cell_cen[ii],
-                                             cell_cen[jj],
-                                             i_face_normal[face_id],
-                                             i_face_cog[face_id],
-                                             dijpf[face_id],
-                                             i_massflux[face_id],
-                                             (const cs_real_3_t *)grad[ii],
-                                             (const cs_real_3_t *)grad[jj],
-                                             (const cs_real_3_t *)grdpa[ii],
-                                             (const cs_real_3_t *)grdpa[jj],
-                                             _pvar[ii],
-                                             _pvar[jj],
-                                             pvara[ii],
-                                             pvara[jj],
-                                             pifri,
-                                             pifrj,
-                                             pjfri,
-                                             pjfrj,
-                                             pip,
-                                             pjp,
-                                             pipr,
-                                             pjpr);
+            bool upwind_switch = false;
+
+            if (isstpp == 0)
+              cs_i_cd_steady_slope_test_vector(&upwind_switch,
+                                               iconvp,
+                                               ircflp,
+                                               ischcp,
+                                               relaxp,
+                                               blencp,
+                                               blend_st,
+                                               weight[face_id],
+                                               i_dist[face_id],
+                                               i_face_surf[face_id],
+                                               cell_cen[ii],
+                                               cell_cen[jj],
+                                               i_face_normal[face_id],
+                                               i_face_cog[face_id],
+                                               dijpf[face_id],
+                                               i_massflux[face_id],
+                                               (const cs_real_3_t *)grad[ii],
+                                               (const cs_real_3_t *)grad[jj],
+                                               (const cs_real_3_t *)grdpa[ii],
+                                               (const cs_real_3_t *)grdpa[jj],
+                                               _pvar[ii],
+                                               _pvar[jj],
+                                               pvara[ii],
+                                               pvara[jj],
+                                               pifri,
+                                               pifrj,
+                                               pjfri,
+                                               pjfrj,
+                                               pip,
+                                               pjp,
+                                               pipr,
+                                               pjpr);
+            else
+              cs_i_cd_steady_slope_test_vector_old(&upwind_switch,
+                                                   iconvp,
+                                                   ircflp,
+                                                   ischcp,
+                                                   relaxp,
+                                                   blencp,
+                                                   weight[face_id],
+                                                   i_dist[face_id],
+                                                   i_face_surf[face_id],
+                                                   cell_cen[ii],
+                                                   cell_cen[jj],
+                                                   i_face_normal[face_id],
+                                                   i_face_cog[face_id],
+                                                   dijpf[face_id],
+                                                   i_massflux[face_id],
+                                                   (const cs_real_3_t *)grad[ii],
+                                                   (const cs_real_3_t *)grad[jj],
+                                                   (const cs_real_3_t *)grdpa[ii],
+                                                   (const cs_real_3_t *)grdpa[jj],
+                                                   _pvar[ii],
+                                                   _pvar[jj],
+                                                   pvara[ii],
+                                                   pvara[jj],
+                                                   pifri,
+                                                   pifrj,
+                                                   pjfri,
+                                                   pjfrj,
+                                                   pip,
+                                                   pjp,
+                                                   pipr,
+                                                   pjpr);
 
             cs_i_conv_flux_vector(iconvp,
                                   1.,
@@ -4020,31 +4058,59 @@ cs_convection_diffusion_vector(int                         idtvar,
             }
             cs_real_3_t pip, pjp;
             cs_real_3_t pif, pjf;
-            bool upwind_switch[3];
-            cs_i_cd_unsteady_slope_test_vector(upwind_switch,
-                                               iconvp,
-                                               ircflp,
-                                               ischcp,
-                                               blencp,
-                                               weight[face_id],
-                                               i_dist[face_id],
-                                               i_face_surf[face_id],
-                                               cell_cen[ii],
-                                               cell_cen[jj],
-                                               i_face_normal[face_id],
-                                               i_face_cog[face_id],
-                                               dijpf[face_id],
-                                               i_massflux[face_id],
-                                               (const cs_real_3_t *)grad[ii],
-                                               (const cs_real_3_t *)grad[jj],
-                                               (const cs_real_3_t *)grdpa[ii],
-                                               (const cs_real_3_t *)grdpa[jj],
-                                               _pvar[ii],
-                                               _pvar[jj],
-                                               pif,
-                                               pjf,
-                                               pip,
-                                               pjp);
+            bool upwind_switch = false;
+
+            if (isstpp == 0)
+              cs_i_cd_unsteady_slope_test_vector(&upwind_switch,
+                                                 iconvp,
+                                                 ircflp,
+                                                 ischcp,
+                                                 blencp,
+                                                 blend_st,
+                                                 weight[face_id],
+                                                 i_dist[face_id],
+                                                 i_face_surf[face_id],
+                                                 cell_cen[ii],
+                                                 cell_cen[jj],
+                                                 i_face_normal[face_id],
+                                                 i_face_cog[face_id],
+                                                 dijpf[face_id],
+                                                 i_massflux[face_id],
+                                                 (const cs_real_3_t *)grad[ii],
+                                                 (const cs_real_3_t *)grad[jj],
+                                                 (const cs_real_3_t *)grdpa[ii],
+                                                 (const cs_real_3_t *)grdpa[jj],
+                                                 _pvar[ii],
+                                                 _pvar[jj],
+                                                 pif,
+                                                 pjf,
+                                                 pip,
+                                                 pjp);
+            else
+              cs_i_cd_unsteady_slope_test_vector_old(&upwind_switch,
+                                                     iconvp,
+                                                     ircflp,
+                                                     ischcp,
+                                                     blencp,
+                                                     weight[face_id],
+                                                     i_dist[face_id],
+                                                     i_face_surf[face_id],
+                                                     cell_cen[ii],
+                                                     cell_cen[jj],
+                                                     i_face_normal[face_id],
+                                                     i_face_cog[face_id],
+                                                     dijpf[face_id],
+                                                     i_massflux[face_id],
+                                                     (const cs_real_3_t *)grad[ii],
+                                                     (const cs_real_3_t *)grad[jj],
+                                                     (const cs_real_3_t *)grdpa[ii],
+                                                     (const cs_real_3_t *)grdpa[jj],
+                                                     _pvar[ii],
+                                                     _pvar[jj],
+                                                     pif,
+                                                     pjf,
+                                                     pip,
+                                                     pjp);
 
             cs_i_conv_flux_vector(iconvp,
                                   thetap,
@@ -4070,17 +4136,19 @@ cs_convection_diffusion_vector(int                         idtvar,
                                   fluxi,
                                   fluxj);
 
-            if (ii < n_cells && (upwind_switch[0] || upwind_switch[1] || upwind_switch[2]))
-              n_upwind++;
+            if (upwind_switch) {
+
+              /* in parallel, face will be counted by one and only one rank */
+              if (ii < n_cells)
+                n_upwind++;
+
+              if (v_slope_test != NULL) {
+                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+              }
+            }
 
             for (int isou = 0; isou < 3; isou++) {
-
-              if (upwind_switch[isou]) {
-                if (v_slope_test != NULL) {
-                  v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
-                  v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
-                }
-              }
 
               rhs[ii][isou] -= fluxi[isou];
               rhs[jj][isou] += fluxj[isou];
@@ -4520,6 +4588,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
   const int isstpp = var_cal_opt.isstpc;
   const int iwarnp = var_cal_opt.iwarni;
   const double blencp = var_cal_opt.blencv;
+  const double blend_st = var_cal_opt.blend_st;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
   const double relaxp = var_cal_opt.relaxv;
@@ -5063,13 +5132,14 @@ cs_convection_diffusion_tensor(int                         idtvar,
             }
             cs_real_6_t pip, pjp, pipr, pjpr;
             cs_real_6_t pifri, pifrj, pjfri, pjfrj;
-            bool upwind_switch[6];
-            cs_i_cd_steady_slope_test_tensor(upwind_switch,
+            bool upwind_switch = false;
+            cs_i_cd_steady_slope_test_tensor(&upwind_switch,
                                              iconvp,
                                              ircflp,
                                              ischcp,
                                              relaxp,
                                              blencp,
+                                             blend_st,
                                              weight[face_id],
                                              i_dist[face_id],
                                              i_face_surf[face_id],
@@ -5149,12 +5219,13 @@ cs_convection_diffusion_tensor(int                         idtvar,
             }
             cs_real_6_t pip, pjp;
             cs_real_6_t pif, pjf;
-            bool upwind_switch[6];
-            cs_i_cd_unsteady_slope_test_tensor(upwind_switch,
+            bool upwind_switch = false;
+            cs_i_cd_unsteady_slope_test_tensor(&upwind_switch,
                                                iconvp,
                                                ircflp,
                                                ischcp,
                                                blencp,
+                                               blend_st,
                                                weight[face_id],
                                                i_dist[face_id],
                                                i_face_surf[face_id],
@@ -5199,24 +5270,18 @@ cs_convection_diffusion_tensor(int                         idtvar,
                                   fluxi,
                                   fluxj);
 
-            if (ii < n_cells &&
-                (   upwind_switch[0]
-                 || upwind_switch[1]
-                 || upwind_switch[2]
-                 || upwind_switch[3]
-                 || upwind_switch[4]
-                 || upwind_switch[5]))
-              n_upwind++;
+            if (upwind_switch) {
+              /* in parallel, face will be counted by one and only one rank */
+              if (ii < n_cells)
+                n_upwind++;
+
+              if (v_slope_test != NULL) {
+                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+              }
+            }
 
             for (int isou = 0; isou < 6; isou++) {
-
-              if (upwind_switch[isou]) {
-                if (v_slope_test != NULL) {
-                  v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
-                  v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
-                }
-              }
-
               rhs[ii][isou] -= fluxi[isou];
               rhs[jj][isou] += fluxj[isou];
             } /* isou */
@@ -5441,6 +5506,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   const int icoupl = var_cal_opt.icoupl;
   int limiter_choice = -1;
   const double blencp = var_cal_opt.blencv;
+  const double blend_st = var_cal_opt.blend_st;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
   const double extrap = var_cal_opt.extrag;
@@ -6071,7 +6137,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
             cs_real_t pifri, pjfri, pifrj, pjfrj;
             cs_real_t pip, pjp, pipr, pjpr;
 
-            bool upwind_switch;
+            bool upwind_switch = false;
 
             cs_i_cd_steady_slope_test(&upwind_switch,
                                       iconvp,
@@ -6079,6 +6145,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                       ischcp,
                                       relaxp,
                                       blencp,
+                                      blend_st,
                                       weight[face_id],
                                       i_dist[face_id],
                                       i_face_surf[face_id],
@@ -6177,6 +6244,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                           ircflp,
                                           ischcp,
                                           blencp,
+                                          blend_st,
                                           weight[face_id],
                                           i_dist[face_id],
                                           i_face_surf[face_id],

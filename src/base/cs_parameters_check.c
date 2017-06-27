@@ -900,6 +900,13 @@ cs_parameters_check(void)
                                        var_cal_opt.blencv,
                                        0., 1.);
 
+      cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
+                                       _(f_desc),
+                                       "var_cal_opt.blend_st (2nd order scheme "
+                                       "share for convection)",
+                                       var_cal_opt.blend_st,
+                                       0., 1.);
+
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
                                     "var_cal_opt.ischcv (2nd order scheme "
@@ -911,7 +918,7 @@ cs_parameters_check(void)
                                     _(f_desc),
                                     "var_cal_opt.isstpc (slope test)",
                                     var_cal_opt.isstpc,
-                                    0, 4);
+                                    -1, 4);
 
       BFT_FREE(f_desc);
     }

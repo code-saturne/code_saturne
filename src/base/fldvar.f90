@@ -1150,6 +1150,7 @@ vcopt%ircflu = 1
 vcopt%iwgrec = 0
 vcopt%thetav = -999.d0
 vcopt%blencv = -999.d0
+vcopt%blend_st = 0.d0
 vcopt%epsilo = -999.d0
 vcopt%epsrsm = -999.d0
 vcopt%epsrgr = 1.d-5
