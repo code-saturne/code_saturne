@@ -137,7 +137,7 @@ _cart_to_cyl(const cs_rotation_t  *r,
   e_th[2] =  e_ax[0] * (coords[1] - r->invariant[1])
            - e_ax[1] * (coords[0] - r->invariant[0]);
 
-  cs_real_t xnrm =  sqrt(cs_math_3_square_norm(e_th));
+  cs_real_t xnrm =  cs_math_3_norm(e_th);
 
   e_th[0] /= xnrm;
   e_th[1] /= xnrm;
