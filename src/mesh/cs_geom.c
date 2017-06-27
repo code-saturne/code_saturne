@@ -163,7 +163,7 @@ cs_geom_closest_point(cs_lnum_t         n_points,
   cs_real_t d2_min = HUGE_VAL;
 
   for (cs_lnum_t i = 0; i < n_points; i++) {
-    cs_real_t d2 = cs_math_3_distance_squared(point_coords[i], query_coords);
+    cs_real_t d2 = cs_math_3_square_distance(point_coords[i], query_coords);
     if (d2 < d2_min) {
       d2_min = d2;
       id_min = i;

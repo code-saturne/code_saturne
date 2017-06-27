@@ -129,8 +129,8 @@ cs_math_3_distance(const cs_real_t  xa[3],
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t
-cs_math_3_distance_squared(const cs_real_t  xa[3],
-                           const cs_real_t  xb[3])
+cs_math_3_square_distance(const cs_real_t  xa[3],
+                          const cs_real_t  xb[3])
 {
   cs_real_t v[3] = {xb[0] - xa[0],
                     xb[1] - xa[1],
