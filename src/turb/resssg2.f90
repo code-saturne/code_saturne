@@ -149,6 +149,7 @@ double precision deltij(6), dij(3,3)
 double precision tuexpr, thets , thetv , thetp1
 double precision aiksjk, aikrjk, aii ,aklskl, aikakj
 double precision xaniso(3,3), xstrai(3,3), xrotac(3,3), xprod(3,3), matrot(3,3)
+double precision sym_strain(6)
 double precision xrij(3,3), xnal(3), xnoral, xnnd
 double precision d1s2, d1s3, d2s3
 double precision alpha3
@@ -545,6 +546,12 @@ do iel=1,ncel
   xstrai(3,1) = xstrai(1,3)
   xstrai(3,2) = xstrai(2,3)
   xstrai(3,3) = gradv(3, 3, iel)
+  sym_strain(1) = xstrai(1,1)
+  sym_strain(2) = xstrai(2,2)
+  sym_strain(3) = xstrai(3,3)
+  sym_strain(4) = xstrai(1,2)
+  sym_strain(5) = xstrai(2,3)
+  sym_strain(6) = xstrai(1,3)
   ! omegaij
   xrotac(1,1) = 0.d0
   xrotac(1,2) = d1s2*(gradv(2, 1, iel)-gradv(1, 2, iel))
@@ -583,7 +590,7 @@ do iel=1,ncel
   end do
 
   ! Computing the maximal eigenvalue (in terms of norm!) of S
-  call calc_symtens_eigvals(xstrai, eigen_vals)
+  call calc_symtens_eigvals(sym_strain, eigen_vals)
   eigen_max = maxval(abs(eigen_vals))
 
   ! Constant for the dissipation
