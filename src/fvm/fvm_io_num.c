@@ -325,6 +325,201 @@ _check_morton_ordering(int                      dim,
     _reorder_coords_lexicographic(dim, i_prev, n_entities - 1, coords, order);
 }
 
+/*----------------------------------------------------------------------------
+ * Maximum local global number associated with an I/O numbering structure.
+ *
+ * This function is to be used for ordered global numberings.
+ *
+ * parameters:
+ *   this_io_num <-- pointer to partially initialized I/O numbering structure.
+ *
+ * returns:
+ *   maximum global number associated with the I/O numbering
+ *----------------------------------------------------------------------------*/
+
+static cs_gnum_t
+_fvm_io_num_local_max(const fvm_io_num_t  *this_io_num)
+{
+  cs_gnum_t   local_max;
+
+  /* Get maximum global number value */
+
+  size_t n_ent = this_io_num->global_num_size;
+  if (n_ent > 0)
+    local_max = this_io_num->global_num[n_ent - 1];
+  else
+    local_max = 0;
+
+  return local_max;
+}
+
+/*----------------------------------------------------------------------------
+ * When sub-entities have been added to an I/O numbering, switch from
+ * a numbering on the initial entities (shifted by number of sub-entities) to
+ * a numbering on the final sub-entities.
+ *
+ * Also update whether the numbering may be shared, and discard copy if not
+ * needed.
+ *
+ * parameters:
+ *   this_io_num    <-> pointer to structure that should be ordered
+ *   n_sub_entities <-- optional number of sub-entities per initial entity,
+ *                      or NULL if unused
+ *   may_be_shared  <-- indicate if structure may be shared at this stage
+ *----------------------------------------------------------------------------*/
+
+static void
+_fvm_io_num_order_finalize(fvm_io_num_t     *this_io_num,
+                           const cs_lnum_t   n_sub_entities[],
+                           _Bool             may_be_shared)
+{
+  if (n_sub_entities != NULL) {
+
+    cs_lnum_t i, j, k;
+    cs_gnum_t *_global_num;
+
+    for (i = 0, j = 0; i < this_io_num->global_num_size; i++)
+      j += n_sub_entities[i];
+
+    BFT_MALLOC(_global_num, j, cs_gnum_t);
+
+    for (i = 0, j = 0; i < this_io_num->global_num_size; i++) {
+      for (k = 0; k < n_sub_entities[i]; j++, k++)
+        _global_num[j] = this_io_num->_global_num[i] - n_sub_entities[i] + k + 1;
+    }
+
+    BFT_FREE(this_io_num->_global_num);
+    this_io_num->_global_num = _global_num;
+
+    if (this_io_num->global_num_size != (cs_lnum_t)j) {
+      this_io_num->global_num_size = j;
+      may_be_shared = false;
+    }
+
+    if (may_be_shared == false)
+      this_io_num->global_num = this_io_num->_global_num;
+  }
+
+  /* If numbering was initially shared, check if it was changed or if it
+     may remain shared (in which case the copy may be discarded) */
+
+  if (may_be_shared == true) {
+    cs_lnum_t i;
+    for (i = 0; i < this_io_num->global_num_size; i++)
+      if (this_io_num->_global_num[i] != this_io_num->global_num[i])
+        break;
+    if (i < this_io_num->global_num_size)
+      this_io_num->global_num = this_io_num->_global_num;
+    else
+      BFT_FREE(this_io_num->_global_num);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Local ordering associated with an I/O numbering structure.
+ *
+ * The structure should contain an initial ordering, which should
+ * be sorted, but need not be contiguous. On output, the numbering
+ * will be contiguous.
+ *
+ * As an option, a number of sub-entities per initial entity may be
+ * given, in which case sub-entities of a same entity will have contiguous
+ * numbers in the final ordering.
+ *
+ * parameters:
+ *   this_io_num    <-> pointer to structure that should be ordered
+ *   n_sub_entities <-- optional number of sub-entities per initial entity,
+ *                      or NULL if unused
+ *----------------------------------------------------------------------------*/
+
+static void
+_fvm_io_num_local_order(fvm_io_num_t     *this_io_num,
+                        const cs_lnum_t   n_sub_entities[])
+{
+  cs_gnum_t   num_prev, num_cur;
+
+  _Bool       may_be_shared = false;
+
+  cs_gnum_t   current_gnum = 0;
+
+  /* If numbering is shared, we will check later it was changed or if
+     it can remain shared (in which case the copy may be discarded) */
+
+  if (this_io_num->global_num != this_io_num->_global_num)
+    may_be_shared = true;
+  else
+    may_be_shared = false;
+
+  size_t n_ent = this_io_num->global_num_size;
+
+  if (n_ent > 0) {
+
+    cs_lnum_t *b_order;
+    cs_gnum_t *b_gnum = this_io_num->_global_num;
+    const cs_lnum_t *b_nsub = n_sub_entities;
+
+    BFT_MALLOC(b_order, n_ent, cs_lnum_t);
+
+    cs_order_gnum_allocated(NULL,
+                            b_gnum,
+                            b_order,
+                            n_ent);
+
+    /* Determine global order; requires ordering to loop through buffer by
+       increasing number (blocks associated with each process are
+       already sorted, but the whole "gathered" block is not).
+       We build an initial global order based on the initial global numbering,
+       such that for each block, the global number of an entity is equal to
+       the cumulative number of sub-entities */
+
+    if (b_nsub != NULL) {
+
+      current_gnum = b_nsub[b_order[0]];
+      num_prev = b_gnum[b_order[0]];
+      b_gnum[b_order[0]] = current_gnum;
+
+      for (size_t i = 1; i < n_ent; i++) {
+        num_cur = b_gnum[b_order[i]];
+        if (num_cur > num_prev)
+          current_gnum += b_nsub[b_order[i]];
+        b_gnum[b_order[i]] = current_gnum;
+        num_prev = num_cur;
+      }
+
+    }
+    else { /* if (b_n_sub == NULL) */
+
+      current_gnum = 1;
+      num_prev = b_gnum[b_order[0]];
+      b_gnum[b_order[0]] = current_gnum;
+
+      for (size_t i = 1; i < n_ent; i++) {
+        num_cur = b_gnum[b_order[i]];
+        if (num_cur > num_prev)
+          current_gnum += 1;
+        b_gnum[b_order[i]] = current_gnum;
+        num_prev = num_cur;
+      }
+
+    }
+
+    BFT_FREE(b_order);
+
+  }
+
+  /* When sub-entities have been added, now switch from a numbering on
+     the initial entities (shifted by number of sub-entities) to
+     a numbering on the final sub-entities */
+
+  _fvm_io_num_order_finalize(this_io_num,
+                             n_sub_entities,
+                             may_be_shared);
+
+  /* Get final maximum global number value */
+
+  this_io_num->global_count = _fvm_io_num_local_max(this_io_num);
+}
+
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
@@ -395,16 +590,8 @@ static cs_gnum_t
 _fvm_io_num_global_max(const fvm_io_num_t  *const this_io_num,
                        const MPI_Comm             comm)
 {
-  cs_gnum_t   local_max, global_max;
-  size_t      n_ent;
-
-  /* Get maximum global number value */
-
-  n_ent = this_io_num->global_num_size;
-  if (n_ent > 0)
-    local_max = this_io_num->global_num[n_ent - 1];
-  else
-    local_max = 0;
+  cs_gnum_t  local_max = _fvm_io_num_local_max(this_io_num);
+  cs_gnum_t  global_max = 0;
 
   MPI_Allreduce(&local_max, &global_max, 1, CS_MPI_GNUM, MPI_MAX, comm);
 
@@ -623,54 +810,13 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   cs_all_to_all_destroy(&d);
 
-  /* Get final maximum global number value */
-
-  this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
-
   /* When sub-entities have been added, now switch from a numbering on
      the initial entities (shifted by number of sub-entities) to
      a numbering on the final sub-entities */
 
-  if (n_sub_entities != NULL) {
-
-    cs_lnum_t i, j, k;
-    cs_gnum_t *_global_num;
-
-    for (i = 0, j = 0; i < this_io_num->global_num_size; i++)
-      j += n_sub_entities[i];
-
-    BFT_MALLOC(_global_num, j, cs_gnum_t);
-
-    for (i = 0, j = 0; i < this_io_num->global_num_size; i++) {
-      for (k = 0; k < n_sub_entities[i]; j++, k++)
-        _global_num[j] = this_io_num->_global_num[i] - n_sub_entities[i] + k + 1;
-    }
-
-    BFT_FREE(this_io_num->_global_num);
-    this_io_num->_global_num = _global_num;
-
-    if (this_io_num->global_num_size != (cs_lnum_t)j) {
-      this_io_num->global_num_size = j;
-      may_be_shared = false;
-    }
-
-    if (may_be_shared == false)
-      this_io_num->global_num = this_io_num->_global_num;
-  }
-
-  /* If numbering was initially shared, check if it was changed or if it
-     may remain shared (in which case the copy may be discarded) */
-
-  if (may_be_shared == true) {
-    cs_lnum_t i;
-    for (i = 0; i < this_io_num->global_num_size; i++)
-      if (this_io_num->_global_num[i] != this_io_num->global_num[i])
-        break;
-    if (i < this_io_num->global_num_size)
-      this_io_num->global_num = this_io_num->_global_num;
-    else
-      BFT_FREE(this_io_num->_global_num);
-  }
+  _fvm_io_num_order_finalize(this_io_num,
+                             n_sub_entities,
+                             may_be_shared);
 
   /* Get final maximum global number value */
 
@@ -1875,80 +2021,21 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
                   size_t            n_entities,
                   int               share_parent_global)
 {
-  size_t  i;
-  cs_lnum_t  *order = NULL;
+  cs_lnum_t *parent_entity_id = NULL;
 
-  fvm_io_num_t  *this_io_num = NULL;
-
-  /* Initial checks */
-
-  if (cs_glob_n_ranks < 2)
-    return NULL;
-
-#if defined(HAVE_MPI)
-
-  /* Create structure */
-
-  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
-
-  this_io_num->global_num_size = n_entities;
-
-  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
-  this_io_num->global_num = this_io_num->_global_num;
-
-  if (n_entities > 0) {
-
-    /* Assign initial global numbers */
-
-    if (parent_entity_number != NULL) {
-      for (i = 0 ; i < n_entities ; i++)
-        this_io_num->_global_num[i]
-          = parent_global_number[parent_entity_number[i]-1];
-    }
-    else {
-      for (i = 0 ; i < n_entities ; i++)
-        this_io_num->_global_num[i] = parent_global_number[i];
-    }
-
-    if (cs_order_gnum_test(NULL,
-                           this_io_num->_global_num,
-                           n_entities) == false) {
-      cs_gnum_t *tmp_num;
-      order = cs_order_gnum(NULL,
-                            this_io_num->_global_num,
-                            n_entities);
-      BFT_MALLOC(tmp_num, n_entities, cs_gnum_t);
-      for (i = 0; i < n_entities; i++)
-        tmp_num[i] = this_io_num->_global_num[order[i]];
-      memcpy(this_io_num->_global_num, tmp_num, n_entities*sizeof(cs_gnum_t));
-      BFT_FREE(tmp_num);
-    }
+  if (parent_entity_number != NULL) {
+    BFT_MALLOC(parent_entity_id, n_entities, cs_lnum_t);
+    for (size_t i = 0; i < n_entities; i++)
+      parent_entity_id[i] = parent_entity_number[i] - 1;
   }
 
-  /* Order globally */
+  fvm_io_num_t  *this_io_num
+    = fvm_io_num_create_from_select(parent_entity_id,
+                                    parent_global_number,
+                                    n_entities,
+                                    share_parent_global);
 
-  this_io_num->global_count = n_entities;
-
-  _fvm_io_num_copy_on_write(this_io_num);
-  _fvm_io_num_global_order(this_io_num,
-                           NULL,
-                           cs_glob_mpi_comm);
-
-  if (order != NULL) {
-    cs_gnum_t *tmp_num;
-    BFT_MALLOC(tmp_num, n_entities, cs_gnum_t);
-    for (i = 0; i < n_entities; i++)
-      tmp_num[order[i]] = this_io_num->_global_num[i];
-    memcpy(this_io_num->_global_num, tmp_num, n_entities*sizeof(cs_gnum_t));
-    BFT_FREE(tmp_num);
-    BFT_FREE(order);
-  }
-
-  if (share_parent_global != 0)
-    _fvm_io_num_try_to_set_shared(this_io_num,
-                                  parent_global_number);
-
-#endif
+  BFT_FREE(parent_entity_id);
 
   return this_io_num;
 }
@@ -1983,10 +2070,8 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
 
   /* Initial checks */
 
-  if (cs_glob_n_ranks < 2)
+  if (cs_glob_n_ranks < 2 && parent_global_number == NULL)
     return NULL;
-
-#if defined(HAVE_MPI)
 
   /* Create structure */
 
@@ -2025,14 +2110,24 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
     }
   }
 
-  /* Order globally */
-
   this_io_num->global_count = n_entities;
 
   _fvm_io_num_copy_on_write(this_io_num);
-  _fvm_io_num_global_order(this_io_num,
-                           NULL,
-                           cs_glob_mpi_comm);
+
+  /* Order globally */
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1)
+    _fvm_io_num_global_order(this_io_num,
+                             NULL,
+                             cs_glob_mpi_comm);
+
+#endif
+
+  if (cs_glob_n_ranks == 1)
+    _fvm_io_num_local_order(this_io_num,
+                            NULL);
 
   if (order != NULL) {
     cs_gnum_t *tmp_num;
@@ -2047,8 +2142,6 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
   if (share_parent_global != 0)
     _fvm_io_num_try_to_set_shared(this_io_num,
                                   parent_global_number);
-
-#endif
 
   return this_io_num;
 }
@@ -2115,38 +2208,40 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
   if (base_io_num == NULL)
     return NULL;
 
-  assert(cs_glob_n_ranks > 1); /* Otherwise, base_io_num should be NULL */
+  /* Create structure */
+
+  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+
+  cs_lnum_t n_ent = base_io_num->global_num_size;
+
+  BFT_MALLOC(this_io_num->_global_num, n_ent, cs_gnum_t);
+  this_io_num->global_num = this_io_num->_global_num;
+
+  this_io_num->global_num_size = n_ent;
+
+  /* Assign initial global numbers */
+
+  for (cs_lnum_t i = 0 ; i < n_ent ; i++)
+    this_io_num->_global_num[i] = base_io_num->global_num[i];
+
+  this_io_num->global_count = n_ent;
+
+  _fvm_io_num_copy_on_write(this_io_num);
+
+  /* Order globally */
 
 #if defined(HAVE_MPI)
-  {
-    cs_lnum_t   i, n_ent;
 
-    /* Create structure */
-
-    BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
-
-    n_ent = base_io_num->global_num_size;
-
-    BFT_MALLOC(this_io_num->_global_num, n_ent, cs_gnum_t);
-    this_io_num->global_num = this_io_num->_global_num;
-
-    this_io_num->global_num_size = n_ent;
-
-    /* Assign initial global numbers */
-
-    for (i = 0 ; i < n_ent ; i++)
-      this_io_num->_global_num[i] = base_io_num->global_num[i];
-
-    /* Order globally */
-
-    this_io_num->global_count = n_ent;
-
-    _fvm_io_num_copy_on_write(this_io_num);
+  if (cs_glob_n_ranks > 1)
     _fvm_io_num_global_order(this_io_num,
                              n_sub_entities,
                              cs_glob_mpi_comm);
-  }
+
 #endif
+
+  if (cs_glob_n_ranks == 1)
+    _fvm_io_num_local_order(this_io_num,
+                            n_sub_entities);
 
   return this_io_num;
 }
