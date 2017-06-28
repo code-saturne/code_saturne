@@ -1221,12 +1221,14 @@ _add_side_faces(cs_mesh_t           *m,
     cs_lnum_t n_quad = 0;
 
     for (cs_lnum_t i = 0; i < n_edges; i++) {
-      cs_lnum_t vsid0 = v_s_id[e2v[i][0]];
-      cs_lnum_t vsid1 = v_s_id[e2v[i][1]];
+      cs_lnum_t n_f_sub = f_shift[i+1] - f_shift[i];
+      if (n_f_sub < 1)
+        continue;
+      cs_lnum_t vid0 = e2v[i][0], vid1 = e2v[i][1];
+      cs_lnum_t vsid0 = v_s_id[vid0], vsid1 = v_s_id[vid1];
       cs_lnum_t n_v_sub0 = n_v_shift[vsid0+1] - n_v_shift[vsid0];
       cs_lnum_t n_v_sub1 = n_v_shift[vsid1+1] - n_v_shift[vsid1];
-      cs_lnum_t n_f_sub = f_shift[i+1] - f_shift[i];
-      cs_lnum_t n_f_tria = 2*n_f_sub - n_v_sub0 - n_v_sub1;
+      cs_lnum_t n_f_tria = CS_ABS(n_v_sub1 - n_v_sub0);
       n_tria += n_f_tria;
       n_quad += n_f_sub - n_f_tria;
     }
@@ -1277,6 +1279,11 @@ _add_side_faces(cs_mesh_t           *m,
 
     for (cs_lnum_t i = 0; i < n_edges; i++) {
 
+      cs_lnum_t n_f_sub = f_shift[i+1] - f_shift[i];
+
+      if (n_f_sub < 1)
+        continue;
+
       cs_lnum_t vid0 = e2v[i][0], vid1 = e2v[i][1];
       cs_lnum_t vsid0 = v_s_id[vid0], vsid1 = v_s_id[vid1];
 
@@ -1284,11 +1291,6 @@ _add_side_faces(cs_mesh_t           *m,
       cs_lnum_t n_v_sub1 = n_v_shift[vsid1+1] - n_v_shift[vsid1];
 
       cs_lnum_t n_v_diff = CS_ABS(n_v_sub1 - n_v_sub0);
-
-      cs_lnum_t n_f_sub = f_shift[i+1] - f_shift[i];
-
-      if (n_f_sub < 1)
-        continue;
 
       /* Face -> vertices connectivity;
          when edge vertices do not have the same extrusion count,
@@ -1353,7 +1355,7 @@ _add_side_faces(cs_mesh_t           *m,
 
       for (cs_lnum_t j = 1; j < n_f_sub; j++) {
 
-        if (i < n_v_diff)
+        if (j < n_v_diff)
           continue;
 
         p_face_vtx_idx[1] = p_face_vtx_idx[0] + 4;
@@ -1559,7 +1561,7 @@ cs_mesh_extrude(cs_mesh_t          *m,
     n_v_sub[v_id] = 0;
 
   for (cs_lnum_t i = 0; i < n_vertices; i++)
-    n_v_sub[vertices[i]] = n_layers[i];
+    n_v_sub[_vertices[i]] = n_layers[i];
 
   cs_lnum_t *n_c_shift = _add_extruded_cells(m,
                                              n_faces,
@@ -1577,7 +1579,7 @@ cs_mesh_extrude(cs_mesh_t          *m,
     v_s_id[v_id] = -1;
 
   for (cs_lnum_t i = 0; i < n_vertices; i++)
-    v_s_id[vertices[i]] = i;
+    v_s_id[_vertices[i]] = i;
 
   _add_layer_faces(m,
                    interior_gc,
