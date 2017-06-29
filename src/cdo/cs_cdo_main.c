@@ -288,7 +288,7 @@ cs_cdo_main(void)
 
   cs_domain_initialize_systems(domain);
 
-  while (cs_domain_needs_iterate(domain)) { // Main time loop
+  while (cs_domain_needs_iteration(domain)) { // Main time loop
 
     /* Define the current time step */
     cs_domain_define_current_time_step(domain);

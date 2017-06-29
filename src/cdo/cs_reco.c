@@ -513,7 +513,7 @@ void
 cs_reco_grd_cell_from_pv(cs_lnum_t                    c_id,
                          const cs_cdo_connect_t      *connect,
                          const cs_cdo_quantities_t   *quant,
-                         const double                *pdi,
+                         const cs_real_t             *pdi,
                          cs_real_t                    val_xc[])
 {
   val_xc[0] = val_xc[1] = val_xc[2] = 0.;
@@ -526,13 +526,11 @@ cs_reco_grd_cell_from_pv(cs_lnum_t                    c_id,
 
   for (cs_lnum_t i = c2e->idx[c_id]; i < c2e->idx[c_id+1]; i++) {
 
-    const cs_lnum_t  e_id = c2e->ids[i];
-    const cs_lnum_t  shift_e = 2*e_id;
-    const cs_lnum_t  v1_id = e2v->col_id[shift_e];
+    const cs_lnum_t  shift_e = 2*c2e->ids[i];
     const short int  sgn_v1 = e2v->sgn[shift_e];
-    const cs_lnum_t  v2_id = e2v->col_id[shift_e+1];
-    const short int  sgn_v2 = e2v->sgn[shift_e+1];
-    const double  gdi_e = sgn_v1*pdi[v1_id] + sgn_v2*pdi[v2_id];
+    const cs_real_t  pv1 = pdi[e2v->col_id[shift_e]];
+    const cs_real_t  pv2 = pdi[e2v->col_id[shift_e+1]];
+    const cs_real_t  gdi_e = sgn_v1*(pv1 - pv2);
     const cs_dface_t  dfq = quant->dface[i];  /* Dual face quantities */
 
     for (int k = 0; k < 3; k++)

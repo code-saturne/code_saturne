@@ -51,10 +51,10 @@ BEGIN_C_DECLS
 /* Index to scan a mesh connectivity */
 typedef struct {
 
-  bool     owner;
-  int      n;
-  int     *idx;   /* from 0, size = n+1 */
-  int     *ids;   /* ids from 0 to n-1 (there is no multifold entry) */
+  bool        owner;
+  int         n;
+  cs_lnum_t  *idx;   /* from 0, size = n+1 */
+  cs_lnum_t  *ids;   /* ids from 0 to n-1 (there is no multifold entry) */
 
 } cs_connect_index_t;
 

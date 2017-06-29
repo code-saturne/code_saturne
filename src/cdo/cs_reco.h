@@ -233,7 +233,7 @@ void
 cs_reco_grd_cell_from_pv(cs_lnum_t                    c_id,
                          const cs_cdo_connect_t      *connect,
                          const cs_cdo_quantities_t   *quant,
-                         const double                *pdi,
+                         const cs_real_t             *pdi,
                          cs_real_t                    val_xc[]);
 
 /*----------------------------------------------------------------------------*/

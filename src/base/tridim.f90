@@ -1202,7 +1202,7 @@ do while (iterns.le.nterup)
     ! Wall distance is computed if:
     !   - it has to be updated
     !   - we need it
-    ! In cas there is no wall, distance is a big value.
+    ! In case there is no wall, distance is a big value.
     if (imajdy.eq.0 .and. ineedy.eq.1) then
 
       if (abs(icdpar).eq.1) then

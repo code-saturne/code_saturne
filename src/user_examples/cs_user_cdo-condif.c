@@ -626,9 +626,9 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
   /* Optional: specify the quadrature used for computing a source term
 
      >> key takes value among
-     CS_QUADRATURE_BARY     used the barycenter approximation
-     CS_QUADRATURE_HIGHER   used 4 Gauss points for approximating the integral
-     CS_QUADRATURE_HIGHEST  used 5 Gauss points for approximating the integral
+     CS_QUADRATURE_BARY     barycenter approximation
+     CS_QUADRATURE_HIGHER   4 Gauss points for approximating the integral
+     CS_QUADRATURE_HIGHEST  5 Gauss points for approximating the integral
   */
 
   cs_xdef_set_quadrature(st, CS_QUADRATURE_BARY);

@@ -336,7 +336,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain);
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_domain_needs_iterate(cs_domain_t  *domain);
+cs_domain_needs_iteration(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

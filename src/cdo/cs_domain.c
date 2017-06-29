@@ -684,6 +684,8 @@ cs_domain_update_mesh_locations(cs_domain_t   *domain)
 void
 cs_domain_setup_predefined_equations(cs_domain_t   *domain)
 {
+  CS_UNUSED(domain);
+
   /* Wall distance */
   if (cs_walldistance_is_activated())
     cs_walldistance_setup();
@@ -896,7 +898,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_domain_needs_iterate(cs_domain_t  *domain)
+cs_domain_needs_iteration(cs_domain_t  *domain)
 {
   bool  one_more_iter = true;
 
