@@ -46,6 +46,7 @@
 #include "bft_printf.h"
 
 #include "cs_interface.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_post.h"
@@ -767,6 +768,179 @@ _get_boundary_thickness(const cs_mesh_t             *mesh,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the cell -> faces connectivity which is stored in a
+ *         cs_sla_matrix_t structure
+ *
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ *
+ * \return a pointer to a new allocated cs_sla_matrix_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_c2f(const cs_mesh_t   *mesh,
+           cs_lnum_t         *p_c2f_idx[],
+           cs_lnum_t         *p_c2f_ids[])
+{
+  int  idx_size = 0;
+  int  *cell_shift = NULL;
+  cs_lnum_t  *c2f_idx = NULL;
+  cs_lnum_t  *c2f_ids = NULL;
+
+  const int  n_cells = mesh->n_cells;
+  const int  n_i_faces = mesh->n_i_faces;
+  const int  n_b_faces = mesh->n_b_faces;
+
+  BFT_MALLOC(c2f_idx, n_cells + 1, cs_lnum_t);
+  BFT_MALLOC(cell_shift, n_cells, int);
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    cell_shift[i] = c2f_idx[i] = 0;
+  c2f_idx[n_cells] = 0;
+
+  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+    c2f_idx[mesh->b_face_cells[i]+1] += 1;
+    idx_size += 1;
+  }
+
+  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+
+    const int  c1_id = mesh->i_face_cells[i][0];
+    const int  c2_id = mesh->i_face_cells[i][1];
+
+    if (c1_id < n_cells) // cell owned by the local rank
+      c2f_idx[c1_id+1] += 1, idx_size += 1;
+    if (c2_id < n_cells) // cell owned by the local rank
+      c2f_idx[c2_id+1] += 1, idx_size += 1;
+
+  }
+
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    c2f_idx[i+1] += c2f_idx[i];
+
+  assert(c2f_idx[n_cells] == idx_size);
+
+  BFT_MALLOC(c2f_ids, idx_size, cs_lnum_t);
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+    const cs_lnum_t  c1_id = mesh->i_face_cells[f_id][0];
+    const cs_lnum_t  c2_id = mesh->i_face_cells[f_id][1];
+
+    if (c1_id < n_cells) { /* Don't want ghost cells */
+
+      const cs_lnum_t  shift = c2f_idx[c1_id] + cell_shift[c1_id];
+      c2f_ids[shift] = f_id;
+      cell_shift[c1_id] += 1;
+
+    }
+
+    if (c2_id < n_cells) { /* Don't want ghost cells */
+
+      const cs_lnum_t  shift = c2f_idx[c2_id] + cell_shift[c2_id];
+      c2f_ids[shift] = f_id;
+      cell_shift[c2_id] += 1;
+
+    }
+
+  } /* End of loop on internal faces */
+
+  for (cs_lnum_t  f_id = 0; f_id < n_b_faces; f_id++) {
+
+    const cs_lnum_t  c_id = mesh->b_face_cells[f_id];
+    const cs_lnum_t  shift = c2f_idx[c_id] + cell_shift[c_id];
+
+    c2f_ids[shift] = n_i_faces + f_id;
+    cell_shift[c_id] += 1;
+
+  } /* End of loop on border faces */
+
+  /* Free memory */
+  BFT_FREE(cell_shift);
+
+  /* Return pointers */
+  *p_c2f_idx = c2f_idx;
+  *p_c2f_ids = c2f_ids;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute cellwise the warping error
+ *  Id = 1/|c| \sum_(f \in F_c) x_f \otimes \vect{f}
+ * Froebinus norm is used to get a scalar-valued quantity
+ *
+ * parameters:
+ *   mesh             <-- pointer to mesh structure.
+ *   mesh_quantities  <-- pointer to mesh quantities structures.
+ *   warp_error       <-> array of values to compute
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_warp_error(const cs_mesh_t              *mesh,
+                    const cs_mesh_quantities_t   *mesh_quantities,
+                    cs_real_t                     warp_error[])
+{
+  const cs_real_t  *vol = mesh_quantities->cell_vol;
+
+  cs_lnum_t  *c2f_ids = NULL;
+  cs_lnum_t  *c2f_idx = NULL;
+
+  /* Build cell -> face connectivity */
+  _build_c2f(mesh, &c2f_idx, &c2f_ids);
+
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
+
+    const cs_real_t  invvol_c = 1/vol[c_id];
+    const cs_real_t  *xc = mesh_quantities->cell_cen + 3*c_id;
+
+    cs_real_33_t   tens = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+
+    for (cs_lnum_t i = c2f_idx[c_id]; i < c2f_idx[c_id+1]; i++) {
+
+      cs_lnum_t  f_id = c2f_ids[i];
+      cs_real_t  *xf = NULL, *surf = NULL;
+      int  sgn = 1;
+
+      if (f_id < mesh->n_i_faces) {
+
+        const cs_lnum_t  c2_id = mesh->i_face_cells[f_id][1];
+        if (c_id == c2_id)
+          sgn = -1;
+
+        xf = mesh_quantities->i_face_cog + 3*f_id;
+        surf = mesh_quantities->i_f_face_normal + 3*f_id;
+
+      }
+      else {
+
+        f_id -= mesh->n_i_faces; // Border face
+        xf = mesh_quantities->b_face_cog + 3*f_id;
+        surf = mesh_quantities->b_f_face_normal + 3*f_id;
+
+      }
+
+      for (int ki = 0; ki < 3; ki++)
+        for (int kj = 0; kj < 3; kj++)
+          tens[ki][kj] += sgn*(xf[ki] - xc[ki]) * surf[kj];
+
+    } // Loop on face cells
+
+    for (int ki = 0; ki < 3; ki++)
+      for (int kj = 0; kj < 3; kj++)
+        tens[ki][kj] *= invvol_c;
+
+    warp_error[c_id] =
+      fabs(cs_math_33_determinant((const cs_real_t (*)[3])tens) - 1);
+
+  } // Loop on cells
+
+  /* Free memory */
+  BFT_FREE(c2f_ids);
+  BFT_FREE(c2f_idx);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -871,6 +1045,7 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   bool  compute_orthogonality = true;
   bool  compute_warping = true;
   bool  compute_thickness = true;
+  bool  compute_warp_error = true;
   bool  vol_fields = false;
   bool  brd_fields = false;
 
@@ -1261,6 +1436,48 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
     BFT_FREE(b_thickness);
 
   } /* End of boundary cell thickness treatment */
+
+  /*---------------*/
+  /* warping error */
+  /*---------------*/
+
+  if (compute_warp_error == true) {
+
+    cs_real_t  *warp_error = NULL;
+    BFT_MALLOC(warp_error, mesh->n_cells ,cs_real_t);
+
+    _compute_warp_error(mesh, mesh_quantities, warp_error);
+
+    /* Display histograms */
+
+    bft_printf(_("\n  Histogram of the cellwise warping error :\n\n"));
+    _histogram(n_cells, warp_error);
+
+    /* Post processing */
+
+    if (vol_fields == true)
+      cs_post_write_var(CS_POST_MESH_VOLUME,
+                        CS_POST_WRITER_ALL_ASSOCIATED,
+                        "Warp_Error",
+                        1,
+                        false,
+                        true,
+                        CS_POST_TYPE_cs_real_t,
+                        warp_error,
+                        NULL,
+                        NULL,
+                        ts);
+
+    double  l2_error = cs_gres(mesh->n_cells,
+                               mesh_quantities->cell_vol,
+                               warp_error,
+                               warp_error);
+
+    bft_printf(" L2-error norm induced by warping : %5.3e\n", sqrt(l2_error));
+    BFT_FREE(warp_error);
+
+  } /* End of cell volume treatment */
+
 }
 
 /*----------------------------------------------------------------------------*/
