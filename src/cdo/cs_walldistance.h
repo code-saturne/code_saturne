@@ -79,6 +79,20 @@ cs_walldistance_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Finalize the setup stage for the equation related to the wall
+ *         distance. Only useful for Hamilton-Jacobi equation
+ *
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_walldistance_finalize_setup(const cs_cdo_connect_t       *connect,
+                               const cs_cdo_quantities_t    *cdoq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the wall distance
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure

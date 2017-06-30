@@ -2586,6 +2586,43 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Cellwise computation of the discrete gradient at vertices
+ *
+ * \param[in]      eq          pointer to a cs_equation_t structure
+ * \param[in, out] v_gradient  gradient at vertices
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
+                                       cs_real_t             *v_gradient)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+  assert(v_gradient != NULL);
+
+  const cs_equation_param_t  *eqp = eq->param;
+
+  /* Retrieve the field from its id */
+  cs_field_t  *fld = cs_field_by_id(eq->field_id);
+
+  switch (eqp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    cs_cdovcb_scaleq_vtx_gradient(fld->val, eq->builder, v_gradient);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid type of scheme for compting the gradient at vertices");
+    break;
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined extra-operations related to all equations
  *
  * \param[in]  ts      pointer to a cs_time_step_t struct.

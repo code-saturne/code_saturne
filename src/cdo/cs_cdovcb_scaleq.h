@@ -257,6 +257,21 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Cellwise computation of the discrete gradient at vertices
+ *
+ * \param[in]       v_values    discrete values for the potential at vertices
+ * \param[in, out]  builder     pointer to builder structure
+ * \param[in, out]  v_gradient  gradient at vertices
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_vtx_gradient(const cs_real_t   *v_values,
+                              void              *builder,
+                              cs_real_t         *v_gradient);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined extra-operations related to this equation
  *
  * \param[in]       eqname     name of the equation

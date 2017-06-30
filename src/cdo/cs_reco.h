@@ -238,6 +238,43 @@ cs_reco_grd_cell_from_pv(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the value at the cell center of the gradient of a field
+ *         defined on primal vertices.
+ *
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      pdi      pointer to the array of values
+ * \param[in, out] grdv     value of the reconstructed gradient at vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_grdv_from_pv(const cs_cdo_connect_t      *connect,
+                     const cs_cdo_quantities_t   *quant,
+                     const cs_real_t             *pdi,
+                     cs_real_t                    grdv[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value of a scalar potential at a point inside a cell
+ *         The scalar potential has DoFs located at primal vertices
+ *
+ * \param[in]      cm             pointer to a cs_cell_mesh_t structure
+ * \param[in]      pdi            array of DoF values at vertices
+ * \param[out]     cell_gradient  gradient inside the cell
+ *
+ * \return the value of the reconstructed potential at the evaluation point
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_cell_grad_from_scalar_pv(const cs_cell_mesh_t    *cm,
+                                    const cs_real_t          pdi[],
+                                    cs_real_t               *cell_gradient);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct at the cell center a field of edge-based DoFs
  *
  *  \param[in]      cid     cell id
@@ -277,24 +314,6 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
  * \brief  Reconstruct the value of a scalar potential at a point inside a cell
  *         The scalar potential has DoFs located at primal vertices
  *
- * \param[in]      cm             pointer to a cs_cell_mesh_t structure
- * \param[in]      pdi            array of DoF values at vertices
- * \param[out]     cell_gradient  gradient inside the cell
- *
- * \return the value of the reconstructed potential at the evaluation point
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_cw_cell_grad_from_scalar_pv(const cs_cell_mesh_t    *cm,
-                                    const cs_real_t          pdi[],
-                                    cs_real_t               *cell_gradient);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct the value of a scalar potential at a point inside a cell
- *         The scalar potential has DoFs located at primal vertices
- *
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
  * \param[in]      pdi          array of DoF values at vertices
  * \param[in]      length_xcxp  lenght of the segment [x_c, x_p]
@@ -311,6 +330,47 @@ cs_reco_cw_scalar_pv_inside_cell(const cs_cell_mesh_t    *cm,
                                  const cs_real_t          length_xcxp,
                                  const cs_real_t          unitv_xcxp[],
                                  cs_real_t                wbuf[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the weighted (by volume) gradient inside a given primal
+ *          cell for the related vertices.
+ *          Use the WBS algo. for approximating the gradient.
+ *          The computation takes into account a subdivision into tetrahedra of
+ *          the current cell based on p_{ef,c}
+ *
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot      values of the potential fields at vertices + cell
+ * \param[in, out] cb       auxiliary structure for computing the flux
+ * \param[in, out] vgrd     gradient at vertices inside this cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
+                             const cs_real_t        *pot,
+                             cs_cell_builder_t      *cb,
+                             cs_real_t              *vgrd);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the mean value of a gradient inside a given primal cell.
+ *          Use the WBS algo. for approximating the gradient.
+ *          The computation takes into account a subdivision into tetrahedra of
+ *          the current cell based on p_{ef,c}
+ *
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot      values of the potential fields at vertices + cell
+ * \param[in, out] cb       auxiliary structure for computing the flux
+ * \param[in, out] cgrd     mean-value of the cell gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
+                             const cs_real_t        *pot,
+                             cs_cell_builder_t      *cb,
+                             cs_real_t              *cgrd);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -50,6 +50,7 @@
 #include "cs_cdo_local.h"
 #include "cs_cdo_scheme_geometry.h"
 #include "cs_cdo_time.h"
+#include "cs_defs.h"
 #include "cs_equation_common.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -941,7 +942,7 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
 
       /* Assemble the cellwise contribution to the rank contribution */
       for (short int v = 0; v < cm->n_vc; v++)
-# pragma omp atomic
+#       pragma omp atomic
         b->source_terms[cm->v_ids[v]] += csys->source[v];
       cell_sources[c_id] = csys->source[cm->n_vc]; // Not critical
 
@@ -1747,6 +1748,127 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
     BFT_FREE(pot);
 
   } // OMP Section
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(b->monitor->tce), &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Cellwise computation of the discrete gradient at vertices
+ *
+ * \param[in]       v_values    discrete values for the potential at vertices
+ * \param[in, out]  builder     pointer to builder structure
+ * \param[in, out]  v_gradient  gradient at vertices
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_vtx_gradient(const cs_real_t   *v_values,
+                              void              *builder,
+                              cs_real_t         *v_gradient)
+{
+  cs_cdovcb_scaleq_t  *b = (cs_cdovcb_scaleq_t  *)builder;
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  /* Sanity checks */
+  assert(b->eqp->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_WBS);
+
+  if (v_gradient == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Result array has to be allocated prior to the call.");
+
+  cs_real_t  *dualcell_vol = NULL;
+  BFT_MALLOC(dualcell_vol, quant->n_vertices, cs_real_t);
+
+# pragma omp parallel for if (3*quant->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < 3*quant->n_vertices; i++)
+    v_gradient[i]  = 0;
+# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
+    dualcell_vol[i] = 0;
+
+  cs_timer_t  t0 = cs_timer_time();
+
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)  \
+  shared(quant, connect, b, v_gradient, v_values, dualcell_vol,  \
+         cs_cdovcb_cell_bld, cs_glob_n_ranks)
+  {
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+    double  *pot = NULL;
+    cs_real_3_t  cgrd;
+
+    BFT_MALLOC(pot, connect->n_max_vbyc + 1, double);
+
+    cs_flag_t  msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
+      CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_HFQ;
+
+    /* Each thread get back its related structures:
+       Get the cellwise view of the mesh and the algebraic system */
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_builder_t  *cb = cs_cdovcb_cell_bld[t_id];
+
+    /* Define the flux by cellwise contributions */
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      /* Set the local mesh structure for the current cell */
+      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+
+      /* Define a local buffer keeping the value of the discrete potential
+         for the current cell */
+      for (short int v = 0; v < cm->n_vc; v++)
+        pot[v] = v_values[cm->v_ids[v]];
+      pot[cm->n_vc] = b->cell_values[c_id];
+
+      cs_reco_cw_cgrd_wbs_from_pvc(cm, pot, cb, cgrd);
+
+      for (short int v = 0; v < cm->n_vc; v++) {
+        const double dvol = cm->wvc[v] * cm->vol_c;
+#       pragma omp atomic
+        dualcell_vol[cm->v_ids[v]] += dvol;
+        for (int k = 0; k < 3; k++)
+#         pragma omp atomic
+          v_gradient[3*cm->v_ids[v] + k] += dvol*cgrd[k];
+      }
+
+    } // Loop on cells
+
+    if (cs_glob_n_ranks > 1) {
+
+      cs_interface_set_sum(connect->v_rs->ifs,
+                           connect->n_vertices,
+                           1,
+                           true, // interlace
+                           CS_REAL_TYPE,
+                           dualcell_vol);
+
+      cs_interface_set_sum(connect->v_rs->ifs,
+                           connect->n_vertices,
+                           3,
+                           true, // interlace
+                           CS_REAL_TYPE,
+                           v_gradient);
+    }
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t i = 0; i < quant->n_vertices; i++) {
+      cs_real_t  inv_dualcell_vol = 1/dualcell_vol[i];
+      for (int k = 0; k < 3; k++)
+        v_gradient[3*i + k] *= inv_dualcell_vol;
+    }
+
+    BFT_FREE(pot);
+
+  } // OMP Section
+
+  BFT_FREE(dualcell_vol);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(b->monitor->tce), &t0, &t1);

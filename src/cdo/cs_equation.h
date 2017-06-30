@@ -715,6 +715,19 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Cellwise computation of the discrete gradient at vertices
+ *
+ * \param[in]      eq          pointer to a cs_equation_t structure
+ * \param[in, out] v_gradient  gradient at vertices
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
+                                       cs_real_t             *v_gradient);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined extra-operations related to all equations
  *
  * \param[in]  ts      pointer to a cs_time_step_t struct.

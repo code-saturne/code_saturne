@@ -804,6 +804,7 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
   cs_advection_field_set_shared_pointers(domain->cdo_quantities,
                                          domain->connect,
                                          domain->time_step);
+
   /* Groundwater flow module */
   if (cs_gwf_is_activated()) {
 
@@ -831,6 +832,9 @@ cs_domain_finalize_setup(cs_domain_t                 *domain,
   /* Set the definition of user-defined properties and/or advection
      fields (no more fields are created at this stage) */
   cs_user_cdo_finalize_setup(cs_glob_domain);
+
+  if (cs_walldistance_is_activated())
+    cs_walldistance_finalize_setup(domain->connect, domain->cdo_quantities);
 
   if (cs_gwf_is_activated())
     cs_gwf_finalize_setup(domain->connect, domain->cdo_quantities);

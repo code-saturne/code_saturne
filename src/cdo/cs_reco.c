@@ -544,6 +544,71 @@ cs_reco_grd_cell_from_pv(cs_lnum_t                    c_id,
     val_xc[k] *= invvol;
 
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value at the cell center of the gradient of a field
+ *         defined on primal vertices.
+ *
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      pdi      pointer to the array of values
+ * \param[in, out] grdv     value of the reconstructed gradient at vertices
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_grdv_from_pv(const cs_cdo_connect_t      *connect,
+                     const cs_cdo_quantities_t   *quant,
+                     const cs_real_t             *pdi,
+                     cs_real_t                    grdv[])
+{
+  if (pdi == NULL)
+    return;
+  assert(grdv != NULL);
+
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the value of a scalar potential at a point inside a cell
+ *         The scalar potential has DoFs located at primal vertices
+ *
+ * \param[in]      cm             pointer to a cs_cell_mesh_t structure
+ * \param[in]      pdi            array of DoF values at vertices
+ * \param[out]     cell_gradient  gradient inside the cell
+ *
+ * \return the value of the reconstructed potential at the evaluation point
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_cell_grad_from_scalar_pv(const cs_cell_mesh_t    *cm,
+                                    const cs_real_t          pdi[],
+                                    cs_real_t               *cell_gradient)
+{
+  /* Sanity checks */
+  assert(cm != NULL && pdi != NULL);
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
+
+  /* Reconstruct a constant gradient inside the current cell */
+  cell_gradient[0] = cell_gradient[1] = cell_gradient[2] = 0;
+  for (short int e = 0; e < cm->n_ec; e++) {
+
+    const cs_lnum_t  v0 = cm->v_ids[cm->e2v_ids[2*e]];
+    const cs_lnum_t  v1 = cm->v_ids[cm->e2v_ids[2*e+1]];
+    const cs_real_t  coeff = cm->e2v_sgn[e]*(pdi[v0]-pdi[v1])*cm->dface[e].meas;
+    for (int k = 0; k < 3; k++)
+      cell_gradient[k] += coeff * cm->dface[e].unitv[k];
+
+  } // Loop on cell edges
+
+  const cs_real_t  invcell = 1./cm->vol_c;
+  for (int k = 0; k < 3; k++) cell_gradient[k] *= invcell;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Reconstruct at the cell center a field of edge-based DoFs
@@ -631,45 +696,6 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
  * \brief  Reconstruct the value of a scalar potential at a point inside a cell
  *         The scalar potential has DoFs located at primal vertices
  *
- * \param[in]      cm             pointer to a cs_cell_mesh_t structure
- * \param[in]      pdi            array of DoF values at vertices
- * \param[out]     cell_gradient  gradient inside the cell
- *
- * \return the value of the reconstructed potential at the evaluation point
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_cw_cell_grad_from_scalar_pv(const cs_cell_mesh_t    *cm,
-                                    const cs_real_t          pdi[],
-                                    cs_real_t               *cell_gradient)
-{
-  /* Sanity checks */
-  assert(cm != NULL && pdi != NULL);
-  assert(cs_test_flag(cm->flag,
-                      CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_DFQ));
-
-  /* Reconstruct a constant gradient inside the current cell */
-  cell_gradient[0] = cell_gradient[1] = cell_gradient[2] = 0;
-  for (short int e = 0; e < cm->n_ec; e++) {
-
-    const cs_lnum_t  v0 = cm->v_ids[cm->e2v_ids[2*e]];
-    const cs_lnum_t  v1 = cm->v_ids[cm->e2v_ids[2*e+1]];
-    const cs_real_t  coeff = cm->e2v_sgn[e]*(pdi[v0]-pdi[v1])*cm->dface[e].meas;
-    for (int k = 0; k < 3; k++)
-      cell_gradient[k] += coeff * cm->dface[e].unitv[k];
-
-  } // Loop on cell edges
-
-  const cs_real_t  invcell = 1./cm->vol_c;
-  for (int k = 0; k < 3; k++) cell_gradient[k] *= invcell;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct the value of a scalar potential at a point inside a cell
- *         The scalar potential has DoFs located at primal vertices
- *
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
  * \param[in]      pdi          array of DoF values at vertices
  * \param[in]      length_xcxp  lenght of the segment [x_c, x_p]
@@ -719,6 +745,200 @@ cs_reco_cw_scalar_pv_inside_cell(const cs_cell_mesh_t    *cm,
   p_rec += length_xcxp * cs_math_3_dot_product(gcell, unitv_xcxp);
 
   return  p_rec;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the weighted (by volume) gradient inside a given primal
+ *          cell for the related vertices.
+ *          Use the WBS algo. for approximating the gradient.
+ *          The computation takes into account a subdivision into tetrahedra of
+ *          the current cell based on p_{ef,c}
+ *
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot      values of the potential fields at vertices + cell
+ * \param[in, out] cb       auxiliary structure for computing the flux
+ * \param[in, out] vgrd     gradient at vertices inside this cell
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
+                             const cs_real_t        *pot,
+                             cs_cell_builder_t      *cb,
+                             cs_real_t              *vgrd)
+{
+  /* Sanity checks */
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_HFQ));
+
+  cs_real_3_t  grd_c, grd_v1, grd_v2;
+
+  /* Temporary buffers */
+  cs_real_3_t  *u_vc = cb->vectors;
+  double  *l_vc = cb->values;
+
+  const double  *p_v = pot;
+  const double  p_c = pot[cm->n_vc];
+
+  /* Reset local fluxes */
+  for (int i = 0; i < 3*cm->n_vc; i++) vgrd[i] = 0.;
+
+  /* Store segments xv --> xc for this cell */
+  for (short int v = 0; v < cm->n_vc; v++)
+    cs_math_3_length_unitv(cm->xc, cm->xv + 3*v, l_vc + v, u_vc[v]);
+
+  /* Loop on cell faces */
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    const cs_quant_t  pfq = cm->face[f];
+    const cs_nvec3_t  deq = cm->dedge[f];
+
+    /* Compute geometrical quantities for the current face:
+       - the weighting of each triangle defined by a base e and an apex f
+       - volume of each sub-tetrahedron pef_c
+       - the gradient of the Lagrange function related xc in p_{f,c} */
+    const cs_real_t  ohf = -cm->f_sgn[f]/cm->hfc[f];
+    for (int k = 0; k < 3; k++) grd_c[k] = ohf * pfq.unitv[k];
+
+    /* Compute the reconstructed value of the potential at p_f */
+    double  p_f = 0.;
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const short int  ee = 2*cm->f2e_ids[i];
+
+      p_f += cm->tef[i]*(  p_v[cm->e2v_ids[ee]]      // p_v1
+                         + p_v[cm->e2v_ids[ee+1]] ); // p_v2
+    }
+    p_f *= 0.5/pfq.meas;
+
+    const double  dp_cf = p_c - p_f;
+
+    /* Loop on face edges to scan p_{ef,c} subvolumes */
+    const cs_real_t  hf_coef = cs_math_onethird * cm->hfc[f];
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const short int  ee = 2*cm->f2e_ids[i];
+      const short int  v1 = cm->e2v_ids[ee];
+      const short int  v2 = cm->e2v_ids[ee+1];
+
+      cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])u_vc, l_vc,
+                        grd_v1, grd_v2);
+
+      /* Gradient of the Lagrange function related to a face.
+         grd_f = -(grd_c + grd_v1 + grd_v2)
+         This formula is a consequence of the Partition of the Unity.
+         This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
+      const cs_real_t  sefv_vol = 0.5 * hf_coef * cm->tef[i]; // 0.5 pef_vol
+      cs_real_3_t  _grd;
+      for (int k = 0; k < 3; k++) {
+        _grd[k] = sefv_vol * ( dp_cf          * grd_c[k]  +
+                              (p_v[v1] - p_f) * grd_v1[k] +
+                              (p_v[v2] - p_f) * grd_v2[k]);
+        vgrd[3*v1 + k] += _grd[k];
+        vgrd[3*v2 + k] += _grd[k];
+      }
+
+    } // Loop on face edges
+
+  } // Loop on cell faces
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the mean value of a gradient inside a given primal cell.
+ *          Use the WBS algo. for approximating the gradient.
+ *          The computation takes into account a subdivision into tetrahedra of
+ *          the current cell based on p_{ef,c}
+ *
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot      values of the potential fields at vertices + cell
+ * \param[in, out] cb       auxiliary structure for computing the flux
+ * \param[in, out] cgrd     mean-value of the cell gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
+                             const cs_real_t        *pot,
+                             cs_cell_builder_t      *cb,
+                             cs_real_t              *cgrd)
+{
+  /* Sanity checks */
+  assert(cs_test_flag(cm->flag,
+                      CS_CDO_LOCAL_PV  | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ |
+                      CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_HFQ));
+
+  cs_real_3_t  grd_c, grd_v1, grd_v2;
+
+  /* Temporary buffers */
+  cs_real_3_t  *u_vc = cb->vectors;
+  double  *l_vc = cb->values;
+
+  cgrd[0] = cgrd[1] = cgrd[2] = 0.;
+
+  const double  *p_v = pot;
+  const double  p_c = pot[cm->n_vc];
+
+  /* Store segments xv --> xc for this cell */
+  for (short int v = 0; v < cm->n_vc; v++)
+    cs_math_3_length_unitv(cm->xc, cm->xv + 3*v, l_vc + v, u_vc[v]);
+
+  /* Loop on cell faces */
+  for (short int f = 0; f < cm->n_fc; f++) {
+
+    const cs_quant_t  pfq = cm->face[f];
+    const cs_nvec3_t  deq = cm->dedge[f];
+
+    /* Compute geometrical quantities for the current face:
+       - the weighting of each triangle defined by a base e and an apex f
+       - volume of each sub-tetrahedron pef_c
+       - the gradient of the Lagrange function related xc in p_{f,c} */
+    const cs_real_t  ohf = -cm->f_sgn[f]/cm->hfc[f];
+    for (int k = 0; k < 3; k++) grd_c[k] = ohf * pfq.unitv[k];
+
+    /* Compute the reconstructed value of the potential at p_f */
+    double  p_f = 0.;
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const short int  ee = 2*cm->f2e_ids[i];
+
+      p_f += cm->tef[i]*(  p_v[cm->e2v_ids[ee]]      // p_v1
+                         + p_v[cm->e2v_ids[ee+1]] ); // p_v2
+    }
+    p_f *= 0.5/pfq.meas;
+
+    const double  dp_cf = p_c - p_f;
+
+    /* Loop on face edges to scan p_{ef,c} subvolumes */
+    const cs_real_t  hf_coef = cs_math_onethird * cm->hfc[f];
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const short int  ee = 2*cm->f2e_ids[i];
+      const short int  v1 = cm->e2v_ids[ee];
+      const short int  v2 = cm->e2v_ids[ee+1];
+
+      cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])u_vc, l_vc,
+                        grd_v1, grd_v2);
+
+      /* Gradient of the Lagrange function related to a face.
+         grd_f = -(grd_c + grd_v1 + grd_v2)
+         This formula is a consequence of the Partition of the Unity.
+         This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
+      const cs_real_t  pefv_vol = hf_coef * cm->tef[i];
+      for (int k = 0; k < 3; k++)
+        cgrd[k] += pefv_vol * ( dp_cf          * grd_c[k]  +
+                               (p_v[v1] - p_f) * grd_v1[k] +
+                               (p_v[v2] - p_f) * grd_v2[k]);
+
+    } // Loop on face edges
+
+  } // Loop on cell faces
+
+  const double  invvol = 1/cm->vol_c;
+  for (int k = 0; k < 3; k++) cgrd[k] *= invvol;
 }
 
 /*----------------------------------------------------------------------------*/
