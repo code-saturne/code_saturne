@@ -197,6 +197,7 @@ dict_object["RESUSubFolderSYR"]         = 100106
 dict_object["SRCSYRFolder"]             = 100107
 dict_object["USRSRCSYRFile"]            = 100108
 dict_object["CouplingStudy"]            = 100109
+dict_object["OpenSyrthesCaseFile"]      = 100110
 #-------------------------------------------------------------------------------
 # Definition of the icon of objects to represent in the Object Browser.
 # Attribut "AttributePixMap" for the related SObject.
