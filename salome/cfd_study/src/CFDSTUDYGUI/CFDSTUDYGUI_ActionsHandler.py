@@ -121,6 +121,9 @@ DisplayTypeSURFACEFRAME        = 76
 DisplayTypeFEATURE_EDGES       = 77
 DisplayTypeSHRINK              = 78
 
+#SyrthesGui Actions
+OpenSyrthesCaseFile                = 80
+
 #=====SOLVER ACTIONS
 #Common Actions
 SolverFileMenu                 = 100
@@ -493,6 +496,17 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[RunScriptAction] = action_id
+
+        #syrthes actions
+        action = sgPyQt.createAction(-1,\
+                                      ObjectTR.tr("OPEN_SYRTHES-CASE_FILE_ACTION_TEXT"),\
+                                      ObjectTR.tr("OPEN_SYRTHES-CASE_FILE_ACTION_TIP"),\
+                                      ObjectTR.tr("OPEN_SYRTHES-CASE_FILE_ACTION_SB"),\
+                                      ObjectTR.tr("OPEN_SYRTHES-CASE_FILE_ACTION_ICON"))
+        action.triggered.connect(self.slotOpenSyrthesCaseFile)
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._CommonActionIdMap[OpenSyrthesCaseFile] = action_id
 
         # Solver actions
 
@@ -956,6 +970,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SyrthesFile"]:
             popup.addAction(self.commonAction(ViewAction))
+            popup.addAction(self.commonAction(OpenSyrthesCaseFile))
         elif id == CFDSTUDYGUI_DataModel.dict_object["CouplingFilePy"]:
             popup.addAction(self.commonAction(EditAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["CouplingRuncase"]:
@@ -2105,6 +2120,32 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
     def slotHelpNCDoxygen(self):
         self._SolverGUI.onNeptuneHelpDoxygen()
+
+    def slotOpenSyrthesCaseFile(self): 
+        """
+        OpenSyrthesGui
+        """
+        print "slotOpenSyrthesCaseFile"
+        sobj = self._singleSelectedObject()
+        if not sobj == None:
+            import salome
+            import salome.syrthes
+            from salome.syrthes.dictSyrthesDesc import SYR_DESC
+
+            import SyrthesMain
+            from SyrthesMain import MainView
+
+            path = CFDSTUDYGUI_DataModel._GetPath(sobj)
+            if re.match(".*\.syd$", sobj.GetName()):
+                #export Med file from CFDSTUDY into PARAVIS
+#                engine = salome.lcc.FindOrLoadComponent("FactoryServerPy", "SYRTHES")
+                widget = MainView(sgPyQt.getDesktop(), False,True)            
+                widget.OpeningFile(path)
+                widget.show()
+
+            if salome.sg.hasDesktop():
+                salome.sg.updateObjBrowser(1)
+        QApplication.restoreOverrideCursor()
 
 
     def commonAction(self, theId):
