@@ -114,6 +114,18 @@
             <translation>You don't have access rights for this script execution!</translation>
         </message>
         <message>
+            <source>UPDATE_CASE_PATH_ACTION_TEXT</source>
+            <translation>Update case path...</translation>
+        </message>
+        <message>
+            <source>UPDATE_CASE_PATH_ACTION_TIP</source>
+            <translation>Update case path...</translation>
+        </message>
+        <message>
+            <source>UPDATE_CASE_PATH_ACTION_SB</source>
+            <translation>Update case path...</translation>
+        </message>
+        <message>
             <source>SOLVER_FILE_MENU_TEXT</source>
             <translation>CFD_Code</translation>
         </message>
@@ -534,6 +546,18 @@
         <message>
             <source>NOT_A_STUDY_DIRECTORY</source>
             <translation>Study directory: %s, is neither a %s study nor a CFD study coupling with %s.</translation>
+        </message>
+        <message>
+            <source>OPEN_SYRTHES-CASE_FILE_ACTION_TEXT</source>
+            <translation>Open Syrthes Case ...</translation>
+        </message>
+        <message>
+            <source>OPEN_SYRTHES-CASE_FILE_ACTION_TIP</source>
+            <translation>Open Syrthes Case ...</translation>
+        </message>
+        <message>
+            <source>OPEN_SYRTHES-CASE_FILE_ACTION_SB</source>
+            <translation>Open Syrthes Case ...</translation>
         </message>
     </context>
     <context>

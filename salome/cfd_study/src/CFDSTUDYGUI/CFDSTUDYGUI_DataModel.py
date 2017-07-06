@@ -579,12 +579,29 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
         if theSyrthesOpt:
             args.append("--syrthes")
             args.append(os.path.join(theStudyPath,theSyrthesCase))
+
         runCommand(args, start_dir, "")
 
     else:
         cfdstudyMess.criticalMessage(mess)
     return mess == ""
 
+def updateCasePath(theCasePath):
+
+    mess = ""
+    scrpt, c ,mess = BinCode()
+    if mess == "" :
+        curd = os.getcwd()
+
+        start_dir = ""
+        args = [scrpt]
+        args.append('create')
+        args.append(theCasePath)
+        args.append('--import-only')
+        runCommand(args, start_dir, "")
+    else:
+        cfdstudyMess.criticalMessage(mess)
+    return mess == ""
 
 def _UpdateStudy():
     """

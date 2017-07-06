@@ -85,6 +85,7 @@ OpenGUIAction                 = 5
 UpdateObjBrowserAction        = 6
 InfoCFDSTUDYAction            = 7
 OpenAnExistingCase            = 8
+UpdateCasePath                = 9  # code_saturne create --import-only - popupmenu case
 
 #common actions
 RemoveAction                  = 20
@@ -475,6 +476,17 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[ConvertMeshToMed] = action_id
+
+# popup added toupdate case path with code_saturne create --import-only into case directory files
+        action = sgPyQt.createAction(-1,\
+                                      ObjectTR.tr("UPDATE_CASE_PATH_ACTION_TEXT"),\
+                                      ObjectTR.tr("UPDATE_CASE_PATH_ACTION_TIP"),\
+                                      ObjectTR.tr("UPDATE_CASE_PATH_ACTION_SB"),\
+                                      ObjectTR.tr("UPDATE_CASE_PATH_ACTION_ICON"))
+        action.triggered.connect(self.slotUpdateCasePath)
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._CommonActionIdMap[UpdateCasePath] = action_id
 
         #other actions
         action = sgPyQt.createAction(-1,\
@@ -875,6 +887,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(UpdateObjBrowserAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["Case"]:
             popup.addAction(self.commonAction(LaunchGUIAction))
+            popup.addAction(self.commonAction(UpdateCasePath))
             popup.addAction(self.commonAction(RemoveAction))
             popup.addAction(self.commonAction(UpdateObjBrowserAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAFolder"]           or \
@@ -1837,6 +1850,22 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self.updateActions()
 
 
+    def slotUpdateCasePath(self):
+        sobj = self._singleSelectedObject()
+        if sobj == None:
+            return
+
+        studyId = sgPyQt.getStudyId()
+        casePath = CFDSTUDYGUI_DataModel._GetPath(sobj)
+
+        aCase = CFDSTUDYGUI_DataModel.GetCase(sobj)
+        import os
+        if not os.path.exists(casePath):
+            mess = cfdstudyMess.trMessage(self.tr("ENV_DLG_INVALID_DIRECTORY"),[casePath])+ self.tr("STMSG_UPDATE_STUDY_INCOMING")
+            cfdstudyMess.aboutMessage(mess)
+            return
+        CFDSTUDYGUI_DataModel.updateCasePath(casePath )
+
     def __compile(self, aCaseObject):
         """
         Private method.
@@ -2125,7 +2154,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         OpenSyrthesGui
         """
-        print "slotOpenSyrthesCaseFile"
         sobj = self._singleSelectedObject()
         if not sobj == None:
             import salome
@@ -2137,8 +2165,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
             path = CFDSTUDYGUI_DataModel._GetPath(sobj)
             if re.match(".*\.syd$", sobj.GetName()):
-                #export Med file from CFDSTUDY into PARAVIS
-#                engine = salome.lcc.FindOrLoadComponent("FactoryServerPy", "SYRTHES")
                 widget = MainView(sgPyQt.getDesktop(), False,True)            
                 widget.OpeningFile(path)
                 widget.show()

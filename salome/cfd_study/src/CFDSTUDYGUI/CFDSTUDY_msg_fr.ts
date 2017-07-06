@@ -114,6 +114,18 @@
             <translation>Exécution du script...</translation>
         </message>
         <message>
+            <source>UPDATE_CASE_PATH_ACTION_TEXT</source>
+            <translation>Mise à jour du chemin du cas...</translation>
+        </message>
+        <message>
+            <source>UPDATE_CASE_PATH_ACTION_TIP</source>
+            <translation>Mise à jour du chemin du cas...</translation>
+        </message>
+        <message>
+            <source>UPDATE_CASE_PATH_ACTION_SB</source>
+            <translation>Mise à jour du chemin du cas...</translation>
+        </message>
+        <message>
             <source>RUN_SCRIPT_ACTION_ACCESS_ERROR</source>
             <translation>Vous n'avez pas les droits d'accès pour le script d'exécution !</translation>
         </message>
@@ -536,6 +548,18 @@
         <message>
             <source>NOT_A_STUDY_DIRECTORY</source>
             <translation>Le répertoire d'étude : %s, n'est ni une étude %s ni une étude couplée avec %s.</translation>
+        </message>
+        <message>
+            <source>OPEN_SYRTHES-CASE_FILE_ACTION_TEXT</source>
+            <translation>Ouverture du fichier cas Syrthes ...</translation>
+        </message>
+        <message>
+            <source>OPEN_SYRTHES-CASE_FILE_ACTION_TIP</source>
+            <translation>Ouverture du fichier cas Syrthes ...</translation>
+        </message>
+        <message>
+            <source>OPEN_SYRTHES-CASE_FILE_ACTION_SB</source>
+            <translation>Ouverture du fichier cas Syrthes ...</translation>
         </message>
     </context>
     <context>
