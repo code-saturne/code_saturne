@@ -294,6 +294,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
  * \param[in, out]  pty         pointer to a cs_property_t structure
  * \param[in]       zone_name   name of an already defined zone
  * \param[in]       func        pointer to a cs_analytic_func_t function
+ * \param[in]       input       NULL or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -302,7 +303,8 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 cs_xdef_t *
 cs_property_def_by_analytic(cs_property_t        *pty,
                             const char           *zone_name,
-                            cs_analytic_func_t   *func);
+                            cs_analytic_func_t   *func,
+                            void                 *input);
 
 /*----------------------------------------------------------------------------*/
 /*!

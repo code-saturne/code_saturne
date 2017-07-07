@@ -298,17 +298,19 @@ cs_equation_add_ic_by_qov(cs_equation_t    *eq,
  *         By default, the unknown is set to zero everywhere.
  *         Here the initial value is set according to an analytical function
  *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
- * \param[in]       analytic  pointer to an analytic function
+ * \param[in, out] eq        pointer to a cs_equation_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_add_ic_by_analytic(cs_equation_t        *eq,
                                const char           *z_name,
-                               cs_analytic_func_t   *analytic);
+                               cs_analytic_func_t   *analytic,
+                               void                 *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -350,7 +352,7 @@ cs_equation_add_bc_by_array(cs_equation_t              *eq,
                             const char                 *z_name,
                             cs_flag_t                   loc,
                             cs_real_t                  *array,
-                            cs_real_t                  *index);
+                            cs_lnum_t                  *index);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -360,9 +362,10 @@ cs_equation_add_bc_by_array(cs_equation_t              *eq,
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure
  * \param[in]      bc_type   type of boundary condition to add
- * \param[in]       z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
  * \param[in]      analytic  pointer to an analytic function defining the value
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
@@ -370,7 +373,8 @@ void
 cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
                                const cs_param_bc_type_t    bc_type,
                                const char                 *z_name,
-                               cs_analytic_func_t         *analytic);
+                               cs_analytic_func_t         *analytic,
+                               void                       *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -412,9 +416,10 @@ cs_equation_add_source_term_by_val(cs_equation_t   *eq,
  *         function
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
  * \param[in]      ana       pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new cs_source_term_t structure
  */
@@ -423,7 +428,8 @@ cs_equation_add_source_term_by_val(cs_equation_t   *eq,
 cs_xdef_t *
 cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
                                         const char           *z_name,
-                                        cs_analytic_func_t   *ana);
+                                        cs_analytic_func_t   *ana,
+                                        void                 *input);
 
 /*----------------------------------------------------------------------------*/
 /*!

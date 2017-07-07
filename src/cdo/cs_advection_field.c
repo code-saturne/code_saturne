@@ -499,25 +499,29 @@ cs_advection_field_def_by_value(cs_adv_field_t    *adv,
  *
  * \param[in, out]  adv     pointer to a cs_adv_field_t structure
  * \param[in]       func    pointer to a function
+ * \param[in]       input   NULL or pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
-                                   cs_analytic_func_t    *func)
+                                   cs_analytic_func_t    *func,
+                                   void                  *input)
 {
   if (adv == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
 
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = 0;
+  cs_xdef_analytic_input_t  anai = {.func = func,
+                                    .input = input };
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           3, // dim.
                                           0, // zone_id = 0 => all cells
                                           state_flag,
                                           meta_flag,
-                                          (void *)func);
+                                          &anai);
 
   /* Set function pointers */
   adv->get_eval_all_vertices = cs_xdef_eval_at_vertices_by_analytic;

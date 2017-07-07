@@ -350,10 +350,14 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
-  /* Evaluate the property for this time at the cell center */
-  ana(ts->t_cur, n_elts, elt_ids, quant->cell_centers, compact, eval);
+  /* Evaluate the function for this time at the cell center */
+  anai->func(ts->t_cur,
+             n_elts, elt_ids, quant->cell_centers,
+             compact, // compacted output ?
+             anai->input,
+             eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -387,10 +391,14 @@ cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
-  /* Evaluate the property for this time at the cell center */
-  ana(ts->t_cur, n_elts, elt_ids, quant->vtx_coord, compact, eval);
+  /* Evaluate the function for this time at the border face center */
+  anai->func(ts->t_cur,
+             n_elts, elt_ids, quant->vtx_coord,
+             compact,  // compacted output ?
+             anai->input,
+             eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -423,10 +431,14 @@ cs_xdef_eval_at_vertices_by_analytic(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
-  /* Evaluate the property for this time at the cell center */
-  ana(ts->t_cur, n_elts, elt_ids, quant->vtx_coord, compact, eval);
+  /* Evaluate the function for this time at the cell center */
+  anai->func(ts->t_cur,
+             n_elts, elt_ids, quant->vtx_coord,
+             compact,  // compacted output ?
+             anai->input,
+             eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -447,10 +459,14 @@ cs_xdef_eval_cw_cell_by_analytic(const cs_cell_mesh_t       *cm,
                                  void                       *input,
                                  cs_real_t                  *eval)
 {
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
-  /* Evaluate the property for this time at the cell center */
-  ana(ts->t_cur, 1, NULL, cm->xc, true, eval);
+  /* Evaluate the function for this time at the cell center */
+  anai->func(ts->t_cur,
+             1, NULL, cm->xc,
+             true, // compacted output ?
+             anai->input,
+             eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -694,6 +710,7 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
+  CS_UNUSED(ts);
 
   cs_xdef_array_input_t  *array_input = (cs_xdef_array_input_t *)input;
 
@@ -1107,10 +1124,14 @@ cs_xdef_eval_cw_at_xyz_by_analytic(const cs_cell_mesh_t       *cm,
 {
   CS_UNUSED(cm);
 
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
-  /* Evaluate the property for this time at the cell center */
-  ana(ts->t_cur, n_points, NULL, xyz, true, eval);
+  /* Evaluate the function for this time at the given coordinates */
+  anai->func(ts->t_cur,
+             n_points, NULL, xyz,
+             true, // compacted output ?
+             anai->input,
+             eval);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -80,12 +80,13 @@ static const char _err_not_handled[] = " This case is not handled yet.";
  * \brief  Compute the integral over a tetrahedron of the barycentric subdiv.
  *         using a barycentric quadrature rule
  *
- * \param[in]  tcur   current physical time of the simulation
- * \param[in]  xv     first point of the tetrahedron
- * \param[in]  xe     second point of the tetrahedron
- * \param[in]  xf     third point of the tetrahedron
- * \param[in]  xc     fourth point of the tetrahedron
- * \param[in]  ana    pointer to the analytic function
+ * \param[in]  tcur    current physical time of the simulation
+ * \param[in]  xv      first point of the tetrahedron
+ * \param[in]  xe      second point of the tetrahedron
+ * \param[in]  xf      third point of the tetrahedron
+ * \param[in]  xc      fourth point of the tetrahedron
+ * \param[in]  ana     pointer to the analytic function
+ * \param[in]  input   NULL or pointer to a structure cast on-the-fly
  *
  * \return the result of the integration
  */
@@ -97,7 +98,8 @@ _analytic_quad_tet1(double                 tcur,
                     const cs_real_3_t      xe,
                     const cs_real_3_t      xf,
                     const cs_real_3_t      xc,
-                    cs_analytic_func_t    *ana)
+                    cs_analytic_func_t    *ana,
+                    void                  *input)
 {
   int  k;
   cs_real_3_t  xg;
@@ -108,7 +110,7 @@ _analytic_quad_tet1(double                 tcur,
   for (k = 0; k < 3; k++)
     xg[k] = 0.25*(xv[k] + xe[k] + xf[k] + xc[k]);
 
-  ana(tcur, 1, NULL, xg, true, &evaluation);
+  ana(tcur, 1, NULL, xg, true, input, &evaluation);
 
   return vol_tet * evaluation;
 }
@@ -118,12 +120,13 @@ _analytic_quad_tet1(double                 tcur,
  * \brief  Compute the integral over a tetrahedron of the barycentric subdiv.
  *         with a quadrature rule using 4 Gauss points and a unique weight
  *
- * \param[in]  tcur   current physical time of the simulation
- * \param[in]  xv     first point of the tetrahedron
- * \param[in]  xe     second point of the tetrahedron
- * \param[in]  xf     third point of the tetrahedron
- * \param[in]  xc     fourth point of the tetrahedron
- * \param[in]  ana    pointer to the analytic function
+ * \param[in]  tcur    current physical time of the simulation
+ * \param[in]  xv      first point of the tetrahedron
+ * \param[in]  xe      second point of the tetrahedron
+ * \param[in]  xf      third point of the tetrahedron
+ * \param[in]  xc      fourth point of the tetrahedron
+ * \param[in]  ana     pointer to the analytic function
+ * \param[in]  input   NULL or pointer to a structure cast on-the-fly
  *
  * \return the result of the integration
  */
@@ -135,7 +138,8 @@ _analytic_quad_tet4(double                tcur,
                     const cs_real_3_t     xe,
                     const cs_real_3_t     xf,
                     const cs_real_3_t     xc,
-                    cs_analytic_func_t   *ana)
+                    cs_analytic_func_t   *ana,
+                    void                 *input)
 {
   double  weight;
   cs_real_3_t  gauss_pts[4];
@@ -146,7 +150,7 @@ _analytic_quad_tet4(double                tcur,
   /* Compute Gauss points and its unique weight */
   cs_quadrature_tet_4pts(xv, xe, xf, xc, vol_tet, gauss_pts, &weight);
 
-  ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, true, evaluation);
+  ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, true, input, evaluation);
 
   double  result = 0.0;
   for (int p = 0; p < 4; p++) result += evaluation[p];
@@ -160,12 +164,13 @@ _analytic_quad_tet4(double                tcur,
  * \brief  Compute the integral over a tetrahedron of the barycentric subdiv.
  *         with a quadrature rule using 5 Gauss points and 5 weights
  *
- * \param[in]  tcur   current physical time of the simulation
- * \param[in]  xv     first point of the tetrahedron
- * \param[in]  xe     second point of the tetrahedron
- * \param[in]  xf     third point of the tetrahedron
- * \param[in]  xc     fourth point of the tetrahedron
- * \param[in]  ana    pointer to the analytic function
+ * \param[in]  tcur    current physical time of the simulation
+ * \param[in]  xv      first point of the tetrahedron
+ * \param[in]  xe      second point of the tetrahedron
+ * \param[in]  xf      third point of the tetrahedron
+ * \param[in]  xc      fourth point of the tetrahedron
+ * \param[in]  ana     pointer to the analytic function
+ * \param[in]  input   NULL or pointer to a structure cast on-the-fly
  *
  * \return the result of the integration
  */
@@ -177,7 +182,8 @@ _analytic_quad_tet5(double                tcur,
                     const cs_real_3_t     xe,
                     const cs_real_3_t     xf,
                     const cs_real_3_t     xc,
-                    cs_analytic_func_t   *ana)
+                    cs_analytic_func_t   *ana,
+                    void                 *input)
 {
   cs_real_t  weights[5], evaluation[5];
   cs_real_3_t  gauss_pts[5];
@@ -187,7 +193,7 @@ _analytic_quad_tet5(double                tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_tet_5pts(xv, xe, xf, xc, vol_tet, gauss_pts, weights);
 
-  ana(tcur, 5, NULL, (const cs_real_t *)gauss_pts, true, evaluation);
+  ana(tcur, 5, NULL, (const cs_real_t *)gauss_pts, true, input, evaluation);
 
   double  result = 0.0;
   for (int p = 0; p < 5; p++) result += evaluation[p] * weights[p];
@@ -200,8 +206,9 @@ _analytic_quad_tet5(double                tcur,
  * \brief  Compute the integral over dual cells of a scalar density field
  *         defined by an analytical function on a cell
  *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
  * \param[in]      ana         pointer to the analytic function
+ * \param[in]      input       NULL or pointer to a structure cast on-the-fly
  * \param[in]      quad_type   type of quadrature to use
  * \param[in, out] values      pointer to the computed values
  */
@@ -210,6 +217,7 @@ _analytic_quad_tet5(double                tcur,
 static void
 _cellwise_dcsd_by_analytic(const cs_cell_mesh_t    *cm,
                            cs_analytic_func_t      *ana,
+                           void                    *input,
                            cs_quadrature_type_t     quad_type,
                            double                   values[])
 {
@@ -235,16 +243,16 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t    *cm,
 
       case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
       case CS_QUADRATURE_BARY_SUBDIV:
-        add1  = _analytic_quad_tet1(tcur, xv1, xe, xf, cm->xc, ana);
-        add2  = _analytic_quad_tet1(tcur, xv2, xe, xf, cm->xc, ana);
+        add1  = _analytic_quad_tet1(tcur, xv1, xe, xf, cm->xc, ana, input);
+        add2  = _analytic_quad_tet1(tcur, xv2, xe, xf, cm->xc, ana, input);
         break;
       case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-        add1 = _analytic_quad_tet4(tcur, xv1, xe, xf, cm->xc, ana);
-        add2 = _analytic_quad_tet4(tcur, xv2, xe, xf, cm->xc, ana);
+        add1 = _analytic_quad_tet4(tcur, xv1, xe, xf, cm->xc, ana, input);
+        add2 = _analytic_quad_tet4(tcur, xv2, xe, xf, cm->xc, ana, input);
         break;
       case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-        add1 = _analytic_quad_tet5(tcur, xv1, xe, xf, cm->xc, ana);
-        add2 = _analytic_quad_tet5(tcur, xv2, xe, xf, cm->xc, ana);
+        add1 = _analytic_quad_tet5(tcur, xv1, xe, xf, cm->xc, ana, input);
+        add2 = _analytic_quad_tet5(tcur, xv2, xe, xf, cm->xc, ana, input);
         break;
       default:
         bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
@@ -266,6 +274,7 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t    *cm,
  *         defined by an analytical function on a selection of (primal) cells
  *
  * \param[in]      ana         pointer to the analytic function
+ * \param[in]      input       NULL or pointer to a structure cast on-the-fly
  * \param[in]      n_loc_elts  number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in]      quad_type   type of quadrature to use
@@ -275,6 +284,7 @@ _cellwise_dcsd_by_analytic(const cs_cell_mesh_t    *cm,
 
 static void
 _dcsd_by_analytic(cs_analytic_func_t       *ana,
+                  void                     *input,
                   const cs_lnum_t           n_elts,
                   const cs_lnum_t          *elt_ids,
                   cs_quadrature_type_t      quad_type,
@@ -315,16 +325,16 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
 
         case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
         case CS_QUADRATURE_BARY_SUBDIV:
-          add1 = _analytic_quad_tet1(tcur, xv1, xe, xf, xc, ana);
-          add2 = _analytic_quad_tet1(tcur, xv2, xe, xf, xc, ana);
+          add1 = _analytic_quad_tet1(tcur, xv1, xe, xf, xc, ana, input);
+          add2 = _analytic_quad_tet1(tcur, xv2, xe, xf, xc, ana, input);
           break;
         case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-          add1 = _analytic_quad_tet4(tcur, xv1, xe, xf, xc, ana);
-          add2 = _analytic_quad_tet4(tcur, xv2, xe, xf, xc, ana);
+          add1 = _analytic_quad_tet4(tcur, xv1, xe, xf, xc, ana, input);
+          add2 = _analytic_quad_tet4(tcur, xv2, xe, xf, xc, ana, input);
           break;
         case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-          add1 = _analytic_quad_tet5(tcur, xv1, xe, xf, xc, ana);
-          add2 = _analytic_quad_tet5(tcur, xv2, xe, xf, xc, ana);
+          add1 = _analytic_quad_tet5(tcur, xv1, xe, xf, xc, ana, input);
+          add2 = _analytic_quad_tet5(tcur, xv2, xe, xf, xc, ana, input);
           break;
         default:
           bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
@@ -347,9 +357,10 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
  * \brief  Compute the integral over primal cells of a scalar density field
  *         defined by an analytical function on a cell
  *
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      ana         pointer to the analytic function
- * \param[in]      quad_type   type of quadrature to use
+ * \param[in]    cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]    ana         pointer to the analytic function
+ * \param[in]    input       NULL or pointer to a structure cast on-the-fly
+ * \param[in]    quad_type   type of quadrature to use
  *
  * \return the value of the corresponding integral
  */
@@ -358,7 +369,8 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
 static double
 _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
                            cs_analytic_func_t      *ana,
-                           cs_quadrature_type_t         quad_type)
+                           void                    *input,
+                           cs_quadrature_type_t     quad_type)
 {
   const double  tcur = cs_time_step->t_cur;
 
@@ -372,17 +384,17 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
     case CS_QUADRATURE_BARY_SUBDIV:
       retval = _analytic_quad_tet1(tcur,
                                    cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
-                                   ana);
+                                   ana, input);
       break;
     case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
       retval = _analytic_quad_tet4(tcur,
                                    cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
-                                   ana);
+                                   ana, input);
       break;
     case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
       retval = _analytic_quad_tet5(tcur,
                                    cm->xv, cm->xv + 3, cm->xv + 6, cm->xv + 9,
-                                   ana);
+                                   ana, input);
       break;
     default:
       bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
@@ -424,13 +436,13 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
 
         case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
         case CS_QUADRATURE_BARY_SUBDIV:
-          add  = _analytic_quad_tet1(tcur, xv0, xv1, xv2, cm->xc, ana);
+          add  = _analytic_quad_tet1(tcur, xv0, xv1, xv2, cm->xc, ana, input);
           break;
         case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-          add = _analytic_quad_tet4(tcur, xv0, xv1, xv2, cm->xc, ana);
+          add = _analytic_quad_tet4(tcur, xv0, xv1, xv2, cm->xc, ana, input);
           break;
         case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-          add = _analytic_quad_tet5(tcur, xv0, xv1, xv2, cm->xc, ana);
+          add = _analytic_quad_tet5(tcur, xv0, xv1, xv2, cm->xc, ana, input);
           break;
         default:
           bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
@@ -456,13 +468,13 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
 
           case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
           case CS_QUADRATURE_BARY_SUBDIV:
-            add  = _analytic_quad_tet1(tcur, xv1, xv2, xf, cm->xc, ana);
+            add  = _analytic_quad_tet1(tcur, xv1, xv2, xf, cm->xc, ana, input);
             break;
           case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-            add = _analytic_quad_tet4(tcur, xv1, xv2, xf, cm->xc, ana);
+            add = _analytic_quad_tet4(tcur, xv1, xv2, xf, cm->xc, ana, input);
             break;
           case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-            add = _analytic_quad_tet5(tcur, xv1, xv2, xf, cm->xc, ana);
+            add = _analytic_quad_tet5(tcur, xv1, xv2, xf, cm->xc, ana, input);
             break;
           default:
             bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
@@ -488,6 +500,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
  *         defined by an analytical function on a selection of (primal) cells
  *
  * \param[in]      ana         pointer to the analytic function
+ * \param[in]      input       NULL or pointer to a structure cast on-the-fly
  * \param[in]      n_loc_elts  number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in]      quad_type   type of quadrature to use
@@ -497,6 +510,7 @@ _cellwise_pcsd_by_analytic(const cs_cell_mesh_t    *cm,
 
 static void
 _pcsd_by_analytic(cs_analytic_func_t       *ana,
+                  void                     *input,
                   const cs_lnum_t           n_elts,
                   const cs_lnum_t          *elt_ids,
                   cs_quadrature_type_t      quad_type,
@@ -532,13 +546,13 @@ _pcsd_by_analytic(cs_analytic_func_t       *ana,
 
         case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
         case CS_QUADRATURE_BARY_SUBDIV:
-          add  = _analytic_quad_tet1(tcur, xv1, xv2, xf, xc, ana);
+          add  = _analytic_quad_tet1(tcur, xv1, xv2, xf, xc, ana, input);
           break;
         case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-          add = _analytic_quad_tet4(tcur, xv1, xv2, xf, xc, ana);
+          add = _analytic_quad_tet4(tcur, xv1, xv2, xf, xc, ana, input);
           break;
         case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-          add = _analytic_quad_tet5(tcur, xv1, xv2, xf, xc, ana);
+          add = _analytic_quad_tet5(tcur, xv1, xv2, xf, xc, ana, input);
           break;
         default:
           bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
@@ -639,6 +653,7 @@ _pcsd_by_value(const double       const_val,
  *         defined by an analytical function on a selection of (primal) cells
  *
  * \param[in]      ana         pointer to the analytic function
+ * \param[in]      input       NULL or pointer to a structure cast on-the-fly
  * \param[in]      n_loc_elts  number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in, out] values      pointer to the computed values
@@ -647,6 +662,7 @@ _pcsd_by_value(const double       const_val,
 
 static void
 _pfsp_by_analytic(cs_analytic_func_t    *ana,
+                  void                  *input,
                   const cs_lnum_t        n_elts,
                   const cs_lnum_t       *elt_ids,
                   double                 values[])
@@ -672,7 +688,7 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
       cs_lnum_t  f_id = c2f->ids[j];
       if (todo[f_id]) {
         const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
-        ana(tcur, 1, NULL, xf, false,  values + f_id);
+        ana(tcur, 1, NULL, xf, false,  input, values + f_id);
         todo[f_id] = false;
       }
 
@@ -689,6 +705,7 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
  *         defined by an analytical function on a selection of (primal) cells
  *
  * \param[in]      ana         pointer to the analytic function
+ * \param[in]      input       NULL or pointer to a structure cast on-the-fly
  * \param[in]      n_elts      number of elements to consider
  * \param[in]      elt_ids     pointer to the list od selected ids
  * \param[in, out] values      pointer to the computed values
@@ -697,6 +714,7 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
 
 static void
 _pvsp_by_analytic(cs_analytic_func_t    *ana,
+                  void                  *input,
                   const cs_lnum_t        n_elts,
                   const cs_lnum_t       *elt_ids,
                   double                 values[])
@@ -733,7 +751,10 @@ _pvsp_by_analytic(cs_analytic_func_t    *ana,
   }
 
   /* One call for all selected vertices */
-  ana(tcur, n_selected_vertices, vtx_lst, quant->vtx_coord, false, values);
+  ana(tcur, n_selected_vertices, vtx_lst, quant->vtx_coord,
+      false,  // compacted output ?
+      input,
+      values);
 
   BFT_FREE(vtx_lst);
 }
@@ -1069,13 +1090,18 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
   /* Perform the evaluation */
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
-    cs_analytic_func_t  *ana = (cs_analytic_func_t *)def->input;
+    cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
 
     if (cs_test_flag(dof_flag, cs_cdo_primal_cell))
-      _pcsd_by_analytic(ana, z->n_cells, z->cell_ids, def->qtype, retval);
+      _pcsd_by_analytic(anai->func, anai->input,
+                        z->n_cells, z->cell_ids, def->qtype,
+                        retval);
 
     else if (cs_test_flag(dof_flag, cs_cdo_dual_cell))
-      _dcsd_by_analytic(ana, z->n_cells, z->cell_ids, def->qtype, retval);
+      _dcsd_by_analytic(anai->func, anai->input,
+                        z->n_cells, z->cell_ids, def->qtype,
+                        retval);
+
     else
       bft_error(__FILE__, __LINE__, 0, _err_not_handled);
 
@@ -1150,7 +1176,8 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
-  cs_analytic_func_t  *ana = (cs_analytic_func_t *)def->input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)def->input;
+
   const cs_volume_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
@@ -1162,10 +1189,15 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
     if (cs_test_flag(dof_flag, cs_cdo_primal_vtx)) {
 
       if (def->meta & CS_FLAG_FULL_LOC)
-        ana(tcur, quant->n_vertices, NULL, quant->vtx_coord, false,
-            retval);
+        anai->func(tcur,
+                   quant->n_vertices, NULL, quant->vtx_coord,
+                   false,  // compacted output ?
+                   anai->input,
+                   retval);
       else
-        _pvsp_by_analytic(ana, z->n_cells, z->cell_ids, retval);
+        _pvsp_by_analytic(anai->func, anai->input,
+                          z->n_cells, z->cell_ids,
+                          retval);
 
       if (cs_glob_n_ranks > 1)
         cs_range_set_sync(connect->v_rs,
@@ -1182,14 +1214,22 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
         /* All the support entities are selected:
            - First pass: interior faces
            - Second pass: border faces */
-        ana(tcur, quant->n_i_faces, NULL, quant->i_face_center, true,
-            retval);
-        ana(tcur, quant->n_b_faces, NULL, quant->b_face_center, true,
-            retval + quant->n_i_faces);
+        anai->func(tcur,
+                   quant->n_i_faces, NULL, quant->i_face_center,
+                   true, // compacted output
+                   anai->input,
+                   retval);
+        anai->func(tcur,
+                   quant->n_b_faces, NULL, quant->b_face_center,
+                   true, // compacted output
+                   anai->input,
+                   retval + quant->n_i_faces);
 
       }
       else
-        _pfsp_by_analytic(ana, z->n_cells, z->cell_ids, retval);
+        _pfsp_by_analytic(anai->func, anai->input,
+                          z->n_cells, z->cell_ids,
+                          retval);
 
       if (cs_glob_n_ranks > 1)
         cs_range_set_sync(connect->f_rs,
@@ -1203,9 +1243,17 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
              cs_test_flag(dof_flag, cs_cdo_dual_vtx)) {
 
       if (def->meta & CS_FLAG_FULL_LOC) /* All cells are selected */
-        ana(tcur, quant->n_cells, NULL, quant->cell_centers, false, retval);
+        anai->func(tcur,
+                   quant->n_cells, NULL, quant->cell_centers,
+                   false, // compacted output
+                   anai->input,
+                   retval);
       else
-        ana(tcur, z->n_cells, z->cell_ids, quant->cell_centers, false, retval);
+        anai->func(tcur,
+                   z->n_cells, z->cell_ids, quant->cell_centers,
+                   false, // compacted output
+                   anai->input,
+                   retval);
 
       /* No sync since theses values are computed by only one rank */
 

@@ -100,7 +100,8 @@ static const double  one_third = 1./3.;
  * \param[in]      n_elts     number of elements to consider
  * \param[in]      pt_ids     list of elements ids (to access coords and fill)
  * \param[in]      coords     where ?
- * \param[in]      commpact   true:no indirection, false:indirection for filling
+ * \param[in]      compact    true:no indirection, false:indirection for filling
+ * \param[in]      input      NULL or pointer to a structure cast on-the-fly
  * \param[in, out] retval     result of the function
  */
 /*----------------------------------------------------------------------------*/
@@ -111,9 +112,11 @@ _define_adv_field(cs_real_t           time,
                   const cs_lnum_t    *pt_ids,
                   const cs_real_t    *xyz,
                   bool                compact,
+                  void               *input,
                   cs_real_t          *res)
 {
   CS_UNUSED(time);
+  CS_UNUSED(input);
 
   if (pt_ids != NULL && !compact) {
 
@@ -169,12 +172,13 @@ _define_adv_field(cs_real_t           time,
  *         is set to false
  *         Rely on a generic function pointer for an analytic function
  *
- * \param[in]      time       when ?
- * \param[in]      n_elts     number of elements to consider
- * \param[in]      pt_ids     list of elements ids (to access coords and fill)
- * \param[in]      coords     where ?
- * \param[in]      commpact   true:no indirection, false:indirection for filling
- * \param[in, out] res        result of the function
+ * \param[in]      time      when ?
+ * \param[in]      n_elts    number of elements to consider
+ * \param[in]      pt_ids    list of elements ids (to access coords and fill)
+ * \param[in]      coords    where ?
+ * \param[in]      compact   true:no indirection, false:indirection for filling
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] res       result of the function
  */
 /*----------------------------------------------------------------------------*/
 
@@ -184,9 +188,11 @@ _define_bcs(cs_real_t           time,
             const cs_lnum_t    *pt_ids,
             const cs_real_t    *xyz,
             bool                compact,
+            void               *input,
             cs_real_t          *res)
 {
   CS_UNUSED(time);
+  CS_UNUSED(input);
 
   const double  pi = 4.0*atan(1.0);
   if (pt_ids != NULL && !compact) {
@@ -233,12 +239,13 @@ _define_bcs(cs_real_t           time,
  *         is set to false
  *         Rely on a generic function pointer for an analytic function
  *
- * \param[in]      time       when ?
- * \param[in]      n_elts     number of elements to consider
- * \param[in]      pt_ids     list of elements ids (to access coords and fill)
- * \param[in]      coords     where ?
- * \param[in]      commpact   true:no indirection, false:indirection for filling
- * \param[in, out] res        result of the function
+ * \param[in]      time      when ?
+ * \param[in]      n_elts    number of elements to consider
+ * \param[in]      pt_ids    list of elements ids (to access coords and fill)
+ * \param[in]      coords    where ?
+ * \param[in]      compact   true:no indirection, false:indirection for filling
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] res       result of the function
  */
 /*----------------------------------------------------------------------------*/
 
@@ -248,9 +255,12 @@ _define_source(cs_real_t           time,
                const cs_lnum_t     pt_ids[],
                const cs_real_t    *xyz,
                bool                compact,
+               void               *input,
                cs_real_t          *res)
 {
   CS_UNUSED(time);
+  CS_UNUSED(input);
+
   const double  pi = 4.0*atan(1.0), pi2 = pi*pi;
   if (pt_ids != NULL && !compact) {
 
@@ -545,7 +555,7 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
 
   cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
 
-  cs_advection_field_def_by_analytic(adv, _define_adv_field);
+  cs_advection_field_def_by_analytic(adv, _define_adv_field, NULL);
 
   /* Enable also the defintion of the advection field at mesh vertices */
   cs_advection_field_set_option(adv, CS_ADVKEY_DEFINE_AT_VERTICES);
@@ -582,7 +592,8 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
   cs_equation_add_bc_by_analytic(eq,
                                  CS_PARAM_BC_DIRICHLET,
                                  "boundary_faces",  // zone name
-                                 _define_bcs);      // pointer to the function
+                                 _define_bcs,       // pointer to the function
+                                 NULL);             // input structure
 
   /* Link properties to different terms of this equation
      >> cs_equation_link(eq,
@@ -611,7 +622,8 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
      or
      >> cs_equation_add_source_term_by_analytic(eq,
                                                 volume_zone_name,
-                                                analytic_func);
+                                                analytic_func,
+                                                input_pointer);
 
 
      where val is the value of the source term by m^3
@@ -621,7 +633,8 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
   cs_xdef_t  *st
     = cs_equation_add_source_term_by_analytic(eq,
                                               "cells",
-                                              _define_source);
+                                              _define_source,
+                                              NULL);
 
   /* Optional: specify the quadrature used for computing a source term
 

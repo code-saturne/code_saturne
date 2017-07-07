@@ -1560,17 +1560,19 @@ cs_equation_add_ic_by_qov(cs_equation_t    *eq,
  *         By default, the unknown is set to zero everywhere.
  *         Here the initial value is set according to an analytical function
  *
- * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
- * \param[in]       analytic  pointer to an analytic function
+ * \param[in, out] eq        pointer to a cs_equation_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      analytic  pointer to an analytic function
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_add_ic_by_analytic(cs_equation_t        *eq,
                                const char           *z_name,
-                               cs_analytic_func_t   *analytic)
+                               cs_analytic_func_t   *analytic,
+                               void                 *input)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
@@ -1583,11 +1585,14 @@ cs_equation_add_ic_by_analytic(cs_equation_t        *eq,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
+  cs_xdef_analytic_input_t  anai = {.func = analytic,
+                                    .input = input };
+
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim, z_id,
                                         0, // state flag
                                         meta_flag,
-                                        (void *)analytic);
+                                        &anai);
 
   int  new_id = eqp->n_ic_desc;
   eqp->n_ic_desc += 1;
@@ -1654,7 +1659,7 @@ cs_equation_add_bc_by_array(cs_equation_t              *eq,
                             const char                 *z_name,
                             cs_flag_t                   loc,
                             cs_real_t                  *array,
-                            cs_real_t                  *index)
+                            cs_lnum_t                  *index)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
@@ -1694,9 +1699,10 @@ cs_equation_add_bc_by_array(cs_equation_t              *eq,
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure
  * \param[in]      bc_type   type of boundary condition to add
- * \param[in]       z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
  * \param[in]      analytic  pointer to an analytic function defining the value
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1704,20 +1710,23 @@ void
 cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
                                const cs_param_bc_type_t    bc_type,
                                const char                 *z_name,
-                               cs_analytic_func_t         *analytic)
+                               cs_analytic_func_t         *analytic,
+                               void                       *input)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
 
   /* Add a new cs_xdef_t structure */
   cs_equation_param_t  *eqp = eq->param;
+  cs_xdef_analytic_input_t  anai = {.func = analytic,
+                                    .input = input };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                           eqp->dim,
                                           _get_bzone_id(z_name),
                                           0, // state
                                           cs_cdo_bc_get_flag(bc_type), // meta
-                                          (void *)analytic);
+                                          &anai);
 
   int  new_id = eqp->n_bc_desc;
   eqp->n_bc_desc += 1;
@@ -1811,9 +1820,10 @@ cs_equation_add_source_term_by_val(cs_equation_t   *eq,
  *         function
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure
- * \param[in]      z_name    name of the associated zone (if NULL or
- *                            "" all cells are considered)
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
  * \param[in]      ana       pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new cs_source_term_t structure
  */
@@ -1822,7 +1832,8 @@ cs_equation_add_source_term_by_val(cs_equation_t   *eq,
 cs_xdef_t *
 cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
                                         const char           *z_name,
-                                        cs_analytic_func_t   *ana)
+                                        cs_analytic_func_t   *ana,
+                                        void                 *input)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
@@ -1838,12 +1849,15 @@ cs_equation_add_source_term_by_analytic(cs_equation_t        *eq,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
+  cs_xdef_analytic_input_t  anai = {.func = ana,
+                                    .input = input };
+
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim,
                                         z_id,
                                         state_flag,
                                         meta_flag,
-                                        (void *)ana);
+                                        &anai);
 
   /* Default setting for quadrature is different in this case */
   cs_xdef_set_quadrature(d, CS_QUADRATURE_BARY_SUBDIV);

@@ -775,11 +775,15 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
   assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV));
 
   const double  tcur = cs_time_step->t_cur;
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)source->input;
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Retrieve the values of the potential at each cell vertices */
   double  *eval = cb->values;
-  ana(tcur, cm->n_vc, NULL, cm->xv, true, eval);
+  anai->func(tcur, cm->n_vc, NULL, cm->xv,
+             true, // compacted output ?
+             anai->input,
+             eval);
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc;
@@ -855,7 +859,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
                       CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ |
                       CS_CDO_LOCAL_FE  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_EV));
 
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)source->input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Compute the barycenter of each portion of dual cells */
   cs_real_3_t  *xgv = cb->vectors;
@@ -902,7 +906,10 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
   /* Call the analytic function to evaluate the function at xgv */
   const double  tcur = cs_time_step->t_cur;
   double  *eval_xgv = vol_vc + cm->n_vc;
-  ana(tcur, cm->n_vc, NULL, (const cs_real_t *)xgv, true, eval_xgv);
+  anai->func(tcur, cm->n_vc, NULL, (const cs_real_t *)xgv,
+             true, // compacted output ?
+             anai->input,
+             eval_xgv);
 
   for (short int v = 0; v < cm->n_vc; v++)
     values[v] = cm->vol_c * cm->wvc[v] * eval_xgv[v];
@@ -942,7 +949,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
 
   const double  tcur = cs_time_step->t_cur;
 
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)source->input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -970,7 +977,11 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
       for (int k = 0; k < 3; k++)
         xg[1][k] = xfc[k] + 0.375*xv2[k] + 0.125*xv1[k];
 
-      ana(tcur, 2, NULL, (const cs_real_t *)xg, true, eval_xg);
+      anai->func(tcur, 2, NULL, (const cs_real_t *)xg,
+                 true, // compacted output ?
+                 anai->input,
+                 eval_xg);
+
       values[v1] += half_pef_vol * eval_xg[0];
       values[v2] += half_pef_vol * eval_xg[1];
 
@@ -1014,7 +1025,8 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
                       CS_CDO_LOCAL_PEQ));
 
   const double  tcur = cs_time_step->t_cur;
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)source->input;
+
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Temporary buffers */
   double  *contrib = cb->values;              // size n_vc
@@ -1023,11 +1035,17 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
 
   /* Cell evaluation */
   double  eval_c;
-  ana(tcur, 1, NULL, cm->xc, true, &eval_c);
+  anai->func(tcur, 1, NULL, cm->xc,
+             true, // compacted output ?
+             anai->input,
+             &eval_c);
 
   /* Contributions related to vertices */
   double  *eval_v = cb->values + cm->n_vc; // size n_vc
-  ana(tcur, cm->n_vc, NULL, cm->xv, true, eval_v);
+  anai->func(tcur, cm->n_vc, NULL, cm->xv,
+             true,  // compacted output ?
+             anai->input,
+             eval_v);
 
   cs_real_3_t  *xvc = cb->vectors;
   for (short int v = 0; v < cm->n_vc; v++) {
@@ -1036,7 +1054,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   }
 
   double  *eval_vc = cb->values + 2*cm->n_vc; // size n_vc
-  ana(tcur, cm->n_vc, NULL, (const cs_real_t *)xvc, true, eval_vc);
+  anai->func(tcur, cm->n_vc, NULL, (const cs_real_t *)xvc,
+             true,  // compacted output ?
+             anai->input,
+             eval_vc);
 
   for (short int v = 0; v < cm->n_vc; v++) {
 
@@ -1062,7 +1083,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   // Evaluate the analytic function at xe and xec
   double  *eval_e = cb->values + cm->n_vc; // size=n_ec (overwrite eval_v)
   double  *eval_ec = eval_e + cm->n_ec;    // size=n_ec (overwrite eval_vc)
-  ana(tcur, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors, true, eval_e);
+  anai->func(tcur, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
+             true,  // compacted output ?
+             anai->input,
+             eval_e);
 
   // xev (size = 2*n_ec)
   cs_real_3_t  *xve = cb->vectors;         // size=2*n_ec (overwrite xe and xec)
@@ -1082,7 +1106,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   } // Loop on edges
 
   double  *eval_ve = eval_ec + cm->n_ec; // size = 2*n_ec
-  ana(tcur, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors, true, eval_ve);
+  anai->func(tcur, 2*cm->n_ec, NULL, (const cs_real_t *)cb->vectors,
+             true,  // compacted output ?
+             anai->input,
+             eval_ve);
 
   /* 3) Main loop on faces */
   double  *pvf_vol = eval_ve + 2*cm->n_ec;  // size n_vc
@@ -1108,7 +1135,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       cs_real_3_t  xef;
       cs_real_t  eval_ef;
       for (int k = 0; k < 3; k++) xef[k] = 0.5*(cm->edge[e].center[k] + xf[k]);
-      ana(tcur, 1, NULL, xef, true, &eval_ef);
+      anai->func(tcur, 1, NULL, xef,
+                 true,  // compacted output ?
+                 anai->input,
+                 &eval_ef);
 
       // 1/5 (EF + EC) -1/20 * (E)
       const double  common_ef_contrib =
@@ -1137,7 +1167,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
     }
 
     double  *eval_vfc = pvf_vol + cm->n_vc; // size=n_vf + 2
-    ana(tcur, 2+n_vf, NULL, (const cs_real_t *)xvfc, true, eval_vfc);
+    anai->func(tcur, 2+n_vf, NULL, (const cs_real_t *)xvfc,
+               true,  // compacted output ?
+               anai->input,
+               eval_vfc);
 
     for (short int i = 0; i < n_vf; i++) {
       short int  v = cb->ids[i];
@@ -1190,7 +1223,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                       CS_CDO_LOCAL_EV));
 
   const double  tcur = cs_time_step->t_cur;
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)source->input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Temporary buffers */
   double  *contrib = cb->values;
@@ -1216,7 +1249,11 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                              tet_vol,
                              gauss_pts, weights);
 
-      ana(tcur, 5, NULL, (const cs_real_t *)gauss_pts, true, results);
+      anai->func(tcur, 5, NULL, (const cs_real_t *)gauss_pts,
+                 true,  // compacted output ?
+                 anai->input,
+                 results);
+
       sum = 0.;
       for (int p = 0; p < 5; p++) sum += results[p] * weights[p];
       contrib[v1] += sum;
@@ -1226,7 +1263,11 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                              tet_vol,
                              gauss_pts, weights);
 
-      ana(tcur, 5, NULL, (const cs_real_t *)gauss_pts, true, results);
+      anai->func(tcur, 5, NULL, (const cs_real_t *)gauss_pts,
+                 true,  // compacted output ?
+                 anai->input,
+                 results);
+
       sum = 0.;
       for (int p = 0; p < 5; p++) sum += results[p] * weights[p];
       contrib[v2] += sum;
@@ -1316,12 +1357,20 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
   assert(cb != NULL && cb->hdg != NULL);
 
   const double  tcur = cs_time_step->t_cur;
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)source->input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Retrieve the values of the potential at each cell vertices */
   double  *eval = cb->values;
-  ana(tcur, cm->n_vc, NULL, cm->xv, true, eval);
-  ana(tcur, 1, NULL, cm->xc, true, eval + cm->n_vc);
+
+  anai->func(tcur, cm->n_vc, NULL, cm->xv,
+             true,  // compacted output ?
+             anai->input,
+             eval);
+
+  anai->func(tcur, 1, NULL, cm->xc,
+             true,  // compacted output ?
+             anai->input,
+             eval + cm->n_vc);
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc + 1;
@@ -1393,12 +1442,16 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
 
-  cs_analytic_func_t *ana = (cs_analytic_func_t *)source->input;
+  cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Call the analytic function to evaluate the function at xc */
   const double  tcur = cs_time_step->t_cur;
   double  eval_xc;
-  ana(tcur, 1, NULL, (const cs_real_t *)cm->xc, true, &eval_xc);
+
+  anai->func(tcur, 1, NULL, (const cs_real_t *)cm->xc,
+             true,  // compacted output ?
+             anai->input,
+             &eval_xc);
 
   values[cm->n_fc] = cm->vol_c * eval_xc;
 }

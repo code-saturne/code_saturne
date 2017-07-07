@@ -127,6 +127,19 @@ cs_xdef_volume_create(cs_xdef_type_t    type,
     }
     break;
 
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_xdef_analytic_input_t  *a = (cs_xdef_analytic_input_t *)input;
+      cs_xdef_analytic_input_t  *b = NULL;
+
+      BFT_MALLOC(b, 1, cs_xdef_analytic_input_t);
+      b->func = a->func;
+      b->input = a->input;
+
+      d->input = b;
+    }
+    break;
+
   case CS_XDEF_BY_ARRAY:
     {
       cs_xdef_array_input_t  *a = (cs_xdef_array_input_t *)input;
@@ -223,6 +236,19 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
 
       /* Update state flag */
       d->state |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE;
+    }
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_xdef_analytic_input_t  *a = (cs_xdef_analytic_input_t *)input;
+      cs_xdef_analytic_input_t  *b = NULL;
+
+      BFT_MALLOC(b, 1, cs_xdef_analytic_input_t);
+      b->func = a->func;
+      b->input = a->input;
+
+      d->input = b;
     }
     break;
 
@@ -354,7 +380,9 @@ cs_xdef_free(cs_xdef_t     *d)
     }
   }
 
-  if (d->type == CS_XDEF_BY_VALUE || d->type == CS_XDEF_BY_QOV)
+  if (d->type == CS_XDEF_BY_VALUE ||
+      d->type == CS_XDEF_BY_ANALYTIC_FUNCTION ||
+      d->type == CS_XDEF_BY_QOV)
     BFT_FREE(d->input);
 
   BFT_FREE(d);

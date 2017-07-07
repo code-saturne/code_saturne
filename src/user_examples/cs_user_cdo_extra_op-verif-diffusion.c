@@ -105,18 +105,18 @@ static FILE  *resume = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Give the explicit definition of the exact solution
- *         pt_ids is optional. If not NULL, it enables to access in coords
+ * \brief  Generic function pointer for an analytic function
+ *         elt_ids is optional. If not NULL, it enables to access in coords
  *         at the right location and the same thing to fill retval if compact
  *         is set to false
- *         Rely on a generic function pointer for an analytic function
  *
- * \param[in]      time       when ?
- * \param[in]      n_elts     number of elements to consider
- * \param[in]      pt_ids     list of elements ids (to access coords and fill)
- * \param[in]      coords     where ?
- * \param[in]      commpact   true:no indirection, false:indirection for filling
- * \param[in, out] retval     result of the function
+ * \param[in]      time     when ?
+ * \param[in]      n_elts   number of elements to consider
+ * \param[in]      elt_ids  list of elements ids (to access coords and fill)
+ * \param[in]      coords   where ?
+ * \param[in]      compact  true:no indirection, false:indirection for filling
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in, out] retval   result of the function
  */
 /*----------------------------------------------------------------------------*/
 
@@ -126,9 +126,11 @@ _get_sol(cs_real_t          time,
          const cs_lnum_t    pt_ids[],
          const cs_real_t   *xyz,
          bool               compact,
+         void              *input,
          cs_real_t         *retval)
 {
   CS_UNUSED(time);
+  CS_UNUSED(input);
 
   const double  pi = 4.0*atan(1.0);
   if (pt_ids != NULL && !compact) {
@@ -252,7 +254,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 
     BFT_MALLOC(rpex, n_vertices, double);
     BFT_MALLOC(ddip, n_vertices, double);
-    get_sol(tcur, n_vertices, NULL, cdoq->vtx_coord, true, rpex);
+    get_sol(tcur, n_vertices, NULL, cdoq->vtx_coord, true, NULL, rpex);
     for (int i = 0; i < n_vertices; i++)
       ddip[i] = rpex[i] - pdi[i];
 

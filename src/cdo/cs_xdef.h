@@ -90,6 +90,7 @@ typedef struct {
 
 } cs_xdef_t;
 
+/* Input structure when an array is used for the definition */
 typedef struct {
 
   int               stride;  /* array stride */
@@ -99,6 +100,13 @@ typedef struct {
 
 } cs_xdef_array_input_t;
 
+/* Input structure when an analytic function is used for the definition */
+typedef struct {
+
+  void                *input;  // NULL or pointer to a structure cast on-the-fly
+  cs_analytic_func_t  *func;   // analytic function to call
+
+} cs_xdef_analytic_input_t;
 
 /*============================================================================
  * Public function prototypes

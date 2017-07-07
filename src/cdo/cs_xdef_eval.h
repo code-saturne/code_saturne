@@ -316,6 +316,34 @@ cs_xdef_eval_at_vertices_by_analytic(cs_lnum_t                    n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate a quantity defined at border faces using an analytic
+ *         function
+ *
+ * \param[in]  n_elts    number of elements to consider
+ * \param[in]  elt_ids   list of element ids
+ * \param[in]  compact   true:no indirection, false:indirection for output
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]  input     pointer to an input structure
+ * \param[out] eval      result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
+                                    const cs_lnum_t             *elt_ids,
+                                    bool                         compact,
+                                    const cs_mesh_t             *mesh,
+                                    const cs_cdo_connect_t      *connect,
+                                    const cs_cdo_quantities_t   *quant,
+                                    const cs_time_step_t        *ts,
+                                    void                        *input,
+                                    cs_real_t                   *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate a quantity defined using an analytic function by a
  *         cellwise process (usage of a cs_cell_mesh_t structure)
  *

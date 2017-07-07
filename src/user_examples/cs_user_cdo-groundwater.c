@@ -97,12 +97,13 @@ static const double k1 = 1e5, k2 = 1;
  *         is set to false
  *         Rely on a generic function pointer for an analytic function
  *
- * \param[in]      time       when ?
- * \param[in]      n_elts     number of elements to consider
- * \param[in]      pt_ids     list of elements ids (to access coords and fill)
- * \param[in]      coords     where ?
- * \param[in]      compact    true:no indirection, false:indirection for filling
- * \param[in, out] retval     result of the function
+ * \param[in]      time      when ?
+ * \param[in]      n_elts    number of elements to consider
+ * \param[in]      pt_ids    list of elements ids (to access coords and fill)
+ * \param[in]      coords    where ?
+ * \param[in]      compact   true:no indirection, false:indirection for filling
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval    result of the function
  */
 /*----------------------------------------------------------------------------*/
 
@@ -112,6 +113,7 @@ get_tracer_sol(cs_real_t          time,
                const cs_lnum_t   *pt_ids,
                const cs_real_t   *xyz,
                bool               compact,
+               void              *input,
                cs_real_t         *retval)
 {
   /* Physical parameters */
@@ -424,7 +426,7 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
                               &val1);  // value to set
 
   /* Define the initial condition (By default: zero is set) */
-  cs_equation_add_ic_by_analytic(eq, "cells", get_tracer_sol);
+  cs_equation_add_ic_by_analytic(eq, "cells", get_tracer_sol, NULL);
 }
 
 /*----------------------------------------------------------------------------*/

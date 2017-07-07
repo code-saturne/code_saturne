@@ -672,6 +672,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
  * \param[in, out]  pty         pointer to a cs_property_t structure
  * \param[in]       zone_name   name of an already defined zone
  * \param[in]       func        pointer to a cs_analytic_func_t function
+ * \param[in]       input       NULL or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
@@ -680,7 +681,8 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 cs_xdef_t *
 cs_property_def_by_analytic(cs_property_t        *pty,
                             const char           *zone_name,
-                            cs_analytic_func_t   *func)
+                            cs_analytic_func_t   *func,
+                            void                 *input)
 {
   if (pty == NULL)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
@@ -695,12 +697,15 @@ cs_property_def_by_analytic(cs_property_t        *pty,
   const cs_volume_zone_t  *zone = cs_volume_zone_by_name(zone_name);
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = 0; // metadata
+  cs_xdef_analytic_input_t  anai = {.func = func,
+                                    .input = input };
+
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         dim,
                                         zone->id,
                                         state_flag,
                                         meta_flag,
-                                        (void *)func);
+                                        &anai);
 
   pty->defs[new_id] = d;
   pty->get_eval_at_cell[new_id] = cs_xdef_eval_at_cells_by_analytic;

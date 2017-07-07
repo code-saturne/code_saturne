@@ -287,12 +287,14 @@ cs_advection_field_def_by_value(cs_adv_field_t    *adv,
  *
  * \param[in, out]  adv     pointer to a cs_adv_field_t structure
  * \param[in]       func    pointer to a function
+ * \param[in]       input   NULL or pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
-                                   cs_analytic_func_t    *func);
+                                   cs_analytic_func_t    *func,
+                                   void                  *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
