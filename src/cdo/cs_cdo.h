@@ -147,12 +147,12 @@ typedef enum {
  *         at the right location and the same thing to fill retval if compact
  *         is set to false
  *
- * \param[in]      time       when ?
- * \param[in]      n_elts     number of elements to consider
- * \param[in]      elt_ids    list of elements ids (to access coords and fill)
- * \param[in]      coords     where ?
- * \param[in]      commpact   true:no indirection, false:indirection for filling
- * \param[in, out] retval     result of the function
+ * \param[in]      time      when ?
+ * \param[in]      n_elts    number of elements to consider
+ * \param[in]      elt_ids   list of elements ids (to access coords and fill)
+ * \param[in]      coords    where ?
+ * \param[in]      compact   true:no indirection, false:indirection for filling
+ * \param[in, out] retval    result of the function
  */
 /*----------------------------------------------------------------------------*/
 

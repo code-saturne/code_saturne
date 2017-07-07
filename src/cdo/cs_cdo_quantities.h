@@ -105,14 +105,19 @@ typedef struct { /* Specific mesh quantities */
   double           vol_tot;
 
   /* Cell-based quantities */
+  /* ===================== */
+
   cs_lnum_t        n_cells;      /* Local number of cells */
   cs_gnum_t        n_g_cells;    /* Global number of cells */
   cs_real_t       *cell_centers;
   cs_real_t       *cell_vol;
-  cs_quant_info_t  cell_info;
   cs_flag_t       *cell_flag;
 
+  cs_quant_info_t  cell_info;
+
   /* Face-based quantities */
+  /* ===================== */
+
   cs_lnum_t        n_i_faces;
   cs_lnum_t        n_b_faces;
   cs_lnum_t        n_faces;   /* n_i_faces + n_b_faces */
@@ -120,9 +125,12 @@ typedef struct { /* Specific mesh quantities */
   cs_quant_t      *face;      /* Face quantities */
   cs_nvec3_t      *dedge;     /* Dual edge quantities (length and unit vector)
                                  Scan with the c2f connectivity */
+
   cs_quant_info_t  face_info;
 
   /* Edge-based quantities */
+  /* ===================== */
+
   cs_lnum_t        n_edges;   /* Local number of edges */
   cs_gnum_t        n_g_edges; /* Global number of edges */
   cs_quant_t      *edge;      /* Edge quantities */
@@ -131,6 +139,7 @@ typedef struct { /* Specific mesh quantities */
                                  s(x_cell, x_face, x_edge) for face in Face_edge
                                  are considered.
                                  Scan with the c2e connectivity */
+
   cs_quant_info_t  edge_info;
 
   /* Vertex-based quantities */

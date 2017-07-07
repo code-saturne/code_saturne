@@ -619,7 +619,6 @@ cs_advection_field_create_fields(void)
 
     cs_adv_field_t  *adv = _adv_fields[i];
     assert(adv != NULL);
-    const cs_xdef_t  *def = adv->definition;
 
     bool  has_previous = (adv->flag & CS_ADVECTION_FIELD_STEADY) ? true:false;
     int  field_mask = CS_FIELD_PROPERTY;

@@ -6018,8 +6018,6 @@ cs_post_init_writers(void)
 void
 cs_post_init_meshes(int check_mask)
 {
-  int i;
-
   { /* Definition of default post-processing meshes if this has not been
        done yet */
 

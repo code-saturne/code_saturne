@@ -770,12 +770,11 @@ _get_boundary_thickness(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the cell -> faces connectivity which is stored in a
- *         cs_sla_matrix_t structure
+ * \brief  Define the cell -> faces connectivity
  *
- * \param[in]  mesh      pointer to a cs_mesh_t structure
- *
- * \return a pointer to a new allocated cs_sla_matrix_t structure
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  p_c2f_idx   pointer to the array of indexes
+ * \param[in]  p_c2f_lst   pointer to the list of face ids
  */
 /*----------------------------------------------------------------------------*/
 

@@ -252,7 +252,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   int isym, inc, isweep, niterf, iccocg, nswmod, itenso, iinvpe;
-  int iinvpp, lvar, ibsize, iesize, imasac, key_sinfo_id;
+  int lvar, ibsize, iesize, imasac, key_sinfo_id;
   double residu, rnorm, ressol, rnorm2;
   double thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta;
 

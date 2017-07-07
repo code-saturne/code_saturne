@@ -594,6 +594,8 @@ cs_source_term_compute_from_density(cs_flag_t                loc,
   /* Initialize values */
   if (values == NULL)
     BFT_MALLOC(values, n_ent*stride, double);
+
+# pragma omp parallel for if (n_ent > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_ent*stride; i++)
     values[i] = 0.0;
 

@@ -135,7 +135,7 @@ cs_cdofb_scaleq_free(void       *builder);
  * \brief  Display information related to the monitoring of the current system
  *
  * \param[in]  eqname    name of the related equation
- * \param[in]  builder   pointer to a cs_cdovcb_scaleq_t structure
+ * \param[in]  builder   pointer to a cs_cdofb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -180,7 +180,7 @@ cs_cdofb_scaleq_initialize_system(void           *builder,
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the vertex field
  * \param[in]      dt_cur     current value of the time step
- * \param[in, out] builder    pointer to cs_cdovcb_scaleq_t structure
+ * \param[in, out] builder    pointer to cs_cdofb_scaleq_t structure
  * \param[in, out] rhs        right-hand side
  * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */

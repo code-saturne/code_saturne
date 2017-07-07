@@ -380,7 +380,7 @@ _init_cell_structures(const cs_flag_t             cell_flag,
  *          information inside the builder to be able to compute the values
  *          at cell centers
  *
- * \param[in]      c2v         pointer to a cs_connect_index_t strcuture
+ * \param[in]      c2v         pointer to a cs_connect_index_t structure
  * \param[in, out] builder     pointer to a cs_cdovcb_scaleq_t structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -642,14 +642,14 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
      needed to compute the cell values from the vertex values.
      No need to synchronize all these quantities since they are only cellwise
      quantities. */
-  BFT_MALLOC(b->cell_values, n_cells, double);
-  BFT_MALLOC(b->cell_rhs, n_cells, double);
-  BFT_MALLOC(b->acc_inv, n_cells, double);
+  BFT_MALLOC(b->cell_values, n_cells, cs_real_t);
+  BFT_MALLOC(b->cell_rhs, n_cells, cs_real_t);
+  BFT_MALLOC(b->acc_inv, n_cells, cs_real_t);
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_cells; i++)
     b->cell_values[i] = b->cell_rhs[i] = b->acc_inv[i] = 0;
 
-  BFT_MALLOC(b->acv, connect->c2v->idx[n_cells], double);
+  BFT_MALLOC(b->acv, connect->c2v->idx[n_cells], cs_real_t);
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < connect->c2v->idx[n_cells]; i++) b->acv[i] = 0.;
 
@@ -774,7 +774,7 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   /* Default intialization */
   b->st_msh_flag = cs_source_term_init(CS_SPACE_SCHEME_CDOVCB,
                                        eqp->n_source_terms,
-                                       (const cs_xdef_t **)eqp->source_terms,
+                   (const cs_xdef_t **)eqp->source_terms,
                                        b->compute_source,
                                        &(b->sys_flag),
                                        &(b->source_mask));
@@ -783,9 +783,8 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   if (b->sys_flag & CS_FLAG_SYS_SOURCETERM) {
 
     BFT_MALLOC(b->source_terms, b->n_dofs, cs_real_t);
-# pragma omp parallel for if (b->n_dofs > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < b->n_dofs; i++)
-      b->source_terms[i] = 0;
+#   pragma omp parallel for if (b->n_dofs > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < b->n_dofs; i++)  b->source_terms[i] = 0;
 
   } /* There is at least one source term */
 
@@ -907,16 +906,16 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdovcb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdovcb_cell_bld[t_id];
-    cs_flag_t  msh_flag = 0;
+    cs_flag_t  msh_flag = b->st_msh_flag;
 
     /* Reset source term array */
-#pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t i = 0; i < b->n_dofs; i++)
       b->source_terms[i] = 0;
 
     cs_real_t  *cell_sources = b->source_terms + quant->n_vertices;
 
-#pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */
@@ -1072,7 +1071,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
     }
   }
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)          \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)          \
   shared(dt_cur, quant, connect, b, rhs, matrix, mav, dir_values, field_val, \
          cs_cdovcb_cell_sys, cs_cdovcb_cell_bld, cs_cdovcb_cell_bc)
   {

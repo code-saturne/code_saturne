@@ -496,7 +496,7 @@ static void
 _pcsd_by_analytic(cs_analytic_func_t       *ana,
                   const cs_lnum_t           n_elts,
                   const cs_lnum_t          *elt_ids,
-                  cs_quadrature_type_t          quad_type,
+                  cs_quadrature_type_t      quad_type,
                   double                    values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
@@ -615,13 +615,13 @@ _pcsd_by_value(const double       const_val,
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
 
   if (elt_ids == NULL) { /* All the support entities are selected */
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
       values[c_id] = quant->cell_vol[c_id]*const_val;
   }
 
   else { /* Loop on selected cells */
-# pragma omp parallel for if (n_elts > CS_THR_MIN)
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t  c_id = elt_ids[i];
       values[c_id] = quant->cell_vol[c_id]*const_val;

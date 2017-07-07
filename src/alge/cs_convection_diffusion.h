@@ -3500,6 +3500,8 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
                             cs_real_t         *pip,
                             cs_real_t         *pjp)
 {
+  CS_UNUSED(blend_st);
+
   cs_real_t recoi, recoj;
   cs_real_t distf, srfan, testij, tesqck;
 
