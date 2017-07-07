@@ -195,12 +195,6 @@ cs_cdo_initialize_structures(cs_mesh_t             *m,
   /* Last setup stage */
   cs_domain_finalize_setup(cs_glob_domain, m, mq);
 
-  /* Initialize post-processing */
-  cs_post_activate_writer(-1,     /* default writer (volume mesh)*/
-                          true);  /* activate if 1 */
-  cs_post_write_meshes(NULL);     /* time step management structure set to NULL
-                                     => Time-independent output is considered */
-
   /* Initialization for user-defined extra operations */
   cs_user_cdo_start_extra_op(cs_glob_domain);
 
