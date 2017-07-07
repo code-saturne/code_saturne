@@ -358,6 +358,70 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate a quantity defined at vertices using an array
+ *
+ * \param[in]  n_elts    number of elements to consider
+ * \param[in]  elt_ids   list of element ids
+ * \param[in]  compact   true:no indirection, false:indirection for output
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]  input     pointer to an input structure
+ * \param[out] eval      result of the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
+                                  const cs_lnum_t             *elt_ids,
+                                  bool                         compact,
+                                  const cs_mesh_t             *mesh,
+                                  const cs_cdo_connect_t      *connect,
+                                  const cs_cdo_quantities_t   *quant,
+                                  const cs_time_step_t        *ts,
+                                  void                        *input,
+                                  cs_real_t                   *eval)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+  CS_UNUSED(quant);
+
+  cs_xdef_array_input_t  *array_input = (cs_xdef_array_input_t *)input;
+
+  assert(array_input->stride == 1); // other cases not managed up to now
+
+  if (cs_test_flag(array_input->loc, cs_cdo_primal_vtx)) {
+
+    if (elt_ids != NULL && !compact) {
+
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        const cs_lnum_t  v_id = elt_ids[i];
+        eval[v_id] = array_input->values[v_id];
+      }
+
+    }
+    else if (elt_ids != NULL && compact) {
+
+      for (cs_lnum_t i = 0; i < n_elts; i++)
+        eval[i] = array_input->values[elt_ids[i]];
+
+    }
+    else {
+
+      assert(elt_ids == NULL);
+      memcpy(eval, (const cs_real_t *)array_input->values, n_elts);
+
+    }
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid support for the input array", __func__);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate a quantity defined at vertices using an analytic function
  *
  * \param[in]  n_elts    number of elements to consider

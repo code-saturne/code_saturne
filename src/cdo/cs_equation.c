@@ -1637,6 +1637,59 @@ cs_equation_add_bc_by_value(cs_equation_t              *eq,
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the givan equation structure
+ *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
+ *
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       bc_type   type of boundary condition to add
+ * \param[in]       z_name    name of the related boundary zone
+ * \param[in]       loc       information to know where are located values
+ * \param[in]       array     pointer to an array
+ * \param[in]       index     optional pointer to the array index
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_bc_by_array(cs_equation_t              *eq,
+                            const cs_param_bc_type_t    bc_type,
+                            const char                 *z_name,
+                            cs_flag_t                   loc,
+                            cs_real_t                  *array,
+                            cs_real_t                  *index)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_eq);
+  assert(cs_test_flag(loc, cs_cdo_primal_face) ||
+         cs_test_flag(loc, cs_cdo_primal_vtx));
+
+  /* Add a new cs_xdef_t structure */
+  cs_equation_param_t  *eqp = eq->param;
+
+  cs_xdef_array_input_t  input = {.stride = eqp->dim,
+                                  .loc = loc,
+                                  .values = array,
+                                  .index = index };
+
+  cs_flag_t  state_flag = 0;
+  if (loc == cs_cdo_primal_face)
+    state_flag = CS_FLAG_STATE_FACEWISE;
+
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
+                                          eqp->dim,
+                                          _get_bzone_id(z_name),
+                                          state_flag,
+                                          cs_cdo_bc_get_flag(bc_type), // meta
+                                          (void *)&input);
+
+  int  new_id = eqp->n_bc_desc;
+  eqp->n_bc_desc += 1;
+  BFT_REALLOC(eqp->bc_desc, eqp->n_bc_desc, cs_xdef_t *);
+  eqp->bc_desc[new_id] = d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the givan equation structure
  *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure

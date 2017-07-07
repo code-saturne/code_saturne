@@ -333,6 +333,29 @@ cs_equation_add_bc_by_value(cs_equation_t              *eq,
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
  *         related to the givan equation structure
+ *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
+ *
+ * \param[in, out]  eq        pointer to a cs_equation_t structure
+ * \param[in]       bc_type   type of boundary condition to add
+ * \param[in]       z_name    name of the related boundary zone
+ * \param[in]       loc       information to know where are located values
+ * \param[in]       array     pointer to an array
+ * \param[in]       index     optional pointer to the array index
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_bc_by_array(cs_equation_t              *eq,
+                            const cs_param_bc_type_t    bc_type,
+                            const char                 *z_name,
+                            cs_flag_t                   loc,
+                            cs_real_t                  *array,
+                            cs_real_t                  *index);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define and initialize a new structure to set a boundary condition
+ *         related to the givan equation structure
  *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure

@@ -564,6 +564,33 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
       }
       break;
 
+    case CS_XDEF_BY_ARRAY:
+      {
+        cs_real_t  *eval = cb->values;
+
+        /* Evaluate the boundary condition at each boundary vertex */
+        cs_xdef_eval_at_vertices_by_array(n_vf,
+                                          f2v_lst,
+                                          true, // compact ouput
+                                          cs_glob_mesh,
+                                          cs_shared_connect,
+                                          cs_shared_quant,
+                                          cs_shared_time_step,
+                                          def->input,
+                                          eval);
+
+        for (short int v = 0; v < n_vf; v++) {
+
+          const cs_lnum_t  v_id = f2v_lst[v];
+          dir_val[v_id] += eval[v];
+          flag[v_id] |= CS_CDO_BC_DIRICHLET;
+          counter[v_id] += 1;
+
+        }
+
+      }
+      break;
+
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
       {
         cs_real_t  *eval = cb->values;
