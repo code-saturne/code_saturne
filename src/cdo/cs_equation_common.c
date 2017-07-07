@@ -885,6 +885,8 @@ cs_equation_assemble_f(const cs_cell_sys_t            *csys,
                        cs_real_t                      *rhs,
                        cs_matrix_assembler_values_t   *mav)
 {
+  CS_UNUSED(sys_flag);
+
   const short int  n_fc = csys->mat->n_ent;
   const cs_lnum_t  *f_ids = csys->mat->ids;
 

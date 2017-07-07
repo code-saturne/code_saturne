@@ -1436,6 +1436,8 @@ cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
                                      cs_cell_builder_t         *cb,
                                      double                    *values)
 {
+  CS_UNUSED(cb);
+
   if (source == NULL)
     return;
 

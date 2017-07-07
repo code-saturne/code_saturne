@@ -45,6 +45,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_blas.h"
 #include "cs_interface.h"
 #include "cs_math.h"
 #include "cs_mesh.h"

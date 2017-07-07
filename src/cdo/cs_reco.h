@@ -216,24 +216,6 @@ cs_reco_grd_cell_from_pv(cs_lnum_t                    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct the value at the cell center of the gradient of a field
- *         defined on primal vertices.
- *
- * \param[in]      connect  pointer to a cs_cdo_connect_t structure
- * \param[in]      quant    pointer to the additional quantities struct.
- * \param[in]      pdi      pointer to the array of values
- * \param[in, out] grdv     value of the reconstructed gradient at vertices
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_grdv_from_pv(const cs_cdo_connect_t      *connect,
-                     const cs_cdo_quantities_t   *quant,
-                     const cs_real_t             *pdi,
-                     cs_real_t                    grdv[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Reconstruct the value of a scalar potential at a point inside a cell
  *         The scalar potential has DoFs located at primal vertices
  *

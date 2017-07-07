@@ -116,6 +116,8 @@ get_tracer_sol(cs_real_t          time,
                void              *input,
                cs_real_t         *retval)
 {
+  CS_UNUSED(input);
+
   /* Physical parameters */
   const double  magnitude = 2*k1/(k1 + k2);
   const double  x_front = magnitude * time;
