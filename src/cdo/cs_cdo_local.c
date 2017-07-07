@@ -884,14 +884,22 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     if (flag & cs_cdo_local_flag_peq) {
 
+      assert(flag & CS_CDO_LOCAL_PV);
+
       /* Primal edge quantities */
       for (short int e = 0; e < cm->n_ec; e++) {
 
-        const cs_quant_t  qe = quant->edge[cm->e_ids[e]];
-        cm->edge[e].meas = qe.meas;
+        const cs_lnum_t  e_id = cm->e_ids[e];
+        const cs_nvec3_t  nv = cs_quant_set_edge_nvec(cm->e_ids[e], quant);
+        const cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
+        const cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id + 1];
+        const cs_real_t  *xv1 = quant->vtx_coord + 3*v1_id;
+        const cs_real_t  *xv2 = quant->vtx_coord + 3*v2_id;
+
+        cm->edge[e].meas = nv.meas;
         for (int k = 0; k < 3; k++) {
-          cm->edge[e].center[k] = qe.center[k];
-          cm->edge[e].unitv[k] = qe.unitv[k];
+          cm->edge[e].center[k] = 0.5 * (xv1[k] + xv2[k]);
+          cm->edge[e].unitv[k] = nv.unitv[k];
         }
 
       }
@@ -901,13 +909,22 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     /* Dual face quantities related to each edge */
     if (flag & CS_CDO_LOCAL_DFQ) {
 
-      const cs_dface_t  *qdf = quant->dface + c2e_idx[0];
-
       for (short int e = 0; e < cm->n_ec; e++) {
-        cm->dface[e].meas = qdf[e].sface[0].meas + qdf[e].sface[1].meas;
-        const double  inv_meas = 1/cm->dface[e].meas;
+
+        const cs_real_t  *sface0 = quant->sface_normal + 6*(c2e_idx[0] + e);
+        const cs_real_t  *sface1 = sface0 + 3;
+
+        cs_real_3_t  df_vect;
         for (int k = 0; k < 3; k++)
-          cm->dface[e].unitv[k] = inv_meas*qdf[e].vect[k];
+          df_vect[k] = sface0[k] + sface1[k];
+
+        cs_nvec3_t  df_nvect;
+        cs_nvec3(df_vect, &df_nvect);
+
+        cm->dface[e].meas = df_nvect.meas;
+        for (int k = 0; k < 3; k++)
+          cm->dface[e].unitv[k] = df_nvect.unitv[k];
+
       }
 
     } // Dual face quantities
@@ -954,7 +971,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
       for (short int f = 0; f < cm->n_fc; f++) {
 
-        const cs_quant_t  pfq = quant->face[cm->f_ids[f]];
+        const cs_quant_t  pfq = cs_quant_set_face(cm->f_ids[f], quant);
+
         cm->face[f].meas = pfq.meas;
         for (int k = 0; k < 3; k++) {
           cm->face[f].center[k] = pfq.center[k];
@@ -967,11 +985,16 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     if (flag & cs_cdo_local_flag_deq) {
 
-      const cs_nvec3_t  *deq = quant->dedge + c2f_idx[0];
       for (short int f = 0; f < cm->n_fc; f++) {
-        cm->dedge[f].meas = deq[f].meas;
+
+        const cs_nvec3_t  de_nvect = cs_quant_set_dedge_nvec(c2f_idx[0]+f,
+                                                             quant);
+
+        /* Copy cs_nvec3_t structure */
+        cm->dedge[f].meas = de_nvect.meas;
         for (int k = 0; k < 3; k++)
-          cm->dedge[f].unitv[k] = deq[f].unitv[k];
+          cm->dedge[f].unitv[k] = de_nvect.unitv[k];
+
       }
 
     } /* Dual edge quantities */
@@ -1058,23 +1081,25 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     if (flag & CS_CDO_LOCAL_EFQ) { /* Build cm->sefc */
 
-      cs_dface_t  *qdf = quant->dface + connect->c2e->idx[c_id];
+      cs_nvec3_t  nv;
 
       for (short int e = 0; e < cm->n_ec; e++) {
 
+        const cs_real_t  *sface0 = quant->sface_normal + 6*(c2e_idx[0] + e);
+        const cs_real_t  *sface1 = sface0 + 3;
         short int  ee = 2*e;
-        /* Sanity checks */
-        assert(cm->f_ids[cm->e2f_ids[ee]] == qdf[e].parent_id[0]);
-        assert(cm->f_ids[cm->e2f_ids[ee+1]] == qdf[e].parent_id[1]);
 
-        cm->sefc[ee].meas = qdf[e].sface[0].meas;
-        cm->sefc[ee].unitv[0] = qdf[e].sface[0].unitv[0];
-        cm->sefc[ee].unitv[1] = qdf[e].sface[0].unitv[1];
-        cm->sefc[ee].unitv[2] = qdf[e].sface[0].unitv[2];
-        cm->sefc[ee+1].meas = qdf[e].sface[1].meas;
-        cm->sefc[ee+1].unitv[0] = qdf[e].sface[1].unitv[0];
-        cm->sefc[ee+1].unitv[1] = qdf[e].sface[1].unitv[1];
-        cm->sefc[ee+1].unitv[2] = qdf[e].sface[1].unitv[2];
+        cs_nvec3(sface0, &nv);
+        cm->sefc[ee].meas = nv.meas;
+        cm->sefc[ee].unitv[0] = nv.unitv[0];
+        cm->sefc[ee].unitv[1] = nv.unitv[1];
+        cm->sefc[ee].unitv[2] = nv.unitv[2];
+        ee++;
+        cs_nvec3(sface1, &nv);
+        cm->sefc[ee].meas = nv.meas;
+        cm->sefc[ee].unitv[0] = nv.unitv[0];
+        cm->sefc[ee].unitv[1] = nv.unitv[1];
+        cm->sefc[ee].unitv[2] = nv.unitv[2];
 
       } /* Loop on face edges */
 
@@ -1186,7 +1211,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
   for (int k = 0; k < 3; k++) fm->xc[k] = xc[k];
 
   /* Face-related quantities */
-  const cs_quant_t  pfq = quant->face[f_id];
+  const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
 
   fm->f_id = f_id;
   fm->face.meas = pfq.meas;
@@ -1203,12 +1228,13 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
   for (short int f = 0; f < n_fc; f++) {
     if (c2f_ids[f] == f_id) {
 
-      const cs_nvec3_t  *deq = quant->dedge + c2f_idx[0];
+      const cs_nvec3_t  de_nvect = cs_quant_set_dedge_nvec(c2f_idx[0]+f,
+                                                           quant);
       const short int  *f_sgn = connect->c2f->sgn + c2f_idx[0];
 
       _f = f;
-      fm->dedge.meas = deq[f].meas;
-      for (int k = 0; k < 3; k++) fm->dedge.unitv[k] = deq[f].unitv[k];
+      fm->dedge.meas = de_nvect.meas;
+      for (int k = 0; k < 3; k++) fm->dedge.unitv[k] = de_nvect.unitv[k];
       fm->f_sgn = f_sgn[f];
       break;
     }
@@ -1229,14 +1255,13 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
   for (short int e = 0; e < fm->n_ef; e++) {
 
     const cs_lnum_t  e_id = f2e_lst[e];
-    const cs_quant_t  qe = quant->edge[e_id];
+    const cs_nvec3_t  e_nvect = cs_quant_set_edge_nvec(e_id, quant);
 
     fm->e_ids[e] = e_id;
-    fm->edge[e].meas = qe.meas;
-    for (int k = 0; k < 3; k++) {
-      fm->edge[e].center[k] = qe.center[k];
-      fm->edge[e].unitv[k] = qe.unitv[k];
-    }
+    fm->edge[e].meas = e_nvect.meas;
+    for (int k = 0; k < 3; k++)
+      fm->edge[e].unitv[k] = e_nvect.unitv[k];
+    // Still to handle the edge barycenter
 
     const cs_lnum_t  *e2v_ids = connect->e2v->col_id + 2*e_id;
     short int  v1 = -1, v2 = -1;
@@ -1270,7 +1295,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
       fm->xv[shift++] = xv[k];
   }
 
-  /* Define wvf and tef */
+  /* Update the edge center. Define wvf and tef */
   for (int i = 0; i < fm->n_vf; i++)
     fm->wvf[i] = 0;
 
@@ -1278,6 +1303,12 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
 
     const short int  v1 = fm->e2v_ids[2*e];
     const short int  v2 = fm->e2v_ids[2*e+1];
+    const cs_real_t  *xv1 = fm->xv + 3*v1;
+    const cs_real_t  *xv2 = fm->xv + 3*v2;
+
+    /* Update the edge center */
+    for (int k = 0; k < 3; k++)
+      fm->edge[e].center[k] = 0.5 * (xv1[k] + xv2[k]);
 
     /* tef = ||(xe -xf) x e||/2 = s(v1,e,f) + s(v2, e, f) */
     const double  tef = cs_compute_area_from_quant(fm->edge[e], pfq.center);
@@ -1286,7 +1317,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     fm->wvf[v2] += tef;
     fm->tef[e] = tef;
 
-  }
+  } // Loop on face edges
 
   const double  invf = 0.5/pfq.meas;
   for (short int v = 0; v < fm->n_vf; v++) fm->wvf[v] *= invf;

@@ -84,11 +84,6 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
                       double                     *p_crec[],
                       double                     *p_frec[])
 {
-  int  i, j, l, eid, vid;
-  double  lef, lve;
-  cs_real_3_t  uef, uve, cp;
-  cs_quant_t  fq, eq;
-
   double  *crec = *p_crec, *frec = *p_frec;
 
   const cs_connect_index_t  *c2v = connect->c2v;
@@ -106,112 +101,54 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
     BFT_MALLOC(frec, quant->n_faces, double);
 
   /* Reconstruction at cell centers */
-  for (i = 0; i < quant->n_cells; i++) {
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-    crec[i] = 0;
-    for (j = c2v->idx[i]; j < c2v->idx[i+1]; j++)
-      crec[i] += dcv[j]*dof[c2v->ids[j]];
-    crec[i] /= quant->cell_vol[i];
+    crec[c_id] = 0;
+    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+      crec[c_id] += dcv[j]*dof[c2v->ids[j]];
+    crec[c_id] /= quant->cell_vol[c_id];
 
-  } /* End of loop on cells */
+  }
 
   /* Reconstruction at face centers */
-  for (i = 0; i < quant->n_faces; i++) {
+  for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
 
-    frec[i] = 0;
-    fq = quant->face[i];
+    const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
 
-    for (j = f2e->idx[i]; j < f2e->idx[i+1]; j++) {
+    frec[f_id] = 0;
+    double  f_surf = 0.;
+    for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
-      eid = f2e->col_id[j];
-      eq = quant->edge[eid];
-      cs_math_3_length_unitv(eq.center, fq.center, &lef, uef);
+      const cs_lnum_t  e_id = f2e->col_id[j];
+      const cs_lnum_t  v1_id = e2v->col_id[2*e_id];
+      const cs_lnum_t  v2_id = e2v->col_id[2*e_id+1];
+      const cs_real_t  *xv1 = quant->vtx_coord + 3*v1_id;
+      const cs_real_t  *xv2 = quant->vtx_coord + 3*v2_id;
 
-      for (l = e2v->idx[eid]; l < e2v->idx[eid+1]; l++) {
+      cs_real_3_t  xe;
+      for (int k = 0; k < 3; k++)
+        xe[k] = 0.5 * (xv1[k] + xv2[k]);
 
-        vid = e2v->col_id[l];
-        cs_math_3_length_unitv(quant->vtx_coord + 3*vid, eq.center, &lve, uve);
-        cs_math_3_cross_product(uve, uef, cp);
-        frec[i] += 0.5 * lve * lef * cs_math_3_norm(cp) * dof[vid];
+      double  lef, lve;
+      cs_real_3_t  uef, uve, cp;
+      cs_math_3_length_unitv(xe, xf, &lef, uef);
+      cs_math_3_length_unitv(xv1, xv2, &lve, uve);
+      cs_math_3_cross_product(uve, uef, cp);
 
-      }
+      const double  tef = 0.5 * lve * lef * cs_math_3_norm(cp);
+
+      f_surf += tef;
+      frec[f_id] += 0.5 * tef * (dof[v1_id] + dof[v2_id]);
 
     } /* End of loop on face edges */
-    frec[i] /= fq.meas;
+
+    frec[f_id] /= f_surf;
 
   } /* End of loop on faces */
 
   /* Return pointers */
   *p_crec = crec;
   *p_frec = frec;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reconstruct by a constant vector a field of edge-based DoFs
- *         in a volume surrounding an edge
- *
- *  \param[in]      cid     cell id
- *  \param[in]      e1_id   sub-volume related to this edge id
- *  \param[in]      c2e     cell -> edges connectivity
- *  \param[in]      quant   pointer to the additional quantities struct.
- *  \param[in]      dof     pointer to the field of edge-based DoFs
- *  \param[in, out] reco    value of the reconstructed field in this sub-volume
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_cost_edge_dof(cs_lnum_t                    cid,
-                      cs_lnum_t                    e1_id,
-                      const cs_connect_index_t    *c2e,
-                      const cs_cdo_quantities_t   *quant,
-                      const double                *dof,
-                      double                       reco[])
-{
-  int  i, k;
-  double  inv_e1df1, e1df2;
-
-  double  sum_vale1df2 = 0.0;
-  double  t1[3] = {0., 0., 0.}, t2[3] = {0., 0., 0.}, t3[3] = {0., 0., 0.};
-
-  const double  invvol = 1/quant->cell_vol[cid];
-  const cs_quant_t e1q = quant->edge[e1_id]; /* Edge quantities */
-
-  if (dof == NULL)
-    return;
-
-  for (i = c2e->idx[cid]; i < c2e->idx[cid+1]; i++) {
-
-    const cs_dface_t  df2q = quant->dface[i];   /* Dual face quantities */
-    const cs_lnum_t  e2_id = c2e->ids[i];
-    const double  val = dof[e2_id];             /* Edge value */
-
-    for (k = 0; k < 3; k++)
-      t2[k] += val * df2q.vect[k];
-
-    /* Better accuracy for the dot product with normalized vectors */
-    e1df2  =  df2q.sface[0].meas * _dp3(e1q.unitv, df2q.sface[0].unitv);
-    e1df2 +=  df2q.sface[1].meas * _dp3(e1q.unitv, df2q.sface[1].unitv);
-    e1df2 *=  e1q.meas;
-    sum_vale1df2 += e1df2 * val;
-
-    if (e1_id == e2_id) {
-      inv_e1df1 = 1./e1df2;
-      for (k = 0; k < 3; k++) {
-        t3[k] = inv_e1df1 * df2q.vect[k];
-        t1[k] = val*t3[k];
-      }
-    }
-
-  } /* End of loop on cell edges */
-
-  /* Divide by cell volume */
-  for (k = 0; k < 3; k++) {
-    t2[k] *= invvol;
-    t3[k] *= -invvol*sum_vale1df2;
-    reco[k] = t1[k] + t2[k] + t3[k];
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -328,11 +265,12 @@ cs_reco_pf_from_pv(cs_lnum_t                     f_id,
   if (pdi == NULL)
     return;
 
-  const cs_quant_t  qf = quant->face[f_id];
+  const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
   const cs_real_t  *xyz = quant->vtx_coord;
   const cs_sla_matrix_t  *e2v = connect->e2v;
   const cs_sla_matrix_t  *f2e = connect->f2e;
 
+  double f_surf = 0.;
   for (cs_lnum_t i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
 
     const cs_lnum_t  e_id = f2e->col_id[i];
@@ -342,12 +280,14 @@ cs_reco_pf_from_pv(cs_lnum_t                     f_id,
     const double  pdi_e = 0.5*(pdi[v1_id] + pdi[v2_id]);
     const cs_real_t  *xv1 = xyz + 3*v1_id;
     const cs_real_t  *xv2 = xyz + 3*v2_id;
+    const cs_real_t  tef = cs_math_surftri(xv1, xv2, xf);
 
-    *pdi_f += pdi_e * cs_math_surftri(xv1, xv2, qf.center);
+    f_surf += tef;
+    *pdi_f += pdi_e * tef;
 
   } // Loop on face edges
 
-  *pdi_f /= qf.meas;
+  *pdi_f /= f_surf;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -377,19 +317,15 @@ cs_reco_dfbyc_at_cell_center(cs_lnum_t                    c_id,
   if (array == NULL)
     return;
 
-  const double  invvol = 1/quant->cell_vol[c_id];
-
   for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
 
-    const cs_lnum_t  e_id = c2e->ids[j];
-    const cs_quant_t  peq = quant->edge[e_id];
-    const cs_real_t  edge_contrib = array[j]*peq.meas;
-
+    const cs_real_t  *e_vect = quant->edge_vector + 3*c2e->ids[j];
     for (int k = 0; k < 3; k++)
-      val_xc[k] += edge_contrib * peq.unitv[k];
+      val_xc[k] += array[j] * e_vect[k];
 
   } // Loop on cell edges
 
+  const double  invvol = 1/quant->cell_vol[c_id];
   for (int k = 0; k < 3; k++)
     val_xc[k] *= invvol;
 
@@ -531,10 +467,13 @@ cs_reco_grd_cell_from_pv(cs_lnum_t                    c_id,
     const cs_real_t  pv1 = pdi[e2v->col_id[shift_e]];
     const cs_real_t  pv2 = pdi[e2v->col_id[shift_e+1]];
     const cs_real_t  gdi_e = sgn_v1*(pv1 - pv2);
-    const cs_dface_t  dfq = quant->dface[i];  /* Dual face quantities */
+
+    /* Dual face quantities */
+    const cs_real_t  *sf0 = quant->sface_normal + 6*i;
+    const cs_real_t  *sf1 = sf0 + 3;
 
     for (int k = 0; k < 3; k++)
-      val_xc[k] += gdi_e*dfq.vect[k];
+      val_xc[k] += gdi_e * (sf0[k] + sf1[k]);
 
   } // Loop on cell edges
 
@@ -636,11 +575,13 @@ cs_reco_ccen_edge_dof(cs_lnum_t                    cid,
 
   for (cs_lnum_t i = c2e->idx[cid]; i < c2e->idx[cid+1]; i++) {
 
-    const cs_dface_t  dfq = quant->dface[i];  /* Dual face quantities */
+    /* Dual face quantities */
+    const cs_real_t  *sf0 = quant->sface_normal + 6*i;
+    const cs_real_t  *sf1 = sf0 + 3;
     const double  val = dof[c2e->ids[i]];     /* Edge value */
 
     for (int k = 0; k < 3; k++)
-      reco[k] += val*dfq.vect[k];
+      reco[k] += val * (sf0[k] + sf1[k]);
 
   } /* End of loop on cell edges */
 
@@ -648,7 +589,6 @@ cs_reco_ccen_edge_dof(cs_lnum_t                    cid,
   const double  invvol = 1/quant->cell_vol[cid];
   for (int k = 0; k < 3; k++)
     reco[k] *= invvol;
-
 }
 
 /*----------------------------------------------------------------------------*/

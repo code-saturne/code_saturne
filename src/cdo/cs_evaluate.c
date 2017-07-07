@@ -295,16 +295,19 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
       const cs_lnum_t  f_id = c2f->col_id[i];
-      const cs_quant_t  f = quant->face[f_id];
+      const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
 
       for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
         const cs_lnum_t  e_id = f2e->col_id[j];
-        const cs_quant_t  e = quant->edge[e_id];
         const cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
         const cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id+1];
         const cs_real_t  *xv1 = quant->vtx_coord + 3*v1_id;
         const cs_real_t  *xv2 = quant->vtx_coord + 3*v2_id;
+
+        cs_real_3_t  xe;
+        for (int k = 0; k < 3; k++)
+          xe[k] = 0.5 * (xv1[k] + xv2[k]);
 
         double  add1 = 0.0, add2 = 0.0;
 
@@ -312,16 +315,16 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
 
         case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
         case CS_QUADRATURE_BARY_SUBDIV:
-          add1 = _analytic_quad_tet1(tcur, xv1, e.center, f.center, xc, ana);
-          add2 = _analytic_quad_tet1(tcur, xv2, e.center, f.center, xc, ana);
+          add1 = _analytic_quad_tet1(tcur, xv1, xe, xf, xc, ana);
+          add2 = _analytic_quad_tet1(tcur, xv2, xe, xf, xc, ana);
           break;
         case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-          add1 = _analytic_quad_tet4(tcur, xv1, e.center, f.center, xc, ana);
-          add2 = _analytic_quad_tet4(tcur, xv2, e.center, f.center, xc, ana);
+          add1 = _analytic_quad_tet4(tcur, xv1, xe, xf, xc, ana);
+          add2 = _analytic_quad_tet4(tcur, xv2, xe, xf, xc, ana);
           break;
         case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-          add1 = _analytic_quad_tet5(tcur, xv1, e.center, f.center, xc, ana);
-          add2 = _analytic_quad_tet5(tcur, xv2, e.center, f.center, xc, ana);
+          add1 = _analytic_quad_tet5(tcur, xv1, xe, xf, xc, ana);
+          add2 = _analytic_quad_tet5(tcur, xv2, xe, xf, xc, ana);
           break;
         default:
           bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
@@ -513,7 +516,7 @@ _pcsd_by_analytic(cs_analytic_func_t       *ana,
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
       const cs_lnum_t  f_id = c2f->col_id[i];
-      const cs_quant_t  f = quant->face[f_id];
+      const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
 
       for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
@@ -529,13 +532,13 @@ _pcsd_by_analytic(cs_analytic_func_t       *ana,
 
         case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
         case CS_QUADRATURE_BARY_SUBDIV:
-          add  = _analytic_quad_tet1(tcur, xv1, xv2, f.center, xc, ana);
+          add  = _analytic_quad_tet1(tcur, xv1, xv2, xf, xc, ana);
           break;
         case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-          add = _analytic_quad_tet4(tcur, xv1, xv2, f.center, xc, ana);
+          add = _analytic_quad_tet4(tcur, xv1, xv2, xf, xc, ana);
           break;
         case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-          add = _analytic_quad_tet5(tcur, xv1, xv2, f.center, xc, ana);
+          add = _analytic_quad_tet5(tcur, xv1, xv2, xf, xc, ana);
           break;
         default:
           bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
@@ -668,7 +671,8 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
 
       cs_lnum_t  f_id = c2f->col_id[j];
       if (todo[f_id]) {
-        ana(tcur, 1, NULL, quant->face[f_id].center, false,  values + f_id);
+        const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
+        ana(tcur, 1, NULL, xf, false,  values + f_id);
         todo[f_id] = false;
       }
 
@@ -1174,10 +1178,15 @@ cs_evaluate_potential_by_analytic(cs_flag_t           dof_flag,
     else if (cs_test_flag(dof_flag, cs_cdo_primal_face)) {
 
       if (def->meta & CS_FLAG_FULL_LOC) {
-        /* All the support entities are selected */
-#       pragma omp parallel for if(quant->n_faces > CS_THR_MIN)
-        for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++)
-          ana(tcur, 1, NULL, quant->face[f_id].center, true, retval + f_id);
+
+        /* All the support entities are selected:
+           - First pass: interior faces
+           - Second pass: border faces */
+        ana(tcur, quant->n_i_faces, NULL, quant->i_face_center, true,
+            retval);
+        ana(tcur, quant->n_b_faces, NULL, quant->b_face_center, true,
+            retval + quant->n_i_faces);
+
       }
       else
         _pfsp_by_analytic(ana, z->n_cells, z->cell_ids, retval);

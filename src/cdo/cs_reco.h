@@ -196,28 +196,6 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reconstruct by a constant vector a field of edge-based DoFs
- *         in a volume surrounding an edge
- *
- *  \param[in]      cid     cell id
- *  \param[in]      e1_id   sub-volume related to this edge id
- *  \param[in]      c2e     cell -> edges connectivity
- *  \param[in]      quant   pointer to the additional quantities struct.
- *  \param[in]      dof     pointer to the field of edge-based DoFs
- *  \param[in, out] reco    value of the reconstructed field in this sub-volume
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_reco_cost_edge_dof(cs_lnum_t                    cid,
-                      cs_lnum_t                    e1_id,
-                      const cs_connect_index_t    *c2e,
-                      const cs_cdo_quantities_t   *quant,
-                      const double                *dof,
-                      double                       reco[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Reconstruct the value at the cell center of the gradient of a field
  *         defined on primal vertices.
  *
