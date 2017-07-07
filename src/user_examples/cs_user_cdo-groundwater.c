@@ -86,62 +86,85 @@ BEGIN_C_DECLS
  * Private function prototypes
  *============================================================================*/
 
-static const double  one6 = 1/6.;
-static const double  L = 200;
+/* Permeability in each subdomain */
+static const double k1 = 1e5, k2 = 1;
 
-/* Solution of the TRACY 1D verification testcase
-   F.T. Tracy, "1D, 2D, 3D analytical solutions of unsaturated flow in
-   groundwater", Journal of Hydrology, 170, pp. 199--214 (1995)
-*/
-static void
-get_sol(cs_real_t           time,
-        cs_lnum_t           n_pts,
-        const cs_real_t    *xyz,
-        cs_real_t          *retval)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the explicit definition of the problem for the Richards eq.
+ *         pt_ids is optional. If not NULL, it enables to access in coords
+ *         at the right location and the same thing to fill retval if compact
+ *         is set to false
+ *         Rely on a generic function pointer for an analytic function
+ *
+ * \param[in]      time       when ?
+ * \param[in]      n_elts     number of elements to consider
+ * \param[in]      pt_ids     list of elements ids (to access coords and fill)
+ * \param[in]      coords     where ?
+ * \param[in]      compact    true:no indirection, false:indirection for filling
+ * \param[in, out] retval     result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+get_tracer_sol(cs_real_t          time,
+               cs_lnum_t          n_points,
+               const cs_lnum_t   *pt_ids,
+               const cs_real_t   *xyz,
+               bool               compact,
+               cs_real_t         *retval)
 {
   /* Physical parameters */
-  const double  ks = 1.15741e-4;
-  const double  theta_r = 0.15, theta_s = 0.45, dtheta = theta_s - theta_r;
-  const double  hr = -100;
-  const double  td = -5*L*L*dtheta/(6*hr*ks);
+  const double  magnitude = 2*k1/(k1 + k2);
+  const double  x_front = magnitude * time;
 
-  /* Time-dependent part */
-  const double  alpha = 6 - 5*time/td;
+  if (pt_ids != NULL && !compact) {
 
-  for (cs_lnum_t p = 0; p < n_pts; p++) {
+    for (cs_lnum_t  i = 0; i < n_points; i++) {
 
-    /* Space-dependent part */
-    const double  xll = (xyz[3*p] - L)/L, beta = xll*xll;
-
-    retval[p] = hr*(1 - beta/alpha);
-
-  }
-}
-
-/* Same as get_sol but optimize for time=0 */
-static void
-get_ic(cs_real_t           time,
-       cs_lnum_t           n_pts,
-       const cs_real_t    *xyz,
-       cs_real_t          *retval)
-{
-  CS_UNUSED(time);
-
-  const double  hr = -100;
-
-  for (cs_lnum_t p = 0; p < n_pts; p++) {
-
-    const double  x = xyz[3*p], xll = (x - L)/L;
-
-    retval[p] = 1-one6*xll*xll;
-    retval[p] *= hr;
+      const cs_lnum_t  id = pt_ids[i];
+      const double  x = xyz[3*id];
+      if (x <= x_front)
+        retval[id] = 1;
+      else
+        retval[id] = 0;
+    }
 
   }
+  else if (pt_ids != NULL && compact) {
+
+    for (cs_lnum_t  i = 0; i < n_points; i++) {
+      const double  x = xyz[3*pt_ids[i]];
+      if (x <= x_front)
+        retval[i] = 1;
+      else
+        retval[i] = 0;
+    }
+
+  }
+  else {
+
+    for (cs_lnum_t  i = 0; i < n_points; i++) {
+      const double  x = xyz[3*i];
+      if (x <= x_front)
+        retval[i] = 1;
+      else
+        retval[i] = 0;
+    }
+
+  }
+
 }
 
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate or not the CDO module
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_user_cdo_activated(void)
@@ -170,16 +193,17 @@ cs_user_cdo_add_mesh_locations(void)
      >> "cells"
      >> "interior_faces"
      >> "boundary_faces"
-     >> "vertices"
+     >> "vertices"  */
 
- */
+  /* For boundary conditions */
+  cs_boundary_zone_define("left", "1:arriere", 0);
+  cs_boundary_zone_define("right", "2:avant", 0);
 
-  cs_boundary_zone_define("left", "x < 1e-3", 0);
+  /* For soil */
+  cs_volume_zone_define("soil1", "2:volume_arriere", CS_VOLUME_ZONE_GWF_SOIL);
+  cs_volume_zone_define("soil2", "1:volume_avant", CS_VOLUME_ZONE_GWF_SOIL);
 
-  char cmd[20];
-  sprintf(cmd, "x > %10.7e", L - 1e-5);
-  cs_boundary_zone_define("right", cmd, 0);
-
+  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -228,8 +252,8 @@ cs_user_cdo_init_setup(cs_domain_t   *domain)
      ========================= */
 
   cs_domain_set_output_param(domain,
-                             10,     // output log frequency
-                             2);     // verbosity (-1: no, 0, ...)
+                             100,     // output log frequency
+                             3);     // verbosity (-1: no, 0, ...)
 
   /* ====================
      Time step management
@@ -241,8 +265,8 @@ cs_user_cdo_init_setup(cs_domain_t   *domain)
   */
 
   cs_domain_set_time_param(domain,
-                           200,       // nt_max or -1 (automatic)
-                           86400.);   // t_max or < 0. (automatic)
+                           500,    // nt_max or -1 (automatic)
+                           -1.);   // t_max or < 0. (automatic)
 
   /* Define the value of the time step
      >> cs_domain_def_time_step_by_value(domain, dt_val);
@@ -254,10 +278,7 @@ cs_user_cdo_init_setup(cs_domain_t   *domain)
      double dt_func(int  nt_cur, double  time_cur)
   */
 
-  cs_domain_def_time_step_by_value(domain, 4320);
-
-  /* Rk: Final time is 10 days = 864000 and dt = 0.05 day i.e 20 iters
-     for one day */
+  cs_domain_def_time_step_by_value(domain, 1e-3);
 
   /* ================================
      Activate groundwater flow module
@@ -273,6 +294,7 @@ cs_user_cdo_init_setup(cs_domain_t   *domain)
      * richards_flag are
      CS_GWF_GRAVITATION, CS_GWF_RICHARDS_UNSTEADY, CS_GWF_SOIL_PROPERTY_UNSTEADY
      CS_GWF_SOIL_ALL_SATURATED
+     or 0 if there is no flag to set
 
      * Consequences of the activation of the groundwater flow module are:
      - add a new equation named "Richards" along with an associated field named
@@ -283,14 +305,30 @@ cs_user_cdo_init_setup(cs_domain_t   *domain)
      - define a new property called "soil_capacity" if "unsteady" is chosen
   */
 
-  cs_gwf_activate(CS_PROPERTY_ISO,
-                  CS_GWF_RICHARDS_UNSTEADY);
+  cs_gwf_activate(CS_PROPERTY_ISO, 0); // no flag to set
 
   /* =========
-     Add soils
+     Add soils (must be done before adding tracers)
      ========= */
 
-  cs_gwf_soil_add("cells", CS_GWF_SOIL_USER);
+  cs_gwf_soil_add("soil1", CS_GWF_SOIL_SATURATED);
+  cs_gwf_soil_add("soil2", CS_GWF_SOIL_SATURATED);
+
+  /* ====================
+     Add tracer equations
+     ====================
+
+     Add a tracer equation which is unsteady and convected by the darcean flux
+     This implies the creation of a new equation called eqname along with a new
+     field called varname.
+
+     For standard tracer:
+       cs_gwf_add_tracer(eqname, varname);
+     For user-defined tracer
+       cs_gwf_add_tracer_user(eqname, varname, setup_func);
+  */
+
+  cs_gwf_add_tracer("Tracer_01","C1");
 
 }
 
@@ -313,16 +351,31 @@ cs_user_cdo_setup_gwf(cs_domain_t   *domain)
      Set soils
      ========= */
 
-  cs_gwf_soil_t  *soil = cs_gwf_soil_by_name("cells");
-  cs_gwf_set_iso_saturated_soil(soil,
-                                1.15741e-4,  // saturated permeability
-                                0.45,        // saturated moisture
-                                1.0);        // bulk density (useless)
+  cs_gwf_soil_t  *s1 = cs_gwf_soil_by_name("soil1");
+  cs_gwf_set_iso_saturated_soil(s1,
+                                k1,     // saturated permeability
+                                1.0,    // saturated moisture
+                                1.0);   // bulk density (useless)
+
+  cs_gwf_soil_t  *s2 = cs_gwf_soil_by_name("soil2");
+  cs_gwf_set_iso_saturated_soil(s2,
+                                k2,     // saturated permeability
+                                1.0,    // saturated moisture
+                                1.0);   // bulk density (useless)
 
   /* ===========
-     Set tracers
-     =========== */
+     Set tracers (soil have to be defined first)
+     ===========
 
+     Set parameters related to each tracer equation in each soil */
+
+  cs_gwf_tracer_t *tr = cs_gwf_tracer_by_name("Tracer_01");
+  cs_gwf_set_standard_tracer(tr,
+                             NULL,        // zone name or NULL for all
+                             0.,          // water molecular diffusivity
+                             0., 0.,      // alpha (longi. and transvesal)
+                             0.,          // distribution coef.
+                             0.);         // 1st order decay coef.
 }
 
 /*----------------------------------------------------------------------------*/
@@ -340,56 +393,38 @@ cs_user_cdo_finalize_setup(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 
-  /* =================
-     Richards equation
-     ================= */
+  /*=============
+    Set equations
+    ============= */
 
-  cs_equation_t  *eq = cs_equation_by_name("Richards");
+  cs_equation_t  *eq = NULL;
 
-  /* Define the boundary conditions
-     -> type of boundary condition:
-        CS_PARAM_BC_DIRICHLET, CS_PARAM_BC_HMG_DIRICHLET,
-        CS_PARAM_BC_NEUMANN, CS_PARAM_BC_HMG_NEUMANN, CS_PARAM_BC_ROBIN
+  /* Richards equation */
+  eq = cs_equation_by_name("Richards");
 
-     >> cs_equation_add_bc_by_value(eq,
-                                    bc_type,
-                                    "mesh_location_name",
-                                    val);  // pointer to cs_real_t  */
+  /* Define the boundary conditions  */
+  cs_real_t  val0 = 0.0, val1 = 1.0;
 
-  cs_equation_add_bc_by_analytic(eq,
-                                 CS_PARAM_BC_DIRICHLET,
-                                 "left",            // name of the boundary zone
-                                 (void *)get_sol);  // analytic function
-
-  /* Value to set */
-  cs_real_t  bc_val = -100;
   cs_equation_add_bc_by_value(eq,
                               CS_PARAM_BC_DIRICHLET,
-                              "right",  // name of the related mesh location
-                              &bc_val); // value to set
+                              "left", // boundary zone name
+                              &val1);  // value to set
 
-  /* Define the initial condition by an analytical function
-     (By default: zero is set) */
-  cs_equation_add_ic_by_analytic(eq,       // equation
-                                 NULL,     // NULL --> all cells
-                                 (void *)get_ic);
-}
+  cs_equation_add_bc_by_value(eq,
+                              CS_PARAM_BC_DIRICHLET,
+                              "right", // boundary zone name
+                              &val0);  // value to set
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the bulk density related to a soil structure
- *
- * \param[in]  soil      pointer to a cs_gwf_soil_t structure
- * \param[out] density   return value for the density
- */
-/*----------------------------------------------------------------------------*/
+  /* Tracer equation */
+  eq = cs_equation_by_name("Tracer_01");
 
-void
-cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
-                             cs_real_t             *density)
-{
-  CS_UNUSED(soil);
-  *density = 1.0;
+  cs_equation_add_bc_by_value(eq,
+                              CS_PARAM_BC_DIRICHLET,
+                              "left",  // boundary zone name
+                              &val1);  // value to set
+
+  /* Define the initial condition (By default: zero is set) */
+  cs_equation_add_ic_by_analytic(eq, "cells", get_tracer_sol);
 }
 
 /*----------------------------------------------------------------------------*/
