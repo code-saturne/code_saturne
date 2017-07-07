@@ -741,7 +741,7 @@ cs_timer_stats_switch(int  id)
   /* Start all inactive timers of the same type which are lower level
      than the common parent */
 
-  for (int p_id = id; p_id > parent_id; p_id = (_stats + id)->parent_id) {
+  for (int p_id = id; p_id > parent_id; p_id = (_stats + p_id)->parent_id) {
 
     s = _stats + p_id;
 
