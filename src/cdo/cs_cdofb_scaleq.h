@@ -201,7 +201,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
  *
  * \param[in]      solu       solution array
  * \param[in]      rhs        rhs associated to this solution array
- * \param[in, out] builder    pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] builder    pointer to cs_cdofb_scaleq_t structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/

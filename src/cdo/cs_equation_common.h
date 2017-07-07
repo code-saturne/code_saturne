@@ -141,6 +141,26 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the values of the Dirichlet BCs when DoFs are scalar-valued
+ *          and attached to faces
+ *
+ * \param[in]      mesh      pointer to a cs_mesh_t structure
+ * \param[in]      eqp       pointer to a cs_equation_param_t
+ * \param[in]      dir       pointer to a cs_cdo_bc_list_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ *
+ * \return a pointer to a new allocated array storing the dirichlet values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_equation_compute_dirichlet_sf(const cs_mesh_t            *mesh,
+                                 const cs_equation_param_t  *eqp,
+                                 const cs_cdo_bc_list_t     *dir,
+                                 cs_cell_builder_t          *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Assemble a cellwise system related to cell vertices into the global
  *         algebraic system
  *
@@ -159,6 +179,26 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
                        cs_flag_t                       sys_flag,
                        cs_real_t                      *rhs,
                        cs_real_t                      *sources,
+                       cs_matrix_assembler_values_t   *mav);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assemble a cellwise system related to cell faces into the global
+ *         algebraic system
+ *
+ * \param[in]       csys      cellwise view of the algebraic system
+ * \param[in]       rset      pointer to a cs_range_set_t structure on vertices
+ * \param[in]       sys_flag  flag associated to the current system builder
+ * \param[in, out]  rhs       array storing the right-hand side
+ * \param[in, out]  mav       pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_assemble_f(const cs_cell_sys_t            *csys,
+                       const cs_range_set_t           *rset,
+                       cs_flag_t                       sys_flag,
+                       cs_real_t                      *rhs,
                        cs_matrix_assembler_values_t   *mav);
 
 /*----------------------------------------------------------------------------*/

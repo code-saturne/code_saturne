@@ -113,6 +113,7 @@ cs_cell_sys_create(int    n_max_ent)
 
   BFT_MALLOC(csys, 1, cs_cell_sys_t);
 
+  csys->c_id = -1;
   csys->n_dofs = 0;
   csys->mat = NULL;
   csys->rhs = NULL;

@@ -284,6 +284,7 @@ _init_cell_structures(const cs_flag_t             cell_flag,
   const int  n_dofs = n_vc + 1;
 
   /* Initialize the local system */
+  csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
   csys->mat->n_ent = n_dofs;
   for (short int v = 0; v < n_vc; v++) {

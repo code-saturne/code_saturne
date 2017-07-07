@@ -89,6 +89,7 @@ typedef struct {
 /* Structure used to store a local system (cell-wise for instance) */
 typedef struct {
 
+  cs_lnum_t      c_id;     // cell id
   int            n_dofs;   // Number of Degrees of Freedom (DoFs) in this cell
   cs_locmat_t   *mat;      // cellwise view of the system matrix
   double        *rhs;      // cellwise view of the right-hand side

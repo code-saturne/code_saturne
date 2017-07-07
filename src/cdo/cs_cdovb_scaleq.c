@@ -260,6 +260,7 @@ _init_cell_structures(const cs_flag_t            cell_flag,
   const int  n_vc = cm->n_vc;
 
   /* Initialize the local system */
+  csys->c_id = cm->c_id;
   csys->n_dofs = n_vc;
   csys->mat->n_ent = n_vc;
   for (short int v = 0; v < n_vc; v++) {
@@ -757,13 +758,13 @@ cs_cdovb_scaleq_init(const cs_equation_param_t   *eqp,
 
     b->st_msh_flag = cs_source_term_init(CS_SPACE_SCHEME_CDOVB,
                                          eqp->n_source_terms,
-                                         (const cs_xdef_t **)eqp->source_terms,
+                     (const cs_xdef_t **)eqp->source_terms,
                                          b->compute_source,
                                          &(b->sys_flag),
                                          &(b->source_mask));
 
     BFT_MALLOC(b->source_terms, b->n_dofs, cs_real_t);
-#pragma omp parallel for if (b->n_dofs > CS_THR_MIN)
+#   pragma omp parallel for if (b->n_dofs > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < b->n_dofs; i++)
       b->source_terms[i] = 0;
 
@@ -915,7 +916,7 @@ cs_cdovb_scaleq_compute_source(void   *builder)
 
       /* Compute the contribution of all source terms in each cell */
       cs_source_term_compute_cellwise(eqp->n_source_terms,
-                                      (const cs_xdef_t **)eqp->source_terms,
+                  (const cs_xdef_t **)eqp->source_terms,
                                       cm,
                                       b->sys_flag,
                                       b->source_mask,

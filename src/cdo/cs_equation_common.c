@@ -40,6 +40,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_boundary_zone.h"
 #include "cs_cdo_local.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovcb_scaleq.h"
@@ -598,7 +599,7 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
         /* Evaluate the boundary condition at each boundary vertex */
         cs_xdef_eval_at_vertices_by_analytic(n_vf,
                                              f2v_lst,
-                                             true, // compact ouput
+                                             true, // compact output
                                              cs_glob_mesh,
                                              cs_shared_connect,
                                              cs_shared_quant,
@@ -694,6 +695,102 @@ cs_equation_compute_dirichlet_sv(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the values of the Dirichlet BCs when DoFs are scalar-valued
+ *          and attached to faces
+ *
+ * \param[in]      mesh      pointer to a cs_mesh_t structure
+ * \param[in]      eqp       pointer to a cs_equation_param_t
+ * \param[in]      dir       pointer to a cs_cdo_bc_list_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ *
+ * \return a pointer to a new allocated array storing the dirichlet values
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_equation_compute_dirichlet_sf(const cs_mesh_t            *mesh,
+                                 const cs_equation_param_t  *eqp,
+                                 const cs_cdo_bc_list_t     *dir,
+                                 cs_cell_builder_t          *cb)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+
+  cs_real_t  *dir_val = NULL;
+
+  /* Initialization */
+  BFT_MALLOC(dir_val, quant->n_b_faces, cs_real_t);
+
+# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < quant->n_b_faces; f_id++) dir_val[f_id] = 0;
+
+  /* Define array storing the Dirichlet values */
+  for (int def_id = 0; def_id < eqp->n_bc_desc; def_id++) {
+
+    const cs_xdef_t  *def = eqp->bc_desc[def_id];
+    assert(def->dim == 1); // scalar variable
+    if (def->meta & CS_CDO_BC_DIRICHLET) {
+
+      const cs_boundary_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
+      switch(def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        {
+          const cs_real_t  *constant_val = (cs_real_t *)def->input;
+
+#         pragma omp parallel for if (bz->n_faces > CS_THR_MIN)
+          for (cs_lnum_t i = 0; i < bz->n_faces; i++)
+            dir_val[bz->face_ids[i]] = constant_val[0];
+        }
+        break;
+
+      case CS_XDEF_BY_ARRAY:
+        {
+          cs_xdef_array_input_t  *array_input =
+            (cs_xdef_array_input_t *)def->input;
+
+          assert(eqp->n_bc_desc == 1); // Only one definition allowed
+          assert(array_input->stride == 1); // other cases not managed up to now
+          assert(cs_test_flag(array_input->loc, cs_cdo_primal_face));
+
+          if (bz->n_faces > 0) // Not only interior
+            memcpy(dir_val, array_input->values, sizeof(cs_real_t)*bz->n_faces);
+
+        }
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        /* Evaluate the boundary condition at each boundary vertex */
+        cs_xdef_eval_at_b_faces_by_analytic(bz->n_faces,
+                                            bz->face_ids,
+                                            false, // compact output
+                                            cs_glob_mesh,
+                                            cs_shared_connect,
+                                            cs_shared_quant,
+                                            cs_shared_time_step,
+                                            def->input,
+                                            dir_val);
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Invalid type of definition.\n"
+                    " Stop computing the Dirichlet value.\n"));
+
+      } // switch def_type
+
+    } // Definition based on Dirichlet BC
+  } // Loop on definitions
+
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 1
+  cs_dump_array_to_listing("DIRICHLET_VALUES", quant->n_b_faces, dir_val, 8);
+#endif
+
+  return dir_val;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Assemble a cellwise system related to cell vertices into the global
  *         algebraic system
  *
@@ -759,6 +856,73 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
     } /* Loop on cell vertices (local cols) */
 
   } /* Loop on cell vertices (local rows) */
+
+  if (block_size > 0) {
+#   pragma omp critical
+    cs_matrix_assembler_values_add_g(mav, block_size, grows, gcols, vals);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assemble a cellwise system related to cell faces into the global
+ *         algebraic system
+ *
+ * \param[in]       csys      cellwise view of the algebraic system
+ * \param[in]       rset      pointer to a cs_range_set_t structure on vertices
+ * \param[in]       sys_flag  flag associated to the current system builder
+ * \param[in, out]  rhs       array storing the right-hand side
+ * \param[in, out]  mav       pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_assemble_f(const cs_cell_sys_t            *csys,
+                       const cs_range_set_t           *rset,
+                       cs_flag_t                       sys_flag,
+                       cs_real_t                      *rhs,
+                       cs_matrix_assembler_values_t   *mav)
+{
+  const short int  n_fc = csys->mat->n_ent;
+  const cs_lnum_t  *f_ids = csys->mat->ids;
+
+  cs_gnum_t  grows[CS_CDO_ASSEMBLE_BUF_SIZE], gcols[CS_CDO_ASSEMBLE_BUF_SIZE];
+  cs_real_t  vals[CS_CDO_ASSEMBLE_BUF_SIZE];
+
+  /* Assemble the matrix related to the advection/diffusion/reaction terms
+     If advection is activated, the resulting system is not symmetric
+     Otherwise, the system is symmetric with extra-diagonal terms. */
+  /* TODO: Add a symmetric version for optimization */
+  int  block_size = 0;
+  for (short int i = 0; i < n_fc; i++) {
+
+    const double  *val_rowi = csys->mat->val + i*n_fc;
+    const cs_lnum_t  fi_id = f_ids[i];
+
+#   pragma omp atomic
+    rhs[fi_id] += csys->rhs[i];
+
+  const cs_gnum_t  grow_id = rset->g_id[fi_id];
+
+    /* Diagonal term is excluded in this connectivity. Add it "manually" */
+    for (short int colj = 0; colj < n_fc; colj++) {
+
+      grows[block_size] = grow_id;
+      gcols[block_size] = rset->g_id[f_ids[colj]];
+      vals[block_size] = val_rowi[colj];
+      block_size += 1;
+
+      if (block_size == CS_CDO_ASSEMBLE_BUF_SIZE) {
+#       pragma omp critical
+        cs_matrix_assembler_values_add_g(mav,
+                                         CS_CDO_ASSEMBLE_BUF_SIZE,
+                                         grows, gcols, vals);
+        block_size = 0;
+      }
+
+    } /* Loop on cell faces (local cols) */
+
+  } /* Loop on cell faces (local rows) */
 
   if (block_size > 0) {
 #   pragma omp critical

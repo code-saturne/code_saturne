@@ -464,6 +464,27 @@ cs_source_term_init(cs_space_scheme_t             space_scheme,
       }
       break; // CDOVCB
 
+    case CS_SPACE_SCHEME_CDOFB:
+      switch (st_def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        compute_source[st_id] = cs_source_term_fbsd_by_value;
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        msh_flag |= CS_CDO_LOCAL_PV;
+        compute_source[st_id] = cs_source_term_fbsd_bary_by_analytic;
+        break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " Invalid type of definition for a source term in CDOVB");
+          break;
+
+        } // switch def_type
+
+      break;
+
     default:
       bft_error(__FILE__, __LINE__, 0,
                 "Invalid space scheme for setting the source term.");
@@ -1308,6 +1329,78 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
 
   for (short int v = 0; v < cm->n_vc + 1; v++)
     values[v] += hdg_eval[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar density (sd) defined on primal cells by a value.
+ *         Case of face-based schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_cell_builder_t         *cb,
+                             double                    *values)
+{
+  CS_UNUSED(cb);
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+
+  const cs_real_t *input = (const cs_real_t *)source->input;
+
+  values[cm->n_fc] = input[0] * cm->vol_c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
+ *         Case of a scalar density defined at primal cells by an analytical
+ *         function.
+ *         Use the barycentric approximation as quadrature to evaluate the
+ *         integral. Exact for linear function.
+ *         Case of face-based schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
+                                     const cs_cell_mesh_t      *cm,
+                                     cs_cell_builder_t         *cb,
+                                     double                    *values)
+{
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+
+  cs_analytic_func_t *ana = (cs_analytic_func_t *)source->input;
+
+  /* Call the analytic function to evaluate the function at xc */
+  const double  tcur = cs_time_step->t_cur;
+  double  eval_xc;
+  ana(tcur, 1, NULL, (const cs_real_t *)cm->xc, true, &eval_xc);
+
+  values[cm->n_fc] = cm->vol_c * eval_xc;
 }
 
 /*----------------------------------------------------------------------------*/
