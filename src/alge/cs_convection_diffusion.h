@@ -2877,7 +2877,7 @@ cs_i_cd_steady_slope_test_vector_old(bool               *upwind_switch,
         cs_upwind_f_val(pjr[isou],
                         &pjfrj[isou]);
 
-        upwind_switch = true;
+        *upwind_switch = true;
 
       } else {
 
@@ -3734,7 +3734,7 @@ cs_i_cd_unsteady_slope_test_vector_old(bool               *upwind_switch,
         cs_upwind_f_val(pj[isou],
                         &pjf[isou]);
 
-        upwind_switch = true;
+        *upwind_switch = true;
 
       } else {
 
