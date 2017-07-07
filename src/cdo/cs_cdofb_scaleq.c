@@ -317,7 +317,7 @@ _init_cell_structures(const cs_flag_t             cell_flag,
  *          information inside the builder to be able to compute the values
  *          at cell centers
  *
- * \param[in]      c2f         pointer to a cs_connect_index_t structure
+ * \param[in]      c2f         pointer to a cs_adjacency_t structure
  * \param[in, out] builder     pointer to a cs_cdovcb_scaleq_t structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -325,10 +325,10 @@ _init_cell_structures(const cs_flag_t             cell_flag,
 /*----------------------------------------------------------------------------*/
 
 static void
-_condense_and_store(const cs_connect_index_t  *c2f,
-                    cs_cdofb_scaleq_t         *b,
-                    cs_cell_builder_t         *cb,
-                    cs_cell_sys_t             *csys)
+_condense_and_store(const cs_adjacency_t    *c2f,
+                    cs_cdofb_scaleq_t       *b,
+                    cs_cell_builder_t       *cb,
+                    cs_cell_sys_t           *csys)
 {
   const int  n_dofs = csys->n_dofs;
   const int  n_fc = n_dofs - 1;
@@ -963,7 +963,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                                        (const cs_xdef_t **)eqp->source_terms,
+                    (const cs_xdef_t **)eqp->source_terms,
                                         cm,
                                         b->sys_flag,
                                         b->source_mask,
@@ -1085,7 +1085,7 @@ cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
        operator */
     /* for (i = 0, l=shft; i < _h->n_ent; i++, l++) { */
     /*   rowsum = 0; */
-    /*   f_id = connect->c2f->col_id[l]; */
+    /*   f_id = connect->c2f->ids[l]; */
     /*   for (j = 0; j < _h->n_ent; j++) */
     /*     rowsum += _h->val[i*_h->n_ent+j]; */
     /*   dsum += rowsum; */

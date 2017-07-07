@@ -57,6 +57,7 @@
 #include "cs_quadrature.h"
 #include "cs_reco.h"
 #include "cs_search.h"
+#include "cs_sla.h"
 #include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------

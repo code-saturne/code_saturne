@@ -1228,7 +1228,7 @@ cs_advection_field_get_flux_tef(const cs_adv_field_t        *adv,
         /* Test if flag has at least the pattern of the reference support */
         if (cs_test_flag(input->loc, cs_cdo_dual_face_byc)) {
 
-          const cs_connect_index_t  *c2e = cs_cdo_connect->c2e;
+          const cs_adjacency_t  *c2e = cs_cdo_connect->c2e;
           const cs_real_t  *cell_array = input->values + c2e->idx[cm->c_id];
 
           /* Compute the reconstruction of the flux in pec */

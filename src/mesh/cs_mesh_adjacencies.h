@@ -42,6 +42,21 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/*!
+ * @defgroup adjacency flags specifying metadata related to a cs_adjacency_t
+ *           structure
+ * @{
+ */
+
+/*!  1: Members of the structure are shared with a parent structure */
+#define  CS_ADJACENCY_SHARED    (1 << 0)
+/*!  2: Ajacency relies on a stride. No index are used to access ids */
+#define  CS_ADJACENCY_STRIDE    (1 << 1)
+/*!  4: Ajacency has a sgn member to known how is oriented each element */
+#define  CS_ADJACENCY_SIGNED    (1 << 2)
+
+/*! @} */
+
 /*============================================================================
  * Type definition
  *============================================================================*/
@@ -69,6 +84,19 @@ typedef struct {
   cs_lnum_t        *cell_b_faces;
 
 } cs_mesh_adjacencies_t;
+
+
+typedef struct {
+
+  cs_flag_t    flag;    /* Compact way to store metadata */
+  int          stride;
+
+  cs_lnum_t    n_elts;
+  cs_lnum_t   *idx;     /* size = n_elts + 1 */
+  cs_lnum_t   *ids;     /* ids from 0 to n-1 (there is no multifold entry) */
+  short int   *sgn;     /* +/- 1 according to the orientation of the element */
+
+} cs_adjacency_t;
 
 /*============================================================================
  *  Global variables
@@ -118,6 +146,138 @@ cs_mesh_adjacencies_update_mesh(void);
 
 void
 cs_mesh_adjacencies_update_cell_cells_e(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create a cs_adjacency_t structure of size n_elts
+ *
+ * \param[in]  flag       metadata related to the new cs_adjacency to create
+ * \param[in]  stride     > 0 if useful otherwise ignored
+ * \param[in]  n_elts     number of entries of the indexed list
+ *
+ * \return  a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_adjacency_create(cs_flag_t    flag,
+                    int          stride,
+                    cs_lnum_t    n_elts);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create a cs_adjacency_t structure sharing arrays scanned with a
+ *          stride
+ *
+ * \param[in]  n_elts    number of elements
+ * \param[in]  stride    value of the stride
+ * \param[in]  ids       array of element ids (size = stride * n_elts)
+ * \param[in]  sgn       array storing the orientation (may be NULL)
+ *
+ * \return  a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_adjacency_create_from_s_arrays(cs_lnum_t    n_elts,
+                                  int          stride,
+                                  cs_lnum_t   *ids,
+                                  short int   *sgn);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create a cs_adjacency_t structure sharing arrays scanned with a
+ *          stride
+ *
+ * \param[in]  n_elts    number of elements
+ * \param[in]  idx       array of size n_elts + 1
+ * \param[in]  ids       array of element ids (size = idx[n_elts])
+ * \param[in]  sgn       array storing the orientation (may be NULL)
+ *
+ * \return  a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_adjacency_create_from_i_arrays(cs_lnum_t     n_elts,
+                                  cs_lnum_t    *idx,
+                                  cs_lnum_t    *ids,
+                                  short int    *sgn);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Destroy a cs_adjacency_t structure
+ *
+ * \param[in, out]  p_adj   pointer of pointer to a cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_adjacency_free(cs_adjacency_t   **p_adj);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create a new cs_adjacency_t structure from the composition of
+ *          two cs_adjacency_t structures: (1) A -> B and (2) B -> C
+ *          The resulting structure describes A -> C. It does not rely on a
+ *          stride and has no sgn member.
+ *
+ * \param[in]  n_c_elts  number of elements in C set
+ * \param[in]  a2b       adjacency A -> B
+ * \param[in]  b2c       adjacency B -> C
+ *
+ *\return  a pointer to the cs_adjacency_t structure A -> C
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_adjacency_compose(int                      n_c_elts,
+                     const cs_adjacency_t    *a2b,
+                     const cs_adjacency_t    *b2c);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create a new cs_adjacency_t structure from a one corresponding to
+ *          A -> B. The resulting structure deals with B -> A
+ *
+ * \param[in]  n_b_elts    size of the set of B elements
+ * \param[in]  a2b         pointer to the A -> B cs_adjacency_t structure
+ *
+ * \return  a new pointer to the cs_adjacency_t structure B -> A
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_adjacency_transpose(int                     n_b_elts,
+                       const cs_adjacency_t   *a2b);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Sort each sub-list related to an entry in a cs_adjacency_t
+ *          structure
+ *
+ * \param[in]  adj     pointer to a cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_adjacency_sort(cs_adjacency_t   *adj);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Dump a cs_adjacency_t structure to a file or into the
+ *          standard output
+ *
+ * \param[in]  name    name of the dump file. Can be set to NULL
+ * \param[in]  _f      pointer to a FILE structure. Can be set to NULL.
+ * \param[in]  adj     pointer to a cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_adjacency_dump(const char           *name,
+                  FILE                 *_f,
+                  cs_adjacency_t       *adj);
 
 /*----------------------------------------------------------------------------*/
 

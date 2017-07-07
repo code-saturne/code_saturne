@@ -108,6 +108,7 @@ _compute_poisson_cdovcb(const cs_cdo_connect_t     *connect,
                         const cs_equation_t        *eq,
                         cs_real_t                   dist[])
 {
+  CS_UNUSED(connect);
   cs_real_3_t  *vtx_gradient = NULL;
 
   BFT_MALLOC(vtx_gradient, cdoq->n_vertices, cs_real_3_t);
@@ -211,7 +212,7 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
   }
 
   /* Reconstruct gradient at vertices from gradient at cells */
-  const cs_connect_index_t  *c2v = connect->c2v;
+  const cs_adjacency_t  *c2v = connect->c2v;
   const cs_real_t  *var = field->val;
 
   for (cs_lnum_t  c_id = 0; c_id < cdoq->n_cells; c_id++) {
@@ -350,7 +351,7 @@ _compute_poisson_cdofb(const cs_cdo_connect_t     *connect,
 
     for (i = connect->c2f->idx[c_id]; i < connect->c2f->idx[c_id+1]; i++) {
 
-      cs_lnum_t  f_id = connect->c2f->col_id[i];
+      cs_lnum_t  f_id = connect->c2f->ids[i];
       cs_nvec3_t  fq = cs_quant_set_face_nvec(f_id, cdoq);
       int  sgn = connect->c2f->sgn[i];
       cs_real_t  dualedge_contrib = fq.meas*sgn*(f_var[f_id] - c_var[c_id]);

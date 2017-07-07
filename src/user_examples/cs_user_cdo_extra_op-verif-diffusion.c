@@ -50,6 +50,7 @@
 #include "cs_domain.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_location.h"
 #include "cs_parall.h"
@@ -198,7 +199,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
   const cs_lnum_t  n_vertices = cdoq->n_vertices;
   const cs_field_t  *field = cs_equation_get_field(eq);
   const cs_real_t  *pdi = field->val;
-  const cs_connect_index_t  *c2v = connect->c2v;
+  const cs_adjacency_t  *c2v = connect->c2v;
 
   /* Analyze the discrete solution */
   cs_real_t  pdi_min, pdi_max, pdi_wsum, pdi_asum, pdi_ssum;

@@ -233,22 +233,22 @@ cs_equation_get_matrix_assembler(cs_space_scheme_t   scheme);
 /*!
  * \brief  Get the connectivity vertex->vertices for the local rank
  *
- * \return  a pointer to a cs_connect_index_t structure
+ * \return  a pointer to a cs_adjacency_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_connect_index_t *
+const cs_adjacency_t *
 cs_equation_get_v2v_index(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Get the connectivity face->faces for the local rank
  *
- * \return  a pointer to a cs_connect_index_t structure
+ * \return  a pointer to a cs_adjacency_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_connect_index_t *
+const cs_adjacency_t *
 cs_equation_get_f2f_index(void);
 
 /*----------------------------------------------------------------------------*/

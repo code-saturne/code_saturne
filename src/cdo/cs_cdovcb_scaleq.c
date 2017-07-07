@@ -381,7 +381,7 @@ _init_cell_structures(const cs_flag_t             cell_flag,
  *          information inside the builder to be able to compute the values
  *          at cell centers
  *
- * \param[in]      c2v         pointer to a cs_connect_index_t structure
+ * \param[in]      c2v         pointer to a cs_adjacency_t structure
  * \param[in, out] builder     pointer to a cs_cdovcb_scaleq_t structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
@@ -389,10 +389,10 @@ _init_cell_structures(const cs_flag_t             cell_flag,
 /*----------------------------------------------------------------------------*/
 
 static void
-_condense_and_store(const cs_connect_index_t  *c2v,
-                    cs_cdovcb_scaleq_t        *b,
-                    cs_cell_builder_t         *cb,
-                    cs_cell_sys_t             *csys)
+_condense_and_store(const cs_adjacency_t    *c2v,
+                    cs_cdovcb_scaleq_t      *b,
+                    cs_cell_builder_t       *cb,
+                    cs_cell_sys_t           *csys)
 {
   const int  n_dofs = csys->n_dofs;
   const int  n_vc = n_dofs - 1;
@@ -932,7 +932,7 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
 
       /* Compute the contribution of all source terms in each cell */
       cs_source_term_compute_cellwise(eqp->n_source_terms,
-                                      (const cs_xdef_t **)eqp->source_terms,
+                  (const cs_xdef_t **)eqp->source_terms,
                                       cm,
                                       b->sys_flag,
                                       b->source_mask,
@@ -1263,7 +1263,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                                        (const cs_xdef_t **)eqp->source_terms,
+                    (const cs_xdef_t **)eqp->source_terms,
                                         cm,
                                         b->sys_flag,
                                         b->source_mask,
@@ -1401,7 +1401,7 @@ cs_cdovcb_scaleq_update_field(const cs_real_t     *solu,
   for (cs_lnum_t i = 0; i < n_vertices; i++) field_val[i] = solu[i];
 
   /* Compute values at cells pc = acc^-1*(sc - acv*pv) */
-  const cs_connect_index_t  *c2v = cs_shared_connect->c2v;
+  const cs_adjacency_t  *c2v = cs_shared_connect->c2v;
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -1493,7 +1493,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
                 " managed yet."));
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_sla_matrix_t  *f2c = connect->f2c;
+  const cs_adjacency_t  *f2c = connect->f2c;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
   double  flx, p_f;
@@ -1510,7 +1510,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
   if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) {
 
     const cs_lnum_t  n_i_faces = connect->n_faces[2];
-    const cs_lnum_t  *cell_ids = f2c->col_id + f2c->idx[n_i_faces];
+    const cs_lnum_t  *cell_ids = f2c->ids + f2c->idx[n_i_faces];
 
     for (cs_lnum_t id = 0; id < n_elts[0]; id++) {
 
@@ -1566,7 +1566,7 @@ cs_cdovcb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
 
       for (cs_lnum_t j = f2c->idx[f_id]; j < f2c->idx[f_id+1]; j++) {
 
-        const cs_lnum_t  c_id = f2c->col_id[j];
+        const cs_lnum_t  c_id = f2c->ids[j];
 
         /* Build a face-wise view of the mesh */
         cs_face_mesh_build(c_id, f_id, connect, quant, fm);
@@ -1671,8 +1671,8 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
 
   cs_timer_t  t0 = cs_timer_time();
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(quant, connect, location, eqp, b, diff_flux, values, \
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)   \
+  shared(quant, connect, location, eqp, b, diff_flux, values,         \
          cs_cdovcb_cell_bld)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -1715,7 +1715,7 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
     }
 
     /* Define the flux by cellwise contributions */
-#pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */

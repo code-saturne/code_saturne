@@ -282,8 +282,8 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
-  const cs_sla_matrix_t  *c2f = connect->c2f;
-  const cs_sla_matrix_t  *f2e = connect->f2e;
+  const cs_adjacency_t  *c2f = connect->c2f;
+  const cs_adjacency_t  *f2e = connect->f2e;
   const double  tcur = cs_time_step->t_cur;
 
   /* Compute dual volumes */
@@ -294,14 +294,14 @@ _dcsd_by_analytic(cs_analytic_func_t       *ana,
 
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
-      const cs_lnum_t  f_id = c2f->col_id[i];
+      const cs_lnum_t  f_id = c2f->ids[i];
       const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
 
       for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
-        const cs_lnum_t  e_id = f2e->col_id[j];
-        const cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
-        const cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id+1];
+        const cs_lnum_t  e_id = f2e->ids[j];
+        const cs_lnum_t  v1_id = connect->e2v->ids[2*e_id];
+        const cs_lnum_t  v2_id = connect->e2v->ids[2*e_id+1];
         const cs_real_t  *xv1 = quant->vtx_coord + 3*v1_id;
         const cs_real_t  *xv2 = quant->vtx_coord + 3*v2_id;
 
@@ -504,8 +504,8 @@ _pcsd_by_analytic(cs_analytic_func_t       *ana,
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_cdo_connect_t  *connect = cs_cdo_connect;
-  const cs_sla_matrix_t  *c2f = connect->c2f;
-  const cs_sla_matrix_t  *f2e = connect->f2e;
+  const cs_adjacency_t  *c2f = connect->c2f;
+  const cs_adjacency_t  *f2e = connect->f2e;
   const double  tcur = cs_time_step->t_cur;
 
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
@@ -515,14 +515,14 @@ _pcsd_by_analytic(cs_analytic_func_t       *ana,
 
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
-      const cs_lnum_t  f_id = c2f->col_id[i];
+      const cs_lnum_t  f_id = c2f->ids[i];
       const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
 
       for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
-        const cs_lnum_t  e_id = f2e->col_id[j];
-        const cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
-        const cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id+1];
+        const cs_lnum_t  e_id = f2e->ids[j];
+        const cs_lnum_t  v1_id = connect->e2v->ids[2*e_id];
+        const cs_lnum_t  v2_id = connect->e2v->ids[2*e_id+1];
         const cs_real_t  *xv1 = quant->vtx_coord + 3*v1_id;
         const cs_real_t  *xv2 = quant->vtx_coord + 3*v2_id;
 
@@ -573,7 +573,7 @@ _dcsd_by_value(const double       const_val,
                const cs_lnum_t   *elt_ids,
                double             values[])
 {
-  const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
+  const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_real_t  *dual_vol = quant->dcell_vol; /* scan by c2v */
 
@@ -653,7 +653,7 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
 {
   const double  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  const cs_sla_matrix_t  *c2f = cs_cdo_connect->c2f;
+  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
 
   /* Initialize todo array */
   bool  *todo = NULL;
@@ -669,7 +669,7 @@ _pfsp_by_analytic(cs_analytic_func_t    *ana,
 
     for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
 
-      cs_lnum_t  f_id = c2f->col_id[j];
+      cs_lnum_t  f_id = c2f->ids[j];
       if (todo[f_id]) {
         const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
         ana(tcur, 1, NULL, xf, false,  values + f_id);
@@ -703,7 +703,7 @@ _pvsp_by_analytic(cs_analytic_func_t    *ana,
 {
   const double  tcur = cs_time_step->t_cur;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
+  const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
 
   /* Initialize todo array */
   cs_lnum_t  *vtx_lst = NULL;
@@ -756,7 +756,7 @@ _pfsp_by_value(const double       const_val,
                double             values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  const cs_sla_matrix_t  *c2f = cs_cdo_connect->c2f;
+  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
 
   /* Initialize todo array */
   bool  *todo = NULL;
@@ -772,7 +772,7 @@ _pfsp_by_value(const double       const_val,
 
     for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
 
-      cs_lnum_t  f_id = c2f->col_id[j];
+      cs_lnum_t  f_id = c2f->ids[j];
       if (todo[f_id])
         values[f_id] = const_val, todo[f_id] = false;
 
@@ -801,11 +801,11 @@ _untag_frontier_vertices(cs_lnum_t      c_id,
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_lnum_t  *f2v_idx = m->i_face_vtx_idx;
   const cs_lnum_t  *f2v_lst = m->i_face_vtx_lst;
-  const cs_sla_matrix_t  *c2f = cs_cdo_connect->c2f;
+  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
 
   for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
 
-    const cs_lnum_t  f_id = c2f->col_id[j];
+    const cs_lnum_t  f_id = c2f->ids[j];
     if (f_id < m->n_i_faces) { /* interior face */
 
       if (cell_tag[m->i_face_cells[f_id][0]] == false ||
@@ -844,7 +844,7 @@ _pvsp_by_qov(const double       quantity_val,
   const cs_lnum_t  n_cells = quant->n_cells;
   const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_real_t  *dc_vol = quant->dcell_vol;
-  const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
+  const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
 
   cs_lnum_t  *vtx_tag = NULL;
   bool  *cell_tag = NULL;
@@ -988,7 +988,7 @@ _pvsp_by_value(cs_real_t          const_val,
                double             values[])
 {
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  const cs_connect_index_t  *c2v = cs_cdo_connect->c2v;
+  const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
 
   /* Initialize todo array */
   bool  *todo = NULL;

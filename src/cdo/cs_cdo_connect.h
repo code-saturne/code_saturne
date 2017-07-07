@@ -33,10 +33,9 @@
 
 #include "cs_base.h"
 #include "cs_cdo.h"
-#include "cs_cdo_toolbox.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_range_set.h"
-#include "cs_sla.h"
 
 #include "fvm_defs.h"
 
@@ -55,27 +54,24 @@ BEGIN_C_DECLS
 /* Connectivity structure */
 typedef struct {
 
-  /* Vertex-related members */
   cs_lnum_t          n_vertices;
-  cs_sla_matrix_t   *v2e;         // vertex --> edges connectivity
+  cs_lnum_t          n_edges;
+  cs_lnum_t          n_faces[3];  // 0: all, 1: border, 2: interior
+  cs_lnum_t          n_cells;
 
   /* Edge-related members */
-  cs_lnum_t          n_edges;
-  cs_sla_matrix_t   *e2f;         // edge --> faces connectivity
-  cs_sla_matrix_t   *e2v;         // edge --> vertices connectivity
+  cs_adjacency_t    *e2v;         // edge --> vertices connectivity
 
   /* Face-related members */
-  cs_lnum_t          n_faces[3];  // 0: all, 1: border, 2: interior
-  cs_sla_matrix_t   *f2c;         // face --> cells connectivity
-  cs_sla_matrix_t   *f2e;         // face --> edges connectivity
+  cs_adjacency_t    *f2c;         // face --> cells connectivity
+  cs_adjacency_t    *f2e;         // face --> edges connectivity
 
   /* Cell-related members */
-  cs_lnum_t            n_cells;
-  fvm_element_t       *cell_type; // type of cell
-  cs_flag_t           *cell_flag; // Flag (Border)
-  cs_sla_matrix_t     *c2f;       // cell --> faces connectivity
-  cs_connect_index_t  *c2e;       // cell -> edges connectivity
-  cs_connect_index_t  *c2v;       // cell -> vertices connectivity
+  fvm_element_t     *cell_type; // type of cell
+  cs_flag_t         *cell_flag; // Flag (Border)
+  cs_adjacency_t    *c2f;       // cell --> faces connectivity
+  cs_adjacency_t    *c2e;       // cell --> edges connectivity
+  cs_adjacency_t    *c2v;       // cell --> vertices connectivity
 
   /* Delta of ids between the min./max. values of entities related to a cell
      Useful to store compactly the link between mesh ids and cell mesh ids
@@ -92,8 +88,15 @@ typedef struct {
   int  n_max_v2ec;   // max. number of edges connected to a vertex in a cell
 
   /* Structures to handle parallelism */
-  const cs_range_set_t   *v_rs;  // range set related to vertices
-  cs_range_set_t         *f_rs;  // range set related to faces
+  const cs_range_set_t   *v_rs;     // range set related to vertices
+
+  cs_range_set_t         *f_rs;     // range set related to faces
+  cs_interface_set_t     *f_ifs;    // interface set for faces
+
+  cs_range_set_t         *hho1_rs;  // range for HHO k=1 schemes
+  cs_interface_set_t     *hho1_ifs; // interface set HHO k=1 schemes
+  cs_range_set_t         *hho2_rs;  // range for HHO k=2 schemes
+  cs_interface_set_t     *hho2_ifs; // interface set HHO k=2 schemes
 
 } cs_cdo_connect_t;
 

@@ -1421,7 +1421,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
                 " managed yet."));
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_sla_matrix_t  *f2c = connect->f2c;
+  const cs_adjacency_t  *f2c = connect->f2c;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
   double  pf;
@@ -1431,7 +1431,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
   if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) { // Belongs to only one cell
 
     const cs_lnum_t  n_i_faces = connect->n_faces[2];
-    const cs_lnum_t  *cell_ids = f2c->col_id + f2c->idx[n_i_faces];
+    const cs_lnum_t  *cell_ids = f2c->ids + f2c->idx[n_i_faces];
 
     for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
 
@@ -1483,7 +1483,7 @@ cs_cdovb_scaleq_compute_flux_across_plane(const cs_real_t     direction[],
 
       for (cs_lnum_t j = f2c->idx[f_id]; j < f2c->idx[f_id+1]; j++) {
 
-        const cs_lnum_t  c_id = f2c->col_id[j];
+        const cs_lnum_t  c_id = f2c->ids[j];
 
         if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
 
@@ -1605,7 +1605,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
        Get the cellwise view of the mesh and the algebraic system */
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_builder_t  *cb = cs_cdovb_cell_bld[t_id];
-    cs_flag_t  msh_flag = 0;
+    cs_flag_t  msh_flag = CS_CDO_LOCAL_PV;
     cs_hodge_t  *get_diffusion_hodge = NULL;
     cs_cdo_cellwise_diffusion_flux_t  *compute_flux = NULL;
 
@@ -1618,7 +1618,7 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
     case CS_PARAM_HODGE_ALGO_COST:
       BFT_MALLOC(pot, connect->n_max_vbyc, double);
 
-      msh_flag = CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
+      msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
         CS_CDO_LOCAL_PVQ;
 
       /* Set function pointers */
@@ -1643,14 +1643,14 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
       else if (cs_test_flag(location, cs_cdo_dual_face_byc))
         compute_flux = cs_cdo_diffusion_vcost_get_dfbyc_flux;
 
-      msh_flag = CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
+      msh_flag |= CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EV |
         CS_CDO_LOCAL_EFQ | CS_CDO_LOCAL_PVQ;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
       BFT_MALLOC(pot, connect->n_max_vbyc + 1, double);
 
-      msh_flag = CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PEQ |
+      msh_flag |= CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PEQ |
         CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_FEQ |
         CS_CDO_LOCAL_EV;
 

@@ -87,7 +87,7 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_pv_at_cell_centers(const cs_connect_index_t    *c2v,
+cs_reco_pv_at_cell_centers(const cs_adjacency_t        *c2v,
                            const cs_cdo_quantities_t   *quant,
                            const double                *array,
                            cs_real_t                   *val_xc);
@@ -107,7 +107,7 @@ cs_reco_pv_at_cell_centers(const cs_connect_index_t    *c2v,
 
 void
 cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
-                          const cs_connect_index_t    *c2v,
+                          const cs_adjacency_t        *c2v,
                           const cs_cdo_quantities_t   *quant,
                           const double                *array,
                           cs_real_t                   *val_xc);
@@ -148,7 +148,7 @@ cs_reco_pf_from_pv(cs_lnum_t                     f_id,
 
 void
 cs_reco_dfbyc_at_cell_center(cs_lnum_t                    c_id,
-                             const cs_connect_index_t    *c2e,
+                             const cs_adjacency_t        *c2e,
                              const cs_cdo_quantities_t   *quant,
                              const double                *array,
                              cs_real_3_t                  val_xc);
@@ -265,7 +265,7 @@ cs_reco_cw_cell_grad_from_scalar_pv(const cs_cell_mesh_t    *cm,
 
 void
 cs_reco_ccen_edge_dof(cs_lnum_t                   cid,
-                      const cs_connect_index_t   *c2e,
+                      const cs_adjacency_t       *c2e,
                       const cs_cdo_quantities_t  *quant,
                       const double               *dof,
                       double                      reco[]);

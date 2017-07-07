@@ -47,6 +47,7 @@
 #include "cs_cdofb_scaleq.h"
 #include "cs_hho_scaleq.h"
 #include "cs_log.h"
+#include "cs_xdef_eval.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -88,11 +89,11 @@ static cs_matrix_structure_t  **cs_equation_common_ms = NULL;
 
 /* Structure related to the index of a matrix for vertex-based schemes
    vertex --> vertices through cell connectivity */
-static cs_connect_index_t  *cs_connect_v2v = NULL;
+static cs_adjacency_t  *cs_connect_v2v = NULL;
 
 /* Structure related to the index of a matrix for face-based schemes
    face --> faces through cell connectivity */
-static cs_connect_index_t  *cs_connect_f2f = NULL;
+static cs_adjacency_t  *cs_connect_f2f = NULL;
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
 static const cs_cdo_quantities_t  *cs_shared_quant;
@@ -113,24 +114,25 @@ static cs_timer_counter_t  tcc; // connectivity building
  *
  * \param[in]  connect       pointer to a cs_cdo_connect_t structure
  *
- * \return a pointer to a new allocated cs_connect_index_t structure
+ * \return a pointer to a new allocated cs_adjacency_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_connect_index_t *
+static cs_adjacency_t *
 _get_v2v(const cs_cdo_connect_t     *connect)
 {
   /* Build a (sorted) v2v connectivity index */
   const cs_lnum_t  n_vertices = connect->n_vertices;
-  const cs_connect_index_t  *c2v = connect->c2v;
+  const cs_adjacency_t  *c2v = connect->c2v;
 
-  cs_connect_index_t  *v2c = cs_index_transpose(n_vertices, c2v);
-  cs_connect_index_t  *v2v = cs_index_compose(n_vertices, v2c, c2v);
+  cs_adjacency_t  *v2c = cs_adjacency_transpose(n_vertices, c2v);
+  cs_adjacency_t  *v2v = cs_adjacency_compose(n_vertices, v2c, c2v);
 
-  cs_index_sort(v2v);
+  cs_adjacency_sort(v2v);
 
   /* Update index (v2v has a diagonal entry. We remove it since we have in
-     mind an index structure for a  matrix stored using the MSR format */
+     mind an matrix structure stored using the MSR format (with diagonal terms
+     counted outside the index) */
   cs_lnum_t  shift = 0;
   cs_lnum_t  prev_start = v2v->idx[0];
   cs_lnum_t  prev_end = v2v->idx[1];
@@ -149,8 +151,10 @@ _get_v2v(const cs_cdo_connect_t     *connect)
 
   } // Loop on vertices
 
+  BFT_REALLOC(v2v->ids, v2v->idx[n_vertices], cs_lnum_t);
+
   /* Free temporary buffers */
-  cs_index_free(&v2c);
+  cs_adjacency_free(&v2c);
 
   return v2v;
 }
@@ -161,28 +165,20 @@ _get_v2v(const cs_cdo_connect_t     *connect)
  *
  * \param[in]  connect       pointer to a cs_cdo_connect_t structure
  *
- * \return a pointer to a new allocated cs_connect_index_t structure
+ * \return a pointer to a new allocated cs_adjacency_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_connect_index_t *
+static cs_adjacency_t *
 _get_f2f(const cs_cdo_connect_t     *connect)
 {
-  cs_connect_index_t  *c2f = NULL, *f2c = NULL, *f2f = NULL;
+  cs_adjacency_t  *f2f = NULL;
 
   const cs_lnum_t  n_faces = connect->n_faces[0];
-  const cs_sla_matrix_t *mc2f = connect->c2f;
-  const cs_sla_matrix_t *mf2c = connect->f2c;
 
   /* Build a face -> face connectivity */
-  f2c = cs_index_map(mf2c->n_rows, mf2c->idx, mf2c->col_id);
-  c2f = cs_index_map(mc2f->n_rows, mc2f->idx, mc2f->col_id);
-  f2f = cs_index_compose(n_faces, f2c, c2f);
-  cs_index_sort(f2f);
-
-  /* Free temporary memory */
-  cs_index_free(&f2c);
-  cs_index_free(&c2f);
+  f2f = cs_adjacency_compose(n_faces, connect->f2c, connect->c2f);
+  cs_adjacency_sort(f2f);
 
   /* Update index (v2v has a diagonal entry. We remove it since we have in
      mind an index structure for a  matrix stored using the MSR format */
@@ -204,6 +200,8 @@ _get_f2f(const cs_cdo_connect_t     *connect)
 
   } // Loop on faces
 
+  BFT_REALLOC(f2f->ids, f2f->idx[n_faces], cs_lnum_t);
+
   return f2f;
 }
 
@@ -212,17 +210,17 @@ _get_f2f(const cs_cdo_connect_t     *connect)
  * \brief  Define a cs_matrix_assembler_t structure
  *
  * \param[in]      n_elts   number of elements
- * \param[in]      x2x      pointer to a cs_connect_index_t struct.
+ * \param[in]      x2x      pointer to a cs_adjacency_t struct.
  * \param[in]      rs       pointer to a range set or NULL if sequential
  * \param[in, out] ma       pointer to the cs_matrix_assembler_t to update
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_matrix_assembler(cs_lnum_t                   n_elts,
-                        const cs_connect_index_t   *x2x,
-                        const cs_range_set_t       *rs,
-                        cs_matrix_assembler_t      *ma)
+_build_matrix_assembler(cs_lnum_t                n_elts,
+                        const cs_adjacency_t    *x2x,
+                        const cs_range_set_t    *rs,
+                        cs_matrix_assembler_t   *ma)
 {
   cs_gnum_t  *grows = NULL, *gcols = NULL;
 
@@ -449,10 +447,10 @@ cs_equation_free_common_structures(cs_flag_t   scheme_flag)
   cs_timer_t t0 = cs_timer_time();
 
   if (scheme_flag & CS_SCHEME_FLAG_CDOVB || scheme_flag & CS_SCHEME_FLAG_CDOVCB)
-    cs_index_free(&(cs_connect_v2v));
+    cs_adjacency_free(&(cs_connect_v2v));
 
   if (scheme_flag & CS_SCHEME_FLAG_CDOFB || scheme_flag & CS_SCHEME_FLAG_HHO)
-    cs_index_free(&(cs_connect_f2f));
+    cs_adjacency_free(&(cs_connect_f2f));
 
     /* Free common structures specific to a numerical scheme */
   if ((scheme_flag & CS_SCHEME_FLAG_CDOVB) &&
@@ -713,6 +711,10 @@ cs_equation_compute_dirichlet_sf(const cs_mesh_t            *mesh,
                                  const cs_cdo_bc_list_t     *dir,
                                  cs_cell_builder_t          *cb)
 {
+  CS_UNUSED(mesh);
+  CS_UNUSED(dir);
+  CS_UNUSED(cb);
+
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
   cs_real_t  *dir_val = NULL;
@@ -1008,11 +1010,11 @@ cs_equation_get_matrix_assembler(cs_space_scheme_t   scheme)
 /*!
  * \brief  Get the connectivity vertex->vertices for the local rank
  *
- * \return  a pointer to a cs_connect_index_t structure
+ * \return  a pointer to a cs_adjacency_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_connect_index_t *
+const cs_adjacency_t *
 cs_equation_get_v2v_index(void)
 {
   return cs_connect_v2v;
@@ -1022,11 +1024,11 @@ cs_equation_get_v2v_index(void)
 /*!
  * \brief  Get the connectivity face->faces for the local rank
  *
- * \return  a pointer to a cs_connect_index_t structure
+ * \return  a pointer to a cs_adjacency_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-const cs_connect_index_t *
+const cs_adjacency_t *
 cs_equation_get_f2f_index(void)
 {
   return cs_connect_f2f;

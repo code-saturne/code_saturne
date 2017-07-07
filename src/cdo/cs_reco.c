@@ -86,10 +86,10 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
 {
   double  *crec = *p_crec, *frec = *p_frec;
 
-  const cs_connect_index_t  *c2v = connect->c2v;
+  const cs_adjacency_t  *c2v = connect->c2v;
   const double  *dcv = quant->dcell_vol;
-  const cs_sla_matrix_t  *f2e = connect->f2e;
-  const cs_sla_matrix_t  *e2v = connect->e2v;
+  const cs_adjacency_t  *f2e = connect->f2e;
+  const cs_adjacency_t  *e2v = connect->e2v;
 
   if (dof == NULL)
     return;
@@ -119,9 +119,9 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
     double  f_surf = 0.;
     for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
-      const cs_lnum_t  e_id = f2e->col_id[j];
-      const cs_lnum_t  v1_id = e2v->col_id[2*e_id];
-      const cs_lnum_t  v2_id = e2v->col_id[2*e_id+1];
+      const cs_lnum_t  e_id = f2e->ids[j];
+      const cs_lnum_t  v1_id = e2v->ids[2*e_id];
+      const cs_lnum_t  v2_id = e2v->ids[2*e_id+1];
       const cs_real_t  *xv1 = quant->vtx_coord + 3*v1_id;
       const cs_real_t  *xv2 = quant->vtx_coord + 3*v2_id;
 
@@ -164,7 +164,7 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_pv_at_cell_centers(const cs_connect_index_t    *c2v,
+cs_reco_pv_at_cell_centers(const cs_adjacency_t        *c2v,
                            const cs_cdo_quantities_t   *quant,
                            const double                *array,
                            cs_real_t                   *val_xc)
@@ -211,7 +211,7 @@ cs_reco_pv_at_cell_centers(const cs_connect_index_t    *c2v,
 
 void
 cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
-                          const cs_connect_index_t    *c2v,
+                          const cs_adjacency_t        *c2v,
                           const cs_cdo_quantities_t   *quant,
                           const double                *array,
                           cs_real_t                   *val_xc)
@@ -267,16 +267,16 @@ cs_reco_pf_from_pv(cs_lnum_t                     f_id,
 
   const cs_real_t  *xf = cs_quant_set_face_center(f_id, quant);
   const cs_real_t  *xyz = quant->vtx_coord;
-  const cs_sla_matrix_t  *e2v = connect->e2v;
-  const cs_sla_matrix_t  *f2e = connect->f2e;
+  const cs_adjacency_t  *e2v = connect->e2v;
+  const cs_adjacency_t  *f2e = connect->f2e;
 
   double f_surf = 0.;
   for (cs_lnum_t i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
 
-    const cs_lnum_t  e_id = f2e->col_id[i];
+    const cs_lnum_t  e_id = f2e->ids[i];
     const cs_lnum_t  shift_e = 2*e_id;
-    const cs_lnum_t  v1_id = e2v->col_id[shift_e];
-    const cs_lnum_t  v2_id = e2v->col_id[shift_e+1];
+    const cs_lnum_t  v1_id = e2v->ids[shift_e];
+    const cs_lnum_t  v2_id = e2v->ids[shift_e+1];
     const double  pdi_e = 0.5*(pdi[v1_id] + pdi[v2_id]);
     const cs_real_t  *xv1 = xyz + 3*v1_id;
     const cs_real_t  *xv2 = xyz + 3*v2_id;
@@ -306,7 +306,7 @@ cs_reco_pf_from_pv(cs_lnum_t                     f_id,
 
 void
 cs_reco_dfbyc_at_cell_center(cs_lnum_t                    c_id,
-                             const cs_connect_index_t    *c2e,
+                             const cs_adjacency_t        *c2e,
                              const cs_cdo_quantities_t   *quant,
                              const double                *array,
                              cs_real_3_t                  val_xc)
@@ -457,15 +457,15 @@ cs_reco_grd_cell_from_pv(cs_lnum_t                    c_id,
   if (pdi == NULL)
     return;
 
-  const cs_connect_index_t  *c2e = connect->c2e;
-  const cs_sla_matrix_t  *e2v = connect->e2v;
+  const cs_adjacency_t  *c2e = connect->c2e;
+  const cs_adjacency_t  *e2v = connect->e2v;
 
   for (cs_lnum_t i = c2e->idx[c_id]; i < c2e->idx[c_id+1]; i++) {
 
     const cs_lnum_t  shift_e = 2*c2e->ids[i];
     const short int  sgn_v1 = e2v->sgn[shift_e];
-    const cs_real_t  pv1 = pdi[e2v->col_id[shift_e]];
-    const cs_real_t  pv2 = pdi[e2v->col_id[shift_e+1]];
+    const cs_real_t  pv1 = pdi[e2v->ids[shift_e]];
+    const cs_real_t  pv2 = pdi[e2v->ids[shift_e+1]];
     const cs_real_t  gdi_e = sgn_v1*(pv1 - pv2);
 
     /* Dual face quantities */
@@ -562,7 +562,7 @@ cs_reco_cw_cell_grad_from_scalar_pv(const cs_cell_mesh_t    *cm,
 
 void
 cs_reco_ccen_edge_dof(cs_lnum_t                    cid,
-                      const cs_connect_index_t    *c2e,
+                      const cs_adjacency_t        *c2e,
                       const cs_cdo_quantities_t   *quant,
                       const double                *dof,
                       double                       reco[])

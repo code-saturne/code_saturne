@@ -70,10 +70,10 @@ typedef struct {
   cs_lnum_t  n_vertices;
   cs_lnum_t  n_edges;
 
-  int  *e2v_lst;  /* Edge ref. definition (2*n_edges) */
-  int  *v2v_idx;
-  int  *v2v_lst;
-  int  *v2v_edge_lst;
+  cs_lnum_t  *e2v_lst;  /* Edge ref. definition (2*n_edges) */
+  cs_lnum_t  *v2v_idx;
+  cs_lnum_t  *v2v_lst;
+  cs_lnum_t  *v2v_edge_lst;
 
 } _edge_builder_t;
 
@@ -83,187 +83,99 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a entry in the face --> edges connectivity
+ * \brief  Define the cell -> faces connectivity which is stored in a
+ *         cs_adjacency_t structure
+ *         Interior and border faces are both considered. Border face ids are
+ *         shift by n_i_faces.
  *
- * \param[in]      shift     position where to add the new entry
- * \param[in]      v1_num    number of the first vertex
- * \param[in]      v2_num    number of the second vertex
- * \param[in]      builder   pointer to a _edge_builder_t structure
- * \param[in, out] f2e       face --> edges connectivity
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_add_f2e_entry(cs_lnum_t                   shift,
-               cs_lnum_t                   v1_num,
-               cs_lnum_t                   v2_num,
-               const _edge_builder_t      *builder,
-               cs_sla_matrix_t            *f2e)
+static cs_adjacency_t *
+_build_c2f_connect(const cs_mesh_t   *mesh)
 {
-  cs_lnum_t  i;
+  cs_lnum_t  *cell_shift = NULL;
+  cs_adjacency_t  *c2f = NULL;
 
-  /* Sanity check */
-  assert(v1_num > 0);
-  assert(v2_num > 0);
-  assert(builder != NULL);
-  assert(builder->v2v_idx != NULL);
-  assert(builder->v2v_idx[v1_num] > builder->v2v_idx[v1_num-1]);
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_b_faces = mesh->n_b_faces;
 
-  /* Get edge number */
-  cs_lnum_t  edge_sgn_num = 0;
-  cs_lnum_t  *v2v_idx = builder->v2v_idx, *v2v_lst = builder->v2v_lst;
+  c2f = cs_adjacency_create(CS_ADJACENCY_SIGNED, // flag
+                            -1,                  // no stride
+                            n_cells);
 
-  for (i = v2v_idx[v1_num-1]; i < v2v_idx[v1_num]; i++) {
-    if (v2v_lst[i] == v2_num) {
-      edge_sgn_num = builder->v2v_edge_lst[i];
-      break;
-    }
-  }
-
-  if (edge_sgn_num == 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" The given couple of vertices (number): [%d, %d]\n"
-                " is not defined in the edge structure.\n"), v1_num, v2_num);
-
-  f2e->col_id[shift] = CS_ABS(edge_sgn_num) - 1;
-  if (edge_sgn_num < 0)
-    f2e->sgn[shift] = -1;
-  else
-    f2e->sgn[shift] = 1;
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the face -> edges connectivity which is stored in a
- *         cs_sla_matrix_t structure
- *
- * \param[in]  m         pointer to a cs_mesh_t structure
- * \param[in]  builder   pointer to the _edge_builder_t structure
- *
- * \return a pointer to a new allocated cs_sla_matrix_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_sla_matrix_t *
-_build_f2e_connect(const cs_mesh_t         *m,
-                   const _edge_builder_t   *builder)
-{
-  int  i, j, s, e, shift, v1_num, v2_num;
-
-  cs_sla_matrix_t  *f2e = NULL;
-
-  const int  n_i_faces = m->n_i_faces;
-  const int  n_b_faces = m->n_b_faces;
-  const int  n_faces = n_i_faces + n_b_faces;
-  const int  n_edges = builder->n_edges;
-
-  f2e = cs_sla_matrix_create(n_faces, n_edges, 1, CS_SLA_MAT_DEC, false);
+  BFT_MALLOC(cell_shift, n_cells, cs_lnum_t);
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_cells; i++) cell_shift[i] = 0;
 
   /* Build index */
-  for (i = 0; i < n_i_faces; i++)
-    f2e->idx[i+1] += m->i_face_vtx_idx[i+1] - m->i_face_vtx_idx[i];
-  for (i = 0, j=n_i_faces+1; i < n_b_faces; i++, j++)
-    f2e->idx[j] += m->b_face_vtx_idx[i+1] - m->b_face_vtx_idx[i];
-  for (i = 0; i < n_faces; i++)
-    f2e->idx[i+1] += f2e->idx[i];
+  for (cs_lnum_t i = 0; i < n_b_faces; i++)
+    c2f->idx[mesh->b_face_cells[i]+1] += 1;
 
-  assert(f2e->idx[n_faces]
-         == m->i_face_vtx_idx[n_i_faces] + m->b_face_vtx_idx[n_b_faces]);
+  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
 
-  /* Build matrix */
-  BFT_MALLOC(f2e->col_id, f2e->idx[n_faces], cs_lnum_t);
-  BFT_MALLOC(f2e->sgn, f2e->idx[n_faces], short int);
+    cs_lnum_t  c1_id = mesh->i_face_cells[i][0];
+    cs_lnum_t  c2_id = mesh->i_face_cells[i][1];
 
-  /* Border faces */
-  for (i = 0; i < n_b_faces; i++) {
+    if (c1_id < n_cells) // cell owned by the local rank
+      c2f->idx[c1_id+1] += 1;
+    if (c2_id < n_cells) // cell owned by the local rank
+      c2f->idx[c2_id+1] += 1;
+  }
 
-    s = m->b_face_vtx_idx[i], e = m->b_face_vtx_idx[i+1];
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    c2f->idx[i+1] += c2f->idx[i];
 
-    cs_lnum_t  f_id = n_i_faces + i;
+  const cs_lnum_t  idx_size = c2f->idx[n_cells];
 
-    shift = f2e->idx[f_id];
-    v1_num = m->b_face_vtx_lst[e-1] + 1;
-    v2_num = m->b_face_vtx_lst[s] + 1;
-    _add_f2e_entry(shift, v1_num, v2_num, builder, f2e);
-
-    for (j = s; j < e-1; j++) {
-
-      shift++;
-      v1_num = m->b_face_vtx_lst[j] + 1;
-      v2_num = m->b_face_vtx_lst[j+1] + 1;
-      _add_f2e_entry(shift, v1_num, v2_num, builder, f2e);
-
-    }
-
-  } /* End of loop on border faces */
+  /* Fill arrays */
+  BFT_MALLOC(c2f->ids, idx_size, cs_lnum_t);
+  BFT_MALLOC(c2f->sgn, idx_size, short int);
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
-    s = m->i_face_vtx_idx[f_id], e = m->i_face_vtx_idx[f_id+1];
-    shift = f2e->idx[f_id];
-    v1_num = m->i_face_vtx_lst[e-1] + 1;
-    v2_num = m->i_face_vtx_lst[s] + 1;
-    _add_f2e_entry(shift, v1_num, v2_num, builder, f2e);
+    const cs_lnum_t  c1_id = mesh->i_face_cells[f_id][0];
+    const cs_lnum_t  c2_id = mesh->i_face_cells[f_id][1];
 
-    for (j = s; j < e-1; j++) {
+    if (c1_id < n_cells) { /* Do not consider ghost cells */
 
-      shift++;
-      v1_num = m->i_face_vtx_lst[j] + 1;
-      v2_num = m->i_face_vtx_lst[j+1] + 1;
-      _add_f2e_entry(shift, v1_num, v2_num, builder, f2e);
+      const cs_lnum_t  shift = c2f->idx[c1_id] + cell_shift[c1_id];
+      c2f->ids[shift] = f_id;
+      c2f->sgn[shift] = 1;
+      cell_shift[c1_id] += 1;
+
+    }
+
+    if (c2_id < n_cells) { /* Do not consider ghost cells */
+
+      const cs_lnum_t  shift = c2f->idx[c2_id] + cell_shift[c2_id];
+      c2f->ids[shift] = f_id;
+      c2f->sgn[shift] = -1;
+      cell_shift[c2_id] += 1;
 
     }
 
   } /* End of loop on internal faces */
 
-  return f2e;
-}
+  for (cs_lnum_t  f_id = 0; f_id < n_b_faces; f_id++) {
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the edge -> vertices connectivity which is stored in a
- *         cs_sla_matrix_t structure
- *
- * \param[in]  builder   pointer to the _edge_builder_t structure
- *
- * \return a pointer to a new allocated cs_sla_matrix_t structure
- */
-/*----------------------------------------------------------------------------*/
+    const cs_lnum_t  c_id = mesh->b_face_cells[f_id];
+    const cs_lnum_t  shift = c2f->idx[c_id] + cell_shift[c_id];
 
-static cs_sla_matrix_t *
-_build_e2v_connect(const _edge_builder_t  *builder)
-{
-  int  i;
+    c2f->ids[shift] = n_i_faces + f_id;
+    c2f->sgn[shift] = 1;
+    cell_shift[c_id] += 1;
 
-  cs_sla_matrix_t  *e2v = NULL;
+  } /* End of loop on border faces */
 
-  const int  n_vertices = builder->n_vertices;
-  const int  n_edges = builder->n_edges;
+  /* Free memory */
+  BFT_FREE(cell_shift);
 
-  e2v = cs_sla_matrix_create(n_edges, n_vertices, 1, CS_SLA_MAT_DEC, false);
-
-  /* Build index */
-  e2v->idx[0] = 0;
-  for (i = 0; i < n_edges; i++)
-    e2v->idx[i+1] = e2v->idx[i] + 2;
-
-  assert(e2v->idx[n_edges] == 2*n_edges);
-
-  /* Build matrix */
-  BFT_MALLOC(e2v->col_id, e2v->idx[n_edges], cs_lnum_t);
-  BFT_MALLOC(e2v->sgn, e2v->idx[n_edges], short int);
-
-  for (i = 0; i < n_edges; i++) {
-
-    e2v->col_id[2*i] = builder->e2v_lst[2*i] - 1;
-    e2v->sgn[2*i] = -1;
-    e2v->col_id[2*i+1] = builder->e2v_lst[2*i+1] - 1;
-    e2v->sgn[2*i+1] = 1;
-
-  }
-
-  return e2v;
+  return c2f;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -279,51 +191,46 @@ _build_e2v_connect(const _edge_builder_t  *builder)
 static _edge_builder_t *
 _create_edge_builder(const cs_mesh_t  *m)
 {
-  int  i, j, k, v1, v2, o1, o2, s, e, nfv, shift, s1, s2;
-
-  int  n_edges = 0, n_init_edges = 0;
-  int  n_max_face_vertices = 0;
-  cs_lnum_t  *f_vertices = NULL, *vtx_shift = NULL;
-  cs_lnum_t  *v2v_idx = NULL, *v2v_lst = NULL, *v2e_lst = NULL;
-  int  *e2v_ref_lst = NULL;
-  cs_gnum_t  *e2v_lst = NULL; /* Only because we have to use cs_order */
-  cs_lnum_t  *order = NULL;
-
-  _edge_builder_t  *builder = NULL;
-
-  const int n_vertices = m->n_vertices;
-  const int n_i_faces = m->n_i_faces;
-  const int n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_vertices = m->n_vertices;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
 
   /* Compute max. number of vertices by face */
-  for (i = 0; i < n_b_faces; i++)
+  int  n_max_face_vertices = 0;
+  for (cs_lnum_t i = 0; i < n_b_faces; i++)
     n_max_face_vertices = CS_MAX(n_max_face_vertices,
                                  m->b_face_vtx_idx[i+1] - m->b_face_vtx_idx[i]);
-  for (i = 0; i < n_i_faces; i++)
+  for (cs_lnum_t i = 0; i < n_i_faces; i++)
     n_max_face_vertices = CS_MAX(n_max_face_vertices,
                                  m->i_face_vtx_idx[i+1] - m->i_face_vtx_idx[i]);
 
+  cs_lnum_t  *f_vertices = NULL;
   BFT_MALLOC(f_vertices, n_max_face_vertices + 1, cs_lnum_t);
 
-  n_init_edges = m->b_face_vtx_idx[n_b_faces];
-  n_init_edges += m->i_face_vtx_idx[n_i_faces];
+  const cs_lnum_t  n_init_edges =
+    m->b_face_vtx_idx[n_b_faces] + m->i_face_vtx_idx[n_i_faces];
+
+  if (n_init_edges == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " Empty mesh connectivity. Stop build edge connectivity.\n");
 
   /* Build e2v_lst */
+  cs_gnum_t  *e2v_lst = NULL; /* Only because we have to use cs_order */
   BFT_MALLOC(e2v_lst, 2*n_init_edges, cs_gnum_t);
 
-  shift = 0;
-  for (i = 0; i < n_b_faces; i++) {
+  cs_lnum_t  shift = 0;
+  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
 
-    s = m->b_face_vtx_idx[i], e = m->b_face_vtx_idx[i+1];
-    nfv = e - s;
+    const cs_lnum_t  s = m->b_face_vtx_idx[i], e = m->b_face_vtx_idx[i+1];
+    const int  nfv = e - s;
 
-    for (j = s, k = 0; j < e; j++, k++)
-      f_vertices[k] = m->b_face_vtx_lst[j] + 1;
+    for (int k = 0; k < nfv; k++)
+      f_vertices[k] = m->b_face_vtx_lst[s+k] + 1;
     f_vertices[nfv] = m->b_face_vtx_lst[s] + 1;
 
-    for (k = 0; k < nfv; k++) {
+    for (int k = 0; k < nfv; k++) {
 
-      v1 = f_vertices[k], v2 = f_vertices[k+1];
+      const cs_lnum_t  v1 = f_vertices[k], v2 = f_vertices[k+1];
       if (v1 < v2)
         e2v_lst[2*shift] = v1, e2v_lst[2*shift+1] = v2;
       else
@@ -334,18 +241,18 @@ _create_edge_builder(const cs_mesh_t  *m)
 
   } /* End of loop on border faces */
 
-  for (i = 0; i < n_i_faces; i++) {
+  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
 
-    s = m->i_face_vtx_idx[i], e = m->i_face_vtx_idx[i+1];
-    nfv = e - s;
+    const cs_lnum_t  s = m->i_face_vtx_idx[i], e = m->i_face_vtx_idx[i+1];
+    const int  nfv = e - s;
 
-    for (j = s, k = 0; j < e; j++, k++)
-      f_vertices[k] = m->i_face_vtx_lst[j] + 1;
+    for (int k = 0; k < nfv; k++)
+      f_vertices[k] = m->i_face_vtx_lst[s+k] + 1;
     f_vertices[nfv] = m->i_face_vtx_lst[s] + 1;
 
-    for (k = 0; k < nfv; k++) {
+    for (int k = 0; k < nfv; k++) {
 
-      v1 = f_vertices[k], v2 = f_vertices[k+1];
+      const cs_lnum_t v1 = f_vertices[k], v2 = f_vertices[k+1];
       if (v1 < v2)
         e2v_lst[2*shift] = v1, e2v_lst[2*shift+1] = v2;
       else
@@ -358,34 +265,36 @@ _create_edge_builder(const cs_mesh_t  *m)
 
   assert(shift == n_init_edges);
 
+  /* Remove duplicated edges */
+  cs_lnum_t  *order = NULL;
   BFT_MALLOC(order, n_init_edges, cs_lnum_t);
   cs_order_gnum_allocated_s(NULL, e2v_lst, 2, order, n_init_edges);
 
-  BFT_MALLOC(v2v_idx, n_vertices + 1, int);
-  for (i = 0; i < n_vertices + 1; i++)
-    v2v_idx[i] = 0;
+  cs_lnum_t  *v2v_idx = NULL;
+  BFT_MALLOC(v2v_idx, n_vertices + 1, cs_lnum_t);
+# pragma omp parallel for if (n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_vertices + 1; i++) v2v_idx[i] = 0;
 
-  if (n_init_edges > 0) {
+  cs_lnum_t  *e2v_ref_lst = NULL;
+  BFT_MALLOC(e2v_ref_lst, 2*n_init_edges, cs_lnum_t);
 
-    BFT_MALLOC(e2v_ref_lst, 2*n_init_edges, int);
+  {
+    cs_lnum_t  o1 = order[0], o2 = order[0];
+    cs_lnum_t  v1 = e2v_lst[2*o1],  v2 = e2v_lst[2*o1+1];
 
-    o1 = order[0];
-    v1 = e2v_lst[2*o1];
-    v2 = e2v_lst[2*o1+1];
-
+    /* Add the first edge */
     e2v_ref_lst[0] = v1;
     e2v_ref_lst[1] = v2;
     v2v_idx[v1] += 1;
     v2v_idx[v2] += 1;
     shift = 1;
 
-    for (i = 1; i < n_init_edges; i++) {
+    /* Add new edges which are different from the one already added */
+    for (cs_lnum_t i = 1; i < n_init_edges; i++) {
 
-      o1 = order[i-1];
-      o2 = order[i];
-
-      if (   e2v_lst[2*o1]   != e2v_lst[2*o2]
-          || e2v_lst[2*o1+1] != e2v_lst[2*o2+1]) {
+      o1 = order[i-1], o2 = order[i];
+      if (e2v_lst[2*o1]   != e2v_lst[2*o2] ||
+          e2v_lst[2*o1+1] != e2v_lst[2*o2+1]) { /* New edge */
 
         v2v_idx[e2v_lst[2*o2]] += 1;
         v2v_idx[e2v_lst[2*o2+1]] += 1;
@@ -397,58 +306,61 @@ _create_edge_builder(const cs_mesh_t  *m)
 
     } /* End of loop on edges */
 
-  } /* n_init_edges > 0 */
-
-  n_edges = shift;
-
-  for (i = 0; i < n_vertices; i++)
-    v2v_idx[i+1] += v2v_idx[i];
+  }
 
   /* Free memory */
   BFT_FREE(e2v_lst);
   BFT_FREE(order);
   BFT_FREE(f_vertices);
 
-  if (n_edges > 0) {
+  const cs_lnum_t  n_edges = shift;
+  for (cs_lnum_t i = 0; i < n_vertices; i++)
+    v2v_idx[i+1] += v2v_idx[i];
 
-    BFT_MALLOC(v2v_lst, v2v_idx[n_vertices], cs_lnum_t);
-    BFT_MALLOC(v2e_lst, v2v_idx[n_vertices], cs_lnum_t);
-    BFT_MALLOC(vtx_shift, n_vertices, int);
+  assert(n_edges > 0);
 
-    for (i = 0; i < n_vertices; i++)
-      vtx_shift[i] = 0;
-
-    for (i = 0; i < n_edges; i++) {
-
-      v1 = e2v_ref_lst[2*i] - 1;
-      v2 = e2v_ref_lst[2*i+1] - 1;
-      s1 = v2v_idx[v1] + vtx_shift[v1];
-      s2 = v2v_idx[v2] + vtx_shift[v2];
-      vtx_shift[v1] += 1;
-      vtx_shift[v2] += 1;
-      v2v_lst[s1] = v2 + 1;
-      v2v_lst[s2] = v1 + 1;
-
-      if (v1 < v2)
-        v2e_lst[s1] = i+1, v2e_lst[s2] = -(i+1);
-      else
-        v2e_lst[s1] = -(i+1), v2e_lst[s2] = i+1;
-
-    } /* End of loop on edges */
-
-    BFT_FREE(vtx_shift);
-
-  } /* n_edges > 0 */
-
-  /* Return pointers */
+  /* Allocate and set members of the edge builder structure */
+  _edge_builder_t  *builder = NULL;
   BFT_MALLOC(builder, 1, _edge_builder_t);
 
   builder->n_vertices = n_vertices;
   builder->n_edges = n_edges;
-  builder->e2v_lst = e2v_ref_lst;
   builder->v2v_idx = v2v_idx;
-  builder->v2v_lst = v2v_lst;
+  builder->e2v_lst = e2v_ref_lst;
+
+  cs_lnum_t  *v2v_lst = NULL, *v2e_lst = NULL;
+  BFT_MALLOC(v2v_lst, v2v_idx[n_vertices], cs_lnum_t);
+  BFT_MALLOC(v2e_lst, v2v_idx[n_vertices], cs_lnum_t);
+
+  cs_lnum_t  *vtx_shift = NULL;
+  BFT_MALLOC(vtx_shift, n_vertices, cs_lnum_t);
+#   pragma omp parallel for if (n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_vertices; i++) vtx_shift[i] = 0;
+
+  for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
+
+    const cs_lnum_t  v1 = e2v_ref_lst[2*e_id] - 1;
+    const cs_lnum_t  v2 = e2v_ref_lst[2*e_id+1] - 1;
+    const cs_lnum_t  s1 = v2v_idx[v1] + vtx_shift[v1];
+    const cs_lnum_t  s2 = v2v_idx[v2] + vtx_shift[v2];
+
+    vtx_shift[v1] += 1;
+    vtx_shift[v2] += 1;
+    v2v_lst[s1] = v2 + 1;
+    v2v_lst[s2] = v1 + 1;
+
+    if (v1 < v2)
+      v2e_lst[s1] = e_id+1, v2e_lst[s2] = -(e_id+1);
+    else
+      v2e_lst[s1] = -(e_id+1), v2e_lst[s2] = e_id+1;
+
+  } /* End of loop on edges */
+
+  /* Assign last members */
   builder->v2v_edge_lst = v2e_lst;
+  builder->v2v_lst = v2v_lst;
+
+  BFT_FREE(vtx_shift);
 
   return builder;
 }
@@ -481,136 +393,173 @@ _free_edge_builder(_edge_builder_t  **p_builder)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the cell -> faces connectivity which is stored in a
- *         cs_sla_matrix_t structure
+ * \brief  Add a entry in the face --> edges connectivity
  *
- * \param[in]  mesh      pointer to a cs_mesh_t structure
- *
- * \return a pointer to a new allocated cs_sla_matrix_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_sla_matrix_t *
-_build_c2f_connect(const cs_mesh_t   *mesh)
-{
-  int  idx_size = 0;
-  int  *cell_shift = NULL;
-  cs_sla_matrix_t  *c2f = NULL;
-
-  const int  n_cells = mesh->n_cells;
-  const int  n_i_faces = mesh->n_i_faces;
-  const int  n_b_faces = mesh->n_b_faces;
-  const int  n_faces = n_i_faces + n_b_faces;
-
-  c2f = cs_sla_matrix_create(n_cells, n_faces, 1, CS_SLA_MAT_DEC, false);
-
-  BFT_MALLOC(cell_shift, n_cells, int);
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    cell_shift[i] = 0;
-
-  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-    c2f->idx[mesh->b_face_cells[i]+1] += 1;
-    idx_size += 1;
-  }
-
-  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
-
-    int  c1_id = mesh->i_face_cells[i][0];
-    int  c2_id = mesh->i_face_cells[i][1];
-
-    if (c1_id < n_cells) // cell owned by the local rank
-      c2f->idx[c1_id+1] += 1, idx_size += 1;
-    if (c2_id < n_cells) // cell owned by the local rank
-      c2f->idx[c2_id+1] += 1, idx_size += 1;
-  }
-
-  for (cs_lnum_t i = 0; i < n_cells; i++)
-    c2f->idx[i+1] += c2f->idx[i];
-
-  assert(c2f->idx[n_cells] == idx_size);
-
-  BFT_MALLOC(c2f->col_id, idx_size, cs_lnum_t);
-  BFT_MALLOC(c2f->sgn, idx_size, short int);
-
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-
-    const cs_lnum_t  c1_id = mesh->i_face_cells[f_id][0];
-    const cs_lnum_t  c2_id = mesh->i_face_cells[f_id][1];
-
-    if (c1_id < n_cells) { /* Don't want ghost cells */
-
-      const cs_lnum_t  shift = c2f->idx[c1_id] + cell_shift[c1_id];
-      c2f->col_id[shift] = f_id;
-      c2f->sgn[shift] = 1;
-      cell_shift[c1_id] += 1;
-
-    }
-
-    if (c2_id < n_cells) { /* Don't want ghost cells */
-
-      const cs_lnum_t  shift = c2f->idx[c2_id] + cell_shift[c2_id];
-      c2f->col_id[shift] = f_id;
-      c2f->sgn[shift] = -1;
-      cell_shift[c2_id] += 1;
-
-    }
-
-  } /* End of loop on internal faces */
-
-  for (cs_lnum_t  f_id = 0; f_id < n_b_faces; f_id++) {
-
-    const cs_lnum_t  c_id = mesh->b_face_cells[f_id];
-    const cs_lnum_t  shift = c2f->idx[c_id] + cell_shift[c_id];
-
-    c2f->col_id[shift] = n_i_faces + f_id;
-    c2f->sgn[shift] = 1;
-    cell_shift[c_id] += 1;
-
-  } /* End of loop on border faces */
-
-  /* Free memory */
-  BFT_FREE(cell_shift);
-
-  return c2f;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Build additional connectivities for accessing geometrical quantities
- *        c2e: cell --> edges connectivity
- *        c2v: cell --> vertices connectivity
- *
- * \param[in, out]  connect     pointer to the cs_cdo_connect_t struct.
+ * \param[in]      shift     position where to add the new entry
+ * \param[in]      v1_num    number of the first vertex
+ * \param[in]      v2_num    number of the second vertex
+ * \param[in]      builder   pointer to a _edge_builder_t structure
+ * \param[in, out] f2e       face --> edges connectivity
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_additional_connect(cs_cdo_connect_t  *connect)
+_add_f2e_entry(cs_lnum_t                  shift,
+               cs_lnum_t                  v1_num,
+               cs_lnum_t                  v2_num,
+               const _edge_builder_t     *builder,
+               cs_adjacency_t            *f2e)
 {
-  cs_connect_index_t  *c2f = cs_index_map(connect->c2f->n_rows,
-                                          connect->c2f->idx,
-                                          connect->c2f->col_id);
-  cs_connect_index_t  *f2e = cs_index_map(connect->f2e->n_rows,
-                                          connect->f2e->idx,
-                                          connect->f2e->col_id);
-  cs_connect_index_t  *e2v = cs_index_map(connect->e2v->n_rows,
-                                          connect->e2v->idx,
-                                          connect->e2v->col_id);
+  /* Sanity check */
+  assert(v1_num > 0);
+  assert(v2_num > 0);
+  assert(builder->v2v_idx[v1_num] > builder->v2v_idx[v1_num-1]);
 
-  /* Build new connectivity */
-  connect->c2e = cs_index_compose(connect->e2v->n_rows, c2f, f2e);
-  connect->c2v = cs_index_compose(connect->v2e->n_rows, connect->c2e, e2v);
+  /* Get edge number */
+  cs_lnum_t  edge_sgn_num = 0;
+  cs_lnum_t  *v2v_idx = builder->v2v_idx, *v2v_lst = builder->v2v_lst;
 
-  /* Sort list for each entry */
-  cs_index_sort(connect->c2v);
-  cs_index_sort(connect->c2e);
+  for (cs_lnum_t i = v2v_idx[v1_num-1]; i < v2v_idx[v1_num]; i++) {
+    if (v2v_lst[i] == v2_num) {
+      edge_sgn_num = builder->v2v_edge_lst[i];
+      break;
+    }
+  }
 
-  /* Free mapped structures */
-  cs_index_free(&c2f);
-  cs_index_free(&f2e);
-  cs_index_free(&e2v);
+  if (edge_sgn_num == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" The given couple of vertices (number): [%d, %d]\n"
+                " is not defined in the edge structure.\n"), v1_num, v2_num);
 
+  f2e->ids[shift] = CS_ABS(edge_sgn_num) - 1;
+  if (edge_sgn_num < 0)
+    f2e->sgn[shift] = -1;
+  else
+    f2e->sgn[shift] = 1;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the face -> edges connectivity which is stored in a
+ *         cs_adjacency_t structure
+ *
+ * \param[in]  m         pointer to a cs_mesh_t structure
+ * \param[in]  builder   pointer to the _edge_builder_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_adjacency_t *
+_build_f2e_connect(const cs_mesh_t         *m,
+                   const _edge_builder_t   *builder)
+{
+  /* Sanity checks */
+  assert(builder != NULL);
+
+  const cs_lnum_t  n_i_faces = m->n_i_faces;
+  const cs_lnum_t  n_b_faces = m->n_b_faces;
+  const cs_lnum_t  n_faces = n_i_faces + n_b_faces;
+
+  cs_adjacency_t  *f2e = NULL;
+  f2e = cs_adjacency_create(CS_ADJACENCY_SIGNED, -1, n_faces);
+
+  /* Build index */
+  for (cs_lnum_t i = 0; i < n_i_faces; i++)
+    f2e->idx[i+1] += m->i_face_vtx_idx[i+1] - m->i_face_vtx_idx[i];
+  for (cs_lnum_t i = 0; i < n_b_faces; i++)
+    f2e->idx[n_i_faces+i+1] += m->b_face_vtx_idx[i+1] - m->b_face_vtx_idx[i];
+  for (cs_lnum_t i = 0; i < n_faces; i++)
+    f2e->idx[i+1] += f2e->idx[i];
+
+  assert(f2e->idx[n_faces] ==
+         m->i_face_vtx_idx[n_i_faces] + m->b_face_vtx_idx[n_b_faces]);
+
+  /* Build matrix */
+  BFT_MALLOC(f2e->ids, f2e->idx[n_faces], cs_lnum_t);
+  BFT_MALLOC(f2e->sgn, f2e->idx[n_faces], short int);
+
+  /* Border faces */
+  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+
+    const cs_lnum_t  s = m->b_face_vtx_idx[i], e = m->b_face_vtx_idx[i+1];
+    const cs_lnum_t  f_id = n_i_faces + i;
+
+    cs_lnum_t  v1_num = m->b_face_vtx_lst[e-1] + 1;
+    cs_lnum_t  v2_num = m->b_face_vtx_lst[s] + 1;
+    cs_lnum_t  shift = f2e->idx[f_id];
+
+    _add_f2e_entry(shift, v1_num, v2_num, builder, f2e);
+
+    for (cs_lnum_t j = s; j < e-1; j++) {
+
+      shift++;
+      v1_num = m->b_face_vtx_lst[j] + 1;
+      v2_num = m->b_face_vtx_lst[j+1] + 1;
+      _add_f2e_entry(shift, v1_num, v2_num, builder, f2e);
+
+    }
+
+  } /* End of loop on border faces */
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+    const cs_lnum_t  s = m->i_face_vtx_idx[f_id], e = m->i_face_vtx_idx[f_id+1];
+
+    cs_lnum_t  shift = f2e->idx[f_id];
+    cs_lnum_t  v1_num = m->i_face_vtx_lst[e-1] + 1;
+    cs_lnum_t  v2_num = m->i_face_vtx_lst[s] + 1;
+
+    _add_f2e_entry(shift, v1_num, v2_num, builder, f2e);
+
+    for (cs_lnum_t j = s; j < e-1; j++) {
+
+      shift++;
+      v1_num = m->i_face_vtx_lst[j] + 1;
+      v2_num = m->i_face_vtx_lst[j+1] + 1;
+      _add_f2e_entry(shift, v1_num, v2_num, builder, f2e);
+
+    }
+
+  } /* End of loop on interior faces */
+
+  return f2e;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the edge -> vertices connectivity which is stored in a
+ *         cs_adjacency_t structure
+ *
+ * \param[in]  builder   pointer to the _edge_builder_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_adjacency_t *
+_build_e2v_connect(const _edge_builder_t  *builder)
+{
+  const cs_lnum_t  n_edges = builder->n_edges;
+
+  /* Arrays ids and sgn are allocated during the creation of the structure */
+  cs_adjacency_t  *e2v = cs_adjacency_create(CS_ADJACENCY_SIGNED,
+                                             2, // stride
+                                             n_edges);
+
+  /* Fill arrays */
+# pragma omp parallel for if (n_edges > CS_THR_MIN)
+  for (cs_lnum_t shift = 0; shift < 2*n_edges; shift += 2) {
+
+    e2v->ids[shift] = builder->e2v_lst[shift] - 1;
+    e2v->sgn[shift] = -1;
+    e2v->ids[shift+1] = builder->e2v_lst[shift+1] - 1;
+    e2v->sgn[shift+1] = 1;
+
+  }
+
+  return e2v;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -640,12 +589,12 @@ _compute_max_ent(const cs_mesh_t      *m,
 
   const cs_lnum_t  n_cells = connect->n_cells;
   const cs_lnum_t  n_edges = connect->n_edges;
-  const cs_connect_index_t  *c2v = connect->c2v;
-  const cs_connect_index_t  *c2e = connect->c2e;
-  const cs_sla_matrix_t  *e2v = connect->e2v;
+  const cs_adjacency_t  *c2v = connect->c2v;
+  const cs_adjacency_t  *c2e = connect->c2e;
+  const cs_adjacency_t  *e2v = connect->e2v;
 
-  assert(c2e->n == n_cells);
-  assert(c2v->n == n_cells);
+  assert(c2e->n_elts == n_cells);
+  assert(c2v->n_elts == n_cells);
 
   int  n_max_vc = 0, n_max_ec = 0, n_max_fc = 0;
   int  n_max_v2ec = 0, n_max_v2fc = 0, n_max_vf = 0;
@@ -689,7 +638,7 @@ _compute_max_ent(const cs_mesh_t      *m,
 
     for (short int e = 0; e < n_ec; e++) {
 
-      const cs_lnum_t  *e2v_ids = e2v->col_id + 2*c2e_ids[e];
+      const cs_lnum_t  *e2v_ids = e2v->ids + 2*c2e_ids[e];
 
       v_count[e2v_ids[0]] += 1;
       v_count[e2v_ids[1]] += 1;
@@ -706,7 +655,7 @@ _compute_max_ent(const cs_mesh_t      *m,
     }
 
     const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
-    const cs_lnum_t  *c2f_ids = connect->c2f->col_id + c2f_idx[0];
+    const cs_lnum_t  *c2f_ids = connect->c2f->ids + c2f_idx[0];
     const int  n_fc = c2f_idx[1] - c2f_idx[0];
 
     if (n_fc > n_max_fc) n_max_fc = n_fc;
@@ -799,7 +748,7 @@ _get_cell_type(cs_lnum_t                 c_id,
     for (cs_lnum_t i = connect->c2f->idx[c_id]; i < connect->c2f->idx[c_id+1];
          i++) {
 
-      cs_lnum_t  f_id = connect->c2f->col_id[i];
+      cs_lnum_t  f_id = connect->c2f->ids[i];
 
       if (connect->f2e->idx[f_id+1] - connect->f2e->idx[f_id] == 4) // Quad
         count[1] += 1;
@@ -821,7 +770,7 @@ _get_cell_type(cs_lnum_t                 c_id,
     for (cs_lnum_t i = connect->c2f->idx[c_id]; i < connect->c2f->idx[c_id+1];
          i++) {
 
-      cs_lnum_t  f_id = connect->c2f->col_id[i];
+      cs_lnum_t  f_id = connect->c2f->ids[i];
 
       if (connect->f2e->idx[f_id+1] - connect->f2e->idx[f_id] != 4) {
         is_hexa = false;
@@ -836,6 +785,56 @@ _get_cell_type(cs_lnum_t                 c_id,
   }
 
   return ret_type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and define a cs_range_set_t structure and a
+ *        cs_interface_set_t structure for schemes with DoFs at faces.
+ *
+ * \param[in]       mesh          pointer to a cs_mesh_t structure
+ * \param[in]       n_faces       number of faces (interior + border)
+ * \param[in]       n_face_dofs   number of DoFs per face
+ * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
+ * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_assign_ifs_rs(const cs_mesh_t       *mesh,
+               cs_lnum_t              n_faces,
+               int                    n_face_dofs,
+               cs_interface_set_t   **p_ifs,
+               cs_range_set_t       **p_rs)
+{
+  cs_interface_set_t  *ifs = NULL;
+  cs_range_set_t  *rs = NULL;
+  cs_gnum_t *face_gnum = NULL;
+
+  BFT_MALLOC(face_gnum, n_faces, cs_gnum_t);
+# pragma omp parallel for if (n_faces*n_face_dofs > CS_THR_MIN)
+  for (cs_gnum_t i = 0; i < (cs_gnum_t)(n_faces*n_face_dofs); i++)
+    face_gnum[i] = i+1;
+
+    /* Do not consider periodicity up to now. Should split the face interface
+       into interior and border faces to do this, since only boundary faces
+       can be associated to a periodicity */
+  ifs = cs_interface_set_create(n_faces * n_face_dofs,
+                                NULL,
+                                face_gnum,
+                                mesh->periodicity, 0, NULL, NULL, NULL);
+
+  rs = cs_range_set_create(ifs,
+                           NULL,
+                           n_faces,
+                           false, //TODO: Ask Yvan
+                           0);    // g_id_base
+
+  BFT_FREE(face_gnum);
+
+  /* Return pointers */
+  *p_ifs = ifs;
+  *p_rs = rs;
 }
 
 /*============================================================================
@@ -867,34 +866,23 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   BFT_MALLOC(connect, 1, cs_cdo_connect_t);
 
   /* Build the cell --> faces connectivity */
+  const cs_lnum_t  n_cells = mesh->n_cells;
   connect->c2f = _build_c2f_connect(mesh);
 
   /* Build the face --> cells connectivity */
-  connect->f2c = cs_sla_matrix_transpose(connect->c2f);
+  const cs_lnum_t  n_faces = mesh->n_i_faces + mesh->n_b_faces;
+  connect->f2c = cs_adjacency_transpose(n_faces, connect->c2f);
 
   /* Build the face --> edges connectivity */
   _edge_builder_t  *builder = _create_edge_builder(mesh);
   connect->f2e = _build_f2e_connect(mesh, builder);
 
-  /* Build the edge --> faces connectivity */
-  connect->e2f = cs_sla_matrix_transpose(connect->f2e);
-
   /* Build the edge --> vertices connectivity */
+  const cs_lnum_t  n_edges = builder->n_edges;
+  const cs_lnum_t  n_vertices = mesh->n_vertices;
   connect->e2v = _build_e2v_connect(builder);
 
-  /* Build the vertex --> edges connectivity */
-  connect->v2e = cs_sla_matrix_transpose(connect->e2v);
-
   _free_edge_builder(&builder);
-
-  /* Build additional connectivity c2e, c2v (used to access dual faces and
-     dual volumes) */
-  _build_additional_connect(connect);
-
-  const cs_lnum_t  n_vertices = connect->v2e->n_rows;
-  const cs_lnum_t  n_edges = connect->e2f->n_rows;
-  const cs_lnum_t  n_faces = connect->f2e->n_rows;
-  const cs_lnum_t  n_cells = connect->c2f->n_rows;
 
   connect->n_vertices = n_vertices;
   connect->n_edges = n_edges;
@@ -902,6 +890,15 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   connect->n_faces[1] = mesh->n_b_faces;
   connect->n_faces[2] = mesh->n_i_faces;
   connect->n_cells = n_cells;
+
+  /* Build additional connectivity cell --> edges and cell --> vertices
+     Useful for accessing dual faces and dual volumes for instance */
+
+  connect->c2e = cs_adjacency_compose(n_edges, connect->c2f, connect->f2e);
+  cs_adjacency_sort(connect->c2e);
+
+  connect->c2v = cs_adjacency_compose(n_vertices, connect->c2e, connect->e2v);
+  cs_adjacency_sort(connect->c2v);
 
   /* Build the cell flag and associate a cell type to each cell */
   BFT_MALLOC(connect->cell_flag, n_cells, cs_flag_t);
@@ -914,15 +911,23 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   }
 
   /* Loop on border faces and flag boundary cells */
-  cs_lnum_t  *c_ids = connect->f2c->col_id + connect->f2c->idx[mesh->n_i_faces];
+  cs_lnum_t  *c_ids = connect->f2c->ids + connect->f2c->idx[mesh->n_i_faces];
   for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++)
     connect->cell_flag[c_ids[f_id]] = CS_FLAG_BOUNDARY;
 
   /* Max number of entities (vertices, edges and faces) by cell */
   _compute_max_ent(mesh, connect);
 
+  /* Members to handle assembly process and parallel sync. */
   connect->v_rs = NULL;
+
   connect->f_rs = NULL;
+  connect->f_ifs = NULL;
+
+  connect->hho1_rs = NULL;
+  connect->hho2_rs = NULL;
+  connect->hho1_ifs = NULL;
+  connect->hho2_ifs = NULL;
 
   if ((scheme_flag & CS_SCHEME_FLAG_CDOVB) ||
       (scheme_flag & CS_SCHEME_FLAG_CDOVCB)) {
@@ -938,13 +943,18 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   }
 
-  if ((scheme_flag & CS_SCHEME_FLAG_CDOFB) ||
-      (scheme_flag & CS_SCHEME_FLAG_HHO)) {
+  /* CDO face-based schemes or HHO schemes with k=0 */
+  if (scheme_flag & CS_SCHEME_FLAG_CDOFB ||
+      cs_test_flag(scheme_flag, CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY0))
+    _assign_ifs_rs(mesh, n_faces, 1, &(connect->f_ifs), &(connect->f_rs));
 
-    /* Face range set */
-    connect->f_rs = NULL; // TODO
+  /* HHO schemes with k=1 */
+  if (cs_test_flag(scheme_flag, CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY1))
+    _assign_ifs_rs(mesh, n_faces, 3, &(connect->f_ifs), &(connect->f_rs));
 
-  }
+  /* HHO schemes with k=2 */
+  if (cs_test_flag(scheme_flag, CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY2))
+    _assign_ifs_rs(mesh, n_faces, 6, &(connect->f_ifs), &(connect->f_rs));
 
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();
@@ -971,22 +981,25 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   if (connect == NULL)
     return connect;
 
-  connect->v2e = cs_sla_matrix_free(connect->v2e);
-  connect->e2f = cs_sla_matrix_free(connect->e2f);
-  connect->e2v = cs_sla_matrix_free(connect->e2v);
-  connect->f2e = cs_sla_matrix_free(connect->f2e);
-  connect->f2c = cs_sla_matrix_free(connect->f2c);
-  connect->c2f = cs_sla_matrix_free(connect->c2f);
+  cs_adjacency_free(&(connect->e2v));
+  cs_adjacency_free(&(connect->f2e));
+  cs_adjacency_free(&(connect->f2c));
 
-  /* Specific CDO connectivity */
-  cs_index_free(&(connect->c2e));
-  cs_index_free(&(connect->c2v));
+  cs_adjacency_free(&(connect->c2f));
+  cs_adjacency_free(&(connect->c2e));
+  cs_adjacency_free(&(connect->c2v));
 
   BFT_FREE(connect->cell_type);
   BFT_FREE(connect->cell_flag);
 
   /* Structures for parallelism */
   cs_range_set_destroy(&(connect->f_rs));
+  cs_range_set_destroy(&(connect->hho1_rs));
+  cs_range_set_destroy(&(connect->hho2_rs));
+
+  cs_interface_set_destroy(&(connect->f_ifs));
+  cs_interface_set_destroy(&(connect->hho1_ifs));
+  cs_interface_set_destroy(&(connect->hho2_ifs));
 
   BFT_FREE(connect);
 
@@ -1097,18 +1110,12 @@ cs_cdo_connect_dump(const cs_cdo_connect_t  *connect)
 
   fprintf(fdump, "\n Connect structure: %p\n", (const void *)connect);
 
-  cs_sla_matrix_dump("Connect c2f mat", fdump, connect->c2f);
-  cs_sla_matrix_dump("Connect f2e mat", fdump, connect->f2e);
-  cs_sla_matrix_dump("Connect e2v mat", fdump, connect->e2v);
-
-  cs_sla_matrix_dump("Connect f2c mat", fdump, connect->f2c);
-
-  cs_sla_matrix_dump("Connect e2f mat", fdump, connect->e2f);
-  cs_sla_matrix_dump("Connect v2e mat", fdump, connect->v2e);
-
-  /* Dump specific CDO connectivity */
-  cs_index_dump("Connect c2e", fdump, connect->c2e);
-  cs_index_dump("Connect c2v", fdump, connect->c2v);
+  cs_adjacency_dump("Cell   --> Faces",    fdump, connect->c2f);
+  cs_adjacency_dump("Face   --> Edges",    fdump, connect->f2e);
+  cs_adjacency_dump("Edge   --> Vertices", fdump, connect->e2v);
+  cs_adjacency_dump("Face   --> Cells",    fdump, connect->f2c);
+  cs_adjacency_dump("Cell   --> Edges",    fdump, connect->c2e);
+  cs_adjacency_dump("Cell   --> Vertices", fdump, connect->c2v);
 
   fclose(fdump);
   BFT_FREE(fname);

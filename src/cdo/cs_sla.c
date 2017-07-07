@@ -1406,10 +1406,10 @@ cs_sla_matrix_create_from_ref(const cs_sla_matrix_t   *ref,
 /*----------------------------------------------------------------------------*/
 
 cs_sla_matrix_t *
-cs_sla_matrix_create_msr_from_index(const cs_connect_index_t   *connect_idx,
-                                    bool                        is_symmetric,
-                                    bool                        sorted_idx,
-                                    int                         stride)
+cs_sla_matrix_create_msr_from_index(const cs_adjacency_t   *connect_idx,
+                                    bool                    is_symmetric,
+                                    bool                    sorted_idx,
+                                    int                     stride)
 {
   cs_sla_matrix_t  *m = NULL;
 
@@ -1419,8 +1419,8 @@ cs_sla_matrix_create_msr_from_index(const cs_connect_index_t   *connect_idx,
   BFT_MALLOC(m, 1, cs_sla_matrix_t);
 
   m->type = CS_SLA_MAT_MSR;
-  m->n_rows = connect_idx->n;
-  m->n_cols = connect_idx->n;
+  m->n_rows = connect_idx->n_elts;
+  m->n_cols = connect_idx->n_elts;
   m->stride = stride;
   m->idx = connect_idx->idx;
   m->col_id = connect_idx->ids;
@@ -3522,20 +3522,20 @@ cs_sla_system_dump(const char              *name,
  * \param[in]  n_cells   number of cells
  * \param[in]  bktrans   block (1,0) and (0,1) are transposed: true or false
  * \param[in]  bk00sym   block (0,0) is symmetric: true or false
- * \param[in]  x2x       pointer to cs_connect_index_t struc.
- * \param[in]  c2x       pointer to cs_connect_index_t struc.
+ * \param[in]  x2x       pointer to cs_adjacency_t struc.
+ * \param[in]  c2x       pointer to cs_adjacency_t struc.
  *
  * \return  a pointer to new allocated hybrid matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sla_hmatrix_t *
-cs_sla_hmatrix_create(cs_lnum_t                   n_x,
-                      cs_lnum_t                   n_cells,
-                      bool                        bktrans,
-                      bool                        bk00sym,
-                      const cs_connect_index_t   *x2x,
-                      const cs_connect_index_t   *c2x)
+cs_sla_hmatrix_create(cs_lnum_t               n_x,
+                      cs_lnum_t               n_cells,
+                      bool                    bktrans,
+                      bool                    bk00sym,
+                      const cs_adjacency_t   *x2x,
+                      const cs_adjacency_t   *c2x)
 {
   cs_sla_hmatrix_t  *hm = NULL;
 

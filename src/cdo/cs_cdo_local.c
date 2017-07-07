@@ -892,8 +892,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
         const cs_lnum_t  e_id = cm->e_ids[e];
         const cs_nvec3_t  nv = cs_quant_set_edge_nvec(cm->e_ids[e], quant);
-        const cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
-        const cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id + 1];
+        const cs_lnum_t  v1_id = connect->e2v->ids[2*e_id];
+        const cs_lnum_t  v2_id = connect->e2v->ids[2*e_id + 1];
         const cs_real_t  *xv1 = quant->vtx_coord + 3*v1_id;
         const cs_real_t  *xv2 = quant->vtx_coord + 3*v2_id;
 
@@ -949,8 +949,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       /* Store only the sign related to the first vertex since the sign
          related to the second one is minus the first one */
       cm->e2v_sgn[e] = connect->e2v->sgn[2*e_id];
-      cm->e2v_ids[2*e]   = cm->kbuf[connect->e2v->col_id[2*e_id] - shift];
-      cm->e2v_ids[2*e+1] = cm->kbuf[connect->e2v->col_id[2*e_id+1] - shift];
+      cm->e2v_ids[2*e]   = cm->kbuf[connect->e2v->ids[2*e_id] - shift];
+      cm->e2v_ids[2*e+1] = cm->kbuf[connect->e2v->ids[2*e_id+1] - shift];
 
     } // Loop on cell edges
 
@@ -959,7 +959,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   /* Information related to primal faces */
   if (flag & cs_cdo_local_flag_f) {
 
-    const cs_lnum_t  *c2f_lst = connect->c2f->col_id + c2f_idx[0];
+    const cs_lnum_t  *c2f_lst = connect->c2f->ids + c2f_idx[0];
     const short int  *c2f_sgn = connect->c2f->sgn + c2f_idx[0];
 
     for (short int f = 0; f < cm->n_fc; f++) {
@@ -1026,7 +1026,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       cm->kbuf[cm->e_ids[e]-shift] = e;
 
     const cs_lnum_t  *f2e_idx = connect->f2e->idx;
-    const cs_lnum_t  *f2e_ids = connect->f2e->col_id;
+    const cs_lnum_t  *f2e_ids = connect->f2e->ids;
 
     cm->f2e_idx[0] = 0;
     int shift_idx = 0;
@@ -1222,7 +1222,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
   }
 
   const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
-  const cs_lnum_t  *c2f_ids = connect->c2f->col_id + c2f_idx[0];
+  const cs_lnum_t  *c2f_ids = connect->c2f->ids + c2f_idx[0];
   const int  n_fc = c2f_idx[1] - c2f_idx[0];
 
   short int _f = n_fc;
@@ -1246,7 +1246,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
               _(" Face %d not found.\n Stop build a face mesh."), f_id);
 
   const cs_lnum_t  *f2e_idx = connect->f2e->idx + f_id;
-  const cs_lnum_t  *f2e_lst = connect->f2e->col_id + f2e_idx[0];
+  const cs_lnum_t  *f2e_lst = connect->f2e->ids + f2e_idx[0];
 
   fm->n_vf = fm->n_ef = f2e_idx[1] - f2e_idx[0];
   short int nv = 0;
@@ -1264,7 +1264,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
       fm->edge[e].unitv[k] = e_nvect.unitv[k];
     // Still to handle the edge barycenter
 
-    const cs_lnum_t  *e2v_ids = connect->e2v->col_id + 2*e_id;
+    const cs_lnum_t  *e2v_ids = connect->e2v->ids + 2*e_id;
     short int  v1 = -1, v2 = -1;
     for (int v = 0; v < fm->n_vf && fm->v_ids[v] != -1; v++) {
       if (fm->v_ids[v] == e2v_ids[0])

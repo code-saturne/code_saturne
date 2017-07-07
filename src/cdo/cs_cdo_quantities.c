@@ -230,8 +230,8 @@ _get_proj_quantities(cs_lnum_t                f_id,
   cs_lnum_t  v_id[2];
   cs_real_t  a[2], b[2], a2[2], b2[2];
 
-  const cs_sla_matrix_t  *f2e = connect->f2e;
-  const cs_sla_matrix_t  *e2v = connect->e2v;
+  const cs_adjacency_t  *f2e = connect->f2e;
+  const cs_adjacency_t  *e2v = connect->e2v;
 
   /* Initialize structure */
   _cdo_projq_t  projq;
@@ -246,13 +246,13 @@ _get_proj_quantities(cs_lnum_t                f_id,
   for (cs_lnum_t  i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
 
     short int  e_sgn = f2e->sgn[i];
-    cs_lnum_t  e_id = f2e->col_id[i];
-    cs_lnum_t  s = e2v->idx[e_id];
+    cs_lnum_t  e_id = f2e->ids[i];
+    cs_lnum_t  s = 2*e_id;
 
     if (e_sgn > 0)
-      v_id[0] = e2v->col_id[s], v_id[1] = e2v->col_id[s+1];
+      v_id[0] = e2v->ids[s], v_id[1] = e2v->ids[s+1];
     else
-      v_id[0] = e2v->col_id[s+1], v_id[1] = e2v->col_id[s];
+      v_id[0] = e2v->ids[s+1], v_id[1] = e2v->ids[s];
 
     /* Vertices in the plane (alpha, beta) */
     for (int k = 0; k < 2; k++) {
@@ -359,7 +359,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
   /* Sanity check */
   assert(topo->e2v != NULL);
-  assert(topo->e2f != NULL && topo->f2c != NULL && topo->c2e != NULL);
+  assert(topo->f2e != NULL && topo->f2c != NULL && topo->c2e != NULL);
 
   cs_real_t  *edge_center = NULL;
 
@@ -370,7 +370,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
   for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
 
     /* Get the two vertex ids related to the current edge */
-    const cs_lnum_t  *v_ids = topo->e2v->col_id + 2*e_id;
+    const cs_lnum_t  *v_ids = topo->e2v->ids + 2*e_id;
     const cs_real_t  *xa = quant->vtx_coord + 3*v_ids[0];
     const cs_real_t  *xb = quant->vtx_coord + 3*v_ids[1];
 
@@ -407,7 +407,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 # pragma omp parallel default(none) \
   shared(quant, topo, parent_thread_array, edge_center, cs_glob_n_threads)
   { // OMP Block
-    const cs_sla_matrix_t  *c2f = topo->c2f, *f2e = topo->f2e;
+    const cs_adjacency_t  *c2f = topo->c2f, *f2e = topo->f2e;
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int t_id = omp_get_thread_num();
@@ -433,7 +433,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
       for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
-        const cs_lnum_t  f_id = c2f->col_id[i];
+        const cs_lnum_t  f_id = c2f->ids[i];
         const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
 
         /* Compute xf -> xc */
@@ -449,7 +449,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
         for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
-          const cs_lnum_t  e_id = topo->f2e->col_id[j];
+          const cs_lnum_t  e_id = topo->f2e->ids[j];
           const cs_real_t  *xe = edge_center + 3*e_id;
 
           /* Compute the vectorial area for the triangle : xc, xf, xe */
@@ -536,7 +536,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
   /* Sanity checks */
   assert(topo->f2e != NULL && topo->f2c != NULL && topo->c2v != NULL);
 
-  const cs_sla_matrix_t  *c2f = topo->c2f, *f2e = topo->f2e;
+  const cs_adjacency_t  *c2f = topo->c2f, *f2e = topo->f2e;
 
   /* Allocate and initialize arrays */
   BFT_MALLOC(quant->dcell_vol, topo->c2v->idx[quant->n_cells], double);
@@ -557,7 +557,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
 
     for (cs_lnum_t jf = c2f->idx[c_id]; jf < c2f->idx[c_id+1]; jf++) {
 
-      const cs_lnum_t  f_id = topo->c2f->col_id[jf];
+      const cs_lnum_t  f_id = topo->c2f->ids[jf];
       const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
 
       const cs_real_t  *xf;
@@ -568,8 +568,8 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
 
       for (cs_lnum_t je = f2e->idx[f_id]; je < f2e->idx[f_id+1]; je++) {
 
-        const cs_lnum_t  e_id = f2e->col_id[je];
-        const cs_lnum_t *v_ids = topo->e2v->col_id + 2*e_id;
+        const cs_lnum_t  e_id = f2e->ids[je];
+        const cs_lnum_t *v_ids = topo->e2v->ids + 2*e_id;
         const cs_lnum_t  v1_id = v_ids[0], v2_id = v_ids[1];
         const double pvol = 0.5 * cs_math_voltet(quant->vtx_coord + 3*v1_id,
                                                  quant->vtx_coord + 3*v2_id,
@@ -688,7 +688,7 @@ _vtx_algorithm(const cs_cdo_connect_t      *connect,
                cs_cdo_quantities_t         *quant) /* In/out */
 {
   const cs_lnum_t  n_cells = quant->n_cells;
-  const cs_connect_index_t  *c2v = connect->c2v;
+  const cs_adjacency_t  *c2v = connect->c2v;
 
   /* Compute cell centers */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -767,10 +767,10 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
                                                fspec);
 
     /* Update cell quantities */
-    const cs_sla_matrix_t  *f2c = connect->f2c;
+    const cs_adjacency_t  *f2c = connect->f2c;
     for (cs_lnum_t i = f2c->idx[f_id]; i < f2c->idx[f_id+1]; i++) {
 
-      const cs_lnum_t  c_id = f2c->col_id[i];
+      const cs_lnum_t  c_id = f2c->ids[i];
       const short int  sgn = f2c->sgn[i];
       const double Fvol = ( (fspec.XYZ[X] == 0) ? fsubq.Fa :
                             ( (fspec.XYZ[Y] == 0) ? fsubq.Fb : fsubq.Fc) );
@@ -824,7 +824,7 @@ _define_cell_flag(const cs_cdo_connect_t  *topo,
       for (cs_lnum_t i = topo->c2f->idx[c_id]; i < topo->c2f->idx[c_id+1];
            i++) {
 
-        const cs_lnum_t  f_id = topo->c2f->col_id[i];
+        const cs_lnum_t  f_id = topo->c2f->ids[i];
         const cs_nvec3_t  de_nv = cs_quant_set_dedge_nvec(i, cdoq);
         const cs_nvec3_t  pf_nv = cs_quant_set_face_nvec(f_id, cdoq);
 
@@ -976,14 +976,14 @@ cs_cdo_quantities_build(cs_cdo_cell_center_algo_t     cc_algo,
 
 
   if (topo->e2v != NULL) {
-    cdoq->n_edges = topo->e2v->n_rows;
+    cdoq->n_edges = topo->n_edges;
 
     if (cs_glob_n_ranks == 1)
       cdoq->n_g_edges = cdoq->n_edges;
 
     else { /* Compute the global number of edges */
 
-      const cs_lnum_t  *e2v_ids = topo->e2v->col_id;
+      const cs_lnum_t  *e2v_ids = topo->e2v->ids;
 
       cs_gnum_t  *e2v_gnum = NULL;
       BFT_MALLOC(e2v_gnum, 2*cdoq->n_edges, cs_gnum_t);
@@ -1037,7 +1037,7 @@ cs_cdo_quantities_build(cs_cdo_cell_center_algo_t     cc_algo,
   /* ---------------------------- */
 
   const cs_lnum_t  idx_size = topo->c2f->idx[n_cells];
-  const cs_sla_matrix_t  *c2f = topo->c2f;
+  const cs_adjacency_t  *c2f = topo->c2f;
 
   BFT_MALLOC(cdoq->dedge_vector, 3*idx_size, cs_real_t);
 
@@ -1048,7 +1048,7 @@ cs_cdo_quantities_build(cs_cdo_cell_center_algo_t     cc_algo,
 
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
-      const cs_lnum_t  f_id = c2f->col_id[i];
+      const cs_lnum_t  f_id = c2f->ids[i];
       const short int  sgn = c2f->sgn[i];
       const cs_lnum_t  bf_id = f_id - cdoq->n_i_faces;
       if (bf_id > -1) {

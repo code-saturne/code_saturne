@@ -921,7 +921,7 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
   if (cs_test_flag(gw->flux_location, cs_cdo_dual_face_byc)) {
 
     /* Darcian flux settings */
-    const cs_connect_index_t  *c2e = connect->c2e;
+    const cs_adjacency_t  *c2e = connect->c2e;
 
     BFT_MALLOC(gw->darcian_flux, c2e->idx[n_cells], cs_real_t);
 
