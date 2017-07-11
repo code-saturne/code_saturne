@@ -1,4 +1,12 @@
 
+Release 5.0.4 (unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Fix missing file in theory graphics Makefile.
+
 Release 5.0.3 (June 29 2017)
 ============================
 
