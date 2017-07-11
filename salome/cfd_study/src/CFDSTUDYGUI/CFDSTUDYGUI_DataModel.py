@@ -75,6 +75,7 @@ import subprocess
 
 from code_saturne.Base.QtCore    import *
 from code_saturne.Base.QtWidgets import *
+from code_saturne import cs_runcase
 
 from omniORB import CORBA
 
@@ -467,15 +468,30 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
         attr.SetValue(aStudyName)
         attr = builder.FindOrCreateAttribute(studyObject, "AttributeComment")
         attr.SetValue(aStudyDir)
+
     if iok:
         UpdateSubTree(studyObject)
         if "coupling_parameters.py" in os.listdir(theStudyPath):
             # Update SYRTHES PATH into coupling_parameters.py file
-            replaceOrInsertCouplingPath(os.path.join(theStudyPath,"coupling_parameters.py"))
-        if "runcase" in os.listdir(theStudyPath):
+            replaceOrInsertCouplingPath(os.path.join(theStudyPath,
+                                                     "coupling_parameters.py"))
+        if "runcase" in os.listdir(theStudyPath) and theCreateOpt:
             # Update the coupling study PATH into runcase file
-            updateRuncaseCoupling(os.path.join(theStudyPath,"runcase"),theNprocs)
+            runcase = cs_runcase.runcase(os.path.join(theStudyPath, "runcase"))
+            if theNprocs != "":
+                runcase.set_nprocs(theNprocs)
+            runcase.save()
 
+        if CFDSTUDYGUI_Commons.isaCFDStudy(theStudyPath):
+            theStudy = FindStudyByPath(theStudyPath)
+            theStudyCaseNameList = GetCaseNameList(theStudy)
+            if theStudyCaseNameList != [] or theStudyCaseNameList != None :
+                for theStudyCase in theStudyCaseNameList :
+                    runcasePath = os.path.join(theStudyPath, theStudyCase,
+                                               "SCRIPTS/runcase")
+                    if os.path.exists(runcasePath):
+                        runcase = cs_runcase.runcase(runcasePath)
+                        runcase.save()
     return iok
 
 
@@ -500,41 +516,6 @@ def replaceOrInsertCouplingPath(The_coupling_parameters_path):
     if not boo:
         l.insert(1,lineToInsert)
     f = open(The_coupling_parameters_path,"w")
-    f.writelines(l)
-    f.close()
-
-def updateRuncaseCoupling(The_runcase_coupling_path,theNprocs):
-    """
-    Pathes into runcase file for coupling are updated
-    """
-    f = open(The_runcase_coupling_path,"r")
-    l = f.readlines()
-    f.close()
-    ind = -1
-    lineToInsert = "cd "+os.path.dirname(The_runcase_coupling_path)+"\n"
-    for i in l :
-        if  i.startswith("export PATH"):
-            ind = l.index(i)
-            l[ind] = 'export PATH='+'"'+os.path.join(os.path.join(os.getenv("CS_ROOT_DIR"),'bin'))+'":$PATH\n'
-        if  i.startswith("\code_saturne run"):
-            ir = l.index(i)
-            lComRun = string.split(i[1:])
-            j = '--coupling'
-            if lComRun.count(j):
-               ic = lComRun.index(j)
-               lComRun[ic+1] = os.path.join(os.path.dirname(The_runcase_coupling_path),"coupling_parameters.py")
-               if theNprocs != "":
-                   if int(theNprocs) > 1:
-                       lComRun[ic]= string.join(["--nprocs",theNprocs,j]," ")
-               comRun = string.join(lComRun," ")
-            l[ir] = "\\"+comRun+"\n"
-        if i.startswith("cd "):
-            ir = l.index(i)
-            l[ir] = lineToInsert
-    if ind >=0:
-        if lineToInsert not in l :
-            l.insert(ind+1,lineToInsert)
-    f = open(The_runcase_coupling_path,"w")
     f.writelines(l)
     f.close()
 
@@ -602,6 +583,7 @@ def updateCasePath(theCasePath):
     else:
         cfdstudyMess.criticalMessage(mess)
     return mess == ""
+
 
 def _UpdateStudy():
     """
@@ -1490,11 +1472,11 @@ def GetCaseNameList(theStudy):
     builder = study.NewBuilder()
 
     attr = builder.FindOrCreateAttribute(theStudy, "AttributeLocalID")
-    if attr.Value() != dict_object["Study"] or attr.Value() != dict_object["CouplingStudy"]:
-        return CaseList
+    if attr.Value() != dict_object["Study"] :
+        if attr.Value() != dict_object["CouplingStudy"]:
+            return CaseList
 
     iter  = study.NewChildIterator(theStudy)
-
     while iter.More():
         anObject = iter.Value()
         attr = builder.FindOrCreateAttribute(anObject, "AttributeLocalID")
