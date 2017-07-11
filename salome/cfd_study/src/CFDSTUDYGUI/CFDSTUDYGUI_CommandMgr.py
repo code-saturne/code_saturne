@@ -84,7 +84,7 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
         self.objBr = None
         if obj_directory != None and obj_directory != "":
             self.objBr = obj_directory
-
+        self.start_directory = start_directory
         self.proc = QProcess()
 
         self.proc.readyReadStandardOutput.connect(self.__readFromStdout)
@@ -101,6 +101,8 @@ class CFDSTUDYGUI_QProcessDialog(QDialog, Ui_CFDSTUDYGUI_QProcessDialog):
 
     def __process(self):
         if self.proc.exitStatus() == QProcess.NormalExit and not self.procErrorFlag:
+            if self.start_directory != "":
+                self.proc.setWorkingDirectory(self.start_directory)
             self.proc.start(self.cmd)
             if self.cmd_list:
                 self.cmd = self.cmd_list.pop(0)
