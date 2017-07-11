@@ -82,6 +82,7 @@ clthermique.dat \
 clthermique.pdf \
 clthermique.py \
 clthermique.xmgr \
+EK_model.png \
 loilog.pdf \
 loilog.py \
 loilog.xmgr
