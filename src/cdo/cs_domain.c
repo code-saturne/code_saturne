@@ -324,7 +324,7 @@ cs_domain_create(void)
   domain->dt_cur = default_time_step;
   domain->time_step_def = NULL;
 
-  BFT_MALLOC(domain->time_step, 1, cs_time_step_t);
+  domain->time_step = cs_get_glob_time_step();
   domain->time_step->is_variable = 0;
   domain->time_step->is_local = 0; // In CDO, this is always equal to 0
   domain->time_step->nt_prev = 0;  // Changed in case of restart
@@ -403,7 +403,7 @@ cs_domain_free(cs_domain_t   *domain)
   BFT_FREE(domain->boundary_def);
 
   domain->time_step_def = cs_xdef_free(domain->time_step_def);
-  BFT_FREE(domain->time_step);
+  domain->time_step = NULL;
 
   /* Print monitoring information */
   cs_equation_log_monitoring();
