@@ -97,7 +97,7 @@ BEGIN_C_DECLS
  * \brief Define head losses for a given volume zone.
  *
  * Head loss tensor coefficients for each cell are organized as follows:
- * ck11, ck22, ck33, ck12, ck13, ck23.
+ * ck11, ck22, ck33, ck12, ck23, ck13.
  *
  * Coefficients are set to zero (then computed based on definitions provided
  * through the GUI if this is the case) before calling this function, so
