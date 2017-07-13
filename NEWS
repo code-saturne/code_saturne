@@ -5,6 +5,12 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Fix matrix coefficient assignment issue for MSR matrices in cases
+  where multiple faces separate two given cells (such as when faces are
+  subdivided). This could lead to incorrect linear solver convergence
+  in those cases, affecting mostly multigrid as a preconditioner cases,
+  which uses MSR-type matrices.
+
 - Fix issue in some matrix structure selection forced cases.
 
 - Several fixes in CFD_STUDY's interactive behavior.
