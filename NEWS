@@ -15,6 +15,9 @@ Numerics
 User changes
 ------------
 
+- Make advanced turbulence inititalisation for k-omega, Bl-v2/k and
+  EBRSM turbulence models default option.
+
 - Removed handling of VTK-based scalar slice outputs in studymanager;
   graphical files may now be included, and using Catalyst to produce
   images is recommended.
