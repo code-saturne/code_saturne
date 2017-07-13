@@ -666,8 +666,8 @@ cs_matrix_native(bool        symmetric,
                                                       diag_block_size,
                                                       extra_diag_block_size);
 
-  if (_matrix_tuned[mft] != NULL) {
-    if ((_matrix_tuned[mft])->type == CS_MATRIX_NATIVE)
+  if (_matrix_tuned[_tuned_matrix_id[mft]] != NULL) {
+    if ((_matrix_tuned[_tuned_matrix_id[mft]])->type == CS_MATRIX_NATIVE)
       m = cs_matrix_default(symmetric,
                             diag_block_size,
                             extra_diag_block_size);
