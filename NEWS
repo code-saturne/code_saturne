@@ -5,6 +5,8 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Fix issue in some matrix structure selection forced cases.
+
 - Several fixes in CFD_STUDY's interactive behavior.
 
 - Fix missing file in theory graphics Makefile.
