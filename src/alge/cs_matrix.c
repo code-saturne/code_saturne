@@ -3653,20 +3653,17 @@ _set_coeffs_msr(cs_matrix_t         *matrix,
     BFT_MALLOC(mc->_x_val, ms->row_index[ms->n_rows], cs_real_t);
   mc->x_val = mc->_x_val;
 
+  /* Copy extra-diagonal values if assembly is direct */
+
+  if (ms->direct_assembly)
+    _set_xa_coeffs_msr_direct(matrix, symmetric, n_edges, edges, xa);
+
   /* Initialize coefficients to zero if assembly is incremental */
 
-  if (ms->direct_assembly == false || xa == NULL)
-    _map_or_copy_xa_coeffs_msr(matrix, true, NULL);
-
   else {
-
-    /* Copy extra-diagonal values */
-
-    if (ms->direct_assembly == true)
-      _set_xa_coeffs_msr_direct(matrix, symmetric, n_edges, edges, xa);
-    else
+    _map_or_copy_xa_coeffs_msr(matrix, true, NULL);
+    if (xa != NULL)
       _set_xa_coeffs_msr_increment(matrix, symmetric, n_edges, edges, xa);
-
   }
 }
 
