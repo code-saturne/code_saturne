@@ -2150,7 +2150,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
     def slotHelpNCDoxygen(self):
         self._SolverGUI.onNeptuneHelpDoxygen()
 
-    def slotOpenSyrthesCaseFile(self): 
+    def slotOpenSyrthesCaseFile(self):
         """
         OpenSyrthesGui
         """
@@ -2165,7 +2165,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
             path = CFDSTUDYGUI_DataModel._GetPath(sobj)
             if re.match(".*\.syd$", sobj.GetName()):
-                widget = MainView(sgPyQt.getDesktop(), False,True)            
+                widget = MainView(sgPyQt.getDesktop(), False,True)
                 widget.OpeningFile(path)
                 widget.show()
 
