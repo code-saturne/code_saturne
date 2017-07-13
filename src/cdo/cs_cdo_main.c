@@ -280,6 +280,9 @@ cs_cdo_main(void)
   /*  Build high-level structures and create algebraic systems */
   cs_domain_t  *domain = cs_glob_domain;
 
+  if (cs_restart_present())
+    cs_domain_read_restart(domain);
+
   cs_domain_initialize_systems(domain);
 
   while (cs_domain_needs_iteration(domain)) { // Main time loop

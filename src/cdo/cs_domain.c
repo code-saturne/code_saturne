@@ -65,6 +65,7 @@
 #include "cs_restart.h"
 #include "cs_restart_default.h"
 #include "cs_source_term.h"
+#include "cs_time_step.h"
 #include "cs_walldistance.h"
 
 /*----------------------------------------------------------------------------
@@ -1161,6 +1162,149 @@ cs_domain_process_after_solve(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Read a restart file for the CDO module
+ *
+ * \param[in]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_read_restart(const cs_domain_t  *domain)
+{
+  cs_restart_t  *restart = cs_restart_create("cdo", // restart file name
+                                             NULL,  // directory name
+                                             CS_RESTART_MODE_READ);
+
+  const char err_i_val[] = N_("Restart mismatch for: %s\n"
+                              "read: %d\n"
+                              "expected: %d.");
+  int i_val;
+
+  /* Read a new section: version */
+  int  version = 400000;
+  cs_restart_read_section(restart,
+                          "code_saturne:checkpoint:main:version", // secname
+                          CS_MESH_LOCATION_NONE,                  // ml_id
+                          1,                                      // nb. values
+                          CS_TYPE_cs_int_t,                       // val. type
+                          &i_val);                                // value(s)
+
+  if (i_val != version)
+    bft_error(__FILE__, __LINE__, 0, _(err_i_val),
+              "code_saturne:checkpoint:main:version", version, i_val);
+
+  /* Read a new section: field information */
+  cs_map_name_to_id_t  *old_field_map = NULL;
+
+  cs_restart_read_field_info(restart, &old_field_map);
+
+  /* Read a new section */
+  int  n_equations = cs_equation_get_n_equations();
+  cs_restart_read_section(restart,
+                          "cdo:n_equations",
+                          CS_MESH_LOCATION_NONE,
+                          1,
+                          CS_TYPE_cs_int_t,
+                          &i_val);
+
+  if (i_val != n_equations)
+    bft_error(__FILE__, __LINE__, 0, _(err_i_val),
+              "cdo:n_equations", n_equations, i_val);
+
+  /* Read a new section */
+  int  n_properties = cs_property_get_n_properties();
+  cs_restart_read_section(restart,
+                          "cdo:n_properties",
+                          CS_MESH_LOCATION_NONE,
+                          1,
+                          CS_TYPE_cs_int_t,
+                          &i_val);
+
+  if (i_val != n_properties)
+    bft_error(__FILE__, __LINE__, 0, _(err_i_val),
+              "cdo:n_properties", n_properties, i_val);
+
+  /* Read a new section */
+  int  n_adv_fields = cs_advection_field_get_n_fields();
+  cs_restart_read_section(restart,
+                          "cdo:n_adv_fields",
+                          CS_MESH_LOCATION_NONE,
+                          1,
+                          CS_TYPE_cs_int_t,
+                          &i_val);
+
+  if (i_val != n_adv_fields)
+    bft_error(__FILE__, __LINE__, 0, _(err_i_val),
+              "cdo:n_adv_fields", n_adv_fields, i_val);
+
+  /* Read a new section: activation or not of the groundwater flow module */
+  int  igwf = 0; // not activated by default
+  if (cs_gwf_is_activated()) igwf = 1;
+  cs_restart_read_section(restart,
+                          "groundwater_flow_module",
+                          CS_MESH_LOCATION_NONE,
+                          1,
+                          CS_TYPE_cs_int_t,
+                          &i_val);
+
+  if (i_val != igwf)
+    bft_error(__FILE__, __LINE__, 0, _(err_i_val),
+              "groundwater_flow_module", igwf, i_val);
+
+  /* Read a new section: computation or not of the wall distance */
+  int  iwall = 0;
+  if (cs_walldistance_is_activated()) iwall = 1;
+  cs_restart_read_section(restart,
+                          "wall_distance",
+                          CS_MESH_LOCATION_NONE,
+                          1,
+                          CS_TYPE_cs_int_t,
+                          &i_val);
+
+  if (i_val != iwall)
+    bft_error(__FILE__, __LINE__, 0, _(err_i_val),
+              "wall_distance", iwall, i_val);
+
+  /* Read a new section: number of computed time steps */
+  int  nt_cur = 0;
+  cs_restart_read_section(restart,
+                          "cur_time_step",
+                          CS_MESH_LOCATION_NONE,
+                          1,
+                          CS_TYPE_cs_int_t,
+                          &nt_cur);
+
+  /* Read a new section: number of computed time steps */
+  cs_real_t  t_cur = 0;
+  cs_restart_read_section(restart,
+                          "cur_time",
+                          CS_MESH_LOCATION_NONE,
+                          1,
+                          CS_TYPE_cs_real_t,
+                          &t_cur);
+
+  cs_time_step_redefine_cur(nt_cur, t_cur);
+
+  /* Main variables */
+  int  t_id_flag = 0; // Only current values
+  cs_restart_read_variables(restart, old_field_map, t_id_flag, NULL);
+
+  cs_map_name_to_id_destroy(&old_field_map);
+
+  // TODO: read field values for previous time step if needed
+
+  int n_fields = cs_field_n_fields();
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_current_to_previous(f);
+  }
+
+  /* Finalize restart process */
+  cs_restart_destroy(&restart);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Write a restart file for the CDO module
  *
  * \param[in]  domain     pointer to a cs_domain_t structure
@@ -1185,7 +1329,6 @@ cs_domain_write_restart(const cs_domain_t  *domain)
 
   /* Write a new section: field information */
   cs_restart_write_field_info(restart);
-
 
   /* Write a new section */
   int  n_equations = cs_equation_get_n_equations();
@@ -1237,11 +1380,20 @@ cs_domain_write_restart(const cs_domain_t  *domain)
   /* Write a new section: number of computed time steps */
   int  ntcabs = domain->time_step->nt_cur;
   cs_restart_write_section(restart,
-                           "nbre_pas_de_temps",
+                           "cur_time_step",
                            CS_MESH_LOCATION_NONE,
                            1,
                            CS_TYPE_cs_int_t,
                            &ntcabs);
+
+  /* Read a new section: number of computed time steps */
+  cs_real_t  ttcabs = domain->time_step->t_cur;
+  cs_restart_write_section(restart,
+                           "cur_time",
+                           CS_MESH_LOCATION_NONE,
+                           1,
+                           CS_TYPE_cs_real_t,
+                           &ttcabs);
 
   /* Main variables */
   int  t_id_flag = 0; // Only current values

@@ -1135,12 +1135,8 @@ _read_turbulence_model(cs_restart_t  *r)
                                              1,
                                              &iturb_old);
 
-  if (n_opt_vals != 1) {
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Error reading turbulence model info from restart file \"%s\"."),
-       cs_restart_get_name(r));
-  }
+  if (n_opt_vals != 1)
+    iturb_old = -999;
 
   return iturb_old;
 }
@@ -1769,22 +1765,26 @@ cs_restart_read_variables(cs_restart_t               *r,
 
   if (t_id_flag < 1) {
 
-    /* standard calculation */
-    if (CS_F_(p)) {
-      if (!(_read_flag[CS_F_(u)->id] & 1) || !(_read_flag[CS_F_(p)->id] & 1))
-        bft_error
-          (__FILE__, __LINE__, 0,
-           _("Error reading velocity/pressure values in restart file \"%s\"."),
-           cs_restart_get_name(r));
-    /* ground water flow calculation */
-    } else if (CS_F_(head)) {
-      if (   !(_read_flag[CS_F_(u)->id] & 1)
-          || !(_read_flag[CS_F_(head)->id] & 1))
-        bft_error
-          (__FILE__, __LINE__, 0,
-           _("Error reading velocity/hydraulic head values in restart "
-             "file \"%s\"."),
-           cs_restart_get_name(r));
+    if (cs_glob_field_pointers != NULL) {
+
+      /* standard calculation */
+      if (CS_F_(p)) {
+        if (!(_read_flag[CS_F_(u)->id] & 1) || !(_read_flag[CS_F_(p)->id] & 1))
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("Error reading velocity/pressure values in restart file \"%s\"."),
+             cs_restart_get_name(r));
+        /* ground water flow calculation */
+      } else if (CS_F_(head)) {
+        if (   !(_read_flag[CS_F_(u)->id] & 1)
+            || !(_read_flag[CS_F_(head)->id] & 1))
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("Error reading velocity/hydraulic head values in restart "
+               "file \"%s\"."),
+             cs_restart_get_name(r));
+      }
+
     }
 
     int n_missing = 0;

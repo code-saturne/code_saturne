@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-05-29 03:18+0200\n"
+"POT-Creation-Date: 2017-07-13 17:22+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3076,6 +3076,9 @@ msgstr ""
 "\n"
 "Optimisation des matrices symétriques\n"
 "=====================================\n"
+
+msgid "invalid value of isstpp for a work array"
+msgstr "valeur invalide de isstpc pour un tableau de travail"
 
 #, c-format
 msgid " %s: Convection in centered blending with %f percent of upwind\n"
@@ -6265,10 +6268,6 @@ msgstr "Erreur à l'ouverture du fichier journal : %s"
 msgid "time"
 msgstr "temps"
 
-#, c-format
-msgid "Invalid (not-a-number) values detected for array %s."
-msgstr ""
-
 msgid "field"
 msgstr "champ"
 
@@ -6288,6 +6287,9 @@ msgstr "moy. ensemble"
 msgid "spatial mean"
 msgstr "moy. spatiale"
 
+msgid "Invalid (not-a-number) values detected for a field."
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -6297,6 +6299,9 @@ msgstr ""
 "\n"
 "  ** Valeurs calculées sur %s\n"
 "     ----------------------%.*s\n"
+
+msgid "Invalid (not-a-number) values detected for a statistic."
+msgstr ""
 
 msgid "value"
 msgstr ""
@@ -6589,6 +6594,9 @@ msgstr ""
 
 msgid "[0.;1.] (1-upwind proportion (0: upwind))"
 msgstr "[0.;1.] (1 - proportion d'upwind (0 : upwind))"
+
+msgid "[0.;1.] (1-upwind proportion after slope test (0: upwind))"
+msgstr "[0.;1.] (1 - proportion d'upwind après test de pente (0 : upwind))"
 
 msgid "Reconstruction mode"
 msgstr "Mode de reconstruction"
@@ -8094,12 +8102,6 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Error reading turbulence model info from restart file \"%s\"."
-msgstr ""
-"Erreur à la lecture du modèle de turbulence dans le fichier de reprise \"%s"
-"\"."
-
-#, c-format
 msgid ""
 "\n"
 "  Warning: the turbulence model has been changed\n"
@@ -9343,6 +9345,9 @@ msgstr "terme source"
 msgid "mass source term"
 msgstr "terme source de masse"
 
+msgid "groundwater soil"
+msgstr ""
+
 msgid "cell with forbidden zone overlap"
 msgstr ""
 
@@ -9389,34 +9394,21 @@ msgstr ""
 msgid "No aligned allocation function available on this system"
 msgstr ""
 
-msgid " Invalid type of definition for a material property."
-msgstr ""
-
 #, c-format
 msgid ""
-" Invalid value %s for setting key CS_ADVKEY_DEFINE_AT\n"
-" Valid choices are \"cells\" or \"vertices\".\n"
-" Please modify your setting.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid value %s for setting key CS_ADVKEY_POST\n"
-" Valid choices are \"field\" or \"courant\".\n"
-" Please modify your setting.\n"
+" An existing advection field has already the name %s.\n"
+" Stop adding this advection field.\n"
 msgstr ""
 
 msgid " Key not implemented for setting an advection field."
 msgstr ""
 
+msgid "cells"
+msgstr "cellules"
+
 msgid ""
 " Incompatible type of boundary condition by default.\n"
 " Please modify your settings.\n"
-msgstr ""
-
-msgid ""
-" Invalid type of boundary condition.\n"
-" Stop generating the boundary condition structure."
 msgstr ""
 
 #, c-format
@@ -9460,24 +9452,6 @@ msgid ""
 " Computing the flux across all interior or border faces is not managed yet."
 msgstr ""
 
-msgid "domain_walls"
-msgstr ""
-
-msgid "domain_inlets"
-msgstr ""
-
-msgid "domain_outlets"
-msgstr ""
-
-msgid "domain_symmetries"
-msgstr ""
-
-#, c-format
-msgid ""
-" Problem detected during the setup.\n"
-" %lu boundary faces have no boundary type."
-msgstr ""
-
 msgid ""
 " Invalid type of boundary by default.\n"
 " Valid choice is CS_PARAM_BOUNDARY_WALL or CS_PARAM_BOUNDARY_SYMMETRY."
@@ -9485,8 +9459,8 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid mesh location name %s.\n"
-" This mesh location is not already defined.\n"
+" Invalid zone name %s.\n"
+" This zone is not already defined.\n"
 msgstr ""
 
 msgid " Invalid key for setting a cs_domain_t structure."
@@ -9494,43 +9468,14 @@ msgstr ""
 
 #, c-format
 msgid ""
-" An existing property has already the name %s.\n"
-" Stop adding this property.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" An existing advection field has already the name %s.\n"
-" Stop adding this advection field.\n"
-msgstr ""
-
-msgid ""
-" Groundwater module is requested but is not activated.\n"
-" Please first activate this module."
-msgstr ""
-
-#, c-format
-msgid ""
-" Stop setting a tracer equation %s.\n"
-" No equation with this name has been found.\n"
-" Please check your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid type of equation: %s\n"
-" Choices are scalar, vector or tensor."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid type of boundary condition by default: %s\n"
-" Choices are zero_value or zero_flux."
-msgstr ""
-
-#, c-format
-msgid ""
 " Undefined type of equation to solve for eq. %s. Please check your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+"Restart mismatch for: %s\n"
+"read: %d\n"
+"expected: %d."
 msgstr ""
 
 msgid ""
@@ -9562,6 +9507,17 @@ msgstr ""
 msgid ""
 " No equation name associated to an equation structure.\n"
 " Check your initialization."
+msgstr ""
+
+#, c-format
+msgid ""
+" Stop adding a new equation.\n"
+" Equation name %s is already defined."
+msgstr ""
+
+msgid ""
+" Invalid type of boundary condition by default.\n"
+" Valid choices are CS_PARAM_BC_HMG_DIRICHLET or CS_PARAM_BC_HMG_NEUMANN"
 msgstr ""
 
 msgid ""
@@ -9638,12 +9594,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Invalid value \"%s\" for CS_EQKEY_ADV_FLUX_QUADRA\n"
-" Valid choices are \"bary\", \"higher\" and \"highest\"."
-msgstr ""
-
-#, c-format
-msgid ""
 " Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
 " Valid choices are \"implicit\", \"explicit\", \"crank_nicolson\", and "
 "\"theta_scheme\"."
@@ -9661,23 +9611,11 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Type of equation for eq. %s is incompatible with the creation of a field "
-"structure.\n"
-msgstr ""
-
-#, c-format
-msgid ""
 " Space scheme for eq. %s is incompatible with a field.\n"
 " Stop adding a cs_field_t structure.\n"
 msgstr ""
 
 msgid " Invalid mesh location id (= -1) for the current field\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Cannot find the reaction term %s in equation %s.\n"
-" Please check your settings.\n"
 msgstr ""
 
 #, c-format
@@ -9692,6 +9630,12 @@ msgstr ""
 msgid ""
 " Computation of the diffusive and convective flux across\n"
 " a plane is not available for equation %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid mesh location name %s.\n"
+" This mesh location is not already defined.\n"
 msgstr ""
 
 #, c-format
@@ -9731,94 +9675,76 @@ msgid ""
 " This situation is not handled yet."
 msgstr ""
 
-msgid " Invalid type of model for estimating the moisture content."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid type of mesh location for mesh location  %s.\n"
-" The expected type is CS_MESH_LOCATION_CELLS.\n"
-msgstr ""
-
-#, c-format
-msgid " Invalid type of property for %s."
-msgstr ""
-
-msgid " Key not implemented"
-msgstr " Clé non gérée."
-
-#, c-format
-msgid ""
-" Maximum number of tracers is reached.\n"
-" Stop adding the tracer equation %s.\n"
-" Please modify your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" Stop setting a tracer equation. Invalid mesh location name %s.\n"
-" This mesh location is not already defined.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Stop setting a tracer equation. No soil related to mesh location %s has "
-"been found.\n"
-" Please check your settings."
-msgstr ""
-
 msgid " Groundwater module is activated but no soil is defined."
-msgstr ""
-
-msgid " Invalid type of property."
-msgstr ""
-
-msgid " Invalid type of model for groundwater module.."
 msgstr ""
 
 msgid " Richards eq. is only available for vertex-based schemes."
 msgstr ""
 
-msgid "by analytic function"
+msgid "VpCd"
 msgstr ""
 
-msgid "by array"
+msgid "EpFd"
 msgstr ""
 
-msgid "by one variable law"
+msgid "FpEd"
 msgstr ""
 
-msgid "by two variables law"
+msgid "EdFp"
 msgstr ""
 
-msgid "quantity over a volume"
+msgid "CpVd"
 msgstr ""
 
-msgid "by time function"
+msgid "Voronoi"
 msgstr ""
 
-msgid "by user function"
+msgid "Whitney on the Barycentric Subdivision (WBS)"
 msgstr ""
 
-msgid "by value"
+msgid "COnsistency-STabilization splitting (COST)"
 msgstr ""
 
-msgid "vector"
+msgid "Automatic switch"
 msgstr ""
 
-msgid "tensor"
+msgid "Homogeneous Dirichlet"
 msgstr ""
 
-msgid " Invalid type of variable."
+msgid "Dirichlet"
 msgstr ""
 
-msgid " Invalid BC type. Stop execution."
+msgid "Homogeneous Neumann"
 msgstr ""
 
-msgid " Invalid type of enforcement. Stop execution."
+msgid "Neumann"
 msgstr ""
 
-msgid " Invalid type of reaction term. Stop execution."
+msgid "Robin"
+msgstr ""
+
+msgid "strong"
+msgstr ""
+
+msgid "weak using a big penalization coefficient"
+msgstr ""
+
+msgid "weak using the Nitsche method"
+msgstr ""
+
+msgid "weak using the symmetrized Nitsche method"
+msgstr ""
+
+msgid "domain_walls"
+msgstr ""
+
+msgid "domain_inlets"
+msgstr ""
+
+msgid "domain_outlets"
+msgstr ""
+
+msgid "domain_symmetries"
 msgstr ""
 
 msgid " Invalid solver. Stop execution."
@@ -9829,37 +9755,17 @@ msgstr ""
 
 #, c-format
 msgid ""
+" %s: An existing property has already the name %s.\n"
+" Stop adding this property.\n"
+msgstr ""
+
+#, c-format
+msgid ""
 " The definition of the tensor related to the property %s is not symmetric.\n"
 " This case is not handled. Please check your settings.\n"
 msgstr ""
 
-#, c-format
-msgid ""
-" Max. number of subdomains has been reached for property %s.\n"
-" Please check your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" mesh location %s has not been found.\n"
-" Please check your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid key \"%s\" for setting the type of property.\n"
-" Valid keys: \"isotropic\", \"orthotropic\" and \"anisotropic\".\n"
-" Please modify your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid value %s for setting key CS_PTYKEY_POST\n"
-" Valid choices are \"fourier\".\n"
-" Please modify your setting.\n"
-msgstr ""
-
-msgid " Invalid type of definition for a property."
+msgid " Invalid type of property."
 msgstr ""
 
 msgid "barycentric"
@@ -9879,9 +9785,6 @@ msgid ""
 " Stop execution.\n"
 msgstr ""
 
-msgid " Invalid type of source term."
-msgstr ""
-
 msgid " Invalid numerical scheme to set a source term."
 msgstr ""
 
@@ -9890,6 +9793,12 @@ msgstr ""
 
 msgid " Invalid type of definition.\n"
 msgstr ""
+
+msgid " Invalid type of description."
+msgstr ""
+
+msgid "vertices"
+msgstr "sommets"
 
 #, c-format
 msgid ""
@@ -13613,12 +13522,6 @@ msgstr "    Création du halo distant\n"
 msgid "    Updating the faces -> cells connectivity\n"
 msgstr "    Mise à jour de la connectivité faces -> cellules\n"
 
-msgid "cells"
-msgstr "cellules"
-
-msgid "vertices"
-msgstr "sommets"
-
 msgid "faces"
 msgstr ""
 
@@ -13740,6 +13643,15 @@ msgid ""
 msgstr ""
 "\n"
 "  Histogramme de l'épaisseur des cellules de bord:\n"
+"\n"
+
+msgid ""
+"\n"
+"  Histogram of the cellwise warping error :\n"
+"\n"
+msgstr ""
+"\n"
+"  Histogramme de l'erreur cellule du au gauchissement :\n"
 "\n"
 
 msgid ""
@@ -15399,4 +15311,3 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
-

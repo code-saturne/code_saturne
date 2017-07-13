@@ -397,6 +397,17 @@ cs_domain_process_after_solve(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Read a restart file for the CDO module
+ *
+ * \param[in]  domain     pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_read_restart(const cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Write a restart file for the CDO module
  *
  * \param[in]  domain     pointer to a cs_domain_t structure

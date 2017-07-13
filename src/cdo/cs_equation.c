@@ -1970,7 +1970,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     assert(eq != NULL); // Sanity check
 
     if (eq->main_ts_id > -1)
-    cs_timer_stats_start(eq->main_ts_id);
+      cs_timer_stats_start(eq->main_ts_id);
 
     const cs_equation_param_t  *eqp = eq->param;
 
@@ -1978,7 +1978,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     eq->builder = eq->init_builder(eqp, mesh);
 
     // By default, 0 is set as initial condition
-    if (eqp->n_ic_desc > 0)
+    if (eqp->n_ic_desc > 0 && ts->nt_cur < 1)
       _initialize_field_from_ic(eq);
 
     if (eqp->flag & CS_EQUATION_UNSTEADY)
