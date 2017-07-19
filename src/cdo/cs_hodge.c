@@ -102,6 +102,108 @@ static const double  cs_hodge_vc_coef = 3./20;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Check the coherency of the values of a stiffness matrix
+ *
+ * \param[in] sloc       pointer to a cs_locmat_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_check_stiffness(const cs_locmat_t       *sloc)
+{
+  assert(sloc != NULL);
+
+  double  print_val = 0.;
+
+  for (int i = 0 ; i < sloc->n_ent; i++) {
+    double  rsum = 0.;
+    const cs_real_t  *rval = sloc->val + i*sloc->n_ent;
+    for (cs_lnum_t j = 0; j < sloc->n_ent; j++)
+      rsum += rval[j];
+
+    print_val += fabs(rsum);
+
+    if (rsum > 100*cs_math_get_machine_epsilon()) {
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT, " %s: row %d Row sum = %5.3e > 0 !\n",
+                    __func__, i, rsum);
+    }
+
+  }
+  cs_log_printf(CS_LOG_DEFAULT, " %s: err = %5.3e\n", __func__, print_val);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Check the coherency of the values of a discrete Hodge operator
+ *
+ * \param[in]      vec     vectors of quantities to test against a hodge
+ * \paran[in]      res     vectors of quantities to compare with
+ * \param[in]      hdg     pointer to a cs_locmat_t structure
+ * \param[in]      h_info  parametrization of the discrete Hodge operator
+ * \param[in, out] cb      pointer to a cell builder structure
+ *                         buffers to store temporary values
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_check_vector_hodge(const cs_real_3_t       *vec,
+                    const cs_real_3_t       *res,
+                    const cs_locmat_t       *hdg,
+                    const cs_param_hodge_t   h_info,
+                    cs_cell_builder_t       *cb)
+
+{
+  assert(hdg != NULL);
+
+  cs_real_t  *in = cb->values;
+  cs_real_t  *h_in = cb->values + hdg->n_ent;
+  cs_real_t  *ref = cb->values + 2*hdg->n_ent;
+  double  print_val = 0.;
+
+  if (h_info.is_unity) {
+    cb->pty_mat[0][0] = cb->pty_mat[1][1] = cb->pty_mat[2][2] = 1;
+    cb->pty_mat[0][1] = cb->pty_mat[1][0] = cb->pty_mat[2][0] = 0;
+    cb->pty_mat[0][2] = cb->pty_mat[1][2] = cb->pty_mat[2][1] = 0;
+  }
+  else if (h_info.is_iso) {
+    cb->pty_mat[0][0] = cb->pty_mat[1][1] = cb->pty_mat[2][2] = cb->pty_val;
+    cb->pty_mat[0][1] = cb->pty_mat[1][0] = cb->pty_mat[2][0] = 0;
+    cb->pty_mat[0][2] = cb->pty_mat[1][2] = cb->pty_mat[2][1] = 0;
+  }
+
+  const cs_real_3_t  a[3] = { {1, 0, 0}, {0, 1, 0}, {0, 0, 1} };
+
+  for (int dim = 0; dim < 3; dim++) {
+
+    cs_real_3_t  pty_a;
+    cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, a[dim], pty_a);
+
+    for (int i = 0; i < hdg->n_ent; i++) {
+      in[i] = vec[i][dim];
+      ref[i] = _dp3(pty_a, res[i]);
+    }
+
+    cs_locmat_matvec(hdg, in, h_in);
+
+    double  err = 0.;
+    for (int i = 0; i < hdg->n_ent; i++)
+      err += fabs(ref[i] - h_in[i]);
+    print_val += err;
+    if (err > 100 * cs_math_get_machine_epsilon()) {
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " %s: err = %5.3e, dim = %d\n", __func__, err, dim);
+    }
+
+  }
+
+  cs_log_printf(CS_LOG_DEFAULT, "%s: err = %5.3e\n", __func__, print_val);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute quantities used for defining the entries of the discrete
  *          Hodge for COST algo. when the property is isotropic
  *          Initialize the local discrete Hodge op. with the consistency part
@@ -350,6 +452,7 @@ cs_hodge_fb_cost_get_stiffness(const cs_param_hodge_t    h_info,
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
     cs_locmat_dump(cm->c_id, sloc);
+    _check_stiffness(sloc);
   }
 #endif
 }
@@ -414,6 +517,7 @@ cs_hodge_fb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
     cs_locmat_dump(cm->c_id, sloc);
+    _check_stiffness(sloc);
   }
 #endif
 
@@ -600,6 +704,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
     cs_locmat_dump(cm->c_id, sloc);
+    _check_stiffness(sloc);
   }
 #endif
 }
@@ -696,6 +801,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
     cs_locmat_dump(cm->c_id, sloc);
+    _check_stiffness(sloc);
   }
 #endif
 }
@@ -832,6 +938,7 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
     cs_locmat_dump(cm->c_id, sloc);
+    _check_stiffness(sloc);
   }
 #endif
 }
@@ -981,6 +1088,7 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
     cs_locmat_dump(cm->c_id, sloc);
+    _check_stiffness(sloc);
   }
 #endif
 }
@@ -1405,6 +1513,9 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
     cs_locmat_dump(cm->c_id, hdg);
+    _check_vector_hodge((const cs_real_t (*)[3])pq,
+                        (const cs_real_t (*)[3])dq,
+                        hdg, h_info, cb);
   }
 #endif
 }
@@ -1543,6 +1654,9 @@ cs_hodge_fped_cost_get(const cs_param_hodge_t    h_info,
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
     cs_locmat_dump(cm->c_id, hdg);
+    _check_vector_hodge((const cs_real_t (*)[3])pq,
+                        (const cs_real_t (*)[3])dq,
+                        hdg, h_info, cb);
   }
 #endif
 }
@@ -1681,6 +1795,9 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
     cs_locmat_dump(cm->c_id, hdg);
+    _check_vector_hodge((const cs_real_t (*)[3])dq,
+                        (const cs_real_t (*)[3])pq,
+                        hdg, h_info, cb);
   }
 #endif
 }
