@@ -202,8 +202,8 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             return False
 
 
-    def onSaveXmlFile(self):
-        log.debug("onSaveXmlFile")
+    def SaveXmlFile(self):
+        log.debug("SaveXmlFile")
         if self._CurrentWindow != None:
             if self._CurrentWindow.case['xmlfile'] != "":
                 self._CurrentWindow.fileSave()
@@ -219,7 +219,6 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         """
         old_xml_file = None
         xml_file = None
-
         if self._CurrentWindow != None:
             old_xml_file = self._CurrentWindow.case['xmlfile']
             self._CurrentWindow.fileSaveAs()
