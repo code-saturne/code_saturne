@@ -2771,25 +2771,54 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
     if (   f->type & CS_FIELD_VARIABLE
         && !cs_gui_strcmp(f->name, "pressure")
         && !cs_gui_strcmp(f->name, "hydraulic_head")) {
-      j = cs_field_get_key_int(f, var_key_id) -1;
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-      _variable_value(f->name, "blending_factor", &var_cal_opt.blencv);
-      _variable_value(f->name, "solver_precision", &var_cal_opt.epsilo);
+        j = cs_field_get_key_int(f, var_key_id) -1;
+        cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-      // only for nscaus and model scalar
-      _variable_value(f->name, "time_step_factor", &cdtvar[j]);
+      if ( cs_gui_strcmp(f->name, "r11") ||
+           cs_gui_strcmp(f->name, "r22") ||
+           cs_gui_strcmp(f->name, "r33") ||
+           cs_gui_strcmp(f->name, "r12") ||
+           cs_gui_strcmp(f->name, "r23") ||
+           cs_gui_strcmp(f->name, "r13") ) {
 
-      _variable_attribute(f->name, "order_scheme", &var_cal_opt.ischcv);
-      _variable_attribute(f->name, "slope_test", &var_cal_opt.isstpc);
-      _variable_attribute(f->name, "flux_reconstruction", &var_cal_opt.ircflu);
-      tmp = (double) var_cal_opt.nswrsm;
-      _variable_value(f->name, "rhs_reconstruction", &tmp);
-      var_cal_opt.nswrsm = (int) tmp;
+        _variable_value("rij", "blending_factor", &var_cal_opt.blencv);
+        _variable_value("rij", "solver_precision", &var_cal_opt.epsilo);
 
-      tmp = (double) var_cal_opt.iwarni;
-      _variable_value(f->name, "verbosity", &tmp);
-      var_cal_opt.iwarni = (int) tmp;
+        // only for nscaus and model scalar
+        _variable_value("rij", "time_step_factor", &cdtvar[j]);
+
+        _variable_attribute("rij", "order_scheme", &var_cal_opt.ischcv);
+        _variable_attribute("rij", "slope_test", &var_cal_opt.isstpc);
+        _variable_attribute("rij", "flux_reconstruction", &var_cal_opt.ircflu);
+
+        tmp = (double) var_cal_opt.nswrsm;
+        _variable_value("rij", "rhs_reconstruction", &tmp);
+        var_cal_opt.nswrsm = (int) tmp;
+
+        tmp = (double) var_cal_opt.iwarni;
+        _variable_value("rij", "verbosity", &tmp);
+        var_cal_opt.iwarni = (int) tmp;
+
+      } else {
+
+        _variable_value(f->name, "blending_factor", &var_cal_opt.blencv);
+        _variable_value(f->name, "solver_precision", &var_cal_opt.epsilo);
+
+        // only for nscaus and model scalar
+        _variable_value(f->name, "time_step_factor", &cdtvar[j]);
+
+        _variable_attribute(f->name, "order_scheme", &var_cal_opt.ischcv);
+        _variable_attribute(f->name, "slope_test", &var_cal_opt.isstpc);
+        _variable_attribute(f->name, "flux_reconstruction", &var_cal_opt.ircflu);
+        tmp = (double) var_cal_opt.nswrsm;
+        _variable_value(f->name, "rhs_reconstruction", &tmp);
+        var_cal_opt.nswrsm = (int) tmp;
+
+        tmp = (double) var_cal_opt.iwarni;
+        _variable_value(f->name, "verbosity", &tmp);
+        var_cal_opt.iwarni = (int) tmp;
+      }
 
       // Set Field calculation options in the field structure
       // TODO add nitmax, imgr, iresol, cdtvar

@@ -664,6 +664,7 @@ class XMLinit(Variables):
                     ("component_R12",                "r12"),
                     ("component_R13",                "r13"),
                     ("component_R23",                "r23"),
+                    ("StressTensor",                 "rij"),
                     ("turb_k",                       "k"),
                     ("turb_eps",                     "epsilon"),
                     ("turb_phi",                     "phi"),
@@ -1415,6 +1416,16 @@ class XMLinit(Variables):
         if nch:
             if nch['model'] == 'homogeneous_fuel_moisture_lagr':
                 nch['model'] = 'homogeneous_fuel_moisture'
+
+        # fix name of Reynolds stress tensor
+        ntur = XMLThermoPhysicalModelNode.xmlGetNode('turbulence')
+        if ntur:
+            if (ntur['model'] == 'Rij-SSG') or (ntur['model'] == 'Rij-epsilon') or (ntur['model'] == 'Rij-EBRSM'):
+
+                node = ntur.xmlGetNode('variable', name="r11")
+                if node:
+                    node['label'] = "Rij"
+                    node['name']  = "rij"
 
         return
 

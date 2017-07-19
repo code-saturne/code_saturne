@@ -87,9 +87,7 @@ class XMLmodel(Variables):
             nodeList.append(nodeTurb.xmlGetNode('variable', name='epsilon'))
 
         elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
-            for var in ('r11', 'r22', 'r33',
-                        'r12', 'r13', 'r23',
-                        'epsilon'):
+            for var in ('rij', 'epsilon'):
                 nodeList.append(nodeTurb.xmlGetNode('variable', name=var))
             if model in ('Rij-EBRSM'):
                 nodeList.append(nodeTurb.xmlGetNode('variable', name='alpha'))

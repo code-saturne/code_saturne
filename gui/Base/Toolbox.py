@@ -309,6 +309,7 @@ def dicoLabel(name):
                             ('r12',                           "R12",        "R12"),
                             ('r13',                           "R13",        "R13"),
                             ('r23',                           "R23",        "R23"),
+                            ('rij',                           "Rij",        "Rij"),
                             ('phi',                           "phi",        "phi"),
                             ('alpha',                         "alpha",      "alpha"),
                             ('omega',                         "omega",      "omega"),

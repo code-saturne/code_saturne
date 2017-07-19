@@ -96,6 +96,7 @@ class TurbulenceModel(Variables, Model):
                                'r12',
                                'r13',
                                'r23',
+                               'rij',
                                'k',
                                'epsilon',
                                'phi',
@@ -221,9 +222,7 @@ class TurbulenceModel(Variables, Model):
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
 
         elif model_turb in ('Rij-epsilon', 'Rij-SSG'):
-            lst = ('r11', 'r22', 'r33',
-                   'r12', 'r13', 'r23',
-                   'epsilon')
+            lst = ('rij', 'epsilon')
             for v in lst:
                 self.setNewVariable(self.node_turb, v, label=v)
             self.setNewProperty(self.node_turb, 'turbulent_viscosity')
@@ -231,9 +230,7 @@ class TurbulenceModel(Variables, Model):
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
 
         elif model_turb == 'Rij-EBRSM':
-            lst = ('r11', 'r22', 'r33',
-                   'r12', 'r13', 'r23',
-                   'epsilon', 'alpha')
+            lst = ('rij', 'epsilon', 'alpha')
             for v in lst:
                 self.setNewVariable(self.node_turb, v, label=v)
             self.setNewProperty(self.node_turb, 'turbulent_viscosity')
