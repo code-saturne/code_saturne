@@ -333,3 +333,9 @@ def createPopupMenu(popup, context):
                             else:
                                 if not CFDSTUDYGUI_DataModel.isLinkPathObject(sobj) and (sg.SelectedCount() == 1):
                                     ActionHandler.customPopup(id, popup)
+                                fathername = sobj.GetFather().GetName()
+                                if  fathername in ["RESU","RESU_COUPLING"]:
+                                    if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]) or \
+                                        CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]):
+                                        ActionHandler.customPopup(id, popup)
+                                        ActionHandler.commonAction(ActionHandler.RemoveAction).setEnabled(True)
