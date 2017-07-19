@@ -206,6 +206,10 @@
             <translation>Voulez-vous vraiment supprimer le répertoire de cas : %s, de cette étude sur le disque?</translation>
         </message>
         <message>
+            <source>REMOVE_RESU_SUB_FOLDER_ACTION_CONFIRM_MESS</source>
+            <translation>Voulez-vous vraiment supprimer le répertoire de résultats : %s, de ce cas d'étude sur le disque?</translation>
+        </message>
+        <message>
             <source>REMOVE_FILE_ACTION_CONFIRM_MESS</source>
             <translation>Voulez-vous vraiment supprimer le fichier : %s, de cette étude sur le disque ?</translation>
         </message>
