@@ -203,6 +203,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._SolverGUI = CFDSTUDYGUI_SolverGUI.CFDSTUDYGUI_SolverGUI()
         self._DskAgent = Desktop_Agent()
 
+        self.RemoveAction = RemoveAction
 
     def createActions(self):
         """
@@ -840,6 +841,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):
                 self.commonAction(RemoveAction).setEnabled(True)
                 self.commonAction(RemoveAction).setVisible(True)
+            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]):
+                self.commonAction(RemoveAction).setVisible(True)
+            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]):
+                self.commonAction(RemoveAction).setVisible(True)
+
+            
 
     def updateActionsXmlFile(self, XMLSobj) :
 
@@ -896,6 +903,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
              id == CFDSTUDYGUI_DataModel.dict_object["SRCFolder"]            or \
              id == CFDSTUDYGUI_DataModel.dict_object["USERSFolder"]          or \
              id == CFDSTUDYGUI_DataModel.dict_object["RESUFolder"]           or \
+             id == CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGFolder"]  or \
              id == CFDSTUDYGUI_DataModel.dict_object["RESUSubErrFolder"]     or \
              id == CFDSTUDYGUI_DataModel.dict_object["RESSRCFolder"]         or \
              id == CFDSTUDYGUI_DataModel.dict_object["HISTFolder"]           or \
@@ -943,6 +951,9 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESUFile"]:
             popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]:
+            popup.addAction(self.commonAction(RemoveAction))
+            popup.addAction(self.commonAction(UpdateObjBrowserAction))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]:
             popup.addAction(self.commonAction(RemoveAction))
             popup.addAction(self.commonAction(UpdateObjBrowserAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESUSubErrFolder"]:
@@ -1226,41 +1237,52 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
 
     def slotRemoveAction(self):
+        log.debug("slotRemoveAction")
+        listSobj = self._multipleSelectedObject()
+        study = CFDSTUDYGUI_DataModel._getStudy()
+        if listSobj != [] :
+            self.removeAction_multipleSobjects(listSobj)
+
+    def removeAction_multipleSobjects(self,listSobj):
+        for sobj in listSobj:
+            if sobj != None:
+                self.removeAction_obj(sobj)
+
+    def removeAction_obj(self,sobj):
         """
         Deletes file or folder from the Object Browser, and from the unix system files.
         Delete dock windows attached to a CFD Study if this study is deleted from the Object Browser.
         """
-        log.debug("slotRemoveAction")
-        sobj = self._singleSelectedObject()
         if sobj != None:
             sobjpath = CFDSTUDYGUI_DataModel._GetPath(sobj)
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):         
                 mess = cfdstudyMess.trMessage(self.tr("REMOVE_ACTION_CONFIRM_MESS"),[sobjpath])
             elif CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]):
                 mess = cfdstudyMess.trMessage(self.tr("REMOVE_RESU_SUB_FOLDER_ACTION_CONFIRM_MESS"),[sobjpath])
+            elif CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]):
+                mess = cfdstudyMess.trMessage(self.tr("REMOVE_RESU_SUB_FOLDER_ACTION_CONFIRM_MESS"),[sobjpath])
             else :
                 mess = cfdstudyMess.trMessage(self.tr("REMOVE_FILE_ACTION_CONFIRM_MESS"),[sobjpath])
             if cfdstudyMess.warningMessage(mess) == QMessageBox.No:
                 return
+            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):
+                c = CFDSTUDYGUI_DataModel.GetCase(sobj).GetName()
+                caseName  = sobj.GetName()
+                studyObj = CFDSTUDYGUI_DataModel.GetStudyByObj(sobj)
+                studyName = studyObj.GetName()
 
-            c = CFDSTUDYGUI_DataModel.GetCase(sobj).GetName()
-            caseName  = sobj.GetName()
-            studyObj = CFDSTUDYGUI_DataModel.GetStudyByObj(sobj)
-            studyName = studyObj.GetName()
-            father = sobj.GetFather()
-            fatherpath = CFDSTUDYGUI_DataModel._GetPath(father)
-            fathername = father.GetName()
-
-            if c == caseName:
-                XmlCaseNameList = CFDSTUDYGUI_DataModel.getXmlCaseNameList(sobj)
-                if XmlCaseNameList != [] :
-                    for i in XmlCaseNameList :
-                        self._SolverGUI.removeDockWindow(studyName, caseName,i)
-                if CFDSTUDYGUI_SolverGUI.findDockWindow("unnamed", caseName, studyName):
-                    self._SolverGUI.removeDockWindow(studyName, caseName,"unnamed")
+                if c == caseName:
+                    XmlCaseNameList = CFDSTUDYGUI_DataModel.getXmlCaseNameList(sobj)
+                    if XmlCaseNameList != [] :
+                        for i in XmlCaseNameList :
+                            self._SolverGUI.removeDockWindow(studyName, caseName,i)
+                    if CFDSTUDYGUI_SolverGUI.findDockWindow("unnamed", caseName, studyName):
+                        self._SolverGUI.removeDockWindow(studyName, caseName,"unnamed")
             watchCursor = QCursor(Qt.WaitCursor)
             QApplication.setOverrideCursor(watchCursor)
 #           As we remove case directory which can be the current working directory, we need to change the current working directory eitherwise there is a problem with os.getcwd() or equivalent
+            father = sobj.GetFather()
+            fatherpath = CFDSTUDYGUI_DataModel._GetPath(father)
             os.chdir(fatherpath)
             if os.path.isdir(sobjpath):
                 shutil.rmtree(sobjpath)
