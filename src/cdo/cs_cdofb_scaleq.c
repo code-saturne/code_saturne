@@ -274,7 +274,7 @@ _init_cell_structures(const cs_flag_t             cell_flag,
         if (face_flag & CS_CDO_BC_HMG_DIRICHLET)
             cbc->dof_flag[f] |= CS_CDO_BC_HMG_DIRICHLET;
         else if (face_flag & CS_CDO_BC_DIRICHLET) {
-          cbc->dir_values[f] = dir_values[cm->f_ids[f]];
+          cbc->dir_values[f] = dir_values[f_id];
           cbc->dof_flag[f] |= CS_CDO_BC_DIRICHLET;
         }
 
@@ -340,10 +340,12 @@ _condense_and_store(const cs_adjacency_t    *c2f,
 
   b->acc_inv[csys->c_id] = inv_acc;
   b->cell_rhs[csys->c_id] = cell_rhs;
+
+  /* Store the cell row (the last one) */
   double  *acf = b->acf + c2f->idx[csys->c_id];
   for (int f = 0; f < n_fc; f++) acf[f] = row_c[f];
 
-  /* Store the cell column (the last one) */
+  /* Store the cell column temporary (the last one) */
   double  *afc = cb->values;
   for (int f = 0; f < n_fc; f++) afc[f] = csys->mat->val[n_dofs*f + n_fc];
 
@@ -353,14 +355,14 @@ _condense_and_store(const cs_adjacency_t    *c2f,
   for (short int i = 0; i < n_fc; i++) {
 
     double  *old_i = csys->mat->val + n_dofs*i; // old row_i
-    double  *new_i = csys->mat->val + n_fc*i; // old row_i
+    double  *new_i = csys->mat->val + n_fc*i;   // new row_i
 
     /* Condensate the local matrix */
     const double  coef_i = inv_acc * afc[i];
     for (short int j = 0; j < n_fc; j++)
-      new_i[j] = old_i[j] - row_c[j]*coef_i;
+      new_i[j] = old_i[j] - acf[j]*coef_i;
 
-    /* Update RHS: RHS_v = RHS_v - Afc*Acc^-1*s_c */
+    /* Update RHS: RHS_f = RHS_f - Afc*Acc^-1*s_c */
     csys->rhs[i] -= cell_rhs*coef_i;
 
   } // Loop on fi cell faces
@@ -429,11 +431,11 @@ cs_cdofb_scaleq_initialize(void)
   }
 #else
   assert(cs_glob_n_threads == 1);
-  cs_cdofb_cell_sys[0] = cs_cell_sys_create(connect->n_max_fbyc+1);
+  cs_cdofb_cell_sys[0] = cs_cell_sys_create(connect->n_max_fbyc + 1);
   cs_cdofb_cell_bc[0] = cs_cell_bc_create(connect->n_max_fbyc + 1,
                                            connect->n_max_fbyc);
   cs_cdofb_cell_bld[0] = cs_cell_builder_create(CS_SPACE_SCHEME_CDOFB,
-                                                 connect);
+                                                connect);
 #endif /* openMP */
 }
 
@@ -519,8 +521,7 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
     b->sys_flag |= CS_FLAG_SYS_SOURCETERM;
 
   /* Flag to indicate what to build in a cell mesh */
-  b->msh_flag = CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_PEQ |
-    CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ;
+  b->msh_flag = CS_CDO_LOCAL_PF | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ;
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
@@ -534,12 +535,6 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
                                 eqp->n_bc_desc,
                                 eqp->bc_desc,
                                 n_b_faces);
-
-  if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_PENA)
-    bft_error(__FILE__, __LINE__, 0,
-              " CDO face-based schemes and weak enforcement by a strong"
-              " penalization are not compatible yet.\n"
-              " Please modify your settings.");
 
   /* Values at each face (interior and border) i.e. take into account BCs */
   BFT_MALLOC(b->face_values, n_faces, cs_real_t);
@@ -561,31 +556,51 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
   for (cs_lnum_t i = 0; i < connect->c2f->idx[n_cells]; i++) b->acf[i] = 0.;
 
   /* Diffusion part */
-  b->diff_pty_uniform = cs_property_is_uniform(eqp->diffusion_property);
+  /* -------------- */
 
-  b->enforce_dirichlet = NULL;
-  switch (eqp->enforcement) {
-
-  case CS_PARAM_BC_ENFORCE_WEAK_PENA:
-    b->enforce_dirichlet = NULL; //cs_cdofb_diffusion_pena_dirichlet;
-    break;
-
-  case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              (" Invalid type of algorithm to enforce Dirichlet BC."));
-
-  }
-
+  b->diff_pty_uniform = true;
   b->get_stiffness_matrix = NULL;
   b->boundary_flux_op = NULL;
-  if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
+  b->enforce_dirichlet = NULL;
 
-    b->get_stiffness_matrix = NULL; //TODO
-    b->boundary_flux_op = NULL; // TODO
+  if (eqp->flag & CS_EQUATION_DIFFUSION) {
 
-  }
+    b->sys_flag |= CS_FLAG_SYS_DIFFUSION;
+    b->diff_pty_uniform = cs_property_is_uniform(eqp->diffusion_property);
+
+    switch (eqp->diffusion_hodge.algo) {
+
+    case CS_PARAM_HODGE_ALGO_COST:
+      b->get_stiffness_matrix = cs_hodge_fb_cost_get_stiffness;
+      b->boundary_flux_op = NULL; //cs_cdovb_diffusion_cost_flux_op;
+      break;
+
+    case CS_PARAM_HODGE_ALGO_VORONOI:
+      b->get_stiffness_matrix = cs_hodge_fb_voro_get_stiffness;
+      b->boundary_flux_op = NULL; //cs_cdovb_diffusion_cost_flux_op;
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                (" Invalid type of algorithm to build the diffusion term."));
+
+    } // Switch on Hodge algo.
+
+    switch (eqp->enforcement) {
+
+    case CS_PARAM_BC_ENFORCE_WEAK_PENA:
+      b->enforce_dirichlet = cs_cdo_diffusion_pena_dirichlet;
+      break;
+
+    case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                (" Invalid type of algorithm to enforce Dirichlet BC."));
+
+    }
+
+  } // Diffusion part
 
   /* Advection part */
 
@@ -1055,49 +1070,29 @@ cs_cdofb_scaleq_update_field(const cs_real_t            *solu,
                              cs_real_t                  *field_val)
 {
   CS_UNUSED(rhs);
-
-  int  i, j, l, c_id, f_id;
-
   cs_cdofb_scaleq_t  *b = (cs_cdofb_scaleq_t *)builder;
 
-  const cs_cdo_bc_list_t  *dir_faces = b->face_bc->dir;
-  const cs_equation_param_t  *eqp = b->eqp;
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
 
   /* Set computed solution in builder->face_values */
   memcpy(b->face_values, solu, quant->n_faces*sizeof(cs_real_t));
 
-  /* /\* Compute now the value at each cell center *\/ */
-  /* cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect, false, h_info); */
-
   /* Build the remaining discrete operators */
-  for (c_id = 0; c_id < quant->n_cells; c_id++) {
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-    int  shft = connect->c2f->idx[c_id];
-    double _wf_val = 0.0, dsum = 0.0, rowsum = 0.0;
+    cs_real_t  f_contrib = 0.;
+    for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++)
+      f_contrib += b->face_values[c2f->ids[i]] * b->acf[i];
 
-    /* Build a local discrete Hodge operator */
-    /* cs_locmat_t  *_h = cs_hodge_build_local(c_id, connect, quant, hb); */
-
-    /* Compute dsum: the sum of all the entries of the local discrete Hodge
-       operator */
-    /* for (i = 0, l=shft; i < _h->n_ent; i++, l++) { */
-    /*   rowsum = 0; */
-    /*   f_id = connect->c2f->ids[l]; */
-    /*   for (j = 0; j < _h->n_ent; j++) */
-    /*     rowsum += _h->val[i*_h->n_ent+j]; */
-    /*   dsum += rowsum; */
-    /*   _wf_val += b->face_values[f_id] * rowsum; */
-    /* } */
-
-    field_val[c_id] = 1/dsum*(b->source_terms[c_id] + _wf_val);
+    /* acf stores minus the row sum of the discrete Hodge operator */
+    if (b->sys_flag & CS_FLAG_SYS_SOURCETERM)
+      field_val[c_id] = -b->acc_inv[c_id]*(b->source_terms[c_id] + f_contrib);
+    else
+      field_val[c_id] = -b->acc_inv[c_id]*f_contrib;
 
   } // loop on cells
 
-  /* /\* Free memory *\/ */
-  /* hb = cs_hodge_builder_free(hb); */
 }
 
 /*----------------------------------------------------------------------------*/

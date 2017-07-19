@@ -395,7 +395,7 @@ cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
   /* Evaluate the function for this time at the border face center */
   anai->func(ts->t_cur,
-             n_elts, elt_ids, quant->vtx_coord,
+             n_elts, elt_ids, quant->b_face_center,
              compact,  // compacted output ?
              anai->input,
              eval);

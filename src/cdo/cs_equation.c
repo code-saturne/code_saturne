@@ -159,6 +159,23 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Carry out operations for allocating and/or initializing the solution
+ *         array and the right hand side of the linear system to solve.
+ *         Handle parallelism thanks to cs_range_set_t structure.
+ *
+ * \param[in, out] eq_cast    pointer to generic builder structure
+ * \param[in, out] p_x        pointer of pointer to the solution array
+ * \param[in, out] p_rhs      pointer of pointer to the RHS array
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_prepare_solve_t)(void              *eq_to_cast,
+                              cs_real_t         *p_x[],
+                              cs_real_t         *p_rhs[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Store solution(s) of the linear system into a field structure
  *         Update extra-field values if required (for hybrid discretization)
  *
@@ -291,32 +308,31 @@ struct _cs_equation_t {
   char *restrict         varname;
   int                    field_id;
 
-  /* Timer statistic for a "light" profiling */
-  int     main_ts_id;   /* Id of the main timer states structure related
-                           to this equation */
-  int     solve_ts_id;  /* Id of the timer stats structure related to the
-                           inversion of the linear system */
-
-  bool    do_build;     /* false => keep the system as it is */
-
   /* Algebraic system */
-  cs_lnum_t              sles_size[2]; /* 0: size of the linear system treated
-                                             on this rank
-                                             (size for gather operation)
-                                          1: size of the linear system related
-                                             to the local number of entities
-                                             (size for scatter operation) */
-  cs_real_t             *rhs;          /* right-hand side defined by a local
-                                          cellwise building. This may be
-                                          different from the rhs given to
-                                          cs_sles_solve() in parallel mode */
-  cs_matrix_t           *matrix;       /* matrix to inverse with cs_sles_solve()
-                                          The matrix size can be different from
-                                          rhs size in parallel mode since the
-                                          decomposition is different */
+  /* ---------------- */
 
-  const cs_range_set_t  *rset;         /* range set to handle parallelism
-                                          shared with cs_cdo_connect_t struct.*/
+  /* There are possibly two different sizes for the linear system to handle
+     - One for "scatter"-type operations based on the number of geometrical
+       entities owned by the local instance of the mesh
+     - One for "gather"-type operations based on a balance of the number of
+     DoFs from a algebraic point of view. In parallel runs, these two sizes
+     can be different.
+     n_sles_gather_elts <= n_sles_scatter_elts
+  */
+
+  cs_lnum_t              n_sles_scatter_elts;
+  cs_lnum_t              n_sles_gather_elts;
+
+  /* Right-hand side defined by a local cellwise building. This may be
+     different from the rhs given to cs_sles_solve() in parallel mode. */
+  cs_real_t             *rhs;
+
+  /* Matrix to inverse with cs_sles_solve() The matrix size can be different
+     from the rhs size in parallel mode since the decomposition is different */
+  cs_matrix_t           *matrix;
+
+  /* Range set to handle parallelism. Shared with cs_cdo_connect_t struct.*/
+  const cs_range_set_t  *rset;
 
   /* System builder depending on the numerical scheme */
   void                     *builder;
@@ -326,6 +342,7 @@ struct _cs_equation_t {
   cs_equation_free_builder_t       *free_builder;
   cs_equation_initialize_system_t  *initialize_system;
   cs_equation_build_system_t       *build_system;
+  cs_equation_prepare_solve_t      *prepare_solving;
   cs_equation_update_field_t       *update_field;
   cs_equation_compute_source_t     *compute_source;
   cs_equation_flux_plane_t         *compute_flux_across_plane;
@@ -333,6 +350,14 @@ struct _cs_equation_t {
   cs_equation_extra_op_t           *postprocess;
   cs_equation_get_extra_values_t   *get_extra_values;
   cs_equation_print_monitor_t      *display_monitoring;
+
+  /* Timer statistic for a "light" profiling */
+  int     main_ts_id;   /* Id of the main timer states structure related
+                           to this equation */
+  int     solve_ts_id;  /* Id of the timer stats structure related to the
+                           inversion of the linear system */
+
+  bool    do_build;     /* false => keep the system as it is */
 
 };
 
@@ -542,10 +567,178 @@ _initialize_field_from_ic(cs_equation_t  *eq)
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Carry out operations for allocating and/or initializing the solution
+ *         array and the right hand side of the linear system to solve.
+ *         Handle parallelism thanks to cs_range_set_t structure.
+ *
+ * \param[in, out] eq_cast    pointer to generic builder structure
+ * \param[in, out] p_x        pointer of pointer to the solution array
+ * \param[in, out] p_rhs      pointer of pointer to the RHS array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_prepare_vb_solving(void              *eq_to_cast,
+                    cs_real_t         *p_x[],
+                    cs_real_t         *p_rhs[])
+{
+  cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
+  const cs_field_t  *fld = cs_field_by_id(eq->field_id);
+  const int  eq_dim = fld->dim;
+
+  cs_real_t  *x = NULL, *b = NULL;
+
+  BFT_MALLOC(x, CS_MAX(eq->n_sles_scatter_elts,
+                       cs_matrix_get_n_columns(eq->matrix)), cs_real_t);
+
+  /* x and b are a "gathered" view of field->val and eq->rhs respectively
+     through the range set operation.
+     Their size is equal to n_sles_gather_elts <= n_sles_scatter_elts */
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+
+    /* Compact numbering to fit the algebraic decomposition */
+    cs_range_set_gather(eq->rset,
+                        CS_REAL_TYPE, eq_dim, // type and stride
+                        fld->val,             // in: size = n_sles_scatter_elts
+                        x);                   //out: size = n_sles_gather_elts
+
+    /* The right-hand side stems from a cellwise building on this rank.
+       Other contributions from distant ranks may contribute to an element
+       owned by the local rank */
+    BFT_MALLOC(b, eq->n_sles_scatter_elts, cs_real_t);
+
+#if defined(HAVE_OPENMP)
+#   pragma omp parallel for if (eq->n_sles_scatter_elts > CS_THR_MIN)
+    for (cs_lnum_t  i = 0; i < eq->n_sles_scatter_elts; i++)
+      b[i] = eq->rhs[i];
+#else
+    memcpy(b, eq->rhs, eq->n_sles_scatter_elts * sizeof(cs_real_t));
+#endif
+
+    cs_interface_set_sum(eq->rset->ifs,
+                         eq->n_sles_scatter_elts, eq_dim, false, CS_REAL_TYPE,
+                         b);
+
+    cs_range_set_gather(eq->rset,
+                        CS_REAL_TYPE, eq_dim, // type and stride
+                        b,                    // in: size = n_sles_scatter_elts
+                        b);                   //out: size = n_sles_gather_elts
+
+  }
+  else { /* Serial mode *** without periodicity *** */
+
+    assert(eq->n_sles_gather_elts == eq->n_sles_scatter_elts);
+
+#if defined(HAVE_OPENMP)
+#   pragma omp parallel for if (eq->n_sles_scatter_elts > CS_THR_MIN)
+    for (cs_lnum_t  i = 0; i < eq->n_sles_scatter_elts; i++)
+      x[i] = fld->val[i];
+#else
+    memcpy(x, fld->val, eq->n_sles_scatter_elts * sizeof(cs_real_t));
+#endif
+
+    /* Nothing to do for the right-hand side */
+    b = eq->rhs;
+
+  }
+
+  /* Return pointers */
+  *p_x = x;
+  *p_rhs = b;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Carry out operations for allocating and/or initializing the solution
+ *         array and the right hand side of the linear system to solve.
+ *         Handle parallelism thanks to cs_range_set_t structure.
+ *
+ * \param[in, out] eq_cast    pointer to generic builder structure
+ * \param[in, out] p_x        pointer of pointer to the solution array
+ * \param[in, out] p_rhs      pointer of pointer to the RHS array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_prepare_fb_solving(void              *eq_to_cast,
+                    cs_real_t         *p_x[],
+                    cs_real_t         *p_rhs[])
+{
+  cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
+  const cs_field_t  *fld = cs_field_by_id(eq->field_id);
+  const cs_real_t  *f_values = eq->get_extra_values(eq->builder);
+  const int  eq_dim = fld->dim;
+
+  /* Sanity check */
+  assert(f_values != NULL);
+
+  cs_real_t  *x = NULL, *b = NULL;
+  BFT_MALLOC(x, CS_MAX(eq->n_sles_scatter_elts,
+                       cs_matrix_get_n_columns(eq->matrix)), cs_real_t);
+
+  /* x and b are a "gathered" view of field->val and eq->rhs respectively
+     through the range set operation.
+     Their size is equal to n_sles_gather_elts <= n_sles_scatter_elts */
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+
+    /* Compact numbering to fit the algebraic decomposition */
+    cs_range_set_gather(eq->rset,
+                        CS_REAL_TYPE, eq_dim, // type and stride
+                        f_values,             // in: size = n_sles_scatter_elts
+                        x);                   //out: size = n_sles_gather_elts
+
+    /* The right-hand side stems from a cellwise building on this rank.
+       Other contributions from distant ranks may contribute to an element
+       owned by the local rank */
+    BFT_MALLOC(b, eq->n_sles_scatter_elts, cs_real_t);
+
+#if defined(HAVE_OPENMP)
+#   pragma omp parallel for if (eq->n_sles_scatter_elts > CS_THR_MIN)
+    for (cs_lnum_t  i = 0; i < eq->n_sles_scatter_elts; i++)
+      b[i] = eq->rhs[i];
+#else
+    memcpy(b, eq->rhs, eq->n_sles_scatter_elts * sizeof(cs_real_t));
+#endif
+
+    cs_interface_set_sum(eq->rset->ifs,
+                         eq->n_sles_scatter_elts, eq_dim, false, CS_REAL_TYPE,
+                         b);
+
+    cs_range_set_gather(eq->rset,
+                        CS_REAL_TYPE, eq_dim, // type and stride
+                        b,                    // in: size = n_sles_scatter_elts
+                        b);                   //out: size = n_sles_gather_elts
+
+  }
+  else { /* Serial mode *** without periodicity *** */
+
+    assert(eq->n_sles_gather_elts == eq->n_sles_scatter_elts);
+
+#if defined(HAVE_OPENMP)
+#   pragma omp parallel for if (eq->n_sles_scatter_elts > CS_THR_MIN)
+    for (cs_lnum_t  i = 0; i < eq->n_sles_scatter_elts; i++)
+      x[i] = f_values[i];
+#else
+    memcpy(x, f_values, eq->n_sles_scatter_elts * sizeof(cs_real_t));
+#endif
+
+    /* Nothing to do for the right-hand side */
+    b = eq->rhs;
+
+  }
+
+  /* Return pointers */
+  *p_x = x;
+  *p_rhs = b;
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -699,7 +892,7 @@ cs_equation_add(const char            *eqname,
   eq->matrix = NULL;
   eq->rhs = NULL;
   eq->rset = NULL;
-  eq->sles_size[0] = eq->sles_size[1] = 0;
+  eq->n_sles_gather_elts = eq->n_sles_scatter_elts = 0;
 
   /* Builder structure for this equation */
   eq->builder = NULL;
@@ -958,6 +1151,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       eq->free_builder = cs_cdovb_scaleq_free;
       eq->initialize_system = cs_cdovb_scaleq_initialize_system;
       eq->build_system = cs_cdovb_scaleq_build_system;
+      eq->prepare_solving = _prepare_vb_solving;
       eq->update_field = cs_cdovb_scaleq_update_field;
       eq->compute_source = cs_cdovb_scaleq_compute_source;
       eq->compute_flux_across_plane = cs_cdovb_scaleq_compute_flux_across_plane;
@@ -971,9 +1165,9 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
       /* Set the size of the algebraic system arising from the cellwise
          process */
-      eq->sles_size[0] = eq->sles_size[1] = connect->n_vertices;
+      eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
       if (cs_glob_n_ranks > 1)
-        eq->sles_size[0] = connect->v_rs->n_elts[0];
+        eq->n_sles_gather_elts = connect->v_rs->n_elts[0];
       break;
 
     case CS_SPACE_SCHEME_CDOVCB:
@@ -981,6 +1175,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       eq->free_builder = cs_cdovcb_scaleq_free;
       eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
       eq->build_system = cs_cdovcb_scaleq_build_system;
+      eq->prepare_solving = _prepare_vb_solving;
       eq->update_field = cs_cdovcb_scaleq_update_field;
       eq->compute_source = cs_cdovcb_scaleq_compute_source;
       eq->compute_flux_across_plane =
@@ -995,9 +1190,9 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
       /* Set the size of the algebraic system arising from the cellwise
          process */
-      eq->sles_size[0] = eq->sles_size[1] = connect->n_vertices;
+      eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
       if (cs_glob_n_ranks > 1)
-        eq->sles_size[0] = connect->v_rs->n_elts[0];
+        eq->n_sles_gather_elts = connect->v_rs->n_elts[0];
       break;
 
     case CS_SPACE_SCHEME_CDOFB:
@@ -1005,6 +1200,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       eq->free_builder = cs_cdofb_scaleq_free;
       eq->initialize_system = cs_cdofb_scaleq_initialize_system;
       eq->build_system = cs_cdofb_scaleq_build_system;
+      eq->prepare_solving = _prepare_fb_solving;
       eq->update_field = cs_cdofb_scaleq_update_field;
       eq->compute_source = cs_cdofb_scaleq_compute_source;
       eq->compute_flux_across_plane = NULL;
@@ -1018,9 +1214,9 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
 
       /* Set the size of the algebraic system arising from the cellwise
          process */
-      eq->sles_size[0] = eq->sles_size[1] = connect->n_faces[0];
+      eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
       if (cs_glob_n_ranks > 1)
-        eq->sles_size[0] = connect->f_rs->n_elts[0];
+        eq->n_sles_gather_elts = connect->f_rs->n_elts[0];
       break;
 
     case CS_SPACE_SCHEME_HHO:
@@ -1028,6 +1224,7 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       eq->free_builder = cs_hho_scaleq_free;
       eq->initialize_system = NULL; //cs_hho_initialize_system;
       eq->build_system = cs_hho_scaleq_build_system;
+      eq->prepare_solving = _prepare_fb_solving;
       eq->update_field = cs_hho_scaleq_update_field;
       eq->compute_source = cs_hho_scaleq_compute_source;
       eq->compute_flux_across_plane = NULL;
@@ -1042,9 +1239,9 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       /* Set the size of the algebraic system arising from the cellwise
          process */
       // TODO (update according to the order)
-      eq->sles_size[0] = eq->sles_size[1] = connect->n_faces[0];
+      eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
       if (cs_glob_n_ranks > 1)
-        eq->sles_size[0] = connect->f_rs->n_elts[0];
+        eq->n_sles_gather_elts = connect->f_rs->n_elts[0];
       break;
 
     default:
@@ -2065,6 +2262,9 @@ cs_equation_solve(cs_equation_t   *eq)
 {
   int  n_iters = 0;
   double  residual = DBL_MAX;
+  cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
+  cs_field_t  *fld = cs_field_by_id(eq->field_id);
+  cs_real_t  *x = NULL, *b = NULL;
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
@@ -2074,71 +2274,25 @@ cs_equation_solve(cs_equation_t   *eq)
   const cs_equation_param_t  *eqp = eq->param;
   const double  r_norm = 1.0; // No renormalization by default (TODO)
   const cs_param_itsol_t  itsol_info = eqp->itsol_info;
-  const cs_lnum_t  n_max_elts = CS_MAX(eq->sles_size[1],
-                                       cs_matrix_get_n_columns(eq->matrix));
 
-  cs_real_t  *x = NULL; //cs_equation_get_tmpbuf();
-  cs_real_t  *b = NULL; //x + eq->sles_size[1];
-
-  BFT_MALLOC(x, n_max_elts, cs_real_t);
-
-  cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
-  cs_field_t  *fld = cs_field_by_id(eq->field_id);
-
-  /* Sanity check (up to now, only scalar field are handled) */
+  /* Sanity checks (up to now, only scalar field are handled) */
   assert(fld->dim == 1);
+  assert(eq->n_sles_gather_elts <= eq->n_sles_scatter_elts);
+  assert(eq->n_sles_gather_elts == cs_matrix_get_n_rows(eq->matrix));
 
-  /* x and b are a "gathered" view of field->val and eq->rhs respectively
-     through the range set operation.
-     Their size is equal to sles_size[0] <= sles_size[1] */
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
-
-    /* Compact numbering to fit the algebraic decomposition */
-    cs_range_set_gather(eq->rset,
-                        CS_REAL_TYPE, 1, // type and stride
-                        fld->val,        // in: size = eq->sles_size[1]
-                        x);              //out: size = eq->sles_size[0]
-
-    /* The right-hand side stems from a cellwise building on this rank.
-       Other contributions from distant ranks may contribute to an element
-       owned by the local rank */
-      BFT_MALLOC(b, n_max_elts, cs_real_t);
-
-#if defined(HAVE_OPENMP)
-#   pragma omp parallel for if (eq->sles_size[1] > CS_THR_MIN)
-    for (cs_lnum_t  i = 0; i < eq->sles_size[1]; i++)
-      b[i] = eq->rhs[i];
-#else
-    memcpy(b, eq->rhs, eq->sles_size[1] * sizeof(cs_real_t));
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 0
+  cs_log_printf(CS_LOG_DEFAULT,
+                " n_sles_gather_elts:  %d\n"
+                " n_sles_scatter_elts: %d\n"
+                " n_matrix_rows:       %d\n"
+                " n_matrix_columns:    %d\n",
+                eq->n_sles_gather_elts, eq->n_sles_scatter_elts,
+                cs_matrix_get_n_rows(eq->matrix),
+                cs_matrix_get_n_columns(eq->matrix));
 #endif
 
-    cs_interface_set_sum(eq->rset->ifs,
-                         eq->sles_size[1], 1, false, CS_REAL_TYPE,
-                         b);
-
-    cs_range_set_gather(eq->rset,
-                        CS_REAL_TYPE, 1, // type and stride
-                        b,               // in: size = eq->sles_size[1]
-                        b);              //out: size = eq->sles_size[0]
-
-  }
-  else { /* Serial mode *** without periodicity *** */
-
-    assert(eq->sles_size[0] == n_max_elts);
-    assert(cs_matrix_get_n_rows(eq->matrix) == n_max_elts);
-
-#if defined(HAVE_OPENMP)
-#   pragma omp parallel for if (eq->sles_size[1] > CS_THR_MIN)
-    for (cs_lnum_t  i = 0; i < eq->sles_size[1]; i++)
-      x[i] = fld->val[i];
-#else
-    memcpy(x, fld->val, eq->sles_size[1] * sizeof(cs_real_t));
-#endif
-
-    /* Nothing to do for the right-hand side */
-    b = eq->rhs;
-
-  }
+  /* Handle parallelism */
+  eq->prepare_solving(eq, &x, &b);
 
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
                                                    eq->matrix,
@@ -2154,7 +2308,7 @@ cs_equation_solve(cs_equation_t   *eq)
 
   if (eq->param->sles_verbosity > 0) {
 
-    const cs_lnum_t  size = eq->sles_size[0];
+    const cs_lnum_t  size = eq->n_sles_gather_elts;
     const cs_lnum_t  *row_index, *col_id;
     const cs_real_t  *d_val, *x_val;
 

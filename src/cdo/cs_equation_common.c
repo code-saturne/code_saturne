@@ -722,7 +722,7 @@ cs_equation_compute_dirichlet_sf(const cs_mesh_t            *mesh,
   /* Initialization */
   BFT_MALLOC(dir_val, quant->n_b_faces, cs_real_t);
 
-# pragma omp parallel for if (quant->n_vertices > CS_THR_MIN)
+# pragma omp parallel for if (quant->n_b_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < quant->n_b_faces; f_id++) dir_val[f_id] = 0;
 
   /* Define array storing the Dirichlet values */

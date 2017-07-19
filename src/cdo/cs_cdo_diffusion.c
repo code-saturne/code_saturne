@@ -678,8 +678,8 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique (symmetrized or not) or penalization
+ * \brief   Take into account Dirichlet BCs by a weak enforcement by a
+ *          penalization technique with a huge value
  *
  * \param[in]       h_info    cs_param_hodge_t structure for diffusion
  * \param[in]       cbc       pointer to a cs_cell_bc_t structure
@@ -692,13 +692,13 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
-                                  const cs_cell_bc_t              *cbc,
-                                  const cs_cell_mesh_t            *cm,
-                                  cs_cdo_diffusion_flux_trace_t   *flux_op,
-                                  cs_face_mesh_t                  *fm,
-                                  cs_cell_builder_t               *cb,
-                                  cs_cell_sys_t                   *csys)
+cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
+                                const cs_cell_bc_t              *cbc,
+                                const cs_cell_mesh_t            *cm,
+                                cs_cdo_diffusion_flux_trace_t   *flux_op,
+                                cs_face_mesh_t                  *fm,
+                                cs_cell_builder_t               *cb,
+                                cs_cell_sys_t                   *csys)
 {
   CS_UNUSED(h_info); // Prototype common to cs_cdo_diffusion_enforce_dir_t
   CS_UNUSED(fm);
@@ -710,7 +710,8 @@ cs_cdovb_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
   assert(cbc != NULL && cm != NULL);
   assert(csys != NULL);
   /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_ent = cm->n_vc + 1
-     For VB schemes  cbc->n_dofs = csys->mat->n_ent = cm->n_vc */
+     For VB schemes  cbc->n_dofs = csys->mat->n_ent = cm->n_vc
+     For FB schemes  cbc->n_dofs = csys->mat->n_ent = cm->n_fc */
 
   /* Enforcement of the Dirichlet BCs */
   if (cbc->n_dirichlet == 0)
@@ -719,14 +720,14 @@ cs_cdovb_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
   const short int n_dofs = csys->mat->n_ent;
 
   // Penalize diagonal entry (and its rhs if needed)
-  for (short int v = 0; v < cbc->n_dofs; v++) {
+  for (short int i = 0; i < cbc->n_dofs; i++) {
 
-    if (cbc->dof_flag[v] & CS_CDO_BC_DIRICHLET) {
-      csys->mat->val[v + n_dofs*v] += cs_big_pena_coef;
-      csys->rhs[v] += cbc->dir_values[v] * cs_big_pena_coef;
+    if (cbc->dof_flag[i] & CS_CDO_BC_DIRICHLET) {
+      csys->mat->val[i + n_dofs*i] += cs_big_pena_coef;
+      csys->rhs[i] += cbc->dir_values[i] * cs_big_pena_coef;
     }
-    else if (cbc->dof_flag[v] & CS_CDO_BC_HMG_DIRICHLET)
-      csys->mat->val[v + n_dofs*v] += cs_big_pena_coef;
+    else if (cbc->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
+      csys->mat->val[i + n_dofs*i] += cs_big_pena_coef;
 
   } /* Loop on degrees of freedom */
 

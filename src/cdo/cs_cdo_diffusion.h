@@ -205,13 +205,13 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
-                                  const cs_cell_bc_t              *cbc,
-                                  const cs_cell_mesh_t            *cm,
-                                  cs_cdo_diffusion_flux_trace_t   *flux_op,
-                                  cs_face_mesh_t                  *fm,
-                                  cs_cell_builder_t               *cb,
-                                  cs_cell_sys_t                   *csys);
+cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
+                                const cs_cell_bc_t              *cbc,
+                                const cs_cell_mesh_t            *cm,
+                                cs_cdo_diffusion_flux_trace_t   *flux_op,
+                                cs_face_mesh_t                  *fm,
+                                cs_cell_builder_t               *cb,
+                                cs_cell_sys_t                   *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -849,9 +849,9 @@ _test_cdovb_schemes(FILE             *out,
   _test_stiffness_vb(out, cm, cb->loc);
 
   /* Enforce Dirichlet BC */
-  cs_cdovb_diffusion_pena_dirichlet(hcost_info, cbc, cm,
-                                    cs_cdovb_diffusion_cost_flux_op,
-                                    fm, cb, csys);
+  cs_cdo_diffusion_pena_dirichlet(hcost_info, cbc, cm,
+                                  cs_cdovb_diffusion_cost_flux_op,
+                                  fm, cb, csys);
   _locsys_dump(out, "\nCDO.VB; PENA.DGA.FLX.COST; PERMEABILITY.ANISO",
                csys);
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
@@ -881,9 +881,9 @@ _test_cdovb_schemes(FILE             *out,
   _test_stiffness_vb(out, cm, cb->loc);
 
   /* Enforce Dirichlet BC */
-  cs_cdovb_diffusion_pena_dirichlet(hvor_info, cbc, cm,
-                                    cs_cdovb_diffusion_cost_flux_op,
-                                    fm, cb, csys);
+  cs_cdo_diffusion_pena_dirichlet(hvor_info, cbc, cm,
+                                  cs_cdovb_diffusion_cost_flux_op,
+                                  fm, cb, csys);
   _locsys_dump(out, "\nCDO.VB; PENA.VORO.FLX.COST; PERMEABILITY.ISO",
                csys);
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;

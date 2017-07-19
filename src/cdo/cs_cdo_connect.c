@@ -41,6 +41,8 @@
 
 #include "bft_mem.h"
 
+#include "fvm_io_num.h"
+
 #include "cs_cdo.h"
 #include "cs_log.h"
 #include "cs_order.h"
@@ -807,30 +809,96 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
                cs_interface_set_t   **p_ifs,
                cs_range_set_t       **p_rs)
 {
-  cs_interface_set_t  *ifs = NULL;
-  cs_range_set_t  *rs = NULL;
+  fvm_io_num_t  *i_face_io_num = NULL, *b_face_io_num = NULL;
+
+  const cs_gnum_t  *i_face_gnum;
+  const cs_gnum_t  *b_face_gnum;
+
+  if (n_face_dofs == 1) {
+
+    i_face_gnum = mesh->global_i_face_num;
+    b_face_gnum = mesh->global_b_face_num;
+
+  }
+  else {
+
+    cs_lnum_t  *order = NULL;
+    cs_gnum_t  *gnum_ordered = NULL;
+
+    BFT_MALLOC(order, CS_MAX(mesh->n_i_faces,
+                             mesh->n_b_faces), cs_lnum_t);
+    BFT_MALLOC(gnum_ordered, CS_MAX(mesh->n_i_faces,
+                                    mesh->n_b_faces), cs_gnum_t);
+
+    /* Handle interior faces */
+    cs_order_gnum_allocated(NULL,
+                            mesh->global_i_face_num,
+                            order,
+                            mesh->n_i_faces);
+
+    for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
+      gnum_ordered[i] = mesh->global_i_face_num[order[i]];
+
+    i_face_io_num = fvm_io_num_create_from_adj_s(NULL,
+                                                 gnum_ordered,
+                                                 mesh->n_i_faces,
+                                                 n_face_dofs);
+    i_face_gnum = fvm_io_num_get_global_num(i_face_io_num);
+
+    /* Handle border faces */
+    cs_order_gnum_allocated(NULL,
+                            mesh->global_b_face_num,
+                            order,
+                            mesh->n_b_faces);
+
+    for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
+      gnum_ordered[i] = mesh->global_b_face_num[order[i]];
+
+    b_face_io_num = fvm_io_num_create_from_adj_s(NULL,
+                                                 gnum_ordered,
+                                                 mesh->n_b_faces,
+                                                 n_face_dofs);
+    b_face_gnum = fvm_io_num_get_global_num(b_face_io_num);
+
+    BFT_FREE(order);
+    BFT_FREE(gnum_ordered);
+  }
+
   cs_gnum_t *face_gnum = NULL;
+  BFT_MALLOC(face_gnum, n_faces * n_face_dofs, cs_gnum_t);
 
-  BFT_MALLOC(face_gnum, n_faces, cs_gnum_t);
-# pragma omp parallel for if (n_faces*n_face_dofs > CS_THR_MIN)
-  for (cs_gnum_t i = 0; i < (cs_gnum_t)(n_faces*n_face_dofs); i++)
-    face_gnum[i] = i+1;
+  cs_gnum_t  i_shift = (cs_gnum_t)mesh->n_i_faces * (cs_gnum_t)n_face_dofs;
+  cs_gnum_t  global_i_shift = mesh->n_g_i_faces * (cs_gnum_t)n_face_dofs;
 
-    /* Do not consider periodicity up to now. Should split the face interface
-       into interior and border faces to do this, since only boundary faces
-       can be associated to a periodicity */
+# pragma omp parallel for if (i_shift > CS_THR_MIN)
+  for (cs_gnum_t i = 0; i < i_shift; i++)
+    face_gnum[i] = i_face_gnum[i];
+
+# pragma omp parallel for if (mesh->n_b_faces*n_face_dofs > CS_THR_MIN)
+  for (cs_gnum_t i = 0; i < (cs_gnum_t)(mesh->n_b_faces*n_face_dofs); i++)
+    face_gnum[i + i_shift] = b_face_gnum[i] + global_i_shift;
+
+  /* Do not consider periodicity up to now. Should split the face interface
+     into interior and border faces to do this, since only boundary faces
+     can be associated to a periodicity */
+  cs_interface_set_t  *ifs = NULL;
   ifs = cs_interface_set_create(n_faces * n_face_dofs,
                                 NULL,
                                 face_gnum,
                                 mesh->periodicity, 0, NULL, NULL, NULL);
 
-  rs = cs_range_set_create(ifs,
-                           NULL,
-                           n_faces,
-                           false, //TODO: Ask Yvan
-                           0);    // g_id_base
+  cs_range_set_t  *rs = cs_range_set_create(ifs,
+                                            NULL,
+                                            n_faces,
+                                            false, //TODO: Ask Yvan
+                                            0);    // g_id_base
 
+  /* Free memory */
   BFT_FREE(face_gnum);
+  if (n_face_dofs > 1) {
+    i_face_io_num = fvm_io_num_destroy(i_face_io_num);
+    b_face_io_num = fvm_io_num_destroy(b_face_io_num);
+  }
 
   /* Return pointers */
   *p_ifs = ifs;

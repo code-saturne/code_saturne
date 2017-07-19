@@ -661,7 +661,7 @@ cs_cdovcb_scaleq_init(const cs_equation_param_t   *eqp,
   switch (eqp->enforcement) {
 
   case CS_PARAM_BC_ENFORCE_WEAK_PENA:
-    b->enforce_dirichlet = cs_cdovb_diffusion_pena_dirichlet;
+    b->enforce_dirichlet = cs_cdo_diffusion_pena_dirichlet;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
