@@ -2063,7 +2063,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         log.debug("slotSaveDataFile")
         if self._SolverGUI._CurrentWindow != None:
             if self._SolverGUI._CurrentWindow.case['xmlfile'] != "":
-                self._SolverGUI._CurrentWindow.fileSave()
+                self._SolverGUI.SaveXmlFile()
             else:
                 self.slotSaveAsDataFile()
 
