@@ -616,7 +616,6 @@ iwalfs = -999
 iwallt = 0
 iclkep = 0
 ikecou =-999
-irijco = 0
 irijnu = 0
 irijrb = 0
 irijec = 0

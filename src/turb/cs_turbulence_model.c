@@ -184,8 +184,8 @@ BEGIN_C_DECLS
         - 0: false (default)
   \var  cs_turb_rans_model_t::irijco
         coupled solving of Rij
-        - 1: true
-        - 0: false (default)
+        - 1: true (default)
+        - 0: false
         \var  cs_turb_rans_model_t::irijnu
         pseudo eddy viscosity in the matrix of momentum equation to partially
         implicit \f$ \divv \left( \rho \tens{R} \right) \f$
@@ -332,7 +332,7 @@ _turb_rans_model =
   .igrari     =    1,
   .ikecou     = -999,
   .reinit_turb=    1,
-  .irijco     =    0,
+  .irijco     =    1, /* Coupled version of DRSM models */
   .irijnu     =    0,
   .irijrb     =    0,
   .irijec     =    0,
@@ -1325,7 +1325,7 @@ cs_turb_model_log_setup(void)
   } else if (cs_glob_turb_model->iturb == 30) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   Rij-epsilon         (iturb = 30)\n"
+       _("   Rij-epsilon LRR     (iturb = 30)\n"
          "    almax:       %14.5e (Characteristic length)\n"
          "    uref:        %14.5e (Characteristic velocity)\n"
          "    irijco:      %14d (Coupled resolution)\n"
@@ -1349,7 +1349,7 @@ cs_turb_model_log_setup(void)
   } else if (cs_glob_turb_model->iturb == 31) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("   SSG Rij-epsilon     (iturb = 31)\n"
+       _("   Rij-epsilon SSG    (iturb = 31)\n"
          "    almax:       %14.5e (Characteristic length)\n"
          "    uref:        %14.5e (Characteristic velocity)\n"
          "    irijco:      %14d (Coupled resolution)\n"
