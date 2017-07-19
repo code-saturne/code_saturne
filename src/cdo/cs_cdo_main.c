@@ -195,9 +195,6 @@ cs_cdo_initialize_structures(cs_mesh_t             *m,
   /* Last setup stage */
   cs_domain_finalize_setup(cs_glob_domain, m, mq);
 
-  /* Initialization for user-defined extra operations */
-  cs_user_cdo_start_extra_op(cs_glob_domain);
-
   /* Sumary of the settings */
   cs_cdo_connect_summary(cs_glob_domain->connect);
   cs_cdo_quantities_summary(cs_glob_domain->cdo_quantities);
@@ -283,7 +280,13 @@ cs_cdo_main(void)
   if (cs_restart_present())
     cs_domain_read_restart(domain);
 
+  /* Set the initial values of the fields and properties */
   cs_domain_initialize_systems(domain);
+
+  /* Initialization for user-defined extra operations. Should be done
+     after the domain initializatoin if one wants to overwrite the field
+     initialization for instance */
+  cs_user_cdo_start_extra_op(cs_glob_domain);
 
   while (cs_domain_needs_iteration(domain)) { // Main time loop
 
