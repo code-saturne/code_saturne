@@ -57,7 +57,10 @@ BEGIN_C_DECLS
  */
 
 /*! initialization zone */
-#define CS_BOUNDARY_ZONE_WALL       (1 << 0)
+#define CS_BOUNDARY_ZONE_WALL         (1 << 0)
+
+/*! zone defined for CDO domain */
+#define CS_BOUNDARY_ZONE_CDO_DOMAIN   (1 << 1)
 
 /*! @} */
 

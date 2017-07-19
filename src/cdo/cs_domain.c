@@ -364,7 +364,7 @@ cs_domain_create(void)
 
   /* Allocate domain builder */
   BFT_MALLOC(domain->boundary_def, 1, cs_domain_boundary_t);
-  domain->boundary_def->default_type = CS_PARAM_N_BOUNDARY_TYPES;
+  domain->boundary_def->default_type = CS_PARAM_BOUNDARY_WALL; // Set by default
   domain->boundary_def->n_zones = 0;
   domain->boundary_def->zone_ids = NULL;
   domain->boundary_def->type_by_zone = NULL;
@@ -668,10 +668,14 @@ cs_domain_update_mesh_locations(cs_domain_t   *domain)
   const char *zone_name =
     cs_param_get_boundary_domain_name(CS_PARAM_BOUNDARY_WALL);
 
-  cs_boundary_zone_define_by_func(zone_name,
-                                  _wall_boundary_selection,
-                                  domain->boundary_def,
-                                  0);
+  int  z_id = cs_boundary_zone_define_by_func(zone_name,
+                                              _wall_boundary_selection,
+                                              domain->boundary_def,
+                                              CS_BOUNDARY_ZONE_CDO_DOMAIN);
+
+  /* Allow overlay with other boundary zones used to set BCs on transport
+     equations for instance */
+  cs_boundary_zone_set_overlay(z_id, true);
 }
 
 /*----------------------------------------------------------------------------*/

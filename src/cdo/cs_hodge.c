@@ -74,8 +74,8 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_HODGE_DBG 0
-#define CS_HODGE_MODULO   10
+#define CS_HODGE_DBG       3
+#define CS_HODGE_MODULO    1
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
@@ -130,7 +130,7 @@ _check_stiffness(const cs_locmat_t       *sloc)
     }
 
   }
-  cs_log_printf(CS_LOG_DEFAULT, " %s: err = %5.3e\n", __func__, print_val);
+  cs_log_printf(CS_LOG_DEFAULT, " %s: err = % -5.3e\n", __func__, print_val);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -198,7 +198,7 @@ _check_vector_hodge(const cs_real_3_t       *vec,
 
   }
 
-  cs_log_printf(CS_LOG_DEFAULT, "%s: err = %5.3e\n", __func__, print_val);
+  cs_log_printf(CS_LOG_DEFAULT, "%s: err = % -5.3e\n", __func__, print_val);
 
 }
 
