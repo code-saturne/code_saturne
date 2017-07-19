@@ -72,7 +72,8 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDOFB_SCALEQ_DBG 0
+#define CS_CDOFB_SCALEQ_DBG 4
+#define CS_CDOFB_SCALEQ_MODULO  10
 
 /* Algebraic system for CDO face-based discretization */
 
@@ -935,8 +936,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
                             csys, cbc, cb);                          // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
-      if (c_id % CS_CDOFB_SCALEQ_MODULO == 0)
-        cs_cell_mesh_dump(cm);
+      if (c_id % CS_CDOFB_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
 #endif
 
       /* DIFFUSION CONTRIBUTION TO THE ALGEBRAIC SYSTEM */
@@ -1024,7 +1024,8 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
       }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
-      cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
+      if (c_id % CS_CDOFB_SCALEQ_MODULO == 0)
+        cs_cell_sys_dump(">> (FINAL) Local system matrix", c_id, csys);
 #endif
 
       /* Assemble the local system (related to vertices only since one applies
@@ -1040,7 +1041,9 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
   cs_dump_array_to_listing("FINAL RHS_FACE", quant->n_faces, rhs, 8);
-  cs_dump_array_to_listing("FINAL RHS_CELL",quant->n_cells, b->source_terms, 8);
+  if (b->source_terms != NULL)
+    cs_dump_array_to_listing("FINAL RHS_CELL",
+                             quant->n_cells, b->source_terms, 8);
 #endif
 
   /* Free temporary buffers and structures */

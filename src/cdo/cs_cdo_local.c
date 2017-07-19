@@ -1012,7 +1012,12 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
         cm->hfc[f] = cs_math_3_dot_product(cm->face[f].unitv,
                                            cm->dedge[f].unitv);
         cm->hfc[f] *= cm->dedge[f].meas;
-        assert(cm->hfc[f] > 0);
+#if defined(DEBUG) && !defined(NDEBUG)
+        if (cm->hfc[f] <= 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    " Invalid result; hfc = %5.3e < 0 !\n",
+                    cm->hfc[f]);
+#endif
       }
 
     } /* Quantities related to the pyramid of base f */

@@ -41,7 +41,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
+#include "bft_mem.h"
 
 #include "cs_cdo_scheme_geometry.h"
 #include "cs_log.h"
@@ -75,6 +75,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define CS_HODGE_DBG 0
+#define CS_HODGE_MODULO   10
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3  cs_math_3_dot_product
@@ -344,6 +345,13 @@ cs_hodge_fb_cost_get_stiffness(const cs_param_hodge_t    h_info,
 
   /* (c, c) diagonal entry */
   sval_crow[cm->n_fc] = full_sum;
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
+    cs_locmat_dump(cm->c_id, sloc);
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -369,13 +377,45 @@ cs_hodge_fb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   assert(cs_test_flag(cm->flag,
                       CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
 
+  /* Compute the local discrete Hodge operator */
+  cs_hodge_edfp_voro_get(h_info, cm, cb);
+
   /* Initialize the local stiffness matrix */
   cs_locmat_t  *sloc = cb->loc;
-
   sloc->n_ent = cm->n_fc + 1;
   for (int i = 0; i < cm->n_fc; i++) sloc->ids[i] = cm->f_ids[i];
   sloc->ids[cm->n_fc] = cm->c_id;
   for (int i = 0; i < sloc->n_ent*sloc->n_ent; i++) sloc->val[i] = 0;
+
+  double  full_sum = 0.;
+
+  cs_locmat_t  *hloc = cb->hdg;
+  double  *sval_crow = sloc->val + cm->n_fc*sloc->n_ent;
+
+  for (int i = 0; i < hloc->n_ent; i++) {
+
+    /* Hodge operator is diagonal */
+    const double  *hval_i = hloc->val + i*hloc->n_ent;
+    const double  row_sum = hval_i[i];
+
+    double  *sval_i = sloc->val + i*sloc->n_ent;
+
+    sval_i[i] = hval_i[i];
+    sval_i[cm->n_fc] = -row_sum;
+    sval_crow[i] = -row_sum;
+    full_sum += row_sum;
+
+  }
+
+  /* (c, c) diagonal entry */
+  sval_crow[cm->n_fc] = full_sum;
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
+    cs_locmat_dump(cm->c_id, sloc);
+  }
+#endif
 
   bft_error(__FILE__, __LINE__, 0, "Under construction");
 }
@@ -557,8 +597,10 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
-      cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
-      cs_locmat_dump(cm->c_id, sloc);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
+    cs_locmat_dump(cm->c_id, sloc);
+  }
 #endif
 }
 
@@ -651,8 +693,10 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   } /* Tensor-valued property */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
-  cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
-  cs_locmat_dump(cm->c_id, sloc);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
+    cs_locmat_dump(cm->c_id, sloc);
+  }
 #endif
 }
 
@@ -785,8 +829,10 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
-  cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
-  cs_locmat_dump(cm->c_id, sloc);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
+    cs_locmat_dump(cm->c_id, sloc);
+  }
 #endif
 }
 
@@ -932,8 +978,10 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
-  cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
-  cs_locmat_dump(cm->c_id, sloc);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
+    cs_locmat_dump(cm->c_id, sloc);
+  }
 #endif
 }
 
@@ -1050,7 +1098,10 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
-  cs_locmat_dump(cm->c_id, hdg);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_locmat_dump(cm->c_id, hdg);
+  }
 #endif
 }
 
@@ -1158,7 +1209,10 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
-  cs_locmat_dump(cm->c_id, hdg);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_locmat_dump(cm->c_id, hdg);
+  }
 #endif
 }
 
@@ -1204,7 +1258,10 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
-  cs_locmat_dump(cm->c_id, hdg);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_locmat_dump(cm->c_id, hdg);
+  }
 #endif
 }
 
@@ -1264,7 +1321,10 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
   } // Loop on cell edges
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
-  cs_locmat_dump(cm->c_id, hdg);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_locmat_dump(cm->c_id, hdg);
+  }
 #endif
 }
 
@@ -1342,7 +1402,10 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
                       hdg->val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
-  cs_locmat_dump(cm->c_id, hdg);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_locmat_dump(cm->c_id, hdg);
+  }
 #endif
 }
 
@@ -1396,7 +1459,10 @@ cs_hodge_fped_voro_get(const cs_param_hodge_t    h_info,
   } // Loop on cell faces
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
-  cs_locmat_dump(cm->c_id, hdg);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_locmat_dump(cm->c_id, hdg);
+  }
 #endif
 }
 
@@ -1474,7 +1540,10 @@ cs_hodge_fped_cost_get(const cs_param_hodge_t    h_info,
                       hdg->val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
-  cs_locmat_dump(cm->c_id, hdg);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_locmat_dump(cm->c_id, hdg);
+  }
 #endif
 }
 
@@ -1528,7 +1597,10 @@ cs_hodge_edfp_voro_get(const cs_param_hodge_t    h_info,
   } // Loop on cell faces
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
-  cs_locmat_dump(cm->c_id, hdg);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_locmat_dump(cm->c_id, hdg);
+  }
 #endif
 }
 
@@ -1606,7 +1678,10 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
                       hdg->val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
-  cs_locmat_dump(cm->c_id, hdg);
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_locmat_dump(cm->c_id, hdg);
+  }
 #endif
 }
 
@@ -1913,6 +1988,12 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
 
   } /* Loop on face edges */
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
+  if (fm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Surfacic Hodge op.   ");
+    cs_locmat_dump(fm->f_id, hf);
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
