@@ -199,7 +199,11 @@
         </message>
         <message>
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
-            <translation>Do You really want to delete the study case directory: %s, on your disk?</translation>
+            <translation>Do You really want to delete the study case directory: %s, of the study on your disk?</translation>
+        </message>
+        <message>
+            <source>REMOVE_RESU_SUB_FOLDER_ACTION_CONFIRM_MESS</source>
+            <translation>Do You really want to delete the Resu sub Folder directory: %s, of the study case on your disk?</translation>
         </message>
         <message>
             <source>REMOVE_FILE_ACTION_CONFIRM_MESS</source>

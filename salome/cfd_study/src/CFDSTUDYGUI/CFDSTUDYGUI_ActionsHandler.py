@@ -898,7 +898,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
              id == CFDSTUDYGUI_DataModel.dict_object["RESUFolder"]           or \
              id == CFDSTUDYGUI_DataModel.dict_object["RESUSubErrFolder"]     or \
              id == CFDSTUDYGUI_DataModel.dict_object["RESSRCFolder"]         or \
-             id == CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]        or \
              id == CFDSTUDYGUI_DataModel.dict_object["HISTFolder"]           or \
              id == CFDSTUDYGUI_DataModel.dict_object["PRETFolder"]           or \
              id == CFDSTUDYGUI_DataModel.dict_object["SUITEFolder"]          or \
@@ -1235,11 +1234,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sobj = self._singleSelectedObject()
         if sobj != None:
             sobjpath = CFDSTUDYGUI_DataModel._GetPath(sobj)
-            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):
-                motcle = "REMOVE_ACTION_CONFIRM_MESS"
+            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):         
+                mess = cfdstudyMess.trMessage(self.tr("REMOVE_ACTION_CONFIRM_MESS"),[sobjpath])
+            elif CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]):
+                mess = cfdstudyMess.trMessage(self.tr("REMOVE_RESU_SUB_FOLDER_ACTION_CONFIRM_MESS"),[sobjpath])
             else :
-                motcle = "REMOVE_FILE_ACTION_CONFIRM_MESS"
-            mess = cfdstudyMess.trMessage(self.tr(motcle),[sobjpath])
+                mess = cfdstudyMess.trMessage(self.tr("REMOVE_FILE_ACTION_CONFIRM_MESS"),[sobjpath])
             if cfdstudyMess.warningMessage(mess) == QMessageBox.No:
                 return
 
