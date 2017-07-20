@@ -276,17 +276,17 @@ call field_get_key_id("variable_id", keyvar)
 
 ! allocate temporary arrays
 allocate(velipb(nfabor,3))
-if (irijco.eq.1) then
+if (irij.ge.1 .and. irijco.eq.1) then
   call field_get_dim(ivarfl(irij), dimrij) ! dimension of Rij
   allocate(pimpts(dimrij))
   allocate(hextts(dimrij))
   allocate(qimpts(dimrij))
   allocate(cflts(dimrij))
   do isou = 1 , dimrij
-  pimpts(isou) = 0
-  hextts(isou) = 0
-  qimpts(isou) = 0
-  cflts(isou) = 0
+    pimpts(isou) = 0
+    hextts(isou) = 0
+    qimpts(isou) = 0
+    cflts(isou) = 0
   enddo
 endif
 ! coefa and coefb are required to compute the cell gradients for the wall
