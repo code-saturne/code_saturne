@@ -1542,7 +1542,7 @@ def getXmlCaseNameList(theCase):
     while iter.More():
         aName = iter.Value().GetName()
         if aName != "" :
-            if "XML" in subprocess.check_output(["file",aName]):
+            if "XML" in subprocess.check_output(["file",_GetPath(iter.Value())]):
                 XmlCaseNameList.append(iter.Value().GetName())
         iter.Next()
     return XmlCaseNameList
