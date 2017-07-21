@@ -403,7 +403,7 @@ if (st_id .ge.0) then
   endif
 end if
 
-if (vcopt%ibdtso.gt.ntinit.and.ntcabs.gt.1 &
+if (vcopt%ibdtso.gt.1.and.ntcabs.gt.ntinit &
     .and.(idtvar.eq.0.or.idtvar.eq.1)) then
   ! TODO: remove test on ntcabs and implemente a "proper" condition for
   ! initialization.
