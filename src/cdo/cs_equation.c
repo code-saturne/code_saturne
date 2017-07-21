@@ -1800,7 +1800,7 @@ cs_equation_add_ic_by_analytic(cs_equation_t        *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the givan equation structure
+ *         related to the given equation structure
  *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
@@ -1822,8 +1822,15 @@ cs_equation_add_bc_by_value(cs_equation_t              *eq,
   /* Add a new cs_xdef_t structure */
   cs_equation_param_t  *eqp = eq->param;
 
+  int dim = eqp->dim;
+  if (bc_type == CS_PARAM_BC_NEUMANN||
+      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+    dim *= 3; // vector if scalar eq, tensor if vector eq.
+  else if (bc_type == CS_PARAM_BC_ROBIN)
+    dim *= 4;
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                          eqp->dim,
+                                          dim,
                                           _get_bzone_id(z_name),
                                           CS_FLAG_STATE_UNIFORM, // state flag
                                           cs_cdo_bc_get_flag(bc_type), // meta
@@ -1838,7 +1845,7 @@ cs_equation_add_bc_by_value(cs_equation_t              *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the givan equation structure
+ *         related to the given equation structure
  *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
@@ -1875,8 +1882,15 @@ cs_equation_add_bc_by_array(cs_equation_t              *eq,
   if (loc == cs_cdo_primal_face)
     state_flag = CS_FLAG_STATE_FACEWISE;
 
+  int dim = eqp->dim;
+  if (bc_type == CS_PARAM_BC_NEUMANN||
+      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+    dim *= 3; // vector if scalar eq, tensor if vector eq.
+  else if (bc_type == CS_PARAM_BC_ROBIN)
+    dim *= 4;
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
-                                          eqp->dim,
+                                          dim,
                                           _get_bzone_id(z_name),
                                           state_flag,
                                           cs_cdo_bc_get_flag(bc_type), // meta
@@ -1891,7 +1905,7 @@ cs_equation_add_bc_by_array(cs_equation_t              *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the givan equation structure
+ *         related to the given equation structure
  *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure
@@ -1918,8 +1932,15 @@ cs_equation_add_bc_by_analytic(cs_equation_t              *eq,
   cs_xdef_analytic_input_t  anai = {.func = analytic,
                                     .input = input };
 
+  int dim = eqp->dim;
+  if (bc_type == CS_PARAM_BC_NEUMANN||
+      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+    dim *= 3; // vector if scalar eq, tensor if vector eq.
+  else if (bc_type == CS_PARAM_BC_ROBIN)
+    dim *= 4;
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                          eqp->dim,
+                                          dim,
                                           _get_bzone_id(z_name),
                                           0, // state
                                           cs_cdo_bc_get_flag(bc_type), // meta

@@ -1,6 +1,6 @@
 /*============================================================================
- * Build an algebraic CDO face-based system for convection/diffusion equation
- * with source terms
+ * Build an algebraic CDO face-based system for unsteady convection/diffusion
+ * reaction of scalar equations with source terms
  *============================================================================*/
 
 /*
@@ -205,6 +205,7 @@ _get_cell_mesh_flag(cs_flag_t       cell_flag,
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      b           pointer to a cs_cdofb_scaleq_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
+ * \param[in]      neu_tags    Definition id related to each Neumann face
  * \param[in]      field_tn    values of the field at the last computed time
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cbc         pointer to a cellwise view of the BCs
@@ -217,6 +218,7 @@ _init_cell_structures(const cs_flag_t             cell_flag,
                       const cs_cell_mesh_t       *cm,
                       const cs_cdofb_scaleq_t    *b,
                       const cs_real_t             dir_values[],
+                      const short int             neu_tags[],
                       const cs_real_t             field_tn[],
                       cs_cell_sys_t              *csys,
                       cs_cell_bc_t               *cbc,
@@ -277,6 +279,12 @@ _init_cell_structures(const cs_flag_t             cell_flag,
         else if (face_flag & CS_CDO_BC_DIRICHLET) {
           cbc->dir_values[f] = dir_values[f_id];
           cbc->dof_flag[f] |= CS_CDO_BC_DIRICHLET;
+        }
+        else if (face_flag & CS_CDO_BC_NEUMANN) {
+
+          cbc->dof_flag[f] |= CS_CDO_BC_NEUMANN;
+          cs_equation_compute_neumann_sf(neu_tags[f_id], f, b->eqp, cm, cbc);
+
         }
 
       } // Border faces
@@ -527,6 +535,14 @@ cs_cdofb_scaleq_init(const cs_equation_param_t   *eqp,
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
   b->bd_msh_flag = 0;
+  for (int i = 0; i < eqp->n_bc_desc; i++) {
+    const cs_xdef_t  *def = eqp->bc_desc[i];
+    if (def->meta & CS_CDO_BC_NEUMANN)
+      if (def->qtype == CS_QUADRATURE_BARY_SUBDIV ||
+          def->qtype == CS_QUADRATURE_HIGHER ||
+          def->qtype == CS_QUADRATURE_HIGHEST)
+        b->bd_msh_flag |= CS_CDO_LOCAL_EV | CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ;
+  }
 
   /* Set members and structures related to the management of the BCs
      Translate user-defined information about BC into a structure well-suited
@@ -848,9 +864,12 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
                                      b->face_bc->dir,
                                      cs_cdofb_cell_bld[0]);
 
+  /* Tag faces with a non-homogeneous Neumann BC */
+  short int  *neu_tags = cs_equation_tag_neumann_face(b->eqp);
+
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)         \
-  shared(dt_cur, quant, connect, b, rhs, matrix, mav, field_val, dir_values, \
-         cs_cdofb_cell_sys, cs_cdofb_cell_bld, cs_cdofb_cell_bc)
+  shared(dt_cur, quant, connect, b, rhs, matrix, mav, dir_values, neu_tags,  \
+         field_val, cs_cdofb_cell_sys, cs_cdofb_cell_bld, cs_cdofb_cell_bc)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -932,8 +951,9 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _init_cell_structures(cell_flag, cm, b, dir_values, field_val, // in
-                            csys, cbc, cb);                          // out
+      _init_cell_structures(cell_flag, cm, b,
+                            dir_values, neu_tags, field_val,  // in
+                            csys, cbc, cb);                   // out
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
       if (c_id % CS_CDOFB_SCALEQ_MODULO == 0) cs_cell_mesh_dump(cm);
@@ -1004,6 +1024,12 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
                          c_id, csys);
 #endif
 
+      /* Neumann boundary conditions */
+      if ((cell_flag & CS_FLAG_BOUNDARY) && cbc->n_nhmg_neuman > 0) {
+        for (short int f  = 0; f < cm->n_fc; f++)
+          csys->rhs[cm->n_fc] += cbc->neu_values[f];
+      }
+
       /* Static condensation of the local system matrix of size n_vc + 1 into
          a matrix of size n_vc. Store information in the builder structure in
          order to be able to compute the values at cell centers. */
@@ -1048,6 +1074,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
+  BFT_FREE(neu_tags);
   cs_matrix_assembler_values_finalize(&mav);
 
   cs_timer_t  t1 = cs_timer_time();

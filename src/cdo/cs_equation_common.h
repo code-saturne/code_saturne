@@ -161,6 +161,62 @@ cs_equation_compute_dirichlet_sf(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Tag each face related to a Neumann BC with its definition id.
+ *          Default tag is -1 (not a Neumann face)
+ *
+ * \param[in]      eqp        pointer to a cs_equation_param_t
+
+ * \return an array with prescribed tags
+ */
+/*----------------------------------------------------------------------------*/
+
+short int *
+cs_equation_tag_neumann_face(const cs_equation_param_t  *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Neumann BCs when DoFs are scalar-valued
+ *          and attached to vertices.
+ *          Values in the cbc parameters are updated.
+ *
+ * \param[in]      def_id     id of the definition for setting the Neumann BC
+ * \param[in]      f          local face number in the cs_cell_mesh_t
+ * \param[in]      eqp        pointer to a cs_equation_param_t
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cbc        pointer to a cs_cell_bc_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_neumann_sv(short int                   def_id,
+                               short int                   f,
+                               const cs_equation_param_t  *eqp,
+                               const cs_cell_mesh_t       *cm,
+                               cs_cell_bc_t               *cbc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Neumann BCs when DoFs are scalar-valued
+ *          and attached to faces.
+ *          Values in the cbc parameters are set.
+ *
+ * \param[in]      def_id     id of the definition for setting the Neumann BC
+ * \param[in]      f          local face number in the cs_cell_mesh_t
+ * \param[in]      eqp        pointer to a cs_equation_param_t
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cbc        pointer to a cs_cell_bc_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_neumann_sf(short int                   def_id,
+                               short int                   f,
+                               const cs_equation_param_t  *eqp,
+                               const cs_cell_mesh_t       *cm,
+                               cs_cell_bc_t               *cbc);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Assemble a cellwise system related to cell vertices into the global
  *         algebraic system
  *

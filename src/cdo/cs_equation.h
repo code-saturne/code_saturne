@@ -315,7 +315,7 @@ cs_equation_add_ic_by_analytic(cs_equation_t        *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the givan equation structure
+ *         related to the given equation structure
  *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
@@ -334,7 +334,7 @@ cs_equation_add_bc_by_value(cs_equation_t              *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the givan equation structure
+ *         related to the given equation structure
  *         z_name corresponds to the name of a pre-existing cs_boundary_zone_t
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
@@ -357,7 +357,7 @@ cs_equation_add_bc_by_array(cs_equation_t              *eq,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define and initialize a new structure to set a boundary condition
- *         related to the givan equation structure
+ *         related to the given equation structure
  *         ml_name corresponds to the name of a pre-existing cs_mesh_location_t
  *
  * \param[in, out] eq        pointer to a cs_equation_t structure

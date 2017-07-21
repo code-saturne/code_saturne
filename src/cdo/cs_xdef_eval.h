@@ -36,6 +36,7 @@
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
 #include "cs_mesh.h"
+#include "cs_quadrature.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
@@ -627,6 +628,92 @@ cs_xdef_eval_cw_3_at_xyz_by_field(const cs_cell_mesh_t       *cm,
                                   const cs_time_step_t       *ts,
                                   void                       *input,
                                   cs_real_t                  *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the normal flux of a quantity
+ *         defined by values. The normal flux is then added to each portion of
+ *         face related to a vertex.
+ *         Use of a cs_cell_mesh_t structure.
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      f       local face id
+ * \param[in]      input   pointer to an input structure
+ * \param[in, out] eval    result of the evaluation (updated inside)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_at_vtx_flux_by_val(const cs_cell_mesh_t     *cm,
+                                   short int                 f,
+                                   void                     *input,
+                                   cs_real_t                *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the normal flux of a quantity
+ *         defined by analytic function. The normal flux is then added to each
+ *         portion of face related to a vertex.
+ *         Use of a cs_cell_mesh_t structure.
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      f       local face id
+ * \param[in]      ts      pointer to a cs_time_step_t structure
+ * \param[in]      input   pointer to an input structure
+ * \param[in]      qtype   level of quadrature to use
+ * \param[in, out] eval    result of the evaluation (updated inside)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_at_vtx_flux_by_analytic(const cs_cell_mesh_t      *cm,
+                                        short int                  f,
+                                        const cs_time_step_t      *ts,
+                                        void                      *input,
+                                        cs_quadrature_type_t       qtype,
+                                        cs_real_t                 *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the normal flux of a quantity
+ *         defined by values.
+ *         Use of a cs_cell_mesh_t structure.
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      f       local face id
+ * \param[in]      input   pointer to an input structure
+ * \param[in, out] eval    result of the evaluation (set inside)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_flux_by_val(const cs_cell_mesh_t     *cm,
+                            short int                 f,
+                            void                     *input,
+                            cs_real_t                *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the normal flux of a quantity
+ *         defined by analytic function.
+ *         Use of a cs_cell_mesh_t structure.
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      f       local face id
+ * \param[in]      ts      pointer to a cs_time_step_t structure
+ * \param[in]      input   pointer to an input structure
+ * \param[in]      qtype   level of quadrature to use
+ * \param[in, out] eval    result of the evaluation (set inside)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_cw_flux_by_analytic(const cs_cell_mesh_t      *cm,
+                                 short int                  f,
+                                 const cs_time_step_t      *ts,
+                                 void                      *input,
+                                 cs_quadrature_type_t       qtype,
+                                 cs_real_t                 *eval);
 
 /*----------------------------------------------------------------------------*/
 
