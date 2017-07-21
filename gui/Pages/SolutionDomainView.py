@@ -862,7 +862,7 @@ class MeshInputDialog(QFileDialog):
         self.setWindowTitle(caption)
 
         self.name_filter = str(self.tr("Imported or preprocessed meshes (mesh_input mesh_output)"))
-        self.setFilter(self.name_filter)
+        self.setNameFilter(self.name_filter)
 
         self.select_label = str(self.tr("Choose"))
         self.setLabelText(QFileDialog.Accept, self.select_label)
@@ -890,7 +890,7 @@ class MeshInputDialog(QFileDialog):
             if os.path.isdir(path):
                 mode = QFileDialog.Directory
         self.setFileMode(mode)
-        self.setFilter(self.name_filter)
+        self.setNameFilter(self.name_filter)
         self.setLabelText(QFileDialog.Accept, self.select_label)
 
 
