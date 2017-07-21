@@ -407,19 +407,19 @@ _condense_and_store(const cs_adjacency_t    *c2v,
 {
   const int  n_dofs = csys->n_dofs;
   const int  n_vc = n_dofs - 1;
-  const cs_lnum_t  c_id = csys->mat->ids[n_vc];
 
   /* Store information to compute the cell values after the resolution */
   const double  *row_c = csys->mat->val + n_dofs*n_vc; // Last row
   const double  inv_acc = 1/row_c[n_vc];
   const double  cell_rhs = csys->rhs[n_vc];
 
-  b->acc_inv[c_id] = inv_acc;
-  b->cell_rhs[c_id] = cell_rhs;
-  double  *acv = b->acv + c2v->idx[c_id];
+  b->acc_inv[csys->c_id] = inv_acc;
+  b->cell_rhs[csys->c_id] = cell_rhs;
+
+  /* Store the cell row (the last one) */
+  double  *acv = b->acv + c2v->idx[csys->c_id];
   for (int v = 0; v < n_vc; v++) acv[v] = row_c[v];
 
-  /* Store the cell column (the last one) */
   double  *avc = cb->values;
   for (int v = 0; v < n_vc; v++) avc[v] = csys->mat->val[n_dofs*v + n_vc];
 

@@ -975,9 +975,7 @@ cs_order_gnum_allocated(const cs_lnum_t  list[],
       BFT_MALLOC(number_list, nb_ent, cs_gnum_t);
       for (i = 0 ; i < nb_ent ; i++)
         number_list[i] = number[list[i] - 1];
-      _order_gnum(number_list,
-                   order,
-                   nb_ent);
+      _order_gnum(number_list, order, nb_ent);
       BFT_FREE(number_list);
     }
     else
@@ -995,9 +993,7 @@ cs_order_gnum_allocated(const cs_lnum_t  list[],
       BFT_MALLOC(number_list, nb_ent, cs_gnum_t);
       for (i = 0 ; i < nb_ent ; i++)
         number_list[i] = (cs_gnum_t)(list[i]);
-      _order_gnum(number_list,
-                   order,
-                   nb_ent);
+      _order_gnum(number_list, order, nb_ent);
       BFT_FREE(number_list);
     }
     else {
@@ -1047,17 +1043,11 @@ cs_order_gnum_allocated_s(const cs_lnum_t  list[],
         for (j = 0; j < stride; j++)
           number_list[i*stride + j] = number[(list[i] - 1)*stride + j];
       }
-      _order_gnum_s(number_list,
-                     stride,
-                     order,
-                     nb_ent);
+      _order_gnum_s(number_list, stride, order, nb_ent);
       BFT_FREE(number_list);
     }
     else
-      _order_gnum_s(number,
-                     stride,
-                     order,
-                     nb_ent);
+      _order_gnum_s(number, stride, order, nb_ent);
 
   }
 
@@ -1065,10 +1055,7 @@ cs_order_gnum_allocated_s(const cs_lnum_t  list[],
 
   else
 
-    cs_order_gnum_allocated(list,
-                              NULL,
-                              order,
-                              nb_ent);
+    cs_order_gnum_allocated(list, NULL, order, nb_ent);
 
 }
 
