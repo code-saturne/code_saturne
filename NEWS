@@ -5,6 +5,8 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Fix Fix bug in double backward Euler for scalars.
+
 - Fix matrix coefficient assignment issue for MSR matrices in cases
   where multiple faces separate two given cells (such as when faces are
   subdivided). This could lead to incorrect linear solver convergence
