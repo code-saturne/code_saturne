@@ -6312,7 +6312,10 @@ listing.}\\
 \subsubsection{Absorption coefficient of the medium, boundary conditions
    for the luminance and calculation of the net radiative flux}
 %==================================
-When the absorption coefficient is not constant, the subroutine \texttt{usray3} is called instead at each time step. It is composed of three parts. In the first one, the user
+
+When the absorption coefficient is not constant, the subroutine
+\texttt{cs\_user\_rad\_transfer\_absorption} is called instead at each time
+step. It is composed of three parts. In the first one, the user
 must provide the absorption coefficient of the medium in the array CK,
 for each cell of the fluid mesh. By default, the absorption coefficient
 of the medium is 0, which corresponds to a transparent medium.\\
@@ -6332,36 +6335,9 @@ to give it a particular value. In most cases, the given examples do not
 need to be modified.
 
 %==================================
-\subsubsection{Input of radiative transfer parameters}
-%==================================
-
-\noindent
-\textit{The routine \texttt{usray5} is called twice. The first time is for boundary
-conditions. The second time is for the net radiation flux computation}
-
-In this subroutine, during the first call (\texttt{iappel=1}), the boundary conditions
- are filled:
-\begin{list}{-}{}
-\item the radiative intensity must be set in the array \texttt{cofrua} when the discrete
- ordinates model is used; an example is given in \texttt{usray5} for an isotropic radiation
- field on a grey wall. Proposed boundary conditions for the intensity in \texttt{usray5} are:
-symmetry, inlet/outlet, and wall boundary,
-\item the entering intensity for free boundaries is set to zero in \texttt{cofrua} (if the
-user has more information, he can improve it),
-\item arrays \texttt{cofrua} and \texttt{cofrub} must be filled when the P-1 model is
- used. The boundary conditions proposed are the same as with the discrete ordinates model.
-\end{list}
-During the second call (\texttt{iappel=2}), the density of the net radiation flux must be
- calculated consistently with the boundary conditions of the intensity considering that the
-density of net flux is the balance between the radiative emitting part of a boundary face
-(and not the reflecting one) and the radiative absorbing part. The provided example is
-consistent with the example of the intensity boundary conditions given when the discrete
- ordinates model is used.
-
-
-%==================================
 \subsection{Conjugate heat transfer}
 %==================================
+
 %========================================
 \subsubsection{Thermal module in a 1D wall}
 %========================================

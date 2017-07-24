@@ -227,7 +227,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.lineEditNdirec.setValidator(validatorNdir)
 
         self.modelAbsorption.addItem('constant',                   'constant')
-        self.modelAbsorption.addItem('user subroutine (usray3)',   'variable')
+        self.modelAbsorption.addItem('user function (cs_user_rad_transfer_absorption)',   'variable')
         self.modelAbsorption.addItem('user law',                   'formula')
         self.modelAbsorption.addItem('H2O and CO2 mixing (Modak)', 'modak')
 

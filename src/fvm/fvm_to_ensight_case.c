@@ -906,8 +906,6 @@ fvm_to_ensight_case_get_var_file(fvm_to_ensight_case_t       *const this_case,
 
     var = this_case->var[i];
 
-    char _clw_name[128];
-
     size_t l_c = strlen(var->name);
     if (l_c > 128) {
       if (clw_name == _clw_name)

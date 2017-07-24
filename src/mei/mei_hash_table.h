@@ -185,9 +185,6 @@ struct item * mei_hash_table_lookup(hash_table_t *htable,
  * param [in] value store a value if the record if a real
  * param [in] f1 pointer on a one argument function
  * param [in] f2 pointer on a two argument function
- * param [in] f3 pointer on a three argument function
- * param [in] f4 pointer on a four argument function
- * param [in] i1d pointer on a 1D interpolation function
  */
 /*----------------------------------------------------------------------------*/
 
@@ -196,10 +193,8 @@ mei_hash_table_insert(hash_table_t *const htable,
                       const char *const  key,
                       const mei_flag_t type,
                       const double value,
-                      const func1_t func,
-                      const func2_t f2,
-                      const func3_t f3,
-                      const func4_t f4);
+                      const func1_t f1,
+                      const func2_t f2);
 
 /*----------------------------------------------------------------------------*/
 /*

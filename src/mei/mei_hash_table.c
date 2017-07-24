@@ -185,8 +185,6 @@ mei_hash_table_find(hash_table_t *const htable, const char *const key)
  * \param [in] value store a value if the record if a real
  * \param [in] f1 pointer on a one argument function
  * \param [in] f2 pointer on a two argument function
- * \param [in] f3 pointer on a three argument function
- * \param [in] f4 pointer on a four argument function
  */
 /*----------------------------------------------------------------------------*/
 
@@ -196,9 +194,7 @@ mei_hash_table_insert(hash_table_t *const htable,
                       const mei_flag_t type,
                       const double value,
                       const func1_t f1,
-                      const func2_t f2,
-                      const func3_t f3,
-                      const func4_t f4)
+                      const func2_t f2)
 {
   unsigned v;
   struct item* item = mei_hash_table_find(htable, key);
@@ -356,8 +352,6 @@ mei_hash_table_init(hash_table_t *const htable)
                           CONSTANT,
                           constants[i],
                           NULL,
-                          NULL,
-                          NULL,
                           NULL);
 
   j = sizeof(functions_names) / sizeof(functions_names[0]);
@@ -367,8 +361,6 @@ mei_hash_table_init(hash_table_t *const htable)
                           FUNC1,
                           0,
                           functions[i],
-                          NULL,
-                          NULL,
                           NULL);
 
   j = sizeof(functions2_names) / sizeof(functions2_names[0]);
@@ -378,9 +370,7 @@ mei_hash_table_init(hash_table_t *const htable)
                           FUNC2,
                           0,
                           NULL,
-                          functions2[i],
-                          NULL,
-                          NULL);
+                          functions2[i]);
 }
 
 /*----------------------------------------------------------------------------*/

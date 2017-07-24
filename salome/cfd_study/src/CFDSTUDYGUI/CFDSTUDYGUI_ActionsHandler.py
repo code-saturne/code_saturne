@@ -846,7 +846,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]):
                 self.commonAction(RemoveAction).setVisible(True)
 
-            
+
 
     def updateActionsXmlFile(self, XMLSobj) :
 
@@ -1255,7 +1255,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         if sobj != None:
             sobjpath = CFDSTUDYGUI_DataModel._GetPath(sobj)
-            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):         
+            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):
                 mess = cfdstudyMess.trMessage(self.tr("REMOVE_ACTION_CONFIRM_MESS"),[sobjpath])
             elif CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]):
                 mess = cfdstudyMess.trMessage(self.tr("REMOVE_RESU_SUB_FOLDER_ACTION_CONFIRM_MESS"),[sobjpath])

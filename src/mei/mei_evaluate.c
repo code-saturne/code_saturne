@@ -236,8 +236,6 @@ _check_symbol(mei_node_t  *p)
                             CONSTANT,
                             0,
                             NULL,
-                            NULL,
-                            NULL,
                             NULL);
       return _check_symbol(p->type->opr.op[1]);
 
@@ -333,8 +331,6 @@ _evaluate(mei_node_t  *p)
                             p->type->opr.op[0]->type->id.i,
                             CONSTANT,
                             t2,
-                            NULL,
-                            NULL,
                             NULL,
                             NULL);
       return 0;
@@ -715,8 +711,6 @@ mei_tree_insert(mei_tree_t    *ev,
                         CONSTANT,
                         value,
                         NULL,
-                        NULL,
-                        NULL,
                         NULL);
 }
 
@@ -742,8 +736,6 @@ mei_symbol_table_insert(hash_table_t  *symbol_table,
                         str,
                         CONSTANT,
                         value,
-                        NULL,
-                        NULL,
                         NULL,
                         NULL);
 }

@@ -77,7 +77,6 @@ double precision smbr(ncelet)
 
 integer          iel   , ii    , jj    , kk    , mm
 integer          iskm  , iski  , iskj
-integer          ifac
 integer          inc   , iccocg, f_id
 
 double precision cmu075, distxn, d2s3  , trrij , xk
@@ -449,13 +448,12 @@ double precision smbr(6,ncelet)
 
 integer          iel   , ii    , jj    , kk    , mm
 integer          iskm  , iski  , iskj
-integer          ifac
 integer          inc   , iccocg, f_id
 
 double precision cmu075, distxn, d2s3  , trrij , xk
 double precision vnk   , vnm   , vni   , vnj
 double precision deltki, deltkj, deltkm, deltij(6)
-double precision aa    , bb    , xnorme
+double precision bb    , xnorme
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: produk, epsk

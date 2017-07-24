@@ -109,19 +109,11 @@ implicit none
 
 integer          iel, ifcvsl
 
-double precision t_h, humidity, humid_sat, cp_h
-
-double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: cvar_temp4, cvar_yma, cvar_press
-double precision, dimension(:), pointer :: cpro_humid, cpro_cp_h
-double precision, dimension(:), pointer :: cpro_viscls_h, cpro_viscls_l
+double precision, dimension(:), pointer :: cvar_press
 
 integer          ipass
 data             ipass /0/
 save             ipass
-
-integer iflid
-character(len=80) :: fname
 
 !===============================================================================
 ! 0 - INITIALISATIONS A CONSERVER

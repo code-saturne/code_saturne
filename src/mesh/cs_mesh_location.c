@@ -49,6 +49,7 @@
 #include "cs_parall.h"
 
 #include "cs_mesh.h"
+#include "cs_sort.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -131,7 +131,7 @@ double precision cmueta, sqrcmu, xs
 double precision hint
 double precision turb_schmidt
 double precision xnoral, xnal(3)
-double precision utaurf,ut2,ypa,ya,tke,xunorm, limiter, nu0,alpha
+double precision utaurf,ut2,ypa,ya,xunorm, limiter, nu0,alpha
 
 double precision rvoid(1)
 

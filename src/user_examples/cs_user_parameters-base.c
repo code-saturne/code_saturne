@@ -264,8 +264,8 @@ cs_user_parameters(void)
 
   /*! [param_var_rij_clipping */
 
-  /* Example: post-process the Q-critertion on the whole domain mesh */
-  /*-----------------------------------------------------------------*/
+  /* Example: post-process the Q-criterion on the whole domain mesh */
+  /*----------------------------------------------------------------*/
 
   /*! [param_var_q_criterion] */
 

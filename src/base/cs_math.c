@@ -198,7 +198,8 @@ cs_math_get_machine_epsilon(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute all eigenvalues of a 3x3 symmetric matrix.
+ * \brief Compute all eigenvalues of a 3x3 symmetric matrix
+ *        with symmetric storage.
  *
  * Based on: Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
  *           Communication of the ACM (April 1961)
@@ -282,7 +283,7 @@ cs_math_sym_33_eigen(const cs_real_t  m[6],
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute max/min eigenvalues ratio and max. eigenvalue of a 3x3
- *         symmetric matrix.
+ *         symmetric matrix with non-symmetric storage.
  *
  * Based on: Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
  *           Communication of the ACM (April 1961)

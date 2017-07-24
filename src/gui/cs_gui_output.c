@@ -447,7 +447,7 @@ _property_post(int  f_id)
   if (f_log != -999)
     cs_field_set_key_int(f, k_log, f_log);
   else {
-    const char *pl = _get_property_label(f->name);
+    char *pl = _get_property_label(f->name);
     if (pl != NULL)
       in_tree = true;
     BFT_FREE(pl);

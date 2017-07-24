@@ -155,7 +155,7 @@ class StandardItemModelScalars(QStandardItemModel):
         cond = self.bdModel.getRadiativeChoice()
 
         if cond == 'itpimp':
-            lst = [(0, self.tr("Emissivite"), '',  'EPSP',  'emissivity'),
+            lst = [(0, self.tr("Emissivity"), '',  'EPSP',  'emissivity'),
                    (1, self.tr("Initial temperature"), 'K', 'TINTP', 'internal_temperature_profile')]
         if cond == 'ipgrno':
             lst = [(0, self.tr("Emissivity"), '',  'EPSP',  'emissivity'),

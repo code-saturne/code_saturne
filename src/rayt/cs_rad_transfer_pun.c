@@ -324,7 +324,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
         cs_real_t tw4 = pow(twall[ifac], 4.);
         cs_real_t aaa = 1.5*b_dist[ifac]/ckmel[iel]
                         * ( 2. /(2.-f_eps->val[ifac])-1.);
-        cs_real_t aa = (aaa*tw4+f_theta4->val[iel])/(1.+aaa);
+        aa = (aaa*tw4+f_theta4->val[iel])/(1.+aaa);
 
         f_qinci->val[ifac]
           =  stephn * ( 2.0 * aa - f_eps->val[ifac] * tw4)

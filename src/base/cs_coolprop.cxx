@@ -192,7 +192,7 @@ cs_phys_prop_coolprop(char                              *CoolPropMaterial,
 
   cs_fp_exception_restore_trap();
 
-  if (out.size() != n_vals)
+  if ((cs_lnum_t)(out.size()) != n_vals)
     bft_error(__FILE__, __LINE__, 0,
               _("CoolProp was unable to compute some fluid properties with\n"
                 "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"

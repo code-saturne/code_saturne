@@ -226,7 +226,7 @@
            <item>
             <widget class="QGroupBox" name="groupBox_2">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the absorption coefficient. It can be either constant and defined through the GUI, or variable and then must be defined using the user subroutine &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;usray3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the absorption coefficient. It can be either constant and defined through the GUI, or variable and then must be defined using the user subroutine &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_rad_transfer_absorption&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="title">
               <string>Absorption coefficient</string>

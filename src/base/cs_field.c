@@ -1248,11 +1248,9 @@ cs_f_field_set_key_int_bits(int  f_id,
                             int  k_id,
                             int  mask)
 {
-  int retval = 0;
-
   cs_field_t *f = cs_field_by_id(f_id);
 
-  retval = cs_field_set_key_int_bits(f, k_id, mask);
+  cs_field_set_key_int_bits(f, k_id, mask);
 }
 
 /*----------------------------------------------------------------------------
@@ -3933,11 +3931,8 @@ cs_field_log_key_defs(void)
                                        cs_map_name_to_id_key(_key_map, i));
     cs_field_key_def_t *kd = _key_defs + key_id;
     const char *key = cs_map_name_to_id_key(_key_map, i);
-    const void *t;
 
     if (kd->type_id == 't') {
-      t = kd->def_val.v_p;
-
       cs_log_printf(CS_LOG_SETUP,
                     _("  %-24s %-12s struct  %-4d "),
                     key, " ", key_id);

@@ -240,14 +240,15 @@ Verification that all boundary faces have been treated
 \section abso_flux Absorption coefficient and net radiation flux
 
 The absorption coefficient and the net radiation flux for the radiative module
-can be defined in \ref cs_user_radiative_transfer.c through the \ref usray3
-and \ref usray5 subroutines.
+can be defined in \ref cs_user_radiative_transfer.c through the
+\ref cs_user_rad_transfer_absorption
+and \ref cs_user_rad_transfer_net_flux subroutines.
 
 \subsection abso Absorption coefficient
 
-The absorption coefficient is defined in \ref usray3 .
+The absorption coefficient is defined in \ref cs_user_rad_transfer_absorption.
 
-\subsubsection arg Arguments of usray3
+\subsubsection arg Arguments of cs_user_rad_transfer_absorption
 
 \snippet cs_user_radiative_transfer.c arg_1
 
@@ -263,11 +264,11 @@ The absorption coefficient is defined in \ref usray3 .
 
 \snippet cs_user_radiative_transfer.c format_1
 
-\subsection usray5_flux Net radiation flux
+\subsection cs_user_rad_transfer_net_flux Net radiation flux
 
-The net radiation flux is computed in \ref usray5 .
+The net radiation flux is computed in \ref cs_user_rad_transfer_net_flux.
 
-\subsubsection arg2 Arguments of usray5
+\subsubsection arg2 Arguments of cs_user_rad_transfer_net_flux
 
 \snippet cs_user_radiative_transfer.c arg_2
 

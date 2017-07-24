@@ -117,7 +117,7 @@ integer          nbzfmx, nozfmx
 integer          ielpdc, iflmas, iflmab
 integer          kcpsyr, icpsyr
 
-double precision tditot, tdist2, tdist1, cvcst
+double precision cvcst
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision hdls(6)
@@ -161,7 +161,6 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cpro_prtot
 double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt
-double precision, dimension(:), pointer :: w_dist
 
 ! Darcy
 integer mbrom

@@ -357,14 +357,14 @@
 
   \section cs_user_parameters_h_postprocess Activate some automatic post-processings
 
-  You can activate the post-processing of the Q-critertion on the whole domain
+  You can activate the post-processing of the Q-criterion on the whole domain
   mesh with:
 
-  \snippet cs_user_parameters.c param_var_q_criterion
+  \snippet cs_user_parameters-base.c param_var_q_criterion
 
   You can activate the post-processing of clipping on turbulent quantities
   on the whole domain mesh with:
 
-  \snippet cs_user_parameters.c param_var_rij_clipping
+  \snippet cs_user_parameters-base.c param_var_rij_clipping
 
 */

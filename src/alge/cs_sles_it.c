@@ -2954,7 +2954,7 @@ _gmres(cs_sles_it_t              *c,
   int check_freq, l_iter, l_old_iter, scaltest;
   int krylov_size, _krylov_size;
   cs_lnum_t  ii, kk, jj;
-  double    beta, dot_prod, residue, _residue, epsi;
+  double    beta, dot_prod, residue, epsi;
   cs_real_t  *_aux_vectors;
   cs_real_t *restrict _krylov_vectors, *restrict _h_matrix;
   cs_real_t *restrict _givens_coeff, *restrict _beta;

@@ -874,7 +874,7 @@ cs_parall_min_id_rank_r(cs_lnum_t  *elt_id,
 /*!
  * \brief Build a global array from each local array in each domain.
  *
- * Local arrays are appened in order of owning MPI rank.
+ * Local arrays are appended in order of owning MPI rank.
  * The size of each local array may be different.
  *
  * Use of this function may be quite practical, but should be limited
