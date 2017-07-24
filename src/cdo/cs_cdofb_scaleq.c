@@ -1027,7 +1027,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
       /* Neumann boundary conditions */
       if ((cell_flag & CS_FLAG_BOUNDARY) && cbc->n_nhmg_neuman > 0) {
         for (short int f  = 0; f < cm->n_fc; f++)
-          csys->rhs[cm->n_fc] += cbc->neu_values[f];
+          csys->rhs[f] = cbc->neu_values[f];
       }
 
       /* Static condensation of the local system matrix of size n_vc + 1 into

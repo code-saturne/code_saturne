@@ -867,16 +867,28 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
   cs_gnum_t *face_gnum = NULL;
   BFT_MALLOC(face_gnum, n_faces * n_face_dofs, cs_gnum_t);
 
-  cs_gnum_t  i_shift = (cs_gnum_t)mesh->n_i_faces * (cs_gnum_t)n_face_dofs;
-  cs_gnum_t  global_i_shift = mesh->n_g_i_faces * (cs_gnum_t)n_face_dofs;
+  if (cs_glob_n_ranks > 1) {
 
-# pragma omp parallel for if (i_shift > CS_THR_MIN)
-  for (cs_gnum_t i = 0; i < i_shift; i++)
-    face_gnum[i] = i_face_gnum[i];
+    cs_gnum_t  i_shift = (cs_gnum_t)mesh->n_i_faces * (cs_gnum_t)n_face_dofs;
+    cs_gnum_t  global_i_shift = mesh->n_g_i_faces * (cs_gnum_t)n_face_dofs;
 
-# pragma omp parallel for if (mesh->n_b_faces*n_face_dofs > CS_THR_MIN)
-  for (cs_gnum_t i = 0; i < (cs_gnum_t)(mesh->n_b_faces*n_face_dofs); i++)
-    face_gnum[i + i_shift] = b_face_gnum[i] + global_i_shift;
+    assert(i_face_gnum != NULL);
+#   pragma omp parallel for if (i_shift > CS_THR_MIN)
+    for (cs_gnum_t i = 0; i < i_shift; i++)
+      face_gnum[i] = i_face_gnum[i];
+
+#   pragma omp parallel for if (mesh->n_b_faces*n_face_dofs > CS_THR_MIN)
+    for (cs_gnum_t i = 0; i < (cs_gnum_t)(mesh->n_b_faces*n_face_dofs); i++)
+      face_gnum[i + i_shift] = b_face_gnum[i] + global_i_shift;
+
+  }
+  else {
+
+#   pragma omp parallel for if (n_faces * n_face_dofs > CS_THR_MIN)
+    for (cs_gnum_t i = 0; i < (cs_gnum_t)(n_faces*n_face_dofs); i++)
+      face_gnum[i] = i + 1;
+
+  }
 
   /* Do not consider periodicity up to now. Should split the face interface
      into interior and border faces to do this, since only boundary faces

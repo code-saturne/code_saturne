@@ -729,9 +729,9 @@ cs_equation_compute_dirichlet_sf(const cs_mesh_t            *mesh,
   for (int def_id = 0; def_id < eqp->n_bc_desc; def_id++) {
 
     const cs_xdef_t  *def = eqp->bc_desc[def_id];
-    assert(def->dim == 1); // scalar variable
     if (def->meta & CS_CDO_BC_DIRICHLET) {
 
+      assert(def->dim == 1); // scalar variable
       const cs_boundary_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
       switch(def->type) {
 
