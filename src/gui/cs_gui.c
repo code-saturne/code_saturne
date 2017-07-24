@@ -6188,6 +6188,39 @@ cs_gui_time_moments(void)
 
       cs_field_t *f = cs_field_by_name_try(f_name);
 
+      /* If we failed to find Rij, we search for Rxx.
+       * This test is needed for the case where irijco = 0
+       */
+      if (f == NULL && strcmp(f_name, "rij")) {
+        switch(idim) {
+
+          case 0:
+            f = CS_F_(r11);
+            break;
+
+          case 1:
+            f = CS_F_(r22);
+            break;
+
+          case 2:
+            f = CS_F_(r33);
+            break;
+
+          case 3:
+            f = CS_F_(r12);
+            break;
+
+          case 4:
+            f = CS_F_(r23);
+            break;
+
+          case 5:
+            f = CS_F_(r13);
+            break;
+        }
+        idim = 0;
+      }
+
       m_f_id[j] = f->id;
       m_c_id[j] = idim;
 

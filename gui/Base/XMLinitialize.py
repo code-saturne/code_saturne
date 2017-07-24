@@ -562,7 +562,6 @@ class XMLinit(Variables):
                         content = re.sub(pattern, n['name'], content)
                         nf.xmlSetTextNode(content)
 
-
         # update velocity node
         nodeV = self.__XMLVelocityPressureNode.xmlGetNode('variable', name="velocity_U")
         if nodeV:
@@ -1426,6 +1425,34 @@ class XMLinit(Variables):
                 if node:
                     node['label'] = "Rij"
                     node['name']  = "rij"
+                    node['dimension'] = "6"
+
+                node = ntur.xmlGetNode('variable', name="r22")
+                if node:
+                    node.xmlRemoveNode()
+                node = ntur.xmlGetNode('variable', name="r33")
+                if node:
+                    node.xmlRemoveNode()
+                node = ntur.xmlGetNode('variable', name="r12")
+                if node:
+                    node.xmlRemoveNode()
+                node = ntur.xmlGetNode('variable', name="r23")
+                if node:
+                    node.xmlRemoveNode()
+                node = ntur.xmlGetNode('variable', name="r13")
+                if node:
+                    node.xmlRemoveNode()
+
+            # Update Time Averages using Rij if needed !
+            rij_lbls = ['r11', 'r22', 'r33', 'r12', 'r23', 'r13']
+            for node in self.case.xmlGetNodeList('time_average'):
+                if node:
+                    for var in node.xmlGetChildNodeList('var_prop'):
+                        varName = var['name']
+                        if varName in rij_lbls:
+                            var['name'] = 'rij'
+                            var['component'] = rij_lbls.index(varName)
+
 
         return
 

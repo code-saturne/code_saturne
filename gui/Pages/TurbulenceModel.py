@@ -224,7 +224,11 @@ class TurbulenceModel(Variables, Model):
         elif model_turb in ('Rij-epsilon', 'Rij-SSG'):
             lst = ('rij', 'epsilon')
             for v in lst:
-                self.setNewVariable(self.node_turb, v, label=v)
+                # Rij is now considered as a tensor (vector of length 6, since it is symmetric)
+                if v == 'rij':
+                    self.setNewVariable(self.node_turb, v, label='Rij', dim='6')
+                else:
+                    self.setNewVariable(self.node_turb, v, label=v)
             self.setNewProperty(self.node_turb, 'turbulent_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
