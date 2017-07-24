@@ -215,8 +215,8 @@ cs_math_sym_33_eigen(const cs_real_t  m[6],
 {
   cs_real_t  e, e1, e2, e3;
 
-  cs_real_t  p1 = cs_math_3_square_norm((cs_real_3_t *)(m+3));
-  cs_real_t  d2 = cs_math_3_square_norm((cs_real_3_t *)m);
+  cs_real_t  p1 = cs_math_3_square_norm((const cs_real_t *)(m+3));
+  cs_real_t  d2 = cs_math_3_square_norm((const cs_real_t *)m);
 
   if (p1 > cs_math_epzero*d2) { /* m is not diagonal */
 
