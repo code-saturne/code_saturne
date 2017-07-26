@@ -278,15 +278,28 @@ cs_lagr_car(int              iprev,
 
     else if (extra->itytur == 3) {
 
-      for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
+      if (extra->cvar_rij == NULL) {
+        /* irijco = 0 */
 
-        energi[cell_id] = 0.5 * (  extra->cvar_r11->vals[iprev][cell_id]
-                                 + extra->cvar_r22->vals[iprev][cell_id]
-                                 + extra->cvar_r33->vals[iprev][cell_id]);
-        dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
+        for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
 
+          energi[cell_id] = 0.5 * (  extra->cvar_r11->vals[iprev][cell_id]
+                                   + extra->cvar_r22->vals[iprev][cell_id]
+                                   + extra->cvar_r33->vals[iprev][cell_id]);
+          dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
+
+        }
+      } else {
+        /* irijco = 1 */
+        for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
+
+          energi[cell_id] = 0.5 * ( extra->cvar_rij->vals[iprev][6*cell_id]
+                                  + extra->cvar_rij->vals[iprev][6*cell_id + 1]
+                                  + extra->cvar_rij->vals[iprev][6*cell_id + 2]
+                                  );
+          dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
+        }
       }
-
     }
 
     else if (extra->iturb == 60) {
@@ -425,11 +438,20 @@ cs_lagr_car(int              iprev,
 
             if (extra->itytur == 3) {
 
-              cs_real_t r11  = extra->cvar_r11->vals[iprev][cell_id];
-              cs_real_t r22  = extra->cvar_r22->vals[iprev][cell_id];
-              cs_real_t r33  = extra->cvar_r33->vals[iprev][cell_id];
-              ktil = 3.0 * (r11 * bbi[0] + r22 * bbi[1] + r33 * bbi[2])
-                         / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
+              if (extra->cvar_rij == NULL) {
+                cs_real_t r11  = extra->cvar_r11->vals[iprev][cell_id];
+                cs_real_t r22  = extra->cvar_r22->vals[iprev][cell_id];
+                cs_real_t r33  = extra->cvar_r33->vals[iprev][cell_id];
+                ktil = 3.0 * (r11 * bbi[0] + r22 * bbi[1] + r33 * bbi[2])
+                           / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
+              } else {
+                cs_real_t r11  = extra->cvar_rij->vals[iprev][6*cell_id    ];
+                cs_real_t r22  = extra->cvar_rij->vals[iprev][6*cell_id + 1];
+                cs_real_t r33  = extra->cvar_rij->vals[iprev][6*cell_id + 2];
+
+                ktil = 3.0 * (r11 * bbi[0] + r22 * bbi[1] + r33 * bbi[2])
+                           / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
+              }
 
             }
 

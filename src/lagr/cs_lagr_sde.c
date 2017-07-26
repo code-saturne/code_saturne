@@ -946,10 +946,17 @@ _lagesd(cs_real_t           dtp,
   if (extra->itytur == 2 || extra->iturb == 50 || extra->iturb == 60)
     enertur  = extra->cvar_k->vals[1][cell_id];
 
-  else if (extra->itytur == 3)
-    enertur  = 0.5 * (  extra->cvar_r11->vals[1][cell_id]
-                      + extra->cvar_r22->vals[1][cell_id]
-                      + extra->cvar_r33->vals[1][cell_id]);
+  else if (extra->itytur == 3) {
+    if (extra->cvar_rij == NULL) {
+      enertur  = 0.5 * (  extra->cvar_r11->vals[1][cell_id]
+                        + extra->cvar_r22->vals[1][cell_id]
+                        + extra->cvar_r33->vals[1][cell_id]);
+    } else {
+      enertur  = 0.5 * (  extra->cvar_rij->vals[1][6*cell_id    ]
+                        + extra->cvar_rij->vals[1][6*cell_id + 1]
+                        + extra->cvar_rij->vals[1][6*cell_id + 2]);
+    }
+  }
 
   cs_lnum_t marko  = cs_lagr_particle_get_lnum(particle, p_am,
                                                CS_LAGR_MARKO_VALUE);
