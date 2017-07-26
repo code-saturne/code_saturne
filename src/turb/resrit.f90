@@ -129,6 +129,7 @@ double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:), pointer :: cvar_ep
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvar_tt, cvara_tt
 double precision, dimension(:), pointer :: viscl, visct, viscls, c_st_prv
 
@@ -157,12 +158,16 @@ call field_get_val_s(ivisct, visct)
 
 call field_get_val_s(ivarfl(iep), cvar_ep)
 
-call field_get_val_s(ivarfl(ir11), cvar_r11)
-call field_get_val_s(ivarfl(ir22), cvar_r22)
-call field_get_val_s(ivarfl(ir33), cvar_r33)
-call field_get_val_s(ivarfl(ir12), cvar_r12)
-call field_get_val_s(ivarfl(ir13), cvar_r13)
-call field_get_val_s(ivarfl(ir23), cvar_r23)
+if (irijco.eq.1) then
+  call field_get_val_v(ivarfl(irij), cvar_rij)
+else
+  call field_get_val_s(ivarfl(ir11), cvar_r11)
+  call field_get_val_s(ivarfl(ir22), cvar_r22)
+  call field_get_val_s(ivarfl(ir33), cvar_r33)
+  call field_get_val_s(ivarfl(ir12), cvar_r12)
+  call field_get_val_s(ivarfl(ir13), cvar_r13)
+  call field_get_val_s(ivarfl(ir23), cvar_r23)
+endif
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -275,12 +280,21 @@ endif
 
 do iel = 1, ncel
 
-  xrij(1,1) = cvar_r11(iel) !FIXME irijco!
-  xrij(2,2) = cvar_r22(iel)
-  xrij(3,3) = cvar_r33(iel)
-  xrij(1,2) = cvar_r12(iel)
-  xrij(1,3) = cvar_r13(iel)
-  xrij(2,3) = cvar_r23(iel)
+  if (irijco.eq.1) then
+    xrij(1,1) = cvar_rij(1,iel)
+    xrij(2,2) = cvar_rij(2,iel)
+    xrij(3,3) = cvar_rij(3,iel)
+    xrij(1,2) = cvar_rij(4,iel)
+    xrij(2,3) = cvar_rij(5,iel)
+    xrij(1,3) = cvar_rij(6,iel)
+  else
+    xrij(1,1) = cvar_r11(iel)
+    xrij(2,2) = cvar_r22(iel)
+    xrij(3,3) = cvar_r33(iel)
+    xrij(1,2) = cvar_r12(iel)
+    xrij(1,3) = cvar_r13(iel)
+    xrij(2,3) = cvar_r23(iel)
+  endif
   xrij(2,1) = xrij(1,2)
   xrij(3,1) = xrij(1,3)
   xrij(3,2) = xrij(2,3)
@@ -291,7 +305,7 @@ do iel = 1, ncel
     prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
   endif
 
-  trrij  = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+  trrij  = 0.5d0*(xrij(1,1) + xrij(2,2) + xrij(3,3))
   ! --- Compute Durbin time scheme
   xttke  = trrij/cvar_ep(iel)
 

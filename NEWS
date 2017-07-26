@@ -5,6 +5,9 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Compatibility fixes for coupled RSM components (irijco=1) with
+  some models (such as turbulent diffusion).
+
 - Lagrangian module: fixes for return coupling with coupled RSM model.
 
 - GUI: fix for mesh name filter with Qt5.
