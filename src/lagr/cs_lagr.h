@@ -985,6 +985,9 @@ typedef struct {
   /* Reynolds stress component Rzz */
   cs_field_t *cvar_r33;
 
+  /* Reynolds Stress Tensor */
+  cs_field_t *cvar_rij;
+
 } cs_lagr_extra_module_t;
 
 /* external data relative to coal combustion */

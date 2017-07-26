@@ -967,9 +967,15 @@ _lagitf(cs_lagr_attribute_t  *iattr)
         }
         else if (extra->itytur == 3) {
 
-          energ    = 0.5 * (  extra->cvar_r11->val[cell_id]
-                            + extra->cvar_r22->val[cell_id]
-                            + extra->cvar_r33->val[cell_id]);
+          if (extra->cvar_rij == NULL) {
+            energ    = 0.5 * (  extra->cvar_r11->val[cell_id]
+                              + extra->cvar_r22->val[cell_id]
+                              + extra->cvar_r33->val[cell_id]);
+          } else {
+            energ    = 0.5 * (  extra->cvar_rij->val[6*cell_id    ]
+                              + extra->cvar_rij->val[6*cell_id + 1]
+                              + extra->cvar_rij->val[6*cell_id + 2]);
+          }
           dissip   = extra->cvar_ep->val[cell_id];
 
         }

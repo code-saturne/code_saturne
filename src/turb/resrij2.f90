@@ -115,7 +115,7 @@ double precision produc(6,ncelet)
 double precision gradro(3,ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
-double precision tslage(6,ncelet),tslagi(6,ncelet)
+double precision tslage(ncelet,6),tslagi(ncelet)
 double precision smbr(6,ncelet), rovsdt(6,6,ncelet)
 
 ! Local variables
@@ -295,10 +295,10 @@ enddo
 
 !     2nd order is not taken into account
 do isou = 1, dimrij
-        if (iilagr.eq.2 .and. ltsdyn.eq.1) then
+  if (iilagr.eq.2 .and. ltsdyn.eq.1) then
     do iel = 1,ncel
-      smbr(isou, iel)   = smbr(isou, iel)   + tslage(isou,iel)
-      rovsdt(isou,isou,iel) = rovsdt(isou,isou, iel) + max(-tslagi(isou, iel),zero)
+      smbr(isou, iel)   = smbr(isou, iel)   + tslage(iel, isou)
+      rovsdt(isou,isou,iel) = rovsdt(isou,isou, iel) + max(-tslagi(iel),zero)
     enddo
   endif
 enddo

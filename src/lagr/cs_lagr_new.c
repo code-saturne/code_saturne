@@ -398,6 +398,7 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
   cs_real_3_t *vel;
   cs_real_t *cvar_k, *cvar_r11, *cvar_r22, *cvar_r33;
+  cs_real_t *cvar_rij;
 
   vel = (cs_real_3_t *)extra->vel->vals[time_id];
 
@@ -411,9 +412,13 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
   else if (extra->itytur == 3) {
 
-    cvar_r11 = extra->cvar_r11->vals[time_id];
-    cvar_r22 = extra->cvar_r22->vals[time_id];
-    cvar_r33 = extra->cvar_r33->vals[time_id];
+    if (extra->cvar_rij == NULL) {
+      cvar_r11 = extra->cvar_r11->vals[time_id];
+      cvar_r22 = extra->cvar_r22->vals[time_id];
+      cvar_r33 = extra->cvar_r33->vals[time_id];
+    } else {
+      cvar_rij = extra->cvar_rij->vals[time_id];
+    }
 
   }
 
@@ -443,8 +448,13 @@ cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
 
     else if (extra->itytur == 3) {
 
-      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        w1[iel] = 0.5 * (cvar_r11[iel] + cvar_r22[iel] + cvar_r33[iel]);
+      if (extra->cvar_rij == NULL) {
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+          w1[iel] = 0.5 * (cvar_r11[iel] + cvar_r22[iel] + cvar_r33[iel]);
+      } else {
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+          w1[iel] = 0.5*(cvar_rij[6*iel] + cvar_rij[6*iel+1] + cvar_rij[6*iel+2]);
+      }
 
     }
 

@@ -5,6 +5,8 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Lagrangian module: fixes for return coupling with coupled RSM model.
+
 - GUI: fix for mesh name filter with Qt5.
 
 - Fix bug in double backward Euler for scalars.

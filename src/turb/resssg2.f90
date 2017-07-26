@@ -71,7 +71,7 @@
 
 subroutine resssg2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   ,                                               &
+   ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
    gradv  , gradro ,                                              &
@@ -121,7 +121,8 @@ double precision gradv(3, 3, ncelet)
 double precision gradro(3,ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
-double precision tslage(6,ncelet),tslagi(6,ncelet)
+double precision tslage(ncelet,6)
+double precision tslagi(ncelet)
 double precision smbr(6,ncelet)
 double precision rovsdt(6,6,ncelet)
 
@@ -338,14 +339,14 @@ enddo
 !===============================================================================
 
 !     2nd order is not taken into account
-do isou = 1, dimrij
-        if (iilagr.eq.2 .and. ltsdyn.eq.1) then
-    do iel = 1,ncel
-      smbr(isou, iel)   = smbr(isou, iel)   + tslage(isou,iel)
-      rovsdt(isou,isou,iel) = rovsdt(isou,isou, iel) + max(-tslagi(isou, iel),zero)
-    enddo
-  endif
-enddo
+if ((iilagr.eq.2).and.(ltsdyn.eq.1)) then
+  do isou = 1, dimrij
+    do iel = 1, ncel
+      smbr(isou, iel) = smbr(isou, iel) + tslage(iel, isou)
+      rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel) + max(-tslagi(iel),zero)
+    end do
+  end do
+end if
 
 !===============================================================================
 ! 4. Mass source term
