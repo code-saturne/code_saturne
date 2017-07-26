@@ -619,7 +619,6 @@ _read_field_vals_legacy(cs_restart_t  *r,
       snprintf(old_name_yz, 127, "r23::vals::0");
       snprintf(old_name_xz, 127, "r13::vals::0");
 
-
       retcode = cs_restart_check_section(r,
                                          old_name_xx,
                                          f->location_id,
@@ -2346,7 +2345,7 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
                                                       old_name_yz,
                                                       old_name_xz,
                                                       f->location_id,
-                                                      (cs_real_6_t *)(f->vals));
+                                                      (cs_real_6_t *)(f->val));
           }
           else {
              retval =  cs_restart_read_real_66_t_compat(r,
@@ -2358,7 +2357,7 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
                                                         old_name_yz,
                                                         old_name_xz,
                                                         f->location_id,
-                                                        (cs_real_66_t *)(f->vals));
+                                                        (cs_real_66_t *)(f->val));
           }
         }
         else {
