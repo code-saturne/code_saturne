@@ -1453,6 +1453,15 @@ class XMLinit(Variables):
                             var['name'] = 'rij'
                             var['component'] = rij_lbls.index(varName)
 
+            # Update profiles using Rij
+            for node in self.case.xmlGetNodeList('profile'):
+                if node:
+                    for var in node.xmlGetChildNodeList('var_prop'):
+                        varName = var['name']
+                        if varName in rij_lbls:
+                            var['name'] = 'rij'
+                            var['component'] = rij_lbls.index(varName)
+
 
         return
 

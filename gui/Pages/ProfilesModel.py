@@ -118,10 +118,21 @@ class ProfilesModel(Model):
 
                 dim = node['dimension']
                 if dim and int(dim) > 1:
-                    for ii in range(int(dim)):
-                        label1 = label + "[" + str(ii) + "]"
-                        if not (node['support'] and node['support'] == "boundary"):
-                            self.dicoLabel2Name[label1] = (name, str(ii))
+                    # If we consider the Rij tensor, the user will see
+                    # R11, R22, ... in the GUI instead of Rij[0], Rij[1], ...
+                    # This choice was considered as the clearest.
+                    # CK
+                    if name == 'rij':
+                        rij_lbls = ['R11', 'R22', 'R33', 'R12', 'R23', 'R13']
+                        for ii in range(int(dim)):
+                            label1 = rij_lbls[ii]
+                            if not (node['support'] and node['support'] == "boundary"):
+                                self.dicoLabel2Name[label1] = (name, str(ii))
+                    else:
+                        for ii in range(int(dim)):
+                            label1 = label + "[" + str(ii) + "]"
+                            if not (node['support'] and node['support'] == "boundary"):
+                                self.dicoLabel2Name[label1] = (name, str(ii))
                 else:
                     if not (node['support'] and node['support'] == "boundary"):
                         if name != 'local_time_step':
