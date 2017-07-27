@@ -60,7 +60,6 @@
 !>                               source terms or mass rate (see \ref cs_user_mass_source_terms)
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at edge faces
-!> \param[in]     tslage        explicit source terms for the Lagrangian module
 !> \param[in]     tslagi        implicit source terms for the Lagrangian module
 !> \param[in]     smbr          working array
 !> \param[in]     rovsdt        working array
@@ -73,7 +72,7 @@ subroutine resrij2 &
    produc , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
-   tslage , tslagi ,                                              &
+   tslagi ,                                                       &
    smbr   , rovsdt )
 
 !===============================================================================
@@ -115,7 +114,7 @@ double precision produc(6,ncelet)
 double precision gradro(3,ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
-double precision tslage(ncelet,6),tslagi(ncelet)
+double precision tslagi(ncelet)
 double precision smbr(6,ncelet), rovsdt(6,6,ncelet)
 
 ! Local variables
@@ -158,7 +157,7 @@ double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:,:), pointer :: cvar_var, cvara_var
 double precision, allocatable, dimension(:,:) :: cvara_r
-double precision, dimension(:,:), pointer :: c_st_prv
+double precision, dimension(:,:), pointer :: c_st_prv, lagr_st_rij
 double precision, dimension(:), pointer :: viscl
 
 type(var_cal_opt) :: vcopt_rij
@@ -259,7 +258,6 @@ endif
 !===============================================================================
 
 call cs_user_turbulence_source_terms2 &
-!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(irij)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -267,9 +265,9 @@ call cs_user_turbulence_source_terms2 &
    smbr   , rovsdt )
 
   !     If we extrapolate the source terms
-do isou = 1, dimrij
-  if (st_prv_id.ge.0) then
-    do iel = 1, ncel
+if (st_prv_id.ge.0) then
+  do iel = 1, ncel
+    do isou = 1, dimrij
       !       Save for exchange
       tuexpr = c_st_prv(isou,iel)
       !       For continuation and the next time step
@@ -281,41 +279,43 @@ do isou = 1, dimrij
       !       Diagonal
       rovsdt(isou,isou,iel) = - thetv*rovsdt(isou,isou,iel)
     enddo
-  else
-    do iel = 1, ncel
+  enddo
+else
+  do iel = 1, ncel
+    do isou = 1, dimrij
       smbr(isou,iel)   = rovsdt(isou,isou,iel)*cvara_var(isou,iel) + smbr(isou,iel)
       rovsdt(isou,isou,iel) = max(-rovsdt(isou,isou,iel),zero)
     enddo
-  endif
-enddo
+  enddo
+endif
 
 !===============================================================================
 ! 3. Lagrangian source terms
 !===============================================================================
 
 !     2nd order is not taken into account
-do isou = 1, dimrij
-  if (iilagr.eq.2 .and. ltsdyn.eq.1) then
-    do iel = 1,ncel
-      smbr(isou, iel)   = smbr(isou, iel)   + tslage(iel, isou)
+if (iilagr.eq.2 .and. ltsdyn.eq.1) then
+  call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
+  do iel = 1,ncel
+    do isou = 1, dimrij
+      smbr(isou, iel)   = smbr(isou, iel) + lagr_st_rij(isou,iel)
       rovsdt(isou,isou,iel) = rovsdt(isou,isou, iel) + max(-tslagi(iel),zero)
     enddo
-  endif
-enddo
+  enddo
+endif
 
 !===============================================================================
 ! 4. Mass source term
 !===============================================================================
 
-do isou = 1, dimrij
-  if (ncesmp.gt.0) then
+if (ncesmp.gt.0) then
 
+  do isou = 1, dimrij
     !       Integer equal to 1 (for navsto: nb of sur-iter)
     iiun = 1
 
     ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
     call catsmt &
-    !==========
    ( ncelet , ncel   , ncesmp , iiun     , isto2t ,                   &
      icetsm , itypsm(:,irij + isou - 1)  ,                            &
      cell_f_vol , cvara_var  , smacel(:,irij+isou-1)  , smacel(:,ipr) ,   &
@@ -333,8 +333,8 @@ do isou = 1, dimrij
       enddo
     endif
 
-  endif
-enddo
+  enddo
+endif
 
 !===============================================================================
 ! 5. Unsteady term
@@ -342,9 +342,9 @@ enddo
 
 ! ---> Added in the matrix diagonal
 
-do isou = 1, dimrij
-  do iel=1,ncel
-    rovsdt(isou,isou,iel) = rovsdt(isou, isou,iel)                                       &
+do iel=1,ncel
+  do isou = 1, dimrij
+    rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel)                              &
               + vcopt_rij%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
   enddo
 enddo
@@ -596,20 +596,21 @@ if (igrari.eq.1) then
 
   call rijthe2(nscal, gradro, w7)
 
-  do isou = 1, dimrij
-    ! If we extrapolate the source terms: previous ST
-    if (st_prv_id.ge.0) then
-      do iel = 1, ncel
+  ! If we extrapolate the source terms: previous ST
+  if (st_prv_id.ge.0) then
+    do iel = 1, ncel
+      do isou = 1, dimrij
         c_st_prv(isou,iel) = c_st_prv(isou,iel) + w7(isou,iel)
       enddo
+    enddo
     ! Otherwise smbr
-    else
-      do iel = 1, ncel
+  else
+    do iel = 1, ncel
+      do isou = 1, dimrij
         smbr(isou,iel) = smbr(isou,iel) + w7(isou,iel)
       enddo
-    endif
-  enddo
-
+    enddo
+  endif
 
 endif
 
@@ -647,10 +648,7 @@ else
     w1(iel) = viscl(iel) + vcopt_rij%idifft*rctse
   enddo
 
-  call viscfa                    &
- ( imvisf ,                      &
-   w1     ,                      &
-   viscf  , viscb  )
+  call viscfa(imvisf, w1, viscf, viscb)
 
 endif
 
@@ -690,7 +688,6 @@ relaxp = vcopt_rij%relaxv
 icvflb = 0
 
 call coditts &
-!==========
  ( idtvar , ivarfl(irij)    , iconvp , idiffp , ndircp ,          &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , idftnp , iswdyp ,                            &

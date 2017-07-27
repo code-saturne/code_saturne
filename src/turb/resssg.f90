@@ -64,7 +64,6 @@
 !>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at edge faces
-!> \param[in]     tslage        explicit source terms for the Lagrangian module
 !> \param[in]     tslagi        implicit source terms for the Lagrangian module
 !> \param[in]     smbr          working array
 !> \param[in]     rovsdt        working array
@@ -78,7 +77,7 @@ subroutine resssg &
    gradv  , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
-   tslage , tslagi ,                                              &
+   tslagi ,                                                       &
    smbr   , rovsdt )
 
 !===============================================================================
@@ -122,7 +121,7 @@ double precision gradv(3, 3, ncelet)
 double precision gradro(3,ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
-double precision tslage(ncelet),tslagi(ncelet)
+double precision tslagi(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
 
 ! Local variables
@@ -133,7 +132,7 @@ integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
-integer          st_prv_id
+integer          st_prv_id, comp_id
 integer          iprev , inc, iccocg, ll
 integer          imucpp, idftnp, iswdyp
 integer          ivar_r(3,3)
@@ -167,7 +166,7 @@ double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:,:), pointer :: visten
+double precision, dimension(:,:), pointer :: visten, lagr_st_rij
 double precision, dimension(:), pointer :: cvara_ep, cvar_al
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
@@ -329,8 +328,15 @@ endif
 
  !     2nd order is not taken into account
  if (iilagr.eq.2 .and. ltsdyn.eq.1) then
+   call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
+   comp_id = isou
+   if (isou .eq. 5) then
+     comp_id = 6
+   else if (isou .eq.6) then
+     comp_id = 5
+   endif
    do iel = 1,ncel
-     smbr(iel)   = smbr(iel)   + tslage(iel)
+     smbr(iel)   = smbr(iel)   + lagr_st_rij(comp_id,iel)
      rovsdt(iel) = rovsdt(iel) + max(-tslagi(iel),zero)
    enddo
  endif
@@ -371,7 +377,7 @@ endif
 
 ! ---> Added in the matrix diagonal
 
-do iel=1,ncel
+do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                       &
             + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
 enddo

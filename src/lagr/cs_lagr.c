@@ -231,17 +231,8 @@ static cs_lagr_source_terms_t _cs_glob_lagr_source_terms
   = {.ltsdyn = 0,
      .ltsmas = 0,
      .ltsthe = 0,
-     .itsvx = 0,
-     .itsvy = 0,
-     .itsvz = 0,
      .itsli = 0,
      .itske = 0,
-     .itsr11 = 0,
-     .itsr12 = 0,
-     .itsr13 = 0,
-     .itsr22 = 0,
-     .itsr23 = 0,
-     .itsr33 = 0,
      .itste = 0,
      .itsti = 0,
      .itsmas = 0,
@@ -431,17 +422,8 @@ void
 cs_f_lagr_source_terms_pointers(cs_int_t **p_ltsdyn,
                                 cs_int_t **p_ltsmas,
                                 cs_int_t **p_ltsthe,
-                                cs_int_t **p_itsvx,
-                                cs_int_t **p_itsvy,
-                                cs_int_t **p_itsvz,
                                 cs_int_t **p_itsli,
                                 cs_int_t **p_itske,
-                                cs_int_t **p_itsr11,
-                                cs_int_t **p_itsr12,
-                                cs_int_t **p_itsr13,
-                                cs_int_t **p_itsr22,
-                                cs_int_t **p_itsr23,
-                                cs_int_t **p_itsr33,
                                 cs_int_t **p_itste,
                                 cs_int_t **p_itsti,
                                 cs_int_t **p_itsmas,
@@ -552,17 +534,8 @@ void
 cs_f_lagr_source_terms_pointers(cs_int_t **p_ltsdyn,
                                 cs_int_t **p_ltsmas,
                                 cs_int_t **p_ltsthe,
-                                cs_int_t **p_itsvx,
-                                cs_int_t **p_itsvy,
-                                cs_int_t **p_itsvz,
                                 cs_int_t **p_itsli,
                                 cs_int_t **p_itske,
-                                cs_int_t **p_itsr11,
-                                cs_int_t **p_itsr12,
-                                cs_int_t **p_itsr13,
-                                cs_int_t **p_itsr22,
-                                cs_int_t **p_itsr23,
-                                cs_int_t **p_itsr33,
                                 cs_int_t **p_itste,
                                 cs_int_t **p_itsti,
                                 cs_int_t **p_itsmas,
@@ -575,17 +548,8 @@ cs_f_lagr_source_terms_pointers(cs_int_t **p_ltsdyn,
   *p_ltsdyn = &cs_glob_lagr_source_terms->ltsdyn;
   *p_ltsmas = &cs_glob_lagr_source_terms->ltsmas;
   *p_ltsthe = &cs_glob_lagr_source_terms->ltsthe;
-  *p_itsvx  = &cs_glob_lagr_source_terms->itsvx;
-  *p_itsvy  = &cs_glob_lagr_source_terms->itsvy;
-  *p_itsvz  = &cs_glob_lagr_source_terms->itsvz;
   *p_itsli  = &cs_glob_lagr_source_terms->itsli;
   *p_itske  = &cs_glob_lagr_source_terms->itske;
-  *p_itsr11 = &cs_glob_lagr_source_terms->itsr11;
-  *p_itsr12 = &cs_glob_lagr_source_terms->itsr12;
-  *p_itsr13 = &cs_glob_lagr_source_terms->itsr13;
-  *p_itsr22 = &cs_glob_lagr_source_terms->itsr22;
-  *p_itsr23 = &cs_glob_lagr_source_terms->itsr23;
-  *p_itsr33 = &cs_glob_lagr_source_terms->itsr33;
   *p_itste  = &cs_glob_lagr_source_terms->itste;
   *p_itsti  = &cs_glob_lagr_source_terms->itsti;
   *p_itsmas = &cs_glob_lagr_source_terms->itsmas;

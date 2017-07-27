@@ -54,6 +54,7 @@
 
 #include "cs_log.h"
 
+#include "cs_field.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_parameters_check.h"
@@ -1180,24 +1181,12 @@ cs_restart_lagrangian_checkpoint_read(void)
          * On donne le meme label au keps, au v2f et au k-omega (meme variable k)*/
         if (cs_glob_lagr_source_terms->ltsdyn == 1) {
 
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsvx], "terme_source_vitesseX");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsvy], "terme_source_vitesseY");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsvz], "terme_source_vitesseZ");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsli], "terme_source_vitesse_implicite");
+          sprintf(nomtsl[cs_glob_lagr_source_terms->itsli],
+                  "terme_source_vitesse_implicite");
 
           if (extra->itytur == 2 || extra->iturb == 50 || extra->iturb == 60)
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itske], "terme_source_turbulence_keps");
-
-          else if (extra->itytur == 3) {
-
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr11], "terme_source_turbulence_R11");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr12], "terme_source_turbulence_R12");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr13], "terme_source_turbulence_R13");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr22], "terme_source_turbulence_R22");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr23], "terme_source_turbulence_R23");
-            sprintf(nomtsl[cs_glob_lagr_source_terms->itsr33], "terme_source_turbulence_R33");
-
-          }
+            sprintf(nomtsl[cs_glob_lagr_source_terms->itske],
+                    "terme_source_turbulence_keps");
 
         }
 
@@ -1240,7 +1229,8 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         }
 
-        /*  Termes source de couplage retour   */
+        /* Old style return coupling terms */
+
         itysup  = 1;
         nbval   = 1;
         for (cs_lnum_t ivar = 0; ivar < cs_glob_lagr_dim->ntersl; ivar++) {
@@ -1250,6 +1240,37 @@ cs_restart_lagrangian_checkpoint_read(void)
           cs_restart_read_section(cs_lag_stat_restart,
                                   nomtsl[ivar+1], itysup, nbval,
                                   CS_TYPE_cs_real_t, st_val);
+        }
+
+        /* New style return coupling terms */
+
+        {
+          cs_field_t *f = cs_field_by_name_try("velocity_st_lagr");
+          if (f != NULL) {
+            cs_restart_read_real_3_t_compat(cs_lag_stat_restart,
+                                            f->name,
+                                            "terme_source_vitesseX",
+                                            "terme_source_vitesseY",
+                                            "terme_source_vitesseZ",
+                                            f->location_id,
+                                            (cs_real_3_t *)(f->vals));
+          }
+        }
+
+        {
+          cs_field_t *f = cs_field_by_name_try("rij_st_lagr");
+          if (f != NULL) {
+            cs_restart_read_real_6_t_compat(cs_lag_stat_restart,
+                                            f->name,
+                                            "terme_source_turbulence_R11",
+                                            "terme_source_turbulence_R22",
+                                            "terme_source_turbulence_R33",
+                                            "terme_source_turbulence_R12",
+                                            "terme_source_turbulence_R23",
+                                            "terme_source_turbulence_R13",
+                                            f->location_id,
+                                            (cs_real_6_t *)(f->vals));
+          }
         }
 
       }
@@ -2392,20 +2413,9 @@ cs_restart_lagrangian_checkpoint_write(void)
       /* On donne des labels au different TS pour les noms de rubriques    */
       /* On donne le meme label au keps, au v2f et au k-omega (meme variable k) */
       if (cs_glob_lagr_source_terms->ltsdyn == 1) {
-        sprintf(nomtsl[cs_glob_lagr_source_terms->itsvx], "terme_source_vitesseX");
-        sprintf(nomtsl[cs_glob_lagr_source_terms->itsvy], "terme_source_vitesseY");
-        sprintf(nomtsl[cs_glob_lagr_source_terms->itsvz], "terme_source_vitesseZ");
         sprintf(nomtsl[cs_glob_lagr_source_terms->itsli], "terme_source_vitesse_implicite");
         if (extra->itytur == 2 || extra->iturb == 50 || extra->iturb == 60) {
           sprintf(nomtsl[cs_glob_lagr_source_terms->itske], "terme_source_turbulence_keps");
-        }
-        else if (extra->itytur == 3) {
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr11], "terme_source_turbulence_R11");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr12], "terme_source_turbulence_R12");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr13], "terme_source_turbulence_R13");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr22], "terme_source_turbulence_R22");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr23], "terme_source_turbulence_R23");
-          sprintf(nomtsl[cs_glob_lagr_source_terms->itsr33], "terme_source_turbulence_R33");
         }
       }
       if (cs_glob_lagr_source_terms->ltsmas == 1) {
@@ -2437,7 +2447,8 @@ cs_restart_lagrangian_checkpoint_write(void)
         }
       }
 
-      /* Termes source de couplage retour    */
+      /* Old style return source terms */
+
       itysup = 1;
       nbval = 1;
 
@@ -2451,6 +2462,17 @@ cs_restart_lagrangian_checkpoint_write(void)
                                  itysup, nbval, CS_TYPE_cs_real_t,
                                  st_val);
 
+      }
+
+      /* New style return source terms */
+
+      const char *st_names[] = {"velocity_st_lagr",
+                                "rij_st_lagr"};
+
+      for (int st_id = 0; st_id < 2; st_id++) {
+        cs_field_t *f = cs_field_by_name_try(st_names[st_id]);
+        if (f != NULL)
+          cs_restart_write_field_vals(cs_lag_stat_restart, f->id, 0);
       }
 
     }

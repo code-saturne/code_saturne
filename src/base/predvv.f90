@@ -192,8 +192,8 @@ double precision cofafv(3  ,nfabor)
 double precision coefbv(3,3,nfabor)
 double precision cofbfv(3,3,nfabor)
 
-double precision vel   (3  ,ncelet)
-double precision vela  (3  ,ncelet)
+double precision vel   (3, ncelet)
+double precision vela  (3, ncelet)
 
 ! Local variables
 
@@ -251,7 +251,7 @@ double precision, dimension(:), pointer :: cvara_r12, cvara_r23, cvara_r13
 double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: viscl, visct, c_estim
 double precision, allocatable, dimension(:) :: surfbm
-double precision, dimension(:,:), pointer :: lapla
+double precision, dimension(:,:), pointer :: lapla, lagr_st_vel
 double precision, dimension(:), pointer :: cpro_tsrho
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
@@ -284,7 +284,6 @@ call field_get_val_s(icrom, crom)
 if (iroext.gt.0.or.idilat.gt.1) then
   call field_get_val_prev_s(icrom, croma)
 endif
-
 
 if (iappel.eq.2) then
   if (iforbr.ge.0 .and. iterns.eq.1 .or. ivofmt.ge.0) then
@@ -1623,9 +1622,11 @@ endif
 
 if (iilagr.eq.2 .and. ltsdyn.eq.1)  then
 
+  call field_get_val_v_by_name('velocity_st_lagr', lagr_st_vel)
+
   do iel = 1, ncel
     do isou = 1, 3
-      smbr(isou,iel) = smbr(isou,iel) + tslagr(iel,itsvx+isou-1)
+      smbr(isou,iel) = smbr(isou,iel) + lagr_st_vel(isou,iel)
     enddo
   enddo
   ! At the second call, fimp is unused

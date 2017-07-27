@@ -46,7 +46,8 @@
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     icepdc        index of the ncepdp cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
-!> \param[in]     itypsm        mass source type for the variables (cf. cs_user_mass_source_terms)
+!> \param[in]     itypsm        mass source type for the variables
+!>                              (cf. cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     ckupdc        work array for the head loss
@@ -75,7 +76,7 @@ use entsor
 use cstphy
 use cstnum
 use optcal
-use pointe, only: rvoid1, rvoid2
+use pointe, only: rvoid1
 use ppincl
 use mesh
 use field
@@ -110,7 +111,6 @@ integer          inc   , iccocg
 integer          iwarnp, iclip
 integer          nswrgp, imligp
 integer          f_id0
-integer          iitsla
 integer          iprev
 double precision epsrgp, climgp, extrap
 double precision rhothe
@@ -126,7 +126,7 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:) :: smbrts
 double precision, allocatable, dimension(:,:,:) ::rovsdtts
 
-double precision, pointer, dimension(:) :: tslage, tslagi
+double precision, pointer, dimension(:) :: tslagi
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: brom, crom
@@ -137,7 +137,7 @@ double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 double precision, dimension(:), pointer :: cvara_scalt
 double precision, dimension(:), pointer :: cvar_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvara_rij, cvar_rij, vel
-double precision, dimension(:,:), pointer :: tslage2
+double precision, dimension(:,:), pointer :: lagr_st_rij
 
 type(var_cal_opt) :: vcopt
 
@@ -148,8 +148,6 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 tslagi  => rvoid1
-tslage  => rvoid1
-tslage2 => rvoid2
 
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
@@ -558,14 +556,18 @@ endif
 !     We solve the equation in a routine similar to covofi.f90
 !===============================================================================
 
+if (iilagr.eq.2) then
+  call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
+else
+  lagr_st_rij => null()
+endif
+
 if (irijco.eq.1) then
   ivar = irij
 
   if (iilagr.eq.2) then
-    tslage2 => tslagr(1:ncelet,itsr11:itsr13)
     tslagi  => tslagr(1:ncelet,itsli)
   endif
-
 
   ! Rij-epsilon standard (LRR)
   if (iturb.eq.30) then !TODO
@@ -576,7 +578,7 @@ if (irijco.eq.1) then
    produc , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
-   tslage , tslagi ,                                              &
+   tslagi ,                                                       &
    smbrts   , rovsdtts )
 
   ! Rij-epsilon SSG or EBRSM
@@ -590,7 +592,7 @@ if (irijco.eq.1) then
     gradv   , gradro ,                                              &
     ckupdc  , smacel ,                                              &
     viscf   , viscb  ,                                              &
-    tslage2 , tslagi ,                                              &
+    tslagi ,                                                        &
     smbrts  , rovsdtts )
   endif
 else
@@ -610,8 +612,6 @@ else
     endif
 
     if (iilagr.eq.2) then
-      iitsla = itsr11 + (isou-1)
-      tslage => tslagr(1:ncelet,iitsla)
       tslagi => tslagr(1:ncelet,itsli)
     endif
 
@@ -625,12 +625,12 @@ else
      produc , gradro ,                                              &
      ckupdc , smacel ,                                              &
      viscf  , viscb  ,                                              &
-     tslage , tslagi ,                                              &
+     tslagi ,                                                       &
      smbr   , rovsdt )
 
     ! Rij-epsilon SSG or EBRSM
     elseif (iturb.eq.31.or.iturb.eq.32) then
-        call resssg &
+      call resssg &
       ( nvar   , nscal  , ncepdp , ncesmp ,                            &
         ivar   , isou   ,                                              &
         icepdc , icetsm , itypsm ,                                     &
@@ -638,7 +638,7 @@ else
         gradv  , gradro ,                                              &
         ckupdc , smacel ,                                              &
         viscf  , viscb  ,                                              &
-        tslage , tslagi ,                                              &
+        tslagi ,                                                       &
         smbr   , rovsdt )
     endif
 
@@ -656,7 +656,6 @@ call reseps &
    gradv  , produc , gradro ,                                     &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
-   tslagr ,                                                       &
    smbr   , rovsdt )
 
 !===============================================================================
@@ -674,6 +673,7 @@ if (irijco.eq.1) then
 else
   call clprij(ncelet, ncel, iclip)
 endif
+
 
 ! Free memory
 deallocate(viscf, viscb)

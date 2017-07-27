@@ -59,10 +59,10 @@
 !>                              (without rho volume) only for iturb=30
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate (see \ref cs_user_mass_source_terms)
+!>                              source terms or mass rate (see
+!>                              \ref cs_user_mass_source_terms)
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at edge faces
-!> \param[in]     tslage        explicit source terms for the Lagrangian module
 !> \param[in]     tslagi        implicit source terms for the Lagrangian module
 !> \param[in]     smbr          working array
 !> \param[in]     rovsdt        working array
@@ -76,7 +76,7 @@ subroutine resrij &
    produc , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
-   tslage , tslagi ,                                              &
+   tslagi ,                                                       &
    smbr   , rovsdt )
 
 !===============================================================================
@@ -119,13 +119,13 @@ double precision produc(6,ncelet)
 double precision gradro(3,ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
-double precision tslage(ncelet),tslagi(ncelet)
+double precision tslagi(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
 integer          iel
-integer          ii    , jj    , kk    , iiun
+integer          ii    , jj    , kk    , iiun, comp_id
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
@@ -157,7 +157,7 @@ double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:,:), pointer :: visten
+double precision, dimension(:,:), pointer :: visten, lagr_st_rij
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvar_var, cvara_var
@@ -255,7 +255,6 @@ endif
 !===============================================================================
 
 call cs_user_turbulence_source_terms &
-!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(ivar)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -289,8 +288,15 @@ endif
 
 !     Second order is not taken into account
 if (iilagr.eq.2 .and. ltsdyn.eq.1) then
+  call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
+  comp_id = isou
+  if (isou .eq. 5) then
+    comp_id = 6
+  else if (isou .eq.6) then
+    comp_id = 5
+  endif
   do iel = 1,ncel
-    smbr(iel)   = smbr(iel)   + tslage(iel)
+    smbr(iel)   = smbr(iel)   + lagr_st_rij(comp_id,iel)
     rovsdt(iel) = rovsdt(iel) + max(-tslagi(iel),zero)
   enddo
 endif

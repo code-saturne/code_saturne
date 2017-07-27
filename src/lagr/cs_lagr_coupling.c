@@ -126,10 +126,24 @@ cs_lagr_coupling(cs_real_t taup[],
                  cs_real_t volp[],
                  cs_real_t volm[])
 {
+  cs_real_3_t *st_vel = NULL, *t_st_vel = NULL;
+  cs_real_6_t *st_rij = NULL, *t_st_rij = NULL;
 
   /* ====================================================================   */
   /* 1. INITIALISATION    */
   /* ====================================================================   */
+
+  {
+    cs_field_t *f = cs_field_by_name_try("velocity_st_lagr");
+    if (f != NULL)
+      st_vel = (cs_real_3_t *)(f->val);
+  }
+
+  {
+    cs_field_t *f = cs_field_by_name_try("rij_st_lagr");
+    if (f != NULL)
+      st_rij = (cs_real_6_t *)(f->val);
+  }
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
   cs_lagr_source_terms_t *lag_st = cs_glob_lagr_source_terms;
@@ -140,8 +154,6 @@ cs_lagr_coupling(cs_real_t taup[],
 
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
-
-  cs_real_t tvmax = 0.8;
 
   cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t ncel = cs_glob_mesh->n_cells;
@@ -167,10 +179,8 @@ cs_lagr_coupling(cs_real_t taup[],
   cs_glob_lagr_source_terms->tmamax = 0.0;
 
   for (cs_lnum_t iel = 0; iel < ncel; iel++) {
-
     volp[iel]      = 0.0;
     volm[iel]      = 0.0;
-
   }
 
   for (cs_lnum_t ivar = 0; ivar < ntersl; ivar++) {
@@ -210,9 +220,12 @@ cs_lagr_coupling(cs_real_t taup[],
     cs_real_t  prev_p_mass = cs_lagr_particles_get_real_n(p_set, npt, 1, CS_LAGR_MASS);
     cs_real_t *prev_p_vel  = cs_lagr_particles_attr_n(p_set, npt, 1, CS_LAGR_VELOCITY);
 
-    auxl1[npt] = p_stat_w * (p_mass * p_vel[0] - prev_p_mass * prev_p_vel[0] - grav[0] * tsfext[npt]) / dtp;
-    auxl2[npt] = p_stat_w * (p_mass * p_vel[1] - prev_p_mass * prev_p_vel[1] - grav[1] * tsfext[npt]) / dtp;
-    auxl3[npt] = p_stat_w * (p_mass * p_vel[2] - prev_p_mass * prev_p_vel[2] - grav[2] * tsfext[npt]) / dtp;
+    auxl1[npt] = p_stat_w * (p_mass * p_vel[0] - prev_p_mass * prev_p_vel[0]
+                                               - grav[0] * tsfext[npt]) / dtp;
+    auxl2[npt] = p_stat_w * (p_mass * p_vel[1] - prev_p_mass * prev_p_vel[1]
+                                               - grav[1] * tsfext[npt]) / dtp;
+    auxl3[npt] = p_stat_w * (p_mass * p_vel[2] - prev_p_mass * prev_p_vel[2]
+                                               - grav[2] * tsfext[npt]) / dtp;
 
   }
 
@@ -222,15 +235,24 @@ cs_lagr_coupling(cs_real_t taup[],
 
   if (cs_glob_lagr_source_terms->ltsdyn == 1) {
 
+    if (cs_glob_lagr_time_scheme->isttio == 1 && lag_st->npts > 0)
+      BFT_MALLOC(t_st_vel, ncelet, cs_real_3_t);
+    else
+      t_st_vel = st_vel;
+
     for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
-      cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
+      cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
+                                                      CS_LAGR_STAT_WEIGHT);
 
-      cs_real_t  prev_p_diam = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_DIAMETER);
-      cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_MASS);
-      cs_real_t  p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
+      cs_real_t  prev_p_diam = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                           CS_LAGR_DIAMETER);
+      cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                           CS_LAGR_MASS);
+      cs_real_t  p_mass = cs_lagr_particle_get_real(particle, p_am,
+                                                    CS_LAGR_MASS);
 
       cs_lnum_t iel = cs_lagr_particle_get_cell_id(particle, p_am);
 
@@ -239,9 +261,9 @@ cs_lagr_coupling(cs_real_t taup[],
       volm[iel] += p_stat_w * prev_p_mass;
 
       /* TS de QM   */
-      tslag[iel + (lag_st->itsvx-1) * ncelet] += - auxl1[npt];
-      tslag[iel + (lag_st->itsvy-1) * ncelet] += - auxl2[npt];
-      tslag[iel + (lag_st->itsvz-1) * ncelet] += - auxl3[npt];
+      t_st_vel[iel][0] += - auxl1[npt];
+      t_st_vel[iel][1] += - auxl2[npt];
+      t_st_vel[iel][2] += - auxl3[npt];
       tslag[iel + (lag_st->itsli-1) * ncelet] += - 2.0 * p_stat_w * p_mass / taup[npt];
 
     }
@@ -261,24 +283,34 @@ cs_lagr_coupling(cs_real_t taup[],
         unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
         cs_lnum_t  iel         = cs_lagr_particle_get_cell_id(particle, p_am);
-        cs_real_t *prev_f_vel  = cs_lagr_particle_attr_n(particle, p_am, 1, CS_LAGR_VELOCITY_SEEN);
-        cs_real_t *f_vel       = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
+        cs_real_t *prev_f_vel  = cs_lagr_particle_attr_n(particle, p_am, 1,
+                                                         CS_LAGR_VELOCITY_SEEN);
+        cs_real_t *f_vel       = cs_lagr_particle_attr(particle, p_am,
+                                                       CS_LAGR_VELOCITY_SEEN);
 
         cs_real_t uuf = 0.5 * (prev_f_vel[0] + f_vel[0]);
         cs_real_t vvf = 0.5 * (prev_f_vel[1] + f_vel[1]);
         cs_real_t wwf = 0.5 * (prev_f_vel[2] + f_vel[2]);
 
-        tslag[iel + (lag_st->itske-1) * ncelet] += - uuf * auxl1[npt] - vvf * auxl2[npt] - wwf * auxl3[npt];
+        tslag[iel + (lag_st->itske-1) * ncelet] += - uuf * auxl1[npt]
+                                                   - vvf * auxl2[npt]
+                                                   - wwf * auxl3[npt];
 
       }
 
       for (cs_lnum_t iel = 0; iel < ncel; iel++)
-        tslag[iel + (lag_st->itske-1) * ncelet] += - extra->vel->val[iel * 3    ] * tslag[iel + (lag_st->itsvx-1) * ncelet]
-                                                   - extra->vel->val[iel * 3 + 1] * tslag[iel + (lag_st->itsvy-1) * ncelet]
-                                                   - extra->vel->val[iel * 3 + 2] * tslag[iel + (lag_st->itsvz-1) * ncelet];
+        tslag[iel + (lag_st->itske-1) * ncelet]
+          += - extra->vel->val[iel * 3    ] * t_st_vel[iel][0]
+             - extra->vel->val[iel * 3 + 1] * t_st_vel[iel][1]
+             - extra->vel->val[iel * 3 + 2] * t_st_vel[iel][2];
 
     }
     else if (extra->itytur == 3) {
+
+      if (cs_glob_lagr_time_scheme->isttio == 1 && lag_st->npts > 0)
+        BFT_MALLOC(t_st_rij, ncelet, cs_real_6_t);
+      else
+        t_st_rij = st_rij;
 
       for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
@@ -286,37 +318,42 @@ cs_lagr_coupling(cs_real_t taup[],
 
         cs_lnum_t  iel         = cs_lagr_particle_get_cell_id(particle, p_am);
 
-        cs_real_t *prev_f_vel  = cs_lagr_particle_attr_n(particle, p_am, 1, CS_LAGR_VELOCITY_SEEN);
-        cs_real_t *f_vel       = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
+        cs_real_t *prev_f_vel  = cs_lagr_particle_attr_n(particle, p_am, 1,
+                                                         CS_LAGR_VELOCITY_SEEN);
+        cs_real_t *f_vel       = cs_lagr_particle_attr(particle, p_am,
+                                                       CS_LAGR_VELOCITY_SEEN);
 
         cs_real_t uuf = 0.5 * (prev_f_vel[0] + f_vel[0]);
         cs_real_t vvf = 0.5 * (prev_f_vel[1] + f_vel[1]);
         cs_real_t wwf = 0.5 * (prev_f_vel[2] + f_vel[2]);
 
-        tslag[iel + (lag_st->itsr11-1) * ncelet] += - 2.0 * uuf * auxl1[npt];
-        tslag[iel + (lag_st->itsr12-1) * ncelet] += - uuf * auxl2[npt] - vvf * auxl1[npt];
-        tslag[iel + (lag_st->itsr13-1) * ncelet] += - uuf * auxl3[npt] - wwf * auxl1[npt];
-        tslag[iel + (lag_st->itsr22-1) * ncelet] += - 2.0 * vvf * auxl2[npt];
-        tslag[iel + (lag_st->itsr23-1) * ncelet] += - vvf * auxl3[npt] - wwf * auxl2[npt];
-        tslag[iel + (lag_st->itsr33-1) * ncelet] += - 2.0 * wwf * auxl3[npt];
+        t_st_rij[iel][0] += - 2.0 * uuf * auxl1[npt];
+        t_st_rij[iel][1] += - 2.0 * vvf * auxl2[npt];
+        t_st_rij[iel][2] += - 2.0 * wwf * auxl3[npt];
+        t_st_rij[iel][3] += - uuf * auxl2[npt] - vvf * auxl1[npt];
+        t_st_rij[iel][4] += - vvf * auxl3[npt] - wwf * auxl2[npt];
+        t_st_rij[iel][5] += - uuf * auxl3[npt] - wwf * auxl1[npt];
 
       }
       for (cs_lnum_t iel = 0; iel < ncel; iel++) {
 
-        tslag[iel + (lag_st->itsr11-1) * ncelet] += - 2.0 * extra->vel->val[iel * 3    ] * tslag[iel + (lag_st->itsvx-1) * ncelet];
+        t_st_rij[iel][0] += - 2.0 * extra->vel->val[iel * 3    ]
+                                  * t_st_vel[iel][0];
 
-        tslag[iel + (lag_st->itsr12-1) * ncelet] += -       extra->vel->val[iel * 3    ] * tslag[iel + (lag_st->itsvy-1) * ncelet]
-                                                    -       extra->vel->val[iel * 3 + 1] * tslag[iel + (lag_st->itsvx-1) * ncelet];
+        t_st_rij[iel][1] += - 2.0 * extra->vel->val[iel * 3 + 1]
+                                  * t_st_vel[iel][1];
 
-        tslag[iel + (lag_st->itsr13-1) * ncelet] += -       extra->vel->val[iel * 3    ] * tslag[iel + (lag_st->itsvz-1) * ncelet]
-                                                    -       extra->vel->val[iel * 3 + 2] * tslag[iel + (lag_st->itsvx-1) * ncelet];
+        t_st_rij[iel][2] += - 2.0 * extra->vel->val[iel * 3 + 2]
+                                  * t_st_vel[iel][2];
 
-        tslag[iel + (lag_st->itsr22-1) * ncelet] += - 2.0 * extra->vel->val[iel * 3 + 1] * tslag[iel + (lag_st->itsvy-1) * ncelet];
+        t_st_rij[iel][3] += - extra->vel->val[iel * 3    ] * t_st_vel[iel][1]
+                            - extra->vel->val[iel * 3 + 1] * t_st_vel[iel][0];
 
-        tslag[iel + (lag_st->itsr23-1) * ncelet] += -       extra->vel->val[iel * 3 + 1] * tslag[iel + (lag_st->itsvz-1) * ncelet]
-                                                    -       extra->vel->val[iel * 3 + 2] * tslag[iel + (lag_st->itsvy-1) * ncelet];
+        t_st_rij[iel][4] += - extra->vel->val[iel * 3 + 1] * t_st_vel[iel][2]
+                            - extra->vel->val[iel * 3 + 2] * t_st_vel[iel][1];
 
-        tslag[iel + (lag_st->itsr33-1) * ncelet] += - 2.0 * extra->vel->val[iel * 3 + 2] * tslag[iel + (lag_st->itsvz-1) * ncelet];
+        t_st_rij[iel][5] += - extra->vel->val[iel * 3    ] * t_st_vel[iel][2]
+                            - extra->vel->val[iel * 3 + 2] * t_st_vel[iel][0];
 
       }
 
@@ -443,26 +480,33 @@ cs_lagr_coupling(cs_real_t taup[],
 
   cs_real_t *st_val = cs_glob_lagr_source_terms->st_val; /* short alias */
 
+  const cs_real_t tvmax = 0.8;
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
   for (cs_lnum_t iel = 0; iel < ncel; iel++) {
 
-    cs_real_t mf =   cs_glob_mesh_quantities->cell_vol[iel]
-                   * extra->cromf->val[iel];
-    cs_real_t tauv = volp[iel] / cs_glob_mesh_quantities->cell_vol[iel];
+    cs_real_t mf   = cell_vol[iel] * extra->cromf->val[iel];
+    cs_real_t tauv = volp[iel] / cell_vol[iel];
     cs_real_t taum = volm[iel] / mf;
 
     if (tauv > tvmax) {
 
       cs_glob_lagr_source_terms->ntxerr++;;
 
-      for (int ivar = 0; ivar < ntersl; ivar++) {
+      for (int ivar = 0; ivar < ntersl; ivar++)
         st_val[iel + ivar * ncelet] = 0.0;
 
+      if (t_st_rij != NULL) {
+        for (cs_lnum_t j = 0; j < 6; j++)
+          t_st_rij[iel][j] = 0.0;
       }
 
     }
 
-    cs_glob_lagr_source_terms->vmax   = CS_MAX(tauv, cs_glob_lagr_source_terms->vmax);
-    cs_glob_lagr_source_terms->tmamax = CS_MAX(taum, cs_glob_lagr_source_terms->tmamax);
+    cs_glob_lagr_source_terms->vmax
+      = CS_MAX(tauv, cs_glob_lagr_source_terms->vmax);
+    cs_glob_lagr_source_terms->tmamax
+      = CS_MAX(taum, cs_glob_lagr_source_terms->tmamax);
 
   }
 
@@ -482,22 +526,46 @@ cs_lagr_coupling(cs_real_t taup[],
 
     }
 
+    if (st_vel != NULL) {
+      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          st_vel[iel][j]
+            =    (t_st_vel[iel][j] + (lag_st->npts - 1.0) * st_vel[iel][j])
+               / lag_st->npts;
+        }
+      }
+    }
+
+    if (st_rij != NULL) {
+      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
+        for (cs_lnum_t j = 0; j < 6; j++) {
+          st_rij[iel][j]
+            =    (t_st_rij[iel][j] + (lag_st->npts - 1.0) * st_rij[iel][j])
+               / lag_st->npts;
+        }
+      }
+    }
+
   }
   else {
 
     for (int ivar = 0; ivar < ntersl; ivar++) {
-
       for (cs_lnum_t iel = 0; iel < ncel; iel++)
         st_val[iel + ncelet * ivar] = tslag[iel + ncelet * ivar];
-
     }
+
   }
 
+  if (t_st_vel != st_vel)
+    BFT_FREE(t_st_vel);
 
-  BFT_FREE (auxl1);
-  BFT_FREE (auxl2);
-  BFT_FREE (auxl3);
-  BFT_FREE (tslag);
+  if (t_st_rij != st_rij)
+    BFT_FREE(t_st_rij);
+
+  BFT_FREE(auxl1);
+  BFT_FREE(auxl2);
+  BFT_FREE(auxl3);
+  BFT_FREE(tslag);
 }
 
 /*----------------------------------------------------------------------------*/

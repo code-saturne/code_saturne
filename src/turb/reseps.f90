@@ -56,7 +56,6 @@
 !>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at edge faces
-!> \param[in]     tslagr        coupling term for lagrangian
 !> \param[in]     smbr          working array
 !> \param[in]     rovsdt        working array
 !_______________________________________________________________________________
@@ -68,7 +67,6 @@ subroutine reseps &
    gradv  , produc , gradro ,                                     &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
-   tslagr ,                                                       &
    smbr   , rovsdt )
 
 !===============================================================================
@@ -109,7 +107,6 @@ double precision produc(6,ncelet), gradv(3, 3, ncelet)
 double precision gradro(3,ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
-double precision tslagr(ncelet,*)
 double precision smbr(ncelet), rovsdt(ncelet)
 
 ! Local variables
@@ -147,7 +144,7 @@ double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvar_ep, cvara_ep, cvar_al
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
-double precision, dimension(:,:), pointer :: cvara_rij
+double precision, dimension(:,:), pointer :: cvara_rij, lagr_st_rij
 double precision, dimension(:), pointer :: viscl, visct, c_st_prv
 
 character(len=80) :: label
@@ -276,16 +273,18 @@ endif
 !     Second order is not taken into account
 if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 
+  call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
+
   do iel = 1, ncel
     ! Source terms with eps
-    tseps = -0.5d0 * ( tslagr(iel,itsr11)                        &
-                     + tslagr(iel,itsr22)                        &
-                     + tslagr(iel,itsr33) )
+    tseps = -0.5d0 * ( lagr_st_rij(1,iel)                        &
+                     + lagr_st_rij(2,iel)                        &
+                     + lagr_st_rij(3,iel))
     ! quotient k/eps
     if (irijco.eq.1) then
-      kseps = 0.5d0 * ( cvara_rij(1,iel)                           &
-                      + cvara_rij(2,iel)                           &
-                      + cvara_rij(3,iel) )                         &
+      kseps = 0.5d0 * ( cvara_rij(1,iel)                         &
+                      + cvara_rij(2,iel)                         &
+                      + cvara_rij(3,iel) )                       &
                       / cvara_ep(iel)
     else
       kseps = 0.5d0 * ( cvara_r11(iel)                           &

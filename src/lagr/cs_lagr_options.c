@@ -46,6 +46,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_field.h"
 #include "cs_gui_particles.h"
 #include "cs_gui_util.h"
 #include "cs_mesh_location.h"
@@ -85,6 +86,29 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create source term fields for lagrangian module
+ *
+ * \param[in]  name  source term field name
+ * \param[in]  name  source term field dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_define_st_field(const char  *name,
+                 int          dim)
+{
+  int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
+  int location_id = CS_MESH_LOCATION_CELLS;
+
+  cs_field_t *f = cs_field_create(name,
+                                  field_type,
+                                  location_id,
+                                  dim,
+                                  false);
+}
 
 /*-----------------------------------------------------------------------------
  * Copy a variable name to the boundary variable names array
@@ -2357,17 +2381,8 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   irf = 0;
 
   lagdim->ntersl = 0;
-  cs_glob_lagr_source_terms->itsvx  = 0;
-  cs_glob_lagr_source_terms->itsvy  = 0;
-  cs_glob_lagr_source_terms->itsvz  = 0;
   cs_glob_lagr_source_terms->itsli  = 0;
   cs_glob_lagr_source_terms->itske  = 0;
-  cs_glob_lagr_source_terms->itsr11 = 0;
-  cs_glob_lagr_source_terms->itsr12 = 0;
-  cs_glob_lagr_source_terms->itsr13 = 0;
-  cs_glob_lagr_source_terms->itsr22 = 0;
-  cs_glob_lagr_source_terms->itsr23 = 0;
-  cs_glob_lagr_source_terms->itsr33 = 0;
   cs_glob_lagr_source_terms->itsmas = 0;
   cs_glob_lagr_source_terms->itste  = 0;
   cs_glob_lagr_source_terms->itsti  = 0;
@@ -2395,15 +2410,14 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   /* Dynamique : Vitesse + Turbulence    */
   if (cs_glob_lagr_source_terms->ltsdyn == 1) {
 
-    lagdim->ntersl += 4;
-    cs_glob_lagr_source_terms->itsvx = ++irf;
-    cs_glob_lagr_source_terms->itsvy = ++irf;
-    cs_glob_lagr_source_terms->itsvz = ++irf;
+    _define_st_field("velocity_st_lagr", 3);
+
+    lagdim->ntersl += 1;
     cs_glob_lagr_source_terms->itsli = ++irf;
 
     if (   extra->itytur == 2
-           || extra->iturb == 50
-           || extra->iturb == 60) {
+        || extra->iturb == 50
+        || extra->iturb == 60) {
 
       /* K-eps, v2f et k-omega     */
       lagdim->ntersl += 1;
@@ -2413,13 +2427,8 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     else if (extra->itytur == 3) {
 
       /* RIJ   */
-      lagdim->ntersl += 6;
-      cs_glob_lagr_source_terms->itsr11 = ++irf;
-      cs_glob_lagr_source_terms->itsr12 = ++irf;
-      cs_glob_lagr_source_terms->itsr13 = ++irf;
-      cs_glob_lagr_source_terms->itsr22 = ++irf;
-      cs_glob_lagr_source_terms->itsr23 = ++irf;
-      cs_glob_lagr_source_terms->itsr33 = ++irf;
+
+      _define_st_field("rij_st_lagr", 6);
 
     }
     else {

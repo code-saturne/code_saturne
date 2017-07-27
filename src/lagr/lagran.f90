@@ -121,15 +121,6 @@ module lagran
   !> Useful if \ref iilagr = 2
   integer(c_int), pointer, save ::  ltsthe
 
-  !> explicit source term for the continuous phase X velocity
-  integer(c_int), pointer, save ::  itsvx
-
-  !> explicit source term for the continuous phase Y velocity
-  integer(c_int), pointer, save ::  itsvy
-
-  !> explicit source term for the continuous phase Z velocity
-  integer(c_int), pointer, save ::  itsvz
-
   !> implicit source term for the continuous phase velocity and
   !> for the turbulent energy if the \f$k-\varepsilon\f$ model is used
   integer(c_int), pointer, save ::  itsli
@@ -138,32 +129,6 @@ module lagran
   !> turbulent energy if the \f$k-\varepsilon\f$ turbulence model is used
   !> for the continuous phase
   integer(c_int), pointer, save ::  itske
-
-  !> source term for the Reynolds stress
-  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-  !> turbulence model is used for the continuous phase
-  integer(c_int), pointer, save ::  itsr11
-
-  !> source term for the Reynolds stress
-  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-  !> turbulence model is used for the continuous phase
-  integer(c_int), pointer, save ::  itsr12
-  !> source term for the Reynolds stress
-  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-  !> turbulence model is used for the continuous phase
-  integer(c_int), pointer, save ::  itsr13
-  !> source term for the Reynolds stress
-  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-  !> turbulence model is used for the continuous phase
-  integer(c_int), pointer, save ::  itsr22
-  !> source term for the Reynolds stress
-  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-  !> turbulence model is used for the continuous phase
-  integer(c_int), pointer, save ::  itsr23
-  !> source term for the Reynolds stress
-  !> and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-  !> turbulence model is used for the continuous phase
-  integer(c_int), pointer, save ::  itsr33
 
   !> explicit thermal source term for the thermal scalar of the continuous phase
   integer(c_int), pointer, save ::  itste
@@ -210,12 +175,9 @@ module lagran
       type(c_ptr), intent(out) :: p_iilagr, p_idepst, p_ipreci
     end subroutine cs_f_lagr_params_pointers
 
-    subroutine cs_f_lagr_source_terms_pointers(p_ltsdyn, p_ltsmas,   &
-                                               p_ltsthe, p_itsvx,              &
-                                               p_itsvy, p_itsvz, p_itsli,      &
-                                               p_itske, p_itsr11, p_itsr12,    &
-                                               p_itsr13, p_itsr22, p_itsr23,   &
-                                               p_itsr33, p_itste, p_itsti,     &
+    subroutine cs_f_lagr_source_terms_pointers(p_ltsdyn, p_ltsmas,             &
+                                               p_ltsthe, p_itsli,              &
+                                               p_itske, p_itste, p_itsti,      &
                                                p_itsmas, p_itsco,              &
                                                p_itsmv1, p_itsmv2, dim_itsmv1, &
                                                dim_itsmv2) &
@@ -223,10 +185,8 @@ module lagran
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int) :: dim_itsmv1, dim_itsmv2
-      type(c_ptr), intent(out) :: p_ltsdyn, p_ltsmas, p_ltsthe,      &
-                                  p_itsvx, p_itsvy, p_itsvz, p_itsli,          &
-                                  p_itske, p_itsr11, p_itsr12, p_itsr13,       &
-                                  p_itsr22, p_itsr23, p_itsr33, p_itste,       &
+      type(c_ptr), intent(out) :: p_ltsdyn, p_ltsmas, p_ltsthe, p_itsli,       &
+                                  p_itske, p_itste,                            &
                                   p_itsti, p_itsmas, p_itsmv1, p_itsmv2,       &
                                   p_itsco
     end subroutine cs_f_lagr_source_terms_pointers
@@ -342,9 +302,8 @@ contains
     type(c_ptr) :: p_idepst, p_ipreci
 
     ! lagr_option_source_terms
-    type(c_ptr) :: p_ltsdyn, p_ltsmas, p_ltsthe, p_itsvx,                     &
-                   p_itsvy, p_itsvz, p_itsli, p_itske, p_itsr11, p_itsr12,    &
-                   p_itsr13, p_itsr22, p_itsr23,  p_itsr33, p_itste, p_itsti, &
+    type(c_ptr) :: p_ltsdyn, p_ltsmas, p_ltsthe, p_itsli, p_itske,     &
+                   p_itste, p_itsti,                                   &
                    p_itsmas, p_itsmv1, p_itsmv2, p_itsco
     integer(c_int) :: dim_itsmv1, dim_itsmv2
 
@@ -354,28 +313,16 @@ contains
     call c_f_pointer(p_ipreci , ipreci)
 
     call cs_f_lagr_source_terms_pointers(p_ltsdyn, p_ltsmas,           &
-                                         p_ltsthe, p_itsvx,            &
-                                         p_itsvy, p_itsvz, p_itsli,    &
-                                         p_itske, p_itsr11, p_itsr12,  &
-                                         p_itsr13, p_itsr22, p_itsr23, &
-                                         p_itsr33, p_itste, p_itsti,   &
+                                         p_ltsthe, p_itsli,            &
+                                         p_itske,  p_itste, p_itsti,   &
                                          p_itsmas, p_itsco,            &
                                          p_itsmv1, p_itsmv2,           &
                                          dim_itsmv1, dim_itsmv2)
     call c_f_pointer(p_ltsdyn, ltsdyn)
     call c_f_pointer(p_ltsmas, ltsmas)
     call c_f_pointer(p_ltsthe, ltsthe)
-    call c_f_pointer(p_itsvx , itsvx )
-    call c_f_pointer(p_itsvy , itsvy )
-    call c_f_pointer(p_itsvz , itsvz )
     call c_f_pointer(p_itsli , itsli )
     call c_f_pointer(p_itske , itske )
-    call c_f_pointer(p_itsr11, itsr11)
-    call c_f_pointer(p_itsr12, itsr12)
-    call c_f_pointer(p_itsr13, itsr13)
-    call c_f_pointer(p_itsr22, itsr22)
-    call c_f_pointer(p_itsr23, itsr23)
-    call c_f_pointer(p_itsr33, itsr33)
     call c_f_pointer(p_itste , itste )
     call c_f_pointer(p_itsti , itsti )
     call c_f_pointer(p_itsmas, itsmas)

@@ -531,15 +531,6 @@ typedef struct {
    Useful if \ref iilagr = 2 */
   int  ltsthe;
 
-  /*! explicit source term for the continuous phase X velocity */
-  int  itsvx;
-
-  /*! explicit source term for the continuous phase Y velocity */
-  int  itsvy;
-
-  /*! explicit source term for the continuous phase Z velocity */
-  int  itsvz;
-
   /*! implicit source term for the continuous phase velocity and
     for the turbulent energy if the \f$k-\varepsilon\f$ model is used */
   int  itsli;
@@ -548,36 +539,6 @@ typedef struct {
    turbulent energy if the \f$k-\varepsilon\f$ turbulence model is used
    for the continuous phase */
   int  itske;
-
-  /*! source term for the Reynolds stress
-    and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-    turbulence model is used for the continuous phase */
-  int  itsr11;
-
-  /*! source term for the Reynolds stress
-    and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-    turbulence model is used for the continuous phase */
-  int  itsr12;
-
-  /*! source term for the Reynolds stress
-    and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-    turbulence model is used for the continuous phase */
-  int  itsr13;
-
-  /*! source term for the Reynolds stress
-    and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-    turbulence model is used for the continuous phase */
-  int  itsr22;
-
-  /*! source term for the Reynolds stress
-    and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-    turbulence model is used for the continuous phase */
-  int  itsr23;
-
-  /*! source term for the Reynolds stress
-   and the turbulent dissipation if the \f$R_{ij}-\varepsilon\f$
-   turbulence model is used for the continuous phase */
-  int  itsr33;
 
   /*! explicit thermal source term for the thermal scalar of
     the continuous phase */
