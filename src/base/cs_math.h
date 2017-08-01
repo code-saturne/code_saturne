@@ -77,6 +77,37 @@ extern const cs_real_t cs_math_pi;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Computes the binomial coefficient of n and k
+ *
+ * \param[in] n      first argument
+ * \param[in] k      second argument
+ *
+ * \return the value of \binom(n)(k)
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline int
+cs_math_binom(short int  n,
+              short int  k)
+{
+  int ret = 1;
+  assert(n >= k);
+
+  const short int n_iter = (k > n-k) ? n-k : k;
+  for (short int j = 1; j <= n_iter; j++, n--) {
+    if (n % j == 0)
+      ret *= n/j;
+    else if (ret % j == 0)
+      ret = ret/j*n;
+    else
+      ret = (ret*n)/j;
+  }
+
+  return ret;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the square of a real value.
  *
  * \param[in]  x  value
