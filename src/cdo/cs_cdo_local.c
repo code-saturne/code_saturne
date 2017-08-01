@@ -363,7 +363,7 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
 
   case CS_SPACE_SCHEME_CDOFB:
     {
-      BFT_MALLOC(cb->ids, n_vc, short int);
+      BFT_MALLOC(cb->ids, n_fc, short int);
       for (int i = 0; i < n_fc; i++) cb->ids[i] = 0;
 
       size = n_fc*(n_fc+1);
