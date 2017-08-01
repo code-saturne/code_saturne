@@ -76,7 +76,7 @@ BEGIN_C_DECLS
 
 /* Redefined the name of functions from cs_math to get shorter names */
 #define _dp3 cs_math_3_dot_product
-#define CS_WALLDISTANCE_DBG 2
+#define CS_WALLDISTANCE_DBG 0
 
 /*============================================================================
  * Private variables

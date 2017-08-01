@@ -72,7 +72,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDOFB_SCALEQ_DBG      4
+#define CS_CDOFB_SCALEQ_DBG      0
 #define CS_CDOFB_SCALEQ_MODULO  10
 
 /* Algebraic system for CDO face-based discretization */
