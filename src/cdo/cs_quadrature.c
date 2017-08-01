@@ -60,6 +60,8 @@ static const double  _quad_over6 = 1./6.;
 static const double  _quad_over3 = 1./3.;
 static const double  _quad_9ov40 = 9./40.;
 static const double  _quad_31ov240 = 31./240.;
+static const double  _tetr_quad15w3 = 10. / 189.;
+static const double  _tetr_quad15w4 = 16. / 135.;
 
 /* Constant quadrature weights */
 static double  _edge_quad2c1;
@@ -72,6 +74,14 @@ static double  _tria_quad7c3;
 static double  _tria_quad7c4;
 static double  _tetr_quad4c1;
 static double  _tetr_quad4c2;
+static double  _tetr_quad15g1;
+static double  _tetr_quad15g11;
+static double  _tetr_quad15g2;
+static double  _tetr_quad15g21;
+static double  _tetr_quad15g3;
+static double  _tetr_quad15g31;
+static double  _tetr_quad15w1;
+static double  _tetr_quad15w2;
 
 static const char
 cs_quadrature_type_name[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
@@ -115,6 +125,16 @@ cs_quadrature_setup(void)
   /* Quadrature on tetrahedron with 4 points */
   _tetr_quad4c1 = 0.05*(5. - sqrt(5));
   _tetr_quad4c2 = 1. -3.*_tetr_quad4c1;
+
+  /* Quadrature on tetrahedron with 15 points */
+  _tetr_quad15g1  =(7. - sqrt(15.) ) / 34.; ;
+  _tetr_quad15g11 = 1. - 3. * _tetr_quad15g1;
+  _tetr_quad15g2  = 7./17. - _tetr_quad15g1;
+  _tetr_quad15g21 = 1. - 3. * _tetr_quad15g2;
+  _tetr_quad15g3  = (5. - sqrt(15.)) / 20.;
+  _tetr_quad15g31 = (5. + sqrt(15.)) / 20.;
+  _tetr_quad15w1  = (2665. + 14. * sqrt(15.) ) / 37800.;
+  _tetr_quad15w2  = (2665. - 14. * sqrt(15.) ) / 37800.;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -381,6 +401,69 @@ cs_quadrature_tet_5pts(const cs_real_3_t  xv,
   for (int k = 0; k < 4; k++)
     weights[k] = wv2;
   weights[4] = wv1;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the quadrature in a tetrehedra. Exact for 5th order
+ *         polynomials (order 6).
+ *
+ * \param[in]       xv       first vertex
+ * \param[in]       xe       second vertex
+ * \param[in]       xf       third vertex
+ * \param[in]       xc       fourth vertex
+ * \param[in]       vol      volume of tetrahedron {xv, xe, xf, xc}
+ * \param[in, out]  gpts     15 Gauss points (size = 3*15)
+ * \param[in, out]  weights  15 weigths related to each Gauss point
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_quadrature_tet_15pts(const cs_real_3_t   xv,
+                        const cs_real_3_t   xe,
+                        const cs_real_3_t   xf,
+                        const cs_real_3_t   xc,
+                        double              vol,
+                        cs_real_3_t         gpts[],
+                        double              weights[])
+{
+  const double w1 = vol * _tetr_quad15w1;
+  const double w2 = vol * _tetr_quad15w2;
+  const double w3 = vol * _tetr_quad15w3;
+
+  for (short int i = 0; i < 3; ++i) {
+
+    const double  xvxe = xv[i] + xe[i];
+    const double  xfxc = xf[i] + xc[i];
+    const double  xvxf = xf[i] + xv[i];
+    const double  xexc = xc[i] + xe[i];
+    const double  xvxc = xv[i] + xc[i];
+    const double  xexf = xe[i] + xf[i];
+
+    gpts[0][i]  = _tetr_quad15g1 * (xvxe + xf[i]) + _tetr_quad15g11 * xc[i];
+    gpts[1][i]  = _tetr_quad15g1 * (xexc + xv[i]) + _tetr_quad15g11 * xf[i];
+    gpts[2][i]  = _tetr_quad15g1 * (xfxc + xv[i]) + _tetr_quad15g11 * xe[i];
+    gpts[3][i]  = _tetr_quad15g1 * (xfxc + xe[i]) + _tetr_quad15g11 * xv[i];
+    gpts[4][i]  = _tetr_quad15g2 * (xvxe + xf[i]) + _tetr_quad15g21 * xc[i];
+    gpts[5][i]  = _tetr_quad15g2 * (xvxe + xc[i]) + _tetr_quad15g21 * xf[i];
+    gpts[6][i]  = _tetr_quad15g2 * (xfxc + xv[i]) + _tetr_quad15g21 * xe[i];
+    gpts[7][i]  = _tetr_quad15g2 * (xfxc + xe[i]) + _tetr_quad15g21 * xv[i];
+    gpts[8][i]  = _tetr_quad15g3 * xvxe + _tetr_quad15g31 * xfxc;
+    gpts[9][i]  = _tetr_quad15g3 * xvxc + _tetr_quad15g31 * xexf;
+    gpts[10][i] = _tetr_quad15g3 * xvxf + _tetr_quad15g31 * xexc;
+    gpts[11][i] = _tetr_quad15g3 * xexf + _tetr_quad15g31 * xvxc;
+    gpts[12][i] = _tetr_quad15g3 * xfxc + _tetr_quad15g31 * xvxe;
+    gpts[13][i] = _tetr_quad15g3 * xexc + _tetr_quad15g31 * xvxf;
+    gpts[14][i] = 0.25* (xvxe + xfxc);
+
+  }
+
+  weights[0]  = weights[1] = weights[ 2] = weights[ 3] = w1;
+  weights[4]  = weights[5] = weights[ 6] = weights[ 7] = w2;
+  weights[8]  = weights[9] = weights[10] = weights[11] = weights[12] = w3;
+  weights[13] = w3;
+  weights[14] = vol * _tetr_quad15w4;
 }
 
 /*----------------------------------------------------------------------------*/

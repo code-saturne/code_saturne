@@ -224,6 +224,30 @@ cs_quadrature_tet_5pts(const cs_real_3_t  xv,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the quadrature in a tetrehedra. Exact for 5th order
+ *         polynomials (order 6).
+ *
+ * \param[in]       xv       first vertex
+ * \param[in]       xe       second vertex
+ * \param[in]       xf       third vertex
+ * \param[in]       xc       fourth vertex
+ * \param[in]       vol      volume of tetrahedron {xv, xe, xf, xc}
+ * \param[in, out]  gpts     15 Gauss points (size = 3*15)
+ * \param[in, out]  weights  15 weigths related to each Gauss point
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_quadrature_tet_15pts(const cs_real_3_t   xv,
+                        const cs_real_3_t   xe,
+                        const cs_real_3_t   xf,
+                        const cs_real_3_t   xc,
+                        double              vol,
+                        cs_real_3_t         gpts[],
+                        double              weights[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return th name associated to a type of quadrature
  *
  * \param[in]     type     cs_quadrature_type_t
