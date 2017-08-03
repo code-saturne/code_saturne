@@ -1292,9 +1292,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                                   CS_LAGR_PART_DEPOSITED);
     }
 
-    bdy_conditions->particle_flow_rate[boundary_zone]
-      -= particle_stat_weight * particle_mass;
-
     /* FIXME: For post-processing by trajectory purpose */
 
     for (k = 0; k < 3; k++)
