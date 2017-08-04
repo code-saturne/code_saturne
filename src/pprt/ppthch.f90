@@ -93,6 +93,8 @@ module ppthch
   !> number of global reactions in gas phase
   integer, save ::           nrgaz
 
+  !> rank of O2 in gas composition
+  integer, save ::           iio2
   !> rank of H2O in gas composition
   integer, save ::           iih2o
   !> rank of CO2 in gas composition

@@ -123,6 +123,7 @@ cs_f_ppthch_get_pointers(int     **iic,
 
 void
 cs_f_coincl_get_pointers(double  **coefeg,
+                         double  **compog,
                          double  **xsoot,
                          double  **rosoot);
 
@@ -205,14 +206,17 @@ cs_f_ppthch_get_pointers(int     **iic,
  *
  * parameters:
  *   coefeg --> pointer to conversion coefficients
+ *   compog --> pointer to conversion coefficients
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_coincl_get_pointers(double  **coefeg,
+                         double  **compog,
                          double  **xsoot,
                          double  **rosoot)
 {
   *coefeg = &(cs_glob_combustion_model->gas.coefeg[0][0]);
+  *compog = &(cs_glob_combustion_model->gas.compog[0][0]);
   *xsoot  = &(cs_glob_combustion_model->gas.xsoot);
   *rosoot = &(cs_glob_combustion_model->gas.rosoot);
 }

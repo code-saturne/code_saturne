@@ -81,8 +81,14 @@ typedef struct {
   /*! molar mass of global species */
   double  wmolg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
 
-  /*! conversion coefficients from global species to elementary species */
+  /*! mass fraction conversion coefficients from global species to
+      elementary species */
   double  coefeg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES]
+                [CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
+
+  /*! mole fraction conversion coefficients from global species to
+      elementary species */
+  double  compog[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES]
                 [CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS];
 
 } cs_combustion_gas_model_t;

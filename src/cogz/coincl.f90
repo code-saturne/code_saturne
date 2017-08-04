@@ -46,8 +46,13 @@ module coincl
   ! combustible reaction enthalpy (Pouvoir Calorifique Inferieur)
   double precision, save :: pcigas
 
-  ! conversion coefficients from global species to elementary species
+  ! mass fraction conversion coefficients
+  ! from global species to elementary species
   double precision, pointer, save :: coefeg(:,:)
+
+  ! mole fraction conversion coefficients
+  ! from global species to elementary species
+  double precision, pointer, save :: compog(:,:)
 
   !--> MODELE FLAMME DE DIFFUSION (CHIMIE 3 POINTS)
 
@@ -150,12 +155,12 @@ module coincl
     ! Interface to C function retrieving pointers to members of the
     ! global combustion model flags
 
-    subroutine cs_f_coincl_get_pointers(p_coefeg,           &
+    subroutine cs_f_coincl_get_pointers(p_coefeg, p_compog, &
                                         p_xsoot, p_rosoot)  &
       bind(C, name='cs_f_coincl_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_coefeg, p_xsoot, p_rosoot
+      type(c_ptr), intent(out) :: p_coefeg, p_compog, p_xsoot, p_rosoot
     end subroutine cs_f_coincl_get_pointers
 
     !---------------------------------------------------------------------------
@@ -182,11 +187,12 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_coefeg, c_xsoot, c_rosoot
+    type(c_ptr) :: c_coefeg, c_compog, c_xsoot, c_rosoot
 
-    call cs_f_coincl_get_pointers(c_coefeg, c_xsoot, c_rosoot)
+    call cs_f_coincl_get_pointers(c_coefeg, c_compog, c_xsoot, c_rosoot)
 
     call c_f_pointer(c_coefeg, coefeg, [ngazem, ngazgm])
+    call c_f_pointer(c_compog, compog, [ngazem, ngazgm])
     call c_f_pointer(c_xsoot, xsoot)
     call c_f_pointer(c_rosoot, rosoot)
 

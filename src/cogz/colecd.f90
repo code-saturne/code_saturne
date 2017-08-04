@@ -83,7 +83,6 @@ integer          mode, icalck
 
 double precision tmin , tmax
 double precision kabse(ngazem)
-double precision compog(ngazem,ngazgm)
 double precision wmolce (ngazem)
 double precision cpgaze(ngazem,npot)
 double precision coefg(ngazgm), tgaz, efgaz(ngazgm)
@@ -100,6 +99,7 @@ double precision, dimension(:), allocatable :: bb, xx
 
 ! Initialize variables to avoid compiler warnings
 
+iio2  = 0
 iico  = 0
 iico2 = 0
 iih2o = 0
@@ -565,6 +565,7 @@ if (indjon.eq.1) then
     nomgaz = nomcoe(ige)
     IF (trim(nomgaz).EQ.'C(S)') IIC=IGE
     IF (trim(nomgaz).EQ.'CO'  ) IICO=IGE
+    IF (trim(nomgaz).EQ.'O2'  ) IIO2=IGE
     IF (trim(nomgaz).EQ.'CO2' ) IICO2=IGE
     IF (trim(nomgaz).EQ.'H2O' ) IIH2O=IGE
   enddo

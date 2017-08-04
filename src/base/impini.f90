@@ -127,10 +127,16 @@ if (ippmod(icod3p).ne.-1) then
   write(nfecra,1070) namgas, pcigas
   write(nfecra,1080) trim(nomcog(igfuel(1))), &
   -nreact(igoxy(1)), trim(nomcog(igoxy(1))), trim(nomcog(igprod(1)))
-  write(nfecra,'(a15,10(1x,a14))') "Composition", "Fuel", "Oxydizer", "Products"
-  write(nfecra,'(a15,10(1x,a14))') "-----------", "----", "--------", "--------"
+  write(nfecra,'(a20,10(1x,a14))') "Mass composition", "Fuel", "Oxydizer", "Products"
+  write(nfecra,'(a20,10(1x,a14))') "----------------", "----", "--------", "--------"
   do ige = 1, ngaze
     write(nfecra,'(a15,10(1x,f14.5))') trim(nomcoe(ige)), (coefeg(ige,igg), igg=1, ngazg)
+  enddo
+  write(nfecra,1000)
+  write(nfecra,'(a20,10(1x,a14))') "Molar composition", "Fuel", "Oxydizer", "Products"
+  write(nfecra,'(a20,10(1x,a14))') "-----------------", "----", "--------", "--------"
+  do ige = 1, ngaze
+    write(nfecra,'(a15,10(1x,f14.5))') trim(nomcoe(ige)), (compog(ige,igg), igg=1, ngazg)
   enddo
 else if (ippmod(icoebu).ne.-1) then
   write(nfecra,1010)
