@@ -1316,14 +1316,14 @@ enddo
 do i = 1, number_of_files, 1
   do j = 1, sections_per_file, 1
     do k = 2, dynamical_profile_dim
-      if (zt(k-1,j,i).ge.zt(k,j,i)) then
+      if (zd(k-1,j,i).ge.zd(k,j,i)) then
         write(nfecra,*) "the dynamical profile in section ", j
         call bounds(imbrication_files(i),len(imbrication_files(i)),first,last)
         write(nfecra,*) "of the file '",imbrication_files(i)(first:last),"'"
         write(nfecra,*) "is not strictly increasing"
         write(nfecra,*) "erroneous level ",k," with zd =",zd(k,j,i)
         do kk = 1, dynamical_profile_dim, 1
-          write(nfecra,*) "k=",kk,"zd=",zt(kk,j,i)
+          write(nfecra,*) "k=",kk,"zd=",zd(kk,j,i)
         enddo
         stop
       endif
