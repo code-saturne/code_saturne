@@ -112,7 +112,7 @@ double precision rvoid(1)
 
 character(len=80) :: fname
 
-double precision, dimension(:), allocatable :: w1, viscce
+double precision, dimension(:), allocatable :: w1, viscce, rtrace
 double precision, dimension(:), allocatable :: coefap, coefbp
 double precision, dimension(:), allocatable :: cofafp, cofbfp
 double precision, dimension(:,:), allocatable :: coefa1
@@ -135,6 +135,7 @@ double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:), pointer :: cvar_k
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: visct, cpro_viscls
 double precision, dimension(:), pointer :: cvara_var
 
@@ -212,9 +213,13 @@ call field_get_val_s(ibrom, brom)
 call field_get_val_s(ivisct, visct)
 
 if (itytur.eq.3) then
-  call field_get_val_s(ivarfl(ir11), cvar_r11)
-  call field_get_val_s(ivarfl(ir22), cvar_r22)
-  call field_get_val_s(ivarfl(ir33), cvar_r33)
+  if (irijco.eq.1) then
+    call field_get_val_v(ivarfl(irij), cvar_rij)
+  else
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+  endif
 elseif (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
   call field_get_val_s(ivarfl(ik), cvar_k)
 endif
@@ -322,33 +327,37 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
   if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS).and.iturb.ne.0) then
 
     ! The diagonal part is easy to implicit (Grad (K) . n = (K_j - K_i)/IJ)
-
-    ! Compute the K=1/3*trace(K) coefficient (diffusion of Zaichik)
+    ! Compute the K=1/3*trace(R) coefficient (diffusion of Zaichik)
 
     if (itytur.eq.3) then
 
-      do iel = 1, ncel
+      allocate(rtrace(ncel))
 
+      if (irijco.eq.1) then
+        do iel = 1, ncel
+          rtrace(iel) = cvar_rij(1,iel) + cvar_rij(2,iel) + cvar_rij(3,iel)
+        enddo
+      else
+        do iel = 1, ncel
+          rtrace(iel) = cvar_r11(iel) + cvar_r22(iel) + cvar_r33(iel)
+        enddo
+      endif
+
+      do iel = 1, ncel
         ! Correction by Omega
         omegaa = cpro_taup(iel)/cpro_taufpt(iel)
         ! FIXME: use idifft or not?
-        viscce(iel) = 1.d0/3.d0                                        &
-                    * cpro_taup(iel)/(1.d0+omegaa)*( cvar_r11(iel)     &
-                                                   + cvar_r22(iel)     &
-                                                   + cvar_r33(iel) )
+        viscce(iel) = 1.d0/3.d0 * cpro_taup(iel)/(1.d0+omegaa)*rtrace(iel)
       enddo
+      deallocate(rtrace)
 
     elseif (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
 
       do iel = 1, ncel
-
         ! Correction by Omega
         omegaa = cpro_taup(iel)/cpro_taufpt(iel)
-
         viscce(iel) = 2.d0/3.d0*cpro_taup(iel)/(1.d0+omegaa)*cvar_k(iel)
       enddo
-
-    else
 
     endif
 

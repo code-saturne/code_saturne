@@ -5,6 +5,8 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Fix turbophoresis drift flux computation for coupled RSM models (irijco=1).
+
 - Fix bounds for dynamic profiles in imbrication module for atmo. flow.
 
 - Compatibility fixes for coupled RSM components (irijco=1) with
