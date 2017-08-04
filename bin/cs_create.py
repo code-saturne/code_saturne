@@ -372,6 +372,9 @@ domains = [
 
         for c in self.cases:
 
+            c = os.path.normpath(c)
+            base_c = os.path.basename(c)
+
             template = sep + \
 """
     {'solver': 'PACKAGE',
@@ -382,7 +385,7 @@ domains = [
      'n_procs_max': None}
 """
             template = re.sub(e_pkg, solver_name, template)
-            template = re.sub(e_dom, c, template)
+            template = re.sub(e_dom, base_c, template)
 
             dict_str += template
 
@@ -393,6 +396,9 @@ domains = [
 
 
         for c in self.syr_case_names:
+
+            c = os.path.normpath(c)
+            base_c = os.path.basename(c)
 
             template = \
 """
@@ -406,7 +412,7 @@ domains = [
      'opt' : ''}               # Additional SYRTHES options
                                # (ex.: postprocessing with '-v ens' or '-v med')
 """
-            template = re.sub(e_dom, c, template)
+            template = re.sub(e_dom, base_c, template)
             dict_str += template
 
         if self.ast_case_name is not None:
