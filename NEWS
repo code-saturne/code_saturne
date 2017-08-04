@@ -5,6 +5,9 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Ensure field domain is filled in with cases basename
+  in coupling parameters script when creating a coupled study.
+
 - Fix turbophoresis drift flux computation for coupled RSM models (irijco=1).
 
 - Fix bounds for dynamic profiles in imbrication module for atmo. flow.
