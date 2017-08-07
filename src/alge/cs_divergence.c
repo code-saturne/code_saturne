@@ -1042,19 +1042,13 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
       /* With anisotropic porosity */
     } else if (porosi != NULL && porosf != NULL) {
 #     pragma omp parallel for
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {//FIXME
-        c_mass_var[cell_id][0] = ( porosf[cell_id][0]*c_var[cell_id][0]
-                          + porosf[cell_id][3]*c_var[cell_id][1]
-                          + porosf[cell_id][5]*c_var[cell_id][2] )
-                        * c_rho[cell_id];
-        c_mass_var[cell_id][1] = ( porosf[cell_id][3]*c_var[cell_id][0]
-                          + porosf[cell_id][1]*c_var[cell_id][1]
-                          + porosf[cell_id][4]*c_var[cell_id][2] )
-                        * c_rho[cell_id];
-        c_mass_var[cell_id][2] = ( porosf[cell_id][5]*c_var[cell_id][0]
-                          + porosf[cell_id][4]*c_var[cell_id][1]
-                          + porosf[cell_id][2]*c_var[cell_id][2] )
-                        * c_rho[cell_id];
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        cs_math_sym_33_product(porosf[cell_id],
+                               c_var[cell_id],
+                               c_mass_var[cell_id]);
+
+        for (int isou = 0; isou < 6; isou++)
+          c_mass_var[cell_id][isou] *= c_rho[cell_id];
       }
     }
 
@@ -1077,19 +1071,13 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
           c_mass_var[cell_id][isou] = c_var[cell_id][isou]*porosi[cell_id];
         }
       }
-      /* With anisotropic porosity FIXME */
+      /* With anisotropic porosity */
     } else if (porosi != NULL && porosf != NULL) {
 #     pragma omp parallel for
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        c_mass_var[cell_id][0] = porosf[cell_id][0]*c_var[cell_id][0]
-                        + porosf[cell_id][3]*c_var[cell_id][1]
-                        + porosf[cell_id][5]*c_var[cell_id][2];
-        c_mass_var[cell_id][1] = porosf[cell_id][3]*c_var[cell_id][0]
-                        + porosf[cell_id][1]*c_var[cell_id][1]
-                        + porosf[cell_id][4]*c_var[cell_id][2];
-        c_mass_var[cell_id][2] = porosf[cell_id][5]*c_var[cell_id][0]
-                        + porosf[cell_id][4]*c_var[cell_id][1]
-                        + porosf[cell_id][2]*c_var[cell_id][2];
+        cs_math_sym_33_product(porosf[cell_id],
+                               c_var[cell_id],
+                               c_mass_var[cell_id]);
       }
     }
   }
@@ -1126,35 +1114,26 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
           b_mass_var[face_id][isou] = b_rho[face_id]*c_var[cell_id][isou]*porosi[cell_id];
         }
       }
-      /* With anisotropic porosity FIXME*/
+      /* With anisotropic porosity */
     } else if (porosi != NULL && porosf != NULL) {
 #     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        coefaq[face_id][0] = ( porosf[cell_id][0]*coefav[face_id][0]
-                             + porosf[cell_id][3]*coefav[face_id][1]
-                             + porosf[cell_id][5]*coefav[face_id][2] )
-                           * b_rho[face_id];
-        coefaq[face_id][1] = ( porosf[cell_id][3]*coefav[face_id][0]
-                             + porosf[cell_id][1]*coefav[face_id][1]
-                             + porosf[cell_id][4]*coefav[face_id][2] )
-                           * b_rho[face_id];
-        coefaq[face_id][2] = ( porosf[cell_id][5]*coefav[face_id][0]
-                             + porosf[cell_id][4]*coefav[face_id][1]
-                             + porosf[cell_id][2]*coefav[face_id][2] )
-                           * b_rho[face_id];
-        b_mass_var[face_id][0] = ( porosf[cell_id][0]*c_var[cell_id][0]
-                             + porosf[cell_id][3]*c_var[cell_id][1]
-                             + porosf[cell_id][5]*c_var[cell_id][2] )
-                           * b_rho[face_id];
-        b_mass_var[face_id][1] = ( porosf[cell_id][3]*c_var[cell_id][0]
-                             + porosf[cell_id][1]*c_var[cell_id][1]
-                             + porosf[cell_id][4]*c_var[cell_id][2] )
-                           * b_rho[face_id];
-        b_mass_var[face_id][2] = ( porosf[cell_id][5]*c_var[cell_id][0]
-                             + porosf[cell_id][4]*c_var[cell_id][1]
-                             + porosf[cell_id][2]*c_var[cell_id][2] )
-                           * b_rho[face_id];
+
+        cs_math_sym_33_product(porosf[cell_id],
+                               coefav[face_id],
+                               coefaq[face_id]);
+
+        for (int isou = 0; isou < 6; isou++)
+          coefaq[face_id][isou] *= b_rho[face_id];
+
+        cs_math_sym_33_product(porosf[cell_id],
+                               c_var[cell_id],
+                               b_mass_var[face_id]);
+
+        for (int isou = 0; isou < 6; isou++)
+          b_mass_var[face_id][isou] *= b_rho[face_id];
+
       }
     }
 
@@ -1181,29 +1160,19 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
           b_mass_var[face_id][isou] = c_var[cell_id][isou]*porosi[cell_id];
         }
       }
-      /* With anisotropic porosity FIXME */
+      /* With anisotropic porosity */
     } else if (porosi != NULL && porosf != NULL) {
 #     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        coefaq[face_id][0] = porosf[cell_id][0]*coefav[face_id][0]
-                           + porosf[cell_id][3]*coefav[face_id][1]
-                           + porosf[cell_id][5]*coefav[face_id][2];
-        coefaq[face_id][1] = porosf[cell_id][3]*coefav[face_id][0]
-                           + porosf[cell_id][1]*coefav[face_id][1]
-                           + porosf[cell_id][4]*coefav[face_id][2];
-        coefaq[face_id][2] = porosf[cell_id][5]*coefav[face_id][0]
-                           + porosf[cell_id][4]*coefav[face_id][1]
-                           + porosf[cell_id][2]*coefav[face_id][2];
-        b_mass_var[face_id][0] = ( porosf[cell_id][0]*c_var[cell_id][0]
-                             + porosf[cell_id][3]*c_var[cell_id][1]
-                             + porosf[cell_id][5]*c_var[cell_id][2] );
-        b_mass_var[face_id][1] = ( porosf[cell_id][3]*c_var[cell_id][0]
-                             + porosf[cell_id][1]*c_var[cell_id][1]
-                             + porosf[cell_id][4]*c_var[cell_id][2] );
-        b_mass_var[face_id][2] = ( porosf[cell_id][5]*c_var[cell_id][0]
-                             + porosf[cell_id][4]*c_var[cell_id][1]
-                             + porosf[cell_id][2]*c_var[cell_id][2] );
+
+        cs_math_sym_33_product(porosf[cell_id],
+                               coefav[face_id],
+                               coefaq[face_id]);
+
+        cs_math_sym_33_product(porosf[cell_id],
+                               c_var[cell_id],
+                               b_mass_var[face_id]);
       }
     }
 

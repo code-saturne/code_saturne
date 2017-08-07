@@ -556,6 +556,8 @@ cs_math_sym_33_inv_cramer(const cs_real_t  s[6],
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the product of two symmetric matrices.
+ * Warning: this is valid if and only if s1 and s2 commute (otherwise sout is
+ * not symmetric).
  *
  * \remark Symmetric matrix coefficients are stored as follows:
  *         (s11, s22, s33, s12, s23, s13)
