@@ -5,6 +5,8 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Fix for issue #236 (crash on restart using periodicity).
+
 - Major fix for coupled Rij solver (irijico = 1).
 
 - Ensure field domain is filled in with cases basename

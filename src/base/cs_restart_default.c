@@ -279,13 +279,13 @@ _sync_field_vals(cs_field_t  *f,
     cs_halo_sync_var_strided(m->halo, halo_type, v, f->dim);
 
     if (m->n_init_perio > 0) {
-      if (m->dim == 3)
+      if (f->dim == 3)
         cs_halo_perio_sync_var_vect(m->halo, halo_type, v, 3);
-      else if (m->dim == 6)
+      else if (f->dim == 6)
         cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, v);
-      else if (m->dim == 9)
+      else if (f->dim == 9)
         cs_halo_perio_sync_var_tens(m->halo, halo_type, v);
-      else if (m->dim == 1 && f == CS_F_(r13)) {
+      else if (f->dim == 1 && f == CS_F_(r13)) {
         cs_halo_perio_sync_var_tens_ni(m->halo,
                                        halo_type,
                                        CS_F_(r11)->vals[t_id],
