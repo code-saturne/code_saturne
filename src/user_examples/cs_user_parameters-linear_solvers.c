@@ -274,11 +274,14 @@ cs_user_linear_solvers(void)
 {
   /* Available native iterative linear solvers are:
    *
-   *  CS_SLES_PCG        (preconditionned conjugate gradient)
-   *  CS_SLES_JACOBI     (Jacobi)
-   *  CS_SLES_BICGSTAB   (Bi-conjugate gradient stabilized)
-   *  CS_SLES_BICGSTAB2  (BiCGStab2)
-   *  CS_SLES_GMRES      (generalized minimal residual)
+   *  CS_SLES_PCG                 (preconditionned conjugate gradient)
+   *  CS_SLES_JACOBI              (Jacobi)
+   *  CS_SLES_BICGSTAB            (Bi-conjugate gradient stabilized)
+   *  CS_SLES_BICGSTAB2           (BiCGStab2)
+   *  CS_SLES_GMRES               (generalized minimal residual)
+   *  CS_SLES_P_GAUSS_SEIDEL      (process-local Gauss-Seidel)
+   *  CS_SLES_P_SYM_GAUSS_SEIDEL  (process-local symmetric Gauss-Seidel)
+   *  CS_SLES_PCR3                (3-layer conjugate residual)
    *
    *  The multigrid solver uses the conjugate gradient as a smoother
    *  and coarse solver by default, but this behavior may be modified. */

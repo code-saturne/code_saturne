@@ -5,7 +5,10 @@ Trunk (unreleased)
 Numerics
 --------
 
-- Simplify selection of symmetric Gauss-Seidel linear solver variant.
+- Switch from Jacobi to processor-local symmetric Gauss-Seidel as default
+  linear solver type for non-symmetric systems.
+
+- Simplify selection of local symmetric Gauss-Seidel linear solver variant.
 
 - Make vectorial and tensorial slope tests invariant by rotation and
   identical for all components (previous version available for the
