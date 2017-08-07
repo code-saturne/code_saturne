@@ -3981,27 +3981,47 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                           _("Error: can not find the required symbol: %s\n"),
                           "r11, r22, r33, r12, r13, r23 or epsilon");
 
-              cs_field_t *c_r11 = cs_field_by_name("r11");
-              cs_field_t *c_r22 = cs_field_by_name("r22");
-              cs_field_t *c_r33 = cs_field_by_name("r33");
-              cs_field_t *c_r12 = cs_field_by_name("r12");
-              cs_field_t *c_r13 = cs_field_by_name("r13");
-              cs_field_t *c_r23 = cs_field_by_name("r23");
+              cs_field_t *c_rij = cs_field_by_name("rij");
               cs_field_t *c_eps = cs_field_by_name("epsilon");
 
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                mei_evaluate(ev_formula_turb);
-                c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
-                c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
-                c_r33->val[iel] = mei_tree_lookup(ev_formula_turb, "r33");
-                c_r12->val[iel] = mei_tree_lookup(ev_formula_turb, "r12");
-                c_r13->val[iel] = mei_tree_lookup(ev_formula_turb, "r13");
-                c_r23->val[iel] = mei_tree_lookup(ev_formula_turb, "r23");
-                c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+              if (c_rij != NULL) {
+                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+                  cs_lnum_t iel = cell_ids[icel];
+                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
+                  mei_evaluate(ev_formula_turb);
+                  c_rij->val[iel*6]   = mei_tree_lookup(ev_formula_turb, "r11");
+                  c_rij->val[iel*6+1] = mei_tree_lookup(ev_formula_turb, "r22");
+                  c_rij->val[iel*6+2] = mei_tree_lookup(ev_formula_turb, "r33");
+                  c_rij->val[iel*6+3] = mei_tree_lookup(ev_formula_turb, "r12");
+                  c_rij->val[iel*6+4] = mei_tree_lookup(ev_formula_turb, "r23");
+                  c_rij->val[iel*6+5] = mei_tree_lookup(ev_formula_turb, "r13");
+                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+                }
+              }
+              else {
+                cs_field_t *c_r11 = cs_field_by_name("r11");
+                cs_field_t *c_r22 = cs_field_by_name("r22");
+                cs_field_t *c_r33 = cs_field_by_name("r33");
+                cs_field_t *c_r12 = cs_field_by_name("r12");
+                cs_field_t *c_r13 = cs_field_by_name("r13");
+                cs_field_t *c_r23 = cs_field_by_name("r23");
+
+                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+                  cs_lnum_t iel = cell_ids[icel];
+                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
+                  mei_evaluate(ev_formula_turb);
+                  c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
+                  c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
+                  c_r33->val[iel] = mei_tree_lookup(ev_formula_turb, "r33");
+                  c_r12->val[iel] = mei_tree_lookup(ev_formula_turb, "r12");
+                  c_r13->val[iel] = mei_tree_lookup(ev_formula_turb, "r13");
+                  c_r23->val[iel] = mei_tree_lookup(ev_formula_turb, "r23");
+                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+                }
               }
             }
 
@@ -4013,29 +4033,50 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                           _("Error: can not find the required symbol: %s\n"),
                           "r11, r22, r33, r12, r13, r23, epsilon or alpha");
 
-              cs_field_t *c_r11 = cs_field_by_name("r11");
-              cs_field_t *c_r22 = cs_field_by_name("r22");
-              cs_field_t *c_r33 = cs_field_by_name("r33");
-              cs_field_t *c_r12 = cs_field_by_name("r12");
-              cs_field_t *c_r13 = cs_field_by_name("r13");
-              cs_field_t *c_r23 = cs_field_by_name("r23");
+              cs_field_t *c_rij = cs_field_by_name("rij");
               cs_field_t *c_eps = cs_field_by_name("epsilon");
               cs_field_t *c_alp = cs_field_by_name("alpha");
 
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                mei_evaluate(ev_formula_turb);
-                c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
-                c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
-                c_r33->val[iel] = mei_tree_lookup(ev_formula_turb, "r33");
-                c_r12->val[iel] = mei_tree_lookup(ev_formula_turb, "r12");
-                c_r13->val[iel] = mei_tree_lookup(ev_formula_turb, "r13");
-                c_r23->val[iel] = mei_tree_lookup(ev_formula_turb, "r23");
-                c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
-                c_alp->val[iel] = mei_tree_lookup(ev_formula_turb, "alpha");
+              if (c_rij != NULL) {
+                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+                  cs_lnum_t iel = cell_ids[icel];
+                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
+                  mei_evaluate(ev_formula_turb);
+                  c_rij->val[iel*6]   = mei_tree_lookup(ev_formula_turb, "r11");
+                  c_rij->val[iel*6+1] = mei_tree_lookup(ev_formula_turb, "r22");
+                  c_rij->val[iel*6+2] = mei_tree_lookup(ev_formula_turb, "r33");
+                  c_rij->val[iel*6+3] = mei_tree_lookup(ev_formula_turb, "r12");
+                  c_rij->val[iel*6+4] = mei_tree_lookup(ev_formula_turb, "r23");
+                  c_rij->val[iel*6+5] = mei_tree_lookup(ev_formula_turb, "r13");
+                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+                  c_alp->val[iel] = mei_tree_lookup(ev_formula_turb, "alpha");
+                }
+              }
+              else {
+                cs_field_t *c_r11 = cs_field_by_name("r11");
+                cs_field_t *c_r22 = cs_field_by_name("r22");
+                cs_field_t *c_r33 = cs_field_by_name("r33");
+                cs_field_t *c_r12 = cs_field_by_name("r12");
+                cs_field_t *c_r13 = cs_field_by_name("r13");
+                cs_field_t *c_r23 = cs_field_by_name("r23");
+
+                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+                  cs_lnum_t iel = cell_ids[icel];
+                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
+                  mei_evaluate(ev_formula_turb);
+                  c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
+                  c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
+                  c_r33->val[iel] = mei_tree_lookup(ev_formula_turb, "r33");
+                  c_r12->val[iel] = mei_tree_lookup(ev_formula_turb, "r12");
+                  c_r13->val[iel] = mei_tree_lookup(ev_formula_turb, "r13");
+                  c_r23->val[iel] = mei_tree_lookup(ev_formula_turb, "r23");
+                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+                  c_alp->val[iel] = mei_tree_lookup(ev_formula_turb, "alpha");
+                }
               }
             }
 
