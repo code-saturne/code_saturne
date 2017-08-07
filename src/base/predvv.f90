@@ -243,7 +243,6 @@ double precision, dimension(:,:), allocatable :: coefat
 double precision, dimension(:,:,:), allocatable :: coefbt
 double precision, dimension(:,:), allocatable :: tflmas, tflmab
 double precision, dimension(:,:), allocatable :: divt
-double precision, dimension(:), allocatable ::xnormp
 double precision, dimension(:,:), pointer :: forbr, c_st_vel
 double precision, dimension(:), pointer :: cvara_pr, cvara_k
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
@@ -440,131 +439,6 @@ if (iforbr.ge.0 .and. iterns.eq.1) then
     enddo
   enddo
 endif
-
-!-------------------------------------------------------------------------------
-! ---> RESIDU DE NORMALISATION POUR RESOLP
-!     Test d'un residu de normalisation de l'etape de pression
-!       plus comprehensible = div(rho u* + dt gradP^(n))-Gamma
-!       i.e. second membre du systeme en pression hormis la partie
-!       pression (sinon a convergence, on tend vers 0)
-!       Represente les termes que la pression doit equilibrer
-!     On calcule ici div(rho dt/rho gradP^(n)) et on complete a la fin
-!       avec  div(rho u*)
-!     Pour grad P^(n) on suppose que des CL de Neumann homogenes
-!       s'appliquent partout : on peut donc utiliser les CL de la
-!       vitesse pour u*+dt/rho gradP^(n). Comme on calcule en deux fois,
-!       on utilise les CL de vitesse homogenes pour dt/rho gradP^(n)
-!       ci-dessous et les CL de vitesse completes pour u* a la fin.
-
-if (iappel.eq.1.and.irnpnw.eq.1) then
-
-!     Calcul de dt/rho*grad P
-  do iel = 1, ncel
-    dtsrom = dt(iel)/crom(iel)
-    trav(1,iel) = grad(1,iel)*dtsrom
-    trav(2,iel) = grad(2,iel)*dtsrom
-    trav(3,iel) = grad(3,iel)*dtsrom
-  enddo
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synvin(trav)
-  endif
-
-!     Calcul de rho dt/rho*grad P.n aux faces
-!       Pour gagner du temps, on ne reconstruit pas.
-  itypfl = 1
-  ! VOF algorithm: the pressure step corresponds to the
-  ! correction of the volumetric flux, not the mass flux
-  if (ivofmt.ge.0)  itypfl = 0
-  init   = 1
-  inc    = 0
-  iflmb0 = 1
-  nswrp  = 1
-  iwarnp = vcopt_p%iwarni
-  imligp = vcopt_u%imligr
-  epsrgp = vcopt_u%epsrgr
-  climgp = vcopt_u%climgr
-
-  call inimav                                                     &
- ( ivarfl(iu)      , itypfl ,                                     &
-   iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
-   iwarnp ,                                                       &
-   epsrgp , climgp ,                                              &
-   crom   , brom   ,                                              &
-   trav   ,                                                       &
-   coefav , coefbv ,                                              &
-   viscf  , viscb  )
-
-  ! Compute div(rho dt/rho*grad P)
-  allocate(xnormp(ncelet))
-
-  init = 1
-  call divmas(init,viscf,viscb,xnormp)
-
-!-- Volumic Gamma source term adding for volumic mass flow rate
-  if (ncesmp.gt.0) then
-    do ii = 1, ncesmp
-      iel = icetsm(ii)
-      xnormp(iel) = xnormp(iel) - cell_f_vol(iel)*smacel(ii,ipr)
-    enddo
-  endif
-
-!-- Surface Gamma source term adding for surface condensation modelling
-  if (nfbpcd.gt.0) then
-    do ii = 1, nfbpcd
-      ifac= ifbpcd(ii)
-      iel = ifabor(ifac)
-      xnormp(iel) = xnormp(iel) - surfbn(ifac) * spcond(ii,ipr)
-    enddo
-  endif
-
-! --- volume Gamma source term adding for volume condensation modelling
-  if (icondv.eq.0) then
-    allocate(surfbm(ncelet))
-    surfbm(:) = 0.d0
-
-    do ii = 1, ncmast
-      iel= ltmast(ii)
-      surfbm(iel) = s_metal*volume(iel)/voltot
-      xnormp(iel) = xnormp(iel)  - surfbm(iel)*svcond(iel,ipr)
-    enddo
-
-    deallocate(surfbm)
-  endif
-
-  if (idilat.ge.4) then
-    call field_get_val_s(iustdy(itsrho), cpro_tsrho)
-  endif
-
-  ! Dilatable mass conservative algorithm
-  if (idilat.eq.2) then
-    do iel = 1, ncel
-      drom = crom(iel) - croma(iel)
-      xnormp(iel) = xnormp(iel) + drom*cell_f_vol(iel)/dt(iel)
-    enddo
-  ! Semi-analytic weakly compressible algorithm add + 1/rho Drho/Dt
-  else if (idilat.eq.4)then
-    do iel = 1, ncel
-      xnormp(iel) = xnormp(iel) + cpro_tsrho(iel)/crom(iel)
-    enddo
-  else if (idilat.eq.5) then
-    do iel = 1, ncel
-      xnormp(iel) = xnormp(iel) + cpro_tsrho(iel)
-    enddo
-  endif
-
-  ! Cavitation source term
-  if (icavit.gt.0) then
-    do iel = 1, ncel
-      xnormp(iel) = xnormp(iel) -cell_f_vol(iel)*gamcav(iel)*(1.d0/rho2 - 1.d0/rho1)
-    enddo
-  endif
-
-!     On conserve XNORMP, on complete avec u* a la fin et
-!       on le transfere a resopv
-
-endif
-
 
 !     Au premier appel, TRAV est construit directement ici.
 !     Au second  appel (estimateurs), TRAV contient deja
@@ -1822,53 +1696,6 @@ else if (iappel.eq.2) then
       c_estim(iel) = c_estim(iel) + (smbr(isou,iel)/volume(iel))**2
     enddo
   enddo
-endif
-
-!===============================================================================
-! 4. Finalize the norm of the pressure step (see resopv)
-!===============================================================================
-
-if (iappel.eq.1.and.irnpnw.eq.1) then
-
-  ! Compute div(rho u*)
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synvin(vel)
-  endif
-
-  ! To save time, no space reconstruction
-  itypfl = 1
-  ! VOF algorithm: the pressure step corresponds to the
-  ! correction of the volumetric flux, not the mass flux
-  if (ivofmt.ge.0)  itypfl = 0
-  init   = 1
-  inc    = 1
-  iflmb0 = 1
-  nswrp  = 1
-
-  iwarnp = vcopt_p%iwarni
-  imligp = vcopt_u%imligr
-  epsrgp = vcopt_u%epsrgr
-  climgp = vcopt_u%climgr
-
-  call inimav &
- ( ivarfl(iu)      , itypfl ,                                     &
-   iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
-   iwarnp ,                                                       &
-   epsrgp , climgp ,                                              &
-   crom   , brom   ,                                              &
-   vel    ,                                                       &
-   coefav , coefbv ,                                              &
-   viscf  , viscb  )
-
-  init = 0
-  call divmas(init,viscf,viscb,xnormp)
-
-  ! Compute the norm rnormp used in resopv
-  rnormp = sqrt(cs_gdot(ncel,xnormp,xnormp))
-
-  ! Free memory
-  deallocate(xnormp)
 endif
 
 ! ---> Finilaze estimators + Printings

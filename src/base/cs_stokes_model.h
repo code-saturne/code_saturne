@@ -59,10 +59,6 @@ typedef struct {
                                  continuity equation
                                  - 1: true (default)
                                  - 0: false */
-  int           irnpnw;       /* compute the normed residual for the pressure
-                                 step in the prediction step
-                                 - 1: true (default)
-                                 - 0: false */
   double        rnormp;       /* normed residual for the pressure step */
   double        arak;         /* Arakawa multiplicator for the Rhie and Chow
                                  filter (1 by default) */
