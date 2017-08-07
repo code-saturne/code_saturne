@@ -57,12 +57,12 @@ BEGIN_C_DECLS
 /*!
  * \brief Compute head loss coefficients.
  *
- * \param[out]  ckupdc  head loss coefficients for all zones, non-interleaved
+ * \param[out]  cku  head loss coefficients for all zones
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_head_losses_compute(cs_real_t ckupdc[]);
+cs_head_losses_compute(cs_real_6_t cku[]);
 
 /*----------------------------------------------------------------------------*/
 

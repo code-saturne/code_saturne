@@ -346,6 +346,6 @@ module paramx
   ! do not compile if the deprecated name (now used for the C routine) is used.
   integer cs_user_boundary_conditions, cs_user_parameters,     &
           cs_user_initialization, cs_user_physical_properties, &
-          cs_user_extra_operations, ushist
+          cs_user_extra_operations, ushist, cs_f_user_head_losses
 
 end module paramx

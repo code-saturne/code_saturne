@@ -234,7 +234,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 
 !===============================================================================
 
@@ -252,32 +252,23 @@ end subroutine usvist
 
 !===============================================================================
 
-
-subroutine ussmag &
-!================
-
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel ,                                              &
-   mijlij , mijmij )
-
 !===============================================================================
-!> FONCTION :
-!>
-!>
-!> MODIFICATION UTILISATEUR DE LA CONSTANTE DE SMAGORINSKY
-!> DANS LE CAS DE L'UTILISATION D'UN MODELE DYNAMIQUE
+! Purpose:
+! --------
+!
+!> ussmag
+!> \brief user modification of the Smagorinsky constant in the case of a
+!>   dynamic model
 !>
 !>              SMAGOR = Mij.Lij / Mij.Mij
 !>
-!> EN FAIT, DES MOYENNES LOCALES DU NUMERATEUR ET DU DENOMINATEUR
-!> SONT REALISEES AVANT L'APPEL A USSMAG, SOIT
+!> The local avergaes of the numerator and denominator are done before calling
+!> this subroutine, so
 !>
 !>              SMAGOR = < Mij.Lij > / < Mij.Mij >
 !>
-!> DANS CETTE ROUTINE, Mij.Lij ET Mij.Mij SONT PASSES EN ARGUMENT
-!> AVANT LA MOYENNE LOCALE.
+!> In this subroutine, Mij.Lij and Mij.Mij are passed as arguments before
+!> the local average.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -299,6 +290,15 @@ subroutine ussmag &
 !> \param[in]     mijlij        mij.lij before the local averaging
 !> \param[in]     mijmij        mij.mij before the local averaging
 !_______________________________________________________________________________
+
+subroutine ussmag &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   icepdc , icetsm , itypsm ,                                     &
+   dt     ,                                                       &
+   ckupdc , smacel ,                                              &
+   mijlij , mijmij )
+
+!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -327,7 +327,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision mijlij(ncelet), mijmij(ncelet)
 
 ! Local

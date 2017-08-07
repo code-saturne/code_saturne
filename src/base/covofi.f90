@@ -137,7 +137,7 @@ integer          ltmast(ncelet), itypst(ncelet,nvar)
 
 double precision dt(ncelet)
 double precision tslagr(ncelet,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision spcond(nfbpcd,nvar)
 double precision svcond(ncelet,nvar), flxmst(ncelet)
 double precision viscf(nfac), viscb(nfabor)

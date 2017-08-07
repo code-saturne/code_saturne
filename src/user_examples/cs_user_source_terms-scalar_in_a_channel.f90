@@ -147,7 +147,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
 
 ! Local variables
@@ -372,7 +372,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 !< [loc_var_scal]
 ! Local variables

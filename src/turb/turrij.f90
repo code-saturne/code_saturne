@@ -98,7 +98,7 @@ integer          icetsm(ncesmp)
 integer, dimension(ncesmp,nvar), target :: itypsm
 
 double precision dt(ncelet)
-double precision ckupdc(ncepdp,6)
+double precision ckupdc(6,ncepdp)
 
 double precision, dimension(ncesmp,nvar), target ::  smacel
 double precision, dimension(ncelet,ntersl), target :: tslagr

@@ -93,7 +93,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          izctsm(ncel)
 
 double precision dt(ncelet)
-double precision ckupdc(ncepdp,6)
+double precision ckupdc(6,ncepdp)
 double precision smacel(ncesmp,nvar)
 
 !< [loc_var]

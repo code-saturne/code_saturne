@@ -502,14 +502,6 @@ if (ncpdct.gt.0) then
 
   call cs_head_losses_compute(ckupdc)
 
-  iappel = 3
-
-  call cs_f_user_head_losses &
-( ncepdc , iappel ,                                              &
-  icepdc , izcpdc ,                                              &
-  dt     ,                                                       &
-  ckupdc )
-
  if (iflow .eq.1) then
    call laghlo(ncepdc, icepdc, itypfb, ckupdc)
  endif
@@ -733,12 +725,12 @@ if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0               &
     iel = icepdc(ielpdc)
 
     ! dttens = (1/dt + Kpdc)^-1
-    hdls(1) = ckupdc(ielpdc, 1) + 1.d0/dt(iel)
-    hdls(2) = ckupdc(ielpdc, 2) + 1.d0/dt(iel)
-    hdls(3) = ckupdc(ielpdc, 3) + 1.d0/dt(iel)
-    hdls(4) = ckupdc(ielpdc, 4)
-    hdls(5) = ckupdc(ielpdc, 5)
-    hdls(6) = ckupdc(ielpdc, 6)
+    hdls(1) = ckupdc(1, ielpdc) + 1.d0/dt(iel)
+    hdls(2) = ckupdc(2, ielpdc) + 1.d0/dt(iel)
+    hdls(3) = ckupdc(3, ielpdc) + 1.d0/dt(iel)
+    hdls(4) = ckupdc(4, ielpdc)
+    hdls(5) = ckupdc(5, ielpdc)
+    hdls(6) = ckupdc(6, ielpdc)
 
     call symmetric_matrix_inverse(hdls, dttens(:, iel))
   enddo

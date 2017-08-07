@@ -213,12 +213,6 @@ allocate(izftcd(ncel)) ! should be in init_pcond only
 ncetsm = volume_zone_n_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM)
 ncepdc = volume_zone_n_type_cells(VOLUME_ZONE_HEAD_LOSS)
 
-call cs_f_user_head_losses &
-( ncepdc , iappel ,                                              &
-  ivoid  , izcpdc ,                                              &
-  rvoid  ,                                                       &
-  rvoid  )
-
 ! Total number of cells with head-loss
 ncpdct = ncepdc
 if (irangp.ge.0) then
@@ -651,14 +645,6 @@ if (ncpdct.gt.0) then
   endif
 
   call volume_zone_select_type_cells(VOLUME_ZONE_HEAD_LOSS, icepdc)
-
-  iappel = 2
-
-  call cs_f_user_head_losses &
-( ncepdc , iappel ,                                              &
-  icepdc , izcpdc ,                                              &
-  dt     ,                                                       &
-  ckupdc )
 
 endif
 

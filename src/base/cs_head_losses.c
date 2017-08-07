@@ -108,12 +108,12 @@ BEGIN_C_DECLS
 /*!
  * \brief Compute head loss coefficients.
  *
- * \param[out]  ckupdc  head loss coefficients for all zones, non-interleaved
+ * \param[out]  cku  head loss coefficients for all zones
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_head_losses_compute(cs_real_t ckupdc[])
+cs_head_losses_compute(cs_real_6_t cku[])
 {
   const int n_zones = cs_volume_zone_n_zones();
 
@@ -134,9 +134,6 @@ cs_head_losses_compute(cs_real_t ckupdc[])
         n_loc_cells = z->n_elts;
     }
   }
-
-  cs_real_6_t *cku;
-  BFT_MALLOC(cku, n_loc_cells, cs_real_6_t);
 
   /* Loop on head loss zones */
 
@@ -161,14 +158,6 @@ cs_head_losses_compute(cs_real_t ckupdc[])
       cs_gui_head_losses(z, cku);
       cs_user_head_losses(z, cku);
 
-      /* Now copy to Fortran array
-         (de-interleave, and append zones data) */
-
-      for (cs_lnum_t j = 0; j < n_z_cells; j++) {
-        for (cs_lnum_t k = 0; k < 6; k++)
-          ckupdc[k * n_hl_cells + n_p_cells + j] = cku[j][k];
-      }
-
       /* update previous cells accumulator */
 
       n_p_cells += n_z_cells;
@@ -176,8 +165,6 @@ cs_head_losses_compute(cs_real_t ckupdc[])
     }
 
   }
-
-  BFT_FREE(cku);
 }
 
 /*----------------------------------------------------------------------------*/

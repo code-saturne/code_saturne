@@ -97,7 +97,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision tslagr(ncelet,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision prdv2f(ncelet)
 
 ! Local variables

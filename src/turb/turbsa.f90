@@ -93,7 +93,7 @@ integer          icvflb
 integer          ivoid(1)
 
 double precision dt(ncelet)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 
 ! Local variables
 

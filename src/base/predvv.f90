@@ -174,7 +174,7 @@ integer          ltmast(ncelet)
 double precision dt(ncelet)
 double precision flumas(nfac), flumab(nfabor)
 double precision tslagr(ncelet,*)
-double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision spcond(nfbpcd,nvar), svcond(ncelet,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision grdphd(3, ncelet)
@@ -768,12 +768,12 @@ if (iappel.eq.1) then
 
       ! Diagonal part
       do isou = 1, 3
-        fimp(isou,isou,iel) = fimp(isou,isou,iel) + romvom*ckupdc(ielpdc,isou)
+        fimp(isou,isou,iel) = fimp(isou,isou,iel) + romvom*ckupdc(isou,ielpdc)
       enddo
       ! Extra-diagonal part
-      cpdc12 = ckupdc(ielpdc,4)
-      cpdc23 = ckupdc(ielpdc,5)
-      cpdc13 = ckupdc(ielpdc,6)
+      cpdc12 = ckupdc(4,ielpdc)
+      cpdc23 = ckupdc(5,ielpdc)
+      cpdc13 = ckupdc(6,ielpdc)
 
       fimp(1,2,iel) = fimp(1,2,iel) + romvom*cpdc12
       fimp(2,1,iel) = fimp(2,1,iel) + romvom*cpdc12
@@ -1147,12 +1147,12 @@ if (iappel.eq.1.and.iphydr.eq.1.and.iterns.eq.1) then
       vit1   = vela(1,iel)
       vit2   = vela(2,iel)
       vit3   = vela(3,iel)
-      cpdc11 = ckupdc(ielpdc,1)
-      cpdc22 = ckupdc(ielpdc,2)
-      cpdc33 = ckupdc(ielpdc,3)
-      cpdc12 = ckupdc(ielpdc,4)
-      cpdc23 = ckupdc(ielpdc,5)
-      cpdc13 = ckupdc(ielpdc,6)
+      cpdc11 = ckupdc(1,ielpdc)
+      cpdc22 = ckupdc(2,ielpdc)
+      cpdc33 = ckupdc(3,ielpdc)
+      cpdc12 = ckupdc(4,ielpdc)
+      cpdc23 = ckupdc(5,ielpdc)
+      cpdc13 = ckupdc(6,ielpdc)
       dfrcxt(1 ,iel) = dfrcxt(1 ,iel) &
                     - crom(iel)*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
       dfrcxt(2 ,iel) = dfrcxt(2 ,iel) &

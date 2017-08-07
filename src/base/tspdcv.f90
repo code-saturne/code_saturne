@@ -67,7 +67,7 @@ implicit none
 integer          ncepdp
 integer          icepdc(ncepdp)
 
-double precision ckupdc(ncepdp,6)
+double precision ckupdc(6,ncepdp)
 double precision trav(3,ncelet)
 double precision vela  (3  ,ncelet)
 
@@ -93,12 +93,12 @@ do ielpdc = 1, ncepdp
 
   iel    = icepdc(ielpdc)
   romvom =-crom(iel)*cell_f_vol(iel)
-  cpdc11 = ckupdc(ielpdc,1)
-  cpdc22 = ckupdc(ielpdc,2)
-  cpdc33 = ckupdc(ielpdc,3)
-  cpdc12 = ckupdc(ielpdc,4)
-  cpdc23 = ckupdc(ielpdc,5)
-  cpdc13 = ckupdc(ielpdc,6)
+  cpdc11 = ckupdc(1,ielpdc)
+  cpdc22 = ckupdc(2,ielpdc)
+  cpdc33 = ckupdc(3,ielpdc)
+  cpdc12 = ckupdc(4,ielpdc)
+  cpdc23 = ckupdc(5,ielpdc)
+  cpdc13 = ckupdc(6,ielpdc)
   vit1   = vela(1,iel)
   vit2   = vela(2,iel)
   vit3   = vela(3,iel)

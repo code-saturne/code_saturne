@@ -72,9 +72,8 @@ AM_LDFLAGS =
 
 EXTRA_DIST = cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 cs_user_extra_operations.f90 \
-cs_user_head_losses.f90 cs_user_initialization.f90  \
-cs_user_parameters.f90 cs_user_physical_properties.f90 \
-cs_user_porosity.f90
+cs_user_initialization.f90  \
+cs_user_parameters.f90 cs_user_physical_properties.f90
 
 # Library source files
 
@@ -152,17 +151,6 @@ cs_f_user_extra_operations.obj: $(cs_user_f_extra_operations)
 cs_f_user_extra_operations.lo: $(cs_user_f_extra_operations)
 	$(LTFCCOMPILE) -c -o cs_f_user_extra_operations.o $(cs_user_f_extra_operations)
 
-cs_user_f_head_losses = $(top_srcdir)/src/user/cs_user_head_losses.f90
-
-cs_f_user_head_losses.o: $(cs_user_f_head_losses)
-	$(FCCOMPILE) -c -o cs_f_user_head_losses.o  $(cs_user_f_head_losses)
-
-cs_f_user_head_losses.obj: $(cs_user_f_head_losses)
-	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_head_losses)`
-
-cs_f_user_head_losses.lo: $(cs_user_f_head_losses)
-	$(LTFCCOMPILE) -c -o cs_f_user_head_losses.o $(cs_user_f_head_losses)
-
 cs_user_f_initialization = $(top_srcdir)/src/user/cs_user_initialization.f90
 
 cs_f_user_initialization.o: $(cs_user_f_initialization)
@@ -200,7 +188,7 @@ noinst_LTLIBRARIES = libcsuser.la
 libcsuser_la_SOURCES = $(userfiles)
 libcsuser_la_LIBADD = cs_f_user_parameters.lo cs_f_user_extra_operations.lo \
 cs_f_user_initialization.lo cs_f_user_physical_properties.lo \
-cs_f_user_boundary_conditions.lo cs_f_user_head_losses.lo \
+cs_f_user_boundary_conditions.lo \
 cs_f_user_porosity.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
@@ -209,7 +197,6 @@ user_DATA = $(userfiles) cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 \
 cs_user_parameters.f90 \
 cs_user_extra_operations.f90 \
-cs_user_head_losses.f90 \
 cs_user_initialization.f90 \
 cs_user_physical_properties.f90 \
 cs_user_porosity.f90
