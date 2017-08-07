@@ -1060,7 +1060,8 @@ if(itytur.eq.3.and.iterns.eq.1) then
   allocate(tflmas(3,nfac))
   allocate(tflmab(3,nfabor))
 
-  call divrij &
+  if (irijco.eq.0) then
+    call divrij &
  ( f_id   , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
@@ -1069,6 +1070,18 @@ if(itytur.eq.3.and.iterns.eq.1) then
    rij    ,                                                       &
    coefat , coefbt ,                                              &
    tflmas , tflmab )
+
+  else
+    call divrijco &
+ ( f_id   , itypfl ,                                              &
+   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+   iwarnp ,                                                       &
+   epsrgp , climgp ,                                              &
+   crom   , brom   ,                                              &
+   rij    ,                                                       &
+   coefat , coefbt ,                                              &
+   tflmas , tflmab )
+  endif
 
   deallocate(rij)
   deallocate(coefat, coefbt)

@@ -1051,7 +1051,7 @@ do ifac = 1, nfabor
             coefaf_rij(isou, ifac)      = -hint * coefa_rij(isou, ifac)
             coefad_rij(isou, ifac)      = 0.d0
             do ii = 1, 6
-              coefb_rij(isou,ii, ifac)  = alpha(isou,ii)
+              coefb_rij(isou,ii, ifac)  = alpha(ii, isou)
               if (ii.eq.isou) then
                 coefbf_rij(isou,ii, ifac) = hint * (1.d0 - coefb_rij(isou,ii, ifac))
               else
