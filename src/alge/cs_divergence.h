@@ -143,7 +143,7 @@ void CS_PROCF (projtv, PROJTV)
 );
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_tensor_flux
+ * Wrapper to cs_tensor_face_flux
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (divrij, DIVRIJ)
@@ -393,17 +393,15 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 /*!
  * \brief Add \f$ \rho \tens{r} \vect{s}_\ij\f$ to a flux.
  *
- * This is done by computing the flux associated to each line of the tensor.
- *
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
- * \param[in]     f_id          field ids (or -1)
+ * \param[in]     f_id          field id (or -1)
  * \param[in]     itypfl        indicator (take rho into account or not)
  *                               - 1 compute \f$ \rho\vect{u}\cdot\vect{s} \f$
  *                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$
  * \param[in]     iflmb0        the mass flux is set to 0 on walls and
  *                               symmetries if = 1
- * \param[in]     init          the flux is initialized to 0 if > 0
+ * \param[in]     init          the mass flux is initialized to 0 if > 0
  * \param[in]     inc           indicator
  *                               - 0 solve an increment
  *                               - 1 otherwise
@@ -421,41 +419,39 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
  *                               reconstruction
  * \param[in]     climgu        clipping coefficient for the computation of
  *                               the gradient
- * \param[in]     rom           cell density
- * \param[in]     romb          density at boundary faces
- * \param[in]     symten        symmetric tensor variable
- * \param[in]     cofast        boundary condition array for the variable
+ * \param[in]     c_rho         cell density
+ * \param[in]     b_rho         density at boundary faces
+ * \param[in]     c_var         variable
+ * \param[in]     coefav        boundary condition array for the variable
  *                               (explicit part - symmetric tensor array)
- * \param[in]     cofbst        boundary condition array for the variable
+ * \param[in]     coefbv        boundary condition array for the variable
  *                               (implicit part - 6x6 symmetric tensor array)
- * \param[in,out] i_massflux    mass flux vector at interior faces
-                                 \f$ \dot{m}_\fij \f$
- * \param[in,out] b_massflux    mass flux vector at boundary faces
-                                 \f$ \dot{m}_\fib \f$
+ * \param[in,out] i_massflux    mass flux at interior faces \f$ \dot{m}_\fij \f$
+ * \param[in,out] b_massflux    mass flux at boundary faces \f$ \dot{m}_\fib \f$
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_tensor_flux(const cs_mesh_t             *m,
-               cs_mesh_quantities_t        *fvq,
-               int                          f_id,
-               int                          itypfl,
-               int                          iflmb0,
-               int                          init,
-               int                          inc,
-               int                          imrgra,
-               int                          nswrgu,
-               int                          imligu,
-               int                          iwarnu,
-               double                       epsrgu,
-               double                       climgu,
-               const cs_real_t              rom[],
-               const cs_real_t              romb[],
-               const cs_real_6_t            tens[],
-               const cs_real_6_t            coefav[],
-               const cs_real_66_t           coefbv[],
-               cs_real_3_t        *restrict i_massflux,
-               cs_real_3_t        *restrict b_massflux);
+cs_tensor_face_flux(const cs_mesh_t          *m,
+                    cs_mesh_quantities_t     *fvq,
+                    int                       f_id,
+                    int                       itypfl,
+                    int                       iflmb0,
+                    int                       init,
+                    int                       inc,
+                    int                       imrgra,
+                    int                       nswrgu,
+                    int                       imligu,
+                    int                       iwarnu,
+                    double                    epsrgu,
+                    double                    climgu,
+                    const cs_real_t           c_rho[],
+                    const cs_real_t           b_rho[],
+                    const cs_real_6_t         c_var[],
+                    const cs_real_6_t         coefav[],
+                    const cs_real_66_t        coefbv[],
+                    cs_real_3_t     *restrict i_massflux,
+                    cs_real_3_t     *restrict b_massflux);
 
 /*----------------------------------------------------------------------------*/
 

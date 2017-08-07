@@ -290,6 +290,72 @@ cs_math_sym_33_3_product(const cs_real_t  m[6],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the product of a symmetric matrix of 3x3 real values by
+ * a vector of 3 real values and add it to the vector.
+ * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
+ *
+ * \param[in]     m             matrix of 3x3 real values
+ * \param[in]     v             vector of 3 real values
+ * \param[out]    mv            vector of 3 real values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_sym_33_3_product_add(const cs_real_t  m[6],
+                             const cs_real_t  v[3],
+                             cs_real_t        mv[restrict 3])
+{
+  mv[0] += m[0] * v[0] + m[3] * v[1] + m[5] * v[2];
+  mv[1] += m[3] * v[0] + m[1] * v[1] + m[4] * v[2];
+  mv[2] += m[5] * v[0] + m[4] * v[1] + m[2] * v[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the product of a matrix of 6x6 real values by
+ * a vector of 6 real values.
+ *
+ * \param[in]     m             matrix of 6x6 real values
+ * \param[in]     v             vector of 6 real values
+ * \param[out]    mv            vector of 6 real values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_66_6_product(const cs_real_t  m[6][6],
+                     const cs_real_t  v[6],
+                     cs_real_t        mv[restrict 6])
+{
+  for (int i = 0; i < 6; i++) {
+    for (int j = 0; j < 6; j++)
+      mv[i] = m[i][j] * v[j];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the product of a matrix of 6x6 real values by
+ * a vector of 6 real values and add it to the vector.
+ *
+ * \param[in]     m             matrix of 6x6 real values
+ * \param[in]     v             vector of 6 real values
+ * \param[out]    mv            vector of 6 real values
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_66_6_product_add(const cs_real_t  m[6][6],
+                         const cs_real_t  v[6],
+                         cs_real_t        mv[restrict 6])
+{
+  for (int i = 0; i < 6; i++) {
+    for (int j = 0; j < 6; j++)
+      mv[i] += m[i][j] * v[j];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the determinant of a 3x3 matrix
  *
  * \param[in]  m    3x3 matrix
