@@ -231,9 +231,9 @@ cs_lagr_car(int              iprev,
             || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 2)
           xrkl = extra->diftl0 / rom;
         else if (extra->cpro_viscls != NULL)
-          xrkl = extra->cpro_viscls->val[cell_id] / rom;
+          xrkl = extra->cpro_viscls->val[cell_id] / (rom * xcp);
         else
-          xrkl = extra->visls0 / rom;
+          xrkl = extra->visls0 / (rom * xcp);
 
         cs_real_t prt  = xnul / xrkl;
         cs_real_t fnus = 2.0 + 0.55 * pow (rep, 0.5) * pow (prt, (d1s3));
