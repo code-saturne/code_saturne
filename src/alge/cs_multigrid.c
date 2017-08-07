@@ -1064,9 +1064,6 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
   cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[0], cs_grid_get_comm(g));
 #endif
 
-  if (mg->info.type[0] && symmetric)
-    cs_sles_it_set_symmetric(mgd->sles_hierarchy[0], true);
-
   cs_sles_it_setup(mgd->sles_hierarchy[0], name, m, verbosity - 2);
   mgd->sles_hierarchy[1] = NULL;
 
@@ -1098,11 +1095,6 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
 
     cs_sles_it_set_shareable(mgd->sles_hierarchy[i*2 + 1],
                              mgd->sles_hierarchy[i*2]);
-
-    if (mg->info.type[0] && symmetric)
-      cs_sles_it_set_symmetric(mgd->sles_hierarchy[i*2], true);
-    if (mg->info.type[1] && symmetric)
-      cs_sles_it_set_symmetric(mgd->sles_hierarchy[i*2+1], true);
 
     cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m, verbosity - 2);
     cs_sles_it_setup(mgd->sles_hierarchy[i*2+1], "", m, verbosity - 2);
@@ -1143,9 +1135,6 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
     cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[i*2],
                                    cs_grid_get_comm(mgd->grid_hierarchy[i]));
 #endif
-
-    if (mg->info.type[2] && symmetric)
-      cs_sles_it_set_symmetric(mgd->sles_hierarchy[i*2], true);
 
     cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m, verbosity - 2);
     mgd->sles_hierarchy[i*2+1] = NULL;
@@ -1897,19 +1886,19 @@ _multigrid_pc_create(void)
 
   cs_multigrid_set_solver_options
     (mg,
-     CS_SLES_P_GAUSS_SEIDEL, /* descent smoothe */
-     CS_SLES_P_GAUSS_SEIDEL, /* ascent smoothe */
-     CS_SLES_P_GAUSS_SEIDEL, /* coarse smoothe */
-     1,                      /* n_max_cycles */
-     1,                      /* n_max_iter_descent, */
-     1,                      /* n_max_iter_ascent */
-     1,                      /* n_max_iter_coarse */
-     0,                      /* poly_degree_descent */
-     0,                      /* poly_degree_ascent */
-     0,                      /* poly_degree_coarse */
-     -1.0,                   /* precision_mult_descent */
-     -1.0,                   /* precision_mult_ascent */
-     1.0);                   /* precision_mult_coarse */
+     CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
+     CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
+     CS_SLES_P_SYM_GAUSS_SEIDEL, /* coarse smoothe */
+     1,                          /* n_max_cycles */
+     1,                          /* n_max_iter_descent, */
+     1,                          /* n_max_iter_ascent */
+     1,                          /* n_max_iter_coarse */
+     0,                          /* poly_degree_descent */
+     0,                          /* poly_degree_ascent */
+     0,                          /* poly_degree_coarse */
+     -1.0,                       /* precision_mult_descent */
+     -1.0,                       /* precision_mult_ascent */
+     1.0);                       /* precision_mult_coarse */
 
   return mg;
 }
@@ -2446,8 +2435,8 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
   info->precision_mult[2] = precision_mult_coarse;
 
   for (int i = 0; i < 3; i++) {
-    if (   info->type[i] == CS_SLES_JACOBI
-        || info->type[i] == CS_SLES_P_GAUSS_SEIDEL)
+    if (   info->type[i] >= CS_SLES_JACOBI
+        || info->type[i] <= CS_SLES_P_SYM_GAUSS_SEIDEL)
       info->poly_degree[i] = -1;
   }
 }

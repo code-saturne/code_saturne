@@ -56,14 +56,15 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_SLES_PCG,             /* Preconditionned conjugate gradient */
-  CS_SLES_JACOBI,          /* Jacobi */
-  CS_SLES_BICGSTAB,        /* Bi-conjugate gradient stabilized */
-  CS_SLES_BICGSTAB2,       /* Bi-conjugate gradient stabilized - 2*/
-  CS_SLES_GMRES,           /* Generalized minimal residual */
-  CS_SLES_P_GAUSS_SEIDEL,  /* Process-local Gauss-Seidel */
-  CS_SLES_PCR3,            /* 3-layer conjugate residual */
-  CS_SLES_N_IT_TYPES       /* Number of resolution algorithms */
+  CS_SLES_PCG,                 /* Preconditionned conjugate gradient */
+  CS_SLES_JACOBI,              /* Jacobi */
+  CS_SLES_BICGSTAB,            /* Bi-conjugate gradient stabilized */
+  CS_SLES_BICGSTAB2,           /* Bi-conjugate gradient stabilized - 2*/
+  CS_SLES_GMRES,               /* Generalized minimal residual */
+  CS_SLES_P_GAUSS_SEIDEL,      /* Process-local Gauss-Seidel */
+  CS_SLES_P_SYM_GAUSS_SEIDEL,  /* Process-local symmetric Gauss-Seidel */
+  CS_SLES_PCR3,                /* 3-layer conjugate residual */
+  CS_SLES_N_IT_TYPES           /* Number of resolution algorithms */
 
 } cs_sles_it_type_t;
 
@@ -394,20 +395,6 @@ cs_sles_it_set_mpi_reduce_comm(cs_sles_it_t  *context,
 void
 cs_sles_it_assign_order(cs_sles_it_t   *context,
                         cs_lnum_t     **order);
-
-/*----------------------------------------------------------------------------
- * Assign symmetric option to iterative solver.
- *
- * This is useful only for Process-local Gauss-Seidel.
- *
- * parameters:
- *   context   <-> pointer to iterative solver info and context
- *   symmetric <-- symmetric if true
- *----------------------------------------------------------------------------*/
-
-void
-cs_sles_it_set_symmetric(cs_sles_it_t   *context,
-                         bool            symmetric);
 
 /*----------------------------------------------------------------------------
  * Query mean number of rows under which Conjugate Gradient algorithm

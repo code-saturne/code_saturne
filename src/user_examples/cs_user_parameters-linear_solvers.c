@@ -390,8 +390,8 @@ cs_user_linear_solvers(void)
 
     cs_multigrid_set_solver_options
       (mg,
-       CS_SLES_P_GAUSS_SEIDEL, /* descent smoother (CS_SLES_P_GAUSS_SEIDEL) */
-       CS_SLES_P_GAUSS_SEIDEL, /* ascent smoother (CS_SLES_P_GAUSS_SEIDEL) */
+       CS_SLES_P_GAUSS_SEIDEL, /* descent smoother (CS_SLES_P_SYM_GAUSS_SEIDEL) */
+       CS_SLES_P_GAUSS_SEIDEL, /* ascent smoother (CS_SLES_P_SYM_GAUSS_SEIDEL) */
        CS_SLES_PCG,            /* coarse solver (CS_SLES_P_GAUSS_SEIDEL) */
        1,              /* n max cycles (default 1) */
        1,              /* n max iter for descent (default 1) */

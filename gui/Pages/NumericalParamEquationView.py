@@ -127,6 +127,7 @@ class SolverChoiceDelegate(QItemDelegate):
         editor.addItem("BiCGstab2")
         editor.addItem("GMRES")
         editor.addItem("Gauss Seidel")
+        editor.addItem("Symmetric Gauss Seidel")
         editor.addItem("conjugate residual")
         if mg:
             editor.addItem("Multigrid")
@@ -136,8 +137,8 @@ class SolverChoiceDelegate(QItemDelegate):
 
     def setEditorData(self, comboBox, index):
         dico = {"automatic": 0, "conjugate_gradient": 1, "jacobi": 2,
-                "bi_cgstab": 3, "bi_cgstab2": 4, "gmres": 5, "multigrid": 8,
-                "gauss_seidel": 6, "PCR3": 7}
+                "bi_cgstab": 3, "bi_cgstab2": 4, "gmres": 5, "multigrid": 9,
+                "gauss_seidel": 6, "symmetric_gauss_seidel": 7, "PCR3": 8}
         row = index.row()
         string = index.model().dataSolver[row]['iresol']
         idx = dico[string]
@@ -497,28 +498,30 @@ class StandardItemModelSolver(QStandardItemModel):
 
 
     def populateModel(self):
-        self.dicoV2M= {"Multigrid"          : 'multigrid',
-                       "Conjugate gradient" : 'conjugate_gradient',
-                       "Jacobi"             : 'jacobi',
-                       "BiCGstab"           : 'bi_cgstab',
-                       "BiCGstab2"          : 'bi_cgstab2',
-                       "GMRES"              : 'gmres',
-                       "Automatic"          : "automatic",
-                       "Gauss Seidel"       : "gauss_seidel",
-                       "conjugate residual" : "PCR3",
-                       "None"               : "none",
-                       "Polynomial"         : "polynomial"}
-        self.dicoM2V= {"multigrid"          : 'Multigrid',
-                       "conjugate_gradient" : 'Conjugate gradient',
-                       "jacobi"             : 'Jacobi',
-                       "bi_cgstab"          : 'BiCGstab',
-                       "bi_cgstab2"         : 'BiCGstab2',
-                       'gmres'              : "GMRES",
-                       "automatic"          : "Automatic",
-                       "gauss_seidel"       : "Gauss Seidel",
-                       "PCR3"               : "conjugate residual",
-                       "none"               : "None",
-                       "polynomial"         : "Polynomial"}
+        self.dicoV2M= {"Multigrid"              : 'multigrid',
+                       "Conjugate gradient"     : 'conjugate_gradient',
+                       "Jacobi"                 : 'jacobi',
+                       "BiCGstab"               : 'bi_cgstab',
+                       "BiCGstab2"              : 'bi_cgstab2',
+                       "GMRES"                  : 'gmres',
+                       "Automatic"              : "automatic",
+                       "Gauss Seidel"           : "gauss_seidel",
+                       "Symmetric Gauss Seidel" : "symmetric_gauss_seidel",
+                       "conjugate residual"     : "PCR3",
+                       "None"                   : "none",
+                       "Polynomial"             : "polynomial"}
+        self.dicoM2V= {"multigrid"              : 'Multigrid',
+                       "conjugate_gradient"     : 'Conjugate gradient',
+                       "jacobi"                 : 'Jacobi',
+                       "bi_cgstab"              : 'BiCGstab',
+                       "bi_cgstab2"             : 'BiCGstab2',
+                       'gmres'                  : "GMRES",
+                       "automatic"              : "Automatic",
+                       "gauss_seidel"           : "Gauss Seidel",
+                       "symmetric_gauss_seidel" : "Symmetric Gauss Seidel",
+                       "PCR3"                   : "conjugate residual",
+                       "none"                   : "None",
+                       "polynomial"             : "Polynomial"}
 
         for name in self.NPE.getSolverList():
             row = self.rowCount()

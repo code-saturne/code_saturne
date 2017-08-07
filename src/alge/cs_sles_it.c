@@ -101,6 +101,8 @@ BEGIN_C_DECLS
        Preconditioned GMRES (generalized minimum residual)
   \var CS_SLES_P_GAUSS_SEIDEL
        Process-local Gauss-Seidel
+  \var CS_SLES_P_SYM_GAUSS_SEIDEL
+       Process-local symmetric Gauss-Seidel
   \var CS_SLES_PCR3
        3-layer conjugate residual
 
@@ -194,8 +196,6 @@ struct _cs_sles_it_t {
 
   cs_sles_it_type_t    type;               /* Solver type */
 
-  bool                 symmetric;          /* symmetric for Gauss-Seidel */
-
   bool                 update_stats;       /* do stats need to be updated ? */
 
   int                  n_max_iter;         /* maximum number of iterations */
@@ -283,7 +283,8 @@ const char *cs_sles_it_type_name[] = {N_("Conjugate gradient"),
                                       N_("BiCGstab"),
                                       N_("BiCGstab2"),
                                       N_("GMRES"),
-                                      N_("Processor Gauss-Seidel"),
+                                      N_("Local Gauss-Seidel"),
+                                      N_("Local symmetric Gauss-Seidel"),
                                       N_("3-layer conjugate residual")};
 
 /*============================================================================
@@ -363,11 +364,11 @@ _convergence_test(cs_sles_it_t              *c,
     double vals = residue;
     double wall_time = cs_timer_wtime();
     c->plot_time_stamp += 1;
-    cs_time_plot_vals_write(c->plot,                /* time plot structure */
-                            c->plot_time_stamp,     /* current iteration number */
-                            wall_time,              /* current time */
-                            1,                      /* number of values */
-                            &vals);                 /* values */
+    cs_time_plot_vals_write(c->plot,             /* time plot structure */
+                            c->plot_time_stamp,  /* current iteration number */
+                            wall_time,           /* current time */
+                            1,                   /* number of values */
+                            &vals);              /* values */
 
   }
 
@@ -423,7 +424,6 @@ _convergence_test(cs_sles_it_t              *c,
       bft_printf(final_fmt, n_iter, residue, residue/convergence->r_norm);
     return CS_SLES_CONVERGED;
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -3557,6 +3557,16 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
   cs_sles_convergence_state_t cvg;
   double  res2, residue;
 
+  /* Check matrix storage type */
+
+  if (cs_matrix_get_type(a) != CS_MATRIX_MSR)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Symmetric Gauss-Seidel Jacobi hybrid solver only supported with a\n"
+         "matrix using %s (%s) storage."),
+       cs_matrix_type_name[CS_MATRIX_MSR],
+       _(cs_matrix_type_fullname[CS_MATRIX_MSR]));
+
   unsigned n_iter = 0;
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
@@ -3854,7 +3864,6 @@ _p_gauss_seidel(cs_sles_it_t              *c,
                                       rhs,
                                       vx);
 
-  else if (c->symmetric == false)
     cvg = _p_gauss_seidel_msr(c,
                               a,
                               diag_block_size,
@@ -3862,15 +3871,6 @@ _p_gauss_seidel(cs_sles_it_t              *c,
                               convergence,
                               rhs,
                               vx);
-
-  else
-    cvg = _p_sym_gauss_seidel_msr(c,
-                                  a,
-                                  diag_block_size,
-                                  rotation_mode,
-                                  convergence,
-                                  rhs,
-                                  vx);
 
   return cvg;
 }
@@ -3980,6 +3980,7 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   switch(c->type) {
   case CS_SLES_JACOBI:
   case CS_SLES_P_GAUSS_SEIDEL:
+  case CS_SLES_P_SYM_GAUSS_SEIDEL:
     c->_pc = NULL;
     break;
   case CS_SLES_PCG:         /* specific implementation for non-preconditioned */
@@ -3998,8 +3999,6 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
       c->_pc =cs_sles_pc_poly_2_create();
   }
   c->pc = c->_pc;
-
-  c->symmetric = false;
 
   c->update_stats = update_stats;
 
@@ -4444,6 +4443,15 @@ cs_sles_it_solve(void                *context,
                             rhs,
                             vx);
       break;
+    case CS_SLES_P_SYM_GAUSS_SEIDEL:
+      cvg = _p_sym_gauss_seidel_msr(c,
+                                    a,
+                                    _diag_block_size,
+                                    rotation_mode,
+                                    &convergence,
+                                    rhs,
+                                    vx);
+      break;
     default:
       bft_error
         (__FILE__, __LINE__, 0,
@@ -4787,25 +4795,6 @@ cs_sles_it_assign_order(cs_sles_it_t   *context,
     *order = NULL;
 
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Assign symmetric option to iterative solver.
- *
- * This is useful only for Process-local Gauss-Seidel.
- *
- * \param[in, out]  context    pointer to iterative solver info and context
- * \param[in]       symmetric  symmetric if true
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sles_it_set_symmetric(cs_sles_it_t   *context,
-                         bool            symmetric)
-{
-  if (context->type == CS_SLES_P_GAUSS_SEIDEL)
-    context->symmetric = symmetric;
 }
 
 /*----------------------------------------------------------------------------*/

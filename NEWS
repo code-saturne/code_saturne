@@ -5,6 +5,8 @@ Trunk (unreleased)
 Numerics
 --------
 
+- Simplify selection of symmetric Gauss-Seidel linear solver variant.
+
 - Make vectorial and tensorial slope tests invariant by rotation and
   identical for all components (previous version available for the
   velocity with isstpc = -1 in var_cal_opt structure).

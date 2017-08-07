@@ -5685,6 +5685,8 @@ cs_gui_linear_solvers(void)
         sles_it_type = CS_SLES_GMRES;
       else if (cs_gui_strcmp(algo_choice, "gauss_seidel"))
         sles_it_type = CS_SLES_P_GAUSS_SEIDEL;
+      else if (cs_gui_strcmp(algo_choice, "symmetric_gauss_seidel"))
+        sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
       else if (cs_gui_strcmp(algo_choice, "PCR3"))
         sles_it_type = CS_SLES_PCR3;
 
@@ -5722,8 +5724,8 @@ cs_gui_linear_solvers(void)
           cs_sles_it_transfer_pc(c, &pc);
           cs_multigrid_set_solver_options
             (mg,
-             CS_SLES_P_GAUSS_SEIDEL,
-             CS_SLES_P_GAUSS_SEIDEL,
+             CS_SLES_P_SYM_GAUSS_SEIDEL,
+             CS_SLES_P_SYM_GAUSS_SEIDEL,
              CS_SLES_PCG,
              1,   /* n max cycles */
              1,   /* n max iter for descent */
@@ -5756,9 +5758,9 @@ cs_gui_linear_solvers(void)
           if (var_cal_opt.iconv > 0)
             cs_multigrid_set_solver_options
               (mg,
-               CS_SLES_P_GAUSS_SEIDEL,
-               CS_SLES_P_GAUSS_SEIDEL,
-               CS_SLES_P_GAUSS_SEIDEL,
+               CS_SLES_P_SYM_GAUSS_SEIDEL,
+               CS_SLES_P_SYM_GAUSS_SEIDEL,
+               CS_SLES_P_SYM_GAUSS_SEIDEL,
                100, /* n max cycles */
                3,   /* n max iter for descent (default 2) */
                2,   /* n max iter for ascent (default 10) */
