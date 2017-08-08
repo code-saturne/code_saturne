@@ -47,6 +47,8 @@ User changes
 Architectural changes
 ---------------------
 
+- Default to PyQt5 instead of PyQt4 when both are available.
+
 - Remove support for restart files older than version 4.0.
 
 Bug fixes

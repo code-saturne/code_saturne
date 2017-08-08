@@ -726,37 +726,6 @@ cs_have_gui_qt5=no
 
 if test "x$cs_have_gui" = "xcheck" ; then
 
-  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "x4" ; then
-
-    AC_MSG_CHECKING([for PyQt4 version >= 4.5])
-
-    prog="[import sys, string
-try: import PyQt4
-except ImportError: sys.exit(1)
-from PyQt4.QtCore import *
-if list(map(int, QT_VERSION_STR.split('.'))) < [4,5,0]: sys.exit(1)
-if list(map(int, PYQT_VERSION_STR.split('.'))) < [4,5,0]: sys.exit(1)
-sys.exit(0)]"
-
-    ${PYTHON} -c "${prog}"
-    retval=$?
-
-    if test $retval -ne 0 ; then
-      AC_MSG_RESULT([no])
-    else
-      AC_MSG_RESULT([yes])
-      cs_have_gui=yes
-      cs_have_gui_qt4=yes
-    fi
-
-  fi
-
-fi
-
-if test "x$cs_have_gui" = "xcheck" ; then
-
-  cs_have_gui=no
-
   if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "x5" ; then
 
     AC_MSG_CHECKING([for PyQt5 version >= 5.0])
@@ -774,11 +743,42 @@ sys.exit(0)]"
 
     if test $retval -ne 0 ; then
       AC_MSG_RESULT([no])
-      AC_MSG_FAILURE([cannot find PyQt5 support (>= 5.0) or PyQt4 support (>= 4.5), Graphical User Interface cannot be installed])
     else
       AC_MSG_RESULT([yes])
       cs_have_gui=yes
       cs_have_gui_qt5=yes
+    fi
+
+  fi
+
+fi
+
+if test "x$cs_have_gui" = "xcheck" ; then
+
+  cs_have_gui=no
+
+  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "x4" ; then
+
+    AC_MSG_CHECKING([for PyQt4 version >= 4.5])
+
+    prog="[import sys, string
+try: import PyQt4
+except ImportError: sys.exit(1)
+from PyQt4.QtCore import *
+if list(map(int, QT_VERSION_STR.split('.'))) < [4,5,0]: sys.exit(1)
+if list(map(int, PYQT_VERSION_STR.split('.'))) < [4,5,0]: sys.exit(1)
+sys.exit(0)]"
+
+    ${PYTHON} -c "${prog}"
+    retval=$?
+
+    if test $retval -ne 0 ; then
+      AC_MSG_RESULT([no])
+      AC_MSG_FAILURE([cannot find PyQt5 support (>= 5.0) or PyQt4 support (>= 4.5), Graphical User Interface cannot be installed])
+    else
+      AC_MSG_RESULT([yes])
+      cs_have_gui=yes
+      cs_have_gui_qt4=yes
     fi
   fi
 
