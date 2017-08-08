@@ -690,6 +690,12 @@ cs_sles_solve_native(int                  f_id,
         need_msr = true;
     }
 
+    /* MSR not supported yet for full blocks */
+    if (extra_diag_block_size != NULL) {
+      if (extra_diag_block_size[0] > 1)
+        need_msr = false;
+    }
+
     if (need_msr)
       a = cs_matrix_msr(symmetric,
                         diag_block_size,

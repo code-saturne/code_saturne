@@ -4233,9 +4233,12 @@ cs_sles_it_setup(void               *context,
 
   if (   c->type == CS_SLES_JACOBI
       || c->type == CS_SLES_P_GAUSS_SEIDEL
-      || c->type == CS_SLES_P_SYM_GAUSS_SEIDEL)
+      || c->type == CS_SLES_P_SYM_GAUSS_SEIDEL) {
+    /* Force to Jacobi in case matrix type is not adapted */
+    if (cs_matrix_get_type(a) != CS_MATRIX_MSR)
+      c->type = CS_SLES_JACOBI;
     _setup_sles_it(c, name, a, verbosity, diag_block_size, true);
-
+  }
   else
     _setup_sles_it(c, name, a, verbosity, diag_block_size, false);
 }
