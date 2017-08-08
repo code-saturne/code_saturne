@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-07-13 17:22+0200\n"
+"POT-Creation-Date: 2017-08-08 17:30+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3929,8 +3929,11 @@ msgstr "BiCGstab2"
 msgid "GMRES"
 msgstr ""
 
-msgid "Processor Gauss-Seidel"
+msgid "Local Gauss-Seidel"
 msgstr "Gauss-Seidel local"
+
+msgid "Local symmetric Gauss-Seidel"
+msgstr "Gauss-Seidel symmétrique local"
 
 msgid "3-layer conjugate residual"
 msgstr "Résidu conjugué à 3 couches"
@@ -3984,6 +3987,12 @@ msgstr "  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"
 
 #, c-format
 msgid ""
+"Symmetric Gauss-Seidel Jacobi hybrid solver only supported with a\n"
+"matrix using %s (%s) storage."
+msgstr ""
+
+#, c-format
+msgid ""
 "Gauss-Seidel Jacobi hybrid solver only supported with a\n"
 "matrix using %s (%s) storage."
 msgstr ""
@@ -4023,11 +4032,33 @@ msgid ""
 "  Total solution time:           %12.3f\n"
 msgstr ""
 "  Nombre de préparations :       %12d\n"
-"  Number d'appels :              %12d\n"
+"  Nombre d'appels :              %12d\n"
 "  Nombre d'itérations minimal :  %12d\n"
 "  Nombre d'itérations maximal :  %12d\n"
 "  Nombre d'itérations moyen :    %12d\n"
 "  Temps total de préparation :   %12.3f\n"
+"  Temps total de résolution :    %12.3f\n"
+
+#, c-format
+msgid ""
+"\n"
+"  Backup solver type:            %s\n"
+msgstr ""
+"\n"
+"  Type de solveur de secours :   %s\n"
+
+#, c-format
+msgid ""
+"  Number of calls:               %12d\n"
+"  Minimum number of iterations:  %12d\n"
+"  Maximum number of iterations:  %12d\n"
+"  Mean number of iterations:     %12d\n"
+"  Total solution time:           %12.3f\n"
+msgstr ""
+"  Nombre d'appels :              %12d\n"
+"  Nombre d'itérations minimal :  %12d\n"
+"  Nombre d'itérations maximal :  %12d\n"
+"  Nombre d'itérations moyen :    %12d\n"
 "  Temps total de résolution :    %12.3f\n"
 
 #, c-format
@@ -9649,6 +9680,11 @@ msgid ""
 " Stop computing the Dirichlet value.\n"
 msgstr ""
 
+msgid ""
+" Invalid type of definition.\n"
+" Stop computing the Neumann value.\n"
+msgstr ""
+
 #, c-format
 msgid ""
 " Undefined iterative solver for solving %s equation.\n"
@@ -14842,7 +14878,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   Rij-epsilon         (iturb = 30)\n"
+"   Rij-epsilon LRR     (iturb = 30)\n"
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    irijco:      %14d (Coupled resolution)\n"
@@ -14868,7 +14904,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"   SSG Rij-epsilon     (iturb = 31)\n"
+"   Rij-epsilon SSG    (iturb = 31)\n"
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    irijco:      %14d (Coupled resolution)\n"

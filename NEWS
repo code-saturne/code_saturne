@@ -5,6 +5,10 @@ Trunk (unreleased)
 Numerics
 --------
 
+- Added fallback mechanism to allow less stable but faster Krylov solvers
+  (such as BiCGstab) to switch temporarily to GMRES in case of
+  convergence error.
+
 - Switch from Jacobi to processor-local symmetric Gauss-Seidel as default
   linear solver type for non-symmetric systems.
 

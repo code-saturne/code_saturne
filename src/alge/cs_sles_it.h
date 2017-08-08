@@ -396,6 +396,26 @@ void
 cs_sles_it_assign_order(cs_sles_it_t   *context,
                         cs_lnum_t     **order);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define convergence level under which the fallback to another
+ *        solver may be used if applicable.
+ *
+ * Currently, this mechanism is only by default used for BiCGstab and
+ * 3-layer conjugate residual solvers with scalar matrices, which may
+ * fall back to a preconditioned GMRES solver. For those solvers, the
+ * default threshold is \ref CS_SLES_BREAKDOWN, meaning that divergence
+ * (but not breakdown) will lead to the use of the fallback mechanism.
+ *
+ * \param[in, out]  context   pointer to iterative solver info and context
+ * \param[in]       thresold  convergence level under which fallback is used
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_fallback_threshold(cs_sles_it_t                 *context,
+                                  cs_sles_convergence_state_t   threshold);
+
 /*----------------------------------------------------------------------------
  * Query mean number of rows under which Conjugate Gradient algorithm
  * uses the single-reduction variant.

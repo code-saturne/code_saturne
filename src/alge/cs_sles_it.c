@@ -166,9 +166,6 @@ typedef struct _cs_sles_it_setup_t {
 
   cs_lnum_t            n_rows;           /* number of associated rows */
 
-  const cs_matrix_t   *a;                /* pointer to matrix */
-  cs_matrix_t        *_a;                /* private pointer to matrix */
-
   const cs_real_t     *ad_inv;           /* pointer to diagonal inverse */
   cs_real_t           *_ad_inv;          /* private pointer to
                                             diagonal inverse */
@@ -245,6 +242,12 @@ struct _cs_sles_it_t {
   cs_sles_it_add_t            *add_data;   /* additional data */
 
   cs_sles_it_setup_t          *setup_data; /* setup data */
+
+  /* Alternative solvers (fallback or heuristics) */
+
+  cs_sles_convergence_state_t  fallback_cvg;  /* threshold for fallback
+                                                 convergence */
+  cs_sles_it_t                *fallback;   /* fallback solver */
 
 };
 
@@ -3435,8 +3438,6 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    register double r;
-
     n_iter += 1;
 
     /* Synchronize ghost cells first */
@@ -3474,7 +3475,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
     if (diag_block_size == 1) {
 
-#     pragma omp parallel for private(r) reduction(+:res2)      \
+#     pragma omp parallel for reduction(+:res2)      \
                           if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
@@ -3490,7 +3491,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
         vx0 *= ad_inv[ii];
 
-        r = ad[ii] * (vx0-vxm1);
+        register double r = ad[ii] * (vx0-vxm1);
         res2 += (r*r);
 
         vx[ii] = vx0;
@@ -3499,7 +3500,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
     }
     else {
 
-#     pragma omp parallel for private(r) reduction(+:res2) \
+#     pragma omp parallel for reduction(+:res2) \
                           if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
@@ -3909,6 +3910,92 @@ _p_gauss_seidel(cs_sles_it_t              *c,
   return cvg;
 }
 
+/*----------------------------------------------------------------------------
+ * Switch to fallback solver if defined.
+ *
+ * vx is reset to zero in this case.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- matrix
+ *   solver_type     <-- fallback solver type
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   prev_state      <-- previous convergence state
+ *   convergence     <-> convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area
+ *                       (internal allocation if NULL)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_fallback(cs_sles_it_t                    *c,
+          cs_sles_it_type_t                solver_type,
+          const cs_matrix_t               *a,
+          cs_halo_rotation_t               rotation_mode,
+          cs_sles_convergence_state_t      prev_state,
+          const cs_sles_it_convergence_t  *convergence,
+          int                             *n_iter,
+          double                          *residue,
+          const cs_real_t                 *rhs,
+          cs_real_t                       *restrict vx,
+          size_t                           aux_size,
+          void                            *aux_vectors)
+{
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
+
+  /* Check if fallback was already defined for this case */
+
+  if (c->fallback == NULL) {
+
+    c->fallback = cs_sles_it_create(solver_type,
+                                    -1, /* poly_degree */
+                                    c->n_max_iter,
+                                    c->update_stats);
+
+    cs_sles_it_set_shareable(c->fallback, c);
+
+    c->fallback->plot = c->plot;
+
+  }
+
+  c->fallback->plot_time_stamp = c->plot_time_stamp;
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+
+  if (prev_state < CS_SLES_BREAKDOWN) {
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_rows; i++)
+      vx[i] = 0;
+  }
+
+  cvg = cs_sles_it_solve(c->fallback,
+                         convergence->name,
+                         a,
+                         convergence->verbosity,
+                         rotation_mode,
+                         convergence->precision,
+                         convergence->r_norm,
+                         n_iter,
+                         residue,
+                         rhs,
+                         vx,
+                         aux_size,
+                         aux_vectors);
+
+  cs_sles_it_free(c->fallback);
+
+  *n_iter += convergence->n_iterations;
+
+  c->plot_time_stamp = c->fallback->plot_time_stamp;
+
+  return cvg;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -4061,6 +4148,22 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   c->add_data = NULL;
   c->shared = NULL;
 
+  /* Fallback mechanism; note that for fallbacks,
+     the preconditioner is shared, so Krylov methods
+     may not be mixed with Jacobi or Gauss-Seidel methods */
+
+  switch(c->type) {
+  case CS_SLES_BICGSTAB:
+  case CS_SLES_BICGSTAB2:
+  case CS_SLES_PCR3:
+    c->fallback_cvg = CS_SLES_BREAKDOWN;
+    break;
+  default:
+    c->fallback_cvg = CS_SLES_DIVERGED;
+  }
+
+  c->fallback = NULL;
+
   return c;
 }
 
@@ -4078,6 +4181,11 @@ cs_sles_it_destroy(void **context)
 {
   cs_sles_it_t *c = (cs_sles_it_t *)(*context);
   if (c != NULL) {
+    if (c->fallback != NULL) {
+      void *f = c->fallback;
+      cs_sles_it_destroy(&f);
+      c->fallback = f;
+    }
     cs_sles_pc_destroy(&(c->_pc));
     cs_sles_it_free(c);
     if (c->_plot != NULL) {
@@ -4172,6 +4280,9 @@ cs_sles_it_log(const void  *context,
     int n_it_max = c->n_iterations_max;
     int n_it_mean = 0;
 
+    if (n_it_min < 0)
+      n_it_min = 0;
+
     if (n_calls > 0)
       n_it_mean = (int)(  c->n_iterations_tot
                          / ((unsigned long long)n_calls));
@@ -4196,6 +4307,36 @@ cs_sles_it_log(const void  *context,
                   c->n_setups, n_calls, n_it_min, n_it_max, n_it_mean,
                   c->t_setup.wall_nsec*1e-9,
                   c->t_solve.wall_nsec*1e-9);
+
+    if (c->fallback != NULL) {
+
+      n_calls = c->fallback->n_solves;
+      n_it_min = c->fallback->n_iterations_min;
+      n_it_max = c->fallback->n_iterations_max;
+      n_it_mean = 0;
+
+      if (n_it_min < 0)
+        n_it_min = 0;
+
+      if (n_calls > 0)
+        n_it_mean = (int)(  c->fallback->n_iterations_tot
+                           / ((unsigned long long)n_calls));
+
+    cs_log_printf(log_type,
+                  _("\n"
+                    "  Backup solver type:            %s\n"),
+                  _(cs_sles_it_type_name[c->fallback->type]));
+
+    cs_log_printf(log_type,
+                  _("  Number of calls:               %12d\n"
+                    "  Minimum number of iterations:  %12d\n"
+                    "  Maximum number of iterations:  %12d\n"
+                    "  Mean number of iterations:     %12d\n"
+                    "  Total solution time:           %12.3f\n"),
+                  n_calls, n_it_min, n_it_max, n_it_mean,
+                  c->fallback->t_solve.wall_nsec*1e-9);
+
+    }
 
   }
 
@@ -4446,7 +4587,7 @@ cs_sles_it_solve(void                *context,
                        vx,
                        aux_size,
                        aux_vectors);
-      break;
+    break;
     case CS_SLES_BICGSTAB2:
       cvg = _bicgstab2(c,
                        a,
@@ -4525,19 +4666,24 @@ cs_sles_it_solve(void                *context,
   *n_iter = convergence.n_iterations;
   *residue = convergence.residue;
 
+  cs_sles_it_type_t fallback_type = CS_SLES_N_IT_TYPES;
+  if (cvg < c->fallback_cvg && _diag_block_size == 1)
+    fallback_type = CS_SLES_GMRES;
+
   if (c->update_stats == true) {
 
     t1 = cs_timer_time();
 
-    if (c->n_solves == 0)
-      c->n_iterations_min = _n_iter;
-
     c->n_solves += 1;
 
-    if (c->n_iterations_min > _n_iter)
-      c->n_iterations_min = _n_iter;
-    if (c->n_iterations_max < _n_iter)
-      c->n_iterations_max = _n_iter;
+    if (fallback_type == CS_SLES_N_IT_TYPES) {
+      if (c->n_iterations_tot == 0)
+        c->n_iterations_min = _n_iter;
+      else if (c->n_iterations_min > _n_iter)
+        c->n_iterations_min = _n_iter;
+      if (c->n_iterations_max < _n_iter)
+        c->n_iterations_max = _n_iter;
+    }
 
     c->n_iterations_last = _n_iter;
     c->n_iterations_tot += _n_iter;
@@ -4545,6 +4691,20 @@ cs_sles_it_solve(void                *context,
     cs_timer_counter_add_diff(&(c->t_solve), &t0, &t1);
 
   }
+
+  if (fallback_type != CS_SLES_N_IT_TYPES)
+    cvg = _fallback(c,
+                    fallback_type,
+                    a,
+                    rotation_mode,
+                    cvg,
+                    &convergence,
+                    n_iter,
+                    residue,
+                    rhs,
+                    vx,
+                    aux_size,
+                    aux_vectors);
 
   return cvg;
 }
@@ -4570,6 +4730,9 @@ cs_sles_it_free(void  *context)
   cs_timer_t t0;
   if (c->update_stats == true)
     t0 = cs_timer_time();
+
+  if (c->fallback != NULL)
+    cs_sles_it_free(c->fallback);
 
   if (c->_pc != NULL)
     cs_sles_pc_free(c->_pc);
@@ -4834,6 +4997,29 @@ cs_sles_it_assign_order(cs_sles_it_t   *context,
     *order = NULL;
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define convergence level under which the fallback to another
+ *        solver may be used if applicable.
+ *
+ * Currently, this mechanism is only by default used for BiCGstab and
+ * 3-layer conjugate residual solvers with scalar matrices, which may
+ * fall back to a preconditioned GMRES solver. For those solvers, the
+ * default threshold is \ref CS_SLES_BREAKDOWN, meaning that divergence
+ * (but not breakdown) will lead to the use of the fallback mechanism.
+ *
+ * \param[in, out]  context   pointer to iterative solver info and context
+ * \param[in]       thresold  convergence level under which fallback is used
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_fallback_threshold(cs_sles_it_t                 *context,
+                                  cs_sles_convergence_state_t   threshold)
+{
+  context->fallback_cvg = threshold;
 }
 
 /*----------------------------------------------------------------------------*/
