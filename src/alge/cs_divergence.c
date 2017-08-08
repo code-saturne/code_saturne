@@ -1246,9 +1246,8 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
 
   if (nswrgu > 1) {
 
-    cs_real_66_t *c_grad_mvar;
+    cs_real_63_t *c_grad_mvar;
     BFT_MALLOC(c_grad_mvar, n_cells_ext, cs_real_63_t);
-
 
     /* Computation of c_mass_var gradient
        (vectorial gradient, the periodicity has already been treated) */
@@ -1281,9 +1280,9 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
 
           double pnd = weight[face_id];
 
-          cs_real_6_t f_mass_var;
+          cs_real_t f_mass_var[6];
 
-          for (int isou = 0; isou < 6; isou++)
+          for (cs_lnum_t isou = 0; isou < 6; isou++)
             /* Non-reconstructed face value */
             f_mass_var[isou] = pnd*c_mass_var[ii][isou]+(1.-pnd)*c_mass_var[jj][isou]
               /* Reconstruction: face gradient times OF */
