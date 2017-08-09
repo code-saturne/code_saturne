@@ -31,7 +31,7 @@
   \section cs_user_extra_operations_examples_intro Introduction
 
   This page provides several examples of code blocks that may be used
-  to perform energy balance, 1D profiles, etc.
+  to perform data extraction or modify values
   in \ref cs_user_extra_operations.
 
 
@@ -40,7 +40,6 @@
 
   - \subpage cs_user_extra_operations_examples_energy_balance_p
   - \subpage cs_user_extra_operations_examples_balance_by_zone_p
-  - \subpage cs_user_extra_operations_examples_oned_profile_p
   - \subpage cs_user_extra_operations_examples_force_temperature_p
   - \subpage cs_user_extra_operations_examples_global_efforts_p
   - \subpage cs_user_extra_operations_examples_parallel_operations_p
@@ -260,42 +259,6 @@
 // __________________________________________________________________________________
 /*!
 
-  \page cs_user_extra_operations_examples_oned_profile_p Extract a 1D profile
-
-  \section cs_user_extra_operations_examples_oned_profile Extract a 1D profile
-
-  This is an example of \ref cs_user_extra_operations which performs 1D profile.
-
-  \subsection cs_user_extra_operations_examples_loc_var_1dp Local variables to be added
-
-  \snippet cs_user_extra_operations-extract_1d_profile.f90 loc_var_dec
-
-  \subsection cs_user_extra_operations_examples_1dp_body Body
-
-   We seek here to extract the profile of U, V, W, k and epsilon on an
-   arbitrary 1D curve based on a curvilear abscissa.
-   The profile is described in the 'profile.dat' file (do not forget to
-   define it as user data in the run script).
-
-   - the curve used here is the segment: [(0;0;0),(0;0.1;0)], but the
-     generalization to an arbitrary curve is simple.
-   - the routine handles parallelism an periodicity, as well as the different
-     turbulence models.
-   - the 1D curve is discretized into 'npoint' points. For each of these
-     points, we search for the closest cell center and we output the variable
-     values at this cell center. For better consistency, the coordinate
-     which is output is that of the cell center (instead of the initial point).
-   - we avoid using the same cell multiple times (in case several points
-     an the curve are associated with the same cell).
-
-  Here is the corresponding code:
-
-  \snippet cs_user_extra_operations-extract_1d_profile.f90 example_1
-
-*/
-// __________________________________________________________________________________
-/*!
-
   \page cs_user_extra_operations_examples_force_temperature_p Force temperature in a given region
 
   \section cs_user_extra_operations_examples_force_temperature Force temperature in a given region
@@ -334,7 +297,7 @@
   \subsection cs_user_extra_operations_examples_geff_body Body
 
   Example: compute global efforts on a subset of faces.
-  If efforts have been calculated correctly:
+  If boundary stresses have been calculated correctly:
 
   \snippet cs_user_extra_operations-global_efforts.f90 example_1
 
