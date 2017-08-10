@@ -5,6 +5,9 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Fix some spurious warning messages relative to number of sweeps
+  and extended neighborhood reduction when using LES.
+
 - Lagrangian module: fix characteristic time using temperature.
 
 - Fix for issue #236 (crash on restart using periodicity).

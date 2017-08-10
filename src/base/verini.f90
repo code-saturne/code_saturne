@@ -154,14 +154,14 @@ if (itytur.eq.4.or.ischtp.eq.2) then
   call field_get_label(ivarfl(iu), chaine)
   chaine = trim(chaine)
   iiidef = 10
-  if (vcopt%nswrsm.ne.iiidef) then
+  if (vcopt%nswrsm.lt.iiidef) then
     write(nfecra,2125) chaine(1:16),iiidef,vcopt%nswrsm
   endif
   jj = ipr
   call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
   call field_get_label(ivarfl(jj), chaine)
   iiidef = 5
-  if (vcopt%nswrsm.ne.iiidef) then
+  if (vcopt%nswrsm.lt.iiidef) then
     write(nfecra,2125) chaine(1:16),iiidef,vcopt%nswrsm
   endif
 endif
@@ -169,7 +169,7 @@ endif
 do ii = 1, nscal
   if (itytur.eq.4.or.ischtp.eq.2) then
     iiidef = 10
-    if (vcopt%nswrsm.ne.iiidef) then
+    if (vcopt%nswrsm.lt.iiidef) then
       write(nfecra,2125) chaine(1:16),iiidef,vcopt%nswrsm
     endif
   endif
