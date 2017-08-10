@@ -1026,7 +1026,7 @@ class Studies(object):
         self.__compare     = options.compare
         self.__ref         = options.reference
         self.__postpro     = options.post
-        self.__default_fmt = options.default_fmt;
+        self.__default_fmt = options.default_fmt
         self.__dis_tex     = options.disable_tex
 
         # in case of restart
