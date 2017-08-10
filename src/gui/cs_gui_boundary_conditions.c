@@ -1550,7 +1550,6 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
     }
     else if (cs_gui_strcmp(nature, "groundwater")) {
       _boundary_darcy(nature, label, izone);
-      //TODO species
     }
 
     /* for each zone */
@@ -1572,8 +1571,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
       }
 
       /* Meteo scalars */
-      if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
-      {
+      if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
         char *path_meteo = cs_xpath_init_path();
         int size = -1;
         cs_xpath_add_elements(&path_meteo, 3,
@@ -1604,6 +1602,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
           }
         }
       }
+
       /* Electric arc scalars */
       if (cs_gui_strcmp(vars->model, "joule_effect")) {
         char *path_elec = cs_xpath_init_path();
@@ -1648,7 +1647,6 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
 
     BFT_FREE(nature);
     BFT_FREE(label);
-
   }  /* for izones */
 
   int overlap_error[4] = {0, -1, -1, -1};

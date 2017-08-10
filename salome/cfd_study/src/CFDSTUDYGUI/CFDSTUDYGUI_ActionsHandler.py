@@ -846,7 +846,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]):
                 self.commonAction(RemoveAction).setVisible(True)
 
-            
+
 
     def updateActionsXmlFile(self, XMLSobj) :
 
@@ -1255,7 +1255,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         if sobj != None:
             sobjpath = CFDSTUDYGUI_DataModel._GetPath(sobj)
-            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):         
+            if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["Case"]):
                 mess = cfdstudyMess.trMessage(self.tr("REMOVE_ACTION_CONFIRM_MESS"),[sobjpath])
             elif CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]):
                 mess = cfdstudyMess.trMessage(self.tr("REMOVE_RESU_SUB_FOLDER_ACTION_CONFIRM_MESS"),[sobjpath])
@@ -2177,7 +2177,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
     def slotHelpNCDoxygen(self):
         self._SolverGUI.onNeptuneHelpDoxygen()
 
-    def slotOpenSyrthesCaseFile(self): 
+    def slotOpenSyrthesCaseFile(self):
         """
         OpenSyrthesGui
         """
@@ -2192,7 +2192,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
             path = CFDSTUDYGUI_DataModel._GetPath(sobj)
             if re.match(".*\.syd$", sobj.GetName()):
-                widget = MainView(sgPyQt.getDesktop(), False,True)            
+                widget = MainView(sgPyQt.getDesktop(), False,True)
                 widget.OpeningFile(path)
                 widget.show()
 
