@@ -55,7 +55,7 @@ except Exception: # email version 4.0 (Python2 from Python 2.5)
 #-------------------------------------------------------------------------------
 
 # Do not import studymanager yet, as it pulls Python packages such as
-# matplotlib or vtk which may not be in the standard path, and may need
+# matplotlib which may not be in the standard path, and may need
 # sourcing of a specific environment (which itself is delayed in case
 # the main and coputation packages are not the same).
 
@@ -255,7 +255,7 @@ def run_studymanager(pkg, options):
     """
 
     # Source environment if required before importing studymanager modules, as
-    # it pulls Python packages such as matplotlib or vtk which may not be in
+    # it pulls Python packages such as matplotlib which may not be in
     # the standard path.
     from cs_exec_environment import set_modules, source_rcfile, enquote_arg
     set_modules(pkg)
