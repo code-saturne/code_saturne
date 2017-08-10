@@ -2772,28 +2772,34 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
     if (   f->type & CS_FIELD_VARIABLE
         && !cs_gui_strcmp(f->name, "pressure")
         && !cs_gui_strcmp(f->name, "hydraulic_head")) {
+
       j = cs_field_get_key_int(f, var_key_id) -1;
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-      _variable_value(f->name, "blending_factor", &var_cal_opt.blencv);
-      _variable_value(f->name, "solver_precision", &var_cal_opt.epsilo);
+      const char *ref_name = f->name;
+
+      if (cs_gui_strcmp(f->name, "rij"))
+        ref_name = "r11";
+
+      _variable_value(ref_name, "blending_factor", &var_cal_opt.blencv);
+      _variable_value(ref_name, "solver_precision", &var_cal_opt.epsilo);
 
       // only for nscaus and model scalar
-      _variable_value(f->name, "time_step_factor", &cdtvar[j]);
+      _variable_value(ref_name, "time_step_factor", &cdtvar[j]);
 
-      _variable_attribute(f->name, "order_scheme", &var_cal_opt.ischcv);
-      _variable_attribute(f->name, "slope_test", &var_cal_opt.isstpc);
-      _variable_attribute(f->name, "flux_reconstruction", &var_cal_opt.ircflu);
+      _variable_attribute(ref_name, "order_scheme", &var_cal_opt.ischcv);
+      _variable_attribute(ref_name, "slope_test", &var_cal_opt.isstpc);
+      _variable_attribute(ref_name, "flux_reconstruction", &var_cal_opt.ircflu);
+
       tmp = (double) var_cal_opt.nswrsm;
-      _variable_value(f->name, "rhs_reconstruction", &tmp);
+      _variable_value(ref_name, "rhs_reconstruction", &tmp);
       var_cal_opt.nswrsm = (int) tmp;
 
       tmp = (double) var_cal_opt.iwarni;
-      _variable_value(f->name, "verbosity", &tmp);
+      _variable_value(ref_name, "verbosity", &tmp);
       var_cal_opt.iwarni = (int) tmp;
 
       // Set Field calculation options in the field structure
-      // TODO add nitmax, imgr, iresol, cdtvar
       cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
     }
   }
@@ -2808,13 +2814,10 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
       bft_printf("--blencv = %f\n", var_cal_opt.blencv);
       bft_printf("--epsilo = %g\n", var_cal_opt.epsilo);
       bft_printf("--cdtvar = %g\n", cdtvar[j]);
-      //bft_printf("--nitmax = %i\n", nitmax[j]);
       bft_printf("--ischcv = %i\n", var_cal_opt.ischcv);
       bft_printf("--isstpc = %i\n", var_cal_opt.isstpc);
       bft_printf("--ircflu = %i\n", var_cal_opt.ircflu);
       bft_printf("--nswrsm = %i\n", var_cal_opt.nswrsm);
-      //bft_printf("--imgr = %i\n"  , imgr[j]);
-      //bft_printf("--iresol = %i\n", iresol[j]);
     }
   }
 #endif
@@ -3954,26 +3957,46 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                           "r11, r22, r33, r12, r13, r23 or epsilon");
 
               cs_field_t *c_r11 = cs_field_by_name("r11");
-              cs_field_t *c_r22 = cs_field_by_name("r22");
-              cs_field_t *c_r33 = cs_field_by_name("r33");
-              cs_field_t *c_r12 = cs_field_by_name("r12");
-              cs_field_t *c_r13 = cs_field_by_name("r13");
-              cs_field_t *c_r23 = cs_field_by_name("r23");
               cs_field_t *c_eps = cs_field_by_name("epsilon");
 
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                mei_evaluate(ev_formula_turb);
-                c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
-                c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
-                c_r33->val[iel] = mei_tree_lookup(ev_formula_turb, "r33");
-                c_r12->val[iel] = mei_tree_lookup(ev_formula_turb, "r12");
-                c_r13->val[iel] = mei_tree_lookup(ev_formula_turb, "r13");
-                c_r23->val[iel] = mei_tree_lookup(ev_formula_turb, "r23");
-                c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+              if (c_r11 == NULL) {
+                cs_field_t *c_rij = cs_field_by_name("rij");
+                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+                  cs_lnum_t iel = cell_ids[icel];
+                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
+                  mei_evaluate(ev_formula_turb);
+                  c_rij->val[iel*6]   = mei_tree_lookup(ev_formula_turb, "r11");
+                  c_rij->val[iel*6+1] = mei_tree_lookup(ev_formula_turb, "r22");
+                  c_rij->val[iel*6+2] = mei_tree_lookup(ev_formula_turb, "r33");
+                  c_rij->val[iel*6+3] = mei_tree_lookup(ev_formula_turb, "r12");
+                  c_rij->val[iel*6+4] = mei_tree_lookup(ev_formula_turb, "r23");
+                  c_rij->val[iel*6+5] = mei_tree_lookup(ev_formula_turb, "r13");
+                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+                }
+              }
+              else {
+                cs_field_t *c_r22 = cs_field_by_name("r22");
+                cs_field_t *c_r33 = cs_field_by_name("r33");
+                cs_field_t *c_r12 = cs_field_by_name("r12");
+                cs_field_t *c_r13 = cs_field_by_name("r13");
+                cs_field_t *c_r23 = cs_field_by_name("r23");
+
+                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+                  cs_lnum_t iel = cell_ids[icel];
+                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
+                  mei_evaluate(ev_formula_turb);
+                  c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
+                  c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
+                  c_r33->val[iel] = mei_tree_lookup(ev_formula_turb, "r33");
+                  c_r12->val[iel] = mei_tree_lookup(ev_formula_turb, "r12");
+                  c_r13->val[iel] = mei_tree_lookup(ev_formula_turb, "r13");
+                  c_r23->val[iel] = mei_tree_lookup(ev_formula_turb, "r23");
+                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+                }
               }
             }
 
@@ -3986,28 +4009,49 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                           "r11, r22, r33, r12, r13, r23, epsilon or alpha");
 
               cs_field_t *c_r11 = cs_field_by_name("r11");
-              cs_field_t *c_r22 = cs_field_by_name("r22");
-              cs_field_t *c_r33 = cs_field_by_name("r33");
-              cs_field_t *c_r12 = cs_field_by_name("r12");
-              cs_field_t *c_r13 = cs_field_by_name("r13");
-              cs_field_t *c_r23 = cs_field_by_name("r23");
               cs_field_t *c_eps = cs_field_by_name("epsilon");
               cs_field_t *c_alp = cs_field_by_name("alpha");
 
-              for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
-                cs_lnum_t iel = cell_ids[icel];
-                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
-                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
-                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
-                mei_evaluate(ev_formula_turb);
-                c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
-                c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
-                c_r33->val[iel] = mei_tree_lookup(ev_formula_turb, "r33");
-                c_r12->val[iel] = mei_tree_lookup(ev_formula_turb, "r12");
-                c_r13->val[iel] = mei_tree_lookup(ev_formula_turb, "r13");
-                c_r23->val[iel] = mei_tree_lookup(ev_formula_turb, "r23");
-                c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
-                c_alp->val[iel] = mei_tree_lookup(ev_formula_turb, "alpha");
+              if (c_r11 == NULL) {
+                cs_field_t *c_rij = cs_field_by_name("rij");
+                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+                  cs_lnum_t iel = cell_ids[icel];
+                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
+                  mei_evaluate(ev_formula_turb);
+                  c_rij->val[iel*6]   = mei_tree_lookup(ev_formula_turb, "r11");
+                  c_rij->val[iel*6+1] = mei_tree_lookup(ev_formula_turb, "r22");
+                  c_rij->val[iel*6+2] = mei_tree_lookup(ev_formula_turb, "r33");
+                  c_rij->val[iel*6+3] = mei_tree_lookup(ev_formula_turb, "r12");
+                  c_rij->val[iel*6+4] = mei_tree_lookup(ev_formula_turb, "r23");
+                  c_rij->val[iel*6+5] = mei_tree_lookup(ev_formula_turb, "r13");
+                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+                  c_alp->val[iel] = mei_tree_lookup(ev_formula_turb, "alpha");
+                }
+              }
+              else {
+                cs_field_t *c_r22 = cs_field_by_name("r22");
+                cs_field_t *c_r33 = cs_field_by_name("r33");
+                cs_field_t *c_r12 = cs_field_by_name("r12");
+                cs_field_t *c_r13 = cs_field_by_name("r13");
+                cs_field_t *c_r23 = cs_field_by_name("r23");
+
+                for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
+                  cs_lnum_t iel = cell_ids[icel];
+                  mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                  mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                  mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
+                  mei_evaluate(ev_formula_turb);
+                  c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
+                  c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
+                  c_r33->val[iel] = mei_tree_lookup(ev_formula_turb, "r33");
+                  c_r12->val[iel] = mei_tree_lookup(ev_formula_turb, "r12");
+                  c_r13->val[iel] = mei_tree_lookup(ev_formula_turb, "r13");
+                  c_r23->val[iel] = mei_tree_lookup(ev_formula_turb, "r23");
+                  c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
+                  c_alp->val[iel] = mei_tree_lookup(ev_formula_turb, "alpha");
+                }
               }
             }
 
@@ -5635,15 +5679,20 @@ cs_gui_linear_solvers(void)
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
 
+      const char *ref_name = f->name;
+
+      if (cs_gui_strcmp(f->name, "rij"))
+        ref_name = "r11";
+
       tmp = (double) n_max_iter_default;
-      _variable_value(f->name, "max_iter_number", &tmp);
+      _variable_value(ref_name, "max_iter_number", &tmp);
       int n_max_iter = (int) tmp;
 
       multigrid = false;
       sles_it_type = CS_SLES_N_IT_TYPES;
 
-      algo_choice = _variable_choice(f->name, "solver_choice");
-      precond_choice = _variable_choice(f->name, "preconditioning_choice");
+      algo_choice = _variable_choice(ref_name, "solver_choice");
+      precond_choice = _variable_choice(ref_name, "preconditioning_choice");
 
       if (cs_gui_strcmp(algo_choice, "multigrid"))
         multigrid = true;
@@ -6161,6 +6210,36 @@ cs_gui_time_moments(void)
       int idim = _get_time_average_component(imom, j + 1);
 
       cs_field_t *f = cs_field_by_name_try(f_name);
+
+      /* If we failed to find R11, we search for Rij.
+       * This test is needed for the case where irijco = 1
+       */
+      if (f == NULL && CS_F_(rij) != NULL) {
+        if (strcmp(f_name, "r11")) {
+          f = CS_F_(rij);
+          idim = 0;
+        }
+        else if (strcmp(f_name, "r22")) {
+          f = CS_F_(rij);
+          idim = 1;
+        }
+        else if (strcmp(f_name, "r33")) {
+          f = CS_F_(rij);
+          idim = 2;
+        }
+        else if (strcmp(f_name, "r12")) {
+          f = CS_F_(rij);
+          idim = 3;
+        }
+        else if (strcmp(f_name, "r23")) {
+          f = CS_F_(rij);
+          idim = 4;
+        }
+        else if (strcmp(f_name, "r13")) {
+          f = CS_F_(rij);
+          idim = 5;
+        }
+      }
 
       m_f_id[j] = f->id;
       m_c_id[j] = idim;

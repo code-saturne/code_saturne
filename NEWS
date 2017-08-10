@@ -5,6 +5,8 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Fixes for handling of coupled RSM (irijco=1) with GUI settings
+
 - Fix some spurious warning messages relative to number of sweeps
   and extended neighborhood reduction when using LES.
 
