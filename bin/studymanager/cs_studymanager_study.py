@@ -41,6 +41,8 @@ import fnmatch
 
 from cs_exec_environment import get_shell_type, enquote_arg
 from cs_create import set_executable
+from cs_runcase import runcase
+
 from studymanager.cs_studymanager_parser import Parser
 from studymanager.cs_studymanager_texmaker import Report1, Report2
 try:
@@ -393,79 +395,49 @@ class Case(object):
         from cs_exec_environment import separate_args, \
                                  get_command_single_value
 
-        if self.subdomains:
-            run_ref = os.path.join(self.__repo, self.label, "runcase")
-            run_new = os.path.join(self.__dest, self.label, "runcase")
-            run_ref_win = os.path.join(self.__repo, self.label, "runcase.bat")
-        else:
-            run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
-            run_new = os.path.join(self.__dest, self.label, "SCRIPTS", "runcase")
-            run_ref_win = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase.bat")
+        # Prepare runcase path
+        scripts = None
+        if not self.subdomains:
+            scripts= "SCRIPTS"
+
+        scripts_repo = os.path.join(self.__repo, self.label, scripts)
+        scripts_dest = os.path.join(self.__dest, self.label, scripts)
+
+        run_ref = os.path.join(scripts_repo, "runcase")
+        run_ref_win = os.path.join(scripts_repo, "runcase.bat")
+        run_new = os.path.join(scripts_dest, "runcase")
 
         if sys.platform.startswith('win'):
-            if self.subdomains:
-                run_new = os.path.join(self.__dest, self.label, "runcase.bat")
-            else:
-                run_new = os.path.join(self.__dest, self.label, "SCRIPTS", "runcase.bat")
+            run_new = os.path.join(scripts_dest, "runcase.bat")
 
-        # Read the runcase from the Repository
-
-        try:
-            f = open(run_ref, mode = 'r')
-        except:
-            try:
-                f = open(run_ref_win, mode = 'r')
-            except IOError:
-                print("Error: can not open %s\n" % run_ref)
-                sys.exit(1)
-
-        for line in f.readlines():
-            if sys.platform.startswith('win'):
-                if re.search(self.exe, line):
-                    #we suppress "\" if needed
-                    content = line.split()
-                    if re.search(r'^\\' + self.exe, line):
-                        content[0] = self.exe
-                    run_cmd = " ".join(content)
-            else:
-                if re.search(r'^\\' + self.exe, line):
-                    run_cmd = " ".join(line.split())
-        f.close()
-
-        # Write the new runcase
-
-        try:
-            f = open(run_new, mode = 'r')
-        except IOError:
-            print("Error: can not open %s\n" % run_new)
+        # Read runcase from repo
+        path = run_ref
+        if not os.path.isfile(path):
+            path = run_ref_win
+        if not os.path.isfile(path):
+            print("Error: could not find %s (or %s)\n" % run_ref, run_ref_win)
             sys.exit(1)
 
-        lines = f.readlines()
-        f.close()
+        runcase_repo = runcase(path, create_if_missing=False)
 
-        for i in range(len(lines)):
-            l = lines[i].strip()
-            if len(l) == 0:
-                continue
-            if l[0] == '#':
-                continue
-            if sys.platform.startswith('win'):
-                if re.search(self.exe, lines[i]):
-                    lines[i] = run_cmd + " --id=" + run_id
-                elif re.search(r' cd ', lines[i]): # do not switch to batch submit directory
-                    lines[i] = '# ' + lines[i]
-            else:
-                if re.search(r'^\\' + self.exe, lines[i]):
-                    if self.__data['n_procs'] == None:
-                        lines[i] = run_cmd + " --id=" + run_id
-                    else:
-                        lines[i] = run_cmd + " --id=" + run_id + " -n " + self.__data['n_procs']
-                elif re.search(r' cd ', lines[i]): # do not switch to batch submit directory
-                    lines[i] = '# ' + lines[i]
+        # Read runcase from dest
+        path = run_new
+        runcase_dest = runcase(path, create_if_missing=False,
+                               ignore_batch=True)
 
-        f = open(run_new, mode = 'w')
-        f.writelines(lines)
-        f.close()
+        # Assign run command from repo in dest
+        runcase_dest.set_run_args(runcase_repo.get_run_args())
+
+        # set run_id in dest
+        runcase_dest.set_run_id(run_id=run_id)
+
+        # Set number of processors if provided
+        n_procs = self.__data['n_procs']
+        if n_procs:
+            runcase_dest.set_nprocs(n_procs)
+
+        # Write runcase
+        runcase_dest.save()
 
     #---------------------------------------------------------------------------
 
@@ -734,7 +706,7 @@ class Study(object):
         else:
             for data in self.__parser.getCasesKeywords(self.label):
                 # n_procs given in smgr command line overwrites n_procs by case
-                if n_procs != None :
+                if n_procs:
                     data['n_procs'] = str(n_procs)
                 c = Case(pkg,
                          self.__log,
@@ -1197,7 +1169,7 @@ class Studies(object):
     def run(self):
         """
         Update and run all cases.
-        Warning, if the makup of the case is repeated in the xml file of parameters,
+        Warning, if the markup of the case is repeated in the xml file of parameters,
         the run of the case is also repeated.
         """
         for l, s in self.studies:
