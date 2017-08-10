@@ -2772,56 +2772,38 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
         && !cs_gui_strcmp(f->name, "pressure")
         && !cs_gui_strcmp(f->name, "hydraulic_head")) {
 
-        j = cs_field_get_key_int(f, var_key_id) -1;
-        cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+      j = cs_field_get_key_int(f, var_key_id) -1;
+      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
-      if ( cs_gui_strcmp(f->name, "r11") ||
-           cs_gui_strcmp(f->name, "r22") ||
-           cs_gui_strcmp(f->name, "r33") ||
-           cs_gui_strcmp(f->name, "r12") ||
-           cs_gui_strcmp(f->name, "r23") ||
-           cs_gui_strcmp(f->name, "r13") ) {
+      const char *ref_name = f->name;
 
-        _variable_value("rij", "blending_factor", &var_cal_opt.blencv);
-        _variable_value("rij", "solver_precision", &var_cal_opt.epsilo);
+      if (   cs_gui_strcmp(f->name, "r11")
+          || cs_gui_strcmp(f->name, "r22")
+          || cs_gui_strcmp(f->name, "r33")
+          || cs_gui_strcmp(f->name, "r12")
+          || cs_gui_strcmp(f->name, "r23")
+          || cs_gui_strcmp(f->name, "r13"))
+        ref_name = "rij";
 
-        // only for nscaus and model scalar
-        _variable_value("rij", "time_step_factor", &cdtvar[j]);
+      _variable_value(ref_name, "blending_factor", &var_cal_opt.blencv);
+      _variable_value(ref_name, "solver_precision", &var_cal_opt.epsilo);
 
-        _variable_attribute("rij", "order_scheme", &var_cal_opt.ischcv);
-        _variable_attribute("rij", "slope_test", &var_cal_opt.isstpc);
-        _variable_attribute("rij", "flux_reconstruction", &var_cal_opt.ircflu);
+      // only for nscaus and model scalar
+      _variable_value(ref_name, "time_step_factor", &cdtvar[j]);
 
-        tmp = (double) var_cal_opt.nswrsm;
-        _variable_value("rij", "rhs_reconstruction", &tmp);
-        var_cal_opt.nswrsm = (int) tmp;
+      _variable_attribute(ref_name, "order_scheme", &var_cal_opt.ischcv);
+      _variable_attribute(ref_name, "slope_test", &var_cal_opt.isstpc);
+      _variable_attribute(ref_name, "flux_reconstruction", &var_cal_opt.ircflu);
 
-        tmp = (double) var_cal_opt.iwarni;
-        _variable_value("rij", "verbosity", &tmp);
-        var_cal_opt.iwarni = (int) tmp;
+      tmp = (double) var_cal_opt.nswrsm;
+      _variable_value(ref_name, "rhs_reconstruction", &tmp);
+      var_cal_opt.nswrsm = (int) tmp;
 
-      } else {
-
-        _variable_value(f->name, "blending_factor", &var_cal_opt.blencv);
-        _variable_value(f->name, "solver_precision", &var_cal_opt.epsilo);
-
-        // only for nscaus and model scalar
-        _variable_value(f->name, "time_step_factor", &cdtvar[j]);
-
-        _variable_attribute(f->name, "order_scheme", &var_cal_opt.ischcv);
-        _variable_attribute(f->name, "slope_test", &var_cal_opt.isstpc);
-        _variable_attribute(f->name, "flux_reconstruction", &var_cal_opt.ircflu);
-        tmp = (double) var_cal_opt.nswrsm;
-        _variable_value(f->name, "rhs_reconstruction", &tmp);
-        var_cal_opt.nswrsm = (int) tmp;
-
-        tmp = (double) var_cal_opt.iwarni;
-        _variable_value(f->name, "verbosity", &tmp);
-        var_cal_opt.iwarni = (int) tmp;
-      }
+      tmp = (double) var_cal_opt.iwarni;
+      _variable_value(ref_name, "verbosity", &tmp);
+      var_cal_opt.iwarni = (int) tmp;
 
       // Set Field calculation options in the field structure
-      // TODO add nitmax, imgr, iresol, cdtvar
       cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
     }
   }
@@ -2836,13 +2818,10 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
       bft_printf("--blencv = %f\n", var_cal_opt.blencv);
       bft_printf("--epsilo = %g\n", var_cal_opt.epsilo);
       bft_printf("--cdtvar = %g\n", cdtvar[j]);
-      //bft_printf("--nitmax = %i\n", nitmax[j]);
       bft_printf("--ischcv = %i\n", var_cal_opt.ischcv);
       bft_printf("--isstpc = %i\n", var_cal_opt.isstpc);
       bft_printf("--ircflu = %i\n", var_cal_opt.ircflu);
       bft_printf("--nswrsm = %i\n", var_cal_opt.nswrsm);
-      //bft_printf("--imgr = %i\n"  , imgr[j]);
-      //bft_printf("--iresol = %i\n", iresol[j]);
     }
   }
 #endif
@@ -5702,15 +5681,25 @@ cs_gui_linear_solvers(void)
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
 
+      const char *ref_name = f->name;
+
+      if (   cs_gui_strcmp(f->name, "r11")
+          || cs_gui_strcmp(f->name, "r22")
+          || cs_gui_strcmp(f->name, "r33")
+          || cs_gui_strcmp(f->name, "r12")
+          || cs_gui_strcmp(f->name, "r23")
+          || cs_gui_strcmp(f->name, "r13"))
+        ref_name = "rij";
+
       tmp = (double) n_max_iter_default;
-      _variable_value(f->name, "max_iter_number", &tmp);
+      _variable_value(ref_name, "max_iter_number", &tmp);
       int n_max_iter = (int) tmp;
 
       multigrid = false;
       sles_it_type = CS_SLES_N_IT_TYPES;
 
-      algo_choice = _variable_choice(f->name, "solver_choice");
-      precond_choice = _variable_choice(f->name, "preconditioning_choice");
+      algo_choice = _variable_choice(ref_name, "solver_choice");
+      precond_choice = _variable_choice(ref_name, "preconditioning_choice");
 
       if (cs_gui_strcmp(algo_choice, "multigrid"))
         multigrid = true;
@@ -6234,38 +6223,36 @@ cs_gui_time_moments(void)
       /* If we failed to find Rij, we search for Rxx.
        * This test is needed for the case where irijco = 0
        */
-      if (f == NULL && strcmp(f_name, "rij")) {
+
+      if (f == NULL && cs_gui_strcmp(f_name, "rij")) {
         switch(idim) {
-
-          case 0:
-            f = CS_F_(r11);
-            break;
-
-          case 1:
-            f = CS_F_(r22);
-            break;
-
-          case 2:
-            f = CS_F_(r33);
-            break;
-
-          case 3:
-            f = CS_F_(r12);
-            break;
-
-          case 4:
-            f = CS_F_(r23);
-            break;
-
-          case 5:
-            f = CS_F_(r13);
-            break;
+        case 0:
+          f = CS_F_(r11);
+          break;
+        case 1:
+          f = CS_F_(r22);
+          break;
+        case 2:
+          f = CS_F_(r33);
+          break;
+        case 3:
+          f = CS_F_(r12);
+          break;
+        case 4:
+          f = CS_F_(r23);
+          break;
+        case 5:
+          f = CS_F_(r13);
+          break;
         }
-        idim = 0;
+        m_f_id[j] = f->id;
+        m_c_id[j] = 0;
       }
 
-      m_f_id[j] = f->id;
-      m_c_id[j] = idim;
+      else {
+        m_f_id[j] = f->id;
+        m_c_id[j] = idim;
+      }
 
       BFT_FREE(f_name);
     }
