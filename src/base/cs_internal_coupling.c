@@ -1568,9 +1568,9 @@ cs_internal_coupling_spmv_contribution(bool              exclude_diag,
   /* Exchange x */
 
   cs_real_t *x_j = NULL;
-  BFT_MALLOC(x_j, n_local, cs_real_t);
+  BFT_MALLOC(x_j, f->dim * n_local, cs_real_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
-                                           1,
+                                           f->dim,
                                            x,
                                            x_j);
 
@@ -1579,26 +1579,61 @@ cs_internal_coupling_spmv_contribution(bool              exclude_diag,
   cs_real_t *hintp = f->bc_coeffs->hint;
   cs_real_t *hextp = f->bc_coeffs->hext;
 
-  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    face_id = faces_local[ii];
-    cell_id = b_face_cells[face_id];
 
-    cs_real_t fluxi = 0.;
-    cs_real_t pi = exclude_diag ?
-      0. : x[cell_id]; /* If exclude_diag, no diagonal term */
-    cs_real_t pj = x_j[ii];
+  if (f->dim == 1) {
+    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+      face_id = faces_local[ii];
+      cell_id = b_face_cells[face_id];
 
-    cs_real_t hint = hintp[face_id];
-    cs_real_t hext = hextp[face_id];
-    cs_real_t heq = hint * hext / (hint + hext);
+      cs_real_t fluxi = 0.;
+      cs_real_t pi = exclude_diag ?
+        0. : x[cell_id]; /* If exclude_diag, no diagonal term */
+      cs_real_t pj = x_j[ii];
 
-    cs_b_diff_flux_coupling(idiffp,
-                            pi,
-                            pj,
-                            heq,
-                            &fluxi);
+      cs_real_t hint = hintp[face_id];
+      cs_real_t hext = hextp[face_id];
+      cs_real_t heq = hint * hext / (hint + hext);
 
-    y[cell_id] += thetap * fluxi;
+      cs_b_diff_flux_coupling(idiffp,
+          pi,
+          pj,
+          heq,
+          &fluxi);
+
+      y[cell_id] += thetap * fluxi;
+    }
+
+  } else if (f->dim == 3) {
+    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+      face_id = faces_local[ii];
+      cell_id = b_face_cells[face_id];
+
+      cs_real_3_t fluxi = {0., 0., 0.};
+      cs_real_3_t pi;
+      /* If exclude_diag, no diagonal term */
+      if (exclude_diag) {
+        for (int k = 0; k < 3; k++)
+          pi[k] = 0.;
+      } else {
+        for (int k = 0; k < 3; k++)
+          pi[k] = x[cell_id+k];
+      }
+      cs_real_3_t pj = {x_j[ii], x_j[ii+1], x_j[ii+2]};
+
+      cs_real_t hint = hintp[face_id];
+      cs_real_t hext = hextp[face_id];
+      cs_real_t heq = hint * hext / (hint + hext);
+
+      cs_b_diff_flux_coupling_vector(idiffp,
+          pi,
+          pj,
+          heq,
+          fluxi);
+
+      for (int k = 0; k < 3; k++)
+        y[cell_id+k] += thetap * fluxi[k];
+    }
+
   }
   /* Free memory */
   BFT_FREE(x_j);

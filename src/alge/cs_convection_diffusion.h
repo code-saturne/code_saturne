@@ -4889,7 +4889,7 @@ cs_b_cd_unsteady_vector(const int          ircflp,
                                  ircflp,
                                  recoi);
 
-  for(int isou = 0; isou< 3; isou++)
+  for (int isou = 0; isou < 3; isou++)
     pip[isou] = pi[isou] + recoi[isou];
 }
 
@@ -4946,6 +4946,31 @@ cs_b_diff_flux_coupling(const int        idiffp,
 {
   *fluxi += idiffp*b_visc*(pi - pj);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add diffusive flux to flux at an internal coupling face for a vector.
+ *
+ * \param[in]     idiffp   diffusion flag
+ * \param[in]     pi       value at cell i
+ * \param[in]     pj       value at cell j
+ * \param[in]     b_visc   equivalent exchange coefficient at an internal
+ *                         coupling face
+ * \param[in,out] fluxi    flux at internal coupling face
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_b_diff_flux_coupling_vector(const int          idiffp,
+                               const cs_real_3_t  pi,
+                               const cs_real_3_t  pj,
+                               const cs_real_t    b_visc,
+                               cs_real_t          fluxi[3])
+{
+  for (int k = 0; k < 3; k++)
+    fluxi[k] += idiffp*b_visc*(pi[k] - pj[k]);
+}
+
 
 /*============================================================================
  * Public function prototypes for Fortran API

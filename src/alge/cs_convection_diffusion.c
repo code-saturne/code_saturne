@@ -3365,6 +3365,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   const int ischcp = var_cal_opt.ischcv;
   const int isstpp = var_cal_opt.isstpc;
   const int iwarnp = var_cal_opt.iwarni;
+  const int icoupl = var_cal_opt.icoupl;
   const double blencp = var_cal_opt.blencv;
   const double blend_st = var_cal_opt.blend_st;
   const double epsrgp = var_cal_opt.epsrgr;
@@ -3427,6 +3428,17 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   cs_real_t  *v_slope_test = _get_v_slope_test(f_id,  var_cal_opt);
 
+  /* Internal coupling variables */
+  cs_real_3_t *pvar_local = NULL;
+  cs_real_3_t *pvar_distant = NULL;
+  cs_real_t hint, hext, heq;
+  cs_lnum_t *faces_local = NULL;
+  cs_int_t n_local;
+  cs_lnum_t n_distant;
+  cs_lnum_t *faces_distant = NULL;
+  int coupling_id;
+  cs_internal_coupling_t *cpl = NULL;
+
   /*==========================================================================*/
 
   /* 1. Initialization */
@@ -3484,6 +3496,18 @@ cs_convection_diffusion_vector(int                         idtvar,
   }
 
   iupwin = (blencp > 0.) ? 0 : 1;
+
+  if (icoupl > 0) {
+    assert(f_id != -1);
+    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    coupling_id = cs_field_get_key_int(f, coupling_key_id);
+    cpl = cs_internal_coupling_by_id(coupling_id);
+    cs_internal_coupling_coupled_faces(cpl,
+                                       &n_local,
+                                       &faces_local,
+                                       &n_distant,
+                                       &faces_distant);
+  }
 
   /* 2. Compute the balance with reconstruction */
 
@@ -4291,6 +4315,71 @@ cs_convection_diffusion_vector(int                         idtvar,
         }
       }
 
+      /* The variable is internal_coupled and an implicit contribution
+       * is required */
+      if (icoupl > 0) {
+        /* Prepare data for sending */
+        BFT_MALLOC(pvar_distant, n_distant, cs_real_3_t);
+
+        for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+          cs_lnum_t face_id = faces_distant[ii];
+          cs_lnum_t jj = b_face_cells[face_id];
+
+          cs_real_3_t pip;
+          cs_b_cd_unsteady_vector(ircflp,
+                                  diipb[face_id],
+                                  (const cs_real_3_t *)grad[jj],
+                                  _pvar[jj],
+                                  pip);
+
+          for (int k = 0; k < 3; k++)
+            pvar_distant[ii][k] = pip[k];
+        }
+
+        /* Receive data */
+        BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
+        cs_internal_coupling_exchange_var(cpl,
+                                          3, /* Dimension */
+                                          pvar_distant,
+                                          pvar_local);
+
+        /* Flux contribution */
+        assert(f != NULL);
+        cs_real_t *hintp = f->bc_coeffs->hint;
+        cs_real_t *hextp = f->bc_coeffs->hext;
+        for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+          cs_lnum_t face_id = faces_local[ii];
+          cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_3_t pip, pjp;
+          cs_real_3_t fluxi = {0., 0., 0.};
+
+          cs_b_cd_unsteady_vector(ircflp,
+                                  diipb[face_id],
+                                  (const cs_real_3_t *)grad[jj],
+                                  _pvar[jj],
+                                  pip);
+
+          for (int k = 0; k < 3; k++)
+            pjp[k] = pvar_local[ii][k];
+
+          hint = hintp[face_id];
+          hext = hextp[face_id];
+          heq = hint * hext / (hint + hext);
+
+          cs_b_diff_flux_coupling_vector(idiffp,
+                                         pip,
+                                         pjp,
+                                         heq,
+                                         fluxi);
+
+          for (int k = 0; k < 3; k++)
+            rhs[jj][k] -= thetap * fluxi[k];
+        }
+
+        BFT_FREE(pvar_local);
+        /* Sending structures are no longer needed */
+        BFT_FREE(pvar_distant);
+      }
     } /* idtvar */
 
     /* Boundary convective flux imposed at some faces (tags in icvfli array) */
