@@ -362,7 +362,7 @@ cs_parameters_is_in_list_int(cs_parameter_error_behavior_t   err_behavior,
                     "while its value must be one of:\n"),
                   param_name, param_value);
     for (int i = 0; i < enum_size; i++)
-      cs_log_printf(log_id, "  %d\n", i);
+      cs_log_printf(log_id, "  %d\n", enum_values[i]);
   }
   else {
     cs_log_printf(log_id,
@@ -1565,28 +1565,28 @@ cs_parameters_check(void)
     /* The reduction of the extended neighborhood can degrade the results of the
        LES dynamic model */
     if (cs_glob_turb_model->iturb == 41) {
-      const int imrgra_vals[3] = {3, 6, 9};
-      cs_parameters_is_in_list_int(CS_WARNING,
-                                   _("while reading input data,\n"
-                                     "a reduction of the extended neighborhood "
-                                     "was selected for the calculation of the "
-                                     "gradients by least squares.\n"
-                                     "However this will also be applied to the "
-                                     "averaging in the LES Dynamic model "
-                                     "selected.\n"
-                                     "The computation will run, but the "
-                                     "averaging of the Smagorinsky constant "
-                                     "can be degraded, as it uses the same "
-                                     "reduced neighborhood.\n"
-                                     "Use fully extended neighborhood or "
-                                     "define manually the averaging of the "
-                                     "dynamic Smagorinsky constant via "
-                                     "subroutine ussmag."),
-                                   "cs_glob_space_disc->imrgra",
-                                   cs_glob_space_disc->imrgra,
-                                   3,
-                                   imrgra_vals,
-                                   NULL);
+      int imrgra_cmp = CS_ABS(cs_glob_turb_model->iturb);
+      switch(imrgra_cmp) {
+      case 3:
+      case 6:
+      case 9:
+        cs_parameters_error
+          (CS_WARNING,
+           _("while reading input data"),
+           _("A reduction of the extended neighborhood was selected for the\n"
+             "calculation of the gradients by least squares.\n"
+             "This will also be applied to the averaging in the "
+             "selected LES Dynamic model.\n"
+             "The computation will run, but the averaging of the Smagorinsky\n"
+             "constant can be degraded, "
+             "as it uses the same reduced neighborhood.\n"
+             "Use fully extended neighborhood or directly "
+             "define the averaging of the\n"
+             "dynamic Smagorinsky constant via the ussmag subroutine."));
+        break;
+      default:
+        break;
+      }
     }
   }
 
