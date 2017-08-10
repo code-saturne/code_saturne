@@ -46,7 +46,8 @@ class runcase(object):
                  create_if_missing=True,
                  rebuild=False,
                  study_name=None,
-                 case_name=None):
+                 case_name=None,
+                 ignore_batch=False):
         """
         Initialize runcase info object.
         """
@@ -61,12 +62,15 @@ class runcase(object):
             if rebuild:
                 self.get_run_command()
                 command_line = self.lines[self.run_cmd_line_id]
-                self.build_template(package, study_name, case_name)
+                self.build_template(package,
+                                    study_name,
+                                    case_name,
+                                    ignore_batch)
                 self.lines[self.run_cmd_line_id] = command_line
 
         except IOError:
             if create_if_missing or rebuild:
-                self.build_template(package, study_name, case_name)
+                self.build_template(package, study_name, case_name, ignore_batch)
             else:
                 print("Error: can not open or read %s\n" % self.path)
                 sys.exit(1)
@@ -163,7 +167,8 @@ class runcase(object):
 
     #---------------------------------------------------------------------------
 
-    def build_template(self, package=None, study_name=None, case_name=None):
+    def build_template(self, package=None, study_name=None, case_name=None,
+                       ignore_batch=False):
         """
         Build batch file template
         """
@@ -186,7 +191,7 @@ class runcase(object):
         config = configparser.ConfigParser()
         config.read(package.get_configfiles())
 
-        if config.has_option('install', 'batch'):
+        if not ignore_batch and config.has_option('install', 'batch'):
 
             batch_template = config.get('install', 'batch')
 
