@@ -733,9 +733,8 @@ class Study(object):
             print("\n\n\nWarning: no case defined in %s study\n\n\n" % study)
         else:
             for data in self.__parser.getCasesKeywords(self.label):
-                if n_procs == None:
-                    data['n_procs'] = None
-                else:
+                # n_procs given in smgr command line overwrites n_procs by case
+                if n_procs != None :
                     data['n_procs'] = str(n_procs)
                 c = Case(pkg,
                          self.__log,
