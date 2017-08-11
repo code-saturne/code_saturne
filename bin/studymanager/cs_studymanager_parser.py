@@ -26,7 +26,7 @@
 # Standard modules import
 #-------------------------------------------------------------------------------
 
-import os, sys, logging
+import os, sys, logging, re
 from xml.dom import minidom
 from xml.sax.handler import ContentHandler
 from xml.sax import make_parser
@@ -283,7 +283,7 @@ class Parser(object):
 
     #---------------------------------------------------------------------------
 
-    def getCasesLabel(self, l, attr=None):
+    def getStatusOnCasesLabels(self, l, attr=None):
         """
         Read:
             <study label='STUDY' status='on'>
@@ -311,7 +311,7 @@ class Parser(object):
 
     #---------------------------------------------------------------------------
 
-    def getCasesKeywords(self, l):
+    def getStatusOnCasesKeywords(self, l):
         """
         Read N_PROCS and USER_INPUT_FILES in:
             <study label='STUDY' status='on'>
@@ -347,6 +347,12 @@ class Parser(object):
                     d['n_procs'] = str(node.attributes["n_procs"].value)
                 except:
                     d['n_procs'] = None
+
+                try:
+                    tags = str(node.attributes["tags"].value)
+                    d['tags'] = [tag.strip() for tag in re.split(',', tags)]
+                except:
+                    d['tags'] = None
 
                 for n in node.childNodes:
                     if n.nodeType == minidom.Node.ELEMENT_NODE and n.childNodes:

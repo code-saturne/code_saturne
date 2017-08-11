@@ -91,6 +91,7 @@ class Case(object):
         self.compute    = data['compute']
         self.plot       = data['post']
         self.run_id     = data['run_id']
+        self.tags       = data['tags']
         self.compare    = data['compare']
 
         self.is_compil  = "not done"
@@ -659,7 +660,9 @@ class Study(object):
     """
     Create, run and compare all cases for a given study.
     """
-    def __init__(self, pkg, parser, study, exe, dif, rlog, n_procs=None, force_rm=False, force_overwrite=False):
+    def __init__(self, pkg, parser, study, exe, dif, rlog, n_procs=None,
+                 force_rm=False, force_overwrite=False, with_tags=None,
+                 without_tags=None):
         """
         Constructor.
           1. initialize attributes,
@@ -677,6 +680,12 @@ class Study(object):
         @param n_procs: number of requested processors
         @type force_rm: C{True} or C{False}
         @param force_rm: remove always existing cases
+        @type force_overwrite: C{True} or C{False}
+        @param force_overwrite: overwrite files in dest by files in repo
+        @type with_tags: C{List}
+        @param with_tags: list of tags given at the command line
+        @type without_tags: C{List}
+        @param without_tags: list of tags given at the command line
         """
         # Initialize attributes
         self.__parser   = parser
@@ -698,35 +707,58 @@ class Study(object):
         self.Cases = []
         self.matplotlib_figures = []
         self.input_figures = []
+        self.active_cases = []
 
-        # build the list of the cases
-        self.cases = parser.getCasesLabel(study)
-        if not self.cases:
+        # get list of cases in study
+        on_cases = parser.getStatusOnCasesLabels(study)
+        if not on_cases:
+
             print("\n\n\nWarning: no case defined in %s study\n\n\n" % study)
+
         else:
-            for data in self.__parser.getCasesKeywords(self.label):
+
+            for data in self.__parser.getStatusOnCasesKeywords(self.label):
+
                 # n_procs given in smgr command line overwrites n_procs by case
                 if n_procs:
                     data['n_procs'] = str(n_procs)
-                c = Case(pkg,
-                         self.__log,
-                         self.__diff,
-                         self.__parser,
-                         self.label,
-                         data,
-                         self.__repo,
-                         self.__dest)
-                self.Cases.append(c)
+
+                # check if every tag passed by option --with-tags belongs to
+                # list of tags of the current case
+                tagged = False
+                if with_tags and data['tags']:
+                    tagged = all(tag in data['tags'] for tag in with_tags)
+
+                # check if none of tags passed by option --without-tags
+                # belong to list of tags of the current case
+                exclude = False
+                if without_tags and data['tags']:
+                    exclude = any(tag in data['tags'] for tag in without_tags)
+
+                # do not append case if tags do not match
+                if not with_tags and not without_tags or tagged and not exclude:
+                    c = Case(pkg,
+                             self.__log,
+                             self.__diff,
+                             self.__parser,
+                             self.label,
+                             data,
+                             self.__repo,
+                             self.__dest)
+                    self.Cases.append(c)
+                    self.active_cases.append(c.label)
 
     #---------------------------------------------------------------------------
 
-    def getCasesLabel(self):
+    def getActiveCasesLabels(self):
         """
-        Return the list of the labels of the cases of the current study.
+        Return the list of the labels of the cases of the current study
+        which have status on and which tags match those given at the
+        command line
         @rtype: C{List}
-        @return: labels of the cases
+        @return: labels of active cases
         """
-        return self.cases
+        return self.active_cases
 
     #---------------------------------------------------------------------------
 
@@ -968,6 +1000,15 @@ class Studies(object):
         except Exception:
             self.__plotter = None
 
+        # create list of restricting and excluding tags
+        self.__tags = None
+        if options.with_tags:
+            with_tags = re.split(',', options.with_tags)
+            self.__with_tags = [tag.strip() for tag in with_tags]
+        if options.without_tags:
+            without_tags = re.split(',', options.without_tags)
+            self.__without_tags = [tag.strip() for tag in without_tags]
+
         # build the list of the studies
 
         doc = os.path.join(self.__dest, options.log_file)
@@ -979,7 +1020,9 @@ class Studies(object):
                                            exe, dif, self.__log, \
                                            options.n_procs, \
                                            options.remove_existing, \
-                                           options.force_overwrite)] )
+                                           options.force_overwrite, \
+                                           self.__with_tags, \
+                                           self.__without_tags)] )
             if options.debug:
                 print(" >> Append study ", l)
 

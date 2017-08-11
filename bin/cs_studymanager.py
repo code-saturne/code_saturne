@@ -154,6 +154,14 @@ def process_cmd_line(argv, pkg):
                       dest="debug", default=False,
                       help="Activate debugging mode")
 
+    parser.add_option("--with-tags", type="string",
+                      dest="with_tags", default="",
+                      help="Only process runs with all specified tags")
+
+    parser.add_option("--without-tags", type="string",
+                      dest="without_tags", default="",
+                      help="Exclude any run with one of specified tags")
+
     (options, args) = parser.parse_args(argv)
 
     return  options
