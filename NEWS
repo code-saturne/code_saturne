@@ -44,6 +44,11 @@ Bug fixes
 
 - Fix missing file in theory graphics Makefile.
 
+Architectural changes
+---------------------
+
+- Improve Catalyst environment handling for better automation with SALOME.
+
 Release 5.0.3 (June 29 2017)
 ============================
 

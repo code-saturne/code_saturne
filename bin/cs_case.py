@@ -1233,7 +1233,6 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
                 n_procs += d.n_procs
 
         # Set PATH for Windows DLL search PATH
-        # It should not harm in other circumstances
 
         if sys.platform.startswith('win'):
             cs_exec_environment.write_script_comment(s,
@@ -1268,25 +1267,6 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
                                                    'LD_LIBRARY_PATH',
                                                    salome_libdir)
 
-        # Add paths for plugins
-        plugin_lib_dirs, plugin_pythonpath_dirs, plugin_env_vars \
-            = self.package_compute.config.get_plugin_search_paths()
-        for d in plugin_lib_dirs:
-            cs_exec_environment.write_prepend_path(s,
-                                                   'LD_LIBRARY_PATH',
-                                                   d)
-        for d in plugin_pythonpath_dirs:
-            cs_exec_environment.write_prepend_path(s,
-                                                   'PYTHONPATH',
-                                                   d)
-
-        # Add additional environment variables
-
-        for v in plugin_env_vars:
-            cs_exec_environment.write_export_env(s, v, plugin_env_vars[v])
-
-        s.write('\n')
-
         # Handle rcfile and environment modules if used
 
         rcfile = cs_exec_environment.get_rcfile(self.package_compute)
@@ -1302,6 +1282,26 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
             if rcfile:
                 s.write('  source ' + rcfile + '\n')
             s.write('fi\n\n')
+
+        # Add paths for plugins or dynamic library dependencies
+
+        plugin_lib_dirs, plugin_pythonpath_dirs, plugin_env_vars \
+            = self.package_compute.config.get_run_environment_dependencies()
+        for d in plugin_lib_dirs:
+            cs_exec_environment.write_prepend_path(s,
+                                                   'LD_LIBRARY_PATH',
+                                                   d)
+        for d in plugin_pythonpath_dirs:
+            cs_exec_environment.write_prepend_path(s,
+                                                   'PYTHONPATH',
+                                                   d)
+
+        # Add additional environment variables
+
+        for v in plugin_env_vars:
+            cs_exec_environment.write_export_env(s, v, plugin_env_vars[v])
+
+        s.write('\n')
 
         # Handle OpenMP if needed
 
