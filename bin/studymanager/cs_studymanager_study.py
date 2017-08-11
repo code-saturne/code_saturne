@@ -1001,10 +1001,11 @@ class Studies(object):
             self.__plotter = None
 
         # create list of restricting and excluding tags
-        self.__tags = None
+        self.__with_tags = None
         if options.with_tags:
             with_tags = re.split(',', options.with_tags)
             self.__with_tags = [tag.strip() for tag in with_tags]
+        self.__without_tags = None
         if options.without_tags:
             without_tags = re.split(',', options.without_tags)
             self.__without_tags = [tag.strip() for tag in without_tags]
