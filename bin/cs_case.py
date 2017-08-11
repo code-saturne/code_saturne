@@ -1233,7 +1233,6 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
                 n_procs += d.n_procs
 
         # Set PATH for Windows DLL search PATH
-        # It should not harm in other circumstances
 
         if sys.platform.startswith('win'):
             cs_exec_environment.write_script_comment(s,
@@ -1268,9 +1267,26 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
                                                    'LD_LIBRARY_PATH',
                                                    salome_libdir)
 
-        # Add paths for plugins
+        # Handle rcfile and environment modules if used
+
+        rcfile = cs_exec_environment.get_rcfile(self.package_compute)
+
+        if rcfile or self.package_compute.config.env_modules != "no":
+            cs_exec_environment.write_script_comment(s, \
+               'Load environment if this script is run directly.\n')
+            s.write('if test "$CS_ENVIRONMENT_SET" != "true" ; then\n')
+            if self.package_compute.config.env_modules != "no":
+                s.write('  module purge\n')
+                for m in self.package_compute.config.env_modules.strip().split():
+                    s.write('  module load ' + m + '\n')
+            if rcfile:
+                s.write('  source ' + rcfile + '\n')
+            s.write('fi\n\n')
+
+        # Add paths for plugins or dynamic library dependencies
+
         plugin_lib_dirs, plugin_pythonpath_dirs, plugin_env_vars \
-            = self.package_compute.config.get_plugin_search_paths()
+            = self.package_compute.config.get_run_environment_dependencies()
         for d in plugin_lib_dirs:
             cs_exec_environment.write_prepend_path(s,
                                                    'LD_LIBRARY_PATH',
@@ -1294,22 +1310,6 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
             cs_exec_environment.write_export_env(s, v, plugin_env_vars[v])
 
         s.write('\n')
-
-        # Handle rcfile and environment modules if used
-
-        rcfile = cs_exec_environment.get_rcfile(self.package_compute)
-
-        if rcfile or self.package_compute.config.env_modules != "no":
-            cs_exec_environment.write_script_comment(s, \
-               'Load environment if this script is run directly.\n')
-            s.write('if test "$CS_ENVIRONMENT_SET" != "true" ; then\n')
-            if self.package_compute.config.env_modules != "no":
-                s.write('  module purge\n')
-                for m in self.package_compute.config.env_modules.strip().split():
-                    s.write('  module load ' + m + '\n')
-            if rcfile:
-                s.write('  source ' + rcfile + '\n')
-            s.write('fi\n\n')
 
         # Handle OpenMP if needed
 
