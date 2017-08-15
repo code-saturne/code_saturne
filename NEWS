@@ -5,6 +5,9 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- GUI with Lagrangian module: fix for reading of inlet particle velocity
+  when prescribed values are set.
+
 - Fixes for handling of coupled RSM (irijco=1) with GUI settings
 
 - Fix some spurious warning messages relative to number of sweeps

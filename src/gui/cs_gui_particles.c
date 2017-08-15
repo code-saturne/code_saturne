@@ -886,9 +886,9 @@ cs_gui_particles_bcs(void)
           }
           else if (cs_gui_strcmp(choice, "components")) {
             itmp0 = 1;
-            _get_double(&(vel[0]), 3, path2, "velocity", "velocity_x");
-            _get_double(&(vel[1]), 3, path2, "velocity", "velocity_y");
-            _get_double(&(vel[2]), 3, path2, "velocity", "velocity_z");
+            _get_double(&(vel[0]), 3, path2, "velocity", "velocity_u");
+            _get_double(&(vel[1]), 3, path2, "velocity", "velocity_v");
+            _get_double(&(vel[2]), 3, path2, "velocity", "velocity_w");
           }
           else if (cs_gui_strcmp(choice, "subroutine"))
             itmp0 = 2;
