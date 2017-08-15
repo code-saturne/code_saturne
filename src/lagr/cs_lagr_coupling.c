@@ -236,9 +236,14 @@ cs_lagr_coupling(cs_real_t taup[],
   if (cs_glob_lagr_source_terms->ltsdyn == 1) {
 
     if (cs_glob_lagr_time_scheme->isttio == 1 && lag_st->npts > 0)
-      BFT_MALLOC(t_st_vel, ncelet, cs_real_3_t);
+      BFT_MALLOC(t_st_vel, ncel, cs_real_3_t);
     else
       t_st_vel = st_vel;
+
+    for (cs_lnum_t i = 0; i < ncel; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
+        t_st_vel[i][j] = 0;
+    }
 
     for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
@@ -308,9 +313,14 @@ cs_lagr_coupling(cs_real_t taup[],
     else if (extra->itytur == 3) {
 
       if (cs_glob_lagr_time_scheme->isttio == 1 && lag_st->npts > 0)
-        BFT_MALLOC(t_st_rij, ncelet, cs_real_6_t);
+        BFT_MALLOC(t_st_rij, ncel, cs_real_6_t);
       else
         t_st_rij = st_rij;
+
+      for (cs_lnum_t i = 0; i < ncel; i++) {
+        for (cs_lnum_t j = 0; j < 6; j++)
+          t_st_rij[i][j] = 0;
+      }
 
       for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
@@ -495,6 +505,11 @@ cs_lagr_coupling(cs_real_t taup[],
 
       for (int ivar = 0; ivar < ntersl; ivar++)
         st_val[iel + ivar * ncelet] = 0.0;
+
+      if (t_st_vel != NULL) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          t_st_vel[iel][j] = 0.0;
+      }
 
       if (t_st_rij != NULL) {
         for (cs_lnum_t j = 0; j < 6; j++)
