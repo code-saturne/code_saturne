@@ -55,9 +55,11 @@
 #include "fvm_periodicity.h"
 
 #include "cs_base.h"
+#include "cs_boundary_zone.h"
 #include "cs_physical_constants.h"
 #include "cs_geom.h"
 #include "cs_halo.h"
+#include "cs_interface.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -104,7 +106,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* State where a particle can be.
-   (order is chosen so as to make tests simpler; inside domain first, outside after) */
+   (order is chosen so as to make tests simpler;
+   inside domain first, outside after) */
 
 typedef enum {
   CS_LAGR_PART_TO_SYNC,
@@ -128,25 +131,6 @@ typedef enum {
   CS_LAGR_TRACKING_ERR_LOST_PIC
 
 } cs_lagr_tracking_error_t;
-
-/* keys to sort attributes by Fortran array and index (for mapping)
-   eptp/eptpa real values at current and previous time steps
-
-   ieptp/ieptpa integer values at current and previous time steps
-   pepa real values at current time step
-   _int_loc local integer values at current time step
-   ipepa integer values at current time step
-   iprkid values are for rank ids, useful and valid only for previous
-   time steps */
-
-typedef enum {
-  EPTP_TS = 1, /* EPTP with possible source terms */
-  EPTP,
-  IEPTP,
-  PEPA,
-  IPEPA,
-  IPRKID,
-} _array_map_id_t;
 
 /*============================================================================
  * Local structure definitions
@@ -906,78 +890,6 @@ _manage_error(cs_lnum_t                       failsafe_mode,
 }
 
 /*----------------------------------------------------------------------------
- * Determine the number of the closest wall face from the particle
- * as well as the corresponding wall normal distance (y_p^+)
- *
- * Used for the deposition model.
- *
- * parameters:
- *   particle      <-- particle attributes for current time step
- *   p_am          <-- pointer to attributes map for current time step
- *   visc_length   <--
- *   yplus         --> associated yplus value
- *   face_id       --> associated neighbor wall face, or -1
- *----------------------------------------------------------------------------*/
-
-void
-_test_wall_cell(const void                     *particle,
-                const cs_lagr_attribute_map_t  *p_am,
-                const cs_real_t                 visc_length[],
-                cs_real_t                      *yplus,
-                cs_lnum_t                      *face_id)
-{
-  cs_lnum_t cell_num
-    = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_NUM);
-
-  if (cell_num < 0) return;
-
-  cs_lagr_track_builder_t  *builder = _particle_track_builder;
-  cs_lagr_bdy_condition_t  *bdy_conditions = cs_glob_lagr_bdy_conditions;
-  cs_lnum_t  *cell_face_idx = builder->cell_face_idx;
-  cs_lnum_t  *cell_face_lst = builder->cell_face_lst;
-  cs_lnum_t cell_id = cell_num - 1;
-
-  *yplus = 10000;
-  *face_id = -1;
-
-  cs_lnum_t  start = cell_face_idx[cell_id];
-  cs_lnum_t  end =  cell_face_idx[cell_id + 1];
-
-  for (cs_lnum_t i = start; i < end; i++) {
-    cs_lnum_t  face_num = cell_face_lst[i];
-
-    if (face_num < 0) {
-      cs_lnum_t f_id = CS_ABS(face_num) - 1;
-      cs_lnum_t b_zone_id = bdy_conditions->b_face_zone_id[f_id];
-
-      if (   (bdy_conditions->b_zone_natures[b_zone_id] == CS_LAGR_DEPO1)
-          || (bdy_conditions->b_zone_natures[b_zone_id] == CS_LAGR_DEPO2)
-          || (bdy_conditions->b_zone_natures[b_zone_id] == CS_LAGR_DEPO_DLVO)) {
-
-        cs_real_t x_face = cs_glob_lagr_b_u_normal[f_id][0];
-        cs_real_t y_face = cs_glob_lagr_b_u_normal[f_id][1];
-        cs_real_t z_face = cs_glob_lagr_b_u_normal[f_id][2];
-
-        cs_real_t offset_face = cs_glob_lagr_b_u_normal[f_id][3];
-        const cs_real_t  *particle_coord
-          = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
-
-        cs_real_t dist_norm =   CS_ABS(  particle_coord[0] * x_face
-                                       + particle_coord[1] * y_face
-                                       + particle_coord[2] * z_face
-                                       + offset_face) / visc_length[f_id];
-        if (dist_norm  < *yplus) {
-          *yplus = dist_norm;
-          *face_id = f_id;
-        }
-      }
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
  * Compute the contribution of a particle to the boundary mass flux.
  *
  * Used for the deposition model.
@@ -1218,7 +1130,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   cs_lnum_t  face_id = face_num - 1;
   cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
-  cs_lagr_bdy_condition_t  *bdy_conditions = cs_glob_lagr_bdy_conditions;
+  cs_lagr_zone_data_t  *bdy_conditions = cs_lagr_get_boundary_conditions();
 
   cs_real_t  energt = 0.;
   cs_lnum_t  contact_number = 0;
@@ -1242,6 +1154,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
 
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  const char b_type = cs_glob_lagr_boundary_conditions->elt_type[face_id];
 
   assert(bdy_conditions != NULL);
 
@@ -1277,14 +1191,14 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   for (k = 0; k < 3; k++)
     intersect_pt[k] = disp[k]*t_intersect + p_info->start_coords[k];
 
-  if (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_OUTLET
-      || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_INLET
-      || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO1) {
+  if (   b_type == CS_LAGR_OUTLET
+      || b_type == CS_LAGR_INLET
+      || b_type == CS_LAGR_DEPO1) {
 
     move_particle = CS_LAGR_PART_MOVE_OFF;
     particle_state = CS_LAGR_PART_OUT;
 
-    if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO1) {
+    if (b_type == CS_LAGR_DEPO1) {
       particles->n_part_dep += 1;
       particles->weight_dep += particle_stat_weight;
       if (cs_glob_lagr_model->deposition == 1)
@@ -1298,7 +1212,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       particle_coord[k] = intersect_pt[k];
   }
 
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO2) {
+  else if (b_type == CS_LAGR_DEPO2) {
 
     move_particle = CS_LAGR_PART_MOVE_OFF;
 
@@ -1341,7 +1255,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   }
 
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO_DLVO) {
+  else if (b_type == CS_LAGR_DEPO_DLVO) {
 
     cs_real_t particle_diameter
       = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
@@ -1702,7 +1616,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     }
   }
 
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_REBOUND) {
+  else if (b_type == CS_LAGR_REBOUND) {
 
     move_particle = CS_LAGR_PART_MOVE_ON;
     particle_state = CS_LAGR_PART_TO_SYNC;
@@ -1743,7 +1657,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   }
 
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_SYM) {
+  else if (b_type == CS_LAGR_SYM) {
 
     move_particle = CS_LAGR_PART_MOVE_ON;
     particle_state = CS_LAGR_PART_TO_SYNC;
@@ -1784,7 +1698,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   }
 
-  else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_FOULING) {
+  else if (b_type == CS_LAGR_FOULING) {
 
     /* Fouling of the particle, if its properties make it possible and
        with respect to a probability
@@ -1941,7 +1855,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Boundary condition %d not recognized.\n"),
-              bdy_conditions->b_zone_natures[boundary_zone]);
+              b_type);
 
   /* Ensure some fields are updated */
 
@@ -1964,19 +1878,33 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   *p_move_particle = move_particle;
 
+  /* Update per-zone flow rate measure for exiting particles */
+
   if (particle_state == CS_LAGR_PART_OUT) {
-    bdy_conditions->particle_flow_rate[boundary_zone]
-      -= (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT)
-          * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS));
+    int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
+
+    cs_real_t fr =   particle_stat_weight
+                   * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
+
+    bdy_conditions->particle_flow_rate[boundary_zone*n_stats] -= fr;
+
+    if (n_stats > 1) {
+      int class_id
+        = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_STAT_CLASS);
+      if (class_id > 0 && class_id < n_stats)
+        bdy_conditions->particle_flow_rate[  boundary_zone*n_stats
+                                           + class_id] -= fr;
+    }
+
   }
 
   /* FIXME: Post-treatment not yet implemented... */
 
-  if  (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO1
-       || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO2
-       || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_DEPO_DLVO
-       || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_REBOUND
-       || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_FOULING) {
+  if  (   b_type == CS_LAGR_DEPO1
+       || b_type == CS_LAGR_DEPO2
+       || b_type == CS_LAGR_DEPO_DLVO
+       || b_type == CS_LAGR_REBOUND
+       || b_type == CS_LAGR_FOULING) {
 
     /* Number of particle-boundary interactions  */
     if (cs_glob_lagr_boundary_interactions->inbrbd > 0)
@@ -2012,6 +1940,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
  *   p_am                     <-- particle attribute map
  *   displacement_step_id     <-- id of displacement step
  *   failsafe_mode            <-- with (0) / without (1) failure capability
+ *   b_face_zone_id           <-- boundary face zone id
+ *   visc_length              <-- viscous layer thickness
  *
  * returns:
  *   a state associated to the status of the particle (treated, to be deleted,
@@ -2023,6 +1953,7 @@ _local_propagation(void                           *particle,
                    const cs_lagr_attribute_map_t  *p_am,
                    int                             displacement_step_id,
                    int                             failsafe_mode,
+                   const int                       b_face_zone_id[],
                    const cs_real_t                 visc_length[],
                    const cs_field_t               *u)
 {
@@ -2043,7 +1974,6 @@ _local_propagation(void                           *particle,
   const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
   cs_lagr_track_builder_t  *builder = _particle_track_builder;
 
-  cs_lagr_bdy_condition_t  *bdy_conditions = cs_glob_lagr_bdy_conditions;
   cs_lnum_t  *cell_face_idx = builder->cell_face_idx;
   cs_lnum_t  *cell_face_lst = builder->cell_face_lst;
 
@@ -2117,8 +2047,8 @@ _local_propagation(void                           *particle,
 
     if (lagr_model->deposition > 0 && *particle_yplus < 0.) {
 
-      _test_wall_cell(particle, p_am, visc_length,
-                      particle_yplus, neighbor_face_id);
+      cs_lagr_test_wall_cell(particle, p_am, visc_length,
+                             particle_yplus, neighbor_face_id);
 
       if (*particle_yplus < 100.) {
 
@@ -2202,8 +2132,8 @@ _local_propagation(void                           *particle,
 
     /* Loop on faces to see if the particle trajectory crosses it*/
     for (i = cell_face_idx[cur_cell_id];
-        i < cell_face_idx[cur_cell_id+1] && move_particle == CS_LAGR_PART_MOVE_ON;
-        i++) {
+         i < cell_face_idx[cur_cell_id+1] && move_particle == CS_LAGR_PART_MOVE_ON;
+         i++) {
 
       cs_lnum_t face_id, vtx_start, vtx_end, n_vertices;
       const cs_lnum_t  *face_connect;
@@ -2390,8 +2320,8 @@ _local_propagation(void                           *particle,
 
           /* Wall cell detection */
 
-          _test_wall_cell(particle, p_am, visc_length,
-                          particle_yplus, neighbor_face_id);
+          cs_lagr_test_wall_cell(particle, p_am, visc_length,
+                                 particle_yplus, neighbor_face_id);
 
           if ( save_yplus < 100. ) {
 
@@ -2509,7 +2439,7 @@ _local_propagation(void                           *particle,
                               particle,
                               face_num,
                               t_intersect,
-                              bdy_conditions->b_face_zone_id[face_num-1],
+                              b_face_zone_id[face_num-1],
                               &move_particle);
 
       if (cs_glob_lagr_time_scheme->t_order == 2)
@@ -3328,6 +3258,8 @@ cs_lagr_tracking_initialize(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Apply one particle movement step.
+ *
+ * \param[in]  visc_length     viscous layer thickness
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3366,6 +3298,8 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
 
   assert(particles != NULL);
 
+  const int *b_face_zone_id = cs_boundary_zone_face_class_id();
+
   /* particles->n_part_new: handled in injection step */
 
   particles->weight = 0.0;
@@ -3378,7 +3312,8 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
   particles->n_failed_part = 0;
   particles->weight_failed = 0.0;
 
-  _initialize_displacement(particles, part_b_mass_flux);
+  _initialize_displacement(particles,
+                           part_b_mass_flux);
 
   /* Main loop on  particles: global propagation */
 
@@ -3404,6 +3339,7 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
                                             p_am,
                                             n_displacement_steps,
                                             failsafe_mode,
+                                            b_face_zone_id,
                                             visc_length,
                                             u);
 
@@ -3443,8 +3379,8 @@ cs_lagr_tracking_particle_movement(const cs_real_t  visc_length[])
       cs_real_t *cur_part_yplus
         = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
 
-        _test_wall_cell(particle, p_am, visc_length,
-                        cur_part_yplus, cur_neighbor_face_id);
+      cs_lagr_test_wall_cell(particle, p_am, visc_length,
+                             cur_part_yplus, cur_neighbor_face_id);
 
       /* Modification of MARKO pointer */
       if (*cur_part_yplus > 100.0)
@@ -3579,10 +3515,6 @@ cs_lagr_tracking_finalize(void)
   /* Destroy builder */
   _particle_track_builder = _destroy_track_builder(_particle_track_builder);
 
-  /* Destroy boundary condition structure */
-
-  cs_lagr_finalize_bdy_cond();
-
   /* Destroy internal condition structure*/
 
   cs_lagr_finalize_internal_cond();
@@ -3607,6 +3539,108 @@ cs_lagr_tracking_finalize(void)
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)  _delete_particle_datatypes();
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine the number of the closest wall face from the particle
+ *        as well as the corresponding wall normal distance (y_p^+)
+ *
+ * Used for the deposition model.
+ *
+ * \param[in]   particle     particle attributes for current time step
+ * \param[in]   p_am         pointer to attributes map for current time step
+ * \param[in]   visc_length  viscous layer thickness
+ * \param[out]  yplus        associated yplus value
+ * \param[out]  face_id      associated neighbor wall face, or -1
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_test_wall_cell(const void                     *particle,
+                       const cs_lagr_attribute_map_t  *p_am,
+                       const cs_real_t                 visc_length[],
+                       cs_real_t                      *yplus,
+                       cs_lnum_t                      *face_id)
+{
+  cs_lnum_t cell_num
+    = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_NUM);
+
+  if (cell_num < 0) return;
+
+  cs_lagr_track_builder_t  *builder = _particle_track_builder;
+  cs_lnum_t  *cell_face_idx = builder->cell_face_idx;
+  cs_lnum_t  *cell_face_lst = builder->cell_face_lst;
+  cs_lnum_t cell_id = cell_num - 1;
+
+  *yplus = 10000;
+  *face_id = -1;
+
+  cs_lnum_t  start = cell_face_idx[cell_id];
+  cs_lnum_t  end =  cell_face_idx[cell_id + 1];
+
+  for (cs_lnum_t i = start; i < end; i++) {
+    cs_lnum_t  face_num = cell_face_lst[i];
+
+    if (face_num < 0) {
+
+      assert(cs_glob_lagr_boundary_conditions != NULL);
+
+      cs_lnum_t f_id = CS_ABS(face_num) - 1;
+      const char b_type = cs_glob_lagr_boundary_conditions->elt_type[f_id];
+
+      if (   (b_type == CS_LAGR_DEPO1)
+          || (b_type == CS_LAGR_DEPO2)
+          || (b_type == CS_LAGR_DEPO_DLVO)) {
+
+        cs_real_t x_face = cs_glob_lagr_b_u_normal[f_id][0];
+        cs_real_t y_face = cs_glob_lagr_b_u_normal[f_id][1];
+        cs_real_t z_face = cs_glob_lagr_b_u_normal[f_id][2];
+
+        cs_real_t offset_face = cs_glob_lagr_b_u_normal[f_id][3];
+        const cs_real_t  *particle_coord
+          = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
+
+        cs_real_t dist_norm = CS_ABS(  particle_coord[0] * x_face
+                                     + particle_coord[1] * y_face
+                                     + particle_coord[2] * z_face
+                                     + offset_face) / visc_length[f_id];
+        if (dist_norm  < *yplus) {
+          *yplus = dist_norm;
+          *face_id = f_id;
+        }
+      }
+    }
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointers to cell face connectivity used in particle tracking.
+ *
+ * \param[out]  cell_face_idx  cell face index
+ * \param[out]  cell_face_lst  cell face connectivity (signed 1-to-n based,
+ *                             negative for boundary faces, positive for
+ *                             interior faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_get_cell_face_connectivity(cs_lnum_t  **cell_face_idx,
+                                   cs_lnum_t  **cell_face_lst)
+{
+  cs_lagr_track_builder_t  *builder = _particle_track_builder;
+
+  if (builder != NULL) {
+    *cell_face_idx = builder->cell_face_idx;
+    *cell_face_lst = builder->cell_face_lst;
+  }
+  else {
+    *cell_face_idx = NULL;
+    *cell_face_lst = NULL;
+  }
 }
 
 /*----------------------------------------------------------------------------*/

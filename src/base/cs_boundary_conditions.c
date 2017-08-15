@@ -781,7 +781,8 @@ cs_boundary_conditions_free(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Set convective oulet boundary condition for a scalar
+/*!
+ * \brief Set convective oulet boundary condition for a scalar.
  *
  * Parameters:
  * \param[out]    coefa         explicit BC coefficient for gradients
@@ -794,13 +795,14 @@ cs_boundary_conditions_free(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
-                                                         cs_real_t *cofaf,
-                                                         cs_real_t *coefb,
-                                                         cs_real_t *cofbf,
-                                                         cs_real_t  pimp,
-                                                         cs_real_t  cfl,
-                                                         cs_real_t  hint)
+void
+cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
+                                                    cs_real_t *cofaf,
+                                                    cs_real_t *coefb,
+                                                    cs_real_t *cofbf,
+                                                    cs_real_t  pimp,
+                                                    cs_real_t  cfl,
+                                                    cs_real_t  hint)
 {
   /* Gradient BCs */
   *coefb = cfl / (1.0 + cfl);
@@ -809,8 +811,6 @@ void cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
   /* Flux BCs */
   *cofaf = - hint * *coefa;
   *cofbf =   hint * (1.0 - *coefb);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/

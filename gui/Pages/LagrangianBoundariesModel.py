@@ -85,7 +85,7 @@ class LagrangianBoundariesModel(Model):
         """
         default = {}
         default['particles'] = "inlet"
-        default['nbclas'] = 0
+        default['n_is'] = 0
         default['number'] = 10
         default['frequency'] = 1
         default['statistical_groups'] = 0.
@@ -96,17 +96,15 @@ class LagrangianBoundariesModel(Model):
         default['velocity_choice'] = "fluid"
         default['velocity_norm'] = 0.
         default['velocity_value'] = 0.
-        default['temperature_choice'] = "prescribed"
+        default['temperature_choice'] = "fluid"
         default['temperature'] = 20.
         default['specific_heat'] = 1400.
         default['emissivity'] = 0.9
-        default['diameter_choice'] = "prescribed"
         default['diameter'] = 1.0e-5
         default['diameter_standard_deviation'] = 0.
         default['fouling_index'] = 1.
         default['coal_number'] = 1
         default['coal_temperature'] = 800.
-        default['coal_composition'] = "raw_coal_as_received"
         return default
 
     def getFoulingStatus(self):
@@ -123,15 +121,15 @@ class LagrangianBoundariesModel(Model):
         'self.node_boundary' and 'self.node_particles' used in many functions.
         """
         if nature == "inlet":
-            self.isInList(value, ["inlet"])
+            self.isInList(value, ["inlet", "bounce", "outlet"])
         elif nature == "outlet":
             self.isInList(value, ["outlet"])
         elif nature == "free_inlet_outlet":
-            self.isInList(value, ["outlet"])
+            self.isInList(value, ["inlet", "outlet"])
         elif nature == "imposed__outlet":
             self.isInList(value, ["outlet"])
         elif nature == "symmetry":
-            self.isInList(value, ["part_symmetry"])
+            self.isInList(value, ["part_symmetry", "bounce"])
         elif nature == "wall":
             l = [ "inlet", "bounce", "deposit1", "deposit2"]
             if LagrangianModel(self.case).getCoalFouling() == "on":
@@ -149,9 +147,9 @@ class LagrangianBoundariesModel(Model):
         Return value for the boundary condition.
         """
         default = { "wall" : "deposit1", "inlet" : "inlet",
-                "outlet" : "outlet", "free_inlet_outlet" : "outlet",
-                "imposed_p_outlet" : "outlet",
-                "symmetry" : "part_symmetry"}
+                    "outlet" : "outlet", "free_inlet_outlet" : "outlet",
+                    "imposed_p_outlet" : "outlet",
+                    "symmetry" : "part_symmetry"}
         self.setCurrentBoundaryNode(nature, labelbc)
         if self.node_particles:
             val = self.node_particles['choice']
@@ -170,35 +168,41 @@ class LagrangianBoundariesModel(Model):
         self.node_particles = self.node_boundary.xmlInitChildNode('particles', 'choice')
 
 
-    def newClassNode(self):
+    def newSetNode(self):
         """
-        Add a new 'class' node with child nodes.
+        Add a new 'set' node with child nodes.
         """
-        node_class = self.node_particles.xmlAddChild('class')
-        node_class.xmlSetData('number', self.default['number'])
-        node_class.xmlSetData('frequency', self.default['frequency'])
-        node_class.xmlSetData('statistical_groups', self.default['statistical_groups'])
-        node_class.xmlSetData('mass_flow_rate', self.default['mass_flow_rate'])
+        node_set = self.node_particles.xmlAddChild('class')
+        node_set.xmlSetData('number', self.default['number'])
+        node_set.xmlSetData('frequency', self.default['frequency'])
+        node_set.xmlSetData('statistical_groups', self.default['statistical_groups'])
+        node_set.xmlSetData('mass_flow_rate', self.default['mass_flow_rate'])
         if CoalCombustionModel(self.case).getCoalCombustionModel("only") == 'off':
-            node_class.xmlSetData('density', self.default['density'])
-            node_class.xmlInitChildNode('temperature', choice=self.default['temperature_choice'])
-            node_class.xmlSetData('temperature', self.default['temperature'])
+            node_set.xmlSetData('density', self.default['density'])
+            node_set.xmlInitChildNode('temperature',
+                                      choice=self.default['temperature_choice'])
+            node_set.xmlSetData('temperature',
+                                self.default['temperature'])
 
-        node_class.xmlInitChildNode('statistical_weight', choice=self.default['statistical_weight_choice'])
-        node_class.xmlSetData('statistical_weight', self.default['statistical_weight'])
+        node_set.xmlInitChildNode('statistical_weight',
+                                  choice=self.default['statistical_weight_choice'])
+        node_set.xmlSetData('statistical_weight',
+                            self.default['statistical_weight'])
 
-        node_class.xmlInitChildNode('velocity', choice=self.default['velocity_choice'])
+        node_set.xmlInitChildNode('velocity',
+                                  choice=self.default['velocity_choice'])
 
-        node_class.xmlInitChildNode('diameter', choice=self.default['diameter_choice'])
-        node_class.xmlSetData('diameter', self.default['diameter'])
-        node_class.xmlSetData('diameter_standard_deviation', self.default['diameter_standard_deviation'])
-        node_class.xmlSetData('fouling_index', self.default['fouling_index'])
+        node_set.xmlInitChildNode('diameter')
+        node_set.xmlSetData('diameter', self.default['diameter'])
+        node_set.xmlSetData('diameter_standard_deviation',
+                            self.default['diameter_standard_deviation'])
+        node_set.xmlSetData('fouling_index', self.default['fouling_index'])
 
 
     @Variables.undoGlobal
-    def setNumberOfClassesValue(self, labelbc, value):
+    def setNumberOfSetsValue(self, labelbc, value):
         """
-        Update the number of classes. Create or delete nodes if necessary.
+        Update the number of sets. Create or delete nodes if necessary.
         """
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
@@ -206,242 +210,242 @@ class LagrangianBoundariesModel(Model):
         nnodes = len(node_list)
         if value > nnodes:
             for i in range(value-nnodes):
-                self.newClassNode()
+                self.newSetNode()
         else:
             for i in range(nnodes-value):
                 node_list[-1].xmlRemoveNode()
-            # redefine self.node_class
-            self.setCurrentClassNode(labelbc, value)
+            # redefine self.node_set
+            self.setCurrentSetNode(labelbc, value)
 
 
     @Variables.noUndo
-    def getNumberOfClassesValue(self, labelbc):
+    def getNumberOfSetsValue(self, labelbc):
         """
-        Return the number of classes.
+        Return the number of injection sets.
         """
         node_list = self.node_particles.xmlGetChildNodeList('class')
         value = len(node_list)
         if value == None:
-            value = self.defaultParticlesBoundaryValues()['nbclas']
-            self.setNumberOfClassesValue(labelbc, value)
+            value = self.defaultParticlesBoundaryValues()['n_is']
+            self.setNumberOfSetsValue(labelbc, value)
         return value
 
 
     @Variables.undoLocal
-    def setCurrentClassNode(self, labelbc, iclass):
+    def setCurrentSetNode(self, labelbc, iset):
         """
-        Update the current class node.
+        Update the current set node.
         """
         choice = self.node_particles['choice']
         self.isInList(choice, ["inlet"])
-        self.isInt(iclass)
-        self.node_class = None
+        self.isInt(iset)
+        self.node_set = None
         nodes_list = self.node_particles.xmlGetChildNodeList('class')
         if nodes_list:
             nnodes = len(nodes_list)
-            self.isLowerOrEqual(iclass, nnodes)
-            self.node_class = nodes_list[iclass-1]
+            self.isLowerOrEqual(iset, nnodes)
+            self.node_set = nodes_list[iset-1]
 
 
     @Variables.undoLocal
-    def setNumberOfParticulesInClassValue(self, label, iclass, value):
+    def setNumberOfParticulesInSetValue(self, label, iset, value):
         """
-        Update the number of particles in a class.
+        Update the number of particles in a set.
         """
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('number', value)
+        self.node_set.xmlSetData('number', value)
 
 
     @Variables.noUndo
-    def getNumberOfParticulesInClassValue(self, label, iclass):
+    def getNumberOfParticulesInSetValue(self, label, iset):
         """
-        Return the number of particles in a class.
+        Return the number of particles in a set.
         """
-        value = self.node_class.xmlGetInt('number')
+        value = self.node_set.xmlGetInt('number')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['number']
-            self.setNumberOfParticulesInZoneValue(label, iclass,value)
+            self.setNumberOfParticulesInZoneValue(label, iset,value)
         return value
 
 
     @Variables.undoLocal
-    def setInjectionFrequencyValue(self, label, iclass, value):
+    def setInjectionFrequencyValue(self, label, iset, value):
         """
         Update the injection frequency.
         """
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('frequency', value)
+        self.node_set.xmlSetData('frequency', value)
 
 
     @Variables.noUndo
-    def getInjectionFrequencyValue(self, label, iclass):
+    def getInjectionFrequencyValue(self, label, iset):
         """
         Return the injection frequency.
         """
-        value = self.node_class.xmlGetInt('frequency')
+        value = self.node_set.xmlGetInt('frequency')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['frequency']
-            self.setInjectionFrequencyValue(label, iclass, value)
+            self.setInjectionFrequencyValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setParticleGroupNumberValue(self, label, iclass, value):
+    def setParticleGroupNumberValue(self, label, iset, value):
         """
         Update the group number of the particle.
         """
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('statistical_groups', value)
+        self.node_set.xmlSetData('statistical_groups', value)
 
 
     @Variables.noUndo
-    def getParticleGroupNumberValue(self, label, iclass):
+    def getParticleGroupNumberValue(self, label, iset):
         """
         Return the group number of the particle.
         """
-        value = self.node_class.xmlGetInt('statistical_groups')
+        value = self.node_set.xmlGetInt('statistical_groups')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['statistical_groups']
-            self.setParticleGroupNumberValue(label, iclass, value)
+            self.setParticleGroupNumberValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setMassFlowRateValue(self, label, iclass, value):
+    def setMassFlowRateValue(self, label, iset, value):
         """
         Update the mass flow rate value.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('mass_flow_rate', value)
+        self.node_set.xmlSetData('mass_flow_rate', value)
 
 
     @Variables.noUndo
-    def getMassFlowRateValue(self, label, iclass):
+    def getMassFlowRateValue(self, label, iset):
         """
         Return the mass flow rate value.
         """
-        value = self.node_class.xmlGetDouble('mass_flow_rate')
+        value = self.node_set.xmlGetDouble('mass_flow_rate')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['mass_flow_rate']
-            self.setMassFlowRateValue(label, iclass, value)
+            self.setMassFlowRateValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setStatisticalWeightChoice(self, label, iclass, value):
+    def setStatisticalWeightChoice(self, label, iset, value):
         """
         Update the condition on statistical weight.
         """
-        self.isInList(value, ["rate", "prescribed", "subroutine"])
-        node = self.node_class.xmlInitChildNode('statistical_weight', 'choice')
+        self.isInList(value, ["rate", "prescribed"])
+        node = self.node_set.xmlInitChildNode('statistical_weight', 'choice')
         node['choice'] = value
 
 
     @Variables.noUndo
-    def getStatisticalWeightChoice(self, label, iclass):
+    def getStatisticalWeightChoice(self, label, iset):
         """
         Return the condition on statistical weight.
         """
-        node = self.node_class.xmlInitChildNode('statistical_weight', 'choice')
+        node = self.node_set.xmlInitChildNode('statistical_weight', 'choice')
         if node:
             val = node['choice']
             if val == None or val == "":
                 val = self.defaultParticlesBoundaryValues()['statistical_weight_choice']
-                self.setStatisticalWeightChoice(label, iclass, val)
+                self.setStatisticalWeightChoice(label, iset, val)
         return val
 
 
     @Variables.undoLocal
-    def setStatisticalWeightValue(self, label, iclass, value):
+    def setStatisticalWeightValue(self, label, iset, value):
         """
         Update the statistical weight value.
         """
         self.isFloat(value)
         self.isGreater(value, 0)
-        self.node_class.xmlSetData('statistical_weight', value)
+        self.node_set.xmlSetData('statistical_weight', value)
 
 
     @Variables.noUndo
-    def getStatisticalWeightValue(self, label, iclass):
+    def getStatisticalWeightValue(self, label, iset):
         """
         Return the statistical weight value.
         """
-        value = self.node_class.xmlGetDouble('statistical_weight')
+        value = self.node_set.xmlGetDouble('statistical_weight')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['statistical_weight']
-            self.setStatisticalWeightValue(label, iclass, value)
+            self.setStatisticalWeightValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setDensityValue(self, label, iclass, value):
+    def setDensityValue(self, label, iset, value):
         """
         Update the density value.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('density', value)
+        self.node_set.xmlSetData('density', value)
 
 
     @Variables.noUndo
-    def getDensityValue(self, label, iclass):
+    def getDensityValue(self, label, iset):
         """
         Return the density value.
         """
-        value = self.node_class.xmlGetDouble('density')
+        value = self.node_set.xmlGetDouble('density')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['density']
-            self.setDensityValue(label, iclass, value)
+            self.setDensityValue(label, iset, value)
         return value
 
     @Variables.undoLocal
-    def setFoulingIndexValue(self, label, iclass, value):
+    def setFoulingIndexValue(self, label, iset, value):
         """
         Update the fouling index value.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('fouling_index', value)
+        self.node_set.xmlSetData('fouling_index', value)
 
 
     @Variables.noUndo
-    def getFoulingIndexValue(self, label, iclass):
+    def getFoulingIndexValue(self, label, iset):
         """
         Return the fouling index value.
         """
-        value = self.node_class.xmlGetDouble('fouling_index')
+        value = self.node_set.xmlGetDouble('fouling_index')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['fouling_index']
-            self.setFoulingIndexValue(label, iclass, value)
+            self.setFoulingIndexValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setVelocityChoice(self, label, iclass, choice):
+    def setVelocityChoice(self, label, iset, choice):
         """
         Update the condition on velocity.
         """
-        self.isInList(choice, ["fluid", "components", "norm", "subroutine"])
-        node_velocity = self.node_class.xmlInitChildNode('velocity', 'choice')
+        self.isInList(choice, ["fluid", "components", "norm"])
+        node_velocity = self.node_set.xmlInitChildNode('velocity', 'choice')
         node_velocity['choice'] = choice
-        if choice in ["fluid", "norm", "subroutine"]:
+        if choice in ["fluid", "norm"]:
             node_velocity.xmlRemoveChild('velocity_x')
             node_velocity.xmlRemoveChild('velocity_y')
             node_velocity.xmlRemoveChild('velocity_z')
-        elif choice in ["fluid", "components", "subroutine"]:
+        elif choice in ["fluid", "components"]:
             node_velocity.xmlRemoveChild('norm')
 
 
     @Variables.noUndo
-    def getVelocityChoice(self, label, iclass):
+    def getVelocityChoice(self, label, iset):
         """
         Return the condition on velocity.
         """
-        node = self.node_class.xmlInitChildNode('velocity', 'choice')
+        node = self.node_set.xmlInitChildNode('velocity', 'choice')
         if node:
             val = node['choice']
             if val == None:
@@ -451,280 +455,233 @@ class LagrangianBoundariesModel(Model):
 
 
     @Variables.undoLocal
-    def setVelocityNormValue(self, label, iclass, value):
+    def setVelocityNormValue(self, label, iset, value):
         """
         Update the velocity norm.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0.)
-        node_velocity = self.node_class.xmlInitChildNode('velocity', choice="norm")
+        node_velocity = self.node_set.xmlInitChildNode('velocity', choice="norm")
         choice = node_velocity['choice']
         self.isInList(choice, ["norm"])
         node_velocity.xmlSetData('norm', value)
 
 
     @Variables.noUndo
-    def getVelocityNormValue(self, label, iclass):
+    def getVelocityNormValue(self, label, iset):
         """
         Return the velocity norm.
         """
-        node_velocity = self.node_class.xmlInitChildNode('velocity', choice="norm")
+        node_velocity = self.node_set.xmlInitChildNode('velocity', choice="norm")
         value = node_velocity.xmlGetDouble('norm')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['velocity_norm']
-            self.setVelocityNormValue(label, iclass, value)
+            self.setVelocityNormValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setVelocityDirectionValue(self, label, iclass, idir, value):
+    def setVelocityDirectionValue(self, label, iset, idir, value):
         """
         Update the velocity value in the given direction.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0.)
-        node_velocity = self.node_class.xmlInitChildNode('velocity', choice="components")
+        node_velocity = self.node_set.xmlInitChildNode('velocity', choice="components")
         choice = node_velocity['choice']
         self.isInList(choice, ["components"])
         node_velocity.xmlSetData('velocity_' + idir, value)
 
 
     @Variables.noUndo
-    def getVelocityDirectionValue(self, label, iclass, idir):
+    def getVelocityDirectionValue(self, label, iset, idir):
         """
         Return the velocity value in the given direction.
         """
-        node_velocity = self.node_class.xmlInitChildNode('velocity', choice="components")
-        value = self.node_class.xmlGetDouble('velocity_' + idir)
+        node_velocity = self.node_set.xmlInitChildNode('velocity', choice="components")
+        value = self.node_set.xmlGetDouble('velocity_' + idir)
         if value == None:
             value = self.defaultParticlesBoundaryValues()['velocity_value']
-            self.setVelocityDirectionValue(label, iclass, idir, value)
+            self.setVelocityDirectionValue(label, iset, idir, value)
         return value
 
 
     @Variables.undoLocal
-    def setTemperatureChoice(self, label, iclass, value):
+    def setTemperatureChoice(self, label, iset, value):
         """
         Update the condition on temperature.
         """
-        self.isInList(value, ["prescribed", "subroutine"])
-        node = self.node_class.xmlInitChildNode('temperature', 'choice')
+        self.isInList(value, ["prescribed", "fluid"])
+        node = self.node_set.xmlInitChildNode('temperature', 'choice')
         node['choice'] = value
 
 
     @Variables.noUndo
-    def getTemperatureChoice(self, label, iclass):
+    def getTemperatureChoice(self, label, iset):
         """
         Return the condition on temperature.
         """
-        node = self.node_class.xmlInitChildNode('temperature', 'choice')
+        node = self.node_set.xmlInitChildNode('temperature', 'choice')
         if node:
             val = node['choice']
             if val == None:
                 val = self.defaultParticlesBoundaryValues()['temperature_choice']
-                self.setTemperatureChoice(label, iclass, val)
+                self.setTemperatureChoice(label, iset, val)
         return val
 
 
     @Variables.undoLocal
-    def setTemperatureValue(self, label, iclass, value):
+    def setTemperatureValue(self, label, iset, value):
         """
         Update the temperature value.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('temperature', value)
+        self.node_set.xmlSetData('temperature', value)
 
 
     @Variables.noUndo
-    def getTemperatureValue(self, label, iclass):
+    def getTemperatureValue(self, label, iset):
         """
         Return the temperature value.
         """
-        value = self.node_class.xmlGetDouble('temperature')
+        value = self.node_set.xmlGetDouble('temperature')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['temperature']
-            self.setTemperatureValue(label, iclass, value)
+            self.setTemperatureValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setSpecificHeatValue(self, label, iclass, value):
+    def setSpecificHeatValue(self, label, iset, value):
         """
         Update the specific heat value.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('specific_heat', value)
+        self.node_set.xmlSetData('specific_heat', value)
 
 
     @Variables.noUndo
-    def getSpecificHeatValue(self, label, iclass):
+    def getSpecificHeatValue(self, label, iset):
         """
         Return the specific heat value.
         """
-        value = self.node_class.xmlGetDouble('specific_heat')
+        value = self.node_set.xmlGetDouble('specific_heat')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['specific_heat']
-            self.setSpecificHeatValue(label, iclass, value)
+            self.setSpecificHeatValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setEmissivityValue(self, label, iclass, value):
+    def setEmissivityValue(self, label, iset, value):
         """
         Update the emissivity value.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('emissivity', value)
+        self.node_set.xmlSetData('emissivity', value)
 
 
     @Variables.noUndo
-    def getEmissivityValue(self, label, iclass):
+    def getEmissivityValue(self, label, iset):
         """
         Return the emissivity value.
         """
-        value = self.node_class.xmlGetDouble('emissivity')
+        value = self.node_set.xmlGetDouble('emissivity')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['emissivity']
-            self.setEmissivityValue(label, iclass, value)
+            self.setEmissivityValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setDiameterChoice(self, label, iclass, value):
-        """
-        Update the condition on the particle diameter.
-        """
-        self.isInList(value, ["prescribed", "subroutine"])
-        node = self.node_class.xmlInitChildNode('diameter', 'choice')
-        node['choice'] = value
-
-
-    @Variables.noUndo
-    def getDiameterChoice(self, label, iclass):
-        """
-        Return the condition on the particle diameter.
-        """
-        node = self.node_class.xmlInitChildNode('diameter', 'choice')
-        if node:
-            val = node['choice']
-            if val == None:
-                val = self.defaultParticlesBoundaryValues()['diameter_choice']
-                self.setDiameterChoice(label, iclass, val)
-        return val
-
-
-    @Variables.undoLocal
-    def setDiameterValue(self, label, iclass, value):
+    def setDiameterValue(self, label, iset, value):
         """
         Update the particle diameter value.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('diameter', value)
+        self.node_set.xmlSetData('diameter', value)
 
 
     @Variables.noUndo
-    def getDiameterValue(self, label, iclass):
+    def getDiameterValue(self, label, iset):
         """
         Return the particle diameter value.
         """
-        value = self.node_class.xmlGetDouble('diameter')
+        value = self.node_set.xmlGetDouble('diameter')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['diameter']
-            self.setDiameterValue(label, iclass, value)
+            self.setDiameterValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setDiameterVarianceValue(self, label, iclass, value):
+    def setDiameterVarianceValue(self, label, iset, value):
         """
         Update the particle diameter variance value.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('diameter_standard_deviation', value)
+        self.node_set.xmlSetData('diameter_standard_deviation', value)
 
 
     @Variables.noUndo
-    def getDiameterVarianceValue(self, label, iclass):
+    def getDiameterVarianceValue(self, label, iset):
         """
         Return the particle diameter variance value.
         """
-        value = self.node_class.xmlGetDouble('diameter_standard_deviation')
+        value = self.node_set.xmlGetDouble('diameter_standard_deviation')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['diameter_standard_deviation']
-            self.setDiameterVarianceValue(label, iclass, value)
+            self.setDiameterVarianceValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setCoalNumberValue(self, label, iclass, value):
+    def setCoalNumberValue(self, label, iset, value):
         """
         Update the coal number of the particle.
         """
         self.isInt(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('coal_number', value)
+        self.node_set.xmlSetData('coal_number', value)
 
 
     @Variables.noUndo
-    def getCoalNumberValue(self, label, iclass):
+    def getCoalNumberValue(self, label, iset):
         """
         Return the coal number of the particle.
         """
-        value = self.node_class.xmlGetInt('coal_number')
+        value = self.node_set.xmlGetInt('coal_number')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['coal_number']
-            self.setCoalNumberValue(label, iclass, value)
+            self.setCoalNumberValue(label, iset, value)
         return value
 
 
     @Variables.undoLocal
-    def setCoalTemperatureValue(self, label, iclass, value):
+    def setCoalTemperatureValue(self, label, iset, value):
         """
         Update the coal temperature.
         """
         self.isFloat(value)
         self.isGreaterOrEqual(value, 0)
-        self.node_class.xmlSetData('coal_temperature', value)
+        self.node_set.xmlSetData('coal_temperature', value)
 
 
     @Variables.noUndo
-    def getCoalTemperatureValue(self, label, iclass):
+    def getCoalTemperatureValue(self, label, iset):
         """
         Return the coal temperature.
         """
-        value = self.node_class.xmlGetDouble('coal_temperature')
+        value = self.node_set.xmlGetDouble('coal_temperature')
         if value == None:
             value = self.defaultParticlesBoundaryValues()['coal_temperature']
-            self.setCoalTemperatureValue(label, iclass, value)
+            self.setCoalTemperatureValue(label, iset, value)
         return value
-
-
-    @Variables.undoLocal
-    def setCoalCompositionChoice(self, label, iclass, value):
-        """
-        Update the coal composition choice.
-        """
-        self.isInList(value, ["raw_coal_as_received", "subroutine"])
-        node = self.node_class.xmlInitChildNode('coal_composition', 'choice')
-        node['choice'] = value
-
-
-    @Variables.undoLocal
-    def getCoalCompositionChoice(self, label, iclass):
-        """
-        Return the condition on the coal composition.
-        """
-        node = self.node_class.xmlInitChildNode('coal_composition', 'choice')
-        val = node['choice']
-        if not val:
-            val = self.defaultParticlesBoundaryValues()['coal_composition']
-            self.setCoalCompositionChoice(label, iclass, val)
-        return val
 
 
 #-------------------------------------------------------------------------------

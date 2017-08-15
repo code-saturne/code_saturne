@@ -73,39 +73,9 @@ BEGIN_C_DECLS
 /* debugging switch */
 #define _XML_DEBUG_ 0
 
-/*
-  rcodcl[ k * dim1 *dim2 + j *dim1 + i]
-*/
-
 /*============================================================================
  * Local Structure Definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Structures associated to lagrangian particles definition
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-  char       **label;             /* label for each boundary zone                    */
-  char       **nature;            /* nature for each boundary zone                   */
-  char       **p_nature;          /* specific nature of the boundary for particles   */
-  int         *n_classes;         /* number of classes for each zone                 */
-  int        **n_particles;       /* number of particles for each class              */
-  int        **frequency;         /* frequency of injection for each class           */
-  int        **statistical_groups;/* frequency of injection for each class           */
-  double     **statistical_weight;/* number of real particles for numerical particles*/
-  double     **mass_flow_rate;    /* mass flow rate of particles                     */
-  double     **density;           /* density for each class                          */
-  double     **fouling_index;     /* fouling index for each class                    */
-  double     **diameter;          /* diameter for each class                         */
-  double     **standard_deviation;/* standard deviation of diameter for each class   */
-  double     **specific_heat;     /* specific heat for each class                    */
-  double     **emissivity;        /* emissivity for each class                       */
-#if 0
-  mei_tree_t **velocity;          /* formula for norm or mass flow rate of velocity  */
-  mei_tree_t **direction;         /* formula for direction of velocity               */
-#endif
-} cs_particles_boundary_t;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -123,9 +93,11 @@ typedef struct {
  * Return value of the particles model
  *----------------------------------------------------------------------------*/
 
-static void
-_get_particles_model(const char *const model, int *const imodel)
+static int
+_get_particles_model(const char  *model)
 {
+  int retval = 0;
+
   char *path;
   char *attr;
 
@@ -136,14 +108,16 @@ _get_particles_model(const char *const model, int *const imodel)
 
   if (attr != NULL) {
     if (cs_gui_strcmp(attr, "off"))
-      *imodel = 0;
+      retval = 0;
     else if (cs_gui_strcmp(attr, "thermal"))
-      *imodel = 1;
+      retval = 1;
     else if (cs_gui_strcmp(attr, "coal"))
-      *imodel = 2;
+      retval = 2;
     BFT_FREE(attr);
   }
   BFT_FREE(path);
+
+  return retval;
 }
 
 /*-----------------------------------------------------------------------------
@@ -300,7 +274,9 @@ _get_double(double *const  keyword,
  *----------------------------------------------------------------------------*/
 
 static char*
-_get_attr(const char *const param, const int nbr, ...)
+_get_attr(const char *const param,
+          const int nbr,
+          ...)
 {
   va_list list;
 
@@ -471,7 +447,7 @@ cs_gui_particles_model(void)
     cs_glob_lagr_time_scheme->iilagr = 0;
     BFT_FREE(attr);
 #if _XML_DEBUG_
-    bft_printf("==>UILAG1\n");
+    bft_printf("%s\n", __func__);
     bft_printf("--iilagr = %i\n", cs_glob_lagr_time_scheme->iilagr);
 #endif
     return;
@@ -496,7 +472,7 @@ cs_gui_particles_model(void)
 
   /* Particles model */
 
-  _get_particles_model("particles_models", &(cs_glob_lagr_model->physical_model));
+  cs_glob_lagr_model->physical_model = _get_particles_model("particles_models");
 
   switch (cs_glob_lagr_model->physical_model) {
   case 1:
@@ -745,37 +721,34 @@ cs_gui_particles_model(void)
 void
 cs_gui_particles_bcs(void)
 {
-  int zones;
-  int iclas, ilayer;
-  cs_lnum_t nelt = 0;
   char *interaction = NULL;
   char sclass[10];
   char *path1, *path2;
   char *choice;
 
   cs_lnum_t iphyla = cs_glob_lagr_model->physical_model;
-  cs_lagr_bdy_condition_t *bdy_cond = cs_lagr_get_bdy_conditions();
+  cs_lagr_zone_data_t *bdy_cond = cs_lagr_get_boundary_conditions();
   cs_lagr_get_internal_conditions();
 
-  zones = cs_gui_boundary_zones_number();
+  /* zone 0 for "all", next zones defined by GUI */
+
+  int n_zones = cs_gui_boundary_zones_number();
 
 #if _XML_DEBUG_
-  bft_printf("==>UILAG2\n");
+  bft_printf("%s\n", __func__);
 #endif
 
   /* First iteration only: memory allocation */
 
-  for (cs_lnum_t izone = 0; izone < zones; izone++) {
+  for (cs_lnum_t izone = 0; izone < n_zones; izone++) {
 
-    char *label = cs_gui_boundary_zone_label(izone + 1);
-    char *nature = cs_gui_boundary_zone_nature(izone + 1);
+    /* zone_id is incremented because access is made through real
+       zone number (from 1 to nzone), and not through array index */
 
-    const cs_lnum_t *faces_list = cs_gui_get_boundary_faces(label, &nelt);
+    int zone_id = izone + 1;
 
-    for (cs_lnum_t ielt = 0; ielt < nelt; ielt++) {
-      cs_lnum_t ifac = faces_list[ielt];
-      bdy_cond->b_face_zone_id[ifac] = izone;
-    }
+    char *label = cs_gui_boundary_zone_label(zone_id);
+    char *nature = cs_gui_boundary_zone_nature(zone_id);
 
     path2 = cs_xpath_init_path();
     cs_xpath_add_elements(&path2, 2, "boundary_conditions",
@@ -792,58 +765,57 @@ cs_gui_particles_bcs(void)
     if (interaction != NULL) {
 
       if (cs_gui_strcmp(interaction, "inlet"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_INLET;
+        bdy_cond->zone_type[zone_id] = CS_LAGR_INLET;
 
       else if(cs_gui_strcmp(interaction, "outlet"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_OUTLET;
+        bdy_cond->zone_type[zone_id] = CS_LAGR_OUTLET;
 
       else if(cs_gui_strcmp(interaction, "bounce"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_REBOUND;
+        bdy_cond->zone_type[zone_id] = CS_LAGR_REBOUND;
 
       else if(cs_gui_strcmp(interaction, "part_symmetry"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_SYM;
+        bdy_cond->zone_type[zone_id] = CS_LAGR_SYM;
 
       else if(cs_gui_strcmp(interaction, "deposit1"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_DEPO1;
+        bdy_cond->zone_type[zone_id] = CS_LAGR_DEPO1;
 
       else if(cs_gui_strcmp(interaction, "deposit2"))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_DEPO2;
+        bdy_cond->zone_type[zone_id] = CS_LAGR_DEPO2;
 
       else if(cs_gui_strcmp(interaction, "fouling") && iphyla == 2)
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_FOULING;
+        bdy_cond->zone_type[zone_id] = CS_LAGR_FOULING;
 
       else if(   cs_gui_strcmp(interaction, "fouling")
               && (iphyla == 0  || iphyla == 1))
-        bdy_cond->b_zone_natures[izone] = CS_LAGR_DEPO_DLVO;
+        bdy_cond->zone_type[zone_id] = CS_LAGR_DEPO_DLVO;
 
 #if _XML_DEBUG_
-      bft_printf("--b_zone_natures[%i] = %i has %i class(es) \n", izone,
-                 bdy_cond->b_zone_natures[izone],
-                 bdy_cond->b_zone_classes[izone]);
+      bft_printf("--zone_type[%i] = %i has %i set(s) \n", izone,
+                 bdy_cond->zone_type[zone_id],
+                 bdy_cond->b_zone_sets[zone_id]);
 
-      bft_printf("--zone %i : class number %i \n", izone,
-                 bdy_cond->b_zone_classes[izone]);
       bft_printf("--        : label    %s \n", label);
       bft_printf("--        : nature   %s \n", nature);
-      bft_printf("--        : p_nature %i \n", bdy_cond->b_zone_natures[izone]);
+      bft_printf("--        : p_nature %i \n", bdy_cond->zone_type[zone_id]);
 #endif
 
       /* Additional info for inlet */
 
-      if (bdy_cond->b_zone_natures[izone] == CS_LAGR_INLET) {
+      if (bdy_cond->zone_type[zone_id] == CS_LAGR_INLET) {
 
         strcpy(path1, path2);
         cs_xpath_add_element(&path1, "class");
-        bdy_cond->b_zone_classes[izone] = cs_gui_get_nb_element(path1);
+        int n_injection_sets = cs_gui_get_nb_element(path1);
         strcpy(path1, path2);
 
-        for (iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
+        for (int set_id = 0; set_id < n_injection_sets; set_id++) {
 
-          /* izone is incremented because access is made through real
-             zone number (from 1 to nzone), and not through array index */
-          cs_lagr_init_zone_class_new(iclas, izone);
+          cs_lagr_injection_set_t *zis
+            = cs_lagr_get_injection_set(bdy_cond, zone_id, set_id);
 
-          sprintf(sclass, "class[%i]", iclas+1);
+          cs_lagr_injection_set_default(zis);
+
+          sprintf(sclass, "class[%i]", set_id+1);
           BFT_REALLOC(path2,
                       ( 20+strlen(nature)
                         +10+strlen(label)
@@ -862,11 +834,10 @@ cs_gui_particles_bcs(void)
           _get_int(&(itmp1), 2, path2, "frequency");
           _get_int(&(itmp2), 2, path2, "statistical_groups");
 
-          cs_lagr_set_zone_class_injection(iclas,
-                                           izone,
-                                           itmp0,
-                                           itmp1,
-                                           itmp2);
+          zis->n_inject = itmp0;
+          zis->injection_frequency = itmp1;
+          zis->cluster = itmp2;
+
 #if _XML_DEBUG_
           bft_printf("---number = %i \n", itmp0);
           bft_printf("---frequency = %i \n", itmp1);
@@ -876,27 +847,26 @@ cs_gui_particles_bcs(void)
 
           choice = _get_attr("choice", 2, path2, "velocity");
 
-          cs_real_t vel[3];
+          cs_real_t vel[3] = {0, 0, 0};
+
           if (cs_gui_strcmp(choice, "fluid"))
-            itmp0 = -1;
+            zis->velocity_profile = -1;
 
           else if (cs_gui_strcmp(choice, "norm")) {
-            itmp0 = 0;
             _get_double(&(vel[0]), 3, path2, "velocity", "norm");
+            zis->velocity_profile = 0;
+            zis->velocity_magnitude = vel[0];
           }
           else if (cs_gui_strcmp(choice, "components")) {
-            itmp0 = 1;
+            zis->velocity_profile = 1;
             _get_double(&(vel[0]), 3, path2, "velocity", "velocity_x");
             _get_double(&(vel[1]), 3, path2, "velocity", "velocity_y");
             _get_double(&(vel[2]), 3, path2, "velocity", "velocity_z");
+            for (int i = 0; i < 3; i++)
+              zis->velocity[i] = vel[i];
           }
           else if (cs_gui_strcmp(choice, "subroutine"))
-            itmp0 = 2;
-
-          cs_lagr_set_zone_class_velocity(iclas,
-                                          izone,
-                                          itmp0,
-                                          vel);
+            zis->velocity_profile = 2;
 
 #if _XML_DEBUG_
           bft_printf("---velocity choice: %i "
@@ -920,30 +890,21 @@ cs_gui_particles_bcs(void)
 
           choice = _get_attr("choice", 2, path2, "statistical_weight");
 
-          if (cs_gui_strcmp(choice, "prescribed")) {
-            itmp0 = 1;
-            _get_double(&rtmp0, 2, path2, "statistical_weight");
-            rtmp1 = 0;
-          }
-          else if (cs_gui_strcmp(choice, "rate")) {
-            itmp0 = 1;
+          if (cs_gui_strcmp(choice, "rate")) {
             rtmp0 = 0;
             _get_double(&rtmp1, 2, path2, "mass_flow_rate");
+            zis->stat_weight = 0;
+            zis->flow_rate = rtmp1;
           }
-          else if (cs_gui_strcmp(choice, "subroutine")) {
-            itmp0 = 2;
+          else { /* if (cs_gui_strcmp(choice, "prescribed")) */
             _get_double(&rtmp0, 2, path2, "statistical_weight");
-            rtmp1 = 0;
+            zis->stat_weight = rtmp0;
+            zis->flow_rate = 0;
           }
-          cs_lagr_set_zone_class_stat(iclas,
-                                      izone,
-                                      itmp0,
-                                      rtmp0,
-                                      rtmp1);
 
 #if _XML_DEBUG_
           bft_printf("---statistical weight choice: %i "
-                     " (1: prescribed, 2: rate, 3: subroutine)\n", itmp0);
+                     " (1: prescribed, 2: rate)\n", itmp0);
 
           if (itmp0 == 1 || itmp0 == 2) {
             bft_printf("----statistical weight = %f \n", rtmp0);
@@ -956,26 +917,12 @@ cs_gui_particles_bcs(void)
 
           choice = _get_attr("choice", 2, path2, "diameter");
 
-          if (cs_gui_strcmp(choice, "prescribed")) {
-            itmp0 = 1;
-            _get_double(&rtmp0, 2, path2, "diameter");
-            _get_double(&rtmp1, 2, path2, "diameter_standard_deviation");
-          }
-          else if (cs_gui_strcmp(choice, "subroutine")) {
-            itmp0 = 2;
-          }
-
-          cs_lagr_set_zone_class_diam(iclas,
-                                      izone,
-                                      itmp0,
-                                      rtmp0,
-                                      rtmp1);
+          _get_double(&rtmp0, 2, path2, "diameter");
+          _get_double(&rtmp1, 2, path2, "diameter_standard_deviation");
+          zis->diameter = rtmp0;
+          zis->diameter_variance = rtmp1;
 
 #if _XML_DEBUG_
-          bft_printf("---diameter choice = %i "
-                     "(1: prescribed, 2: subroutine)\n",
-                     itmp0);
-
           if (itmp0 == 1) {
             bft_printf("----diameter = %f \n", rtmp0);
             bft_printf("----standard deviation = %f \n", rtmp1);
@@ -988,9 +935,7 @@ cs_gui_particles_bcs(void)
 
             _get_double(&rtmp0, 2, path2, "density");
 
-            cs_lagr_set_zone_class_density(iclas,
-                                           izone,
-                                           rtmp0);
+            zis->density = rtmp0;
 
 #if _XML_DEBUG_
             bft_printf("---density = %f \n", rtmp0);
@@ -999,11 +944,9 @@ cs_gui_particles_bcs(void)
           }
 
           /* Fouling index*/
-          _get_double(&rtmp0, 2, path2, "fouling_index");
 
-          cs_lagr_set_zone_class_foul_index(iclas,
-                                            izone,
-                                            rtmp0);
+          _get_double(&rtmp0, 2, path2, "fouling_index");
+          zis->fouling_index = rtmp0;
 
           if (iphyla == 1) {
 
@@ -1012,30 +955,23 @@ cs_gui_particles_bcs(void)
             choice = _get_attr("choice", 2, path2, "temperature");
 
             if (cs_gui_strcmp(choice, "prescribed")) {
-              itmp0 = 1;
+              zis->temperature_profile = 1;
               _get_double(&rtmp0, 2, path2, "temperature");
+              zis->temperature = rtmp0;
             }
-            else if (cs_gui_strcmp(choice, "subroutine")) {
-              itmp0 = 2;
-              rtmp0 = 0.0;
+            else if (cs_gui_strcmp(choice, "fluid")) {
+              zis->temperature_profile = 0;
+              zis->temperature = 0;
             }
 
             _get_double(&rtmp1, 2, path2, "specific_heat");
             _get_double(&rtmp2, 2, path2, "emissivity");
-
-            cs_lagr_set_zone_class_temperature(iclas,
-                                               izone,
-                                               itmp0,
-                                               &rtmp0,
-                                               rtmp2);
-
-            cs_lagr_set_zone_class_cp(iclas,
-                                      izone,
-                                      rtmp1);
+            zis->cp = rtmp1;
+            zis->emissivity = rtmp2;
 
 #if _XML_DEBUG_
             bft_printf("---temperature choice = %i "
-                       "(1: prescribed, 2: subroutine)\n",
+                       "(0: fluid, 1: prescribed)\n",
                        itmp0);
 
             if (itmp0 == 1)
@@ -1052,30 +988,14 @@ cs_gui_particles_bcs(void)
           else if (iphyla == 2) {
 
             /* Read the coal number */
+
             _get_int(&itmp0, 2, path2, "coal_number");
-            itmp1 = 0;
+            zis->coal_number = itmp0;
 
-            // Fresh coal or user defined
-            choice  = _get_attr("choice", 2, path2, "coal_composition");
+            /* Data are read in pulverized fuel combustion module profile */
 
-            cs_real_t coal_temp[cs_glob_lagr_const_dim->nlayer];
-            if (cs_gui_strcmp(choice, "raw_coal_as_received")) {
-
-              /* Data are read in pulverised fuel combustion module */
-              /* profile */
-              itmp1  = 1;
-
-              for (ilayer=0;
-                   ilayer < cs_glob_lagr_const_dim->nlayer;
-                   ilayer++)
-                _get_double(&(coal_temp[ilayer]), 2, path2, "coal_temperature");
-
-            }
-
-            else if (cs_gui_strcmp(choice, "subroutine")) {
-              /* profile */
-              itmp1 = 0;
-            }
+            _get_double(&rtmp0, 2, path2, "coal_temperature");
+            zis->temperature = rtmp0;
 
 #if _XML_DEBUG_
             bft_printf("---coal number = %i \n", itmp0);
@@ -1083,23 +1003,9 @@ cs_gui_particles_bcs(void)
                        "(1: raw coal, 2: user defined)\n", itmp1);
 #endif /* _XML_DEBUG_ */
 
-            cs_lagr_set_zone_class_coal(iclas,
-                                        izone,
-                                        itmp1, // coal profile
-                                        itmp0, // coal number
-                                        coal_temp, // coal temperature
-                                        NULL,
-                                        NULL,
-                                        NULL,
-                                        -cs_math_big_r,
-                                        -cs_math_big_r,
-                                        -cs_math_big_r);
-
-            BFT_FREE(choice);
-
           }
 
-        } /* End of loop on class */
+        } /* End of loop on set */
 
       } /* End of test on inlet */
 

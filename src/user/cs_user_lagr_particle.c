@@ -188,56 +188,36 @@ cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User setting of particle inlet conditions for the particles (inlet
- *        and treatment for the other boundaries)
+ * \brief User modification of newly injected particles.
  *
- *  This function is called after the initialization of the new particles in
- *  order to modify them according to new particle profiles (injection
- *  profiles, position of the injection point, statistical weights,
- *  correction of the diameter if the standard-deviation option is activated).
+ * This function is called after the initialization of the new particles in
+ * order to modify them according to new particle profiles (injection
+ * profiles, position of the injection point, statistical weights,
+ * correction of the diameter if the standard-deviation option is activated).
  *
- * \param[in] time_id         time step indicator for fields
- *                            0: use fields at current time step
- *                            1: use fields at previous time step
- * \param[in] injfac          array of injection face id for every particles
- * \param[in] local_userdata  local_userdata pointer to zone/cluster specific
- *                            boundary conditions (number of injected
- *                            particles, velocity profile...)
+ * This function is called for each injection zone and class. Particles
+ * with ids between \c pset->n_particles and \c n_elts are initialized
+ * but may be modidied by this function.
+ *
+ * \param[in,out]  particles         particle set
+ * \param[in]      zis               zone injection set data
+ * \param[in]      particle_range    start and past-the-end ids of new particles
+ *                                   for this zone and class
+ * \param[in]      particle_face_id  face ids of new particles if zone is
+ *                                   a boundary,  NULL otherwise
+ * \param[in]      visc_length       viscous layer thickness
+ *                                   (size: number of mesh boundary faces)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_in(int                         time_id,
-                int                        *injfac,
-                cs_lagr_zone_class_data_t  *local_userdata,
-                cs_real_t                   vislen[])
+cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
+                const cs_lagr_injection_set_t  *zis,
+                const cs_lnum_t                 particle_range[2],
+                const cs_lnum_t                 particle_face_id[],
+                const cs_real_t                 visc_length[])
 {
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Prescribe some attributes for newly injected particles.
- *
- * This function is called at different points, at which different attributes
- * may be modified.
- *
- * \param[in,out] particle  particle structure
- * \param[in]     p_am      particle attributes map
- * \param[in]     face_id   id of particle injection face
- * \param[in]     attr_id   id of variable modifiable by this call. called for
-                            CS_LAGR_VELOCITY, CS_LAGR_DIAMETER,
-                            CS_LAGR_TEMPERATURE, CS_LAGR_STAT_WEIGHT,
-                            CS_LAGR_USER
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_new_p_attr(unsigned char                  *particle,
-                        const cs_lagr_attribute_map_t  *p_am,
-                        cs_lnum_t                       face_id,
-                        cs_lagr_attribute_t             attr_id)
-{
 }
 
 /*----------------------------------------------------------------------------*/

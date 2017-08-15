@@ -91,6 +91,10 @@ cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \
 cs_user_head_losses.c \
 cs_user_initialization.c \
+cs_user_lagr_model.c \
+cs_user_lagr_particle.c \
+cs_user_lagr_boundary_conditions.c \
+cs_user_lagr_volume_conditions.c \
 cs_user_les_inflow.f90 \
 cs_user_mass_source_terms.f90 \
 cs_user_mesh.c \
@@ -110,9 +114,6 @@ cs_user_zones.c \
 cs_user_boundary_conditions_ale.f90 \
 usatch.f90 \
 usctdz.f90 \
-cs_user_lagr_model.c \
-cs_user_lagr_boundary_conditions.c \
-cs_user_lagr_particle.c \
 usthht.f90 \
 usvort.f90 \
 usvosy.f90

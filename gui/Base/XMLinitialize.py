@@ -1229,7 +1229,8 @@ class XMLinit(Variables):
                     XMLLagrangianNode['model'] = node['model']
                     node.xmlRemoveNode()
         XMLBoundaryNode = self.case.xmlInitNode('boundary_conditions')
-        for nature in ('inlet', 'outlet', 'wall', 'symmetry', 'free_inlet_outlet', 'groundwater'):
+        for nature in ('inlet', 'outlet', 'wall', 'symmetry',
+                       'free_inlet_outlet', 'groundwater'):
             for node in XMLBoundaryNode.xmlGetNodeList(nature):
                 node['field_id'] = 'none'
 
@@ -1419,7 +1420,7 @@ class XMLinit(Variables):
         # fix name of Reynolds stress tensor
         ntur = XMLThermoPhysicalModelNode.xmlGetNode('turbulence')
         if ntur:
-            if (ntur['model'] == 'Rij-SSG') or (ntur['model'] == 'Rij-epsilon') or (ntur['model'] == 'Rij-EBRSM'):
+            if ntur['model'] in  ('Rij-SSG', 'Rij-epsilon', 'Rij-EBRSM'):
 
                 node = ntur.xmlGetNode('variable', name="r11")
                 if node:
@@ -1463,6 +1464,63 @@ class XMLinit(Variables):
                             var['component'] = rij_lbls.index(varName)
 
 
+            # Lagrangian model setup renames and cleanup
+            XMLBoundaryNode = self.case.xmlGetNode('boundary_conditions')
+            XMLInletNodes = XMLBoundaryNode.xmlGetNodeList('inlet')
+            for XMLInletNode in XMLInletNodes:
+                XMLParticeNodes = XMLInletNode.xmlGetNodeList('particles')
+                for XMLParticleNode in XMLParticeNodes:
+                    XMLClassNodes = XMLInletNode.xmlGetNodeList('class')
+                    for XMLClassNode in XMLClassNodes:
+                        node = XMLClassNode.xmlGetNode('velocity', choice='subroutine')
+                        if node:
+                            node['choice'] = 'components'
+                        else:
+                            node = XMLClassNode.xmlGetNode('velocity', choice='components')
+                            if node:
+                                for d in (('u', 'x'), ('v', 'y'), ('w', 'z')):
+                                    onode = node.xmlGetNode('velocity_' + d[0])
+                                    if onode:
+                                        nnode = node.xmlInitNode('velocity_' + d[1])
+                                        nnode.xmlChildsCopy(onode)
+                                        onode.xmlRemoveNode()
+                        if node:
+                            node['choice'] = 'components'
+                        for attr in ('statistical_weight', 'temperature'):
+                            node = XMLClassNode.xmlGetNode(attr, choice='subroutine')
+                            if node:
+                                node['choice'] = 'prescribed'
+                        node = XMLClassNode.xmlGetNode('diameter')
+                        if node:
+                            node.xmlDelAttribute('choice')
+                        for attr in ('coal_composition', 'statitical_weight'):
+                            node = XMLClassNode.xmlGetNode(attr)
+                            if node:
+                                node.xmlRemoveNode()
+
+            XMLLagrangianNode = self.case.xmlGetNode('lagrangian')
+            if XMLLagrangianNode:
+                for attr in ('continuous_injection', 'particles_max_number'):
+                    node = XMLLagrangianNode.xmlGetNode(attr)
+                    if node:
+                        node.xmlRemoveNode()
+                stats_node = XMLLagrangianNode.xmlGetNode('statistics')
+                if stats_node:
+                    vol_node = stats_node.xmlGetNode('volume')
+                    if vol_node:
+                        for attr in ('Part_velocity_X', 'Part_velocity_Y',
+                                     'Part_velocity_Z'):
+                            node = vol_node.xmlGetNode('property', name=attr)
+                            if node:
+                                node.xmlRemoveNode()
+                output_node = XMLLagrangianNode.xmlGetNode('output')
+                if output_node:
+                    for attr in ('trajectory', 'particles', 'number_of_particles',
+                                 'postprocessing_format', 'postprocessing_options',
+                                 'postprocessing_frequency'):
+                        node = output_node.xmlGetNode(attr)
+                        if node:
+                            node.xmlRemoveNode()
         return
 
 #-------------------------------------------------------------------------------

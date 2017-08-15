@@ -2376,8 +2376,6 @@ cs_flux_through_surface(const char         *scalar_name,
     = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
 
   const int *bc_type = cs_glob_bc_type;
 

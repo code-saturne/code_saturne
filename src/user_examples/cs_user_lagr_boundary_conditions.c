@@ -42,17 +42,111 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
-#include "cs_gui_util.h"
+#include "cs_boundary_zone.h"
 #include "cs_math.h"
-#include "cs_selector.h"
+#include "cs_parall.h"
 #include "cs_parameters.h"
+#include "cs_prototypes.h"
+#include "cs_random.h"
 
 #include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
+#include "cs_log.h"
 
 #include "cs_lagr.h"
 #include "cs_lagr_new.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_prototypes.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*============================================================================
+ * Local (user defined) function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Computation of particle injection profile.
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * parameters:
+ *   zone_id     <-- id of associated mesh zone
+ *   location_id <-- id of associated mesh location
+ *   input       <-- pointer to optional (untyped) value or structure.
+ *   n_elts      <-- number of zone elements
+ *   elt_ids     <-- ids of zone elements
+ *   profile     <-- weight of a given zone element (size: n_elts)
+ *----------------------------------------------------------------------------*/
+
+/*! [lagr_bc_profile_func_2] */
+static void
+_injection_profile(int               zone_id,
+                   int               location_id,
+                   const void       *input,
+                   cs_lnum_t         n_elts,
+                   const cs_lnum_t   elt_ids[],
+                   cs_real_t         profile[])
+{
+  const cs_real_3_t  *b_face_coords
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+
+  const int itmx = 8;
+
+  /* Data initializations with experimental measurements
+     --------------------------------------------------- */
+
+  /* transverse coordinate */
+
+  cs_real_t zi[] = {0.e-3, 1.e-3, 1.5e-3, 2.0e-3, 2.5e-3, 3.0e-3, 3.5e-3,
+                    4.0e-3, 4.5e-3, 5.0e-3};
+
+  /* particle volume fraction */
+
+  cs_real_t lvf[] = {0.377e-4, 2.236e-4, 3.014e-4, 4.306e-4, 5.689e-4,
+                     8.567e-4, 7.099e-4, 4.520e-4, 2.184e-4, 0.377e-4};
+
+  /* vertical mean velocity of the particles */
+
+  cs_real_t ui[] = {5.544, 8.827, 9.068, 9.169, 8.923, 8.295, 7.151, 6.048,
+                    4.785, 5.544};
+
+  /* Loop en elements
+     ---------------- */
+
+  for (cs_lnum_t ei = 0; ei < n_elts; ei++) {
+
+    /* Face center */
+
+    const cs_lnum_t face_id = elt_ids[ei];
+
+    const cs_real_t z = b_face_coords[face_id][2];
+
+    /* Interpolation */
+
+    int i = 0;
+
+    if (z > zi[0]) {
+      for (i = 0; i < itmx; i++) {
+        if (z >= zi[i] && z < zi[i+1])
+          break;
+      }
+    }
+
+    /* Compute volume fraction and statistical weight */
+
+    cs_real_t up = ui[i] +(z-zi[i])*(ui[i+1]-ui[i])/(zi[i+1]-zi[i]);
+    cs_real_t lvfp = lvf[i] + (z-zi[i])*(lvf[i+1]-lvf[i])/(zi[i+1]-zi[i]);
+
+    /* number of particles in the cell */
+
+    profile[ei] = lvfp * up;
+  }
+}
+/*! [lagr_bc_profile_func_2] */
 
 /*============================================================================
  * User function definitions
@@ -62,7 +156,8 @@
 /*!
  * \brief Define particle boundary conditions.
  *
- * This is used definition of for inlet and of the other boundaries
+ * This is used for the definition of inlet and other boundaries,
+ * based on predefined boundary zones (\ref cs_boundary_zone_t).
  *
  * \param[in] bc_type    type of the boundary faces
  */
@@ -73,127 +168,66 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
 {
   cs_mesh_t *mesh = cs_glob_mesh;
 
-  cs_lnum_t  nlelt = mesh->n_b_faces;
+  /*! [lagr_bc_variables] */
+  cs_lagr_zone_data_t *lagr_bcs = cs_lagr_get_boundary_conditions();
+  /*! [lagr_bc_variables] */
 
-  cs_lagr_bdy_condition_t *lagr_bdy_cond = cs_lagr_get_bdy_conditions();
-  cs_lagr_coal_comb_t *lag_cc = cs_glob_lagr_coal_comb;
+  /* Zone types
+     ========== */
 
-  /* Allocate a temporary array for boundary faces selection */
+  /* For every boundary zone, we define the associated type:
 
-  cs_lnum_t *lstelt;
-  BFT_MALLOC(lstelt, nlelt, cs_lnum_t);
+       CS_LAGR_INLET     -> zone of particle inlet
+       CS_LAGR_OUTLET    -> particle outlet
+       CS_LAGR_REBOUND   -> rebound of the particles
+       CS_LAGR_DEPO1     -> definitive deposition
+       CS_LAGR_DEPO2     -> definitive deposition, but the particle remains
+                            in memory (useful only if iensi2 = 1)
+       CS_LAGR_DEPO_DLVO -> deposition of the particle with DLVO forces
+       CS_LAGR_FOULING   -> fouling (coal only physical_model = 2)
+       CS_LAGR_SYM       -> symmetry condition for the particles (zero flux)
 
-  /* Construction of the boundary zones */
+ */
 
-  /* Definition of the boundary zones
-     For the Lagrangian module, the user defines nfrlag boundary zones
-     from the properties (groups, ...) of the boundary faces, from the
-     boundary conditions, or even from their coordinates. To do this,
-     we fill the ifrlag(mesh->n_b_faces) array which gives for every boundary
-     face the number (id+1) of the zone to which it belongs ifrlag(face_id)
+  /* define zone types */
 
-     Be careful, all the boundary faces must have been assigned.
+  /*! [lagr_bc_define_type_1] */
+  {
+     const cs_boundary_zone_t  *z;
+     int n_zones = cs_boundary_zone_n_zones();
 
-     The number of the zones (thus the values of ifrlag(face_id)) is arbitrarily
-     chosen by the user, but must be a positive integer and inferior or equal
-     to nflagm.
+     /* default: rebound for all types */
+     for (int z_id = 0; z_id < n_zones; z_id++) {
+       lagr_bcs->zone_type[z_id] = CS_LAGR_REBOUND;
+     }
 
-     Afterwards, we assign to every zone a type named itylag that will be used
-     to prescribe global boundary conditions. */
+     /* inlet and outlet for specified zones */
+     z = cs_boundary_zone_by_name("inlet");
+     lagr_bcs->zone_type[z->id] = CS_LAGR_INLET;
 
-  /* First zone numbered izone = 0 */
-  cs_selector_get_b_face_list("10",
-                              &nlelt,
-                              lstelt);
-  for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++) {
-    cs_lnum_t face_id = lstelt[ilelt];
-    lagr_bdy_cond->b_face_zone_id[face_id] = 0; /* zone_id */
+     z = cs_boundary_zone_by_name("outlet");
+     lagr_bcs->zone_type[z->id] = CS_LAGR_OUTLET;
   }
+  /*! [lagr_bc_define_type_1] */
 
-  /* Second zone numbered izone = 1 */
-  cs_selector_get_b_face_list("4 and y < 1.0",
-                              &nlelt,
-                              lstelt);
+  /* Injection per particle set into the calculation domain
+     ====================================================== */
 
-  for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++) {
-    cs_lnum_t face_id = lstelt[ilelt];
-    lagr_bdy_cond->b_face_zone_id[face_id] = 1; /* zone_id */
-  }
-
-  /* Third zone numbered izone = 3 (inlet) */
-
-  for (cs_lnum_t face_id = 0; face_id < nlelt; face_id++) {
-    if (bc_type[face_id] == CS_INLET) {
-      lagr_bdy_cond->b_face_zone_id[face_id] = 3; /* zone_id */
-    }
-  }
-
-  /* Nth zone numbered izone = 4 */
-  cs_selector_get_b_face_list("4 and y < 1.0",
-                              &nlelt,
-                              lstelt);
-
-  for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++) {
-    cs_lnum_t face_id = lstelt[ilelt];
-    lagr_bdy_cond->b_face_zone_id[face_id] = 4; /* zone_id */
-  }
-
-  /* Injection per particle class into the calculation domain
-     ======================================================== */
-
-  /* To provide information about the particle classes,
-     we follow a two-step procedure:
-     1) first, the number of particle classes is prescribed
-     for each boundary zone: iusncl (by default, this parameter is set to zero)
-
-     2) afterwards, for each zone and for each class, we prescribe
-     the physical properties of the particles
-     Number of particle classes entering the domain
-     We assign here the number of classes for each zone previously identified.
-
-     This number is zero by default.
-     The maximal number of classes is nclagm
-     ---> First zone numbered izone = 0: 1 class injected  */
-
-  int nbclas = 1;
-  lagr_bdy_cond->b_zone_classes[0] = nbclas;
-
-  /* ---> Second zone numbered izone = 1: 0 class injected */
-  nbclas = 0;
-  lagr_bdy_cond->b_zone_classes[1] = nbclas;
-
-  /* ---> Third zone numbered izone = 3 : 0 class injected */
-  nbclas = 0;
-  lagr_bdy_cond->b_zone_classes[3] = nbclas;
-
-  /* ---> Zone numbered izone = 4 : 0 class injected */
-  nbclas = 0;
-  lagr_bdy_cond->b_zone_classes[4] = nbclas;
-
-  /* For every class associated with a zone,
+  /* For every injection (usually inlet) zone,
      we provide the following information:
 
-     b_zone_classes number of classes per zone
-     b_zone_natures boundary conditions for the particles
-       = CS_LAGR_INLET     -> zone of particle inlet
-       = CS_LAGR_OUTLET    -> particle outlet
-       = CS_LAGR_REBOUND   -> rebound of the particles
-       = CS_LAGR_DEPO1     -> definitive deposition
-       = CS_LAGR_DEPO2     -> definitive deposition, but the particle remains
-                              in memory (useful only if iensi2 = 1)
-       = CS_LAGR_DEPO_DLVO -> deposition of the particle with DLVO forces
-       = CS_LAGR_FOULING   -> fouling (coal only physical_model = 2)
-       = CS_LAGR_SYM       -> symmetry condition for the particles (zero flux)
+     *   n_inject: number of particles injected per set and per zone
+     *   injection_frequency: injection frequency. If injection_frequency = 0,
+                              then the injection occurs only at the first
+                              absolute iteration.
 
-     *   nb_part : number of particles per class and per zone
-     *   injection_frequency : injection frequency. If injection_frequency = 0,
-                               then the injection occurs only at the first
-                               absolute iteration.
+     *   injection_profile_func: optional pointer to profile definition
+     *   injection_profile_input: associated input, or NULL
 
-     *   cluster : number of the group to which the particle belongs
-                   (only if one wishes to calculate statistics per group)
+     *   cluster: number of the group to which the particle belongs
+                  (only if one wishes to calculate statistics per group)
 
-     *   velocity_profile : type of condition on the velocity
+     *   velocity_profile: type of condition on the velocity
               = -1 imposed flow velocity
               =  0 imposed velocity along the normal direction of the
                     boundary face, with norm equal to velocity[0] (m/s)
@@ -202,229 +236,80 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
                                                   velocity[2] (m/s)
               =  2 user-defined profile
 
-     *   distribution_profile : type of statistical weight
-              = 1 automatic: we prescribe
-                    flow_rate:   mass flow rate (kg/s)
-                    stat_weight: statistical weight (number of samples) associated
-                                 to the particle (automatically computed to respect
-                                 a mass flow rate if it is defined)
-              = 2 user-defined profile
+     *   temperature_profile: type of temperature condition
+              = 0 fluid temperature
+              = 1 imposed temperature: we prescribe the temperature
 
-     *   temperature_profile : type of temperature condition
-              = 1 imposed temperature: we prescribe temperature[] in Kelvin:
-                        - temperature[0]       if physical_model != 2
-                        - temperature[nlayers] if physical_model = 2
-              = 2 user-defined profile
+     *   density
 
-     *   diameter_profile : type of diameter condition
-              = 1 imposed diameter: we prescribe diameter (m) and diameter_variance
-                                    (standard deviation, in m)
-              = 2 user-defined profile
-     *   coal_number : number of the coal of the particle (only if physical_model = 2)
+     *   coal_number: number of the coal of the particle
+                      (only if physical_model = 2) */
 
-     *   coal_profile : type of coal injection composition (only if physical_model = 2)
-              = 0 coal injected with an user-defined composition
-              = 1 raw coal injection
+  /* Access an injection set for selected zone
+     (created automatically if not previously accessed) */
 
-     density is 2500.0 */
+  /*! [lagr_bc_define_injection_1] */
+  {
+    const cs_boundary_zone_t  *z = cs_boundary_zone_by_name("inlet");
+    int set_id = 0;
+    cs_lagr_injection_set_t *zis
+      = cs_lagr_get_injection_set(lagr_bcs, z->id, set_id);
 
-  int  izone = 0;
-  nbclas = lagr_bdy_cond->b_zone_classes[izone];
-  lagr_bdy_cond->b_zone_natures[izone] = CS_LAGR_INLET;
+    /* Now define parameters for this class and set */
 
-  for (cs_lnum_t iclas = 0; iclas < nbclas; iclas++) {
+    zis->n_inject = 100;
+    zis->injection_frequency = 1;
 
-    /* Ensure defaults are set   */
-    cs_lagr_zone_class_data_t *zone_class_data = cs_lagr_init_zone_class_new(iclas, izone);
+    /* Assign other attributes (could be done through the GUI) */
 
-    /* Now define parameters for this class and zone */
-
-    zone_class_data->nb_part = 10;
-    zone_class_data->injection_frequency = 2;
     if (cs_glob_lagr_model->n_stat_classes > 0)
-      zone_class_data->cluster = iclas + 1;
+      zis->cluster = set_id + 1;
 
-    int vel_profile = 0;
-    cs_real_t vel[3];
-    vel[0] = 1.1;
-    vel[1] = 0.0;
-    vel[2] = 0.0;
+    zis->velocity_profile = 0;
+    zis->velocity_magnitude = 1.1;
 
-    cs_lagr_set_zone_class_velocity(iclas,
-                                    izone,
-                                    vel_profile,
-                                    vel);
+    zis->stat_weight = 1.0;
+    zis->flow_rate = 0.0;
 
-    int stat_profile = 1;
-    cs_real_t stat_weight = 1.0;
-    cs_real_t flow_rate   = 0.0;
-    cs_lagr_set_zone_class_stat(iclas,
-                                izone,
-                                stat_profile,
-                                stat_weight,
-                                flow_rate);
+    /* Mean value and standard deviation of the diameter */
+    zis->diameter = 5e-05;
+    zis->diameter_variance = 0.0;
 
-    /* if the physics is " simple"    */
+    /* Density */
 
-    if (   cs_glob_lagr_model->physical_model == 0
-        || cs_glob_lagr_model->physical_model == 1) {
+    zis->density = 2500.0;
 
-      /* Mean value and standard deviation of the diameter */
-      int diam_profile = 1;
-      cs_real_t diam = 5e-05;
-      cs_real_t diam_dev  = 0.0;
-      cs_lagr_set_zone_class_diam(iclas,
-                                  izone,
-                                  diam_profile,
-                                  diam,
-                                  diam_dev);
+    zis->fouling_index = 100.0;
 
-      /* Density    */
-      cs_real_t density = 2500.0;
-      cs_lagr_set_zone_class_density(iclas,
-                                     izone,
-                                     density);
+    /* Temperature and Cp */
 
-      cs_real_t foul_index = 100.0;
-      cs_lagr_set_zone_class_foul_index(iclas,
-                                        izone,
-                                        foul_index);
+    if (cs_glob_lagr_specific_physics->itpvar == 1) {
+      zis->temperature_profile = 1;
+      zis->temperature = 20.0;
 
-      if (cs_glob_lagr_model->physical_model == 1) {
-
-        /* Temperature and Cp   */
-        if (cs_glob_lagr_specific_physics->itpvar == 1) {
-
-          int temp_profile  = 1;
-          cs_real_t temp[1] = {20.0};
-          cs_real_t cp    = 1400.0;
-          cs_real_t emissivity   = 0.7;
-          cs_lagr_set_zone_class_temperature(iclas,
-                                             izone,
-                                             temp_profile,
-                                             temp,
-                                             emissivity);
-
-          cs_lagr_set_zone_class_cp(iclas,
-                                    izone,
-                                    cp);
-
-        }
-
-      }
-
+      zis->cp = 1400.;
+      zis->emissivity = 0.7;
     }
 
-    /* Coal  */
-    else if (cs_glob_lagr_model->physical_model == 2) {
-      int nlayer = cs_glob_lagr_model->n_temperature_layers;
-      /* CAUTION :
-         1) To transport and burn coal particles with the Lagrangian
-         module, a specific physics for the dispersed phase must
-         be activated for the carrier phase.
-         2) The physical properties of the coal particles are known
-         from the thermo-chemical file: dp_FCP
-         3) For the current phase ICLAS, and for the current boundary
-         zone IZONE, we assign to the coal particles the properties of
-         the coal ICOAL of the ICOAL class taken from the file dp_FCP.
-         4) icoal : number of the coal between 1 and ncharb defined by
-         the user in the file dp_FCP.
-         Mean value and standard deviation of the diameter  */
-
-      int diam_profile = 1;
-      cs_real_t diam = 5e-05;
-      cs_real_t diam_dev  = 0.0;
-      cs_lagr_set_zone_class_diam(iclas,
-                                  izone,
-                                  diam_profile,
-                                  diam,
-                                  diam_dev);
-
-      /* Temperature (in K)   */
-      cs_real_t temp[nlayer] ;
-      for (int ilayer = 0; ilayer < nlayer; ilayer++)
-        temp[ilayer] = 800.0 ;
-
-      /* Number of the coal   */
-      int icoal = 0;
-
-      /* Raw coal or user defined coal injection condition  */
-      int coal_profile = 1;
-      if (coal_profile == 0) {
-
-        /* Example of user-defined injection, coal after devolatilisation */
-        /* Specific heat   */
-        cs_real_t cp = lag_cc->cp2ch[icoal];
-
-        /* water mass fraction in the particle */
-        cs_real_t water_mass_fraction  = 0.0;
-
-        /* Density    */
-        cs_real_t density
-          =   lag_cc->xashch[icoal] * lag_cc->rho0ch[icoal]
-            + (1.0 - lag_cc->xwatch[icoal] - lag_cc->xashch[icoal])
-            * lag_cc->rho0ch[icoal]
-            * (1.0 - (lag_cc->y1ch[icoal] + lag_cc->y2ch[icoal]) / 2.0);
-
-        cs_real_t coal_mass_fraction[nlayer];
-        cs_real_t coke_mass_fraction[nlayer];
-        cs_real_t coke_density[nlayer];
-
-        for (int ilayer = 0; ilayer < nlayer; ilayer++) {
-          /* reactive coal mass fraction in the particle   */
-          coal_mass_fraction[ilayer] = 0.0;
-
-          /* coke density after pyrolysis   */
-          coke_density[ilayer]
-            =   (1.0 - lag_cc->xwatch[icoal] - lag_cc->xashch[icoal])
-              * lag_cc->rho0ch[icoal]
-              * (1.0 - (lag_cc->y1ch[icoal] + lag_cc->y2ch[icoal]) / 2.0);
-
-          /* coke mass fraction in the particle  */
-          coke_mass_fraction[ilayer] = coke_density[ilayer] / density;
-
-        }
-
-        /* coke diameter   */
-        cs_real_t shrinking_diameter = diam;
-
-        /* initial particle diameter */
-        cs_real_t initial_diameter = diam;
-
-        cs_lagr_set_zone_class_coal(iclas,
-                                    izone,
-                                    coal_profile,
-                                    icoal,
-                                    temp,
-                                    coal_mass_fraction,
-                                    coke_mass_fraction,
-                                    coke_density,
-                                    water_mass_fraction,
-                                    shrinking_diameter,
-                                    initial_diameter);
-
-        cs_lagr_set_zone_class_cp(iclas,
-                                  izone,
-                                  cp);
-
-      }
-
-    }
-
-    /* Complete definition of parameters for this class and zone    */
-    //    lagr_define_zone_class_param (&iclas, &izone, iczpar, rczpar);
-    /* ===============================     */
   }
+  /*! [lagr_bc_define_injection_1] */
 
-  /* ---> Second zone, numbered izone = 1 */
-  /* IUSCLB : rebound of the particle    */
-  izone  = 1;
-  lagr_bdy_cond->b_zone_natures[izone] = CS_LAGR_REBOUND;
+  /*! [lagr_bc_define_injection_2] */
+  {
+    const cs_boundary_zone_t  *z = cs_boundary_zone_by_name("inlet");
+    int set_id = 1;
+    cs_lagr_injection_set_t *zis
+      = cs_lagr_get_injection_set(lagr_bcs, z->id, set_id);
 
-  /* same procedure for the other zones...    */
+    /* Assign injection profile function */
 
-  /* Deallocate the temporary array */
-  BFT_FREE(lstelt);
+    zis->injection_profile_func = _injection_profile;
+    zis->injection_profile_input = NULL; /* default */
+
+  }
+  /*! [lagr_bc_define_injection_2] */
+
+  /* same procedure for additional injections at other zones or sets... */
 }
 
 /*----------------------------------------------------------------------------*/

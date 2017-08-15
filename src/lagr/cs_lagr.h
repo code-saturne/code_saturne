@@ -29,9 +29,20 @@
 
 #include "cs_defs.h"
 
+/*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
 #include "assert.h"
+
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
 #include "cs_base.h"
 #include "cs_field.h"
+
+#include "cs_lagr_injection.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -41,50 +52,78 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for computation of particle injection profile.
+ *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * \param[in]   zone_id      id of associated mesh zone
+ * \param[in]   location_id  id of associated mesh location
+ * \param[in]   input        pointer to optional (untyped) value or structure.
+ * \param[in]   n_elts       number of zone elements
+ * \param[in]   elt_ids      ids of zone elements
+ * \param[out]  profile      weight of a given zone element (size: n_elts)
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_lagr_injection_profile_compute_t) (int               zone_id,
+                                       int               location_id,
+                                       const void       *input,
+                                       cs_lnum_t         n_elts,
+                                       const cs_lnum_t   elt_ids[],
+                                       cs_real_t         profile[]);
+
 /*! Lagrangian boundary condition types */
+/*--------------------------------------*/
 
 typedef enum {
 
-  CS_LAGR_INLET = 1,
-  CS_LAGR_OUTLET = 2,
-  CS_LAGR_REBOUND = 3,
-  CS_LAGR_DEPO1 = 4,
-  CS_LAGR_DEPO2 = 5,
-  CS_LAGR_FOULING = 7,
-  CS_LAGR_JBORD1 = 8,
-  CS_LAGR_JBORD2 = 9,
-  CS_LAGR_JBORD3 = 10,
-  CS_LAGR_JBORD4 = 11,
-  CS_LAGR_JBORD5 = 12,
-  CS_LAGR_DEPO_DLVO = 13,
-  CS_LAGR_SYM = 14
+  CS_LAGR_BC_UNDEFINED,
+  CS_LAGR_INLET,
+  CS_LAGR_OUTLET,
+  CS_LAGR_REBOUND,
+  CS_LAGR_DEPO1,
+  CS_LAGR_DEPO2,
+  CS_LAGR_FOULING,
+  CS_LAGR_JBORD1,
+  CS_LAGR_JBORD2,
+  CS_LAGR_JBORD3,
+  CS_LAGR_JBORD4,
+  CS_LAGR_JBORD5,
+  CS_LAGR_DEPO_DLVO,
+  CS_LAGR_SYM
 
 } cs_lagr_bc_type_t;
 
 /*! Lagrangian deposition state */
 
 typedef enum {
+
   CS_LAGR_PART_IN_FLOW        = 0,
   CS_LAGR_PART_DEPOSITED      = 1,
   CS_LAGR_PART_ROLLING        = 2,
   CS_LAGR_PART_TO_DELETE      = 3,
   CS_LAGR_PART_NO_MOTION      = 10,
   CS_LAGR_PART_IMPOSED_MOTION = 11
+
 } cs_lagr_deposition_state_t;
 
-/*! Fxed maximum sizes */
-/*---------------------*/
+/*! Fixed maximum sizes */
+/*----------------------*/
 
 typedef struct {
 
   int nusbrd;  /*!< maximum number of additional user
                     particle/boundary interactions */
 
-  int nflagm;  /*!< maximum number of boundary zones */
   int ndlaim;  /*!< maximum number of particle integer data */
 
   int ncharm2; /*!< maximum number of coal classes */
-  int nlayer;  /*!< maximal number of coal layers */
+  int nlayer;  /*!< maximum number of coal layers */
 
 } cs_lagr_const_dim_t;
 
@@ -239,7 +278,8 @@ typedef struct {
 
 } cs_lagr_model_t;
 
-/* ========================================================================== */
+/*! Particle counters for the Lagrangian module */
+/*----------------------------------------------*/
 
 typedef struct {
 
@@ -292,19 +332,20 @@ typedef struct {
 
 } cs_lagr_particle_counter_t;
 
-/* ========================================================================== */
+/*! Specific physical model options for the Lagrangian module */
+/* ---------------------------------------------------------- */
 
 typedef struct {
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
       temperature (in degrees Celsius).
-      Useful if \ref physical_model=1 and if there is a thermal scalar associated with
-      the continuous phase
+      Useful if \ref physical_model=1 and if there is a thermal scalar
+      associated with the continuous phase.
   */
   int   itpvar;
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
-      diameter. Useful if \ref physical_model = 1
+      diameter. Useful if \ref physical_model = 1.
   */
   int   idpvar;
 
@@ -315,9 +356,9 @@ typedef struct {
 
   /*  initialization temperature (in degree Celsius) for the particles already
       present in the calculation domain when an evolution equation on
-      the particle temperature is activated during a calculation (\ref physical_model =
-      1 and \ref itpvar = 1).
-      Useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation
+      the particle temperature is activated during a calculation
+      (\ref physical_model = 1 and \ref itpvar = 1).
+      Useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation.
   */
   cs_real_t          tpart;
 
@@ -332,7 +373,8 @@ typedef struct {
 
 } cs_lagr_specific_physics_t;
 
-/* ========================================================================== */
+/*! Parameters of the reentrainment model */
+/* -------------------------------------- */
 
 typedef struct {
 
@@ -353,7 +395,8 @@ typedef struct {
 
 } cs_lagr_reentrained_model_t;
 
-/* ========================================================================== */
+/*! Parameters of the precipitation model */
+/* -------------------------------------- */
 
 typedef struct {
 
@@ -372,11 +415,11 @@ typedef struct {
 
 } cs_lagr_precipitation_model_t;
 
-/* ========================================================================== */
+/*! Parameters of the particle clogging model */
+/* ------------------------------------------ */
 
 typedef struct {
 
-  /* Parameter of the particle clogging model */
   cs_real_t          jamlim;
   cs_real_t          mporos;
   cs_real_t          csthpp;
@@ -384,11 +427,11 @@ typedef struct {
 
 } cs_lagr_clogging_model_t;
 
-/* ========================================================================== */
+/*! Parameters of the particle consolidation model */
+/* ----------------------------------------------- */
 
 typedef struct {
 
-  /* Parameter of the particle consolidation model */
   cs_lnum_t          iconsol;
   cs_real_t          rate_consol;
   cs_real_t          slope_consol;
@@ -396,7 +439,8 @@ typedef struct {
 
 } cs_lagr_consolidation_model_t;
 
-/* ========================================================================== */
+/*! Lagrangian time stepping status */
+/*----------------------------------*/
 
 typedef struct {
 
@@ -411,106 +455,67 @@ typedef struct {
 
 } cs_lagr_time_step_t;
 
-/* ========================================================================== */
+/*! Particle injection parameters for a given zone and particle set */
+/*------------------------------------------------------------------*/
 
 typedef struct {
 
-  /*! number of particles per class and per boundary zone */
-  cs_lnum_t  nb_part;
+  int         zone_id;               /*!< associated zone id */
+  int         set_id;                /*!< associated set id */
+  int         location_id;           /*!< associated mesh location id */
 
-  /*! injection frequency
-    (if < 0, particles are introduced only at first iteration) */
-  int        injection_frequency;
+  cs_gnum_t   n_inject;              /*!< number of particles injected
+                                          at a time for this class and zone */
+
+  int         injection_frequency;   /*!< injection frequency
+                                          (if < 0, only at first iteration) */
+
+  /*! optional injection profile computation function, or NULL */
+  cs_lagr_injection_profile_compute_t  *injection_profile_func;
+
+  /*! optional injection profile input data, or NULL */
+  void                                 *injection_profile_input;
 
   /*! velocity condition type:
     - -1 imposed fluid velocity (from cell velocity)
-    -  0 imposed fluid velocity along the normal of the boundary face, with \ref iuno norm.
-    -  1 imposed velocity: \ref iupt \ref ivpt \ref iwpt must be given.
-    -  2 velocity profile given by user.*/
-  int        velocity_profile;
+    -  0 imposed fluid velocity along the normal of the boundary face
+    -  1 imposed velocity: \ref velocity must be set. */
+  int         velocity_profile;
 
-  /*! distribution profile:
-    - 1 uniform distribution,
-    - 2 presence rate profile given by user.*/
-  int        distribution_profile;
+  /*! temperature condition type:
+    - 0 fluid temperature
+    - 1 imposed temperature */
+  int         temperature_profile;
 
-  /*! temperature profile:
-    - 1 constant temperature profile
-    - 2 temperature profile given by the user */
-  int        temperature_profile;
+  int         coal_number;          /*!< particle coal number
+                                      (if \ref physical_model=2) */
 
-  /*! type of user profiles:
-    - 1: flat diameter profile
-    - 2: user profile to be defined in cs_user_lagr_boundary_conditions */
-  int        diameter_profile;
+  int         cluster;              /*!< statistical cluster id */
 
-  /*! type of coal initial composition (if \ref physical_model=2)
-    - 1: coal initial composition is given by DP_FCP
-    - 0: user profile to be defined cs_user_lagr_boundary_conditions */
-  int        coal_profile;
+  cs_real_t   velocity_magnitude;   /*!< particle velocity magnitude */
+  cs_real_t   velocity[3];          /*!< particle velocity components */
 
-  /*! coal number of the particle (if \ref physical_model=2)*/
-  int        coal_number;
+  cs_real_t   temperature;          /*!< particle temperature */
 
-  /*! statistics group number */
-  int        cluster;
+  cs_real_t   diameter;             /*!< particle diameter */
+  cs_real_t   diameter_variance;    /*!< particle diameter variance */
 
-  /*! particle velocity magnitude */
-  cs_real_t  velocity_magnitude;
+  cs_real_t   density;              /*!< particle density */
 
-  /*! particle velocity components by class and zone */
-  cs_real_t  velocity[3];
+  cs_real_t   fouling_index;        /*!< fouling index */
 
-  /*! particle temperature (size: n_layer) */
-  cs_real_t  *temperature;
+  cs_real_t   cp;                   /*!< particle specific heat */
 
-  /*! particle diameter */
-  cs_real_t   diameter;
+  cs_real_t   stat_weight;          /*!< particle statitistical weight */
 
-  /*! particle diameter variance */
-  cs_real_t   diameter_variance;
+  cs_real_t   flow_rate;            /*!< flow rate */
 
-  /*! density */
-  cs_real_t   density;
+  cs_real_t   emissivity;           /*!< particle emissivity */
 
-  /*! fouling index */
-  cs_real_t   foul_index;
+} cs_lagr_injection_set_t;
 
-  /*! particle specific heat */
-  cs_real_t   cp;
-
-  /*! particle weight */
-  cs_real_t   stat_weight;
-
-  /*! flow rate */
-  cs_real_t   flow_rate;
-
-  /*! particle emissivity */
-  cs_real_t   emissivity;
-
-  /*! water mass fraction in coal particles */
-  cs_real_t   water_mass_fraction;
-
-  /*! active coal mass fraction in coal particles */
-  cs_real_t  *coal_mass_fraction;
-
-  /*! coke mass fraction in coal particles */
-  cs_real_t  *coke_mass_fraction;
-
-  /*! diameter of shrinking core */
-  cs_real_t   shrinking_diameter;
-
-  /*! initial particle diameter (for coal particles) */
-  cs_real_t   initial_diameter;
-
-  /*! coke density after pyrolysis (for coal particles) */
-  cs_real_t  *coke_density;
-
-} cs_lagr_zone_class_data_t;
-
-/* ========================================================================== */
-
-/* ========================================================================== */
+/*! 2-way coupling and source term information. */
+/*----------------------------------------------*/
 
 typedef struct {
 
@@ -552,12 +557,10 @@ typedef struct {
   int  itsmas;
 
   /*  source term for the light volatile matters */
-//TODO
-  int  *itsmv1;//ncharm2
+  int  *itsmv1;  //ncharm2
 
   /*  source term for the heavy volatile matters */
-//TODO
-  int  *itsmv2;//ncharm2
+  int  *itsmv2;  //ncharm2
 
   /*! source term for the carbon released during heterogeneous combustion */
   int  itsco;
@@ -597,29 +600,32 @@ typedef struct {
 
 } cs_lagr_source_terms_t;
 
-/* ========================================================================== */
-
-/* Structures useful to deal with boundary conditions
-   For USLABO => _boundary_track_treatment */
+/*! Boundary or volume condition definitions and data */
+/*----------------------------------------------------*/
 
 typedef struct {
 
-  int         n_b_zones;       /* NFRLAG */
-  int         n_b_max_zones;
+  int                         location_id;         /*!< mesh location id */
 
-  cs_lnum_t  *b_zone_id;       /* ILFLAG */
-  int        *b_zone_classes;  /* IUSNCL */
-  int        *b_zone_natures;  /* IUSCLB */
+  int                         n_zones;             /*!< number of zones */
+  int                        *zone_type;           /*!< zone type */
 
-  int        *b_face_zone_id;  /* IFRLAG */
+  int                        *n_injection_sets;    /*!< number of injection
+                                                        sets per zone */
+  cs_lagr_injection_set_t   **injection_set;       /*!< injection data per
+                                                        set per zone */
 
-  bool        steady_bndy_conditions;
+  char                       *elt_type;            /*! zone type per
+                                                       element, or NULL */
 
-  cs_real_t  *particle_flow_rate; /* DEBLAG -> post-processing use */
+  cs_real_t                  *particle_flow_rate;  /*!< particle flow rate
+                                                        per zone per
+                                                        statistical class */
 
-} cs_lagr_bdy_condition_t;
+} cs_lagr_zone_data_t;
 
-/* Structures useful to deal with iternal conditions */
+/*! Internal face condition definitions */
+/*---------------------------------------*/
 
 typedef struct {
 
@@ -627,7 +633,8 @@ typedef struct {
 
 } cs_lagr_internal_condition_t;
 
-/* ========================================================================== */
+/*! Encrustation model parameters */
+/*--------------------------------*/
 
 typedef struct {
 
@@ -664,7 +671,8 @@ typedef struct {
 
 } cs_lagr_encrustation_t;
 
-/* ========================================================================== */
+/*! Physical and chemical model parameters */
+/*-----------------------------------------*/
 
 typedef struct {
 
@@ -692,16 +700,17 @@ typedef struct {
 
 } cs_lagr_physico_chemical_t;
 
-/* ========================================================================== */
+/*! Brownian movement parameters */
+/*-------------------------------*/
 
 typedef struct {
 
-  /* brownnian motion activation */
-  int  lamvbr;
+  int  lamvbr;  /*!< brownian motion activation */
 
 } cs_lagr_brownian_t;
 
-/* ========================================================================== */
+/*! Boundary interactions statistics parameters */
+/*----------------------------------------------*/
 
 typedef struct {
 
@@ -862,7 +871,8 @@ typedef struct {
 
 } cs_lagr_boundary_interactions_t;
 
-/* ========================================================================== */
+/*! Pointers to external (Eulerian solver) data. */
+/*-----------------------------------------------*/
 
 typedef struct {
 
@@ -891,9 +901,8 @@ typedef struct {
   /* visls0 */
   cs_real_t visls0;
 
-  /*****************
-   * Useful fields *
-   *****************/
+  /* Referenced fields
+     ----------------- */
 
   /* wall ustar */
   cs_real_t *uetbor;
@@ -951,7 +960,8 @@ typedef struct {
 
 } cs_lagr_extra_module_t;
 
-/* external data relative to coal combustion */
+/*! External data relative to coal combustion */
+/*--------------------------------------------*/
 
 typedef struct {
 
@@ -994,30 +1004,28 @@ typedef struct {
 
 /*! Fixed constants */
 
-extern const cs_lagr_const_dim_t   *cs_glob_lagr_const_dim;
+extern const cs_lagr_const_dim_t          *cs_glob_lagr_const_dim;
 
 /*! General dimensions */
 
-extern cs_lagr_dim_t           *cs_glob_lagr_dim;
+extern cs_lagr_dim_t                      *cs_glob_lagr_dim;
 
 /*! Time and Lagrangian-Eulerian coupling scheme */
-extern cs_lagr_time_scheme_t   *cs_glob_lagr_time_scheme;
+extern cs_lagr_time_scheme_t              *cs_glob_lagr_time_scheme;
 
 /*! Main Lagragian physical model parameters */
-extern cs_lagr_model_t         *cs_glob_lagr_model;
+extern cs_lagr_model_t                    *cs_glob_lagr_model;
 
 /*! Read-only pointer to global particle counter */
-extern const cs_lagr_particle_counter_t      *cs_glob_lagr_particle_counter;
+extern const cs_lagr_particle_counter_t   *cs_glob_lagr_particle_counter;
 
 /* Lagrangian log output every frequency_n time steps */
 
 extern int cs_glob_lagr_log_frequency_n;
 
-/* Statisics on borders*/
-extern cs_real_t *bound_stat;
+/* Statisics on boundaries */
 
-extern int cs_glob_lagr_nzone_max;
-extern int cs_glob_lagr_nclass_max;
+extern cs_real_t *bound_stat;
 
 extern cs_lagr_specific_physics_t            *cs_glob_lagr_specific_physics;
 extern cs_lagr_reentrained_model_t           *cs_glob_lagr_reentrained_model;
@@ -1034,9 +1042,9 @@ extern cs_lagr_boundary_interactions_t       *cs_glob_lagr_boundary_interactions
 extern cs_lagr_extra_module_t                *cs_glob_lagr_extra_module;
 extern cs_lagr_coal_comb_t                   *cs_glob_lagr_coal_comb;
 
-extern cs_lagr_bdy_condition_t               *cs_glob_lagr_bdy_conditions;
+extern const cs_lagr_zone_data_t             *cs_glob_lagr_boundary_conditions;
+extern const cs_lagr_zone_data_t             *cs_glob_lagr_volume_conditions;
 extern cs_lagr_internal_condition_t          *cs_glob_lagr_internal_conditions;
-extern cs_lagr_zone_class_data_t             *lagr_zone_class_data;
 
 /* Unit normals and offsets of boundary faces */
 extern cs_real_4_t   *cs_glob_lagr_b_u_normal;
@@ -1050,207 +1058,40 @@ extern cs_real_33_t  *cs_glob_lagr_b_face_proj;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide access to class/boundary zone parameters structure
+ * \brief Provide access to injection set structure.
  *
- * \param[in]    iclass     particle class number
- * \param[in]    izone      boundary zone number
+ * This access method ensures the strucure is initialized for the given
+ * zone and injection set.
  *
- * \return
- *   pointer to particle class and boundary zone structure of parameters
+ * \param[in]  zone_data  pointer to boundary or volume conditions structure
+ * \param[in]  zone_id    zone id
+ * \param[in]  set id     injection set id
+ *
+ * \return pointer to injection set data structure
  */
-/* ----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
-cs_lagr_zone_class_data_t *
-cs_lagr_get_zone_class_data(int  iclass,
-                            int  izone);
+cs_lagr_injection_set_t *
+cs_lagr_get_injection_set(cs_lagr_zone_data_t  *zone_data,
+                          int                   zone_id,
+                          int                   set_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set injection parameters for a given class and boundary zone
+ * \brief Initialize injection set data structure fields to defaults.
  *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   number     pointer to number of particles to inject
- * \param[in]   freq       pointer to injection frequency
- * \param[in]   stat       pointer to statistical groups id
- *
+ * \param[in, out]   zis  pointer to structure to initialize
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_set_zone_class_injection(int  iclass,
-                                 int  izone,
-                                 int  number,
-                                 int  freq,
-                                 int  stat);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set temperature parameters for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   profile    temperature profile
- * \param[in]   temp       pointer to temperature values
- * \param[in]   emissivity emissivity value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_temperature(int         iclass,
-                                   int         izone,
-                                   int         profile,
-                                   cs_real_t  *temp,
-                                   cs_real_t   emissivity);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set temperature parameters for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   cp         pointer to specific heat value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_cp(int        iclass,
-                          int        izone,
-                          cs_real_t  cp);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set coal parameters for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   profile    coal profile
- * \param[in]   number     coal number
- * \param[in]   temp       pointer to temperature array
- * \param[in]   coal_mf    pointer to coal mass fraction
- * \param[in]   coke_mf    pointer to coke mass fraction
- * \param[in]   coke_density  pointer to coke density after pyrolysis
- * \param[in]   water_mf   pointer to water mass fraction
- * \param[in]   shrink_diam  pointer to coke shrinking diameter
- * \param[in]   init_diam  pointer to initial particle diameter
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_coal(int         iclass,
-                            int         izone,
-                            int         profile,
-                            int         number,
-                            cs_real_t  *temp,
-                            cs_real_t  *coal_mf,
-                            cs_real_t  *coke_mf,
-                            cs_real_t  *coke_density,
-                            cs_real_t   water_mf,
-                            cs_real_t   shrink_diam,
-                            cs_real_t   init_diam);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set coal parameters for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   profile    pointer to flag for flow and stat weight profile
- * \param[in]   weight     pointer to stat weight value
- * \param[in]   flow       pointer to mass flow rate value
- *
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_stat(int        iclass,
-                            int        izone,
-                            int        profile,
-                            cs_real_t  weight,
-                            cs_real_t  flow);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set diameter parameters for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   profile    pointer to flag for diameter profile
- * \param[in]   diam       pointer to diameter value
- * \param[in]   diam_dev   pointer to diameter standard deviation value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_diam(int        iclass,
-                            int        izone,
-                            int        profile,
-                            cs_real_t  diam,
-                            cs_real_t  diam_dev);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set density for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   density    pointer to density value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_density(int        iclass,
-                               int        izone,
-                               cs_real_t  density);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set density for a given class and boundary zone
- *
- * \param[in]   iclass      class number
- * \param[in]   izone       boundary zone number
- * \param[in]   foul_index  pointer to fouling index value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_foul_index(int        iclass,
-                                  int        izone,
-                                  cs_real_t  foul_index);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set velocity parameters for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   profile    pointer to velocity profile
- * \param[in]   velocity   pointer to velocity values array
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_velocity(int        iclass,
-                                int        izone,
-                                int        profile,
-                                cs_real_t  velocity[]);
-
-/*----------------------------------------------------------------------------
- * \brief Initialize Lagrangian module parameters for a given set of data
- *
- *
- *----------------------------------------------------------------------------*/
-
-cs_lagr_zone_class_data_t *
-cs_lagr_init_zone_class_new(int       iclass,
-                            int       izone);
+cs_lagr_injection_set_default(cs_lagr_injection_set_t  *zis);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get read/write pointer to global particle counter
  *
- * \return
- *   pointer to lagrangian particle counter structure
+ * \return  pointer to lagrangian particle counter structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1363,10 +1204,31 @@ cs_get_lagr_brownian(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return pointer to the main boundary conditions structure.
+ *
+ * \return  pointer to current boundary zone data structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lagr_zone_data_t  *
+cs_lagr_get_boundary_conditions(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to the main volume conditions structure.
+ *
+ * \return pointer to current volume zone data structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lagr_zone_data_t  *
+cs_lagr_get_volume_conditions(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return pointer to the main internal conditions structure.
  *
- * \return
- *   pointer to current internal_contditions or NULL
+ * \return pointer to current internal conditions structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1375,22 +1237,12 @@ cs_lagr_get_internal_conditions(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return pointer to the main boundary conditions structure.
- *
- * \return
- *   pointer to current bdy_conditions or NULL
+ * \brief Finalize the global boundary and volume condition structures.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_lagr_bdy_condition_t *
-cs_lagr_get_bdy_conditions(void);
-
-/*----------------------------------------------------------------------------
- * Destroy finalize the global cs_lagr_bdy_condition_t structure.
- *----------------------------------------------------------------------------*/
-
 void
-cs_lagr_finalize_bdy_cond(void);
+cs_lagr_finalize_zone_conditions(void);
 
 /*----------------------------------------------------------------------------
  * Destroy finalize the global cs_lagr_internal_condition_t structure.
@@ -1410,7 +1262,6 @@ cs_get_lagr_boundary_interactions(void);
 
 /*----------------------------------------------------------------------------
  * Provide access to cs_lagr_extra_module_t
- *
  *----------------------------------------------------------------------------*/
 
 cs_lagr_extra_module_t *
@@ -1455,7 +1306,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
 void
 cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
                       cs_real_t  **p_cs_glob_lagr_source_terms);
-
 
 /*----------------------------------------------------------------------------
  * Free lagrangian arrays

@@ -29,9 +29,9 @@
 
 #include "cs_defs.h"
 
-#include "cs_interface.h"
-
-#include "assert.h"
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
 
 #include "cs_lagr_particle.h"
 
@@ -52,10 +52,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -71,6 +67,8 @@ cs_lagr_tracking_initialize(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Apply one particle movement step.
+ *
+ * \param[in]   visc_length  viscous layer thickness
  */
 /*----------------------------------------------------------------------------*/
 
@@ -87,19 +85,42 @@ void
 cs_lagr_tracking_finalize(void);
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
- * \brief Calculates the distance to the wall y+.
+ * \brief Determine the number of the closest wall face from the particle
+ *        as well as the corresponding wall normal distance (y_p^+)
+ *
+ * Used for the deposition model.
+ *
+ * \param[in]   particle     particle attributes for current time step
+ * \param[in]   p_am         pointer to attributes map for current time step
+ * \param[in]   visc_length  viscous layer thickness
+ * \param[out]  yplus        associated yplus value
+ * \param[out]  face_id      associated neighbor wall face, or -1
  */
 /*----------------------------------------------------------------------------*/
 
 void
-_test_wall_cell(const void                     *particle,
-                const cs_lagr_attribute_map_t  *p_am,
-                const cs_real_t                 visc_length[],
-                cs_real_t                      *yplus,
-                cs_lnum_t                      *face_id);
+cs_lagr_test_wall_cell(const void                     *particle,
+                       const cs_lagr_attribute_map_t  *p_am,
+                       const cs_real_t                 visc_length[],
+                       cs_real_t                      *yplus,
+                       cs_lnum_t                      *face_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointers to cell face connectivity used in particle tracking.
+ *
+ * \param[out]  cell_face_idx  cell face index
+ * \param[out]  cell_face_lst  cell face connectivity (signed 1-to-n based,
+ *                             negative for boundary faces, positive for
+ *                             interior faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_get_cell_face_connectivity(cs_lnum_t  **cell_face_idx,
+                                   cs_lnum_t  **cell_face_lst);
+
 /*----------------------------------------------------------------------------*/
 
 

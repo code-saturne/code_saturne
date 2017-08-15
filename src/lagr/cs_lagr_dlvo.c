@@ -170,9 +170,9 @@ cs_lagr_dlvo_init(const cs_real_t   water_permit,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf(" epseau = %g\n", cs_lagr_dlvo_param.water_permit);
   bft_printf(" fion   = %g\n", cs_lagr_dlvo_param.ionic_strength);
-  bft_printf(" temp[1]   = %g\n", cs_lagr_dlvo_param.temperature[0]);
+  bft_printf(" temp[0]   = %g\n", cs_lagr_dlvo_param.temperature[0]);
   bft_printf(" valen   = %g\n", cs_lagr_dlvo_param.valen);
-  bft_printf(" debye[1]   = %g\n", cs_lagr_dlvo_param.debye_length[0]);
+  bft_printf(" debye[0]   = %g\n", cs_lagr_dlvo_param.debye_length[0]);
   bft_printf(" phi_p   = %g\n", cs_lagr_dlvo_param.phi_p);
   bft_printf(" phi_s  = %g\n", cs_lagr_dlvo_param.phi_s);
 #endif

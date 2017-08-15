@@ -103,11 +103,11 @@ _define_st_field(const char  *name,
   int field_type = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY;
   int location_id = CS_MESH_LOCATION_CELLS;
 
-  cs_field_t *f = cs_field_create(name,
-                                  field_type,
-                                  location_id,
-                                  dim,
-                                  false);
+  cs_field_create(name,
+                  field_type,
+                  location_id,
+                  dim,
+                  false);
 }
 
 /*-----------------------------------------------------------------------------
@@ -225,7 +225,8 @@ _free_lagr_boundary_interaction_pointers(void)
  *============================================================================*/
 
 /* ---------------------------------------------------------------------- */
-/*! \brief Lagrangian module options definition.
+/*!
+ * \brief Lagrangian module options definition.
  *
  * - default initialization
  * - read user settings
@@ -248,28 +249,9 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
   cs_lagr_option_definition(isuite, iccvfg, iscalt, dtref);
 }
 
-/* ---------------------------------------------------------------------- */
-/*! \brief Lagrangian module initialize statistics fields
- */
-/* ---------------------------------------------------------------------- */
-
-void
-CS_PROCF (lagstati, LAGSTATI) (void)
-{
-  cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
-
-  if (lagr_model->deposition > 0)
-    cs_field_find_or_create("ustar",
-                            CS_FIELD_PROPERTY | CS_FIELD_PROPERTY,
-                            CS_MESH_LOCATION_BOUNDARY_FACES,
-                            1);
-
-  /* Now activate basic statistics */
-  cs_lagr_stat_initialize();
-}
-
 /*----------------------------------------------------------------------------*/
-/*! \brief Lagrangian module options definition.
+/*!
+ * \brief Lagrangian module options definition.
  *
  * - default initialization
  * - read user settings
@@ -373,7 +355,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     BFT_FREE(cs_glob_lagr_source_terms->itsmv1);
     BFT_FREE(cs_glob_lagr_source_terms->itsmv2);
 
-    cs_lagr_finalize_bdy_cond();
+    cs_lagr_finalize_zone_conditions();
 
     return;
   }
@@ -419,7 +401,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   if (lagr_time_scheme->iilagr > 0
       && (   cs_glob_time_step->is_local
-          || cs_glob_time_step->is_variable)){
+          || cs_glob_time_step->is_variable)) {
 
     bft_printf("@\n"
                "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -1553,31 +1535,11 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   if (lagr_time_scheme->iilagr == 3)
     lagr_time_scheme->isttio = 1;
 
-  if (lagr_time_scheme->isttio < 0 ||
-      lagr_time_scheme->isttio > 1) {
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR SUR LE CARACTERE STATIONNAIRE DE\n"
-               "@       L'ECOULEMENT DE LA PHASE CONTINUE\n"
-               "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    ISTTIO DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-               "@       IL VAUT ICI ISTTIO = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de ISTTIO.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_time_scheme->isttio);
-    iok++;
-
-  }
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_time_scheme->isttio",
+                                  lagr_time_scheme->isttio,
+                                  0, 2);
 
   if (lagr_time_scheme->iilagr == 2) {
 
@@ -1607,30 +1569,11 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
     }
 
-    if (cs_glob_lagr_source_terms->ltsdyn < 0 ||
-        cs_glob_lagr_source_terms->ltsdyn > 1) {
-
-      bft_printf("@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n"
-                 "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-                 "@    =========\n"
-                 "@    L'INDICATEUR SUR LE COUPLAGE RETOUR SUR LA DYNAMIQUE\n"
-                 "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-                 "@\n"
-                 "@    LTSDYN DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-                 "@       IL VAUT ICI LTSDYN = %d\n"
-                 "@\n"
-                 "@  Le calcul ne sera pas execute.\n"
-                 "@\n"
-                 "@  Verifier la valeur de LTSDYN.\n"
-                 "@\n"
-                 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n",
-                 cs_glob_lagr_source_terms->ltsdyn);
-      iok++;
-
-    }
+    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                  _("in Lagrangian module"),
+                                  "cs_glob_lagr_source_terms->ltsdyn",
+                                  cs_glob_lagr_source_terms->ltsdyn,
+                                  0, 2);
 
     if (     lagr_model->physical_model == 1
         && (  cs_glob_lagr_specific_physics->impvar == 1
@@ -1769,7 +1712,6 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     cs_exit(1);
 
   {
-
     if (cs_glob_lagr_stat_options->idstnt < 1) {
 
       bft_printf("@\n"
@@ -1829,59 +1771,17 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   if (iok != 0)
     cs_exit(1);
 
-  /* NORDRE     */
-  if (   lagr_time_scheme->t_order != 1
-      && lagr_time_scheme->t_order != 2) {
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_time_scheme->t_order",
+                                lagr_time_scheme->t_order,
+                                1, 3);
 
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR SUR L'ORDRE D'INTEGRATION\n"
-               "@       DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES\n"
-               "@       A UNE VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    NORDRE DEVRAIT ETRE UN ENTIER EGAL A 1 OU 2\n"
-               "@       IL VAUT ICI NORDRE = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de NORDRE.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_time_scheme->t_order);
-    iok++;
-
-  }
-
-
-  /* IDISTU     */
-  if (lagr_time_scheme->idistu < 0 ||
-      lagr_time_scheme->idistu > 1) {
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR SUR LA PRISE EN COMPTE DE LA DISPERSION\n"
-               "@       TURBULENTE A UNE VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    IDISTU DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-               "@       IL VAUT ICI IDISTU = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IDISTU.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_time_scheme->idistu);
-    iok++;
-
-  }
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_time_scheme->idistu",
+                                lagr_time_scheme->idistu,
+                                0, 2);
 
   if (   lagr_time_scheme->idistu == 1
          && extra->itytur != 2
@@ -1952,31 +1852,11 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   }
 
-  /* IDISTU     */
-  if (lagr_time_scheme->idiffl < 0 ||
-      lagr_time_scheme->idiffl > 1) {
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR SUR LA PRISE EN COMPTE DE LA DIFFUSION\n"
-               "@       TURBULENTE A UNE VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    IDIFFL DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-               "@       IL VAUT ICI IDIFFL = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de IDIFFL.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_time_scheme->idiffl);
-    iok++;
-
-  }
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_time_scheme->idiffl",
+                                lagr_time_scheme->idiffl,
+                                0, 2);
 
   /* MODCPL IDIRLA   */
   if (lagr_time_scheme->modcpl < 0) {
@@ -2071,33 +1951,11 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   }
 
-  /* ILAPOI     */
-  if (lagr_time_scheme->ilapoi < 0 ||
-      lagr_time_scheme->ilapoi > 1) {
-
-    bft_printf("@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n"
-               "@ @@ ATTENTION : ARRET A L'EXECUTION DU MODULE LAGRANGIEN\n"
-               "@    =========\n"
-               "@    L'INDICATEUR DE RESOLUTION DE L'EQUATION DE POISSON\n"
-               "@      POUR LES VITESSE MOYENNES ET DE CORRECTION DES\n"
-               "@      VITESSES INSTANTANNEES DES PARTICULES\n"
-               "@      A UNE VALEUR NON PERMISE (LAGOPT).\n"
-               "@\n"
-               "@    ILAPOI DEVRAIT ETRE UN ENTIER EGAL A 0 OU 1\n"
-               "@       IL VAUT ICI ILAPOI = %d\n"
-               "@\n"
-               "@  Le calcul ne sera pas execute.\n"
-               "@\n"
-               "@  Verifier la valeur de ILAPOI.\n"
-               "@\n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@\n",
-               lagr_time_scheme->ilapoi);
-    iok++;
-
-  }
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_time_scheme->ilapoi",
+                                lagr_time_scheme->ilapoi,
+                                0, 2);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("in Lagrangian module"),
@@ -2540,6 +2398,15 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   /* Now define particle map */
   cs_lagr_particle_attr_initialize();
+
+  if (lagr_model->deposition > 0)
+    cs_field_find_or_create("ustar",
+                            CS_FIELD_PROPERTY | CS_FIELD_PROPERTY,
+                            CS_MESH_LOCATION_BOUNDARY_FACES,
+                            1);
+
+  /* Now activate basic statistics */
+  cs_lagr_stat_initialize();
 }
 
 /*----------------------------------------------------------------------------*/

@@ -37,6 +37,19 @@ Default option changes
 User changes
 ------------
 
+- Changes in Lagrangian module boundary and injection definitions.
+  * renamed boundary particle classes to sets to avoid confusion with
+    statistical classes.
+  * some API changes in user functions; the cs_user_lagr_new_p_attr function
+    is removed in favor of the more general cs_user_lagr_in.
+  * boundary zones are now based on the general zones, as defined using the
+    GUI or cs_user_zones.c.
+  * definition of boundary injections is now more streamlined. Complex coal
+    (non-raw) coal definitions, which were little tested, can be done using
+    cs_user_lagr_in.
+  * mesh-based profiles (injection rate) may be defined using user functions.
+  * volume injections may now be done using the same mechanism.
+
 - Removed handling of VTK-based scalar slice outputs in studymanager;
   graphical files may now be included, and using Catalyst to produce
   images is recommended.

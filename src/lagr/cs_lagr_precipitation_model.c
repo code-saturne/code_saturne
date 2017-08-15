@@ -145,10 +145,23 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
   BFT_MALLOC(mp_preci, mesh->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(part_tot, mesh->n_cells_with_ghosts, cs_lnum_t);
 
+  /* reference diameter taken from first injection (FIXME) */
+
+  cs_real_t ref_diameter = 0;
+  {
+    const cs_lagr_zone_data_t *bcs = cs_glob_lagr_boundary_conditions;
+    for (int z_id = 0; z_id < bcs->n_zones; z_id++) {
+      if (bcs->n_injection_sets[z_id] > 0) {
+        ref_diameter = bcs->injection_set[z_id][0].diameter;
+        break;
+      }
+    }
+  }
+
   /* ====================================================================
    * 2. Calculation of the mass source terms due to
    *    precipitation and dissolution phenomena
-   * ====================================================================   */
+   * ==================================================================== */
 
   if (preci->nbrclas > 0) {
 
@@ -178,7 +191,7 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
 
     }
 
-    /* Source term applied to second scalar     */
+    /* Source term applied to second scalar */
 
     for (cs_lnum_t iel = 0; iel < mesh->n_cells; iel++) {
 
@@ -187,7 +200,7 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
       /* PRECIPITATION   */
       if (cvar_scal[iel] >= solub[iel]) {
 
-        cs_real_t mass = pis6 * pow (preci->diameter, 3) * preci->rho;
+        cs_real_t mass = pis6 * pow(preci->diameter, 3) * preci->rho;
         preci->nbprec[iel] =   (cvar_scal[iel] - solub[iel])
                              * fvq->cell_vol[iel] / mass;
         mp_preci[iel] =  preci->nbprec[iel] * mass;
@@ -207,10 +220,6 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
 
             for (cs_lnum_t iclas = 0; iclas < preci->nbrclas; iclas++) {
 
-              cs_lnum_t izone = 0;
-              cs_lagr_zone_class_data_t *zone_class_data
-                = cs_lagr_get_zone_class_data(iclas, izone);
-
               cs_real_t p_diam = cs_lagr_particle_get_real(particle, p_am,
                                                            CS_LAGR_DIAMETER);
               cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am,
@@ -218,7 +227,7 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
               cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
               cs_real_t mass = preci->rho * pis6 * pow(p_diam,3.0);
               if (   cell_id == iel
-                  && p_diam - zone_class_data->diameter < 1e-12
+                  && p_diam - ref_diameter < 1e-12
                   && p_mass - mass < 1e-12) {
 
                 cs_real_t p_weight = cs_lagr_particle_get_real(particle, p_am,
@@ -294,11 +303,22 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
   cs_real_t *mp_diss_t;
   BFT_MALLOC(mp_diss_t, mesh->n_cells_with_ghosts, cs_real_t);
 
-  cs_lnum_t nbdiss_tot  = 0;
-
   /* number of precipated particles */
-  cs_lnum_t nbprec_tot  = 0;
-  cs_lnum_t nbprec2     = 0;
+  cs_lnum_t nbprec_tot = 0;
+  cs_lnum_t nbprec2    = 0;
+
+  /* reference diameter taken from first injection (FIXME) */
+
+  cs_real_t ref_diameter = 0;
+  {
+    const cs_lagr_zone_data_t *bcs = cs_glob_lagr_boundary_conditions;
+    for (int z_id = 0; z_id < bcs->n_zones; z_id++) {
+      if (bcs->n_injection_sets[z_id] > 0) {
+        ref_diameter = bcs->injection_set[z_id][0].diameter;
+        break;
+      }
+    }
+  }
 
   /* ============================================================ */
   /* 2. GESTION DES PARTICULES */
@@ -325,7 +345,7 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
       for (cs_lnum_t i = 0; i < preci->nbprec[iel]; i++)
         cell[nbprec_tot + i]      = iel;
 
-      nbprec_tot   = nbprec_tot + preci->nbprec[iel];
+      nbprec_tot += preci->nbprec[iel];
 
     }
 
@@ -344,13 +364,9 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
         for (cs_lnum_t iclas = 0; iclas < preci->nbrclas; iclas++) {
 
-          int izone = 0;
-          cs_lagr_zone_class_data_t *zone_class_data
-            = cs_lagr_get_zone_class_data(iclas, izone);
-
           if (   cs_lagr_particle_get_cell_id(particle, p_am) == iel
               && (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER)
-                  - zone_class_data->diameter < 1e-12)
+                  - ref_diameter < 1e-12)
               && (mp[iclas] < mp_diss[iel * preci->nbrclas + iclas])) {
 
             /* Removing of particles due to dissolution */
@@ -373,18 +389,6 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
   }
 
-  for (cs_lnum_t iclas = 0; iclas < preci->nbrclas; iclas++)
-    nbdiss_tot += nbdiss[iclas];
-
-  cs_lnum_t value_part  = nbprec_tot;
-
-  if (cs_glob_rank_id >= 0) {
-
-    cs_parall_sum(1, CS_INT_TYPE, &nbprec_tot);
-    cs_parall_sum(1, CS_INT_TYPE, &nbdiss_tot);
-
-  }
-
   cs_lnum_t npt = p_set->n_particles;
   p_set->n_part_new += nbprec_tot;
 
@@ -393,7 +397,7 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
   if (nbprec_tot >= 1) {
 
-    for (cs_lnum_t ip = npt; ip < npt + value_part; ip++) {
+    for (cs_lnum_t ip = npt; ip < npt + nbprec_tot; ip++) {
 
       /* TODO: place particle at random location in the cell iel
          (not always at the cog) */
@@ -460,14 +464,14 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
   *val = 0.;
 
-  for (cs_lnum_t ip = npt; ip < npt + value_part; ip++) {
+  for (cs_lnum_t ip = npt; ip < npt + nbprec_tot; ip++) {
 
     unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
     *val += cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
 
   }
 
-  p_set->n_particles += value_part;
+  p_set->n_particles += nbprec_tot;
 
   BFT_FREE(cell);
   BFT_FREE(nbdiss);

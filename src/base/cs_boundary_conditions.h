@@ -64,7 +64,8 @@ BEGIN_C_DECLS
 
 extern const int  *cs_glob_bc_type;
 
-/*! boundary zone number associated with each boundary face (specific physics)*/
+/*! boundary zone number associated with each boundary face
+  (specific physical models)*/
 
 extern const int  *cs_glob_bc_face_zone;
 
@@ -270,7 +271,8 @@ cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  *a,
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Set convective oulet boundary condition for a scalar
+/*!
+ * \brief Set convective oulet boundary condition for a scalar
  *
  * Parameters:
  * \param[out]    coefa         explicit BC coefficient for gradients
@@ -283,13 +285,14 @@ cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  *a,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
-                                                         cs_real_t *cofaf,
-                                                         cs_real_t *coefb,
-                                                         cs_real_t *cofbf,
-                                                         cs_real_t  pimp,
-                                                         cs_real_t  cfl,
-                                                         cs_real_t  hint);
+void
+cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
+                                                    cs_real_t *cofaf,
+                                                    cs_real_t *coefb,
+                                                    cs_real_t *cofbf,
+                                                    cs_real_t  pimp,
+                                                    cs_real_t  cfl,
+                                                    cs_real_t  hint);
 
 /*----------------------------------------------------------------------------*/
 

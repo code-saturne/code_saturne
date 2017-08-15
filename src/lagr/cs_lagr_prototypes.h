@@ -87,59 +87,45 @@ cs_user_lagr_ef(cs_real_t            dt_p,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User function for the boundary conditions for the particles (inlet
- *   and treatment for the other boundaries)
- *  This routine is called after the initialization of the new particles in order
- *  to modify them according to new particle profiles.
+ * \brief User modification of newly injected particles.
  *
- * \param[in] time_id         time step indicator for fields
- *                            0: use fields at current time step
- *                            1: use fields at previous time step
- * \param[in] injfac          array of injection face id for every particles
- * \param[in] local_userdata  local_userdata pointer to zone/cluster specific
- *                            boundary conditions (number of injected
- *                            particles, velocity profile...)
+ * This function is called after the initialization of the new particles in
+ * order to modify them according to new particle profiles (injection
+ * profiles, position of the injection point, statistical weights,
+ * correction of the diameter if the standard-deviation option is activated).
+ *
+ * This function is called for each injection zone and class. Particles
+ * with ids between \c pset->n_particles and \c n_elts are initialized
+ * but may be modidied by this function.
+ *
+ * \param[in,out]  particles         particle set
+ * \param[in]      zis               injection data for this set
+ * \param[in]      particle_range    start and past-the-end ids of new particles
+ *                                   for this zone and class
+ * \param[in]      particle_face_id  face ids of new particles if zone is
+ *                                   a boundary,  NULL otherwise
+ * \param[in]      visc_length       viscous layer thickness
+ *                                   (size: number of mesh boundary faces)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_in(int                         time_id,
-                int                        *injfac,
-                cs_lagr_zone_class_data_t  *local_userdata,
-                cs_real_t                   vislen[]  );
+cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
+                const cs_lagr_injection_set_t  *zis,
+                const cs_lnum_t                 particle_range[2],
+                const cs_lnum_t                 particle_face_id[],
+                const cs_real_t                 visc_length[]);
 
-/*---------------------------------------------------------------------------------*/
-/* \brief User subroutine of the Lagrangian particle-tracking module
+/*---------------------------------------------------------------------------*/
+/*
+ * \brief User function of the Lagrangian particle-tracking module
  *
- *  User subroutine for input of calculation parameters.
- *  This parameters concerns physical, numerical and post-processing options.
+ *  User input of physical, numerical and post-processing options.
  */
-/*---------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_lagr_model(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Prescribe some attributes for newly injected particles.
- *
- * This function is called at different points, at which different attributes
- * may be modified.
- *
- * \param[in,out] particle  particle structure
- * \param[in]     p_am      particle attributes map
- * \param[in]     face_id   id of particle injection face
- * \param[in]     attr_id   id of variable modifiable by this call. called for
-                            CS_LAGR_PRED_VELOCITY, CS_LAGR_DIAMETER,
-                            CS_LAGR_TEMPERATURE, CS_LAGR_STAT_WEIGHT
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_new_p_attr(unsigned char                  *particle,
-                        const cs_lagr_attribute_map_t  *p_am,
-                        cs_lnum_t                       face_id,
-                        cs_lagr_attribute_t             attr_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -216,35 +202,33 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User function (non-mandatory intervention)
- *     Integration of the sde for the user-defined variables.
- *     The variables are constant by default.
- *     The sde must be of the form:
+ * \brief User integration of the SDE for the user-defined variables.
+ *
+ * The variables are constant by default. The SDE must be of the form:
+ *
  * \f[
  *    \frac{dT}{dt}=\frac{T - PIP}{Tca}
  * \f]
- *     T : IIIIeme user-defined variable, given for the ip particle by
- *            T = EPTP(JVLS(IIII),IP)
- *            T = EPTPA(JVLS(IIII),IP)
- *     Tca : Characteristic time for the sde
- *           to be prescribed in the array auxl1
- *     PIP : Coefficient of the sde (pseudo right member)
- *           to be prescribed in the array auxl2
- *           If the chosen scheme is first order (nordre=1)
- *            then, at the first and only passage pip is expressed
- *            as a function of the quantities of the previous time step
- *            contained in eptpa
- *           If the chosen scheme is second order (nordre=2)
- *            then, at the first passage (nor=1) pip is expressed as
- *            a function of the quantities of the previous time step contained
- *            in eptpa, and at the second passage (nor=2) pip is expressed as
- *            a function of the quantities of the current time step
  *
- * \param[in] dt        time step (per cell)
- * \param[in] taup      particle relaxation time
- * \param[in] tlag      relaxation time for the flow
- * \param[in] tempct    characteristic thermal time and implicit source
- *                      term of return coupling
+ * T:   particle attribute representing the variable
+ * Tca: characteristic time for the sde
+ *      to be prescribed in the array auxl1
+ * PIP: coefficient of the SDE (pseudo RHS)
+ *      to be prescribed in the array auxl2.
+ *      If the chosen scheme is first order (nordre=1) then, at the first
+ *      and only call pip is expressed as a function of the quantities of
+ *      the previous time step (contained in the particle data).
+ *      If the chosen scheme is second order (nordre=2)
+ *      then, at the first call (nor=1) pip is expressed as a function of
+ *      the quantities of the previous time step, and at the second passage
+ *      (nor=2) pip is expressed as a function of the quantities of the
+ *      current time step.
+ *
+ * \param[in]  dt      time step (per cell)
+ * \param[in]  taup    particle relaxation time
+ * \param[in]  tlag    relaxation time for the flow
+ * \param[in]  tempct  characteristic thermal time and implicit source
+ *                     term of return coupling
  */
 /*----------------------------------------------------------------------------*/
 
@@ -256,31 +240,30 @@ cs_user_lagr_sde(const cs_real_t  dt[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User function of the Lagrangian particle-tracking module:
- *        User function for input of calculation parameters.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_model(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Define particle boundary conditions.
  *
- *   This is used definition of for inlet and of the other boundaries
+ * This is used for the definition of inlet and other boundaries,
+ * based on predefined boundary zones (\ref cs_boundary_zone_t).
  *
- *   Boundary faces may be selected using the
- *    \ref cs_selector_get_b_face_num_list function.
- *
- * parameters:
- *
- * \param[in] itypfb    type of the boundary faces
+ * \param[in] bc_type    type of the boundary faces
  */
-/* --------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_lagr_boundary_conditions(const int  itypfb[]);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define particle volume conditions.
+ *
+ * This is used definition of for injection
+ * based on predefined volume zones (\ref cs_volume_zone_t).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_volume_conditions(void);
 
 /*----------------------------------------------------------------------------*/
 

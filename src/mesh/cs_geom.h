@@ -90,7 +90,7 @@ cs_geom_closest_point(cs_lnum_t         n_points,
  * \param[in]   n_vertices     number of face vertices
  * \param[in]   vertex_ids     ids of face vertices
  * \param[in]   vertex_coords  vertex coordinates
- * \param[in]   face_center    cordinates of face center
+ * \param[in]   face_center    coordinates of face center
  * \param[in]   face_normal    face normal vector
  * \param[in]   sx0            segment start coordinates
  * \param[in]   sx1            segment end coordinates

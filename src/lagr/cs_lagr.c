@@ -60,6 +60,10 @@
 #include "cs_mesh_location.h"
 #include "cs_prototypes.h"
 
+#include "cs_boundary_conditions.h"
+#include "cs_boundary_zone.h"
+#include "cs_volume_zone.h"
+
 #include "cs_parameters.h"
 #include "cs_time_step.h"
 #include "cs_physical_constants.h"
@@ -69,6 +73,9 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_post_default.h"
+
+#include "cs_gui_particles.h"
+#include "cs_gui_util.h"
 
 #include "cs_lagr.h"
 
@@ -126,7 +133,6 @@ BEGIN_C_DECLS
 
 cs_lagr_const_dim_t _lagr_const_dim
   = {.nusbrd = 10,
-     .nflagm = 100,
      .ndlaim = 10,
      .ncharm2 = 5,
      .nlayer = 5};
@@ -215,7 +221,8 @@ cs_lagr_clogging_model_t *cs_glob_lagr_clogging_model
    = &_cs_glob_lagr_clogging_model;
 
 /* lagr clogging model structure and associated pointer */
-static cs_lagr_consolidation_model_t _cs_glob_lagr_consolidation_model = {0, 0, 0, 0};
+static cs_lagr_consolidation_model_t _cs_glob_lagr_consolidation_model
+   = {0, 0, 0, 0};
 cs_lagr_consolidation_model_t *cs_glob_lagr_consolidation_model
    = &_cs_glob_lagr_consolidation_model;
 
@@ -351,6 +358,11 @@ static cs_lagr_coal_comb_t _lagr_coal_comb
      NULL, NULL, NULL, NULL, NULL,
      NULL, NULL, NULL, NULL, NULL};
 
+/* boundary and volume condition data */
+
+static cs_lagr_zone_data_t  *_boundary_conditions = NULL;
+static cs_lagr_zone_data_t  *_volume_conditions = NULL;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -373,16 +385,10 @@ cs_lagr_coal_comb_t *cs_glob_lagr_coal_comb = &_lagr_coal_comb;
 
 cs_real_t *bound_stat = NULL;
 
-cs_lagr_zone_class_data_t *_lagr_zone_class_data = NULL;
-
-cs_lagr_bdy_condition_t  *cs_glob_lagr_bdy_conditions = NULL;
+const cs_lagr_zone_data_t     *cs_glob_lagr_boundary_conditions = NULL;
+const cs_lagr_zone_data_t     *cs_glob_lagr_volume_conditions = NULL;
 
 cs_lagr_internal_condition_t  *cs_glob_lagr_internal_conditions = NULL;
-
-/* Array dimensions for lagrangien user data per zone per class */
-
-int  cs_glob_lagr_nzone_max  = 0;
-int  cs_glob_lagr_nclass_max = 0;
 
 /* Geometry helper arrays */
 /*------------------------*/
@@ -710,7 +716,7 @@ _lagr_map_fields_default(void)
         _lagr_extra_module.uetbor = NULL;
   }
   else {
-    /* we use NEPTUNE_CFD */
+    /* we are probably using NEPTUNE_CFD */
     _lagr_extra_module.pressure    = cs_field_by_name_try("Pressure");
     _lagr_extra_module.vel         = cs_field_by_name_try("lagr_velocity");
     _lagr_extra_module.cvar_k      = cs_field_by_name_try("lagr_k");
@@ -720,9 +726,11 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.cvar_r22    = cs_field_by_name_try("lagr_r22");
     _lagr_extra_module.cvar_r33    = cs_field_by_name_try("lagr_r33");
     _lagr_extra_module.cvar_rij    = cs_field_by_name_try("lagr_rij");
-    _lagr_extra_module.viscl       = cs_field_by_name_try("lagr_molecular_viscosity");
+    _lagr_extra_module.viscl       = cs_field_by_name_try
+                                       ("lagr_molecular_viscosity");
     _lagr_extra_module.scal_t      = cs_field_by_name_try("lagr_enthalpy");
-    _lagr_extra_module.cpro_viscls = cs_field_by_name_try("lagr_thermal_conductivity");
+    _lagr_extra_module.cpro_viscls = cs_field_by_name_try
+                                       ("lagr_thermal_conductivity");
     _lagr_extra_module.cpro_cp     = cs_field_by_name_try("lagr_specific_heat");
     _lagr_extra_module.temperature = cs_field_by_name_try("lagr_temperature");
     _lagr_extra_module.t_gaz       = NULL;
@@ -736,176 +744,120 @@ _lagr_map_fields_default(void)
 
     cs_field_t *f = cs_field_by_name_try("wall_friction_velocity");
     if (f != NULL)
-        _lagr_extra_module.uetbor  = f->val;
+      _lagr_extra_module.uetbor  = f->val;
     else
-        _lagr_extra_module.uetbor  = NULL;
-    }
-}
-
-static void
-_cs_lagr_free_zone_class_data(cs_lagr_zone_class_data_t *zone_class_data)
-{
-  assert(zone_class_data != NULL);
-
-  if (cs_glob_lagr_model->physical_model == 1)
-    BFT_FREE(zone_class_data->temperature);
-
-  else if (cs_glob_lagr_model->physical_model == 2) {
-
-    BFT_FREE(zone_class_data->coke_density);
-    BFT_FREE(zone_class_data->temperature);
-    BFT_FREE(zone_class_data->coal_mass_fraction);
-    BFT_FREE(zone_class_data->coke_mass_fraction);
-
+      _lagr_extra_module.uetbor  = NULL;
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reallocate a zone injection data structure for a given zone and set.
+ *
+ * The data is reallocated (expanded) if needed, and section relative
+ * to the given class id is set to default values.
+ *
+ * Note that the structure is allocated in one block, large enough to contain
+ * the base structure and model-dependent arrays it may point to.
+ *
+ * \param[in]        location_id       id of associated location
+ * \param[in]        zone_id           id of associated zone
+ * \param[in]        set_id            id of requested class
+ * \param[in, out]   n_injection_sets  number of injection sets for this zone
+ * \param[in, out]   injection_sets    zone injection data for this zone
+ */
+/*----------------------------------------------------------------------------*/
+
 static void
-_cs_lagr_free_all_zone_class_data(void)
+_zone_injection_set_init(int                        location_id,
+                         int                        zone_id,
+                         int                        set_id,
+                         int                       *n_injection_sets,
+                         cs_lagr_injection_set_t  **injection_sets)
 {
-  if (_lagr_zone_class_data != NULL) {
-    for (int  i = 0; i < cs_glob_lagr_nzone_max * cs_glob_lagr_nclass_max ; i++)
-      _cs_lagr_free_zone_class_data(&(_lagr_zone_class_data[i]));
-    BFT_FREE(_lagr_zone_class_data);
+  /* Simply reset if allocation is large enough */
+
+  if (set_id < *n_injection_sets) {
+    cs_lagr_injection_set_t *zis
+      = (cs_lagr_injection_set_t *)((*injection_sets) + set_id);
+    cs_lagr_injection_set_default(zis);
+  }
+
+  /* Reallocate memory so as to maintain
+     sub-arrays at the end of the structure */
+
+  else {
+
+    cs_lagr_injection_set_t *_zis  = *injection_sets;
+    BFT_REALLOC(_zis, set_id+1, cs_lagr_injection_set_t);
+
+    for (int i = *n_injection_sets; i <= set_id; i++) {
+
+      cs_lagr_injection_set_t *zis = (cs_lagr_injection_set_t *)(_zis + i);
+
+      memset(zis, 0, sizeof(cs_lagr_injection_set_t));
+
+      zis->location_id = location_id;
+      zis->zone_id = zone_id;
+      zis->set_id = set_id;
+
+      cs_lagr_injection_set_default(zis);
+
+    }
+
+    *n_injection_sets = set_id+1;
+    *injection_sets = _zis;
+
   }
 }
 
 /*----------------------------------------------------------------------------
- * Zone and class data structure allocation for a given class and zone.
- * Reallocation of the main array if necessary.
- *----------------------------------------------------------------------------*/
-
-static cs_lagr_zone_class_data_t *
-_cs_lagr_allocate_zone_class_data(int  iclass,
-                                  int  izone)
-{
-  if (izone >= cs_glob_lagr_nzone_max || iclass >= cs_glob_lagr_nclass_max) {
-
-    int  old_lagr_nzone  = cs_glob_lagr_nzone_max;
-    int  old_lagr_nclass = cs_glob_lagr_nclass_max;
-
-    if (izone >= cs_glob_lagr_nzone_max)
-      cs_glob_lagr_nzone_max  = CS_MAX(izone +1, cs_glob_lagr_nzone_max  + 5);
-    if (iclass >= cs_glob_lagr_nclass_max)
-      cs_glob_lagr_nclass_max = CS_MAX(iclass +1, cs_glob_lagr_nclass_max + 1);
-
-    BFT_REALLOC(_lagr_zone_class_data,
-                cs_glob_lagr_nzone_max * cs_glob_lagr_nclass_max,
-                cs_lagr_zone_class_data_t);
-
-    if (cs_glob_lagr_nzone_max != old_lagr_nzone) {
-      for (int  ii = old_lagr_nclass-1; ii > 0; ii--) { /* no-op for ii = 0 */
-        for (int  jj = old_lagr_nzone-1; jj >= 0; jj--) {
-          _lagr_zone_class_data[cs_glob_lagr_nzone_max * ii + jj]
-            = _lagr_zone_class_data[old_lagr_nzone * ii + jj];
-          memset(_lagr_zone_class_data + (old_lagr_nzone * ii + jj),
-                 0,
-                 sizeof(cs_lagr_zone_class_data_t));
-        }
-      }
-    }
-
-    for (int ii = old_lagr_nclass; ii < cs_glob_lagr_nclass_max; ii++)
-      for (int jj = 0; jj < cs_glob_lagr_nzone_max; jj++) {
-        memset(_lagr_zone_class_data + (cs_glob_lagr_nzone_max * ii + jj),
-               0,
-               sizeof(cs_lagr_zone_class_data_t));
-    }
-    for (int ii = 0; ii < cs_glob_lagr_nclass_max; ii++)
-      for (int jj = old_lagr_nzone; jj < cs_glob_lagr_nzone_max; jj++) {
-        memset(_lagr_zone_class_data + (cs_glob_lagr_nzone_max * ii + jj),
-               0,
-               sizeof(cs_lagr_zone_class_data_t));
-    }
-  }
-
-  cs_lagr_zone_class_data_t *zone_class_data
-    = cs_lagr_get_zone_class_data(iclass, izone);
-
-  assert(zone_class_data != NULL);
-
-  /* On first call for this zone */
-
-  if (zone_class_data->nb_part == 0) {
-
-    if (cs_glob_lagr_model->physical_model == 1) {
-      BFT_MALLOC(zone_class_data->temperature,
-                 1,
-                 cs_real_t);
-    }
-    else if (cs_glob_lagr_model->physical_model == 2) {
-
-      BFT_MALLOC(zone_class_data->coke_density,
-                 cs_glob_lagr_model->n_temperature_layers,
-                 cs_real_t);
-      BFT_MALLOC(zone_class_data->temperature,
-                 cs_glob_lagr_model->n_temperature_layers,
-                 cs_real_t);
-      BFT_MALLOC(zone_class_data->coal_mass_fraction,
-                 cs_glob_lagr_model->n_temperature_layers,
-                 cs_real_t);
-      BFT_MALLOC(zone_class_data->coke_mass_fraction,
-                 cs_glob_lagr_model->n_temperature_layers,
-                 cs_real_t);
-
-    }
-
-  }
-
-  return zone_class_data;
-}
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Initialize a cs_lagr_bdy_condition_t structure.
+ * Initialize or update a zone data structure
  *
  * parameters:
- *   n_max_zones     <--  number max. of boundary zones
+ *   zone_data   <-> pointer to zone data structure pointer
+ *   location_id <-- mesh location id
+ *   n_zones     <-- number of zones
  *
  * returns:
- *   a new defined cs_lagr_bdy_condition_t structure
+ *   a new defined cs_lagr_injection_sets_t structure
  *----------------------------------------------------------------------------*/
 
-static cs_lagr_bdy_condition_t *
-_create_bdy_cond_struct(int   n_max_zones)
+static void
+_update_zone_data_struct(cs_lagr_zone_data_t  **zone_data,
+                         int                    location_id,
+                         int                    n_zones)
 {
-  int   i;
+  cs_lagr_zone_data_t  *zd = *zone_data;
 
-  cs_lagr_bdy_condition_t *bdy_cond = NULL;
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  BFT_MALLOC(bdy_cond, 1, cs_lagr_bdy_condition_t);
-
-  bdy_cond->n_b_zones = 0;
-  bdy_cond->n_b_max_zones = n_max_zones;
-
-  BFT_MALLOC(bdy_cond->particle_flow_rate, n_max_zones, cs_real_t);
-  BFT_MALLOC(bdy_cond->b_zone_id, n_max_zones, int);
-  BFT_MALLOC(bdy_cond->b_zone_classes, n_max_zones, int);
-  BFT_MALLOC(bdy_cond->b_zone_natures, n_max_zones, int);
-
-  for (i = 0; i < n_max_zones; i++) {
-
-    bdy_cond->particle_flow_rate[i] = 0.0;
-    bdy_cond->b_zone_id[i] = -1;
-    bdy_cond->b_zone_classes[i] = 0;
-    bdy_cond->b_zone_natures[i] = -1;
-
+  if (*zone_data == NULL) {
+    BFT_MALLOC(zd, 1, cs_lagr_zone_data_t);
+    zd->location_id = location_id;
+    zd->n_zones = 0;
+    zd->zone_type = NULL;
+    zd->n_injection_sets = NULL;
+    zd->injection_set = NULL;
+    zd->elt_type = NULL;
+    zd->particle_flow_rate = NULL;
+    *zone_data = zd;
   }
 
-  BFT_MALLOC(bdy_cond->b_face_zone_id, mesh->n_b_faces, int);
+  if (zd->n_zones < n_zones) {
+    int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
+    BFT_REALLOC(zd->zone_type, n_zones, int);
+    BFT_REALLOC(zd->n_injection_sets, n_zones, int);
+    BFT_REALLOC(zd->injection_set, n_zones, cs_lagr_injection_set_t *);
+    BFT_REALLOC(zd->particle_flow_rate, n_zones*n_stats, cs_real_t);
+    for (int i = zd->n_zones; i < n_zones; i++) {
+      zd->zone_type[i] = -1;
+      zd->n_injection_sets[i] = 0;
+      zd->injection_set[i] = NULL;
+    }
+    for (int i = zd->n_zones*n_stats; i < n_zones*n_stats; i++)
+      zd->particle_flow_rate[i] = 0;
 
-  for (i = 0; i < cs_glob_mesh->n_b_faces; i++)
-    bdy_cond->b_face_zone_id[i] = -1;
-
-  bdy_cond->steady_bndy_conditions = false;
-
-  return bdy_cond;
+    zd->n_zones = n_zones;
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -931,9 +883,53 @@ _create_internal_cond_struct(void)
   return internal_cond;
 }
 
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update (or build) boundary face types.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_boundary_face_type(void)
+{
+  cs_lagr_zone_data_t *bcs = cs_lagr_get_boundary_conditions();
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+
+  BFT_REALLOC(bcs->elt_type, mesh->n_b_faces, char);
+
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
+    bcs->elt_type[i] = 0;
+
+  for (int z_id = 0; z_id < bcs->n_zones; z_id++) {
+
+    if (bcs->zone_type[z_id] < 0) /* ignore undefined zones */
+      continue;
+
+    char z_type = bcs->zone_type[z_id];
+
+    const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(z_id);
+    for (cs_lnum_t i = 0; i < z->n_faces; i++)
+      bcs->elt_type[z->face_ids[i]] = z_type;
+
+  }
+
+  /* Check definitions */
+
+  {
+    int *bc_flag;
+    BFT_MALLOC(bc_flag, mesh->n_b_faces, int);
+
+    for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
+      bc_flag[i] = bcs->elt_type[i];
+
+    cs_boundary_conditions_error(bc_flag, _("Lagrangian boundary type"));
+
+    BFT_FREE(bc_flag);
+  }
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions
@@ -993,8 +989,6 @@ cs_lagr_finalize(void)
 
   BFT_FREE(cs_glob_lagr_source_terms->st_val);
 
-  _cs_lagr_free_all_zone_class_data();
-
   /* geometry */
 
   BFT_FREE(cs_glob_lagr_b_u_normal);
@@ -1032,385 +1026,86 @@ cs_lagr_finalize(void)
   /* Close tracking structures */
 
   cs_lagr_tracking_finalize();
+
+  cs_lagr_finalize_zone_conditions();
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set temperature parameters for a given class and boundary zone
+ * \brief Provide access to injection set structure.
  *
- * \param[in]   iclass      class number
- * \param[in]   izone       boundary zone number
- * \param[in]   profile     temperature profile
- * \param[in]   temp        pointer to temperature values
- * \param[in]   emissivity  emissivity value
+ * This access method ensures the strucure is initialized for the given
+ * zone and injection set.
+ *
+ * \param[in]  zone_data  pointer to boundary or volume conditions structure
+ * \param[in]  zone_id    zone id
+ * \param[in]  set id     injection set id
+ *
+ * \return pointer to injection set data structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lagr_injection_set_t *
+cs_lagr_get_injection_set(cs_lagr_zone_data_t  *zone_data,
+                          int                   zone_id,
+                          int                   set_id)
+{
+  assert(zone_data != NULL);
+  assert(zone_id >= 0 && set_id >= 0);
+  assert(zone_id < zone_data->n_zones);
+
+  if (set_id >= zone_data->n_injection_sets[zone_id])
+    _zone_injection_set_init(zone_data->location_id,
+                             zone_id,
+                             set_id,
+                             &(zone_data->n_injection_sets[zone_id]),
+                             &(zone_data->injection_set[zone_id]));
+
+  return &(zone_data->injection_set[zone_id][set_id]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize injection set data structure fields to defaults.
+ *
+ * \param[in, out]   zis  pointer to structure to initialize
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_set_zone_class_temperature(int         iclass,
-                                   int         izone,
-                                   int         profile,
-                                   cs_real_t  *temp,
-                                   cs_real_t   emissivity)
+cs_lagr_injection_set_default(cs_lagr_injection_set_t  *zis)
 {
-  cs_lagr_zone_class_data_t *zonedata
-    = cs_lagr_get_zone_class_data(iclass, izone);
+  assert(zis != NULL);
 
-  assert(cs_glob_lagr_model->physical_model == 1);
+  zis->n_inject             =  0;
+  zis->injection_frequency  =  0;
 
-  /* temperature, emissivity */
-  zonedata->temperature_profile = profile;
+  zis->injection_profile_func = NULL;
+  zis->injection_profile_input = NULL;
 
-  zonedata->temperature[0] = temp[0];
-  zonedata->emissivity = emissivity;
-}
+  zis->velocity_profile     = -2;
+  zis->temperature_profile  = -2;
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set temperature parameters for a given class and boundary zone
- *
- * \param[in]   iclass  class number
- * \param[in]   izone   boundary zone number
- * \param[in]   cp      pointer to specific heat value
- */
-/*----------------------------------------------------------------------------*/
+  if (cs_glob_lagr_model->physical_model == 2)
+    zis->coal_number        = -2;
 
-void
-cs_lagr_set_zone_class_cp(int        iclass,
-                          int        izone,
-                          cs_real_t  cp)
-{
-  cs_lagr_zone_class_data_t *zonedata
-    = cs_lagr_get_zone_class_data(iclass, izone);
+  zis->cluster              =  0;
 
-  zonedata->cp = cp;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set coal parameters for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   profile    coal profile
- * \param[in]   number     coal number
- * \param[in]   temp       pointer to temperature array
- * \param[in]   coal_mf    pointer to coal mass fraction
- * \param[in]   coke_mf    pointer to coke mass fraction
- * \param[in]   coke_density  pointer to coke density after pyrolysis
- * \param[in]   water_mf   pointer to water mass fraction
- * \param[in]   shrink_diam  pointer to coke shrinking diameter
- * \param[in]   init_diam  pointer to initial particle diameter
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_coal(int         iclass,
-                            int         izone,
-                            int         profile,
-                            int         number,
-                            cs_real_t  *temp,
-                            cs_real_t  *coal_mf,
-                            cs_real_t  *coke_mf,
-                            cs_real_t  *coke_density,
-                            cs_real_t   water_mf,
-                            cs_real_t   shrink_diam,
-                            cs_real_t   init_diam)
-{
-  cs_lagr_zone_class_data_t *zonedata
-    = cs_lagr_get_zone_class_data(iclass, izone);
-
-  zonedata->coal_profile = profile;
-  zonedata->coal_number  = number;
-
-  for (cs_lnum_t ilayer = 0;
-       ilayer < cs_glob_lagr_model->n_temperature_layers;
-       ilayer++) {
-
-    if (temp != NULL)
-      zonedata->temperature[ilayer] = temp[ilayer];
-
-    if (coke_density != NULL)
-      zonedata->coke_density[ilayer] = coke_density[ilayer];
-
-    if (coal_mf != NULL)
-      zonedata->coal_mass_fraction[ilayer] = coal_mf[ilayer];
-
-    if (coke_mf !=NULL)
-      zonedata->coke_mass_fraction[ilayer] = coke_mf[ilayer];
-
-  }
-
-  zonedata->initial_diameter   = init_diam;
-  zonedata->shrinking_diameter = shrink_diam;
-
-  zonedata->water_mass_fraction = water_mf;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set coal parameters for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   profile    pointer to flag for flow and stat weight profile
- * \param[in]   weight     pointer to stat weight value
- * \param[in]   flow       pointer to mass flow rate value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_stat(int        iclass,
-                            int        izone,
-                            int        profile,
-                            cs_real_t  weight,
-                            cs_real_t  flow)
-{
-  cs_lagr_zone_class_data_t *zonedata
-    = cs_lagr_get_zone_class_data(iclass, izone);
-
-  zonedata->distribution_profile = profile;
-  zonedata->stat_weight          = weight;
-  zonedata->flow_rate            = flow;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set diameter parameters for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   profile    pointer to flag for diameter profile
- * \param[in]   diam       pointer to diameter value
- * \param[in]   diam_dev   pointer to diameter standard deviation value
- *
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_diam (int        iclass,
-                             int        izone,
-                             int        profile,
-                             cs_real_t  diam,
-                             cs_real_t  diam_dev)
-{
-  cs_lagr_zone_class_data_t *zonedata
-    = cs_lagr_get_zone_class_data(iclass, izone);
-
-  zonedata->diameter_profile  = profile;
-  zonedata->diameter          = diam;
-  zonedata->diameter_variance = diam_dev;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set injection parameters for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   number     pointer to number of particles to inject
- * \param[in]   freq       pointer to injection frequency
- * \param[in]   stat       pointer to statistical groups id
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_injection(int        iclass,
-                                 int        izone,
-                                 int        number,
-                                 int        freq,
-                                 int        stat)
-{
-  cs_lagr_zone_class_data_t *zonedata
-    = cs_lagr_get_zone_class_data(iclass, izone);
-
-  zonedata->nb_part = number;
-  zonedata->injection_frequency = freq;
-  zonedata->cluster = stat;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set velocity parameters for a given class and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   profile    pointer to velocity profile
- * \param[in]   velocity   pointer to velocity values array
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_velocity(int        iclass,
-                                int        izone,
-                                int        profile,
-                                cs_real_t  velocity[])
-{
-  cs_lagr_zone_class_data_t *zonedata
-    = cs_lagr_get_zone_class_data(iclass, izone);
-
-  zonedata->velocity_profile = profile;
-
-  if (zonedata->velocity_profile == 0)
-    zonedata->velocity_magnitude = velocity[0];
-
-  else if (zonedata->velocity_profile == 1) {
-
-    for (int  i = 0; i < 3; i++)
-      zonedata->velocity[i] = velocity[i];
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set density for a given class of particls and boundary zone
- *
- * \param[in]   iclass     class number
- * \param[in]   izone      boundary zone number
- * \param[in]   density    pointer to density value
- *
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_density(int        iclass,
-                               int        izone,
-                               cs_real_t  density)
-{
-  cs_lagr_zone_class_data_t *zonedata
-    = cs_lagr_get_zone_class_data(iclass, izone);
-
-  zonedata->density = density;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set fouling index for a given class of particles and boundary zone
- *
- * \param[in]   iclass      class number
- * \param[in]   izone       boundary zone number
- * \param[in]   foul_index  pointer to fouling index value
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_set_zone_class_foul_index(int        iclass,
-                                  int        izone,
-                                  cs_real_t  foul_index)
-{
-  cs_lagr_zone_class_data_t *zonedata
-    = cs_lagr_get_zone_class_data(iclass, izone);
-
-  zonedata->foul_index = foul_index;
-}
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Provide access to class/boundary zone parameters structure
- *
- * \param[in]    iclass     particle class number
- * \param[in]    izone      boundary zone number
- *
- * \return
- *   pointer to particle class and boundary zone structure of parameters
- */
-/*----------------------------------------------------------------------------*/
-
-cs_lagr_zone_class_data_t *
-cs_lagr_get_zone_class_data(int   iclass,
-                            int   izone)
-{
-  assert(_lagr_zone_class_data != NULL);
-
-  return &(_lagr_zone_class_data[iclass*cs_glob_lagr_nzone_max + izone]);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize a new class/boundary zone parameters structure
- *
- * \param[in]    iclass     particle class number
- * \param[in]    izone      boundary zone number
- *
- * \return
- *   pointer to particle class and boundary zone structure of parameters
- */
-/* ----------------------------------------------------------------------------*/
-
-cs_lagr_zone_class_data_t *
-cs_lagr_init_zone_class_new(int       iclass,
-                            int       izone)
-{
-  cs_lagr_zone_class_data_t *zonedata
-    = _cs_lagr_allocate_zone_class_data(iclass, izone);
-
-  zonedata->nb_part              =  0;
-  zonedata->injection_frequency  =  0;
-  zonedata->velocity_profile     = -2;
-  zonedata->distribution_profile = -2;
-  zonedata->temperature_profile  = -2;
-  zonedata->diameter_profile     = -2;
-
-  if (cs_glob_lagr_model->physical_model == 2) {
-
-    zonedata->coal_profile       = -2;
-    zonedata->coal_number        = -2;
-
-  }
-
-  zonedata->cluster              =  0;
-
-  zonedata->velocity_magnitude   = - cs_math_big_r;
+  zis->velocity_magnitude   = - cs_math_big_r;
 
   for (int  i = 0; i < 3; i++)
-    zonedata->velocity[i]        = - cs_math_big_r;
+    zis->velocity[i]        = - cs_math_big_r;
 
-  zonedata->stat_weight          = - cs_math_big_r;
-  zonedata->diameter             = - cs_math_big_r;
-  zonedata->diameter_variance    = - cs_math_big_r;
-  zonedata->density              = - cs_math_big_r;
+  zis->stat_weight          = - cs_math_big_r;
+  zis->diameter             = - cs_math_big_r;
+  zis->diameter_variance    = - cs_math_big_r;
+  zis->density              = - cs_math_big_r;
 
-  if (cs_glob_lagr_model->physical_model == 1) {
+  zis->temperature      = - cs_math_big_r;
+  zis->cp               = - cs_math_big_r;
+  zis->emissivity       = - cs_math_big_r;
 
-    if (cs_glob_lagr_specific_physics->itpvar == 1 ) {
-
-      zonedata->temperature[0]   = - cs_math_big_r;
-      zonedata->cp               = - cs_math_big_r;
-      zonedata->emissivity       = - cs_math_big_r;
-
-    }
-
-  }
-
-  else if (cs_glob_lagr_model->physical_model == 2) {
-
-    zonedata->cp                 = - cs_math_big_r;
-
-    for (cs_lnum_t ilayer = 0;
-         ilayer < cs_glob_lagr_model->n_temperature_layers;
-         ilayer ++) {
-
-      zonedata->temperature[ilayer]        = - cs_math_big_r;
-      zonedata->coal_mass_fraction[ilayer] = - cs_math_big_r;
-      zonedata->coke_mass_fraction[ilayer] = - cs_math_big_r;
-      zonedata->coke_density[ilayer]       = - cs_math_big_r;
-
-    }
-
-    zonedata->water_mass_fraction = - cs_math_big_r;
-    zonedata->shrinking_diameter  = - cs_math_big_r;
-    zonedata->initial_diameter    = - cs_math_big_r;
-
-  }
-
-  zonedata->flow_rate     = 0.0;
-
-  return zonedata;
+  zis->flow_rate     = 0.0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1622,7 +1317,9 @@ cs_lagr_get_internal_conditions(void)
     cs_glob_lagr_internal_conditions = _create_internal_cond_struct();
 
   if (cs_glob_lagr_internal_conditions->i_face_zone_id == NULL) {
-    BFT_MALLOC(cs_glob_lagr_internal_conditions->i_face_zone_id, cs_glob_mesh->n_i_faces, int);
+    BFT_MALLOC(cs_glob_lagr_internal_conditions->i_face_zone_id,
+               cs_glob_mesh->n_i_faces,
+               int);
 
     for (cs_lnum_t i = 0; i < cs_glob_mesh->n_i_faces; i++)
       cs_glob_lagr_internal_conditions->i_face_zone_id[i] = -1;
@@ -1632,48 +1329,86 @@ cs_lagr_get_internal_conditions(void)
   return cs_glob_lagr_internal_conditions;
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return pointer to the main boundary conditions structure.
  *
- * \return
- *   pointer to current bdy_contditions or NULL
+ * \return  pointer to current boundary zone data structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_lagr_bdy_condition_t  *
-cs_lagr_get_bdy_conditions(void)
+cs_lagr_zone_data_t  *
+cs_lagr_get_boundary_conditions(void)
 {
   /* Define a structure with default parameters if not done yet */
 
-  if (cs_glob_lagr_bdy_conditions == NULL)
-    cs_glob_lagr_bdy_conditions
-      = _create_bdy_cond_struct(cs_glob_lagr_const_dim->nflagm);
+  cs_lnum_t n_zones = cs_boundary_zone_n_zones();
 
-  return cs_glob_lagr_bdy_conditions;
+  _update_zone_data_struct(&_boundary_conditions,
+                           CS_MESH_LOCATION_BOUNDARY_FACES,
+                           n_zones);
+
+  cs_glob_lagr_boundary_conditions = _boundary_conditions;
+
+  return _boundary_conditions;
 }
 
-/*----------------------------------------------------------------------------
- * Destroy finalize the global cs_lagr_bdy_condition_t structure.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to the main volume conditions structure.
+ *
+ * \return pointer to current volume zone data structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lagr_zone_data_t  *
+cs_lagr_get_volume_conditions(void)
+{
+  /* Define a structure with default parameters if not done yet */
+
+  cs_lnum_t n_zones = cs_volume_zone_n_zones();
+
+  _update_zone_data_struct(&_volume_conditions,
+                           CS_MESH_LOCATION_CELLS,
+                           n_zones);
+
+  cs_glob_lagr_volume_conditions = _volume_conditions;
+
+  return _volume_conditions;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to the main internal conditions structure.
+ *
+ * \return pointer to current internal conditions structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_finalize_bdy_cond(void)
+cs_lagr_finalize_zone_conditions(void)
 {
-  cs_lagr_bdy_condition_t  *bdy_cond = cs_glob_lagr_bdy_conditions;
+  cs_lagr_zone_data_t  *zda[2] = {_boundary_conditions,
+                                  _volume_conditions};
 
-  if (bdy_cond != NULL) {
+  for (int i = 0; i < 2; i++) {
 
-    BFT_FREE(bdy_cond->b_zone_id);
-    BFT_FREE(bdy_cond->b_zone_natures);
-    BFT_FREE(bdy_cond->b_zone_classes);
+    cs_lagr_zone_data_t  *zd = zda[i];
 
-    BFT_FREE(bdy_cond->b_face_zone_id);
+    if (zd != NULL) {
 
-    BFT_FREE(bdy_cond->particle_flow_rate);
+      BFT_FREE(zd->zone_type);
+      for (int j = 0; j < zd->n_zones; j++)
+        BFT_FREE(zd->injection_set[j]);
+      BFT_FREE(zd->injection_set);
+      BFT_FREE(zd->n_injection_sets);
 
-    BFT_FREE(cs_glob_lagr_bdy_conditions);
+      BFT_FREE(zd->elt_type);
+      BFT_FREE(zd->particle_flow_rate);
+
+      BFT_FREE(zda[i]);
+
+    }
 
   }
 }
@@ -1684,7 +1419,8 @@ cs_lagr_finalize_bdy_cond(void)
 
 void cs_lagr_finalize_internal_cond(void)
 {
-  cs_lagr_internal_condition_t  *internal_cond = cs_glob_lagr_internal_conditions;
+  cs_lagr_internal_condition_t  *internal_cond
+    = cs_glob_lagr_internal_conditions;
   if (internal_cond != NULL) {
     BFT_FREE(internal_cond->i_face_zone_id);
     BFT_FREE(internal_cond);
@@ -1726,6 +1462,8 @@ cs_get_lagr_extra_module(void)
 void
 cs_lagr_solve_initialize(const cs_real_t  *dt)
 {
+  CS_UNUSED(dt);
+
   /* For frozen field:
      values at previous time step = values at current time step */
 
@@ -1818,28 +1556,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
       vislen[ifac] = -cs_math_big_r;
   }
 
-  /* ====================================================================   */
-  /* 1.  INITIALISATIONS  */
-  /* ====================================================================   */
-
-  /* ->Sur Champ fige Lagrangien :
-   *   values at previous time step = values at current time step
-   *   Rem : cette boucle pourrait etre faite au 1er passage
-   *         mais la presence de cs_user_extra_operations incite a la prudence...*/
-
-  if (cs_glob_lagr_time_scheme->iilagr == 3) {
-
-    int n_fields = cs_field_n_fields();
-
-    for (int f_id = 0; f_id < n_fields; f_id++){
-
-      cs_field_t *f = cs_field_by_id(f_id);
-      if (f->type & CS_FIELD_VARIABLE)
-        cs_field_current_to_previous(f);
-
-    }
-
-  }
+  /* Initialization
+     -------------- */
 
   cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
 
@@ -1848,7 +1566,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1) {
 
-    /* --> if the deposition model is activated */
+    /* If the deposition model is activated */
 
     if (lagr_model->deposition >= 1) {
 
@@ -1857,7 +1575,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
       cs_real_3_t  dtmp;
       dtmp[0]  = 0.0;
 
-      /* boundary faces data  */
+      /* Boundary faces data  */
 
       cs_lagr_geom();
 
@@ -1904,16 +1622,33 @@ cs_lagr_solve_time_step(const int         itypfb[],
       if (cs_glob_rank_id <= 0)
         bft_printf(_("   ** LAGRANGIAN MODULE:\n"
                      "   ** deposition submodel\n"
-                     "---------------------------------------------\n\n\n"
-                     "** Mean friction velocity  (ustar) =  %7.3F\n"
-                     "---------------------------------------------------------------\n"),
+                     "---------------------------------------------\n"
+                     "** Mean friction velocity  (ustar) = %7.3f\n"
+                     "---------------------------------------------\n"),
                    ustarmoy);
 
     }
 
   }
 
-  /* Initialization  */
+  /* Update boundary condition types;
+     in most cases, this should be useful only at the first iteration,
+     but we prefer to be safe in case of advanced uses with time-dependent
+     zones or zone types */
+
+  /* User initialization by set and boundary */
+
+  if (cs_gui_file_is_loaded() && ts->nt_cur == ts->nt_prev +1)
+    cs_gui_particles_bcs();
+
+  /* User initialization by set and zone */
+
+  cs_user_lagr_boundary_conditions(itypfb);
+  cs_user_lagr_volume_conditions();
+
+  _update_boundary_face_type();
+
+  /* Initialize counter */
 
   part_c->n_g_total = 0;
   part_c->n_g_new = 0;
@@ -1929,9 +1664,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
   part_c->w_fouling = 0;
   part_c->w_resuspended = 0;
 
-  /* ====================================================================   */
-  /* 1.bis  Initialization for the dlvo, roughness and clogging  model */
-  /* ====================================================================   */
+  /* Initialization for the dlvo, roughness and clogging  model
+     ---------------------------------------------------------- */
 
   if (   lagr_model->dlvo == 1
       || lagr_model->roughness == 1
@@ -1968,9 +1702,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   }
 
-  /* ====================================================================   */
-  /*   Initialization for the dlvo model */
-  /* ====================================================================   */
+  /* Initialization for the dlvo model
+     --------------------------------- */
 
   if (lagr_model->dlvo == 1)
     cs_lagr_dlvo_init(cs_glob_lagr_physico_chemical->epseau,
@@ -1983,9 +1716,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                       cs_glob_lagr_clogging_model->csthpp,
                       cs_glob_lagr_physico_chemical->lambda_vdw);
 
-  /* ====================================================================   */
-  /*  Initialization for the roughness surface model    */
-  /* ====================================================================   */
+  /* Initialization for the roughness surface model
+     ---------------------------------------------- */
 
   if (lagr_model->roughness == 1)
     roughness_init(&cs_glob_lagr_physico_chemical->epseau,
@@ -2001,9 +1733,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                    &cs_glob_lagr_reentrained_model->rayasp,
                    &cs_glob_lagr_reentrained_model->rayasg);
 
-  /* ====================================================================   */
-  /*   Initialization for the clogging model  */
-  /* ====================================================================   */
+  /* Initialization for the clogging model
+     ------------------------------------- */
 
   if (lagr_model->clogging == 1)
     cloginit(&cs_glob_lagr_physico_chemical->epseau,
@@ -2019,25 +1750,24 @@ cs_lagr_solve_time_step(const int         itypfb[],
              &cs_glob_lagr_clogging_model->csthpp,
              &cs_glob_lagr_physico_chemical->lambda_vdw);
 
-  /* ====================================================================   */
-  /* 2.  MISE A JOUR DES NOUVELLES PARTICULES ENTREES DANS LE DOMAINE  */
-  /* ====================================================================   */
-  /* At the first time step we initialize particles to  */
-  /* values at current time step and not at previous time step, because     */
-  /* values at previous time step = initialization */
+  /* Update for new particles which entered the domain
+     ------------------------------------------------- */
+
+  /* At the first time step we initialize particles to
+     values at current time step and not at previous time step, because
+     values at previous time step = initialization */
 
   int  iprev;
-  if (ts->nt_cur == 1) /* Use fields at current time step     */
+  if (ts->nt_cur == 1) /* Use fields at current time step */
     iprev = 0;
 
-  else  /* Use fields at previous time step    */
+  else                 /* Use fields at previous time step */
     iprev = 1;
 
   cs_lagr_injection(iprev, itypfb, vislen);
 
-  /* ====================================================================   */
-  /* 3.  GESTION DU TEMPS QUI PASSE...   */
-  /* ====================================================================   */
+  /* Management of advancing time
+     ---------------------------- */
 
   cs_glob_lagr_time_step->dtp = dt[0];
   cs_glob_lagr_time_step->ttclag += cs_glob_lagr_time_step->dtp;
@@ -2065,12 +1795,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     }
 
-    /* ====================================================================   */
-    /* 4.  GRADIENT DE PRESSION ET DE LA VITESSE FLUIDE   */
-    /* ====================================================================   */
-    /* At the first time step we initialize particles to  */
-    /* values at current time step and not at previous time step, because     */
-    /* values at previous time step = initialization (null gradients)    */
+    /* Pressure and fluid velocity gradients
+       ------------------------------------- */
+
+    /* At the first time step we initialize particles to
+       values at current time step and not at previous time step, because
+       values at previous time step = initialization (null gradients) */
 
     mode = 1;
     if (ts->nt_cur == 1)
@@ -2078,9 +1808,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     cs_lagr_gradients(mode, gradpr, gradvf);
 
-    /* ====================================================================   */
-    /* 5. PROGRESSION DES PARTICULES  */
-    /* ====================================================================   */
+    /* Particles progression
+       --------------------- */
 
     bool go_on = true;
     while (go_on) {
@@ -2126,15 +1855,15 @@ cs_lagr_solve_time_step(const int         itypfb[],
       if (cs_glob_lagr_brownian->lamvbr == 1)
         BFT_MALLOC(terbru, p_set->n_particles, cs_real_t);
 
-      /* --> Recopie des resultats de l'etape precedente :  */
+      /* Copy results from previous step */
 
       if (cs_glob_lagr_time_step->nor == 1) {
         for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++)
           cs_lagr_particles_current_to_previous(p_set, ip);
       }
 
-      /* ----> COMPUTATION OF THE FLUID'S PRESSURE AND VELOCITY GRADIENT   */
-      /*       AT N+1 (with values at current time step)    */
+      /* Computation of the fluid's pressure and velocity gradient
+         at n+1 (with values at current time step) */
       if (   cs_glob_lagr_time_step->nor == 2
           && cs_glob_lagr_time_scheme->iilagr != 3)
         cs_lagr_gradients(0, gradpr, gradvf);
@@ -2142,12 +1871,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
       /* use fields at previous or current time step */
       if (cs_glob_lagr_time_step->nor == 1)
         /* Use fields at previous time step    */
-        iprev     = 1;
+        iprev = 1;
 
       else
-        iprev     = 0;
+        iprev = 0;
 
-      /* Retrieve bx values associated with particles from previous pass   */
+      /* Retrieve bx values associated with particles from previous pass */
 
       if (   cs_glob_lagr_time_scheme->t_order == 2
           && cs_glob_lagr_time_step->nor == 2) {
@@ -2178,8 +1907,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   w1,
                   w2);
 
-      /* --> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES  */
-      /*     POSITION, VITESSE FLUIDE, VITESSE PARTICULE    */
+      /* Integration of SDEs: position, fluid and particle velocity */
 
       cs_lagr_sde(cs_glob_lagr_time_step->dtp,
                   (const cs_real_t *)taup,
@@ -2209,8 +1937,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       }
 
-      /* --> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES  */
-      /*     LIEES AUX PHYSIQUES PARTICULIERES PARTICULAIRES     */
+      /* Integration of SDE related to physical models */
 
       if (lagr_model->physical_model == 1 || lagr_model->physical_model == 2) {
 
@@ -2268,14 +1995,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       p_set->n_particles += nresnew;
 
-      /* ====================================================================   */
-      /* 8.  Reperage des particules - Traitement des conditions aux limites    */
-      /*     pour la position des particules */
-      /* ====================================================================   */
+      /* Location of particles - boundary conditions for particle positions
+         ------------------------------------------------------------------ */
 
       if (cs_glob_lagr_time_step->nor == 1) {
 
-        /* -> Si on est en instationnaire, RAZ des statistiques aux frontieres    */
+        /* In unsteady case, reset boundary statistics */
 
         if (   cs_glob_lagr_time_scheme->isttio == 0
             || (   cs_glob_lagr_time_scheme->isttio == 1
@@ -2321,19 +2046,18 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       }
 
-      /* ====================================================================   */
-      /* 11.  CALCUL DE L'ADHESION SI MODELE DE REENTRAINEMENT   */
-      /* ====================================================================   */
+      /* Compute adhesion for reentrainement model
+         ----------------------------------------- */
 
       if (lagr_model->resuspension > 0)
         cs_lagr_resuspension();
 
-      /* ====================================================================   */
-      /* 11.  CALCUL STATISTIQUES  */
-      /* ====================================================================   */
+      /* Compute statistics
+         ------------------ */
 
       /* Calculation of consolidation:
        * linear increase of the consolidation height with deposit time */
+
       if (cs_glob_lagr_consolidation_model->iconsol > 0) {
 
         for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
@@ -2362,7 +2086,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
           && cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt)
         cs_lagr_stat_update();
 
-      /*  STATISTICS FOR CLOGGING  */
+      /* Statistics for clogging */
+
       if (   cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order
           && lagr_model->clogging == 1
           && cs_glob_lagr_consolidation_model->iconsol == 1) {
@@ -2416,6 +2141,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
           }
           else {
 
+            /* FIXME */
+
             bft_printf("   ** LAGRANGIAN MODULE:\n"
                        "   ** Error in cs_lagr.c: inclg < 0 ! \n"
                        "---------------------------------------------\n\n\n"
@@ -2428,17 +2155,15 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       }
 
-      /* ====================================================================   */
-      /* 12.  Equation de Poisson  */
-      /* ====================================================================   */
+      /* Poisson equation
+         ---------------- */
 
       if (   cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order
           && cs_glob_lagr_time_scheme->ilapoi == 1)
         cs_lagr_poisson(itypfb);
 
-      /* ====================================================================   */
-      /* 14. UN AUTRE TOUR ?  */
-      /* ====================================================================   */
+      /* Loop again ?
+         ---------- */
 
       if (   cs_glob_lagr_time_scheme->t_order != 2
           || cs_glob_lagr_time_step->nor != 1)
@@ -2459,13 +2184,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
   part_c->n_g_cumulative_total += part_c->n_g_new;
   part_c->n_g_cumulative_failed += part_c->n_g_failed;
 
-  /* ====================================================================
-   * 18. ECRITURE SUR FICHIERS DES INFORMATIONS SUR LE NOMBRE DE PARTICULES
-   *   - nombre de particules dans le domaine
-   *   - nombre de particules entrantes
-   *   - nombre de particules sorties
-   *   - ...
-   * ==================================================================== */
+  /* Logging
+     ------- */
 
   int  modntl;
   if (ipass == 1)
@@ -2483,7 +2203,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
   if (modntl == 0)
     cs_lagr_print(ts->t_cur);
 
-  /* Free memory     */
+  /* Free memory */
+
   BFT_FREE(gradpr);
   BFT_FREE(w1);
   BFT_FREE(w2);

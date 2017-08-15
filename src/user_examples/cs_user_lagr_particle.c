@@ -247,75 +247,84 @@ cs_user_lagr_ef(cs_real_t            dt_p,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User setting of particle inlet conditions for the particles (inlet
- *        and treatment for the other boundaries)
+ * \brief User modification of newly injected particles.
  *
- *  This function is called after the initialization of the new particles in
- *  order to modify them according to new particle profiles (injection
- *  profiles, position of the injection point, statistical weights,
- *  correction of the diameter if the standard-deviation option is activated).
+ * This function is called after the initialization of the new particles in
+ * order to modify them according to new particle profiles (injection
+ * profiles, position of the injection point, statistical weights,
+ * correction of the diameter if the standard-deviation option is activated).
  *
- * \param[in] time_id         time step indicator for fields
- *                            0: use fields at current time step
- *                            1: use fields at previous time step
- * \param[in] injfac          array of injection face id for every particles
- * \param[in] local_userdata  local_userdata pointer to zone/cluster specific
- *                            boundary conditions (number of injected
- *                            particles, velocity profile...)
+ * This function is called for each injection zone and set. Particles
+ * with ids between \c pset->n_particles and \c n_elts are initialized
+ * but may be modidied by this function.
+ *
+ * \param[in,out]  particles         particle set
+ * \param[in]      zis               zone injection set data
+ * \param[in]      particle_range    start and past-the-end ids of new particles
+ *                                   for this zone and class
+ * \param[in]      particle_face_id  face ids of new particles if zone is
+ *                                   a boundary,  NULL otherwise
+ * \param[in]      visc_length       viscous layer thickness
+ *                                   (size: number of mesh boundary faces)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_in(int                         time_id,
-                int                        *injfac,
-                cs_lagr_zone_class_data_t  *local_userdata,
-                cs_real_t                   vislen[] )
+cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
+                const cs_lagr_injection_set_t  *zis,
+                const cs_lnum_t                 particle_range[2],
+                const cs_lnum_t                 particle_face_id[],
+                const cs_real_t                 visc_length[])
 {
   const int ntcabs = cs_glob_time_step->nt_cur;
 
-  cs_lagr_bdy_condition_t  *lagr_bdy_conditions = cs_lagr_get_bdy_conditions();
+  cs_lagr_zone_data_t  *lagr_bdy_conditions
+    = cs_lagr_get_boundary_conditions();
 
-  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  /* Simple changes to selected attributes
+     ------------------------------------- */
 
-  if (p_set->n_part_new == 0)
+  for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++) {
+
+    /* velocity */
+
+    cs_real_t *part_vel
+      = cs_lagr_particles_attr(particles, p_id, CS_LAGR_VELOCITY);
+    part_vel[0] = 1.0;
+    part_vel[1] = 0.0;
+    part_vel[2] = 0.0;
+
+    /* diameter */
+
+    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_DIAMETER, 5e-05);
+
+    /* Temperature profile */
+
+    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_TEMPERATURE, 20.0);
+
+    /* Statistical weight profile */
+
+    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_STAT_WEIGHT, 0.01);
+
+    /* User variables */
+    for (int attr_id = CS_LAGR_USER;
+         attr_id < CS_LAGR_USER + cs_glob_lagr_model->n_user_variables;
+         attr_id++) {
+      cs_real_t *user_var = cs_lagr_particle_attr(particles, p_id, attr_id);
+      *user_var = 0.;
+    }
+
+  }
+
+  if (particle_range[1] <= particle_range[0])
     return;
 
   /* Modifications occur after all the initializations related to
-     the particle injection, but before the treatment of the continuous
-     injection: it is thus possible to impose an injection profile with
-     the continous-injection option. */
+     the particle injection. */
 
-  /* reinitialization of the counter of the new particles */
-  cs_lnum_t npt  = p_set->n_particles;
-
-  /* for each boundary zone */
-  for (cs_lnum_t ii = 0; ii < lagr_bdy_conditions->n_b_zones; ii++) {
-
-    cs_lnum_t izone = lagr_bdy_conditions->b_zone_id[ii];
-
-    /* for each class */
-    for (cs_lnum_t iclas = 0;
-         iclas < lagr_bdy_conditions->b_zone_classes[izone];
-         iclas++) {
-
-      cs_lagr_zone_class_data_t *userdata
-        = &(local_userdata[iclas * cs_glob_lagr_nzone_max + izone]);
-
-      /* if new particles must enter the domain:  */
-      if (ntcabs % userdata->injection_frequency == 0) {
-
-        for (cs_lnum_t ip = npt; ip < npt + userdata->nb_part; ip++) {
-
-          _inlet2(p_set, ip);
-
-        }
-
-        npt += userdata->nb_part;
-
-      }
-
-    }
-
+  /* if new particles have entered the domain  */
+  for (cs_lnum_t ip = particle_range[0]; ip < particle_range[1]; ip++) {
+    _inlet2(particles, ip);
   }
 
   /*
@@ -339,78 +348,22 @@ cs_user_lagr_in(int                         time_id,
    *
    * When the velocity of the flow is modified as above, most of the time
    * the user knows only the mean value. In some flow configurations and some
-   * injection conditions, it may be necessary to reconstruct the fluctuating part.
+   * injection conditions, it may be necessary to reconstruct the
+   * fluctuating part.
    * That is why the following function may be called.
    * Caution:
    *   - this turbulent component must be reconstructed only on the modified
    *     velocities of the flow seen.
-   *   - the reconstruction is must be adapted to the case. */
+   *   - the reconstruction must be adapted to the case. */
 
   if (false) {
-    cs_lnum_t npar1 = p_set->n_particles;
-    cs_lnum_t npar2 = p_set->n_particles + p_set->n_part_new;
-    cs_lagr_new_particle_init(npar1, npar2, time_id, vislen);
+    int time_id = 1;
+    if (cs_glob_time_step->nt_cur == 1)
+      time_id = 0;
+    cs_lagr_new_particle_init(particle_range,
+                              time_id,
+                              visc_length);
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Prescribe some attributes for newly injected particles.
- *
- * This function is called at different points, at which different attributes
- * may be modified.
- *
- * \param[inout]  particle  particle structure
- * \param[in]     p_am      particle attributes map
- * \param[in]     face_id   id of particle injection face
- * \param[in]     attr_id   id of variable modifiable by this call. called for
-                            CS_LAGR_VELOCITY, CS_LAGR_DIAMETER,
-                            CS_LAGR_TEMPERATURE, CS_LAGR_STAT_WEIGHT,
-                            CS_LAGR_USER
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_new_p_attr(unsigned char                  *particle,
-                        const cs_lagr_attribute_map_t  *p_am,
-                        cs_lnum_t                       face_id,
-                        cs_lagr_attribute_t             attr_id)
-{
-  /* Velocity profile */
-
-  if (attr_id == CS_LAGR_VELOCITY) {
-
-    cs_real_t *part_vel
-      = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
-    part_vel[0] = 1.0;
-    part_vel[1] = 0.0;
-    part_vel[2] = 0.0;
-
-  }
-
-  /* Diameter profile */
-
-  if (attr_id == CS_LAGR_DIAMETER)
-    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, 5e-05);
-
-  /* Temperature profile */
-
-  if (attr_id == CS_LAGR_TEMPERATURE)
-    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE, 20.0);
-
-  /* Statistical weight profile */
-
-  if (attr_id == CS_LAGR_STAT_WEIGHT)
-    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_STAT_WEIGHT, 0.01);
-
-  /* User variables */
-  if (attr_id >= CS_LAGR_USER
-      && (attr_id < CS_LAGR_USER + cs_glob_lagr_model->n_user_variables)) {
-
-    cs_real_t *user_var = cs_lagr_particle_attr(particle, p_am, attr_id);
-    *user_var = 0.;
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/

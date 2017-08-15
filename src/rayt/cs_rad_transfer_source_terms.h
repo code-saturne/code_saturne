@@ -59,8 +59,8 @@ BEGIN_C_DECLS
 /*!
  * \brief Implicit and explicit radiative source terms for thermal scalar.
  *
- * \param[inout]  smbrs   work array for right hand side
- * \param[inout]  rovsdt  work array for unsteady term
+ * \param[in,out]  smbrs   work array for right hand side
+ * \param[in,out]  rovsdt  work array for unsteady term
  */
 /*----------------------------------------------------------------------------*/
 

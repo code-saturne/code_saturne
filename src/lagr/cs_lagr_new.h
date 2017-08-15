@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_LAGNEW_H__
-#define __CS_LAGR_LAGNEW_H__
+#ifndef __CS_LAGR_NEW_H__
+#define __CS_LAGR_NEW_H__
 
 /*============================================================================
  * Handling of new particles.
@@ -29,6 +29,12 @@
 
 #include "cs_defs.h"
 
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "cs_lagr_particle.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -51,25 +57,43 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Inject a series of particles at random positions on a given zone.
+ * \brief Inject a series of particles at random positions on given faces.
+ *
+ * The fluid velocity and other variables and attributes are computed here.
+ *
+ * \param[in,out]  particles          pointer to particle set
+ * \param[in]      n_faces            number of faces in zone
+ * \param[in]      face_ids           ids of faces in zone
+ * \param[in]      face_particle_idx  starting index of added particles
+ *                                    for each face in zone
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_new(cs_lagr_particle_set_t  *particles,
+            cs_lnum_t                n_faces,
+            const cs_lnum_t          face_ids[],
+            const cs_lnum_t          face_particle_idx[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Inject a series of particles at random positions on given cells.
  *
  * \warning Currently works only for tri and quadrangular faces.
  *
  * The fluid velocity and other variables and attributes are computed here.
  *
- * \param[inout]   npt      current number of particles
- * \param[in]      nznew    number of added particles
- * \param[in]      zone_id  zone number (zone index + 1 in arrays)
- * \param[in]      ifrlag   boundary zone number for lagrangian
- * \param[in,out]  iworkp   array containing injection face number
+ * \param[in,out]  particles          pointer to particle set
+ * \param[in]      n_cells            number of cells in zone
+ * \param[in]      cell_ids           ids of cells in zone
+ * \param[in]      cell_particle_idx  starting index of added particles
+ *                                    for each cell in zone
  *----------------------------------------------------------------------------*/
 
 void
-cs_lagr_new(cs_lnum_t  *npt,
-            cs_lnum_t   nznew,
-            int         zone_id,
-            const int   ifrlag[],
-            cs_lnum_t   iworkp[]);
+cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
+              cs_lnum_t                n_cells,
+              const cs_lnum_t          cell_ids[],
+              const cs_lnum_t          cell_particle_idx[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -77,20 +101,21 @@ cs_lagr_new(cs_lnum_t  *npt,
  *
  * The fluid velocity seen is computed here.
  *
- * \param[in]   p_id_l     lower particle id bound (included)
- * \param[in]   p_id_u     uppder particle id bound (excluded)
- * \param[in]   time_id    associated time id (0: current, 1: previous)
+ * \param[in]  particle_range  start and past-the-end ids of new particles
+ *                             for this zone and class
+ * \param[in]  time_id         associated time id (0: current, 1: previous)
+ * \param[in]  visc_length     viscous layer thickness
+ *                             (size: number of mesh boundary faces)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_new_particle_init(cs_lnum_t   p_id_l,
-                          cs_lnum_t   p_id_u,
-                          cs_lnum_t   time_id,
-                          cs_real_t   vislen[]);
+cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
+                          int              time_id,
+                          const cs_real_t  visc_length[]);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_LAGNEW_H__ */
+#endif /* __CS_LAGR_NEW_H__ */

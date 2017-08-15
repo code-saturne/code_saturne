@@ -89,7 +89,7 @@ BEGIN_C_DECLS
  *===========================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute whether the projection point of prev_location is inside or outside
+ * Compute whether the projection point of a segment is inside or outside
  * the a given edge of a sub triangle
  *
  * parameters:
@@ -193,7 +193,7 @@ cs_geom_closest_point(cs_lnum_t         n_points,
  * \param[in]   n_vertices     number of face vertices
  * \param[in]   vertex_ids     ids of face vertices
  * \param[in]   vertex_coords  vertex coordinates
- * \param[in]   face_center    cordinates of face center
+ * \param[in]   face_center    coordinates of face center
  * \param[in]   face_normal    face normal vector
  * \param[in]   sx0            segment start coordinates
  * \param[in]   sx1            segment end coordinates
@@ -240,7 +240,7 @@ cs_geom_segment_intersect_face(int              orient,
    *  - loop on sub-triangles of the face
    *    and test for each triangle if the intersection is inside the triangle
    *  - use of a geometric algorithm:x
-   *    the intersection is in the triangle if it is on the proper side of each
+   *    the intersection is in the triangle if it is on the proper side of all
    *    three edges defining the triangle (e0, e1 and e_out)
    *    This is measured calculating the sign u, v and w
    *    (and keeping them in memory to calculate each value only once)
@@ -350,7 +350,7 @@ cs_geom_segment_intersect_face(int              orient,
     /* Same sign (meaning there is a possible intersection with t > 0). */
     if (sign_det == sign_go_p) {
 
-      /* The particle enters or leaves the half-space */
+      /* The segment enters or leaves the half-space */
       if (dir_move) {
         if (fabs(go_p) < fabs(det)) {
           /* There is a real intersection (outward)
@@ -384,9 +384,8 @@ cs_geom_segment_intersect_face(int              orient,
     }
 
     /* In case intersections were removed due to non-convex cases
-     *  (i.e.  n_intersects < 1, but retval <1 ),
-     *  the retval value is forced to 1
-     *  (no intersection since the particle entered and left from this face). */
+     *  (i.e.  n_intersects < 1, but retval < 1),
+     *  the retval value is forced to 1 (no intersection). */
 
     if (n_intersects < 1 && retval < 1.) {
       retval = 2.;

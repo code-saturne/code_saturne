@@ -1,5 +1,5 @@
 /*============================================================================
- * Methods for lagrangian module
+ * Particle injection for lagrangian module.
  *============================================================================*/
 
 /*
@@ -24,9 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-/*============================================================================
- * Functions dealing with particle tracking
- *============================================================================*/
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -50,14 +48,12 @@
 #include "bft_error.h"
 #include "bft_mem.h"
 
-#include "fvm_periodicity.h"
-
 #include "cs_base.h"
-#include "cs_defs.h"
 #include "cs_math.h"
-#include "cs_halo.h"
-#include "cs_interface.h"
-#include "cs_math.h"
+
+#include "cs_boundary_zone.h"
+#include "cs_volume_zone.h"
+
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
@@ -97,6 +93,972 @@ BEGIN_C_DECLS
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Binary search for a given local id in a given array of
+ *        ordered values.
+ *
+ * We assume the id is present in the array.
+ *
+ * \param[in]  n   number of values
+ * \param[in]  x   value to locate
+ * \param[in]  a   array of ordered values (size n)
+ *
+ * \return  index of x in array (smallest i such that a[i] >= x)
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_lnum_t
+_segment_binary_search(cs_lnum_t     n,
+                       double        x,
+                       const double  a[])
+{
+  cs_lnum_t start_id = 0;
+  cs_lnum_t end_id = n-1;
+  cs_lnum_t mid_id = (end_id - start_id) / 2;
+
+  x = CS_MIN(x, a[end_id]); /* precaution: force in range */
+
+  while (start_id < end_id) {
+    if (a[mid_id] < x)
+      start_id = mid_id + 1;
+    else /* if (a[mid_id] >= x) */
+      end_id = mid_id;
+    mid_id = start_id + ((end_id - start_id) / 2);
+  }
+
+  assert(mid_id >= 0 && mid_id < n);
+
+  return mid_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Distribute new particles in a given region.
+ *
+ * \param[in]   n_g_particles     global number of particles to inject
+ * \param[in]   n_elts            number of elements in region
+ * \param[in]   elt_id            element ids (or NULL)
+ * \param[in]   elt_weight        parent element weights
+ *                                (i.e. all local surfaces or volumes)
+ * \param[in]   elt_profile       optional profile values for elements (or NULL)
+ * \param[out]  elt_particle_idx  start index of added particles for each
+ *                                element (size: n_elts + 1)
+ *
+ * \return  number of particles added on local rank
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_distribute_particles(cs_gnum_t         n_g_particles,
+                      cs_lnum_t         n_elts,
+                      const cs_lnum_t   elt_id[],
+                      const cs_real_t   elt_weight[],
+                      const cs_real_t  *elt_profile,
+                      cs_lnum_t         elt_particle_idx[])
+{
+  cs_lnum_t n_particles = (cs_glob_n_ranks > 1) ? 0 : n_g_particles;
+
+  /* Compute local element weight */
+
+  cs_real_t *elt_cm_weight = NULL;
+
+  BFT_MALLOC(elt_cm_weight, n_elts, cs_real_t);
+
+  if (elt_id != NULL) {
+    if (elt_profile != NULL) {
+      for (cs_lnum_t i = 0; i < n_elts; i++)
+        elt_cm_weight[i] = elt_weight[elt_id[i]]*elt_profile[i];
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++)
+        elt_cm_weight[i] = elt_weight[elt_id[i]];
+    }
+  }
+  else {
+    if (elt_profile != NULL) {
+      for (cs_lnum_t i = 0; i < n_elts; i++)
+        elt_cm_weight[i] = elt_weight[i]*elt_profile[i];
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++)
+        elt_cm_weight[i] = elt_weight[i];
+    }
+  }
+
+  /* Transform to cumulative weight using Kahan summation */
+
+  double l_weight = 0;
+  {
+    double d = 0., c = 0.;
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      double z = elt_cm_weight[i] - c;
+      double t = d + z;
+      c = (t - d) - z;
+      d = t;
+      elt_cm_weight[i] = d;
+    }
+    l_weight = d;
+  }
+
+#if defined(HAVE_MPI)
+
+  /* Pre_distribution to various ranks; we assume that the number of
+     injected particles at a given time is not huge, so it is cheaper
+     to precompute the distribution on a single rank and broadcast it.
+     For a higher number of particles, computing by blocs and then
+     redistributing (with "all to all" operations) could be more efficient. */
+
+  if (cs_glob_n_ranks > 1) {
+
+    int n_ranks = cs_glob_n_ranks;
+    int l_rank = cs_glob_rank_id;
+    int r_rank = 0; /* Root rank for serialized operations */
+
+    cs_lnum_t  *n_rank_particles = NULL;
+    double     *cm_weight = NULL;
+
+    if (l_rank == r_rank) {
+
+      BFT_MALLOC(n_rank_particles, n_ranks, cs_lnum_t);
+      BFT_MALLOC(cm_weight, n_ranks, double);
+
+      for (int i = 0; i < n_ranks; i++)
+        n_rank_particles[i] = 0;
+
+    }
+
+    MPI_Gather(&l_weight, 1, MPI_DOUBLE, cm_weight, 1, MPI_DOUBLE,
+               r_rank, cs_glob_mpi_comm);
+
+    if (l_rank == r_rank) {
+
+      /* Scan (cumulative sum) operation */
+      for (int i = 1; i < n_ranks; i++)
+        cm_weight[i] += cm_weight[i-1];
+
+      /* Scale to [0, 1] */
+      double tot_weight = cm_weight[n_ranks-1];
+
+      if (tot_weight > 0.) {
+
+        for (int i = 0; i < n_ranks; i++)
+          cm_weight[i] /= tot_weight;
+
+        /* Compute distribution */
+
+        for (cs_gnum_t i = 0; i < n_g_particles; i++) {
+          cs_real_t r;
+          cs_random_uniform(1, &r);
+          int r_id = _segment_binary_search(n_ranks, r, cm_weight);
+          n_rank_particles[r_id] += 1;
+        }
+
+      }
+
+      BFT_FREE(cm_weight);
+    }
+
+    MPI_Scatter(n_rank_particles, 1, CS_MPI_LNUM,
+                &n_particles, 1, CS_MPI_LNUM,
+                r_rank, cs_glob_mpi_comm);
+
+    BFT_FREE(n_rank_particles);
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  /* Check for empty zones */
+
+  if (n_particles > 0 && n_elts < 1)
+    n_particles = 0;
+
+  /* Now distribute locally */
+
+  for (cs_lnum_t i = 0; i < n_elts; i++)
+    elt_particle_idx[i] = 0;
+  elt_particle_idx[n_elts] = 0;
+
+  for (cs_lnum_t i = 0; i < n_elts; i++)
+    elt_cm_weight[i] /= l_weight;
+
+  /* Compute distribution */
+
+  for (cs_lnum_t i = 0; i < n_particles; i++) {
+    cs_real_t r;
+    cs_random_uniform(1, &r);
+    cs_lnum_t e_id = _segment_binary_search(n_elts, r, elt_cm_weight);
+    elt_particle_idx[e_id+1] += 1;
+  }
+
+  BFT_FREE(elt_cm_weight);
+
+  /* transform count to index */
+
+  for (cs_lnum_t i = 0; i < n_elts; i++)
+    elt_particle_idx[i+1] += elt_particle_idx[i];
+
+  assert(elt_particle_idx[n_elts] == n_particles);
+
+  return n_particles;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check injection parameters are valid.
+ *
+ * \param[in]  zis  pointer to injection data for a given zone and set
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_injection_check(const cs_lagr_injection_set_t  *zis)
+{
+  const char _profile_err_fmt_i[]
+    = N_("Lagrangian %s zone %d, set %d\n"
+         "  %s profile value (%d) is invalid.");
+  const char _profile_err_fmt_d[]
+    = N_("Lagrangian %s zone %d, set %d\n"
+         "  %s profile value (%g) is invalid.");
+
+  char z_type_name[32] = "unknown";
+  if (zis->location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
+    strncpy(z_type_name, _("boundary"), 31);
+  else if (zis->location_id == CS_MESH_LOCATION_CELLS)
+    strncpy(z_type_name, _("volume"), 31);
+  z_type_name[31] = '\0';
+
+  int z_id = zis->zone_id;
+  int set_id = zis->set_id;
+
+  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+
+  /* Verification of particle classes */
+
+  if (cs_glob_lagr_model->n_stat_classes > 0) {
+    if (   zis->cluster < 0
+        || zis->cluster > cs_glob_lagr_model->n_stat_classes)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian module: \n"
+                  "  number of clusters = %d is either not defined (negative)\n"
+                  "  or > to the number of statistical classes %d\n"
+                  "  for zone %d and set %d."),
+                (int)zis->cluster,
+                (int)cs_glob_lagr_model->n_stat_classes,
+                z_id,
+                set_id);
+  }
+
+  /* temperature */
+  if (   cs_glob_lagr_model->physical_model == 1
+      && (   cs_glob_lagr_specific_physics->itpvar == 1
+          || cs_glob_lagr_specific_physics->idpvar == 1
+          || cs_glob_lagr_specific_physics->impvar == 1)) {
+    if (zis->temperature_profile < 1 || zis->temperature_profile > 1)
+      bft_error(__FILE__, __LINE__, 0, _profile_err_fmt_i,
+                z_type_name, z_id, set_id,
+                _("temperature"), (int)zis->temperature_profile);
+  }
+
+  /* velocity */
+  if (   zis->location_id != CS_MESH_LOCATION_BOUNDARY_FACES
+      && zis->velocity_profile == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Lagrangian %s zone %d, set %d:\n"
+                " velocity profile type 0 may not be used\n"
+                " for volume zones, as it requires surface normals."),
+              z_type_name, z_id, set_id);
+  else if (zis->velocity_profile <  -1 || zis->velocity_profile > 1)
+    bft_error(__FILE__, __LINE__, 0, _profile_err_fmt_i,
+              z_type_name, z_id, set_id,
+              _("velocity"), (int)zis->velocity_profile);
+
+  /* statistical weight */
+  if (zis->stat_weight <= 0.0 && zis->flow_rate <= 0.0)
+    bft_error(__FILE__, __LINE__, 0, _profile_err_fmt_d,
+              z_type_name, z_id, set_id,
+              _("statistical weight"), (double)zis->stat_weight);
+
+  /* mass flow rate */
+  if (zis->flow_rate > 0.0 && zis->n_inject  == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Lagrangian %s zone %d, set %d:\n"
+                " flow rate is positive (%g)\n"
+                " while number injected particles is 0."),
+              z_type_name, z_id, set_id,
+              (double)zis->flow_rate);
+
+  /* particle properties: diameter, variance, and rho */
+  if (cs_glob_lagr_model->physical_model != 2) {
+    if (   zis->density  < 0.0
+        || zis->diameter < 0.0
+        || zis->diameter_variance < 0.0)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Lagrangian %s zone %d, set %d:\n"
+           "  error on particle properties definition:\n"
+           "  rho = %g, diameter = %g,\n"
+           "  diameter standard deviation = %g\n"
+           "This may lead to injection of  particles with negative diameters."),
+         z_type_name, z_id, set_id,
+         (double)zis->density,
+         (double)zis->diameter,
+         (double)zis->diameter_variance);
+  }
+
+  if (zis->diameter < 3.0 * zis->diameter_variance)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Lagrangian %s zone %d, set %d:\n"
+                "  diameter (%g) is smaller than 3 times\n"
+                "  its standard deviation (%g)."),
+              z_type_name, z_id, set_id,
+              (double)zis->diameter,
+              (double)zis->diameter_variance);
+
+  /* temperature and Cp */
+  if (   cs_glob_lagr_model->physical_model == 1
+      && cs_glob_lagr_specific_physics->itpvar == 1) {
+    cs_real_t tkelvn = -cs_physical_constants_celsius_to_kelvin;
+    if (zis->cp < 0.0 || zis->temperature < tkelvn)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian %s zone %d, set %d:\n"
+                  "  specific heat capacity (%g) is negative\n"
+                  "  or temperature (%g) is lower than %g."),
+                z_type_name, z_id, set_id,
+                (double)zis->cp,
+                (double)zis->temperature,
+                (double)tkelvn);
+  }
+
+  /* emissivity */
+  if (   cs_glob_lagr_model->physical_model == 1
+      && cs_glob_lagr_specific_physics->itpvar == 1
+      && extra->iirayo > 0) {
+
+    if (zis->emissivity < 0.0 || zis->emissivity > 1.0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian %s zone %d, set %d:\n"
+                  "  particle emissivity (%g) is not properly set."),
+                z_type_name, z_id, set_id,
+                (double)zis->emissivity);
+
+  }
+
+  /* Coal */
+
+  if (cs_glob_lagr_model->physical_model == 2) {
+
+    cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+    if (zis->coal_number < 1 && zis->coal_number > extra->ncharb)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Lagrangian %s zone %d, set %d:\n"
+           "  the coal number %d for the injected particle is either negative\n"
+           "  or greater than the maximum number of coals defined (%d)."),
+         z_type_name, z_id, set_id,
+         (int)zis->coal_number, (int)extra->ncharb);
+
+    int coal_id = zis->coal_number - 1;
+
+    /* properties of coal particles */
+    if (zis->temperature < tkelvi)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian %s zone %d, set %d:\n"
+                  "  temperature is not properly set: %g."),
+                z_type_name, z_id, set_id,
+                (double)zis->temperature);
+
+    /* Properties of coal particles */
+
+    /* Composition of coal defined in XML file (DP_FCP) */
+
+    cs_real_t *xashch = cs_glob_lagr_coal_comb->xashch;
+    cs_real_t *cp2ch  = cs_glob_lagr_coal_comb->cp2ch;
+    cs_real_t *xwatch = cs_glob_lagr_coal_comb->xwatch;
+    cs_real_t *rho0ch = cs_glob_lagr_coal_comb->rho0ch;
+
+    if (   rho0ch[coal_id] < 0.0
+        || cp2ch[coal_id]  < 0.0
+        || xwatch[coal_id] < 0.0
+        || xwatch[coal_id] > 1.0
+        || xashch[coal_id] < 0.0
+        || xashch[coal_id] > 1.0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian %s zone %d, set %d:\n"
+                  "  wrong conditions for coal number %d.\n"
+                  "    coal density = %g\n"
+                  "    Cp CP2CH = %g\n"
+                  "    water mass fraction = %g\n"
+                  "    ashes mass fraction = %g."),
+                z_type_name, z_id, set_id,
+                (int)coal_id,
+                (double)rho0ch[coal_id],
+                (double)cp2ch[coal_id],
+                (double)xwatch[coal_id],
+                (double)xashch[coal_id]);
+
+    if (xwatch[coal_id] + xashch[coal_id] > 1.0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian %s zone %d, set %d:\n"
+                  "  wrong conditions for coal number %d.\n"
+                  "    water mass fraction = %g\n"
+                  "    ashes mass fraction = %g\n"
+                  "    mass fraction is larger than 1: %g."),
+                z_type_name, z_id, set_id,
+                (int)zis->coal_number,
+                (double)xwatch[coal_id],
+                (double)xashch[coal_id],
+                (double)(xwatch[coal_id] + xashch[coal_id]));
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build particle injection face ids array for a given boundary
+ *        zone and set.
+ *
+ * The caller is responsible for freeing the returned array.
+ *
+ * \param[in]  n_faces            number of elements in zone
+ * \param[in]  face_ids           matching face ids
+ * \param[in]  face_particle_idx  starting id of new particles for a given
+ *                                face (size: n_faces+1)
+ *
+ * \return array of ids of faces for injected particles
+ *         (size: face_particle_idx[n_faces])
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t *
+_get_particle_face_ids(cs_lnum_t         n_faces,
+                       const cs_lnum_t   face_ids[],
+                       const cs_lnum_t   face_particle_idx[])
+{
+  cs_lnum_t  *particle_face_id = NULL;
+
+  cs_lnum_t n_p_new = face_particle_idx[n_faces];
+
+  BFT_MALLOC(particle_face_id, n_p_new, cs_lnum_t);
+
+  /* Loop on zone elements where particles are injected */
+
+  n_p_new = 0;
+
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
+
+    /* Loop on particles added for this face */
+
+    for (cs_lnum_t j = face_particle_idx[i]; j < face_particle_idx[i+1]; j++)
+      particle_face_id[j] = face_ids[i];
+
+  }
+
+  return(particle_face_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize particle values
+ *
+ * \param[in,out]  p_set             particle set
+ * \param[in]      zis               injection data this zone and set
+ * \param[in]      time_id           time step indicator for fields
+ *                                     0: use fields at current time step
+ *                                     1: use fields at previous time step
+ * \param[in]      n_elts            number of elements in zone
+ * \param[in]      face_ids          matching face ids if zone is a boundary
+ * \param[in]      elt_particle_idx  starting id of new particles for a given
+ *                                   element (size: n_elts+1)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_particles(cs_lagr_particle_set_t         *p_set,
+                const cs_lagr_injection_set_t  *zis,
+                int                             time_id,
+                cs_lnum_t                       n_elts,
+                const cs_lnum_t                *face_ids,
+                const cs_lnum_t                 elt_particle_idx[])
+{
+  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
+
+  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+
+  /* Non-lagrangian fields */
+
+  const cs_real_t  *xashch = cs_glob_lagr_coal_comb->xashch;
+  const cs_real_t  *cp2ch  = cs_glob_lagr_coal_comb->cp2ch;
+  const cs_real_t  *xwatch = cs_glob_lagr_coal_comb->xwatch;
+  const cs_real_t  *rho0ch = cs_glob_lagr_coal_comb->rho0ch;
+
+  const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+  const cs_real_t *vela = extra->vel->vals[time_id];
+  cs_real_t *cscalt = NULL, *temp = NULL, *temp1 = NULL;
+
+  const cs_real_t pis6 = cs_math_pi / 6.0;
+
+  /* Loop on zone elements where particles are injected */
+
+  for (cs_lnum_t li = 0; li < n_elts; li++) {
+
+    cs_lnum_t n_e_p = elt_particle_idx[li+1] - elt_particle_idx[li];
+
+    if (n_e_p < 1)
+      continue;
+
+    cs_lnum_t p_s_id = p_set->n_particles +  elt_particle_idx[li];
+    cs_lnum_t p_e_id = p_s_id + n_e_p;
+
+    const cs_lnum_t face_id = (face_ids != NULL) ? face_ids[li] : -1;
+
+    /* Loop on particles added for this face */
+
+    for (cs_lnum_t p_id = p_s_id; p_id < p_e_id; p_id++) {
+
+      unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
+
+      cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
+
+      /* Random value associated with each particle */
+
+      cs_real_t part_random = -1;
+      cs_random_uniform(1, &part_random);
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RANDOM_VALUE,
+                                part_random);
+
+      /* Particle velocity components */
+
+      cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
+                                                  CS_LAGR_VELOCITY);
+
+      /* prescribed components */
+      if (zis->velocity_profile == 1) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          part_vel[i] = zis->velocity[i];
+      }
+
+      /* prescribed norm */
+      else if (zis->velocity_profile == 0) {
+        assert(face_id >= 0);
+        for (cs_lnum_t i = 0; i < 3; i++)
+          part_vel[i] = -   fvq->b_face_normal[face_id * 3 + i]
+                          / fvq->b_face_surf[face_id]
+                          * zis->velocity_magnitude;
+      }
+
+      /* velocity as seen from fluid */
+      else if (zis->velocity_profile ==  -1) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          part_vel[i] = vela[cell_id * 3  + i];
+      }
+
+      /* fluid velocity seen */
+      cs_real_t *part_seen_vel = cs_lagr_particle_attr(particle, p_am,
+                                                       CS_LAGR_VELOCITY_SEEN);
+      for (int i = 0; i < 3; i++)
+        part_seen_vel[i] = vela[cell_id * 3 + i];
+
+      /* Residence time (may be negative to ensure continuous injection) */
+      if (zis->injection_frequency == 1) {
+        cs_real_t res_time = - part_random *cs_glob_lagr_time_step->dtp;
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME,
+                                  res_time);
+      }
+      else
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME,
+                                  0.0);
+
+      /* Diameter */
+      if (zis->diameter_variance > 0.0) {
+
+        double    random;
+        cs_random_normal(1, &random);
+
+        cs_real_t diam =   zis->diameter
+                         + random * zis->diameter_variance;
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, diam);
+
+        /* On verifie qu'on obtient un diametre dans la gamme des 99,7% */
+        cs_real_t d3 = 3.0 * zis->diameter_variance;
+
+        if (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER)
+            < zis->diameter - d3)
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
+                                    zis->diameter);
+
+        if (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER)
+            > zis->diameter + d3)
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
+                                    zis->diameter);
+
+      }
+
+      else
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
+                                  zis->diameter);
+
+      /* Other parameters */
+      cs_real_t diam = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
+      cs_real_t mporos = cs_glob_lagr_clogging_model->mporos;
+      if (cs_glob_lagr_model->clogging == 1) {
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
+                                  diam/(1.-mporos));
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, diam);
+      }
+
+      /* Other variables (mass, ...) depending on physical model  */
+      cs_real_t d3 = pow(diam, 3.0);
+
+      if (cs_glob_lagr_model->n_stat_classes > 0)
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_STAT_CLASS,
+                                  zis->cluster);
+
+      /* used for 2nd order only */
+      if (p_am->displ[0][CS_LAGR_TAUP_AUX] > 0)
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TAUP_AUX, 0.0);
+
+      if (   cs_glob_lagr_model->physical_model == 0
+          || cs_glob_lagr_model->physical_model == 1) {
+
+        if (cs_glob_lagr_model->clogging == 0)
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
+                                    zis->density * pis6 * d3);
+        else
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
+                                    zis->density * pis6 * d3
+                                    * pow(1.0-mporos, 3));
+
+        if (   cs_glob_lagr_model->physical_model == 1
+            && cs_glob_lagr_specific_physics->itpvar == 1) {
+
+          if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
+              || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
+              || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
+            cs_lagr_particle_set_real(particle, p_am,
+                                      CS_LAGR_FLUID_TEMPERATURE,
+                                      temp1[cell_id] - tkelvi);
+
+          else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
+                   || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
+                   || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
+                   || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
+            cs_lagr_particle_set_real(particle, p_am,
+                                      CS_LAGR_FLUID_TEMPERATURE,
+                                      temp[cell_id] - tkelvi);
+
+          else if (   cs_glob_thermal_model->itherm
+                   == CS_THERMAL_MODEL_TEMPERATURE) {
+
+            /* Kelvin */
+            if (cs_glob_thermal_model->itpscl == 1)
+              cs_lagr_particle_set_real(particle, p_am,
+                                        CS_LAGR_FLUID_TEMPERATURE,
+                                        cscalt[cell_id] - tkelvi);
+
+            /* Celsius */
+            else if (cs_glob_thermal_model->itpscl == 2)
+              cs_lagr_particle_set_real(particle, p_am,
+                                        CS_LAGR_FLUID_TEMPERATURE,
+                                        cscalt[cell_id]);
+
+          }
+
+          else if (   cs_glob_thermal_model->itherm
+                   == CS_THERMAL_MODEL_ENTHALPY) {
+
+            int mode = 1;
+            CS_PROCF(usthht, USTHHT)(&mode, &(cscalt[cell_id]), temp);
+            cs_lagr_particle_set_real(particle, p_am,
+                                      CS_LAGR_FLUID_TEMPERATURE,
+                                      temp[0]);
+
+          }
+
+          /* constant temperature set, may be modified later by user function */
+          if (zis->temperature_profile == 1)
+            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,
+                                      zis->temperature);
+
+          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CP,
+                                    zis->cp);
+          if (extra->iirayo > 0)
+            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_EMISSIVITY,
+                                      zis->emissivity);
+
+        }
+
+      }
+
+      else if (cs_glob_lagr_model->physical_model == 2) {
+
+        int coal_id = zis->coal_number - 1;
+
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_COAL_NUM, coal_id);
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
+                                  temp1[cell_id] - tkelvi);
+
+        cs_real_t *particle_temp
+          = cs_lagr_particle_attr(particle, p_am, CS_LAGR_TEMPERATURE);
+        for (int ilayer = 0;
+             ilayer < cs_glob_lagr_model->n_temperature_layers;
+             ilayer++)
+          particle_temp[ilayer] = zis->temperature;
+
+        /* composition from DP_FCP */
+
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CP, cp2ch[coal_id]);
+
+        cs_real_t mass = rho0ch[coal_id] * pis6 * d3;
+
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, mass);
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_WATER_MASS,
+                                  xwatch[coal_id] * mass);
+
+        cs_real_t *particle_coal_mass
+            = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COAL_MASS);
+        cs_real_t *particle_coke_mass
+          = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COKE_MASS);
+        for (int ilayer = 0;
+             ilayer < cs_glob_lagr_model->n_temperature_layers;
+             ilayer++) {
+
+          particle_coal_mass[ilayer]
+            =    (1.0 - xwatch[coal_id]
+                      - xashch[coal_id])
+              * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
+              / cs_glob_lagr_model->n_temperature_layers;
+          particle_coke_mass[ilayer] = 0.0;
+
+        }
+
+        cs_lagr_particle_set_real
+          (particle, p_am,
+           CS_LAGR_SHRINKING_DIAMETER,
+           cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER));
+        cs_lagr_particle_set_real
+          (particle, p_am,
+           CS_LAGR_INITIAL_DIAMETER,
+           cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER));
+
+        cs_real_t *particle_coal_density
+          = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COAL_DENSITY);
+        for (int ilayer = 0;
+             ilayer < cs_glob_lagr_model->n_temperature_layers;
+             ilayer++)
+          particle_coal_density[ilayer] = rho0ch[coal_id];
+
+      }
+
+      /* statistical weight */
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_STAT_WEIGHT,
+                                zis->stat_weight);
+
+      /* Fouling index */
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FOULING_INDEX,
+                                zis->fouling_index);
+
+      /* Initialization of deposition model */
+
+      if (cs_glob_lagr_model->deposition == 1) {
+
+        cs_real_t random;
+        cs_random_uniform(1, &random);
+        cs_lagr_particle_set_real(particle, p_am,
+                                  CS_LAGR_INTERF, 5.0 + 15.0 * random);
+        cs_lagr_particle_set_real(particle, p_am,
+                                  CS_LAGR_YPLUS, 1000.0);
+        cs_lagr_particle_set_lnum(particle, p_am,
+                                  CS_LAGR_MARKO_VALUE, -1);
+        cs_lagr_particle_set_lnum(particle, p_am,
+                                  CS_LAGR_NEIGHBOR_FACE_ID, -1);
+
+      }
+
+      /* Initialization of clogging model */
+
+      if (cs_glob_lagr_model->clogging == 1) {
+
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DEPO_TIME, 0.0);
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT, 0.0);
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART, 1.0);
+
+      }
+
+      /* Initialize the additional user variables */
+
+      for (int i = 0;
+           i < cs_glob_lagr_model->n_user_variables;
+           i++)
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_USER + i, 0.0);
+
+    }
+
+  }
+
+  /* Update weights to have the correct flow rate
+     -------------------------------------------- */
+
+  if (zis->flow_rate > 0.0 && zis->n_inject > 0) {
+
+    cs_real_t dmass = 0.0;
+
+    cs_lnum_t p_s_id = p_set->n_particles;
+    cs_lnum_t p_e_id = p_s_id + elt_particle_idx[n_elts];
+
+    for (cs_lnum_t p_id = p_s_id; p_id < p_e_id; p_id++)
+      dmass += cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
+
+    cs_parall_sum(1, CS_REAL_TYPE, &dmass);
+
+    /* Compute weights */
+
+    if (dmass > 0.0) {
+      cs_real_t s_weight =   zis->flow_rate * cs_glob_lagr_time_step->dtp
+                           / dmass;
+      for (cs_lnum_t p_id = p_s_id; p_id < p_e_id; p_id++)
+        cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_STAT_WEIGHT, s_weight);
+    }
+
+    else {
+
+      char z_type_name[32] = "unknown";
+      if (zis->location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
+        strncpy(z_type_name, _("boundary"), 31);
+      else if (zis->location_id == CS_MESH_LOCATION_CELLS)
+        strncpy(z_type_name, _("volume"), 31);
+      z_type_name[31] = '\0';
+
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian %s zone %d, set %d:\n"
+                  " imposed flow rate is %g\n"
+                  " while mass of injected particles is 0."),
+                z_type_name, zis->zone_id, zis->set_id,
+                (double)zis->flow_rate);
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check injected particle values
+ *
+ * \param[in,out]  p_set             particle set
+ * \param[in]      zis               injection data for this zone and set
+ * \param[in]      n_elts            number of elements in zone
+ * \param[in]      elt_particle_idx  starting id of new particles for a given
+ *                                   element (size: n_elts+1)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_particles(cs_lagr_particle_set_t         *p_set,
+                 const cs_lagr_injection_set_t  *zis,
+                 cs_lnum_t                       n_elts,
+                 const cs_lnum_t                 elt_particle_idx[])
+{
+  const cs_lnum_t s_id = p_set->n_particles;
+  const cs_lnum_t e_id = s_id + elt_particle_idx[n_elts];
+
+  char z_type_name[32] = "unknown";
+  if (zis->location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
+    strncpy(z_type_name, _("boundary"), 31);
+  else if (zis->location_id == CS_MESH_LOCATION_CELLS)
+    strncpy(z_type_name, _("volume"), 31);
+  z_type_name[31] = '\0';
+
+  int attrs[] = {CS_LAGR_DIAMETER, CS_LAGR_MASS, CS_LAGR_STAT_WEIGHT,
+                 CS_LAGR_CP};
+
+  for (cs_lnum_t p_id = s_id; p_id < e_id; p_id++) {
+
+    for (int i_attr = 0; i_attr < 4; i_attr++) {
+
+      int attr = attrs[i_attr];
+
+      if (p_set->p_am->count[1][attr] > 0) {
+
+        cs_real_t val  = cs_lagr_particles_get_real(p_set, p_id, attr);
+
+        if (val <= 0.0)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Lagrangian %s zone %d, set %d:\n"
+                      "  particle %d has a negative %s: %g"),
+                    z_type_name, zis->zone_id, zis->set_id,
+                    p_id, cs_lagr_attribute_name[attr], (double)val);
+
+      }
+
+    }
+
+  }
+
+  if (cs_glob_lagr_model->physical_model == 2) {
+
+    int r01_attrs[] = {CS_LAGR_WATER_MASS, CS_LAGR_COAL_MASS, CS_LAGR_COKE_MASS,
+                       CS_LAGR_COAL_DENSITY};
+    int r00_attrs[] = {CS_LAGR_SHRINKING_DIAMETER, CS_LAGR_INITIAL_DIAMETER};
+
+    for (cs_lnum_t p_id = s_id; p_id < e_id; p_id++) {
+
+      for (int i_attr = 0; i_attr < 4; i_attr++) {
+
+        int attr = r01_attrs[i_attr];
+        int n_vals = p_set->p_am->count[1][attr];
+        cs_real_t *vals = cs_lagr_particles_attr(p_set, p_id, attr);
+
+        for (int l_id = 0; l_id < n_vals; l_id++) {
+          if (vals[l_id] < 0.0 || vals[l_id] > 1.0) {
+            if (n_vals == 1)
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Lagrangian %s zone %d, set %d:\n"
+                          "  particle %d has %s outside  [0, 1] range: %g"),
+                        z_type_name, zis->zone_id, zis->set_id,
+                        p_id, cs_lagr_attribute_name[attr], (double)vals[0]);
+            else
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Lagrangian %s zone %d, set %d:\n"
+                          "  particle %d has %s outside  [0, 1] range\n"
+                          "  in layer %d: %g"),
+                        z_type_name, zis->zone_id, zis->set_id,
+                        p_id, cs_lagr_attribute_name[attr], l_id, (double)vals[l_id]);
+          }
+
+        }
+
+      }
+
+      for (int i_attr = 0; i_attr < 3; i_attr++) {
+
+        int attr = r00_attrs[i_attr];
+        cs_real_t val = cs_lagr_particles_get_real(p_set, p_id, attr);
+
+        if (val < 0) {
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Lagrangian %s zone %d, set %d:\n"
+                      "  particle %d has a negative %s: %g"),
+                    z_type_name, zis->zone_id, zis->set_id,
+                    p_id, cs_lagr_attribute_name[attr], (double)val);
+
+        }
+
+      }
+
+    }
+
+  }
+}
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -120,1544 +1082,319 @@ cs_lagr_injection(int        time_id,
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
-  cs_real_t  *xashch = cs_glob_lagr_coal_comb->xashch;
-  cs_real_t  *cp2ch  = cs_glob_lagr_coal_comb->cp2ch;
-  cs_real_t  *xwatch = cs_glob_lagr_coal_comb->xwatch;
-  cs_real_t  *rho0ch = cs_glob_lagr_coal_comb->rho0ch;
-
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
-  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
-
-  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
-  cs_real_t tkelvn = -cs_physical_constants_celsius_to_kelvin;
 
   /* Non-lagrangian fields */
   cs_real_t *vela = extra->vel->vals[time_id];
-  cs_real_t *cscalt = NULL, *temp = NULL, *temp1 = NULL;
 
   cs_lagr_particle_counter_t *pc = cs_lagr_get_particle_counter();
   const cs_time_step_t *ts = cs_glob_time_step;
 
-  if (   cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE
-      || cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY)
-    cscalt = extra->scal_t->vals[time_id];
-
-  if (extra->temperature != NULL)
-    temp = extra->temperature->val;
-
-  if (extra->t_gaz != NULL)
-    temp1 = extra->t_gaz->val;
-
-  /* Memory management */
-
-  int *ilftot;
-  BFT_MALLOC(ilftot, cs_glob_lagr_const_dim->nflagm, int);
+  const int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
 
   /* Initialization */
 
-  cs_real_t pis6 = cs_math_pi / 6.0;
+  cs_lagr_zone_data_t  *zda[2] = {cs_lagr_get_boundary_conditions(),
+                                  cs_lagr_get_volume_conditions()};
 
-  cs_lagr_bdy_condition_t  *bdy_cond = cs_lagr_get_bdy_conditions();
   cs_lagr_get_internal_conditions();
 
-  /* User initialization by class and boundary */
+  /* Boundary conditions */
 
-  if (cs_gui_file_is_loaded() && ts->nt_cur == ts->nt_prev +1)
-    cs_gui_particles_bcs();
+  {
+    cs_lagr_zone_data_t *zd = zda[0];
 
-  cs_user_lagr_boundary_conditions(itypfb);
+    for (int z_id = 0; z_id < zd->n_zones; z_id++) {
 
-  /* setup BCs */
+      if (zd->zone_type[z_id] > CS_LAGR_SYM)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Lagrangian boundary zone %d nature %d is unknown."),
+                  z_id + 1,
+                  (int)zd->zone_type[z_id]);
 
-  /* Faces must all belong to a valid boundary zone */
-
-  int *ifvu;
-  BFT_MALLOC(ifvu, cs_glob_lagr_const_dim->nflagm, int);
-  for (int ii = 0; ii < cs_glob_lagr_const_dim->nflagm; ii++)
-    ifvu[ii] = 0;
-
-  for (cs_lnum_t ifac = 0; ifac < mesh->n_b_faces; ifac++) {
-    if (   bdy_cond->b_face_zone_id[ifac] < 0
-        || bdy_cond->b_face_zone_id[ifac] >= cs_glob_lagr_const_dim->nflagm)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Lagrangian module: \n"
-                  "  the zone id associated to face %d must be "
-                  "an integer >= 0 and < nflagm = %d.\n"
-                  "  This number is here %d."),
-                (int)ifac,
-                (int)cs_glob_lagr_const_dim->nflagm,
-                (int)bdy_cond->b_face_zone_id[ifac]);
-    else
-      ifvu[bdy_cond->b_face_zone_id[ifac]] = 1;
-  }
-
-  cs_parall_max(cs_glob_lagr_const_dim->nflagm, CS_INT_TYPE, ifvu);
-
-  /* Build a list of boundary zone ids. */
-
-  bdy_cond->n_b_zones = 0;
-
-  for (int ii = 0; ii < cs_glob_lagr_const_dim->nflagm; ii++) {
-    if (ifvu[ii]) {
-      bdy_cond->b_zone_id[bdy_cond->n_b_zones] = ii;
-      bdy_cond->n_b_zones += 1;
-    }
-  }
-
-  BFT_FREE(ifvu);
-
-  /* --> Calculation of the surfaces of the Lagrangian boundary zones  */
-
-  cs_real_t *surflag = NULL;
-  cs_real_t *surlgrg = NULL;
-  cs_lnum_t *ninjrg = NULL;
-  cs_lnum_t  nfrtot;
-
-  if (cs_glob_rank_id >= 0) {
-
-    BFT_MALLOC(surflag, cs_glob_lagr_const_dim->nflagm, cs_real_t);
-    BFT_MALLOC(surlgrg, cs_glob_lagr_const_dim->nflagm * cs_glob_n_ranks, cs_real_t);
-    BFT_MALLOC(ninjrg, cs_glob_n_ranks, cs_lnum_t);
-
-    for (cs_lnum_t kk = 0; kk < cs_glob_lagr_const_dim->nflagm; kk++) {
-
-      surflag[kk] = 0.0;
-
-      for (cs_lnum_t jj = 0; jj < cs_glob_n_ranks; jj++)
-        surlgrg[cs_glob_n_ranks * kk + jj] = 0.0;
-
-    }
-
-    for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-
-      int izone = bdy_cond->b_zone_id[ii];
-
-      surflag[izone] = 0.0;
-
-      for (cs_lnum_t ifac = 0; ifac < mesh->n_b_faces; ifac++) {
-
-        if (izone == bdy_cond->b_face_zone_id[ifac]) {
-
-          surflag[izone] += fvq->b_face_surf[ifac];
-          surlgrg[(izone) * cs_glob_n_ranks + cs_glob_rank_id]
-            += fvq->b_face_surf[ifac];
-
-        }
-
-      }
-
-    }
-
-    for (cs_lnum_t kk = 0; kk < cs_glob_lagr_const_dim->nflagm; kk++) {
-
-      cs_parall_sum(1, CS_DOUBLE, &(surflag[kk]));
-
-      for (cs_lnum_t jj = 0; jj < cs_glob_n_ranks; jj++)
-        cs_parall_sum(1, CS_DOUBLE, &(surlgrg[kk * cs_glob_n_ranks + jj]));
-
-    }
-
-    if (cs_glob_rank_id == 0) {
-
-      nfrtot = 0;
-      cs_lnum_t jj = 0;
-
-      for (cs_lnum_t kk = 0; kk < cs_glob_lagr_const_dim->nflagm; kk++) {
-
-        if (surflag[kk] > 1e-15) {
-
-          nfrtot++;
-          ilftot[jj] = kk;
-          jj++;
-
-        }
-
-      }
-
-    }
-
-    cs_parall_bcast(0, 1, CS_LNUM_TYPE, &nfrtot);
-    cs_parall_bcast(0, nfrtot, CS_LNUM_TYPE, ilftot);
-
-  }
-
-  else {
-
-    nfrtot = bdy_cond->n_b_zones;
-
-    for (int ii = 0; ii < bdy_cond->n_b_zones; ii++)
-      ilftot[ii] = bdy_cond->b_zone_id[ii];
-
-  }
-
-  /* --> Nombre de classes.    */
-
-  for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-
-    int izone = bdy_cond->b_zone_id[ii];
-
-    if (bdy_cond->b_zone_classes[izone] < 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Lagrangian module: \n"
-                  "  number of particle classes for zone %d "
-                  "is not defined (=%d)\n"),
-                (int)izone + 1,
-                (int)bdy_cond->b_zone_classes[izone]);
-
-  }
-
-  /* Verification of particle classes de particules: just a warning */
-  if (cs_glob_lagr_model->n_stat_classes > 0) {
-
-    for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-
-      int izone = bdy_cond->b_zone_id[ii];
-
-      for (int iclas = 0;
-           iclas < bdy_cond->b_zone_classes[izone];
-           iclas++) {
-
-        cs_lagr_zone_class_data_t *userdata
-          = cs_lagr_get_zone_class_data(iclas, izone);
-
-        if (   userdata->cluster <= 0
-            || userdata->cluster > cs_glob_lagr_model->n_stat_classes)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Lagrangian module: \n"
-                      "  number of clusters = %d is either not defined (negative)\n"
-                      "   or > to the number of statistical classes %d "
-                      "for zone %d and class %d."),
-                    (int)userdata->cluster,
-                    (int)cs_glob_lagr_model->n_stat_classes,
-                    (int)izone + 1,
-                    (int)iclas);
-
-      }
-
-    }
-
-  }
-
-  /* --> Boundary conditions */
-  for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-
-    int izone = bdy_cond->b_zone_id[ii];
-
-    if (   bdy_cond->b_zone_natures[izone] != CS_LAGR_INLET
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_OUTLET
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_REBOUND
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_DEPO1
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_DEPO2
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_SYM
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_FOULING
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_JBORD1
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_JBORD2
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_JBORD3
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_JBORD4
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_JBORD5
-        && bdy_cond->b_zone_natures[izone] != CS_LAGR_DEPO_DLVO) {
-
-      bft_error(__FILE__, __LINE__, 0,
-                _("Lagrangian boundary zone %d nature %d is unknown."),
-                izone + 1,
-                (int)bdy_cond->b_zone_natures[izone]);
-    }
-
-  }
-
-  for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-    int izone = bdy_cond->b_zone_id[ii];
-    if (   bdy_cond->b_zone_natures[izone] == CS_LAGR_FOULING
-        && cs_glob_lagr_model->physical_model != 2)
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("Lagrangian boundary zone %d nature is of type CS_LAGR_FOULING,\n"
-           "but cs_glob_lagr_model->physical_model is not equal to 2."),
-         (int)izone + 1);
-  }
-
-  for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-    int izone = bdy_cond->b_zone_id[ii];
-    if (   bdy_cond->b_zone_natures[izone] == CS_LAGR_FOULING
-        && cs_glob_lagr_model->fouling != 1)
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("Lagrangian boundary zone %d nature is of type CS_LAGR_FOULING,\n"
-           "but fouling is not activated."),
-         (int)izone + 1);
-  }
-
-  /* --> Type de condition pour le diametre.  */
-
-  if (   cs_glob_lagr_model->physical_model == 1
-      && (   cs_glob_lagr_specific_physics->itpvar == 1
-          || cs_glob_lagr_specific_physics->idpvar == 1
-          || cs_glob_lagr_specific_physics->impvar == 1)) {
-
-    for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-      int izone = bdy_cond->b_zone_id[ii];
-      for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
-        cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
-        if (   userdata->temperature_profile < 1
-            || userdata->temperature_profile > 2)
-          bft_error
-            (__FILE__, __LINE__, 0,
-             _("Lagrangian boundary zone %d temperature profile "
-               "value is invalid (=%d)\n"),
-             (int)izone + 1,
-             (int)userdata->temperature_profile);
-      }
-    }
-
-  }
-
-  /* local copy of parameters */
-
-  cs_lagr_zone_class_data_t *local_zone_class_data = NULL;
-  BFT_MALLOC(local_zone_class_data,
-             cs_glob_lagr_nzone_max * cs_glob_lagr_nclass_max,
-             cs_lagr_zone_class_data_t);
-
-  for (int izone = 0; izone < cs_glob_lagr_nzone_max; izone++) {
-
-    for (int iclas = 0; iclas < cs_glob_lagr_nclass_max; iclas++) {
-
-      cs_lagr_zone_class_data_t *userdata
-        = cs_lagr_get_zone_class_data(iclas, izone);
-
-      local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone] = *userdata;
-
-    }
-
-  }
-
-  for (int ii = 0; ii < bdy_cond->n_b_zones; ii++) {
-
-    int izone = bdy_cond->b_zone_id[ii];
-
-    for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
-
-      cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
-
-      if (userdata->nb_part < 0)
+      if (   zd->zone_type[z_id] == CS_LAGR_FOULING
+          && cs_glob_lagr_model->physical_model != 2)
         bft_error
           (__FILE__, __LINE__, 0,
-           _("Number of particles for zone %d and class %d is not defined (=%d)\n"),
-           (int)izone + 1,
-           (int)iclas,
-           (int)bdy_cond->b_zone_classes[izone]);
-
-      /* --> Type de condition pour le taux de presence.    */
-      if (   userdata->distribution_profile < 1
-          || userdata->distribution_profile > 2)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Lagrangian boundary zone %d, class %d:\n"
-                    "  distribution profile value is invalid (=%d)\n"),
-                  (int)izone + 1,
-                  (int)iclas,
-                  (int)userdata->distribution_profile);
-
-      /* --> Type de condition pour la vitesse.   */
-      if (   userdata->velocity_profile <  -1
-          || userdata->velocity_profile > 2)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Lagrangian boundary zone %d, class %d:\n"
-                    "  velocity profile value is invalid (=%d)\n"),
-                  (int)izone + 1,
-                  (int)iclas,
-                  (int)userdata->velocity_profile);
-
-      /* --> Type de condition pour le diametre.  */
-      if (   userdata->diameter_profile < 1
-          || userdata->diameter_profile > 2)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Lagrangian boundary zone %d:\n"
-                    "  class %d diameter profile value is invalid (=%d)\n"),
-                  (int)izone + 1,
-                  (int)iclas,
-                  (int)userdata->diameter_profile);
-
-      /* statistical weight */
-      if (   userdata->stat_weight <= 0.0
-          && userdata->flow_rate <= 0.0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Lagrangian boundary zone %d, class %d:\n"
-                    "  statistical weight value is invalid (=%e10.3)\n"),
-                  (int)izone + 1,
-                  (int)iclas,
-                  (double)userdata->stat_weight);
-
-      /* particle mass flow rate */
-      if (   userdata->flow_rate > 0.0
-          && userdata->nb_part  == 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Lagrangian boundary zone %d, class %d:\n"
-                    " flow rate is positive (%e10.3)\n"
-                    " while number of particle is 0."),
-                  (int)izone + 1,
-                  (int)iclas,
-                  (double)userdata->flow_rate);
-
-      /* --> Proprietes des particules : le diametre, son ecart-type, et rho    */
-      if (cs_glob_lagr_model->physical_model != 2) {
-        if (   userdata->density  < 0.0
-            || userdata->diameter < 0.0
-            || userdata->diameter_variance < 0.0)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Lagrangian boundary zone %d, class %d:\n"
-                      "  error on particles properties definition:\n"
-                      "  rho = %e10.3, diameter = %e10.3,\n"
-                      "  diameter standard deviation = %e10.3."),
-                    (int)izone + 1,
-                    (int)iclas,
-                    (double)userdata->density,
-                    (double)userdata->diameter,
-                    (double)userdata->diameter_variance);
-      }
-
-      if (userdata->diameter < 3.0 * userdata->diameter_variance)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Lagrangian boundary zone %d, class %d:\n"
-                    "  diameter (%e10.3) is smaller than 3 times\n"
-                    "  its standard deviation (%e10.3)."),
-                  (int)izone + 1,
-                  (int)iclas,
-                  (double)userdata->diameter,
-                  (double)userdata->diameter_variance);
-
-      /* --> Proprietes des particules : Temperature et CP  */
-      if (   cs_glob_lagr_model->physical_model == 1
-          && cs_glob_lagr_specific_physics->itpvar == 1) {
-
-        if (   userdata->cp < 0.0
-            || userdata->temperature[0] < tkelvn)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Lagrangian boundary zone %d, class %d:\n"
-                      "  specific heat capacity is negative (%e10.3)\n"
-                      "  or temperature (%e10.3) is lower than %e10.3."),
-                    (int)izone + 1,
-                    (int)iclas,
-                    (double)userdata->cp,
-                    (double)userdata->temperature[0],
-                    (double)tkelvn);
-
-      }
-
-      /* --> Proprietes des particules : Emissivite    */
-      if (   cs_glob_lagr_model->physical_model == 1
-          && cs_glob_lagr_specific_physics->itpvar == 1
-          && extra->iirayo > 0) {
-
-        if (   userdata->emissivity < 0.0
-            || userdata->emissivity > 1.0)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Lagrangian boundary zone %d, class %d:\n"
-                      "  particle emissivity is not properly set = %e10.3."),
-                    (int)izone + 1,
-                    (int)iclas,
-                    (double)userdata->emissivity);
-
-      }
-
-      /* Charbon    */
-      if (cs_glob_lagr_model->physical_model == 2) {
-
-        if (   userdata->coal_number < 1
-            && userdata->coal_number > extra->ncharb)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Lagrangian boundary zone %d, class %d:\n"
-                      "  the coal number %d for the injected particle is either negative\n"
-                      "  or over the maximum number of coal given in dp_FCP (ncharb = %d)."),
-                    (int)izone + 1,
-                    (int)iclas,
-                    (int)userdata->coal_number,
-                    (int)extra->ncharb);
-
-        int coal_id = userdata->coal_number - 1;
-
-        /* Properties of coal particles */
-        if (   userdata->coal_profile < 0
-            || userdata->coal_profile > 1)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Lagrangian boundary zone %d, class %d:\n"
-                      "  the coal profile flag is not properly set.\n"
-                      "  I must be equal to 0 (user definition) or 1 "
-                      " (composition is set identical to fresh coal).\n"
-                      "  Coal profile is %d."),
-                    (int)izone + 1,
-                    (int)iclas,
-                    (int)userdata->coal_profile);
-
-        else if (   userdata->coal_profile     == 0
-                 && userdata->diameter_profile == 2) {
-          bft_printf(_("\nLagrangian module warning:\n"));
-          bft_printf(_("  Both coal and diameter profiles are user\n"
-                       " defined for zone %d, class %d.\n"
-                       "  This may cause unwanted problems:\n"
-                       "  coal initial and shrinking diameters are set before\n"
-                       "  the definition of the particle diameter."),
-                     (int)izone + 1,
-                     (int)iclas);
-        }
-
-        else if (   userdata->coal_profile     == 0
-                 && userdata->diameter_profile == 1
-                 && userdata->diameter_variance > 0.0)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Lagrangian boundary zone %d, class %d:\n"
-                      "  both coal and diameter profiles are set to be user defined\n"
-                      "  This may cause unwanted problems: coal initial and shrinking\n"
-                      "  diameters are set before the definition of the particle diameter."),
-                    (int)izone + 1,
-                    (int)iclas);
-
-        for (int ilayer = 0;
-             ilayer < cs_glob_lagr_model->n_temperature_layers;
-             ilayer++) {
-
-          if (userdata->temperature[ilayer] < tkelvi)
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Lagrangian boundary zone %d, class %d:\n"
-                        "  temperature is not properly set for layer %d: %e10.3."),
-                      (int)izone + 1,
-                      (int)iclas,
-                      (int)ilayer,
-                      (double)userdata->temperature[ilayer]);
-
-        }
-
-        /* Properties of coal particles */
-
-        if (userdata->coal_profile == 0) {
-
-          if (   userdata->density < 0.0
-              || userdata->cp < 0.0
-              || userdata->water_mass_fraction < 0.0
-              || userdata->water_mass_fraction > 1.0)
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Lagrangian boundary zone %d, class %d:\n"
-                        "  wrong conditions, with\n"
-                        "    density = %e10.3\n"
-                        "    Cp = %e10.3\n"
-                        "    steam mass fraction = %e10.3."),
-                      (int)izone + 1,
-                      (int)iclas,
-                      (double)userdata->density,
-                      (double)userdata->cp,
-                      (double)userdata->water_mass_fraction);
-
-          for (int ilayer = 0;
-               ilayer < cs_glob_lagr_model->n_temperature_layers;
-               ilayer++) {
-
-            if (   userdata->coal_mass_fraction[ilayer] < 0.0
-                || userdata->coal_mass_fraction[ilayer] > 1.0
-                || userdata->coke_mass_fraction[ilayer] < 0.0
-                || userdata->coke_mass_fraction[ilayer] > 1.0
-                || userdata->coke_density[ilayer] < 0.0)
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Lagrangian boundary zone %d, class %d:\n"
-                          "  wrong conditions on layer %d.\n"
-                          "    coal mass fraction = %e10.3\n"
-                          "    coke mass fraction = %e10.3\n"
-                          "    coke density after pyrolysis = %e10.3."),
-                        (int)izone + 1,
-                        (int)iclas,
-                        (int)ilayer,
-                        (double)userdata->coal_mass_fraction[ilayer],
-                        (double)userdata->coke_mass_fraction[ilayer],
-                        (double)userdata->coke_density[ilayer]);
-
-          }
-
-          if (   userdata->shrinking_diameter < 0.0
-              || userdata->initial_diameter < 0.0)
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Lagrangian boundary zone %d, class %d:\n"
-                        "  wrong conditions, with\n"
-                        "    coke diameter = %e10.3\n"
-                        "    initial diameter = %e10.3\n"),
-                      (int)izone + 1,
-                      (int)iclas,
-                      (double)userdata->shrinking_diameter,
-                      (double)userdata->initial_diameter);
-
-        }
-
-        /* irawcl = 1 --> Composition du charbon definie dans le fichier XML (DP_FCP)
-         * on verifie les donnes contenues dans le XML   */
-        else if (userdata->coal_profile == 1) {
-
-          if (   rho0ch[coal_id] < 0.0
-              || cp2ch[coal_id]  < 0.0
-              || xwatch[coal_id] < 0.0
-              || xwatch[coal_id] > 1.0
-              || xashch[coal_id] < 0.0
-              || xashch[coal_id] > 1.0)
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Lagrangian boundary zone %d, class %d:\n"
-                        "  wrong conditions for coal number %d.\n"
-                        "    density RHO0CH = %e10.3\n"
-                        "    Cp CP2CH = %e10.3\n"
-                        "    water mass fraction XWATCH = %e10.3\n"
-                        "    ashes mass fraction XASHCH = %e10.3."),
-                      (int)izone + 1,
-                      (int)iclas,
-                      (int)coal_id,
-                      (double)rho0ch[coal_id],
-                      (double)cp2ch[coal_id],
-                      (double)xwatch[coal_id],
-                      (double)xashch[coal_id]);
-
-          if (xwatch[coal_id] + xashch[coal_id] > 1.0)
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Lagrangian boundary zone %d, class %d:\n"
-                        "  wrong conditions for coal number %d.\n"
-                        "    water mass fraction XWATCH = %e10.3\n"
-                        "    ashes mass fraction XASHCH = %e10.3\n"
-                        "    mass fraction is larger than 1: %e10.3."),
-                      (int)izone + 1,
-                      (int)iclas,
-                      (int)userdata->coal_number,
-                      (double)xwatch[coal_id],
-                      (double)xashch[coal_id],
-                      (double)(  xwatch[coal_id]
-                               + xashch[coal_id]));
-
-          if (   userdata->density >= 0.0
-              || userdata->water_mass_fraction >= 0.0
-              || userdata->cp >= 0.0
-              || userdata->shrinking_diameter >= 0.0
-              || userdata->initial_diameter >= 0.0)
-            bft_error
-              (__FILE__, __LINE__, 0,
-               _("Lagrangian boundary zone %d, class %d:\n"
-                 "  conditions set with the contents of a DP_FCP file,\n"
-                 "  but one is initialized to a different value than %e10.3.\n"
-                 "  density = %e10.3\n"
-                 "  water mass fraction = %e10.3\n"
-                 "  Cp = %e10.3\n"
-                 "  coke diameter = %e10.3\n"
-                 "  initial diameter = %e10.3."),
-               (int)izone + 1,
-               (int)iclas,
-               (double)-cs_math_big_r,
-               (double)userdata->density,
-               (double)userdata->water_mass_fraction,
-               (double)userdata->cp,
-               (double)userdata->shrinking_diameter,
-               (double)userdata->initial_diameter);
-
-          for (int ilayer = 0;
-               ilayer < cs_glob_lagr_model->n_temperature_layers;
-               ilayer++) {
-
-            if (   userdata->coal_mass_fraction[ilayer] >= 0.0
-                || userdata->coke_mass_fraction[ilayer] >= 0.0
-                || userdata->coke_density[ilayer] >= 0.0)
-              bft_error
-                (__FILE__, __LINE__, 0,
-                 _("Lagrangian boundary zone %d, class %d:\n"
-                   "  wrong conditions for layer %d.\n"
-                   "    Conditions are set with the contents of a DP_FCP file,\n"
-                   "    but one is initialized to a different value than %e10.3.\n"
-                   "  coal mass fraction IFRMCH = %e10.3\n"
-                   "  coke mass fraction IFRMCK = %e10.3\n"
-                   "  initial coke mass fraction IRHOCK0 = %e10.3\n"
-                   "  coke diameter = %e10.3\n"
-                   "  initial diameter = %e10.3."),
-                 (int)izone + 1,
-                 (int)iclas,
-                 (int)ilayer,
-                 (double)-cs_math_big_r,
-                 (double)userdata->coal_mass_fraction[ilayer],
-                 (double)userdata->coke_mass_fraction[ilayer],
-                 (double)userdata->coke_density[ilayer],
-                 (double)userdata->shrinking_diameter,
-                 (double)userdata->initial_diameter);
-
-          }
-
-        }
-
-      }
+           _("Lagrangian boundary zone %d nature is of type CS_LAGR_FOULING,\n"
+             "but cs_glob_lagr_model->physical_model is not equal to 2."),
+           z_id);
+      if (   zd->zone_type[z_id] == CS_LAGR_FOULING
+          && cs_glob_lagr_model->fouling != 1)
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("Lagrangian boundary zone %d nature is of type CS_LAGR_FOULING,\n"
+             "but fouling is not activated."),
+           z_id);
 
     }
 
   }
 
-  /* ==============================================================================
-   * 4. Transformation des donnees utilisateur
-   * ============================================================================== */
-
-  /* Compute number of particles to inject for this iteration */
+  /* Reset some particle counters */
 
   p_set->n_part_new = 0;
+  p_set->weight_new = 0.0;
 
-  for (int ii = 0; ii < nfrtot; ii++) {
-
-    int izone = ilftot[ii];
-
-    for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
-
-      cs_lagr_zone_class_data_t *userdata
-        = cs_lagr_get_zone_class_data(iclas, izone);
-      cs_lagr_zone_class_data_t *local_userdata
-        = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
-
-      /* Inject only at first time step if injection frequency is zero */
-
-      if (local_userdata->injection_frequency <= 0) {
-        if (ts->nt_cur == ts->nt_prev+1 && pc->n_g_cumulative_total == 0)
-          local_userdata->injection_frequency = ts->nt_cur;
-        else
-          local_userdata->injection_frequency = ts->nt_cur+1;
-      }
-
-      if (ts->nt_cur % local_userdata->injection_frequency == 0)
-        p_set->n_part_new += userdata->nb_part;
-
-    }
-
+  for (int i_loc = 0; i_loc < 2; i_loc++) {
+    cs_lagr_zone_data_t *zd = zda[i_loc];
+    int fr_size = zd->n_zones * n_stats;
+    for (int i = 0; i < fr_size; i++)
+      zd->particle_flow_rate[i] = 0;
   }
 
-  /* ==============================================================================
-   * 5. Precipitation/Dissolution
-   * ============================================================================== */
+  /* Injection due to precipitation/Dissolution
+     ------------------------------------------ */
 
   if (cs_glob_lagr_model->precipitation == 1)
     cs_lagr_precipitation_injection(vela, &dnbpnw_preci);
 
-  /* --> Limite du nombre de particules  */
-  cs_lnum_t tmp = cs_lagr_particle_set_resize(p_set->n_particles + p_set->n_part_new);
+  /* User-defined injection
+     ---------------------- */
 
-  if (tmp < 0) {
+  /* Check various condition types and optional maximum particle limit */
 
-    bft_printf(_("\n Lagrangian module: \n"));
-    bft_printf
-      (_("  If particles are injected according to boundary conditions,\n"
-         "  the total number of particle in the domain would exceed the total\n"
-         "  number admissible set by cs_lagr_set_n_g_particles_max.\n"
-         "  No particle are injected at iteration %d."),
-       ts->nt_cur);
-    p_set->n_part_new = 0;
+  unsigned long long n_g_particles_next = pc->n_g_total;
 
-  }
+  for (int i_loc = 0; i_loc < 2; i_loc++) {
 
-  /* In no new particles are injected, return */
+    cs_lagr_zone_data_t *zd = zda[i_loc];
 
-  if (p_set->n_part_new == 0) {
+    /* compute global number of injected particles */
 
-    BFT_FREE(surflag);
-    BFT_FREE(surlgrg);
-    BFT_FREE(ninjrg);
-
-    BFT_FREE(ilftot);
-    BFT_FREE(local_zone_class_data);
-
-    return;
-  }
-
-  /* ----------------------------------------------------------------------
-   * --> Tirage aleatoire des positions des P_SET->N_PART_NEW nouvelles particules
-   * au niveau des zones de bord et reperage des cellules correspondantes
-   * ---------------------------------------------------------------------- */
-
-  /* Initialize local number of particles injected by rank */
-  cs_lnum_t nlocnew = 0;
-
-  /* Distribute new particles  */
-  /* For each boundary zone    */
-  for (int ii = 0; ii < nfrtot; ii++) {
-
-    int izone = ilftot[ii];
-
-    /* for each class  */
-    for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
-
-      cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
-      cs_lagr_zone_class_data_t *local_userdata
-        = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
-
-      /* if new particles must be added */
-      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
-
-        /* Compute on rank 0 the number of particles to inject for each rank
-         * based on the relative surface of each injection zone present on
-         * each rank: fill array ninjrg(cs_glob_n_ranks) */
-        if (cs_glob_rank_id == 0) {
-
-          for (int irp = 0; irp < cs_glob_n_ranks; irp++)
-            ninjrg[irp] = 0;
-
-          for (cs_lnum_t ipart = 0; ipart < userdata->nb_part; ipart++) {
-
-            cs_real_t random;
-            cs_random_uniform(1, &random);
-
-            /* blindage   */
-            random = random + 1e-09;
-            int irp = 0;
-            cs_real_t offset = surlgrg[izone * cs_glob_n_ranks + irp] / surflag[izone];
-
-            while (random > offset) {
-
-              irp++;
-              offset += surlgrg[izone * cs_glob_n_ranks + irp] / surflag[izone];
-
-            }
-
-            ninjrg[irp]++;
-
-          }
-
-        }
-
-        /* Broadcast to all ranks */
-        cs_parall_bcast(0, cs_glob_n_ranks, CS_LNUM_TYPE, ninjrg);
-
-        /* End of the computation of the number of particles to inject */
-        if (cs_glob_rank_id >= 0) {
-          local_userdata->nb_part = ninjrg[cs_glob_rank_id];
-          nlocnew += ninjrg[cs_glob_rank_id];
-        }
-        else {
-          local_userdata->nb_part = userdata->nb_part;
-          nlocnew += userdata->nb_part;
-        }
-
+    for (int z_id = 0; z_id < zd->n_zones; z_id++) {
+      for (int set_id = 0; set_id < zd->n_injection_sets[z_id]; set_id++) {
+        cs_lagr_injection_set_t *zis
+          = cs_lagr_get_injection_set(zd, z_id, set_id);
+        _injection_check(zis);
+        n_g_particles_next += (unsigned long long) (zis->n_inject);
       }
-
     }
 
   }
 
-  tmp = cs_lagr_particle_set_resize(p_set->n_particles + nlocnew);
+  /* Avoid injection if maximum defined number of particles reached */
 
-  if (tmp < 0) {
+  if (n_g_particles_next > cs_lagr_get_n_g_particles_max()) {
 
     bft_printf(_("\n Lagrangian module: \n"));
     bft_printf
-      (_("If particles are injected according to boundary conditions,\n"
-         " the total number of particle in the domain would exceed the\n"
-         " total number admissible set by cs_lagr_set_n_g_particles_max.\n"
-         " No particle are injected at iteration %d.\n"),
-       (int)ts->nt_cur);
-
-    BFT_FREE(surflag);
-    BFT_FREE(surlgrg);
-    BFT_FREE(ninjrg);
-
-    BFT_FREE(ilftot);
-    BFT_FREE(local_zone_class_data);
+      (_("  If particles are injected at time step %d,\n"
+         "  the total number of particles in the domain would increase from\n"
+         "  %llu to %llu, exceeding the maximums set by\n"
+         "  cs_lagr_set_n_g_particles_max. (%llu).\n"
+         "  No particles will be injected for this time step.\n"),
+       ts->nt_cur,
+       (unsigned long long)(pc->n_g_total),
+       (unsigned long long)n_g_particles_next,
+       (unsigned long long)(cs_lagr_get_n_g_particles_max()));
 
     return;
+
   }
 
-  /* Allocate a work array     */
-  cs_lnum_t *iwork;
-  BFT_MALLOC(iwork, p_set->n_particles + nlocnew, cs_lnum_t);
+  /* Now inject new particles
+     ------------------------ */
 
-  /* Now define particles */
-  /* initialize new particles counter    */
-  cs_lnum_t npt = p_set->n_particles;
+  cs_lnum_t n_elts_m = CS_MAX(mesh->n_b_faces, mesh->n_cells);
+  cs_lnum_t *elt_particle_idx = NULL;
+  BFT_MALLOC(elt_particle_idx, n_elts_m+1, cs_lnum_t);
 
-  /* For each boundary zone    */
-  for (int ii = 0; ii < nfrtot; ii++) {
+  /* Loop in injection type (boundary, volume) */
 
-    int izone = ilftot[ii];
+  for (int i_loc = 0; i_loc < 2; i_loc++) {
 
-    /* for each class  */
-    for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
+    cs_lagr_zone_data_t *zd = zda[i_loc];
 
-      cs_lagr_zone_class_data_t *local_userdata
-        = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
+    int n_zones = 0;
 
-      /* if new particles must be added */
-      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
+    const cs_real_t  *elt_weight = NULL;
 
-        if (local_userdata->nb_part > 0) {
-
-          cs_lagr_new(&npt,
-                      local_userdata->nb_part,
-                      izone,
-                      bdy_cond->b_face_zone_id,
-                      iwork);
-
-        }
-
-      }
-
+    if (i_loc == 0) { /* boundary */
+      elt_weight = fvq->b_face_surf;
+      n_zones = cs_boundary_zone_n_zones();
+    }
+    else {            /* volume */
+      elt_weight = fvq->cell_vol;
+      n_zones = cs_volume_zone_n_zones();
     }
 
-  }
+    /* Loop on injection zones */
 
-  /* Injected particles count check */
+    for (int z_id = 0; z_id < n_zones; z_id++) {
 
-  if ((p_set->n_particles + nlocnew) != npt) {
+      /* Loop on injected sets */
 
-    bft_printf(_("\n Lagrangian module: \n"));
-    bft_printf(_("  Bad boundary conditions.\n The number of injected particles\n"
-                 "  for this time step does not match the one specified\n"
-                 "  in the boundary conditions.\n"
-                 "  number set for injection NBPNEW = %d\n"
-                 "  number affectively injected NPT-NBPART = %d\n"),
-               (int)nlocnew,
-               (int)npt-p_set->n_particles);
-    cs_exit(1);
+      cs_lnum_t         n_z_elts = 0;
+      const cs_lnum_t  *z_elt_ids = NULL;
 
-  }
+      if (i_loc == 0) {
+        const cs_boundary_zone_t  *z = cs_boundary_zone_by_id(z_id);
+        n_z_elts = z->n_faces;
+        z_elt_ids = z->face_ids;
+      }
+      else {
+        const cs_volume_zone_t  *z = cs_volume_zone_by_id(z_id);
+        n_z_elts = z->n_cells;
+        z_elt_ids = z->cell_ids;
+      }
 
-  /* reinitialisation du compteur de nouvelles particules */
-  npt = p_set->n_particles;
+      for (int set_id = 0;
+           set_id < zd->n_injection_sets[z_id];
+           set_id++) {
 
-  /* pour chaque zone de bord: */
-  for (int ii = 0; ii < nfrtot; ii++) {
+        const cs_lagr_injection_set_t *zis = NULL;
 
-    int izone = ilftot[ii];
+        zis = cs_lagr_get_injection_set(zd, z_id, set_id);
 
-    /* pour chaque classe : */
-    for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
+        int injection_frequency = zis->injection_frequency;
 
-      cs_lagr_zone_class_data_t *local_userdata
-        = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
-      cs_lagr_zone_class_data_t *userdata
-        = cs_lagr_get_zone_class_data(iclas, izone);
+        /* Inject only at first time step if injection frequency is zero */
 
-      /* si de nouvelles particules doivent entrer */
-      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
-
-        for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
-
-          unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
-
-          cs_lnum_t cell_id = cs_lagr_particle_get_cell_id(particle, p_am);
-          cs_lnum_t ifac = iwork[ip];
-
-          /* Random value associated with each particle */
-
-          cs_real_t part_random = -1;
-          cs_random_uniform(1, &part_random);
-          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RANDOM_VALUE,
-                                    part_random);
-
-          /* Particle velocity components */
-
-          cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
-
-          /* prescribed components */
-          if (userdata->velocity_profile == 1) {
-            for (cs_lnum_t i = 0; i < 3; i++)
-              part_vel[i] = userdata->velocity[i];
-          }
-
-          /* prescribed norm */
-          else if (userdata->velocity_profile == 0) {
-            for (cs_lnum_t i = 0; i < 3; i++)
-              part_vel[i] = -   fvq->b_face_normal[ifac * 3 + i]
-                              / fvq->b_face_surf[ifac]
-                              * userdata->velocity_magnitude;
-          }
-
-          /* velocity as seen from fluid */
-          else if (userdata->velocity_profile ==  -1) {
-            for (cs_lnum_t i = 0; i < 3; i++)
-              part_vel[i] = vela[cell_id * 3  + i];
-          }
-
-          /* prescribed velocity profile */
-          else if (userdata->velocity_profile == 2) {
-            cs_user_lagr_new_p_attr(particle,
-                                    p_am,
-                                    ifac,
-                                    CS_LAGR_VELOCITY);
-          }
-
-          /* fluid velocity seen */
-          cs_real_t *part_seen_vel = cs_lagr_particle_attr(particle, p_am,
-                                                           CS_LAGR_VELOCITY_SEEN);
-          for (int i = 0; i < 3; i++)
-            part_seen_vel[i] = vela[cell_id * 3 + i];
-
-          /* Residence time (may be negative to ensure continuous injection) */
-          if (local_userdata->injection_frequency == 1) {
-            cs_real_t res_time = - part_random *cs_glob_lagr_time_step->dtp;
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME,
-                                      res_time);
-          }
+        if (injection_frequency <= 0) {
+          if (ts->nt_cur == ts->nt_prev+1 && pc->n_g_cumulative_total == 0)
+            injection_frequency = ts->nt_cur;
           else
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME,
-                                      0.0);
-
-          /* Diameter */
-          if (userdata->diameter_profile == 1) {
-
-            if (userdata->diameter_variance > 0.0) {
-
-              double    random;
-              cs_random_normal(1, &random);
-
-              cs_real_t diam =   userdata->diameter
-                               + random * userdata->diameter_variance;
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, diam);
-
-              /* On verifie qu'on obtient un diametre dans la gamme des 99,7% */
-              cs_real_t d3 = 3.0 * userdata->diameter_variance;
-
-              if (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER)
-                  < userdata->diameter - d3)
-                cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
-                                          userdata->diameter);
-
-              if (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER)
-                  > userdata->diameter + d3)
-                cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
-                                          userdata->diameter);
-
-            }
-
-            else
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
-                                        userdata->diameter);
-
-          }
-
-          /* in case of profile for diameter */
-          else if (userdata->diameter_profile == 2) {
-            cs_user_lagr_new_p_attr(particle,
-                                    p_am,
-                                    ifac,
-                                    CS_LAGR_DIAMETER);
-          }
-
-          /* Other parameters */
-          cs_real_t diam = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
-          cs_real_t mporos = cs_glob_lagr_clogging_model->mporos;
-          if (cs_glob_lagr_model->clogging == 1) {
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
-                                      diam/(1.-mporos));
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_HEIGHT, diam);
-          }
-
-          /* Other variables (mass, ...) depending on physical model  */
-          cs_real_t d3 = pow(diam, 3.0);
-
-          if (cs_glob_lagr_model->n_stat_classes > 0)
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_STAT_CLASS,
-                                      userdata->cluster);
-
-          /* used for 2nd order only */
-          if (p_am->displ[0][CS_LAGR_TAUP_AUX] > 0)
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TAUP_AUX, 0.0);
-
-          if (   cs_glob_lagr_model->physical_model == 0
-              || cs_glob_lagr_model->physical_model == 1) {
-
-            if (cs_glob_lagr_model->clogging == 0)
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
-                                        userdata->density * pis6 * d3);
-            else
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
-                                        userdata->density * pis6 * d3
-                                        * pow(1.0-mporos,3));
-
-            if (   cs_glob_lagr_model->physical_model == 1
-                && cs_glob_lagr_specific_physics->itpvar == 1) {
-
-              /* si Temperature constante imposee :  */
-              if (userdata->temperature_profile == 1)
-                cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE,
-                                          userdata->temperature[0]);
-
-              /* si profil pour la temperature :     */
-              else if (userdata->temperature_profile == 2) {
-                cs_user_lagr_new_p_attr(particle,
-                                        p_am,
-                                        ifac,
-                                        CS_LAGR_TEMPERATURE);
-              }
-
-              if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
-                  || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
-                  || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
-                cs_lagr_particle_set_real(particle, p_am,
-                                          CS_LAGR_FLUID_TEMPERATURE,
-                                          temp1[cell_id] - tkelvi);
-
-              else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] >= 0
-                       || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] >= 0
-                       || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
-                       || cs_glob_physical_model_flag[CS_JOULE_EFFECT] >= 0)
-                cs_lagr_particle_set_real(particle, p_am,
-                                          CS_LAGR_FLUID_TEMPERATURE,
-                                          temp[cell_id] - tkelvi);
-
-              else if (cs_glob_thermal_model->itherm ==
-                               CS_THERMAL_MODEL_TEMPERATURE) {
-
-                /* Kelvin */
-                if (cs_glob_thermal_model->itpscl == 1)
-                  cs_lagr_particle_set_real(particle, p_am,
-                                            CS_LAGR_FLUID_TEMPERATURE,
-                                            cscalt[cell_id] - tkelvi);
-
-                /* Celsius    */
-                else if (cs_glob_thermal_model->itpscl == 2)
-                  cs_lagr_particle_set_real(particle, p_am,
-                                            CS_LAGR_FLUID_TEMPERATURE,
-                                            cscalt[cell_id]);
-
-              }
-
-              else if (cs_glob_thermal_model->itherm ==
-                               CS_THERMAL_MODEL_ENTHALPY) {
-
-                int mode = 1;
-                temp[0] = cs_lagr_particle_get_real(particle, p_am,
-                                                    CS_LAGR_FLUID_TEMPERATURE);
-                CS_PROCF(usthht, USTHHT)(&mode, &(cscalt[cell_id]), temp);
-
-              }
-
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CP,
-                                        userdata->cp);
-              if (extra->iirayo > 0)
-                cs_lagr_particle_set_real(particle, p_am, CS_LAGR_EMISSIVITY,
-                                          userdata->emissivity);
-
-            }
-
-          }
-
-          else if (cs_glob_lagr_model->physical_model == 2) {
-
-            int coal_id = userdata->coal_number - 1;
-
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_COAL_NUM, coal_id);
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FLUID_TEMPERATURE,
-                                      temp1[cell_id] - tkelvi);
-
-            cs_real_t *particle_temp
-              = cs_lagr_particle_attr(particle, p_am, CS_LAGR_TEMPERATURE);
-            for (int ilayer = 0;
-                 ilayer < cs_glob_lagr_model->n_temperature_layers;
-                 ilayer++)
-              particle_temp[ilayer] = userdata->temperature[ilayer];
-
-            /* user-defined composition (cs_user_lagr_boundary_conditions) */
-            if (userdata->coal_profile == 0) {
-
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CP, userdata->cp);
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
-                                        userdata->density * pis6 * d3);
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_WATER_MASS,
-                                          userdata->water_mass_fraction
-                                        * cs_lagr_particle_get_real(particle, p_am,
-                                                                    CS_LAGR_MASS));
-
-              cs_real_t *particle_coal_mass
-                = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COAL_MASS);
-              cs_real_t *particle_coke_mass
-                = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COKE_MASS);
-              for (int ilayer = 0;
-                   ilayer < cs_glob_lagr_model->n_temperature_layers;
-                   ilayer++) {
-
-                particle_coal_mass[ilayer] = userdata->coal_mass_fraction[ilayer]
-                  * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
-                  / cs_glob_lagr_model->n_temperature_layers;
-                particle_coke_mass[ilayer] = userdata->coke_mass_fraction[ilayer]
-                  * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
-                  / cs_glob_lagr_model->n_temperature_layers;
-
-              }
-
-              cs_lagr_particle_set_real(particle, p_am,
-                                        CS_LAGR_SHRINKING_DIAMETER,
-                                        userdata->shrinking_diameter);
-              cs_lagr_particle_set_real(particle, p_am,
-                                        CS_LAGR_INITIAL_DIAMETER,
-                                        userdata->initial_diameter);
-
-              cs_real_t *particle_coal_density
-                = cs_lagr_particle_attr(particle, p_am,
-                                        CS_LAGR_COAL_DENSITY);
-              for (int ilayer = 0;
-                   ilayer < cs_glob_lagr_model->n_temperature_layers;
-                   ilayer++)
-                particle_coal_density[ilayer] = userdata->coke_density[ilayer];
-
-            }
-
-            /* composition from DP_FCP */
-            else if (userdata->coal_profile == 1) {
-
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CP,
-                                        cp2ch[coal_id]);
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
-                                        rho0ch[coal_id] * pis6 * d3);
-              cs_lagr_particle_set_real(particle, p_am, CS_LAGR_WATER_MASS,
-                                        xwatch[coal_id]
-                                        * cs_lagr_particle_get_real(particle, p_am,
-                                                                    CS_LAGR_MASS));
-
-              cs_real_t *particle_coal_mass
-                = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COAL_MASS);
-              cs_real_t *particle_coke_mass
-                = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COKE_MASS);
-              for (int ilayer = 0;
-                   ilayer < cs_glob_lagr_model->n_temperature_layers;
-                   ilayer++) {
-
-                particle_coal_mass[ilayer]
-                  =    (1.0 - xwatch[coal_id]
-                            - xashch[coal_id])
-                    * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
-                   / cs_glob_lagr_model->n_temperature_layers;
-                particle_coke_mass[ilayer] = 0.0;
-
-              }
-
-              cs_lagr_particle_set_real
-                (particle, p_am,
-                 CS_LAGR_SHRINKING_DIAMETER,
-                 cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER));
-              cs_lagr_particle_set_real
-                (particle, p_am,
-                 CS_LAGR_INITIAL_DIAMETER,
-                 cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER));
-
-              cs_real_t *particle_coal_density
-                = cs_lagr_particle_attr(particle, p_am,
-                                        CS_LAGR_COAL_DENSITY);
-              for (int ilayer = 0;
-                   ilayer < cs_glob_lagr_model->n_temperature_layers;
-                   ilayer++)
-                particle_coal_density[ilayer] = rho0ch[coal_id];
-
-            }
-          }
-
-          /* statistical weight */
-          if (userdata->distribution_profile == 1)
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_STAT_WEIGHT,
-                                      userdata->stat_weight);
-
-          else if (userdata->distribution_profile == 2) {
-            cs_user_lagr_new_p_attr(particle,
-                                    p_am,
-                                    ifac,
-                                    CS_LAGR_STAT_WEIGHT);
-          }
-
-          /* Fouling index */
-          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_FOULING_INDEX,
-                                    userdata->foul_index);
-
-          /* Initialization of deposition model */
-
-          if (cs_glob_lagr_model->deposition == 1) {
-
-            cs_real_t random;
-            cs_random_uniform(1, &random);
-            cs_lagr_particle_set_real(particle, p_am,
-                                      CS_LAGR_INTERF, 5.0 + 15.0 * random);
-            cs_lagr_particle_set_real(particle, p_am,
-                                      CS_LAGR_YPLUS, 1000.0);
-            cs_lagr_particle_set_lnum(particle, p_am,
-                                      CS_LAGR_MARKO_VALUE, -1);
-            cs_lagr_particle_set_lnum(particle, p_am,
-                                      CS_LAGR_NEIGHBOR_FACE_ID, -1);
-
-          }
-
-          /* Initialization of clogging model */
-
-          if (cs_glob_lagr_model->clogging == 1) {
-
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DEPO_TIME, 0.0);
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CONSOL_HEIGHT, 0.0);
-            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CLUSTER_NB_PART, 1.0);
-
-          }
-
-          /* Loop on the additional user variables */
-
-          for (int i = 0;
-              i < cs_glob_lagr_model->n_user_variables;
-              i++) {
-
-            cs_real_t *user_var = cs_lagr_particle_attr(particle, p_am, CS_LAGR_USER + i);
-            *user_var = 0.;
-
-            cs_user_lagr_new_p_attr(particle,
-                                    p_am,
-                                    ifac,
-                                    CS_LAGR_USER + i);
-          }
-
+            injection_frequency = ts->nt_cur+1;
         }
 
-        npt = npt + local_userdata->nb_part;
+        if (ts->nt_cur % injection_frequency != 0)
+          continue;
 
-      }
-
-    }
-
-  }
-
-  /* Control test */
-
-  if ((p_set->n_particles + nlocnew) != npt)
-    bft_error(__FILE__, __LINE__, 0,
-              _("  Bad lagrangian boundary conditions.\n"
-                "    the number of injected particles for this lagrangian\n"
-                "    iteration does not match the one specified in the boundary\n"
-                "    conditions.\n"
-                "    number set for injection NBPNEW = %d\n"
-                "    number effectively injected NPT-NBPART = %d"),
-              (int)nlocnew,
-              (int)npt-p_set->n_particles);
-
-  /* Update weights to have the correct flow rate
-     ============================================ */
-
-  /* Reinitialize new particles counter */
-  npt = p_set->n_particles;
-
-  /* for each boundary zone */
-  for (int z_id = 0; z_id < bdy_cond->n_b_zones; z_id++) {
-
-    int izone = bdy_cond->b_zone_id[z_id];
-
-    /* pour chaque classe : */
-    for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
-
-      cs_lagr_zone_class_data_t *local_userdata
-        = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
-      cs_lagr_zone_class_data_t *userdata = cs_lagr_get_zone_class_data(iclas, izone);
-
-      /* si de nouvelles particules sont entrees, */
-      /* et si on a un debit non nul :  */
-      if (   ts->nt_cur % local_userdata->injection_frequency == 0
-          && userdata->flow_rate > 0.0
-          && userdata->nb_part > 0) {
-
-        cs_real_t dmass = 0.0;
-
-        for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
-
-          unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
-          dmass += cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
-
+        cs_real_t *elt_profile = NULL;
+        if (zis->injection_profile_func != NULL) {
+          BFT_MALLOC(elt_profile, n_z_elts, cs_real_t);
+          zis->injection_profile_func(zis->zone_id,
+                                      zis->location_id,
+                                      zis->injection_profile_input,
+                                      n_z_elts,
+                                      z_elt_ids,
+                                      elt_profile);
         }
 
-        cs_parall_sum(1, CS_REAL_TYPE, &dmass);
+        cs_lnum_t n_inject = _distribute_particles(zis->n_inject,
+                                                   n_z_elts,
+                                                   z_elt_ids,
+                                                   elt_weight,
+                                                   elt_profile,
+                                                   elt_particle_idx);
 
-        /* Compute weights */
+        BFT_FREE(elt_profile);
 
-        if (dmass > 0.0) {
+        if (cs_lagr_particle_set_resize(p_set->n_particles + n_inject) < 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    "Lagrangian module internal error: \n"
+                    "  resizing of particle set impossible but previous\n"
+                    "  size computation did not detect this issue.");
 
-          for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
+        /* Define particle coordinates and place on faces/cells */
 
-            unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
-            cs_lagr_particle_set_real
-              (particle, p_am, CS_LAGR_STAT_WEIGHT,
-               (userdata->flow_rate * cs_glob_lagr_time_step->dtp) / dmass);
+        if (zis->location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
+          cs_lagr_new(p_set,
+                      n_z_elts,
+                      z_elt_ids,
+                      elt_particle_idx);
+        else
+          cs_lagr_new_v(p_set,
+                        n_z_elts,
+                        z_elt_ids,
+                        elt_particle_idx);
 
+        BFT_FREE(elt_profile);
+
+        /* Initialize other particle attributes */
+
+        _init_particles(p_set,
+                        zis,
+                        time_id,
+                        n_z_elts,
+                        z_elt_ids,
+                        elt_particle_idx);
+
+        assert(n_inject == elt_particle_idx[n_z_elts]);
+
+        cs_lnum_t particle_range[2] = {p_set->n_particles,
+                                       p_set->n_particles + n_inject};
+
+        cs_lagr_new_particle_init(particle_range,
+                                  time_id,
+                                  vislen);
+
+        /* advanced user modification */
+
+        {
+          cs_lnum_t *particle_face_ids = NULL;
+
+          if (zis->location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
+            particle_face_ids = _get_particle_face_ids(n_z_elts,
+                                                       z_elt_ids,
+                                                       elt_particle_idx);
+
+          cs_user_lagr_in(p_set,
+                          zis,
+                          particle_range,
+                          particle_face_ids,
+                          vislen);
+
+          BFT_FREE(particle_face_ids);
+        }
+
+        /* for safety, build values at previous time step */
+
+        for (cs_lnum_t p_id = particle_range[0];
+             p_id < particle_range[1];
+             p_id++)
+          cs_lagr_particles_current_to_previous(p_set, p_id);
+
+        /* check some particle attributes consistency */
+
+        _check_particles(p_set, zis, n_z_elts, elt_particle_idx);
+
+        /* update counters and balances */
+
+        cs_real_t z_weight = 0.;
+
+        for (cs_lnum_t p_id = particle_range[0];
+             p_id < particle_range[1];
+             p_id++) {
+          cs_real_t s_weight = cs_lagr_particles_get_real(p_set, p_id,
+                                                          CS_LAGR_STAT_WEIGHT);
+          cs_real_t flow_rate = (  s_weight
+                                 * cs_lagr_particles_get_real(p_set, p_id,
+                                                              CS_LAGR_MASS));
+
+          zd->particle_flow_rate[z_id*n_stats] += flow_rate;
+
+          if (n_stats > 1) {
+            int class_id = cs_lagr_particles_get_lnum(p_set, p_id,
+                                                      CS_LAGR_STAT_CLASS);
+            if (class_id > 0 && class_id < n_stats)
+              zd->particle_flow_rate[z_id*n_stats + class_id] += flow_rate;
           }
 
+          z_weight += s_weight;
         }
 
-        else {
+        p_set->n_particles += n_inject;
+        p_set->n_part_new += n_inject;
+        p_set->weight_new += z_weight;
 
-          bft_printf(_("\n Lagrangian module: \n"));
-          bft_printf
-            (_(" In zone %d, class %d conditions are erroneous.\n"
-               "   Imposed Flow rate value is =%e10.3 "
-               "while number of particles is 0."),
-             (int)izone + 1,
-             (int)iclas,
-             (double)userdata->flow_rate);
-          cs_exit(1);
+      } /* end of loop on sets */
 
-        }
+    } /* end of loop on zones */
 
-        npt = npt + local_userdata->nb_part;
+  } /* end of loop on zone types (boundary/volume) */
 
-      }
+  BFT_FREE(elt_particle_idx);
 
-    }
-
-  }
-
-  /* ==============================================================================
-   * 6. SIMULATION DES VITESSES TURBULENTES FLUIDES INSTANTANEES VUES
-   * PAR LES PARTICULES SOLIDES LE LONG DE LEUR TRAJECTOIRE.
-   * ============================================================================== */
-
-  /* si de nouvelles particules doivent entrer :   */
-
-  cs_lnum_t npar1 = p_set->n_particles;
-  cs_lnum_t npar2 = p_set->n_particles + nlocnew;
-  cs_lagr_new_particle_init(npar1, npar2, time_id, vislen);
-
-  /* ==============================================================================
-   * 7. MODIFICATION DES TABLEAUX DE DONNEES PARTICULAIRES
-   * ============================================================================== */
-
-  cs_user_lagr_in(time_id, iwork, local_zone_class_data, vislen);
-
-  /* ==============================================================================
-   * 7bis. Random id associated with particles (to be initialized later)
-   * ============================================================================== */
-
-  srand(cs_glob_rank_id + 1);
-
-  /* for safety, build values at previous time step */
-  for (cs_lnum_t ip = npar1; ip < npar2; ip++)
-    cs_lagr_particles_current_to_previous(p_set, ip);
-
-  /* reinitialisation du compteur de nouvelles particules    */
-  npt = p_set->n_particles;
-
-  /* pour chaque zone de bord: */
-  for (int z_id = 0; z_id < bdy_cond->n_b_zones; z_id++) {
-
-    int izone = bdy_cond->b_zone_id[z_id];
-
-    /* loop on classes */
-    for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
-
-      cs_lagr_zone_class_data_t *local_userdata
-        = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
-      cs_lagr_zone_class_data_t *userdata
-        = cs_lagr_get_zone_class_data(iclas, izone);
-
-      /* if new particles have been added */
-      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
-
-        for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
-
-          unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
-
-          if (   cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER) < 0.0
-              && userdata->diameter_variance > 0.0){
-
-            bft_printf(_("\nLagrangian module warning: \n"));
-            bft_printf
-              (_("  In zone %d, class %d conditions are erroneous.\n"
-                 "    Computation of a particle diameter from mean diameter\n"
-                 "    and standard deviation yields a negative value,\n"
-                 "    due to a stochastic selection of 'gaussian border'\n"
-                 "  mean diameter = %e10.3\n"
-                 "  standard deviation = %e10.3\n"
-                 "  computed diameter = %e10.3\n"),
-               (int)izone + 1,
-               (int)iclas,
-               (double)userdata->diameter,
-               (double)userdata->diameter_variance,
-               (double)cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER));
-
-          }
-
-        }
-
-        npt = npt + local_userdata->nb_part;
-
-      }
-
-    }
-
-  }
-
-  /* Control test */
-
-  if ((p_set->n_particles + nlocnew) != npt)
-    bft_error(__FILE__, __LINE__, 0,
-              _("  Bad lagrangian boundary conditions.\n"
-                "    the number of injected particles for this time step\n"
-                "    does not match the one specified in the boundary conditions.\n"
-                "  number set for injection NBPNEW = %d\n"
-                "  number affectively injected NPT-NBPART = %d\n"),
-              (int)nlocnew,
-              (int)npt-p_set->n_particles);
-
-  /* Free memory */
-  BFT_FREE(iwork);
-
-  /* ==============================================================================
-   * 9. CALCUL DE LA MASSE TOTALE INJECTES EN CHAQUE ZONE
-   * Attention cette valeur est modifie dans USLABO pour tenir compte
-   * des particules qui sortent
-   * + calcul du nombres physiques de particules qui rentrent (tenant
-   * compte des poids)
-   * ============================================================================== */
-
-  /* reinitialisation du compteur de nouvelles particules    */
-  npt = p_set->n_particles;
-  p_set->weight_new = 0.0;
-
-  /* pour chaque zone de bord :     */
-  for (int z_id = 0; z_id < bdy_cond->n_b_zones; z_id++) {
-
-    int izone = bdy_cond->b_zone_id[z_id];
-    bdy_cond->particle_flow_rate[izone] = 0.0;
-
-    /* pour chaque classe : */
-    for (int iclas = 0; iclas < bdy_cond->b_zone_classes[izone]; iclas++) {
-
-      cs_lagr_zone_class_data_t *local_userdata
-        = &(local_zone_class_data[iclas * cs_glob_lagr_nzone_max + izone]);
-
-      /* si de nouvelles particules sont entrees, */
-      if (ts->nt_cur % local_userdata->injection_frequency == 0) {
-
-        for (cs_lnum_t ip = npt; ip < npt + local_userdata->nb_part; ip++) {
-
-          unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
-
-          bdy_cond->particle_flow_rate[izone]
-            += (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT)
-                * cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS));
-          p_set->weight_new += cs_lagr_particle_get_real(particle, p_am,
-                                                         CS_LAGR_STAT_WEIGHT);
-
-        }
-
-      }
-
-      npt = npt + local_userdata->nb_part;
-
-    }
-
-  }
-
-  if (cs_glob_lagr_model->precipitation == 1)
-    p_set->weight_new += dnbpnw_preci;
-
-  /* Update total number of particles */
-
-  p_set->n_particles += nlocnew;
-  p_set->n_part_new = nlocnew;
+  /* Update global particle counters */
 
   pc = cs_lagr_update_particle_counter();
   pc->n_g_total += pc->n_g_new;
-
-  /**************
-   * Free memory
-   **************/
-
-  BFT_FREE(surflag);
-  BFT_FREE(surlgrg);
-  BFT_FREE(ninjrg);
-
-  BFT_FREE(ilftot);
-  BFT_FREE(local_zone_class_data);
 }
 
 /*----------------------------------------------------------------------------*/

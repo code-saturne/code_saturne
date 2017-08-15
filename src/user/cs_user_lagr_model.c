@@ -41,13 +41,13 @@
 #include "cs_lagr_prototypes.h"
 #include "cs_prototypes.h"
 
-/*---------------------------------------------------------------------------------*/
-/* \brief User function of the Lagrangian particle-tracking module
+/*---------------------------------------------------------------------------*/
+/*
+ * \brief User function of the Lagrangian particle-tracking module
  *
- *  User function for input of calculation parameters.
- *  These parameters concern physical, numerical and post-processing options.
+ *  User input of physical, numerical and post-processing options.
  */
-/*---------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_lagr_model(void)

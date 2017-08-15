@@ -42,7 +42,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
-#include "cs_boundary_zone.h"
+#include "cs_volume_zone.h"
 #include "cs_math.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
@@ -68,17 +68,15 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define particle boundary conditions.
+ * \brief Define particle volume conditions.
  *
- * This is used for the definition of inlet and other boundaries,
+ * This is used for the definition of volume injections,
  * based on predefined boundary zones (\ref cs_boundary_zone_t).
- *
- * \param[in] bc_type    type of the boundary faces
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_boundary_conditions(const int  bc_type[])
+cs_user_lagr_volume_conditions(void)
 {
 
 }

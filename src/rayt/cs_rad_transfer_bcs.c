@@ -1283,7 +1283,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
       if (   bc_type[ifac] == CS_SYMMETRY
           || (   (   bc_type[ifac] == CS_SMOOTHWALL
                   || bc_type[ifac] == CS_ROUGHWALL)
-              && f_eps->val[ifac] == 0.0) ) {
+              && f_eps->val[ifac] <= 0.0) ) {
         cs_real_t qimp = 0.0;
         cs_boundary_conditions_set_neumann_scalar(&coefap[ifac],
                                                   &cofafp[ifac],

@@ -41,20 +41,19 @@
 #include "cs_lagr_prototypes.h"
 #include "cs_prototypes.h"
 
-/*---------------------------------------------------------------------------------*/
-/* \brief User function of the Lagrangian particle-tracking module
+/*---------------------------------------------------------------------------*/
+/*
+ * \brief User function of the Lagrangian particle-tracking module
  *
- *  User function for input of calculation parameters.
- *  These parameters concern physical, numerical and post-processing options.
+ *  User input of physical, numerical and post-processing options.
  */
-/*---------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_lagr_model(void)
 {
-  /* ==========================================================================
-   * 1. Particle-tracking mode
-   * ========================================================================== */
+  /* Particle-tracking mode
+   * ====================== */
 
   /* iilagr = 0 : no particle tracking (default)
    *        = 1 : particle-tracking one-way coupling
@@ -66,9 +65,8 @@ cs_user_lagr_model(void)
 
   cs_glob_lagr_time_scheme->iilagr = 1;
 
-  /* ==========================================================================
-   * 2. Particle-tracking calculation restart
-   * ========================================================================== */
+  /* Particle-tracking calculation restart
+   * ===================================== */
 
   /* isuila = 0 : no restart (default)
      = 1 : restart (this value requires a restart on the continuous
@@ -82,9 +80,8 @@ cs_user_lagr_model(void)
   if (cs_glob_lagr_time_scheme->isuila == 1)
     cs_glob_lagr_stat_options->isuist = 0;
 
-  /* ==========================================================================
-   * 3. Particle tracking: specific models
-   * ========================================================================== */
+  /* Particle tracking: specific models
+   * ================================== */
 
   /* iphyla = 0 : only transport modeling (default)
    *         = 1 : equation on temperature (in Celsius degrees), diameter or mass
@@ -109,7 +106,7 @@ cs_user_lagr_model(void)
     cs_glob_lagr_specific_physics->impvar   = 0;
   }
 
-  /* 3.2 coal fouling
+  /* Coal fouling
    * ---------------------------------------------------------------------
    * Reference internal reports EDF/R&D: HI-81/00/030/A and HI-81/01/033/A
    *
@@ -166,17 +163,17 @@ cs_user_lagr_model(void)
     cs_real_t cao   = 13.3;
 
     /* Enc1 and Enc2 : coefficients in Watt and Fereday expression  */
-    cs_glob_lagr_encrustation->enc1[icha] = 0.00835 * sio2 + 0.00601 * al2o3 - 0.109;
-    cs_glob_lagr_encrustation->enc2[icha] =  0.0415  * sio2 + 0.0192  * al2o3
-      + 0.0276 * fe2o3 + 0.016 * cao - 3.92;
+    cs_glob_lagr_encrustation->enc1[icha]
+      = 0.00835 * sio2 + 0.00601 * al2o3 - 0.109;
+    cs_glob_lagr_encrustation->enc2[icha]
+      =  0.0415  * sio2 + 0.0192  * al2o3 + 0.0276 * fe2o3 + 0.016 * cao - 3.92;
   }
 
-  /* ==========================================================================
-   * 4. Calculation features for the dispersed phases
-   * ========================================================================== */
+  /* Calculation features for the dispersed phases
+   * ============================================= */
 
-  /* 4.1 Additional variables
-   *   ------------------------
+  /* Additional variables
+   * --------------------
    *
    *   Additional variables may be accessed using the (CS_LAGR_USER + i)
    *   attribute, where 0 <= i < lagr_params->n_user_variables
@@ -187,8 +184,8 @@ cs_user_lagr_model(void)
 
   cs_lagr_set_n_user_variables(0);
 
-  /* 4.2 Steady or unsteady continuous phase
-   *   ------------------------
+  /* Steady or unsteady continuous phase
+   * -----------------------------------
    *   if steady: isttio = 1
    *   if unsteady: isttio = 0
    *   if iilagr = 3 then isttio = 1
@@ -199,7 +196,8 @@ cs_user_lagr_model(void)
   if (cs_glob_lagr_time_scheme->iilagr != 3)
     cs_glob_lagr_time_scheme->isttio   = 0;
 
-  /* 4.3 Two-way coupling: (iilagr = 2)  */
+  /* Two-way coupling: (iilagr = 2)
+     ------------------------------ */
 
   if (cs_glob_lagr_time_scheme->iilagr == 2) {
     /* * number of absolute time step (i.e. with restart)
@@ -238,8 +236,8 @@ cs_user_lagr_model(void)
 
   }
 
-  /* 4.4 Volume statistics
-     --------------------- */
+  /* Volume statistics
+     ----------------- */
 
   /* Threshold for the management of volume statistics
      -------------------------------------------------
@@ -274,10 +272,10 @@ cs_user_lagr_model(void)
 
   cs_glob_lagr_stat_options->nstist = cs_glob_lagr_stat_options->idstnt;
 
-  /* 4.4.2 Volume statistical variables  */
-  /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-  /* Activation of the calculation of the particle volume fraction     */
-  /* Name of the mean : Part_vol_frac    */
+  /* Volume statistical variables
+     ---------------------------- */
+
+  /* Activation of the calculation of the particle volume fraction */
 
   cs_lagr_stat_activate(CS_LAGR_STAT_VOLUME_FRACTION);
 
@@ -293,34 +291,33 @@ cs_user_lagr_model(void)
 
   cs_lagr_stat_activate_attr(CS_LAGR_STAT_WEIGHT);
 
-  /* 2) Specific models (iphyla = 1) following the chosen options:     */
+  /*Specific models (iphyla = 1) following the chosen options: */
   /* Mean and variance of the temperature     */
   /* Mean and variance of the diameter   */
   /* Mean and variance of the mass  */
 
-  /* 6) Statistics per group:
-   * ----------------------- */
+  /* Statistics per class
+   * -------------------- */
 
   cs_glob_lagr_model->n_stat_classes = 0;
 
-  /* ==========================================================================
-   * 8. Options concerning the numerical treatment of the dispersed phase
-   * ========================================================================== */
+  /* Options concerning the numerical treatment of the dispersed phase
+   * ================================================================= */
 
   /* Integration order of the stochastic differential equations   */
   /* (default 2; acceptable values 1 or 2)    */
 
   cs_glob_lagr_time_scheme->t_order = 1;
 
-  /* ==========================================================================
-   * 9. Options concerning the treatment of the dispersed phase
-   * ========================================================================== */
+  /* Options concerning the treatment of the dispersed phase
+   * ======================================================= */
 
   /*  Caution: In this version, the turbulent dispersion works only if
-      ------- the continuous phase is calculated with a k-eps or a Rij-eps model
+               the continuous phase is calculated with a k-eps or
+               a Rij-eps model
 
       Activation of the turbulent dispersion
-      (default on: 1 ; off: 0)  */
+      (default on: 1 ; off: 0) */
 
   cs_glob_lagr_time_scheme->idistu = 1;
 
@@ -351,9 +348,8 @@ cs_user_lagr_model(void)
   if (cs_glob_lagr_time_scheme->modcpl > 0)
     cs_glob_lagr_time_scheme->idirla = 1;
 
-  /* ==========================================================================
-   * 10. Options concerning the treatment of specific forces
-   * ========================================================================== */
+  /* Options concerning the treatment of specific forces
+   * =================================================== */
 
   /* idlvo = 0
      = 1 dlvo deposition conditions are activated for the
@@ -388,9 +384,8 @@ cs_user_lagr_model(void)
     cs_glob_lagr_physico_chemical->fion   = 0.01;
   }
 
-  /* ==========================================================================
-   * 11. Activation of Brownian motion
-   * ========================================================================== */
+  /* Activation of Brownian motion
+   * ============================= */
 
   /* Activation of Brownian motion:
      (default off: 0 ; on: 1)
@@ -398,20 +393,16 @@ cs_user_lagr_model(void)
      ======== */
   cs_glob_lagr_brownian->lamvbr = 0;
 
-  /* ==========================================================================
-   * 12. Activation of deposition model
-   * ========================================================================== */
+  /* Activation of deposition model
+   * ============================== */
 
-  /* Activation of the deposition model
-     (default off: 0 ; on: 1) */
+  /* Activation of the deposition model (default off: 0 ; on: 1) */
   cs_glob_lagr_model->deposition = 0;
 
-  /* ==========================================================================
-   * 13. Activation of roughness and resuspension model
-   * ========================================================================== */
+  /* Activation of roughness and resuspension model
+   * ============================================== */
 
-  /* Activation of the resuspension model
-     (default off: 0 ; on: 1) */
+  /* Activation of the resuspension model (default off: 0 ; on: 1) */
   cs_glob_lagr_model->resuspension = 0;
 
   /* Caution: OPTION FOR DEVELOPERS ONLY
@@ -422,7 +413,7 @@ cs_user_lagr_model(void)
 
   /* Parameters of the particle resuspension model for the roughness */
 
-  /*   average distance between two large-scale asperities */
+  /* average distance between two large-scale asperities */
   cs_glob_lagr_reentrained_model->espasg = 2e-05;
 
   /* density of the small-scale asperities */
@@ -437,9 +428,8 @@ cs_user_lagr_model(void)
   /* Young's modulus (GPa) */
   cs_glob_lagr_reentrained_model->modyeq = 266000000000.0;
 
-  /* ==========================================================================
-   * 14. Activation of the clogging model
-   * ========================================================================== */
+  /* Activation of the clogging model
+   * ================================ */
 
   /* Activation of the clogging model
      (default off: 0 ; on: 1)
@@ -464,9 +454,8 @@ cs_user_lagr_model(void)
   /* Hamaker constant for the particle/fluid/particle system */
   cs_glob_lagr_clogging_model->csthpp      = 5e-20;
 
-  /* ==========================================================================
-   * 14bis. Influence of the deposit on the flow
-   * ========================================================================== */
+  /* Influence of the deposit on the flow
+   * ==================================== */
 
   /* Activation of the influence of the deposit on the flow
      by the head losses calculation (with clogging model only)
@@ -485,9 +474,8 @@ cs_user_lagr_model(void)
 
   }
 
-  /* ==========================================================================
-   * 14ter. Activation of the consolidation model
-   * ========================================================================== */
+  /* Activation of the consolidation model
+   * ===================================== */
 
   /* Activation of the consolidation model
      (default off: 0 ; on: 1) */
@@ -514,9 +502,8 @@ cs_user_lagr_model(void)
   /* Consolidation rate (m/s) */
   cs_glob_lagr_consolidation_model->rate_consol  = 4.0e-3;
 
-  /*==========================================================================
-   * 15. Activation of the precipitation/disolution model
-   *==========================================================================*/
+  /* Activation of the precipitation/disolution model
+   * ================================================ */
 
   /* Activation of the precipitation/dissolution model
      (default off: 0 ; on: 1)
@@ -532,9 +519,8 @@ cs_user_lagr_model(void)
   /* Number of particle classes */
   cs_glob_lagr_precipitation_model->nbrclas   = 2;
 
-  /* ==========================================================================
-   * 16. Boundary statistics
-   * ========================================================================== */
+  /* Boundary statistics
+   * =================== */
 
   /* The boundary statistic 'number of particle/boundary interactions' must be
      selected to activate the particle average imoybr(...) = 2 */
@@ -581,10 +567,10 @@ cs_user_lagr_model(void)
 
   cs_glob_lagr_boundary_interactions->nusbor = 0;
 
-  /* 16.1.3 Name of the recordings for display,
+  /* Name of the recordings for display,
      Average in time of particle average
      of the boundary statistics
-     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     -----------------------------------
 
      * A priori the user intervenes only in the additional user information
      to be recorded: he must prescribe the name of the recording as well as
@@ -610,11 +596,10 @@ cs_user_lagr_model(void)
      * The back-ups in the restart file are performed without applying
        this average. */
 
-  /*==========================================================================
-   * Periodicity for the output of the Lagrangian log (listla)
-   * ==========================================================================*/
+  /* Frequency for the output of the Lagrangian log (listla)
+   * ======================================================= */
 
-  cs_glob_lagr_log_frequency_n  = 1;
+  cs_glob_lagr_log_frequency_n = 1;
 }
 
 /*----------------------------------------------------------------------------*/

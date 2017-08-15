@@ -493,79 +493,77 @@ cs_lagr_log_iteration(void)
   cs_log_printf(CS_LOG_DEFAULT,
                 _("   Zone     Mass flow rate(kg/s)      Boundary type\n"));
 
-  int nbfr = 0;
-  cs_lagr_bdy_condition_t *bdy_cond = cs_lagr_get_bdy_conditions();
+  cs_lagr_zone_data_t *bdy_cond = cs_lagr_get_boundary_conditions();
 
-  /* TODO log for internal zone */
+  /* TODO log for volume conditions and internal zone */
 #if 0
   cs_lagr_internal_condition_t *internal_cond = cs_lagr_get_internal_conditions();
 #endif
 
-  for (int i = 0; i < bdy_cond->n_b_zones; i++) {
-    if (bdy_cond->b_zone_id[i] > nbfr)
-      nbfr = bdy_cond->b_zone_id[i] + 1;
-  }
+  int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
 
-  if (cs_glob_rank_id >= 0)
-    cs_parall_counter_max(&nbfr, 1);
+  cs_real_t *flow_rate;
+  int flow_rate_size = bdy_cond->n_zones*n_stats;
+  BFT_MALLOC(flow_rate, flow_rate_size, cs_real_t);
 
-  cs_real_t debloc[2];
-  for (cs_lnum_t nb = 0; nb < nbfr; nb++) {
+  for (int i = 0; i < flow_rate_size; i++)
+    flow_rate[i] = bdy_cond->particle_flow_rate[i];
 
-    debloc[0] = 0.0;
-    debloc[1] = 0.0;
+  cs_parall_sum(flow_rate_size, CS_REAL_TYPE, flow_rate);
 
-    for (cs_lnum_t ii = 0; ii < bdy_cond->n_b_zones; ii++) {
+  for (cs_lnum_t z_id = 0; z_id < bdy_cond->n_zones; z_id++) {
 
-      if (bdy_cond->b_zone_id[ii] == nb) {
-        debloc[0] = 1.0;
-        debloc[1] = bdy_cond->particle_flow_rate[nb];
-      }
-
-    }
-
-    cs_parall_sum(2, CS_REAL_TYPE, debloc);
-
-    if (debloc[0] > 0.5) {
+    if (CS_ABS(flow_rate[z_id*n_stats]) > 0.) {
 
       const char *chcond;
 
-      if (bdy_cond->b_zone_natures[nb] == CS_LAGR_INLET)
+      if (bdy_cond->zone_type[z_id] == CS_LAGR_INLET)
         chcond = _("inlet");
 
-      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_REBOUND)
+      else if (bdy_cond->zone_type[z_id] == CS_LAGR_REBOUND)
         chcond = _("rebound");
 
-      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_OUTLET)
+      else if (bdy_cond->zone_type[z_id] == CS_LAGR_OUTLET)
         chcond = _("outlet");
 
-      else if (   bdy_cond->b_zone_natures[nb] == CS_LAGR_DEPO1
-               || bdy_cond->b_zone_natures[nb] == CS_LAGR_DEPO2)
+      else if (   bdy_cond->zone_type[z_id] == CS_LAGR_DEPO1
+               || bdy_cond->zone_type[z_id] == CS_LAGR_DEPO2)
         chcond = _("deposition");
 
-      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_FOULING)
+      else if (bdy_cond->zone_type[z_id] == CS_LAGR_FOULING)
         chcond = _("fouling");
 
-      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_DEPO_DLVO)
+      else if (bdy_cond->zone_type[z_id] == CS_LAGR_DEPO_DLVO)
         chcond = _("dlvo conditions");
 
-      else if (bdy_cond->b_zone_natures[nb] == CS_LAGR_SYM)
+      else if (bdy_cond->zone_type[z_id] == CS_LAGR_SYM)
         chcond = _("symmetry");
 
       else
         chcond = _("user");
 
       cs_log_printf(CS_LOG_DEFAULT,
-                    "  %3d          %12.5E         %s\n",
-                    nb,
-                    debloc[1]/cs_glob_lagr_time_step->dtp,
+                    "  %3d          %12.5e         %s\n",
+                    z_id,
+                    flow_rate[z_id*n_stats]/cs_glob_lagr_time_step->dtp,
                     chcond);
+
+      for (int j = 1; j < n_stats; j++) {
+        if (CS_ABS(flow_rate[z_id*n_stats + j]) > 0)
+          cs_log_printf(CS_LOG_DEFAULT,
+                        "    class %3d  %12.5e         %s\n",
+                        j,
+                        flow_rate[z_id*n_stats]/cs_glob_lagr_time_step->dtp,
+                        chcond);
+      }
 
     }
 
   }
 
   cs_log_separator(CS_LOG_DEFAULT);
+
+  BFT_FREE(flow_rate);
 
   /* Boundary statistics  */
 

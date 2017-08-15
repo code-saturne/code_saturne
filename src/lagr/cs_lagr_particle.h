@@ -1321,15 +1321,30 @@ cs_lagr_particle_set_resize(cs_lnum_t  n_min_particles);
 void
 cs_lagr_set_reallocation_factor(double f);
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get global maximum number of particles.
+ *
+ * By default, the number is limited only by local \ref cs_lnum_t and global
+ * \ref cs_gnum_t data representation limits.
+ *
+ * \return  global maximum number of particles
+ */
+/*----------------------------------------------------------------------------*/
+
+unsigned long long
+cs_lagr_get_n_g_particles_max(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set global maximum number of particles.
  *
- * By default, the number is limited only by local cs_lnum_t and global
- * cs_gnum_t data representation limits.
+ * By default, the number is limited only by local \ref cs_lnum_t and global
+ * \ref cs_gnum_t data representation limits.
  *
- * parameters:
- *   n_g_particles_max <-- global maximum number of particles
-*----------------------------------------------------------------------------*/
+ * \param[in]  n_g_particles_max  global maximum number of particles
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_set_n_g_particles_max(unsigned long long  n_g_particles_max);

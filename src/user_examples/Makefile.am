@@ -88,8 +88,10 @@ cs_user_extra_operations-scalar_balance.c \
 cs_user_extra_operations-turbomachinery.c \
 cs_user_head_losses.c \
 cs_user_lagr_boundary_conditions.c \
+cs_user_lagr_volume_conditions.c \
 cs_user_lagr_model.c \
 cs_user_lagr_particle.c \
+cs_user_lagr_particle-coal.c \
 cs_user_mesh-boundary.c \
 cs_user_mesh-groups_from_free_faces.c \
 cs_user_mesh-input-save.c \
