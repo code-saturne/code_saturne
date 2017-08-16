@@ -372,8 +372,8 @@ _system_info(bool  log)
 
   /* Functions not available on IBM Blue Gene or Cray XT,
      but a stub may exist, so we make sure we ignore it */
-#if   defined(__blrts__) || defined(__bg__) \
-   || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+#if   defined(__bg__) || defined(_CRAYC) \
+   || defined(__CRAYXT) || defined(__CRAYXE) || defined(__CRAYXC)
   pwd_user = NULL;
 #else
   pwd_user = getpwuid(geteuid());
