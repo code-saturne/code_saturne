@@ -1454,6 +1454,9 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
 
     cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
 
+    if (p_set == NULL)
+      return;
+
     /* Particle positions */
 
     if (post_mesh->ent_flag[3] == 1) {
