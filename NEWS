@@ -5,6 +5,8 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Fix crash in Catalyst output when visualizing tensor data on cells.
+
 - Fix postprocessing output name of volume zone ids (appeared as boundary).
 
 - Fix crash in quality criteria mode when Lagrangian module is active.

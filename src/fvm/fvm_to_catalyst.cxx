@@ -923,24 +923,26 @@ _export_field_values_e(const fvm_nodal_t         *mesh,
                       field_values,
                       values + start_id);
 
-    /* Special case for symmetric tensors */
-
-    if (dim == 6) {
-      for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
-        values[9*i + 8] = values[9*i + 2];
-        values[9*i + 7] = values[9*i + 4];
-        values[9*i + 6] = values[9*i + 5];
-        values[9*i + 4] = values[9*i + 1];
-        values[9*i + 2] = values[9*i + 5];
-        values[9*i + 1] = values[9*i + 3];
-        values[9*i + 5] = values[9*i + 7];
-      }
-    }
-
     start_id += section->n_elements*dest_dim;
     if (n_parent_lists == 0)
       src_shift += section->n_elements;
 
+  }
+
+  /* Special case for symmetric tensors */
+
+  if (dim == 6) {
+
+    cs_lnum_t n_elts = f->GetNumberOfCells();
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      values[9*i + 8] = values[9*i + 2];
+      values[9*i + 7] = values[9*i + 4];
+      values[9*i + 6] = values[9*i + 5];
+      values[9*i + 4] = values[9*i + 1];
+      values[9*i + 2] = values[9*i + 5];
+      values[9*i + 1] = values[9*i + 3];
+      values[9*i + 5] = values[9*i + 7];
+    }
   }
 }
 
