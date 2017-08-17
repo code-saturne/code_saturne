@@ -397,12 +397,11 @@ class Case(object):
                                  get_command_single_value
 
         # Prepare runcase path
-        scripts = None
+        scripts_repo = os.path.join(self.__repo, self.label)
+        scripts_dest = os.path.join(self.__dest, self.label)
         if not self.subdomains:
-            scripts= "SCRIPTS"
-
-        scripts_repo = os.path.join(self.__repo, self.label, scripts)
-        scripts_dest = os.path.join(self.__dest, self.label, scripts)
+            scripts_repo = os.path.join(scripts_repo, "SCRIPTS")
+            scripts_dest = os.path.join(scripts_dest, "SCRIPTS")
 
         run_ref = os.path.join(scripts_repo, "runcase")
         run_ref_win = os.path.join(scripts_repo, "runcase.bat")
