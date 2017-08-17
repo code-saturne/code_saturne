@@ -2022,6 +2022,7 @@ _cs_post_write_fixed_zone_info(fvm_writer_t          *writer,
 
   bool output = false;
   const int   *var_ptr[1] = {NULL};
+  const char  *name = NULL;
 
   if (post_mesh->id == CS_POST_MESH_VOLUME) {
 
@@ -2039,6 +2040,7 @@ _cs_post_write_fixed_zone_info(fvm_writer_t          *writer,
       return;
 
     const int *zone_id = cs_volume_zone_cell_zone_id();
+    name = "volume zone id";
 
     if (cs_volume_zone_n_zones_time_varying() == 0) {
       output = true;
@@ -2063,6 +2065,7 @@ _cs_post_write_fixed_zone_info(fvm_writer_t          *writer,
       return;
 
     const int *zone_id = cs_boundary_zone_face_zone_id();
+    name = "boundary zone id";
 
     if (cs_boundary_zone_n_zones_time_varying() == 0) {
       output = true;
@@ -2084,7 +2087,7 @@ _cs_post_write_fixed_zone_info(fvm_writer_t          *writer,
 
     fvm_writer_export_field(writer,
                             post_mesh->exp_mesh,
-                            "boundary zone id",
+                            name,
                             FVM_WRITER_PER_ELEMENT,
                             1,
                             CS_INTERLACE,
