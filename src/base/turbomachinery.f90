@@ -56,13 +56,23 @@ module turbomachinery
 
     ! Interface to C function mapping some data for turbomachinery
 
-    subroutine map_turbomachinery_module (iturbo2, irotce2) &
-      bind(C, name='cs_f_map_turbomachinery_module')
+    subroutine map_turbomachinery_model (iturbo2, imobil2) &
+      bind(C, name='cs_f_map_turbomachinery_model')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(out) :: iturbo2
+      integer(c_int), intent(out) :: iturbo2, imobil2
+    end subroutine map_turbomachinery_model
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function mapping some data for turbomachinery
+
+    subroutine map_turbomachinery_rotor (irotce2) &
+      bind(C, name='cs_f_map_turbomachinery_rotor')
+      use, intrinsic :: iso_c_binding
+      implicit none
       type(c_ptr), intent(out) :: irotce2
-    end subroutine map_turbomachinery_module
+    end subroutine map_turbomachinery_rotor
 
     !---------------------------------------------------------------------------
 
@@ -120,7 +130,7 @@ contains
 
     ! Map turbomachinery module components to global c turbomachinery structure
 
-    call map_turbomachinery_module(iturbo, c_p)
+    call map_turbomachinery_rotor(c_p)
 
     call c_f_pointer(c_p, irotce, [ncelet])
 
@@ -166,7 +176,7 @@ contains
     type(c_ptr) :: c_p
     integer(c_int) :: iturbo2
 
-    call map_turbomachinery_module(iturbo2, c_p)
+    call map_turbomachinery_rotor(c_p)
 
     call turbomachinery_resize_cell_fields
 

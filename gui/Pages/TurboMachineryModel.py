@@ -218,7 +218,8 @@ class TurboMachineryModel(Variables, Model):
         """
         Put model for turbo machinery
         """
-        self.isInList(model, ('off', 'frozen', 'transient'))
+        self.isInList(model, ('off', 'frozen', 'transient',
+                              'transient_coupled'))
         self.node_turbo.xmlSetAttribute(model = model)
 
         if model == 'off':

@@ -55,6 +55,7 @@ use vof
 use cavitation
 use darcy_module
 use radiat
+use turbomachinery
 use cs_nz_condensation, only: nzones
 use ctincl
 
@@ -155,6 +156,8 @@ call listing_writing_period_init
 call radiat_init
 call gas_mix_options_init
 call ctwr_properties_init
+
+call map_turbomachinery_model(iturbo, imobil)
 
 !===============================================================================
 ! 2. ENTREES SORTIES entsor.f90

@@ -76,6 +76,7 @@ use cs_fuel_incl
 use mesh
 use field
 use rotation
+use turbomachinery
 use darcy_module
 use cs_f_interfaces
 use cs_c_bindings
@@ -464,21 +465,26 @@ endif
 
 if (imobil.eq.1) then
 
-  ! En turbomachine on connait la valeur exacte de la vitesse de maillage
-  ! on modifie la geometrie en fonction de la geometrie initiale
+  if (iturbo.eq.2) then
 
-  do inod = 1, nnod
-    do ii = 1, 3
-      xyznod(ii,inod) = xyzno0(ii,inod)
+    call turbomachinery_update_mesh (ttcmob, rs_ell(1))
+
+  else
+
+    do inod = 1, nnod
+      do ii = 1, 3
+        xyznod(ii,inod) = xyzno0(ii,inod)
+      enddo
     enddo
-  enddo
 
-  call rotation_update_coords(nnod, ttcmob, xyznod)
+    call rotation_update_coords(nnod, ttcmob, xyznod)
 
-  call algrma(volmin, volmax, voltot)
+    call algrma(volmin, volmax, voltot)
 
-  ! Abort at the end of the current time-step if there is a negative volume
-  if (volmin.le.0.d0) ntmabs = ntcabs
+    ! Abort at the end of the current time-step if there is a negative volume
+    if (volmin.le.0.d0) ntmabs = ntcabs
+
+  endif
 
 endif
 

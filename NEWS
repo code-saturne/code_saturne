@@ -37,6 +37,13 @@ Default option changes
 User changes
 ------------
 
+- Legacy coupling-based transient turbomachinery option is now defined in a
+  manner similar to join-based coupling, simply replacing simply the joining
+  by an internal coupling. Coupling is internal to a code instance, requiring
+  a single data setup, and switching from a joining to a coupling-based
+  scheme is now easy.
+
+- When inserting boundaries (shuch as thin walls), vertices are now separated
 - Changes in Lagrangian module boundary and injection definitions.
   * renamed boundary particle classes to sets to avoid confusion with
     statistical classes.
@@ -89,7 +96,6 @@ User changes
 
 - Do not relax k and epsilon by default when using Bl v2 k turbulence model.
 
-- When inserting boundaries (shuch as thin walls), vertices are now separated
   on each side of those boundaries, for a true topological mesh modification.
   cs_user_mesh_thinwall is also renamed to cs_user_mesh_boundary.
 

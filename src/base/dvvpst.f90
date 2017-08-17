@@ -153,50 +153,7 @@ if (numtyp .eq. -1) then
 
   endif
 
-  ! Relative pressure and volocity in case of relative coordinate system
-
-  if (icorio.eq.1) then
-
-    call field_get_val_s(icrom, crom)
-
-    idimt = 1
-    ientla = .true.
-    ivarpr = .false.
-
-    do iloc = 1, ncelps
-
-      iel = lstcel(iloc)
-      call rotation_velocity(1, xyzcen(:,iel), vr)
-
-      tracel(iloc) = cvar_pr(iel) + &
-             0.5d0*crom(iel)*(vr(1)**2 + vr(2)**2 + vr(3)**2)
-
-    enddo
-
-    call post_write_var(nummai, 'Pressure', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, tracel, rbid, rbid)
-
-    idimt = 3
-    ientla = .true.
-    ivarpr = .false.
-
-    do iloc = 1, ncelps
-
-      iel = lstcel(iloc)
-      call rotation_velocity(1, xyzcen(:,iel), vr)
-
-      tracel(1 + (iloc-1)*idimt) = vel(1,iel) + vr(1)
-      tracel(2 + (iloc-1)*idimt) = vel(2,iel) + vr(2)
-      tracel(3 + (iloc-1)*idimt) = vel(3,iel) + vr(3)
-
-    enddo
-
-    call post_write_var(nummai, 'Velocity', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, tracel, rbid, rbid)
-
-  endif
-
-  ! Relative pressure and volocity in case of fixed coordinate system
+  ! Relative pressure and velocity in case of moving mesh in fixed coordinates
 
   if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
 
@@ -239,6 +196,48 @@ if (numtyp .eq. -1) then
 
   endif
 
+  ! Absolute pressure and velocity in case of relative coordinate system
+
+  if (icorio.eq.1) then
+
+    call field_get_val_s(icrom, crom)
+
+    idimt = 1
+    ientla = .true.
+    ivarpr = .false.
+
+    do iloc = 1, ncelps
+
+      iel = lstcel(iloc)
+      call rotation_velocity(1, xyzcen(:,iel), vr)
+
+      tracel(iloc) = cvar_pr(iel) + &
+             0.5d0*crom(iel)*(vr(1)**2 + vr(2)**2 + vr(3)**2)
+
+    enddo
+
+    call post_write_var(nummai, 'Pressure', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, tracel, rbid, rbid)
+
+    idimt = 3
+    ientla = .true.
+    ivarpr = .false.
+
+    do iloc = 1, ncelps
+
+      iel = lstcel(iloc)
+      call rotation_velocity(1, xyzcen(:,iel), vr)
+
+      tracel(1 + (iloc-1)*idimt) = vel(1,iel) + vr(1)
+      tracel(2 + (iloc-1)*idimt) = vel(2,iel) + vr(2)
+      tracel(3 + (iloc-1)*idimt) = vel(3,iel) + vr(3)
+
+    enddo
+
+    call post_write_var(nummai, 'Velocity', idimt, ientla, ivarpr,  &
+                        ntcabs, ttcabs, tracel, rbid, rbid)
+
+  endif
 
 !===============================================================================
 ! Boundary

@@ -86,21 +86,22 @@ typedef struct {
   char    *app_name;        /* Application name */
   char    *face_cpl_sel_c;  /* Face selection criteria */
   char    *cell_cpl_sel_c;  /* Cell selection criteria */
-  char    *face_sup_sel_c;  /* Face selection criteria */
-  char    *cell_sup_sel_c;  /* Cell selection criteria */
+  char    *face_loc_sel_c;  /* Face selection criteria */
+  char    *cell_loc_sel_c;  /* Cell selection criteria */
   int      verbosity;       /* Verbosity level */
 
 } _cs_sat_coupling_builder_t;
 
-
 struct _cs_sat_coupling_t {
 
-  char            *sat_name;     /* Application name */
+  char                   *sat_name;        /* Application name */
+  cs_sat_coupling_tag_t  *tag_func;        /* Tagging function pointer */
+  void                   *tag_context;     /* Tagging context */
 
   char            *face_cpl_sel; /* Face selection criteria */
   char            *cell_cpl_sel; /* Face selection criteria */
-  char            *face_sup_sel; /* Face selection criteria */
-  char            *cell_sup_sel; /* Face selection criteria */
+  char            *face_loc_sel; /* Face selection criteria */
+  char            *cell_loc_sel; /* Face selection criteria */
 
   ple_locator_t   *localis_cel;  /* Locator associated with cells */
   ple_locator_t   *localis_fbr;  /* Locator associated with boundary faces */
@@ -119,6 +120,7 @@ struct _cs_sat_coupling_t {
   cs_real_t       *distant_pond_fbr; /* Distant weighting coefficient */
   cs_real_t       *local_pond_fbr;   /* Local weighting coefficient */
 
+  cs_real_t        tolerance; /* location tolerance */
   int              verbosity; /* Verbosity level */
 
   /* Communication-related members */
@@ -168,11 +170,11 @@ _remove_matched_builder_entries(void)
 
     _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
 
-    if (scb->match_id > -1) {
+    if (scb->match_id != -1) {
       if (scb->face_cpl_sel_c != NULL) BFT_FREE(scb->face_cpl_sel_c);
       if (scb->cell_cpl_sel_c != NULL) BFT_FREE(scb->cell_cpl_sel_c);
-      if (scb->face_sup_sel_c != NULL) BFT_FREE(scb->face_sup_sel_c);
-      if (scb->cell_sup_sel_c != NULL) BFT_FREE(scb->cell_sup_sel_c);
+      if (scb->face_loc_sel_c != NULL) BFT_FREE(scb->face_loc_sel_c);
+      if (scb->cell_loc_sel_c != NULL) BFT_FREE(scb->cell_loc_sel_c);
       if (scb->app_name != NULL) BFT_FREE(scb->app_name);
     }
   }
@@ -300,8 +302,8 @@ _sat_add_mpi(int builder_id,
 
   cs_sat_coupling_add(scb->face_cpl_sel_c,
                       scb->cell_cpl_sel_c,
-                      scb->face_sup_sel_c,
-                      scb->cell_sup_sel_c,
+                      scb->face_loc_sel_c,
+                      scb->cell_loc_sel_c,
                       scb->app_name,
                       scb->verbosity);
 
@@ -520,8 +522,8 @@ _sat_coupling_destroy(cs_sat_coupling_t  *couplage)
 
   BFT_FREE(couplage->face_cpl_sel);
   BFT_FREE(couplage->cell_cpl_sel);
-  BFT_FREE(couplage->face_sup_sel);
-  BFT_FREE(couplage->cell_sup_sel);
+  BFT_FREE(couplage->face_loc_sel);
+  BFT_FREE(couplage->cell_loc_sel);
 
   ple_locator_destroy(couplage->localis_cel);
   ple_locator_destroy(couplage->localis_fbr);
@@ -601,7 +603,6 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
     BFT_FREE(couplage->distant_pond_fbr);
   if (couplage->local_pond_fbr != NULL)
     BFT_FREE(couplage->local_pond_fbr);
-
 
   /* Interpolation structure */
 
@@ -745,7 +746,6 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
   }
 
-
   /* Get the distant weighting coefficients (reverse = 1) */
 
   reverse = 1;
@@ -757,8 +757,6 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
                                  sizeof(cs_real_t),
                                  1,
                                  reverse);
-
-
 
   /* Calculation of the OF distance */
   /*--------------------------------*/
@@ -794,14 +792,18 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
     distance_fbr_cel /= surface;
     distance_cel_cel /= surface;
 
-    for (icoo = 0 ; icoo < 3 ; icoo++)
+    const cs_real_3_t *restrict b_face_cog
+      = (const cs_real_3_t *restrict)mesh_quantities->b_face_cog;
+    const cs_real_3_t *restrict b_face_normal
+      = (const cs_real_3_t *restrict)mesh_quantities->b_face_normal;
 
-      couplage->local_of[ind*3 + icoo] =
-        mesh_quantities->b_face_cog[ifac*3 + icoo]
-        -  (mesh_quantities->b_face_cog[ifac*3 + icoo] /*  O'  */
-            + mesh_quantities->b_face_normal[ifac*3 + icoo] *distance_fbr_cel/surface   /*J'=F+n*FJ'*/
-            - 0.5*mesh_quantities->b_face_normal[ifac*3 + icoo] *distance_cel_cel/surface );  /*-n*I'J'/2*/
-
+    for (icoo = 0 ; icoo < 3 ; icoo++) {
+      couplage->local_of[ind*3 + icoo]
+        =     b_face_cog[ifac][icoo]
+          -  (      b_face_cog[ifac][icoo] /*  O'  */
+              +     b_face_normal[ifac][icoo] *distance_fbr_cel/surface    /*J'=F+n*FJ'*/
+              - 0.5*b_face_normal[ifac][icoo] *distance_cel_cel/surface);  /*-n*I'J'/2*/
+    }
   }
 
   reverse = 1;
@@ -815,8 +817,6 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
                                  reverse);
 
   BFT_FREE(local_xyzcen);
-
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -843,7 +843,7 @@ void CS_PROCF (ussatc, USSATC)
 }
 
 /*----------------------------------------------------------------------------
- * Get number of code coupling
+ * Get number of code couplings
  *
  * Fortran interface:
  *
@@ -859,10 +859,9 @@ void CS_PROCF (nbccpl, NBCCPL)
 )
 {
   if (_cs_glob_n_sat_cp < 0) {
+    _cs_glob_n_sat_cp = cs_sat_coupling_n_couplings();
     if (_sat_coupling_builder_size > 0)
-      _cs_glob_n_sat_cp = _sat_coupling_builder_size;
-    else
-      _cs_glob_n_sat_cp = cs_sat_coupling_n_couplings();
+      _cs_glob_n_sat_cp += _sat_coupling_builder_size;
   }
 
   *n_couplings = _cs_glob_n_sat_cp;
@@ -914,7 +913,7 @@ void CS_PROCF (defloc, DEFLOC)
   int locator_options[PLE_LOCATOR_N_OPTIONS];
   locator_options[PLE_LOCATOR_NUMBERING] = 1;
 
-  const double tolerance = 0.1;
+  int *point_tag = NULL;
 
   /* Initializations and verifications */
 
@@ -933,21 +932,21 @@ void CS_PROCF (defloc, DEFLOC)
 
   /* Create the local lists */
 
-  if (coupl->cell_sup_sel != NULL) {
+  if (coupl->cell_loc_sel != NULL) {
 
     BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
 
-    cs_selector_get_cell_num_list(coupl->cell_sup_sel,
+    cs_selector_get_cell_num_list(coupl->cell_loc_sel,
                                   &(coupl->nbr_cel_sup),
                                   c_elt_list);
 
   }
 
-  if (coupl->face_sup_sel != NULL) {
+  if (coupl->face_loc_sel != NULL) {
 
     BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
-    cs_selector_get_b_face_num_list(coupl->face_sup_sel,
+    cs_selector_get_b_face_num_list(coupl->face_loc_sel,
                                     &(coupl->nbr_fbr_sup),
                                     f_elt_list);
 
@@ -991,8 +990,8 @@ void CS_PROCF (defloc, DEFLOC)
 
   }
 
-  if (coupl->cell_sup_sel != NULL) BFT_FREE(c_elt_list);
-  if (coupl->face_sup_sel != NULL) BFT_FREE(f_elt_list);
+  if (coupl->cell_loc_sel != NULL) BFT_FREE(c_elt_list);
+  if (coupl->face_loc_sel != NULL) BFT_FREE(f_elt_list);
 
   /* Build and initialize associated locator */
 
@@ -1030,22 +1029,33 @@ void CS_PROCF (defloc, DEFLOC)
 
   }
 
+  if (coupl->tag_func != NULL) {
+    BFT_MALLOC(point_tag, nbr_cel_cpl, int);
+    coupl->tag_func(coupl->tag_context,
+                    coupl->cells_sup,
+                    nbr_cel_cpl,
+                    1,
+                    c_elt_list,
+                    point_tag);
+  }
+
   ple_locator_set_mesh(coupl->localis_cel,
                        coupl->cells_sup,
                        locator_options,
                        0.,
-                       tolerance,
+                       coupl->tolerance,
                        3,
                        nbr_cel_cpl,
                        c_elt_list,
-                       NULL,
+                       point_tag,
                        mesh_quantities->cell_cen,
                        NULL,
                        cs_coupling_mesh_extents,
                        cs_coupling_point_in_mesh_p);
 
-  if (coupl->cell_cpl_sel != NULL) BFT_FREE(c_elt_list);
+  BFT_FREE(point_tag);
 
+  if (coupl->cell_cpl_sel != NULL) BFT_FREE(c_elt_list);
 
   if (coupl->face_cpl_sel != NULL) {
 
@@ -1062,28 +1072,38 @@ void CS_PROCF (defloc, DEFLOC)
   else
     support_fbr = coupl->cells_sup;
 
+  if (coupl->tag_func != NULL) {
+    BFT_MALLOC(point_tag, nbr_fbr_cpl, int);
+    coupl->tag_func(coupl->tag_context,
+                    support_fbr,
+                    nbr_fbr_cpl,
+                    1,
+                    f_elt_list,
+                    point_tag);
+  }
+
   ple_locator_set_mesh(coupl->localis_fbr,
                        support_fbr,
                        locator_options,
                        0.,
-                       tolerance,
+                       coupl->tolerance,
                        3,
                        nbr_fbr_cpl,
                        f_elt_list,
-                       NULL,
+                       point_tag,
                        mesh_quantities->b_face_cog,
                        NULL,
                        cs_coupling_mesh_extents,
                        cs_coupling_point_in_mesh_p);
 
-  if (coupl->face_cpl_sel != NULL) BFT_FREE(f_elt_list);
+  BFT_FREE(point_tag);
 
+  if (coupl->face_cpl_sel != NULL) BFT_FREE(f_elt_list);
 
   /* Computed some quantities needed for a centered-like interpolation */
 
   if (coupl->localis_fbr != NULL)
     _sat_coupling_interpolate(coupl);
-
 
 #if 0
   /* TODO: associate the FVM meshes to the post-processing,
@@ -1650,7 +1670,6 @@ void CS_PROCF (varcpl, VARCPL)
                                    sizeof(cs_real_t),
                                    *stride,
                                    0);
-
   }
 
 }
@@ -1893,8 +1912,8 @@ void
 cs_sat_coupling_define(const char  *saturne_name,
                        const char  *boundary_cpl_criteria,
                        const char  *volume_cpl_criteria,
-                       const char  *boundary_sup_criteria,
-                       const char  *volume_sup_criteria,
+                       const char  *boundary_loc_criteria,
+                       const char  *volume_loc_criteria,
                        int          verbosity)
 {
   _cs_sat_coupling_builder_t *scb = NULL;
@@ -1927,16 +1946,16 @@ cs_sat_coupling_define(const char  *saturne_name,
     strcpy(scb->cell_cpl_sel_c, volume_cpl_criteria);
   }
 
-  scb->face_sup_sel_c = NULL;
-  if (boundary_sup_criteria != NULL) {
-    BFT_MALLOC(scb->face_sup_sel_c, strlen(boundary_sup_criteria) + 1, char);
-    strcpy(scb->face_sup_sel_c, boundary_sup_criteria);
+  scb->face_loc_sel_c = NULL;
+  if (boundary_loc_criteria != NULL) {
+    BFT_MALLOC(scb->face_loc_sel_c, strlen(boundary_loc_criteria) + 1, char);
+    strcpy(scb->face_loc_sel_c, boundary_loc_criteria);
   }
 
-  scb->cell_sup_sel_c = NULL;
-  if (volume_sup_criteria != NULL) {
-    BFT_MALLOC(scb->cell_sup_sel_c, strlen(volume_sup_criteria) + 1, char);
-    strcpy(scb->cell_sup_sel_c, volume_sup_criteria);
+  scb->cell_loc_sel_c = NULL;
+  if (volume_loc_criteria != NULL) {
+    BFT_MALLOC(scb->cell_loc_sel_c, strlen(volume_loc_criteria) + 1, char);
+    strcpy(scb->cell_loc_sel_c, volume_loc_criteria);
   }
 
   scb->verbosity = verbosity;
@@ -1989,7 +2008,7 @@ cs_sat_coupling_by_id(int coupling_id)
 void
 cs_sat_coupling_all_init(void)
 {
-  /* First try using MPI */
+  /* First, try using other MPI communicators */
 
 #if defined(HAVE_MPI)
 
@@ -2027,8 +2046,8 @@ cs_sat_coupling_all_init(void)
 void
 cs_sat_coupling_add(const char  *face_cpl_sel_c,
                     const char  *cell_cpl_sel_c,
-                    const char  *face_sup_sel_c,
-                    const char  *cell_sup_sel_c,
+                    const char  *face_loc_sel_c,
+                    const char  *cell_loc_sel_c,
                     const char  *sat_name,
                     int          verbosity)
 {
@@ -2041,6 +2060,8 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
   BFT_MALLOC(sat_coupling, 1, cs_sat_coupling_t);
 
   sat_coupling->sat_name = NULL;
+  sat_coupling->tag_func = NULL;
+  sat_coupling->tag_context = NULL;
 
   if (sat_name != NULL) {
     BFT_MALLOC(sat_coupling->sat_name, strlen(sat_name) + 1, char);
@@ -2051,8 +2072,8 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
 
   sat_coupling->face_cpl_sel = NULL;
   sat_coupling->cell_cpl_sel = NULL;
-  sat_coupling->face_sup_sel = NULL;
-  sat_coupling->cell_sup_sel = NULL;
+  sat_coupling->face_loc_sel = NULL;
+  sat_coupling->cell_loc_sel = NULL;
 
   if (face_cpl_sel_c != NULL) {
     BFT_MALLOC(sat_coupling->face_cpl_sel, strlen(face_cpl_sel_c) + 1, char);
@@ -2063,13 +2084,13 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
     strcpy(sat_coupling->cell_cpl_sel, cell_cpl_sel_c);
   }
 
-  if (face_sup_sel_c != NULL) {
-    BFT_MALLOC(sat_coupling->face_sup_sel, strlen(face_sup_sel_c) + 1, char);
-    strcpy(sat_coupling->face_sup_sel, face_sup_sel_c);
+  if (face_loc_sel_c != NULL) {
+    BFT_MALLOC(sat_coupling->face_loc_sel, strlen(face_loc_sel_c) + 1, char);
+    strcpy(sat_coupling->face_loc_sel, face_loc_sel_c);
   }
-  if (cell_sup_sel_c != NULL) {
-    BFT_MALLOC(sat_coupling->cell_sup_sel, strlen(cell_sup_sel_c) + 1, char);
-    strcpy(sat_coupling->cell_sup_sel, cell_sup_sel_c);
+  if (cell_loc_sel_c != NULL) {
+    BFT_MALLOC(sat_coupling->cell_loc_sel, strlen(cell_loc_sel_c) + 1, char);
+    strcpy(sat_coupling->cell_loc_sel, cell_loc_sel_c);
   }
 
   sat_coupling->faces_sup = NULL;
@@ -2081,6 +2102,7 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
   sat_coupling->nbr_fbr_sup = 0;
   sat_coupling->nbr_cel_sup = 0;
 
+  sat_coupling->tolerance = 0.1;
   sat_coupling->verbosity = verbosity;
 
   /* Geometric quantities arrays for interpolation */
@@ -2105,6 +2127,50 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
 
   cs_glob_sat_couplings[cs_glob_sat_n_couplings] = sat_coupling;
   cs_glob_sat_n_couplings++;
+}
+
+/*----------------------------------------------------------------------------
+ * Create a new internal Code_Saturne coupling.
+ *
+ * arguments:
+ *   tag_func          <-- pointer to tagging function
+ *   tag_context       <-- pointer to tagging function context
+ *   boundary_criteria <-- boundary face selection criteria, or NULL
+ *   volume_criteria   <-- volume cell selection criteria, or NULL
+ *   loc_tolerance     <-- location tolerance factor (0.1 recommended)
+ *   verbosity         <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
+                             void                   *tag_context,
+                             const char             *boundary_cpl_criteria,
+                             const char             *volume_cpl_criteria,
+                             const char             *boundary_loc_criteria,
+                             const char             *volume_loc_criteria,
+                             float                   loc_tolerance,
+                             int                     verbosity)
+{
+  cs_sat_coupling_add(boundary_cpl_criteria,
+                      volume_cpl_criteria,
+                      boundary_loc_criteria,
+                      volume_loc_criteria,
+                      NULL,
+                      verbosity);
+
+  cs_sat_coupling_t *sat_coupling
+    = cs_sat_coupling_by_id(cs_sat_coupling_n_couplings() - 1);
+
+  sat_coupling->tag_func = tag_func;
+  sat_coupling->tag_context = tag_context;
+
+#if defined(HAVE_MPI)
+
+  sat_coupling->comm = cs_glob_mpi_comm;
+  sat_coupling->sat_root_rank = 0;
+  sat_coupling->n_sat_ranks = cs_glob_n_ranks;
+
+#endif
 }
 
 /*----------------------------------------------------------------------------

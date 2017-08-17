@@ -2103,6 +2103,50 @@ _c_head_losses(const char  *zone_id,
   return value;
 }
 
+/*-----------------------------------------------------------------------------
+ * Get turbomachinery model
+ *
+ * parameters:
+ *   model_type  -->  turbomachinery model type
+ *   coupled     -->  use coupled variant
+ *----------------------------------------------------------------------------*/
+
+static void
+_turbomachinery_model(cs_turbomachinery_model_t  *model_type,
+                      bool                       *coupled)
+{
+  *model_type = CS_TURBOMACHINERY_NONE;
+  *coupled = false;
+
+  char *path = NULL;
+  char *model = NULL;
+
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2,
+                        "thermophysical_models",
+                        "turbomachinery");
+  cs_xpath_add_attribute(&path, "model");
+  model = cs_gui_get_attribute_value(path);
+
+  BFT_FREE(path);
+
+  if (cs_gui_strcmp(model, "off"))
+    *model_type = CS_TURBOMACHINERY_NONE;
+  else if (cs_gui_strcmp(model, "transient"))
+    *model_type = CS_TURBOMACHINERY_TRANSIENT;
+  else if (cs_gui_strcmp(model, "frozen"))
+    *model_type = CS_TURBOMACHINERY_FROZEN;
+  else if (cs_gui_strcmp(model, "transient_coupled")) {
+    *model_type = CS_TURBOMACHINERY_TRANSIENT;
+    *coupled = true;
+  }
+
+  BFT_FREE(model);
+}
+
 /*----------------------------------------------------------------------------
  * Return the value of the choice attribute for rotor (turbomachinery)
  *
@@ -6284,32 +6328,12 @@ cs_gui_time_moments(void)
 void
 cs_gui_turbomachinery(void)
 {
-  char *path = NULL;
-  char *model = NULL;
+  cs_turbomachinery_model_t  model_type;
+  bool coupled;
 
-  if (!cs_gui_file_is_loaded())
-    return;
+  _turbomachinery_model(&model_type, &coupled);
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2,
-                        "thermophysical_models",
-                        "turbomachinery");
-  cs_xpath_add_attribute(&path, "model");
-  model = cs_gui_get_attribute_value(path);
-
-  BFT_FREE(path);
-
-  if (cs_gui_strcmp(model, "off"))
-    cs_turbomachinery_set_model(CS_TURBOMACHINERY_NONE);
-  else if (cs_gui_strcmp(model, "transient"))
-    cs_turbomachinery_set_model(CS_TURBOMACHINERY_TRANSIENT);
-  else if (cs_gui_strcmp(model, "frozen"))
-    cs_turbomachinery_set_model(CS_TURBOMACHINERY_FROZEN);
-  else
-    cs_turbomachinery_set_model(CS_TURBOMACHINERY_NONE);
-
-  BFT_FREE(model);
-
+  cs_turbomachinery_set_model(model_type);
 }
 
 /*-----------------------------------------------------------------------------
@@ -6322,29 +6346,25 @@ cs_gui_turbomachinery_rotor(void)
   if (!cs_gui_file_is_loaded())
     return;
 
-  char *path = NULL;
+  cs_turbomachinery_model_t  model_type;
+  bool coupled;
 
-  double rotation_axis[3];
-  double rotation_invariant[3];
-  double rotation_velocity;
-  char *cell_criteria;
-  char *model;
+  _turbomachinery_model(&model_type, &coupled);
 
-  path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2,
-                        "thermophysical_models",
-                        "turbomachinery");
-  cs_xpath_add_attribute(&path, "model");
-  model = cs_gui_get_attribute_value(path);
+  if (model_type != CS_TURBOMACHINERY_NONE) {
 
-  BFT_FREE(path);
-
-  if (!cs_gui_strcmp(model, "off")) {
+    char *path = NULL;
 
     int n_rotors
       = cs_gui_get_tag_count("/thermophysical_models/turbomachinery/rotor\n", 1);
 
     for (int rotor_id = 0; rotor_id < n_rotors; rotor_id++) {
+
+      double rotation_axis[3];
+      double rotation_invariant[3];
+      double rotation_velocity;
+
+      char *cell_criteria;
 
       rotation_axis[0] = _rotor_option(rotor_id, "axis_x");
       rotation_axis[1] = _rotor_option(rotor_id, "axis_y");
@@ -6383,44 +6403,45 @@ cs_gui_turbomachinery_rotor(void)
                                   rotation_invariant);
 
       BFT_FREE(cell_criteria);
+
     }
 
-    int n_join = 0;
-    n_join = cs_gui_get_tag_count
-                 ("/thermophysical_models/turbomachinery/joining/face_joining", 1);
+    int n_join = cs_gui_get_tag_count("/thermophysical_models/"
+                                      "turbomachinery/joining/face_joining", 1);
 
-    if (n_join != 0) {
-      for (int join_id = 0; join_id < n_join; join_id++) {
+    for (int join_id = 0; join_id < n_join; join_id++) {
 
-        char *selector_s  =  _get_rotor_face_joining("selector", join_id+1);
-        char *fraction_s  =  _get_rotor_face_joining("fraction", join_id+1);
-        char *plane_s     =  _get_rotor_face_joining("plane", join_id+1);
-        char *verbosity_s =  _get_rotor_face_joining("verbosity", join_id+1);
-        char *visu_s      =  _get_rotor_face_joining("visualization", join_id+1);
+      char *selector_s  =  _get_rotor_face_joining("selector", join_id+1);
+      char *fraction_s  =  _get_rotor_face_joining("fraction", join_id+1);
+      char *plane_s     =  _get_rotor_face_joining("plane", join_id+1);
+      char *verbosity_s =  _get_rotor_face_joining("verbosity", join_id+1);
+      char *visu_s      =  _get_rotor_face_joining("visualization", join_id+1);
 
-        double fraction = (fraction_s != NULL) ? atof(fraction_s) : 0.1;
-        double plane = (plane_s != NULL) ? atof(plane_s) : 25.0;
-        int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 0;
-        int visualization = (visu_s != NULL) ? atoi(visu_s) : 0;
+      double fraction = (fraction_s != NULL) ? atof(fraction_s) : 0.1;
+      double plane = (plane_s != NULL) ? atof(plane_s) : 25.0;
+      int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 0;
+      int visualization = (visu_s != NULL) ? atoi(visu_s) : 0;
 
-        BFT_FREE(visu_s);
-        BFT_FREE(verbosity_s);
-        BFT_FREE(plane_s);
-        BFT_FREE(fraction_s);
+      BFT_FREE(visu_s);
+      BFT_FREE(verbosity_s);
+      BFT_FREE(plane_s);
+      BFT_FREE(fraction_s);
 
-        (void) cs_turbomachinery_join_add(selector_s,
-                                          fraction,
-                                          plane,
-                                          verbosity,
-                                          visualization);
+      if (coupled == false)
+        (void)cs_turbomachinery_join_add(selector_s,
+                                         fraction,
+                                         plane,
+                                         verbosity,
+                                         visualization);
+      else
+        (void)cs_turbomachinery_coupling_add(selector_s,
+                                             fraction,
+                                             verbosity);
 
-        BFT_FREE(selector_s);
+      BFT_FREE(selector_s);
 
-      }
     }
   }
-
-  BFT_FREE(model);
 }
 
 /*----------------------------------------------------------------------------

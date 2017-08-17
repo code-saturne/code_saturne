@@ -45,8 +45,8 @@
 #include "cs_interface.h"
 
 #include "cs_base.h"
-#include "cs_benchmark.h"
 #include "cs_boundary_zone.h"
+#include "cs_coupling.h"
 #include "cs_gradient.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
@@ -74,6 +74,7 @@
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
 #include "cs_restart.h"
+#include "cs_sat_coupling.h"
 #include "cs_preprocessor_data.h"
 #include "cs_volume_zone.h"
 
@@ -101,9 +102,11 @@ typedef struct {
 
   int                        n_rotors;          /* Number of rotors */
 
+  int                        n_couplings;       /* Number of couplings */
+
   cs_rotation_t             *rotation;          /* rotation structures */
   char                     **rotor_cells_c;     /* Rotor cells selection
-                                                   criteria ((for each rotor) */
+                                                   criteria (for each rotor) */
 
   cs_mesh_t                 *reference_mesh;    /* Reference mesh (before
                                                    rotation and joining) */
@@ -128,8 +131,10 @@ cs_turbomachinery_t  *_turbomachinery = NULL;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void cs_f_map_turbomachinery_module(cs_int_t    *iturbo,
-                                    int        **irotce);
+void cs_f_map_turbomachinery_model(cs_int_t    *iturbo,
+                                   cs_int_t    *imobil);
+
+void cs_f_map_turbomachinery_rotor(int       **irotce);
 
 /*============================================================================
  * Private function definitions
@@ -166,6 +171,79 @@ _post_error_faces_select(void         *input,
 }
 
 /*----------------------------------------------------------------------------
+ * Function for tagging of coupling mesh.
+ *
+ * We use the rotor number as a tag
+ *
+ * Note: if the context pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure
+ * should not be temporary (i.e. local);
+ *
+ * parameters:
+ *   context         <-> pointer to optional (untyped) value or structure.
+ *   mesh            <-> nodal mesh which should be tagged
+ *   n_points        <-- number of points to tag
+ *   point_list_base <-- base numbering for point_list
+ *   point_list      <-- optional indirection for points
+ *   point_tag       --> point tag values (size: n_tags)
+ *----------------------------------------------------------------------------*/
+
+static void
+_turbomachinery_coupling_tag(void            *context,
+                             fvm_nodal_t     *mesh,
+                             cs_lnum_t        n_points,
+                             cs_lnum_t        point_list_base,
+                             const cs_lnum_t  point_list[],
+                             int             *point_tag)
+{
+  const cs_turbomachinery_t *tbm = context;
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  /* Tag elements (boundary faces) */
+
+  if (mesh != NULL) {
+
+    cs_lnum_t n_elts = fvm_nodal_get_n_entities(mesh, 3);
+
+    const int ent_dim = 3;
+    int *elt_tag;
+    cs_lnum_t *parent_num;
+
+    BFT_MALLOC(elt_tag, n_elts, int);
+    BFT_MALLOC(parent_num, n_elts, cs_lnum_t);
+
+    fvm_nodal_get_parent_num(mesh, ent_dim, parent_num);
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t c_id = parent_num[i] - 1;
+      elt_tag[i] = tbm->cell_rotor_num[c_id];
+    }
+
+    BFT_FREE(parent_num);
+
+    fvm_nodal_set_tag(mesh, elt_tag, ent_dim);
+
+    BFT_FREE(elt_tag);
+
+  }
+
+  /* Tag vertices */
+
+  if (point_list != NULL) {
+    for (cs_lnum_t i = 0; i < n_points; i++) {
+      cs_lnum_t f_id = point_list[i] - point_list_base;
+      cs_lnum_t c_id = m->b_face_cells[f_id];
+      point_tag[i] = tbm->cell_rotor_num[c_id];
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_points; i++) {
+      cs_lnum_t c_id = m->b_face_cells[i];
+      point_tag[i] = tbm->cell_rotor_num[c_id];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Create an empty turbomachinery structure
  *----------------------------------------------------------------------------*/
 
@@ -192,6 +270,7 @@ _turbomachinery_create(void)
   tbm->n_b_faces_ref = -1;
   tbm->cell_rotor_num = NULL;
   tbm->model = CS_TURBOMACHINERY_NONE;
+  tbm->n_couplings = 0;
 
   return tbm;
 }
@@ -325,6 +404,9 @@ _relative_velocity(double        omega,
  *
  * Note that some fields which are recomputable are not copied.
  *
+ * In case of coupling only (i.e. no joining), only a partial copy of the
+ * mesh is done.
+ *
  * parameters:
  *   mesh      <-- reference mesh
  *   mesh_copy <-> mesh copy
@@ -354,10 +436,13 @@ _copy_mesh(const cs_mesh_t  *mesh,
 
   /* Local structures */
 
-  BFT_MALLOC(mesh_copy->vtx_coord, (3*mesh->n_vertices), cs_real_t);
+  BFT_REALLOC(mesh_copy->vtx_coord, (3*mesh->n_vertices), cs_real_t);
   memcpy(mesh_copy->vtx_coord,
          mesh->vtx_coord,
          3*mesh->n_vertices*sizeof(cs_real_t));
+
+  if (cs_glob_n_joinings < 1)
+    return;
 
   BFT_MALLOC(mesh_copy->i_face_cells, mesh->n_i_faces, cs_lnum_2_t);
   memcpy(mesh_copy->i_face_cells,
@@ -669,6 +754,58 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
 }
 
 /*----------------------------------------------------------------------------
+ * Update mesh for unsteady rotor/stator computation when no joining is used.
+ *
+ * parameters:
+ *   restart_mode  true for restart, false otherwise
+ *   t_cur_mob     current rotor time
+ *   t_elapsed     elapsed computation time
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_mesh_coupling(double   t_cur_mob,
+                      double  *t_elapsed)
+{
+  double  t_start, t_end;
+
+  cs_turbomachinery_t *tbm = _turbomachinery;
+
+  int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
+  int t_top_id = cs_timer_stats_switch(t_stat_id);
+
+  t_start = cs_timer_wtime();
+
+  /* Indicates we are in the framework of turbomachinery */
+
+  tbm->active = true;
+
+  /* Cell and boundary face numberings can be moved from old mesh
+     to new one, as the corresponding parts of the mesh should not change */
+
+  _copy_mesh(tbm->reference_mesh, cs_glob_mesh);
+
+  /* Update geometry, if necessary */
+
+  if (tbm->n_rotors > 0)
+    _update_geometry(cs_glob_mesh, t_cur_mob);
+
+  /* Recompute geometric quantities related to the mesh */
+
+  cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
+
+  /* Update linear algebra APIs relative to mesh */
+
+  cs_gradient_perio_update_mesh();
+
+  t_end = cs_timer_wtime();
+
+  *t_elapsed = t_end - t_start;
+
+  cs_timer_stats_switch(t_top_id);
+}
+
+/*----------------------------------------------------------------------------
  * Update mesh for unsteady rotor/stator computation.
  *
  * parameters:
@@ -696,6 +833,14 @@ _update_mesh(bool     restart_mode,
   /* Indicates we are in the framework of turbomachinery */
 
   tbm->active = true;
+
+  /* In case of simple coupling, use simpler update */
+
+  if (cs_glob_n_joinings < 1) {
+    _update_mesh_coupling(t_cur_mob,
+                          t_elapsed);
+    return;
+  }
 
   /* Cell and boundary face numberings can be moved from old mesh
      to new one, as the corresponding parts of the mesh should not change */
@@ -913,29 +1058,45 @@ _update_mesh(bool     restart_mode,
  *
  * parameters:
  *   iturbo <-- turbomachinery type flag
- *   irotce <-- pointer to cell flag for rotation
+ *   imobil <-- mobile mesh indicator
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_map_turbomachinery_module(cs_int_t    *iturbo,
-                               cs_int_t   **irotce)
+cs_f_map_turbomachinery_model(cs_int_t    *iturbo,
+                              cs_int_t    *imobil)
 {
   if (_turbomachinery != NULL) {
 
     *iturbo = _turbomachinery->model;
 
-    /* Assign rotor cells flag array to module */
-
-    *irotce = _turbomachinery->cell_rotor_num;
+    if (   _turbomachinery->n_couplings > 0
+        && _turbomachinery->model == CS_TURBOMACHINERY_TRANSIENT)
+      *imobil = 1;
 
   }
   else {
 
     *iturbo = CS_TURBOMACHINERY_NONE;
 
-    *irotce = NULL;
+    /* leave imobil unchanged (migh be already set) */
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Map turbomachinery rotor to fortran module
+ *
+ * parameters:
+ *   irotce <-- pointer to cell flag for rotation
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_map_turbomachinery_rotor(cs_int_t   **irotce)
+{
+  if (_turbomachinery != NULL)
+    *irotce = _turbomachinery->cell_rotor_num;
+  else
+    *irotce = NULL;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1044,7 +1205,7 @@ cs_turbomachinery_join_add(const char  *sel_criteria,
 {
   /* Allocate and initialize a cs_join_t structure */
 
-  BFT_REALLOC(cs_glob_join_array, cs_glob_n_joinings + 1, cs_join_t *);
+  BFT_REALLOC(cs_glob_join_array,  cs_glob_n_joinings + 1, cs_join_t *);
 
   cs_glob_join_array[cs_glob_n_joinings]
     = cs_join_create(cs_glob_n_joinings + 1,
@@ -1061,6 +1222,37 @@ cs_turbomachinery_join_add(const char  *sel_criteria,
   cs_glob_n_joinings++;
 
   return cs_glob_n_joinings;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a cs_join_t structure to the list of rotor/stator couplings.
+ *
+ * \param[in]  sel_criteria   boundary face selection criteria
+ * \param[in]  tolerance      value of the search tolerance
+ * \param[in]  verbosity      level of verbosity required
+ *
+ * \return  number (1 to n) associated with new coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_turbomachinery_coupling_add(const char  *sel_criteria,
+                               float        tolerance,
+                               int          verbosity)
+{
+  cs_sat_coupling_add_internal(_turbomachinery_coupling_tag,
+                               _turbomachinery,
+                               sel_criteria,
+                               NULL,
+                               NULL,
+                               "all[]",
+                               tolerance,
+                               verbosity);
+
+  _turbomachinery->n_couplings += 1;
+
+  return cs_sat_coupling_n_couplings();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1104,16 +1296,12 @@ cs_turbomachinery_restart_mesh(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initializations for turbomachinery computation.
- *
- * \note This function should be called before once the mesh is built,
- *       but before cs_post_init_meshes() so that postprocessing meshes are
- *       updated correctly in the transient case.
+ * \brief Definitions for turbomachinery computation.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbomachinery_initialize(void)
+cs_turbomachinery_define(void)
 {
   /* Define model; could be moved anywhere before time loop. */
 
@@ -1132,6 +1320,31 @@ cs_turbomachinery_initialize(void)
 
   cs_gui_turbomachinery_rotor();
   cs_user_turbomachinery_rotor();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initializations for turbomachinery computation.
+ *
+ * \note This function should be called before once the mesh is built,
+ *       but before cs_post_init_meshes() so that postprocessing meshes are
+ *       updated correctly in the transient case.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_initialize(void)
+{
+  if (_turbomachinery == NULL)
+    return;
+
+  cs_turbomachinery_t *tbm = _turbomachinery;
+
+  if (tbm->model == CS_TURBOMACHINERY_NONE)
+    return;
+
+  /* Select rotor cells */
+
   _select_rotor_cells(tbm);
 
   /* Build the reference mesh that duplicates the global mesh before joining;

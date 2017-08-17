@@ -130,11 +130,12 @@
 
   If the meshes on both sides of the interface are very different and can not
   be modified, the user should turn to a rotor/stator coupling based on the
-  code/code coupling of \c Code_Saturne with itself. The data setting for these
-  computations takes place in the cs_user_parameters.f90 file of each of the
-  coupled cases (subroutine \ref usipsu):
+  code/code coupling of \c Code_Saturne with itself. This simply requires
+  replacing the definition of a face joining for an interface (using the
+  GUI or a call to \ref cs_turbomachinery_join_add by a call to
+  \ref cs_turbomachinery_coupling_add, as in the following example:
 
-  \snippet cs_user_parameters-rotation.f90 param_rotation
+  \snippet cs_user_turbomachinery.c user_tbm_set_coupling
 
   If a coupling is defined and the rotation is not null in at least one of the
   cases, \ref cstphy::icorio "icorio" determines the type of rotor/stator

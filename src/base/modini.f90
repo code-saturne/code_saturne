@@ -45,9 +45,10 @@ use cplsat
 use post
 use ppincl
 use rotation
-use cs_c_bindings
 use darcy_module
+use turbomachinery
 use vof
+use cs_c_bindings
 
 !===============================================================================
 
@@ -1051,6 +1052,8 @@ if (nbrcpl.ge.1) then
       imobil = 1
       call cs_post_set_deformable
     endif
+  else if (iturbo.ne.0) then
+    ifaccp = 1
   endif
 endif
 

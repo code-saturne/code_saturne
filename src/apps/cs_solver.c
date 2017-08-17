@@ -210,6 +210,8 @@ cs_run(void)
 
   cs_preprocess_mesh_define();
 
+  cs_turbomachinery_define();
+
   /* Call main calculation initialization function or help */
 
   cs_io_log_initialize();

@@ -36,6 +36,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "fvm_defs.h"
+#include "fvm_nodal.h"
+
 #include "cs_base.h"
 
 /*----------------------------------------------------------------------------*/
@@ -43,10 +45,37 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Structure Definitions
+ * Type Definitions
  *============================================================================*/
 
 typedef struct _cs_sat_coupling_t cs_sat_coupling_t;
+
+/*----------------------------------------------------------------------------
+ * Function pointer to mesh tagging function.
+ *
+ * Each function of this sort may be used to tag a mesh and associated
+ * points for mocatin exclusion.
+ *
+ * Note: if the context pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure
+ * should not be temporary (i.e. local);
+ *
+ * parameters:
+ *   context         <-> pointer to optional (untyped) value or structure.
+ *   mesh            <-> nodal mesh which should be tagged
+ *   n_points        <-- number of points to tag
+ *   point_list_base <-- base numbering for point_list
+ *   point_list      <-- optional indirection for points
+ *   point_tag       --> point tag values (size: n_tags)
+ *----------------------------------------------------------------------------*/
+
+typedef void
+(cs_sat_coupling_tag_t) (void            *context,
+                         fvm_nodal_t     *mesh,
+                         cs_lnum_t        n_points,
+                         cs_lnum_t        point_list_base,
+                         const cs_lnum_t  point_list[],
+                         int             *point_tag);
 
 /*============================================================================
  *  Public function prototypes for Fortran API
@@ -410,8 +439,8 @@ void
 cs_sat_coupling_define(const char  *saturne_name,
                        const char  *boundary_cpl_criteria,
                        const char  *volume_cpl_criteria,
-                       const char  *boundary_sup_criteria,
-                       const char  *volume_sup_criteria,
+                       const char  *boundary_loc_criteria,
+                       const char  *volume_loc_criteria,
                        int          verbosity);
 
 /*----------------------------------------------------------------------------
@@ -451,10 +480,32 @@ cs_sat_coupling_by_id(int coupling_id);
 void
 cs_sat_coupling_add(const char  *face_cpl_sel_c,
                     const char  *cell_cpl_sel_c,
-                    const char  *face_sup_sel_c,
-                    const char  *cell_sup_sel_c,
+                    const char  *face_loc_sel_c,
+                    const char  *cell_loc_sel_c,
                     const char  *sat_name,
                     int          verbosity);
+
+/*----------------------------------------------------------------------------
+ * Create a new internal Code_Saturne coupling.
+ *
+ * arguments:
+ *   tag_func          <-- pointer to tagging function
+ *   tag_context       <-- pointer to tagging function context
+ *   boundary_criteria <-- boundary face selection criteria, or NULL
+ *   volume_criteria   <-- volume cell selection criteria, or NULL
+ *   loc_tolerance     <-- location tolerance factor (0.1 recommended)
+ *   verbosity         <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
+                             void                   *tag_context,
+                             const char             *boundary_cpl_criteria,
+                             const char             *volume_cpl_criteria,
+                             const char             *boundary_loc_criteria,
+                             const char             *volume_loc_criteria,
+                             float                   loc_tolerance,
+                             int                     verbosity);
 
 /*----------------------------------------------------------------------------
  * Initialize Code_Saturne couplings.

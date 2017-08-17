@@ -115,6 +115,30 @@ cs_turbomachinery_join_add(const char  *sel_criteria,
                            int          visualization);
 
 /*----------------------------------------------------------------------------
+ * Add a cs_join_t structure to the list of rotor/stator couplings.
+ *
+ * parameters:
+ *   sel_criteria <-- boundary face selection criteria
+ *   tolerance    <-- value of the search tolerance
+ *   verbosity    <-- level of verbosity required
+ *
+ * returns:
+ *   number (1 to n) associated with new coupling
+ *----------------------------------------------------------------------------*/
+
+int
+cs_turbomachinery_coupling_add(const char  *sel_criteria,
+                               float        tolerance,
+                               int          verbosity);
+
+/*----------------------------------------------------------------------------
+ * Definitions for turbomachinery computation.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_turbomachinery_define(void);
+
+/*----------------------------------------------------------------------------
  * Initializations for turbomachinery computation
  *
  * Note: this function should be called before once the mesh is built,
