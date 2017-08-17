@@ -99,13 +99,13 @@ double precision xx, yy, zz, fra(8)
 double precision omegal(3), omegad(3), omegar(3), omgnrl, omgnrd, omgnrr
 double precision vitent, daxis2
 
-double precision, allocatable, dimension(:,:,:) :: gradv
+double precision, allocatable, dimension(:,:,:) :: gradv, gradts
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: trav1, trav2, trav3, trav4
 double precision, allocatable, dimension(:) :: trav5, trav6, trav7, trav8
 
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:,:), pointer :: vel, cvar_rij
 double precision, dimension(:), pointer :: cvar_pr, cvar_k, cvar_ep
 double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg
 double precision, dimension(:), pointer :: cvar_var, cvar_scal
@@ -415,101 +415,56 @@ if (itytur.eq.2) then
                              iccocg,                              &
                              grad)
 
-  ! For a specific face to face coupling, geometric assumptions are made
+  do ipt = 1, nptdis
 
-  if (ifaccp.eq.1) then
+    iel = locpts(ipt)
 
-    do ipt = 1, nptdis
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
 
-      iel = locpts(ipt)
+    trav1(ipt) = cvar_k(iel) + xjjp*grad(1,iel)   &
+                             + yjjp*grad(2,iel)   &
+                             + zjjp*grad(3,iel)
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+  enddo
 
-      trav1(ipt) = cvar_k(iel)                         &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-    ! For a generic coupling, no assumption can be made
-
-  else
-
-    do ipt = 1, nptdis
-
-      iel = locpts(ipt)
-
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav1(ipt) = cvar_k(iel)                         &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-  endif
-
-  !         Préparation des données: interpolation de epsilon en J'
+  ! Prepare data: interpolate epsilon at J'
 
   call field_gradient_scalar(ivarfl(iep), iprev, imrgra, inc,     &
                              iccocg,                              &
                              grad)
 
-  ! For a specific face to face coupling, geometric assumptions are made
+  do ipt = 1, nptdis
 
-  if (ifaccp.eq.1) then
+    iel = locpts(ipt)
 
-    do ipt = 1, nptdis
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
 
-      iel = locpts(ipt)
+    trav2(ipt) = cvar_ep(iel) + xjjp*grad(1,iel)  &
+                              + yjjp*grad(2,iel)  &
+                              + zjjp*grad(3,iel)
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav2(ipt) = cvar_ep(iel)                        &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-    ! For a generic coupling, no assumption can be made
-
-  else
-
-    do ipt = 1, nptdis
-
-      iel = locpts(ipt)
-
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav2(ipt) = cvar_ep(iel)                        &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-  endif
-
+  enddo
 
 !=======================================================================
-!          3.1.2.   Transfert de variable à "iso-modèle"
+!          3.1.2.   Transfer variable as "iso-model"
 !=======================================================================
 
   if (itytu0.eq.2) then
 
-    !           Energie turbulente
-    !           ------------------
+    ! k
+    ! -
     ipos = ipos + 1
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = trav1(ipt)
     enddo
 
-    !           Dissipation turbulente
-    !           ----------------------
+    ! epsilon
+    ! -------
     ipos = ipos + 1
 
     do ipt = 1, nptdis
@@ -517,7 +472,7 @@ if (itytur.eq.2) then
     enddo
 
     !=======================================================================
-    !          3.1.3.   Transfert de k-eps vers Rij-eps
+    !          3.1.3.   Transfer from k-eps to Rij-eps
     !=======================================================================
 
   elseif (itytu0.eq.3) then
@@ -593,7 +548,7 @@ if (itytur.eq.2) then
     enddo
 
     !=======================================================================
-    !          3.1.4.   Transfert de k-eps vers v2f
+    !          3.1.4.   Transfer from k-eps to v2f
     !=======================================================================
 
   elseif (iturcp(numcpl).eq.50) then
@@ -606,16 +561,16 @@ if (itytur.eq.2) then
 
   elseif (iturcp(numcpl).eq.60) then
 
-    !           Energie turbulente
-    !           -----------------
+    ! k
+    ! -
     ipos = ipos + 1
 
     do ipt = 1, nptdis
       rvdis(ipt,ipos) = trav1(ipt)
     enddo
 
-    !           Omega
-    !           -----
+    ! omega
+    ! -----
     ipos = ipos + 1
 
     do ipt = 1, nptdis
@@ -635,60 +590,26 @@ elseif (itytur.eq.3) then
   !          3.2.1. INTERPOLATION EN J'
   !=======================================================================
 
-  ! Préparation des données: interpolation des Rij en J'
+  ! Prepare data: interpolate Rij at J'
 
-  do isou = 1, 6
+  if (irijco.eq.0) then
 
-    if (isou.eq.1) ivar = ir11
-    if (isou.eq.2) ivar = ir22
-    if (isou.eq.3) ivar = ir33
-    if (isou.eq.4) ivar = ir12
-    if (isou.eq.5) ivar = ir23
-    if (isou.eq.6) ivar = ir13
+    do isou = 1, 6
 
-    call field_get_val_s(ivarfl(ivar), cvar_var)
+      if (isou.eq.1) ivar = ir11
+      if (isou.eq.2) ivar = ir22
+      if (isou.eq.3) ivar = ir33
+      if (isou.eq.4) ivar = ir12
+      if (isou.eq.5) ivar = ir23
+      if (isou.eq.6) ivar = ir13
 
-    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,    &
-                               iccocg,                              &
-                               grad)
+      call field_get_val_s(ivarfl(ivar), cvar_var)
 
-    ! For a specific face to face coupling, geometric assumptions are made
+      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,    &
+                                 iccocg,                              &
+                                 grad)
 
-    if (ifaccp.eq.1) then
-
-      do ipt = 1, nptdis
-
-        iel = locpts(ipt)
-
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
-
-        if (isou.eq.1) then
-          trav1(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        else if (isou.eq.2) then
-          trav2(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        else if (isou.eq.3) then
-          trav3(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        else if (isou.eq.4) then
-          trav4(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        else if (isou.eq.5) then
-          trav5(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        else if (isou.eq.6) then
-          trav6(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        endif
-
-      enddo
-
-      ! For a generic coupling, no assumption can be made
-
-    else
+      ! For a specific face to face coupling, geometric assumptions are made
 
       do ipt = 1, nptdis
 
@@ -699,72 +620,94 @@ elseif (itytur.eq.3) then
         zjjp = djppts(3,ipt)
 
         if (isou.eq.1) then
-          trav1(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
+          trav1(ipt) =   cvar_var(iel) &
+                       + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.2) then
-          trav2(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
+          trav2(ipt) =   cvar_var(iel) &
+                      + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.3) then
-          trav3(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
+          trav3(ipt) =   cvar_var(iel) &
+                       + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.4) then
-          trav4(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
+          trav4(ipt) =   cvar_var(iel) &
+                       + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.5) then
-          trav5(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
+          trav5(ipt) =   cvar_var(iel) &
+                       + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.6) then
-          trav6(ipt) = cvar_var(iel) &
-             + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
+          trav6(ipt) =   cvar_var(iel) &
+                       + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         endif
 
       enddo
 
-    endif
+    enddo
 
-  enddo
+  else if (irijco.eq.1) then
 
-  ! Préparation des données: interpolation de epsilon en J'
+    call field_get_val_v(ivarfl(irij), cvar_rij)
+
+    ! allocate a temporary array
+    allocate(gradts(6,3,ncelet))
+
+    call field_gradient_tensor(ivarfl(irij), iprev, imrgra, inc,  &
+         gradts)
+
+    do ipt = 1, nptdis
+
+      iel = locpts(ipt)
+
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
+
+      trav1(ipt) = cvar_var(iel) + xjjp*gradts(1,1,iel)  &
+                                 + yjjp*gradts(1,2,iel)  &
+                                 + zjjp*gradts(1,3,iel)
+
+      trav2(ipt) = cvar_var(iel) + xjjp*gradts(2,1,iel)  &
+                                 + yjjp*gradts(2,2,iel)  &
+                                 + zjjp*gradts(2,3,iel)
+
+      trav3(ipt) = cvar_var(iel) + xjjp*gradts(3,1,iel)  &
+                                 + yjjp*gradts(3,2,iel)  &
+                                 + zjjp*gradts(3,3,iel)
+
+      trav4(ipt) = cvar_var(iel) + xjjp*gradts(4,1,iel)  &
+                                 + yjjp*gradts(4,2,iel)  &
+                                 + zjjp*gradts(4,3,iel)
+
+      trav5(ipt) = cvar_var(iel) + xjjp*gradts(5,1,iel)  &
+                                 + yjjp*gradts(5,2,iel)  &
+                                 + zjjp*gradts(5,3,iel)
+
+      trav6(ipt) = cvar_var(iel) + xjjp*gradts(6,1,iel)  &
+                                 + yjjp*gradts(6,2,iel)  &
+                                 + zjjp*gradts(6,3,iel)
+
+    enddo
+
+  endif
+
+  ! Prepare data: interpolation of epsilon at J'
 
   call field_gradient_scalar(ivarfl(iep), iprev, imrgra, inc,     &
                              iccocg,                              &
                              grad)
 
-  ! For a specific face to face coupling, geometric assumptions are made
+  do ipt = 1, nptdis
 
-  if (ifaccp.eq.1) then
+    iel = locpts(ipt)
 
-    do ipt = 1, nptdis
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
 
-      iel = locpts(ipt)
+    trav7(ipt) = cvar_ep(iel) + xjjp*grad(1,iel)  &
+                              + yjjp*grad(2,iel)  &
+                              + zjjp*grad(3,iel)
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav7(ipt) = cvar_ep(iel)                        &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-    ! For a generic coupling, no assumption can be made
-
-  else
-
-    do ipt = 1, nptdis
-
-      iel = locpts(ipt)
-
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav7(ipt) = cvar_ep(iel)                        &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-  endif
+  enddo
 
 !=======================================================================
 !          3.2.2. Transfert de variable à "iso-modèle"
@@ -878,91 +821,47 @@ elseif (iturb.eq.50) then
   !          3.3.1. INTERPOLATION EN J'
   !=======================================================================
 
-  !         Préparation des données: interpolation de k en J'
+  !         Prepare data: interpolation of k at J'
 
   call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,      &
                              iccocg,                              &
                              grad)
 
-  ! For a specific face to face coupling, geometric assumptions are made
+  do ipt = 1, nptdis
 
-  if (ifaccp.eq.1) then
+    iel = locpts(ipt)
 
-    do ipt = 1, nptdis
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
 
-      iel = locpts(ipt)
+    trav1(ipt) = cvar_k(iel) + xjjp*grad(1,iel)  &
+                             + yjjp*grad(2,iel)  &
+                             + zjjp*grad(3,iel)
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+  enddo
 
-      trav1(ipt) = cvar_k(iel)                         &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-    ! For a generic coupling, no assumption can be made
-
-  else
-
-    do ipt = 1, nptdis
-
-      iel = locpts(ipt)
-
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav1(ipt) = cvar_k(iel)                         &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-  endif
-
-  ! Préparation des données: interpolation de epsilon en J'
+  ! Prepare data: interpolation of epsilon at J'
 
   call field_gradient_scalar(ivarfl(iep), iprev, imrgra, inc,  &
                              iccocg,                           &
                              grad)
 
-  ! For a specific face to face coupling, geometric assumptions are made
+  do ipt = 1, nptdis
 
-  if (ifaccp.eq.1) then
+    iel = locpts(ipt)
 
-    do ipt = 1, nptdis
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
 
-      iel = locpts(ipt)
+    trav2(ipt) = cvar_ep(iel) + xjjp*grad(1,iel)  &
+                              + yjjp*grad(2,iel)  &
+                              + zjjp*grad(3,iel)
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+  enddo
 
-      trav2(ipt) = cvar_ep(iel)                        &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-    ! For a generic coupling, no assumption can be made
-
-  else
-
-    do ipt = 1, nptdis
-
-      iel = locpts(ipt)
-
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav2(ipt) = cvar_ep(iel)                        &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-  endif
-
-  !         Préparation des données: interpolation de Phi en J'
+  !         Prepare data: interpolation of Phi at J'
 
   call field_gradient_scalar(ivarfl(iphi), iprev, imrgra, inc,  &
                              iccocg,                            &
@@ -976,52 +875,31 @@ elseif (iturb.eq.50) then
     yjjp = djppts(2,ipt)
     zjjp = djppts(3,ipt)
 
-    trav3(ipt) = cvar_phi(iel)                        &
-         + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
+    trav3(ipt) = cvar_phi(iel) + xjjp*grad(1,iel)  &
+                               + yjjp*grad(2,iel)  &
+                               + zjjp*grad(3,iel)
 
   enddo
 
-  !         Préparation des données: interpolation de F-barre en J'
+  !         Prepare data: interpolation of F-bar at J'
 
   call field_gradient_scalar(ivarfl(ifb), iprev, imrgra, inc,  &
                              iccocg,                           &
                              grad)
 
-  ! For a specific face to face coupling, geometric assumptions are made
+  do ipt = 1, nptdis
 
-  if (ifaccp.eq.1) then
+    iel = locpts(ipt)
 
-    do ipt = 1, nptdis
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
 
-      iel = locpts(ipt)
+    trav4(ipt) = cvar_fb(iel) + xjjp*grad(1,iel)  &
+                              + yjjp*grad(2,iel)  &
+                              + zjjp*grad(3,iel)
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav4(ipt) = cvar_fb(iel)                        &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-    ! For a generic coupling, no assumption can be made
-
-  else
-
-    do ipt = 1, nptdis
-
-      iel = locpts(ipt)
-
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav4(ipt) = cvar_fb(iel)                        &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-  endif
+  enddo
 
 !=======================================================================
 !          3.3.2. Transfert de variable à "iso-modèle"
@@ -1080,89 +958,45 @@ elseif (iturb.eq.60) then
   !          3.4.1. INTERPOLATION EN J'
   !=======================================================================
 
-  !         Préparation des données: interpolation de k en J'
+  !         Prepare data: interpolation of k at J'
 
   call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,  &
                              iccocg,                          &
                              grad)
 
-  ! For a specific face to face coupling, geometric assumptions are made
+  do ipt = 1, nptdis
 
-  if (ifaccp.eq.1) then
+    iel = locpts(ipt)
 
-    do ipt = 1, nptdis
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
 
-      iel = locpts(ipt)
+    trav1(ipt) = cvar_k(iel) + xjjp*grad(1,iel)  &
+                             + yjjp*grad(2,iel)  &
+                             + zjjp*grad(3,iel)
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
+  enddo
 
-      trav1(ipt) = cvar_k(iel)                         &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-    ! For a generic coupling, no assumption can be made
-
-  else
-
-    do ipt = 1, nptdis
-
-      iel = locpts(ipt)
-
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav1(ipt) = cvar_k(iel)                         &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-  endif
-
-  !         Préparation des données: interpolation de omega en J'
+  !         Prepare data: interpolation of omega at J'
 
   call field_gradient_scalar(ivarfl(iomg), iprev, imrgra, inc,  &
                              iccocg,                            &
                              grad)
 
-  ! For a specific face to face coupling, geometric assumptions are made
+  do ipt = 1, nptdis
 
-  if (ifaccp.eq.1) then
+    iel = locpts(ipt)
 
-    do ipt = 1, nptdis
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
 
-      iel = locpts(ipt)
+    trav2(ipt) = cvar_omg(iel) + xjjp*grad(1,iel)  &
+                               + yjjp*grad(2,iel)  &
+                               + zjjp*grad(3,iel)
 
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav2(ipt) = cvar_omg(iel)                        &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-    ! For a generic coupling, no assumption can be made
-
-  else
-
-    do ipt = 1, nptdis
-
-      iel = locpts(ipt)
-
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav2(ipt) = cvar_omg(iel)                        &
-           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    enddo
-
-  endif
+  enddo
 
   !=======================================================================
   !          3.4.2. Transfert de variable à "iso-modèle"
@@ -1316,17 +1150,12 @@ if (nscal.gt.0) then
                                iccocg,                            &
                                grad)
 
-    ! For a specific face to face coupling, geometric assumptions are made
+    do ipt = 1, nptdis
 
-    if (ifaccp.eq.1) then
+      iel = locpts(ipt)
 
-      do ipt = 1, nptdis
-
-        iel = locpts(ipt)
-
-! --- Pour les scalaires on veut imposer un dirichlet. On se laisse
-!     le choix entre UPWIND, SOLU ou CENTRE. Seul le centré respecte
-!     la diffusion si il n'y avait qu'un seul domaine
+! --- For scalars we want to prescribe a Dirichlet condition.
+!     Only a centered scheme would respect diffusion in a single domain.
 
 ! -- UPWIND
 
@@ -1343,33 +1172,15 @@ if (nscal.gt.0) then
 
 ! -- CENTRE
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+      xjjp = djppts(1,ipt)
+      yjjp = djppts(2,ipt)
+      zjjp = djppts(3,ipt)
 
-        rvdis(ipt,ipos) = cvar_scal(iel) &
-          + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
+      rvdis(ipt,ipos) = cvar_scal(iel) + xjjp*grad(1,iel)  &
+                                       + yjjp*grad(2,iel)  &
+                                       + zjjp*grad(3,iel)
 
-      enddo
-
-    ! For a generic coupling, no assumption can be made
-
-    else
-
-      do ipt = 1, nptdis
-
-        iel = locpts(ipt)
-
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
-
-        rvdis(ipt,ipos) = cvar_scal(iel)                             &
-          + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-      enddo
-
-    endif
+    enddo
 
   enddo
 
