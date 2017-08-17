@@ -854,10 +854,11 @@ cs_internal_coupling_bcs(int         bc_type[])
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_initial_contribution(const cs_internal_coupling_t  *cpl,
-                                          const cs_real_t                c_weight[],
-                                          const cs_real_t                pvar[],
-                                          cs_real_3_t          *restrict grad)
+cs_internal_coupling_initialize_scalar_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    const cs_real_t                pvar[],
+    cs_real_3_t          *restrict grad)
 {
   cs_lnum_t face_id, cell_id;
 
@@ -923,22 +924,193 @@ cs_internal_coupling_initial_contribution(const cs_internal_coupling_t  *cpl,
 }
 
 /*----------------------------------------------------------------------------
- * Add internal coupling rhs contribution for iterative gradient calculation
+ * Add contribution from coupled faces (internal coupling) to initialisation
+ * for iterative vector gradient calculation
  *
  * parameters:
  *   cpl      <-- pointer to coupling entity
  *   c_weight <-- weighted gradient coefficient variable, or NULL
- *   grad     <-- pointer to gradient
- *   pvar     <-- pointer to variable
- *   rhs      <-> pointer to rhs contribution
+ *   pvar     <-- variable
+ *   grad     <-> gradient
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
-                              const cs_real_t                c_weight[],
-                              cs_real_3_t          *restrict grad,
-                              const cs_real_t                pvar[],
-                              cs_real_3_t                    rhs[])
+cs_internal_coupling_initialize_vector_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    const cs_real_3_t              pvar[],
+    cs_real_33_t         *restrict grad)
+{
+  cs_lnum_t face_id, cell_id;
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+  const cs_real_t* g_weight = cpl->g_weight;
+  cs_real_t *r_weight = NULL;
+
+  const cs_mesh_t* m = cs_glob_mesh;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+
+  /* Exchange pvar */
+  cs_real_3_t *pvar_local = NULL;
+  BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           3,
+                                           (const cs_real_t *)pvar,
+                                           (cs_real_t *)pvar_local);
+
+  /* Preliminary step in case of heterogenous diffusivity */
+
+  if (c_weight != NULL) {
+    BFT_MALLOC(r_weight, n_local, cs_real_t);
+    _compute_physical_face_weight(cpl,
+                                  c_weight, /* diffusivity */
+                                  r_weight); /* physical face weight */
+    /* Redefinition of rweight :
+         Before : (1-g_weight)*rweight <==> 1 - ktpond
+         Modif : rweight = ktpond
+       Scope of this modification is local */
+    for (cs_lnum_t ii = 0; ii < n_local; ii++)
+      r_weight[ii] = 1.0 - (1.0-g_weight[ii]) * r_weight[ii];
+  }
+
+  /* Add contribution */
+
+  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+    face_id = faces_local[ii];
+    cell_id = b_face_cells[face_id];
+
+    /* compared to _initialize_scalar_gradient :
+       1 - rweight <==> 1 - ktpond
+       g_weight <==> weight = alpha_ij
+       pvar[cell_id] <==> pvar[ii]
+       pvar_local[ii] <==> pvar[jj]
+       b_f_face_normal <==> i_f_face_normal */
+
+    for (int i = 0; i < 3; i++) {
+      cs_real_t pfaci = (c_weight == NULL) ?
+        (1.0-g_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]) :
+        (1.0-r_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
+
+      for (int j = 0; j < 3; j++)
+        grad[cell_id][i][j] += pfaci * b_f_face_normal[face_id][j];
+
+    }
+  }
+  /* Free memory */
+  if (c_weight != NULL) BFT_FREE(r_weight);
+  BFT_FREE(pvar_local);
+}
+
+/*----------------------------------------------------------------------------
+ * Add contribution from coupled faces (internal coupling) to initialisation
+ * for iterative symmetric tensor gradient calculation
+ *
+ * parameters:
+ *   cpl      <-- pointer to coupling entity
+ *   c_weight <-- weighted gradient coefficient variable, or NULL
+ *   pvar     <-- variable
+ *   grad     <-> gradient
+ *----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_initialize_tensor_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    const cs_real_6_t              pvar[],
+    cs_real_63_t         *restrict grad)
+{
+  cs_lnum_t face_id, cell_id;
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+  const cs_real_t* g_weight = cpl->g_weight;
+  cs_real_t *r_weight = NULL;
+
+  const cs_mesh_t* m = cs_glob_mesh;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+
+  /* Exchange pvar */
+  cs_real_6_t *pvar_local = NULL;
+  BFT_MALLOC(pvar_local, n_local, cs_real_6_t);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           6,
+                                           (const cs_real_t *)pvar,
+                                           (cs_real_t *)pvar_local);
+
+  /* Preliminary step in case of heterogenous diffusivity */
+
+  if (c_weight != NULL) {
+    BFT_MALLOC(r_weight, n_local, cs_real_t);
+    _compute_physical_face_weight(cpl,
+                                  c_weight, /* diffusivity */
+                                  r_weight); /* physical face weight */
+    /* Redefinition of rweight :
+         Before : (1-g_weight)*rweight <==> 1 - ktpond
+         Modif : rweight = ktpond
+       Scope of this modification is local */
+    for (cs_lnum_t ii = 0; ii < n_local; ii++)
+      r_weight[ii] = 1.0 - (1.0-g_weight[ii]) * r_weight[ii];
+  }
+
+  /* Add contribution */
+
+  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+    face_id = faces_local[ii];
+    cell_id = b_face_cells[face_id];
+
+    /* compared to _initialize_scalar_gradient :
+       1 - rweight <==> 1 - ktpond
+       g_weight <==> weight = alpha_ij
+       pvar[cell_id] <==> pvar[ii]
+       pvar_local[ii] <==> pvar[jj]
+       b_f_face_normal <==> i_f_face_normal */
+
+    for (int i = 0; i < 6; i++) {
+      cs_real_t pfaci = (c_weight == NULL) ?
+        (1.0-g_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]) :
+        (1.0-r_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
+
+      for (int j = 0; j < 3; j++)
+        grad[cell_id][i][j] += pfaci * b_f_face_normal[face_id][j];
+
+    }
+  }
+  /* Free memory */
+  if (c_weight != NULL) BFT_FREE(r_weight);
+  BFT_FREE(pvar_local);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add internal coupling rhs contribution for iterative gradient
+ * calculation
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       grad     pointer to gradient
+ * \param[in]       pvar     pointer to variable
+ * \param[in, out]  rhs      pointer to rhs contribution
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_iterative_scalar_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    cs_real_3_t          *restrict grad,
+    const cs_real_t                pvar[],
+    cs_real_3_t                    rhs[])
 {
   cs_lnum_t face_id, cell_id;
 
@@ -957,14 +1129,14 @@ cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
 
   /* Exchange grad and pvar */
-  cs_real_t *grad_local = NULL;
-  BFT_MALLOC(grad_local, 3*n_local, cs_real_t);
+  cs_real_3_t *grad_local = NULL;
+  BFT_MALLOC(grad_local, n_local, cs_real_3_t);
   cs_real_t *pvar_local = NULL;
   BFT_MALLOC(pvar_local, n_local, cs_real_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            3,
                                            (const cs_real_t *)grad,
-                                           grad_local);
+                                           (cs_real_t *)grad_local);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            1,
                                            pvar,
@@ -1007,9 +1179,9 @@ cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
          pvar_local[ii] <==> pvar[cell_id2]
          b_f_face_normal <==> i_f_face_normal */
     cs_real_t pfaci = 0.5;
-    pfaci *= offset_vect[ii][0]*(grad_local[3*ii  ]+grad[cell_id][0])
-            +offset_vect[ii][1]*(grad_local[3*ii+1]+grad[cell_id][1])
-            +offset_vect[ii][2]*(grad_local[3*ii+2]+grad[cell_id][2]);
+    pfaci *= offset_vect[ii][0]*(grad_local[ii][0]+grad[cell_id][0])
+            +offset_vect[ii][1]*(grad_local[ii][1]+grad[cell_id][1])
+            +offset_vect[ii][2]*(grad_local[ii][2]+grad[cell_id][2]);
     if (c_weight != NULL)
       pfaci += (1.0-r_weight[ii]) * (pvar_local[ii] - pvar[cell_id]);
     else
@@ -1025,20 +1197,238 @@ cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
   BFT_FREE(pvar_local);
 }
 
-/*----------------------------------------------------------------------------
- * Add internal coupling contribution for reconstruction of the gradient of a
- * scalar.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add internal coupling rhs contribution for iterative vector gradient
+ * calculation
  *
- * parameters:
- *   cpl      <-- pointer to coupling entity
- *   r_grad   <-- pointer to reconstruction gradient
- *   grad     <-> pointer to gradient to be reconstructed
- *----------------------------------------------------------------------------*/
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       grad     pointer to gradient
+ * \param[in]       pvar     pointer to variable
+ * \param[in, out]  rhs      pointer to rhs contribution
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
-                                 cs_real_3_t          *restrict r_grad,
-                                 cs_real_3_t                    grad[])
+cs_internal_coupling_iterative_vector_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    cs_real_33_t         *restrict grad,
+    const cs_real_3_t              pvar[],
+    cs_real_33_t                   rhs[])
+{
+  cs_lnum_t face_id, cell_id;
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+  const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
+  const cs_real_t* g_weight = cpl->g_weight;
+  cs_real_t *r_weight = NULL;
+
+  const cs_mesh_t* m = cs_glob_mesh;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+
+  /* Exchange grad and pvar */
+  cs_real_33_t *grad_local = NULL;
+  BFT_MALLOC(grad_local, n_local, cs_real_33_t);
+  cs_real_3_t *pvar_local = NULL;
+  BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           9,
+                                           (const cs_real_t *)grad,
+                                           (cs_real_t *)grad_local);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           3,
+                                           (const cs_real_t *)pvar,
+                                           (cs_real_t *)pvar_local);
+
+  /* Preliminary step in case of heterogenous diffusivity */
+
+  if (c_weight != NULL) { /* Heterogenous diffusivity */
+    BFT_MALLOC(r_weight, n_local, cs_real_t);
+    _compute_physical_face_weight(cpl,
+                                  c_weight, /* diffusivity */
+                                  r_weight); /* physical face weight */
+    /* Redefinition of rweight_* :
+         Before : (1-g_weight)*rweight <==> 1 - ktpond
+         Modif : rweight = ktpond
+       Scope of this modification is local */
+    for (cs_lnum_t ii = 0; ii < n_local; ii++)
+      r_weight[ii] = 1.0 - (1.0-g_weight[ii]) * r_weight[ii];
+  }
+
+  /* Compute rhs */
+
+  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+    face_id = faces_local[ii];
+    cell_id = b_face_cells[face_id];
+
+    /*
+       Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                + (1-\alpha_\ij) \varia_\cellj\f$
+               but for the cell \f$ \celli \f$ we remove
+               \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+               and for the cell \f$ \cellj \f$ we remove
+               \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+    */
+
+    /* Reconstruction part
+         compared to _iterative_scalar_gradient :
+         g_weight <==> weight = alpha_ij
+         pvar[cell_id] <==> pvar[cell_id1]
+         pvar_local[ii] <==> pvar[cell_id2]
+         b_f_face_normal <==> i_f_face_normal */
+    for (int i = 0; i < 3; i++) {
+      cs_real_t pfaci = 0.5;
+      pfaci *= offset_vect[ii][0]*(grad_local[ii][i][0]+grad[cell_id][i][0])
+              +offset_vect[ii][1]*(grad_local[ii][i][1]+grad[cell_id][i][1])
+              +offset_vect[ii][2]*(grad_local[ii][i][2]+grad[cell_id][i][2]);
+      if (c_weight != NULL)
+        pfaci += (1.0-r_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
+      else
+        pfaci += (1.0-g_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
+
+      for (int j = 0; j < 3; j++)
+        rhs[cell_id][i][j] += pfaci * b_f_face_normal[face_id][j];
+
+    }
+  }
+
+  if (c_weight != NULL) BFT_FREE(r_weight);
+  BFT_FREE(grad_local);
+  BFT_FREE(pvar_local);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add internal coupling rhs contribution for iterative tensor gradient
+ * calculation
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       grad     pointer to gradient
+ * \param[in]       pvar     pointer to variable
+ * \param[in, out]  rhs      pointer to rhs contribution
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_iterative_tensor_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    cs_real_63_t         *restrict grad,
+    const cs_real_6_t              pvar[],
+    cs_real_63_t                   rhs[])
+{
+  cs_lnum_t face_id, cell_id;
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+  const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
+  const cs_real_t* g_weight = cpl->g_weight;
+  cs_real_t *r_weight = NULL;
+
+  const cs_mesh_t* m = cs_glob_mesh;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+
+  /* Exchange grad and pvar */
+  cs_real_63_t *grad_local = NULL;
+  BFT_MALLOC(grad_local, n_local, cs_real_63_t);
+  cs_real_6_t *pvar_local = NULL;
+  BFT_MALLOC(pvar_local, n_local, cs_real_6_t);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           18,
+                                           (const cs_real_t *)grad,
+                                           (cs_real_t *)grad_local);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           6,
+                                           (const cs_real_t *)pvar,
+                                           (cs_real_t *)pvar_local);
+
+  /* Preliminary step in case of heterogenous diffusivity */
+
+  if (c_weight != NULL) { /* Heterogenous diffusivity */
+    BFT_MALLOC(r_weight, n_local, cs_real_t);
+    _compute_physical_face_weight(cpl,
+                                  c_weight, /* diffusivity */
+                                  r_weight); /* physical face weight */
+    /* Redefinition of rweight_* :
+         Before : (1-g_weight)*rweight <==> 1 - ktpond
+         Modif : rweight = ktpond
+       Scope of this modification is local */
+    for (cs_lnum_t ii = 0; ii < n_local; ii++)
+      r_weight[ii] = 1.0 - (1.0-g_weight[ii]) * r_weight[ii];
+  }
+
+  /* Compute rhs */
+
+  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+    face_id = faces_local[ii];
+    cell_id = b_face_cells[face_id];
+
+    /*
+       Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                + (1-\alpha_\ij) \varia_\cellj\f$
+               but for the cell \f$ \celli \f$ we remove
+               \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+               and for the cell \f$ \cellj \f$ we remove
+               \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+    */
+
+    /* Reconstruction part
+         compared to _iterative_scalar_gradient :
+         g_weight <==> weight = alpha_ij
+         pvar[cell_id] <==> pvar[cell_id1]
+         pvar_local[ii] <==> pvar[cell_id2]
+         b_f_face_normal <==> i_f_face_normal */
+    for (int i = 0; i < 6; i++) {
+      cs_real_t pfaci = 0.5;
+      pfaci *= offset_vect[ii][0]*(grad_local[ii][i][0]+grad[cell_id][i][0])
+              +offset_vect[ii][1]*(grad_local[ii][i][1]+grad[cell_id][i][1])
+              +offset_vect[ii][2]*(grad_local[ii][i][2]+grad[cell_id][i][2]);
+      if (c_weight != NULL)
+        pfaci += (1.0-r_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
+      else
+        pfaci += (1.0-g_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
+
+      for (int j = 0; j < 3; j++)
+        rhs[cell_id][i][j] += pfaci * b_f_face_normal[face_id][j];
+
+    }
+  }
+
+  if (c_weight != NULL) BFT_FREE(r_weight);
+  BFT_FREE(grad_local);
+  BFT_FREE(pvar_local);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add internal coupling contribution for reconstruction of the
+ * gradient of a scalar.
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       r_grad   pointer to reconstruction gradient
+ * \param[in, out]  grad     pointer to gradient to be reconstructed var
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_reconstruct_scalar_gradient(
+    const cs_internal_coupling_t  *cpl,
+    cs_real_3_t          *restrict r_grad,
+    cs_real_3_t                    grad[])
 {
   int ll;
   cs_lnum_t face_id, cell_id;
@@ -1057,12 +1447,12 @@ cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
 
   /* Exchange r_grad */
 
-  cs_real_t *r_grad_local = NULL;
-  BFT_MALLOC(r_grad_local, 3*n_local, cs_real_t);
+  cs_real_3_t *r_grad_local = NULL;
+  BFT_MALLOC(r_grad_local, n_local, cs_real_t);
   cs_internal_coupling_exchange_by_cell_id(cpl,
                                            3,
                                            (const cs_real_t *)r_grad,
-                                           r_grad_local);
+                                           (cs_real_t *)r_grad_local);
 
   /* Compute rhs */
 
@@ -1074,9 +1464,9 @@ cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
          compared to _iterative_scalar_gradient :
          b_f_face_normal <==> i_f_face_normal */
     cs_real_t rfac = 0.5;
-    rfac *= offset_vect[ii][0]*(r_grad_local[3*ii  ]+r_grad[cell_id][0])
-           +offset_vect[ii][1]*(r_grad_local[3*ii+1]+r_grad[cell_id][1])
-           +offset_vect[ii][2]*(r_grad_local[3*ii+2]+r_grad[cell_id][2]);
+    rfac *= offset_vect[ii][0]*(r_grad_local[ii][0]+r_grad[cell_id][0])
+           +offset_vect[ii][1]*(r_grad_local[ii][1]+r_grad[cell_id][1])
+           +offset_vect[ii][2]*(r_grad_local[ii][2]+r_grad[cell_id][2]);
 
     for (ll = 0; ll < 3; ll++)
       grad[cell_id][ll] += rfac * b_f_face_normal[face_id][ll];
@@ -1086,21 +1476,151 @@ cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
   BFT_FREE(r_grad_local);
 }
 
-/*----------------------------------------------------------------------------
- * Add internal coupling rhs contribution for LSQ gradient calculation
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add internal coupling contribution for reconstruction of the
+ * gradient of a vector.
  *
- * parameters:
- *   cpl      <-- pointer to coupling entity
- *   c_weight <-- weighted gradient coefficient variable, or NULL
- *   w_stride <-- stride of weighting coefficient
- *   rhsv     <-> rhs contribution modified
- *----------------------------------------------------------------------------*/
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       r_grad   pointer to reconstruction gradient
+ * \param[in, out]  grad     pointer to gradient to be reconstructed var
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
-                             const cs_real_t                c_weight[],
-                             const int                      w_stride,
-                             cs_real_4_t                    rhsv[])
+cs_internal_coupling_reconstruct_vector_gradient(
+    const cs_internal_coupling_t  *cpl,
+    cs_real_33_t         *restrict r_grad,
+    cs_real_33_t                   grad[])
+{
+  cs_lnum_t face_id, cell_id;
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+  const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
+
+  const cs_mesh_t* m = cs_glob_mesh;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+
+  /* Exchange r_grad */
+
+  cs_real_33_t *r_grad_local = NULL;
+  BFT_MALLOC(r_grad_local, n_local, cs_real_33_t);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           9,
+                                           (const cs_real_t *)r_grad,
+                                           (cs_real_t *)r_grad_local);
+
+  /* Compute rhs */
+
+  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+    face_id = faces_local[ii];
+    cell_id = b_face_cells[face_id];
+
+    /* Reconstruction part
+         compared to _iterative_scalar_gradient :
+         b_f_face_normal <==> i_f_face_normal */
+    for (int i = 0; i < 3; i++) {
+      cs_real_t rfac = 0.5;
+      rfac *= offset_vect[ii][0]*(r_grad_local[ii][i][0]+r_grad[cell_id][i][0])
+             +offset_vect[ii][1]*(r_grad_local[ii][i][1]+r_grad[cell_id][i][1])
+             +offset_vect[ii][2]*(r_grad_local[ii][i][2]+r_grad[cell_id][i][2]);
+
+      for (int j = 0; j < 3; j++)
+        grad[cell_id][i][j] += rfac * b_f_face_normal[face_id][j];
+    }
+
+  }
+
+  BFT_FREE(r_grad_local);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add internal coupling contribution for reconstruction of the
+ * gradient of a symmetric tensor.
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       r_grad   pointer to reconstruction gradient
+ * \param[in, out]  grad     pointer to gradient to be reconstructed var
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_reconstruct_tensor_gradient(
+    const cs_internal_coupling_t  *cpl,
+    cs_real_63_t         *restrict r_grad,
+    cs_real_63_t                   grad[])
+{
+  cs_lnum_t face_id, cell_id;
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+  const cs_real_3_t *offset_vect = (const cs_real_3_t *)cpl->offset_vect;
+
+  const cs_mesh_t* m = cs_glob_mesh;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_mesh_quantities_t* fvq = cs_glob_mesh_quantities;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+
+  /* Exchange r_grad */
+
+  cs_real_63_t *r_grad_local = NULL;
+  BFT_MALLOC(r_grad_local, n_local, cs_real_63_t);
+  cs_internal_coupling_exchange_by_cell_id(cpl,
+                                           18,
+                                           (const cs_real_t *)r_grad,
+                                           (cs_real_t *)r_grad_local);
+
+  /* Compute rhs */
+
+  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+    face_id = faces_local[ii];
+    cell_id = b_face_cells[face_id];
+
+    /* Reconstruction part
+         compared to _iterative_scalar_gradient :
+         b_f_face_normal <==> i_f_face_normal */
+    for (int i = 0; i < 6; i++) {
+      cs_real_t rfac = 0.5;
+      rfac *= offset_vect[ii][0]*(r_grad_local[ii][i][0]+r_grad[cell_id][i][0])
+             +offset_vect[ii][1]*(r_grad_local[ii][i][1]+r_grad[cell_id][i][1])
+             +offset_vect[ii][2]*(r_grad_local[ii][i][2]+r_grad[cell_id][i][2]);
+
+      for (int j = 0; j < 3; j++)
+        grad[cell_id][i][j] += rfac * b_f_face_normal[face_id][j];
+    }
+
+  }
+
+  BFT_FREE(r_grad_local);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add internal coupling rhs contribution for LSQ gradient calculation
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       w_stride stride of weighting coefficient
+ * \param[in, out]  rhs      pointer to rhs contribution
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_lsq_scalar_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    const int                      w_stride,
+    cs_real_4_t                    rhsv[])
 {
   cs_lnum_t face_id, cell_id;
   cs_real_t pfac;
@@ -1197,6 +1717,139 @@ cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
 
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         rhsv[cell_id][ll] +=  fctb[ll];
+    }
+
+  }
+  /* Free memory */
+  if (c_weight != NULL) BFT_FREE(weight);
+  BFT_FREE(pvar_local);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add internal coupling rhs contribution for LSQ gradient calculation
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       w_stride stride of weighting coefficient
+ * \param[in]       pvar     pointer to variable
+ * \param[in, out]  rhs      pointer to rhs contribution
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_lsq_vector_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    const int                      w_stride,
+    const cs_real_3_t              pvar[],
+    cs_real_33_t                   rhs[])
+{
+  cs_lnum_t face_id, cell_id;
+  cs_real_t pfac;
+  cs_real_3_t dc, fctb;
+
+  const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t *faces_local = cpl->faces_local;
+  const cs_lnum_t n_distant = cpl->n_distant;
+  const cs_lnum_t *faces_distant = cpl->faces_distant;
+  const cs_real_t* g_weight = cpl->g_weight;
+  const cs_real_3_t *ci_cj_vect = (const cs_real_3_t *)cpl->ci_cj_vect;
+
+  const cs_mesh_t* m = cs_glob_mesh;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  /* Variables for cases w_stride = 1 or 6 */
+  const bool scalar_diff = (c_weight != NULL && w_stride == 1);
+  const bool tensor_diff = (c_weight != NULL && w_stride == 6);
+  cs_real_t *weight = NULL;
+
+  /* Exchange pvar */
+
+  cs_real_3_t *pvar_distant = NULL;
+  BFT_MALLOC(pvar_distant, n_distant, cs_real_3_t);
+  for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+    face_id = faces_distant[ii];
+    cell_id = b_face_cells[face_id];
+    for (int i = 0; i < 3; i++)
+      pvar_distant[ii][i] = pvar[cell_id][i];
+  }
+  cs_real_3_t *pvar_local = NULL;
+  BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
+  cs_internal_coupling_exchange_var(cpl,
+                                    3,
+                                    pvar_distant,
+                                    pvar_local);
+  /* Free memory */
+  BFT_FREE(pvar_distant);
+
+  /* Preliminary step in case of heterogenous diffusivity */
+
+  if (c_weight != NULL) { /* Heterogenous diffusivity */
+    if (tensor_diff) {
+      BFT_MALLOC(weight, 6*n_local, cs_real_t);
+      cs_internal_coupling_exchange_by_cell_id(cpl,
+                                               6,
+                                               c_weight,
+                                               weight);
+    } else {
+      BFT_MALLOC(weight, n_local, cs_real_t);
+      _compute_physical_face_weight(cpl,
+                                    c_weight, /* diffusivity */
+                                    weight); /* physical face weight */
+    }
+  }
+
+  /* Compute rhs */
+
+  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+    face_id = faces_local[ii];
+    cell_id = b_face_cells[face_id];
+    for (cs_lnum_t ll = 0; ll < 3; ll++)
+      dc[ll] = ci_cj_vect[ii][ll];
+
+    if (tensor_diff) {//FIXME
+      /* (P_j - P_i)*/
+      for (int i = 0; i < 3; i++) {
+        cs_real_t p_diff = (pvar_local[ii][i] - pvar[cell_id][i]);
+
+        _compute_ani_weighting(&c_weight[6*cell_id],
+                               &weight[6*ii],
+                               p_diff,
+                               dc,
+                               g_weight[ii],
+                               rhs[cell_id][i]);
+      }
+    } else if (scalar_diff) {
+
+      for (int i = 0; i < 3; i++) {
+        /* (P_j - P_i) / ||d||^2 */
+        pfac = (pvar_local[ii][i] - pvar[cell_id][i])
+             / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        for (int j = 0; j < 3; j++)
+          fctb[j] = dc[j] * pfac;
+
+        /* Compared with _lsq_scalar_gradient, weight from
+         * _compute_physical_face_weight already contains denom */
+        for (int j = 0; j < 3; j++)
+          rhs[cell_id][i][j] +=  weight[ii] * fctb[j];
+      }
+    } else {
+      for (int i = 0; i < 3; i++) {
+        /* (P_j - P_i) / ||d||^2 */
+        pfac = (pvar_local[ii][i] - pvar[cell_id][i])
+             / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        for (int j = 0; j < 3; j++)
+          fctb[j] = dc[j] * pfac;
+
+        /* Compared with _lsq_scalar_gradient, weight from
+         * _compute_physical_face_weight already contains denom */
+        for (int j = 0; j < 3; j++)
+          rhs[cell_id][i][j] +=  fctb[j];
+      }
     }
 
   }

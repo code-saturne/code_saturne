@@ -3554,6 +3554,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     coefbv,
                                     _pvar,
                                     gweight, /* weighted gradient */
+                                    cpl,
                                     grad);
 
   } else {
@@ -7501,6 +7502,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
   const int imligp = var_cal_opt.imligr;
   const int ircflp = var_cal_opt.ircflu;
   const int iwarnp = var_cal_opt.iwarni;
+  const int icoupl = var_cal_opt.icoupl;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
   const double relaxp = var_cal_opt.relaxv;
@@ -7536,6 +7538,17 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
     = (const cs_real_3_t *restrict)fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
+
+  /* Internal coupling variables */
+  cs_real_t *pvar_local = NULL;
+  cs_real_t *pvar_distant = NULL;
+  cs_real_t hint, hext, heq;
+  cs_lnum_t *faces_local = NULL;
+  cs_int_t n_local;
+  cs_lnum_t n_distant;
+  cs_lnum_t *faces_distant = NULL;
+  int coupling_id;
+  cs_internal_coupling_t *cpl = NULL;
 
   /* Local variables */
 
@@ -7586,6 +7599,19 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
     strcpy(var_name, "Work array");
   var_name[31] = '\0';
 
+  if (icoupl > 0) {
+    assert(f_id != -1);
+    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    coupling_id = cs_field_get_key_int(f, coupling_key_id);
+    cpl = cs_internal_coupling_by_id(coupling_id);
+    cs_internal_coupling_coupled_faces(cpl,
+                                       &n_local,
+                                       &faces_local,
+                                       &n_distant,
+                                       &faces_distant);
+  }
+
+
   /* 2. Compute the diffusive part with reconstruction technics */
 
   /* Compute the gradient of the current variable if needed */
@@ -7605,6 +7631,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                                     coefbv,
                                     _pvar,
                                     NULL, /* weighted gradient */
+                                    cpl,
                                     gradv);
 
   } else {

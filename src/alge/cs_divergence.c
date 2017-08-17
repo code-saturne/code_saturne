@@ -759,6 +759,7 @@ cs_mass_flux(const cs_mesh_t          *m,
                        coefbv,
                        qdm,
                        NULL, /* weighted gradient */
+                       NULL, /* cpl */
                        grdqdm);
 
     /* Mass flow through interior faces */

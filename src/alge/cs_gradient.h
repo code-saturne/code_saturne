@@ -237,6 +237,8 @@ cs_gradient_scalar(const char                *var_name,
  * \param[in, out]  var             gradient's base variable
  * \param[in, out]  c_weight        weighted gradient coefficient variable,
  *                                  or NULL
+ * \param[in, out]  cpl             structure associated with internal coupling,
+ *                                  or NULL
  * \param[out]      gradv           gradient
                                     (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
@@ -256,6 +258,7 @@ cs_gradient_vector(const char                *var_name,
                    const cs_real_33_t         bc_coeff_b[],
                    cs_real_3_t      *restrict var,
                    cs_real_t        *restrict c_weight,
+                   cs_internal_coupling_t    *cpl,
                    cs_real_33_t     *restrict gradv);
 
 /*----------------------------------------------------------------------------*/
@@ -376,6 +379,8 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
  * \param[in, out]  var             gradient's base variable
  * \param[in, out]  c_weight        weighted gradient coefficient variable,
  *                                  or NULL
+ * \param[in, out]  cpl             structure associated with internal coupling,
+ *                                  or NULL
  * \param[out]      gradv           gradient
                                     (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
@@ -395,6 +400,7 @@ cs_gradient_vector_synced_input(const char                *var_name,
                                 const cs_real_t            bc_coeff_b[][3][3],
                                 const cs_real_t            var[restrict][3],
                                 const cs_real_t            c_weight[restrict],
+                                const cs_internal_coupling_t  *cpl,
                                 cs_real_33_t     *restrict gradv);
 
 /*----------------------------------------------------------------------------*/

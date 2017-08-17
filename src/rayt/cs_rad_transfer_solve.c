@@ -1854,6 +1854,7 @@ cs_rad_transfer_solve(int               bc_type[],
                        (const cs_real_33_t *)coefbq,
                        cpro_q,
                        NULL, /* weighted gradient */
+                       NULL, /* cpl */
                        grad);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {

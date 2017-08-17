@@ -125,6 +125,7 @@ diverv (cs_real_t    *diverg,
                      (const cs_real_33_t *)coefb,
                      u,
                      NULL, /* weighted gradient */
+                     NULL, /* cpl */
                      grad);
 
   /* ====================================================================

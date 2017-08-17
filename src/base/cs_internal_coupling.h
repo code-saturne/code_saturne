@@ -220,54 +220,177 @@ cs_internal_coupling_it_cocg_contribution(const cs_internal_coupling_t  *cpl,
 void
 cs_internal_coupling_initialize(void);
 
-/*----------------------------------------------------------------------------
- * Add internal coupling rhs contribution for LSQ gradient calculation
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add internal coupling rhs contribution for LSQ gradient calculation
  *
- * parameters:
- *   cpl      <-- pointer to coupling entity
- *   c_weight <-- weighted gradient coefficient variable, or NULL
- *   w_stride <-- stride of weighting coefficient
- *   rhsv     <-> rhs contribution modified
- *----------------------------------------------------------------------------*/
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       w_stride stride of weighting coefficient
+ * \param[in, out]  rhs      pointer to rhs contribution
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_lsq_rhs(const cs_internal_coupling_t  *cpl,
-                             const cs_real_t                c_weight[],
-                             const int                      w_stride,
-                             cs_real_4_t                    rhsv[]);
+cs_internal_coupling_lsq_scalar_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    const int                      w_stride,
+    cs_real_4_t                    rhsv[]);
 
-/*----------------------------------------------------------------------------
- * Add internal coupling rhs contribution for iterative gradient calculation
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add internal coupling rhs contribution for LSQ gradient calculation
  *
- * parameters:
- *   cpl      <-- pointer to coupling entity
- *   c_weight <-- weighted gradient coefficient variable, or NULL
- *   grad     <-- pointer to gradient
- *   pvar     <-- pointer to variable
- *   rhs      <-> pointer to rhs contribution
- *----------------------------------------------------------------------------*/
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       w_stride stride of weighting coefficient
+ * \param[in]       pvar     pointer to variable
+ * \param[in, out]  rhs      pointer to rhs contribution
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_iter_rhs(const cs_internal_coupling_t  *cpl,
-                              const cs_real_t                c_weight[],
-                              cs_real_3_t          *restrict grad,
-                              const cs_real_t                pvar[],
-                              cs_real_3_t                    rhs[]);
+cs_internal_coupling_lsq_vector_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    const int                      w_stride,
+    const cs_real_3_t              pvar[],
+    cs_real_33_t                   rhs[]);
 
-/*----------------------------------------------------------------------------
- * Add internal coupling contribution for reconstruction of the gradient of a
- * scalar.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add internal coupling rhs contribution for LSQ gradient calculation
  *
- * parameters:
- *   cpl      <-- pointer to coupling entity
- *   r_grad   <-- pointer to reconstruction gradient
- *   grad     <-> pointer to gradient to be reconstructed
- *----------------------------------------------------------------------------*/
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       w_stride stride of weighting coefficient
+ * \param[in]       pvar     pointer to variable
+ * \param[in, out]  rhs      pointer to rhs contribution
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_reconstruct(const cs_internal_coupling_t  *cpl,
-                                 cs_real_3_t          *restrict r_grad,
-                                 cs_real_3_t                    grad[]);
+cs_internal_coupling_lsq_tensor_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    const int                      w_stride,
+    const cs_real_6_t              pvar[],
+    cs_real_63_t                   rhs[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add internal coupling rhs contribution for iterative gradient
+ * calculation
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       grad     pointer to gradient
+ * \param[in]       pvar     pointer to variable
+ * \param[in, out]  rhs      pointer to rhs contribution
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_iterative_scalar_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    cs_real_3_t          *restrict grad,
+    const cs_real_t                pvar[],
+    cs_real_3_t                    rhs[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add internal coupling rhs contribution for iterative vector gradient
+ * calculation
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       grad     pointer to gradient
+ * \param[in]       pvar     pointer to variable
+ * \param[in, out]  rhs      pointer to rhs contribution
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_iterative_vector_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    cs_real_33_t         *restrict grad,
+    const cs_real_3_t              pvar[],
+    cs_real_33_t                   rhs[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add internal coupling rhs contribution for iterative tensor gradient
+ * calculation
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       c_weight weighted gradient coefficient variable, or NULL
+ * \param[in]       grad     pointer to gradient
+ * \param[in]       pvar     pointer to variable
+ * \param[in, out]  rhs      pointer to rhs contribution
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_iterative_tensor_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    cs_real_63_t         *restrict grad,
+    const cs_real_6_t              pvar[],
+    cs_real_63_t                   rhs[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add internal coupling contribution for reconstruction of the
+ * gradient of a scalar.
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       r_grad   pointer to reconstruction gradient
+ * \param[in, out]  grad     pointer to gradient to be reconstructed var
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_reconstruct_scalar_gradient(
+    const cs_internal_coupling_t  *cpl,
+    cs_real_3_t          *restrict r_grad,
+    cs_real_3_t                    grad[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add internal coupling contribution for reconstruction of the
+ * gradient of a vector.
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       r_grad   pointer to reconstruction gradient
+ * \param[in, out]  grad     pointer to gradient to be reconstructed var
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_reconstruct_vector_gradient(
+    const cs_internal_coupling_t  *cpl,
+    cs_real_33_t         *restrict r_grad,
+    cs_real_33_t                   grad[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add internal coupling contribution for reconstruction of the
+ * gradient of a symmetric tensor.
+ *
+ * \param[in]       cpl      pointer to coupling entity
+ * \param[in]       r_grad   pointer to reconstruction gradient
+ * \param[in, out]  grad     pointer to gradient to be reconstructed var
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_reconstruct_tensor_gradient(
+    const cs_internal_coupling_t  *cpl,
+    cs_real_63_t         *restrict r_grad,
+    cs_real_63_t                   grad[]);
 
 /*----------------------------------------------------------------------------
  * Modify matrix-vector product in case of internal coupling
@@ -401,22 +524,64 @@ cs_internal_coupling_add(cs_mesh_t   *mesh,
 void
 cs_internal_coupling_add_entity(int        f_id);
 
-/*----------------------------------------------------------------------------
- * Add contribution from coupled faces (internal coupling) to initialisation
- * for iterative scalar gradient calculation
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add contribution from coupled faces (internal coupling) to
+ * initialisation for iterative scalar gradient calculation
  *
- * parameters:
- *   cpl      <-- pointer to coupling entity
- *   c_weight <-- weighted gradient coefficient variable, or NULL
- *   pvar     <-- variable
- *   grad     <-> gradient
- *----------------------------------------------------------------------------*/
+ * \param[in]       cpl       pointer to coupling entity
+ * \param[in]       c_weight  weighted gradient coefficient variable, or NULL
+ * \param[in, out]  pvar      variable
+ * \param[in, out]  grad      gradient
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_initial_contribution(const cs_internal_coupling_t  *cpl,
-                                          const cs_real_t                c_weight[],
-                                          const cs_real_t                pvar[],
-                                          cs_real_3_t          *restrict grad);
+cs_internal_coupling_initialize_scalar_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    const cs_real_t                pvar[],
+    cs_real_3_t          *restrict grad);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add contribution from coupled faces (internal coupling) to
+ * initialisation for iterative vector gradient calculation
+ *
+ * \param[in]       cpl       pointer to coupling entity
+ * \param[in]       c_weight  weighted gradient coefficient variable, or NULL
+ * \param[in, out]  pvar      variable
+ * \param[in, out]  grad      gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_initialize_vector_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    const cs_real_3_t              pvar[],
+    cs_real_33_t         *restrict grad);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add contribution from coupled faces (internal coupling) to
+ * initialisation for iterative symmetric tensor gradient calculation
+ *
+ * \param[in]       cpl       pointer to coupling entity
+ * \param[in]       c_weight  weighted gradient coefficient variable, or NULL
+ * \param[in, out]  pvar      variable
+ * \param[in, out]  grad      gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_internal_coupling_initialize_tensor_gradient(
+    const cs_internal_coupling_t  *cpl,
+    const cs_real_t                c_weight[],
+    const cs_real_6_t              pvar[],
+    cs_real_63_t         *restrict grad);
+
 
 /*----------------------------------------------------------------------------*/
 

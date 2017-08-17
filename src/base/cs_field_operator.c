@@ -721,6 +721,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
   cs_real_t *c_weight = NULL;
+  cs_internal_coupling_t  *cpl = NULL;
 
   /* Get the calculation option from the field */
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
@@ -732,6 +733,17 @@ cs_field_gradient_vector(const cs_field_t          *f,
       if (diff_id > -1) {
         cs_field_t *weight_f = cs_field_by_id(diff_id);
         c_weight = weight_f->val;
+      }
+    }
+  }
+
+  if (f->type & CS_FIELD_VARIABLE) {
+    if (var_cal_opt.idiff > 0) {
+      int key_id = cs_field_key_id_try("coupling_entity");
+      if (key_id > -1) {
+        int coupl_id = cs_field_get_key_int(f, key_id);
+        if (coupl_id > -1)
+          cpl = cs_internal_coupling_by_id(coupl_id);
       }
     }
   }
@@ -752,6 +764,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
                      (const cs_real_33_t *)(f->bc_coeffs->b),
                      var,
                      c_weight,
+                     cpl,
                      grad);
 }
 
