@@ -766,7 +766,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                      (unsigned long long) n_ext);
         if (ext_syr)
           bft_printf(_(" Some solid mesh elements not located on fluid mesh\n"));
-        bft_printf(_("   Extending search with tolerance factor %f..."),
+        bft_printf(_("\n   Extending search with tolerance factor %f..."),
                    tolerance);
         bft_printf_flush();
       }
