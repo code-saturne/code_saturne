@@ -149,7 +149,7 @@ cs_check_cdo_CPPFLAGS = $(AM_CPPFLAGS) $(PETSC_CPPFLAGS)
 cs_check_cdo_LDADD = $(top_builddir)/src/apps/libsaturne.la
 
 if HAVE_CATALYST
-if HAVE_PLUGINS
+if HAVE_PLUGIN_CATALYST
 else
 cs_check_cdo_LDADD += $(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
 $(CATALYSTRUNPATH)

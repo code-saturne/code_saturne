@@ -75,10 +75,13 @@ _unity(cs_real_t         time,
        const cs_lnum_t  *pt_ids,
        const cs_real_t  *xyz,
        bool              compact,
+       void             *input,
        cs_real_t         retval[])
 {
   CS_UNUSED(time);
   CS_UNUSED(xyz);
+  CS_UNUSED(input);
+
   if (pt_ids != NULL && !compact)
     for (cs_lnum_t i = 0; i < n_pts; i++) retval[pt_ids[i]] = 1.0;
   else
@@ -91,9 +94,12 @@ _linear_xyz(cs_real_t          time,
             const cs_lnum_t   *pt_ids,
             const cs_real_t   *xyz,
             bool               compact,
+            void              *input,
             cs_real_t          retval[])
 {
   CS_UNUSED(time);
+  CS_UNUSED(input);
+
   if (pt_ids != NULL && !compact) {
 
     for (cs_lnum_t i = 0; i < n_pts; i++) {
@@ -123,9 +129,12 @@ _quadratic_x2(cs_real_t          time,
               const cs_lnum_t   *pt_ids,
               const cs_real_t   *xyz,
               bool               compact,
+              void              *input,
               cs_real_t          retval[])
 {
+  CS_UNUSED(input);
   CS_UNUSED(time);
+
   if (pt_ids != NULL && !compact) {
 
     for (cs_lnum_t i = 0; i < n_pts; i++) {
@@ -156,9 +165,12 @@ _nonpoly(cs_real_t         time,
          const cs_lnum_t  *pt_ids,
          const cs_real_t  *xyz,
          bool              compact,
+         void             *input,
          cs_real_t         retval[])
 {
+  CS_UNUSED(input);
   CS_UNUSED(time);
+
   if (pt_ids != NULL && !compact) {
 
     for (cs_lnum_t i = 0; i < n_pts; i++) {
@@ -204,6 +216,7 @@ _define_cm_hexa_unif(double            a,
   const double  ah = a/2.;
 
   cm->c_id = 0;
+
   /* Set all quantities */
   cm->flag = CS_CDO_LOCAL_PV |CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PEQ |
     CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ |
@@ -415,6 +428,7 @@ _define_cm_tetra_ref(double            a,
   const double  sq2 = sqrt(2.), invsq2 = 1./sq2;
 
   cm->c_id = 0;
+
   /* Set all quantities */
   cm->flag = CS_CDO_LOCAL_PV |CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_PEQ |
     CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FEQ |
@@ -903,9 +917,9 @@ _test_cdovb_schemes(FILE             *out,
   _test_stiffness_vb(out, cm, cb->loc);
 
   /* Enforce Dirichlet BC */
-  cs_cdovb_diffusion_pena_dirichlet(hwbs_info, cbc, cm,
-                                    cs_cdovb_diffusion_wbs_flux_op,
-                                    fm, cb, csys);
+  cs_cdo_diffusion_pena_dirichlet(hwbs_info, cbc, cm,
+                                  cs_cdovb_diffusion_wbs_flux_op,
+                                  fm, cb, csys);
   _locsys_dump(out, "\nCDO.VB; PENA.WBS.FLX.WBS; PERMEABILITY.ANISO",
                csys);
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
@@ -930,9 +944,9 @@ _test_cdovb_schemes(FILE             *out,
   /* ADVECTION OPERATOR */
   /* ================== */
 
-  cs_adv_field_t  *beta = cs_advection_field_create("Adv.Field");
+  cs_adv_field_t  *beta = cs_advection_field_add("Adv.Field");
   cs_equation_param_t  *eqp = cs_equation_param_create(CS_EQUATION_TYPE_USER,
-                                                       CS_PARAM_VAR_SCAL,
+                                                       1,
                                                        CS_PARAM_BC_HMG_NEUMANN);
 
   eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
@@ -941,7 +955,6 @@ _test_cdovb_schemes(FILE             *out,
   eqp->advection_info.formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
   eqp->advection_info.scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
   eqp->advection_info.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
-  eqp->advection_info.quad_type = CS_QUADRATURE_BARY;
 
   /* Constant advection field */
   cs_real_3_t  vector_field = {1., 0., 0.};
@@ -949,7 +962,7 @@ _test_cdovb_schemes(FILE             *out,
   eqp->advection_field = beta;
 
   /* Free memory */
-  beta = cs_advection_field_free(beta);
+  cs_advection_field_destroy_all();
   eqp = cs_equation_param_free(eqp);
 
   /* ADVECTION: BOUNDARY FLUX OPERATOR */
@@ -963,7 +976,7 @@ _test_cdovb_schemes(FILE             *out,
   cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
   cs_flag_t  meta_flag = cs_source_term_set_default_flag(CS_SPACE_SCHEME_CDOVB);
 
-  cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC,
+  cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                          1,
                                          0, // z_id
                                          state_flag,
