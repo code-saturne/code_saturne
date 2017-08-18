@@ -239,7 +239,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
     cs_post_write_var(mesh_id,
                       CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
-                      "Turb energy",                  /* var_name */
+                      cs_field_get_label(f),          /* var_name */
                       1,                              /* var_dim */
                       true,                           /* interlace, */
                       true,                           /* use_parent */
