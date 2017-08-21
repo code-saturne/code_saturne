@@ -5,6 +5,9 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Fix possible crash or error when computing wall distance for 2D
+  (single cell layer) meshes.
+
 - Fix bug in the implicit part of the user momentum source terms when
   this matrix is not symmetric.
 
