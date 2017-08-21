@@ -5,6 +5,9 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Fix bug in the implicit part of the user momentum source terms when
+  this matrix is not symmetric.
+
 - Fix bug in rough wall function (when iwallf != 2 and when using DRSM
   turbulence models)
 

@@ -1436,7 +1436,7 @@ if (iterns.eq.1) then
       do isou = 1, 3
         do jsou = 1, 3
           trava(isou,iel) = trava(isou,iel)                                  &
-                          + tsimp(isou,jsou,iel)*vela(jsou,iel)
+                          + tsimp(jsou,isou,iel)*vela(jsou,iel)
         enddo
       enddo
     enddo
@@ -1445,7 +1445,7 @@ if (iterns.eq.1) then
       do isou = 1, 3
         do jsou = 1, 3
           trav(isou,iel) = trav(isou,iel)                                    &
-                         + tsimp(isou,jsou,iel)*vela(jsou,iel)
+                         + tsimp(jsou,isou,iel)*vela(jsou,iel)
         enddo
       enddo
     enddo
