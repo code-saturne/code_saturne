@@ -38,36 +38,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-#include "bft_printf.h"
-
-#include "fvm_selector.h"
-
-#include "cs_interface.h"
 
 #include "cs_base.h"
-#include "cs_benchmark.h"
-#include "cs_gradient.h"
-#include "cs_gui.h"
-#include "cs_gui_mesh.h"
-#include "cs_gui_output.h"
-#include "cs_gradient.h"
-#include "cs_gradient_perio.h"
-#include "cs_join.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_matrix_default.h"
 #include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_coherency.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_mesh_to_builder.h"
-#include "cs_multigrid.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_preprocess.h"
-#include "cs_prototypes.h"
-#include "cs_renumber.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
 
