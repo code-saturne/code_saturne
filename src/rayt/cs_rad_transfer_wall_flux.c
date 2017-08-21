@@ -219,7 +219,7 @@ cs_rad_transfer_wall_flux(int         nvar,
 
       qconv = flconp[ifac];
       cs_real_t qinci = qincip[ifac];
-      cs_real_t sigt4 = stephn * pow (tparop[ifac], 4.0);
+      cs_real_t sigt4 = stephn * cs_math_pow4(tparop[ifac]);
       cs_real_t epp   = epsp[ifac];
       qrayt = epp * (qinci - sigt4);
     }
@@ -236,7 +236,7 @@ cs_rad_transfer_wall_flux(int         nvar,
       qconv  = flconp[ifac];
       cs_real_t qinci  = qincip[ifac];
       cs_real_t epp    = epsp[ifac];
-      cs_real_t sigt3  = stephn * pow (tparop[ifac], 3);
+      cs_real_t sigt3  = stephn * cs_math_pow3(tparop[ifac]);
       qrayt  = epp * (qinci - sigt3 * tparop[ifac]);
       cs_real_t detep  =   (esl * (qconv + qrayt) - (tparop[ifac] - textp[ifac]))
                          / (1.0 + 4.0 * esl * epp * sigt3 + esl * hfconp[ifac]);
@@ -324,7 +324,7 @@ cs_rad_transfer_wall_flux(int         nvar,
       qconv  = flconp[ifac];
       cs_real_t qinci  = qincip[ifac];
       cs_real_t epp    = epsp[ifac];
-      cs_real_t sigt3  = stephn * pow (tparop[ifac], 3);
+      cs_real_t sigt3  = stephn * cs_math_pow3(tparop[ifac]);
       qrayt  = epp * (qinci - sigt3 * tparop[ifac]);
       cs_real_t detep  =  (qconv + qrayt - rcodcl[ifac + ircodcl])
                         / (4.0 * epp * sigt3 + hfconp[ifac]);
@@ -444,7 +444,7 @@ cs_rad_transfer_wall_flux(int         nvar,
         int log_z_id = b_face_class_id[ifac];
 
         if (indtp[log_z_id] != 0) {
-          cs_real_t tp4 = pow(tparop[ifac], 4);
+          cs_real_t tp4 = cs_math_pow4(tparop[ifac]);
           tzomoy[log_z_id] += tparop[ifac] * srfbn;
           flunet[log_z_id] += epsp[ifac] * (qincip[ifac] - stephn * tp4) * srfbn;
           radios[log_z_id] += - (epsp[ifac] * stephn * tp4

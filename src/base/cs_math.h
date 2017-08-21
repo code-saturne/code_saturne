@@ -124,6 +124,54 @@ cs_math_sq(cs_real_t  x)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the square of a real value.
+ *
+ * \param[in]  x  value
+ *
+ * \return the square of the given value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_pow2(cs_real_t  x)
+{
+  return x*x;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the cube of a real value.
+ *
+ * \param[in]  x  value
+ *
+ * \return the cube of the given value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_pow3(cs_real_t  x)
+{
+  return x*x*x;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the 4-th power of a real value.
+ *
+ * \param[in]  x  value
+ *
+ * \return the 4th power of the given value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_pow4(cs_real_t  x)
+{
+  return (x*x)*(x*x);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the (euclidean) distance between two points xa and xb in
  *         a cartesian coordinate system of dimension 3.
  *

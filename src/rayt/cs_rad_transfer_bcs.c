@@ -376,7 +376,7 @@ cs_rad_transfer_bcs(int         nvar,
       if (   bc_type[ifac] == CS_SMOOTHWALL
           || bc_type[ifac] == CS_ROUGHWALL) {
         tparo[ifac]         = tint[ifac];
-        f_bqinci->val[ifac] = stephn * pow (tint[ifac], 4);
+        f_bqinci->val[ifac] = stephn * cs_math_pow4(tint[ifac]);
       }
       else {
         tparo[ifac]         = 0.0;
@@ -1250,7 +1250,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
                || bc_type[ifac] == CS_ROUGHWALL)
         /* Remember: In case of the usage of the standard radiation
            models of code_saturne, abo=1  */
-        pimp =    f_eps->val[ifac] * stephn * (pow (tparoi[ifac], 4.0))
+        pimp =    f_eps->val[ifac] * stephn * cs_math_pow4(tparoi[ifac])
                 * unspi * abo[ifac + iband * n_b_faces]
                 + (1.0 - f_eps->val[ifac]) * qpatmp * unspi;
 
@@ -1315,7 +1315,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
         cs_real_t xit = 1.5 * distbf * ckmel[iel]
                             * (2.0 / (2.0 - f_eps->val[ifac]) - 1.0);
         cs_real_t cfl = 1.0 / xit;
-        cs_real_t pimp = (pow (tparoi[ifac], 4)) * abo[ifac + iband * n_b_faces];
+        cs_real_t pimp = cs_math_pow4(tparoi[ifac]) * abo[ifac + iband * n_b_faces];
         cs_boundary_conditions_set_convective_outlet_scalar(&coefap[ifac],
                                                             &cofafp[ifac],
                                                             &coefbp[ifac],
