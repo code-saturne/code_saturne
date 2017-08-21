@@ -663,7 +663,7 @@ cs_matrix_anisotropic_diffusion_wrapper_tensor(int                  iconvp,
                                                i_visc,
                                                b_visc,
                                                da,
-                                               xa);
+                                               (cs_real_66_t *)xa);
 
   /* Non-symmetric matrix */
   } else {

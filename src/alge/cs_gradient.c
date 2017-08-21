@@ -1983,7 +1983,7 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
   cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
   cs_real_t  rnorm;
-  cs_real_t  pfac, pfac0, pfac1, pip, det_inv;
+  cs_real_t  pfac, pfac0, pfac1, pip;
   cs_real_3_t  fexd;
   cs_real_4_t  fctb;
 
@@ -2413,7 +2413,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
   cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
-  cs_real_t  pfac, det_inv;
+  cs_real_t  pfac;
   cs_real_t  extrab, unddij, umcbdd, udbfs;
   cs_real_3_t  dc, dddij, dsij;
   cs_real_4_t  fctb;

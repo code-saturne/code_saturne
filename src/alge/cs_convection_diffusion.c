@@ -4341,8 +4341,8 @@ cs_convection_diffusion_vector(int                         idtvar,
         BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
         cs_internal_coupling_exchange_var(cpl,
                                           3, /* Dimension */
-                                          pvar_distant,
-                                          pvar_local);
+                                          (cs_real_t *)pvar_distant,
+                                          (cs_real_t *)pvar_local);
 
         /* Flux contribution */
         assert(f != NULL);
@@ -7540,9 +7540,6 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
   const int *bc_type = cs_glob_bc_type;
 
   /* Internal coupling variables */
-  cs_real_t *pvar_local = NULL;
-  cs_real_t *pvar_distant = NULL;
-  cs_real_t hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
   cs_int_t n_local;
   cs_lnum_t n_distant;
