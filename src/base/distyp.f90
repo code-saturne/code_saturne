@@ -145,7 +145,7 @@ save             ipass
 allocate(dvarp(ncelet), smbdp(ncelet), rovsdp(ncelet))
 allocate(q(3,ncelet))
 allocate(flumas(nfac), flumab(nfabor))
-allocate(rom(nfac), romb(nfabor))
+allocate(rom(ncelet), romb(nfabor))
 allocate(coefap(nfabor), coefbp(nfabor))
 allocate(coefav(3,nfabor))
 allocate(coefbv(3,3,nfabor))
