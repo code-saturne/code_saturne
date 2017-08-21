@@ -159,9 +159,6 @@ class Case(object):
         #    with the __backwardCompatibility method.
 
         from Base.XMLengine import Case
-        from Pages.ScriptRunningModel import ScriptRunningModel
-        from cs_exec_environment import \
-            separate_args, get_command_single_value, update_command_single_value, assemble_args
 
         if self.exe == "code_saturne":
             from Base.XMLinitialize import XMLinit
@@ -288,15 +285,6 @@ class Case(object):
         """
         # 1) Load the xml file of parameters in order to update it
         #    with the __backwardCompatibility method.
-
-        from Pages.ScriptRunningModel import ScriptRunningModel
-        from cs_exec_environment import \
-            separate_args, get_command_single_value, update_command_single_value, assemble_args, enquote_arg
-
-        if self.exe == "code_saturne":
-            from Base.XMLinitialize import XMLinit
-        elif self.exe == "neptune_cfd":
-            from core.XMLinitialize import XMLinit
 
         if self.subdomains:
             cdirs = []
