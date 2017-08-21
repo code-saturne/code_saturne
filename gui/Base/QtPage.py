@@ -39,6 +39,8 @@ This module defines the following classes:
 import sys
 import os
 import logging
+import locale
+
 Py2 = sys.version[0] == '2'
 Py3 = sys.version[0] == '3'
 
@@ -154,7 +156,10 @@ if os.environ.get('QT_API', 'pyqt') == 'pyqt':
             elif convfunc is int:
                 return int(qobj)
             elif convfunc is float:
-                return float(qobj)
+                try:
+                    return float(qobj)
+                except Exception:
+                    return locale.atof(qobj)
             else:
                 return qobj
 
@@ -665,6 +670,7 @@ class DoubleValidator(QDoubleValidator):
         Initialization for validator
         """
         QDoubleValidator.__init__(self, parent)
+        self.setLocale(QLocale(QLocale.C, QLocale.AnyCountry))
         self.parent = parent
         self.state = QValidator.Invalid
         self.__min = min
@@ -749,13 +755,12 @@ class DoubleValidator(QDoubleValidator):
         """
         state = QDoubleValidator.validate(self, stri, pos)[0]
 
-        try:
-            x = from_qvariant(stri, float)
-            valid = True
-            pass
-        except (TypeError, ValueError):
-            x = 0.0
-            valid = False
+        if state == QValidator.Acceptable:
+            try:
+                x = from_qvariant(stri, float)
+            except Exception: # may be type error or localization issue
+                x = 0.0
+                state = QValidator.Intermediate
 
         if state == QValidator.Acceptable:
             if self.exclusiveMin and x == self.bottom():
@@ -765,7 +770,7 @@ class DoubleValidator(QDoubleValidator):
 
         palette = self.parent.palette()
 
-        if not valid or state == QValidator.Intermediate:
+        if state != QValidator.Acceptable:
             palette.setColor(QPalette.Text, QColor("red"))
             self.parent.setPalette(palette)
         else:
