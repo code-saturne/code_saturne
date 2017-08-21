@@ -272,7 +272,6 @@ class Case(object):
             else:
                 if re.search(r'^export PATH=', lines[i]):
                     lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
-                j = lines[i].find(self.pkg.name)
 
         f = open(batch_file, mode = 'w')
         f.writelines(lines)
@@ -302,25 +301,8 @@ class Case(object):
         # Update the runcase script from the Repository in case of coupling
 
         if self.subdomains:
-            ref = os.path.join(self.__repo, self.label, "runcase")
-            try:
-                f = open(ref, mode = 'r')
-                lines = f.readlines()
-                f.close()
-                for i in range(len(lines)):
-                    if lines[i].strip()[0:1] == '#':
-                        continue
-                    if xmlonly:
-                        if re.search(r'^export PATH=', lines[i]):
-                            lines[i] = 'export PATH="":$PATH\n'
-                    else:
-                        if re.search(r'^export PATH=', lines[i]):
-                            lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
-                f = open(ref, mode = 'w')
-                f.writelines(lines)
-                f.close()
-            except IOError:
-                pass
+            case_dir = os.path.join(self.__repo, self.label)
+            self.update_runcase_path(case_dir, None, xmlonly)
 
     #---------------------------------------------------------------------------
 
