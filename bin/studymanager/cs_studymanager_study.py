@@ -196,7 +196,7 @@ class Case(object):
                 os.makedirs(r)
 
         # 3) Update the GUI script from the Repository
-        gui_script = os.path.join(self.__repo, subdir, "DATA")
+        data_subdir = os.path.join(self.__repo, subdir, "DATA")
         self.update_gui_script_path(data_subdir, None, xmlonly)
 
         # 4) Update the runcase script from the Repository
