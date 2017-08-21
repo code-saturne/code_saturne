@@ -226,11 +226,6 @@ class Case(object):
            f.close()
 
            for i in range(len(lines)):
-               if re.search(r'^prefix=', lines[i]):
-                   if xmlonly:
-                       lines[i] = "prefix=\n"
-                   else:
-                       lines[i] = "prefix=" + self.pkg.get_dir('prefix') + "\n"
                if re.search(r'^export PATH=', lines[i]):
                    if xmlonly:
                        lines[i] = 'export PATH="":$PATH\n'
