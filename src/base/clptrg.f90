@@ -741,40 +741,40 @@ do ifac = 1, nfabor
     ! Dimensionless velocity
     uplus = log(yplus+1.d0)/xkappa
 
+    if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
+      ek = cvar_k(iel)
+    else if(itytur.eq.3) then
+      if (irijco.eq.1) then
+        ek = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
+        rxx = cvar_rij(1,iel)
+        rxy = cvar_rij(4,iel)
+        rxz = cvar_rij(6,iel)
+        ryy = cvar_rij(2,iel)
+        ryz = cvar_rij(5,iel)
+        rzz = cvar_rij(3,iel)
+      else
+        ek = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+        rxx = cvar_r11(iel)
+        rxy = cvar_r12(iel)
+        rxz = cvar_r13(iel)
+        ryy = cvar_r22(iel)
+        ryz = cvar_r23(iel)
+        rzz = cvar_r33(iel)
+      endif
+      rnnb =   rnx * (rxx * rnx + rxy * rny + rxz * rnz) &
+        + rny * (rxy * rnx + ryy * rny + ryz * rnz) &
+        + rnz * (rxz * rnx + ryz * rny + rzz * rnz)
+
+      rttb =   tx * (rxx * tx + rxy * ty + rxz * tz) &
+        + ty * (rxy * tx + ryy * ty + ryz * tz) &
+        + tz * (rxz * tx + ryz * ty + rzz * tz)
+    endif
+
     if (iwallf.le.2) then
       uk = uet
 
     ! Si iwallf= 3, 4 ou 5 on calcule uk et uet
     else
-
-      if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
-        ek = cvar_k(iel)
-      else if(itytur.eq.3) then
-        if (irijco.eq.1) then
-          ek = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-          rxx = cvar_rij(1,iel)
-          rxy = cvar_rij(4,iel)
-          rxz = cvar_rij(6,iel)
-          ryy = cvar_rij(2,iel)
-          ryz = cvar_rij(5,iel)
-          rzz = cvar_rij(3,iel)
-        else
-          ek = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-          rxx = cvar_r11(iel)
-          rxy = cvar_r12(iel)
-          rxz = cvar_r13(iel)
-          ryy = cvar_r22(iel)
-          ryz = cvar_r23(iel)
-          rzz = cvar_r33(iel)
-        endif
-        rnnb =   rnx * (rxx * rnx + rxy * rny + rxz * rnz) &
-               + rny * (rxy * rnx + ryy * rny + ryz * rnz) &
-               + rnz * (rxz * rnx + ryz * rny + rzz * rnz)
-
-        rttb =   tx * (rxx * tx + rxy * ty + rxz * tz) &
-               + ty * (rxy * tx + ryy * ty + ryz * tz) &
-               + tz * (rxz * tx + ryz * ty + rzz * tz)
-      endif
 
       uk = cmu025*sqrt(ek)
 

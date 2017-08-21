@@ -5,6 +5,9 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Fix bug in rough wall function (when iwallf != 2 and when using DRSM
+  turbulence models)
+
 - Avoid logging info for an extra boundary zone for radiation module.
 
 - Fix crash in matrix assembler (used by CDO) in rare cases where some
