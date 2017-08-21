@@ -569,8 +569,7 @@ cs_at_data_assim_source_term(int        f_id,
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t rovol = cell_f_vol[c_id]*CS_F_(rho)->val[c_id];
         for (int ii = 0; ii < dim; ii++) {
-          exp_st[dim*c_id+ii] = exp_st[dim*c_id+ii]
-                              +  rovol*oi->relax[ii]
+          exp_st[dim*c_id+ii] += rovol*oi->relax[ii]
                                * (f_oia->val[dim*c_id+ii]-f->val[dim*c_id+ii]);
         }
       }
@@ -578,11 +577,10 @@ cs_at_data_assim_source_term(int        f_id,
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t rovol = cell_f_vol[c_id]*CS_F_(rho)->val[c_id];
         for (int ii = 0; ii < dim; ii++) {
-          exp_st[dim*c_id+ii] = exp_st[dim*c_id+ii]
-                              + rovol*oi->relax[ii]*f_oia->val[dim*c_id+ii];
+          exp_st[dim*c_id+ii] += rovol*oi->relax[ii]*f_oia->val[dim*c_id+ii];
 
-          imp_st[dim*dim*c_id+(dim+1)*ii] = imp_st[dim*dim*c_id+(dim+1)*ii]
-                                          - rovol*oi->relax[ii]*f->val[3*c_id+ii];
+          /* Diagonal term */
+          imp_st[dim*dim*c_id+(dim+1)*ii] -= rovol*oi->relax[ii]*f->val[3*c_id+ii];
         }
       }
     }

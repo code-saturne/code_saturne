@@ -118,8 +118,8 @@ cs_backward_differentiation_in_time(const int     field_id,
   const int dim = f->dim;
 
   if (dim == 3) {
-    cs_real_3_t * exp_part_3 = (cs_real_3_t *)(exp_part);
-    cs_real_33_t * imp_part_33 = (cs_real_33_t *)(imp_part);
+    cs_real_3_t *exp_part_3 = (cs_real_3_t *)(exp_part);
+    cs_real_33_t *imp_part_33 = (cs_real_33_t *)(imp_part);
     for (iel = 0; iel < n_cells; iel++) {
       for (int jj = 0; jj < 3; jj++) {
         exp_part_3[iel][jj] += rho[iel]*cell_vol[iel]/dt[iel]
@@ -140,7 +140,6 @@ cs_backward_differentiation_in_time(const int     field_id,
   }
 
 }
-
 
 /*----------------------------------------------------------------------------*/
 
