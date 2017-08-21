@@ -1390,7 +1390,7 @@ cs_matrix_vector(const cs_mesh_t          *m,
 
   }
 
-  if(n_cells_ext > n_cells) {
+  if (n_cells_ext > n_cells) {
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
 
       for (int isou = 0; isou < 3; isou++) {

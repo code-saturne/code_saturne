@@ -1016,6 +1016,17 @@ _conjugate_gradient(cs_sles_it_t              *c,
   c->setup_data->initial_residue = residue;
   cvg = _convergence_test(c, n_iter, residue, convergence);
 
+#if 0
+  bft_printf(_("In PCG  n_iter : %5u, residue: %11.4e\n"),
+               n_iter, residue);
+  residue = sqrt(_dot_product_xx(c, dk));
+  bft_printf(_("In PCG  n_iter : %5u, dk: %11.4e\n"),
+               n_iter, residue);
+  residue = sqrt(_dot_product_xx(c, gk));
+  bft_printf(_("In PCG  n_iter : %5u, gk: %11.4e\n"),
+               n_iter, residue);
+
+#endif
   if (cvg == CS_SLES_ITERATING) {
 
     n_iter = 1;
@@ -1028,6 +1039,10 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     alpha =  - ro_0 / ro_1;
 
+#if 0
+    bft_printf(_("In PCG  n_iter : %5u, alpha: %11.4e, ro_0: %11.4e, ro_1: %11.4e\n"),
+               n_iter, alpha, ro_0, ro_1);
+#endif
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
 #     pragma omp for nowait
@@ -1042,7 +1057,10 @@ _conjugate_gradient(cs_sles_it_t              *c,
     /* Convergence test */
 
     residue = sqrt(_dot_product_xx(c, rk));
-
+#if 0
+    bft_printf(_("In PCG  n_iter : %5u, residue: %11.4e\n"),
+               n_iter, residue);
+#endif
     cvg = _convergence_test(c, n_iter, residue, convergence);
 
     /* Current Iteration */

@@ -51,6 +51,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_connect.h"
 #include "cs_parall.h"
+#include "cs_bad_cells_regularisation.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -103,6 +104,9 @@ static int cs_glob_mesh_quantities_cell_cen = 0;
 static bool _compute_cocg_s_it = false;
 static bool _compute_cocg_it = false;
 static bool _compute_cocg_lsq = false;
+
+/* Flag (mask) to activate bad cells correction */
+unsigned cs_glob_mesh_quantities_flag = 0;
 
 /* Choice of the porous model */
 int cs_glob_porous_model = 0;
@@ -525,6 +529,146 @@ _compute_cell_cocg_it(const cs_mesh_t        *m,
 # pragma omp parallel for
   for (cell_id = 0; cell_id < n_cells; cell_id++)
     cs_math_33_inv_cramer_in_place(cocg[cell_id]);
+}
+
+/*----------------------------------------------------------------------------
+ * Build the geometrical matrix linear gradient correction
+ *
+ * parameters:
+ *   m               <--  mesh
+ *   fvq             <->  mesh quantities
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_corr_grad_lin(const cs_mesh_t       *m,
+                      cs_mesh_quantities_t   *fvq)
+{
+  /* Local variables */
+
+  const int n_cells = m->n_cells;
+  const int n_cells_with_ghosts = m->n_cells_with_ghosts;
+  const int n_i_faces = m->n_i_faces;
+  const int n_b_faces = m->n_b_faces;
+
+  const cs_lnum_t  *b_face_cells = m->b_face_cells;
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+
+  cs_real_t    *restrict corr_grad_lin_det = fvq->corr_grad_lin_det;
+  cs_real_33_t *restrict corr_grad_lin     = fvq->corr_grad_lin;
+
+    /* Initialization */
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
+    for (int i_ = 0; i_ < 3; i_++)
+      for (int j_ = 0; j_ < 3; j_++)
+        corr_grad_lin[cell_id][i_][j_] = 0.;
+
+    /* Internal faces contribution */
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+    cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+
+    for (int i_ = 0; i_ < 3; i_++)
+      for (int j_ = 0; j_ < 3; j_++) {
+        double flux = i_face_cog[face_id][i_] * i_face_normal[face_id][j_];
+        corr_grad_lin[cell_id1][i_][j_] += flux;
+        corr_grad_lin[cell_id2][i_][j_] -= flux;
+      }
+  }
+
+  /* Boundary faces contribution */
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    cs_lnum_t cell_id = b_face_cells[face_id];
+    for (int i_ = 0; i_ < 3; i_++)
+      for (int j_ = 0; j_ < 3; j_++) {
+        double flux = b_face_cog[face_id][i_] * b_face_normal[face_id][j_];
+        corr_grad_lin[cell_id][i_][j_] += flux;
+      }
+  }
+
+  /* Matrix inversion */
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+  {
+    double cocg11 = corr_grad_lin[cell_id][0][0] / cell_vol[cell_id];
+    double cocg12 = corr_grad_lin[cell_id][1][0] / cell_vol[cell_id];
+    double cocg13 = corr_grad_lin[cell_id][2][0] / cell_vol[cell_id];
+    double cocg21 = corr_grad_lin[cell_id][0][1] / cell_vol[cell_id];
+    double cocg22 = corr_grad_lin[cell_id][1][1] / cell_vol[cell_id];
+    double cocg23 = corr_grad_lin[cell_id][2][1] / cell_vol[cell_id];
+    double cocg31 = corr_grad_lin[cell_id][0][2] / cell_vol[cell_id];
+    double cocg32 = corr_grad_lin[cell_id][1][2] / cell_vol[cell_id];
+    double cocg33 = corr_grad_lin[cell_id][2][2] / cell_vol[cell_id];
+
+    double a11 = cocg22 * cocg33 - cocg32 * cocg23;
+    double a12 = cocg32 * cocg13 - cocg12 * cocg33;
+    double a13 = cocg12 * cocg23 - cocg22 * cocg13;
+    double a21 = cocg31 * cocg23 - cocg21 * cocg33;
+    double a22 = cocg11 * cocg33 - cocg31 * cocg13;
+    double a23 = cocg21 * cocg13 - cocg11 * cocg23;
+    double a31 = cocg21 * cocg32 - cocg31 * cocg22;
+    double a32 = cocg31 * cocg12 - cocg11 * cocg32;
+    double a33 = cocg11 * cocg22 - cocg21 * cocg12;
+
+    double det_inv = cocg11 * a11 + cocg21 * a12 + cocg31 * a13;
+
+    if (fabs(det_inv) >= 1.e-15) {
+      det_inv = 1. / det_inv;
+
+      corr_grad_lin[cell_id][0][0] = a11 * det_inv;
+      corr_grad_lin[cell_id][0][1] = a12 * det_inv;
+      corr_grad_lin[cell_id][0][2] = a13 * det_inv;
+      corr_grad_lin[cell_id][1][0] = a21 * det_inv;
+      corr_grad_lin[cell_id][1][1] = a22 * det_inv;
+      corr_grad_lin[cell_id][1][2] = a23 * det_inv;
+      corr_grad_lin[cell_id][2][0] = a31 * det_inv;
+      corr_grad_lin[cell_id][2][1] = a32 * det_inv;
+      corr_grad_lin[cell_id][2][2] = a33 * det_inv;
+
+      double a1 = corr_grad_lin[cell_id][0][0];
+      double a2 = corr_grad_lin[cell_id][0][1];
+      double a3 = corr_grad_lin[cell_id][0][2];
+      double a4 = corr_grad_lin[cell_id][1][0];
+      double a5 = corr_grad_lin[cell_id][1][1];
+      double a6 = corr_grad_lin[cell_id][1][2];
+      double a7 = corr_grad_lin[cell_id][2][0];
+      double a8 = corr_grad_lin[cell_id][2][1];
+      double a9 = corr_grad_lin[cell_id][2][2];
+
+      double determinant =  a1 * (a5*a9 - a8*a6)
+                          - a2 * (a4*a9 - a7*a6)
+                          + a3 * (a4*a8 - a7*a5);
+
+      corr_grad_lin_det[cell_id] = determinant;
+    }
+    else {
+      corr_grad_lin[cell_id][0][0] = 0.;
+      corr_grad_lin[cell_id][0][1] = 0.;
+      corr_grad_lin[cell_id][0][2] = 0.;
+      corr_grad_lin[cell_id][1][0] = 0.;
+      corr_grad_lin[cell_id][1][1] = 0.;
+      corr_grad_lin[cell_id][1][2] = 0.;
+      corr_grad_lin[cell_id][2][0] = 0.;
+      corr_grad_lin[cell_id][2][1] = 0.;
+      corr_grad_lin[cell_id][2][2] = 0.;
+
+      corr_grad_lin_det[cell_id] = 1.;
+    }
+  }
+
+  if (m->halo != NULL) {
+    cs_halo_sync_var (m->halo, CS_HALO_STANDARD, corr_grad_lin_det);
+    cs_halo_sync_var_strided (m->halo, CS_HALO_STANDARD, (cs_real_t *)corr_grad_lin, 9);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -970,6 +1114,211 @@ _compute_face_quantities(const cs_lnum_t   dim,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Recompute quantities associated to faces (border or internal) when
+ * the quality of the mesh is not good enough
+ *
+ *----------------------------------------------------------------------------*/
+
+static void
+_correct_cell_face_center(const cs_mesh_t  *mesh,
+                          const cs_lnum_t   n_cells_with_ghosts,
+                          const cs_lnum_t   n_i_faces,
+                          const cs_lnum_t   n_b_faces,
+                          const cs_lnum_2_t i_face_cells[],
+                          const cs_lnum_t   b_face_cells[],
+                          cs_real_3_t       cell_cen[],
+                          cs_real_3_t       i_face_cog[],
+                          cs_real_3_t       b_face_cog[],
+                          cs_real_3_t       i_face_normal[],
+                          cs_real_3_t       b_face_normal[],
+                          cs_real_t         i_face_surf[],
+                          cs_real_t         b_face_surf[])
+{
+  int nitmax = 100;
+  cs_real_3_t *i_face_cog0, *b_face_cog0;
+  cs_real_3_t *i_face_cen, *b_face_cen;
+
+  cs_real_t *relaxf;
+  cs_real_t *relaxb;
+
+  cs_real_33_t *dxidxj;
+  cs_real_t *determinant;
+
+  BFT_MALLOC(i_face_cog0, n_i_faces, cs_real_3_t);
+  BFT_MALLOC(b_face_cog0, n_b_faces, cs_real_3_t);
+  BFT_MALLOC(i_face_cen, n_i_faces, cs_real_3_t);
+  BFT_MALLOC(b_face_cen, n_b_faces, cs_real_3_t);
+  BFT_MALLOC(relaxf, n_i_faces, cs_real_t);
+  BFT_MALLOC(relaxb, n_b_faces, cs_real_t);
+  BFT_MALLOC(dxidxj, n_cells_with_ghosts, cs_real_33_t);
+  BFT_MALLOC(determinant, n_cells_with_ghosts, cs_real_t);
+
+  /* Iterative process */
+  for (int sweep = 0; sweep < 1; sweep++) {
+
+    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
+      for (int i = 0; i < 3; i++)
+        i_face_cog0[face_id][i] = i_face_cog[face_id][i];
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+      for (int i = 0; i < 3; i++)
+        b_face_cog0[face_id][i] = b_face_cog[face_id][i];
+
+    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+      cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+      cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+
+      for (int i = 0; i < 3; i++)
+        i_face_cen[face_id][i] = 0.5 * (cell_cen[cell_id1][i]
+                                      + cell_cen[cell_id2][i]);
+    }
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      cs_lnum_t cell_id = b_face_cells[face_id];
+
+      double s2 = cs_math_3_square_norm(b_face_normal[face_id]);
+      /* If possible, put the boundary face center F so that
+       * "IF" is colinear to the face normal */
+      if(s2 > 1.e-20) {
+        double lambda = cs_math_3_distance_dot_product(cell_cen[cell_id],
+                                                       b_face_cog[face_id],
+                                                       b_face_normal[face_id]);
+
+        for (int i = 0; i < 3; i++)
+          b_face_cen[face_id][i] = cell_cen[cell_id][i]
+                                 + lambda * b_face_normal[face_id][i] / s2;//TODO NORMALIZE ?
+      }
+      else {
+        for (int i = 0; i < 3; i++)
+          b_face_cen[face_id][i] = b_face_cen[face_id][i];//FIXME gardening
+      }
+    }
+
+    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
+      relaxf[face_id] = 1.;
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+      relaxb[face_id] = 1.;
+
+    int iiter = 0;
+    int irelax = 0;
+
+    do
+    {
+      iiter +=1;
+
+      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+        for (int i = 0; i < 3; i++)
+          i_face_cog[face_id][i] = (1. - relaxf[face_id]) * i_face_cog0[face_id][i]
+                                       + relaxf[face_id]  * i_face_cen[face_id][i];
+      }
+
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+        for (int i = 0; i < 3; i++)
+          b_face_cog[face_id][i] = (1. - relaxb[face_id]) * b_face_cog0[face_id][i]
+                                       + relaxb[face_id]  * b_face_cen[face_id][i];
+      }
+
+      for (cs_lnum_t cell_id = 0; cell_id <  n_cells_with_ghosts; cell_id++)
+        for (int i = 0; i < 3; i++)
+          for (int j = 0; j < 3; j++)
+            dxidxj[cell_id][i][j] = 0.;
+
+      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+        cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+        cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+
+        for (int i = 0; i < 3; i++)
+          for (int j = 0; j < 3; j++) {
+            double fluxij = i_face_cog[face_id][i]//TODO minus celli
+              * i_face_normal[face_id][j];
+            dxidxj[cell_id1][i][j] += fluxij;
+            dxidxj[cell_id2][i][j] -= fluxij;
+          }
+      }
+
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+        cs_lnum_t cell_id = b_face_cells[face_id];
+
+        for (int i = 0; i < 3; i++)
+          for (int j = 0; j < 3; j++) {
+            double fluxij =  b_face_cog[face_id][i]
+                           * b_face_normal[face_id][j];
+            dxidxj[cell_id][i][j] += fluxij;
+          }
+      }
+
+      for (cs_lnum_t cell_id = 0; cell_id <  mesh->n_cells; cell_id++) {
+        double vol = (   dxidxj[cell_id][0][0]
+                       + dxidxj[cell_id][1][1]
+                       + dxidxj[cell_id][2][2] ) / 3.;
+
+        //FIXME
+        if (vol >= 0)
+          vol = CS_MAX(vol,1.e-20);
+
+        double a1 = dxidxj[cell_id][0][0] / vol;
+        double a2 = dxidxj[cell_id][0][1] / vol;
+        double a3 = dxidxj[cell_id][0][2] / vol;
+        double a4 = dxidxj[cell_id][1][0] / vol;
+        double a5 = dxidxj[cell_id][1][1] / vol;
+        double a6 = dxidxj[cell_id][1][2] / vol;
+        double a7 = dxidxj[cell_id][2][0] / vol;
+        double a8 = dxidxj[cell_id][2][1] / vol;
+        double a9 = dxidxj[cell_id][2][2] / vol;
+
+        determinant[cell_id] = fabs(  a1 * (a5*a9 - a8*a6)
+                                    - a2 * (a4*a9 - a7*a6)
+                                    + a3 * (a4*a8 - a7*a5) );
+
+        //FIXME
+        determinant[cell_id] = CS_MAX(determinant[cell_id],1.e-20);
+        determinant[cell_id] = CS_MIN(determinant[cell_id],1./determinant[cell_id]);
+      }
+
+      if (mesh->halo != NULL)
+        cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, determinant);
+
+      irelax = 0;
+
+      //FIXME test was 0.001
+      cs_real_t threshold = 0.001;
+      for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+        cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+        cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+
+        if (determinant[cell_id1] < threshold || determinant[cell_id2] < threshold) {
+          irelax +=1;
+          relaxf[face_id] *= 0.95;
+        }
+      }
+
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+        cs_lnum_t cell_id = b_face_cells[face_id];
+
+        if (determinant[cell_id] < threshold) {
+          irelax += 1;
+          relaxb[face_id] *= 0.95;
+        }
+      }
+
+      cs_parall_counter(&irelax, 1);
+
+    } while (iiter < nitmax && irelax > 0);
+
+
+  }
+  BFT_FREE(i_face_cog0);
+  BFT_FREE(b_face_cog0);
+  BFT_FREE(i_face_cen);
+  BFT_FREE(b_face_cen);
+  BFT_FREE(relaxf);
+  BFT_FREE(relaxb);
+  BFT_FREE(dxidxj);
+  BFT_FREE(determinant);
+
+}
+
 /*----------------------------------------------------------------------------*
  * Compute center of gravity of cells C from their vertices S(i) where
  * i=0, n-1
@@ -1111,7 +1460,7 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
                        const cs_real_t   b_face_cog[],
                        cs_real_t         cell_cen[])
 {
-  cs_lnum_t  i, j, fac_id, cell_id, cell_id1, cell_id2;
+  cs_lnum_t  fac_id, cell_id, cell_id1, cell_id2;
   cs_real_t  area;
   cs_real_t  _norm[3];
 
@@ -1146,11 +1495,11 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
 
   BFT_MALLOC(cell_area, n_cells_with_ghosts, cs_real_t);
 
-  for (j = 0; j < n_cells_with_ghosts; j++) {
+  for (cs_lnum_t j = 0; j < n_cells_with_ghosts; j++) {
 
     cell_area[j] = 0.;
 
-    for (i = 0; i < dim; i++)
+    for (int i = 0; i < dim; i++)
       cell_cen[dim*j + i] = 0. ;
 
   }
@@ -1171,19 +1520,19 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
 
     /* Computation of the area of the face */
 
-    for (i = 0; i < dim; i++)
+    for (int i = 0; i < dim; i++)
       _norm[i] = i_face_norm[dim*fac_id + i];
 
     area = cs_math_3_norm(_norm);
 
     if (cell_id1 > -1) {
       cell_area[cell_id1] += area;
-      for (i = 0; i < dim; i++)
+      for (int i = 0; i < dim; i++)
         cell_cen[dim*cell_id1 + i] += i_face_cog[dim*fac_id + i]*area;
     }
     if (cell_id2 > -1) {
       cell_area[cell_id2] += area;
-      for (i = 0; i < dim; i++)
+      for (int i = 0; i < dim; i++)
         cell_cen[dim*cell_id2 + i] += i_face_cog[dim*fac_id + i]*area;
     }
 
@@ -1208,7 +1557,7 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
 
     if (cell_id1 > -1) {
 
-      for (i = 0; i < dim; i++)
+      for (int i = 0; i < dim; i++)
         _norm[i] = b_face_norm[dim*fac_id + i];
 
       area = cs_math_3_norm(_norm);
@@ -1217,7 +1566,7 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
 
       /* Computation of the numerator */
 
-      for (i = 0; i < dim; i++)
+      for (int i = 0; i < dim; i++)
         cell_cen[dim*cell_id1 + i] += b_face_cog[dim*fac_id + i]*area;
 
     }
@@ -1230,7 +1579,7 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
 
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
 
-    for (i = 0; i < dim; i++)
+    for (int i = 0; i < dim; i++)
       cell_cen[cell_id*dim + i] /= cell_area[cell_id];
 
   } /* End of loop on cells */
@@ -1238,6 +1587,213 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
   /* Free memory */
 
   BFT_FREE(cell_area);
+
+}
+
+/*----------------------------------------------------------------------------*
+ * Compute new cell centers by minimizing the distance to faces
+ *
+ * parameters:
+ *   mesh           <--  pointer to mesh structure
+ *   i_face_normal    <--  surface normal of internal faces
+ *   i_face_cog     <--  center of gravity of internal faces
+ *   b_face_normal    <--  surface normal of border faces
+ *   b_face_cog     <--  center of gravity of border faces
+ *   cell_cen       -->  center of gravity of cells
+ *----------------------------------------------------------------------------*/
+
+static void
+_recompute_cell_cen_face(const cs_mesh_t     *mesh,
+                         const cs_real_3_t   i_face_normal[],
+                         const cs_real_3_t   i_face_cog[],
+                         const cs_real_3_t   b_face_normal[],
+                         const cs_real_3_t   b_face_cog[],
+                         cs_real_3_t         cell_cen[])
+{
+  const  cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const  cs_lnum_t  n_b_faces = mesh->n_b_faces;
+
+  const  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
+
+  const  cs_lnum_2_t  *i_face_cells
+    = (const cs_lnum_2_t *)(mesh->i_face_cells);
+  const  cs_lnum_t  *b_face_cells = mesh->b_face_cells;
+
+  /* First pass of verification */
+  int *pb;
+  BFT_MALLOC(pb, n_cells_with_ghosts, int);
+
+  for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells_with_ghosts; cell_id++)
+    pb[cell_id] = 0;
+
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+
+    cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+    cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+
+    double psi1 = cs_math_3_distance_dot_product(cell_cen[cell_id1],
+                                                 i_face_cog[face_id],
+                                                 i_face_normal[face_id]);
+    double psj1 = cs_math_3_distance_dot_product(cell_cen[cell_id2],
+                                                 i_face_cog[face_id],
+                                                 i_face_normal[face_id]);
+    if (psi1 < 0.) pb[cell_id1]++;
+    if (psj1 > 0.) pb[cell_id2]++;
+  }
+
+  int cpt = 0;
+  for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
+    if(pb[cell_id] > 0) cpt++;
+  cs_parall_counter(&cpt, 1);
+
+  //FIXME global cell number?
+  bft_printf("cpt1 = %d / %d\n",cpt,mesh->n_cells);
+
+  /* Second pass */
+  cs_real_33_t *a;
+  cs_real_3_t  *b;
+
+  BFT_MALLOC(a, n_cells_with_ghosts, cs_real_33_t);
+  BFT_MALLOC(b, n_cells_with_ghosts, cs_real_3_t);
+
+  /* init matrice et second membre */
+  for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells_with_ghosts; cell_id++) {
+    for (int i = 0; i < 3; i++) {
+      b[cell_id][i] = 0.;
+      for (int j = 0; j < 3; j++)
+        a[cell_id][i][j] = 0.;
+    }
+  }
+
+  /* Contribution from interior faces */
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+
+    cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+    cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++) {
+        a[cell_id1][i][j] += i_face_normal[face_id][i] * i_face_normal[face_id][j];
+        a[cell_id2][i][j] += i_face_normal[face_id][i] * i_face_normal[face_id][j];
+      }
+
+    double ps = cs_math_3_dot_product(i_face_normal[face_id], i_face_cog[face_id]);
+
+    for (int i = 0; i < 3; i++) {
+      b[cell_id1][i] += ps * i_face_normal[face_id][i];
+      b[cell_id2][i] += ps * i_face_normal[face_id][i];
+    }
+
+  }
+
+  /* Contribution from boundary faces */
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+    cs_lnum_t cell_id = b_face_cells[face_id];
+
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++) {
+        a[cell_id][i][j] += b_face_normal[face_id][i] * b_face_normal[face_id][j];
+      }
+
+    double ps = cs_math_3_dot_product(b_face_normal[face_id], b_face_cog[face_id]);
+
+    for (int i = 0; i < 3; i++) {
+      b[cell_id][i] += ps * b_face_normal[face_id][i];
+    }
+
+  }
+
+  /* inversion du systeme */
+  double aainv[3][3];
+  double bb[3];
+  for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
+    double adim = a[cell_id][0][0] + a[cell_id][1][2] + a[cell_id][2][2];
+
+    if (adim > 0.) {
+      bb[0] = b[cell_id][0] / adim;
+      bb[1] = b[cell_id][1] / adim;
+      bb[2] = b[cell_id][2] / adim;
+
+      /* Matrix inversion */
+      double cocg11 = a[cell_id][0][0] / adim;
+      double cocg12 = a[cell_id][0][1] / adim;
+      double cocg13 = a[cell_id][0][2] / adim;
+      double cocg21 = a[cell_id][1][0] / adim;
+      double cocg22 = a[cell_id][1][1] / adim;
+      double cocg23 = a[cell_id][1][2] / adim;
+      double cocg31 = a[cell_id][2][0] / adim;
+      double cocg32 = a[cell_id][2][1] / adim;
+      double cocg33 = a[cell_id][2][2] / adim;
+
+      double a11 = cocg22 * cocg33 - cocg32 * cocg23;
+      double a12 = cocg32 * cocg13 - cocg12 * cocg33;
+      double a13 = cocg12 * cocg23 - cocg22 * cocg13;
+      double a21 = cocg31 * cocg23 - cocg21 * cocg33;
+      double a22 = cocg11 * cocg33 - cocg31 * cocg13;
+      double a23 = cocg21 * cocg13 - cocg11 * cocg23;
+      double a31 = cocg21 * cocg32 - cocg31 * cocg22;
+      double a32 = cocg31 * cocg12 - cocg11 * cocg32;
+      double a33 = cocg11 * cocg22 - cocg21 * cocg12;
+
+      double det_inv = cocg11 * a11 + cocg21 * a12 + cocg31 * a13;
+
+      if (fabs(det_inv) >= 1.e-15) {
+        det_inv = 1. / det_inv;
+
+        aainv[0][0] = a11 * det_inv;
+        aainv[0][1] = a12 * det_inv;
+        aainv[0][2] = a13 * det_inv;
+        aainv[1][0] = a21 * det_inv;
+        aainv[1][1] = a22 * det_inv;
+        aainv[1][2] = a23 * det_inv;
+        aainv[2][0] = a31 * det_inv;
+        aainv[2][1] = a32 * det_inv;
+        aainv[2][2] = a33 * det_inv;
+
+        for (int i = 0; i < 3; i++)
+          cell_cen[cell_id][i] = aainv[i][0] * bb[0] + aainv[i][1] * bb[1] + aainv[i][2] * bb[2];
+      }
+    }
+  }
+
+  if (mesh->halo != NULL) {
+    cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED, (cs_real_t *)cell_cen, 3);
+    if (mesh->n_init_perio > 0)
+      cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED, (cs_real_t *)cell_cen);
+  }
+
+  /* Second verification */
+
+  for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells_with_ghosts; cell_id++)
+    pb[cell_id] = 0;
+
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+
+    cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+    cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+
+    double psi1 = cs_math_3_distance_dot_product(cell_cen[cell_id1],
+                                                 i_face_cog[face_id],
+                                                 i_face_normal[face_id]);
+    double psj1 = cs_math_3_distance_dot_product(cell_cen[cell_id2],
+                                                 i_face_cog[face_id],
+                                                 i_face_normal[face_id]);
+    if (psi1 < 0.) pb[cell_id1]++;
+    if (psj1 > 0.) pb[cell_id2]++;
+
+  }
+
+  cpt = 0;
+  for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
+    if (pb[cell_id] > 0) cpt++;
+  cs_parall_counter(&cpt, 1);
+  //FIXME
+  bft_printf("cpt2 = %d / %d\n",cpt,mesh->n_cells);
+
+  /* Free memory */
+
+  BFT_FREE(pb);
 
 }
 
@@ -1358,13 +1914,14 @@ _compute_face_distances(int                dim,
                         const cs_lnum_t    n_b_faces,
                         const cs_lnum_2_t  i_face_cells[],
                         const cs_lnum_t    b_face_cells[],
-                        const cs_real_t    i_face_normal[],
-                        const cs_real_t    b_face_normal[],
-                        const cs_real_t    i_face_cog[],
-                        const cs_real_t    b_face_cog[],
+                        const cs_real_3_t  i_face_normal[],
+                        const cs_real_3_t  b_face_normal[],
+                        const cs_real_3_t  i_face_cog[],
+                        const cs_real_3_t  b_face_cog[],
                         const cs_real_t    i_face_surf[],
                         const cs_real_t    b_face_surf[],
-                        const cs_real_t    cell_cen[],
+                        const cs_real_3_t  cell_cen[],
+                        const cs_real_t    cell_vol[],
                         cs_real_t          i_dist[],
                         cs_real_t          b_dist[],
                         cs_real_t          weight[])
@@ -1372,8 +1929,6 @@ _compute_face_distances(int                dim,
   cs_lnum_t face_id;
   cs_lnum_t cell_id, cell_id1, cell_id2;
 
-  cs_real_t surfn, surfx, surfy, surfz;
-  cs_real_t xvn, yvn, zvn, xvv, yvv, zvv;
   cs_real_t dist2f;
 
   cs_gnum_t w_count = 0;
@@ -1382,70 +1937,97 @@ _compute_face_distances(int                dim,
 
   for (face_id = 0; face_id < n_i_faces; face_id++) {
 
-    surfx = i_face_normal[face_id*dim];
-    surfy = i_face_normal[face_id*dim + 1];
-    surfz = i_face_normal[face_id*dim + 2];
-
-    surfn = i_face_surf[face_id];
+    cs_real_t *face_nomal = i_face_normal[face_id];
+    cs_real_3_t normal;
+    cs_math_3_normalise(face_nomal, normal);
 
     cell_id1 = i_face_cells[face_id][0];
     cell_id2 = i_face_cells[face_id][1];
 
-    /* Distance between the face center of gravity
-       and the neighbor cell center */
-    xvn = cell_cen[cell_id2*dim]     - i_face_cog[face_id*dim];
-    yvn = cell_cen[cell_id2*dim + 1] - i_face_cog[face_id*dim + 1];
-    zvn = cell_cen[cell_id2*dim + 2] - i_face_cog[face_id*dim + 2];
-
-    /* Distance between the neighbor cell centers */
-    xvv = cell_cen[cell_id2*dim]     - cell_cen[cell_id1*dim];
-    yvv = cell_cen[cell_id2*dim + 1] - cell_cen[cell_id1*dim + 1];
-    zvv = cell_cen[cell_id2*dim + 2] - cell_cen[cell_id1*dim + 2];
-
-    /* dot-product with the normal */
-    i_dist[face_id] = (xvv*surfx + yvv*surfy + zvv*surfz) / surfn;
+    /* Distance between the neighbor cell centers
+     * and dot-product with the normal */
+    i_dist[face_id] = cs_math_3_distance_dot_product(cell_cen[cell_id1],
+                                                     cell_cen[cell_id2],
+                                                     normal);
 
     if (CS_ABS(i_dist[face_id]) > 1e-12) {
-      /* dot-product with the normal */
-      dist2f = (xvn*surfx + yvn*surfy + zvn*surfz) / surfn;
+      /* Distance between the face center of gravity
+         and the neighbor cell center
+         and dot-product with the normal */
+      dist2f = cs_math_3_distance_dot_product(i_face_cog[face_id],
+                                              cell_cen[cell_id2],
+                                              normal);
       weight[face_id] = dist2f / i_dist[face_id];
     }
     else {
-      w_count++;
       weight[face_id] = 0.5;
     }
+    double distmax = cs_math_3_distance(cell_cen[cell_id1],
+                                        cell_cen[cell_id2]);
 
+    i_dist[face_id] = CS_MIN(i_dist[face_id], distmax);
+
+    /* Clipping of cell cell distances */
+    if (cs_glob_mesh_quantities_flag & CS_FACE_DISTANCE_CLIP) {
+      double vol = 0.5 * (cell_vol[cell_id1] + cell_vol[cell_id2]);// FIXME armonic?
+      double distmin = 0.1 * vol / i_face_surf[face_id];
+      if (i_dist[face_id] < distmin) {
+        w_count++;
+        i_dist[face_id] = CS_MAX(i_dist[face_id], distmin);
+      }
+
+      /* Clipping of weighting */
+      weight[face_id] = CS_MAX(weight[face_id], 0.001);
+      weight[face_id] = CS_MIN(weight[face_id], 0.999);
+    }
   }
 
   cs_parall_counter(&w_count, 1);
 
   if (w_count > 0)
     bft_printf(_("\n"
-                 "%llu faces have a null distance between centers.\n"
-                 "For these faces, the weight is set to 0.5.\n"),
+                 "%llu faces have a too small distance between centers.\n"
+                 "For these faces, the weight may be clipped.\n"),
                (unsigned long long)w_count);
 
   /* Border faces */
 
+  w_count = 0;
+
   for (face_id = 0; face_id < n_b_faces; face_id++) {
 
-    surfx = b_face_normal[face_id*dim];
-    surfy = b_face_normal[face_id*dim + 1];
-    surfz = b_face_normal[face_id*dim + 2];
-
-    surfn = b_face_surf[face_id];
+    cs_real_t *face_nomal = b_face_normal[face_id];
+    cs_real_3_t normal;
+    cs_math_3_normalise(face_nomal, normal);
 
     cell_id = b_face_cells[face_id];
 
     /* Distance between the face center of gravity
        and the neighbor cell center */
-    xvn = b_face_cog[face_id*dim]     - cell_cen[cell_id*dim];
-    yvn = b_face_cog[face_id*dim + 1] - cell_cen[cell_id*dim + 1];
-    zvn = b_face_cog[face_id*dim + 2] - cell_cen[cell_id*dim + 2];
+    b_dist[face_id] = cs_math_3_distance_dot_product(cell_cen[cell_id],
+                                                     b_face_cog[face_id],
+                                                     normal);
+    /* Clipping of cell boundary distances */
+    if (cs_glob_mesh_quantities_flag & CS_FACE_DISTANCE_CLIP) {
+      double distmin = 0.05 * cell_vol[cell_id] / b_face_surf[face_id];
+      double distmax = cs_math_3_distance(cell_cen[cell_id],
+                                          b_face_cog[face_id]);
+      b_dist[face_id] = CS_MIN(b_dist[face_id], distmax);//FIXME not possible...
+      if (b_dist[face_id] < distmin) {
+        w_count++;
+        b_dist[face_id] = CS_MAX(b_dist[face_id], distmin);
+      }
 
-    b_dist[face_id] = (xvn*surfx + yvn*surfy + zvn*surfz) / surfn;
-
+    }
   }
+
+  cs_parall_counter(&w_count, 1);
+
+  if (w_count > 0)
+    bft_printf(_("\n"
+                 "%llu boundary faces have a too small distance between\n"
+                 "cell centre and face centre.\n"),
+               (unsigned long long)w_count);
 }
 
 /*----------------------------------------------------------------------------
@@ -1504,6 +2086,7 @@ _compute_face_vectors(int                dim,
                       const cs_real_t    b_face_surf[],
                       const cs_real_t    cell_cen[],
                       const cs_real_t    weight[],
+                      const cs_real_t    b_dist[],
                       cs_real_t          dijpf[],
                       cs_real_t          diipb[],
                       cs_real_t          dofij[])
@@ -1580,6 +2163,18 @@ _compute_face_vectors(int                dim,
     diipb[face_id*dim + 1] = vecigy - psi*surfny;
     diipb[face_id*dim + 2] = vecigz - psi*surfnz;
 
+    /* Limiter on boundary face reconstruction */
+    if (cs_glob_mesh_quantities_flag & CS_FACE_RECONSTRUCTION_CLIP) {
+      double iip = sqrt(   diipb[face_id*dim]     * diipb[face_id*dim]
+                         + diipb[face_id*dim + 1] * diipb[face_id*dim + 1]
+                         + diipb[face_id*dim + 2] * diipb[face_id*dim + 2]);
+      double corri = 0.5 * b_dist[face_id] / CS_MAX(iip, 1.e-20);
+      corri = CS_MIN(corri, 1.);
+
+      diipb[face_id*dim]    *= corri;
+      diipb[face_id*dim +1] *= corri;
+      diipb[face_id*dim +2] *= corri;
+    }
   }
 }
 
@@ -1625,6 +2220,7 @@ _compute_face_sup_vectors(int                dim,
                           const cs_real_t    i_face_cog[],
                           const cs_real_t    i_face_surf[],
                           const cs_real_t    cell_cen[],
+                          cs_real_t          dist[],
                           cs_real_t          diipf[],
                           cs_real_t          djjpf[])
 {
@@ -1672,6 +2268,26 @@ _compute_face_sup_vectors(int                dim,
     djjpf[face_id*dim + 1] = vecjgy - djjpp*surfny;
     djjpf[face_id*dim + 2] = vecjgz - djjpp*surfnz;
 
+    /* Limiter on interior face reconstruction */
+    if (cs_glob_mesh_quantities_flag & CS_FACE_RECONSTRUCTION_CLIP) {
+      double iip = sqrt(   diipf[face_id*dim]     * diipf[face_id*dim]
+                         + diipf[face_id*dim + 1] * diipf[face_id*dim + 1]
+                         + diipf[face_id*dim + 2] * diipf[face_id*dim + 2]);
+      double corri = 0.5 * dist[face_id] / CS_MAX(iip, 1.e-20);
+      corri = CS_MIN(corri, 1.);
+      diipf[face_id*dim]    *= corri;
+      diipf[face_id*dim +1] *= corri;
+      diipf[face_id*dim +2] *= corri;
+
+      double jjp = sqrt(   djjpf[face_id*dim]     * djjpf[face_id*dim]
+                         + djjpf[face_id*dim + 1] * djjpf[face_id*dim + 1]
+                         + djjpf[face_id*dim + 2] * djjpf[face_id*dim + 2]);
+      double corrj = 0.5 * dist[face_id] / CS_MAX(jjp, 1.e-20);
+      corrj = CS_MIN(corrj, 1.);
+      djjpf[face_id*dim   ] *= corrj;
+      djjpf[face_id*dim +1] *= corrj;
+      djjpf[face_id*dim +2] *= corrj;
+    }
   }
 }
 
@@ -1884,6 +2500,9 @@ cs_mesh_quantities_create(void)
   mesh_quantities->cocgb_s_lsq = NULL;
   mesh_quantities->cocg_it = NULL;
   mesh_quantities->cocg_lsq = NULL;
+  mesh_quantities->bad_cell_indic = NULL;//FIXME rm
+  mesh_quantities->corr_grad_lin_det = NULL;
+  mesh_quantities->corr_grad_lin = NULL;
   mesh_quantities->b_sym_flag = NULL;
   mesh_quantities->c_solid_flag = NULL;
   mesh_quantities->bad_cell_flag = NULL;
@@ -1935,6 +2554,9 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
   BFT_FREE(mesh_quantities->cocgb_s_lsq);
   BFT_FREE(mesh_quantities->cocg_it);
   BFT_FREE(mesh_quantities->cocg_lsq);
+  BFT_FREE(mesh_quantities->bad_cell_indic);
+  BFT_FREE(mesh_quantities->corr_grad_lin_det);
+  BFT_FREE(mesh_quantities->corr_grad_lin);
   BFT_FREE(mesh_quantities->b_sym_flag);
   BFT_FREE(mesh_quantities->c_solid_flag);
   BFT_FREE(mesh_quantities->bad_cell_flag);
@@ -1960,6 +2582,24 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   cs_lnum_t  n_i_faces = mesh->n_i_faces;
   cs_lnum_t  n_b_faces = mesh->n_b_faces;
   cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
+  cs_lnum_t  n_cells = mesh->n_cells;
+
+  if (cs_glob_mesh_quantities_flag != 0)
+    bft_printf
+      (" Warning:\n"
+       " --------\n"
+       "    Activate mesh corrections:\n"
+       "      CS_BAD_CELLS_WARPED_CORRECTION: %d\n"
+       "      CS_BAD_CELLS_REGULARISATION: %d\n"
+       "      CS_CELL_FACE_CENTER_CORRECTION: %d\n"
+       "      CS_FACE_DISTANCE_CLIP: %d\n"
+       "      CS_FACE_RECONSTRUCTION_CLIP: %d\n",
+       (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION),
+       (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION),
+       (cs_glob_mesh_quantities_flag & CS_CELL_FACE_CENTER_CORRECTION),
+       (cs_glob_mesh_quantities_flag & CS_FACE_DISTANCE_CLIP),
+       (cs_glob_mesh_quantities_flag & CS_FACE_RECONSTRUCTION_CLIP)
+       );
 
   /* Update the number of passes */
 
@@ -2071,6 +2711,9 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
     }
   }
 
+  BFT_MALLOC(mesh_quantities->corr_grad_lin_det, n_cells_with_ghosts, cs_real_t);
+  BFT_MALLOC(mesh_quantities->corr_grad_lin, n_cells_with_ghosts, cs_real_33_t);
+
   if (mesh_quantities->b_sym_flag == NULL)
     BFT_MALLOC(mesh_quantities->b_sym_flag, n_b_faces, cs_int_t);
 
@@ -2107,6 +2750,15 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                            mesh_quantities->b_face_normal,
                            mesh_quantities->b_face_cog,
                            mesh_quantities->cell_cen);
+
+    if (cs_glob_mesh_quantities_flag & CS_CELL_CENTER_CORRECTION)
+      _recompute_cell_cen_face(mesh,
+                               (const cs_real_3_t *)(mesh_quantities->i_face_normal),
+                               (const cs_real_3_t *)(mesh_quantities->i_face_cog),
+                               (const cs_real_3_t *)(mesh_quantities->b_face_normal),
+                               (const cs_real_3_t *)(mesh_quantities->b_face_cog),
+                               (cs_real_3_t *)(mesh_quantities->cell_cen));
+
     break;
 
   case 1:
@@ -2119,6 +2771,24 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   }
 
+  /* Recompute face centers as the middle of two cell centers if possible */
+  if (cs_glob_mesh_quantities_flag & CS_CELL_FACE_CENTER_CORRECTION) {
+    _correct_cell_face_center(mesh,
+                              n_cells_with_ghosts,
+                              n_i_faces,
+                              n_b_faces,
+                              (const cs_lnum_2_t *)(mesh->i_face_cells),
+                              mesh->b_face_cells,
+                              (cs_real_3_t *)(mesh_quantities->cell_cen),
+                              (cs_real_3_t *)(mesh_quantities->i_face_cog),
+                              (cs_real_3_t *)(mesh_quantities->b_face_cog),
+                              (cs_real_3_t *)(mesh_quantities->i_face_normal),
+                              (cs_real_3_t *)(mesh_quantities->b_face_normal),
+                              mesh_quantities->i_face_surf,
+                              mesh_quantities->b_face_surf);
+
+
+  }
   /* Compute the volume of cells */
 
   _compute_cell_volume(mesh,
@@ -2173,13 +2843,14 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                           mesh->n_b_faces,
                           (const cs_lnum_2_t *)(mesh->i_face_cells),
                           mesh->b_face_cells,
-                          mesh_quantities->i_face_normal,
-                          mesh_quantities->b_face_normal,
-                          mesh_quantities->i_face_cog,
-                          mesh_quantities->b_face_cog,
+                          (const cs_real_3_t *)(mesh_quantities->i_face_normal),
+                          (const cs_real_3_t *)(mesh_quantities->b_face_normal),
+                          (const cs_real_3_t *)(mesh_quantities->i_face_cog),
+                          (const cs_real_3_t *)(mesh_quantities->b_face_cog),
                           mesh_quantities->i_face_surf,
                           mesh_quantities->b_face_surf,
-                          mesh_quantities->cell_cen,
+                          (const cs_real_3_t *)(mesh_quantities->cell_cen),
+                          mesh_quantities->cell_vol,
                           mesh_quantities->i_dist,
                           mesh_quantities->b_dist,
                           mesh_quantities->weight);
@@ -2199,6 +2870,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                         mesh_quantities->b_face_surf,
                         mesh_quantities->cell_cen,
                         mesh_quantities->weight,
+                        mesh_quantities->b_dist,
                         mesh_quantities->dijpf,
                         mesh_quantities->diipb,
                         mesh_quantities->dofij);
@@ -2213,6 +2885,10 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   if (_compute_cocg_it == 1)
     _compute_cell_cocg_it(mesh, mesh_quantities, NULL);
+
+  /* Build the geometrical matrix linear gradient correction */
+  if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION)
+    _compute_corr_grad_lin(mesh, mesh_quantities);
 
   /* Print some information on the control volumes, and check min volume */
 
@@ -2319,6 +2995,7 @@ cs_mesh_quantities_sup_vectors(const cs_mesh_t       *mesh,
                             mesh_quantities->i_face_cog,
                             mesh_quantities->i_face_surf,
                             mesh_quantities->cell_cen,
+                            mesh_quantities->i_dist,
                             mesh_quantities->diipf,
                             mesh_quantities->djjpf);
 }

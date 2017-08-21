@@ -66,6 +66,7 @@
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
 #include "cs_internal_coupling.h"
+#include "cs_bad_cells_regularisation.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -3615,6 +3616,8 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
     = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *restrict)fvq->dofij;
+  const cs_real_33_t *restrict corr_grad_lin
+    = (const cs_real_33_t *restrict)fvq->corr_grad_lin;
 
   bool  *coupled_faces = (cpl == NULL) ?
     NULL : (bool *)cpl->coupled_faces;
@@ -3722,6 +3725,20 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++)
         grad[cell_id][i][j] *= dvol;
+    }
+
+    if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
+      cs_real_3_t gradpa;
+      for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+          gradpa[j] = grad[cell_id][i][j];
+          grad[cell_id][i][j] = 0.;
+        }
+
+        for (int j = 0; j < 3; j++)
+          for (int k = 0; k < 3; k++)
+            grad[cell_id][i][j] += corr_grad_lin[cell_id][j][k] * gradpa[k];
+      }
     }
   }
 
@@ -5489,6 +5506,9 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
+  const cs_real_33_t *restrict corr_grad_lin
+    = (const cs_real_33_t *restrict)fvq->corr_grad_lin;
+
   int        g_id, t_id;
 
   cs_real_3_t  fexd;
@@ -5683,6 +5703,18 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
     grad[cell_id][0] *= dvol;
     grad[cell_id][1] *= dvol;
     grad[cell_id][2] *= dvol;
+
+    if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
+      cs_real_3_t gradpa;
+      for (int i = 0; i < 3; i++) {
+        gradpa[i] = grad[cell_id][i];
+        grad[cell_id][i] = 0.;
+      }
+
+      for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+          grad[cell_id][i] += corr_grad_lin[cell_id][i][j] * gradpa[j];
+    }
   }
 
   /* Synchronize halos */
@@ -6327,6 +6359,9 @@ _gradient_scalar(const char                    *var_name,
   _scalar_gradient_clipping(halo_type, clip_mode, verbosity, tr_dim, clip_coeff,
                             var, grad);
 
+  if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
+    cs_bad_cells_regularisation_vector(grad, 0);
+
   BFT_FREE(rhsv);
 }
 
@@ -6486,6 +6521,10 @@ _gradient_vector(const char                    *var_name,
                             clip_coeff,
                             (const cs_real_3_t *)var,
                             grad);
+
+  if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
+    cs_bad_cells_regularisation_tensor(grad, 0);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7089,7 +7128,7 @@ cs_gradient_vector(const char                *var_name,
  * \param[in]       bc_coeff_b      boundary condition term b
  * \param[in, out]  var             gradient's base variable
  * \param[out]      grad           gradient
-                                    (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
+                                    (\f$ \der{u_i}{x_j} \f$ is grad[][i][j])
  */
 /*----------------------------------------------------------------------------*/
 

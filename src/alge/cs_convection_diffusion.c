@@ -69,6 +69,7 @@
 #include "cs_stokes_model.h"
 #include "cs_boundary_conditions.h"
 #include "cs_internal_coupling.h"
+#include "cs_bad_cells_regularisation.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -9664,6 +9665,19 @@ cs_diffusion_potential(const int                 f_id,
       }
     }
 
+    cs_real_t *_pvar = NULL;
+
+    if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION) {
+      BFT_MALLOC(_pvar, n_cells_ext, cs_real_t);
+
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
+        _pvar[cell_id] = pvar[cell_id];
+
+      cs_bad_cells_regularisation_scalar(_pvar);
+    } else {
+      _pvar = pvar;
+    }
+
     cs_gradient_scalar_synced_input(var_name,
                                     gradient_type,
                                     halo_type,
@@ -9681,10 +9695,13 @@ cs_diffusion_potential(const int                 f_id,
                                     frcxt,
                                     coefap,
                                     coefbp,
-                                    pvar,
+                                    _pvar,
                                     gweight, /* Weighted gradient */
                                     NULL, /* internal coupling */
                                     grad);
+
+    if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
+      BFT_FREE(_pvar);
 
     /* Handle parallelism and periodicity */
 

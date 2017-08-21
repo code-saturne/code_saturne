@@ -166,6 +166,16 @@ _sles_default_native(int                f_id,
       sles_it_type = CS_SLES_PCG;
       multigrid = 1;
     }
+    /* cs_bad_cells_regularisation.c */
+    else if (!strcmp(name, "potential_regularisation_scalar")) {
+      sles_it_type = CS_SLES_PCG;
+    }
+    else if (!strcmp(name, "potential_regularisation_vector")) {
+      sles_it_type = CS_SLES_PCG;
+    }
+    else if (!strcmp(name, "potential_regularisation_sym_tensor")) {
+      sles_it_type = CS_SLES_PCG;
+    }
   }
   else if (f_id > -1) {
     const cs_field_t *f = cs_field_by_id(f_id);
@@ -912,7 +922,7 @@ cs_sles_default_error(cs_sles_t                    *sles,
                    "%s [%s]: divergence\n"
                    "  fallback from multigrid to %s-preconditionned CG solver\n"
                    "  for re-try and subsequent solves.\n"),
-                 "Multigrid", name, "Jacobi");
+                   "Multigrid", name, "Jacobi");
 
       cs_sles_free(sles);
 

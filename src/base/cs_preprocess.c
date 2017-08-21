@@ -336,6 +336,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   bft_printf_flush();
 
   t1 = cs_timer_wtime();
+
   cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
 
   if (cs_glob_porous_model == 3) {

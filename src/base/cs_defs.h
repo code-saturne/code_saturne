@@ -314,6 +314,7 @@ typedef cs_real_t  cs_real_9_t[9];      /* Vector of 9 real values */
 
 typedef cs_real_t  cs_real_33_t[3][3];  /* Matrix of 3x3 real values */
 typedef cs_real_t  cs_real_66_t[6][6];  /* Matrix of 6x6 real values */
+typedef cs_real_t  cs_real_99_t[9][9];  /* Matrix of 9x9 real values */
 
 typedef cs_real_t  cs_real_34_t[3][4];  /* Matrix of 3x4 real values */
 

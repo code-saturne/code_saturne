@@ -122,6 +122,7 @@ integer          nbrval, iappel
 integer          ndircp, icpt
 integer          numcpl
 integer          iflvoi, iflvob
+integer          idir
 double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, rhom, rovolsdt
 double precision epsrgp, climgp, extrap, xyzmax(3), xyzmin(3)
@@ -458,6 +459,9 @@ call predvv &
   trava  , ximpa  , uvwk   , dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
   w1     , w7     , w8     , w9     )
+
+! Bad cells regularisation
+call cs_bad_cells_regularisation_vector(vel, 1)
 
 ! --- Sortie si pas de pression continuite
 !       on met a jour les flux de masse, et on sort
@@ -815,6 +819,9 @@ if (ippmod(icompf).lt.0) then
 
 endif
 
+! Bad cells regularisation
+call cs_bad_cells_regularisation_scalar(cvar_pr)
+
 !===============================================================================
 ! 8. Mesh velocity solving (ALE)
 !===============================================================================
@@ -1030,6 +1037,9 @@ if (ippmod(icompf).lt.0) then
   endif
 
 endif
+
+! Bad cells regularisation
+call cs_bad_cells_regularisation_vector(vel, 1)
 
 ! In the ALE framework, we add the mesh velocity
 if (iale.eq.1) then

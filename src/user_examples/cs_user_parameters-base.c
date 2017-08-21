@@ -179,6 +179,20 @@ cs_user_model(void)
   cs_parameters_add_property("user_b_property_1",
                              1,
                              CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  /*--------------------------------------------------------------------------*/
+
+  /*! [mesh_tag_bad_cells_correction] */
+
+  cs_glob_mesh_quantities_flag |= CS_BAD_CELLS_WARPED_CORRECTION;
+  cs_glob_mesh_quantities_flag |= CS_BAD_CELLS_REGULARISATION;
+  cs_glob_mesh_quantities_flag |= CS_CELL_FACE_CENTER_CORRECTION;
+  cs_glob_mesh_quantities_flag |= CS_CELL_CENTER_CORRECTION;
+  cs_glob_mesh_quantities_flag |= CS_FACE_DISTANCE_CLIP;
+  cs_glob_mesh_quantities_flag |= CS_FACE_RECONSTRUCTION_CLIP;
+
+  /*! [mesh_tag_bad_cells_correction] */
+
 }
 
 /*----------------------------------------------------------------------------*/

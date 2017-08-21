@@ -40,8 +40,38 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Local Macro definitions
+ * Macro definitions
  *============================================================================*/
+
+/*!
+ * @defgroup bad_cells_flags Flags specifying bad cells treatment
+ *
+ * @{
+ */
+
+/*
+ * Field property type
+ */
+
+/*! Correct bad cells warping for gradients */
+#define CS_BAD_CELLS_WARPED_CORRECTION (1 << 0)
+
+/*! Regularise on bad cells */
+#define CS_BAD_CELLS_REGULARISATION (1 << 1)
+
+/*! Recompute face centers */
+#define CS_CELL_FACE_CENTER_CORRECTION (1 << 2)
+
+/*! Recompute cell centers */
+#define CS_CELL_CENTER_CORRECTION (1 << 3)
+
+/*! Clip face distance when negative or too small */
+#define CS_FACE_DISTANCE_CLIP (1 << 4)
+
+/*! Clip geometrical quantities used in flux reconstuction */
+#define CS_FACE_RECONSTRUCTION_CLIP (1 << 5)
+
+/*! @} */
 
 /*============================================================================
  * Type definition
@@ -105,6 +135,10 @@ typedef struct {
   cs_real_33_t  *cocg_lsq;       /* Interleaved cocg matrix
                                     for least square gradients */
 
+  int           *bad_cell_indic;    /* Bad cells indicator FIXME rm*/
+  cs_real_t     *corr_grad_lin_det;  /* Determinant of geometrical matrix linear gradient correction */
+  cs_real_33_t  *corr_grad_lin;      /* Geometrical matrix linear gradient correction */
+
   cs_int_t      *b_sym_flag;     /* Symmetry flag for boundary faces */
   cs_int_t      *c_solid_flag;   /* Is the fluid volume 0 flag */
   unsigned      *bad_cell_flag;  /* Flag (mask) for bad cells detected */
@@ -118,6 +152,9 @@ typedef struct {
 /* Pointer to mesh quantities structure associated to the main mesh */
 
 extern cs_mesh_quantities_t  *cs_glob_mesh_quantities;
+
+/* Flag (mask) to activate bad cells correction */
+extern unsigned cs_glob_mesh_quantities_flag;
 
 /* Choice of the porous model */
 extern int cs_glob_porous_model;

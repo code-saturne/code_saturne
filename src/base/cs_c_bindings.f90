@@ -937,6 +937,57 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function
+
+    subroutine cs_bad_cells_regularisation_scalar(var) &
+      bind(C, name='cs_bad_cells_regularisation_scalar')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: var
+    end subroutine cs_bad_cells_regularisation_scalar
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function
+
+    subroutine cs_bad_cells_regularisation_vector(var, &
+      boundary_projection) &
+      bind(C, name='cs_bad_cells_regularisation_vector')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: var
+      integer(c_int), value :: boundary_projection
+    end subroutine cs_bad_cells_regularisation_vector
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function
+
+    subroutine cs_bad_cells_regularisation_tensor(var, &
+      boundary_projection) &
+      bind(C, name='cs_bad_cells_regularisation_tensor')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: var
+      integer(c_int), value :: boundary_projection
+    end subroutine cs_bad_cells_regularisation_tensor
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function
+
+    subroutine cs_bad_cells_regularisation_sym_tensor(var, &
+      boundary_projection) &
+      bind(C, name='cs_bad_cells_regularisation_sym_tensor')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*) :: var
+      integer(c_int), value :: boundary_projection
+    end subroutine cs_bad_cells_regularisation_sym_tensor
+
+
+    !---------------------------------------------------------------------------
+
     !> Interface to C function defining user variables through the GUI.
 
     subroutine cs_gui_user_variables()  &

@@ -76,6 +76,7 @@ cs_matrix_assembler.h \
 cs_matrix_tuning.h \
 cs_matrix_util.h \
 cs_multigrid.h \
+cs_bad_cells_regularisation.h \
 cs_sles.h \
 cs_sles_default.h \
 cs_sles_it.h \
@@ -112,6 +113,7 @@ cs_matrix_assembler.c \
 cs_matrix_tuning.c \
 cs_matrix_util.c \
 cs_multigrid.c \
+cs_bad_cells_regularisation.c \
 cs_sles.c \
 cs_sles_default.c \
 cs_sles_it.c \

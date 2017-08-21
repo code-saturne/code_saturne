@@ -197,6 +197,26 @@ cs_math_3_distance(const cs_real_t  xa[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute \f$ (\vect{x}_b - \vect{x}_a) \cdot \vect{x}_c \f$
+ *
+ * \param[in]  xa   first coordinate
+ * \param[in]  xb   second coordinate
+ * \param[in]  xc   third coordinate
+ *
+ * \return the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_3_distance_dot_product(const cs_real_t  xa[3],
+                               const cs_real_t  xb[3],
+                               const cs_real_t  xc[3])
+{
+  return ((xb[0] - xa[0])*xc[0]+(xb[1] - xa[1])*xc[1]+(xb[2] - xa[2])*xc[2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the squared distance between two points xa and xb in
  *         a cartesian coordinate system of dimension 3.
  *
@@ -270,6 +290,28 @@ cs_math_3_square_norm(const cs_real_t v[3])
   cs_real_t v2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
 
   return v2;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Normalize a vector of 3 real values.
+ *
+ * \param[in]     vin           vector
+ * \param[out]    vout          normalized vector
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_3_normalise(const cs_real_t  vin[3],
+                    cs_real_t        vout[restrict 3])
+{
+  cs_real_t norm = cs_math_3_norm(vin);
+
+  cs_real_t inv_norm = ((norm > cs_math_zero_threshold) ?  1. / norm : 0);
+
+  vout[0] = inv_norm * vin[0];
+  vout[1] = inv_norm * vin[1];
+  vout[2] = inv_norm * vin[2];
 }
 
 /*----------------------------------------------------------------------------*/
