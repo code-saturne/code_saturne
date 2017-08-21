@@ -5,6 +5,8 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Avoid logging info for an extra boundary zone for radiation module.
+
 - Fix crash in matrix assembler (used by CDO) in rare cases where some
   ranks are associated with no locla matrix rows.
 
