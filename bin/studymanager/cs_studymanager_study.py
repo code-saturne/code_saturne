@@ -186,9 +186,12 @@ class Case(object):
                     XMLinit(case).initialize()
                     case.xmlSaveDocument()
 
-        # 2) Create RESU directory if needed
+        # 2) Create RESU and SRC directory if needed
         if not xmlonly:
             r = os.path.join(self.__repo, subdir, "RESU")
+            if not os.path.isdir(r):
+                os.makedirs(r)
+            r = os.path.join(self.__repo, subdir, "SRC")
             if not os.path.isdir(r):
                 os.makedirs(r)
 
