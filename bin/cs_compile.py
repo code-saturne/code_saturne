@@ -319,6 +319,23 @@ def so_dirs_path(flags, pkg):
 
 #-------------------------------------------------------------------------------
 
+
+def files_to_compile(src_dir):
+    """
+    Return files to compile in source path (empty list if none are found)
+    """
+
+    dir_files = os.listdir(src_dir)
+
+    src_files = (fnmatch.filter(dir_files, '*.c')
+                 + fnmatch.filter(dir_files, '*.cxx')
+                 + fnmatch.filter(dir_files, '*.cpp')
+                 + fnmatch.filter(dir_files, '*.[fF]90'))
+
+    return src_files
+
+#-------------------------------------------------------------------------------
+
 def compile_and_link(pkg, srcdir, destdir,
                      opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
                      opt_libs=None, force_link=False, keep_going=False,

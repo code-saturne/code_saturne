@@ -42,6 +42,7 @@ import fnmatch
 from cs_exec_environment import get_shell_type, enquote_arg
 from cs_create import set_executable
 from cs_runcase import runcase
+from cs_compile import files_to_compile, compile_and_link
 
 from studymanager.cs_studymanager_parser import Parser
 from studymanager.cs_studymanager_texmaker import Report1, Report2
@@ -94,7 +95,7 @@ class Case(object):
         self.tags       = data['tags']
         self.compare    = data['compare']
 
-        self.is_compil  = "not done"
+        self.is_compiled= "not done"
         self.is_run     = "not done"
         self.is_time    = "not done"
         self.is_plot    = "not done"
@@ -332,42 +333,39 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def compile(self, d):
+    def test_compilation(self, study_path, log):
         """
-        Just compile user sources if exist.
+        Test compilation of sources for current case (if some exist).
         @rtype: C{String}
-        @return: the status of the succes of the compilation.
+        @return: compilation test status (None if no files to compile).
         """
 
         if self.subdomains:
             sdirs = []
             for sd in self.subdomains:
-                sdirs.append(os.path.join(d, self.label, sd, 'SRC'))
+                sdirs.append(os.path.join(study_path, self.label, sd, 'SRC'))
         else:
-            sdirs = (os.path.join(d, self.label, 'SRC'),)
+            sdirs = (os.path.join(study_path, self.label, 'SRC'),)
 
-        home = os.getcwd()
+        # compilation test mode
+        dest_dir = None
 
-        self.is_compil = "OK"
+        self.is_compiled = None
+        retcode = 0
 
+        # loop over subdomains
         for s in sdirs:
+            src_files = files_to_compile(s)
 
-            os.chdir(s)
-            cmd = os.path.join(self.pkg.get_dir('bindir'), self.exe) + " compile -t"
-            p = subprocess.Popen(cmd,
-                                 shell=True,
-                                 executable=get_shell_type(),
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE,
-                                 universal_newlines=True)
-            output = p.communicate()
-            o = output[1]
-            if o.find('erreur') != -1 or o.find('error') != -1:
-                self.is_compil = "KO"
+            if len(src_files) > 0:
+                self.is_compiled = "OK"
+                retcode += compile_and_link(self.pkg, s, dest_dir,
+                                            stdout=log, stderr=log)
 
-        os.chdir(home)
+        if retcode > 0:
+            self.is_compiled = "KO"
 
-        return self.is_compil
+        return self.is_compiled
 
     #---------------------------------------------------------------------------
 
@@ -1109,22 +1107,15 @@ class Studies(object):
 
     def updateRepository(self, xml_only=False):
         """
-        Create all studies and all cases.
+        Update all studies and all cases.
         """
-        iko = 0
         for l, s in self.studies:
             self.reporting('  o Update repository: ' + l)
             for case in s.Cases:
                 self.reporting('    - update  %s' % case.label)
                 case.update(xml_only)
-                if case.compile(os.path.join(self.__repo, l)) == "OK":
-                    self.reporting('    - compile %s --> OK' % case.label)
-                else:
-                    self.reporting('    - compile %s --> FAILED' % case.label)
-                    iko+=1
-        if iko:
-            self.reporting('Error: compilation failed. Number of failed cases: %s' % iko)
-            sys.exit(1)
+
+        self.reporting('')
 
     #---------------------------------------------------------------------------
 
@@ -1138,24 +1129,38 @@ class Studies(object):
             for line in log_lines:
                 self.reporting(line)
 
+        self.reporting('')
+
     #---------------------------------------------------------------------------
 
-    def compilation(self):
+    def test_compilation(self):
         """
-        Compile sources of all cases.
+        Compile sources of all runs with compute attribute at on.
         """
         iko = 0
         for l, s in self.studies:
+            # build study dir. (in repo.)
+            study_path = os.path.join(self.__repo, l)
+
             self.reporting('  o Compile study: ' + l)
+
             for case in s.Cases:
                 if case.compute == 'on':
-                    if case.compile(os.path.join(self.__dest, l)) == "OK":
+
+                    # test compilation (logs are redirected to smgr log file)
+                    is_compiled = case.test_compilation(study_path, self.__log)
+
+                    # report
+                    if is_compiled == "OK":
                         self.reporting('    - compile %s --> OK' % case.label)
-                    else:
+                    elif is_compiled == "KO":
                         self.reporting('    - compile %s --> FAILED' % case.label)
                         iko+=1
-        if iko > 0:
-            self.reporting('Error: compilation failed. Number of failed cases: %s' % iko)
+
+        self.reporting('')
+
+        if iko:
+            self.reporting('Error: compilation failed for %s case(s).' % iko)
             sys.exit(1)
 
     #---------------------------------------------------------------------------
@@ -1220,7 +1225,7 @@ class Studies(object):
             for case in s.Cases:
                 self.prepro(l, s, case)
                 if self.__running:
-                    if case.compute == 'on' and case.is_compil != "KO":
+                    if case.compute == 'on' and case.is_compiled != "KO":
 
                         if self.__n_iter:
                             if case.subdomains:
@@ -1265,6 +1270,8 @@ class Studies(object):
                                                                                         case.run_id))
 
                         self.__log.flush()
+
+        self.reporting('')
 
     #---------------------------------------------------------------------------
 
@@ -1339,6 +1346,8 @@ class Studies(object):
                             else:
                                 self.reporting('    - compare %s (default mode) --> NO DIFFERENCES FOUND' % (case.label))
 
+        self.reporting('')
+
     #---------------------------------------------------------------------------
 
     def check_script(self, destination=True):
@@ -1381,6 +1390,8 @@ class Studies(object):
                         else:
                             self.reporting('    - script %s not found' % cmd)
 
+        self.reporting('')
+
     #---------------------------------------------------------------------------
 
     def postpro(self):
@@ -1410,6 +1421,8 @@ class Studies(object):
                         self.reporting('    - postpro %s --> OK (%s s)' % (cmd, t))
                     else:
                         self.reporting('    - postpro %s not found' % cmd)
+
+        self.reporting('')
 
     #---------------------------------------------------------------------------
 
@@ -1459,6 +1472,8 @@ class Studies(object):
                                           self.__dis_tex,
                                           self.__default_fmt)
 
+        self.reporting('')
+
     #---------------------------------------------------------------------------
 
     def build_reports(self, report1, report2):
@@ -1488,7 +1503,7 @@ class Studies(object):
 
                 doc1.add_row(l,
                              case.label,
-                             case.is_compil,
+                             case.is_compiled,
                              case.is_run,
                              case.is_time,
                              case.is_compare,

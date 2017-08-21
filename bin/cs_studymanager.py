@@ -89,9 +89,9 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="update_xml", default=False,
                       help="update only xml files in the repository")
 
-    parser.add_option("-t", "--test-compile",
-                      action="store_true", dest="compile", default=False,
-                      help="compile all cases")
+    parser.add_option("-t", "--test-compilation",
+                      action="store_true", dest="test_compilation",
+                      default=False, help="compile all cases")
 
     parser.add_option("-r", "--run",
                       action="store_true", dest="runcase", default=False,
@@ -323,12 +323,18 @@ def run_studymanager(pkg, options):
 
     if options.update:
         studies.updateRepository()
-        return 0
 
     # Update only xml data if needed
 
     if options.update_xml:
         studies.updateRepository(True)
+
+    # Test sources compilation for all cases
+
+    if options.test_compilation:
+        studies.test_compilation()
+
+    if options.update or options.update_xml or options.test_compilation:
         return 0
 
     # Check if xml for result directories in the repository are OK
@@ -343,11 +349,6 @@ def run_studymanager(pkg, options):
     # Create all studies and all cases
 
     studies.createStudies()
-
-    # Compile sources of all cases
-
-    if options.compile:
-        studies.compilation()
 
     # Preprocessing and run all cases
     if options.debug:

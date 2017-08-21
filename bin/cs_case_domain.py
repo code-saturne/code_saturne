@@ -553,12 +553,7 @@ class domain(base_domain):
         """
         # Check if there are files to compile in source path
 
-        dir_files = os.listdir(self.src_dir)
-
-        src_files = (fnmatch.filter(dir_files, '*.c')
-                     + fnmatch.filter(dir_files, '*.cxx')
-                     + fnmatch.filter(dir_files, '*.cpp')
-                     + fnmatch.filter(dir_files, '*.[fF]90'))
+        src_files = cs_compile.files_to_compile(self.src_dir)
 
         if self.exec_solver and len(src_files) > 0:
             return True
@@ -573,17 +568,13 @@ class domain(base_domain):
         """
         # Check if there are files to compile in source path
 
-        dir_files = os.listdir(self.src_dir)
-
-        src_files = (fnmatch.filter(dir_files, '*.c')
-                     + fnmatch.filter(dir_files, '*.cxx')
-                     + fnmatch.filter(dir_files, '*.cpp')
-                     + fnmatch.filter(dir_files, '*.[fF]90'))
+        src_files = cs_compile.files_to_compile(self.src_dir)
 
         if len(src_files) > 0:
 
             # Add header files to list so as not to forget to copy them
 
+            dir_files = os.listdir(self.src_dir)
             src_files = src_files + (  fnmatch.filter(dir_files, '*.h')
                                      + fnmatch.filter(dir_files, '*.hxx')
                                      + fnmatch.filter(dir_files, '*.hpp'))
