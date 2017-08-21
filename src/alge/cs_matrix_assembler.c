@@ -768,8 +768,10 @@ _complete_distant(cs_matrix_assembler_t  *ma,
     for (cs_lnum_t j = n_cols-1; j >= 0; j--)
       g_col_id_d[j] = g_col_id_s[j];
   }
-  d_c_count[0] = ma->d_r_idx[1];
-  ma->d_r_idx[1] += d_r_idx[1];
+  if (n_rows > 0) {
+    d_c_count[0] = ma->d_r_idx[1];
+    ma->d_r_idx[1] += d_r_idx[1];
+  }
 
   BFT_FREE(d_r_idx);
 
@@ -842,8 +844,10 @@ _append_local_and_distant(cs_matrix_assembler_t  *ma,
     for (cs_lnum_t j = n_cols-1; j >= 0; j--)
       col_id_d[j] = col_id_s[j];
   }
-  c_count[0] = ma->_r_idx[1];
-  ma->_r_idx[1] += ma->d_r_idx[1];
+  if (n_rows > 0) {
+    c_count[0] = ma->_r_idx[1];
+    ma->_r_idx[1] += ma->d_r_idx[1];
+  }
 
   /* Now insert terms */
 
