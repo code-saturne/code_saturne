@@ -909,7 +909,7 @@ cs_boundary_zone_face_class_or_zone_id(void)
 int
 cs_boundary_zone_max_class_or_zone_id(void)
 {
-  int retval = _n_zones;
+  int retval = _n_zones-1;
 
   if (_max_zone_class_id > retval)
     retval = _max_zone_class_id;
