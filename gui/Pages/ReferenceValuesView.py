@@ -179,9 +179,11 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         self.modelLength.setItem(str_model=init_length_choice)
         if init_length_choice == 'automatic':
             self.lineEditL0.setText(str())
-            self.lineEditL0.setDisabled(True)
+            self.lineEditL0.hide()
+            self.labelUnitL0.hide()
         else:
-            self.lineEditL0.setEnabled(True)
+            self.lineEditL0.show()
+            self.labelUnitL0.show()
             l = self.mdl.getLength()
             self.lineEditL0.setText(str(l))
 
@@ -230,9 +232,11 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
         self.mdl.setLengthChoice(choice)
         if choice == 'automatic':
             self.lineEditL0.setText(str())
-            self.lineEditL0.setDisabled(True)
+            self.lineEditL0.hide()
+            self.labelUnitL0.hide()
         else:
-            self.lineEditL0.setEnabled(True)
+            self.lineEditL0.show()
+            self.labelUnitL0.show()
             value = self.mdl.getLength()
             self.lineEditL0.setText(str(value))
         log.debug("slotlengthchoice-> %s" % choice)
