@@ -1160,6 +1160,9 @@ class Studies(object):
                     cmd = os.path.join(filePath, label[i])
 
                 if os.path.isfile(cmd):
+                    # ensure script is executable
+                    set_executable(cmd)
+
                     cmd += " " + args[i]
                     cmd += " -c " + os.path.join(self.__dest, l, case.label)
                     repbase = os.getcwd()
@@ -1346,6 +1349,9 @@ class Studies(object):
                     if script[i] and case.is_run != "KO":
                         cmd = os.path.join(self.__dest, l, "POST", label[i])
                         if os.path.isfile(cmd):
+                            # ensure script is executable
+                            set_executable(cmd)
+
                             cmd += " " + args[i]
                             if repo[i]:
                                 r = os.path.join(self.__repo,  l, case.label, "RESU", repo[i])
@@ -1383,6 +1389,9 @@ class Studies(object):
                 if script[i]:
                     cmd = os.path.join(self.__dest, l, "POST", label[i])
                     if os.path.isfile(cmd):
+                        # ensure script is executable
+                        set_executable(cmd)
+
                         list_cases, list_dir = s.getRunDirectories()
                         cmd += ' ' + args[i] + ' -c "' + list_cases + '" -d "' + list_dir + '" -s ' + l
                         retcode, t = run_studymanager_command(cmd, self.__log)
