@@ -37,6 +37,15 @@ Default option changes
 User changes
 ------------
 
+- Separate compilation test and repository update features and add tags
+  feature to studymanager:
+  * --test-compilation or -t to test compilation for all cases
+  * --update or -u to update GUI parameter files and set paths in scripts
+    SaturneGui and runcase
+  * --update-xml or -x to update GUI parameter files only
+  * --with-tags to only process runs with all passed tags
+  * --without-tags to exclude runs with one of the passed tags.
+
 - Legacy coupling-based transient turbomachinery option is now defined in a
   manner similar to join-based coupling, simply replacing simply the joining
   by an internal coupling. Coupling is internal to a code instance, requiring
@@ -78,6 +87,8 @@ Architectural changes
 
 Bug fixes
 ---------
+
+- Fix broken path in update feature of studymanager.
 
 - Fix possible crash or error when computing wall distance for 2D
   (single cell layer) meshes.
