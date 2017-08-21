@@ -917,7 +917,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAFile"]:
             popup.addAction(self.commonAction(EditAction))
             popup.addAction(self.commonAction(MoveToDRAFTAction))
-#            popup.addAction(self.commonAction(CopyCaseFileAction))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["DATAPyFile"]:
+            popup.addAction(self.commonAction(EditAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATADRAFTFile"]:
             popup.addAction(self.commonAction(EditAction))
             popup.addAction(self.commonAction(RemoveAction))

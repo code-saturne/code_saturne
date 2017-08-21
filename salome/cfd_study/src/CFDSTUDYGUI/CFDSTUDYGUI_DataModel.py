@@ -140,6 +140,8 @@ dict_object["REFERENCEDATAFile"]      = 100012
 dict_object["DATAFile"]               = 100013
 dict_object["DRAFTFolder"]            = 100014
 dict_object["DATADRAFTFile"]          = 100015
+dict_object["DATAPyFile"]             = 100016
+
 
 dict_object["DATALaunch"]             = 100018
 dict_object["DATAfileXML"]            = 100019
@@ -214,6 +216,7 @@ icon_collection[dict_object["CaseInProcess"]]  = "CFDSTUDY_CASE_IN_PROC_OBJ_ICON
 
 icon_collection[dict_object["DATAFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["DATAFile"]]       = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["DATAPyFile"]]       = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["DRAFTFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["REFERENCEDATAFolder"]] = "CFDSTUDY_FOLDER_OBJ_ICON"
 
@@ -923,6 +926,8 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["DATALaunch"]
             elif re.match("^dp_", name) or re.match("^meteo",name) or re.match("^cs_", name):
                 objectId = dict_object["DATAFile"]
+            elif re.match(".*\.py$", name):
+                objectId = dict_object["DATAPyFile"]
             else:
                 if os.path.isfile(path):
                     fd = os.open(path , os.O_RDONLY)
