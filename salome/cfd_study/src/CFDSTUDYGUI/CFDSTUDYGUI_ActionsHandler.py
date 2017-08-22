@@ -96,6 +96,7 @@ CopyInDATAAction              = 24
 CopyInSRCAction               = 25
 CopyCaseFileAction            = 26
 CloseStudyAction              = 27
+DisplayImageAction            = 28
 
 #export/convert actions
 ExportInParaViSAction         = 40
@@ -350,6 +351,16 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[EditAction] = action_id
+
+        action = sgPyQt.createAction(-1,\
+                                      ObjectTR.tr("DISPLAY_IMAGE_ACTION_TEXT"),\
+                                      ObjectTR.tr("DISPLAY_IMAGE_ACTION_TIP"),\
+                                      ObjectTR.tr("DISPLAY_IMAGE_ACTION_SB"),\
+                                      ObjectTR.tr("DISPLAY_IMAGE_ACTION_ICON"))
+        action.triggered.connect(self.slotDisplayImageAction)
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._CommonActionIdMap[DisplayImageAction] = action_id
 
         action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("MOVE_TO_DRAFT_ACTION_TEXT"),\
@@ -846,7 +857,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]):
                 self.commonAction(RemoveAction).setVisible(True)
 
-
+            
 
     def updateActionsXmlFile(self, XMLSobj) :
 
@@ -990,9 +1001,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATFile"]:
             popup.addAction(self.commonAction(EditAction))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["RESUPNGFile"]:
+            popup.addAction(self.commonAction(DisplayImageAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["POSTFile"]:
             popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["SyrthesFile"]:
+            popup.addAction(self.commonAction(ViewAction))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["SyrthesSydFile"]:
             popup.addAction(self.commonAction(ViewAction))
             popup.addAction(self.commonAction(OpenSyrthesCaseFile))
         elif id == CFDSTUDYGUI_DataModel.dict_object["CouplingFilePy"]:
@@ -1211,6 +1226,28 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                     cfdstudyMess.aboutMessage(mess)
         else :
             mess = cfdstudyMess.trMessage(self.tr("ADD_VIEWER_NAME_PREFERENCE"),[str(self.tr("EXTERNAL_EDITOR"))])
+            cfdstudyMess.aboutMessage(mess)
+
+    def slotDisplayImageAction(self):
+        """
+        Edits in the read only mode the file selected in the Object Browser.
+        Warning, the editor is always emacs!
+        """
+        displayViewerName = str( sgPyQt.stringSetting( "CFDSTUDY", "ExternalDisplay", str(self.tr("CFDSTUDY_PREF_DISPLAY_VIEWER")) )).strip()
+        if displayViewerName != "":
+            sobj = self._singleSelectedObject()
+            if sobj is not None:
+                path = CFDSTUDYGUI_DataModel._GetPath(sobj)
+                try:
+                    if re.match("display", displayViewerName) or re.match("eog", displayViewerName):
+                        subprocess.Popen([displayViewerName, path])
+                    else:
+                        subprocess.Popen([displayViewerName, path])
+                except:
+                    mess = cfdstudyMess.trMessage(self.tr("VERIFY_DISPLAY_VIEWER_NAME_PREFERENCE"),[str(self.tr("EXTERNAL_DISPLAY"))])
+                    cfdstudyMess.aboutMessage(mess)
+        else :
+            mess = cfdstudyMess.trMessage(self.tr("ADD_DISPLAY_VIEWER_NAME_PREFERENCE"),[str(self.tr("EXTERNAL_DISPLAY"))])
             cfdstudyMess.aboutMessage(mess)
 
 

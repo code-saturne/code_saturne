@@ -167,6 +167,7 @@ dict_object["RESMEDFile"]     = 100039
 dict_object["RESXMLFile"]     = 100040
 dict_object["POSTPROFolder"]  = 100041
 dict_object["RESENSIGHTFile"] = 100042
+dict_object["RESUPNGFile"]    = 100043
 
 dict_object["SCRPTFolder"]    = 100050
 dict_object["SCRPTLanceFile"] = 100051
@@ -194,13 +195,14 @@ dict_object["CouplingFilePy"]           = 100100
 dict_object["RESU_COUPLINGFolder"]      = 100101
 dict_object["SYRCaseFolder"]            = 100102
 dict_object["SyrthesFile"]              = 100103
-dict_object["CouplingRuncase"]          = 100104
-dict_object["RESU_COUPLINGSubFolder"]   = 100105
-dict_object["RESUSubFolderSYR"]         = 100106
-dict_object["SRCSYRFolder"]             = 100107
-dict_object["USRSRCSYRFile"]            = 100108
-dict_object["CouplingStudy"]            = 100109
-dict_object["OpenSyrthesCaseFile"]      = 100110
+dict_object["SyrthesSydFile"]           = 100104
+dict_object["CouplingRuncase"]          = 100105
+dict_object["RESU_COUPLINGSubFolder"]   = 100106
+dict_object["RESUSubFolderSYR"]         = 100107
+dict_object["SRCSYRFolder"]             = 100108
+dict_object["USRSRCSYRFile"]            = 100109
+dict_object["CouplingStudy"]            = 100110
+dict_object["OpenSyrthesCaseFile"]      = 100111
 #-------------------------------------------------------------------------------
 # Definition of the icon of objects to represent in the Object Browser.
 # Attribut "AttributePixMap" for the related SObject.
@@ -248,6 +250,7 @@ icon_collection[dict_object["RESMEDFile"]]     = "VISU_OBJ_ICON"
 icon_collection[dict_object["RESXMLFile"]]     = "CFDSTUDY_EXECUTABLE_OBJ_ICON"
 icon_collection[dict_object["POSTPROFolder"]]  = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESENSIGHTFile"]] = "VISU_OBJ_ICON"
+icon_collection[dict_object["RESUPNGFile"]]    = "VIEW_ACTION_ICON"
 
 icon_collection[dict_object["SCRPTFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["SCRPTLanceFile"]] = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
@@ -273,6 +276,7 @@ icon_collection[dict_object["POSTFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
 #Icons for coupling with SYRTHES CODE
 icon_collection[dict_object["SYRCaseFolder"]]         = "SYRTHES_CASE_ICON"
 icon_collection[dict_object["SyrthesFile"]]           = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["SyrthesSydFile"]]        = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["CouplingFilePy"]]        = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["CouplingRuncase"]]       = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["RESU_COUPLINGFolder"]]   = "CFDSTUDY_FOLDER_OBJ_ICON"
@@ -893,8 +897,10 @@ def _FillObject(theObject, theParent, theBuilder):
         if os.path.isdir(path):
             if name == "usr_examples":
                 objectId = dict_object["SRCSYRFolder"]
-        if name in ["Makefile","syrthes.py","user_cond.c"] or re.match(".*\.syd$", name) or re.match(".*\.syd_example$", name) :
+        if name in ["Makefile","syrthes.py","user_cond.c"]:
             objectId = dict_object["SyrthesFile"]
+        if re.match(".*\.syd$", name) or re.match(".*\.syd_example$", name) :
+            objectId = dict_object["SyrthesSydFile"]
     #parent is Syrthes user examples
     elif parentId == dict_object["SRCSYRFolder"]:
         if re.match(".*\.c$", name):
@@ -1119,6 +1125,8 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["RESUFile"]
             elif re.match("error$", name):
                 objectId = dict_object["RESUFile"]
+            elif re.match(".*\.png$", name):
+                objectId = dict_object["RESUPNGFile"]
 
     elif parentId == dict_object["POSTPROFolder"] :
         if os.path.isfile(path):

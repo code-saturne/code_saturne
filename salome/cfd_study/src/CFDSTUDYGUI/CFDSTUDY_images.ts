@@ -114,6 +114,10 @@
             <translation>EditFile.png</translation>
         </message>
         <message>
+            <source>DISPLAY_IMAGE_ACTION_ICON</source>
+            <translation>ViewFile.png</translation>
+        </message>
+        <message>
             <source>MOVE_FOLDER_ACTION_ICON</source>
             <translation>MoveFolder.png</translation>
         </message>
