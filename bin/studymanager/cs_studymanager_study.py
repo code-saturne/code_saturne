@@ -40,9 +40,10 @@ import fnmatch
 #-------------------------------------------------------------------------------
 
 from cs_exec_environment import get_shell_type, enquote_arg
-from cs_create import set_executable
-from cs_runcase import runcase
 from cs_compile import files_to_compile, compile_and_link
+import cs_create
+from cs_create import set_executable
+import cs_runcase
 
 from studymanager.cs_studymanager_parser import Parser
 from studymanager.cs_studymanager_texmaker import Report1, Report2
@@ -51,7 +52,6 @@ try:
 except Exception:
     pass
 from studymanager.cs_studymanager_run import run_studymanager_command
-import cs_runcase
 
 #-------------------------------------------------------------------------------
 # log config.
@@ -384,12 +384,12 @@ class Case(object):
             print("Error: could not find %s (or %s)\n" % run_ref, run_ref_win)
             sys.exit(1)
 
-        runcase_repo = runcase(path, create_if_missing=False)
+        runcase_repo = cs_runcase.runcase(path, create_if_missing=False)
 
         # Read runcase from dest
         path = run_new
-        runcase_dest = runcase(path, create_if_missing=False,
-                               ignore_batch=True)
+        runcase_dest = cs_runcase.runcase(path, create_if_missing=False,
+                                          ignore_batch=True)
 
         # Assign run command from repo in dest
         runcase_dest.set_run_args(runcase_repo.get_run_args())
@@ -653,6 +653,7 @@ class Study(object):
         @param without_tags: list of tags given at the command line
         """
         # Initialize attributes
+        self.__package  = pkg
         self.__parser   = parser
         self.__main_exe = exe
         self.__diff     = dif
@@ -772,9 +773,23 @@ class Study(object):
 
         # Create study if necessary
         if not os.path.isdir(self.__dest):
-            cmd = self.__main_exe + " create --quiet --study " + self.__dest
-            retval, t = run_studymanager_command(cmd, self.__log)
-            shutil.rmtree(os.path.join(self.__dest, "CASE1"))
+            # build instance of study class from cs_create
+            cr_study = cs_create.Study(self.__package,
+                                       self.label,
+                                       [],   # cases
+                                       [],   # syrthes cases
+                                       None, # aster cases
+                                       None, # copy
+                                       False,# import_only
+                                       False,# use ref
+                                       0)    # verbose
+
+            # TODO: copy-from for study. For now, an empty study
+            # is created and cases are created one by one with
+            # copy-from
+
+            # create empty study
+            cr_study.create()
 
             # Link meshes and copy other files
             ref = os.path.join(self.__repo, "MESH")
