@@ -509,8 +509,6 @@ class Parser(object):
 
         if node.tagName == "data":
             plots = node.getElementsByTagName("plot")
-        elif node.tagName == "resu":
-            plots = node.getElementsByTagName("scalar")
         else:
             plots = []
 

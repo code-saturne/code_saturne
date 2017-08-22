@@ -1439,12 +1439,6 @@ class Studies(object):
                         repo = None
                         case.check_dirs(self, node, repo, dest)
 
-                    for node in self.__parser.getChildren(case.node, "resu"):
-                        plots, file, dest, repo = self.__parser.getResult(node)
-                        if destination == False:
-                            dest = None
-                        case.check_dirs(self, node, repo, dest)
-
                     for node in self.__parser.getChildren(case.node, "input"):
                         file, dest, repo, tex = self.__parser.getInput(node)
                         if destination == False:
