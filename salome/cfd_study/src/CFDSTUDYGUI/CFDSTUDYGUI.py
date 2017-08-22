@@ -93,6 +93,7 @@ DEFAULT_EDITOR_NAME = ObjectTR.tr("CFDSTUDY_PREF_EDITOR")
 
 DEFAULT_READER_NAME = ObjectTR.tr("CFDSTUDY_PREF_READER")
 
+DEFAULT_DISPLAY_VIEWER_NAME = ObjectTR.tr("CFDSTUDY_PREF_DISPLAY_VIEWER")
 
 #-------------------------------------------------------------------------------
 # Callback GUI functions
@@ -108,6 +109,8 @@ def initialize():
         sgPyQt.addSetting( "CFDSTUDY", "ExternalEditor", DEFAULT_EDITOR_NAME )
     if not sgPyQt.hasSetting( "CFDSTUDY", "ExternalReader"):
         sgPyQt.addSetting( "CFDSTUDY", "ExternalReader", DEFAULT_READER_NAME )
+    if not sgPyQt.hasSetting( "CFDSTUDY", "ExternalDisplay"):
+        sgPyQt.addSetting( "CFDSTUDY", "ExternalDisplay", DEFAULT_DISPLAY_VIEWER_NAME )
     pass
 
 
@@ -184,6 +187,9 @@ def createPreferences():
     externalReaderField= str(ObjectTR.tr("EXTERNAL_READER"))
     editor      = sgPyQt.addPreference(externalEditorField,editorGroup,SalomePyQt.PT_String, "CFDSTUDY","ExternalEditor")
     Reader      = sgPyQt.addPreference(externalReaderField,editorGroup,SalomePyQt.PT_String, "CFDSTUDY","ExternalReader")
+    externalDisplayField = str(ObjectTR.tr("EXTERNAL_DISPLAY"))
+    displayViewer        = sgPyQt.addPreference(externalDisplayField,editorGroup,SalomePyQt.PT_String, "CFDSTUDY","ExternalDisplay")
+
 
 
 def preferenceChanged( section, setting ):

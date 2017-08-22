@@ -30,7 +30,6 @@
             <source>SET_CFDSTUDY_STUDY_SB</source>
             <translation>Selection d'une étude CFD existante ou Création</translation>
         </message>
-
         <message>
             <source>SET_CASE_LOCATION_BROWSE_CAPTION</source>
             <translation>Choix du répertoire du cas d'étude CFD</translation>
@@ -63,7 +62,6 @@
             <source>LAUNCH_CFDSTUDY_GUI_SB</source>
             <translation>Lancement de l'interface du code CFD</translation>
         </message>
-
         <message>
             <source>OPEN_EXISTING_CASE_GUI_TEXT</source>
             <translation>Ouverture d'un cas existant</translation>
@@ -76,7 +74,6 @@
             <source>OPEN_EXISTING_CASE_GUI_SB</source>
             <translation>Ouverture d'un Cas existant</translation>
         </message>
-
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_TEXT</source>
             <translation>Mise à jour de l'Object Browser</translation>
@@ -266,6 +263,18 @@
             <translation>Editer</translation>
         </message>
         <message>
+            <source>DISPLAY_IMAGE_ACTION_TEXT</source>
+            <translation>Vue</translation>
+        </message>
+        <message>
+            <source>DISPLAY_IMAGE_ACTION_TIP</source>
+            <translation>Vue</translation>
+        </message>
+        <message>
+            <source>DISPLAY_IMAGE_ACTION_SB</source>
+            <translation>Vue</translation>
+        </message>
+        <message>
             <source>MOVE_TO_DRAFT_ACTION_TEXT</source>
             <translation>Déplacer dans DRAFT</translation>
         </message>
@@ -386,6 +395,10 @@
             <translation>gview</translation>
         </message>
         <message>
+            <source>CFDSTUDY_PREF_DISPLAY_VIEWER</source>
+            <translation>display</translation>
+        </message>
+        <message>
             <source>EXTERNAL_READER</source>
             <translation>Lecteur de fichier</translation>
         </message>
@@ -394,8 +407,16 @@
             <translation>Editeur de fichier</translation>
         </message>
         <message>
+            <source>EXTERNAL_DISPLAY</source>
+            <translation>Visualiseur</translation>
+        </message>
+        <message>
             <source>ADD_VIEWER_NAME_PREFERENCE</source>
             <translation>Pas de nom d'éditeur dans les préférences de SALOME. Entrez le nom d'un éditeur dans les préférences du module CFDSTUDY de SALOME, dans le champ %s (Menu déroulant Fichier puis Préférences...)</translation>
+        </message>
+        <message>
+            <source>ADD_DISPLAY_VIEWER_NAME_PREFERENCE</source>
+            <translation>Pas de nom de visualiseur d'images dans les préférences de SALOME. Entrez le nom d'un visualiseur valide dans les préférences du module CFDSTUDY de SALOME, dans le champ %s (Menu déroulant Fichier puis Préférences...)</translation>
         </message>
         <message>
             <source>VERIFY_VIEWER_NAME_PREFERENCE</source>
@@ -404,6 +425,10 @@
         <message>
             <source>VERIFY_EDITOR_NAME_PREFERENCE</source>
             <translation>Vérifier dans les préférences de SALOME CFDSTUDY si le nom de l'éditeur est valide. Vérifier le champ %s (Menu déroulant Fichier puis Préférences...)</translation>
+        </message>
+        <message>
+            <source>VERIFY_DISPLAY_VIEWER_NAME_PREFERENCE</source>
+            <translation>Vérifier dans les préférences de SALOME CFDSTUDY que le nom du visualiseur d'images est valide. Vérifier le champ %s (Menu déroulant Fichier puis Préférences...)</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_DIFF</source>

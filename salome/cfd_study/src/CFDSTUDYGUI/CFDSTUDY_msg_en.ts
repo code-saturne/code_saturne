@@ -225,7 +225,6 @@
             <source>CLOSE_ACTION_CONFIRM_MESS</source>
             <translation>Do you really want to close this CFD Study : %s, and all of its cases from the SALOME Object Browser ?</translation>
         </message>
-
         <message>
             <source>CLOSE_CFD_GUI_ACTION_TEXT</source>
             <translation>Close GUI</translation>
@@ -261,6 +260,18 @@
         <message>
             <source>EDIT_ACTION_SB</source>
             <translation>Edit</translation>
+        </message>
+        <message>
+            <source>DISPLAY_IMAGE_ACTION_TEXT</source>
+            <translation>Display</translation>
+        </message>
+        <message>
+            <source>DISPLAY_IMAGE_ACTION_TIP</source>
+            <translation>Display</translation>
+        </message>
+        <message>
+            <source>DISPLAY_IMAGE_ACTION_SB</source>
+            <translation>Display</translation>
         </message>
         <message>
             <source>MOVE_TO_DRAFT_ACTION_TEXT</source>
@@ -383,6 +394,10 @@
             <translation>gview</translation>
         </message>
         <message>
+            <source>CFDSTUDY_PREF_DISPLAY_VIEWER</source>
+            <translation>display</translation>
+        </message>
+        <message>
             <source>EXTERNAL_READER</source>
             <translation>External Reader</translation>
         </message>
@@ -391,8 +406,16 @@
             <translation>External Editor</translation>
         </message>
         <message>
+            <source>EXTERNAL_DISPLAY</source>
+            <translation>External Display</translation>
+        </message>
+        <message>
             <source>ADD_VIEWER_NAME_PREFERENCE</source>
             <translation>No preference editor name set. Please, enter an editor name into SALOME CFDSTUDY preferences for the field %s (File Menu then Preferences...)</translation>
+        </message>
+        <message>
+            <source>ADD_DISPLAY_VIEWER_NAME_PREFERENCE</source>
+            <translation>No preference for display image tool name set. Please, enter a display tool name into SALOME CFDSTUDY preferences for the field %s (File Menu then Preferences...)</translation>
         </message>
         <message>
             <source>VERIFY_VIEWER_NAME_PREFERENCE</source>
@@ -401,6 +424,10 @@
         <message>
             <source>VERIFY_EDITOR_NAME_PREFERENCE</source>
             <translation>Verify into SALOME CFDSTUDY preferences if the editor name is valid. Check the field %s (File Menu then Preferences...)</translation>
+        </message>
+        <message>
+            <source>VERIFY_DISPLAY_VIEWER_NAME_PREFERENCE</source>
+            <translation>Verify into SALOME CFDSTUDY preferences if the display image viewer name set is valid. Check the field %s (File Menu then Preferences...)</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_DIFF</source>
