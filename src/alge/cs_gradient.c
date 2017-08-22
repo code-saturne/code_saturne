@@ -1836,11 +1836,8 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from coupled faces */
     if (cpl != NULL)
-      cs_internal_coupling_initialize_scalar_gradient(
-          cpl,
-          c_weight,
-          pvar,
-          grad);
+      cs_internal_coupling_initialize_scalar_gradient
+        (cpl, c_weight, pvar, grad);
 
     /* Contribution from boundary faces */
 
@@ -2650,11 +2647,8 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
     /* Contribution from coupled faces */
 
     if (cpl != NULL)
-      cs_internal_coupling_lsq_scalar_gradient(
-          cpl,
-          c_weight,
-          w_stride,
-          rhsv);
+      cs_internal_coupling_lsq_scalar_gradient
+        (cpl, c_weight, w_stride, rhsv);
 
     /* Contribution from boundary faces */
 
@@ -3493,12 +3487,8 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
   /* Contribution from coupled faces */
   if (cpl != NULL)
-    cs_internal_coupling_initialize_vector_gradient(
-        cpl,
-        c_weight,
-        pvar,
-        grad);
-
+    cs_internal_coupling_initialize_vector_gradient
+      (cpl, c_weight, pvar, grad);
 
   /* Boundary face treatment */
 
@@ -3672,11 +3662,8 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
 
   /* Contribution from coupled faces */
   if (cpl != NULL)
-    cs_internal_coupling_reconstruct_vector_gradient(
-        cpl,
-        r_grad,
-        grad);
-
+    cs_internal_coupling_reconstruct_vector_gradient
+      (cpl, r_grad, grad);
 
   /* Boundary face treatment */
 
@@ -3917,12 +3904,8 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
       /* Contribution from coupled faces */
       if (cpl != NULL)
-        cs_internal_coupling_iterative_vector_gradient(
-            cpl,
-            c_weight,
-            grad,
-            pvar,
-            rhs);
+        cs_internal_coupling_iterative_vector_gradient
+          (cpl, c_weight, grad, pvar, rhs);
 
 
       /* Boundary face treatment */
@@ -4632,13 +4615,12 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
   /* Contribution from coupled faces */
 
   if (cpl != NULL)
-    cs_internal_coupling_lsq_vector_gradient(
-        cpl,
-        c_weight,
-        1, /* w_stride */
-        pvar,
-        rhs);
-
+    cs_internal_coupling_lsq_vector_gradient
+      (cpl,
+       c_weight,
+       1, /* w_stride */
+       pvar,
+       rhs);
 
   /* Contribution from boundary faces */
 
@@ -5650,10 +5632,8 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
     /* Contribution from coupled faces */
     if (cpl != NULL)
-      cs_internal_coupling_reconstruct_scalar_gradient(
-          cpl,
-          r_grad,
-          grad);
+      cs_internal_coupling_reconstruct_scalar_gradient
+        (cpl, r_grad, grad);
 
     /* Contribution from boundary faces */
 
@@ -6022,12 +6002,12 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Contribution from coupled faces */
       if (cpl != NULL)
-        cs_internal_coupling_iterative_scalar_gradient(
-            cpl,
-            c_weight,
-            grad,
-            pvar,
-            rhs);
+        cs_internal_coupling_iterative_scalar_gradient
+          (cpl,
+           c_weight,
+           grad,
+           pvar,
+           rhs);
 
       /* Contribution from boundary faces */
 
