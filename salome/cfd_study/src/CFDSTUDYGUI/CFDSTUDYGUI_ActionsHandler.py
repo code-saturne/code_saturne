@@ -66,6 +66,7 @@ from CFDSTUDYGUI_Commons import _SetCFDCode, CFD_Code, BinCode, CFD_Saturne
 from CFDSTUDYGUI_Commons import CFD_Neptune, sgPyQt, sg, CheckCFD_CodeEnv
 import CFDSTUDYGUI_SolverGUI
 from CFDSTUDYGUI_Message import cfdstudyMess
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -73,6 +74,7 @@ from CFDSTUDYGUI_Message import cfdstudyMess
 logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI_ActionsHandler")
 log.setLevel(logging.NOTSET)
+
 #-------------------------------------------------------------------------------
 # Global definitions
 #-------------------------------------------------------------------------------
@@ -857,7 +859,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESU_COUPLINGSubFolder"]):
                 self.commonAction(RemoveAction).setVisible(True)
 
-            
+
 
     def updateActionsXmlFile(self, XMLSobj) :
 
