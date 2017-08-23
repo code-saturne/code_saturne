@@ -178,7 +178,7 @@ class Case(object):
                         case = Case(package = self.pkg, file_name = fp)
                     except:
                         print("Parameters file reading error.\n")
-                        print("This file is not in accordance with XML specifications.")
+                        print("This file is not in accordance with XML specifications.\n")
                         sys.exit(1)
 
                     case['xmlfile'] = fp
@@ -473,11 +473,17 @@ class Case(object):
             result = os.path.join(reference, self.label, self.resu)
         else:
             result = os.path.join(self.__repo, self.label, self.resu)
-        repo = self.check_dir(studies, node, result, r, "repo")
+        # check_dir called again here to get run_id (possibly date-hour)
+        repo, msg = self.check_dir(node, result, r, "repo")
+        if msg:
+            studies.reporting(msg)
         repo = os.path.join(result, repo, 'checkpoint', 'main')
 
         result = os.path.join(self.__dest, self.label, self.resu)
-        dest = self.check_dir(studies, node, result, d, "dest")
+        # check_dir called again here to get run_id (possibly date-hour)
+        dest, msg = self.check_dir(node, result, d, "dest")
+        if msg:
+            studies.reporting(msg)
         dest = os.path.join(result, dest, 'checkpoint', 'main')
 
         cmd = self.__diff + ' ' + repo + ' ' + dest
@@ -530,45 +536,47 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def check_dir(self, studies, node, result, rep, attr):
+    def check_dir(self, node, result, rep, attr):
         """
-        Check coherency between xml file of parameters and repository or destination.
+        Check coherency between xml file of parameters and repository or
+        destination.
         """
+        msg = "Warning: "
+
+        if not os.path.isdir(result):
+            msg += "the directory %s " \
+                   "does not exist." % (result)
+            return None, msg
+
         # 1. Check if the given result directory exists.
         if rep != "":
             rep_f = os.path.join(result, rep)
             rep_e = os.path.join(result, rep, 'error')
 
             if not os.path.isdir(rep_f):
-                msg = "Study %s case %s:\nthe directory %s does not exist.\nStop.\n" % \
-                    (self.__study, self.label, rep_f)
-                studies.reporting(msg)
-                sys.exit(1)
+                msg += "the result directory %s " \
+                       "does not exist." % (rep_f)
+                return None, msg
 
             if os.path.isfile(rep_e):
-                msg = "Study %s case %s:\nthe directory %s contains an error file.\nStop.\n" % \
-                    (self.__study, self.label, rep_f)
-                studies.reporting(msg)
-                sys.exit(1)
-
-            return rep
+                msg += "the result directory %s " \
+                       "contains an error file." % (rep_f)
+                return None, msg
 
         # 2. The result directory must be read automatically;
         #    check if there is a single result directory.
         elif rep == "":
             if len(list(filter(nodot, os.listdir(result)))) == 0:
-                msg = "Study %s case %s:\nthere is no result directory in %s\nStop.\n" % \
-                    (self.__study, self.label, result)
-                studies.reporting(msg)
-                sys.exit(1)
+                msg += "there is no result directory in %s." % (result)
+                return None, msg
 
             # if no run_id is specified in the xml file
             # only one result directory allowed in RESU
-            if len(list(filter(nodot, os.listdir(result)))) > 1 and self.run_id == "":
-                msg = "Study %s case %s:\nthere are several directories in %s\nStop.\n" % \
-                    (self.__study, self.label, result)
-                studies.reporting(msg)
-                sys.exit(1)
+            if len(list(filter(nodot, os.listdir(result)))) > 1 \
+               and self.run_id == "":
+                msg += "there are several result directories in %s " \
+                       "and no run id specified." % (result)
+                return None, msg
 
             rep = self.run_id
             # if no run_id is specified in the xml file
@@ -578,39 +586,42 @@ class Case(object):
 
             rep_f = os.path.join(result, rep)
             if not os.path.isdir(rep_f):
-                msg = "Study %s case %s:\nthe directory %s does not exist.\nStop.\n" % \
-                    (self.__study, self.label, rep_f)
-                studies.reporting(msg)
-                sys.exit(1)
+                msg += "the result directory %s " \
+                       "does not exist." % (rep_f)
+                return None, msg
 
             rep_e = os.path.join(result, rep, 'error')
             if os.path.isfile(rep_e):
-                msg = "Study %s case %s:\nthe directory %s contains an error file.\nStop.\n" % \
-                    (self.__study, self.label, rep_f)
-                studies.reporting(msg)
-                sys.exit(1)
+                msg += "the result directory %s " \
+                       "contains an error file." % (rep_f)
+                return None, msg
 
             # 3. Update the file of parameters with the name of the result directory
             if node:
                 self.__parser.setAttribute(node, attr, rep)
-            return rep
 
-    def check_dirs(self, studies, node, repo, dest, reference=None):
+        return rep, None
+
+    def check_dirs(self, node, repo, dest, reference=None):
         """
         Check coherency between xml file of parameters and repository and destination.
         """
+        msg = None
+
         if repo != None:
             # build path to RESU directory with path to study and case label in the repo
             if reference:
                 result = os.path.join(reference, self.label, self.resu)
             else:
                 result = os.path.join(self.__repo, self.label, self.resu)
-            self.check_dir(studies, node, result, repo, "repo")
+            rep, msg = self.check_dir(node, result, repo, "repo")
 
         if dest != None:
             # build path to RESU directory with path to study and case label in the dest
             result = os.path.join(self.__dest, self.label, self.resu)
-            self.check_dir(studies, node, result, dest, "dest")
+            rep, msg = self.check_dir(node, result, dest, "dest")
+
+        return msg
 
 #===============================================================================
 # Study class
@@ -665,10 +676,10 @@ class Study(object):
 
         self.label = study
 
-        self.Cases = []
+        self.cases = []
         self.matplotlib_figures = []
         self.input_figures = []
-        self.active_cases = []
+        self.case_labels = []
 
         # get list of cases in study
         on_cases = parser.getStatusOnCasesLabels(study)
@@ -706,24 +717,12 @@ class Study(object):
                              data,
                              self.__repo,
                              self.__dest)
-                    self.Cases.append(c)
-                    self.active_cases.append(c.label)
+                    self.cases.append(c)
+                    self.case_labels.append(c.label)
 
     #---------------------------------------------------------------------------
 
-    def getActiveCasesLabels(self):
-        """
-        Return the list of the labels of the cases of the current study
-        which have status on and which tags match those given at the
-        command line
-        @rtype: C{List}
-        @return: labels of active cases
-        """
-        return self.active_cases
-
-    #---------------------------------------------------------------------------
-
-    def createCase(self, c, log_lines):
+    def create_case(self, c, log_lines):
         """
         Create a case in a study
         """
@@ -760,7 +759,7 @@ class Study(object):
 
     #---------------------------------------------------------------------------
 
-    def createCases(self):
+    def create_cases(self):
         """
         Create a single study with its all cases.
         """
@@ -825,9 +824,9 @@ class Study(object):
         os.chdir(self.__dest)
 
         log_lines = []
-        for c in self.Cases:
+        for c in self.cases:
             if not os.path.isdir(c.label):
-                self.createCase(c, log_lines);
+                self.create_case(c, log_lines);
             else:
                 if self.__force_rm == True:
                     # Build short path to RESU dir. such as 'CASE1/RESU'
@@ -887,12 +886,28 @@ class Study(object):
         list_cases = []
         list_dir   = []
 
-        for case in self.Cases:
+        for case in self.cases:
             if case.is_run != "KO":
                 list_cases.append(case.label)
                 list_dir.append(case.run_dir)
 
         return " ".join(list_cases), " ".join(list_dir)
+
+    #---------------------------------------------------------------------------
+
+    def disable_case(self, case):
+        try:
+            self.cases.remove(case)
+            self.case_labels.remove(case.label)
+        except Exception:
+            pass
+
+        msg = "    - Case %s" % (case.label)
+        if case.run_id != "":
+            msg += ", run id %s" % (case.run_id)
+        msg += " --> DISABLED"
+
+        return msg
 
 #===============================================================================
 # Studies class
@@ -940,7 +955,7 @@ class Studies(object):
         self.__repo = self.__parser.getRepository()
         if not os.path.isdir(self.__repo):
             msg="Studies.__init__() >> self.__repo = {0}\n".format(self.__repo)
-            sys.exit(msg+"Error: repository path is not valid.")
+            sys.exit(msg+"Error: repository path is not valid.\n")
 
         # create if necessary the destination directory
 
@@ -1022,7 +1037,7 @@ class Studies(object):
         # in case of restart
         iok = 0
         for l, s in self.studies:
-            for case in s.Cases:
+            for case in s.cases:
                 if case.compute == 'on':
                    iok+=1
         if not iok:
@@ -1089,7 +1104,7 @@ class Studies(object):
         """
         for l, s in self.studies:
             self.reporting('  o Update repository: ' + l)
-            for case in s.Cases:
+            for case in s.cases:
                 self.reporting('    - update  %s' % case.label)
                 case.update(xml_only)
 
@@ -1097,13 +1112,13 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def createStudies(self):
+    def create_studies(self):
         """
         Create all studies and all cases.
         """
         for l, s in self.studies:
             self.reporting('  o Create study: ' + l)
-            log_lines = s.createCases()
+            log_lines = s.create_cases()
             for line in log_lines:
                 self.reporting(line)
 
@@ -1122,7 +1137,7 @@ class Studies(object):
 
             self.reporting('  o Compile study: ' + l)
 
-            for case in s.Cases:
+            for case in s.cases:
                 if case.compute == 'on':
 
                     # test compilation (logs are redirected to smgr log file)
@@ -1138,7 +1153,7 @@ class Studies(object):
         self.reporting('')
 
         if iko:
-            self.reporting('Error: compilation failed for %s case(s).' % iko)
+            self.reporting('Error: compilation failed for %s case(s).\n' % iko)
             sys.exit(1)
 
     #---------------------------------------------------------------------------
@@ -1155,8 +1170,9 @@ class Studies(object):
             print(" >> args  ", args)
         for i in range(len(label)):
             if pre[i]:
-                # search if the script is the directoty MESH
-                # if not, the script is searched in the directories of the current case
+                # search if the script is in the MESH directory
+                # if not, the script is searched in the directories
+                # of the current case
                 cmd = os.path.join(self.__dest, l, "MESH", label[i])
                 if self.__debug:
                     print("Path to prepro script ", cmd)
@@ -1203,7 +1219,7 @@ class Studies(object):
         """
         for l, s in self.studies:
             self.reporting('  o Script prepro and run for study: ' + l)
-            for case in s.Cases:
+            for case in s.cases:
                 self.prepro(l, s, case)
                 if self.__running:
                     if case.compute == 'on' and case.is_compiled != "KO":
@@ -1262,13 +1278,17 @@ class Studies(object):
         Stop if you try to make a comparison with a file which does not exist.
         """
         for l, s in self.studies:
+            self.reporting('  o Check compare for study: ' + l)
+
             # reference directory passed in studymanager command line overwrites
             # destination in all cases (even if compare is defined by a compare
             # markup with a non empty destination)
+
             ref = None
             if self.__ref:
                 ref = os.path.join(self.__ref, s.label)
-            for case in s.Cases:
+            cases_to_disable = []
+            for case in s.cases:
                 if case.compare == 'on' and case.is_run != "KO":
                     compare, nodes, repo, dest, threshold, args = self.__parser.getCompare(case.node)
                     if compare:
@@ -1278,14 +1298,27 @@ class Studies(object):
                                 is_checked = True
                                 if destination == False:
                                     dest[i]= None
-                                case.check_dirs(self, nodes[i], repo[i], dest[i], reference=ref)
+                                msg = case.check_dirs(nodes[i], repo[i], dest[i], reference=ref)
+                                if msg:
+                                    self.reporting(msg)
+                                    cases_to_disable.append(case)
+
                     if not compare or not is_checked:
                         node = None
                         repo = ""
                         dest = ""
                         if destination == False:
                             dest = None
-                        case.check_dirs(self, node, repo, dest, reference=ref)
+                        msg = case.check_dirs(node, repo, dest, reference=ref)
+                        if msg:
+                            self.reporting(msg)
+                            cases_to_disable.append(case)
+
+            for case in cases_to_disable:
+                msg = s.disable_case(case)
+                self.reporting(msg)
+
+        self.reporting('')
 
     #---------------------------------------------------------------------------
 
@@ -1302,7 +1335,7 @@ class Studies(object):
                 ref = None
                 if self.__ref:
                     ref = os.path.join(self.__ref, s.label)
-                for case in s.Cases:
+                for case in s.cases:
                     if case.compare == 'on' and case.is_run != "KO":
                         is_compare, nodes, repo, dest, t, args = self.__parser.getCompare(case.node)
                         if is_compare:
@@ -1337,13 +1370,25 @@ class Studies(object):
         Stop if you try to run a script with a file which does not exist.
         """
         for l, s in self.studies:
-            for case in s.Cases:
+            self.reporting('  o Check scripts for study: ' + l)
+
+            cases_to_disable = []
+            for case in s.cases:
                 script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
                 for i in range(len(nodes)):
                     if script[i] and case.is_run != "KO":
                         if destination == False:
                             dest[i] = None
-                        case.check_dirs(self, nodes[i], repo[i], dest[i])
+                        msg = case.check_dirs(nodes[i], repo[i], dest[i])
+                        if msg:
+                            self.reporting(msg)
+                            cases_to_disable.append(case)
+
+            for case in cases_to_disable:
+                msg = s.disable_case(case)
+                self.reporting(msg)
+
+        self.reporting('')
 
     #---------------------------------------------------------------------------
 
@@ -1353,7 +1398,7 @@ class Studies(object):
         """
         for l, s in self.studies:
             self.reporting('  o Script postpro study: ' + l)
-            for case in s.Cases:
+            for case in s.cases:
                 script, label, nodes, args, repo, dest = self.__parser.getScript(case.node)
                 for i in range(len(label)):
                     if script[i] and case.is_run != "KO":
@@ -1385,11 +1430,11 @@ class Studies(object):
         for l, s in self.studies:
             # fill results directories and ids for the cases of the current study
             # that were not run by the current studymanager command
-            for case in s.Cases:
+            for case in s.cases:
                 if case.is_run != "KO":
                     if case.run_dir == "":
                         resu = os.path.join(self.__dest, l, case.label, case.resu)
-                        rep = case.check_dir(self, None, resu, "", "dest")
+                        rep, msg = case.check_dir(None, resu, "", "dest")
                         case.run_id = rep
                         case.run_dir = os.path.join(resu, rep)
 
@@ -1413,32 +1458,90 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def check_plot(self, destination=True):
+    def check_data(self, case, destination=True):
+        """
+        Check coherency between xml file of parameters and repository
+        for data markups of a run.
+        """
+        for node in self.__parser.getChildren(case.node, "data"):
+            plots, file, dest, repo = self.__parser.getResult(node)
+            if destination == False:
+                dest = None
+            msg = case.check_dirs(node, repo, dest)
+            if msg:
+                self.reporting(msg)
+                return False
+
+        return True
+
+    #---------------------------------------------------------------------------
+
+    def check_probes(self, case, destination=True):
+        """
+        Check coherency between xml file of parameters and repository
+        for probes markups of a run.
+        """
+        for node in self.__parser.getChildren(case.node, "probes"):
+            file, dest, fig = self.__parser.getProbes(node)
+            if destination == False:
+                dest = None
+            repo = None
+            msg = case.check_dirs(node, repo, dest)
+            if msg:
+                self.reporting(msg)
+                return False
+
+        return True
+
+    #---------------------------------------------------------------------------
+
+    def check_input(self, case, destination=True):
+        """
+        Check coherency between xml file of parameters and repository
+        for probes markups of a run.
+        """
+        for node in self.__parser.getChildren(case.node, "input"):
+            file, dest, repo, tex = self.__parser.getInput(node)
+            if destination == False:
+                dest = None
+            msg = case.check_dirs(node, repo, dest)
+            if msg:
+                self.reporting(msg)
+                return False
+
+        return True
+
+    #---------------------------------------------------------------------------
+
+    def check_plots_and_input(self, destination=True):
         """
         Check coherency between xml file of parameters and repository.
         Stop if you try to make a plot of a file which does not exist.
         """
         for l, s in self.studies:
-            for case in s.Cases:
+            self.reporting('  o Check plots and input for study: ' + l)
+
+            cases_to_disable = []
+            for case in s.cases:
                 if case.plot == "on" and case.is_run != "KO":
-                    for node in self.__parser.getChildren(case.node, "data"):
-                        plots, file, dest, repo = self.__parser.getResult(node)
-                        if destination == False:
-                            dest = None
-                        case.check_dirs(self, node, repo, dest)
 
-                    for node in self.__parser.getChildren(case.node, "probes"):
-                        file, dest, fig = self.__parser.getProbes(node)
-                        if destination == False:
-                            dest = None
-                        repo = None
-                        case.check_dirs(self, node, repo, dest)
+                    if not self.check_data(case, destination):
+                        cases_to_disable.append(case)
+                        continue
 
-                    for node in self.__parser.getChildren(case.node, "input"):
-                        file, dest, repo, tex = self.__parser.getInput(node)
-                        if destination == False:
-                            dest = None
-                        case.check_dirs(self, node, repo, dest)
+                    if not self.check_probes(case, destination):
+                        cases_to_disable.append(case)
+                        continue
+
+                    if not self.check_input(case, destination):
+                        cases_to_disable.append(case)
+                        continue
+
+            for case in cases_to_disable:
+                msg = s.disable_case(case)
+                self.reporting(msg)
+
+        self.reporting('')
 
     #---------------------------------------------------------------------------
 
@@ -1476,7 +1579,7 @@ class Studies(object):
                        self.__parser.write())
 
         for l, s in self.studies:
-            for case in s.Cases:
+            for case in s.cases:
                 if case.diff_value:
                     is_nodiff = "KO"
                 else:
@@ -1506,7 +1609,7 @@ class Studies(object):
                     for g in s.input_figures:
                         doc2.addFigure(g)
 
-                for case in s.Cases:
+                for case in s.cases:
                     if case.is_compare == "done":
                         run_id = None
                         if case.run_id != "":

@@ -506,7 +506,7 @@ class Plotter(object):
                 self.curves.append(curve)
 
         # Read the files for probes
-        for case in study_object.Cases:
+        for case in study_object.cases:
             if case.plot == "on" and case.is_run != "KO":
                 for node in self.parser.getChildren(case.node, "probes"):
                     file_name, dest, fig = self.parser.getProbes(node)
@@ -523,7 +523,7 @@ class Plotter(object):
                         self.curves.append(curve)
 
         # Read the files of results of cases
-        for case in study_object.Cases:
+        for case in study_object.cases:
             if case.plot == "on" and case.is_run != "KO":
                 for node in self.parser.getChildren(case.node, "data"):
                     plots, file_name, dest, repo = self.parser.getResult(node)

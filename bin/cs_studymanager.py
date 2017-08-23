@@ -344,11 +344,11 @@ def run_studymanager(pkg, options):
 
     if options.post:
         studies.check_script(destination=False)
-        studies.check_plot(destination=False)
+        studies.check_plots_and_input(destination=False)
 
     # Create all studies and all cases
 
-    studies.createStudies()
+    studies.create_studies()
 
     # Preprocessing and run all cases
     if options.debug:
@@ -371,7 +371,7 @@ def run_studymanager(pkg, options):
     if options.post:
         studies.check_script()
         studies.scripts()
-        studies.check_plot()
+        studies.check_plots_and_input()
         studies.postpro()
         studies.plot()
 

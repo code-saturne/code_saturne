@@ -37,6 +37,9 @@ Default option changes
 User changes
 ------------
 
+- Disable cases instead of exiting when a run directory check fails in
+  studymanager.
+
 - Separate compilation test and repository update features and add tags
   feature to studymanager:
   * --test-compilation or -t to test compilation for all cases
