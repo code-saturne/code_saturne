@@ -123,8 +123,9 @@ DisplayTypeSURFACEFRAME        = 76
 DisplayTypeFEATURE_EDGES       = 77
 DisplayTypeSHRINK              = 78
 
-#SyrthesGui Actions
-OpenSyrthesCaseFile                = 80
+#Syrthes Actions
+OpenSyrthesCaseFile             = 80
+ExportSyrInSmesh                = 81
 
 #=====SOLVER ACTIONS
 #Common Actions
@@ -531,6 +532,16 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[OpenSyrthesCaseFile] = action_id
+
+        action = sgPyQt.createAction(-1,\
+                                      ObjectTR.tr("EXPORT_SYR_FILE_ACTION_TEXT"),\
+                                      ObjectTR.tr("EXPORT_SYR_FILE_ACTION_TIP"),\
+                                      ObjectTR.tr("EXPORT_SYR_FILE_ACTION_SB"),\
+                                      ObjectTR.tr("EXPORT_IN_SMESH_ACTION_ICON"))
+        action.triggered.connect(self.slotExportSyrInSmesh)
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._CommonActionIdMap[ExportSyrInSmesh] = action_id
 
         # Solver actions
 
@@ -1010,6 +1021,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         elif id == CFDSTUDYGUI_DataModel.dict_object["SyrthesSydFile"]:
             popup.addAction(self.commonAction(ViewAction))
             popup.addAction(self.commonAction(OpenSyrthesCaseFile))
+        elif id == CFDSTUDYGUI_DataModel.dict_object["SYRMESHFile"]:
+            popup.addAction(self.commonAction(ExportSyrInSmesh))
         elif id == CFDSTUDYGUI_DataModel.dict_object["CouplingFilePy"]:
             popup.addAction(self.commonAction(EditAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["CouplingRuncase"]:
@@ -2236,6 +2249,73 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
             if salome.sg.hasDesktop():
                 salome.sg.updateObjBrowser(1)
+        QApplication.restoreOverrideCursor()
+
+
+    def slotExportSyrInSmesh(self):
+        """
+        Export Syr syrthes file in SMESH
+        """
+        waitCursor = QCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(waitCursor)
+
+        sobj = self._singleSelectedObject()
+        if sobj is None:
+            return
+        path = CFDSTUDYGUI_DataModel._GetPath(sobj)
+        studyId = salome.sg.getActiveStudyId()
+        if smeshBuilder :
+            smesh = smeshBuilder.New(salome.myStudy)      
+            study = CFDSTUDYGUI_DataModel._getStudy()
+            builder = study.NewBuilder()
+            meshcomponent = study.FindComponent( "SMESH" )
+            if meshcomponent is None:
+                meshcomponent = builder.NewComponent( "SMESH" )
+                attr = builder.FindOrCreateAttribute( meshcomponent, "AttributeName" )
+                attr.SetValue( "SMESH" )
+            # --- loop on meshes to find if a mesh with the same path and name is already loaded in SMESH
+            MeshPath = ""
+            iter  = study.NewChildIterator(meshcomponent)
+            while iter.More():  # --- loop on meshes
+                studobj = iter.Value()
+                iter.Next()
+                object = studobj.GetObject()
+                if object is None:
+                    continue
+                aMesh = object._narrow(SMESH.SMESH_Mesh)
+                if aMesh is None:
+                    continue
+                medFileInfo = aMesh.GetMEDFileInfo()
+                if medFileInfo == None:
+                    continue
+                aPath = medFileInfo.fileName
+                #print "Mesh path:", aPath
+                if path == aPath:
+                    #print "same path"
+                    MeshPath = aPath
+                    break
+                pass
+            meshpathNewFile = ""
+            # --- if the mesh is not already loaded in SMESH, load it
+            if re.match(".*\.syr$", sobj.GetName()):
+               meshpathNewFile = path.replace(".syr",".med")
+               comm = ['syrthes4med30','-m',path,'-o',meshpathNewFile]
+               import subprocess
+               ret = subprocess.call(comm)
+               path = meshpathNewFile
+            if re.match(".*\.med$", sobj.GetName()) or meshpathNewFile != "" :
+               if MeshPath == "":
+                   aMeshes, aStatus = smesh.CreateMeshesFromMED(path)
+                   if not aStatus:
+                       QApplication.restoreOverrideCursor()
+                       mess = cfdstudyMess.trMessage(self.tr("EXPORT_IN_SMESH_ACTION_WARNING"),[])
+                       cfdstudyMess.warningMessage(mess)
+                       return
+                   for aMeshDC in aMeshes:
+                       aMeshDC.SetAutoColor(1)
+                       mesh = aMeshDC.GetMesh()
+            sgPyQt.updateObjBrowser(studyId, 1)
+
         QApplication.restoreOverrideCursor()
 
 

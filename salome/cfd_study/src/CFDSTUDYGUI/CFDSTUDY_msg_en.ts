@@ -590,6 +590,18 @@
             <source>OPEN_SYRTHES-CASE_FILE_ACTION_SB</source>
             <translation>Open Syrthes Case ...</translation>
         </message>
+        <message>
+            <source>EXPORT_SYR_FILE_ACTION_TEXT</source>
+            <translation>Export Syrthes File in Smesh ...</translation>
+        </message>
+        <message>
+            <source>EXPORT_SYR_FILE_ACTION_TIP</source>
+            <translation>Export Syrthes File in Smesh ...</translation>
+        </message>
+        <message>
+            <source>EXPORT_SYR_FILE_ACTION_SB</source>
+            <translation>Export Syrthes File in Smesh ...</translation>
+        </message>
     </context>
     <context>
         <name>InfoDialogHandler</name>
