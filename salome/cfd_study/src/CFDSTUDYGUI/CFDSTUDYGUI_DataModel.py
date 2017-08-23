@@ -176,9 +176,9 @@ dict_object["SCRPTFile"]      = 100053
 
 dict_object["MESHFolder"]     = 100070
 dict_object["MEDFile"]        = 100071
+dict_object["DESFile"]        = 100072
 dict_object["MESHFile"]       = 100073
 dict_object["DATFile"]        = 100074
-dict_object["DESFile"]        = 100072
 dict_object["CGNSFile"]       = 100075
 dict_object["GeomFile"]       = 100076
 dict_object["CaseFile"]       = 100077
@@ -186,6 +186,7 @@ dict_object["NeuFile"]        = 100078
 dict_object["MSHFile"]        = 100079
 dict_object["HexFile"]        = 100080
 dict_object["UnvFile"]        = 100081
+dict_object["SYRMESHFile"]    = 100082
 
 dict_object["POSTFolder"]     = 100090
 dict_object["POSTFile"]       = 100091
@@ -269,6 +270,7 @@ icon_collection[dict_object["NeuFile"]]        = "MESH_OBJ_ICON"
 icon_collection[dict_object["MSHFile"]]        = "MESH_OBJ_ICON"
 icon_collection[dict_object["HexFile"]]        = "MESH_OBJ_ICON"
 icon_collection[dict_object["UnvFile"]]        = "MESH_OBJ_ICON"
+icon_collection[dict_object["SYRMESHFile"]]    = "MESH_OBJ_ICON"
 
 icon_collection[dict_object["POSTFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["POSTFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
@@ -1025,6 +1027,8 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["HexFile"]
             elif re.match(".*\.unv$", name):
                 objectId = dict_object["UnvFile"]
+            elif re.match(".*\.syr$", name):
+                objectId = dict_object["SYRMESHFile"]
             else:
                 objectId = dict_object["MESHFile"]
 
