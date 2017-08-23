@@ -53,6 +53,7 @@ BEGIN_C_DECLS
 #define CS_BAD_CELL_RATIO                (1 << 3)
 #define CS_BAD_CELL_GUILT                (1 << 4)
 #define CS_BAD_CELL_USER                 (1 << 5)
+#define CS_BAD_CELL_TO_REGULARIZE        (1 << 6)
 
 /*=============================================================================
  * Public function prototypes

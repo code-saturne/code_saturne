@@ -2500,7 +2500,6 @@ cs_mesh_quantities_create(void)
   mesh_quantities->cocgb_s_lsq = NULL;
   mesh_quantities->cocg_it = NULL;
   mesh_quantities->cocg_lsq = NULL;
-  mesh_quantities->bad_cell_indic = NULL;//FIXME rm
   mesh_quantities->corr_grad_lin_det = NULL;
   mesh_quantities->corr_grad_lin = NULL;
   mesh_quantities->b_sym_flag = NULL;
@@ -2554,7 +2553,6 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
   BFT_FREE(mesh_quantities->cocgb_s_lsq);
   BFT_FREE(mesh_quantities->cocg_it);
   BFT_FREE(mesh_quantities->cocg_lsq);
-  BFT_FREE(mesh_quantities->bad_cell_indic);
   BFT_FREE(mesh_quantities->corr_grad_lin_det);
   BFT_FREE(mesh_quantities->corr_grad_lin);
   BFT_FREE(mesh_quantities->b_sym_flag);

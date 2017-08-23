@@ -67,111 +67,6 @@
 
 BEGIN_C_DECLS
 
-void
-_tag_bad_cells(const cs_mesh_t      *mesh,
-               cs_mesh_quantities_t *mq)
-{
-  cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
-  cs_lnum_t n_cells = mesh->n_cells;
-  cs_lnum_t n_i_faces = mesh->n_i_faces;
-  cs_lnum_t n_b_faces = mesh->n_b_faces;
-  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
-  const int *b_face_cells = mesh->b_face_cells;
-
-  unsigned *bad = mq->bad_cell_flag;
-  const cs_real_t *surfn = mq->i_face_surf;
-  const cs_real_t *surfbn = mq->b_face_surf;
-  double *dist = mq->i_dist;
-  double *distbr = mq->b_dist;
-  double *volume  = mq->cell_vol;
-
-  const cs_real_3_t *xyzcen = (const cs_real_3_t *) mq->cell_cen;
-  const cs_real_3_t *cdgfac = (const cs_real_3_t *) mq->i_face_cog;
-  const cs_real_3_t *cdgfbo = (const cs_real_3_t *) mq->b_face_cog;
-  const cs_real_3_t *surfac = (const cs_real_3_t *) mq->i_face_normal;
-  const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
-
-  static cs_gnum_t nb_bad_cells = 0;
-
-  /* If cells are not yet tagged, tag them */
-  if (mq->bad_cell_indic == NULL) {
-    BFT_MALLOC(mq->bad_cell_indic, n_cells_ext, int);
-
-    cs_field_t *f = cs_field_by_name("regul");
-
-    cs_real_3_t *vol;
-    BFT_MALLOC(vol, n_cells_ext, cs_real_3_t);
-
-    //FIXME tensor ?
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      vol[cell_id][0] = 0.;
-      vol[cell_id][1] = 0.;
-      vol[cell_id][2] = 0.;
-    }
-    for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-      cs_lnum_t cell_id1 = i_face_cells[face_id][0];
-      cs_lnum_t cell_id2 = i_face_cells[face_id][1];
-      vol[cell_id1][0] += cdgfac[face_id][0] * surfac[face_id][0];
-      vol[cell_id1][1] += cdgfac[face_id][1] * surfac[face_id][1];
-      vol[cell_id1][2] += cdgfac[face_id][2] * surfac[face_id][2];
-      vol[cell_id2][0] -= cdgfac[face_id][0] * surfac[face_id][0];
-      vol[cell_id2][1] -= cdgfac[face_id][1] * surfac[face_id][1];
-      vol[cell_id2][2] -= cdgfac[face_id][2] * surfac[face_id][2];
-    }
-
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      cs_lnum_t cell_id = b_face_cells[face_id];
-      vol[cell_id][0] += cdgfbo[face_id][0] * surfbo[face_id][0];
-      vol[cell_id][1] += cdgfbo[face_id][1] * surfbo[face_id][1];
-      vol[cell_id][2] += cdgfbo[face_id][2] * surfbo[face_id][2];
-    }
-
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      mq->bad_cell_indic[cell_id] = 0;
-
-      double determinant = mq->corr_grad_lin_det[cell_id];
-
-      int probleme = 0;
-      if (determinant <= 0.) {
-        probleme = 1;
-      }
-      else {
-        determinant = CS_MAX(determinant, 1.e-10);
-        determinant = CS_MAX(determinant, 1./determinant);
-        if (determinant > 2)
-          probleme = 1;
-      }
-
-      // FIXME not invariant by rotation
-      if (probleme > 0 || (bad[cell_id] & CS_BAD_CELL_RATIO)
-          || vol[cell_id][0] < 0. || vol[cell_id][1] < 0. || vol[cell_id][2] < 0.
-          || (bad[cell_id] & CS_BAD_CELL_ORTHO_NORM)) {
-        mq->bad_cell_indic[cell_id] = 1;
-        nb_bad_cells ++;
-      }
-
-      f->val[cell_id] = mq->bad_cell_indic[cell_id];//TODO post
-    }
-
-    if (mesh->halo != NULL)
-      cs_halo_sync_num(mesh->halo, CS_HALO_STANDARD, mq->bad_cell_indic);
-
-    cs_parall_counter(&nb_bad_cells, 1);
-
-    bft_printf("Number of bad cells with regularisation = %d\n", nb_bad_cells);
-
-    BFT_FREE(vol);
-
-    /* If no bad cells, no need of regularisation */
-    if (nb_bad_cells <= 0) {
-      bft_printf("No need of regularisation\n");
-      cs_glob_mesh_quantities_flag |= CS_BAD_CELLS_REGULARISATION;
-    }
-  }
-  return;
-
-}
-
 #endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------*/
@@ -199,17 +94,11 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const int *b_face_cells = mesh->b_face_cells;
 
-  unsigned *bad = mq->bad_cell_flag;
+  unsigned *bad_cell_flag = mq->bad_cell_flag;
   const cs_real_t *surfn = mq->i_face_surf;
   const cs_real_t *surfbn = mq->b_face_surf;
   double *dist = mq->i_dist;
   double *volume  = mq->cell_vol;
-
-
-  /* Tag bad cells, if no bad cells, CS_BAD_CELLS_REGULARISATION is
-   * switch off */
-  _tag_bad_cells(mesh,
-                 mq);
 
   if (!(cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION))
     return;
@@ -220,7 +109,7 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
   double varmax =-1.e20;
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-    if (mq->bad_cell_indic[cell_id] == 0) {
+    if (!(mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE)) {
       varmin = CS_MIN(varmin, var[cell_id]);
       varmax = CS_MAX(varmax, var[cell_id]);
     }
@@ -250,14 +139,15 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
     dam[cell_id1] += ssd;
     dam[cell_id2] += ssd;
 
-    if (mq->bad_cell_indic[cell_id1] > 0 && mq->bad_cell_indic[cell_id2] > 0) {
+    if (   mq->bad_cell_flag[cell_id1] & CS_BAD_CELL_TO_REGULARIZE
+        && mq->bad_cell_flag[cell_id2] & CS_BAD_CELL_TO_REGULARIZE) {
       xam[face_id] = -ssd;
     }
-    else if (mq->bad_cell_indic[cell_id1] > 0) {
+    else if (mq->bad_cell_flag[cell_id1] & CS_BAD_CELL_TO_REGULARIZE) {
       rhs[cell_id1] += ssd * var[cell_id2];
       rhs[cell_id2] += ssd * var[cell_id2];
     }
-    else if (mq->bad_cell_indic[cell_id2] > 0) {
+    else if (mq->bad_cell_flag[cell_id2] & CS_BAD_CELL_TO_REGULARIZE) {
       rhs[cell_id2] += ssd * var[cell_id1];
       rhs[cell_id1] += ssd * var[cell_id1];
     }
@@ -344,7 +234,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const int *b_face_cells = mesh->b_face_cells;
 
-  unsigned *bad = mq->bad_cell_flag;//FIXME use it
+  unsigned *bad_cell_flag = mq->bad_cell_flag;//FIXME use it
   const cs_real_t *surfn = mq->i_face_surf;
   const cs_real_t *surfbn = mq->b_face_surf;
   double *dist = mq->i_dist;
@@ -352,11 +242,6 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
   double *volume  = mq->cell_vol;
 
   const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
-
-  /* Tag bad cells, if no bad cells, CS_BAD_CELLS_REGULARISATION is
-   * switch off */
-  _tag_bad_cells(mesh,
-                 mq);
 
   if (!(cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION))
     return;
@@ -369,7 +254,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
   double varmax[3] = {-1.e20, -1.e20,-1.e20};
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-    if (mq->bad_cell_indic[cell_id] == 0) {
+    if (!(mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE)) {
       for (int i = 0; i < 3; i++) {
         varmin[i] = CS_MIN(varmin[i], var[cell_id][i]);
         varmax[i] = CS_MAX(varmax[i], var[cell_id][i]);
@@ -411,16 +296,17 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
       dam[cell_id2][i][i] += ssd;
     }
 
-    if (mq->bad_cell_indic[cell_id1] > 0 && mq->bad_cell_indic[cell_id2] > 0) {
+    if (   mq->bad_cell_flag[cell_id1] & CS_BAD_CELL_TO_REGULARIZE
+        && mq->bad_cell_flag[cell_id2] & CS_BAD_CELL_TO_REGULARIZE) {
       xam[face_id] = -ssd;
     }
-    else if (mq->bad_cell_indic[cell_id1] > 0) {
+    else if (mq->bad_cell_flag[cell_id1] & CS_BAD_CELL_TO_REGULARIZE) {
       for (int i = 0; i < 3; i++) {
         rhs[cell_id1][i] += ssd * var[cell_id2][i];
         rhs[cell_id2][i] += ssd * var[cell_id2][i];
       }
     }
-    else if (mq->bad_cell_indic[cell_id2] > 0) {
+    else if (mq->bad_cell_flag[cell_id2] & CS_BAD_CELL_TO_REGULARIZE) {
       for (int i = 0; i < 3; i++) {
         rhs[cell_id2][i] += ssd * var[cell_id1][i];
         rhs[cell_id1][i] += ssd * var[cell_id1][i];
@@ -441,7 +327,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
           cs_glob_bc_type[face_id] == CS_ROUGHWALL  ||
           cs_glob_bc_type[face_id] == CS_SYMMETRY     ) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        if (mq->bad_cell_indic[cell_id] > 0) {
+        if (mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE) {
           double ssd = surfbn[face_id] / distbr[face_id];
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
@@ -536,7 +422,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const int *b_face_cells = mesh->b_face_cells;
 
-  unsigned *bad = mq->bad_cell_flag;
+  unsigned *bad_cell_flag = mq->bad_cell_flag;
   const cs_real_t *surfn = mq->i_face_surf;
   const cs_real_t *surfbn = mq->b_face_surf;
   double *dist = mq->i_dist;
@@ -544,11 +430,6 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
   double *volume  = mq->cell_vol;
 
   const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
-
-  /* Tag bad cells, if no bad cells, CS_BAD_CELLS_REGULARISATION is
-   * switch off */
-  _tag_bad_cells(mesh,
-                 mq);
 
   if (!(cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION))
     return;
@@ -561,7 +442,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
   double varmax[6] = {-1.e20, -1.e20,-1.e20, -1.e20, -1.e20,-1.e20};
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-    if (mq->bad_cell_indic[cell_id] == 0) {
+    if (!(mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE)) {
       for (int i = 0; i < 6; i++) {
         varmin[i] = CS_MIN(varmin[i], var[cell_id][i]);
         varmax[i] = CS_MAX(varmax[i], var[cell_id][i]);
@@ -603,16 +484,17 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
       dam[cell_id2][i][i] += ssd;
     }
 
-    if (mq->bad_cell_indic[cell_id1] > 0 && mq->bad_cell_indic[cell_id2] > 0) {
+    if (   mq->bad_cell_flag[cell_id1] & CS_BAD_CELL_TO_REGULARIZE
+        && mq->bad_cell_flag[cell_id2] & CS_BAD_CELL_TO_REGULARIZE) {
       xam[face_id] = -ssd;
     }
-    else if (mq->bad_cell_indic[cell_id1] > 0) {
+    else if (mq->bad_cell_flag[cell_id1] & CS_BAD_CELL_TO_REGULARIZE) {
       for (int i = 0; i < 6; i++) {
         rhs[cell_id1][i] += ssd * var[cell_id2][i];
         rhs[cell_id2][i] += ssd * var[cell_id2][i];
       }
     }
-    else if (mq->bad_cell_indic[cell_id2] > 0) {
+    else if (mq->bad_cell_flag[cell_id2] & CS_BAD_CELL_TO_REGULARIZE) {
       for (int i = 0; i < 6; i++) {
         rhs[cell_id2][i] += ssd * var[cell_id1][i];
         rhs[cell_id1][i] += ssd * var[cell_id1][i];
@@ -633,7 +515,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
           cs_glob_bc_type[face_id] == CS_ROUGHWALL  ||
           cs_glob_bc_type[face_id] == CS_SYMMETRY     ) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        if (mq->bad_cell_indic[cell_id] > 0) {
+        if (mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE) {
           double ssd = surfbn[face_id] / distbr[face_id];
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
@@ -727,7 +609,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const int *b_face_cells = mesh->b_face_cells;
 
-  unsigned *bad = mq->bad_cell_flag;
+  unsigned *bad_cell_flag = mq->bad_cell_flag;
   const cs_real_t *surfn = mq->i_face_surf;
   const cs_real_t *surfbn = mq->b_face_surf;
   double *dist = mq->i_dist;
@@ -735,11 +617,6 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
   double *volume  = mq->cell_vol;
 
   const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
-
-  /* Tag bad cells, if no bad cells, CS_BAD_CELLS_REGULARISATION is
-   * switch off */
-  _tag_bad_cells(mesh,
-                 mq);
 
   if (!(cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION))
     return;
@@ -752,7 +629,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
   double varmax[9] = {-1.e20, -1.e20,-1.e20, -1.e20, -1.e20,-1.e20, -1.e20, -1.e20,-1.e20};
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-    if (mq->bad_cell_indic[cell_id] == 0) {
+    if (!(mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE)) {
       for (int i = 0; i < 9; i++) {
         varmin[i] = CS_MIN(varmin[i], var[cell_id][i]);
         varmax[i] = CS_MAX(varmax[i], var[cell_id][i]);
@@ -794,16 +671,17 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
       dam[cell_id2][i][i] += ssd;
     }
 
-    if (mq->bad_cell_indic[cell_id1] > 0 && mq->bad_cell_indic[cell_id2] > 0) {
+    if (   mq->bad_cell_flag[cell_id1] & CS_BAD_CELL_TO_REGULARIZE
+        && mq->bad_cell_flag[cell_id2] & CS_BAD_CELL_TO_REGULARIZE) {
       xam[face_id] = -ssd;
     }
-    else if (mq->bad_cell_indic[cell_id1] > 0) {
+    else if (mq->bad_cell_flag[cell_id1] & CS_BAD_CELL_TO_REGULARIZE) {
       for (int i = 0; i < 9; i++) {
         rhs[cell_id1][i] += ssd * var[cell_id2][i];
         rhs[cell_id2][i] += ssd * var[cell_id2][i];
       }
     }
-    else if (mq->bad_cell_indic[cell_id2] > 0) {
+    else if (mq->bad_cell_flag[cell_id2] & CS_BAD_CELL_TO_REGULARIZE) {
       for (int i = 0; i < 9; i++) {
         rhs[cell_id2][i] += ssd * var[cell_id1][i];
         rhs[cell_id1][i] += ssd * var[cell_id1][i];
@@ -824,7 +702,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
           cs_glob_bc_type[face_id] == CS_ROUGHWALL  ||
           cs_glob_bc_type[face_id] == CS_SYMMETRY     ) {
         cs_lnum_t cell_id = b_face_cells[face_id];
-        if (mq->bad_cell_indic[cell_id] > 0) {
+        if (mq->bad_cell_flag[cell_id] & CS_BAD_CELL_TO_REGULARIZE) {
           double ssd = surfbn[face_id] / distbr[face_id];
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {

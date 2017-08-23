@@ -135,7 +135,6 @@ typedef struct {
   cs_real_33_t  *cocg_lsq;       /* Interleaved cocg matrix
                                     for least square gradients */
 
-  int           *bad_cell_indic;    /* Bad cells indicator FIXME rm*/
   cs_real_t     *corr_grad_lin_det;  /* Determinant of geometrical matrix linear gradient correction */
   cs_real_33_t  *corr_grad_lin;      /* Geometrical matrix linear gradient correction */
 

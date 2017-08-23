@@ -271,10 +271,6 @@ if (ippmod(idarcy).eq.1) then
 
 endif
 
-call add_property_field_1d('regul', 'regul', iflid)
-call field_set_key_int(iflid, keyvis, 1)
-call field_set_key_int(iflid, keylog, 1)
-
 ! --- Mesh displacement for ALE
 
 if (iale.eq.1) then

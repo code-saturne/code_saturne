@@ -261,9 +261,9 @@ _compute_offsetting(const cs_mesh_t             *mesh,
     off_2 = 1 - pow(of_n / mesh_quantities->cell_vol[cell2], 1/3.);
 
     if (off_1 < 0.1)
-      bad_cell_flag[cell1] = bad_cell_flag[cell1] | CS_BAD_CELL_OFFSET;
+      bad_cell_flag[cell1] |= CS_BAD_CELL_OFFSET;
     if (off_2 < 0.1)
-      bad_cell_flag[cell2] = bad_cell_flag[cell2] | CS_BAD_CELL_OFFSET;
+      bad_cell_flag[cell2] |= CS_BAD_CELL_OFFSET;
 
   }
 
@@ -451,7 +451,7 @@ _compute_least_squares(const cs_mesh_t             *mesh,
     lsq = min_diag / max_diag;
 
     if (lsq < 0.1)
-      bad_cell_flag[cell_id] = bad_cell_flag[cell_id] | CS_BAD_CELL_LSQ_GRAD;
+      bad_cell_flag[cell_id] |= CS_BAD_CELL_LSQ_GRAD;
   }
 
   BFT_FREE(w1);
@@ -498,8 +498,8 @@ _compute_volume_ratio(const cs_mesh_t             *mesh,
                      volume[cell2] / volume[cell1]);
 
     if (vol_ratio < 0.1*0.1) {
-      bad_cell_flag[cell1] = bad_cell_flag[cell1] | CS_BAD_CELL_RATIO;
-      bad_cell_flag[cell2] = bad_cell_flag[cell2] | CS_BAD_CELL_RATIO;
+      bad_cell_flag[cell1] |= CS_BAD_CELL_RATIO;
+      bad_cell_flag[cell2] |= CS_BAD_CELL_RATIO;
     }
   }
 
@@ -538,16 +538,18 @@ _bad_cells_post(const cs_mesh_t             *mesh,
                                 CS_BAD_CELL_LSQ_GRAD,
                                 CS_BAD_CELL_RATIO,
                                 CS_BAD_CELL_GUILT,
-                                CS_BAD_CELL_USER};
+                                CS_BAD_CELL_USER,
+                                CS_BAD_CELL_TO_REGULARIZE};
 
   const char *criterion_name[] = {N_("Bad Cell Ortho Norm"),
                                   N_("Bad Cell Offset"),
                                   N_("Bad Cell LSQ Gradient"),
                                   N_("Bad Cell Volume Ratio"),
                                   N_("Bad Cell Association"),
-                                  N_("Bad Cell by User")};
+                                  N_("Bad Cell by User"),
+                                  N_("Bad Cell to regularize")};
 
-  const int n_criteria = 6;
+  const int n_criteria = 7;
 
   if (_type_flag_visualize[call_type] == 0)
     return;
@@ -620,6 +622,111 @@ _bad_cells_post_function(void                  *mesh,
                   ts);
 }
 
+/*----------------------------------------------------------------------------
+ * Tag cell for regularisation
+ * if no bad cells, CS_BAD_CELLS_REGULARISATION is
+ * switch off.
+ *
+ * parameters:
+ *   mesh            <-- Void pointer to associated mesh structure
+ *   mq              <-- pointer to associated mesh quantities structure
+ *   bad_cell_flag   --> array of bad cell flags for various uses
+ *----------------------------------------------------------------------------*/
+
+static void
+_to_regularize(const cs_mesh_t             *mesh,
+               const cs_mesh_quantities_t  *mq,
+               unsigned                     bad_cell_flag[])
+{
+  cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+  cs_lnum_t n_cells = mesh->n_cells;
+  cs_lnum_t n_i_faces = mesh->n_i_faces;
+  cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
+  const int *b_face_cells = mesh->b_face_cells;
+
+  const cs_real_t *surfn = mq->i_face_surf;
+  const cs_real_t *surfbn = mq->b_face_surf;
+  double *dist = mq->i_dist;
+  double *distbr = mq->b_dist;
+  double *volume  = mq->cell_vol;
+
+  const cs_real_3_t *xyzcen = (const cs_real_3_t *) mq->cell_cen;
+  const cs_real_3_t *cdgfac = (const cs_real_3_t *) mq->i_face_cog;
+  const cs_real_3_t *cdgfbo = (const cs_real_3_t *) mq->b_face_cog;
+  const cs_real_3_t *surfac = (const cs_real_3_t *) mq->i_face_normal;
+  const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
+
+  static cs_gnum_t nb_bad_cells = 0;
+
+  cs_real_3_t *vol;
+  BFT_MALLOC(vol, n_cells_ext, cs_real_3_t);
+
+  //FIXME tensor ?
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    vol[cell_id][0] = 0.;
+    vol[cell_id][1] = 0.;
+    vol[cell_id][2] = 0.;
+  }
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+    cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+    vol[cell_id1][0] += cdgfac[face_id][0] * surfac[face_id][0];
+    vol[cell_id1][1] += cdgfac[face_id][1] * surfac[face_id][1];
+    vol[cell_id1][2] += cdgfac[face_id][2] * surfac[face_id][2];
+    vol[cell_id2][0] -= cdgfac[face_id][0] * surfac[face_id][0];
+    vol[cell_id2][1] -= cdgfac[face_id][1] * surfac[face_id][1];
+    vol[cell_id2][2] -= cdgfac[face_id][2] * surfac[face_id][2];
+  }
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    cs_lnum_t cell_id = b_face_cells[face_id];
+    vol[cell_id][0] += cdgfbo[face_id][0] * surfbo[face_id][0];
+    vol[cell_id][1] += cdgfbo[face_id][1] * surfbo[face_id][1];
+    vol[cell_id][2] += cdgfbo[face_id][2] * surfbo[face_id][2];
+  }
+
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+    double determinant = mq->corr_grad_lin_det[cell_id];
+
+    int probleme = 0;
+    if (determinant <= 0.) {
+      probleme = 1;
+    }
+    else {
+      determinant = CS_MAX(determinant, 1.e-10);
+      determinant = CS_MAX(determinant, 1./determinant);
+      if (determinant > 2)
+        probleme = 1;
+    }
+
+    // FIXME not invariant by rotation
+    if (probleme > 0 || (bad_cell_flag[cell_id] & CS_BAD_CELL_RATIO)
+        || vol[cell_id][0] < 0. || vol[cell_id][1] < 0. || vol[cell_id][2] < 0.
+        || (bad_cell_flag[cell_id] & CS_BAD_CELL_ORTHO_NORM)) {
+      bad_cell_flag[cell_id] |= CS_BAD_CELL_TO_REGULARIZE;
+      nb_bad_cells ++;
+    }
+
+  }
+
+  if (mesh->halo != NULL)
+    cs_halo_sync_num(mesh->halo, CS_HALO_STANDARD, bad_cell_flag);
+
+  cs_parall_counter(&nb_bad_cells, 1);
+
+  BFT_FREE(vol);
+
+  /* If no bad cells, no need of regularisation */
+  if (nb_bad_cells <= 0) {
+    bft_printf("No need of regularisation\n");
+    cs_glob_mesh_quantities_flag -= CS_BAD_CELLS_REGULARISATION;
+  }
+
+  return;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -659,7 +766,7 @@ cs_mesh_bad_cells_set_options(int  type_flag_mask,
     _type_flag_visualize[i] = 0;
   }
 
-  for (i = 0; i < 6; i++) {
+  for (i = 0; i < 7; i++) {
     int mask = (1 << i);
     if (type_flag_mask == 0 || (type_flag_mask & mask)) {
       if (compute > 0) {
@@ -914,8 +1021,8 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
   }
 
-  /* Guilt by association */
-  /*----------------------*/
+  /* 5: Guilt by association */
+  /*-------------------------*/
 
   if (_type_flag_compute[call_type] & CS_BAD_CELL_GUILT) {
 
@@ -964,6 +1071,39 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
     }
 
+  }
+
+  /* Tag some cells to be regularized */
+  /*----------------------------------*/
+
+  if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION) {
+    if (_type_flag_compute[call_type] & CS_BAD_CELL_TO_REGULARIZE)
+      _to_regularize(mesh,
+                     mesh_quantities,
+                     bad_cell_flag);
+
+    if (_type_flag_compute[call_type_log] & CS_BAD_CELL_TO_REGULARIZE) {
+
+      ibad = 0;
+      for (i = 0; i < n_cells; i++) {
+        if (bad_cell_flag[i] & CS_BAD_CELL_TO_REGULARIZE) {
+          ibad++;
+          iwarning++;
+        }
+      }
+
+      if (cs_glob_rank_id >= 0) {
+        cs_parall_counter(&ibad, 1);
+        cs_parall_counter(&iwarning, 1);
+      }
+
+      /* Display listing output */
+      bft_printf(_("\n  Regularisation:\n"));
+      bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
+                 (unsigned long long)ibad,
+                 (double)ibad / (double)n_cells_tot * 100.0);
+
+    }
   }
 
   /* Warning printed in the log file */
