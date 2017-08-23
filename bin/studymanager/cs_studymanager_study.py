@@ -595,11 +595,6 @@ class Case(object):
                 self.__parser.setAttribute(node, attr, rep)
             return rep
 
-        else:
-            studies.reporting('Error: check compare/script/plot/probe/resu/input failed.')
-            sys.exit(1)
-
-
     def check_dirs(self, studies, node, repo, dest, reference=None):
         """
         Check coherency between xml file of parameters and repository and destination.
