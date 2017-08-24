@@ -334,9 +334,6 @@ def run_studymanager(pkg, options):
     if options.test_compilation:
         studies.test_compilation()
 
-    if options.update or options.update_xml or options.test_compilation:
-        return 0
-
     # Check if xml for result directories in the repository are OK
 
     if options.compare:
@@ -348,7 +345,8 @@ def run_studymanager(pkg, options):
 
     # Create all studies and all cases
 
-    studies.create_studies()
+    if options.compare or options.post or options.runcase:
+        studies.create_studies()
 
     # Preprocessing and run all cases
     if options.debug:
