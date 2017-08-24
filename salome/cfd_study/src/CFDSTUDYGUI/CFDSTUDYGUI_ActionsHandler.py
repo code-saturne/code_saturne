@@ -1328,7 +1328,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                     XmlCaseNameList = CFDSTUDYGUI_DataModel.getXmlCaseNameList(sobj)
                     if XmlCaseNameList != [] :
                         for i in XmlCaseNameList :
-                            self._SolverGUI.removeDockWindow(studyName, caseName,i)
+                            if CFDSTUDYGUI_SolverGUI.findDockWindow(i,caseName, studyName):
+                                self._SolverGUI.removeDockWindow(studyName, caseName,i)
                     if CFDSTUDYGUI_SolverGUI.findDockWindow("unnamed", caseName, studyName):
                         self._SolverGUI.removeDockWindow(studyName, caseName,"unnamed")
             watchCursor = QCursor(Qt.WaitCursor)

@@ -692,6 +692,14 @@
             <translation>Directory chosen: %s is not a CFD case directory, choose another one!</translation>
         </message>
         <message>
+            <source>CASE_COPYFROM_NEPTUNE_DLG_ERROR_MESS</source>
+            <translation>A Code_Saturne Copy From case is required. Try again.</translation>
+        </message>
+        <message>
+            <source>CASE_COPYFROM_SATURNE_DLG_ERROR_MESS</source>
+            <translation>A Neptune Copy From case is required. Try again.</translation>
+        </message>
+        <message>
             <source>Select an existing CFD Study</source>
             <translation>Select an existing CFD Study</translation>
         </message>
