@@ -5,6 +5,8 @@ Release 5.0.4 (unreleased)
 Bug fixes
 ---------
 
+- Several fixes in CFD_STUDY Salome module's interactive behavior.
+
 - Fix broken path in update feature of studymanager.
 
 - Fix possible crash or error when computing wall distance for 2D
@@ -64,8 +66,6 @@ Bug fixes
   which uses MSR-type matrices.
 
 - Fix issue in some matrix structure selection forced cases.
-
-- Several fixes in CFD_STUDY's interactive behavior.
 
 - Fix missing file in theory graphics Makefile.
 
