@@ -226,8 +226,6 @@ EXTRA_DIST = \
 unittests.py \
 $(top_srcdir)/tests/graphics
 
-all-local: check
-
 dist-hook:
 	rm -rf `find $(distdir)/tests/graphics -type d -name .svn`
 
