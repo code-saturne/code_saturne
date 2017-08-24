@@ -444,8 +444,8 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
             mess = cfdstudyMess.trMessage(ObjectTR.tr("STUDY_DIRECTORY_ALREADY_EXISTS"),[""])
             cfdstudyMess.criticalMessage(mess)
             return False
-
-    iok = _CallCreateScript(theStudyPath, theCreateOpt, theCaseNames,
+    if theCreateOpt or (not theCreateOpt and theCaseNames!=""):
+        iok = _CallCreateScript(theStudyPath, theCreateOpt, theCaseNames,
                                 theCopyOpt, theNameRef, theSyrthesOpt, theSyrthesCase)
 
     study   = _getStudy()
