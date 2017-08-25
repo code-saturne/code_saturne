@@ -177,11 +177,17 @@ do ilelt = 1, nlelt
   ! - Zone to which the face belongs
   izfppp(ifac) = izone
 
-  ! - CAUTION: do not assign boundary condition type (itypfb(ifac))
-  !            as it is automatically set by the code.
-
   ! - Boundary conditions are prescribed from the meteo profile
   iprofm(izone) = 1
+
+  ! - boundary condition type can be set to ientre or i_convective_inlet
+
+  itypfb(ifac) = ientre
+
+  ! - automatic determination of type (inlet/outlet) according to sign of
+  !   mass flux
+
+  iautom(ifac) = 1
 
 enddo
 !< [example_1]

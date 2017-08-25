@@ -1748,6 +1748,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
  * integer          ientgb           <-- 1 for burned gas inlet (gas combustion)
  * integer          ientgf           <-- 1 for unburned gas inlet (gas combustion)
  * integer          iprofm           <-- atmospheric flows: on/off for profile from data
+ * integer          iautom           <-- atmospheric flows: auto inlet/outlet flag
  * integer          itypfb           <-- type of boundary for each face
  * integer          izfppp           <-- zone number for each boundary face
  * integer          icodcl           <-- boundary conditions array type
@@ -1782,6 +1783,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                                int        *ientgf,
                                int        *ientgb,
                                int        *iprofm,
+                               int        *iautom,
                                int        *itypfb,
                                int        *izfppp,
                                int        *icodcl,
@@ -2194,7 +2196,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         if (boundaries->meteo[izone].automatic) {
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = face_ids[ifac];
-            itypfb[ifbr] = 0;
+            iautom[ifbr] = 1;
           }
         }
       }

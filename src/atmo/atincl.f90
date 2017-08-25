@@ -120,6 +120,9 @@ integer, save :: nbmett
 integer, save :: nbmetm
 !> iprofm --> read zone boundary conditions from profile
 integer, save :: iprofm(nozppm)
+!> iautom --> automatic inlet/outlet boundary condition flag
+!>            (0: not auto (default); 1: auto)
+integer, allocatable, dimension(:) :: iautom
 !> initmeteo --> use meteo profile for variables initialization
 !>                  (0: not used; 1: used (default))
 integer, save :: initmeteo
@@ -291,7 +294,7 @@ use atsoil
 
 implicit none
 
-integer :: imode
+integer :: imode, ifac
 
 ! Allocate additional arrays for Water Microphysics
 
@@ -315,6 +318,13 @@ if (imeteo.gt.0) then
   allocate(pmer(nbmetm))
   allocate(xmet(nbmetm), ymet(nbmetm))
   allocate(rmet(nbmaxt,nbmetm), tpmet(nbmaxt,nbmetm), phmet(nbmaxt,nbmetm))
+
+  ! Allocate and initialize auto inlet/outlet flag
+
+  allocate(iautom(nfabor))
+  do ifac = 1, nfabor
+    iautom(ifac) = 0
+  enddo
 
   ! Allocate additional arrays for 1D radiative model
 
@@ -364,6 +374,8 @@ if (imeteo.gt.0) then
   deallocate(pmer)
   deallocate(xmet, ymet)
   deallocate(rmet, tpmet, phmet)
+
+  deallocate(iautom)
 
   if (iatra1.eq.1) then
 

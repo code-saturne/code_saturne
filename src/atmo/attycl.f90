@@ -286,13 +286,15 @@ do ifac = 1, nfabor
     !     Pour une entree, on remplit la condition de Dirichlet si elle n'a pas
     !     ete  specifiee par utilisateur.
 
-    if (vs.gt.0) then
-      if (itypfb(ifac).eq.0) itypfb(ifac) = isolib
-    else
-      if (itypfb(ifac).eq.0) itypfb(ifac) = ientre
+    if (iautom(ifac).eq.1) then
+      if (vs.gt.0) then
+        itypfb(ifac) = isolib
+      else
+        if (itypfb(ifac).eq.0) itypfb(ifac) = ientre
+      endif
     endif
 
-    if (itypfb(ifac).eq.ientre) then
+    if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
 
       if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0)             &
            rcodcl(ifac,iu,1) = xuent

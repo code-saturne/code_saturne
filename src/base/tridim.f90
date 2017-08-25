@@ -916,7 +916,7 @@ do while (iterns.le.nterup)
   ( ippmod(idarcy),                                                &
     nozppm, ncharm, ncharb, nclpch,                                &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
-    ientfu, ientgb, ientgf, iprofm,                                &
+    ientfu, ientgb, ientgf, iprofm, iautom,                        &
     itypfb, izfppp, icodcl,                                        &
     surfbo, cdgfbo,                                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
@@ -1450,7 +1450,7 @@ if (ippmod(idarcy).eq.1) then
   ( ippmod(idarcy),                                                &
     nozppm, ncharm, ncharb, nclpch,                                &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
-    ientfu, ientgb, ientgf, iprofm,                                &
+    ientfu, ientgb, ientgf, iprofm, iautom,                        &
     itypfb, izfppp, icodcl,                                        &
     surfbo, cdgfbo,                                                &
     qimp,   qimpat, qimpcp, dh,     xintur,                        &
