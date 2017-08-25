@@ -148,7 +148,7 @@ d2s3 = 2.d0/3.d0
 zref = 10.d0
 xuref = 10.d0
 rugd = 0.1d0
-rugt = 0.1d0
+rugt = rugd
 
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
@@ -329,7 +329,6 @@ do ilelt = 1, nlelt
 
   ! Wall: zero flow (zero flux for pressure)
   !       rough friction for velocities (+ turbulent variables)
-  !       zero flux for scalars
 
   ! - Zone to which the zone belongs
   izfppp(ifac) = izone
@@ -339,24 +338,12 @@ do ilelt = 1, nlelt
   ! Roughness for velocity: rugd
   rcodcl(ifac,iu,3) = rugd
 
-  ! Roughness for scalars (if required):
+  ! Roughness for scalars:
   rcodcl(ifac,iv,3) = rugt
 
+  ! By default zero flux for scalars
 
-  if(iscalt.ne.-1) then
 
-    ! If temperature prescribed to 20 with a rough wall law (scalar ii=1)
-    ! (with thermal roughness specified in rcodcl(ifac,iv,3)) :
-    ii = iscalt
-    icodcl(ifac, isca(ii))    = 6
-    rcodcl(ifac, isca(ii),1)  = 293.15d0
-
-    ! If flux prescribed to 4.d0 (scalar ii=2):
-    ii = 2
-    icodcl(ifac, isca(ii))    = 3
-    rcodcl(ifac, isca(ii), 3) = 4.d0
-
-  endif
 enddo
 !< [example_4]
 
