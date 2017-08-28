@@ -103,7 +103,7 @@ $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 mei_test_LDFLAGS =
 mei_test_LDADD = $(top_builddir)/src/mei/libmei.la \
-        $(top_builddir)/src/bft/libbft.la -lm
+	$(top_builddir)/src/bft/libbft.la -lm
 
 # Code_Saturne tests
 
@@ -120,14 +120,15 @@ cs_rank_neighbors_test \
 fvm_selector_test \
 fvm_selector_postfix_test \
 cs_random_test \
-cs_sizes_test
+cs_sizes_test \
+cs_tree_test
 
 LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
-        $(PLE_LDFLAGS) $(MPI_LDFLAGS)
+	$(PLE_LDFLAGS) $(MPI_LDFLAGS)
 LDADD_CS_TESTS = \
-        $(top_builddir)/src/base/libcscore.la \
-        $(top_builddir)/src/bft/libbft.la \
-        $(LIBPLE_LA) $(PLE_LIBS) $(MPI_LIBS) -lm
+	$(top_builddir)/src/base/libcscore.la \
+	$(top_builddir)/src/bft/libbft.la \
+	$(LIBPLE_LA) $(PLE_LIBS) $(MPI_LIBS) -lm
 
 cs_blas_test_SOURCES  = \
 cs_blas_test.c \
@@ -217,6 +218,10 @@ cs_sizes_test_SOURCES  = cs_sizes_test.c
 cs_sizes_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_sizes_test_LDADD    = $(LDADD_CS_TESTS)
 
+cs_tree_test_SOURCES  = cs_tree_test.c
+cs_tree_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
+cs_tree_test_LDADD    = $(LDADD_CS_TESTS)
+
 # Uncomment for tests execution at "make check"
 #TESTS=$(check_PROGRAMS)
 
@@ -228,4 +233,3 @@ $(top_srcdir)/tests/graphics
 
 dist-hook:
 	rm -rf `find $(distdir)/tests/graphics -type d -name .svn`
-

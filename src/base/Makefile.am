@@ -156,6 +156,7 @@ cs_time_plot.h \
 cs_time_step.h \
 cs_timer.h \
 cs_timer_stats.h \
+cs_tree.h \
 cs_turbomachinery.h \
 cs_volume_zone.h \
 cs_wall_functions.h
@@ -163,7 +164,7 @@ cs_wall_functions.h
 # Library source files
 
 noinst_LTLIBRARIES = libcscorep.la libcscore.la \
-                     libcsbase.la libcsrenumber.la
+		     libcsbase.la libcsrenumber.la
 
 # Core library.
 # We use a helper library containing only cs_base.c, so as to pass
@@ -195,7 +196,8 @@ cs_map.c \
 cs_order.c \
 cs_part_to_block.c \
 cs_system_info.c \
-cs_timer.c
+cs_timer.c \
+cs_tree.c
 libcscore_la_LDFLAGS = -no-undefined
 libcscore_la_LIBADD = libcscorep.la $(top_builddir)/src/fvm/libfvm.la
 
