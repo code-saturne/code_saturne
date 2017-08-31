@@ -1421,8 +1421,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
                 if os.path.exists(parentPath) == False:
                     os.mkdir(parentPath)
-
-                shutil.move(path, parentPath)
+                if CFDSTUDYGUI_DataModel.isLinkPathObject(sobj) != None:
+                    #symbolic link file
+                    shutil.copy(path, parentPath)
+                    import subprocess
+                    ret = subprocess.call(['rm','-f',path])
+                else:
+                    shutil.move(path, parentPath)
                 self.updateObjBrowser(parent)
 
 
@@ -2266,7 +2271,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         path = CFDSTUDYGUI_DataModel._GetPath(sobj)
         studyId = salome.sg.getActiveStudyId()
         if smeshBuilder :
-            smesh = smeshBuilder.New(salome.myStudy)      
+            smesh = smeshBuilder.New(salome.myStudy)
             study = CFDSTUDYGUI_DataModel._getStudy()
             builder = study.NewBuilder()
             meshcomponent = study.FindComponent( "SMESH" )

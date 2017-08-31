@@ -327,13 +327,13 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
             return
         CaseRefDATAPath = os.path.join(self.CaseRefName,"DATA")
         if "NeptuneGUI" in os.listdir(CaseRefDATAPath) and self.findChild(QRadioButton,"radioButtonSaturne").isChecked():
-            mess = cfdstudyMess.trMessage(self.tr("CASE_COPYFROM_NEPTUNE_DLG_ERROR_MESS"),[self.CaseRefName])
+            mess = cfdstudyMess.trMessage(self.tr("CASE_COPYFROM_NEPTUNE_DLG_ERROR_MESS"),[])
             cfdstudyMess.aboutMessage(mess)
             self.findChild(QWidget,"copyFromCase_widget").hide()
             self.findChild(QCheckBox,"checkBoxCopyFrom").setChecked(False)
             return
         if "SaturneGUI" in os.listdir(CaseRefDATAPath) and self.findChild(QRadioButton,"radioButtonNeptune").isChecked():
-            mess = cfdstudyMess.trMessage(self.tr("CASE_COPYFROM_SATURNE_DLG_ERROR_MESS"),[self.CaseRefName])
+            mess = cfdstudyMess.trMessage(self.tr("CASE_COPYFROM_SATURNE_DLG_ERROR_MESS"),[])
             cfdstudyMess.aboutMessage(mess)
             self.findChild(QWidget,"copyFromCase_widget").hide()
             self.findChild(QCheckBox,"checkBoxCopyFrom").setChecked(False)

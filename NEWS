@@ -1,4 +1,12 @@
 
+Version 5.0.5 (unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Salome_CFD: symbolic link files bug fixed.
+
 Release 5.0.4 (Aug 24 2017)
 ===========================
 

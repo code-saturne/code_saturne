@@ -337,8 +337,7 @@ def createPopupMenu(popup, context):
                                     popup.removeAction(ActionHandler.commonAction(CFDSTUDYGUI_ActionsHandler.DisplayOnlyGroupMESHAction))
 
                             else:
-                                if not CFDSTUDYGUI_DataModel.isLinkPathObject(sobj) and (sg.SelectedCount() == 1):
-                                    ActionHandler.customPopup(id, popup)
+                                ActionHandler.customPopup(id, popup)
                                 fathername = sobj.GetFather().GetName()
                                 if  fathername in ["RESU","RESU_COUPLING"]:
                                     if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["RESUSubFolder"]) or \
