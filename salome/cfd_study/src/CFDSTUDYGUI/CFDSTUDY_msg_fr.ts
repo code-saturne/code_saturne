@@ -629,7 +629,7 @@
             <translation>Chargement d'une étude existante</translation>
         </message>
         <message>
-            <source>Create Study</source>
+            <source>Create study</source>
             <translation>Création d'une étude</translation>
         </message>
         <message>
@@ -645,8 +645,16 @@
             <translation>Cas</translation>
         </message>
         <message>
-            <source>copy from existing case</source>
-            <translation>copie d'un cas existant</translation>
+            <source>Copy from existing case</source>
+            <translation>Copie d'un cas existant</translation>
+        </message>
+        <message>
+            <source>Coupling with Syrthes</source>
+            <translation>Couplage avec Syrthes</translation>
+        </message>
+        <message>
+            <source>Syrthes case</source>
+            <translation>Cas Syrthes</translation>
         </message>
         <message>
             <source>New study directory name created</source>

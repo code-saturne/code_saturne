@@ -1070,7 +1070,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         Loads the CFD study location. If the name of the CFD study
         does not exists, the corresponding folder is created.
-        dialog.CreateOption boolean indicates that Create Study button is checked
+        dialog.CreateOption boolean indicates that Create study button is checked
         """
         log.debug("slotStudyLocation")
         dialog = self.DialogCollector.SetTreeLocationDialog

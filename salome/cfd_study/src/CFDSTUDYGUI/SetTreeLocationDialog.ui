@@ -41,7 +41,7 @@
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>&amp;Load existing study</string>
+         <string>Load existing study</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -57,7 +57,7 @@
       <item>
        <widget class="QCheckBox" name="checkBoxCreate">
         <property name="text">
-         <string>Create &amp;Study</string>
+         <string>Create study</string>
         </property>
         <property name="checked">
          <bool>false</bool>
@@ -120,7 +120,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Study &amp;name</string>
+         <string>Study name</string>
         </property>
         <property name="wordWrap">
          <bool>false</bool>
@@ -218,7 +218,7 @@
       <item>
        <widget class="QCheckBox" name="checkBoxCopyFrom">
         <property name="text">
-         <string>copy from existing case</string>
+         <string>Copy from existing case</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -312,7 +312,7 @@
                </size>
               </property>
               <property name="text">
-               <string>n&amp;procs</string>
+               <string>Nprocs</string>
               </property>
               <property name="wordWrap">
                <bool>false</bool>
@@ -347,7 +347,7 @@
                </size>
               </property>
               <property name="text">
-               <string>S&amp;yrthes Case</string>
+               <string>Syrthes case</string>
               </property>
               <property name="wordWrap">
                <bool>false</bool>
