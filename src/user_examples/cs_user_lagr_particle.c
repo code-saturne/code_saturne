@@ -95,7 +95,7 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
-static cs_real_t _debm[4];
+static cs_real_t _m_flow[4];
 
 /*============================================================================
  * Local (user defined) function definitions
@@ -218,7 +218,7 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
  * \param[in]     vagaus   Gaussian random variables
  * \param[in]     gradpr   pressure gradient
  * \param[in]     gradvf   gradient of the flow velocity
- * \param[in,out] romp     particle density
+ * \param[in,out] rho_p     particle density
  * \param[out]    fextla   user external force field (m/s^2)$
  */
 /*----------------------------------------------------------------------------*/
@@ -233,7 +233,7 @@ cs_user_lagr_ef(cs_real_t            dt_p,
                 const cs_real_33_t   vagaus[],
                 const cs_real_3_t    gradpr[],
                 const cs_real_33_t   gradvf[],
-                cs_real_t            romp[],
+                cs_real_t            rho_p[],
                 cs_real_3_t          fextla[])
 {
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
@@ -243,6 +243,110 @@ cs_user_lagr_ef(cs_real_t            dt_p,
     fextla[ip][1] = 0;
     fextla[ip][2] = 0;
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User function (non-mandatory intervention)
+ *
+ * User-defined modifications on the variables at the end of the
+ * Lagrangian time step and calculation of user-defined
+ * additional statistics on the particles.
+ *
+ * \param[in]  dt      time step (per cell)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_extra_operations(const cs_real_t  dt[])
+{
+  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  const cs_lagr_attribute_map_t *p_am = p_set->p_am;
+
+  /* Example: computation of the particle mass flow rate on 4 planes
+     --------------------------------------------------------------- */
+
+  {
+    cs_real_t zz[4] = {0.1e0, 0.15e0, 0.20e0, 0.25e0};
+
+    /* If we are in an unsteady case, or if the beginning of the steady stats
+     * is not reached yet, all statistics are reset to zero at each time
+     step before entering this function.*/
+
+    if(   cs_glob_lagr_time_scheme->isttio == 0
+       || cs_glob_time_step->nt_cur <= cs_glob_lagr_stat_options->nstist) {
+      for (cs_lnum_t iplan = 0; iplan < 4; iplan++)
+        _m_flow[iplan] = 0.0;
+
+    }
+
+    for (cs_lnum_t iplan = 0; iplan < 4; iplan++) {
+
+      for (cs_lnum_t npt = 0; p_set->n_particles; npt++) {
+
+        unsigned char *part = p_set->p_buffer + p_am->extents * npt;
+
+        cs_lnum_t iel = cs_lagr_particle_get_cell_id(part, p_am);
+
+        if( iel >= 0 ) {
+
+          const cs_real_t *part_coords
+            = cs_lagr_particle_attr_const(part, p_am, CS_LAGR_COORDS);
+          const cs_real_t *prev_part_coords
+            = cs_lagr_particle_attr_n_const(part, p_am, 1, CS_LAGR_COORDS);
+
+          if (    part_coords[0] > zz[iplan]
+              && prev_part_coords[0] <= zz[iplan])
+            _m_flow[iplan] +=  cs_lagr_particle_get_real(part, p_am,
+                                                        CS_LAGR_STAT_WEIGHT)
+                             * cs_lagr_particle_get_real(part, p_am,
+                                                         CS_LAGR_MASS);
+
+        }
+
+      }
+
+    }
+
+    cs_real_t stat_age = cs_lagr_stat_get_age();
+
+    for (cs_lnum_t iplan = 0; iplan < 4; iplan++)
+      bft_printf(" Particle mass flow at Z(%d): %e14.5)",
+                 iplan,
+                 _m_flow[iplan]/stat_age);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Impose the motion of a particle flagged CS_LAGR_PART_IMPOSED_MOTION.
+ *
+ * User-defined modifications on the particle position and its
+ * velocity.
+ *
+ * \param[in]   coords    old particle coordinates
+ * \param[in]   dt        time step (per particle)
+ * \param[out]  disp      particle dispacement
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
+                            cs_real_t        dt,
+                            cs_real_t        disp[3])
+{
+  /* Angular velocity */
+  cs_real_t omega = 1.0;
+
+  /* Here we impose the particle to move arround a cylinder with
+   * the axis  is (*, 0, 1) */
+  cs_real_t rcost = (coords[1] - 0.0);
+  cs_real_t rsint = (coords[2] - 1.0);
+
+  /* Imposed displacement */
+  disp[0] = 0.;
+  disp[1] = rcost * (cos(omega*dt) - 1.0 ) - rsint * sin(omega*dt);
+  disp[2] = rsint * (cos(omega*dt) - 1.0 ) + rcost * sin(omega*dt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -363,108 +467,6 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
     cs_lagr_new_particle_init(particle_range,
                               time_id,
                               visc_length);
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Impose the motion of a particle flagged CS_LAGR_PART_IMPOSED_MOTION.
- *
- * User-defined modifications on the particle position and its
- * velocity.
- *
- * \param[in]  coords    old particle coordinates
- * \param[in]  dt        time step (per particle)
- * \param[out] disp      particle dispacement
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
-                            cs_real_t        dt,
-                            cs_real_t        disp[3])
-{
-  /* Angular velocity */
-  cs_real_t omega = 1.0;
-
-  /* Here we impose the particle to move arround a cylinder with
-   * the axis  is (*, 0, 1) */
-  cs_real_t rcost = (coords[1] - 0.0);
-  cs_real_t rsint = (coords[2] - 1.0);
-
-  /* Imposed displacement */
-  disp[0] = 0.;
-  disp[1] = rcost * (cos(omega*dt) - 1.0 ) - rsint * sin(omega*dt);
-  disp[2] = rsint * (cos(omega*dt) - 1.0 ) + rcost * sin(omega*dt);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief User function (non-mandatory intervention)
- *
- * User-defined modifications on the variables at the end of the
- * Lagrangian time step and calculation of user-defined
- * additional statistics on the particles.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_extra_operations(const cs_real_t  dt[])
-{
-  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
-  const cs_lagr_attribute_map_t *p_am = p_set->p_am;
-
-  /* Example: computation of the particle mass flow rate on 4 planes
-     --------------------------------------------------------------- */
-
-  {
-    cs_real_t zz[4] = {0.1e0, 0.15e0, 0.20e0, 0.25e0};
-
-    /* If we are in an unsteady case, or if the beginning of the steady stats
-     * is not reached yet, all statistics are reset to zero at each time
-     step before entering this function.*/
-
-    if(   cs_glob_lagr_time_scheme->isttio == 0
-       || cs_glob_time_step->nt_cur <= cs_glob_lagr_stat_options->nstist) {
-      for (cs_lnum_t iplan = 0; iplan < 4; iplan++)
-        _debm[iplan] = 0.0;
-
-    }
-
-    for (cs_lnum_t iplan = 0; iplan < 4; iplan++) {
-
-      for (cs_lnum_t npt = 0; p_set->n_particles; npt++) {
-
-        unsigned char *part = p_set->p_buffer + p_am->extents * npt;
-
-        cs_lnum_t iel = cs_lagr_particle_get_cell_id(part, p_am);
-
-        if( iel >= 0 ) {
-
-          const cs_real_t *part_coords
-            = cs_lagr_particle_attr_const(part, p_am, CS_LAGR_COORDS);
-          const cs_real_t *prev_part_coords
-            = cs_lagr_particle_attr_n_const(part, p_am, 1, CS_LAGR_COORDS);
-
-          if(    part_coords[0] > zz[iplan]
-              && prev_part_coords[0] <= zz[iplan])
-            _debm[iplan] +=  cs_lagr_particle_get_real(part, p_am,
-                                                       CS_LAGR_STAT_WEIGHT)
-              * cs_lagr_particle_get_real(part, p_am, CS_LAGR_MASS);
-
-        }
-
-      }
-
-    }
-
-    cs_real_t stat_age = cs_lagr_stat_get_age();
-
-    for (cs_lnum_t iplan = 0; iplan < 4; iplan++)
-      bft_printf(" Debit massique particulaire en Z(%d) : %E14.5)",
-                 iplan,
-                 _debm[iplan]/stat_age);
-
   }
 }
 
@@ -614,7 +616,7 @@ cs_user_lagr_rt(cs_lnum_t        id_p,
  * \param[out]  tauc   thermal relaxation time
  * \param[in]   dt     time step (per cell)
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_lagr_rt_t(cs_lnum_t        id_p,

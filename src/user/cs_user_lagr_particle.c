@@ -73,8 +73,10 @@
 #include "cs_field_pointer.h"
 
 #include "cs_lagr.h"
+#include "cs_lagr_new.h"
 #include "cs_lagr_particle.h"
 #include "cs_lagr_stat.h"
+#include "cs_lagr_sde.h"
 #include "cs_lagr_geom.h"
 
 /*----------------------------------------------------------------------------
@@ -145,24 +147,14 @@ cs_user_lagr_ef(cs_real_t            dt_p,
  * Lagrangian time step and calculation of user-defined
  * additional statistics on the particles.
  *
- * About the user-defined additional statistics, we recall that:
- *
- *   isttio = 0 : unsteady Lagrangian calculation
- *          = 1 : steady Lagrangian calculation
- *
- *   isuist : Restart of statistics calculation if >= 1, else no stats
- *
- *   idstnt : Number of the time step for the start of the statistics calculation
- *
- *   nstist : Number of the time step of the start of the steady computation
- *
  * \param[in]  dt      time step (per cell)
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_lagr_extra_operations(const cs_real_t  dt[])
 {
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -195,7 +187,7 @@ cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
  * profiles, position of the injection point, statistical weights,
  * correction of the diameter if the standard-deviation option is activated).
  *
- * This function is called for each injection zone and class. Particles
+ * This function is called for each injection zone and set. Particles
  * with ids between \c pset->n_particles and \c n_elts are initialized
  * but may be modidied by this function.
  *
