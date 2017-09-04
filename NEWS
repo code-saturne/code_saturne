@@ -5,6 +5,8 @@ Version 5.0.5 (unreleased)
 Bug fixes
 ---------
 
+- Fix launch of convergence tracking graphical tool when using Qt5.
+
 - Fix issue #239 relative to cooling tower module run in parallel.
 
 - When importing CGNS files and requiring additional groups for mesh
