@@ -226,7 +226,7 @@ class OutputControlModel(Model):
             node = self.node_out.xmlInitNode('writer', id = "-1", label = 'results')
             node.xmlInitNode('frequency', period = 'none')
             node.xmlInitNode('output_at_end', status = 'on')
-            node.xmlInitNode('format', name = 'ensight', options = 'binary')
+            node.xmlInitNode('format', name = 'ensight', options = '')
             node.xmlInitNode('directory', name = 'postprocessing')
             node.xmlInitNode('time_dependency', choice = 'fixed_mesh')
 
@@ -240,7 +240,7 @@ class OutputControlModel(Model):
             nodeL = self.node_out.xmlInitNode('writer', id = "-3", label = 'particles')
             nodeL.xmlInitNode('frequency', period = 'none')
             nodeL.xmlInitNode('output_at_end', status = 'on')
-            nodeL.xmlInitNode('format', name = 'ensight', options = 'binary')
+            nodeL.xmlInitNode('format', name = 'ensight', options = '')
             nodeL.xmlInitNode('directory', name = 'postprocessing')
             nodeL.xmlInitNode('time_dependency', choice = 'transient_connectivity')
 
@@ -249,7 +249,7 @@ class OutputControlModel(Model):
             nodeT = self.node_out.xmlInitNode('writer', id = "-4", label = 'trajectories')
             nodeT.xmlInitNode('frequency', period = 'none')
             nodeT.xmlInitNode('output_at_end', status = 'on')
-            nodeT.xmlInitNode('format', name = 'ensight', options = 'binary')
+            nodeT.xmlInitNode('format', name = 'ensight', options = '')
             nodeT.xmlInitNode('directory', name = 'postprocessing')
             nodeT.xmlInitNode('time_dependency', choice = 'fixed_mesh')
 

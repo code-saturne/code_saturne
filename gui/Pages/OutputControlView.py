@@ -48,7 +48,7 @@ import logging
 from code_saturne.Base.QtCore    import *
 from code_saturne.Base.QtGui     import *
 from code_saturne.Base.QtWidgets import *
-import os
+import os, re
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -1377,6 +1377,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.tableViewWriter.clicked.connect(self.slotSelectWriter)
         self.checkBoxOutputStart.clicked.connect(self.slotWriterOutputStart)
         self.checkBoxOutputEnd.clicked.connect(self.slotWriterOutputEnd)
+        self.checkBoxSeparateMeshes.clicked.connect(self.slotWriterSeparateMeshes)
         self.checkBoxAllVariables.clicked.connect(self.slotAllVariables)
         self.checkBoxAllLagrangianVariables.clicked.connect(self.slotAllLagrangianVariables)
         self.pushButtonFrequency.clicked.connect(self.slotWriterFrequencyFormula)
@@ -1979,30 +1980,83 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.setWriterOutputEndStatus(writer_id, st)
 
 
+    def __WriterOptionsPrelude(self):
+        """
+        Common handling for slots handling writer options
+        """
+        row = -1
+        writer_id = None
+        options = []
+        cindex = self.tableViewWriter.currentIndex()
+        if cindex != (-1,-1):
+            row = cindex.row()
+            writer_id = self.modelWriter.getItem(row)['id']
+            l = re.split(r'[;,\s]\s*',
+                         self.mdl.getWriterOptions(writer_id))
+            for s in l:
+                if s:
+                    options.append(s)
+
+        return row, writer_id, options
+
+
+    @pyqtSlot()
+    def slotWriterSeparateMeshes(self):
+        """
+        Writer separate meshes option
+        """
+        row, writer_id, options = self.__WriterOptionsPrelude()
+
+        if not writer_id:  # should not occur
+            return
+
+        if self.checkBoxSeparateMeshes.isChecked():
+            if 'separate_meshes' not in options:
+                options.append('separate_meshes')
+        else:
+            if 'separate_meshes' in options:
+                options.remove('separate_meshes')
+
+        l = ','.join(options)
+        log.debug("slotWriterSeparateMeshes")
+        self.mdl.setWriterOptions(writer_id, l)
+
+
     @pyqtSlot(str)
     def slotWriterOptions(self):
         """
         Create line for command of format's options
         """
-        cindex = self.tableViewWriter.currentIndex()
-        if cindex != (-1,-1):
-            row = cindex.row()
-            writer_id = self.modelWriter.getItem(row)['id']
-            line = []
-            opt_format = self.modelFormat.dicoV2M[str(self.comboBoxFormat.currentText())]
-            if opt_format != 'binary':
-                line.append(opt_format)
+        row, writer_id, options = self.__WriterOptionsPrelude()
 
-            opt_polygon = self.modelPolygon.dicoV2M[str(self.comboBoxPolygon.currentText())]
-            opt_polyhed = self.modelPolyhedra.dicoV2M[str(self.comboBoxPolyhedra.currentText())]
-            if opt_polygon != 'display':
-                line.append(opt_polygon)
-            if opt_polyhed != 'display':
-                line.append(opt_polyhed)
+        if not writer_id:  # should not occur
+            return
 
-            l = ','.join(line)
-            log.debug("slotOutputOptions-> %s" % l)
-            self.mdl.setWriterOptions(writer_id, l)
+        writer_id = self.modelWriter.getItem(row)['id']
+        line = []
+
+        opt_format = self.modelFormat.dicoV2M[str(self.comboBoxFormat.currentText())]
+
+        # remove previous settings matching this slot
+        for m in (self.modelFormat, self.modelPolygon, self.modelPolyhedra):
+            for s in m.items:
+                if s in options:
+                    options.remove(s)
+
+        # now append options
+        if opt_format != 'binary':
+            options.append(opt_format)
+
+        opt_polygon = self.modelPolygon.dicoV2M[str(self.comboBoxPolygon.currentText())]
+        opt_polyhed = self.modelPolyhedra.dicoV2M[str(self.comboBoxPolyhedra.currentText())]
+        if opt_polygon != 'display':
+            options.append(opt_polygon)
+        if opt_polyhed != 'display':
+            options.append(opt_polyhed)
+
+        l = ','.join(options)
+        log.debug("slotOutputOptions-> %s" % l)
+        self.mdl.setWriterOptions(writer_id, l)
 
 
     def __updateOptionsFormat(self, options, row):
@@ -2010,7 +2064,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Update line for command of format's options at each modification of
         post processing format
         """
-        opts = options.split(',')
+        opts = re.split(r'[;,\s]\s*', options)
+
         format = self.modelWriter.getItem(row)['format']
         log.debug("__updateOptionsFormat-> format = %s" % format)
         log.debug("__updateOptionsFormat-> options = %s" % options)
@@ -2027,6 +2082,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             elif opt == 'discard_polyhedra' or opt == 'divide_polyhedra':
                 self.modelPolyhedra.setItem(str_model=opt)
 
+            elif opt == 'separate_meshes':
+                self.checkBoxSeparateMeshes.setChecked(True)
+
         # default
 
         if 'binary' not in opts and 'big_endian' not in opts and 'text' not in opts:
@@ -2035,6 +2093,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.modelPolygon.setItem(str_model="display")
         if 'discard_polyhedra' not in opts and 'divide_polyhedra' not in opts:
             self.modelPolyhedra.setItem(str_model="display")
+        if 'separate_meshes' not in opts:
+            self.checkBoxSeparateMeshes.setChecked(False)
 
         # enable and disable options related to the format
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>742</width>
-    <height>517</height>
+    <width>787</width>
+    <height>551</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,7 +27,7 @@
       <string/>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tabOUTPUT">
       <attribute name="title">
@@ -327,6 +327,16 @@
                 </property>
                </widget>
               </item>
+              <item row="0" column="2">
+               <widget class="QCheckBox" name="checkBoxSeparateMeshes">
+                <property name="toolTip">
+                 <string>If checked, separate outputs (i.e. files) will be used for each mesh associated with this writer.</string>
+                </property>
+                <property name="text">
+                 <string>Separate meshes</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </item>
             <item>
@@ -465,7 +475,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string/>
             </property>
            </widget>
           </item>
@@ -532,7 +542,7 @@
           <item row="1" column="2">
            <widget class="QCheckBox" name="checkBoxOutputEnd">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string/>
             </property>
             <property name="text">
              <string>Output at end of calculation</string>
