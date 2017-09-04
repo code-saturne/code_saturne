@@ -629,8 +629,8 @@
             <translation>Load existing study</translation>
         </message>
         <message>
-            <source>Create Study</source>
-            <translation>Create Study</translation>
+            <source>Create study</source>
+            <translation>Create study</translation>
         </message>
         <message>
             <source>Study location</source>
@@ -645,8 +645,16 @@
             <translation>Cases</translation>
         </message>
         <message>
-            <source>copy from existing case</source>
-            <translation>copy from existing case</translation>
+            <source>Copy from existing case</source>
+            <translation>Copy from existing case</translation>
+        </message>
+        <message>
+            <source>Coupling with Syrthes</source>
+            <translation>Coupling with Syrthes</translation>
+        </message>
+        <message>
+            <source>Syrthes case</source>
+            <translation>Syrthes case</translation>
         </message>
         <message>
             <source>New study directory name created</source>
