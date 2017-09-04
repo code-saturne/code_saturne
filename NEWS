@@ -5,6 +5,8 @@ Version 5.0.5 (unreleased)
 Bug fixes
 ---------
 
+- Fix issue #239 relative to cooling tower module run in parallel.
+
 - When importing CGNS files and requiring additional groups for mesh
   sections or zones, do not try to build boundary face groups based
   on vertex boundary conditions; fixes crash in this combination.
