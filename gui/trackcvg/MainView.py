@@ -80,9 +80,14 @@ from code_saturne.Base.QtPage import DoubleValidator, from_qvariant, to_qvariant
 import numpy
 import matplotlib
 import matplotlib.pyplot
-import matplotlib.backends.backend_qt4agg
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+if QT_API == 'PYQT4':
+    import matplotlib.backends.backend_qt4agg
+    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+else:
+    import matplotlib.backends.backend_qt5agg
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
 import xml
