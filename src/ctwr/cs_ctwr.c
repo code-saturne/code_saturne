@@ -380,6 +380,8 @@ cs_ctwr_define(const char           zone_criteria[],
   BFT_MALLOC(ct->name, length, char);
   sprintf(ct->name, "cooling_towers_%02d", ct->num);
 
+  ct->file_name = NULL;
+
   ct->delta_t = delta_t;
   ct->relax   = relax;
   ct->t_l_bc  = t_l_bc;
@@ -429,7 +431,9 @@ cs_ctwr_define(const char           zone_criteria[],
   _n_ct_zones += 1;
 
   if (cs_glob_rank_id <= 0) {
-    length = strlen("cooling_towers_balance.") + 3;
+    length = strlen("cooling_towers_balance.") + 2 + 1;
+    for (int _num = ct->num; _num > 99; _num /= 10)
+      length += 1;
     BFT_MALLOC(ct->file_name, length, char);
     sprintf(ct->file_name, "cooling_towers_balance.%02d", ct->num);
 
