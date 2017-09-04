@@ -915,13 +915,9 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         cmd = os.path.join(self.case['package'].get_dir('bindir'),
                            self.case['package'].name)
         cmd = cs_exec_environment.enquote_arg(cmd) + " run --suggest-id"
-        runtype = self.mdl.getRunType()
-        if runtype == "none":
-            cmd += " --id-prefix=import_"
-        elif runtype == "mesh preprocess":
-            cmd += " --id-prefix=preprocess_"
-        elif runtype == "mesh quality":
-            cmd += " --id-prefix=quality_"
+        xmlfile = self.case['xmlfile']
+        if xmlfile:
+            cmd += " --param " + cs_exec_environment.enquote_arg(xmlfile)
 
         r_title = subprocess.Popen(cmd,
                                    shell=True,

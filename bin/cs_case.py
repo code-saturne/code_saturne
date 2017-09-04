@@ -1997,6 +1997,16 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
 
         if len(self.domains) + len(self.syr_domains) + len(self.ast_domains) > 1:
             r += '_COUPLING'
+        elif len(self.domains) == 1 and not (run_id_prefix or run_id_suffix):
+            try:
+                d = self.domains[0]
+                if not d.exec_solver:
+                    run_id_prefix = 'import_'
+                a = d.solver_args
+                if a and a in ('--quality', '--preprocess', '--benchmark'):
+                    run_id_prefix = a[2:] + '_'
+            except Exception:
+                pass
 
         # Make sure directory does not exist already
 
