@@ -753,6 +753,7 @@ ecs_loc_pre_cgns__lit_zones(const ecs_loc_cgns_base_t  *base_maillage,
 
 static void
 ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
+                           bool                          ignore_vertex_bocos,
                            const int                     nzones,
                            ecs_loc_cgns_zone_t          *tab_zone,
                            int                          *nbr_nom_boco,
@@ -929,6 +930,9 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
 
         }
 
+        if (ignore_vertex_bocos && GridLocation == CS_CG_ENUM(Vertex))
+          continue;
+
         /* stockage */
 
         for (ind_nom = 0; nom_boco_loc[ind_nom] != NULL; ind_nom++) {
@@ -987,6 +991,12 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
 
   }
 
+  if (*nbr_boco_tot > 0)
+    printf("\n");
+
+  if (ind_boco_glob < *nbr_boco_tot)
+    *nbr_boco_tot = ind_boco_glob;
+
   if (*nbr_boco_tot > 0) {
 
     for (ind_nom = 0;
@@ -997,12 +1007,6 @@ ecs_loc_pre_cgns__lit_boco(const ecs_loc_cgns_base_t    *base_maillage,
 
     *nbr_nom_boco = ind_nom;
     *tab_nom_boco = nom_boco_loc;
-
-  }
-
-  if (*nbr_boco_tot > 0) {
-
-    printf("\n");
 
   }
 
@@ -2648,7 +2652,6 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
                                       nbr_sselt_boco_som,
                                       tab_sselt_boco_som);
 
-
   /* Transfert des valeurs lues dans les structures d'entité de maillage */
   /*=====================================================================*/
 
@@ -3432,6 +3435,10 @@ ecs_pre_cgns__lit_maillage(const char   *nom_fic_maillage,
   int    ret_cgns = 0;
   float  version_cgns;
 
+  bool ignore_vertex_bocos = false;
+  if (cree_grp_fac_section || cree_grp_fac_zone)
+    ignore_vertex_bocos = true;
+
   /* Création d'un maillage initialement vide (valeur de retour) */
 
   ecs_maillage_t  *maillage = ecs_maillage__cree_nodal();
@@ -3500,6 +3507,7 @@ ecs_pre_cgns__lit_maillage(const char   *nom_fic_maillage,
   /*------------------------------------*/
 
   ecs_loc_pre_cgns__lit_boco(base_maillage,
+                             ignore_vertex_bocos,
                              nzones,
                              tab_zone,
                              &nbr_nom_boco,
