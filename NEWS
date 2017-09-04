@@ -37,6 +37,10 @@ Default option changes
 User changes
 ------------
 
+- When importing CGNS files and requiring additional groups for mesh
+  sections or zones, do not try to build boundary face groups based
+  on vertex boundary conditions.
+
 - Disable cases instead of exiting when a run directory check fails in
   studymanager.
 
