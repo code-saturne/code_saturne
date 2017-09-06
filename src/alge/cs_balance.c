@@ -420,6 +420,11 @@ cs_balance_scalar(int                idtvar,
  *                               at boundary faces for the r.h.s.
  * \param[in]     secvif        secondary viscosity at interior faces
  * \param[in]     secvib        secondary viscosity at boundary faces
+ * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     weighf        internal face weight between cells i j in case
+ *                               of tensor diffusion
+ * \param[in]     weighb        boundary face weight for cells i in case
+ *                               of tensor diffusion
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
@@ -449,6 +454,9 @@ cs_balance_vector(int                  idtvar,
                   const cs_real_t      b_visc[],
                   const cs_real_t      secvif[],
                   const cs_real_t      secvib[],
+                  cs_real_6_t          viscel[],
+                  const cs_real_2_t    weighf[],
+                  const cs_real_t      weighb[],
                   int                  icvflb,
                   const int            icvfli[],
                   cs_real_3_t          smbr[])
@@ -514,8 +522,8 @@ cs_balance_vector(int                  idtvar,
                                    secvif,
                                    smbr);
   }
-  /* Symmetric tensor diffusivity */
-  else if (idftnp == 6) {
+  /* Symmetric tensor diffusivity (Daly-Harlow, type Nabla(v).K )*/
+  else if (idftnp == 6 || idftnp == 36) {
     /* ! Nor diffusive part neither secondary viscosity or transpose of gradient */
     var_cal_opt_loc.idiff = 0;
     /* Convective part */
@@ -544,8 +552,31 @@ cs_balance_vector(int                  idtvar,
     }
 
     /* Diffusive part (with a 3x3 symmetric diffusivity) */
-    if (idiffp == 1) {
+    if (idiffp == 1 && idftnp == 6) {
       cs_anisotropic_diffusion_vector(idtvar,
+                                      f_id,
+                                      var_cal_opt_loc,
+                                      inc,
+                                      ivisep,
+                                      pvar,
+                                      pvara,
+                                      coefav,
+                                      coefbv,
+                                      cofafv,
+                                      cofbfv,
+                                      i_visc,
+                                      b_visc,
+                                      secvif,
+                                      viscel,
+                                      weighf,
+                                      weighb,
+                                      smbr);
+    }
+  }
+  /* Symmetric tensor diffusivity ( type K.Nabla(v) )*/
+  else if (idiffp == 1 && idftnp == 36) {
+    /* ! Nor diffusive part neither secondary viscosity or transpose of gradient */
+      cs_generalized_diffusion_vector(idtvar,
                                       f_id,
                                       var_cal_opt_loc,
                                       inc,

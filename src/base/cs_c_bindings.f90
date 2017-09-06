@@ -1623,8 +1623,9 @@ module cs_c_bindings
                                                   cofbfv, i_massflux,         &
                                                   b_massflux, i_viscm,        &
                                                   b_viscm, i_visc, b_visc,    &
-                                                  secvif, secvib, icvflb,     &
-                                                  icvfli, fimp,               &
+                                                  secvif, secvib,             &
+                                                  viscce, weighf, weighb,     &
+                                                  icvflb, icvfli, fimp,       &
                                                   smbrp, pvar, eswork)        &
       bind(C, name='cs_equation_iterative_solve_vector')
       use, intrinsic :: iso_c_binding
@@ -1638,6 +1639,8 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: i_visc, b_visc
       real(kind=c_double), dimension(*), intent(in) :: i_viscm, b_viscm
       real(kind=c_double), dimension(*), intent(in) :: secvif, secvib
+      real(kind=c_double), dimension(*), intent(in) :: viscce
+      real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
       integer(c_int), value :: icvflb
       integer(c_int), dimension(*), intent(in) :: icvfli
       real(kind=c_double), dimension(*), intent(in) :: fimp
@@ -1709,7 +1712,8 @@ module cs_c_bindings
     subroutine cs_balance_vector(idtvar, f_id, imasac, inc, ivisep,          &
                                  vcopt, pvar, pvara, coefav, coefbv, cofafv, &
                                  cofbfv, i_massflux, b_massflux, i_visc,     &
-                                 b_visc, secvif, secvib, icvflb, icvfli,     &
+                                 b_visc, secvif, secvib, viscel,             &
+                                 weighf, weighb, icvflb, icvfli,             &
                                  smbrp)                                      &
       bind(C, name='cs_balance_vector')
       use, intrinsic :: iso_c_binding
@@ -1720,8 +1724,9 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: pvar, pvara, coefav
       real(kind=c_double), dimension(*), intent(in) :: coefbv, cofafv, cofbfv
       real(kind=c_double), dimension(*), intent(in) :: i_massflux, b_massflux
-      real(kind=c_double), dimension(*), intent(in) :: i_visc, b_visc
+      real(kind=c_double), dimension(*), intent(in) :: i_visc, b_visc, viscel
       real(kind=c_double), dimension(*), intent(in) :: secvif, secvib
+      real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
       integer(c_int), value :: icvflb
       integer(c_int), dimension(*), intent(in) :: icvfli
       real(kind=c_double), dimension(*), intent(inout) :: smbrp
@@ -4371,6 +4376,11 @@ contains
   !>                               at boundary faces for the r.h.s.
   !> \param[in]     secvif        secondary viscosity at interior faces
   !> \param[in]     secvib        secondary viscosity at boundary faces
+  !> \param[in]     viscce        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+  !> \param[in]     weighf        internal face weight between cells i j in case
+  !>                               of tensor diffusion
+  !> \param[in]     weighb        boundary face weight for cells i in case
+  !>                               of tensor diffusion
   !> \param[in]     icvflb        global indicator of boundary convection flux
   !>                               - 0 upwind scheme at all boundary faces
   !>                               - 1 imposed flux at some boundary faces
@@ -4388,7 +4398,8 @@ contains
                      idftnp, iswdyp, iwarnp, blencp, epsilp, epsrsp, epsrgp,   &
                      climgp, relaxp, thetap, pvara , pvark , coefav, coefbv,   &
                      cofafv, cofbfv, i_massflux, b_massflux, i_viscm,          &
-                     b_viscm, i_visc, b_visc, secvif, secvib, icvflb, icvfli,  &
+                     b_viscm, i_visc, b_visc, secvif, secvib,                  &
+                     viscce, weighf, weighb, icvflb, icvfli,                   &
                      fimp, smbrp, pvar, eswork)
 
     use, intrinsic :: iso_c_binding
@@ -4411,6 +4422,8 @@ contains
     real(kind=c_double), dimension(*), intent(in) :: i_visc, b_visc
     real(kind=c_double), dimension(*), intent(in) :: i_viscm, b_viscm
     real(kind=c_double), dimension(*), intent(in) :: secvif, secvib
+    real(kind=c_double), dimension(*), intent(in) :: viscce
+    real(kind=c_double), dimension(*), intent(in) :: weighf, weighb
     integer, intent(in) :: icvflb
     integer(c_int), dimension(*), intent(in) :: icvfli
     real(kind=c_double), dimension(*), intent(in) :: fimp
@@ -4458,7 +4471,8 @@ contains
                                             coefav, coefbv, cofafv, cofbfv,    &
                                             i_massflux, b_massflux, i_viscm,   &
                                             b_viscm, i_visc, b_visc, secvif,   &
-                                            secvib, icvflb, icvfli,            &
+                                            secvib, viscce, weighf, weighb,    &
+                                            icvflb, icvfli,                    &
                                             fimp, smbrp, pvar, eswork)
     return
 
@@ -4587,7 +4601,7 @@ contains
   !>                               at interior faces for the r.h.s.
   !> \param[in]     viscbs        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
   !>                               at boundary faces for the r.h.s.
-  !> \param[in]     visccs        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+  !> \param[in]     viscce        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
   !> \param[in]     weighf        internal face weight between cells i j in case
   !>                               of tensor diffusion
   !> \param[in]     weighb        boundary face weight for cells i in case
@@ -4969,6 +4983,11 @@ contains
   !>                               at boundary faces for the r.h.s.
   !> \param[in]     secvif        secondary viscosity at interior faces
   !> \param[in]     secvib        secondary viscosity at boundary faces
+  !> \param[in]     viscce        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+  !> \param[in]     weighf        internal face weight between cells i j in case
+  !>                               of tensor diffusion
+  !> \param[in]     weighb        boundary face weight for cells i in case
+  !>                               of tensor diffusion
   !> \param[in]     icvflb        global indicator of boundary convection flux
   !>                               - 0 upwind scheme at all boundary faces
   !>                               - 1 imposed flux at some boundary faces
@@ -4981,7 +5000,8 @@ contains
                      ischcp, isstpp, inc, imrgra, ivisep, iwarnp, idftnp,     &
                      imasac, blencp, epsrgp, climgp, relaxp, thetap, pvar,    &
                      pvara, coefav, coefbv, cofafv, cofbfv, flumas, flumab,   &
-                     viscf, viscb, secvif, secvib, icvflb, icvfli, smbrp)
+                     viscf, viscb, secvif, secvib, viscce, weighf, weighb,    &
+                     icvflb, icvfli, smbrp)
 
     use, intrinsic :: iso_c_binding
     use numvar
@@ -5000,6 +5020,7 @@ contains
     real(kind=c_double), dimension(*), intent(in) :: coefbv, cofafv, cofbfv
     real(kind=c_double), dimension(*), intent(in) :: flumas, flumab
     real(kind=c_double), dimension(*), intent(in) :: viscf, viscb
+    real(kind=c_double), dimension(*), intent(in) :: viscce, weighf, weighb
     real(kind=c_double), dimension(*), intent(in) :: secvif, secvib
     integer, intent(in) :: icvflb
     integer(c_int), dimension(*), intent(in) :: icvfli
@@ -5041,7 +5062,8 @@ contains
     call cs_balance_vector(idtvar, f_id, imasac, inc, ivisep,                &
                            c_k_value, pvar, pvara , coefav, coefbv, cofafv,  &
                            cofbfv, flumas, flumab, viscf, viscb, secvif,     &
-                           secvib, icvflb, icvfli, smbrp)
+                           secvib, viscce, weighf, weighb,                   &
+                           icvflb, icvfli, smbrp)
 
     return
 

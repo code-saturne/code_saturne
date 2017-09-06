@@ -1574,6 +1574,7 @@ if (iappel.eq.1) then
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
+   rvoid  , rvoid  , rvoid  ,                                     &
    icvflb , icvfli ,                                              &
    fimp   ,                                                       &
    smbr   ,                                                       &
@@ -1593,6 +1594,7 @@ if (iappel.eq.1) then
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
+   rvoid  , rvoid  , rvoid  ,                                     &
    icvflb , icvfli ,                                              &
    fimp   ,                                                       &
    smbr   ,                                                       &
@@ -1638,6 +1640,7 @@ if (iappel.eq.1) then
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab ,                                              &
    viscfi , viscbi , viscf  , viscb  , secvif , secvib ,          &
+   rvoid  , rvoid  , rvoid  ,                                     &
    icvflb , ivoid  ,                                              &
    fimp   ,                                                       &
    smbr   ,                                                       &
@@ -1687,6 +1690,7 @@ else if (iappel.eq.2) then
    vel    , vel    ,                                                       &
    coefav , coefbv , cofafv , cofbfv ,                                     &
    flumas , flumab , viscf  , viscb  , secvif , secvib ,                   &
+   rvoid  , rvoid  , rvoid  ,                                              &
    icvflb , icvfli ,                                                       &
    smbr   )
 

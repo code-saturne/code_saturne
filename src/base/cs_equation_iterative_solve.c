@@ -1043,6 +1043,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               at boundary faces for the r.h.s.
  * \param[in]     secvif        secondary viscosity at interior faces
  * \param[in]     secvib        secondary viscosity at boundary faces
+ * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     weighf        internal face weight between cells i j in case
+ *                               of tensor diffusion
+ * \param[in]     weighb        boundary face weight for cells i in case
+ *                               of tensor diffusion
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
  *                               - 1 imposed flux at some boundary faces
@@ -1079,6 +1084,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    const cs_real_t       b_visc[],
                                    const cs_real_t       secvif[],
                                    const cs_real_t       secvib[],
+                                   cs_real_6_t           viscel[],
+                                   const cs_real_2_t     weighf[],
+                                   const cs_real_t       weighb[],
                                    int                   icvflb,
                                    const int             icvfli[],
                                    const cs_real_33_t    fimp[],
@@ -1128,7 +1136,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   /* Matrix block size */
   ibsize = 3;
   if (idftnp == 1) iesize = 1;
-  if (idftnp == 6) iesize = 3;
+  if (idftnp == 6) iesize = 1;
 
   db_size[0] = ibsize;
   db_size[1] = ibsize;
@@ -1258,6 +1266,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       b_visc,
                       secvif,
                       secvib,
+                      viscel,
+                      weighf,
+                      weighb,
                       icvflb,
                       icvfli,
                       smbrp);
@@ -1322,6 +1333,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                     b_visc,
                     secvif,
                     secvib,
+                    viscel,
+                    weighf,
+                    weighb,
                     icvflb,
                     icvfli,
                     smbrp);
@@ -1474,6 +1488,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                         b_visc,
                         secvif,
                         secvib,
+                        viscel,
+                        weighf,
+                        weighb,
                         icvflb,
                         icvfli,
                         adxk);
@@ -1623,6 +1640,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       b_visc,
                       secvif,
                       secvib,
+                      viscel,
+                      weighf,
+                      weighb,
                       icvflb,
                       icvfli,
                       smbrp);
@@ -1709,6 +1729,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                       b_visc,
                       secvif,
                       secvib,
+                      viscel,
+                      weighf,
+                      weighb,
                       icvflb,
                       icvfli,
                       smbrp);

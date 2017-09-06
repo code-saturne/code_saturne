@@ -5654,7 +5654,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_anisotropic_diffusion_vector(int                         idtvar,
+cs_generalized_diffusion_vector(int                         idtvar,
                                 int                         f_id,
                                 const cs_var_cal_opt_t      var_cal_opt,
                                 int                         inc,
@@ -5669,6 +5669,77 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
                                 const cs_real_t             b_visc[],
                                 const cs_real_t             secvif[],
                                 cs_real_3_t       *restrict rhs);
+
+/*-----------------------------------------------------------------------------*/
+/*!
+ * \brief Add the explicit part of the diffusion terms with a symmetric tensorial
+ * diffusivity for a transport equation of a vector field \f$ \vect{\varia} \f$.
+ *
+ * More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
+ * follows:
+ * \f[
+ * \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
+ *      - \tens{\mu}_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * Warning:
+ * - \f$ \vect{Rhs} \f$ has already been initialized before calling diftnv!
+ * - mind the sign minus
+ *
+ * \param[in]     idtvar        indicator of the temporal scheme
+ * \param[in]     f_id          index of the current variable
+ * \param[in]     var_cal_opt   variable calculation options
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     ivisep        indicator to take \f$ \divv
+ *                               \left(\mu \gradt \transpose{\vect{a}} \right)
+ *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
+ *                               - 1 take into account,
+ * \param[in]     pvar          solved variable (current time step)
+ * \param[in]     pvara         solved variable (previous time step)
+ * \param[in]     coefav        boundary condition array for the variable
+ *                               (explicit part)
+ * \param[in]     coefbv        boundary condition array for the variable
+ *                               (implicit part)
+ * \param[in]     cofafv        boundary condition array for the diffusion
+ *                               of the variable (explicit part)
+ * \param[in]     cofbfv        boundary condition array for the diffusion
+ *                               of the variable (implicit part)
+ * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
+ *                               at interior faces for the r.h.s.
+ * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the r.h.s.
+ * \param[in]     secvif        secondary viscosity at interior faces
+ * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     weighf        internal face weight between cells i j in case
+ *                               of tensor diffusion
+ * \param[in]     weighb        boundary face weight for cells i in case
+ *                               of tensor diffusion
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_anisotropic_diffusion_vector(int                         idtvar,
+                                int                         f_id,
+                                const cs_var_cal_opt_t      var_cal_opt,
+                                int                         inc,
+                                int                         ivisep,
+                                cs_real_3_t       *restrict pvar,
+                                const cs_real_3_t *restrict pvara,
+                                const cs_real_3_t           coefav[],
+                                const cs_real_33_t          coefbv[],
+                                const cs_real_3_t           cofafv[],
+                                const cs_real_33_t          cofbfv[],
+                                const cs_real_t             i_visc[],
+                                const cs_real_t             b_visc[],
+                                const cs_real_t             secvif[],
+                                cs_real_6_t       *restrict viscel,
+                                const cs_real_2_t           weighf[],
+                                const cs_real_t             weighb[],
+                                cs_real_3_t       *restrict rhs);
+
 
 /*----------------------------------------------------------------------------*/
 /*!

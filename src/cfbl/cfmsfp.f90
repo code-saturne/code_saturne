@@ -133,6 +133,7 @@ double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
 
 type(var_cal_opt) :: vcopt_u, vcopt_p
 
+double precision rvoid(1)
 !===============================================================================
 
 !===============================================================================
@@ -344,6 +345,7 @@ if (itsqdm.ne.0) then
   vela   , vela   ,                                                       &
   coefau , coefbu , cofafu , cofbfu ,                                     &
   flumas , flumab , viscf  , viscb  , secvif , secvib ,                   &
+  rvoid  , rvoid  , rvoid  ,                                              &
   icvflb , icvfli ,                                                       &
   tsexp  )
 

@@ -110,6 +110,7 @@ double precision xrij(3,3),phiith(3), phiitw(3)
 double precision xnal(3), xnoral
 double precision alpha, xttdrbt, xttdrbw
 double precision pk, gk, xxc1, xxc2, xxc3, imp_term
+double precision rctse
 
 double precision rvoid(1)
 
@@ -117,9 +118,12 @@ character(len=80) :: fname, name
 
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:) :: viscb
-double precision, allocatable, dimension(:,:,:) :: viscf
+double precision, allocatable, dimension(:) :: viscf
+double precision, allocatable, dimension(:,:) :: weighf
+double precision, allocatable, dimension(:) :: weighb
 double precision, allocatable, dimension(:,:) :: smbrut
 double precision, allocatable, dimension(:,:,:) :: fimp
+double precision, allocatable, dimension(:) :: w1
 
 double precision, dimension(:,:), pointer :: coefav, cofafv, visten
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
@@ -142,10 +146,13 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 ! Allocate work arrays
+allocate(w1(ncelet))
 allocate(viscce(6,ncelet))
 allocate(smbrut(3,ncelet))
 allocate(fimp(3,3,ncelet))
-allocate(viscf(3,3,nfac), viscb(nfabor))
+allocate(viscf(nfac), viscb(nfabor))
+allocate(weighf(2,nfac))
+allocate(weighb(nfabor))
 
 if ((itytur.eq.2).or.(itytur.eq.5).or.(iturb.eq.60)) then
   write(nfecra,*)'Utiliser un modele Rij avec ces modeles de thermiques'!FIXME
@@ -436,30 +443,54 @@ enddo
 !===============================================================================
 ! 5. Tensorial diffusion
 !===============================================================================
+!FIXME use vcop_ut%idften and set it at 6
+! Symmetric tensor diffusivity (GGDH)
+if (.true.) then
 
-do iel = 1, ncel
+  do iel = 1, ncel
 
-  if (ifcvsl.ge.0) then
-    prdtl = viscl(iel)*xcpp(iel)/viscls(iel)
-  else
-    prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
-  endif
-
-  !FIXME for EB DFM
-  do isou = 1, 6
-    if (isou.le.3) then
-      viscce(isou,iel) = 0.5d0*(viscl(iel)*(1.d0+1.d0/prdtl))    &
-                       + ctheta(iscal)*visten(isou,iel)/csrij
+    if (ifcvsl.ge.0) then
+      prdtl = viscl(iel)*xcpp(iel)/viscls(iel)
     else
-      viscce(isou,iel) = ctheta(iscal)*visten(isou,iel)/csrij
+      prdtl = viscl(iel)*xcpp(iel)/visls0(iscal)
     endif
-  enddo
-enddo
 
-call vistnv &
- ( imvisf ,                                                       &
-   viscce ,                                                       &
+    do isou = 1, 6
+      if (isou.le.3) then
+        viscce(isou,iel) = 0.5d0*(viscl(iel)*(1.d0+1.d0/prdtl))    &
+                         + ctheta(iscal)*visten(isou,iel)/csrij
+      else
+        viscce(isou,iel) = ctheta(iscal)*visten(isou,iel)/csrij
+      endif
+    enddo
+  enddo
+
+  iwarnp = vcopt%iwarni
+
+  call vitens &
+  ( viscce , iwarnp ,             &
+    weighf , weighb ,             &
+    viscf  , viscb  )
+
+! Scalar diffusivity
+else
+
+  do iel = 1, ncel
+    if (irijco.eq.1) then
+      trrij = 0.5d0 * (cvar_rij(1,iel) + cvar_rij(2,iel) + cvar_rij(3,iel))
+    else
+      trrij = 0.5d0 * (cvar_r11(iel) + cvar_r22(iel) + cvar_r33(iel))
+    end if
+    rctse = crom(iel) * csrij * trrij**2 / cvar_ep(iel)
+    w1(iel) = viscl(iel) + vcopt%idifft*rctse
+  enddo
+
+  call viscfa                    &
+  ( imvisf ,                     &
+   w1     ,                      &
    viscf  , viscb  )
+
+end if
 
 !===============================================================================
 ! 6. Vectorial solving of the turbulent thermal fluxes
@@ -522,6 +553,7 @@ call coditv &
  coefav , coefbv , cofafv , cofbfv ,                            &
  imasfl , bmasfl ,                                              &
  viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &
+ viscce , weighf , weighb ,                                     &
  icvflb , ivoid  ,                                              &
  fimp   ,                                                       &
  smbrut ,                                                       &
@@ -537,7 +569,8 @@ deallocate(viscce)
 deallocate(viscf, viscb)
 deallocate(smbrut)
 deallocate(fimp)
-
+deallocate(weighf, weighb)
+deallocate(w1)
 !--------
 ! Formats
 !--------

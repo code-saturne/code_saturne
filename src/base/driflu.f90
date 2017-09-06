@@ -504,6 +504,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
      coefav , coefbv , cofafv , cofbfv ,                                     &
      imasfl_mix , bmasfl_mix ,                                               &
      viscf  , viscb  , rvoid  , rvoid  ,                                     &
+     rvoid  , rvoid  , rvoid  ,                                              &
      icvflb , ivoid  ,                                                       &
      dudt   )
 
