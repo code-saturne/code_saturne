@@ -21,7 +21,9 @@ Bug fixes
   sections or zones, do not try to build boundary face groups based
   on vertex boundary conditions; fixes crash in this combination.
 
-- Salome_CFD: symbolic link files bug fixed.
+- Salome_CFD:
+  * symbolic link files bug fixed.
+  * setup.py save File action bug fixed.
 
 Release 5.0.4 (Aug 24 2017)
 ===========================
