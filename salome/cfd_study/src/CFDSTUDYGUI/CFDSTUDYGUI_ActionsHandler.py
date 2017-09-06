@@ -2125,8 +2125,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         if xmlFilePath == None:
             return
         if os.path.basename(xmlFilePath) == xmlDefaultName:
-            oldXmlFilePath = None
-            self.updateGui(oldXmlFilePath,xmlFilePath)
+            theCase = self._SolverGUI.getCase(self._SolverGUI._CurrentWindow)
+            if theCase == None:
+                return
+            if xmlDefaultName not in CFDSTUDYGUI_DataModel.getXmlCaseNameList(theCase):
+                oldXmlFilePath = None
+                self.updateGui(oldXmlFilePath,xmlFilePath)
 
 
     def slotSaveAsDataFile(self):
