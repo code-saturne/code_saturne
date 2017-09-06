@@ -185,6 +185,7 @@ double precision, allocatable, dimension(:) :: srccond
 double precision, allocatable, dimension(:) :: srcmst
 
 double precision, dimension(:,:), pointer :: xut, visten
+double precision, dimension(:,:), pointer :: vistet
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:), pointer :: imasfl, bmasfl
@@ -931,6 +932,35 @@ endif
 ! MAX(K + K_t,0) mais cela autoriserait des K_t negatif, ce qui est
 ! considere ici comme non physique.
 if (vcopt%idiff.ge.1) then
+
+  allocate(vistet(6,ncelet))
+
+  ! AFM model or DFM models: add div(Cp*rho*T'u') to smbrs
+  ! Compute T'u' for GGDH
+  if (ityturt(iscal).ge.1) then
+
+    ! EB-GGDH/AFM/DFM: solving alpha for the scalar
+    if (iturt(iscal).eq.11.or.iturt(iscal).eq.21.or.iturt(iscal).eq.31) then
+      ! Name of the scalar
+      call field_get_name(ivarfl(isca(iscal)), fname)
+
+      ! Index of the corresponding turbulent flux
+      call field_get_id(trim(fname)//'_alpha', f_id)
+
+      call resalp(f_id, xclt)
+    endif
+
+    call divrit &
+    !==========
+    ( nscal  ,                                                       &
+      iscal  ,                                                       &
+      dt     ,                                                       &
+      xcpp   ,                                                       &
+      vistet ,                                                       &
+      smbrs  )
+
+  endif
+
   ! Scalar diffusivity
   if (vcopt%idften.eq.1) then
 
@@ -982,30 +1012,58 @@ if (vcopt%idiff.ge.1) then
       call field_get_val_v(ivstes, visten)
     endif
 
-    if (ifcvsl.lt.0) then
-      do iel = 1, ncel
+    if (iturt(iscal).eq.11.or.iturt(iscal).eq.20.or.iturt(iscal).eq.21) then
+      if (ifcvsl.lt.0) then
+        do iel = 1, ncel
 
-        temp = vcopt%idifft*xcpp(iel)*ctheta(iscal)/csrij
-        viscce(1,iel) = temp*visten(1,iel) + visls0(iscal)
-        viscce(2,iel) = temp*visten(2,iel) + visls0(iscal)
-        viscce(3,iel) = temp*visten(3,iel) + visls0(iscal)
-        viscce(4,iel) = temp*visten(4,iel)
-        viscce(5,iel) = temp*visten(5,iel)
-        viscce(6,iel) = temp*visten(6,iel)
+          temp = vcopt%idifft*xcpp(iel)
+          viscce(1,iel) = temp*vistet(1,iel) + visls0(iscal)
+          viscce(2,iel) = temp*vistet(2,iel) + visls0(iscal)
+          viscce(3,iel) = temp*vistet(3,iel) + visls0(iscal)
+          viscce(4,iel) = temp*vistet(4,iel)
+          viscce(5,iel) = temp*vistet(5,iel)
+          viscce(6,iel) = temp*vistet(6,iel)
 
-      enddo
+        enddo
+      else
+        do iel = 1, ncel
+
+          temp = vcopt%idifft*xcpp(iel)
+          viscce(1,iel) = temp*vistet(1,iel) + cpro_viscls(iel)
+          viscce(2,iel) = temp*vistet(2,iel) + cpro_viscls(iel)
+          viscce(3,iel) = temp*vistet(3,iel) + cpro_viscls(iel)
+          viscce(4,iel) = temp*vistet(4,iel)
+          viscce(5,iel) = temp*vistet(5,iel)
+          viscce(6,iel) = temp*vistet(6,iel)
+
+        enddo
+      endif
     else
-      do iel = 1, ncel
+      if (ifcvsl.lt.0) then
+        do iel = 1, ncel
 
-        temp = vcopt%idifft*xcpp(iel)*ctheta(iscal)/csrij
-        viscce(1,iel) = temp*visten(1,iel) + cpro_viscls(iel)
-        viscce(2,iel) = temp*visten(2,iel) + cpro_viscls(iel)
-        viscce(3,iel) = temp*visten(3,iel) + cpro_viscls(iel)
-        viscce(4,iel) = temp*visten(4,iel)
-        viscce(5,iel) = temp*visten(5,iel)
-        viscce(6,iel) = temp*visten(6,iel)
+          temp = vcopt%idifft*xcpp(iel)*ctheta(iscal)/csrij
+          viscce(1,iel) = temp*visten(1,iel) + visls0(iscal)
+          viscce(2,iel) = temp*visten(2,iel) + visls0(iscal)
+          viscce(3,iel) = temp*visten(3,iel) + visls0(iscal)
+          viscce(4,iel) = temp*visten(4,iel)
+          viscce(5,iel) = temp*visten(5,iel)
+          viscce(6,iel) = temp*visten(6,iel)
 
-      enddo
+        enddo
+      else
+        do iel = 1, ncel
+
+          temp = vcopt%idifft*xcpp(iel)*ctheta(iscal)/csrij
+          viscce(1,iel) = temp*visten(1,iel) + cpro_viscls(iel)
+          viscce(2,iel) = temp*visten(2,iel) + cpro_viscls(iel)
+          viscce(3,iel) = temp*visten(3,iel) + cpro_viscls(iel)
+          viscce(4,iel) = temp*visten(4,iel)
+          viscce(5,iel) = temp*visten(5,iel)
+          viscce(6,iel) = temp*visten(6,iel)
+
+        enddo
+      endif
     endif
 
     iwarnp = vcopt%iwarni
@@ -1028,31 +1086,7 @@ if (vcopt%idiff.ge.1) then
 
   endif
 
-  ! AFM model or DFM models: add div(Cp*rho*T'u') to smbrs
-  ! Compute T'u' for GGDH
-  if (ityturt(iscal).ge.1) then
-
-
-    ! EB-GGDH/AFM/DFM: solving alpha for the scalar
-    if (iturt(iscal).eq.11.or.iturt(iscal).eq.21.or.iturt(iscal).eq.31) then
-      ! Name of the scalar
-      call field_get_name(ivarfl(isca(iscal)), fname)
-
-      ! Index of the corresponding turbulent flux
-      call field_get_id(trim(fname)//'_alpha', f_id)
-
-      call resalp(f_id, xclt)
-    endif
-
-    call divrit &
-    !==========
-    ( nscal  ,                                                       &
-      iscal  ,                                                       &
-      dt     ,                                                       &
-      xcpp   ,                                                       &
-      smbrs  )
-
-  endif
+  deallocate(vistet)
 
 else
 
