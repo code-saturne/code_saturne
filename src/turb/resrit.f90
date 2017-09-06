@@ -349,8 +349,8 @@ do iel = 1, ncel
       gk = 0.d0
     endif
     xxc1 = 1.d0+2.d0*(1.d0 - cvar_al(iel))*(pk+gk)/cvar_ep(iel)
-    xxc2 = 0.5d0*(1.d0+1.d0/prdtl)*(1.d0-0.3d0*(1.d0 - cvar_al(iel))) &
-      *(pk+gk)/cvar_ep(iel)
+    xxc2 = 0.5d0*(1.d0+1.d0/prdtl)*(1.d0-0.3d0*(1.d0 - cvar_al(iel)) &
+      *(pk+gk)/cvar_ep(iel))
     xxc3 = xxc2
 
   else

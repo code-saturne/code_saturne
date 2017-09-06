@@ -953,7 +953,12 @@ if (nscal.gt.0) then
       call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
       vcopt%idifft = 0
       vcopt%idften = 1
-      ctheta(iscal) = cthdfm
+      if (iturt(iscal).eq.31) then
+        ctheta(iscal) = cthebdfm
+        c2trit = 0.3d0
+      else
+        ctheta(iscal) = cthdfm
+      end if
       call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
       ! GGDH on the thermal fluxes is automatically done
 

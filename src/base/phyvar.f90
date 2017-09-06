@@ -516,8 +516,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
             xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
             xttdrb = max(ttke,xttkmg)
             !FIXME xttdrbt = xttdrb*sqrt((1.d0-alpha3)*PR/XRH + alpha3)
-            rottke  = csrij * crom(iel) * ttke
-            !rottke  = csrij * crom(iel) * xttdrbt !FIXME see RESRIT of F Dehoux l800
+            rottke  = csrij * crom(iel) * xttdrb
 
             vistes(1,iel) = rottke*cvar_r11(iel)
             vistes(2,iel) = rottke*cvar_r22(iel)

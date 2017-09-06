@@ -743,6 +743,7 @@ module cstphy
   double precision, save :: xclt
   !> constant of EB-DFM
   double precision, save :: rhebdfm
+  double precision, save :: cthebdfm
 
   !> \}
 
