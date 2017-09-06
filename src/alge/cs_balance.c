@@ -572,7 +572,7 @@ cs_balance_vector(int                  idtvar,
                                       weighb,
                                       smbr);
     }
-  }
+
   /* Symmetric tensor diffusivity ( type K.Nabla(v) )*/
   else if (idiffp == 1 && idftnp == 36) {
     /* ! Nor diffusive part neither secondary viscosity or transpose of gradient */
