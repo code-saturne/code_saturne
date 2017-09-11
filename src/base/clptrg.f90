@@ -1681,6 +1681,10 @@ if (iscal.eq.iscalt) then
   tplumn =  grand
 endif
 
+rinfiv(1) = rinfin
+rinfiv(2) = rinfin
+rinfiv(3) = rinfin
+
 if (ityturt(iscal).eq.3) then
 
   ! Name of the scalar ivar
