@@ -1842,7 +1842,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       = cs_gui_get_boundary_faces(boundaries->label[izone],
                                   &faces);
 
-    /* Mapped inlet ? */
+    /* Mapped inlet? */
 
     if (   cs_gui_strcmp(boundaries->nature[izone], "inlet")
         && boundaries->locator[izone] == NULL)
@@ -2201,7 +2201,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         }
       }
 
-      /* dirichlet for velocity */
+      /* Dirichlet for velocity */
 
       const cs_field_t  *fv = cs_field_by_name_try("velocity");
       const int var_key_id = cs_field_key_id("variable_id");
@@ -2249,12 +2249,19 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             mei_tree_insert(boundaries->velocity[izone], "y", cdgfbo[3 * ifbr + 1]);
             mei_tree_insert(boundaries->velocity[izone], "z", cdgfbo[3 * ifbr + 2]);
 
+            cs_real_t dir[3] = {boundaries->dirx[izone],
+                                boundaries->diry[izone],
+                                boundaries->dirz[izone]};
+
+            cs_real_t x_norm = cs_math_3_norm(dir);
+            if (x_norm <= 0.)
+              bft_error(__FILE__, __LINE__, 0,
+                  _("Error in the GUI boundary conditions: the normal direction is of norm 0.\n "));
+
             mei_evaluate(boundaries->velocity[izone]);
 
-            norm =   mei_tree_lookup(boundaries->velocity[izone], "u_norm")
-            / sqrt(  boundaries->dirx[izone] * boundaries->dirx[izone]
-                   + boundaries->diry[izone] * boundaries->diry[izone]
-                   + boundaries->dirz[izone] * boundaries->dirz[izone]);
+            norm = mei_tree_lookup(boundaries->velocity[izone], "u_norm")
+              / x_norm;
 
             rcodcl[ ivarv      * n_b_faces + ifbr] = boundaries->dirx[izone] * norm;
             rcodcl[(ivarv + 1) * n_b_faces + ifbr] = boundaries->diry[izone] * norm;
@@ -2371,8 +2378,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             X[1] = mei_tree_lookup(boundaries->direction[izone], "dir_y");
             X[2] = mei_tree_lookup(boundaries->direction[izone], "dir_z");
 
-            norm =   boundaries->norm[izone]
-                   / sqrt(X[0] * X[0] + X[1] * X[1] + X[2] * X[2]);
+            cs_real_t x_norm = cs_math_3_norm(X);
+            if (x_norm <= 0.)
+              bft_error(__FILE__, __LINE__, 0,
+                  _("Error in the GUI boundary conditions: the normal direction is of norm 0.\n "));
+
+            norm = boundaries->norm[izone] / x_norm;
 
             for (i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + ifbr] = X[i] * norm;
@@ -2394,6 +2405,11 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             X[0] = mei_tree_lookup(boundaries->direction[izone], "dir_x");
             X[1] = mei_tree_lookup(boundaries->direction[izone], "dir_y");
             X[2] = mei_tree_lookup(boundaries->direction[izone], "dir_z");
+
+            cs_real_t x_norm = cs_math_3_norm(X);
+            if (x_norm <= 0.)
+              bft_error(__FILE__, __LINE__, 0,
+                  _("Error in the GUI boundary conditions: the normal direction is of norm 0.\n "));
 
             for (i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + ifbr] = X[i];
@@ -2423,8 +2439,13 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             X[1] = mei_tree_lookup(boundaries->direction[izone], "dir_y");
             X[2] = mei_tree_lookup(boundaries->direction[izone], "dir_z");
 
-            norm =   mei_tree_lookup(boundaries->velocity[izone], "u_norm")
-             / sqrt( X[0] * X[0] + X[1] * X[1] + X[2] * X[2]);
+            cs_real_t x_norm = cs_math_3_norm(X);
+            if (x_norm <= 0.)
+              bft_error(__FILE__, __LINE__, 0,
+                  _("Error in the GUI boundary conditions: the normal direction is of norm 0.\n "));
+
+            norm = mei_tree_lookup(boundaries->velocity[izone], "u_norm")
+              / x_norm;
 
             for (i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + ifbr] = X[i] * norm;
