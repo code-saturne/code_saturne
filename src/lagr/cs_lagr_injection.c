@@ -676,34 +676,36 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME,
                                   0.0);
 
-      /* Diameter */
+      /* Diameter (always set base) */
+
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
+                                zis->diameter);
+
       if (zis->diameter_variance > 0.0) {
 
-        double    random;
-        cs_random_normal(1, &random);
+        /* Randomize diameter, ensuring we obtain a
+           positive diameter in the 99,7% range */
 
-        cs_real_t diam =   zis->diameter
-                         + random * zis->diameter_variance;
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, diam);
+        cs_real_t d3   = 3.0 * zis->diameter_variance;
 
-        /* On verifie qu'on obtient un diametre dans la gamme des 99,7% */
-        cs_real_t d3 = 3.0 * zis->diameter_variance;
+        int i_r = 0; /* avoid infinite loop in case of very improbable
+                        random series... */
 
-        if (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER)
-            < zis->diameter - d3)
-          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
-                                    zis->diameter);
+        for (i_r = 0; i_r < 20; i_r++) {
+          double    random;
+          cs_random_normal(1, &random);
 
-        if (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER)
-            > zis->diameter + d3)
-          cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
-                                    zis->diameter);
+          cs_real_t diam =   zis->diameter
+                           + random * zis->diameter_variance;
+
+          if (diam > 0 && (   diam >= zis->diameter - d3
+                           && diam <= zis->diameter + d3)) {
+            cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, diam);
+            break;
+          }
+        }
 
       }
-
-      else
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
-                                  zis->diameter);
 
       /* Other parameters */
       cs_real_t diam = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);

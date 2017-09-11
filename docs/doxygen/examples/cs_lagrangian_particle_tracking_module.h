@@ -77,4 +77,28 @@
 
   An optional user-defined input function may also be associated.
 
+  \section cs_user_lagr_volume_conditions_h  Volume conditions
+
+  Lagrangian volume conditions are based on volume zone
+  (\ref cs_volume_zone_t) definitions. Additional information may be
+  provided for Lagrangian injections.
+
+  As usual, definitions may be created using the GUI and extended
+  with user functions.
+
+  Access to the Lagrangian volume conditions structure,
+  which is necessary to most of the following examples, may be done as
+  follows:
+
+  \snippet cs_user_lagr_volume_conditions.c lagr_vol_cond_variables
+
+  \subsection cs_user_lagr_volume_conditions_h_injection  Injection sets
+
+  In the following example, we inject 2 particle sets at computation
+  initialization (i.e. at the first time step of a computation sequence
+  in which the Lagrangian module is activated).
+  Note that newly injected particles may also be modified using the
+  \ref cs_user_lagr_in function.
+
+  \snippet cs_user_lagr_volume_conditions.c lagr_vol_define_injection_1
 */

@@ -1,3 +1,7 @@
+/*============================================================================
+ * Lagrangian volume injection definitions.
+ *============================================================================*/
+
 /* VERS */
 
 /*
@@ -71,7 +75,7 @@ BEGIN_C_DECLS
  * \brief Define particle volume conditions.
  *
  * This is used for the definition of volume injections,
- * based on predefined boundary zones (\ref cs_boundary_zone_t).
+ * based on predefined volume zones (\ref cs_volume_zone_t).
  */
 /*----------------------------------------------------------------------------*/
 

@@ -468,7 +468,7 @@ typedef struct {
                                           at a time for this class and zone */
 
   int         injection_frequency;   /*!< injection frequency
-                                          (if < 0, only at first iteration) */
+                                          (if =< 0, only at first iteration) */
 
   /*! optional injection profile computation function, or NULL */
   cs_lagr_injection_profile_compute_t  *injection_profile_func;

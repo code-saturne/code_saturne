@@ -1,3 +1,7 @@
+/*============================================================================
+ * Lagrangian volume injection definitions.
+ *============================================================================*/
+
 /* VERS */
 
 /*
@@ -71,25 +75,27 @@ BEGIN_C_DECLS
  * \brief Define particle volume conditions.
  *
  * This is used for the definition of volume injections,
- * based on predefined boundary zones (\ref cs_boundary_zone_t).
+ * based on predefined volume zones (\ref cs_volume_zone_t).
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_lagr_volume_conditions(void)
 {
-  cs_mesh_t *mesh = cs_glob_mesh;
-
+  /*! [lagr_vol_cond_variables] */
   cs_lagr_zone_data_t *lagr_vol_conds = cs_lagr_get_volume_conditions();
+  /*! [lagr_vol_cond_variables] */
 
   /* Example for a uniform injection at computation initialization */
+
+  /*! [lagr_vol_define_injection_1] */
 
   /* The volume zone containing all cells always has id 0;
      a given zone may otherwise be selected using cs_volume_zone_by_name() */
 
-    const cs_volume_zone_t *z = cs_volume_zone_by_id(0);
+  const cs_volume_zone_t *z = cs_volume_zone_by_id(0);
 
-  /* Injecti 2 particle sets of different diameters */
+  /* Inject 2 particle sets of different diameters */
 
   cs_gnum_t n_inject[] = {500, 500};
 
@@ -103,7 +109,8 @@ cs_user_lagr_volume_conditions(void)
       = cs_lagr_get_injection_set(lagr_vol_conds, z->id, set_id);
 
     zis->n_inject = n_inject[set_id];
-    zis->injection_frequency = -1;
+    zis->injection_frequency = 0; /* if <= 0, injection at
+                                     initialization only */
 
     if (cs_glob_lagr_model->n_stat_classes > 0)
       zis->cluster = set_id + 1;
@@ -126,6 +133,7 @@ cs_user_lagr_volume_conditions(void)
 
   }
 
+  /*! [lagr_vol_define_injection_1] */
 }
 
 /*----------------------------------------------------------------------------*/
