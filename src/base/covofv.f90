@@ -144,6 +144,8 @@ double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: smbrv, gavinj
 double precision, allocatable, dimension(:,:,:) :: fimp
 double precision, allocatable, dimension(:,:) :: viscce
+double precision, allocatable, dimension(:,:) :: weighf
+double precision, allocatable, dimension(:) :: weighb
 
 double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
@@ -207,6 +209,8 @@ endif
 
 ! Allocate temporary arrays
 allocate(smbrv(3,ncelet), fimp(3,3,ncelet))
+allocate(weighf(2,nfac))
+allocate(weighb(nfabor))
 
 if (ippmod(idarcy).eq.1) then
   allocate(diverg(ncelet))
@@ -486,10 +490,12 @@ if (vcopt%idiff.ge.1) then
       call syntis(cpro_wgrec_v)
     endif
 
-    call vistnv &
-   ( imvisf ,                                                       &
-     viscce ,                                                       &
-     viscf  , viscb )
+    iwarnp = vcopt%iwarni
+
+    call vitens &
+    ( viscce , iwarnp ,             &
+      weighf , weighb ,             &
+      viscf  , viscb  )
 
   endif
 
@@ -642,7 +648,7 @@ call coditv &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &
-   rvoid  , rvoid  , rvoid  ,                                     &
+   viscce , weighf , weighb ,                                     &
    icvflb , ivoid  ,                                              &
    fimp   , smbrv  , cvar_var        ,                            &
    rvoid  )
@@ -673,6 +679,7 @@ endif
 
 ! Free memory
 deallocate(smbrv, fimp)
+deallocate(weighf, weighb)
 if (allocated(viscce)) deallocate(viscce)
 if (allocated(diverg)) deallocate(diverg)
 

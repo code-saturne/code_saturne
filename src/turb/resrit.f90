@@ -97,6 +97,7 @@ integer          isou, jsou
 integer          itt
 integer          idftnp, iswdyp, icvflb
 integer          f_id
+integer          keyvar, iut
 
 integer          ivoid(1)
 
@@ -137,7 +138,7 @@ double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvar_tt, cvara_tt
 double precision, dimension(:), pointer :: viscl, visct, viscls, c_st_prv
 
-type(var_cal_opt) :: vcopt
+type(var_cal_opt) :: vcopt, vcopt_ut
 
 !===============================================================================
 
@@ -190,6 +191,16 @@ call field_get_val_v(ivsten, visten)
 ivar = isca(iscal)
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+call field_get_key_id("variable_id", keyvar)
+! Get name of the reference scalar
+call field_get_name(ivarfl(ivar), fname)
+! Index of the corresponding turbulent flux
+call field_get_id(trim(fname)//'_turbulent_flux', f_id)
+! Set pointer values of turbulent fluxes
+call field_get_key_int(f_id, keyvar, iut)
+
+call field_get_key_struct_var_cal_opt(ivarfl(iut), vcopt_ut)
 
 if (vcopt%iwarni.ge.1) then
   call field_get_name(ivarfl(ivar), name)
@@ -443,10 +454,8 @@ enddo
 !===============================================================================
 ! 5. Tensorial diffusion
 !===============================================================================
-!FIXME use vcop_ut%idften and set it at 6
 ! Symmetric tensor diffusivity (GGDH)
-if (.true.) then
-
+if (vcopt_ut%idften.eq.6) then
   do iel = 1, ncel
 
     if (ifcvsl.ge.0) then
