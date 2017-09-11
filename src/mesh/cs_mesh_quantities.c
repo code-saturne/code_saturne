@@ -1815,6 +1815,7 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
  *   i_face_cog     <--  center of gravity of internal faces
  *   b_face_norm    <--  surface normal of border faces
  *   b_face_cog     <--  center of gravity of border faces
+ *   cell_cen       <--  center of gravity of cells
  *   cell_vol       -->  cells volume
  *   min_vol        -->  minimum control volume
  *   max_vol        -->  maximum control volume
@@ -1827,6 +1828,7 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
                      const cs_real_t   i_face_cog[],
                      const cs_real_t   b_face_norm[],
                      const cs_real_t   b_face_cog[],
+                     const cs_real_t   cell_cen[],
                      cs_real_t         cell_vol[],
                      cs_real_t         *min_vol,
                      cs_real_t         *max_vol,
@@ -1844,8 +1846,8 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
   for (cell_id = 0; cell_id < mesh->n_cells_with_ghosts; cell_id++)
     cell_vol[cell_id] = 0;
 
-  *min_vol =  1.e12;
-  *max_vol = -1.e12;
+  *min_vol =  cs_math_infinite_r;
+  *max_vol = -cs_math_infinite_r;
   *tot_vol = 0.;
 
   /* Loop on internal faces */
@@ -1855,13 +1857,12 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
     id1 = mesh->i_face_cells[fac_id][0];
     id2 = mesh->i_face_cells[fac_id][1];
 
-    flux = 0;
-    for (i = 0; i < dim; i++)
-      flux += i_face_norm[dim*fac_id + i] * i_face_cog[dim*fac_id + i];//FIXME remove x_G
-
-    cell_vol[id1] += flux;
-    cell_vol[id2] -= flux;
-
+    cell_vol[id1] += cs_math_3_distance_dot_product(&cell_cen[dim*id1],
+                                                    &i_face_cog[dim*fac_id],
+                                                    &i_face_norm[dim*fac_id]);
+    cell_vol[id2] -= cs_math_3_distance_dot_product(&cell_cen[dim*id2],
+                                                    &i_face_cog[dim*fac_id],
+                                                    &i_face_norm[dim*fac_id]);
   }
 
   /* Loop on border faces */
@@ -1870,12 +1871,9 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
 
     id1 = mesh->b_face_cells[fac_id];
 
-    flux = 0;
-    for (i = 0; i < dim; i++)
-      flux += b_face_norm[dim*fac_id + i] * b_face_cog[dim*fac_id + i];
-
-    cell_vol[id1] += flux;
-
+    cell_vol[id1] += cs_math_3_distance_dot_product(&cell_cen[dim*id1],
+                                                    &b_face_cog[dim*fac_id],
+                                                    &b_face_norm[dim*fac_id]);
   }
 
   /* Computation of the volume */
@@ -2798,6 +2796,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                        mesh_quantities->i_face_cog,
                        mesh_quantities->b_face_normal,
                        mesh_quantities->b_face_cog,
+                       mesh_quantities->cell_cen,
                        mesh_quantities->cell_vol,
                        &(mesh_quantities->min_vol),
                        &(mesh_quantities->max_vol),
