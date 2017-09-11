@@ -961,7 +961,14 @@ _compute_face_quantities(const cs_lnum_t   dim,
       face_center[i] = 0.0;
     }
 
-    /* First loop on triangles of the face (computation of surface normals)   */
+    /* Loop on edges and use STokes theorem:
+     *   Int|_S rot(r).dS = Int|_dS r.dl
+     *  with:
+     *  r_x = 1/2 (0, -(z-zB), y-yB)
+     *  r_y = 1/2 (z-zB, 0, -(x-xB))
+     *  r_z = 1/2 (-(y-yB), x-xB, 0)
+     *
+     *   */
     /*========================================================================*/
 
     for (tri_id = 0 ; tri_id < n_face_vertices ; tri_id++) {
@@ -978,22 +985,20 @@ _compute_face_quantities(const cs_lnum_t   dim,
         vect2[i] = face_vtx_coord[tri_id + 1][i] - face_barycenter[i];
       }
 
+      /* r_x . (v_(i+1) -v_i) */
+      face_normal[0] += 0.5*( 0.5*(vect1[1] + vect2[1])*(vect2[2] - vect1[2])
+                            - 0.5*(vect1[2] + vect2[2])*(vect2[1] - vect1[1]));
+      /* r_y . (v_(i+1) -v_i) */
+      face_normal[1] += 0.5*( 0.5*(vect1[2] + vect2[2])*(vect2[0] - vect1[0])
+                            - 0.5*(vect1[0] + vect2[0])*(vect2[2] - vect1[2]));
+      /* r_z . (v_(i+1) -v_i) */
+      face_normal[2] += 0.5*( 0.5*(vect1[0] + vect2[0])*(vect2[1] - vect1[1])
+                            - 0.5*(vect1[1] + vect2[1])*(vect2[0] - vect1[0]));
+
       cs_math_3_cross_product(vect1, vect2, triangle_norm[tri_id]);
 
       for (i = 0; i < 3; i++)
         triangle_norm[tri_id][i] *= 0.5;
-
-      /*----------------------------------------------------------------------
-       * Computation of the normal of the polygon
-       *  => vector sum of normals of triangles
-       *
-       *  ->      n-1   ->
-       *  N(P) =  Sum ( N(Ti) )
-       *          i=0
-       *----------------------------------------------------------------------*/
-
-      for (i = 0; i < 3; i++)
-        face_normal[i] += triangle_norm[tri_id][i];
 
     } /* End of loop on triangles of the face */
 
@@ -1852,7 +1857,7 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
 
     flux = 0;
     for (i = 0; i < dim; i++)
-      flux += i_face_norm[dim*fac_id + i] * i_face_cog[dim*fac_id + i];
+      flux += i_face_norm[dim*fac_id + i] * i_face_cog[dim*fac_id + i];//FIXME remove x_G
 
     cell_vol[id1] += flux;
     cell_vol[id2] -= flux;
@@ -3119,7 +3124,7 @@ cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
  * Compute cell centers.
  *
  * The corresponding array is allocated by this function, and it is the
- * caller's responsibility to free it when they are no longer needed.
+ * caller's responsability to free it when they are no longer needed.
  *
  * parameters:
  *   mesh       <-- pointer to a cs_mesh_t structure
