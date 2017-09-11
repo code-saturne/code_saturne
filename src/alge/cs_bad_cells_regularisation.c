@@ -100,9 +100,6 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
   double *dist = mq->i_dist;
   double *volume  = mq->cell_vol;
 
-  if (!(cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION))
-    return;
-
   cs_real_t *xam, *dam, *rhs;
 
   double varmin = 1.e20;
@@ -234,7 +231,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
   const int *b_face_cells = mesh->b_face_cells;
 
-  unsigned *bad_cell_flag = mq->bad_cell_flag;//FIXME use it
+  unsigned *bad_cell_flag = mq->bad_cell_flag;
   const cs_real_t *surfn = mq->i_face_surf;
   const cs_real_t *surfbn = mq->b_face_surf;
   double *dist = mq->i_dist;
@@ -242,9 +239,6 @@ cs_bad_cells_regularisation_vector(cs_real_3_t *var,
   double *volume  = mq->cell_vol;
 
   const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
-
-  if (!(cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION))
-    return;
 
   cs_real_33_t *dam;
   cs_real_3_t *rhs;
@@ -431,9 +425,6 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t *var,
 
   const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
 
-  if (!(cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION))
-    return;
-
   cs_real_66_t *dam;
   cs_real_6_t *rhs;
   cs_real_t *xam;
@@ -617,9 +608,6 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
   double *volume  = mq->cell_vol;
 
   const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
-
-  if (!(cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION))
-    return;
 
   cs_real_99_t *dam;
   cs_real_9_t *rhs;

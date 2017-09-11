@@ -1595,9 +1595,9 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
  *
  * parameters:
  *   mesh           <--  pointer to mesh structure
- *   i_face_normal    <--  surface normal of internal faces
+ *   i_face_normal  <--  surface normal of internal faces
  *   i_face_cog     <--  center of gravity of internal faces
- *   b_face_normal    <--  surface normal of border faces
+ *   b_face_normal  <--  surface normal of border faces
  *   b_face_cog     <--  center of gravity of border faces
  *   cell_cen       -->  center of gravity of cells
  *----------------------------------------------------------------------------*/
@@ -1646,8 +1646,7 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
     if(pb[cell_id] > 0) cpt++;
   cs_parall_counter(&cpt, 1);
 
-  //FIXME global cell number?
-  bft_printf("cpt1 = %d / %d\n",cpt,mesh->n_cells);
+  bft_printf("Total number of cell centers on the other side of a face (before correction) = %d / %d\n",cpt,mesh->n_cells);
 
   /* Second pass */
   cs_real_33_t *a;
@@ -1788,8 +1787,8 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
   for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
     if (pb[cell_id] > 0) cpt++;
   cs_parall_counter(&cpt, 1);
-  //FIXME
-  bft_printf("cpt2 = %d / %d\n",cpt,mesh->n_cells);
+
+  bft_printf("Total number of cell centers on the other side of a face (after correction) = %d / %d\n",cpt,mesh->n_cells);
 
   /* Free memory */
 
