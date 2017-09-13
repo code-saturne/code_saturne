@@ -3593,10 +3593,10 @@ cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
 
     if (tesqck<=0. || testij<=0.) {
 
-      cs_blend_f_val(blencp,
+      cs_blend_f_val(blend_st,
                      pi,
                      pif);
-      cs_blend_f_val(blencp,
+      cs_blend_f_val(blend_st,
                      pj,
                      pjf);
 
