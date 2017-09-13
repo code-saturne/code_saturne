@@ -134,9 +134,9 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="force_overwrite", default=False,
                       help="overwrite files in MESH and POST directories")
 
-    parser.add_option("-s", "--skip-reports", default=False,
-                      action="store_true", dest="disable_reports",
-                      help="disable the generation of reports")
+    parser.add_option("-s", "--skip-pdflatex", default=False,
+                      action="store_true", dest="disable_pdflatex",
+                      help="disable tex reports compilation with pdflatex")
 
     parser.add_option("--fmt", type="string",
                       dest="default_fmt", default="pdf",
@@ -377,15 +377,16 @@ def run_studymanager(pkg, options):
     studies.reporting(" End of Study Manager")
     studies.reporting(" --------------------")
 
-    # Reporting
-    if not options.disable_reports:
-        attached_file = studies.build_reports("report_global",
-                                              "report_detailed")
-        if len(options.addresses.split()) > 0:
-            send_report(pkg.code_name, studies.logs(),
-                        studies.getlabel(),
-                        options.addresses.split(),
-                        attached_file)
+    # Reporting - attached files are either pdf or
+    # raw tex files if pdflatex is disabled
+    attached_file = studies.build_reports("report_global",
+                                          "report_detailed")
+
+    if len(options.addresses.split()) > 0:
+        send_report(pkg.code_name, studies.logs(),
+                    studies.getlabel(),
+                    options.addresses.split(),
+                    attached_file)
 
     return 0
 

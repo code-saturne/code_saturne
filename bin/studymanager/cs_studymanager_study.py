@@ -1032,7 +1032,10 @@ class Studies(object):
         self.__ref         = options.reference
         self.__postpro     = options.post
         self.__default_fmt = options.default_fmt
+        # do not use tex in matplotlib (built-in mathtext is used instead)
         self.__dis_tex     = options.disable_tex
+        # tex reports compilation with pdflatex
+        self.__pdflatex    = not options.disable_pdflatex
 
         # in case of restart
         iok = 0
@@ -1576,7 +1579,8 @@ class Studies(object):
                        report1,
                        self.__log,
                        self.report,
-                       self.__parser.write())
+                       self.__parser.write(),
+                       self.__pdflatex)
 
         for l, s in self.studies:
             for case in s.cases:
@@ -1597,7 +1601,10 @@ class Studies(object):
 
         # Second detailed report
         if self.__compare or self.__postpro:
-            doc2 = Report2(self.__dest, report2, self.__log)
+            doc2 = Report2(self.__dest,
+                           report2,
+                           self.__log,
+                           self.__pdflatex)
 
             for l, s in self.studies:
                 doc2.appendLine("\\section{%s}" % l)

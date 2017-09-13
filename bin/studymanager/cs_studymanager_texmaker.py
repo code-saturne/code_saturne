@@ -39,11 +39,12 @@ from studymanager.cs_studymanager_run import run_studymanager_command
 class TexWriter(object):
     """
     """
-    def __init__(self, dest, filename, log):
+    def __init__(self, dest, filename, log, pdflatex):
         self.__dest = dest
         self.__filename = os.path.join(self.__dest, filename)
         self.__doc = []
         self.__log = log
+        self.__pdflatex = pdflatex
 
 
     def rawLine(self, line):
@@ -179,14 +180,27 @@ class TexWriter(object):
 
         return self.__filename + ".pdf"
 
+
+    def tex_finalize(self):
+        """
+        Finalize by making pdf if pdflatex is enabled,
+        returns pdf file name (or tex file name if pdflatex disabled).
+        """
+        if self.__pdflatex:
+            filename = self.make_pdf()
+        else:
+            filename = self.__filename + ".tex"
+
+        return filename
+
 #-------------------------------------------------------------------------------
 
 class Report1(TexWriter):
     """
     Global report.
     """
-    def __init__(self, dest, label, log, report, xml):
-        TexWriter.__init__(self, dest, label, log)
+    def __init__(self, dest, label, log, report, xml, pdflatex):
+        TexWriter.__init__(self, dest, label, log, pdflatex)
         self.appendLine("\\section{Summary}")
         self.tabCreate(["Study / Case", "Compilation", "Run", "Time (s)", "Difference"])
         self.xml = xml
@@ -220,18 +234,19 @@ class Report1(TexWriter):
         self.appendLine("\\end{verbatim}\n\\normalsize")
 
         self.write()
-        return self.make_pdf()
+
+        return self.tex_finalize()
 
 #-------------------------------------------------------------------------------
 
 class Report2(TexWriter):
     """
-    Detailled report.
+    Detailed report.
     """
-    def __init__(self, dest, label, log):
+    def __init__(self, dest, label, log, pdflatex):
         """
         """
-        TexWriter.__init__(self, dest, label, log)
+        TexWriter.__init__(self, dest, label, log, pdflatex)
 
 
     def add_row(self, values, studyLabel, caseLabel):
@@ -249,7 +264,7 @@ class Report2(TexWriter):
 
     def close(self):
         self.write()
-        return self.make_pdf()
+        return self.tex_finalize()
 
 #-------------------------------------------------------------------------------
 
@@ -340,4 +355,5 @@ Opening input file: "RESU/20110217-2233/checkpoint/main"
 
 if __name__ == '__main__':
     test()
+
 #-------------------------------------------------------------------------------
