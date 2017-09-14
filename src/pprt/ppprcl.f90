@@ -229,15 +229,6 @@ elseif ( ippmod(icompf).ge.0 ) then
     ifbet(ifac) = 0
   enddo
 
-!     Initialisation des RCODCL(IFAC,.,1) à -RINFIN
-!       pour savoir si l'utilisateur les a modifies (ils sont
-!       initialises par defaut à 0)
-  do ivar = 1, nvar
-    do ifac = 1, nfabor
-      rcodcl(ifac,ivar,1) =-rinfin
-    enddo
-  enddo
-
 ! ---> Version electrique
 !      Effet Joule
 !      Conduction ionique

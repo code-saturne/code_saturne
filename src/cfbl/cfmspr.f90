@@ -251,41 +251,39 @@ enddo
 ! (u + dt f) is computed at internal faces and stored in wflmas,
 ! the values at boundary faces in wflmab won't be taken into account.
 
-call cfmsfp                                                                     &
-( nvar   , nscal  , iterns , ncepdp , ncesmp ,                                  &
-  icepdc , icetsm , itypsm ,                                                    &
-  dt     , vela   ,                                                             &
-  ckupdc , smacel ,                                                             &
+call cfmsfp                                                                    &
+( nvar   , nscal  , iterns , ncepdp , ncesmp ,                                 &
+  icepdc , icetsm , itypsm ,                                                   &
+  dt     , vela   ,                                                            &
+  ckupdc , smacel ,                                                            &
   wflmas , wflmab )
 
 ! Mass flux at internal faces (upwind scheme for the density).
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
-  wflmas(ifac) = -0.5d0*                                                        &
-                 ( crom(ii)*(wflmas(ifac)+abs(wflmas(ifac)))                    &
+  wflmas(ifac) = -0.5d0*                                                       &
+                 ( crom(ii)*(wflmas(ifac)+abs(wflmas(ifac)))                   &
                  + crom(jj)*(wflmas(ifac)-abs(wflmas(ifac))))
 enddo
 
 ! Mass flux at boundary faces.
+do ifac = 1, nfabor
+  iel = ifabor(ifac)
+  wflmab(ifac) = -bmasfl(ifac)
+enddo
+
 if (icfgrp.eq.1) then
   ! The hydrostatic pressure gradient contribution has to be added to the mass
   ! flux if it has been taken into account in the pressure B.C. at walls.
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     if (itypfb(ifac).eq.iparoi) then
-      wflmab(ifac) = -bmasfl(ifac)                                              &
-                     -dt(iel)*crom(iel)*(  gx*surfbo(1,ifac)                    &
-                                         + gy*surfbo(2,ifac)                    &
+      wflmab(ifac) = wflmab(ifac)                                              &
+                     -dt(iel)*crom(iel)*(  gx*surfbo(1,ifac)                   &
+                                         + gy*surfbo(2,ifac)                   &
                                          + gz*surfbo(3,ifac))
-    else
-      wflmab(ifac) = -bmasfl(ifac)
     endif
-  enddo
-else
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    wflmab(ifac) = -bmasfl(ifac)
   enddo
 endif
 

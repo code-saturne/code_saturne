@@ -205,16 +205,6 @@ do ifac = 1, nfabor
 
   if ( itypfb(ifac).eq.iparoi) then
 
-    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been
-    ! modified by the user are set back to zero.
-    ! At walls all variables are treated.
-    do ivar = 1, nvar
-      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-        rcodcl(ifac,ivar,1) = 0.d0
-      endif
-    enddo
-
     ! zero mass flux
     bmasfl(ifac) = 0.d0
 
@@ -327,28 +317,8 @@ do ifac = 1, nfabor
 
   elseif ( itypfb(ifac).eq.isymet ) then
 
-    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been
-    ! modified by the user are set back to zero.
-    ! At symmetry faces, all variables are treated.
-    do ivar = 1, nvar
-      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-        rcodcl(ifac,ivar,1) = 0.d0
-      endif
-    enddo
-
     ! zero mass flux
     bmasfl(ifac) = 0.d0
-
-    ! Pressure condition:
-    ! homogeneous Neumann condition, nothing to be done.
-    icodcl(ifac,ipr) = 3
-    rcodcl(ifac,ipr,1) = 0.d0
-    rcodcl(ifac,ipr,2) = rinfin
-    rcodcl(ifac,ipr,3) = 0.d0
-
-    ! zero flux for all other variables (except for the normal velocity which is
-    ! itself zero) : by default in typecl for isymet code.
 
 !===============================================================================
 ! 4. Treatment of all inlet/outlet boundary faces and thermo step
@@ -372,28 +342,16 @@ do ifac = 1, nfabor
     ! be considered as not initialized and the computation will stop
     ! displaying an error message
     iccfth = 10000
-    if(rcodcl(ifac,ipr,1).gt.0.d0) iccfth = 2*iccfth
-    if(brom(ifac).gt.0.d0)         iccfth = 3*iccfth
-    if(rcodcl(ifac,itk,1).gt.0.d0) iccfth = 5*iccfth
-    if(rcodcl(ifac,ien,1).gt.0.d0) iccfth = 7*iccfth
-    if((iccfth.le.70000.and.iccfth.ne.60000).or.                &
-         (iccfth.eq.350000)) then
+    if(rcodcl(ifac,ipr,1).lt.rinfin*0.5d0) iccfth = 2*iccfth
+    if(brom(ifac).gt.0.d0                ) iccfth = 3*iccfth
+    if(rcodcl(ifac,itk,1).lt.rinfin*0.5d0) iccfth = 5*iccfth
+    if(rcodcl(ifac,ien,1).lt.rinfin*0.5d0) iccfth = 7*iccfth
+
+    if(iccfth.le.70000.and.iccfth.ne.60000.or.iccfth.eq.350000) then
       write(nfecra,1000)iccfth
       call csexit (1)
     endif
     iccfth = iccfth + 900
-
-    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been
-    ! modified by the user are set back to zero.
-    ! Firstly variables other than turbulent ones and passive scalars are
-    ! handled, the others are handled further below.
-    do iii = 1, nvarcf
-      ivar = ivarcf(iii)
-      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-        rcodcl(ifac,ivar,1) = 0.d0
-      endif
-    enddo
 
     ! missing thermo variables among P, rho, T, E are computed
     bc_en(ifac) = rcodcl(ifac,ien,1)
@@ -422,17 +380,6 @@ do ifac = 1, nfabor
     ! non orthogonal meshes but potentially more stable).
     ! Another solution may be to impose zero fluxes which would avoid
     ! reconstruction (to be tested).
-    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been
-    ! modified by the user are set back to zero.
-    ! Firstly variables other than turbulent ones and passive scalars are
-    ! handled, the others are handled further below.
-    do iii = 1, nvarcf
-      ivar = ivarcf(iii)
-      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-        rcodcl(ifac,ivar,1) = 0.d0
-      endif
-    enddo
 
     ! density, velocity and total energy values
     brom(ifac) = crom(iel) ! TODO: test without (already done in phyvar)
@@ -469,18 +416,6 @@ do ifac = 1, nfabor
       call csexit (1)
     endif
 
-    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been
-    ! modified by the user are set back to zero.
-    ! Firstly variables other than turbulent ones and passive scalars are
-    ! handled, the others are handled further below.
-    do iii = 1, nvarcf
-      ivar = ivarcf(iii)
-      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-        rcodcl(ifac,ivar,1) = 0.d0
-      endif
-    enddo
-
     bc_en(ifac) = rcodcl(ifac,ien,1)
     bc_pr(ifac) = rcodcl(ifac,ipr,1)
     bc_tk(ifac) = rcodcl(ifac,itk,1)
@@ -508,18 +443,6 @@ do ifac = 1, nfabor
       write(nfecra,1200)
       call csexit (1)
     endif
-
-    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been
-    ! modified by the user are set back to zero.
-    ! Firstly variables other than turbulent ones and passive scalars are
-    ! handled, the others are handled further below.
-    do iii = 1, nvarcf
-      ivar = ivarcf(iii)
-      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-        rcodcl(ifac,ivar,1) = 0.d0
-      endif
-    enddo
 
     bc_en(ifac) = rcodcl(ifac,ien,1)
     bc_pr(ifac) = rcodcl(ifac,ipr,1)
@@ -552,19 +475,6 @@ do ifac = 1, nfabor
       write(nfecra,1300)
       call csexit (1)
     endif
-
-    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been
-    ! modified by the user are set back to zero.
-    ! Firstly variables other than turbulent ones and passive scalars are
-    ! handled, the others are handled further below.
-    do iii = 1, nvarcf
-      ivar = ivarcf(iii)
-      if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-          rcodcl(ifac,ivar,1) = 0.d0
-      endif
-    enddo
-
 
 !===============================================================================
 ! 5. Unexpected boundary condition type
@@ -722,8 +632,8 @@ do ifac = 1, nfabor
       endif
     else
       if(itytur.eq.2) then
-        if(rcodcl(ifac,ik ,1).gt.0.d0.and.               &
-             rcodcl(ifac,iep,1).gt.0.d0) then
+        if(rcodcl(ifac,ik ,1).lt.rinfin*0.5d0  .and.    &
+           rcodcl(ifac,iep,1).lt.rinfin*0.5d0) then
           icodcl(ifac,ik ) = 1
           icodcl(ifac,iep) = 1
         else
@@ -731,13 +641,13 @@ do ifac = 1, nfabor
           icodcl(ifac,iep) = 3
         endif
       elseif(itytur.eq.3) then
-        if(rcodcl(ifac,ir11,1).gt.0.d0.and.              &
-             rcodcl(ifac,ir22,1).gt.0.d0.and.              &
-             rcodcl(ifac,ir33,1).gt.0.d0.and.              &
-             rcodcl(ifac,ir12,1).gt.-rinfin*0.5d0.and.     &
-             rcodcl(ifac,ir13,1).gt.-rinfin*0.5d0.and.     &
-             rcodcl(ifac,ir23,1).gt.-rinfin*0.5d0.and.     &
-             rcodcl(ifac,iep ,1).gt.0.d0) then
+        if(rcodcl(ifac,ir11,1).lt.rinfin*0.5d0  .and.      &
+           rcodcl(ifac,ir22,1).lt.rinfin*0.5d0  .and.      &
+           rcodcl(ifac,ir33,1).lt.rinfin*0.5d0  .and.      &
+           rcodcl(ifac,ir12,1).lt.rinfin*0.5d0  .and.      &
+           rcodcl(ifac,ir13,1).lt.rinfin*0.5d0  .and.      &
+           rcodcl(ifac,ir23,1).lt.rinfin*0.5d0  .and.      &
+           rcodcl(ifac,iep ,1).lt.rinfin*0.5d0) then
           icodcl(ifac,ir11) = 1
           icodcl(ifac,ir22) = 1
           icodcl(ifac,ir33) = 1
@@ -755,10 +665,10 @@ do ifac = 1, nfabor
           icodcl(ifac,iep ) = 3
         endif
       elseif(iturb.eq.50) then
-        if(rcodcl(ifac,ik  ,1).gt.0.d0.and.              &
-             rcodcl(ifac,iep ,1).gt.0.d0.and.              &
-             rcodcl(ifac,iphi,1).gt.0.d0.and.              &
-             rcodcl(ifac,ifb ,1).gt.-rinfin*0.5d0 ) then
+        if(rcodcl(ifac,ik  ,1).lt.rinfin*0.5d0  .and.      &
+           rcodcl(ifac,iep ,1).lt.rinfin*0.5d0  .and.      &
+           rcodcl(ifac,iphi,1).lt.rinfin*0.5d0  .and.      &
+           rcodcl(ifac,ifb ,1).lt.rinfin*0.5d0) then
           icodcl(ifac,ik  ) = 1
           icodcl(ifac,iep ) = 1
           icodcl(ifac,iphi) = 1
@@ -770,8 +680,8 @@ do ifac = 1, nfabor
           icodcl(ifac,ifb ) = 3
         endif
       elseif(iturb.eq.60) then
-         if(rcodcl(ifac,ik  ,1).gt.0.d0.and.               &
-              rcodcl(ifac,iomg,1).gt.0.d0 ) then
+         if(rcodcl(ifac,ik  ,1).lt.rinfin*0.5d0  .and.      &
+            rcodcl(ifac,iomg,1).lt.rinfin*0.5d0) then
            icodcl(ifac,ik  ) = 1
            icodcl(ifac,iomg) = 1
          else
@@ -787,7 +697,7 @@ do ifac = 1, nfabor
        endif
        if (nscaus.gt.0) then
          do ii = 1, nscaus
-           if(rcodcl(ifac,isca(ii),1).gt.-rinfin*0.5d0) then
+           if(rcodcl(ifac,isca(ii),1).lt.rinfin*0.5d0) then
              icodcl(ifac,isca(ii)) = 1
            else
              icodcl(ifac,isca(ii)) = 3
@@ -796,7 +706,7 @@ do ifac = 1, nfabor
        endif
        if (nscasp.gt.0) then
          do ii = 1, nscasp
-           if(rcodcl(ifac,iscasp(ii),1).gt.-rinfin*0.5d0) then
+           if(rcodcl(ifac,iscasp(ii),1).lt.rinfin*0.5d0) then
              icodcl(ifac,iscasp(ii)) = 1
            else
              icodcl(ifac,iscasp(ii)) = 3
@@ -804,18 +714,6 @@ do ifac = 1, nfabor
          enddo
        endif
      endif
-
-     ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-     ! they have been modified by the user. Here those that have not been
-     ! modified by the user are set back to zero.
-     ! Turbulence and passive scalars are treated so here (to simplify the loop,
-     ! all variables are treated, hence compressible variables are treated again
-     ! here).
-     do ivar = 1, nvar
-       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
-         rcodcl(ifac,ivar,1) = 0.d0
-       endif
-     enddo
 
    endif ! end of test on inlet/outlet faces
 
