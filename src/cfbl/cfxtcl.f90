@@ -381,8 +381,7 @@ do ifac = 1, nfabor
     ! Another solution may be to impose zero fluxes which would avoid
     ! reconstruction (to be tested).
 
-    ! density, velocity and total energy values
-    brom(ifac) = crom(iel) ! TODO: test without (already done in phyvar)
+    ! velocity and total energy values
     bc_en(ifac) = cvar_en(iel)
     bc_pr(ifac) = rcodcl(ifac,ipr,1)
     bc_tk(ifac) = rcodcl(ifac,itk,1)
