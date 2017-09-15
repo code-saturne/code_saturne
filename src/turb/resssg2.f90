@@ -579,14 +579,14 @@ do iel = 1, ncel
   ! Computing the inverse matrix of R^n
   ! Scaling by epsilon in order to dodge inversion errors
   do isou = 1, 6
-    matrn(isou) = cvara_var(isou,iel)/cvara_ep(iel)
+    matrn(isou) = cvara_var(isou,iel)/trrij
     oo_matrn(isou) = 0.0d0
   end do
 
   ! Inversing the matrix
   call symmetric_matrix_inverse(matrn, oo_matrn)
   do isou = 1, dimrij
-    oo_matrn(isou) = oo_matrn(isou)/cvara_ep(iel)
+    oo_matrn(isou) = oo_matrn(isou)/trrij
   end do
 
   ! Computing the maximal eigenvalue (in terms of norm!) of S
