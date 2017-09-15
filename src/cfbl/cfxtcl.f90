@@ -345,42 +345,7 @@ do ifac = 1, nfabor
     ! dealt with further below
 
 !===============================================================================
-! 3.2 Supersonic outlet
-!===============================================================================
-
-  elseif ( itypfb(ifac).eq.isspcf ) then
-
-    ! A Dirichlet value equal to the bulk value is imposed for the velocity
-    ! and the energy (for the other variables a deduced Dirichlet value is
-    ! imposed). The computation of a convection flux is not needed here.
-    ! Reconstruction of those bulk cell values would be necessary by using their
-    ! cell gradient: for now only cell center values are used (not consistant on
-    ! non orthogonal meshes but potentially more stable).
-    ! Another solution may be to impose zero fluxes which would avoid
-    ! reconstruction (to be tested).
-
-    ! velocity and total energy values
-    bc_en(ifac) = cvar_en(iel)
-    bc_pr(ifac) = rcodcl(ifac,ipr,1)
-    bc_tk(ifac) = rcodcl(ifac,itk,1)
-    bc_vel(1,ifac) = vel(1,iel)
-    bc_vel(2,ifac) = vel(2,iel)
-    bc_vel(3,ifac) = vel(3,iel)
-
-    cpb(1) = 0.d0
-    cvb(1) = 0.d0
-    if (icp.ge.0) cpb(1) = cpro_cp(iel)
-    if (icv.ge.0) cvb(1) = cpro_cv(iel)
-
-    l_size = 1
-    call cs_cf_thermo_pt_from_de(cpb, cvb, brom(ifac:ifac), bc_en(ifac:ifac), &
-                                 bc_pr(ifac:ifac), bc_tk(ifac:ifac), &
-                                 bc_vel(:,ifac:ifac), l_size)
-
-    ! mass fluxes and boundary conditions codes, see further below.
-
-!===============================================================================
-! 3.3 Outlet with imposed pressure
+! 3.2 Outlet with imposed pressure
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.isopcf ) then
@@ -405,7 +370,7 @@ do ifac = 1, nfabor
     ! mass fluxes and boundary conditions codes, see further below.
 
 !===============================================================================
-! 3.4 Inlet with Ptot, Htot imposed (reservoir boundary conditions)
+! 3.3 Inlet with Ptot, Htot imposed (reservoir boundary conditions)
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.iephcf ) then
@@ -433,7 +398,7 @@ do ifac = 1, nfabor
     ! mass fluxes and boundary conditions codes, see further below.
 
 !===============================================================================
-! 3.5 Inlet with imposed rho*U and rho*U*H
+! 3.4 Inlet with imposed rho*U and rho*U*H
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.ieqhcf ) then
@@ -462,11 +427,11 @@ do ifac = 1, nfabor
 !    - B.C. code (Dirichlet or Neumann)
 !===============================================================================
 
-  if ( ( itypfb(ifac).eq.iesicf ) .or.                    &
-       ( itypfb(ifac).eq.isspcf ) .or.                    &
-       ( itypfb(ifac).eq.iephcf ) .or.                    &
-       ( itypfb(ifac).eq.isopcf ) .or.                    &
-       ( itypfb(ifac).eq.ieqhcf ) ) then
+  if (itypfb(ifac).eq.iesicf.or.                    &
+      itypfb(ifac).eq.isspcf.or.                    &
+      itypfb(ifac).eq.iephcf.or.                    &
+      itypfb(ifac).eq.isopcf.or.                    &
+      itypfb(ifac).eq.ieqhcf) then
 
 !===============================================================================
 ! 4.1 Mass fluxes computation and
@@ -494,52 +459,52 @@ do ifac = 1, nfabor
 ! 4.2 Copy of boundary values into the Dirichlet values array
 !===============================================================================
 
-    rcodcl(ifac,ien,1) = bc_en(ifac)
-    rcodcl(ifac,ipr,1) = bc_pr(ifac)
-    rcodcl(ifac,itk,1) = bc_tk(ifac)
-    rcodcl(ifac,iu,1)  = bc_vel(1,ifac)
-    rcodcl(ifac,iv,1)  = bc_vel(2,ifac)
-    rcodcl(ifac,iw,1)  = bc_vel(3,ifac)
+    if (itypfb(ifac).ne.isspcf) then
+      rcodcl(ifac,ien,1) = bc_en(ifac)
+      rcodcl(ifac,ipr,1) = bc_pr(ifac)
+      rcodcl(ifac,itk,1) = bc_tk(ifac)
+      rcodcl(ifac,iu,1)  = bc_vel(1,ifac)
+      rcodcl(ifac,iv,1)  = bc_vel(2,ifac)
+      rcodcl(ifac,iw,1)  = bc_vel(3,ifac)
+    else ! supersonic outlet
+      rcodcl(ifac,ien,3) = 0.d0
+      rcodcl(ifac,ipr,3) = 0.d0
+      rcodcl(ifac,itk,3) = 0.d0
+      rcodcl(ifac,iu,3)  = 0.d0
+      rcodcl(ifac,iv,3)  = 0.d0
+      rcodcl(ifac,iw,3)  = 0.d0
+    endif
 
 !===============================================================================
 ! 4.3 Boundary conditions codes (Dirichlet or Neumann)
 !===============================================================================
 
-!     P               : Dirichlet except for iesicf : Neumann (arbitrary choice)
+!     P               : Neumann but pressure part of momentum flux is imposed
+!                       as a Dirichlet BC for the pressure gradient (code 13)
 !     rho, U, E, T    : Dirichlet
 !     k, R, eps, scal : Dirichlet/Neumann depending on the flux mass value
 
-! For the pressure, a Neumann B.C. seems to be less worth for gradient
-! reconstruction if the value of P provided by the user is very different from
-! the internal value. The choice is however arbitrary.
-
-! At this point, the following values are assumed to be in the array rcodcl
-! rcodcl(IFAC,ivar,1) = user or computed above
-! rcodcl(IFAC,ivar,2) = RINFIN
-! rcodcl(IFAC,ivar,3) = 0.D0
-! and if icodcl(IFAC,ivar) = 3, only rcodcl(IFAC,ivar,3) is used
-
-
-!-------------------------------------------------------------------------------
-! Pressure : - Dirichlet for the gradient computation, allowing to have the
-!            pressure part of the convective flux at the boundary
-!            - Homogeneous Neumann for the diffusion
-!-------------------------------------------------------------------------------
-
-    icodcl(ifac,ipr)   = 13
-
-!-------------------------------------------------------------------------------
-! U E T : Dirichlet
-!-------------------------------------------------------------------------------
-
-    ! velocity
-    icodcl(ifac,iu)    = 1
-    icodcl(ifac,iv)    = 1
-    icodcl(ifac,iw)    = 1
-    ! total energy
-    icodcl(ifac,ien)   = 1
-    ! temperature
-    icodcl(ifac,itk)   = 1
+    if (itypfb(ifac).ne.isspcf) then
+      ! Pressure : - Dirichlet for the gradient computation, allowing to have the
+      !              pressure part of the convective flux at the boundary
+      !            - Homogeneous Neumann for the diffusion
+      icodcl(ifac,ipr)   = 13
+      ! velocity
+      icodcl(ifac,iu)    = 1
+      icodcl(ifac,iv)    = 1
+      icodcl(ifac,iw)    = 1
+      ! total energy
+      icodcl(ifac,ien)   = 1
+      ! temperature
+      icodcl(ifac,itk)   = 1
+    else ! supersonic outlet
+      icodcl(ifac,ipr)   = 3
+      icodcl(ifac,iu)    = 3
+      icodcl(ifac,iv)    = 3
+      icodcl(ifac,iw)    = 3
+      icodcl(ifac,ien)   = 3
+      icodcl(ifac,itk)   = 3
+    endif
 
 !-------------------------------------------------------------------------------
 ! Turbulence and passive scalars: Dirichlet / Neumann depending on the mass flux
@@ -554,7 +519,7 @@ do ifac = 1, nfabor
                + bc_vel(2,ifac)*suffbo(2,ifac)                          &
                + bc_vel(3,ifac)*suffbo(3,ifac) )
 
-    if (bmasfl.ge.0.d0) then
+    if (itypfb(ifac).ne.isspcf.and.bmasfl.ge.0.d0) then
       if(itytur.eq.2) then
         icodcl(ifac,ik ) = 3
         icodcl(ifac,iep) = 3
