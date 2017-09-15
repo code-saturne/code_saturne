@@ -111,7 +111,7 @@ double precision epsrsp
 double precision sclnor
 
 integer          imucpp, idftnp, iswdyp
-integer          imvis1, f_id0
+integer          imvis1, f_id0, idtcfl
 
 double precision thetv, relaxp, hint
 
@@ -122,7 +122,7 @@ double precision, allocatable, dimension(:) :: smbrs, rovsdt
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
-double precision, allocatable, dimension(:) :: wflmas, wflmab
+double precision, allocatable, dimension(:) :: wflmas, wflmab, ivolfl, bvolfl
 double precision, allocatable, dimension(:) :: wbfa, wbfb
 double precision, allocatable, dimension(:) :: dpvar
 
@@ -130,8 +130,10 @@ double precision, allocatable, dimension(:) :: c2
 
 double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
-double precision, dimension(:), pointer :: rhopre, crom
+double precision, dimension(:), pointer :: rhopre, crom, brom
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr, cpro_cp, cpro_cv
+double precision, dimension(:,:), pointer :: coefau
+double precision, dimension(:,:,:), pointer :: coefbu
 
 type(var_cal_opt) :: vcopt_p
 
@@ -144,6 +146,7 @@ type(var_cal_opt) :: vcopt_p
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbrs(ncelet), rovsdt(ncelet))
 allocate(wflmas(nfac), wflmab(nfabor))
+allocate(ivolfl(nfac), bvolfl(nfabor))
 
 allocate(wbfa(nfabor), wbfb(nfabor))
 
@@ -152,6 +155,9 @@ allocate(w1(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 allocate(w10(ncelet))
 allocate(dpvar(ncelet))
+
+call field_get_coefa_v(ivarfl(iu), coefau)
+call field_get_coefb_v(ivarfl(iu), coefbu)
 
 ! --- Number of computational variable and post for pressure
 
@@ -164,6 +170,7 @@ call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
 call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 call field_get_val_prev_s(icrom, rhopre)
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
@@ -247,30 +254,32 @@ enddo
 ! 3. "MASS FLUX" AND FACE "VISCOSITY" CALCULATION
 !===============================================================================
 
-! Computation of the "convective flux" for the density:
-! (u + dt f) is computed at internal faces and stored in wflmas,
-! the values at boundary faces in wflmab won't be taken into account.
+! computation of the "convective flux" for the density
 
+! volumic flux (u + dt f)
+idtcfl = 0
 call cfmsfp                                                                    &
-( nvar   , nscal  , iterns , ncepdp , ncesmp ,                                 &
+( nvar   , nscal  , idtcfl , iterns , ncepdp , ncesmp ,                        &
   icepdc , icetsm , itypsm ,                                                   &
   dt     , vela   ,                                                            &
   ckupdc , smacel ,                                                            &
-  wflmas , wflmab )
+  ivolfl , bvolfl )
 
-! Mass flux at internal faces (upwind scheme for the density).
+! mass flux at internal faces (upwind scheme for the density)
+! (negative because added to RHS)
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
   wflmas(ifac) = -0.5d0*                                                       &
-                 ( crom(ii)*(wflmas(ifac)+abs(wflmas(ifac)))                   &
-                 + crom(jj)*(wflmas(ifac)-abs(wflmas(ifac))))
+                 ( crom(ii)*(ivolfl(ifac)+abs(ivolfl(ifac)))                   &
+                 + crom(jj)*(ivolfl(ifac)-abs(ivolfl(ifac))))
 enddo
 
-! Mass flux at boundary faces.
+! mass flux at boundary faces
+! (negative because added to RHS)
 do ifac = 1, nfabor
   iel = ifabor(ifac)
-  wflmab(ifac) = -bmasfl(ifac)
+  wflmab(ifac) = -brom(ifac)*bvolfl(ifac)
 enddo
 
 if (icfgrp.eq.1) then
@@ -290,7 +299,7 @@ endif
 init = 0
 call divmas(init,wflmas,wflmab,smbrs)
 
-! (Delta t)_ij is calculated as the "viscocity" associated to the pressure
+! (Delta t)_ij is calculated as the "viscosity" associated to the pressure
 imvis1 = 1
 
 call viscfa                                                                    &
@@ -444,6 +453,7 @@ deallocate(c2)
 deallocate(viscf, viscb)
 deallocate(smbrs, rovsdt)
 deallocate(wflmas, wflmab)
+deallocate(ivolfl, bvolfl)
 deallocate(w1)
 deallocate(w7, w8, w9)
 deallocate(w10)

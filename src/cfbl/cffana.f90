@@ -89,7 +89,6 @@ integer          iel    , ifac
 integer          ien
 integer          iflmab
 double precision und    , rund
-double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:,:), pointer :: cofacv
 double precision, dimension(:), pointer :: coface
 double precision, dimension(:), pointer :: brom
@@ -101,9 +100,6 @@ double precision, dimension(:), pointer :: brom
 !===============================================================================
 
 ien = isca(ienerg)
-
-call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
-call field_get_val_s(iflmab, bmasfl)
 
 call field_get_coefac_v(ivarfl(iu), cofacv)
 call field_get_coefac_s(ivarfl(ien), coface)
@@ -130,9 +126,6 @@ rund  = brom(ifac)*und
 ! The tag will be used in bilsc2 to retrieve the faces where an analytical flux
 ! has to be imposed
 icvfli(ifac) = 1
-
-! Mass flux
-bmasfl(ifac) = rund * suffbn(ifac)
 
 ! Momentum flux (the centered pressure contribution is directly taken into account
 ! in the pressure BC)

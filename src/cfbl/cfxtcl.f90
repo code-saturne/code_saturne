@@ -109,7 +109,6 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ivar  , ifac  , iel, l_size
 integer          ii    , iii   , iccfth
 integer          icalep
-integer          iflmab
 integer          ien   , itk
 integer          nvarcf
 
@@ -117,7 +116,7 @@ integer          nvcfmx
 parameter       (nvcfmx=6)
 integer          ivarcf(nvcfmx)
 
-double precision hint, cpb(1), cvb(1)
+double precision hint, cpb(1), cvb(1), bmasfl
 
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w4, w5, w6
@@ -126,7 +125,6 @@ double precision, allocatable, dimension(:) :: wbfb, wbfa
 double precision, allocatable, dimension(:) :: bc_en, bc_pr, bc_tk
 double precision, allocatable, dimension(:,:) :: bc_vel
 
-double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:), pointer :: coefbp
 double precision, dimension(:), pointer :: crom, brom, cpro_cp, cpro_cv, cvar_en
 double precision, dimension(:,:), pointer :: vel
@@ -151,9 +149,6 @@ allocate(bc_vel(3,nfabor))
 
 ien = isca(ienerg)
 itk = isca(itempk)
-
-call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
-call field_get_val_s(iflmab, bmasfl)
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
@@ -204,9 +199,6 @@ do ifac = 1, nfabor
 !===============================================================================
 
   if ( itypfb(ifac).eq.iparoi) then
-
-    ! zero mass flux
-    bmasfl(ifac) = 0.d0
 
     ! pressure :
     ! if the gravity is prevailing: hydrostatic pressure
@@ -307,26 +299,12 @@ do ifac = 1, nfabor
 
     endif
 
-
-!     Scalars : zero flux (by default in typecl for iparoi code)
-
-
 !===============================================================================
-! 3. Treatment of all symmetry boundary faces
+! 3. Treatment of all inlet/outlet boundary faces and thermo step
 !===============================================================================
 
-  elseif ( itypfb(ifac).eq.isymet ) then
-
-    ! zero mass flux
-    bmasfl(ifac) = 0.d0
-
 !===============================================================================
-! 4. Treatment of all inlet/outlet boundary faces and thermo step
-!===============================================================================
-
-
-!===============================================================================
-! 4.1 Imposed Inlet/outlet (for example: supersonic inlet)
+! 3.1 Imposed Inlet/outlet (for example: supersonic inlet)
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.iesicf ) then
@@ -367,7 +345,7 @@ do ifac = 1, nfabor
     ! dealt with further below
 
 !===============================================================================
-! 4.2 Supersonic outlet
+! 3.2 Supersonic outlet
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.isspcf ) then
@@ -402,7 +380,7 @@ do ifac = 1, nfabor
     ! mass fluxes and boundary conditions codes, see further below.
 
 !===============================================================================
-! 4.3 Outlet with imposed pressure
+! 3.3 Outlet with imposed pressure
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.isopcf ) then
@@ -427,7 +405,7 @@ do ifac = 1, nfabor
     ! mass fluxes and boundary conditions codes, see further below.
 
 !===============================================================================
-! 4.4 Inlet with Ptot, Htot imposed (reservoir boundary conditions)
+! 3.4 Inlet with Ptot, Htot imposed (reservoir boundary conditions)
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.iephcf ) then
@@ -455,7 +433,7 @@ do ifac = 1, nfabor
     ! mass fluxes and boundary conditions codes, see further below.
 
 !===============================================================================
-! 4.5 Inlet with imposed rho*U and rho*U*H
+! 3.5 Inlet with imposed rho*U and rho*U*H
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.ieqhcf ) then
@@ -475,21 +453,10 @@ do ifac = 1, nfabor
       call csexit (1)
     endif
 
-!===============================================================================
-! 5. Unexpected boundary condition type
-!===============================================================================
-
-  elseif ( itypfb(ifac).ne.iindef ) then
-
-    ! The computation stops.
-    write(nfecra,1400)
-    call csexit (1)
-
   endif ! end of test on boundary condition types
 
-
 !===============================================================================
-! 6. Complete the treatment for inlets and outlets:
+! 4. Complete the treatment for inlets and outlets:
 !    - mass fluxes computation
 !    - boundary convective fluxes computation (analytical or Rusanov) if needed
 !    - B.C. code (Dirichlet or Neumann)
@@ -502,43 +469,29 @@ do ifac = 1, nfabor
        ( itypfb(ifac).eq.ieqhcf ) ) then
 
 !===============================================================================
-! 6.1 Mass fluxes computation and
+! 4.1 Mass fluxes computation and
 !     boundary convective fluxes computation (analytical or Rusanov) if needed
 !     (gamma should already have been computed if Rusanov fluxes are computed)
 !===============================================================================
 
-    ! Supersonic outlet
-    if ( itypfb(ifac).eq.isspcf ) then
+    ! Rusanov fluxes are computed only for the imposed inlet for stability
+    ! reasons (the mass flux computation is concluded)
+    if (itypfb(ifac).eq.iesicf) then
 
-      ! only the mass flux is computed
-      bmasfl(ifac) = brom(ifac) *                                              &
-                     (  bc_vel(1,ifac)*suffbo(1,ifac)                          &
-                      + bc_vel(2,ifac)*suffbo(2,ifac)                          &
-                      + bc_vel(3,ifac)*suffbo(3,ifac) )
+      call cfrusb(ifac, bc_en, bc_pr, bc_vel)
 
-    ! other inlets/outlets
-    else
+    ! For the other types of inlets/outlets (subsonic outlet, QH inlet,
+    ! PH inlet), analytical fluxes are computed
+    elseif (itypfb(ifac).ne.isspcf) then
 
-      ! Rusanov fluxes are computed only for the imposed inlet for stability
-      ! reasons (the mass flux computation is concluded)
-      if (itypfb(ifac).eq.iesicf) then
-
-        call cfrusb(ifac, bc_en, bc_pr, bc_vel)
-
-      ! For the other types of inlets/outlets (subsonic outlet, QH inlet,
-      ! PH inlet), analytical fluxes are computed
-      else
-
-        ! the pressure part of the boundary analytical flux is not added here,
-        ! but set through the pressure gradient boundary conditions (Dirichlet)
-        call cffana(ifac, bc_en, bc_pr, bc_vel)
-
-      endif
+      ! the pressure part of the boundary analytical flux is not added here,
+      ! but set through the pressure gradient boundary conditions (Dirichlet)
+      call cffana(ifac, bc_en, bc_pr, bc_vel)
 
     endif
 
 !===============================================================================
-! 6.2 Copy of boundary values into the Dirichlet values array
+! 4.2 Copy of boundary values into the Dirichlet values array
 !===============================================================================
 
     rcodcl(ifac,ien,1) = bc_en(ifac)
@@ -549,7 +502,7 @@ do ifac = 1, nfabor
     rcodcl(ifac,iw,1)  = bc_vel(3,ifac)
 
 !===============================================================================
-! 6.3 Boundary conditions codes (Dirichlet or Neumann)
+! 4.3 Boundary conditions codes (Dirichlet or Neumann)
 !===============================================================================
 
 !     P               : Dirichlet except for iesicf : Neumann (arbitrary choice)
@@ -596,7 +549,12 @@ do ifac = 1, nfabor
     ! A Dirichlet is chosen if the mass flux is ingoing and if the user provided
     ! a value in rcodcl(ifac,ivar,1)
 
-    if (bmasfl(ifac).ge.0.d0) then
+    bmasfl =  brom(ifac)                                                &
+             *(  bc_vel(1,ifac)*suffbo(1,ifac)                          &
+               + bc_vel(2,ifac)*suffbo(2,ifac)                          &
+               + bc_vel(3,ifac)*suffbo(3,ifac) )
+
+    if (bmasfl.ge.0.d0) then
       if(itytur.eq.2) then
         icodcl(ifac,ik ) = 3
         icodcl(ifac,iep) = 3
@@ -808,22 +766,7 @@ deallocate(bc_en, bc_pr, bc_tk, bc_vel)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 1400 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING : Error during execution,                       ',/,&
-'@    =========                                               ',/,&
-'@    Unexpected type of predefined compressible boundary     ',/,&
-'@      conditions.                                           ',/,&
-'@                                                            ',/,&
-'@    The computation will stop.                              ',/,&
-'@                                                            ',/,&
-'@    Check the boundary conditions in                        ',/,&
-'@    cs_user_boundary_conditions                             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+
 !----
 ! END
 !----

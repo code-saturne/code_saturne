@@ -23,7 +23,7 @@
 subroutine cfmsfp &
 !================
 
- ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
+ ( nvar   , nscal  , idtcfl , iterns , ncepdp , ncesmp ,          &
    icepdc , icetsm , itypsm ,                                     &
    dt     , vela   ,                                              &
    ckupdc , smacel ,                                              &
@@ -43,6 +43,7 @@ subroutine cfmsfp &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
+! idtcfl           ! i  ! <-- ! flux used in CFL mass (1:true, 0:false)        !
 ! iterns           ! i  ! <-- ! Navier-Stokes iteration number                 !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
@@ -93,7 +94,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal, iterns
-integer          ncepdp , ncesmp
+integer          ncepdp , ncesmp, idtcfl
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
@@ -394,16 +395,23 @@ enddo
 
 do iel = 1, ncel
   do isou = 1, 3
-    tsexp(isou,iel) = vela(isou,iel) + dt(iel)*tsexp(isou,iel)
+    tsexp(isou,iel) = dt(iel)*tsexp(isou,iel)
   enddo
 enddo
 
+if (idtcfl.eq.1) then
+  do iel = 1, ncel
+    do isou = 1, 3
+      tsexp(isou,iel) = vela(isou,iel) + tsexp(isou,iel)
+    enddo
+  enddo
+endif
+
 ! Computation of the flux
 
+! volumic flux part based on dt*f^n
 ! In order to avoid a misfit boundary condition, we impose a homogeneous
-! Neumann condition. Note that it is only useful for gradient
-! reconstruction. The boundary value does not matter since the flux
-! is updated afterwards.
+! Neumann condition.
 
 ! Initialization of the mass flux
 init   = 1
@@ -412,7 +420,7 @@ inc    = 0
 iccocg = 1
 iflmb0 = 1
 ! Reconstruction is useless here
-nswrgp = 0
+nswrgp = 0 ! FIXME
 imligp = vcopt_p%imligr
 iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_p%epsrgr
@@ -444,6 +452,24 @@ call inimav                                                      &
   tsexp,                                                         &
   coefau , coefbv ,                                              &
   flumas , flumab )
+
+if (idtcfl.eq.0) then
+  ! volumic flux part based on velocity u^n
+  init   = 0
+  ! take into account Dirichlet velocity boundary conditions
+  inc    = 1
+
+  call inimav                                                      &
+  !==========
+  ( ivarfl(iu)      , itypfl ,                                     &
+    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+    iwarnp ,                                                       &
+    epsrgp , climgp ,                                              &
+    crom, brom,                                                    &
+    vela,                                                          &
+    coefau , coefbu ,                                              &
+    flumas , flumab )
+endif
 
 ! Free memory
 deallocate(w1)

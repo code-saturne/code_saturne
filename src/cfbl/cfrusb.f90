@@ -88,7 +88,6 @@ integer          iflmab
 
 double precision und, uni, rund, runi, cd, ci, cd2(1), ci2(1)
 double precision rrus, runb
-double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:,:), pointer :: cofacv
 double precision, dimension(:), pointer :: coface
 double precision, dimension(:), pointer :: crom, brom
@@ -113,9 +112,6 @@ call field_get_val_s(ibrom, brom)
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 call field_get_val_s(ivarfl(ien), cvar_en)
-
-call field_get_key_int(ivarfl(ien), kbmasf, iflmab)
-call field_get_val_s(iflmab, bmasfl)
 
 call field_get_coefac_v(ivarfl(iu), cofacv)
 call field_get_coefac_s(ivarfl(ien), coface)
@@ -176,9 +172,6 @@ runb  = 0.5d0*(brom(ifac)*und+crom(iel)*uni)          &
 ! The tag will be used in bilsc2 to retrieve the faces where a Rusanov flux
 ! has to be imposed
 icvfli(ifac) = 1
-
-! Mass flux
-bmasfl(ifac) = runb*suffbn(ifac)
 
 ! Momentum flux (the centered pressure contribution is directly taken into account
 ! in the pressure BC)
