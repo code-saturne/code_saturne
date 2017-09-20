@@ -13,6 +13,8 @@ User changes
 Bug fixes
 ---------
 
+- Fix for EBRSM with irijco=1 and floatation terms.
+
 - Fix launch of convergence tracking graphical tool when using Qt5.
 
 - Fix issue #239 relative to cooling tower module run in parallel.
