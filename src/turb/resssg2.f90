@@ -649,10 +649,10 @@ do iel = 1, ncel
 
     ! Linear constant
     impl_lin_cst = eigen_max * (                      &
-                   1.0d0                              & ! Production
-                   + cebmr4 * alpha3                  & ! Phi4 Linear part
-                   + cebmr5 * alpha3            )     & ! Phi5 Linear part
-                 + (1.0d0-alpha3)*cvara_ep(iel)/trrij   ! Epsilon wall
+                   1.0d0                              &        ! Production
+                   + cebmr4 * alpha3                  &        ! Phi4 Linear part
+                   + cebmr5 * alpha3            )     &        ! Phi5 Linear part
+                   + d1s2*(1.0d0-alpha3)*cvara_ep(iel)/trrij   ! Epsilon wall
 
 
     do jsou = 1, 3
@@ -765,6 +765,9 @@ do iel = 1, ncel
       ! of phi and epsilon
 
       ! Calculation of the term near the wall \f$ \Phi_{ij}^w \f$ --> W3
+      !
+      ! Phiw = -5.0 * (eps/k) * [ R*Xn + Xn^T*R - 0.5*tr(Xn*R)*(Xn + Id) ]
+      !
       phiijw = 0.d0
       xnnd = d1s2*( xnal(iii)*xnal(jjj) + deltij(isou) )
       do kk = 1, 3
