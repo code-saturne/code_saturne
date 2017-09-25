@@ -120,7 +120,7 @@ _post_advection_field(const cs_adv_field_t       *adv,
 
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
         cs_nvec3(fld->val + 3*c_id, &adv_c);
-        hc = pow(quant->cell_vol[c_id], cs_math_onethird);
+        hc = cbrt(quant->cell_vol[c_id]);
         courant[c_id] = dt_cur * adv_c.meas / hc;
       }
 
@@ -129,7 +129,7 @@ _post_advection_field(const cs_adv_field_t       *adv,
 
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
         cs_advection_field_get_cell_vector(c_id, adv, &adv_c);
-        hc = pow(quant->cell_vol[c_id], cs_math_onethird);
+        hc = cbrt(quant->cell_vol[c_id]);
         courant[c_id] = dt_cur * adv_c.meas / hc;
       }
 

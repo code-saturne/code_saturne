@@ -613,11 +613,11 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
 
     if (meas > quant->cell_info.meas_max) {
       quant->cell_info.meas_max = meas;
-      quant->cell_info.h_max = pow(meas, cs_math_onethird);
+      quant->cell_info.h_max = cbrt(meas);
     }
     if (meas < quant->cell_info.meas_min) {
       quant->cell_info.meas_min = meas;
-      quant->cell_info.h_min = pow(meas, cs_math_onethird);
+      quant->cell_info.h_min = cbrt(meas);
     }
 
   } // Loop on cells

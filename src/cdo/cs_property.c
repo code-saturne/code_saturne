@@ -1209,9 +1209,9 @@ cs_property_get_fourier(const cs_property_t     *pty,
       if (!pty_uniform)
         ptyval = cs_property_get_cell_value(c_id, pty);
 
-      const cs_real_t  hc2 = pow(cdoq->cell_vol[c_id], 2*cs_math_onethird);
+      const cs_real_t  hc = cbrt(cdoq->cell_vol[c_id]);
 
-      fourier[c_id] = dt * ptyval / hc2;
+      fourier[c_id] = dt * ptyval / (hc*hc);
 
     } // Loop on cells
 
@@ -1235,9 +1235,9 @@ cs_property_get_fourier(const cs_property_t     *pty,
         cs_math_33_eigen((const cs_real_t (*)[3])ptymat, &eig_ratio, &eig_max);
       }
 
-      const cs_real_t  hc2 = pow(cdoq->cell_vol[c_id], 2*cs_math_onethird);
+      const cs_real_t  hc = cbrt(cdoq->cell_vol[c_id]);
 
-      fourier[c_id] = dt * eig_max / hc2;
+      fourier[c_id] = dt * eig_max / (hc*hc);
 
     } // Loop on cells
 

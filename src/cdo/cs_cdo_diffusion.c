@@ -586,7 +586,7 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
       flux_op(fm, cm, pty_nuf, h_info.coef, cb, cb->loc);
 
       /* Update the RHS and the local system matrix */
-      _enforce_nitsche(chi * pow(fm->face.meas,-0.5), // Penalization coeff.
+      _enforce_nitsche(chi/sqrt(fm->face.meas), // Penalization coeff.
                        h_info,
                        fm, cbc,
                        cb->loc, cb, csys);
@@ -659,7 +659,7 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
-      _enforce_nitsche(chi * pow(fm->face.meas,-0.5), // Penalization coeff.
+      _enforce_nitsche(chi/sqrt(fm->face.meas), // Penalization coeff.
                        h_info,
                        fm, cbc,
                        cb->loc, cb, csys);
