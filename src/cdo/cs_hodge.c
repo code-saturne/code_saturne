@@ -74,7 +74,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_HODGE_DBG       3
+#define CS_HODGE_DBG       0
 #define CS_HODGE_MODULO    1
 
 /* Redefined the name of functions from cs_math to get shorter names */
@@ -104,21 +104,21 @@ static const double  cs_hodge_vc_coef = 3./20;
 /*!
  * \brief   Check the coherency of the values of a stiffness matrix
  *
- * \param[in] sloc       pointer to a cs_locmat_t struct.
+ * \param[in] sloc       pointer to a cs_sdm_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_check_stiffness(const cs_locmat_t       *sloc)
+_check_stiffness(const cs_sdm_t       *sloc)
 {
   assert(sloc != NULL);
 
   double  print_val = 0.;
 
-  for (int i = 0 ; i < sloc->n_ent; i++) {
+  for (int i = 0 ; i < sloc->n_rows; i++) {
     double  rsum = 0.;
-    const cs_real_t  *rval = sloc->val + i*sloc->n_ent;
-    for (cs_lnum_t j = 0; j < sloc->n_ent; j++)
+    const cs_real_t  *rval = sloc->val + i*sloc->n_rows;
+    for (cs_lnum_t j = 0; j < sloc->n_rows; j++)
       rsum += rval[j];
 
     print_val += fabs(rsum);
@@ -139,7 +139,7 @@ _check_stiffness(const cs_locmat_t       *sloc)
  *
  * \param[in]      vec     vectors of quantities to test against a hodge
  * \paran[in]      res     vectors of quantities to compare with
- * \param[in]      hdg     pointer to a cs_locmat_t structure
+ * \param[in]      hdg     pointer to a cs_sdm_t structure
  * \param[in]      h_info  parametrization of the discrete Hodge operator
  * \param[in, out] cb      pointer to a cell builder structure
  *                         buffers to store temporary values
@@ -149,7 +149,7 @@ _check_stiffness(const cs_locmat_t       *sloc)
 inline static void
 _check_vector_hodge(const cs_real_3_t       *vec,
                     const cs_real_3_t       *res,
-                    const cs_locmat_t       *hdg,
+                    const cs_sdm_t       *hdg,
                     const cs_param_hodge_t   h_info,
                     cs_cell_builder_t       *cb)
 
@@ -157,8 +157,8 @@ _check_vector_hodge(const cs_real_3_t       *vec,
   assert(hdg != NULL);
 
   cs_real_t  *in = cb->values;
-  cs_real_t  *h_in = cb->values + hdg->n_ent;
-  cs_real_t  *ref = cb->values + 2*hdg->n_ent;
+  cs_real_t  *h_in = cb->values + hdg->n_rows;
+  cs_real_t  *ref = cb->values + 2*hdg->n_rows;
   double  print_val = 0.;
 
   if (h_info.is_unity) {
@@ -179,15 +179,15 @@ _check_vector_hodge(const cs_real_3_t       *vec,
     cs_real_3_t  pty_a;
     cs_math_33_3_product((const cs_real_t (*)[3])cb->pty_mat, a[dim], pty_a);
 
-    for (int i = 0; i < hdg->n_ent; i++) {
+    for (int i = 0; i < hdg->n_rows; i++) {
       in[i] = vec[i][dim];
       ref[i] = _dp3(pty_a, res[i]);
     }
 
-    cs_locmat_matvec(hdg, in, h_in);
+    cs_sdm_square_matvec(hdg, in, h_in);
 
     double  err = 0.;
-    for (int i = 0; i < hdg->n_ent; i++)
+    for (int i = 0; i < hdg->n_rows; i++)
       err += fabs(ref[i] - h_in[i]);
     print_val += err;
     if (err > 100 * cs_math_get_machine_epsilon()) {
@@ -215,7 +215,7 @@ _check_vector_hodge(const cs_real_3_t       *vec,
  * \param[in]      dq         pointer to the second set of quantities
  * \param[in, out] alpha      geometrical quantity
  * \param[in, out] kappa      geometrical quantity
- * \param[in, out] hloc       pointer to a cs_locmat_t struct.
+ * \param[in, out] hloc       pointer to a cs_sdm_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -227,7 +227,7 @@ _compute_cost_quant_iso(const int               n_ent,
                         const cs_real_3_t      *dq,
                         double                 *alpha,
                         double                 *kappa,
-                        cs_locmat_t            *hloc)
+                        cs_sdm_t            *hloc)
 {
   /* Compute several useful quantities
      alpha_ij = delta_ij - pq_j.Consist_i where Consist_i = 1/|c| dq_i
@@ -277,7 +277,7 @@ _compute_cost_quant_iso(const int               n_ent,
  * \param[in]      dq         pointer to the second set of quantities
  * \param[in, out] alpha      geometrical quantity
  * \param[in, out] kappa      geometrical quantity
- * \param[in, out] hloc       pointer to a cs_locmat_t struct.
+ * \param[in, out] hloc       pointer to a cs_sdm_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -289,7 +289,7 @@ _compute_cost_quant(const int               n_ent,
                     const cs_real_3_t      *dq,
                     double                 *alpha,
                     double                 *kappa,
-                    cs_locmat_t            *hloc)
+                    cs_sdm_t            *hloc)
 {
   /* Compute several useful quantities
      alpha_ij = delta_ij - pq_j.Consist_i where Consist_i = 1/|c| dq_i
@@ -338,7 +338,7 @@ _compute_cost_quant(const int               n_ent,
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in]      h_info     pointer to a cs_param_hodge_t structure
- * \param[in, out] hloc       pointer to a cs_locmat_t structure
+ * \param[in, out] hloc       pointer to a cs_sdm_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -413,27 +413,24 @@ cs_hodge_fb_cost_get_stiffness(const cs_param_hodge_t    h_info,
                       CS_CDO_LOCAL_PF | CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
 
   /* Initialize the local stiffness matrix */
-  cs_locmat_t  *sloc = cb->loc;
-  sloc->n_ent = cm->n_fc + 1;
-  for (int i = 0; i < cm->n_fc; i++) sloc->ids[i] = cm->f_ids[i];
-  sloc->ids[cm->n_fc] = cm->c_id;
-  for (int i = 0; i < sloc->n_ent*sloc->n_ent; i++) sloc->val[i] = 0;
+  cs_sdm_t  *sloc = cb->loc;
+  cs_sdm_square_init(cm->n_fc + 1, sloc);
 
   /* Compute the local discrete Hodge operator */
   cs_hodge_edfp_cost_get(h_info, cm, cb);
 
-  cs_locmat_t  *hloc = cb->hdg;
-  double  *sval_crow = sloc->val + cm->n_fc*sloc->n_ent;
+  cs_sdm_t  *hloc = cb->hdg;
+  double  *sval_crow = sloc->val + cm->n_fc*sloc->n_rows;
   double  full_sum = 0.;
 
-  for (int i = 0; i < hloc->n_ent; i++) {
+  for (int i = 0; i < hloc->n_rows; i++) {
 
     const short int  fi_sgn = cm->f_sgn[i];
-    const double  *hval_i = hloc->val + i*hloc->n_ent;
+    const double  *hval_i = hloc->val + i*hloc->n_rows;
 
-    double  *sval_i = sloc->val + i*sloc->n_ent;
+    double  *sval_i = sloc->val + i*sloc->n_rows;
     double  row_sum = 0.;
-    for (int j = 0; j < hloc->n_ent; j++) {
+    for (int j = 0; j < hloc->n_rows; j++) {
       const cs_real_t  hsgn_coef = fi_sgn * cm->f_sgn[j] * hval_i[j];
       row_sum += hsgn_coef;
       sval_i[j] = hsgn_coef;
@@ -451,7 +448,7 @@ cs_hodge_fb_cost_get_stiffness(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
-    cs_locmat_dump(cm->c_id, sloc);
+    cs_sdm_dump(cm->c_id, NULL, NULL, sloc);
     _check_stiffness(sloc);
   }
 #endif
@@ -484,24 +481,21 @@ cs_hodge_fb_voro_get_stiffness(const cs_param_hodge_t    h_info,
   cs_hodge_edfp_voro_get(h_info, cm, cb);
 
   /* Initialize the local stiffness matrix */
-  cs_locmat_t  *sloc = cb->loc;
-  sloc->n_ent = cm->n_fc + 1;
-  for (int i = 0; i < cm->n_fc; i++) sloc->ids[i] = cm->f_ids[i];
-  sloc->ids[cm->n_fc] = cm->c_id;
-  for (int i = 0; i < sloc->n_ent*sloc->n_ent; i++) sloc->val[i] = 0;
+  cs_sdm_t  *sloc = cb->loc;
+  cs_sdm_square_init(cm->n_fc + 1, sloc);
 
   double  full_sum = 0.;
 
-  cs_locmat_t  *hloc = cb->hdg;
-  double  *sval_crow = sloc->val + cm->n_fc*sloc->n_ent;
+  cs_sdm_t  *hloc = cb->hdg;
+  double  *sval_crow = sloc->val + cm->n_fc*sloc->n_rows;
 
-  for (int i = 0; i < hloc->n_ent; i++) {
+  for (int i = 0; i < hloc->n_rows; i++) {
 
     /* Hodge operator is diagonal */
-    const double  *hval_i = hloc->val + i*hloc->n_ent;
+    const double  *hval_i = hloc->val + i*hloc->n_rows;
     const double  row_sum = hval_i[i];
 
-    double  *sval_i = sloc->val + i*sloc->n_ent;
+    double  *sval_i = sloc->val + i*sloc->n_rows;
 
     sval_i[i] = hval_i[i];
     sval_i[cm->n_fc] = -row_sum;
@@ -516,7 +510,7 @@ cs_hodge_fb_voro_get_stiffness(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
-    cs_locmat_dump(cm->c_id, sloc);
+    cs_sdm_dump(cm->c_id, NULL, NULL, sloc);
     _check_stiffness(sloc);
   }
 #endif
@@ -553,17 +547,12 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
   cs_real_3_t  *dq = cb->vectors + cm->n_ec;
 
   /* Initialize the local stiffness matrix */
-  cs_locmat_t  *sloc = cb->loc;
-  sloc->n_ent = cm->n_vc;
-  for (int i = 0; i < cm->n_vc; i++) sloc->ids[i] = cm->v_ids[i];
-  for (int i = 0; i < cm->n_vc*cm->n_vc; i++) sloc->val[i] = 0;
+  cs_sdm_t  *sloc = cb->loc;
+  cs_sdm_square_init(cm->n_vc, sloc);
 
   /* Initialize the hodge matrix */
-  cs_locmat_t  *hloc = cb->hdg;
-
-  hloc->n_ent = cm->n_ec;
-  for (int i = 0; i < cm->n_ec; i++) hloc->ids[i] = cm->e_ids[i];
-  for (int i = 0; i < cm->n_ec*cm->n_ec; i++)  hloc->val[i] = 0;
+  cs_sdm_t  *hloc = cb->hdg;
+  cs_sdm_square_init(cm->n_ec, hloc);
 
   /* Set numbering and geometrical quantities Hodge builder */
   for (int ii = 0; ii < cm->n_ec; ii++) {
@@ -617,8 +606,8 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
     const short int  i2 = cm->e2v_ids[2*ei+1];
     const double  *hi = hloc->val + shift_i;
 
-    double  *si1 = sloc->val + i1*sloc->n_ent;
-    double  *si2 = sloc->val + i2*sloc->n_ent;
+    double  *si1 = sloc->val + i1*sloc->n_rows;
+    double  *si2 = sloc->val + i2*sloc->n_rows;
 
     /* Add contribution from the stabilization part for
        each sub-volume related to a primal entity */
@@ -645,8 +634,8 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
       const short int  j1 = cm->e2v_ids[2*ej];
       const short int  j2 = cm->e2v_ids[2*ej+1];
 
-      double  *sj1 = sloc->val + j1*sloc->n_ent;
-      double  *sj2 = sloc->val + j2*sloc->n_ent;
+      double  *sj1 = sloc->val + j1*sloc->n_rows;
+      double  *sj2 = sloc->val + j2*sloc->n_rows;
 
       /* Add contribution from the stabilization part for
          each sub-volume related to a primal entity */
@@ -694,16 +683,16 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    h_info,
   } /* End of loop on I entities */
 
   /* Stiffness matrix is symmetric by construction */
-  for (int ei = 0; ei < sloc->n_ent; ei++) {
-    double *si = sloc->val + ei*sloc->n_ent;
+  for (int ei = 0; ei < sloc->n_rows; ei++) {
+    double *si = sloc->val + ei*sloc->n_rows;
     for (int ej = 0; ej < ei; ej++)
-      si[ej] = sloc->val[ej*sloc->n_ent + ei];
+      si[ej] = sloc->val[ej*sloc->n_rows + ei];
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
-    cs_locmat_dump(cm->c_id, sloc);
+    cs_sdm_dump(cm->c_id, NULL, NULL, sloc);
     _check_stiffness(sloc);
   }
 #endif
@@ -734,11 +723,8 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
                       CS_CDO_LOCAL_EV));
 
   /* Initialize the local stiffness matrix */
-  cs_locmat_t  *sloc = cb->loc;
-
-  sloc->n_ent = cm->n_vc;
-  for (int i = 0; i < cm->n_vc; i++) sloc->ids[i] = cm->v_ids[i];
-  for (int i = 0; i < cm->n_vc*cm->n_vc; i++) sloc->val[i] = 0;
+  cs_sdm_t  *sloc = cb->loc;
+  cs_sdm_square_init(cm->n_vc, sloc);
 
   if (h_info.is_iso || h_info.is_unity) {
 
@@ -759,8 +745,8 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
       const short int  vi = cm->e2v_ids[2*ii];
       const short int  vj = cm->e2v_ids[2*ii+1];
 
-      double  *si = sloc->val + vi*sloc->n_ent;
-      double  *sj = sloc->val + vj*sloc->n_ent;
+      double  *si = sloc->val + vi*sloc->n_rows;
+      double  *sj = sloc->val + vj*sloc->n_rows;
 
       si[vi] += dval;
       sj[vj] += dval;
@@ -786,8 +772,8 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
       const short int  vi = cm->e2v_ids[2*ii];
       const short int  vj = cm->e2v_ids[2*ii+1];
 
-      double  *si = sloc->val + vi*sloc->n_ent;
-      double  *sj = sloc->val + vj*sloc->n_ent;
+      double  *si = sloc->val + vi*sloc->n_rows;
+      double  *sj = sloc->val + vj*sloc->n_rows;
 
       si[vi] += dval;
       sj[vj] += dval;
@@ -800,7 +786,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
-    cs_locmat_dump(cm->c_id, sloc);
+    cs_sdm_dump(cm->c_id, NULL, NULL, sloc);
     _check_stiffness(sloc);
   }
 #endif
@@ -851,11 +837,8 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
   }
 
   /* Initialize the local stiffness matrix */
-  cs_locmat_t  *sloc = cb->loc;
-
-  sloc->n_ent = cm->n_vc;
-  for (int i = 0; i < cm->n_vc; i++) sloc->ids[i] = cm->v_ids[i];
-  for (int i = 0; i < cm->n_vc*cm->n_vc; i++) sloc->val[i] = 0;
+  cs_sdm_t  *sloc = cb->loc;
+  cs_sdm_square_init(cm->n_vc, sloc);
 
   /* Define the length and unit vector of the segment x_c --> x_v */
   for (short int v = 0; v < cm->n_vc; v++)
@@ -889,7 +872,7 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
 
       /* Compute the gradient of the conforming reconstruction functions for
          each vertex of the cell in this subvol (pefc) */
-      for (int si = 0; si < sloc->n_ent; si++) {
+      for (int si = 0; si < sloc->n_rows; si++) {
 
         for (int k = 0; k < 3; k++)
           glv[si][k] = cm->wvc[si]*grd_c[k];
@@ -909,16 +892,16 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
       } // Loop on cell vertices
 
       /* Build the upper right part */
-      for (int si = 0; si < sloc->n_ent; si++) {
+      for (int si = 0; si < sloc->n_rows; si++) {
 
         cs_math_33_3_product((const cs_real_t (*)[3])tensor, glv[si], matg);
 
         /* Diagonal contribution */
-        double  *mi = sloc->val + si*sloc->n_ent;
+        double  *mi = sloc->val + si*sloc->n_rows;
         mi[si] += subvol * _dp3(matg, glv[si]);
 
         /* Loop on vertices v_j (j > i) */
-        for (int sj = si+1; sj < sloc->n_ent; sj++)
+        for (int sj = si+1; sj < sloc->n_rows; sj++)
           mi[sj] += subvol * _dp3(matg, glv[sj]);
 
       } /* Loop on vertices v_i */
@@ -928,16 +911,16 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    h_info,
   } // Loop on cell faces
 
   /* Matrix is symmetric by construction */
-  for (int si = 0; si < sloc->n_ent; si++) {
-    double  *mi = sloc->val + si*sloc->n_ent;
-    for (int sj = si+1; sj < sloc->n_ent; sj++)
-      sloc->val[sj*sloc->n_ent+si] = mi[sj];
+  for (int si = 0; si < sloc->n_rows; si++) {
+    double  *mi = sloc->val + si*sloc->n_rows;
+    for (int sj = si+1; sj < sloc->n_rows; sj++)
+      sloc->val[sj*sloc->n_rows+si] = mi[sj];
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
-    cs_locmat_dump(cm->c_id, sloc);
+    cs_sdm_dump(cm->c_id, NULL, NULL, sloc);
     _check_stiffness(sloc);
   }
 #endif
@@ -973,10 +956,6 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
   cs_real_t  *wvf = cb->values + cm->n_vc;
   cs_real_t  *pefc_vol = cb->values + 2*cm->n_vc;
 
-  const int  nc_dofs = cm->n_vc + 1;
-  /* index to the (cell,cell) entry */
-  const int  cc = nc_dofs*cm->n_vc + cm->n_vc;
-
   /* Set the diffusion tensor */
   cs_real_33_t  tensor = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
   if (h_info.is_iso) {
@@ -990,12 +969,12 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
   }
 
   /* Initialize the local stiffness matrix */
-  cs_locmat_t  *sloc = cb->loc;
+  const int  nc_dofs = cm->n_vc + 1;
+  /* index to the (cell,cell) entry */
+  const int  cc = nc_dofs*cm->n_vc + cm->n_vc;
 
-  sloc->n_ent = nc_dofs;
-  for (int i = 0; i < cm->n_vc; i++) sloc->ids[i] = cm->v_ids[i];
-  sloc->ids[cm->n_vc] = cm->c_id;
-  for (int i = 0; i < nc_dofs*nc_dofs; i++) sloc->val[i] = 0;
+  cs_sdm_t  *sloc = cb->loc;
+  cs_sdm_square_init(nc_dofs, sloc);
 
   /* Define the length and unit vector of the segment x_c --> x_v */
   for (short int v = 0; v < cm->n_vc; v++)
@@ -1056,10 +1035,10 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
       } // Loop on cell vertices
 
       /* Build the upper right part (v-v and v-c)
-         Be careful: sloc->n_ent = cm->n_vc + 1 */
+         Be careful: sloc->n_rows = cm->n_vc + 1 */
       for (int si = 0; si < cm->n_vc; si++) {
 
-        double  *mi = sloc->val + si*sloc->n_ent;
+        double  *mi = sloc->val + si*sloc->n_rows;
 
         /* Add v-c contribution */
         mi[cm->n_vc] += subvol * _dp3(matg_c, glv[si]);
@@ -1078,16 +1057,16 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    h_info,
   } // Loop on cell faces
 
   /* Matrix is symmetric by construction */
-  for (int si = 0; si < sloc->n_ent; si++) {
-    double  *mi = sloc->val + si*sloc->n_ent;
-    for (int sj = si+1; sj < sloc->n_ent; sj++)
-      sloc->val[sj*sloc->n_ent+si] = mi[sj];
+  for (int si = 0; si < sloc->n_rows; si++) {
+    double  *mi = sloc->val + si*sloc->n_rows;
+    for (int sj = si+1; sj < sloc->n_rows; sj++)
+      sloc->val[sj*sloc->n_rows+si] = mi[sj];
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
-    cs_locmat_dump(cm->c_id, sloc);
+    cs_sdm_dump(cm->c_id, NULL, NULL, sloc);
     _check_stiffness(sloc);
   }
 #endif
@@ -1117,13 +1096,10 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
                       CS_CDO_LOCAL_PVQ | CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ |
                       CS_CDO_LOCAL_EV  | CS_CDO_LOCAL_FEQ | CS_CDO_LOCAL_HFQ));
 
-  cs_locmat_t  *hdg = cb->hdg;
+  cs_sdm_t  *hdg = cb->hdg;
 
   /* Initialize the local matrix related to this discrete Hodge operator */
-  hdg->n_ent = cm->n_vc + 1;
-  hdg->ids[cm->n_vc] = cm->c_id;
-  for (short int v = 0; v < cm->n_vc; v++)        hdg->ids[v] = cm->v_ids[v];
-  for (int i = 0; i < hdg->n_ent*hdg->n_ent; i++) hdg->val[i] = 0;
+  cs_sdm_square_init(cm->n_vc + 1, hdg);
 
   double  *wvf = cb->values;
   double  *pefc_vol = cb->values + cm->n_vc;
@@ -1133,7 +1109,6 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
   const double  c_coef2 = cs_hodge_vc_coef * cm->vol_c;
 
   /* H(c,c) = 0.1*|c| */
-  hdg->ids[cm->n_vc] = cm->c_id;
   hdg->val[msize*cm->n_vc + cm->n_vc] = 0.1*cm->vol_c;
 
   /* Initialize the upper part of the local Hodge matrix
@@ -1142,7 +1117,6 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
 
     double  *mi = hdg->val + vi*msize;
 
-    hdg->ids[vi] = cm->v_ids[vi];
     mi[vi] = c_coef1 * cm->wvc[vi];       // Diagonal entry
     for (short int vj = vi+1; vj < cm->n_vc; vj++)
       mi[vj] = 0.;
@@ -1208,7 +1182,7 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_locmat_dump(cm->c_id, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
   }
 #endif
 }
@@ -1241,9 +1215,8 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
   double  *wvf = cb->values;
   double  *pefc_vol = cb->values + cm->n_vc;
 
-  cs_locmat_t  *hdg = cb->hdg;
-  hdg->n_ent = cm->n_vc;
-  for (short int vi = 0; vi < cm->n_vc; vi++) hdg->ids[vi] = cm->v_ids[vi];
+  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_square_init(cm->n_vc, hdg);
 
   const double  c_coef = 0.1*cm->vol_c;
 
@@ -1319,7 +1292,7 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_locmat_dump(cm->c_id, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
   }
 #endif
 }
@@ -1347,10 +1320,8 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
   assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PVQ));
 
-  cs_locmat_t  *hdg = cb->hdg;
-  hdg->n_ent = cm->n_vc;
-  for (short int v = 0; v < cm->n_vc; v++) hdg->ids[v] = cm->v_ids[v];
-  for (int i = 0; i < cm->n_vc*cm->n_vc; i++) hdg->val[i] = 0;
+  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_square_init(cm->n_vc, hdg);
 
   if (h_info.is_unity) {
 
@@ -1368,7 +1339,7 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_locmat_dump(cm->c_id, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
   }
 #endif
 }
@@ -1397,11 +1368,9 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
   assert(cs_test_flag(cm->flag,
                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ | CS_CDO_LOCAL_EFQ));
 
-  cs_locmat_t  *hdg = cb->hdg;
   /* Initialize the local matrix related to this discrete Hodge operator */
-  hdg->n_ent = cm->n_ec;
-  for (short int e = 0; e < cm->n_ec; e++)    hdg->ids[e] = cm->e_ids[e];
-  for (int i = 0; i < cm->n_ec*cm->n_ec; i++) hdg->val[i] = 0;
+  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_square_init(cm->n_ec, hdg);
 
   for (short int e = 0; e < cm->n_ec; e++) {
 
@@ -1431,7 +1400,7 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_locmat_dump(cm->c_id, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
   }
 #endif
 }
@@ -1459,12 +1428,9 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
   assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DFQ));
 
-  cs_locmat_t  *hdg = cb->hdg;
-
   /* Initialize the local matrix related to this discrete Hodge operator */
-  hdg->n_ent = cm->n_ec;
-  for (short int e = 0; e < cm->n_ec; e++)    hdg->ids[e] = cm->e_ids[e];
-  for (int i = 0; i < cm->n_ec*cm->n_ec; i++) hdg->val[i] = 0;
+  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_square_init(cm->n_ec, hdg);
 
   double  *kappa = cb->values;
   double  *alpha = cb->values + cm->n_ec;
@@ -1512,7 +1478,7 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_locmat_dump(cm->c_id, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
     _check_vector_hodge((const cs_real_t (*)[3])pq,
                         (const cs_real_t (*)[3])dq,
                         hdg, h_info, cb);
@@ -1543,12 +1509,9 @@ cs_hodge_fped_voro_get(const cs_param_hodge_t    h_info,
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
   assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ));
 
-  cs_locmat_t  *hdg = cb->hdg;
-
   /* Initialize the local matrix related to this discrete Hodge operator */
-  hdg->n_ent = cm->n_fc;
-  for (short int f = 0; f < cm->n_fc; f++)    hdg->ids[f] = cm->f_ids[f];
-  for (int i = 0; i < cm->n_fc*cm->n_fc; i++) hdg->val[i] = 0;
+  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_square_init(cm->n_fc, hdg);
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -1572,7 +1535,7 @@ cs_hodge_fped_voro_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_locmat_dump(cm->c_id, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
   }
 #endif
 }
@@ -1600,12 +1563,9 @@ cs_hodge_fped_cost_get(const cs_param_hodge_t    h_info,
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
   assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
 
-  cs_locmat_t  *hdg = cb->hdg;
-
   /* Initialize the local matrix related to this discrete Hodge operator */
-  hdg->n_ent = cm->n_fc;
-  for (short int f = 0; f < cm->n_fc; f++)    hdg->ids[f] = cm->f_ids[f];
-  for (int i = 0; i < cm->n_fc*cm->n_fc; i++) hdg->val[i] = 0;
+  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_square_init(cm->n_fc, hdg);
 
   double  *kappa = cb->values;
   double  *alpha = cb->values + cm->n_ec;
@@ -1653,7 +1613,7 @@ cs_hodge_fped_cost_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_locmat_dump(cm->c_id, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
     _check_vector_hodge((const cs_real_t (*)[3])pq,
                         (const cs_real_t (*)[3])dq,
                         hdg, h_info, cb);
@@ -1684,12 +1644,9 @@ cs_hodge_edfp_voro_get(const cs_param_hodge_t    h_info,
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_VORONOI);
   assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_DEQ | CS_CDO_LOCAL_PFQ));
 
-  cs_locmat_t  *hdg = cb->hdg;
-
   /* Initialize the local matrix related to this discrete Hodge operator */
-  hdg->n_ent = cm->n_fc;
-  for (short int f = 0; f < cm->n_fc; f++)    hdg->ids[f] = cm->f_ids[f];
-  for (int i = 0; i < cm->n_fc*cm->n_fc; i++) hdg->val[i] = 0;
+  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_square_init(cm->n_fc, hdg);
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -1713,7 +1670,7 @@ cs_hodge_edfp_voro_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_locmat_dump(cm->c_id, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
   }
 #endif
 }
@@ -1741,12 +1698,9 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
   assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_DEQ));
 
-  cs_locmat_t  *hdg = cb->hdg;
-
   /* Initialize the local matrix related to this discrete Hodge operator */
-  hdg->n_ent = cm->n_fc;
-  for (short int f = 0; f < cm->n_fc; f++)    hdg->ids[f] = cm->f_ids[f];
-  for (int i = 0; i < cm->n_fc*cm->n_fc; i++) hdg->val[i] = 0;
+  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_square_init(cm->n_fc, hdg);
 
   double  *kappa = cb->values;
   double  *alpha = cb->values + cm->n_fc;
@@ -1794,7 +1748,7 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    h_info,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_locmat_dump(cm->c_id, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
     _check_vector_hodge((const cs_real_t (*)[3])dq,
                         (const cs_real_t (*)[3])pq,
                         hdg, h_info, cb);
@@ -2007,7 +1961,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
           _in[v] = in_vals[cm->v_ids[v]];
 
         /* Local matrix-vector operation */
-        cs_locmat_matvec(cb->hdg, _in, cb->values);
+        cs_sdm_square_matvec(cb->hdg, _in, cb->values);
 
         /* Assemble the resulting vector */
         for (short int v = 0; v < cm->n_vc; v++)
@@ -2020,7 +1974,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
           _in[e] = in_vals[cm->e_ids[e]];
 
         /* Local matrix-vector operation */
-        cs_locmat_matvec(cb->hdg, _in, cb->values);
+        cs_sdm_square_matvec(cb->hdg, _in, cb->values);
 
         /* Assemble the resulting vector */
         for (short int e = 0; e < cm->n_ec; e++)
@@ -2033,7 +1987,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
           _in[f] = in_vals[cm->f_ids[f]];
 
         /* Local matrix-vector operation */
-        cs_locmat_matvec(cb->hdg, _in, cb->values);
+        cs_sdm_square_matvec(cb->hdg, _in, cb->values);
 
         /* Assemble the resulting vector */
         for (short int f = 0; f < cm->n_fc; f++)
@@ -2064,24 +2018,22 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
  *          algorithm
  *
  * \param[in]      fm        pointer to a cs_face_mesh_t structure
- * \param[in, out] hf        pointer to a cs_locmat_t structure to define
+ * \param[in, out] hf        pointer to a cs_sdm_t structure to define
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
-                              cs_locmat_t             *hf)
+                              cs_sdm_t                *hf)
 {
   assert(hf != NULL && fm != NULL);
 
   /* Reset values */
-  hf->n_ent = fm->n_vf;
-  for (short int i = 0; i < fm->n_vf; i++) hf->ids[i] = fm->v_ids[i];
-  for (short int i = 0; i < fm->n_vf*fm->n_vf; i++) hf->val[i] = 0;
+  cs_sdm_square_init(fm->n_vf, hf);
 
   for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
 
-    double  *hi = hf->val + vfi*hf->n_ent;
+    double  *hi = hf->val + vfi*hf->n_rows;
 
     /* Default contribution */
     const double  default_coef = 0.5 * fm->wvf[vfi] * fm->face.meas;
@@ -2100,15 +2052,15 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
     const short int  v2 = fm->e2v_ids[2*e+1];
     const double  extra_val = cs_math_onetwelve * fm->tef[e];
 
-    hf->val[v1*hf->n_ent + v2] += extra_val;
-    hf->val[v2*hf->n_ent + v1] += extra_val;
+    hf->val[v1*hf->n_rows + v2] += extra_val;
+    hf->val[v2*hf->n_rows + v1] += extra_val;
 
   } /* Loop on face edges */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 2
   if (fm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Surfacic Hodge op.   ");
-    cs_locmat_dump(fm->f_id, hf);
+    cs_sdm_dump(fm->f_id, NULL, NULL, hf);
   }
 #endif
 }

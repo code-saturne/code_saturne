@@ -51,7 +51,7 @@
 #include "cs_mesh_location.h"
 #include "cs_boundary_zone.h"
 #include "cs_volume_zone.h"
-#include "cs_cdo_toolbox.h"
+#include "cs_sdm.h"
 #include "cs_property.h"
 #include "cs_advection_field.h"
 

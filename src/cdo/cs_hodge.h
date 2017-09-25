@@ -350,13 +350,13 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
  *          algorithm
  *
  * \param[in]      fm        pointer to a cs_face_mesh_t structure
- * \param[in, out] hf        pointer to a cs_locmat_t structure to define
+ * \param[in, out] hf        pointer to a cs_sdm_t structure to define
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
-                              cs_locmat_t             *hf);
+                              cs_sdm_t                *hf);
 
 /*----------------------------------------------------------------------------*/
 

@@ -121,12 +121,17 @@ cs_cell_sys_create(int    n_max_ent)
   csys->val_n = NULL;
 
   if (n_max_ent > 0) {
-    csys->mat = cs_locmat_create(n_max_ent);
+
+    csys->mat = cs_sdm_square_create(n_max_ent);
+
+    BFT_MALLOC(csys->dof_ids, n_max_ent, cs_lnum_t);
     BFT_MALLOC(csys->rhs, n_max_ent, double);
     BFT_MALLOC(csys->source, n_max_ent, double);
     BFT_MALLOC(csys->val_n, n_max_ent, double);
+
     for (int i = 0; i < n_max_ent; i++)
       csys->rhs[i] = csys->source[i] = csys->val_n[i] = 0.0;
+
   }
 
   return csys;
@@ -148,7 +153,8 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
   if (csys == NULL)
     return;
 
-  csys->mat = cs_locmat_free(csys->mat);
+  csys->mat = cs_sdm_free(csys->mat);
+  BFT_FREE(csys->dof_ids);
   BFT_FREE(csys->rhs);
   BFT_FREE(csys->source);
   BFT_FREE(csys->val_n);
@@ -172,18 +178,21 @@ cs_cell_sys_dump(const char             msg[],
                  const cs_lnum_t        c_id,
                  const cs_cell_sys_t   *csys)
 {
-#pragma omp critical
+# pragma omp critical
   {
     cs_log_printf(CS_LOG_DEFAULT, "%s", msg);
 
-    cs_locmat_dump(c_id, csys->mat);
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "\n>> %-10s | %-10s | %-10s\n",
-                  "RHS", "TS", "VAL_PREV");
+    if (csys->mat->flag & CS_SDM_BY_BLOCK)
+      cs_sdm_block_dump(c_id, csys->mat);
+    else
+      cs_sdm_dump(c_id, csys->dof_ids, csys->dof_ids, csys->mat);
+
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> %-10s | %-10s | %-10s | %-10s\n",
+                  "IDS", "RHS", "TS", "VAL_PREV");
     for (int i = 0; i < csys->n_dofs; i++)
-      cs_log_printf(CS_LOG_DEFAULT,
-                    ">> % .3e | % .3e | % .3e\n",
-                    csys->rhs[i], csys->source[i], csys->val_n[i]);
+      cs_log_printf(CS_LOG_DEFAULT, ">> %10d | % .3e | % .3e | % .3e\n",
+                    csys->dof_ids[i], csys->rhs[i], csys->source[i],
+                    csys->val_n[i]);
   }
 }
 
@@ -332,9 +341,9 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
 
       /* Local square dense matrices used during the construction of
          operators */
-      cb->hdg = cs_locmat_create(n_ec);
-      cb->loc = cs_locmat_create(n_vc);
-      cb->aux = cs_locmat_create(n_vc);
+      cb->hdg = cs_sdm_square_create(n_ec);
+      cb->loc = cs_sdm_square_create(n_vc);
+      cb->aux = cs_sdm_square_create(n_vc);
     }
     break;
 
@@ -354,9 +363,9 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
 
       /* Local square dense matrices used during the construction of
          operators */
-      cb->hdg = cs_locmat_create(n_vc + 1);
-      cb->loc = cs_locmat_create(n_vc + 1);
-      cb->aux = cs_locmat_create(n_vc + 1);
+      cb->hdg = cs_sdm_square_create(n_vc + 1);
+      cb->loc = cs_sdm_square_create(n_vc + 1);
+      cb->aux = cs_sdm_square_create(n_vc + 1);
 
     }
     break;
@@ -377,9 +386,9 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
 
       /* Local square dense matrices used during the construction of
          operators */
-      cb->hdg = cs_locmat_create(n_fc);
-      cb->loc = cs_locmat_create(n_fc + 1);
-      cb->aux = cs_locmat_create(n_fc + 1);
+      cb->hdg = cs_sdm_square_create(n_fc);
+      cb->loc = cs_sdm_square_create(n_fc + 1);
+      cb->aux = cs_sdm_square_create(n_fc + 1);
     }
     break;
 
@@ -411,9 +420,9 @@ cs_cell_builder_free(cs_cell_builder_t     **p_cb)
   BFT_FREE(cb->values);
   BFT_FREE(cb->vectors);
 
-  cb->hdg = cs_locmat_free(cb->hdg);
-  cb->loc = cs_locmat_free(cb->loc);
-  cb->aux = cs_locmat_free(cb->aux);
+  cb->hdg = cs_sdm_free(cb->hdg);
+  cb->loc = cs_sdm_free(cb->loc);
+  cb->aux = cs_sdm_free(cb->aux);
 
   BFT_FREE(cb);
   *p_cb = NULL;

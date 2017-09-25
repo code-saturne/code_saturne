@@ -39,7 +39,7 @@
 
 #include "cs_base.h"
 #include "cs_cdo.h"
-#include "cs_cdo_toolbox.h"
+#include "cs_sdm.h"
 #include "cs_param.h"
 #include "cs_mesh_adjacencies.h"
 
@@ -344,37 +344,6 @@ cs_sla_matrix_csr2msr(cs_sla_matrix_t  *a);
 
 void
 cs_sla_matrix_share2own(cs_sla_matrix_t  *a);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Assemble a MSR matrix from local contributions
- *          --> We assume that the local matrices are symmetric
- *          --> We assume that the assembled matrix has its columns sorted
- *
- * \param[in]       loc        pointer to a local matrix
- * \param[in, out]  ass        pointer to a cs_sla_matrix_t struct.
- * \param[in]       only_diag  true if assembly is only for diagonal terms
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sla_assemble_msr_sym(const cs_locmat_t  *loc,
-                        cs_sla_matrix_t    *ass,
-                        bool                only_diag);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Assemble a MSR matrix from local contributions
- *          --> We assume that the assembled matrix has its columns sorted
- *
- * \param[in]       loc     pointer to a local matrix
- * \param[in, out]  ass     pointer to a cs_sla_matrix_t struct. collecting data
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sla_assemble_msr(const cs_locmat_t  *loc,
-                    cs_sla_matrix_t    *ass);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -689,22 +658,6 @@ cs_sla_hmatvec(const cs_sla_hmatrix_t   *hm,
                double                   *iox[],
                double                   *ioc[],
                bool                      reset);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Assemble a hybrid matrix from local contributions
- *          --> We assume that the local matrices are symmetric
- *          --> We assume that the (0,0) block of the assembled matrix has its
- *              columns sorted
- *
- * \param[in]       loc        pointer to a local matrix
- * \param[in, out]  ass        pointer to a cs_sla_hmatrix_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sla_assemble_hmat_sym(const cs_locmat_t   *loc,
-                         cs_sla_hmatrix_t    *ass);
 
 /*----------------------------------------------------------------------------*/
 

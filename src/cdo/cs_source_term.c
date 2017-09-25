@@ -738,7 +738,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc;
-  cs_locmat_matvec(cb->hdg, eval, hdg_eval);
+  cs_sdm_square_matvec(cb->hdg, eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc; v++)
     values[v] += hdg_eval[v];
@@ -787,7 +787,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc;
-  cs_locmat_matvec(cb->hdg, eval, hdg_eval);
+  cs_sdm_square_matvec(cb->hdg, eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc; v++)
     values[v] += hdg_eval[v];
@@ -1321,7 +1321,7 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc + 1;
-  cs_locmat_matvec(cb->hdg, eval, hdg_eval);
+  cs_sdm_square_matvec(cb->hdg, eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc + 1; v++)
     values[v] += hdg_eval[v];
@@ -1374,7 +1374,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc + 1;
-  cs_locmat_matvec(cb->hdg, eval, hdg_eval);
+  cs_sdm_square_matvec(cb->hdg, eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc + 1; v++)
     values[v] += hdg_eval[v];

@@ -236,18 +236,17 @@ _init_cell_structures(const cs_flag_t             cell_flag,
   /* Initialize the local system */
   csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
-  csys->mat->n_ent = n_dofs;
+  cs_sdm_square_init(n_dofs, csys->mat);
   for (short int f = 0; f < n_fc; f++) {
-    csys->mat->ids[f] = cm->f_ids[f];
+    csys->dof_ids[f] = cm->f_ids[f];
     csys->val_n[f] = b->face_values[cm->f_ids[f]];
     csys->rhs[f] = csys->source[f] = 0.;
   }
-  csys->mat->ids[n_fc] = cm->c_id;
+
+  csys->dof_ids[cm->n_fc] = cm->c_id;
   csys->val_n[n_fc] = field_tn[cm->c_id];
   csys->rhs[n_fc] = b->cell_rhs[cm->c_id]; // Used for static condensation
   csys->source[n_fc] = 0;
-
-  for (short int i = 0; i < n_dofs*n_dofs; i++) csys->mat->val[i] = 0;
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
@@ -360,7 +359,7 @@ _condense_and_store(const cs_adjacency_t    *c2f,
 
   /* Update csys */
   csys->n_dofs = n_fc;
-  csys->mat->n_ent = n_fc;
+  csys->mat->n_rows = n_fc;
   for (short int i = 0; i < n_fc; i++) {
 
     double  *old_i = csys->mat->val + n_dofs*i; // old row_i
@@ -981,7 +980,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
         b->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
 
         // Add the local diffusion operator to the local system
-        cs_locmat_add(csys->mat, cb->loc);
+        cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
         if (c_id % CS_CDOFB_SCALEQ_MODULO == 0)
@@ -1016,7 +1015,6 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
         b->source_terms[c_id] = csys->source[cm->n_fc];
 
       } /* End of term source contribution */
-
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
       if (c_id % CS_CDOFB_SCALEQ_MODULO == 0)

@@ -181,14 +181,14 @@ cs_cdo_time_update_rhs_with_array(const cs_flag_t             sys_flag,
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
                      const double                tpty_val,
-                     const cs_locmat_t          *mass_mat,
+                     const cs_sdm_t             *mass_mat,
                      const cs_flag_t             system_flag,
                      cs_cell_builder_t          *cb,
                      cs_cell_sys_t              *csys)
@@ -197,11 +197,11 @@ cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
   CS_UNUSED(tpty_val);
   CS_UNUSED(cb);
 
-  cs_locmat_t  *adr = csys->mat;
+  cs_sdm_t  *adr = csys->mat;
 
   /* Sanity checks */
   assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
-  assert(csys->n_dofs == adr->n_ent);
+  assert(csys->n_dofs == adr->n_rows);
   assert(system_flag & CS_FLAG_SYS_TIME_DIAG);
 
   /* STEP1 >> Apply source term contribution
@@ -218,7 +218,7 @@ cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
     const double  dval = mass_mat->val[i];
 
     /* Add the diagonal contribution from time matrix */
-    adr->val[i*adr->n_ent + i] += dval;
+    adr->val[i*adr->n_rows + i] += dval;
 
     /* Update the RHS with values at time t_n */
     csys->rhs[i] += dval * csys->val_n[i];
@@ -237,27 +237,27 @@ cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_imp(const cs_equation_param_t  *eqp,
                 const double                tpty_val,
-                const cs_locmat_t          *mass_mat,
+                const cs_sdm_t             *mass_mat,
                 const cs_flag_t             system_flag,
                 cs_cell_builder_t          *cb,
                 cs_cell_sys_t              *csys)
 {
   CS_UNUSED(eqp);
 
-  cs_locmat_t  *adr = csys->mat;
+  cs_sdm_t  *adr = csys->mat;
 
   /* Sanity checks */
   assert(eqp->time_scheme == CS_TIME_SCHEME_IMPLICIT);
-  assert(csys->n_dofs == adr->n_ent);
+  assert(csys->n_dofs == adr->n_rows);
   assert(mass_mat != NULL);
-  assert(mass_mat->n_ent == adr->n_ent);
+  assert(mass_mat->n_rows == adr->n_rows);
 
   /* STEP1 >> Apply source term contribution
            >> RHS has already the BC contribution (+Source term at iter n
@@ -272,18 +272,18 @@ cs_cdo_time_imp(const cs_equation_param_t  *eqp,
 
   /* Compute time_pn for updating the RHS */
   double  *time_pn = cb->values;
-  cs_locmat_matvec(mass_mat, csys->val_n, time_pn);
+  cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
   for (short int i = 0; i < csys->n_dofs; i++)
     csys->rhs[i] += tpty_val*time_pn[i];
 
   /* Update the cellwise system with the time matrix */
-  for (short int i = 0; i < adr->n_ent; i++) {
+  for (short int i = 0; i < adr->n_rows; i++) {
 
-    const int  shift_i = i*adr->n_ent;
+    const int  shift_i = i*adr->n_rows;
     const double  *m_i = mass_mat->val + shift_i;
     double  *adr_i = adr->val + shift_i;
 
-    for (short int j = 0; j < adr->n_ent; j++)
+    for (short int j = 0; j < adr->n_rows; j++)
       adr_i[j] += tpty_val * m_i[j];
 
   }
@@ -301,14 +301,14 @@ cs_cdo_time_imp(const cs_equation_param_t  *eqp,
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_diag_exp(const cs_equation_param_t  *eqp,
                      const double                tpty_val,
-                     const cs_locmat_t          *mass_mat,
+                     const cs_sdm_t             *mass_mat,
                      const cs_flag_t             system_flag,
                      cs_cell_builder_t          *cb,
                      cs_cell_sys_t              *csys)
@@ -321,11 +321,11 @@ cs_cdo_time_diag_exp(const cs_equation_param_t  *eqp,
   assert(eqp->time_scheme == CS_TIME_SCHEME_EXPLICIT);
   assert(system_flag & CS_FLAG_SYS_TIME_DIAG);
 
-  cs_locmat_t  *adr = csys->mat;
+  cs_sdm_t  *adr = csys->mat;
 
   /* STEP1 >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
   double  *adr_pn = cb->values;
-  cs_locmat_matvec(adr, csys->val_n, adr_pn);
+  cs_sdm_square_matvec(adr, csys->val_n, adr_pn);
 
   /* STEP2 >> Compute the time contribution to the RHS: Mtime*pn
            >> Update the cellwise system with the time matrix */
@@ -362,14 +362,14 @@ cs_cdo_time_diag_exp(const cs_equation_param_t  *eqp,
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_exp(const cs_equation_param_t  *eqp,
                 const double                tpty_val,
-                const cs_locmat_t          *mass_mat,
+                const cs_sdm_t             *mass_mat,
                 const cs_flag_t             system_flag,
                 cs_cell_builder_t          *cb,
                 cs_cell_sys_t              *csys)
@@ -377,20 +377,20 @@ cs_cdo_time_exp(const cs_equation_param_t  *eqp,
   CS_UNUSED(eqp);
   CS_UNUSED(system_flag);
 
-  cs_locmat_t  *adr = csys->mat;
+  cs_sdm_t  *adr = csys->mat;
 
   /* Sanity checks */
   assert(eqp->time_scheme == CS_TIME_SCHEME_EXPLICIT);
-  assert(csys->n_dofs == adr->n_ent);
+  assert(csys->n_dofs == adr->n_rows);
   assert(mass_mat != NULL);
 
   /* STEP1 >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
   double  *adr_pn = cb->values;
-  cs_locmat_matvec(adr, csys->val_n, adr_pn);
+  cs_sdm_square_matvec(adr, csys->val_n, adr_pn);
 
   /* STEP2 >> Compute the time contribution to the RHS: Mtime*pn */
   double  *time_pn = cb->values + csys->n_dofs;
-  cs_locmat_matvec(mass_mat, csys->val_n, time_pn);
+  cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
 
   /* >> Update the cellwise system with the time matrix */
   for (short int i = 0; i < csys->n_dofs; i++) {
@@ -423,14 +423,14 @@ cs_cdo_time_exp(const cs_equation_param_t  *eqp,
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
                        const double                tpty_val,
-                       const cs_locmat_t          *mass_mat,
+                       const cs_sdm_t             *mass_mat,
                        const cs_flag_t             system_flag,
                        cs_cell_builder_t          *cb,
                        cs_cell_sys_t              *csys)
@@ -439,13 +439,13 @@ cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
 
   const double  tcoef = 1 - eqp->theta;
 
-  cs_locmat_t  *adr = csys->mat;
+  cs_sdm_t  *adr = csys->mat;
 
   /* Sanity checks */
   assert(eqp->time_scheme == CS_TIME_SCHEME_THETA ||
          eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO);
   assert(system_flag & CS_FLAG_SYS_TIME_DIAG);
-  assert(csys->n_dofs == adr->n_ent);
+  assert(csys->n_dofs == adr->n_rows);
   assert(mass_mat != NULL);
 
   /* STEP1 >> Treatment of the source term */
@@ -455,7 +455,7 @@ cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
 
   /* STEP2 >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
   double  *adr_pn = cb->values;
-  cs_locmat_matvec(adr, csys->val_n, adr_pn);
+  cs_sdm_square_matvec(adr, csys->val_n, adr_pn);
   for (short int i = 0; i < csys->n_dofs; i++)
     adr_pn[i] *= tcoef; // (1 - theta)
 
@@ -495,28 +495,28 @@ cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_theta(const cs_equation_param_t  *eqp,
                   const double                tpty_val,
-                  const cs_locmat_t          *mass_mat,
+                  const cs_sdm_t             *mass_mat,
                   const cs_flag_t             system_flag,
                   cs_cell_builder_t          *cb,
                   cs_cell_sys_t              *csys)
 {
   const double  tcoef = 1 - eqp->theta;
 
-  cs_locmat_t  *adr = csys->mat;
+  cs_sdm_t  *adr = csys->mat;
 
   /* Sanity checks */
   assert(eqp->time_scheme == CS_TIME_SCHEME_THETA ||
          eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO);
-  assert(csys->n_dofs == adr->n_ent);
+  assert(csys->n_dofs == adr->n_rows);
   assert(mass_mat != NULL);
-  assert(mass_mat->n_ent == adr->n_ent);
+  assert(mass_mat->n_rows == adr->n_rows);
 
   /* STEP1 >> Treatment of the source term */
   if (system_flag & CS_FLAG_SYS_SOURCETERM)
@@ -525,7 +525,7 @@ cs_cdo_time_theta(const cs_equation_param_t  *eqp,
 
   /* STEP2 >> Compute the contribution of the "adr" to the RHS: tcoef*adr_pn */
   double  *adr_pn = cb->values;
-  cs_locmat_matvec(adr, csys->val_n, adr_pn);
+  cs_sdm_square_matvec(adr, csys->val_n, adr_pn);
   for (short int i = 0; i < csys->n_dofs; i++)
     adr_pn[i] *= tcoef; // (1 - theta)
 
@@ -547,7 +547,7 @@ cs_cdo_time_theta(const cs_equation_param_t  *eqp,
   /* STEP4 >> Compute the time contribution to the RHS: Mtime*pn
            >> Apply other contributions to the RHS */
   double  *time_pn = cb->values + csys->n_dofs;
-  cs_locmat_matvec(mass_mat, csys->val_n, time_pn);
+  cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
   for (short int i = 0; i < csys->n_dofs; i++)
     csys->rhs[i] += tpty_val*time_pn[i] - adr_pn[i];
 

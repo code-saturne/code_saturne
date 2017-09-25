@@ -58,14 +58,14 @@ BEGIN_C_DECLS
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_cdo_time_scheme_t)(const cs_equation_param_t  *eqp,
                        const double                tpty_val,
-                       const cs_locmat_t          *mass_mat,
+                       const cs_sdm_t             *mass_mat,
                        const cs_flag_t             system_flag,
                        cs_cell_builder_t          *cb,
                        cs_cell_sys_t              *csys);
@@ -125,14 +125,14 @@ cs_cdo_time_update_rhs_with_array(const cs_flag_t             sys_flag,
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
                      const double                tpty_val,
-                     const cs_locmat_t          *mass_mat,
+                     const cs_sdm_t             *mass_mat,
                      const cs_flag_t             system_flag,
                      cs_cell_builder_t          *cb,
                      cs_cell_sys_t              *csys);
@@ -147,14 +147,14 @@ cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_imp(const cs_equation_param_t  *eqp,
                 const double                tpty_val,
-                const cs_locmat_t          *mass_mat,
+                const cs_sdm_t             *mass_mat,
                 const cs_flag_t             system_flag,
                 cs_cell_builder_t          *cb,
                 cs_cell_sys_t              *csys);
@@ -170,14 +170,14 @@ cs_cdo_time_imp(const cs_equation_param_t  *eqp,
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_diag_exp(const cs_equation_param_t  *eqp,
                      const double                tpty_val,
-                     const cs_locmat_t          *mass_mat,
+                     const cs_sdm_t             *mass_mat,
                      const cs_flag_t             system_flag,
                      cs_cell_builder_t          *cb,
                      cs_cell_sys_t              *csys);
@@ -192,14 +192,14 @@ cs_cdo_time_diag_exp(const cs_equation_param_t  *eqp,
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_exp(const cs_equation_param_t  *eqp,
                 const double                tpty_val,
-                const cs_locmat_t          *mass_mat,
+                const cs_sdm_t             *mass_mat,
                 const cs_flag_t             system_flag,
                 cs_cell_builder_t          *cb,
                 cs_cell_sys_t              *csys);
@@ -215,14 +215,14 @@ cs_cdo_time_exp(const cs_equation_param_t  *eqp,
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
                        const double                tpty_val,
-                       const cs_locmat_t          *mass_mat,
+                       const cs_sdm_t             *mass_mat,
                        const cs_flag_t             system_flag,
                        cs_cell_builder_t          *cb,
                        cs_cell_sys_t              *csys);
@@ -237,14 +237,14 @@ cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
  * \param[in]      system_flag  indicate what is needed to build the system
  * \param[in]      mass_mat     pointer to a discrete Hodge op.
  * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- * \param[in, out] csys         pointer to a cs_locmat_t structure
+ * \param[in, out] csys         pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_time_theta(const cs_equation_param_t  *eqp,
                   const double                tpty_val,
-                  const cs_locmat_t          *mass_mat,
+                  const cs_sdm_t             *mass_mat,
                   const cs_flag_t             system_flag,
                   cs_cell_builder_t          *cb,
                   cs_cell_sys_t              *csys);

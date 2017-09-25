@@ -282,23 +282,23 @@ _init_cell_structures(const cs_flag_t             cell_flag,
   const cs_cdo_bc_t  *face_bc = b->face_bc;
 
   /* Cell-wise view of the linear system to build */
-  const int  n_vc = cm->n_vc;
-  const int  n_dofs = n_vc + 1;
+  const short int  n_vc = cm->n_vc;
+  const short int  n_dofs = n_vc + 1;
 
   /* Initialize the local system */
   csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
-  csys->mat->n_ent = n_dofs;
+  cs_sdm_square_init(n_dofs, csys->mat);
+
   for (short int v = 0; v < n_vc; v++) {
-    csys->mat->ids[v] = cm->v_ids[v];
+    csys->dof_ids[v] = cm->v_ids[v];
     csys->val_n[v] = field_tn[cm->v_ids[v]];
     csys->rhs[v] = csys->source[v] = 0.;
   }
-  csys->mat->ids[n_vc] = cm->c_id;
+  csys->dof_ids[cm->n_vc] = cm->c_id;
   csys->val_n[n_vc] = b->cell_values[cm->c_id];
   csys->rhs[n_vc] = b->cell_rhs[cm->c_id]; // Used for static condensation
   csys->source[n_vc] = 0;
-  for (short int i = 0; i < n_dofs*n_dofs; i++) csys->mat->val[i] = 0;
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
@@ -425,7 +425,7 @@ _condense_and_store(const cs_adjacency_t    *c2v,
 
   /* Update csys */
   csys->n_dofs = n_vc;
-  csys->mat->n_ent = n_vc;
+  csys->mat->n_rows = n_vc;
   for (short int i = 0; i < n_vc; i++) {
 
     double  *old_i = csys->mat->val + n_dofs*i; // old row_i
@@ -1199,7 +1199,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
         b->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
 
         // Add the local diffusion operator to the local system
-        cs_locmat_add(csys->mat, cb->loc);
+        cs_sdm_add(csys->mat, cb->loc);
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs) */
@@ -1232,7 +1232,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
         /* Define the local advection matrix */
         b->get_advection_matrix(eqp, cm, fm, cb);
 
-        cs_locmat_add(csys->mat, cb->loc);
+        cs_sdm_add(csys->mat, cb->loc);
 
         /* Last treatment for the advection term: Apply boundary conditions
            csys is updated inside (matrix and rhs) */
@@ -1264,7 +1264,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
 
         /* Update local system matrix with the reaction term
            cb->hdg corresponds to the current mass matrix */
-        cs_locmat_mult_add(csys->mat, rpty_val, cb->hdg);
+        cs_sdm_add_mult(csys->mat, rpty_val, cb->hdg);
 
       } /* END OF REACTION */
 
@@ -1306,7 +1306,7 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
         else
           tpty_val *= cs_property_get_cell_value(c_id, eqp->time_property);
 
-        cs_locmat_t  *mass_mat = cb->hdg;
+        cs_sdm_t  *mass_mat = cb->hdg;
         if (b->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
 
           /* Switch to cb->loc. Define a diagonal matrix (seen as a vector) */

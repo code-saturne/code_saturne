@@ -40,6 +40,7 @@
 #include "cs_cdo_quantities.h"
 #include "cs_equation_param.h"
 #include "cs_hodge.h"
+#include "cs_sdm.h"
 #include "cs_source_term.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
@@ -649,14 +650,16 @@ _define_cm_tetra_ref(double            a,
  *
  * \param[in]    fic        pointer to a FILE structure
  * \param[in]    msg        optional message to print
- * \param[in]    lm         pointer to the cs_sla_locmat_t struct.
+ * \param[in]    dof_ids    id related to each Degree of Freedom
+ * \param[in]    lm         pointer to the cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _locmat_dump(FILE               *fic,
              const char         *msg,
-             const cs_locmat_t  *lm)
+             const int          *dof_ids,
+             const cs_sdm_t     *lm)
 {
   assert(fic != NULL && lm != NULL);
 
@@ -665,13 +668,13 @@ _locmat_dump(FILE               *fic,
 
   /* List sub-entity ids */
   fprintf(fic, "%6s","ID");
-  for (int i = 0; i < lm->n_ent; i++) fprintf(fic, " %11d", lm->ids[i]);
+  for (int i = 0; i < lm->n_rows; i++) fprintf(fic, " %11d", dof_ids[i]);
   fprintf(fic, "\n");
 
-  for (int i = 0; i < lm->n_ent; i++) {
-    fprintf(fic, " %5d", lm->ids[i]);
-    for (int j = 0; j < lm->n_ent; j++)
-      fprintf(fic, " % 6.4e", lm->val[i*lm->n_ent+j]);
+  for (int i = 0; i < lm->n_rows; i++) {
+    fprintf(fic, " %5d", dof_ids[i]);
+    for (int j = 0; j < lm->n_rows; j++)
+      fprintf(fic, " % 6.4e", lm->val[i*lm->n_rows+j]);
     fprintf(fic, "\n");
   }
 
@@ -693,19 +696,19 @@ _locsys_dump(FILE                 *fic,
              const cs_cell_sys_t  *csys)
 {
   assert(fic != NULL && csys != NULL);
-  const cs_locmat_t  *lm = csys->mat;
+  const cs_sdm_t  *lm = csys->mat;
 
   if (msg != NULL)
     fprintf(fic, "%s\n", msg);
 
   /* List sub-entity ids */
   fprintf(fic, "%6s","ID");
-  for (int i = 0; i < lm->n_ent; i++) fprintf(fic, " %11d", lm->ids[i]);
+  for (int i = 0; i < lm->n_rows; i++) fprintf(fic, " %11d", csys->dof_ids[i]);
   fprintf(fic, "%11s %11s %11s\n", "RHS", "SOURCE", "VAL_N");
-  for (int i = 0; i < lm->n_ent; i++) {
-    fprintf(fic, " %5d", lm->ids[i]);
-    for (int j = 0; j < lm->n_ent; j++)
-      fprintf(fic, " % 6.4e", lm->val[i*lm->n_ent+j]);
+  for (int i = 0; i < lm->n_rows; i++) {
+    fprintf(fic, " %5d", csys->dof_ids[i]);
+    for (int j = 0; j < lm->n_rows; j++)
+      fprintf(fic, " % 6.4e", lm->val[i*lm->n_rows+j]);
     fprintf(fic, " % 6.4e % 6.4e % 6.4e\n",
             csys->rhs[i], csys->source[i], csys->val_n[i]);
   }
@@ -718,14 +721,14 @@ _locsys_dump(FILE                 *fic,
  *
  * \param[in]    out     output file
  * \param[in]    cm      pointer to a cs_cell_mesh_t structure
- * \param[in]    hdg     pointer to a cs_locmat_t structure
+ * \param[in]    hdg     pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _test_hodge_vb(FILE               *out,
                cs_cell_mesh_t     *cm,
-               cs_locmat_t        *hdg)
+               cs_sdm_t           *hdg)
 {
   fprintf(out, "\n");
 
@@ -744,14 +747,14 @@ _test_hodge_vb(FILE               *out,
  *
  * \param[in]    out    output file
  * \param[in]    cm     pointer to a cs_cell_mesh_t structure
- * \param[in]    s      pointer to a cs_locmat_t structure (stiffness matrix)
+ * \param[in]    s      pointer to a cs_sdm_t structure (stiffness matrix)
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _test_stiffness_vb(FILE               *out,
                    cs_cell_mesh_t     *cm,
-                   cs_locmat_t        *s)
+                   cs_sdm_t           *s)
 {
   fprintf(out, "\nCDO.VB;   %10s %10s\n", "ROW_SUM", "LIN_SUM");
   for (short int vi = 0; vi < cm->n_vc; vi++) {
@@ -789,9 +792,9 @@ _test_cdovb_schemes(FILE             *out,
 
   /* Initialize a cell view of the algebraic system */
   csys->n_dofs = cm->n_vc;
-  csys->mat->n_ent = cm->n_vc;
+  cs_sdm_square_init(csys->n_dofs, csys->mat);
   for (short int v = 0; v < cm->n_vc; v++)
-    csys->mat->ids[v] = cm->v_ids[v];
+    csys->dof_ids[v] = cm->v_ids[v];
 
   /* Handle anisotropic diffusion */
   cb->pty_mat[0][0] = 1.0, cb->pty_mat[0][1] = 0.5, cb->pty_mat[0][2] = 0.0;
@@ -815,11 +818,12 @@ _test_cdovb_schemes(FILE             *out,
                                  .coef = 1.0};
   cs_hodge_vpcd_wbs_get(hwbs_info, cm, cb);
   _locmat_dump(out, "\nCDO.VB; HDG.VPCD.WBS; PERMEABILITY.ISO",
-               cb->hdg);
+               csys->dof_ids, cb->hdg);
   _test_hodge_vb(out, cm, cb->hdg);
 
   cs_hodge_compute_wbs_surfacic(fm, cb->hdg);
-  _locmat_dump(out, "\nCDO.VB; HDG.VPCD.WBS.FACE; UNITY", cb->hdg);
+  _locmat_dump(out, "\nCDO.VB; HDG.VPCD.WBS.FACE; UNITY",
+               csys->dof_ids, cb->hdg);
   for (int vi = 0; vi < fm->n_vf; vi++) {
     double  row_sum = 0.0;
     double  *hi = cb->hdg->val + vi*fm->n_vf;
@@ -837,7 +841,7 @@ _test_cdovb_schemes(FILE             *out,
                                  .coef = 1.0};
   cs_hodge_vpcd_voro_get(hvor_info, cm, cb);
   _locmat_dump(out, "\nCDO.VB; HDG.VPCD.VORONOI; PERMEABILITY.ISO",
-               cb->hdg);
+               csys->dof_ids, cb->hdg);
   _test_hodge_vb(out, cm, cb->hdg);
 
   /* DIFFUSION */
@@ -852,14 +856,14 @@ _test_cdovb_schemes(FILE             *out,
                                   .coef = 1./3.}; //DGA
   cs_hodge_vb_cost_get_stiffness(hcost_info, cm, cb);
   _locmat_dump(out,"\nCDO.VB; STIFFNESS WITH HDG.EPFD.DGA; PERMEABILITY.ISO",
-               cb->loc);
+               csys->dof_ids, cb->loc);
   _test_stiffness_vb(out, cm, cb->loc);
 
   /* Anisotropic case */
   hcost_info.is_unity = false, hcost_info.is_iso = false;
   cs_hodge_vb_cost_get_stiffness(hcost_info, cm, cb);
   _locmat_dump(out, "\nCDO.VB; STIFFNESS WITH HDG.EPFD.DGA; PERMEABILITY.ANISO",
-               cb->loc);
+               csys->dof_ids, cb->loc);
   _test_stiffness_vb(out, cm, cb->loc);
 
   /* Enforce Dirichlet BC */
@@ -885,13 +889,13 @@ _test_cdovb_schemes(FILE             *out,
   _locsys_dump(out, "\nCDO.VB; WSYM.DGA.FLX.COST; PERMEABILITY.ANISO",
                csys);
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
-  for (int v = 0; v < cm->n_vc*cm->n_vc; v++) csys->mat->val[v] = 0.;
+  cs_sdm_square_init(cm->n_vc, csys->mat);
 
   /* Stiffness matrix arising from a Hodge EpFd built with VORONOI algo. */
   hvor_info.type = CS_PARAM_HODGE_TYPE_EPFD;
   cs_hodge_vb_voro_get_stiffness(hvor_info, cm, cb);
   _locmat_dump(out, "\nCDO.VB; STIFFNESS WITH HDG.EPFD.VORO; PERMEABILITY.ISO",
-               cb->loc);
+               csys->dof_ids, cb->loc);
   _test_stiffness_vb(out, cm, cb->loc);
 
   /* Enforce Dirichlet BC */
@@ -901,19 +905,19 @@ _test_cdovb_schemes(FILE             *out,
   _locsys_dump(out, "\nCDO.VB; PENA.VORO.FLX.COST; PERMEABILITY.ISO",
                csys);
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
-  for (int v = 0; v < cm->n_vc*cm->n_vc; v++) csys->mat->val[v] = 0.;
+  cs_sdm_square_init(cm->n_vc, csys->mat);
 
   /* Stiffness matrix arising from a Hodge EpFd built with WBS algo. */
   hwbs_info.type = CS_PARAM_HODGE_TYPE_EPFD;
   cs_hodge_vb_wbs_get_stiffness(hwbs_info, cm, cb);
   _locmat_dump(out, "\nCDO.VB; STIFFNESS WITH HDG.EPFD.WBS; PERMEABILITY.ISO",
-               cb->loc);
+               csys->dof_ids, cb->loc);
   _test_stiffness_vb(out, cm, cb->loc);
 
   hwbs_info.is_unity = false, hwbs_info.is_iso = false;
   cs_hodge_vb_wbs_get_stiffness(hwbs_info, cm, cb);
   _locmat_dump(out, "\nCDO.VB; STIFFNESS WITH HDG.EPFD.WBS; PERMEABILITY.ANISO",
-               cb->loc);
+               csys->dof_ids, cb->loc);
   _test_stiffness_vb(out, cm, cb->loc);
 
   /* Enforce Dirichlet BC */
@@ -923,23 +927,21 @@ _test_cdovb_schemes(FILE             *out,
   _locsys_dump(out, "\nCDO.VB; PENA.WBS.FLX.WBS; PERMEABILITY.ANISO",
                csys);
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
-  for (int v = 0; v < cm->n_vc*cm->n_vc; v++) csys->mat->val[v] = 0.;
+  cs_sdm_square_init(cm->n_vc, csys->mat);
 
   cs_cdovb_diffusion_weak_dirichlet(hwbs_info, cbc, cm,
                                     cs_cdovb_diffusion_wbs_flux_op,
                                     fm, cb, csys);
-  _locsys_dump(out, "\nCDO.VB; WEAK.WBS.FLX.WBS; PERMEABILITY.ANISO",
-               csys);
+  _locsys_dump(out, "\nCDO.VB; WEAK.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
-  for (int v = 0; v < cm->n_vc*cm->n_vc; v++) csys->mat->val[v] = 0.;
+  cs_sdm_square_init(cm->n_vc, csys->mat);
 
   cs_cdovb_diffusion_wsym_dirichlet(hwbs_info, cbc, cm,
                                     cs_cdovb_diffusion_wbs_flux_op,
                                     fm, cb, csys);
-  _locsys_dump(out, "\nCDO.VB; WSYM.WBS.FLX.WBS; PERMEABILITY.ANISO",
-               csys);
+  _locsys_dump(out, "\nCDO.VB; WSYM.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
   for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
-  for (int v = 0; v < cm->n_vc*cm->n_vc; v++) csys->mat->val[v] = 0.;
+  cs_sdm_square_init(cm->n_vc, csys->mat);
 
   /* ADVECTION OPERATOR */
   /* ================== */
@@ -976,13 +978,6 @@ _test_cdovb_schemes(FILE             *out,
   cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
   cs_flag_t  meta_flag = cs_source_term_set_default_flag(CS_SPACE_SCHEME_CDOVB);
 
-  cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                         1,
-                                         0, // z_id
-                                         state_flag,
-                                         meta_flag,
-                                         (void *)_unity);
-
   /* Evaluate the performance */
   cs_timer_counter_t  tc0, tc1, tc2, tc3;
   CS_TIMER_COUNTER_INIT(tc0); // build system
@@ -990,152 +985,201 @@ _test_cdovb_schemes(FILE             *out,
   CS_TIMER_COUNTER_INIT(tc2); // build system
   CS_TIMER_COUNTER_INIT(tc3); // build system
 
-  // Loop on runs to evaluate the performance of each quadrature
-  for (int r = 0; r < n_runs; r++) {
+  {
+    cs_xdef_analytic_input_t  anai = {.func = _unity,
+                                      .input = NULL };
 
-    /* Reset */
-    for (int v = 0; v < cm->n_vc; v++)
-      st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
+    cs_xdef_t  *stu = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                            1,
+                                            0, // z_id
+                                            state_flag,
+                                            meta_flag,
+                                            &anai);
 
-    cs_timer_t  t0 = cs_timer_time();
-    cs_source_term_dcsd_bary_by_analytic(st, cm, cb, st0_values);
-    cs_timer_t  t1 = cs_timer_time();
-    cs_source_term_dcsd_q1o1_by_analytic(st, cm, cb, st1_values);
-    cs_timer_t  t2 = cs_timer_time();
-    cs_source_term_dcsd_q10o2_by_analytic(st, cm, cb, st2_values);
-    cs_timer_t  t3 = cs_timer_time();
-    cs_source_term_dcsd_q5o3_by_analytic(st, cm, cb, st3_values);
-    cs_timer_t  t4 = cs_timer_time();
+    // Loop on runs to evaluate the performance of each quadrature
+    for (int r = 0; r < n_runs; r++) {
 
-    cs_timer_counter_add_diff(&(tc0), &t0, &t1);
-    cs_timer_counter_add_diff(&(tc1), &t1, &t2);
-    cs_timer_counter_add_diff(&(tc2), &t2, &t3);
-    cs_timer_counter_add_diff(&(tc3), &t3, &t4);
+      /* Reset */
+      for (int v = 0; v < cm->n_vc; v++)
+        st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
 
+      cs_timer_t  t0 = cs_timer_time();
+      cs_source_term_dcsd_bary_by_analytic(stu, cm, cb, st0_values);
+      cs_timer_t  t1 = cs_timer_time();
+      cs_source_term_dcsd_q1o1_by_analytic(stu, cm, cb, st1_values);
+      cs_timer_t  t2 = cs_timer_time();
+      cs_source_term_dcsd_q10o2_by_analytic(stu, cm, cb, st2_values);
+      cs_timer_t  t3 = cs_timer_time();
+      cs_source_term_dcsd_q5o3_by_analytic(stu, cm, cb, st3_values);
+      cs_timer_t  t4 = cs_timer_time();
+
+      cs_timer_counter_add_diff(&(tc0), &t0, &t1);
+      cs_timer_counter_add_diff(&(tc1), &t1, &t2);
+      cs_timer_counter_add_diff(&(tc2), &t2, &t3);
+      cs_timer_counter_add_diff(&(tc3), &t3, &t4);
+
+    }
+
+    fprintf(out, "\nCDO.VB; SOURCE_TERM P0\n");
+    fprintf(out, " V %12s %12s %12s %12s\n",
+            "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
+    for (int i = 0; i < cm->n_vc; i++)
+      fprintf(out, "%2d %10.6e %10.6e %10.6e %10.6e\n",
+              i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
+
+    stu = cs_xdef_free(stu);
   }
 
-  fprintf(out, "\nCDO.VB; SOURCE_TERM P0\n");
-  fprintf(out, " V %12s %12s %12s %12s\n",
-          "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
-  for (int i = 0; i < cm->n_vc; i++)
-    fprintf(out, "%2d %10.6e %10.6e %10.6e %10.6e\n",
-            i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
 
   /* Test with a linear function */
-  st->input = (void *)_linear_xyz;
+  {
+    cs_xdef_analytic_input_t  anai = {.func = _linear_xyz,
+                                      .input = NULL };
 
-  // Loop on runs to evaluate the performance of each quadrature
-  for (int r = 0; r < n_runs; r++) {
+    cs_xdef_t  *stl = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                            1,
+                                            0, // z_id
+                                            state_flag,
+                                            meta_flag,
+                                            &anai);
 
-    /* Reset */
-    for (int v = 0; v < cm->n_vc; v++)
-      st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
+    // Loop on runs to evaluate the performance of each quadrature
+    for (int r = 0; r < n_runs; r++) {
 
-    cs_timer_t  t0 = cs_timer_time();
-    cs_source_term_dcsd_bary_by_analytic(st, cm, cb, st0_values);
-    cs_timer_t  t1 = cs_timer_time();
-    cs_source_term_dcsd_q1o1_by_analytic(st, cm, cb, st1_values);
-    cs_timer_t  t2 = cs_timer_time();
-    cs_source_term_dcsd_q10o2_by_analytic(st, cm, cb, st2_values);
-    cs_timer_t  t3 = cs_timer_time();
-    cs_source_term_dcsd_q5o3_by_analytic(st, cm, cb, st3_values);
-    cs_timer_t  t4 = cs_timer_time();
+      /* Reset */
+      for (int v = 0; v < cm->n_vc; v++)
+        st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
 
-    cs_timer_counter_add_diff(&(tc0), &t0, &t1);
-    cs_timer_counter_add_diff(&(tc1), &t1, &t2);
-    cs_timer_counter_add_diff(&(tc2), &t2, &t3);
-    cs_timer_counter_add_diff(&(tc3), &t3, &t4);
+      cs_timer_t  t0 = cs_timer_time();
+      cs_source_term_dcsd_bary_by_analytic(stl, cm, cb, st0_values);
+      cs_timer_t  t1 = cs_timer_time();
+      cs_source_term_dcsd_q1o1_by_analytic(stl, cm, cb, st1_values);
+      cs_timer_t  t2 = cs_timer_time();
+      cs_source_term_dcsd_q10o2_by_analytic(stl, cm, cb, st2_values);
+      cs_timer_t  t3 = cs_timer_time();
+      cs_source_term_dcsd_q5o3_by_analytic(stl, cm, cb, st3_values);
+      cs_timer_t  t4 = cs_timer_time();
 
+      cs_timer_counter_add_diff(&(tc0), &t0, &t1);
+      cs_timer_counter_add_diff(&(tc1), &t1, &t2);
+      cs_timer_counter_add_diff(&(tc2), &t2, &t3);
+      cs_timer_counter_add_diff(&(tc3), &t3, &t4);
+
+    }
+
+    fprintf(out, "\nCDO.VB; SOURCE_TERM P1\n");
+    fprintf(out, " V %12s %12s %12s %12s\n",
+            "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
+    for (int i = 0; i < cm->n_vc; i++)
+      fprintf(out, "%2d %10.6e %10.6e %10.6e %10.6e\n",
+              i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
+
+    stl = cs_xdef_free(stl);
   }
 
-  fprintf(out, "\nCDO.VB; SOURCE_TERM P1\n");
-  fprintf(out, " V %12s %12s %12s %12s\n",
-          "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
-  for (int i = 0; i < cm->n_vc; i++)
-    fprintf(out, "%2d %10.6e %10.6e %10.6e %10.6e\n",
-            i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
+  {  /* Test with a quadratic (x*x) function */
+    cs_xdef_analytic_input_t  anai = {.func = _quadratic_x2,
+                                      .input = NULL };
 
-  /* Test with a quadratic (x*x) function */
-  st->input = (void *)_quadratic_x2;
+    cs_xdef_t  *stq = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                            1,
+                                            0, // z_id
+                                            state_flag,
+                                            meta_flag,
+                                            &anai);
 
-  // Loop on runs to evaluate the performance of each quadrature
-  for (int r = 0; r < n_runs; r++) {
+    // Loop on runs to evaluate the performance of each quadrature
+    for (int r = 0; r < n_runs; r++) {
 
-    /* Reset */
-    for (int v = 0; v < cm->n_vc; v++)
-      st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
+      /* Reset */
+      for (int v = 0; v < cm->n_vc; v++)
+        st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
 
-    cs_timer_t  t0 = cs_timer_time();
-    cs_source_term_dcsd_bary_by_analytic(st, cm, cb, st0_values);
-    cs_timer_t  t1 = cs_timer_time();
-    cs_source_term_dcsd_q1o1_by_analytic(st, cm, cb, st1_values);
-    cs_timer_t  t2 = cs_timer_time();
-    cs_source_term_dcsd_q10o2_by_analytic(st, cm, cb, st2_values);
-    cs_timer_t  t3 = cs_timer_time();
-    cs_source_term_dcsd_q5o3_by_analytic(st, cm, cb, st3_values);
-    cs_timer_t  t4 = cs_timer_time();
+      cs_timer_t  t0 = cs_timer_time();
+      cs_source_term_dcsd_bary_by_analytic(stq, cm, cb, st0_values);
+      cs_timer_t  t1 = cs_timer_time();
+      cs_source_term_dcsd_q1o1_by_analytic(stq, cm, cb, st1_values);
+      cs_timer_t  t2 = cs_timer_time();
+      cs_source_term_dcsd_q10o2_by_analytic(stq, cm, cb, st2_values);
+      cs_timer_t  t3 = cs_timer_time();
+      cs_source_term_dcsd_q5o3_by_analytic(stq, cm, cb, st3_values);
+      cs_timer_t  t4 = cs_timer_time();
 
-    cs_timer_counter_add_diff(&(tc0), &t0, &t1);
-    cs_timer_counter_add_diff(&(tc1), &t1, &t2);
-    cs_timer_counter_add_diff(&(tc2), &t2, &t3);
-    cs_timer_counter_add_diff(&(tc3), &t3, &t4);
+      cs_timer_counter_add_diff(&(tc0), &t0, &t1);
+      cs_timer_counter_add_diff(&(tc1), &t1, &t2);
+      cs_timer_counter_add_diff(&(tc2), &t2, &t3);
+      cs_timer_counter_add_diff(&(tc3), &t3, &t4);
 
+    }
+
+    fprintf(out, "\nCDO.VB; SOURCE_TERM P2\n");
+    fprintf(out, " V %12s %12s %12s %12s\n",
+            "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
+    for (int i = 0; i < cm->n_vc; i++)
+      fprintf(out, "%2d %10.6e %10.6e %10.6e %10.6e\n",
+              i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
+
+    stq = cs_xdef_free(stq);
   }
 
-  fprintf(out, "\nCDO.VB; SOURCE_TERM P2\n");
-  fprintf(out, " V %12s %12s %12s %12s\n",
-          "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
-  for (int i = 0; i < cm->n_vc; i++)
-    fprintf(out, "%2d %10.6e %10.6e %10.6e %10.6e\n",
-            i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
+  {  /* Test with a non-polynomial function */
+    cs_xdef_analytic_input_t  anai = {.func = _nonpoly,
+                                      .input = NULL };
 
-    /* Test with a non-polynomial function */
-  st->input = (void *)_nonpoly;
-  cs_real_t  exact_result[8] = {0.0609162, // V (0.0,0.0,0.0)
-                                0.100434,  // V (1.0,0.0,0.0)
-                                0.165587,  // V (1.0,1.0,0.0)
-                                0.100434,  // V (0.0,1.0,0.0)
-                                0.100434,  // V (0.0,0.0,1.0)
-                                0.165587,  // V (1.0,0.0,1.0)
-                                0.273007,  // V (1.0,1.0,1.0)
-                                0.165587}; // V (0.0,1.0,1.0)
-  // Loop on runs to evaluate the performance of each quadrature
-  for (int r = 0; r < n_runs; r++) {
+    cs_xdef_t  *st = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                           1,
+                                           0, // z_id
+                                           state_flag,
+                                           meta_flag,
+                                           &anai);
+    cs_real_t  exact_result[8] = {0.0609162, // V (0.0,0.0,0.0)
+                                  0.100434,  // V (1.0,0.0,0.0)
+                                  0.165587,  // V (1.0,1.0,0.0)
+                                  0.100434,  // V (0.0,1.0,0.0)
+                                  0.100434,  // V (0.0,0.0,1.0)
+                                  0.165587,  // V (1.0,0.0,1.0)
+                                  0.273007,  // V (1.0,1.0,1.0)
+                                  0.165587}; // V (0.0,1.0,1.0)
+    // Loop on runs to evaluate the performance of each quadrature
+    for (int r = 0; r < n_runs; r++) {
 
-    /* Reset */
-    for (int v = 0; v < cm->n_vc; v++)
-      st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
+      /* Reset */
+      for (int v = 0; v < cm->n_vc; v++)
+        st0_values[v] = st1_values[v] = st2_values[v] = st3_values[v] = 0.0;
 
-    cs_timer_t  t0 = cs_timer_time();
-    cs_source_term_dcsd_bary_by_analytic(st, cm, cb, st0_values);
-    cs_timer_t  t1 = cs_timer_time();
-    cs_source_term_dcsd_q1o1_by_analytic(st, cm, cb, st1_values);
-    cs_timer_t  t2 = cs_timer_time();
-    cs_source_term_dcsd_q10o2_by_analytic(st, cm, cb, st2_values);
-    cs_timer_t  t3 = cs_timer_time();
-    cs_source_term_dcsd_q5o3_by_analytic(st, cm, cb, st3_values);
-    cs_timer_t  t4 = cs_timer_time();
+      cs_timer_t  t0 = cs_timer_time();
+      cs_source_term_dcsd_bary_by_analytic(st, cm, cb, st0_values);
+      cs_timer_t  t1 = cs_timer_time();
+      cs_source_term_dcsd_q1o1_by_analytic(st, cm, cb, st1_values);
+      cs_timer_t  t2 = cs_timer_time();
+      cs_source_term_dcsd_q10o2_by_analytic(st, cm, cb, st2_values);
+      cs_timer_t  t3 = cs_timer_time();
+      cs_source_term_dcsd_q5o3_by_analytic(st, cm, cb, st3_values);
+      cs_timer_t  t4 = cs_timer_time();
 
-    cs_timer_counter_add_diff(&(tc0), &t0, &t1);
-    cs_timer_counter_add_diff(&(tc1), &t1, &t2);
-    cs_timer_counter_add_diff(&(tc2), &t2, &t3);
-    cs_timer_counter_add_diff(&(tc3), &t3, &t4);
+      cs_timer_counter_add_diff(&(tc0), &t0, &t1);
+      cs_timer_counter_add_diff(&(tc1), &t1, &t2);
+      cs_timer_counter_add_diff(&(tc2), &t2, &t3);
+      cs_timer_counter_add_diff(&(tc3), &t3, &t4);
 
-  }
+    }
 
-  fprintf(out, "\nCDO.VB; SOURCE_TERM NON-POLY\n");
-  fprintf(out, " V %12s %12s %12s %12s\n",
-          "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
-  for (int i = 0; i < cm->n_vc; i++)
-    fprintf(out, "%2d % 10.6e % 10.6e % 10.6e % 10.6e\n",
-            i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
-  if (cm->n_vc == 8) {
-    fprintf(out, " V %12s %12s %12s %12s (ERROR)\n",
+    fprintf(out, "\nCDO.VB; SOURCE_TERM NON-POLY\n");
+    fprintf(out, " V %12s %12s %12s %12s\n",
             "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
     for (int i = 0; i < cm->n_vc; i++)
       fprintf(out, "%2d % 10.6e % 10.6e % 10.6e % 10.6e\n",
-              i, st0_values[i]-exact_result[i], st1_values[i]-exact_result[i],
-              st2_values[i]-exact_result[i], st3_values[i]-exact_result[i]);
+              i, st0_values[i], st1_values[i], st2_values[i], st3_values[i]);
+    if (cm->n_vc == 8) {
+      fprintf(out, " V %12s %12s %12s %12s (ERROR)\n",
+              "DCSD_BARY", "DCSD_Q1O1", "DCSD_Q10O2", "DCSD_Q5O3");
+      for (int i = 0; i < cm->n_vc; i++)
+        fprintf(out, "%2d % 10.6e % 10.6e % 10.6e % 10.6e\n",
+                i, st0_values[i]-exact_result[i], st1_values[i]-exact_result[i],
+                st2_values[i]-exact_result[i], st3_values[i]-exact_result[i]);
+    }
+
+    st = cs_xdef_free(st);
   }
 
   fprintf(out, "\nCDO.VB; PERFORMANCE OF SOURCE TERMS\n");
@@ -1146,7 +1190,6 @@ _test_cdovb_schemes(FILE             *out,
           tc2.wall_nsec*1e-9, tc3.wall_nsec*1e-9);
 
   /* Free memory */
-  BFT_FREE(st);
   cs_cell_builder_free(&cb);
   cs_cell_sys_free(&csys);
 }
@@ -1162,6 +1205,78 @@ main(int    argc,
 
   hexa = fopen("CDO_Test_Hexa.log", "w");
   tetra = fopen("CDO_Test_Tetra.log", "w");
+  FILE  *sdm = fopen("CDO_Test_SmallDenseMatrices.log", "w");
+
+  /* ==================================== */
+  /* TEST Small Dense Matrices operations */
+  /* ==================================== */
+
+  cs_sdm_t  *m = cs_sdm_square_create(6);
+
+  cs_sdm_square_init(3, m);
+  m->val[0] = 2, m->val[1] = -1, m->val[2] = 0;
+  m->val[3] =-1, m->val[4] =  2, m->val[5] =-1;
+  m->val[6] = 0, m->val[7] = -1, m->val[8] = 1;
+
+  cs_real_6_t  b = {1, 0, 0, 0, 0, 0};
+
+  /* Compute the L.D.L^T decomposition and then solve */
+  cs_real_6_t  sol, tmp;
+  cs_real_t  facto[21];
+
+  cs_sdm_33_ldlt_compute(m, facto);
+  cs_sdm_33_ldlt_solve(facto, b, sol);
+
+  fprintf(sdm, " Solution l.d.l^T 33: % .4e % .4e % .4e\n",
+          sol[0], sol[1], sol[2]);
+
+  cs_sdm_ldlt_compute(m, facto, tmp);
+  cs_sdm_ldlt_solve(3, facto, b, sol);
+
+  fprintf(sdm, " Solution l.d.l^T:    % .4e % .4e % .4e\n",
+          sol[0], sol[1], sol[2]);
+
+  cs_sdm_square_init(4, m);
+  m->val[ 0] = 2, m->val[ 1] = -1, m->val[ 2] = 0, m->val[ 3] = 0;
+  m->val[ 4] =-1, m->val[ 5] =  2, m->val[ 6] =-1, m->val[ 7] = 0;
+  m->val[ 8] = 0, m->val[ 9] = -1, m->val[10] = 2, m->val[11] =-1;
+  m->val[12] = 0, m->val[13] =  0, m->val[14] =-1, m->val[15] = 1;
+
+  cs_sdm_44_ldlt_compute(m, facto);
+  cs_sdm_44_ldlt_solve(facto, b, sol);
+
+  fprintf(sdm, " Solution l.d.l^T 44: % .4e % .4e % .4e % .4e\n",
+          sol[0], sol[1], sol[2], sol[3]);
+
+  cs_sdm_ldlt_compute(m, facto, tmp);
+  cs_sdm_ldlt_solve(4, facto, b, sol);
+
+  fprintf(sdm, " Solution l.d.l^T   : % .4e % .4e % .4e % .4e\n",
+          sol[0], sol[1], sol[2], sol[3]);
+
+  cs_sdm_square_init(6, m);
+  cs_real_t *a = m->val;
+  a[ 0] = 2, a[ 1] = -1, a[ 2] = 0, a[ 3] = 0, a[ 4] =  0, a[ 5] =  0;
+  a[ 6] =-1, a[ 7] =  2, a[ 8] =-1, a[ 9] = 0, a[10] =  0, a[11] =  0;
+  a[12] = 0, a[13] = -1, a[14] = 2, a[15] =-1, a[16] =  0, a[17] =  0;
+  a[18] = 0, a[19] =  0, a[20] =-1, a[21] = 2, a[22] = -1, a[23] =  0;
+  a[24] = 0, a[25] =  0, a[26] = 0, a[27] =-1, a[28] =  2, a[29] = -1;
+  a[30] = 0, a[31] =  0, a[32] = 0, a[33] = 0, a[34] = -1, a[35] =  1;
+
+  cs_sdm_66_ldlt_compute(m, facto);
+  cs_sdm_66_ldlt_solve(facto, b, sol);
+
+  fprintf(sdm, " Solution l.d.l^T 66: % .4e % .4e % .4e % .4e % .4e % .4e\n",
+          sol[0], sol[1], sol[2], sol[3], sol[4], sol[5]);
+
+  cs_sdm_ldlt_compute(m, facto, tmp);
+  cs_sdm_ldlt_solve(6, facto, b, sol);
+
+  fprintf(sdm, " Solution l.d.l^T   : % .4e % .4e % .4e % .4e % .4e % .4e\n",
+          sol[0], sol[1], sol[2], sol[3], sol[4], sol[5]);
+
+  fclose(sdm);
+  m = cs_sdm_free(m);
 
   /* connectivity */
   BFT_MALLOC(connect, 1, cs_cdo_connect_t);

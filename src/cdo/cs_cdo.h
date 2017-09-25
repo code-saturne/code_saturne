@@ -260,6 +260,42 @@ void
 cs_nvec3(const cs_real_3_t    v,
          cs_nvec3_t          *qv);
 
+#if defined(DEBUG) && !defined(NDEBUG)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In debug mode, dump an array of double into the listing
+ *
+ * \param[in] header     header message to write
+ * \param[in] size       number of elements in array
+ * \param[in] array      pointer to the array of values
+ * \param[in] n_cols     print array with n_cols columns
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dump_array_to_listing(const char        *header,
+                         const cs_lnum_t    size,
+                         const cs_real_t    array[],
+                         int                n_cols);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In debug mode, dump an array of integer into the listing
+ *
+ * \param[in] header     header message to write
+ * \param[in] size       number of elements in array
+ * \param[in] array      pointer to the array of values
+ * \param[in] n_cols     print array with n_cols columns
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dump_integer_to_listing(const char        *header,
+                           const cs_lnum_t    size,
+                           const cs_lnum_t    array[],
+                           int                n_cols);
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

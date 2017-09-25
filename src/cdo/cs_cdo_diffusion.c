@@ -125,15 +125,15 @@ _enforce_nitsche(const double              pcoef,
                  const cs_param_hodge_t    h_info,
                  const cs_face_mesh_t     *fm,
                  const cs_cell_bc_t       *cbc,
-                 cs_locmat_t              *ntrgrd,
+                 cs_sdm_t                 *ntrgrd,
                  cs_cell_builder_t        *cb,
                  cs_cell_sys_t            *csys)
 {
   /* Sanity checks */
   assert(pcoef > 0);
-  assert(csys->mat->n_ent == ntrgrd->n_ent);
+  assert(csys->mat->n_rows == ntrgrd->n_rows);
 
-  const short int  n_csys = csys->mat->n_ent;
+  const short int  n_csys = csys->mat->n_rows;
 
   switch (h_info.algo) {
 
@@ -148,7 +148,7 @@ _enforce_nitsche(const double              pcoef,
       // Set the penalty diagonal coefficient
       const double  pcoef_v = pcoef * fm->wvf[v];
 
-      ntrgrd->val[vi + vi*ntrgrd->n_ent] += pcoef_v;
+      ntrgrd->val[vi + vi*ntrgrd->n_rows] += pcoef_v;
       csys->rhs[vi] += pcoef_v * cbc->dir_values[vi];
 
     } // Dirichlet or homogeneous Dirichlet
@@ -156,7 +156,7 @@ _enforce_nitsche(const double              pcoef,
 
   case CS_PARAM_HODGE_ALGO_WBS:
     { /* Build the related border Hodge operator */
-      cs_locmat_t  *hloc = cb->aux;
+      cs_sdm_t  *hloc = cb->aux;
 
       cs_hodge_compute_wbs_surfacic(fm, hloc); // hloc is of size n_vf
 
@@ -193,11 +193,11 @@ _enforce_nitsche(const double              pcoef,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
   cs_log_printf(CS_LOG_DEFAULT,
                 ">> Local weak bc matrix (f_id: %d)", fm->f_id);
-  cs_locmat_dump(fm->c_id, ntrgrd);
+  cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
 #endif
 
   /* Add contribution to the linear system */
-  cs_locmat_add(csys->mat, ntrgrd);
+  cs_sdm_add(csys->mat, ntrgrd);
 
 }
 
@@ -227,7 +227,7 @@ cs_cdovcb_diffusion_flux_op(const cs_face_mesh_t     *fm,
                             const cs_real_3_t         pty_nuf,
                             double                    beta,
                             cs_cell_builder_t        *cb,
-                            cs_locmat_t              *ntrgrd)
+                            cs_sdm_t                 *ntrgrd)
 {
   CS_UNUSED(beta);
 
@@ -242,10 +242,7 @@ cs_cdovcb_diffusion_flux_op(const cs_face_mesh_t     *fm,
   const cs_nvec3_t  deq = fm->dedge;
 
   /* Initialize the local operator */
-  ntrgrd->n_ent = cm->n_vc + 1;
-  for (short int v = 0; v < cm->n_vc; v++)  ntrgrd->ids[v] = cm->v_ids[v];
-  ntrgrd->ids[cm->n_vc] = cm->c_id;
-  for (int i = 0; i < ntrgrd->n_ent*ntrgrd->n_ent; i++) ntrgrd->val[i] = 0;
+  cs_sdm_square_init(cm->n_vc + 1, ntrgrd);
 
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
@@ -282,7 +279,7 @@ cs_cdovcb_diffusion_flux_op(const cs_face_mesh_t     *fm,
   for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
 
     short int  vi = fm->v_ids[vfi];
-    double  *ntrgrd_i = ntrgrd->val + vi*ntrgrd->n_ent;
+    double  *ntrgrd_i = ntrgrd->val + vi*ntrgrd->n_rows;
 
     /* Contribution to the cell column */
     ntrgrd_i[cm->n_vc] = fm->wvf[vfi] * pfq.meas * mng_cf;
@@ -339,7 +336,7 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
                                const cs_real_3_t         pty_nuf,
                                double                    beta,
                                cs_cell_builder_t        *cb,
-                               cs_locmat_t              *ntrgrd)
+                               cs_sdm_t                 *ntrgrd)
 {
   CS_UNUSED(beta);
 
@@ -351,9 +348,7 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
   cs_real_3_t  *u_vc = cb->vectors + fm->n_vf;
 
   /* Initialize the local operator */
-  ntrgrd->n_ent = cm->n_vc;
-  for (short int v = 0; v < cm->n_vc; v++)  ntrgrd->ids[v] = cm->v_ids[v];
-  for (int i = 0; i < cm->n_vc*cm->n_vc; i++) ntrgrd->val[i] = 0;
+  cs_sdm_square_init(cm->n_vc, ntrgrd);
 
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
@@ -439,8 +434,8 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
   cs_log_printf(CS_LOG_DEFAULT,
                 ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)",
-                cm->c_id, cm->f_ids[fm->f_id]);
-  cs_locmat_dump(cm->c_id, ntrgrd);
+                cm->c_id,cm->f_ids[fm->f_id]);
+  cs_sdm_dump(cm->c_id,  NULL, NULL, ntrgrd);
 #endif
 }
 
@@ -465,7 +460,7 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
                                 const cs_real_3_t         mnu,
                                 double                    beta,
                                 cs_cell_builder_t        *cb,
-                                cs_locmat_t              *ntrgrd)
+                                cs_sdm_t                 *ntrgrd)
 {
   cs_real_3_t  lek;
   cs_real_3_t  *le_grd = cb->vectors;
@@ -473,9 +468,7 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
   const cs_real_t  over_vol_c = 1/cm->vol_c;
 
   /* Initialize the local operator */
-  ntrgrd->n_ent = cm->n_vc;
-  for (short int v = 0; v < cm->n_vc; v++)  ntrgrd->ids[v] = cm->v_ids[v];
-  for (int i = 0; i < cm->n_vc*cm->n_vc; i++) ntrgrd->val[i] = 0;
+  cs_sdm_square_init(cm->n_vc, ntrgrd);
 
   /* Loop on border face edges */
   for (short int e = 0; e < fm->n_ef; e++) {
@@ -534,7 +527,7 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
   cs_log_printf(CS_LOG_DEFAULT,
                 ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)",
                 cm->c_id, cm->f_ids[fm->f_id]);
-  cs_locmat_dump(cm->c_id, ntrgrd);
+  cs_sdm_dump(cm->c_id, NULL, NULL, ntrgrd);
 #endif
 }
 
@@ -566,8 +559,8 @@ cs_cdovb_diffusion_weak_dirichlet(const cs_param_hodge_t          h_info,
   assert(cbc != NULL && cm != NULL);
   assert(cb != NULL && csys != NULL);
 
-  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_ent = cm->n_vc + 1
-     For VB schemes  cbc->n_dofs = csys->mat->n_ent = cm->n_vc */
+  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_rows = cm->n_vc + 1
+     For VB schemes  cbc->n_dofs = csys->mat->n_rows = cm->n_vc */
 
   /* Enforcement of the Dirichlet BCs */
   if (cbc->n_dirichlet == 0)
@@ -630,8 +623,8 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
   /* Sanity checks */
   assert(cbc != NULL && cm != NULL);
   assert(cb != NULL && csys != NULL);
-  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_ent = cm->n_vc + 1
-     For VB schemes  cbc->n_dofs = csys->mat->n_ent = cm->n_vc */
+  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_rows = cm->n_vc + 1
+     For VB schemes  cbc->n_dofs = csys->mat->n_rows = cm->n_vc */
 
   /* Enforcement of the Dirichlet BCs */
   if (cbc->n_dirichlet == 0)
@@ -658,10 +651,10 @@ cs_cdovb_diffusion_wsym_dirichlet(const cs_param_hodge_t           h_info,
 
       /* Update ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) cb->loc
          plays the role of the flux operator */
-      cs_locmat_add_transpose(cb->loc, cb->aux);
+      cs_sdm_square_add_transpose(cb->loc, cb->aux);
 
       /* Update RHS according to the add of transp (cb->aux) */
-      cs_locmat_matvec(cb->aux, cbc->dir_values, cb->values);
+      cs_sdm_square_matvec(cb->aux, cbc->dir_values, cb->values);
       for (short int v = 0; v < cbc->n_dofs; v++)
         csys->rhs[v] += cb->values[v];
 
@@ -709,15 +702,15 @@ cs_cdo_diffusion_pena_dirichlet(const cs_param_hodge_t           h_info,
   /* Sanity checks */
   assert(cbc != NULL && cm != NULL);
   assert(csys != NULL);
-  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_ent = cm->n_vc + 1
-     For VB schemes  cbc->n_dofs = csys->mat->n_ent = cm->n_vc
-     For FB schemes  cbc->n_dofs = csys->mat->n_ent = cm->n_fc */
+  /* For VCB schemes cbc->n_dofs = cm->n_vc and csys->mat->n_rows = cm->n_vc + 1
+     For VB schemes  cbc->n_dofs = csys->mat->n_rows = cm->n_vc
+     For FB schemes  cbc->n_dofs = csys->mat->n_rows = cm->n_fc */
 
   /* Enforcement of the Dirichlet BCs */
   if (cbc->n_dirichlet == 0)
     return; // Nothing to do
 
-  const short int n_dofs = csys->mat->n_ent;
+  const short int n_dofs = csys->mat->n_rows;
 
   // Penalize diagonal entry (and its rhs if needed)
   for (short int i = 0; i < cbc->n_dofs; i++) {
@@ -768,7 +761,7 @@ cs_cdo_diffusion_vcost_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
 
   /* Store the local fluxes. flux = -Hdg * grd_c(pdi_c)
      cb->hdg has been computed just before the call to this function */
-  cs_locmat_matvec(cb->hdg, gec, flx);
+  cs_sdm_square_matvec(cb->hdg, gec, flx);
 }
 
 /*----------------------------------------------------------------------------*/

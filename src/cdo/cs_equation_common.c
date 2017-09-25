@@ -1005,8 +1005,8 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
                        cs_real_t                      *sources,
                        cs_matrix_assembler_values_t   *mav)
 {
-  const short int  n_vc = csys->mat->n_ent;
-  const cs_lnum_t  *v_ids = csys->mat->ids;
+  const short int  n_vc = csys->mat->n_rows;
+  const cs_lnum_t  *v_ids = csys->dof_ids;
 
   cs_gnum_t  grows[CS_CDO_ASSEMBLE_BUF_SIZE], gcols[CS_CDO_ASSEMBLE_BUF_SIZE];
   cs_real_t  vals[CS_CDO_ASSEMBLE_BUF_SIZE];
@@ -1079,8 +1079,8 @@ cs_equation_assemble_f(const cs_cell_sys_t            *csys,
 {
   CS_UNUSED(sys_flag);
 
-  const short int  n_fc = csys->mat->n_ent;
-  const cs_lnum_t  *f_ids = csys->mat->ids;
+  const short int  n_fc = csys->mat->n_rows;
+  const cs_lnum_t  *f_ids = csys->dof_ids;
 
   cs_gnum_t  grows[CS_CDO_ASSEMBLE_BUF_SIZE], gcols[CS_CDO_ASSEMBLE_BUF_SIZE];
   cs_real_t  vals[CS_CDO_ASSEMBLE_BUF_SIZE];

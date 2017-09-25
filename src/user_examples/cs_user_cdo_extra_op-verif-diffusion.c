@@ -57,7 +57,7 @@
 #include "cs_post.h"
 #include "cs_field.h"
 #include "cs_cdo.h"
-#include "cs_cdo_toolbox.h"
+#include "cs_sdm.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_equation.h"
 #include "cs_equation_param.h"

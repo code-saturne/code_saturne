@@ -44,6 +44,7 @@
 #include "bft_error.h"
 
 #include "cs_defs.h"
+#include "cs_log.h"
 #include "cs_math.h"
 
 /*----------------------------------------------------------------------------
@@ -140,6 +141,80 @@ cs_nvec3(const cs_real_3_t    v,
       qv->unitv[k] = 0;
 
 }
+
+#if defined(DEBUG) && !defined(NDEBUG)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In debug mode, dump an array of double into the listing
+ *
+ * \param[in] header     header message to write
+ * \param[in] size       number of elements in array
+ * \param[in] array      pointer to the array of values
+ * \param[in] n_cols     print array with n_cols columns
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dump_array_to_listing(const char        *header,
+                         const cs_lnum_t    size,
+                         const cs_real_t    array[],
+                         int                n_cols)
+{
+  cs_log_printf(CS_LOG_DEFAULT, "\nDUMP>> %s\n", header);
+
+  if (n_cols < 1) n_cols = 1;
+  int  n_rows = size/n_cols;
+
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+    for (cs_lnum_t j = i*n_cols; j < (i+1)*n_cols; j++)
+      cs_log_printf(CS_LOG_DEFAULT, " (%04d) % 6.4e", j, array[j]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
+
+  if (n_rows*n_cols < size) {
+    for (cs_lnum_t j = n_rows*n_cols; j < size; j++)
+      cs_log_printf(CS_LOG_DEFAULT, " (%04d) % 6.4e", j, array[j]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In debug mode, dump an array of integer into the listing
+ *
+ * \param[in] header     header message to write
+ * \param[in] size       number of elements in array
+ * \param[in] array      pointer to the array of values
+ * \param[in] n_cols     print array with n_cols columns
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_dump_integer_to_listing(const char        *header,
+                           const cs_lnum_t    size,
+                           const cs_lnum_t    array[],
+                           int                n_cols)
+{
+  cs_log_printf(CS_LOG_DEFAULT, "\nDUMP>> %s\n", header);
+
+  if (n_cols < 1) n_cols = 1;
+  int  n_rows = size/n_cols;
+
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+    for (cs_lnum_t j = i*n_cols; j < (i+1)*n_cols; j++)
+      cs_log_printf(CS_LOG_DEFAULT, " (%04d) % 6d", j, array[j]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
+
+  if (n_rows*n_cols < size) {
+    for (cs_lnum_t j = n_rows*n_cols; j < size; j++)
+      cs_log_printf(CS_LOG_DEFAULT, " (%04d) % 6d", j, array[j]);
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
+
+}
+#endif  /* Only in debug mode */
 
 /*----------------------------------------------------------------------------*/
 

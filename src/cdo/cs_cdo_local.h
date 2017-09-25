@@ -34,7 +34,7 @@
 #include "cs_cdo.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
-#include "cs_cdo_toolbox.h"
+#include "cs_sdm.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -67,22 +67,22 @@ BEGIN_C_DECLS
 typedef struct {
 
   /* Temporary buffers */
-  short int     *ids;     // local ids
-  double        *values;  // local values
-  cs_real_3_t   *vectors; // local 3-dimensional vectors
+  short int    *ids;     // local ids
+  double       *values;  // local values
+  cs_real_3_t  *vectors; // local 3-dimensional vectors
 
   /* Structures used to build specific terms composing the algebraic system */
-  cs_locmat_t   *hdg;   // local hodge matrix for diffusion (may be NULL)
-  cs_locmat_t   *loc;   // local square matrix of size n_cell_dofs;
-  cs_locmat_t   *aux;   // auxiliary local square matrix of size n_cell_dofs;
+  cs_sdm_t     *hdg;   // local hodge matrix for diffusion (may be NULL)
+  cs_sdm_t     *loc;   // local square matrix of size n_cell_dofs;
+  cs_sdm_t     *aux;   // auxiliary local square matrix of size n_cell_dofs;
 
   /* Specific members for the weakly enforcement of Dirichlet BCs (diffusion) */
-  double         eig_ratio; // ratio of the eigenvalues of the diffusion tensor
-  double         eig_max;   // max. value among eigenvalues
+  double        eig_ratio; // ratio of the eigenvalues of the diffusion tensor
+  double        eig_max;   // max. value among eigenvalues
 
   /* Store the cellwise value for the diffusion, time and reaction properties */
-  cs_real_33_t   pty_mat; // If not isotropic
-  double         pty_val; // If isotropic
+  cs_real_33_t  pty_mat; // If not isotropic
+  double        pty_val; // If isotropic
 
 } cs_cell_builder_t;
 
@@ -91,7 +91,8 @@ typedef struct {
 
   cs_lnum_t      c_id;     // cell id
   int            n_dofs;   // Number of Degrees of Freedom (DoFs) in this cell
-  cs_locmat_t   *mat;      // cellwise view of the system matrix
+  cs_lnum_t     *dof_ids;  // DoF ids
+  cs_sdm_t      *mat;      // cellwise view of the system matrix
   double        *rhs;      // cellwise view of the right-hand side
   double        *source;   // cellwise view of the source term array
   double        *val_n;    /* values of the unkown at the time t_n (the

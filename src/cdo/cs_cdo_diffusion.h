@@ -72,7 +72,7 @@ typedef void
                                 const cs_real_3_t         mnu,
                                 double                    beta,
                                 cs_cell_builder_t        *cb,
-                                cs_locmat_t              *ntrgrd);
+                                cs_sdm_t                 *ntrgrd);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -141,7 +141,7 @@ cs_cdovcb_diffusion_flux_op(const cs_face_mesh_t     *fm,
                             const cs_real_3_t         pty_nuf,
                             double                    beta,
                             cs_cell_builder_t        *cb,
-                            cs_locmat_t              *ntrgrd);
+                            cs_sdm_t                 *ntrgrd);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -164,7 +164,7 @@ cs_cdovb_diffusion_wbs_flux_op(const cs_face_mesh_t     *fm,
                                const cs_real_3_t         pty_nuf,
                                double                    beta,
                                cs_cell_builder_t        *cb,
-                               cs_locmat_t              *ntrgrd);
+                               cs_sdm_t                 *ntrgrd);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -187,7 +187,7 @@ cs_cdovb_diffusion_cost_flux_op(const cs_face_mesh_t     *fm,
                                 const cs_real_3_t         mnu,
                                 double                    beta,
                                 cs_cell_builder_t        *cb,
-                                cs_locmat_t              *ntrgrd);
+                                cs_sdm_t                 *ntrgrd);
 
 /*----------------------------------------------------------------------------*/
 /*!

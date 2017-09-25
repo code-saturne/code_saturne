@@ -77,7 +77,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDOVB_SCALEQ_DBG  0
+#define CS_CDOVB_SCALEQ_DBG     0
 #define CS_CDOVB_SCALEQ_MODULO  100
 
 /* Redefined the name of functions from cs_math to get shorter names */
@@ -260,18 +260,18 @@ _init_cell_structures(const cs_flag_t            cell_flag,
   const cs_cdo_bc_t  *face_bc = b->face_bc;
 
   /* Cell-wise view of the linear system to build */
-  const int  n_vc = cm->n_vc;
+  const short int  n_vc = cm->n_vc;
 
   /* Initialize the local system */
   csys->c_id = cm->c_id;
   csys->n_dofs = n_vc;
-  csys->mat->n_ent = n_vc;
+  cs_sdm_square_init(n_vc, csys->mat);
+
   for (short int v = 0; v < n_vc; v++) {
-    csys->mat->ids[v] = cm->v_ids[v];
+    csys->dof_ids[v] = cm->v_ids[v];
     csys->val_n[v] = field_tn[cm->v_ids[v]];
     csys->rhs[v] = csys->source[v] = 0.;
   }
-  for (short int v = 0; v < n_vc*n_vc; v++) csys->mat->val[v] = 0;
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
@@ -1180,7 +1180,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
         b->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
 
         // Add the local diffusion operator to the local system
-        cs_locmat_add(csys->mat, cb->loc);
+        cs_sdm_add(csys->mat, cb->loc);
 
         /* Weakly enforced Dirichlet BCs for cells attached to the boundary
            csys is updated inside (matrix and rhs) */
@@ -1214,7 +1214,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
         /* Define the local advection matrix */
         b->get_advection_matrix(eqp, cm, fm, cb);
 
-        cs_locmat_add(csys->mat, cb->loc);
+        cs_sdm_add(csys->mat, cb->loc);
 
         /* Last treatment for the advection term: Apply boundary conditions
            csys is updated inside (matrix and rhs) */
@@ -1234,7 +1234,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
         if (c_id % CS_CDOVB_SCALEQ_MODULO == 0) {
           cs_log_printf(CS_LOG_DEFAULT, ">> Local mass matrix");
-          cs_locmat_dump(c_id, cb->hdg);
+          cs_sdm_dump(c_id, csys->dof_ids, csys->dof_ids, cb->hdg);
         }
 #endif
       }
@@ -1255,7 +1255,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
 
         /* Update local system matrix with the reaction term
            cb->hdg corresponds to the current mass matrix */
-        cs_locmat_mult_add(csys->mat, rpty_val, cb->hdg);
+        cs_sdm_add_mult(csys->mat, rpty_val, cb->hdg);
 
       } /* END OF REACTION */
 
@@ -1296,7 +1296,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
         else
           tpty_val *= cs_property_value_in_cell(cm, eqp->time_property);
 
-        cs_locmat_t  *mass_mat = cb->hdg;
+        cs_sdm_t  *mass_mat = cb->hdg;
         if (b->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
 
           assert(cs_test_flag(b->msh_flag, CS_CDO_LOCAL_PVQ));
