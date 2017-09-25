@@ -42,12 +42,12 @@
 
 #include <bft_mem.h>
 
-#include "cs_cdo_scheme_geometry.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_property.h"
 #include "cs_reco.h"
+#include "cs_scheme_geometry.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

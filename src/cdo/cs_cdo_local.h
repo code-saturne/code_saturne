@@ -138,6 +138,7 @@ typedef struct {
 typedef struct {
 
   cs_flag_t      flag;    // indicate which quantities have to be defined
+  fvm_element_t  type;    // type of element related to this cell
 
   /* Sizes used to allocate buffers */
   short int      n_max_vbyc;

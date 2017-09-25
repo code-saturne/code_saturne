@@ -713,10 +713,10 @@ cs_cell_mesh_dump(cs_cell_mesh_t     *cm)
     return;
   }
 
-  cs_log_printf(CS_LOG_DEFAULT, "\n>> Dump cs_cell_mesh_t %p; flag: %d\n"
+  cs_log_printf(CS_LOG_DEFAULT, "\n>> Dump cs_cell_mesh_t %p; %s; flag: %d\n"
                 " c_id:%d; vol: %9.6e; xc (% .5e % .5e % .5e); diam: % .5e\n",
-                (void *)cm, cm->flag, cm->c_id, cm->vol_c,
-                cm->xc[0], cm->xc[1], cm->xc[2], cm->diam_c);
+                (void *)cm, fvm_element_type_name[cm->type], cm->flag, cm->c_id,
+                cm->vol_c, cm->xc[0], cm->xc[1], cm->xc[2], cm->diam_c);
 
   /* Information related to primal vertices */
   if (cm->flag & cs_cdo_local_flag_v) {
@@ -877,6 +877,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     return;
 
   cm->flag = flag;
+  cm->type = connect->cell_type[c_id];
 
   /* Store information related to cell */
   cm->c_id = c_id;

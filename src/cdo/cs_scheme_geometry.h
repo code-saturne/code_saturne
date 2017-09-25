@@ -1,3 +1,6 @@
+#ifndef __CS_CDO_SCHEME_GEOMETRY_H__
+#define __CS_CDO_SCHEME_GEOMETRY_H__
+
 /*============================================================================
  * Geometric computations for building discretization operators which is
  * shared by several files
@@ -23,89 +26,100 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-#include "cs_defs.h"
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-
 /*----------------------------------------------------------------------------
- * Local headers
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- * Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_cdo_scheme_geometry.h"
+#include "cs_cdo_local.h"
+#include "cs_math.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Local Macro definitions and structure definitions
+/*============================================================================
+ * Macro definitions
  *============================================================================*/
 
-/* Redefined the name of functions from cs_math to get shorter names */
-#define _dp3  cs_math_3_dot_product
-
 /*============================================================================
- * Private function prototypes
+ * Type definitions
+ *============================================================================*/
+
+/*=============================================================================
+ * Inline static function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute for a face the weight related to each vertex w_{v,f}
- *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
- *         weights is equal to 1.
- *         Compute also the volume pefc attached to each edge of the face
+ * \brief  Compute the value of the constant gradient of the Lagrange function
+ *         attached to xc in p_{f,c} (constant inside this volume)
  *
- * \param[in]       f          id of the face in the cell-wise numbering
- * \param[in]       cm         pointer to a cs_cell_mesh_t structure
- * \param[in]       hf_coef    coefficient related to the height of p_{f,c}
- * \param[in]       f_coef     coefficient related to the area of f
- * \param[in, out]  wvf        pointer to an array storing the weight/vertex
- * \param[in, out]  pefc_vol   pointer to an array storing the volume of pefc
-
+ * \param[in]      f_sgn    orientation of the face
+ * \param[in]      pfq      quantities related to a face
+ * \param[in]      deq      quantities related a dual edge
+ * \param[in, out] grd_c    gradient of the Lagrange function related to xc
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_get_wvf_pefcvol(short int                 f,
-                 const cs_cell_mesh_t     *cm,
-                 const double              hf_coef,
-                 const double              f_coef,
-                 cs_real_t                *wvf,
-                 cs_real_t                *pefc_vol)
+cs_compute_grdfc(const short int     f_sgn,
+                 const cs_quant_t    pfq,
+                 const cs_nvec3_t    deq,
+                 cs_real_t          *grd_c)
 {
-  /* Reset weights */
-  for (short int v = 0; v < cm->n_vc; v++) wvf[v] = 0;
+  const double  hfc = cs_math_3_dot_product(pfq.unitv, deq.unitv) * deq.meas;
+  const cs_real_t  ohf = -f_sgn/hfc;
 
-  const short int  f2e_start = cm->f2e_idx[f];
-  const short int  *f2e_ids = cm->f2e_ids + f2e_start;
-  const double  *tef_vals = cm->tef + f2e_start;
-
-  /* Compute a weight for each vertex of the current face */
-  for (short int e = 0; e < cm->f2e_idx[f+1] - f2e_start; e++) {
-
-    const double  tef = tef_vals[e];
-    const double  ef_contrib = tef * f_coef;
-    const short int  ee = 2*f2e_ids[e];
-
-    pefc_vol[e] = tef * hf_coef;
-    wvf[cm->e2v_ids[ee]] += ef_contrib;     // for v1
-    wvf[cm->e2v_ids[ee+1]] += ef_contrib;   // for v2
-
-  } /* End of loop on face edges */
-
+  for (int k = 0; k < 3; k++) grd_c[k] = ohf * pfq.unitv[k];
 }
 
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the inertial matrix of a cell with respect to the point
+ *          called "center". This computation is performed exactly thanks to
+ *          quadrature based on a "tetrahedrization" of the cell.
+ *
+ * \param[in]       cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]       f        id of the face in the cell numbering
+ * \param[in]       ax       main X-axis for the face-related coordinate system
+ * \param[in]       ay       main Y-axis for the face-related coordinate system
+ * \param[in]       center   coordinates of the face center
+ * \param[in, out]  cov      2x2 symmetric covariance matrix to compute
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_compute_face_covariance_tensor(const cs_cell_mesh_t   *cm,
+                                  short int               f,
+                                  const cs_nvec3_t        ax,
+                                  const cs_nvec3_t        ay,
+                                  const cs_real_t         center[3],
+                                  cs_real_t               cov[3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the inertial matrix of a cell with respect to the point
+ *          called "center". This computation is performed exactly thanks to
+ *          quadrature based on a "tetrahedrization" of the cell.
+ *
+ * \param[in]       cm       pointer to a cs_cell_mesh_t structure
+ * \param[in]       center   coordinates of the cell center
+ * \param[in, out]  inertia  inertia matrix to compute
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
+                          const cs_real_t         center[3],
+                          cs_real_t               inertia[3][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -130,31 +144,7 @@ cs_compute_grd_ve(const short int      v1,
                   const cs_real_3_t    uvc[],
                   const cs_real_t      lvc[],
                   cs_real_t           *grd_v1,
-                  cs_real_t           *grd_v2)
-{
-  double  hv;
-  cs_real_3_t  unormal;
-
-  /* Gradient for v1
-     Normal direction to the plane in opposition to v1
-     Height from this plane to the vertex v1 */
-  cs_math_3_cross_product(uvc[v2], deq.unitv, unormal);
-  hv = lvc[v1] * _dp3(uvc[v1], unormal);
-  assert(fabs(hv) > cs_math_get_machine_epsilon()); /* Sanity check */
-
-  const double  ohv1 = 1/hv;
-  for (int k = 0; k < 3; k++) grd_v1[k] = unormal[k] * ohv1;
-
-  /* Gradient for v2
-     Normal direction to the plane in opposition to v2
-     Height from this plane to the vertex v2 */
-  cs_math_3_cross_product(uvc[v1], deq.unitv, unormal);
-  hv = lvc[v2] * _dp3(uvc[v2], unormal);
-  assert(fabs(hv) > cs_math_get_machine_epsilon()); /* Sanity check */
-
-  const double  ohv2 = 1/hv;
-  for (int k = 0; k < 3; k++) grd_v2[k] = unormal[k] * ohv2;
-}
+                  cs_real_t           *grd_v2);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -177,22 +167,7 @@ double
 cs_compute_fwbs_q1(short int                 f,
                    const cs_cell_mesh_t     *cm,
                    cs_real_t                *wvf,
-                   cs_real_t                *pefc_vol)
-{
-  /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
-                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
-                      CS_CDO_LOCAL_EV));
-
-  const cs_quant_t  pfq = cm->face[f];
-  const double  h_coef = cs_math_onethird * cm->hfc[f];
-  const double  f_coef = 0.5/pfq.meas;
-
-  /* Compute geometric quantities */
-  _get_wvf_pefcvol(f, cm, h_coef, f_coef, wvf, pefc_vol);
-
-  return  h_coef * pfq.meas; // volume of p_{f,c}
-}
+                   cs_real_t                *pefc_vol);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -211,29 +186,11 @@ cs_compute_fwbs_q1(short int                 f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_compute_fwbs_q2(short int                f,
-                   const cs_cell_mesh_t    *cm,
-                   cs_real_3_t              grd_c,
-                   cs_real_t               *wvf,
-                   cs_real_t               *pefc_vol)
-{
-  /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
-                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
-                      CS_CDO_LOCAL_EV));
-
-  const cs_quant_t  pfq = cm->face[f];
-  const double  f_coef = 0.5/pfq.meas;
-
-  /* Compute geometric quantities */
-  _get_wvf_pefcvol(f, cm, cs_math_onethird * cm->hfc[f], f_coef, wvf, pefc_vol);
-
-  /* Compute the gradient of the Lagrange function related to xc
-     which is constant inside p_{f,c} */
-  const cs_real_t  ohf = -cm->f_sgn[f]/cm->hfc[f];
-  for (int k = 0; k < 3; k++)
-    grd_c[k] = ohf * pfq.unitv[k];
-}
+cs_compute_fwbs_q2(short int                 f,
+                   const cs_cell_mesh_t     *cm,
+                   cs_real_3_t               grd_c,
+                   cs_real_t                *wvf,
+                   cs_real_t                *pefc_vol);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -258,32 +215,10 @@ cs_compute_fwbs_q3(short int                 f,
                    const cs_cell_mesh_t     *cm,
                    cs_real_3_t               grd_c,
                    cs_real_t                *wvf,
-                   cs_real_t                *pefc_vol)
-{
-  /* Sanity checks */
-  assert(cs_test_flag(cm->flag,
-                      CS_CDO_LOCAL_PFQ | CS_CDO_LOCAL_HFQ | CS_CDO_LOCAL_FEQ |
-                      CS_CDO_LOCAL_EV));
-
-  const cs_quant_t  pfq = cm->face[f];
-  const double  hf = cm->hfc[f];
-  const double  h_coef = cs_math_onethird * hf;
-  const double  f_coef = 0.5/pfq.meas;
-
-  /* Compute geometric quantities */
-  _get_wvf_pefcvol(f, cm, h_coef, f_coef, wvf, pefc_vol);
-
-  /* Compute the gradient of the Lagrange function related to xc
-     which is constant inside p_{f,c} */
-  const cs_real_t  ohf = -cm->f_sgn[f]/hf;
-  for (int k = 0; k < 3; k++)
-    grd_c[k] = ohf * pfq.unitv[k];
-
-  return  h_coef * pfq.meas; // volume of p_{f,c}
-}
+                   cs_real_t                *pefc_vol);
 
 /*----------------------------------------------------------------------------*/
 
-#undef _dp3
-
 END_C_DECLS
+
+#endif /* __CS_CDO_SCHEME_GEOMETRY_H__ */
