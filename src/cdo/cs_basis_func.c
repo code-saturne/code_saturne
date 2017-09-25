@@ -79,6 +79,10 @@ BEGIN_C_DECLS
 
 static double  _clean_threshold = 1e-15;
 
+/* Handle options for building basis functions when using HHO schemes */
+static  cs_flag_t  cs_basis_func_hho_face_flag = 0;
+static  cs_flag_t  cs_basis_func_hho_cell_flag = 0;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -513,7 +517,7 @@ _mono_face_basis_setup(void                    *pbf,
 {
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;
   assert(cs_test_flag(cm->flag, CS_CDO_LOCAL_PV | CS_CDO_LOCAL_PFQ |
-                      CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DIAM));
+                       CS_CDO_LOCAL_PEQ | CS_CDO_LOCAL_DIAM));
 
   for (int k = 0; k < 3; k++)
     bf->center[k] = center[k];
@@ -1831,7 +1835,7 @@ _fk1_compute_projector(void                    *pbf,
   cs_real_t  *pval = bf->projector->val;
 
 #if defined(DEBUG) && !defined(NDEBUG)
-  bf->eval_all_at_point(bf, pfq.center , phi_eval);
+  bf->eval_all_at_point(bf, pfq.center, phi_eval);
   pval[0] = pfq.meas * phi_eval[0];
   pval[1] = pfq.meas * phi_eval[1];
   pval[2] = pfq.meas * phi_eval[2];
@@ -2174,7 +2178,7 @@ _fka_compute_projector(void                    *pbf,
   const cs_quant_t  pfq = cm->face[f];
   const int n_rows = bf->size;
   /* Max quadrature available 7pts. Problem if k > 3 */
-  const int n_gpts = bf->n_gpts_triangle;
+  const int n_gpts = bf->n_gpts_tria;
 
   cs_real_t  *phi_eval = NULL, *weights = NULL;
   cs_real_3_t  *gpts = NULL;
@@ -2213,8 +2217,8 @@ _fka_compute_projector(void                    *pbf,
       short int  v0, v1, v2;
       cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
-      bf->quadrature_triangle(cm->xv + 3*v0, cm->xv + 3*v1, cm->xv + 3*v2,
-                              pfq.meas, gpts, weights);
+      bf->quadrature_tria(cm->xv + 3*v0, cm->xv + 3*v1, cm->xv + 3*v2,
+                          pfq.meas, gpts, weights);
       _add_contrib(n_gpts, (const cs_real_t (*)[3])gpts, weights, bf,
                    0, n_rows, phi_eval, pval);
     }
@@ -2232,8 +2236,8 @@ _fka_compute_projector(void                    *pbf,
         const short int v0 = cm->e2v_ids[2*e0];
         const short int v1 = cm->e2v_ids[2*e0+1];
 
-        bf->quadrature_triangle(cm->xv + 3*v0, cm->xv + 3*v1, pfq.center,
-                                tef[e], gpts, weights);
+        bf->quadrature_tria(cm->xv + 3*v0, cm->xv + 3*v1, pfq.center,
+                            tef[e], gpts, weights);
         _add_contrib(n_gpts, (const cs_real_t (*)[3])gpts, weights, bf,
                      0, n_rows, phi_eval, pval);
 
@@ -2326,11 +2330,6 @@ cs_basis_func_create(cs_flag_t      flag,
   pbf->flag = flag;
   pbf->poly_order = k;
   pbf->dim = dim;
-
-  if (k > 2)
-    bft_error(__FILE__, __LINE__, 0,
-              " Up to now polynomial order is restricted to {0, 1, 2}\n");
-
   pbf->size = cs_math_binom(k + dim, dim);
   pbf->phi0 = 1;
   BFT_MALLOC(pbf->axis, dim, cs_nvec3_t);
@@ -2385,8 +2384,8 @@ cs_basis_func_create(cs_flag_t      flag,
   pbf->facto = NULL;  /* array storing the matrix factorization */
   pbf->project = NULL;
 
-  pbf->n_gpts_triangle = 0;
-  pbf->quadrature_triangle = NULL;
+  pbf->n_gpts_tria = 0;
+  pbf->quadrature_tria = NULL;
   pbf->n_gpts_tetra = 0;
   pbf->quadrature_tetra = NULL;
 
@@ -2402,6 +2401,8 @@ cs_basis_func_create(cs_flag_t      flag,
       pbf->compute_factorization = _k0_compute_facto;
       pbf->project = _k0_project;
       pbf->dump_projector = _cka_dump_projector;
+      pbf->n_gpts_tetra = 4;
+      pbf->quadrature_tetra = cs_quadrature_tet_4pts;
       break;
     case 1:
       pbf->eval_all_at_point = _ck1_eval_all_at_point;
@@ -2453,6 +2454,8 @@ cs_basis_func_create(cs_flag_t      flag,
       pbf->compute_factorization = _k0_compute_facto;
       pbf->project = _k0_project;
       pbf->dump_projector = _cka_dump_projector;
+      pbf->n_gpts_tria = 3;
+      pbf->quadrature_tria = cs_quadrature_tria_3pts;
       break;
     case 1:
       pbf->eval_all_at_point = _fk1_eval_all_at_point;
@@ -2461,8 +2464,8 @@ cs_basis_func_create(cs_flag_t      flag,
       pbf->compute_factorization = _fk1_compute_facto;
       pbf->project = _fk1_project;
       pbf->dump_projector = _fka_dump_projector;
-      pbf->n_gpts_triangle = 4;
-      pbf->quadrature_triangle = cs_quadrature_tria_4pts;
+      pbf->n_gpts_tria = 4;
+      pbf->quadrature_tria = cs_quadrature_tria_4pts;
       break;
     case 2:
       pbf->eval_all_at_point = _fka_eval_all_at_point;
@@ -2471,8 +2474,8 @@ cs_basis_func_create(cs_flag_t      flag,
       pbf->compute_factorization = _fk2_compute_facto;
       pbf->project = _fk2_project;
       pbf->dump_projector = _fka_dump_projector;
-      pbf->n_gpts_triangle = 7;
-      pbf->quadrature_triangle = cs_quadrature_tria_7pts;
+      pbf->n_gpts_tria = 7;
+      pbf->quadrature_tria = cs_quadrature_tria_7pts;
       break;
     default: /* Arbitrary order */
       pbf->eval_all_at_point = _fka_eval_all_at_point;
@@ -2481,8 +2484,8 @@ cs_basis_func_create(cs_flag_t      flag,
       pbf->compute_factorization = _ka_compute_facto;
       pbf->project = _ka_project;
       pbf->dump_projector = _fka_dump_projector;
-      pbf->n_gpts_triangle = 7;
-      pbf->quadrature_triangle = cs_quadrature_tria_7pts;
+      pbf->n_gpts_tria = 7;
+      pbf->quadrature_tria = cs_quadrature_tria_7pts;
       break;
     }
 
@@ -2511,7 +2514,7 @@ cs_basis_func_create(cs_flag_t      flag,
 /*----------------------------------------------------------------------------*/
 
 cs_basis_func_t *
-cs_basis_func_grad(const cs_basis_func_t   *ref)
+cs_basis_func_grad_create(const cs_basis_func_t   *ref)
 {
   assert(ref->dim == 3);
 
@@ -2528,13 +2531,6 @@ cs_basis_func_grad(const cs_basis_func_t   *ref)
 
   /* Copy axis and center */
   BFT_MALLOC(gbf->axis, ref->dim, cs_nvec3_t);
-  for (int i = 0; i < ref->dim; i++) {
-    for (int k = 0; k < 3; k++)
-      gbf->axis[i].unitv[k] = ref->axis[i].unitv[k];
-    gbf->axis[i].meas = ref->axis[i].meas;
-  }
-  for (int k = 0; k < 3; k++)
-    gbf->center[k] = ref->center[k];
 
   /* Build a basis of polynomial functions of order k+1.
      Gradient is apply on-the-fly when the evaluation is performed */
@@ -2563,17 +2559,17 @@ cs_basis_func_grad(const cs_basis_func_t   *ref)
 
   /* Only the function pointer "eval_all_at_point" makes sense in the
    context of the gradient of a set of basis functions */
-  gbf->setup = NULL; /* Copy from the reference no need to set */
+  gbf->setup = NULL; /* Copy from the reference. No need to set */
   gbf->projector = NULL;
   gbf->dump_projector = NULL;
   gbf->compute_projector = NULL;
   gbf->compute_factorization = NULL;
   gbf->facto = NULL;  /* array storing the matrix factorization */
   gbf->project = NULL;
-  gbf->n_gpts_triangle = 0;
-  gbf->quadrature_triangle = NULL;
-  gbf->n_gpts_tetra = 0;
-  gbf->quadrature_tetra = NULL;
+  gbf->n_gpts_tria = ref->n_gpts_tria;
+  gbf->quadrature_tria = ref->quadrature_tria;
+  gbf->n_gpts_tetra = ref->n_gpts_tetra;
+  gbf->quadrature_tetra = ref->quadrature_tetra;
 
   /* Set function pointers */
   switch (gbf->poly_order) {
@@ -2589,6 +2585,32 @@ cs_basis_func_grad(const cs_basis_func_t   *ref)
   }
 
   return gbf;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Copy the center and the different axis from the reference basis
+ *         Up to now, only cell basis functions are handled.
+ *
+ * \param[in]      ref   set of basis function used as a reference
+ * \param[in, out] rcv   set of basis function where members are set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_basis_func_copy_setup(const cs_basis_func_t   *ref,
+                         cs_basis_func_t         *rcv)
+{
+  assert(ref != NULL);
+
+  /* Copy axis and center */
+  for (int i = 0; i < ref->dim; i++) {
+    for (int k = 0; k < 3; k++)
+      rcv->axis[i].unitv[k] = ref->axis[i].unitv[k];
+    rcv->axis[i].meas = ref->axis[i].meas;
+  }
+  for (int k = 0; k < 3; k++)
+    rcv->center[k] = ref->center[k];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2656,6 +2678,40 @@ cs_basis_func_dump(const cs_basis_func_t  *pbf)
     }
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set options for basis functions when using HHO schemes
+ *
+ * \param[in]  face_flag    options related to face basis functinos
+ * \param[in]  cell_flag    options related to cell basis functinos
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_basis_func_set_hho_flag(cs_flag_t   face_flag,
+                           cs_flag_t   cell_flag)
+{
+  cs_basis_func_hho_face_flag = face_flag;
+  cs_basis_func_hho_cell_flag = cell_flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get options for basis functions when using HHO schemes
+ *
+ * \param[out] face_flag   pointer to options related to face basis functinos
+ * \param[out] cell_flag   pointer to options related to cell basis functinos
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_basis_func_get_hho_flag(cs_flag_t   *face_flag,
+                           cs_flag_t   *cell_flag)
+{
+  *face_flag = cs_basis_func_hho_face_flag;
+  *cell_flag = cs_basis_func_hho_cell_flag;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -62,6 +62,7 @@ BEGIN_C_DECLS
  * \param[in]      source     pointer to a cs_xdef_term_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -70,6 +71,7 @@ typedef void
 (cs_source_term_cellwise_t)(const cs_xdef_t         *source,
                             const cs_cell_mesh_t    *cm,
                             cs_cell_builder_t       *cb,
+                            void                    *input,
                             double                  *values);
 
 
@@ -164,10 +166,10 @@ cs_source_term_init(cs_space_scheme_t            space_scheme,
  * \param[in]      n_source_terms  number of source terms
  * \param[in]      source_terms    pointer to the definitions of source terms
  * \param[in]      cm              pointer to a cs_cell_mesh_t structure
- * \param[in]      sys_flag        metadata about the algebraic system
  * \param[in]      source_mask     array storing in a compact way which source
  *                                 term is defined in a given cell
  * \param[in]      compute_source  array of function pointers
+ * \param[in, out] input           pointer to an element cast on-the-fly
  * \param[in, out] cb              pointer to a cs_cell_builder_t structure
  * \param[in, out] csys            cellwise algebraic system
  */
@@ -177,9 +179,9 @@ void
 cs_source_term_compute_cellwise(const int                    n_source_terms,
                                 const cs_xdef_t            **source_terms,
                                 const cs_cell_mesh_t        *cm,
-                                const cs_flag_t              sys_flag,
                                 const cs_mask_t             *source_mask,
                                 cs_source_term_cellwise_t   *compute_source[],
+                                void                        *input,
                                 cs_cell_builder_t           *cb,
                                 cs_cell_sys_t               *csys);
 
@@ -227,6 +229,7 @@ cs_source_term_compute_from_potential(cs_flag_t                loc,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -235,6 +238,7 @@ void
 cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
                              cs_cell_builder_t         *cb,
+                             void                      *input,
                              double                    *values);
 
 /*----------------------------------------------------------------------------*/
@@ -249,6 +253,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -257,6 +262,7 @@ void
 cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
                                 const cs_cell_mesh_t      *cm,
                                 cs_cell_builder_t         *cb,
+                                void                      *input,
                                 double                    *values);
 
 /*----------------------------------------------------------------------------*/
@@ -268,6 +274,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -276,6 +283,7 @@ void
 cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
                              cs_cell_builder_t         *cb,
+                             void                      *input,
                              double                    *values);
 
 /*----------------------------------------------------------------------------*/
@@ -284,12 +292,13 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
  *         add it the given array of values.
  *         Case of a scalar density defined at dual cells by an analytical
  *         function.
- *         Use a the barycentric approximation as quadrature to evaluate the
+ *         Use the barycentric approximation as quadrature to evaluate the
  *         integral. Exact for linear function.
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -298,6 +307,7 @@ void
 cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
                                      cs_cell_builder_t         *cb,
+                                     void                      *input,
                                      double                    *values);
 
 /*----------------------------------------------------------------------------*/
@@ -312,6 +322,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -320,6 +331,7 @@ void
 cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
                                      cs_cell_builder_t         *cb,
+                                     void                      *input,
                                      double                    *values);
 
 /*----------------------------------------------------------------------------*/
@@ -334,6 +346,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -342,6 +355,7 @@ void
 cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
                                       const cs_cell_mesh_t      *cm,
                                       cs_cell_builder_t         *cb,
+                                      void                      *input,
                                       double                    *values);
 
 /*----------------------------------------------------------------------------*/
@@ -358,6 +372,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -366,6 +381,7 @@ void
 cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
                                      cs_cell_builder_t         *cb,
+                                     void                      *input,
                                      double                    *values);
 
 /*----------------------------------------------------------------------------*/
@@ -380,6 +396,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -388,6 +405,7 @@ void
 cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
                              cs_cell_builder_t         *cb,
+                             void                      *input,
                              double                    *values);
 
 /*----------------------------------------------------------------------------*/
@@ -402,6 +420,7 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -410,6 +429,7 @@ void
 cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
                                 const cs_cell_mesh_t      *cm,
                                 cs_cell_builder_t         *cb,
+                                void                      *input,
                                 double                    *values);
 
 /*----------------------------------------------------------------------------*/
@@ -422,6 +442,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
  * \param[in, out] values     pointer to the computed value
  */
 /*----------------------------------------------------------------------------*/
@@ -430,6 +451,7 @@ void
 cs_source_term_fbsd_by_value(const cs_xdef_t           *source,
                              const cs_cell_mesh_t      *cm,
                              cs_cell_builder_t         *cb,
+                             void                      *input,
                              double                    *values);
 
 /*----------------------------------------------------------------------------*/
@@ -453,7 +475,53 @@ void
 cs_source_term_fbsd_bary_by_analytic(const cs_xdef_t           *source,
                                      const cs_cell_mesh_t      *cm,
                                      cs_cell_builder_t         *cb,
+                                     void                      *input,
                                      double                    *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution of a source term for a cell and add it to
+ *         the given array of values.
+ *         Case of a scalar density (sd) defined on primal cells by a value.
+ *         Case of HHO schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
+                              const cs_cell_mesh_t      *cm,
+                              cs_cell_builder_t         *cb,
+                              void                      *input,
+                              double                    *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution of a source term for a cell and add it to
+ *         the given array of values.
+ *         Case of a scalar density (sd) defined on primal cells by an analytic
+ *         function.
+ *         Case of HHO schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
+                                 const cs_cell_mesh_t      *cm,
+                                 cs_cell_builder_t         *cb,
+                                 void                      *input,
+                                 double                    *values);
 
 /*----------------------------------------------------------------------------*/
 

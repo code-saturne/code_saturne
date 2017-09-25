@@ -261,13 +261,17 @@ cs_cdo_local_finalize(void);
  * \brief  Allocate a cs_cell_sys_t structure
  *
  * \param[in]   n_max_ent    max number of entries
+ * \param[in]   n_blocks     number of blocks in a row/column
+ * \param[in]   block_sizes  size of each block or NULL if n_blocks = 1
  *
  * \return a pointer to a new allocated cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_sys_t *
-cs_cell_sys_create(int    n_max_ent);
+cs_cell_sys_create(int          n_max_ent,
+                   short int    n_blocks,
+                   short int   *block_sizes);
 
 /*----------------------------------------------------------------------------*/
 /*!

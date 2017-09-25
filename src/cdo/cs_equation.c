@@ -492,7 +492,7 @@ _initialize_field_from_ic(cs_equation_t  *eq)
   } // VB or VCB schemes --> initialize on vertices
 
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB ||
-      eqp->space_scheme == CS_SPACE_SCHEME_HHO) {
+      eqp->space_scheme == CS_SPACE_SCHEME_HHO_P0) {
 
     cs_flag_t  f_flag = dof_flag | cs_cdo_primal_face;
     cs_real_t  *f_values = eq->get_extra_values(eq->builder);
@@ -527,7 +527,7 @@ _initialize_field_from_ic(cs_equation_t  *eq)
 
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB ||
       eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB ||
-      eqp->space_scheme == CS_SPACE_SCHEME_HHO) {
+      eqp->space_scheme == CS_SPACE_SCHEME_HHO_P0) {
 
     /* TODO: HHO */
 
@@ -1219,10 +1219,12 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
         eq->n_sles_gather_elts = connect->f_rs->n_elts[0];
       break;
 
-    case CS_SPACE_SCHEME_HHO:
+    case CS_SPACE_SCHEME_HHO_P0:
+    case CS_SPACE_SCHEME_HHO_P1:
+    case CS_SPACE_SCHEME_HHO_P2:
       eq->init_builder = cs_hho_scaleq_init;
       eq->free_builder = cs_hho_scaleq_free;
-      eq->initialize_system = NULL; //cs_hho_initialize_system;
+      eq->initialize_system = cs_hho_scaleq_initialize_system;
       eq->build_system = cs_hho_scaleq_build_system;
       eq->prepare_solving = _prepare_fb_solving;
       eq->update_field = cs_hho_scaleq_update_field;
@@ -1323,9 +1325,23 @@ cs_equation_set_param(cs_equation_t       *eq,
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
       eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
     }
-    else if (strcmp(val, "hho") == 0) {
-      eqp->space_scheme = CS_SPACE_SCHEME_HHO;
+    else if (strcmp(val, "hho_p0") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P0;
+      eqp->space_poly_degree = 0;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+    }
+    else if (strcmp(val, "hho_p1") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P1;
       eqp->space_poly_degree = 1;
+      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+    }
+    else if (strcmp(val, "hho_p2") == 0) {
+      eqp->space_scheme = CS_SPACE_SCHEME_HHO_P2;
+      eqp->space_poly_degree = 2;
       eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
       eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
       eqp->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
@@ -2123,7 +2139,9 @@ cs_equation_create_fields(void)
       location_id = cs_mesh_location_get_id_by_name("vertices");
       break;
     case CS_SPACE_SCHEME_CDOFB:
-    case CS_SPACE_SCHEME_HHO:
+    case CS_SPACE_SCHEME_HHO_P0:
+    case CS_SPACE_SCHEME_HHO_P1:
+    case CS_SPACE_SCHEME_HHO_P2:
       location_id = cs_mesh_location_get_id_by_name("cells");
       break;
     default:
@@ -2688,8 +2706,10 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
     return NULL; // Avoid a warning
   }
 
-  if (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB ||
-      eq->param->space_scheme == CS_SPACE_SCHEME_HHO)
+  if (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB  ||
+      eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P0 ||
+      eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P1 ||
+      eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P2)
     return eq->get_extra_values(eq->builder);
   else
     return NULL; // Not implemented
@@ -2721,7 +2741,9 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
 
   switch (eq->param->space_scheme) {
   case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO:
+  case CS_SPACE_SCHEME_HHO_P0:
+  case CS_SPACE_SCHEME_HHO_P1:
+  case CS_SPACE_SCHEME_HHO_P2:
     {
       cs_field_t  *fld = cs_field_by_id(eq->field_id);
 

@@ -202,13 +202,17 @@ cs_cdo_local_finalize(void)
  * \brief  Allocate a cs_cell_sys_t structure
  *
  * \param[in]   n_max_ent    max number of entries
+ * \param[in]   n_blocks     number of blocks in a row/column
+ * \param[in]   block_sizes  size of each block or NULL if n_blocks = 1
  *
  * \return a pointer to a new allocated cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cell_sys_t *
-cs_cell_sys_create(int    n_max_ent)
+cs_cell_sys_create(int          n_max_ent,
+                   short int    n_blocks,
+                   short int   *block_sizes)
 {
   cs_cell_sys_t  *csys = NULL;
 
@@ -217,21 +221,29 @@ cs_cell_sys_create(int    n_max_ent)
   csys->c_id = -1;
   csys->n_dofs = 0;
   csys->mat = NULL;
+  csys->dof_ids = NULL;
   csys->rhs = NULL;
   csys->source = NULL;
   csys->val_n = NULL;
 
   if (n_max_ent > 0) {
 
-    csys->mat = cs_sdm_square_create(n_max_ent);
+    if (n_blocks == 1)
+      csys->mat = cs_sdm_square_create(n_max_ent);
+    else
+      csys->mat = cs_sdm_block_create(n_blocks, n_blocks,
+                                      block_sizes,
+                                      block_sizes);
 
     BFT_MALLOC(csys->dof_ids, n_max_ent, cs_lnum_t);
     BFT_MALLOC(csys->rhs, n_max_ent, double);
     BFT_MALLOC(csys->source, n_max_ent, double);
     BFT_MALLOC(csys->val_n, n_max_ent, double);
 
-    for (int i = 0; i < n_max_ent; i++)
-      csys->rhs[i] = csys->source[i] = csys->val_n[i] = 0.0;
+    const size_t  s = n_max_ent * sizeof(cs_real_t);
+    memset(csys->rhs, 0, s);
+    memset(csys->source, 0, s);
+    memset(csys->val_n, 0, s);
 
   }
 
@@ -255,6 +267,7 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
     return;
 
   csys->mat = cs_sdm_free(csys->mat);
+
   BFT_FREE(csys->dof_ids);
   BFT_FREE(csys->rhs);
   BFT_FREE(csys->source);
@@ -391,7 +404,7 @@ cs_cell_builder_t *
 cs_cell_builder_create(cs_space_scheme_t         scheme,
                        const cs_cdo_connect_t   *connect)
 {
-  int  size;
+  int  size = 0;
 
   cs_cell_builder_t  *cb = NULL;
 
@@ -428,17 +441,16 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
   case CS_SPACE_SCHEME_CDOVB:
     {
       BFT_MALLOC(cb->ids, n_vc, short int);
-      for (int i = 0; i < n_vc; i++) cb->ids[i] = 0;
+      memset(cb->ids, 0, n_vc*sizeof(short int));
 
       size = n_ec*(n_ec+1);
       size = CS_MAX(4*n_ec + 3*n_vc, size);
       BFT_MALLOC(cb->values, size, double);
-      for (int i = 0; i < size; i++) cb->values[i] = 0;
+      memset(cb->values, 0, size*sizeof(cs_real_t));
 
       size = 2*n_ec;
       BFT_MALLOC(cb->vectors, size, cs_real_3_t);
-      for (int i = 0; i < size; i++)
-        cb->vectors[i][0] = cb->vectors[i][1] = cb->vectors[i][2] = 0;
+      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
       /* Local square dense matrices used during the construction of
          operators */
@@ -450,17 +462,17 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
 
   case CS_SPACE_SCHEME_CDOVCB:
     {
-      BFT_MALLOC(cb->ids, n_vc + 1, short int);
-      for (int i = 0; i < n_vc + 1; i++) cb->ids[i] = 0;
+      size = n_vc + 1;
+      BFT_MALLOC(cb->ids, size, short int);
+      memset(cb->ids, 0, size*sizeof(short int));
 
       size = 2*n_vc + 3*n_ec + n_fc;
       BFT_MALLOC(cb->values, size, double);
-      for (int i = 0; i < size; i++) cb->values[i] = 0;
+      memset(cb->values, 0, size*sizeof(cs_real_t));
 
       size = 2*n_ec + n_vc;
       BFT_MALLOC(cb->vectors, size, cs_real_3_t);
-      for (int i = 0; i < size; i++)
-        cb->vectors[i][0] = cb->vectors[i][1] = cb->vectors[i][2] = 0;
+      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
       /* Local square dense matrices used during the construction of
          operators */
@@ -472,19 +484,38 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO_P0:
     {
       BFT_MALLOC(cb->ids, n_fc, short int);
-      for (int i = 0; i < n_fc; i++) cb->ids[i] = 0;
+      memset(cb->ids, 0, n_fc*sizeof(short int));
 
       size = n_fc*(n_fc+1);
       BFT_MALLOC(cb->values, size, double);
-      for (int i = 0; i < size; i++) cb->values[i] = 0;
+      memset(cb->values, 0, size*sizeof(cs_real_t));
 
       size = 2*n_fc;
       BFT_MALLOC(cb->vectors, size, cs_real_3_t);
-      for (int i = 0; i < size; i++)
-        cb->vectors[i][0] = cb->vectors[i][1] = cb->vectors[i][2] = 0;
+      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+
+      /* Local square dense matrices used during the construction of
+         operators */
+      cb->hdg = cs_sdm_square_create(n_fc);
+      cb->loc = cs_sdm_square_create(n_fc + 1);
+      cb->aux = cs_sdm_square_create(n_fc + 1);
+    }
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P0:  /* TODO */
+    {
+      BFT_MALLOC(cb->ids, n_fc, short int);
+      memset(cb->ids, 0, n_fc*sizeof(short int));
+
+      size = CS_MAX(32, n_fc*(n_fc+1));
+      BFT_MALLOC(cb->values, size, double);
+      memset(cb->values, 0, size*sizeof(cs_real_t));
+
+      size = CS_MAX(2*n_fc, 15);
+      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
       /* Local square dense matrices used during the construction of
          operators */
@@ -496,23 +527,76 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
 
   case CS_SPACE_SCHEME_HHO_P1:
     {
-      BFT_MALLOC(cb->ids, n_fc, short int);
-      for (int i = 0; i < n_fc; i++) cb->ids[i] = 0;
+      /* Store the block size description */
+      size = n_fc + 1;
+      BFT_MALLOC(cb->ids, size, short int);
+      memset(cb->ids, 0, size*sizeof(short int));
 
-      size = n_fc*(n_fc+1);
+      /* Store the face, cell and gradient basis function evaluations and
+         the Gauss point weights
+         --->  42 = 3 + 4 + 3*10 + 5
+         or the factorization of the stiffness matrix used for computing
+         the gradient reconstruction operator
+         --->  n = 9 (10 - 1) --> facto = n*(n+1)/2 = 45
+                              --> tmp buffer for facto = n = 9
+                              --> 45 + 9 = 54
+      */
+      size = 54;
       BFT_MALLOC(cb->values, size, double);
-      for (int i = 0; i < size; i++) cb->values[i] = 0;
+      memset(cb->values, 0, size*sizeof(cs_real_t));
 
-      size = 2*n_fc;
+      /* Store Gauss points and tensor.n_f products */
+      size = CS_MAX(15, 5 + n_fc);
       BFT_MALLOC(cb->vectors, size, cs_real_3_t);
-      for (int i = 0; i < size; i++)
-        cb->vectors[i][0] = cb->vectors[i][1] = cb->vectors[i][2] = 0;
+      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
-      /* Local square dense matrices used during the construction of
-         operators */
-      cb->hdg = NULL;
-      cb->loc = NULL;
-      cb->aux = NULL;
+      /* Local dense matrices used during the construction of operators */
+      const short int g_size = 9;                   /* basis (P_(k+1)) - 1 */
+      for (int i = 0; i < n_fc; i++) cb->ids[i] = 3;
+      cb->ids[n_fc] = 4;
+
+      short int  _sizes[3] = {1, 3, 6}; /* c0, cs-1, cs_kp1 - cs */
+      cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
+      cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
+      cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
+    }
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P2:
+    {
+      /* Store the block size description */
+      size = n_fc + 1;
+      BFT_MALLOC(cb->ids, size, short int);
+      memset(cb->ids, 0, size*sizeof(short int));
+
+      /* Store the face, cell and gradient basis function evaluations and
+         the Gauss point weights */
+      /* Store the face, cell and gradient basis function evaluations and
+         the Gauss point weights
+         --->  91 = 6 (f) + 10 (c) + 3*20 (g) + 15 (gauss)
+         or the factorization of the stiffness matrix used for computing
+         the gradient reconstruction operator
+         --->  n = 19 (20 - 1) --> facto = n*(n+1)/2 = 190
+                               --> tmp buffer for facto = n = 19
+                              --> 190 + 19 = 209
+      */
+      size = 209;
+      BFT_MALLOC(cb->values, size, double);
+      memset(cb->values, 0, size*sizeof(cs_real_t));
+
+      size = 15 + n_fc;  /* Store Gauss points and tensor.n_f products */
+      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+
+      /* Local dense matrices used during the construction of operators */
+      const short int g_size = 19; /* basis (P_(k+1)) - 1 */
+      for (int i = 0; i < n_fc; i++) cb->ids[i] = 6;
+      cb->ids[n_fc] = 10;
+
+      short int  _sizes[3] = {1, 9, 10}; /* c0, cs-1, cs_kp1 - cs */
+      cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
+      cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
+      cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
     }
     break;
 

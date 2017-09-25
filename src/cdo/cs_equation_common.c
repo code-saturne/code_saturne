@@ -71,8 +71,10 @@ BEGIN_C_DECLS
 
 /* Main categories to consider for high-level matrix structures */
 #define CS_EQ_COMMON_VERTEX   0
-#define CS_EQ_COMMON_FACE     1
-#define CS_EQ_N_COMMONS       2
+#define CS_EQ_COMMON_FACE_P0  1
+#define CS_EQ_COMMON_FACE_P1  2
+#define CS_EQ_COMMON_FACE_P2  3
+#define CS_EQ_N_COMMONS       4
 
 /*============================================================================
  * Local private variables
@@ -209,15 +211,17 @@ _get_f2f(const cs_cdo_connect_t     *connect)
 /*!
  * \brief  Define a cs_matrix_assembler_t structure
  *
- * \param[in]      n_elts   number of elements
- * \param[in]      x2x      pointer to a cs_adjacency_t struct.
- * \param[in]      rs       pointer to a range set or NULL if sequential
- * \param[in, out] ma       pointer to the cs_matrix_assembler_t to update
+ * \param[in]      n_elts    number of elements
+ * \param[in]      n_dofbyx  number of DoFs by element
+ * \param[in]      x2x       pointer to a cs_adjacency_t structure
+ * \param[in]      rs        pointer to a range set or NULL if sequential
+ * \param[in, out] ma        pointer to the cs_matrix_assembler_t to update
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _build_matrix_assembler(cs_lnum_t                n_elts,
+                        int                      n_dofbyx,
                         const cs_adjacency_t    *x2x,
                         const cs_range_set_t    *rs,
                         cs_matrix_assembler_t   *ma)
@@ -228,25 +232,78 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
   cs_lnum_t  max_size = 0;
   for (cs_lnum_t id = 0; id < n_elts; id++)
     max_size = CS_MAX(max_size, x2x->idx[id+1] - x2x->idx[id]);
-  BFT_MALLOC(grows, max_size + 1, cs_gnum_t); // +1 for the diagonal entry
-  BFT_MALLOC(gcols, max_size + 1, cs_gnum_t);
 
-  for (cs_lnum_t id = 0; id < n_elts; id++) {
+  /* We increment max_size to take into account the diagonal entry */
+  int  buf_size = n_dofbyx * n_dofbyx * (max_size + 1);
+  BFT_MALLOC(grows, buf_size, cs_gnum_t);
+  BFT_MALLOC(gcols, buf_size, cs_gnum_t);
 
-    cs_lnum_t  start = x2x->idx[id];
-    cs_lnum_t  end = x2x->idx[id+1];
-    cs_gnum_t  grow_id = rs->g_id[id];
+  if (n_dofbyx == 1)  { /* Simplified version */
 
-    /* Diagonal term is excluded in this connectivity. Add it "manually" */
-    grows[0] = grow_id, gcols[0] = grow_id;
-    for (cs_lnum_t j = start, i = 1; j < end; j++, i++) {
-      grows[i] = grow_id;
-      gcols[i] = rs->g_id[x2x->ids[j]];
-    }
+    for (cs_lnum_t row_id = 0; row_id < n_elts; row_id++) {
 
-    cs_matrix_assembler_add_g_ids(ma, end-start+1, grows, gcols);
+      const cs_gnum_t  grow_id = rs->g_id[row_id];
+      const cs_lnum_t  start = x2x->idx[row_id];
+      const cs_lnum_t  end = x2x->idx[row_id+1];
 
-  } // Loop on entities
+      /* Diagonal term is excluded in this connectivity. Add it "manually" */
+      grows[0] = grow_id, gcols[0] = grow_id;
+
+      /* Extra diagonal couples */
+      for (cs_lnum_t j = start, i = 1; j < end; j++, i++) {
+        grows[i] = grow_id;
+        gcols[i] = rs->g_id[x2x->ids[j]];
+      }
+
+      cs_matrix_assembler_add_g_ids(ma, end - start + 1, grows, gcols);
+
+    } // Loop on entities
+
+  }
+  else {
+
+    for (cs_lnum_t row_id = 0; row_id < n_elts; row_id++) {
+
+      const cs_lnum_t  start = x2x->idx[row_id];
+      const cs_lnum_t  end = x2x->idx[row_id+1];
+      const int  n_entries = (end - start + 1) * n_dofbyx * n_dofbyx;
+      const cs_gnum_t  *grow_ids = rs->g_id + row_id*n_dofbyx;
+
+      int shift = 0;
+
+      /* Diagonal term is excluded in this connectivity. Add it "manually" */
+      for (int dof_i = 0; dof_i < n_dofbyx; dof_i++) {
+        const cs_gnum_t  grow_id = grow_ids[dof_i];
+        for (int dof_j = 0; dof_j < n_dofbyx; dof_j++) {
+          grows[shift] = grow_id;
+          gcols[shift] = grow_ids[dof_j];
+          shift++;
+        }
+      }
+
+      /* Extra diagonal couples */
+      for (cs_lnum_t j = start; j < end; j++) {
+
+        const cs_lnum_t  col_id = x2x->ids[j];
+        const cs_gnum_t  *gcol_ids = rs->g_id + col_id*n_dofbyx;
+
+        for (int dof_i = 0; dof_i < n_dofbyx; dof_i++) {
+          const cs_gnum_t  grow_id = grow_ids[dof_i];
+          for (int dof_j = 0; dof_j < n_dofbyx; dof_j++) {
+            grows[shift] = grow_id;
+            gcols[shift] = gcol_ids[dof_j];
+            shift++;
+          }
+        }
+
+      } // Loop on number of DoFs by entity
+
+      assert(shift == n_entries);
+      cs_matrix_assembler_add_g_ids(ma, n_entries, grows, gcols);
+
+    } // Loop on entities
+
+  }
 
   /* Now compute structure */
   cs_matrix_assembler_compute(ma);
@@ -309,6 +366,9 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
   const cs_lnum_t  n_faces = connect->n_faces[0];
   const cs_lnum_t  n_vertices = connect->n_vertices;
 
+  cs_matrix_assembler_t  *ma = NULL;
+  cs_matrix_structure_t  *ms = NULL;
+
   /* Allocate and initialize matrix assembler and matrix structures */
   if (scheme_flag & CS_SCHEME_FLAG_CDOVB ||
       scheme_flag & CS_SCHEME_FLAG_CDOVCB) {
@@ -322,13 +382,9 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
     cs_timer_t t1 = cs_timer_time();
     cs_timer_counter_add_diff(&tcc, &t0, &t1);
 
-    cs_matrix_assembler_t  *ma =
-      cs_matrix_assembler_create(connect->v_rs->l_range, true); // sep_diag
-
-    _build_matrix_assembler(n_vertices, cs_connect_v2v, connect->v_rs, ma);
-
-    cs_matrix_structure_t  *ms =
-      cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+    ma = cs_matrix_assembler_create(connect->v_rs->l_range, true); // sep_diag
+    _build_matrix_assembler(n_vertices, 1, cs_connect_v2v, connect->v_rs, ma);
+    ms = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
     /* Monitoring */
     cs_timer_t t2 = cs_timer_time();
@@ -339,7 +395,8 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
   } // Vertex-based schemes and related ones
 
-  if (scheme_flag & CS_SCHEME_FLAG_CDOFB || scheme_flag & CS_SCHEME_FLAG_HHO) {
+  if (scheme_flag & CS_SCHEME_FLAG_CDOFB ||
+      scheme_flag & CS_SCHEME_FLAG_HHO) {
 
     cs_timer_t t0 = cs_timer_time();
 
@@ -350,20 +407,43 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
     cs_timer_t t1 = cs_timer_time();
     cs_timer_counter_add_diff(&tcc, &t0, &t1);
 
-    cs_matrix_assembler_t  *ma =
-      cs_matrix_assembler_create(connect->f_rs->l_range, true); // sep_diag
+    if (scheme_flag & CS_SCHEME_FLAG_POLY0) {
 
-    _build_matrix_assembler(n_faces, cs_connect_f2f, connect->f_rs, ma);
+      ma = cs_matrix_assembler_create(connect->f_rs->l_range, true); // sep_diag
+      _build_matrix_assembler(n_faces, 1, cs_connect_f2f, connect->f_rs, ma);
+      ms = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
-    cs_matrix_structure_t  *ms =
-      cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+      cs_equation_common_ma[CS_EQ_COMMON_FACE_P0] = ma;
+      cs_equation_common_ms[CS_EQ_COMMON_FACE_P0] = ms;
+
+    }
+
+    if (scheme_flag & CS_SCHEME_FLAG_POLY1) {
+
+      ma = cs_matrix_assembler_create(connect->hho1_rs->l_range, true);
+      _build_matrix_assembler(n_faces, 3, cs_connect_f2f, connect->hho1_rs, ma);
+      ms = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+
+      cs_equation_common_ma[CS_EQ_COMMON_FACE_P1] = ma;
+      cs_equation_common_ms[CS_EQ_COMMON_FACE_P1] = ms;
+
+    }
+
+    if (scheme_flag & CS_SCHEME_FLAG_POLY2) {
+
+      ma = cs_matrix_assembler_create(connect->hho2_rs->l_range, true);
+      _build_matrix_assembler(n_faces, 6, cs_connect_f2f, connect->hho2_rs, ma);
+      ms = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+
+      cs_equation_common_ma[CS_EQ_COMMON_FACE_P2] = ma;
+      cs_equation_common_ms[CS_EQ_COMMON_FACE_P2] = ms;
+
+    }
 
     /* Monitoring */
     cs_timer_t t2 = cs_timer_time();
     cs_timer_counter_add_diff(&tca, &t1, &t2);
 
-    cs_equation_common_ma[CS_EQ_COMMON_FACE] = ma;
-    cs_equation_common_ms[CS_EQ_COMMON_FACE] = ms;
 
   } // Face-based schemes and related ones
 
@@ -407,7 +487,7 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
     /* Initialize additional structures */
     cs_hho_scaleq_set_shared_pointers(quant, connect, time_step);
-    cs_hho_scaleq_initialize();
+    cs_hho_scaleq_initialize(scheme_flag);
 
     // TODO: Update this value accordingly to HHO needs
     cwb_size = CS_MAX(cwb_size, (size_t)3*n_faces);
@@ -1150,8 +1230,16 @@ cs_equation_get_matrix_structure(cs_space_scheme_t   scheme)
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO:
-    ms = cs_equation_common_ms[CS_EQ_COMMON_FACE];
+  case CS_SPACE_SCHEME_HHO_P0:
+    ms = cs_equation_common_ms[CS_EQ_COMMON_FACE_P0];
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P1:
+    ms = cs_equation_common_ms[CS_EQ_COMMON_FACE_P1];
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P2:
+    ms = cs_equation_common_ms[CS_EQ_COMMON_FACE_P2];
     break;
 
   default:
@@ -1187,8 +1275,10 @@ cs_equation_get_matrix_assembler(cs_space_scheme_t   scheme)
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO:
-    mav = cs_equation_common_ma[CS_EQ_COMMON_FACE];
+  case CS_SPACE_SCHEME_HHO_P0:
+  case CS_SPACE_SCHEME_HHO_P1:
+  case CS_SPACE_SCHEME_HHO_P2:
+    mav = cs_equation_common_ma[CS_EQ_COMMON_FACE_P0];
     break;
 
   default:

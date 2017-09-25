@@ -127,7 +127,7 @@ cs_quadrature_setup(void)
   _tetr_quad4c2 = 1. -3.*_tetr_quad4c1;
 
   /* Quadrature on tetrahedron with 15 points */
-  _tetr_quad15g1  =(7. - sqrt(15.) ) / 34.; ;
+  _tetr_quad15g1  = (7. - sqrt(15.) ) / 34.;
   _tetr_quad15g11 = 1. - 3. * _tetr_quad15g1;
   _tetr_quad15g2  = 7./17. - _tetr_quad15g1;
   _tetr_quad15g21 = 1. - 3. * _tetr_quad15g2;
@@ -433,20 +433,22 @@ cs_quadrature_tet_15pts(const cs_real_3_t   xv,
   for (short int i = 0; i < 3; ++i) {
 
     const double  xvxe = xv[i] + xe[i];
-    const double  xfxc = xf[i] + xc[i];
-    const double  xvxf = xf[i] + xv[i];
-    const double  xexc = xc[i] + xe[i];
+    const double  xvxf = xv[i] + xf[i];
     const double  xvxc = xv[i] + xc[i];
     const double  xexf = xe[i] + xf[i];
+    const double  xexc = xe[i] + xc[i];
+    const double  xfxc = xf[i] + xc[i];
 
     gpts[0][i]  = _tetr_quad15g1 * (xvxe + xf[i]) + _tetr_quad15g11 * xc[i];
-    gpts[1][i]  = _tetr_quad15g1 * (xexc + xv[i]) + _tetr_quad15g11 * xf[i];
-    gpts[2][i]  = _tetr_quad15g1 * (xfxc + xv[i]) + _tetr_quad15g11 * xe[i];
-    gpts[3][i]  = _tetr_quad15g1 * (xfxc + xe[i]) + _tetr_quad15g11 * xv[i];
+    gpts[1][i]  = _tetr_quad15g1 * (xvxe + xc[i]) + _tetr_quad15g11 * xf[i];
+    gpts[2][i]  = _tetr_quad15g1 * (xvxf + xc[i]) + _tetr_quad15g11 * xe[i];
+    gpts[3][i]  = _tetr_quad15g1 * (xexf + xc[i]) + _tetr_quad15g11 * xv[i];
+
     gpts[4][i]  = _tetr_quad15g2 * (xvxe + xf[i]) + _tetr_quad15g21 * xc[i];
     gpts[5][i]  = _tetr_quad15g2 * (xvxe + xc[i]) + _tetr_quad15g21 * xf[i];
-    gpts[6][i]  = _tetr_quad15g2 * (xfxc + xv[i]) + _tetr_quad15g21 * xe[i];
-    gpts[7][i]  = _tetr_quad15g2 * (xfxc + xe[i]) + _tetr_quad15g21 * xv[i];
+    gpts[6][i]  = _tetr_quad15g2 * (xvxf + xc[i]) + _tetr_quad15g21 * xe[i];
+    gpts[7][i]  = _tetr_quad15g2 * (xexf + xc[i]) + _tetr_quad15g21 * xv[i];
+
     gpts[8][i]  = _tetr_quad15g3 * xvxe + _tetr_quad15g31 * xfxc;
     gpts[9][i]  = _tetr_quad15g3 * xvxc + _tetr_quad15g31 * xexf;
     gpts[10][i] = _tetr_quad15g3 * xvxf + _tetr_quad15g31 * xexc;

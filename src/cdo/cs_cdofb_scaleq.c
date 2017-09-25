@@ -404,7 +404,8 @@ cs_cdofb_scaleq_initialize(void)
     int t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
 
-    cs_cdofb_cell_sys[t_id] = cs_cell_sys_create(connect->n_max_fbyc + 1);
+    cs_cdofb_cell_sys[t_id] = cs_cell_sys_create(connect->n_max_fbyc + 1,
+                                                 1, NULL);
     cs_cdofb_cell_bc[t_id] = cs_cell_bc_create(connect->n_max_fbyc + 1,
                                                connect->n_max_fbyc);
     cs_cdofb_cell_bld[t_id] = cs_cell_builder_create(CS_SPACE_SCHEME_CDOFB,
@@ -412,7 +413,8 @@ cs_cdofb_scaleq_initialize(void)
   }
 #else
   assert(cs_glob_n_threads == 1);
-  cs_cdofb_cell_sys[0] = cs_cell_sys_create(connect->n_max_fbyc + 1);
+  cs_cdofb_cell_sys[0] = cs_cell_sys_create(connect->n_max_fbyc + 1,
+                                            1, NULL);
   cs_cdofb_cell_bc[0] = cs_cell_bc_create(connect->n_max_fbyc + 1,
                                            connect->n_max_fbyc);
   cs_cdofb_cell_bld[0] = cs_cell_builder_create(CS_SPACE_SCHEME_CDOFB,
@@ -868,11 +870,6 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
 
     /* Set inside the OMP section so that each thread has its own value */
 
-    /* Initialization of the values of properties */
-    double  time_pty_val = 1.0;
-    double  reac_pty_vals[CS_CDO_N_MAX_REACTIONS];
-    for (int i = 0; i < CS_CDO_N_MAX_REACTIONS; i++) reac_pty_vals[i] = 1.0;
-
     /* Initialize members of the builder related to the current system
        Preparatory step for diffusion term */
     if (b->sys_flag & CS_FLAG_SYS_DIFFUSION) {
@@ -890,11 +887,14 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
     } /* Diffusion */
 
     /* Preparatory step for unsteady term */
+    double  time_pty_val = 1.0;
     if (b->sys_flag & CS_FLAG_SYS_TIME)
       if (b->time_pty_uniform)
         time_pty_val = cs_property_get_cell_value(0, eqp->time_property);
 
     /* Preparatory step for reaction term */
+    double  reac_pty_vals[CS_CDO_N_MAX_REACTIONS];
+    for (int i = 0; i < CS_CDO_N_MAX_REACTIONS; i++) reac_pty_vals[i] = 1.0;
     if (b->sys_flag & CS_FLAG_SYS_REACTION) {
 
       for (int r = 0; r < eqp->n_reaction_terms; r++) {
@@ -971,9 +971,9 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
         cs_source_term_compute_cellwise(eqp->n_source_terms,
                     (const cs_xdef_t **)eqp->source_terms,
                                         cm,
-                                        b->sys_flag,
                                         b->source_mask,
                                         b->compute_source,
+                                        NULL,  // No input structure
                                         cb,    // mass matrix is cb->hdg
                                         csys); // Fill csys->source
 
@@ -1027,7 +1027,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t       *mesh,
       /* Assemble the local system (related to vertices only since one applies
          a static condensation) to the global system */
       cs_equation_assemble_f(csys, connect->f_rs, b->sys_flag, // in
-                             rhs, mav);       // out
+                             rhs, mav);                        // out
 
     } // Main loop on cells
 

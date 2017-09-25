@@ -502,7 +502,8 @@ cs_cdovcb_scaleq_initialize(void)
     int t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
 
-    cs_cdovcb_cell_sys[t_id] = cs_cell_sys_create(connect->n_max_vbyc+1);
+    cs_cdovcb_cell_sys[t_id] = cs_cell_sys_create(connect->n_max_vbyc + 1,
+                                                  1, NULL);
     cs_cdovcb_cell_bc[t_id] = cs_cell_bc_create(connect->n_max_vbyc + 1,
                                                 connect->n_max_fbyc);
     cs_cdovcb_cell_bld[t_id] = cs_cell_builder_create(CS_SPACE_SCHEME_CDOVCB,
@@ -510,7 +511,7 @@ cs_cdovcb_scaleq_initialize(void)
   }
 #else
   assert(cs_glob_n_threads == 1);
-  cs_cdovcb_cell_sys[0] = cs_cell_sys_create(connect->n_max_vbyc+1);
+  cs_cdovcb_cell_sys[0] = cs_cell_sys_create(connect->n_max_vbyc + 1, 1, NULL);
   cs_cdovcb_cell_bc[0] = cs_cell_bc_create(connect->n_max_vbyc + 1,
                                            connect->n_max_fbyc);
   cs_cdovcb_cell_bld[0] = cs_cell_builder_create(CS_SPACE_SCHEME_CDOVCB,
@@ -918,9 +919,9 @@ cs_cdovcb_scaleq_compute_source(void   *builder)
       cs_source_term_compute_cellwise(eqp->n_source_terms,
                   (const cs_xdef_t **)eqp->source_terms,
                                       cm,
-                                      b->sys_flag,
                                       b->source_mask,
                                       b->compute_source,
+                                      NULL,  // No input structure
                                       cb,    // mass matrix is cb->hdg
                                       csys); // Fill csys->source
 
@@ -1251,9 +1252,9 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
         cs_source_term_compute_cellwise(eqp->n_source_terms,
                     (const cs_xdef_t **)eqp->source_terms,
                                         cm,
-                                        b->sys_flag,
                                         b->source_mask,
                                         b->compute_source,
+                                        NULL,  // No input structure
                                         cb,    // mass matrix is cb->hdg
                                         csys); // Fill csys->source
 

@@ -727,31 +727,34 @@ cs_domain_set_scheme_flag(cs_domain_t    *domain)
     else if (vardim == 3)
       domain->scheme_flag |= CS_SCHEME_FLAG_VECTOR;
 
-    if (scheme == CS_SPACE_SCHEME_CDOVB)
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVB | CS_SCHEME_FLAG_POLY0;
-    else if (scheme == CS_SPACE_SCHEME_CDOVCB)
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVCB | CS_SCHEME_FLAG_POLY0;
-    else if (scheme == CS_SPACE_SCHEME_CDOFB)
-      domain->scheme_flag |= CS_SCHEME_FLAG_CDOFB | CS_SCHEME_FLAG_POLY0;
-    else if (scheme == CS_SPACE_SCHEME_HHO)
-      domain->scheme_flag |= CS_SCHEME_FLAG_HHO;
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Undefined type of equation to solve for eq. %s."
-                  " Please check your settings."), cs_equation_get_name(eq));
+    switch (scheme) {
 
-    switch (cs_equation_get_space_poly_degree(eq)) {
-    case 0:
-      domain->scheme_flag |= CS_SCHEME_FLAG_POLY0;
+    case CS_SPACE_SCHEME_CDOVB:
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVB | CS_SCHEME_FLAG_POLY0;
       break;
-    case 1:
-      domain->scheme_flag |= CS_SCHEME_FLAG_POLY1;
+    case CS_SPACE_SCHEME_CDOVCB:
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOVCB | CS_SCHEME_FLAG_POLY0;
       break;
-    case 2:
-      domain->scheme_flag |= CS_SCHEME_FLAG_POLY2;
+    case CS_SPACE_SCHEME_CDOFB:
+      domain->scheme_flag |= CS_SCHEME_FLAG_CDOFB | CS_SCHEME_FLAG_POLY0;
       break;
+    case CS_SPACE_SCHEME_HHO_P0:
+      domain->scheme_flag |= CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY0;
+      assert(cs_equation_get_space_poly_degree(eq) == 0);
+      break;
+    case CS_SPACE_SCHEME_HHO_P1:
+      domain->scheme_flag |= CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY1;
+      assert(cs_equation_get_space_poly_degree(eq) == 1);
+      break;
+    case CS_SPACE_SCHEME_HHO_P2:
+      domain->scheme_flag |= CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY2;
+      assert(cs_equation_get_space_poly_degree(eq) == 2);
+      break;
+
     default:
-      bft_error(__FILE__, __LINE__, 0, " Undefined space polynomial order.");
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Undefined type of schme to solve for eq. %s."
+                  " Please check your settings."), cs_equation_get_name(eq));
     }
 
   } // Loop on equations

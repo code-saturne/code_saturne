@@ -2603,8 +2603,8 @@ _matrix_assembler_values_add_lg_g(cs_matrix_assembler_values_t  *mav,
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_assembler_t *
-cs_matrix_assembler_create(cs_gnum_t  l_range[2],
-                           bool       separate_diag)
+cs_matrix_assembler_create(const cs_gnum_t  l_range[2],
+                           bool             separate_diag)
 {
   cs_matrix_assembler_t *ma = NULL;
 

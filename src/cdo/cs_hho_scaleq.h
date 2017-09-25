@@ -76,11 +76,14 @@ cs_hho_scaleq_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate work buffer and general structures related to HHO schemes
+ *
+ * \param[in]  scheme_flag   flag to identify which kind of numerical scheme is
+ *                           requested to solve the computational domain
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_initialize(void);
+cs_hho_scaleq_initialize(cs_flag_t   scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -129,6 +132,23 @@ cs_hho_scaleq_free(void   *builder);
 
 void
 cs_hho_scaleq_compute_source(void            *builder);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create the matrix of the current algebraic system.
+ *         Allocate and initialize the right-hand side associated to the given
+ *         builder structure
+ *
+ * \param[in, out] builder        pointer to generic builder structure
+ * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
+ * \param[in, out] system_rhs     pointer of pointer to an array of double
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hho_scaleq_initialize_system(void           *builder,
+                                cs_matrix_t   **system_matrix,
+                                cs_real_t     **system_rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!

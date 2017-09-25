@@ -811,63 +811,65 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
 {
   fvm_io_num_t  *i_face_io_num = NULL, *b_face_io_num = NULL;
 
-  const cs_gnum_t  *i_face_gnum;
-  const cs_gnum_t  *b_face_gnum;
-
-  if (n_face_dofs == 1) {
-
-    i_face_gnum = mesh->global_i_face_num;
-    b_face_gnum = mesh->global_b_face_num;
-
-  }
-  else {
-
-    cs_lnum_t  *order = NULL;
-    cs_gnum_t  *gnum_ordered = NULL;
-
-    BFT_MALLOC(order, CS_MAX(mesh->n_i_faces,
-                             mesh->n_b_faces), cs_lnum_t);
-    BFT_MALLOC(gnum_ordered, CS_MAX(mesh->n_i_faces,
-                                    mesh->n_b_faces), cs_gnum_t);
-
-    /* Handle interior faces */
-    cs_order_gnum_allocated(NULL,
-                            mesh->global_i_face_num,
-                            order,
-                            mesh->n_i_faces);
-
-    for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
-      gnum_ordered[i] = mesh->global_i_face_num[order[i]];
-
-    i_face_io_num = fvm_io_num_create_from_adj_s(NULL,
-                                                 gnum_ordered,
-                                                 mesh->n_i_faces,
-                                                 n_face_dofs);
-    i_face_gnum = fvm_io_num_get_global_num(i_face_io_num);
-
-    /* Handle border faces */
-    cs_order_gnum_allocated(NULL,
-                            mesh->global_b_face_num,
-                            order,
-                            mesh->n_b_faces);
-
-    for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
-      gnum_ordered[i] = mesh->global_b_face_num[order[i]];
-
-    b_face_io_num = fvm_io_num_create_from_adj_s(NULL,
-                                                 gnum_ordered,
-                                                 mesh->n_b_faces,
-                                                 n_face_dofs);
-    b_face_gnum = fvm_io_num_get_global_num(b_face_io_num);
-
-    BFT_FREE(order);
-    BFT_FREE(gnum_ordered);
-  }
+  const cs_lnum_t  n_elts = n_faces * n_face_dofs;
 
   cs_gnum_t *face_gnum = NULL;
-  BFT_MALLOC(face_gnum, n_faces * n_face_dofs, cs_gnum_t);
+  BFT_MALLOC(face_gnum, n_elts, cs_gnum_t);
 
   if (cs_glob_n_ranks > 1) {
+
+    const cs_gnum_t  *i_face_gnum;
+    const cs_gnum_t  *b_face_gnum;
+
+    if (n_face_dofs == 1) {
+
+      i_face_gnum = mesh->global_i_face_num;
+      b_face_gnum = mesh->global_b_face_num;
+
+    }
+    else {
+
+      cs_lnum_t  *order = NULL;
+      cs_gnum_t  *gnum_ordered = NULL;
+
+      BFT_MALLOC(order, CS_MAX(mesh->n_i_faces,
+                               mesh->n_b_faces), cs_lnum_t);
+      BFT_MALLOC(gnum_ordered, CS_MAX(mesh->n_i_faces,
+                                      mesh->n_b_faces), cs_gnum_t);
+
+      /* Handle interior faces */
+      cs_order_gnum_allocated(NULL,
+                              mesh->global_i_face_num,
+                              order,
+                              mesh->n_i_faces);
+
+      for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
+        gnum_ordered[i] = mesh->global_i_face_num[order[i]];
+
+      i_face_io_num = fvm_io_num_create_from_adj_s(NULL,
+                                                   gnum_ordered,
+                                                   mesh->n_i_faces,
+                                                   n_face_dofs);
+      i_face_gnum = fvm_io_num_get_global_num(i_face_io_num);
+
+      /* Handle border faces */
+      cs_order_gnum_allocated(NULL,
+                              mesh->global_b_face_num,
+                              order,
+                              mesh->n_b_faces);
+
+      for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
+        gnum_ordered[i] = mesh->global_b_face_num[order[i]];
+
+      b_face_io_num = fvm_io_num_create_from_adj_s(NULL,
+                                                   gnum_ordered,
+                                                   mesh->n_b_faces,
+                                                   n_face_dofs);
+      b_face_gnum = fvm_io_num_get_global_num(b_face_io_num);
+
+      BFT_FREE(order);
+      BFT_FREE(gnum_ordered);
+    }
 
     cs_gnum_t  i_shift = (cs_gnum_t)mesh->n_i_faces * (cs_gnum_t)n_face_dofs;
     cs_gnum_t  global_i_shift = mesh->n_g_i_faces * (cs_gnum_t)n_face_dofs;
@@ -884,30 +886,30 @@ _assign_ifs_rs(const cs_mesh_t       *mesh,
   }
   else {
 
-#   pragma omp parallel for if (n_faces * n_face_dofs > CS_THR_MIN)
-    for (cs_gnum_t i = 0; i < (cs_gnum_t)(n_faces*n_face_dofs); i++)
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_gnum_t i = 0; i < (cs_gnum_t)(n_elts); i++)
       face_gnum[i] = i + 1;
 
-  }
+  } /* Sequential or parallel run */
 
   /* Do not consider periodicity up to now. Should split the face interface
      into interior and border faces to do this, since only boundary faces
      can be associated to a periodicity */
   cs_interface_set_t  *ifs = NULL;
-  ifs = cs_interface_set_create(n_faces * n_face_dofs,
+  ifs = cs_interface_set_create(n_elts,
                                 NULL,
                                 face_gnum,
                                 mesh->periodicity, 0, NULL, NULL, NULL);
 
   cs_range_set_t  *rs = cs_range_set_create(ifs,
                                             NULL,
-                                            n_faces,
+                                            n_elts,
                                             false, //TODO: Ask Yvan
                                             0);    // g_id_base
 
   /* Free memory */
   BFT_FREE(face_gnum);
-  if (n_face_dofs > 1) {
+  if (n_face_dofs > 1 && cs_glob_n_ranks > 1) {
     i_face_io_num = fvm_io_num_destroy(i_face_io_num);
     b_face_io_num = fvm_io_num_destroy(b_face_io_num);
   }
@@ -1030,11 +1032,11 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   /* HHO schemes with k=1 */
   if (cs_test_flag(scheme_flag, CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY1))
-    _assign_ifs_rs(mesh, n_faces, 3, &(connect->f_ifs), &(connect->f_rs));
+    _assign_ifs_rs(mesh, n_faces, 3, &(connect->hho1_ifs), &(connect->hho1_rs));
 
   /* HHO schemes with k=2 */
   if (cs_test_flag(scheme_flag, CS_SCHEME_FLAG_HHO | CS_SCHEME_FLAG_POLY2))
-    _assign_ifs_rs(mesh, n_faces, 6, &(connect->f_ifs), &(connect->f_rs));
+    _assign_ifs_rs(mesh, n_faces, 6, &(connect->hho2_ifs), &(connect->hho2_rs));
 
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();

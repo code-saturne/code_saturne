@@ -71,6 +71,7 @@ cs_evaluate.h \
 cs_gwf.h \
 cs_gwf_soil.h \
 cs_gwf_tracer.h \
+cs_hho_builder.h \
 cs_hho_scaleq.h \
 cs_hodge.h \
 cs_param.h \
@@ -112,6 +113,7 @@ cs_evaluate.c \
 cs_gwf.c \
 cs_gwf_soil.c \
 cs_gwf_tracer.c \
+cs_hho_builder.c \
 cs_hho_scaleq.c \
 cs_hodge.c \
 cs_param.c \

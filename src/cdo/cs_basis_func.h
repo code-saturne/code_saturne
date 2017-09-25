@@ -300,6 +300,32 @@ void
 cs_basis_func_dump(const cs_basis_func_t  *pbf);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set options for basis functions when using HHO schemes
+ *
+ * \param[in]  face_flag    options related to face basis functinos
+ * \param[in]  cell_flag    options related to cell basis functinos
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_basis_func_set_hho_flag(cs_flag_t   face_flag,
+                           cs_flag_t   cell_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get options for basis functions when using HHO schemes
+ *
+ * \param[out] face_flag   pointer to options related to face basis functinos
+ * \param[out] cell_flag   pointer to options related to cell basis functinos
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_basis_func_get_hho_flag(cs_flag_t   *face_flag,
+                           cs_flag_t   *cell_flag);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

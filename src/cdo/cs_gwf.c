@@ -233,7 +233,7 @@ _update_head(cs_gwf_t                    *gw,
       break;
 
     case CS_SPACE_SCHEME_CDOFB:
-    case CS_SPACE_SCHEME_HHO:
+    case CS_SPACE_SCHEME_HHO_P0:
       assert(hydraulic_head->location_id ==
              cs_mesh_location_get_id_by_name("cells"));
 
@@ -349,7 +349,7 @@ _update_darcy_velocity(cs_gwf_t                    *gw,
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO:
+  case CS_SPACE_SCHEME_HHO_P0:
     bft_error(__FILE__, __LINE__, 0, " TODO.");
     break;
 
@@ -765,7 +765,7 @@ cs_gwf_init_setup(void)
       break;
 
     case CS_SPACE_SCHEME_CDOFB:
-    case CS_SPACE_SCHEME_HHO:
+    case CS_SPACE_SCHEME_HHO_P0:
       gw->pressure_head = cs_field_create("pressure_head",
                                           field_mask,
                                           c_loc_id,
@@ -952,7 +952,9 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
     cs_equation_get_space_scheme(gw->richards);
 
   if (richards_scheme == CS_SPACE_SCHEME_CDOFB ||
-      richards_scheme == CS_SPACE_SCHEME_HHO)
+      richards_scheme == CS_SPACE_SCHEME_HHO_P0 ||
+      richards_scheme == CS_SPACE_SCHEME_HHO_P1 ||
+      richards_scheme == CS_SPACE_SCHEME_HHO_P2)
     bft_error(__FILE__, __LINE__, 0,
               _(" Richards eq. is only available for vertex-based schemes."));
 
@@ -966,7 +968,7 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO:
+  case CS_SPACE_SCHEME_HHO_P0:
     if (gw->flag & CS_GWF_GRAVITATION)
       gw->head_in_law = gw->pressure_head->val;
     else

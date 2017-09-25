@@ -133,10 +133,13 @@ typedef struct {
 /* Type of numerical scheme for the discretization in space */
 typedef enum {
 
-  CS_SPACE_SCHEME_CDOVB,   /* CDO scheme with vertex-based positionning */
-  CS_SPACE_SCHEME_CDOVCB,  /* CDO scheme with vertex+cell-based positionning */
-  CS_SPACE_SCHEME_CDOFB,   /* CDO cell-based scheme with hybridization */
-  CS_SPACE_SCHEME_HHO,     /* Hybrid High Order scheme (CDO-FB + high-order) */
+  CS_SPACE_SCHEME_CDOVB,  /* CDO scheme with vertex-based positionning */
+  CS_SPACE_SCHEME_CDOVCB, /* CDO scheme with vertex+cell-based positionning */
+  CS_SPACE_SCHEME_CDOFB,  /* CDO cell-based scheme with hybridization */
+  CS_SPACE_SCHEME_HHO_P0, /* Hybrid High Order scheme; P0 approx. of gradient */
+  CS_SPACE_SCHEME_HHO_P1, /* Hybrid High Order scheme; P1 approx. of gradient */
+  CS_SPACE_SCHEME_HHO_P2, /* Hybrid High Order scheme; P2 approx. of gradient */
+
   CS_SPACE_N_SCHEMES
 
 } cs_space_scheme_t;
