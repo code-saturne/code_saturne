@@ -44,20 +44,24 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#define CS_CDO_LOCAL_PV  (1 <<  0) //   1: cache related to vertices
-#define CS_CDO_LOCAL_PVQ (1 <<  1) //   2: cache related to vertex quantities
-#define CS_CDO_LOCAL_PE  (1 <<  2) //   4: cache related to edges
-#define CS_CDO_LOCAL_PEQ (1 <<  3) //   8: cache related to edge quantities
-#define CS_CDO_LOCAL_DFQ (1 <<  4) //  16: cache related to dual face quant.
-#define CS_CDO_LOCAL_PF  (1 <<  5) //  32: cache related to face
-#define CS_CDO_LOCAL_PFQ (1 <<  6) //  64: cache related to face quantities
-#define CS_CDO_LOCAL_DEQ (1 <<  7) // 128: cache related to dual edge quant.
-#define CS_CDO_LOCAL_EV  (1 <<  8) // 256: cache related to e2v connect.
-#define CS_CDO_LOCAL_FE  (1 <<  9) // 512: cache related to f2e connect.
-#define CS_CDO_LOCAL_FEQ (1 << 10) //1024: cache related to f2e quantities
-#define CS_CDO_LOCAL_EF  (1 << 11) //2048: cache related to e2f connect.
-#define CS_CDO_LOCAL_EFQ (1 << 12) //4096: cache related to e2f quantities
-#define CS_CDO_LOCAL_HFQ (1 << 13) //8192: cache related to the face pyramid
+/* According to the flag which are set, different quantities or connectivities
+   are built on-the-fly and stored in a local cache structure (cell/base) */
+
+#define CS_CDO_LOCAL_PV   (1 <<  0) //     1: local info. for vertices
+#define CS_CDO_LOCAL_PVQ  (1 <<  1) //     2: local quant. on vertices
+#define CS_CDO_LOCAL_PE   (1 <<  2) //     4: local info. for edges
+#define CS_CDO_LOCAL_PEQ  (1 <<  3) //     8: local quant. on edges
+#define CS_CDO_LOCAL_DFQ  (1 <<  4) //    16: local quant. on dual faces
+#define CS_CDO_LOCAL_PF   (1 <<  5) //    32: local info. for faces
+#define CS_CDO_LOCAL_PFQ  (1 <<  6) //    64: local quant. on faces
+#define CS_CDO_LOCAL_DEQ  (1 <<  7) //   128: local quant. on dual edges
+#define CS_CDO_LOCAL_EV   (1 <<  8) //   256: local e2v connectivity
+#define CS_CDO_LOCAL_FE   (1 <<  9) //   512: local f2e connectivity
+#define CS_CDO_LOCAL_FEQ  (1 << 10) //  1024: local f2e quantities
+#define CS_CDO_LOCAL_EF   (1 << 11) //  2048: local e2f connectivity
+#define CS_CDO_LOCAL_EFQ  (1 << 12) //  4096: local e2f quantities
+#define CS_CDO_LOCAL_HFQ  (1 << 13) //  8192: local quant. on face pyramids
+#define CS_CDO_LOCAL_DIAM (1 << 14) // 16384: local diameters on faces/cell
 
 /*============================================================================
  * Type definitions
@@ -134,7 +138,6 @@ typedef struct {
 typedef struct {
 
   cs_flag_t      flag;    // indicate which quantities have to be defined
-  short int     *kbuf;    // buffer storing ids in a compact way
 
   /* Sizes used to allocate buffers */
   short int      n_max_vbyc;
@@ -145,6 +148,7 @@ typedef struct {
   cs_lnum_t      c_id;    // id of related cell
   cs_real_3_t    xc;      // coordinates of the cell center
   double         vol_c;   // volume of the current cell
+  double         diam_c;  // diameter of the current cell
 
   /* Vertex information */
   short int    n_vc;    // local number of vertices in a cell
@@ -162,6 +166,7 @@ typedef struct {
   short int    n_fc;    // local number of faces in a cell
   cs_lnum_t   *f_ids;   // face ids on this rank
   short int   *f_sgn;   // incidence number between f and c
+  double      *f_diam;  // diameters of local faces
   double      *hfc;     // height of the pyramid of basis f and apex c
   cs_quant_t  *face;    // local face quantities (xf, area and unit normal)
   cs_nvec3_t  *dedge;   // local dual edge quantities (length and unit vector)
@@ -227,6 +232,28 @@ extern cs_face_mesh_t  **cs_cdo_local_face_meshes;
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate global structures related to a cs_cell_mesh_t and
+ *         cs_face_mesh_t structures
+ *
+ * \param[in]   connect   pointer to a cs_cdo_connect_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_local_initialize(const cs_cdo_connect_t     *connect);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free global structures related to cs_cell_mesh_t and cs_face_mesh_t
+ *         structures
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_local_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -341,28 +368,6 @@ cs_cell_mesh_dump(cs_cell_mesh_t     *cm);
 
 void
 cs_cell_builder_free(cs_cell_builder_t     **p_cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate global structures related to a cs_cell_mesh_t and
- *         cs_face_mesh_t structures
- *
- * \param[in]   connect   pointer to a cs_cdo_connect_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_local_initialize(const cs_cdo_connect_t     *connect);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free global structures related to cs_cell_mesh_t and cs_face_mesh_t
- *         structures
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_local_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -493,6 +498,34 @@ void
 cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
                                   short int                f,
                                   cs_face_mesh_t          *fm);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_face_mesh_t structure for a given cell from a
+ *         cs_cell_mesh_t structure.
+ *         v_ids and e_ids are defined in the cell numbering given by cm
+ *
+ * \param[in]       cm        pointer to the reference cs_cell_mesh_t structure
+ * \param[in]       f         face id in the cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a cs_face_mesh_t structure to set
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cell_mesh_get_next_3_vertices(const short int   *f2e_ids,
+                                 const short int   *e2v_ids,
+                                 short int         *v0,
+                                 short int         *v1,
+                                 short int         *v2)
+{
+  const short int e0  = f2e_ids[0];
+  const short int e1  = f2e_ids[1];
+  const short int tmp = e2v_ids[2*e1];
+
+  *v0 = e2v_ids[2*e0];
+  *v1 = e2v_ids[2*e0+1];
+  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
+}
 
 /*----------------------------------------------------------------------------*/
 

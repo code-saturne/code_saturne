@@ -66,6 +66,10 @@ BEGIN_C_DECLS
 cs_cell_mesh_t   **cs_cdo_local_cell_meshes = NULL;
 cs_face_mesh_t   **cs_cdo_local_face_meshes = NULL;
 
+/*============================================================================
+ * Local static variables
+ *============================================================================*/
+
 static int  cs_cdo_local_n_structures = 0;
 
 /* Store predefined flags */
@@ -88,6 +92,10 @@ static const cs_flag_t  cs_cdo_local_flag_fe =
 static const cs_flag_t  cs_cdo_local_flag_ef =
   CS_CDO_LOCAL_EF | CS_CDO_LOCAL_EFQ;
 
+/* Auxiliary buffers for computing quantities related to a cs_cell_mesh_t */
+static double     **cs_cdo_local_dbuf = NULL;
+static short int  **cs_cdo_local_kbuf = NULL;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -95,6 +103,99 @@ static const cs_flag_t  cs_cdo_local_flag_ef =
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate global structures related to cs_cell_mesh_t and
+ *         cs_face_mesh_t structures
+ *
+ * \param[in]   connect   pointer to a cs_cdo_connect_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
+{
+  /* Sanity check */
+  assert(cs_glob_n_threads > 0);
+
+  int  n_vc = connect->n_max_vbyc;
+  int  size = cs_glob_n_threads;
+  cs_cdo_local_n_structures = size;
+  BFT_MALLOC(cs_cdo_local_cell_meshes, size, cs_cell_mesh_t *);
+  BFT_MALLOC(cs_cdo_local_face_meshes, size, cs_face_mesh_t *);
+  BFT_MALLOC(cs_cdo_local_dbuf, size, double *);
+  BFT_MALLOC(cs_cdo_local_kbuf, size, short int *);
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+#pragma omp parallel
+  {
+    int t_id = omp_get_thread_num();
+    assert(t_id < cs_glob_n_threads);
+
+    cs_cdo_local_cell_meshes[t_id] = cs_cell_mesh_create(connect);
+    cs_cdo_local_face_meshes[t_id] = cs_face_mesh_create(connect->n_max_vbyf);
+
+    BFT_MALLOC(cs_cdo_local_dbuf[t_id], n_vc*(n_vc+1)/2, double);
+    BFT_MALLOC(cs_cdo_local_kbuf[t_id], CS_MAX(connect->v_max_cell_range,
+                                               connect->e_max_cell_range) + 1,
+               short int);
+  }
+#else
+
+  assert(cs_glob_n_threads == 1);
+
+  cs_cdo_local_cell_meshes[0] = cs_cell_mesh_create(connect);
+  cs_cdo_local_face_meshes[0] = cs_face_mesh_create(connect->n_max_vbyf);
+
+  BFT_MALLOC(cs_cdo_local_dbuf[0], n_vc*(n_vc+1)/2, double);
+  BFT_MALLOC(cs_cdo_local_kbuf[0], CS_MAX(connect->v_max_cell_range,
+                                          connect->e_max_cell_range) + 1,
+             short int);
+
+#endif /* openMP */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free global structures related to cs_cell_mesh_t and cs_face_mesh_t
+ *         structures
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_local_finalize(void)
+{
+  if (cs_cdo_local_n_structures < 1)
+    return;
+
+  assert(cs_cdo_local_n_structures == cs_glob_n_threads);
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+#pragma omp parallel
+  {
+    int t_id = omp_get_thread_num();
+    assert(t_id < cs_glob_n_threads);
+
+    cs_cell_mesh_free(&(cs_cdo_local_cell_meshes[t_id]));
+    cs_face_mesh_free(&(cs_cdo_local_face_meshes[t_id]));
+    BFT_FREE(cs_cdo_local_dbuf[t_id]);
+    BFT_FREE(cs_cdo_local_kbuf[t_id]);
+
+  }
+#else
+  assert(cs_glob_n_threads == 1);
+  cs_cell_mesh_free(&(cs_cdo_local_cell_meshes[0]));
+  cs_face_mesh_free(&(cs_cdo_local_face_meshes[0]));
+  BFT_FREE(cs_cdo_local_dbuf[0]);
+  BFT_FREE(cs_cdo_local_kbuf[0]);
+#endif /* openMP */
+
+  BFT_FREE(cs_cdo_local_cell_meshes);
+  BFT_FREE(cs_cdo_local_face_meshes);
+  BFT_FREE(cs_cdo_local_dbuf);
+  BFT_FREE(cs_cdo_local_kbuf);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -430,77 +531,6 @@ cs_cell_builder_free(cs_cell_builder_t     **p_cb)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate global structures related to cs_cell_mesh_t and
- *         cs_face_mesh_t structures
- *
- * \param[in]   connect   pointer to a cs_cdo_connect_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
-{
-  /* Sanity check */
-  assert(cs_glob_n_threads > 0);
-
-  int  size = cs_glob_n_threads;
-  cs_cdo_local_n_structures = size;
-  BFT_MALLOC(cs_cdo_local_cell_meshes, size, cs_cell_mesh_t *);
-  BFT_MALLOC(cs_cdo_local_face_meshes, size, cs_face_mesh_t *);
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-#pragma omp parallel
-  {
-    int t_id = omp_get_thread_num();
-    assert(t_id < cs_glob_n_threads);
-
-    cs_cdo_local_cell_meshes[t_id] = cs_cell_mesh_create(connect);
-    cs_cdo_local_face_meshes[t_id] = cs_face_mesh_create(connect->n_max_vbyf);
-  }
-#else
-  assert(cs_glob_n_threads == 1);
-  cs_cdo_local_cell_meshes[0] = cs_cell_mesh_create(connect);
-  cs_cdo_local_face_meshes[0] = cs_face_mesh_create(connect->n_max_vbyf);
-#endif /* openMP */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free global structures related to cs_cell_mesh_t and cs_face_mesh_t
- *         structures
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_local_finalize(void)
-{
-  if (cs_cdo_local_n_structures < 1)
-    return;
-
-  assert(cs_cdo_local_n_structures == cs_glob_n_threads);
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-#pragma omp parallel
-  {
-    int t_id = omp_get_thread_num();
-    assert(t_id < cs_glob_n_threads);
-
-    cs_cell_mesh_free(&(cs_cdo_local_cell_meshes[t_id]));
-    cs_face_mesh_free(&(cs_cdo_local_face_meshes[t_id]));
-  }
-#else
-  assert(cs_glob_n_threads == 1);
-  cs_cell_mesh_free(&(cs_cdo_local_cell_meshes[0]));
-  cs_face_mesh_free(&(cs_cdo_local_face_meshes[0]));
-#endif /* openMP */
-
-  BFT_FREE(cs_cdo_local_cell_meshes);
-  BFT_FREE(cs_cdo_local_face_meshes);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Get a pointer to a cs_cell_mesh_t structure corresponding to mesh id
  *
  * \param[in]   mesh_id   id in the array of pointer to cs_cell_mesh_t struct.
@@ -555,8 +585,6 @@ cs_cell_mesh_create(const cs_cdo_connect_t   *connect)
   BFT_MALLOC(cm, 1, cs_cell_mesh_t);
 
   /* Sizes used to allocate buffers */
-  BFT_MALLOC(cm->kbuf, CS_MAX(connect->v_max_cell_range,
-                              connect->e_max_cell_range) + 1, short int);
   cm->n_max_vbyc = connect->n_max_vbyc;
   cm->n_max_ebyc = connect->n_max_ebyc;
   cm->n_max_fbyc = connect->n_max_fbyc;
@@ -580,6 +608,7 @@ cs_cell_mesh_create(const cs_cdo_connect_t   *connect)
   /* Face information */
   BFT_MALLOC(cm->f_ids, cm->n_max_fbyc, cs_lnum_t);
   BFT_MALLOC(cm->f_sgn, cm->n_max_fbyc, short int);
+  BFT_MALLOC(cm->f_diam, cm->n_max_fbyc, double);
   BFT_MALLOC(cm->hfc, cm->n_max_fbyc, double);
   BFT_MALLOC(cm->face, cm->n_max_fbyc, cs_quant_t);
   BFT_MALLOC(cm->dedge, cm->n_max_fbyc, cs_nvec3_t);
@@ -620,6 +649,7 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
   cm->c_id = SHRT_MIN;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = -DBL_MAX;
   cm->vol_c = -DBL_MAX;
+  cm->diam_c = -DBL_MAX;
 
   /* Vertex information */
   for (short int v = 0; v < cm->n_max_vbyc; v++) {
@@ -645,6 +675,7 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
   for (short int f = 0; f < cm->n_max_fbyc; f++) {
     cm->f_ids[f] = SHRT_MIN;
     cm->f_sgn[f] = 0;
+    cm->f_diam[f] = -DBL_MAX;
     cm->hfc[f] = -DBL_MAX;
     cm->face[f].meas = cm->dedge[f].meas = -DBL_MAX;
     cm->face[f].unitv[0] = cm->dedge[f].unitv[0] = -DBL_MAX;
@@ -683,9 +714,9 @@ cs_cell_mesh_dump(cs_cell_mesh_t     *cm)
   }
 
   cs_log_printf(CS_LOG_DEFAULT, "\n>> Dump cs_cell_mesh_t %p; flag: %d\n"
-                " c_id:%d; vol: %9.6e; xc (% .5e % .5e % .5e)\n",
+                " c_id:%d; vol: %9.6e; xc (% .5e % .5e % .5e); diam: % .5e\n",
                 (void *)cm, cm->flag, cm->c_id, cm->vol_c,
-                cm->xc[0], cm->xc[1], cm->xc[2]);
+                cm->xc[0], cm->xc[1], cm->xc[2], cm->diam_c);
 
   /* Information related to primal vertices */
   if (cm->flag & cs_cdo_local_flag_v) {
@@ -719,19 +750,20 @@ cs_cell_mesh_dump(cs_cell_mesh_t     *cm)
   /* Information related to primal faces */
   if (cm->flag & cs_cdo_local_flag_f) {
 
-    cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-9s %-4s %-38s %-38s %-11s"
+    cs_log_printf(CS_LOG_DEFAULT, "%-3s %-9s %-9s %-9s %-4s %-38s %-38s %-11s"
                   "%-11s %-38s\n",
-                  "f", "id", "surf", "sgn", "unit", "coords", "hfc", "dlen",
-                  "dunitv");
+                  "f", "id", "diam", "surf", "sgn", "unit", "coords", "hfc",
+                  "dlen", "dunitv");
     for (short int f = 0; f < cm->n_fc; f++) {
       cs_quant_t  fq = cm->face[f];
       cs_nvec3_t  eq = cm->dedge[f];
-      cs_log_printf(CS_LOG_DEFAULT, "%2d |%8d |%.3e| %2d|% .5e % .5e % .5e|"
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "%2d |%8d |%.3e|%.3e| %2d|% .5e % .5e % .5e|"
                     "% .5e % .5e % .5e|%.5e|%.5e|% .5e % .5e % .5e\n",
-                    f, cm->f_ids[f], fq.meas, cm->f_sgn[f], fq.unitv[0],
-                    fq.unitv[1], fq.unitv[2], fq.center[0], fq.center[1],
-                    fq.center[2], cm->hfc[f], eq.meas, eq.unitv[0], eq.unitv[1],
-                    eq.unitv[2]);
+                    f, cm->f_ids[f], cm->f_diam[f], fq.meas, cm->f_sgn[f],
+                    fq.unitv[0], fq.unitv[1], fq.unitv[2], fq.center[0],
+                    fq.center[1], fq.center[2], cm->hfc[f], eq.meas,
+                    eq.unitv[0], eq.unitv[1], eq.unitv[2]);
     }
 
   } /* Face quantities */
@@ -792,8 +824,6 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
   if (cm == NULL)
     return;
 
-  BFT_FREE(cm->kbuf);
-
   BFT_FREE(cm->v_ids);
   BFT_FREE(cm->wvc);
   BFT_FREE(cm->xv);
@@ -804,6 +834,7 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
 
   BFT_FREE(cm->f_ids);
   BFT_FREE(cm->f_sgn);
+  BFT_FREE(cm->f_diam);
   BFT_FREE(cm->hfc);
   BFT_FREE(cm->face);
   BFT_FREE(cm->dedge);
@@ -947,13 +978,22 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   if (flag & CS_CDO_LOCAL_EV) {
 
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int t_id = omp_get_thread_num();
+    assert(t_id < cs_glob_n_threads);
+#else
+    int t_id = 0;
+#endif /* openMP */
+
+    short int  *kbuf = cs_cdo_local_kbuf[t_id];
+
     /* Store in compact way: mesh --> cell mesh ids for vertices */
     cs_lnum_t  shift = cm->v_ids[0];
     for (short int v = 1; v < cm->n_vc; v++)
       if (cm->v_ids[v] < shift)
         shift = cm->v_ids[v];
     for (short int v = 0; v < cm->n_vc; v++)
-      cm->kbuf[cm->v_ids[v]-shift] = v;
+      kbuf[cm->v_ids[v]-shift] = v;
 
     for (short int e = 0; e < cm->n_ec; e++) {
 
@@ -962,8 +1002,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       /* Store only the sign related to the first vertex since the sign
          related to the second one is minus the first one */
       cm->e2v_sgn[e] = connect->e2v->sgn[2*e_id];
-      cm->e2v_ids[2*e]   = cm->kbuf[connect->e2v->ids[2*e_id] - shift];
-      cm->e2v_ids[2*e+1] = cm->kbuf[connect->e2v->ids[2*e_id+1] - shift];
+      cm->e2v_ids[2*e]   = kbuf[connect->e2v->ids[2*e_id] - shift];
+      cm->e2v_ids[2*e+1] = kbuf[connect->e2v->ids[2*e_id+1] - shift];
 
     } // Loop on cell edges
 
@@ -1035,13 +1075,22 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   if (flag & cs_cdo_local_flag_fe) {
 
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int t_id = omp_get_thread_num();
+    assert(t_id < cs_glob_n_threads);
+#else
+    int t_id = 0;
+#endif /* openMP */
+
+    short int  *kbuf = cs_cdo_local_kbuf[t_id];
+
     /* Store in compact way: mesh --> cell mesh ids for edges */
     cs_lnum_t  shift = cm->e_ids[0];
     for (short int e = 1; e < cm->n_ec; e++)
       if (cm->e_ids[e] < shift)
         shift = cm->e_ids[e];
     for (short int e = 0; e < cm->n_ec; e++)
-      cm->kbuf[cm->e_ids[e]-shift] = e;
+      kbuf[cm->e_ids[e]-shift] = e;
 
     const cs_lnum_t  *f2e_idx = connect->f2e->idx;
     const cs_lnum_t  *f2e_ids = connect->f2e->ids;
@@ -1059,7 +1108,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       cm->f2e_idx[f+1] = cm->f2e_idx[f] + f2e_start - f2e_end;
 
       for (cs_lnum_t i = f2e_start; i < f2e_end; i++)
-        cm->f2e_ids[shift_idx++] = cm->kbuf[f2e_ids[i] - shift];
+        cm->f2e_ids[shift_idx++] = kbuf[f2e_ids[i] - shift];
       cm->f2e_idx[f+1] = shift_idx;
 
     } // Loop on cell faces
@@ -1126,6 +1175,68 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } /* edge-->faces */
 
+  if (flag & CS_CDO_LOCAL_DIAM) {
+
+    assert(cs_test_flag(flag, CS_CDO_LOCAL_EV | CS_CDO_LOCAL_FE));
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int t_id = omp_get_thread_num();
+    assert(t_id < cs_glob_n_threads);
+#else
+    int t_id = 0;
+#endif /* openMP */
+
+    double  *dbuf = cs_cdo_local_dbuf[t_id];
+    short int  *vtag = cs_cdo_local_kbuf[t_id];
+    int  size = cm->n_vc*(cm->n_vc+1)/2;
+    int  shift = 0;
+
+    /* Reset diam */
+    cm->diam_c = -1;
+    for (int i = 0; i < size; i++) dbuf[i] = 0.;
+
+    for (short int vi = 0; vi < cm->n_vc; ++vi) {
+      shift++; // diag entry not taken into account
+      const double *xvi = cm->xv + 3*vi;
+      for (short int vj = vi+1; vj < cm->n_vc; vj++, shift++) {
+        double  l = dbuf[shift] = cs_math_3_distance(xvi, cm->xv + 3*vj);
+        if (l > cm->diam_c) cm->diam_c = l;
+
+      } /* Loop on vj > vi */
+    }   /* Loop on vi */
+
+    for (short int f = 0; f < cm->n_fc; ++f) {
+
+      /* Reset vtag */
+      for (short int v = 0; v < cm->n_vc; v++) vtag[v] = -1;
+
+      /* Tag face vertices */
+      for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+        const int  eshft = 2*cm->f2e_ids[i];
+        vtag[cm->e2v_ids[eshft  ]] = 1;
+        vtag[cm->e2v_ids[eshft+1]] = 1;
+      }
+
+      cm->f_diam[f] = -1;
+      for (short int vi = 0; vi < cm->n_vc; ++vi) {
+
+        if (vtag[vi] > 0) { /* belong to the current face */
+          for (short int vj = vi+1; vj < cm->n_vc; vj++) {
+            if (vtag[vj] > 0) { /* belong to the current face */
+
+              shift = vj*(vj+1)/2 + vi;
+              const double  l = dbuf[shift];
+              if (l > cm->f_diam[f]) cm->f_diam[f] = l;
+
+            }
+          } /* Loop on vj > vi */
+        }
+      }   /* Loop on vi */
+
+    } /* Loop on cell faces */
+
+  } /* Compute diameters */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1408,9 +1519,9 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
       fm->edge[ef].unitv[k] = peq.unitv[k];
     }
 
-    const cs_lnum_t  eshft = 2*ec;
-    cs_lnum_t  v1c_id = cm->e2v_ids[eshft];
-    cs_lnum_t  v2c_id = cm->e2v_ids[eshft+1];
+    const int  eshft = 2*ec;
+    short int  v1c_id = cm->e2v_ids[eshft];
+    short int  v2c_id = cm->e2v_ids[eshft+1];
 
     /* Compact vertex numbering to this face */
     short int  v1 = -1, v2 = -1;
