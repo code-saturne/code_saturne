@@ -49,6 +49,7 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_advection_field.h \
+cs_basis_func.h \
 cs_cdo.h \
 cs_cdo_advection.h \
 cs_cdo_bc.h \
@@ -89,6 +90,7 @@ cs_xdef_eval.h
 noinst_LTLIBRARIES = libcscdo.la
 libcscdo_la_SOURCES = \
 cs_advection_field.c \
+cs_basis_func.c \
 cs_cdo.c \
 cs_cdo_advection.c \
 cs_cdo_bc.c \

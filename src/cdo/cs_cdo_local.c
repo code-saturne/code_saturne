@@ -472,6 +472,7 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
     {
       BFT_MALLOC(cb->ids, n_fc, short int);
       for (int i = 0; i < n_fc; i++) cb->ids[i] = 0;
@@ -490,6 +491,28 @@ cs_cell_builder_create(cs_space_scheme_t         scheme,
       cb->hdg = cs_sdm_square_create(n_fc);
       cb->loc = cs_sdm_square_create(n_fc + 1);
       cb->aux = cs_sdm_square_create(n_fc + 1);
+    }
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P1:
+    {
+      BFT_MALLOC(cb->ids, n_fc, short int);
+      for (int i = 0; i < n_fc; i++) cb->ids[i] = 0;
+
+      size = n_fc*(n_fc+1);
+      BFT_MALLOC(cb->values, size, double);
+      for (int i = 0; i < size; i++) cb->values[i] = 0;
+
+      size = 2*n_fc;
+      BFT_MALLOC(cb->vectors, size, cs_real_3_t);
+      for (int i = 0; i < size; i++)
+        cb->vectors[i][0] = cb->vectors[i][1] = cb->vectors[i][2] = 0;
+
+      /* Local square dense matrices used during the construction of
+         operators */
+      cb->hdg = NULL;
+      cb->loc = NULL;
+      cb->aux = NULL;
     }
     break;
 

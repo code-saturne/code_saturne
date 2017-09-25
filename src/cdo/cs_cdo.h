@@ -31,6 +31,7 @@
 
 #include "cs_base.h"
 #include "cs_defs.h"
+#include "cs_math.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -238,14 +239,20 @@ cs_test_flag(cs_flag_t    flag_to_check,
 /*!
  * \brief  Return a string "true" or "false" according to the boolean
  *
- * \param[in]  boolean     bool  type
+ * \param[in]  boolean  bool type
  *
  * \return a string "true" or "false"
  */
 /*----------------------------------------------------------------------------*/
 
-const char *
-cs_base_strtf(bool  boolean);
+static inline const char *
+cs_base_strtf(bool  boolean)
+{
+  if (boolean)
+    return "true";
+  else
+    return "false";
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -256,9 +263,25 @@ cs_base_strtf(bool  boolean);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static inline void
 cs_nvec3(const cs_real_3_t    v,
-         cs_nvec3_t          *qv);
+         cs_nvec3_t          *qv)
+{
+  cs_real_t  magnitude = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+
+  qv->meas = magnitude;
+  if (fabs(magnitude) > cs_math_zero_threshold) {
+
+    const cs_real_t  inv = 1/magnitude;
+    qv->unitv[0] = inv * v[0];
+    qv->unitv[1] = inv * v[1];
+    qv->unitv[2] = inv * v[2];
+
+  }
+  else
+    qv->unitv[0] = qv->unitv[1] = qv->unitv[2] = 0;
+
+}
 
 #if defined(DEBUG) && !defined(NDEBUG)
 /*----------------------------------------------------------------------------*/

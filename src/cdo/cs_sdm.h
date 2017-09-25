@@ -675,6 +675,30 @@ cs_sdm_square_asymm(cs_sdm_t   *mat);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Decompose a matrix into the matrix product Q.R
+ *         Case of a 3x3 symmetric matrix
+ *
+ * \param[in]      m      matrix values
+ * \param[in, out] Qt     transposed of matrix Q
+ * \param[in, out] R      vector of the coefficient of the decomposition
+ *
+ * \Note: R is an upper triangular matrix. Stored in a compact way.
+ *
+ *    j= 0, 1, 2
+ *  i=0| 0| 1| 2|
+ *  i=1   | 4| 5|
+ *  i=2        6|
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_33_sym_qr_compute(const cs_real_t   m[9],
+                         cs_real_t         Qt[9],
+                         cs_real_t         R[6]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  LDL^T: Modified Cholesky decomposition of a 3x3 SPD matrix.
  *         For more reference, see for instance
  *   http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf

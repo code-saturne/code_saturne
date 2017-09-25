@@ -860,6 +860,74 @@ cs_sdm_square_asymm(cs_sdm_t   *mat)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Decompose a matrix into the matrix product Q.R
+ *         Case of a 3x3 symmetric matrix
+ *
+ * \param[in]      m      matrix values
+ * \param[in, out] Qt     transposed of matrix Q
+ * \param[in, out] R      vector of the coefficient of the decomposition
+ *
+ * \Note: R is an upper triangular matrix. Stored in a compact way.
+ *
+ *    j= 0, 1, 2
+ *  i=0| 0| 1| 2|
+ *  i=1   | 4| 5|
+ *  i=2        6|
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_33_sym_qr_compute(const cs_real_t   m[9],
+                         cs_real_t         Qt[9],
+                         cs_real_t         R[6])
+{
+  /* Sanity checks */
+  assert(m != NULL && Qt != NULL && R != NULL);
+
+  /* Work as if Q is defined column by column (instead of row). At the end, we
+     transpose */
+
+  cs_nvec3_t  tmp;
+  cs_real_3_t  qhat;
+
+  cs_nvec3(m, &tmp); /* normalize the first row (i.e first column) */
+  R[0] = tmp.meas; /* R00 */
+  assert(tmp.meas > cs_math_zero_threshold);
+  cs_real_t  *q0 = Qt;
+  for (int k = 0; k < 3; k++)
+    q0[k] = tmp.unitv[k];
+
+  const cs_real_t  *m1 = m + 3;    /* qhat = m1 */
+  R[1] = cs_math_3_dot_product(q0, m1); /* R01 */
+  for (int k = 0; k < 3; k++)
+    qhat[k] = m1[k] - R[1]*q0[k];
+
+  cs_nvec3(qhat, &tmp);
+  R[3] = tmp.meas; /* R11 */
+  assert(tmp.meas > cs_math_zero_threshold);
+  cs_real_t  *q1 = Qt + 3;
+  for (int k = 0; k < 3; k++)
+    q1[k] = tmp.unitv[k];
+
+  const cs_real_t  *m2 = m + 6;    /* qhat = m2 */
+  R[2] = cs_math_3_dot_product(q0, m2); /* R02 */
+  for (int k = 0; k < 3; k++)
+    qhat[k] = m2[k] - R[2]*q0[k];
+  R[4] = cs_math_3_dot_product(q1, qhat); /* R12 */
+  for (int k = 0; k < 3; k++)
+    qhat[k] -= R[4]*q1[k];
+
+  cs_nvec3(qhat, &tmp);
+  R[5] = tmp.meas;
+  assert(tmp.meas > cs_math_zero_threshold);
+  cs_real_t *q2 = Qt + 6;
+  for (int k = 0; k < 3; k++)
+    q2[k] = tmp.unitv[k];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  LDL^T: Modified Cholesky decomposition of a 3x3 SPD matrix.
  *         For more reference, see for instance
  *   http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf

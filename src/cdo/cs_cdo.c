@@ -94,54 +94,6 @@ const cs_flag_t  cs_cdo_dual_face_byc =
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return a string "true" or "false" according to the boolean
- *
- * \param[in]  boolean  bool type
- *
- * \return a string "true" or "false"
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_base_strtf(bool  boolean)
-{
-  if (boolean)
-    return "true";
-  else
-    return "false";
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a cs_nvec3_t structure from a cs_real_3_t
- *
- * \param[in]  v     vector of size 3
- * \param[out] qv    pointer to a cs_nvec3_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_nvec3(const cs_real_3_t    v,
-         cs_nvec3_t          *qv)
-{
-  cs_real_t  magnitude = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
-
-  qv->meas = magnitude;
-  if (fabs(magnitude) > cs_math_zero_threshold) {
-
-    cs_real_t  inv = 1/magnitude;
-    for (int k = 0; k < 3; k++)
-      qv->unitv[k] = inv * v[k];
-
-  }
-  else
-    for (int k = 0; k < 3; k++)
-      qv->unitv[k] = 0;
-
-}
-
 #if defined(DEBUG) && !defined(NDEBUG)
 /*----------------------------------------------------------------------------*/
 /*!
