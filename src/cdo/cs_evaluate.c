@@ -141,20 +141,18 @@ _analytic_quad_tet4(double                tcur,
                     cs_analytic_func_t   *ana,
                     void                 *input)
 {
-  double  weight;
   cs_real_3_t  gauss_pts[4];
-  double  evaluation[4];
+  double  evaluation[4], weights[4];
 
   const double  vol_tet = cs_math_voltet(xv, xe, xf, xc);
 
   /* Compute Gauss points and its unique weight */
-  cs_quadrature_tet_4pts(xv, xe, xf, xc, vol_tet, gauss_pts, &weight);
+  cs_quadrature_tet_4pts(xv, xe, xf, xc, vol_tet, gauss_pts, weights);
 
   ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, true, input, evaluation);
 
   double  result = 0.0;
-  for (int p = 0; p < 4; p++) result += evaluation[p];
-  result *= weight;
+  for (int p = 0; p < 4; p++) result += weights[p] * evaluation[p];
 
   return result;
 }

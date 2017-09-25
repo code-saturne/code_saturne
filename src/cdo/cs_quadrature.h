@@ -31,6 +31,7 @@
 
 #include "cs_base.h"
 #include "cs_defs.h"
+#include "cs_math.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -55,6 +56,71 @@ typedef enum {
 
 } cs_quadrature_type_t;
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Generic function pointer to compute the quadrature points for an
+ *          edge from v1 -> v2
+ *
+ * \param[in]      v1       first vertex
+ * \param[in]      v2       second vertex
+ * \param[in]      len      length of edge [v1, v2]
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weight (same weight for the two points)
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_quadrature_edge_t) (const cs_real_3_t   v1,
+                        const cs_real_3_t   v2,
+                        double              len,
+                        cs_real_3_t         gpts[],
+                        double             *weights);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Generic functoin pointer to compute the quadrature points for a
+ *          triangle
+ *
+ * \param[in]      v1        first vertex
+ * \param[in]      v2        second vertex
+ * \param[in]      v3        third vertex
+ * \param[in]      area      area of triangle {v1, v2, v3}
+ * \param[in, out] gpts      Gauss points
+ * \param[in, out] weights   weights values
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_quadrature_tria_t) (const cs_real_3_t   v1,
+                        const cs_real_3_t   v2,
+                        const cs_real_3_t   v3,
+                        double              area,
+                        cs_real_3_t         gpts[],
+                        double             *weights);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Generic function to compute the quadrature points in a tetrehedra.
+ *
+ * \param[in]       xv       first vertex
+ * \param[in]       xe       second vertex
+ * \param[in]       xf       third vertex
+ * \param[in]       xc       fourth vertex
+ * \param[in]       vol      volume of tetrahedron {xv, xe, xf, xc}
+ * \param[in, out]  gpts     Gauss points
+ * \param[in, out]  weights  weigths related to each Gauss point
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_quadrature_tet_t) (const cs_real_3_t  xv,
+                       const cs_real_3_t  xe,
+                       const cs_real_3_t  xf,
+                       const cs_real_3_t  xc,
+                       double             vol,
+                       cs_real_3_t        gpts[],
+                       double             weights[]);
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -67,6 +133,32 @@ typedef enum {
 
 void
 cs_quadrature_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute quadrature points for an edge from v1 -> v2 (2 points)
+ *          Exact for polynomial function up to order 1
+ *
+ * \param[in]      v1       first vertex
+ * \param[in]      v2       second vertex
+ * \param[in]      len      length of edge [v1, v2]
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weight (same weight for the two points)
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_edge_1pt(const cs_real_3_t  v1,
+                       const cs_real_3_t  v2,
+                       double             len,
+                       cs_real_3_t        gpts[],
+                       double            *w)
+{
+  gpts[0][0] = 0.5*(v1[0] + v2[0]);
+  gpts[0][1] = 0.5*(v1[1] + v2[1]);
+  gpts[0][2] = 0.5*(v1[2] + v2[2]);
+  w[0] = len;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -107,6 +199,34 @@ cs_quadrature_edge_3pts(const cs_real_3_t  v1,
                         double             len,
                         cs_real_3_t        gpts[],
                         double             w[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute quadrature points for a triangle (1 point)
+ *          Exact for polynomial function up to order 1 (barycentric approx.)
+ *
+ * \param[in]      v1       first vertex
+ * \param[in]      v2       second vertex
+ * \param[in]      v3       third vertex
+ * \param[in]      area     area of triangle {v1, v2, v3}
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weight
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_tria_1pt(const cs_real_3_t   v1,
+                       const cs_real_3_t   v2,
+                       const cs_real_3_t   v3,
+                       double              area,
+                       cs_real_3_t         gpts[],
+                       double             *w)
+{
+  gpts[0][0] = cs_math_onethird * (v1[0] + v2[0] + v3[0]);
+  gpts[0][1] = cs_math_onethird * (v1[1] + v2[1] + v3[1]);
+  gpts[0][2] = cs_math_onethird * (v1[2] + v2[2] + v3[2]);
+  w[0] = area;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -176,6 +296,36 @@ cs_quadrature_tria_7pts(const cs_real_3_t   v1,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the quadrature in a tetrehedra. Exact for 1st order
+ *         polynomials (order 2).
+ *
+ * \param[in]       v1       first vertex
+ * \param[in]       v2       second vertex
+ * \param[in]       v3       third vertex
+ * \param[in]       v4       fourth vertex
+ * \param[in]       vol      volume of tetrahedron
+ * \param[in, out]  gpts     1 Gauss point
+ * \param[in, out]  weights  weight related to this point (= volume)
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_quadrature_tet_1pt(const cs_real_3_t   v1,
+                      const cs_real_3_t   v2,
+                      const cs_real_3_t   v3,
+                      const cs_real_3_t   v4,
+                      double              vol,
+                      cs_real_3_t         gpts[],
+                      double              weight[])
+{
+  gpts[0][0] = 0.25 * (v1[0] + v2[0] + v3[0] + v4[0]);
+  gpts[0][1] = 0.25 * (v1[1] + v2[1] + v3[1] + v4[1]);
+  gpts[0][2] = 0.25 * (v1[2] + v2[2] + v3[2] + v4[2]);
+  weight[0] = vol;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the quadrature in a tetrehedra. Exact for 2nd order
  *         polynomials (order 3).
  *
@@ -185,18 +335,18 @@ cs_quadrature_tria_7pts(const cs_real_3_t   v1,
  * \param[in]       xc       fourth vertex
  * \param[in]       vol      volume of tetrahedron {xv, xe, xf, xc}
  * \param[in, out]  gpts     4 Gauss points (size = 3*4)
- * \param[in, out]  w        weight (same value for all points)
+ * \param[in, out]  weights  weight (same value for all points)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_quadrature_tet_4pts(const cs_real_3_t   xv,
-                       const cs_real_3_t   xe,
-                       const cs_real_3_t   xf,
-                       const cs_real_3_t   xc,
-                       double              vol,
-                       cs_real_3_t         gpts[],
-                       double             *w);
+cs_quadrature_tet_4pts(const cs_real_3_t  xv,
+                       const cs_real_3_t  xe,
+                       const cs_real_3_t  xf,
+                       const cs_real_3_t  xc,
+                       double             vol,
+                       cs_real_3_t        gpts[],
+                       double             weights[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -221,6 +221,111 @@ cs_equation_param_init_sles(const char                 *eqname,
                             int                         field_id);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Ask if the parameters of the equation needs a diffusion term
+ *
+ * \param[in] eqp          pointer to a cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_diffusion(const cs_equation_param_t     *eqp)
+{
+  if (eqp == NULL)
+    return false;
+  if (eqp->flag & CS_EQUATION_DIFFUSION)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Ask if the parameters of the equation needs a convection term
+ *
+ * \param[in] eqp          pointer to a cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_convection(const cs_equation_param_t     *eqp)
+{
+  if (eqp == NULL)
+    return false;
+  if (eqp->flag & CS_EQUATION_CONVECTION)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Ask if the parameters of the equation needs a reaction term
+ *
+ * \param[in] eqp          pointer to a cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_reaction(const cs_equation_param_t     *eqp)
+{
+  if (eqp == NULL)
+    return false;
+  if (eqp->flag & CS_EQUATION_REACTION)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Ask if the parameters of the equation needs an unsteady term
+ *
+ * \param[in] eqp          pointer to a cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_time(const cs_equation_param_t     *eqp)
+{
+  if (eqp == NULL)
+    return false;
+  if (eqp->flag & CS_EQUATION_UNSTEADY)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Ask if the parameters of the equation needs a source term
+ *
+ * \param[in] eqp          pointer to a cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_sourceterm(const cs_equation_param_t     *eqp)
+{
+  if (eqp == NULL)
+    return false;
+  if (eqp->n_source_terms > 0)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

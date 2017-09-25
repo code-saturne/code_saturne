@@ -75,6 +75,37 @@ typedef struct {
 } cs_equation_monitor_t;
 
 /*============================================================================
+ * Inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Retrieve the flag to give for building a cs_cell_mesh_t structure
+ *
+ * \param[in]      cell_flag   flag related to the current cell
+ * \param[in]      v_msh_flag  default mesh flag for the volumic terms
+ * \param[in]      b_msh_flag  default mesh flag for the boundary terms
+ * \param[in]      s_msh_flag  default mesh flag for the source terms
+ *
+ * \return the flag to set for the current cell
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_flag_t
+cs_equation_get_cell_mesh_flag(cs_flag_t       cell_flag,
+                               cs_flag_t       v_msh_flag,
+                               cs_flag_t       b_msh_flag,
+                               cs_flag_t       s_msh_flag)
+{
+  cs_flag_t  msh_flag = v_msh_flag | s_msh_flag;
+
+  if (cell_flag & CS_FLAG_BOUNDARY)
+    msh_flag |= b_msh_flag;
+
+  return msh_flag;
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 

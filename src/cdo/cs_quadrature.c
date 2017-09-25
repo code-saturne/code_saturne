@@ -329,7 +329,7 @@ cs_quadrature_tria_7pts(const cs_real_3_t   v1,
  * \param[in]       xc       fourth vertex
  * \param[in]       vol      volume of tetrahedron {xv, xe, xf, xc}
  * \param[in, out]  gpts     4 Gauss points (size = 3*4)
- * \param[in, out]  w        weight (same value for all points)
+ * \param[in, out]  weights  weight (same value for all points)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -340,7 +340,7 @@ cs_quadrature_tet_4pts(const cs_real_3_t  xv,
                        const cs_real_3_t  xc,
                        double             vol,
                        cs_real_3_t        gpts[],
-                       double            *w)
+                       double             weights[])
 {
   /* Compute Gauss points */
   for (int k = 0; k < 3; k++) {
@@ -355,7 +355,7 @@ cs_quadrature_tet_4pts(const cs_real_3_t  xv,
   }
 
   /* Compute weights (multiplicity 4) */
-  *w = 0.25*vol;
+  weights[0] = weights[1] = weights[2] = weights[3] = 0.25*vol;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -398,11 +398,9 @@ cs_quadrature_tet_5pts(const cs_real_3_t  xv,
   }
 
   /* Compute weights */
-  for (int k = 0; k < 4; k++)
-    weights[k] = wv2;
+  weights[0] = weights[1] = weights[2] = weights[3] = wv2;
   weights[4] = wv1;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!

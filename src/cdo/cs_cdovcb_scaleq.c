@@ -188,33 +188,6 @@ static const cs_time_step_t  *cs_shared_time_step;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Retrieve the flag to give for building a cs_cell_mesh_t structure
- *
- * \param[in]      cell_flag   flag related to the current cell
- * \param[in]      v_msh_flag  default mesh flag for the volumic terms
- * \param[in]      b_msh_flag  default mesh flag for the boundary terms
- * \param[in]      s_msh_flag  default mesh flag for the source terms
- *
- * \return the flag to set for the current cell
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_flag_t
-_get_cell_mesh_flag(cs_flag_t       cell_flag,
-                    cs_flag_t       v_msh_flag,
-                    cs_flag_t       b_msh_flag,
-                    cs_flag_t       s_msh_flag)
-{
-  cs_flag_t  msh_flag = v_msh_flag | s_msh_flag;
-
-  if (cell_flag & CS_FLAG_BOUNDARY)
-    msh_flag |= b_msh_flag;
-
-  return msh_flag;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Retrieve the list of vertices attached to a face
  *
  * \param[in]       f       face id in the cell numbering
@@ -1159,10 +1132,9 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t       *mesh,
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       const cs_flag_t  cell_flag = connect->cell_flag[c_id];
-      const cs_flag_t  msh_flag = _get_cell_mesh_flag(cell_flag,
-                                                      b->msh_flag,
-                                                      b->bd_msh_flag,
-                                                      b->st_msh_flag);
+      const cs_flag_t  msh_flag =
+        cs_equation_get_cell_mesh_flag(cell_flag, b->msh_flag,
+                                       b->bd_msh_flag,  b->st_msh_flag);
 
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
