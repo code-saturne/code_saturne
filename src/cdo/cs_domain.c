@@ -1178,6 +1178,8 @@ cs_domain_process_after_solve(cs_domain_t  *domain)
 void
 cs_domain_read_restart(const cs_domain_t  *domain)
 {
+  CS_UNUSED(domain);
+
   cs_restart_t  *restart = cs_restart_create("main", // restart file name
                                              NULL,   // directory name
                                              CS_RESTART_MODE_READ);
