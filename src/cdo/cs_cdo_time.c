@@ -85,7 +85,7 @@ cs_cdo_time_scheme_t *
 cs_cdo_time_get_scheme_function(const cs_flag_t             sys_flag,
                                 const cs_equation_param_t  *eqp)
 {
-  if ((sys_flag & CS_FLAG_SYS_TIME) == 0)
+  if (!cs_equation_param_has_time(eqp))
     return NULL;
 
   switch (eqp->time_scheme) {
@@ -126,7 +126,6 @@ cs_cdo_time_get_scheme_function(const cs_flag_t             sys_flag,
  * \brief  Update the RHS with the previously computed array values (for
  *         instance the source term)
  *
- * \param[in]     sys_flag    metadata about how is set the algebraic system
  * \param[in]     eqp         pointer to a cs_equation_param_t
  * \param[in]     n_dofs      size of the array of values
  * \param[in]     values      array of values
@@ -135,13 +134,12 @@ cs_cdo_time_get_scheme_function(const cs_flag_t             sys_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_update_rhs_with_array(const cs_flag_t             sys_flag,
-                                  const cs_equation_param_t  *eqp,
+cs_cdo_time_update_rhs_with_array(const cs_equation_param_t  *eqp,
                                   const cs_lnum_t             n_dofs,
                                   const cs_real_t            *values,
                                   cs_real_t                  *rhs)
 {
-  if (!cs_test_flag(sys_flag, CS_FLAG_SYS_TIME))
+  if (!cs_equation_param_has_time(eqp))
     return; /* Nothing to do */
 
   /* Previous values are stored inside values */
@@ -206,7 +204,7 @@ cs_cdo_time_diag_imp(const cs_equation_param_t  *eqp,
 
   /* STEP1 >> Apply source term contribution
            >> RHS has already the BC contribution */
-  if (system_flag & CS_FLAG_SYS_SOURCETERM)
+  if (cs_equation_param_has_sourceterm(eqp))
     for (short int i = 0; i < csys->n_dofs; i++)
       csys->rhs[i] += csys->source[i]; // Values at t_(n+1)
 
@@ -249,7 +247,7 @@ cs_cdo_time_imp(const cs_equation_param_t  *eqp,
                 cs_cell_builder_t          *cb,
                 cs_cell_sys_t              *csys)
 {
-  CS_UNUSED(eqp);
+  CS_UNUSED(system_flag);
 
   cs_sdm_t  *adr = csys->mat;
 
@@ -262,7 +260,7 @@ cs_cdo_time_imp(const cs_equation_param_t  *eqp,
   /* STEP1 >> Apply source term contribution
            >> RHS has already the BC contribution (+Source term at iter n
               if required) */
-  if (system_flag & CS_FLAG_SYS_SOURCETERM)
+  if (cs_equation_param_has_sourceterm(eqp))
     for (short int i = 0; i < csys->n_dofs; i++)
       csys->rhs[i] += csys->source[i]; // Values at t_(n+1)
 
@@ -449,7 +447,7 @@ cs_cdo_time_diag_theta(const cs_equation_param_t  *eqp,
   assert(mass_mat != NULL);
 
   /* STEP1 >> Treatment of the source term */
-  if (system_flag & CS_FLAG_SYS_SOURCETERM)
+  if (cs_equation_param_has_sourceterm(eqp))
     for (short int i = 0; i < csys->n_dofs; i++)
       csys->rhs[i] += eqp->theta * csys->source[i];
 
@@ -507,6 +505,7 @@ cs_cdo_time_theta(const cs_equation_param_t  *eqp,
                   cs_cell_builder_t          *cb,
                   cs_cell_sys_t              *csys)
 {
+  CS_UNUSED(system_flag);
   const double  tcoef = 1 - eqp->theta;
 
   cs_sdm_t  *adr = csys->mat;
@@ -519,7 +518,7 @@ cs_cdo_time_theta(const cs_equation_param_t  *eqp,
   assert(mass_mat->n_rows == adr->n_rows);
 
   /* STEP1 >> Treatment of the source term */
-  if (system_flag & CS_FLAG_SYS_SOURCETERM)
+  if (cs_equation_param_has_sourceterm(eqp))
     for (short int i = 0; i < csys->n_dofs; i++)
       csys->rhs[i] += eqp->theta * csys->source[i];
 

@@ -99,7 +99,6 @@ cs_cdo_time_get_scheme_function(const cs_flag_t             sys_flag,
  * \brief  Update the RHS with the previously computed array values (for
  *         instance the source term)
  *
- * \param[in]     sys_flag    metadata about how is set the algebraic system
  * \param[in]     eqp         pointer to a cs_equation_param_t
  * \param[in]     n_dofs      size of the array of values
  * \param[in]     values      array of values
@@ -108,8 +107,7 @@ cs_cdo_time_get_scheme_function(const cs_flag_t             sys_flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_time_update_rhs_with_array(const cs_flag_t             sys_flag,
-                                  const cs_equation_param_t  *eqp,
+cs_cdo_time_update_rhs_with_array(const cs_equation_param_t  *eqp,
                                   const cs_lnum_t             n_dofs,
                                   const cs_real_t            *values,
                                   cs_real_t                  *rhs);

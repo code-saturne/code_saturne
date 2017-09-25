@@ -50,16 +50,11 @@ BEGIN_C_DECLS
 #define CS_FLAG_BOUNDARY     (1 << 0)  //  1: cell with at least one border face
 
 /* Flag related to the way a CDO system is built */
-#define CS_FLAG_SYS_DIFFUSION    (1 << 0) //   1: Build the diffusion term
-#define CS_FLAG_SYS_ADVECTION    (1 << 1) //   2: Build the advection term
-#define CS_FLAG_SYS_REACTION     (1 << 2) //   4: Build the reaction term(s)
-#define CS_FLAG_SYS_TIME         (1 << 3) //   8: Build the unsteady term
-#define CS_FLAG_SYS_SOURCETERM   (1 << 4) //  16: Build the source term(s)
-#define CS_FLAG_SYS_HLOC_CONF    (1 << 5) //  32: build conforming Hodge op.
-#define CS_FLAG_SYS_SYM          (1 << 6) //  64: system matrix is symmetric
-#define CS_FLAG_SYS_TIME_DIAG    (1 << 7) // 128: lumping/diag by construction
-#define CS_FLAG_SYS_SOURCES_HLOC (1 << 8) // 256: source terms need a hodge op.
-#define CS_FLAG_SYS_DEBUG        (1 << 9) // 512: activate debug mode
+#define CS_FLAG_SYS_HLOC_CONF    (1 << 0) //   1: build conforming Hodge op.
+#define CS_FLAG_SYS_SYM          (1 << 1) //   2: system matrix is symmetric
+#define CS_FLAG_SYS_TIME_DIAG    (1 << 2) //   4: lumping/diag by construction
+#define CS_FLAG_SYS_SOURCES_HLOC (1 << 3) //   8: source terms need a hodge op.
+#define CS_FLAG_SYS_DEBUG        (1 << 4) //  16: activate debug mode
 
 /* Flags use to identify the nature/status of an object (variable, property) */
 #define CS_FLAG_STATE_UNIFORM     (1 << 0) //    1: uniform (in space)
@@ -104,7 +99,7 @@ BEGIN_C_DECLS
 /* Size of the buffer used to collect global ids for rows and columns
    when assembling the values in the global matrix from the local cellwise
    matrices */
-#define CS_CDO_ASSEMBLE_BUF_SIZE  96
+#define CS_CDO_ASSEMBLE_BUF_SIZE  99
 
 /* The following limitation only results from an optimization in the size of
    the bit mask (can be changed if needed by changing the definition of
@@ -114,6 +109,15 @@ BEGIN_C_DECLS
 /* Specifications for open mp loops */
 #define CS_CDO_OMP_CHUNK_SIZE  128
 #define CS_CDO_OMP_SCHEDULE  schedule(static, CS_CDO_OMP_CHUNK_SIZE)
+
+/* Number of DoFs on faces and cells according to the polynomial space */
+#define CS_N_FACE_DOFS_0TH  1
+#define CS_N_FACE_DOFS_1ST  3
+#define CS_N_FACE_DOFS_2ND  6
+
+#define CS_N_CELL_DOFS_0TH  1
+#define CS_N_CELL_DOFS_1ST  4
+#define CS_N_CELL_DOFS_2ND  10
 
 /*============================================================================
  * Type definitions

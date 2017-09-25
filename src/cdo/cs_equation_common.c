@@ -421,7 +421,8 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
     if (scheme_flag & CS_SCHEME_FLAG_POLY1) {
 
       ma = cs_matrix_assembler_create(connect->hho1_rs->l_range, true);
-      _build_matrix_assembler(n_faces, 3, cs_connect_f2f, connect->hho1_rs, ma);
+      _build_matrix_assembler(n_faces, CS_N_FACE_DOFS_1ST, cs_connect_f2f,
+                              connect->hho1_rs, ma);
       ms = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
       cs_equation_common_ma[CS_EQ_COMMON_FACE_P1] = ma;
@@ -432,7 +433,8 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
     if (scheme_flag & CS_SCHEME_FLAG_POLY2) {
 
       ma = cs_matrix_assembler_create(connect->hho2_rs->l_range, true);
-      _build_matrix_assembler(n_faces, 6, cs_connect_f2f, connect->hho2_rs, ma);
+      _build_matrix_assembler(n_faces, CS_N_FACE_DOFS_2ND, cs_connect_f2f,
+                              connect->hho2_rs, ma);
       ms = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
       cs_equation_common_ma[CS_EQ_COMMON_FACE_P2] = ma;
@@ -490,7 +492,12 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
     cs_hho_scaleq_initialize(scheme_flag);
 
     // TODO: Update this value accordingly to HHO needs
-    cwb_size = CS_MAX(cwb_size, (size_t)3*n_faces);
+    if (scheme_flag & CS_SCHEME_FLAG_POLY2)
+      cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_2ND * n_faces);
+    else if (scheme_flag & CS_SCHEME_FLAG_POLY1)
+      cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_1ST * n_faces);
+    else
+      cwb_size = CS_MAX(cwb_size, (size_t)n_faces);
 
   }
 
@@ -571,6 +578,272 @@ cs_equation_free_common_structures(cs_flag_t   scheme_flag)
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f seconds\n",
                 "<CDO/CommonEq> Runtime",
                 tcc.wall_nsec*1e-9, tca.wall_nsec*1e-9);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate a new structure to handle the building of algebraic system
+ *         related to an cs_equation_t structure
+ *
+ * \param[in] eqp       pointer to a cs_equation_param_t structure
+ * \param[in] mesh      pointer to a cs_mesh_t structure
+ *
+ * \return a pointer to a new allocated cs_equation_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_builder_t *
+cs_equation_init_builder(const cs_equation_param_t   *eqp,
+                         const cs_mesh_t             *mesh)
+{
+  cs_equation_builder_t  *eqb = NULL;
+
+  BFT_MALLOC(eqb, 1, cs_equation_builder_t);
+
+  /* Initialize flags used to knows what kind of cell quantities to build */
+  eqb->msh_flag = 0;
+  eqb->bd_msh_flag = 0;
+  eqb->st_msh_flag = 0;
+  eqb->sys_flag = 0;
+
+  /* Handle properties */
+  eqb->diff_pty_uniform = true;
+  if (cs_equation_param_has_diffusion(eqp))
+    eqb->diff_pty_uniform = cs_property_is_uniform(eqp->diffusion_property);
+
+  eqb->time_pty_uniform = true;
+  if (cs_equation_param_has_time(eqp))
+    eqb->time_pty_uniform = cs_property_is_uniform(eqp->time_property);
+
+  if (eqp->n_reaction_terms > CS_CDO_N_MAX_REACTIONS)
+    bft_error(__FILE__, __LINE__, 0,
+              " Number of reaction terms for an equation is too high.\n"
+              " Modify your settings aor contact the developpement team.");
+
+  for (int i = 0; i < eqp->n_reaction_terms; i++)
+    eqb->reac_pty_uniform[i]
+      = cs_property_is_uniform(eqp->reaction_properties[i]);
+
+  /* Handle source terms */
+  eqb->source_mask = NULL;
+  if (cs_equation_param_has_sourceterm(eqp)) {
+
+    /* Default intialization */
+    eqb->st_msh_flag = cs_source_term_init(eqp->space_scheme,
+                                           eqp->n_source_terms,
+                        (const cs_xdef_t**)eqp->source_terms,
+                                           eqb->compute_source,
+                                           &(eqb->sys_flag),
+                                           &(eqb->source_mask));
+
+  } /* There is at least one source term */
+
+  /* Set members and structures related to the management of the BCs
+     Translate user-defined information about BC into a structure well-suited
+     for computation. We make the distinction between homogeneous and
+     non-homogeneous BCs.  */
+  eqb->face_bc = cs_cdo_bc_define(eqp->default_bc,
+                                  eqp->n_bc_desc,
+                                  eqp->bc_desc,
+                                  mesh->n_b_faces);
+
+  /* Monitoring */
+  CS_TIMER_COUNTER_INIT(eqb->tcb); // build system
+  CS_TIMER_COUNTER_INIT(eqb->tcd); // build diffusion terms
+  CS_TIMER_COUNTER_INIT(eqb->tca); // build advection terms
+  CS_TIMER_COUNTER_INIT(eqb->tcr); // build reaction terms
+  CS_TIMER_COUNTER_INIT(eqb->tcs); // build source terms
+  CS_TIMER_COUNTER_INIT(eqb->tce); // extra operations
+
+  return eqb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_equation_builder_t structure
+ *
+ * \param[in, out]  p_builder  pointer of pointer to the cs_equation_builder_t
+ *                             structure to free
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_free_builder(cs_equation_builder_t  **p_builder)
+{
+  if (p_builder == NULL)
+    return;
+  if (*p_builder == NULL)
+    return;
+
+  cs_equation_builder_t  *eqb = *p_builder;
+
+  if (eqb->source_mask != NULL)
+    BFT_FREE(eqb->source_mask);
+
+  /* Free BC structure */
+  eqb->face_bc = cs_cdo_bc_free(eqb->face_bc);
+
+  BFT_FREE(eqb);
+
+  *p_builder = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Print a message in the performance output file related to the
+ *          monitoring of equation
+ *
+ * \param[in]  eqname    pointer to the name of the current equation
+ * \param[in]  eqb       pointer to a cs_equation_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_write_monitoring(const char                    *eqname,
+                             const cs_equation_builder_t   *eqb)
+{
+  double t[6] = {eqb->tcb.wall_nsec, eqb->tcd.wall_nsec,
+                 eqb->tca.wall_nsec, eqb->tcr.wall_nsec,
+                 eqb->tcs.wall_nsec, eqb->tce.wall_nsec};
+  for (int i = 0; i < 6; i++) t[i] *= 1e-9;
+
+  if (eqname == NULL)
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  " %-35s %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f seconds\n",
+                  "<CDO/Equation> Monitoring",
+                  t[0], t[1], t[2], t[3], t[4], t[5]);
+  else {
+    char *msg = NULL;
+    int len = 1 + strlen("<CDO/> Monitoring") + strlen(eqname);
+    BFT_MALLOC(msg, len, char);
+    sprintf(msg, "<CDO/%s> Monitoring", eqname);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  " %-35s %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f seconds\n",
+                  msg, t[0], t[1], t[2], t[3], t[4], t[5]);
+    BFT_FREE(msg);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize all properties for an algebraic system
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out] tpty_val  pointer to the value for the time property
+ * \param[in, out] rpty_vals pointer to the values for reaction properties
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure (diffusion
+ *                           property is stored inside)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_init_properties(const cs_equation_param_t     *eqp,
+                            const cs_equation_builder_t   *eqb,
+                            double                        *tpty_val,
+                            double                        *rpty_vals,
+                            cs_cell_builder_t             *cb)
+{
+  /* Preparatory step for diffusion term */
+  if (cs_equation_param_has_diffusion(eqp))
+    if (eqb->diff_pty_uniform)
+      cs_equation_set_diffusion_property(eqp,
+                                         0,                // cell_id
+                                         CS_FLAG_BOUNDARY, // force boundary
+                                         cb);
+
+  /* Preparatory step for unsteady term */
+  if (cs_equation_param_has_time(eqp))
+    if (eqb->time_pty_uniform)
+      *tpty_val = cs_property_get_cell_value(0, eqp->time_property);
+
+  /* Preparatory step for reaction term */
+  for (int i = 0; i < CS_CDO_N_MAX_REACTIONS; i++) rpty_vals[i] = 1.0;
+
+  if (cs_equation_param_has_reaction(eqp)) {
+
+    for (int r = 0; r < eqp->n_reaction_terms; r++) {
+      if (eqb->reac_pty_uniform[r]) {
+        cs_property_t  *r_pty = eqp->reaction_properties[r];
+        rpty_vals[r] = cs_property_get_cell_value(0, r_pty);
+      }
+    } // Loop on reaction properties
+
+  } // Reaction properties
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the diffusion property inside a cell and its related quantities
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      c_id    id of the cell to deal with
+ * \param[in]      c_flag  flag related to this cell
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_diffusion_property(const cs_equation_param_t     *eqp,
+                                   cs_lnum_t                      c_id,
+                                   cs_flag_t                      c_flag,
+                                   cs_cell_builder_t             *cb)
+{
+  cs_property_get_cell_tensor(c_id,
+                              eqp->diffusion_property,
+                              eqp->diffusion_hodge.inv_pty,
+                              cb->pty_mat);
+
+  if (cs_property_is_isotropic(eqp->diffusion_property))
+    cb->pty_val = cb->pty_mat[0][0];
+
+  /* Set additional quantities in case of more advanced way of enforcing the
+     Dirichlet BCs */
+  if (c_flag & CS_FLAG_BOUNDARY) {
+    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+        eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+      cs_math_33_eigen((const cs_real_t (*)[3])cb->pty_mat,
+                       &(cb->eig_ratio),
+                       &(cb->eig_max));
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the diffusion property inside a cell and its related quantities.
+ *         Cellwise version using a cs_cell_mesh_t structure
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      c_flag  flag related to this cell
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_diffusion_property_cw(const cs_equation_param_t     *eqp,
+                                      const cs_cell_mesh_t          *cm,
+                                      cs_flag_t                      c_flag,
+                                      cs_cell_builder_t             *cb)
+{
+  cs_property_tensor_in_cell(cm,
+                             eqp->diffusion_property,
+                             eqp->diffusion_hodge.inv_pty,
+                             cb->pty_mat);
+
+  if (cs_property_is_isotropic(eqp->diffusion_property))
+    cb->pty_val = cb->pty_mat[0][0];
+
+  /* Set additional quantities in case of more advanced way of enforcing the
+     Dirichlet BCs */
+  if (c_flag & CS_FLAG_BOUNDARY) {
+    if (eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+        eqp->enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+      cs_math_33_eigen((const cs_real_t (*)[3])cb->pty_mat,
+                       &(cb->eig_ratio),
+                       &(cb->eig_max));
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1070,7 +1343,7 @@ cs_equation_compute_neumann_sf(short int                   def_id,
  *
  * \param[in]       csys      cellwise view of the algebraic system
  * \param[in]       rset      pointer to a cs_range_set_t structure on vertices
- * \param[in]       sys_flag  flag associated to the current system builder
+ * \param[in]       eqp       pointer to a cs_equation_param_t structure
  * \param[in, out]  rhs       array storing the right-hand side
  * \param[in, out]  sources   array storing the contribution of source terms
  * \param[in, out]  mav       pointer to a matrix assembler structure
@@ -1080,11 +1353,14 @@ cs_equation_compute_neumann_sf(short int                   def_id,
 void
 cs_equation_assemble_v(const cs_cell_sys_t            *csys,
                        const cs_range_set_t           *rset,
-                       cs_flag_t                       sys_flag,
+                       const cs_equation_param_t      *eqp,
                        cs_real_t                      *rhs,
                        cs_real_t                      *sources,
                        cs_matrix_assembler_values_t   *mav)
 {
+  assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB ||
+         eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB);
+
   const short int  n_vc = csys->mat->n_rows;
   const cs_lnum_t  *v_ids = csys->dof_ids;
 
@@ -1104,7 +1380,7 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
 #   pragma omp atomic
     rhs[vi_id] += csys->rhs[i];
 
-    if (sys_flag & CS_FLAG_SYS_SOURCETERM) {
+    if (cs_equation_param_has_sourceterm(eqp)) {
 #     pragma omp atomic
       sources[vi_id] += csys->source[i];
     }
@@ -1144,7 +1420,7 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
  *
  * \param[in]       csys      cellwise view of the algebraic system
  * \param[in]       rset      pointer to a cs_range_set_t structure on vertices
- * \param[in]       sys_flag  flag associated to the current system builder
+ * \param[in]       eqp       pointer to a cs_equation_param_t structure
  * \param[in, out]  rhs       array storing the right-hand side
  * \param[in, out]  mav       pointer to a matrix assembler structure
  */
@@ -1153,11 +1429,14 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
 void
 cs_equation_assemble_f(const cs_cell_sys_t            *csys,
                        const cs_range_set_t           *rset,
-                       cs_flag_t                       sys_flag,
+                       const cs_equation_param_t      *eqp,
                        cs_real_t                      *rhs,
                        cs_matrix_assembler_values_t   *mav)
 {
-  CS_UNUSED(sys_flag);
+  assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB  ||
+         eqp->space_scheme == CS_SPACE_SCHEME_HHO_P0 ||
+         eqp->space_scheme == CS_SPACE_SCHEME_HHO_P1 ||
+         eqp->space_scheme == CS_SPACE_SCHEME_HHO_P2);
 
   const short int  n_fc = csys->mat->n_rows;
   const cs_lnum_t  *f_ids = csys->dof_ids;
@@ -1346,70 +1625,6 @@ size_t
 cs_equation_get_tmpbuf_size(void)
 {
   return cs_equation_common_work_buffer_size;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Initialize a monitoring structure
- *
- * \return a cs_equation_monitor_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_monitor_t *
-cs_equation_init_monitoring(void)
-{
-  cs_equation_monitor_t  *m = NULL;
-
-  BFT_MALLOC(m, 1, cs_equation_monitor_t);
-
-  /* Monitoring */
-  CS_TIMER_COUNTER_INIT(m->tcb); // build system
-
-  CS_TIMER_COUNTER_INIT(m->tcd); // build diffusion terms
-  CS_TIMER_COUNTER_INIT(m->tca); // build advection terms
-  CS_TIMER_COUNTER_INIT(m->tcr); // build reaction terms
-  CS_TIMER_COUNTER_INIT(m->tcs); // build source terms
-
-  CS_TIMER_COUNTER_INIT(m->tce); // extra operations
-
-  return m;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Print a message in the performance output file related to the
- *          monitoring of equation
- *
- * \param[in]  eqname    pointer to the name of the current equation
- * \param[in]  monitor   monitoring structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_write_monitoring(const char                    *eqname,
-                             const cs_equation_monitor_t   *monitor)
-{
-  double t[6] = {monitor->tcb.wall_nsec, monitor->tcd.wall_nsec,
-                 monitor->tca.wall_nsec, monitor->tcr.wall_nsec,
-                 monitor->tcs.wall_nsec, monitor->tce.wall_nsec};
-  for (int i = 0; i < 6; i++) t[i] *= 1e-9;
-
-  if (eqname == NULL)
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  " %-35s %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f seconds\n",
-                  "<CDO/Equation> Monitoring",
-                  t[0], t[1], t[2], t[3], t[4], t[5]);
-  else {
-    char *msg = NULL;
-    int len = 1 + strlen("<CDO/> Monitoring") + strlen(eqname);
-    BFT_MALLOC(msg, len, char);
-    sprintf(msg, "<CDO/%s> Monitoring", eqname);
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  " %-35s %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f seconds\n",
-                  msg, t[0], t[1], t[2], t[3], t[4], t[5]);
-    BFT_FREE(msg);
-  }
 }
 
 /*----------------------------------------------------------------------------*/

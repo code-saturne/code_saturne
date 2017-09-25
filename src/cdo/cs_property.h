@@ -203,8 +203,39 @@ cs_property_finalize_setup(void);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_property_is_uniform(const cs_property_t   *pty);
+static inline bool
+cs_property_is_uniform(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return false;
+
+  if (pty->state_flag & CS_FLAG_STATE_UNIFORM)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  returns true if the property is isotropic, otherwise false
+ *
+ * \param[in]    pty    pointer to a property to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_property_is_isotropic(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return false;
+
+  if (pty->type == CS_PROPERTY_ISO)
+    return true;
+  else
+    return false;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -216,8 +247,14 @@ cs_property_is_uniform(const cs_property_t   *pty);
  */
 /*----------------------------------------------------------------------------*/
 
-const char *
-cs_property_get_name(const cs_property_t   *pty);
+static inline const char *
+cs_property_get_name(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return NULL;
+
+  return pty->name;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -229,8 +266,14 @@ cs_property_get_name(const cs_property_t   *pty);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_property_type_t
-cs_property_get_type(const cs_property_t   *pty);
+static inline cs_property_type_t
+cs_property_get_type(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return CS_PROPERTY_N_TYPES;
+
+  return pty->type;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

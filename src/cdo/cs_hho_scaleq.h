@@ -96,107 +96,95 @@ cs_hho_scaleq_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_hho_scaleq_t structure
+ * \brief  Initialize a cs_hho_scaleq_t structure storing data useful for
+ *         managing such a scheme
  *
- * \param[in] eqp       pointer to a cs_equation_param_t structure
- * \param[in] mesh      pointer to a cs_mesh_t structure
+ * \param[in] eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb   pointer to a cs_equation_builder_t structure
  *
  * \return a pointer to a new allocated cs_hho_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
-cs_hho_scaleq_init(const cs_equation_param_t   *eqp,
-                   const cs_mesh_t             *mesh);
+cs_hho_scaleq_init_data(const cs_equation_param_t   *eqp,
+                        cs_equation_builder_t       *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Destroy a cs_hho_scaleq_t structure
  *
- * \param[in, out]  builder   pointer to a cs_hho_scaleq_t structure
+ * \param[in, out]  data    pointer to a cs_hho_scaleq_t structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_hho_scaleq_free(void   *builder);
+cs_hho_scaleq_free_data(void   *data);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the contributions of source terms (store inside builder)
  *
- * \param[in, out] builder     pointer to a cs_hho_scaleq_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb      pointer to a cs_equation_builder_t structure
+ * \param[in, out] data     pointer to a cs_hho_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_compute_source(void            *builder);
+cs_hho_scaleq_compute_source(const cs_equation_param_t  *eqp,
+                             cs_equation_builder_t      *eqb,
+                             void                       *data);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Create the matrix of the current algebraic system.
  *         Allocate and initialize the right-hand side associated to the given
- *         builder structure
+ *         data structure
  *
- * \param[in, out] builder        pointer to generic builder structure
+ * \param[in]      eqp            pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
+ * \param[in, out] data           pointer to generic data structure
  * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
  * \param[in, out] system_rhs     pointer of pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_initialize_system(void           *builder,
-                                cs_matrix_t   **system_matrix,
-                                cs_real_t     **system_rhs);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate the matrix related to the algebraic system to solve
- *
- * \return  a pointer to a new allocated structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_t *
-cs_hho_allocate_matrix(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize the right-hand side associated to the given
- *         builder structure
- *
- * \param[in, out] builder    pointer to generic builder structure
- *
- * \return an initialized array
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_hho_initialize_rhs(void       *builder);
+cs_hho_scaleq_initialize_system(const cs_equation_param_t  *eqp,
+                                cs_equation_builder_t      *eqb,
+                                void                       *data,
+                                cs_matrix_t               **system_matrix,
+                                cs_real_t                 **system_rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build the linear system arising from a scalar convection/diffusion
  *         equation with a HHO scheme.
- *         One works cellwise and then process to the assembly.
+ *         One works cellwise and then process to the assembly
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      dt_cur     current value of the time step
- * \param[in, out] builder    pointer to cs_hho_scaleq_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] data       pointer to cs_hho_scaleq_t structure
  * \param[in, out] rhs        right-hand side
  * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_build_system(const cs_mesh_t         *mesh,
-                           const cs_real_t         *field_val,
-                           double                   dt_cur,
-                           void                    *builder,
-                           cs_real_t               *rhs,
-                           cs_matrix_t             *matrix);
+cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
+                           const cs_real_t            *field_val,
+                           double                      dt_cur,
+                           const cs_equation_param_t  *eqp,
+                           cs_equation_builder_t      *eqb,
+                           void                       *data,
+                           cs_real_t                  *rhs,
+                           cs_matrix_t                *matrix);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -205,30 +193,34 @@ cs_hho_scaleq_build_system(const cs_mesh_t         *mesh,
  *
  * \param[in]      solu       solution array
  * \param[in]      rhs        rhs associated to this solution array
- * \param[in, out] builder    pointer to builder structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] data       pointer to cs_hho_scaleq_t structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_update_field(const cs_real_t     *solu,
-                           const cs_real_t     *rhs,
-                           void                *builder,
-                           cs_real_t           *field_val);
+cs_hho_scaleq_update_field(const cs_real_t            *solu,
+                           const cs_real_t            *rhs,
+                           const cs_equation_param_t  *eqp,
+                           cs_equation_builder_t      *eqb,
+                           void                       *data,
+                           cs_real_t                  *field_val);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Get the computed values at faces (DoF used in the linear system are
  *         located at primal faces)
  *
- * \param[in]  builder    pointer to a builder structure
+ * \param[in]  data    pointer to a data structure
  *
  * \return  a pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
 double *
-cs_hho_scaleq_get_face_values(const void          *builder);
+cs_hho_scaleq_get_face_values(const void          *data);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -236,14 +228,18 @@ cs_hho_scaleq_get_face_values(const void          *builder);
  *
  * \param[in]       eqname     name of the equation
  * \param[in]       field      pointer to a field structure
- * \param[in, out]  builder    pointer to builder structure
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  data       pointer to cs_hho_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_extra_op(const char            *eqname,
-                       const cs_field_t      *field,
-                       void                  *builder);
+cs_hho_scaleq_extra_op(const char                 *eqname,
+                       const cs_field_t           *field,
+                       const cs_equation_param_t  *eqp,
+                       cs_equation_builder_t      *eqb,
+                       void                       *data);
 
 /*----------------------------------------------------------------------------*/
 

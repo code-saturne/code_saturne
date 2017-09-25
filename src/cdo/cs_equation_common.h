@@ -52,7 +52,38 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* Store common elements used when building an algebraic system related to
+   an equation */
 typedef struct {
+
+  /* Shortcut to know what to build */
+  cs_flag_t    msh_flag;     // Information related to cell mesh
+  cs_flag_t    bd_msh_flag;  // Information related to cell mesh (boundary)
+  cs_flag_t    st_msh_flag;  // Information related to cell mesh (source term)
+  cs_flag_t    sys_flag;     // Information related to the sytem
+
+  /* Metadata related to associated properties */
+  bool         diff_pty_uniform;
+  bool         time_pty_uniform;
+  bool         reac_pty_uniform[CS_CDO_N_MAX_REACTIONS];
+
+  /* Source terms */
+  cs_mask_t   *source_mask;  /* NULL if at least one source term is not
+                                defined for all cells (size = n_cells) */
+
+  /* Pointer to functions which compute the value of the source term */
+  cs_source_term_cellwise_t  *compute_source[CS_N_MAX_SOURCE_TERMS];
+
+  /* Boundary conditions:
+
+     face_bc should not change during the simulation.
+     The case of a definition of the BCs which changes of type during the
+     simulation is possible but not implemented.
+     You just have to call the initialization step each time the type of BCs
+     is modified to define an updated cs_cdo_bc_t structure.
+  */
+
+  cs_cdo_bc_t           *face_bc; // list of faces sorted by type of BCs
 
   /* Monitoring the efficiency of the algorithm used to manipulate/build
      an equation builder. */
@@ -72,7 +103,7 @@ typedef struct {
                                            all extra operations (post, balance,
                                            fluxes...) */
 
-} cs_equation_monitor_t;
+} cs_equation_builder_t;
 
 /*============================================================================
  * Inline public function prototypes
@@ -82,27 +113,23 @@ typedef struct {
 /*!
  * \brief   Retrieve the flag to give for building a cs_cell_mesh_t structure
  *
- * \param[in]      cell_flag   flag related to the current cell
- * \param[in]      v_msh_flag  default mesh flag for the volumic terms
- * \param[in]      b_msh_flag  default mesh flag for the boundary terms
- * \param[in]      s_msh_flag  default mesh flag for the source terms
+ * \param[in]  cell_flag   flag related to the current cell
+ * \param[in]  eqb         pointer to a cs_equation_builder_t structure
  *
  * \return the flag to set for the current cell
  */
 /*----------------------------------------------------------------------------*/
 
 static inline cs_flag_t
-cs_equation_get_cell_mesh_flag(cs_flag_t       cell_flag,
-                               cs_flag_t       v_msh_flag,
-                               cs_flag_t       b_msh_flag,
-                               cs_flag_t       s_msh_flag)
+cs_equation_get_cell_mesh_flag(cs_flag_t                      cell_flag,
+                               const cs_equation_builder_t   *eqb)
 {
-  cs_flag_t  msh_flag = v_msh_flag | s_msh_flag;
+  cs_flag_t  _flag = eqb->msh_flag | eqb->st_msh_flag;
 
   if (cell_flag & CS_FLAG_BOUNDARY)
-    msh_flag |= b_msh_flag;
+    _flag |= eqb->bd_msh_flag;
 
-  return msh_flag;
+  return _flag;
 }
 
 /*============================================================================
@@ -149,6 +176,103 @@ cs_equation_allocate_common_structures(const cs_cdo_connect_t     *connect,
 
 void
 cs_equation_free_common_structures(cs_flag_t   scheme_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate a new structure to handle the building of algebraic system
+ *         related to an cs_equation_t structure
+ *
+ * \param[in] eqp       pointer to a cs_equation_param_t structure
+ * \param[in] mesh      pointer to a cs_mesh_t structure
+ *
+ * \return a pointer to a new allocated cs_equation_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_builder_t *
+cs_equation_init_builder(const cs_equation_param_t   *eqp,
+                         const cs_mesh_t             *mesh);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_equation_builder_t structure
+ *
+ * \param[in, out]  p_builder  pointer of pointer to the cs_equation_builder_t
+ *                             structure to free
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_free_builder(cs_equation_builder_t  **p_builder);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Print a message in the performance output file related to the
+ *          monitoring of equation
+ *
+ * \param[in]  eqname    pointer to the name of the current equation
+ * \param[in]  eqb       pointer to a cs_equation_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_write_monitoring(const char                    *eqname,
+                             const cs_equation_builder_t   *eqb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize all properties for an algebraic system
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out] tpty_val  pointer to the value for the time property
+ * \param[in, out] rpty_vals pointer to the values for reaction properties
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure (diffusion
+ *                           property is stored inside)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_init_properties(const cs_equation_param_t     *eqp,
+                            const cs_equation_builder_t   *eqb,
+                            double                        *tpty_val,
+                            double                        *rpty_vals,
+                            cs_cell_builder_t             *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the diffusion property inside a cell and its related quantities
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      c_id    id of the cell to deal with
+ * \param[in]      c_flag  flag related to this cell
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_diffusion_property(const cs_equation_param_t     *eqp,
+                                   cs_lnum_t                      c_id,
+                                   cs_flag_t                      c_flag,
+                                   cs_cell_builder_t             *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the diffusion property inside a cell and its related quantities.
+ *         Cellwise version using a cs_cell_mesh_t structure
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      c_flag  flag related to this cell
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_diffusion_property_cw(const cs_equation_param_t     *eqp,
+                                      const cs_cell_mesh_t          *cm,
+                                      cs_flag_t                      c_flag,
+                                      cs_cell_builder_t             *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -253,7 +377,7 @@ cs_equation_compute_neumann_sf(short int                   def_id,
  *
  * \param[in]       csys      cellwise view of the algebraic system
  * \param[in]       rset      pointer to a cs_range_set_t structure on vertices
- * \param[in]       sys_flag  flag associated to the current system builder
+ * \param[in]       eqp       pointer to a cs_equation_param_t structure
  * \param[in, out]  rhs       array storing the right-hand side
  * \param[in, out]  sources   array storing the contribution of source terms
  * \param[in, out]  mav       pointer to a matrix assembler structure
@@ -263,7 +387,7 @@ cs_equation_compute_neumann_sf(short int                   def_id,
 void
 cs_equation_assemble_v(const cs_cell_sys_t            *csys,
                        const cs_range_set_t           *rset,
-                       cs_flag_t                       sys_flag,
+                       const cs_equation_param_t      *eqp,
                        cs_real_t                      *rhs,
                        cs_real_t                      *sources,
                        cs_matrix_assembler_values_t   *mav);
@@ -275,7 +399,7 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
  *
  * \param[in]       csys      cellwise view of the algebraic system
  * \param[in]       rset      pointer to a cs_range_set_t structure on vertices
- * \param[in]       sys_flag  flag associated to the current system builder
+ * \param[in]       eqp       pointer to a cs_equation_param_t structure
  * \param[in, out]  rhs       array storing the right-hand side
  * \param[in, out]  mav       pointer to a matrix assembler structure
  */
@@ -284,7 +408,7 @@ cs_equation_assemble_v(const cs_cell_sys_t            *csys,
 void
 cs_equation_assemble_f(const cs_cell_sys_t            *csys,
                        const cs_range_set_t           *rset,
-                       cs_flag_t                       sys_flag,
+                       const cs_equation_param_t      *eqp,
                        cs_real_t                      *rhs,
                        cs_matrix_assembler_values_t   *mav);
 
@@ -361,31 +485,6 @@ cs_equation_get_tmpbuf(void);
 
 size_t
 cs_equation_get_tmpbuf_size(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Initialize a monitoring structure
- *
- * \return a cs_equation_monitor_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_monitor_t *
-cs_equation_init_monitoring(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Print a message in the performance output file related to the
- *          monitoring of equation
- *
- * \param[in]  eqname    pointer to the name of the current equation
- * \param[in]  monitor   monitoring structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_write_monitoring(const char                    *eqname,
-                             const cs_equation_monitor_t   *monitor);
 
 /*----------------------------------------------------------------------------*/
 

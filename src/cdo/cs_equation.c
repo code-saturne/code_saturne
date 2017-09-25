@@ -92,31 +92,32 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a builder structure
+ * \brief  Initialize a scheme data structure used during the building of the
+ *         algebraic system
  *
- * \param[in] eq         pointer to a cs_equation_param_t structure
- * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in]      eqp    pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb    pointer to a cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated builder structure
+ * \return a pointer to a new allocated scheme builder structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void *
-(cs_equation_init_builder_t)(const cs_equation_param_t  *eqp,
-                             const cs_mesh_t            *mesh);
+(cs_equation_init_data_t)(const cs_equation_param_t  *eqp,
+                          cs_equation_builder_t      *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a builder structure
+ * \brief  Destroy a scheme data structure
  *
- * \param[in, out]  builder   pointer to a builder structure
+ * \param[in, out]  scheme_data   pointer to a builder structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void *
-(cs_equation_free_builder_t)(void  *builder);
+(cs_equation_free_data_t)(void  *scheme_data);
 
 
 /*----------------------------------------------------------------------------*/
@@ -125,16 +126,20 @@ typedef void *
  *         Allocate and initialize the right-hand side associated to the given
  *         builder structure
  *
- * \param[in, out] builder        pointer to generic builder structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] data       pointer to generic data structure
  * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
  * \param[in, out] system_rhs     pointer of pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_initialize_system_t)(void           *builder,
-                                  cs_matrix_t   **system_matrix,
-                                  cs_real_t     **system_rhs);
+(cs_equation_initialize_system_t)(const cs_equation_param_t   *eqp,
+                                  cs_equation_builder_t       *eqb,
+                                  void                        *data,
+                                  cs_matrix_t                **system_matrix,
+                                  cs_real_t                  **system_rhs);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -143,19 +148,23 @@ typedef void
  * \param[in]      m          pointer to a cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      dt_cur     current value of the time step
- * \param[in, out] builder    pointer to builder structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] data      pointer to a scheme builder structure
  * \param[in, out] rhs        right-hand side to compute
  * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_build_system_t)(const cs_mesh_t        *mesh,
-                             const cs_real_t        *field_val,
-                             double                  dt_cur,
-                             void                   *builder,
-                             cs_real_t              *rhs,
-                             cs_matrix_t            *matrix);
+(cs_equation_build_system_t)(const cs_mesh_t            *mesh,
+                             const cs_real_t            *field_val,
+                             double                      dt_cur,
+                             const cs_equation_param_t  *eqp,
+                             cs_equation_builder_t      *eqb,
+                             void                       *data,
+                             cs_real_t                  *rhs,
+                             cs_matrix_t                *matrix);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -181,7 +190,9 @@ typedef void
  *
  * \param[in]      solu       solution array
  * \param[in]      rhs        rhs associated to this solution array
- * \param[in, out] builder    pointer to builder structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] data       pointer to a data structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
@@ -189,58 +200,73 @@ typedef void
 typedef void
 (cs_equation_update_field_t)(const cs_real_t            *solu,
                              const cs_real_t            *rhs,
-                             void                       *builder,
+                             const cs_equation_param_t  *eqp,
+                             cs_equation_builder_t      *eqb,
+                             void                       *data,
                              cs_real_t                  *field_val);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the contribution of source terms for the current time
  *
- * \param[in, out] builder    pointer to builder structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb      pointer to a cs_equation_builder_t structure
+ * \param[in, out] data    pointer to a scheme data structure which is cast
+ *                          on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_compute_source_t)(void          *builder);
+(cs_equation_compute_source_t)(const cs_equation_param_t  *eqp,
+                               cs_equation_builder_t      *eqb,
+                               void                       *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the diffusive and convective flux across a list of faces
  *
- * \param[in]       direction  indicate in which direction flux is > 0
+ * \param[in]       normal     indicate in which direction flux is > 0
  * \param[in]       pdi        pointer to an array of field values
  * \param[in]       ml_id      id related to a cs_mesh_location_t struct.
- * \param[in, out]  builder    pointer to a builder structure
- * \param[in, out]  diff_flux  pointer to the value of the diffusive flux
- * \param[in, out]  conv_flux  pointer to the value of the convective flux
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  data       pointer to data specific for this scheme
+ * \param[in, out]  d_flux     pointer to the value of the diffusive flux
+ * \param[in, out]  c_flux     pointer to the value of the convective flux
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_flux_plane_t)(const cs_real_t        direction[],
-                           const cs_real_t       *pdi,
-                           int                    ml_id,
-                           void                  *builder,
-                           double                *diff_flux,
-                           double                *conv_flux);
+(cs_equation_flux_plane_t)(const cs_real_t             normal[],
+                           const cs_real_t            *pdi,
+                           int                         ml_id,
+                           const cs_equation_param_t  *eqp,
+                           cs_equation_builder_t      *eqb,
+                           void                       *data,
+                           double                     *d_flux,
+                           double                     *c_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Cellwise computation of the diffusive flux across all faces.
  *         Primal or dual faces are considered according to the space scheme
  *
- * \param[in]       f_vals      pointer to an array of field values
- * \param[in, out]  builder     pointer to a builder structure
+ * \param[in]       fvals       pointer to an array of field values
+ * \param[in]       eqp         pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out]  data        pointer to a generic data structure
  * \param[in, out]  location    where the flux is defined
  * \param[in, out]  diff_flux   pointer to the value of the diffusive flux
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_cell_difflux_t)(const cs_real_t    *f_vals,
-                             void               *builder,
-                             cs_flag_t           location,
-                             cs_real_t          *d_flux);
+(cs_equation_cell_difflux_t)(const cs_real_t            *fvals,
+                             const cs_equation_param_t  *eqp,
+                             cs_equation_builder_t      *eqb,
+                             void                       *data,
+                             cs_flag_t                   location,
+                             cs_real_t                  *d_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -248,41 +274,32 @@ typedef void
  *
  * \param[in]       eqname     name of the equation
  * \param[in]       field      pointer to a field structure
- * \param[in, out]  builder    pointer to builder structure
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  data       pointer to a generic data structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_equation_extra_op_t)(const char                 *eqname,
                          const cs_field_t           *field,
-                         void                       *builder);
+                         const cs_equation_param_t  *eqp,
+                         cs_equation_builder_t      *eqb,
+                         void                       *data);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Get the computed values at a different location than that of the
  *         field associated to this equation
  *
- * \param[in]  builder    pointer to a builder structure
+ * \param[in]  scheme_data  pointer to a data structure cast on-the-fly
  *
  * \return  a pointer to an array of double
  */
 /*----------------------------------------------------------------------------*/
 
 typedef double *
-(cs_equation_get_extra_values_t)(const void          *builder);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Display information related to the monitoring of the current system
- *
- * \param[in]  eqname    name of the related equation
- * \param[in]  builder   pointer to an equation builder structure
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_equation_print_monitor_t)(const char   *eqname,
-                              const void   *builder);
+(cs_equation_get_extra_values_t)(const void      *scheme_data);
 
 /*============================================================================
  * Local variables
@@ -320,26 +337,30 @@ struct _cs_equation_t {
      n_sles_gather_elts <= n_sles_scatter_elts
   */
 
-  cs_lnum_t              n_sles_scatter_elts;
-  cs_lnum_t              n_sles_gather_elts;
+  cs_lnum_t                n_sles_scatter_elts;
+  cs_lnum_t                n_sles_gather_elts;
 
   /* Right-hand side defined by a local cellwise building. This may be
      different from the rhs given to cs_sles_solve() in parallel mode. */
-  cs_real_t             *rhs;
+  cs_real_t               *rhs;
 
   /* Matrix to inverse with cs_sles_solve() The matrix size can be different
      from the rhs size in parallel mode since the decomposition is different */
-  cs_matrix_t           *matrix;
+  cs_matrix_t             *matrix;
 
   /* Range set to handle parallelism. Shared with cs_cdo_connect_t struct.*/
-  const cs_range_set_t  *rset;
+  const cs_range_set_t    *rset;
 
-  /* System builder depending on the numerical scheme */
-  void                     *builder;
+  /* Common members between numerical scheme related to the building of an
+     equation */
+  cs_equation_builder_t   *builder;
+
+  /* Data depending on the numerical scheme */
+  void                    *scheme_data;
 
   /* Pointer to functions (see prototypes just above) */
-  cs_equation_init_builder_t       *init_builder;
-  cs_equation_free_builder_t       *free_builder;
+  cs_equation_init_data_t          *init_data;
+  cs_equation_free_data_t          *free_data;
   cs_equation_initialize_system_t  *initialize_system;
   cs_equation_build_system_t       *build_system;
   cs_equation_prepare_solve_t      *prepare_solving;
@@ -349,7 +370,6 @@ struct _cs_equation_t {
   cs_equation_cell_difflux_t       *compute_cellwise_diff_flux;
   cs_equation_extra_op_t           *postprocess;
   cs_equation_get_extra_values_t   *get_extra_values;
-  cs_equation_print_monitor_t      *display_monitoring;
 
   /* Timer statistic for a "light" profiling */
   int     main_ts_id;   /* Id of the main timer states structure related
@@ -535,7 +555,7 @@ _initialize_field_from_ic(cs_equation_t  *eq)
     cs_flag_t  c_flag = dof_flag | cs_cdo_primal_cell;
     cs_real_t  *c_values = values;
     if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
-      c_values = eq->get_extra_values(eq->builder);
+      c_values = eq->get_extra_values(eq->scheme_data);
     assert(c_values != NULL);
 
     for (int def_id = 0; def_id < eqp->n_ic_desc; def_id++) {
@@ -669,7 +689,7 @@ _prepare_fb_solving(void              *eq_to_cast,
 {
   cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
   const cs_field_t  *fld = cs_field_by_id(eq->field_id);
-  const cs_real_t  *f_values = eq->get_extra_values(eq->builder);
+  const cs_real_t  *f_values = eq->get_extra_values(eq->scheme_data);
   const int  eq_dim = fld->dim;
 
   /* Sanity check */
@@ -896,10 +916,11 @@ cs_equation_add(const char            *eqname,
 
   /* Builder structure for this equation */
   eq->builder = NULL;
+  eq->scheme_data = NULL;
 
   /* Pointers of function */
-  eq->init_builder = NULL;
-  eq->free_builder = NULL;
+  eq->init_data = NULL;
+  eq->free_data = NULL;
   eq->initialize_system = NULL;
   eq->build_system = NULL;
   eq->update_field = NULL;
@@ -908,7 +929,6 @@ cs_equation_add(const char            *eqname,
   eq->compute_cellwise_diff_flux = NULL;
   eq->postprocess = NULL;
   eq->get_extra_values = NULL;
-  eq->display_monitoring = NULL;
 
   return  eq;
 }
@@ -981,7 +1001,8 @@ cs_equation_destroy_all(void)
     /* Since eq->rset is only shared, no free is done at this stage */
 
     /* Free the associated builder structure */
-    eq->builder = eq->free_builder(eq->builder);
+    cs_equation_free_builder(&(eq->builder));
+    eq->scheme_data = eq->free_data(eq->scheme_data);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
@@ -1020,7 +1041,7 @@ cs_equation_log_monitoring(void)
 
     /* Display high-level timer counter related to the current equation
        before deleting the structure */
-    eq->display_monitoring(eq->name, eq->builder);
+    cs_equation_write_monitoring(eq->name, eq->builder);
 
   } // Loop on equations
 }
@@ -1147,8 +1168,8 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
     switch(eqp->space_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
-      eq->init_builder = cs_cdovb_scaleq_init;
-      eq->free_builder = cs_cdovb_scaleq_free;
+      eq->init_data = cs_cdovb_scaleq_init_data;
+      eq->free_data = cs_cdovb_scaleq_free_data;
       eq->initialize_system = cs_cdovb_scaleq_initialize_system;
       eq->build_system = cs_cdovb_scaleq_build_system;
       eq->prepare_solving = _prepare_vb_solving;
@@ -1158,7 +1179,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       eq->compute_cellwise_diff_flux = cs_cdovb_scaleq_cellwise_diff_flux;
       eq->postprocess = cs_cdovb_scaleq_extra_op;
       eq->get_extra_values = NULL;
-      eq->display_monitoring = cs_cdovb_scaleq_monitor;
 
       /* Set the cs_range_set_t structure */
       eq->rset = connect->v_rs;
@@ -1166,13 +1186,11 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       /* Set the size of the algebraic system arising from the cellwise
          process */
       eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
-      if (cs_glob_n_ranks > 1)
-        eq->n_sles_gather_elts = connect->v_rs->n_elts[0];
       break;
 
     case CS_SPACE_SCHEME_CDOVCB:
-      eq->init_builder = cs_cdovcb_scaleq_init;
-      eq->free_builder = cs_cdovcb_scaleq_free;
+      eq->init_data = cs_cdovcb_scaleq_init_data;
+      eq->free_data = cs_cdovcb_scaleq_free_data;
       eq->initialize_system = cs_cdovcb_scaleq_initialize_system;
       eq->build_system = cs_cdovcb_scaleq_build_system;
       eq->prepare_solving = _prepare_vb_solving;
@@ -1183,7 +1201,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       eq->compute_cellwise_diff_flux = cs_cdovcb_scaleq_cellwise_diff_flux;
       eq->postprocess = cs_cdovcb_scaleq_extra_op;
       eq->get_extra_values = cs_cdovcb_scaleq_get_cell_values;
-      eq->display_monitoring = cs_cdovcb_scaleq_monitor;
 
       /* Set the cs_range_set_t structure */
       eq->rset = connect->v_rs;
@@ -1191,13 +1208,11 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       /* Set the size of the algebraic system arising from the cellwise
          process */
       eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
-      if (cs_glob_n_ranks > 1)
-        eq->n_sles_gather_elts = connect->v_rs->n_elts[0];
       break;
 
     case CS_SPACE_SCHEME_CDOFB:
-      eq->init_builder = cs_cdofb_scaleq_init;
-      eq->free_builder = cs_cdofb_scaleq_free;
+      eq->init_data = cs_cdofb_scaleq_init_data;
+      eq->free_data = cs_cdofb_scaleq_free_data;
       eq->initialize_system = cs_cdofb_scaleq_initialize_system;
       eq->build_system = cs_cdofb_scaleq_build_system;
       eq->prepare_solving = _prepare_fb_solving;
@@ -1207,7 +1222,6 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       eq->compute_cellwise_diff_flux = NULL;
       eq->postprocess = cs_cdofb_scaleq_extra_op;
       eq->get_extra_values = cs_cdofb_scaleq_get_face_values;
-      eq->display_monitoring = cs_cdofb_scaleq_monitor;
 
       /* Set the cs_range_set_t structure */
       eq->rset = connect->f_rs;
@@ -1215,15 +1229,11 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       /* Set the size of the algebraic system arising from the cellwise
          process */
       eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
-      if (cs_glob_n_ranks > 1)
-        eq->n_sles_gather_elts = connect->f_rs->n_elts[0];
       break;
 
     case CS_SPACE_SCHEME_HHO_P0:
-    case CS_SPACE_SCHEME_HHO_P1:
-    case CS_SPACE_SCHEME_HHO_P2:
-      eq->init_builder = cs_hho_scaleq_init;
-      eq->free_builder = cs_hho_scaleq_free;
+      eq->init_data = cs_hho_scaleq_init_data;
+      eq->free_data = cs_hho_scaleq_free_data;
       eq->initialize_system = cs_hho_scaleq_initialize_system;
       eq->build_system = cs_hho_scaleq_build_system;
       eq->prepare_solving = _prepare_fb_solving;
@@ -1233,17 +1243,57 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
       eq->compute_cellwise_diff_flux = NULL;
       eq->postprocess = cs_hho_scaleq_extra_op;
       eq->get_extra_values = cs_hho_scaleq_get_face_values;
-      eq->display_monitoring = NULL;
 
       /* Set the cs_range_set_t structure */
       eq->rset = connect->f_rs;
 
       /* Set the size of the algebraic system arising from the cellwise
          process */
-      // TODO (update according to the order)
       eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_faces[0];
-      if (cs_glob_n_ranks > 1)
-        eq->n_sles_gather_elts = connect->f_rs->n_elts[0];
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P1:
+      eq->init_data = cs_hho_scaleq_init_data;
+      eq->free_data = cs_hho_scaleq_free_data;
+      eq->initialize_system = cs_hho_scaleq_initialize_system;
+      eq->build_system = cs_hho_scaleq_build_system;
+      eq->prepare_solving = _prepare_fb_solving;
+      eq->update_field = cs_hho_scaleq_update_field;
+      eq->compute_source = cs_hho_scaleq_compute_source;
+      eq->compute_flux_across_plane = NULL;
+      eq->compute_cellwise_diff_flux = NULL;
+      eq->postprocess = cs_hho_scaleq_extra_op;
+      eq->get_extra_values = cs_hho_scaleq_get_face_values;
+
+      /* Set the cs_range_set_t structure */
+      eq->rset = connect->hho1_rs;
+
+      /* Set the size of the algebraic system arising from the cellwise
+         process (OK for a sequential run) */
+      eq->n_sles_gather_elts = CS_N_FACE_DOFS_1ST * connect->n_faces[0];
+      eq->n_sles_scatter_elts = CS_N_FACE_DOFS_1ST * connect->n_faces[0];
+      break;
+
+    case CS_SPACE_SCHEME_HHO_P2:
+      eq->init_data = cs_hho_scaleq_init_data;
+      eq->free_data = cs_hho_scaleq_free_data;
+      eq->initialize_system = cs_hho_scaleq_initialize_system;
+      eq->build_system = cs_hho_scaleq_build_system;
+      eq->prepare_solving = _prepare_fb_solving;
+      eq->update_field = cs_hho_scaleq_update_field;
+      eq->compute_source = cs_hho_scaleq_compute_source;
+      eq->compute_flux_across_plane = NULL;
+      eq->compute_cellwise_diff_flux = NULL;
+      eq->postprocess = cs_hho_scaleq_extra_op;
+      eq->get_extra_values = cs_hho_scaleq_get_face_values;
+
+      /* Set the cs_range_set_t structure */
+      eq->rset = connect->hho2_rs;
+
+      /* Set the size of the algebraic system arising from the cellwise
+         process (OK for a sequential run) */
+      eq->n_sles_gather_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
+      eq->n_sles_scatter_elts = CS_N_FACE_DOFS_2ND * connect->n_faces[0];
       break;
 
     default:
@@ -1252,6 +1302,9 @@ cs_equation_finalize_setup(const cs_cdo_connect_t   *connect,
                   " Please check your settings."));
       break;
     }
+
+    if (cs_glob_n_ranks > 1)
+      eq->n_sles_gather_elts = eq->rset->n_elts[0];
 
     /* Initialize cs_sles_t structure */
     cs_equation_param_init_sles(eq->name, eqp, eq->field_id);
@@ -1777,7 +1830,7 @@ cs_equation_add_ic_by_qov(cs_equation_t    *eq,
  * \param[in]      z_name    name of the associated zone (if NULL or "" if
  *                           all cells are considered)
  * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in]      input     pointer to a structure cast on-the-fly (may be NULL)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2211,7 +2264,8 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     const cs_equation_param_t  *eqp = eq->param;
 
     /* Allocate and initialize a system builder */
-    eq->builder = eq->init_builder(eqp, mesh);
+    eq->builder = cs_equation_init_builder(eqp, mesh);
+    eq->scheme_data = eq->init_data(eqp, eq->builder);
 
     // By default, 0 is set as initial condition
     if (eqp->n_ic_desc > 0 && ts->nt_cur < 1)
@@ -2219,7 +2273,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
     if (eqp->flag & CS_EQUATION_UNSTEADY)
       /* Compute the (initial) source term */
-      eq->compute_source(eq->builder);
+      eq->compute_source(eqp, eq->builder, eq->scheme_data);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
@@ -2272,13 +2326,17 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
   assert(eq->matrix == NULL && eq->rhs == NULL);
 
   /* Initialize the algebraic system to build */
-  eq->initialize_system(eq->builder,
+  eq->initialize_system(eq->param,
+                        eq->builder,
+                        eq->scheme_data,
                         &(eq->matrix),
                         &(eq->rhs));
 
   /* Build the algebraic system to solve */
   eq->build_system(mesh, fld->val, dt_cur,
+                   eq->param,
                    eq->builder,
+                   eq->scheme_data,
                    eq->rhs,
                    eq->matrix);
 
@@ -2363,17 +2421,13 @@ cs_equation_solve(cs_equation_t   *eq)
                   eq->name, code, n_iters, residual, nnz);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
-    if (eq->param->verbosity > 100) {
-      cs_dump_array_to_listing("EQ.AFTER.SOLVE >> X", size, x, 8);
-      cs_dump_array_to_listing("EQ.SOLVE >> RHS", size, b, 8);
-    }
+    cs_dump_array_to_listing("EQ.AFTER.SOLVE >> X", size, x, 8);
+    cs_dump_array_to_listing("EQ.SOLVE >> RHS", size, b, 8);
 #if CS_EQUATION_DBG > 2
-    if (eq->param->verbosity > 100) {
-      cs_dump_integer_to_listing("ROW_INDEX", size + 1, row_index, 8);
-      cs_dump_integer_to_listing("COLUMN_ID", nnz, col_id, 8);
-      cs_dump_array_to_listing("D_VAL", size, d_val, 8);
-      cs_dump_array_to_listing("X_VAL", nnz, x_val, 8);
-    }
+    cs_dump_integer_to_listing("ROW_INDEX", size + 1, row_index, 8);
+    cs_dump_integer_to_listing("COLUMN_ID", nnz, col_id, 8);
+    cs_dump_array_to_listing("D_VAL", size, d_val, 8);
+    cs_dump_array_to_listing("X_VAL", nnz, x_val, 8);
 #endif
 #endif
   }
@@ -2399,7 +2453,8 @@ cs_equation_solve(cs_equation_t   *eq)
   cs_field_current_to_previous(fld);
 
   /* Define the new field value for the current time */
-  eq->update_field(x, eq->rhs, eq->builder, fld->val);
+  eq->update_field(x, eq->rhs, eq->param,
+                   eq->builder, eq->scheme_data, fld->val);
 
   if (eq->param->flag & CS_EQUATION_UNSTEADY)
     eq->do_build = true; /* Improvement: exhibit cases where a new build
@@ -2710,7 +2765,7 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
       eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P0 ||
       eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P1 ||
       eq->param->space_scheme == CS_SPACE_SCHEME_HHO_P2)
-    return eq->get_extra_values(eq->builder);
+    return eq->get_extra_values(eq->scheme_data);
   else
     return NULL; // Not implemented
 }
@@ -2751,7 +2806,7 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
     }
 
   case CS_SPACE_SCHEME_CDOVCB:
-    return eq->get_extra_values(eq->builder);
+    return eq->get_extra_values(eq->scheme_data);
 
   default:
     return NULL; // Not implemented
@@ -2804,7 +2859,9 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
   eq->compute_flux_across_plane(direction,
                                 fld->val,
                                 ml_id,
+                                eq->param,
                                 eq->builder,
+                                eq->scheme_data,
                                 diff_flux, conv_flux);
 }
 
@@ -2842,7 +2899,9 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
 
   /* Perform the computation */
   eq->compute_cellwise_diff_flux(fld->val,
+                                 eq->param,
                                  eq->builder,
+                                 eq->scheme_data,
                                  location,
                                  diff_flux);
 
@@ -2873,7 +2932,8 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
   switch (eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVCB:
-    cs_cdovcb_scaleq_vtx_gradient(fld->val, eq->builder, v_gradient);
+    cs_cdovcb_scaleq_vtx_gradient(fld->val, eq->builder, eq->scheme_data,
+                                  v_gradient);
     break;
 
   default:
@@ -2952,7 +3012,7 @@ cs_equation_extra_post_all(const cs_time_step_t    *ts,
     } // Peclet number
 
     /* Perform post-processing specific to a numerical scheme */
-    eq->postprocess(eq->name, field, eq->builder);
+    eq->postprocess(eq->name, field, eq->param, eq->builder, eq->scheme_data);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);

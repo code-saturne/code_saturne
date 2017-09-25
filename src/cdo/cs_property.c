@@ -469,66 +469,6 @@ cs_property_finalize_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  returns true if the property is uniform, otherwise false
- *
- * \param[in]    pty    pointer to a property to test
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_property_is_uniform(const cs_property_t   *pty)
-{
-  if (pty == NULL)
-    return false;
-
-  if (pty->state_flag & CS_FLAG_STATE_UNIFORM)
-    return true;
-  else
-    return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the name of a property
- *
- * \param[in]    pty    pointer to a property
- *
- * \return  the name of the related property
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_property_get_name(const cs_property_t   *pty)
-{
-  if (pty == NULL)
-    return NULL;
-
-  return pty->name;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the type of a property
- *
- * \param[in]    pty    pointer to a property
- *
- * \return  the type of the related property
- */
-/*----------------------------------------------------------------------------*/
-
-cs_property_type_t
-cs_property_get_type(const cs_property_t   *pty)
-{
-  if (pty == NULL)
-    return CS_PROPERTY_N_TYPES;
-
-  return pty->type;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Define an isotropic cs_property_t structure by value for entities
  *         related to a volume zone
  *
