@@ -285,7 +285,7 @@ _order_by_direction(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Radiative flux and source term compoutation
+ * \brief Radiative flux and source term computation
  *
  * 1/ Luminance data at domain boundaries
  *       (BC: reflection and isotropic emission)

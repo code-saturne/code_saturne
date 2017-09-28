@@ -199,7 +199,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
 
         allocate(refrad(ncelet))
         do iel = 1, ncel
-          refrad(iel) = 0.d+00
+          refrad(iel) = 0.d0
         enddo
 
         call nuclea (                                                 &

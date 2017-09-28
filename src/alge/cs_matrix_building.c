@@ -1421,7 +1421,7 @@ cs_matrix_vector(const cs_mesh_t          *m,
 
   /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
-  for (cs_lnum_t face_id = 0; face_id <n_i_faces; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
     cs_lnum_t ii = i_face_cells[face_id][0];
     cs_lnum_t jj = i_face_cells[face_id][1];
@@ -1442,7 +1442,7 @@ cs_matrix_vector(const cs_mesh_t          *m,
 
   /* 4. Contribution of border faces to the diagonal */
 
-  for (cs_lnum_t face_id = 0; face_id <n_b_faces; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
     cs_lnum_t ii = b_face_cells[face_id];
     double flui = 0.5*(b_massflux[face_id] -fabs(b_massflux[face_id]));

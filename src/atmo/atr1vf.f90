@@ -24,8 +24,8 @@
 !
 !> \brief Atmospheric module subroutine. -
 !>    Computes the source term for scalar equations
-!>    from radiative forcing (uv and ir radiative fluxes)
-!>    computed with the 1d atmo radiative scheme.
+!>    from radiative forcing (UV and IR radiative fluxes)
+!>    computed with the 1D atmospheric radiative scheme.
 !-------------------------------------------------------------------------------
 subroutine atr1vf ()
 
@@ -267,7 +267,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
     k1 = 1
 
-    ! --- Long-wave:
+    ! --- Long-wave: InfraRed
     call rayir ( k1,kmray,ico2,emis,                           &
          tauzq, tauz, tausup, zq,                       &
          acinfe, dacinfe, aco2, daco2, acsup, dacsup,   &
@@ -275,14 +275,14 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
          qlray,fneray,romray,preray,aeroso,             &
          foir,rayi(:,ii) )
 
-    ! --- Short-wave:
+    ! --- Short-wave: Sun
     call rayso ( k1,kmray,heuray,imer1,albedo,                  &
          tauzq, tauz, tausup, zq,                       &
          zray,                                          &
          qvray,qlray,fneray,romray,aeroso,              &
          fos,rayst(:,ii) )
 
-    soilvert(ii)%fos= fos
+    soilvert(ii)%fos = fos
     soilvert(ii)%foir = foir
 
   enddo
@@ -295,8 +295,11 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     infrad(3*(ii-1) + 3) = 4.d0/1.d0    ! vertical(z) cressman radius
   enddo
 
+  ! Map Infra Red 1D (rayi) on the structure idrayi
   call mesmap (idrayi, kmx*nvert, rayi, coords,            &
        cressm, interp, infrad)
+
+  ! Map Sun 1D (rayst) on the structure idrayst
   call mesmap (idrayst, kmx*nvert, rayst, coords,          &
        cressm, interp, infrad)
 

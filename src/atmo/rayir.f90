@@ -261,7 +261,7 @@ endif
 !   4 - in order to economize computation time, CO2 and O3 absorption are calculated only
 !       at the first time step and stocked in tables
 
-if(ico2.eq.1) then
+if (ico2.eq.1) then
 
   do k = k1,kmray
     zz = zray(k)
@@ -350,7 +350,7 @@ if(inua.ne.1) then
   do k = k1+1, kmray
 
     ctray = sig/romray(k)/(cp0*(1.d0 + (cpvcpa - 1.d0)*qvray(k)))
-!  a1: contribution from  0 to z
+    !  a1: contribution from  0 to z
     a1 = 0.d0
     do kk = k1+1, k
       qqqqv = qqqv(k) - qqv(kk)
@@ -359,7 +359,7 @@ if(inua.ne.1) then
       a1 = a1 + dt4dz(kk)*(daco2(k,kk) - dtauv)*dz0(kk-1)
     enddo
     kp1 = k+1
-! a2: contribution from z to ztop
+    ! a2: contribution from z to ztop
     a2 = 0.d0
     do kk = kp1, kmray
       qqqqv = qqv(kk) - qqqv(k)
@@ -367,15 +367,15 @@ if(inua.ne.1) then
       call rayive(tauv,dtauv,qqqqv,qv0(k),qqqqc,qc(k),romray(k))
       a2 = a2 + dt4dz(kk)*(daco2(k,kk) - dtauv)*dz0(kk-1)
     enddo
-! contribution de z a l'infini
+    ! contribution from z to infinity
     qqqqv = xqqvinf - qqqv(k)
     qqqqc = xqqcinf - qqqc(k)
     call rayive(tvsup,dtvsup,qqqqv,qv0(k),qqqqc,qc(k),romray(k))
-! contribution du sol transmise par les couches inferieures (0-z)
+    ! contribution du sol transmise par les couches inferieures (0-z)
     qqqqv = qqqv(k)
     qqqqc = qqqc(k)
     call rayive(tvinfe,dtvinfe,qqqqv,qv0(k),qqqqc,qc(k),romray(k))
-! calcul du refoidissement
+    ! compute cooling
     rayi(k) = ctray*(a1 - a2 + t4zt*(dacsup(k) - dtvsup) -(1.d0 - emis)         &
               *(t41 - foir/sig)*(dtvinfe - dacinfe(k)))
   enddo
@@ -383,7 +383,7 @@ else
 
 !  for cloudy sky
 !  ================
-  do k =k1+1, kmray
+  do k = k1+1, kmray
 
     ctray = sig/romray(k)/(cp0*(1.d0 + (cpvcpa - 1.d0)*qvray(k)))
 ! a1: contribution from 0 to z
