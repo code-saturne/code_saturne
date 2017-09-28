@@ -82,6 +82,7 @@ fvm_to_med.h \
 fvm_to_catalyst.h \
 fvm_to_ensight.h \
 fvm_to_ensight_case.h \
+fvm_to_histogram.h \
 fvm_to_medcoupling.h \
 fvm_to_plot.h \
 fvm_to_time_plot.h \
@@ -125,6 +126,7 @@ fvm_triangulate.c
 libfvm_filters_la_SOURCES = \
 fvm_to_ensight.c \
 fvm_to_ensight_case.c \
+fvm_to_histogram.c \
 fvm_to_plot.c \
 fvm_to_time_plot.c \
 fvm_writer.c \
@@ -187,7 +189,8 @@ $(CATALYST_CXXFLAGS)
 fvm_catalyst_la_LIBADD = \
 $(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
 $(CATALYSTRUNPATH)
-fvm_catalyst_la_SOURCES = fvm_to_catalyst.cxx
+fvm_catalyst_la_SOURCES = fvm_to_catalyst.cxx \
+                          fvm_to_vtk_histogram.cxx
 pkglib_LTLIBRARIES += fvm_catalyst.la
 fvm_catalyst_la_LDFLAGS = -module -avoid-version
 
@@ -203,7 +206,8 @@ $(CATALYST_CXXFLAGS)
 libfvm_catalyst_la_LIBADD = \
 $(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
 $(CATALYSTRUNPATH)
-libfvm_catalyst_la_SOURCES = fvm_to_catalyst.cxx
+libfvm_catalyst_la_SOURCES = fvm_to_catalyst.cxx \
+                             fvm_to_vtk_histogram.cxx
 noinst_LTLIBRARIES += libfvm_catalyst.la
 libfvm_filters_la_LIBADD += libfvm_catalyst.la
 

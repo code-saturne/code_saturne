@@ -115,12 +115,19 @@
 
   \snippet cs_user_postprocess.c post_define_writer_2
 
-  In this last example, a plot writers is defined. Such a writer
+  In the following example, a plot writers is defined. Such a writer
   will be used to output probe, profile, or other point data
   (probes may be output to 3D formats, but plot and time plot
   outputs drop cell or face-based ouptut).
 
   \snippet cs_user_postprocess.c post_define_writer_3
+
+  In this last example, a histogram writer is defined. The format can
+  be changed, as well as the number of subdivisions in the format options.
+  Here the format is tex (resulting tex file can be input in any tex document
+  with package tikz and pgfplots), and the number of subdivisions is 10.
+
+  \snippet cs_user_postprocess.c post_define_writer_4
 
   \section cs_user_postprocess_h_mesh Definition of post-processing and mesh zones
 
@@ -269,6 +276,21 @@
   faces of a mesh with id 1:
 
   \snippet cs_user_postprocess.c post_define_mesh_5
+
+  \subsection cs_user_postprocess_h_mesh_a4 Example: attach mesh to a histogram writer
+
+  Post-processing meshes can be associated to writers.
+
+  In the following example, the default boundary mesh is associated to the default
+  histogram writer. The format of this writer is txt (text files) and it writes
+  only at the end of the calculation.
+
+  \snippet cs_user_postprocess.c post_attach_mesh_1
+
+  In the following example, the default volume mesh is now associated to a user
+  defined writer of Id 6.
+
+  \snippet cs_user_postprocess.c post_attach_mesh_2
 
   \section cs_user_postprocess_h_activation Management of output times
 

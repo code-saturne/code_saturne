@@ -71,6 +71,7 @@ BEGIN_C_DECLS
 #define CS_POST_WRITER_TRAJECTORIES   -4       /* trajectories visualisation */
 #define CS_POST_WRITER_PROBES         -5       /* probe monitoring */
 #define CS_POST_WRITER_PROFILES       -6       /* profiles */
+#define CS_POST_WRITER_HISTOGRAMS     -7       /* histograms */
 
 /* Default mesh ids */
 

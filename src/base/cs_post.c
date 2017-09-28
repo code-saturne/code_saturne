@@ -187,7 +187,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define _MIN_RESERVED_MESH_ID    CS_POST_MESH_PROBES
-#define _MIN_RESERVED_WRITER_ID  CS_POST_WRITER_PROFILES
+#define _MIN_RESERVED_WRITER_ID  CS_POST_WRITER_HISTOGRAMS
 
 /*============================================================================
  * Type definitions
@@ -1282,7 +1282,7 @@ _free_mesh(int _mesh_id)
   BFT_FREE(post_mesh->writer_id);
   post_mesh->n_writers = 0;
 
-  for (i = 0; i < 4; i++)
+  for (i = 0; i < 5; i++)
     BFT_FREE(post_mesh->criteria[i]);
 
   BFT_FREE(post_mesh->name);
@@ -3056,7 +3056,6 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
                           NULL,
                           b_face_val,
                           ts);
-
       }
 
       else if (field_loc_type == CS_MESH_LOCATION_VERTICES)
@@ -3118,7 +3117,6 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
     } /* End of loop on fields */
 
   } /* End of main output for cell or boundary mesh or submesh */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5970,7 +5968,7 @@ cs_post_init_writers(void)
 
   }
 
-  /* Additional writers for probe monitoring and profiles */
+  /* Additional writers for probe monitoring, profiles */
 
   if (!cs_post_writer_exists(CS_POST_WRITER_PROBES))
     cs_post_define_writer(CS_POST_WRITER_PROBES,    /* writer_id */
@@ -5995,6 +5993,20 @@ cs_post_init_writers(void)
                           true,                     /* output at end */
                           -1,                       /* time step frequency */
                           -1.0);                    /* time value frequency */
+
+  /* Additional writers for histograms */
+
+  if (!cs_post_writer_exists(CS_POST_WRITER_HISTOGRAMS))
+    cs_post_define_writer(CS_POST_WRITER_HISTOGRAMS,  /* writer_id */
+                          "histograms",               /* writer name */
+                          "histograms",
+                          "histogram",                /* format name */
+                          "txt",                      /* format options */
+                          FVM_WRITER_FIXED_MESH,
+                          false,                      /* output_at_start */
+                          true,                       /* output at end */
+                          -1,                         /* time step frequency */
+                          -1.0);                      /* time value frequency */
 
   /* Print info on writers */
 

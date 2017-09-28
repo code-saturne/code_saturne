@@ -352,6 +352,19 @@ cs_user_postprocess_writers(void)
                         100,              /* nt_freq */
                         -1.0);            /* dt_freq */
   /*! [post_define_writer_3] */
+
+  /*! [post_define_writer_4] */
+  cs_post_define_writer(6,                        /* writer_id */
+                        "Histogram",              /* writer name */
+                        "histograms",             /* directory name */
+                        "histogram",              /* format name */
+                        "10 tex",                 /* format options */
+                        FVM_WRITER_FIXED_MESH,
+                        false,                    /* output_at_start */
+                        true,                     /* output at end */
+                        -1,                       /* time step frequency */
+                        -1.0);                    /* time value frequency */
+  /*! [post_define_writer_4] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -482,6 +495,26 @@ cs_user_postprocess_meshes(void)
                               writer_ids);
   }
   /*! [post_define_mesh_5] */
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: attach default txt histogram writer on boundary mesh */
+
+  /*! [post_attach_mesh_1] */
+  {
+    cs_post_mesh_attach_writer(CS_POST_MESH_BOUNDARY, CS_POST_WRITER_HISTOGRAMS);
+  }
+  /*! [post_attach_mesh_1] */
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: attach user tex histogram writer of id 6 on volume mesh */
+
+  /*! [post_attach_mesh_2] */
+  {
+    cs_post_mesh_attach_writer(CS_POST_MESH_VOLUME, 6);
+  }
+  /*! [post_attach_mesh_2] */
 }
 
 /*----------------------------------------------------------------------------*/
