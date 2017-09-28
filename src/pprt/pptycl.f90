@@ -120,14 +120,9 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ifac, iok, ifvu, ii, izone, izonem
 
 !===============================================================================
-!===============================================================================
-! 1.  INITIALISATIONS
-!===============================================================================
-
-
 
 !===============================================================================
-! 2.  LISTE DES ZONES (pour n'importe quel modele)
+! 1.  LISTE DES ZONES (pour n'importe quel modele)
 !===============================================================================
 
 ! --> Faces appartiennent toutes a une zone frontiere
@@ -227,7 +222,7 @@ nozapm = izonem
 
 
 !===============================================================================
-! 5.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
+! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
 !       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
 !                     =========================
 !         ON DETERMINE LA FAMILLE ET SES PROPRIETES
@@ -262,7 +257,7 @@ elseif (ippmod(icolwc).ge.0) then
 
 ! ---> Combustion charbon pulverise
 
-elseif ( ippmod(iccoal).ge.0 ) then
+elseif (ippmod(iccoal).ge.0) then
 
   call cs_coal_bcond(itypfb, izfppp, icodcl, rcodcl)
   !=================

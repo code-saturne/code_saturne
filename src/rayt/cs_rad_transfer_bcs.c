@@ -59,6 +59,7 @@
 #include "cs_thermal_model.h"
 #include "cs_prototypes.h"
 #include "cs_boundary_conditions.h"
+#include "cs_physical_constants.h"
 
 #include "cs_gui_radiative_transfer.h"
 #include "cs_rad_transfer.h"
@@ -200,11 +201,11 @@ cs_rad_transfer_bcs(int         nvar,
                     cs_real_t   dt[],
                     cs_real_t   rcodcl[])
 {
-  cs_real_t stephn = 5.6703e-8;
+  cs_real_t stephn = cs_physical_constants_stephan;
 
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
-  cs_real_t tkelvi = 273.15;
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
   /* Allocate temporary arrays */
 
