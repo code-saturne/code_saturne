@@ -13,6 +13,8 @@ User changes
 Bug fixes
 ---------
 
+- Fix issue #243 (error in balance by zone the kinematic outlet term).
+
 - Fix for EBRSM with irijco=1 and floatation terms.
 
 - Fix launch of convergence tracking graphical tool when using Qt5.
