@@ -355,7 +355,7 @@ const double cs_physical_constants_celsius_to_kelvin = 273.15;
 /* !Stephan constant for the radiative module \f$\sigma\f$
    in \f$W.m^{-2}.K^{-4}\f$ */
 
-const double cs_physical_constants_stephn = 5.6703e-8;
+const double cs_physical_constants_stephan = 5.6703e-8;
 
 const cs_physical_constants_t  *cs_glob_physical_constants =
                                   &_physical_constants;

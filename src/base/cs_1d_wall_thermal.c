@@ -575,7 +575,7 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
   bl[n-1] = 0.;
   al[0] = 0.;
   bl[0] += rcp/dtpt1d*2*zz[0] + xlmbt1/(zz[1]-zz[0]) - h2
-         + eps*cs_physical_constants_stephn
+         + eps*cs_physical_constants_stephan
          * pow(_1d_wall_thermal.local_models[ii].t[0],3.);
   dl[0] += f3;
   bl[n-1] += rcp/dtpt1d*2*(_1d_wall_thermal.local_models[ii].eppt1d-zz[n-1])
