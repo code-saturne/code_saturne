@@ -285,12 +285,11 @@ cs_run(void)
 
   cs_gui_postprocess_writers();
   cs_user_postprocess_writers();
+  cs_post_init_writers();
 
   cs_gui_postprocess_meshes();
   cs_user_postprocess_meshes();
   cs_user_postprocess_probes();
-
-  cs_post_init_writers();
 
   /* Print info on fields and associated keys and other setup options */
 
