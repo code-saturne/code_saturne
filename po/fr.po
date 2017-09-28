@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2017-08-17 11:48+0200\n"
+"POT-Creation-Date: 2017-09-28 18:00+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7213,12 +7213,6 @@ msgstr ""
 
 msgid ""
 "while reading input data,\n"
-"the radiative checkpoint cannot be used\n"
-"without having the radiative module enabled."
-msgstr ""
-
-msgid ""
-"while reading input data,\n"
 "the 1D wall thermal checkpoint cannot be used\n"
 "without having the 1D wall thermal module enabled."
 msgstr ""
@@ -11028,6 +11022,11 @@ msgstr ""
 msgid "zone number"
 msgstr "numéro de zone"
 
+msgid ""
+"Error in the GUI boundary conditions: the normal direction is of norm 0.\n"
+" "
+msgstr ""
+
 #, c-format
 msgid ""
 "Error: can not interpret expression: %s\n"
@@ -12925,6 +12924,9 @@ msgstr ""
 msgid "Bad Cell by User"
 msgstr ""
 
+msgid "Bad Cell to regularize"
+msgstr ""
+
 msgid ""
 "\n"
 "  Criterion 1: Orthogonality:\n"
@@ -12963,6 +12965,11 @@ msgid ""
 msgstr ""
 "\n"
 "  Critère 5 : culpabilité par association :\n"
+
+msgid ""
+"\n"
+"  Regularisation:\n"
+msgstr ""
 
 msgid ""
 "\n"
@@ -13583,8 +13590,15 @@ msgstr "Le calcul des centres des cellules n'est implanté qu'en 3D."
 #, c-format
 msgid ""
 "\n"
-"%llu faces have a null distance between centers.\n"
-"For these faces, the weight is set to 0.5.\n"
+"%llu faces have a too small distance between centers.\n"
+"For these faces, the weight may be clipped.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"%llu boundary faces have a too small distance between\n"
+"cell centre and face centre.\n"
 msgstr ""
 
 #, c-format
@@ -14125,6 +14139,15 @@ msgid ""
 "    TEXTP = %12.4e\n"
 msgstr ""
 
+msgid "<none>"
+msgstr "<aucun>"
+
+msgid "DOM (Discrete Ordinates Method)"
+msgstr ""
+
+msgid "P-1"
+msgstr ""
+
 #, c-format
 msgid "x grid failure, i = %d"
 msgstr ""
@@ -14198,29 +14221,19 @@ msgstr ""
 "Options de transfert thermique radiatif\n"
 "----------------------------------------\n"
 
-#, c-format
 msgid ""
 "  Continuous phase:\n"
-"    iirayo:                 %3d  (0: none\n"
-"                                  1: DOM (Discrete Ordinates Model)\n"
-"                                  2: P-1\n"
+"    type:                     %s\n"
 msgstr ""
 "  Phase continue :\n"
-"    iirayo:                 %3d  (0: aucune\n"
-"                                  1: DOM (Modèle des Ordonnées discrètes)\n"
-"                                  2: P-1\n"
+"    type:                     %s\n"
 
-#, c-format
 msgid ""
 "    restart                 %3d  (0: no restart; 1: restart)\n"
 "    nfreqr:                 %3d  (Radiation pass frequency)\n"
-"    i_quadrature:           %3d  (quadrature number (if DOM)\n"
-"                                  1: S4 (24  directions)\n"
-"                                  2: S6 (48  directions)\n"
-"                                  3: S8 (80  directions)\n"
-"                                  4: T2 (32  directions)\n"
-"                                  5: T4 (128 directions)\n"
-"                                  6: Tn (8*ndirec^2 directions))\n"
+msgstr ""
+
+msgid "    i_quadrature:             %s\n"
 msgstr ""
 
 #, c-format
@@ -15222,3 +15235,4 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+

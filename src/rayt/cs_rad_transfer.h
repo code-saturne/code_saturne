@@ -45,13 +45,45 @@ BEGIN_C_DECLS
  * Type definition
  *============================================================================*/
 
+/* Radiative transfer model type */
+
+typedef enum {
+
+  CS_RAD_TRANSFER_NONE,
+  CS_RAD_TRANSFER_DOM,
+  CS_RAD_TRANSFER_P1
+
+} cs_rad_transfer_model_t;
+
+/* Quadrature types */
+
+typedef enum {
+
+  CS_RAD_QUADRATURE_S4 = 1,
+  CS_RAD_QUADRATURE_S6,
+  CS_RAD_QUADRATURE_S8,
+  CS_RAD_QUADRATURE_T2,
+  CS_RAD_QUADRATURE_T4,
+  CS_RAD_QUADRATURE_TN,
+  CS_RAD_QUADRATURE_LC11,
+  CS_RAD_QUADRATURE_DCT020_2468
+
+} cs_rad_quadrature_type_t;
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
 
+/*! Model name */
+extern const char *cs_rad_transfer_model_name[];
+
+/*! Quadrature name */
+extern const char *cs_rad_transfer_quadrature_name[];
+
 typedef struct {
 
-  int           iirayo;
+  cs_rad_transfer_model_t   type;  /*!< model activation and type */
+
   int           nrphas;
   int           iimpar;
   int           iimlum;
@@ -77,6 +109,8 @@ typedef struct {
   int           ifgrno;
   int           ifrefl;
   int           itpt1d;
+
+  bool          atmo_ir_absorption; /*!< infrared absorption model */
 
 } cs_rad_transfer_params_t;
 

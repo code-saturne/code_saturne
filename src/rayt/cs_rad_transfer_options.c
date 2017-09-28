@@ -210,8 +210,8 @@ cs_rad_transfer_options(void)
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("in Radiative module"),
-                                "cs_glob_rad_transfer_params->iirayo",
-                                cs_glob_rad_transfer_params->iirayo,
+                                "cs_glob_rad_transfer_params->type",
+                                cs_glob_rad_transfer_params->type,
                                 0, 3);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
@@ -220,8 +220,8 @@ cs_rad_transfer_options(void)
                                 cs_glob_rad_transfer_params->imodak,
                                 0, 2);
 
-  if (   rt_params->iirayo == 1
-      || rt_params->iirayo == 2)
+  if (   rt_params->type == CS_RAD_TRANSFER_DOM
+      || rt_params->type == CS_RAD_TRANSFER_P1)
     cs_parameters_is_in_range_int
       (CS_ABORT_DELAYED,
        _("in Radiative module"),
@@ -233,7 +233,7 @@ cs_rad_transfer_options(void)
 
   /* Verifications */
 
-  if (rt_params->iirayo > 0) {
+  if (rt_params->type > CS_RAD_TRANSFER_NONE) {
 
     /* Property fields */
     cs_rad_transfer_prp();
@@ -251,7 +251,7 @@ cs_rad_transfer_options(void)
 
     /* --> i_quadrature     */
 
-    if (rt_params->iirayo == 1) {
+    if (rt_params->type == CS_RAD_TRANSFER_DOM) {
       cs_parameters_is_in_range_int
         (CS_ABORT_DELAYED,
          _("in Radiative module"),
@@ -263,7 +263,7 @@ cs_rad_transfer_options(void)
 
     /* --> NDIREC */
 
-    if (   rt_params->iirayo == 1
+    if (   rt_params->type == CS_RAD_TRANSFER_DOM
         && rt_params->i_quadrature == 6) {
       if (rt_params->ndirec < 2)
         cs_parameters_error
@@ -307,7 +307,7 @@ cs_rad_transfer_options(void)
 void
 cs_rad_transfer_log_setup(void)
 {
-  if (cs_glob_rad_transfer_params->iirayo < 1)
+  if (cs_glob_rad_transfer_params->type <= CS_RAD_TRANSFER_NONE)
     return;
 
   /* Now add Lagrangian setup info */
@@ -320,31 +320,28 @@ cs_rad_transfer_log_setup(void)
   cs_log_printf
     (CS_LOG_SETUP,
      _("  Continuous phase:\n"
-       "    iirayo:                 %3d  (0: none\n"
-       "                                  1: DOM (Discrete Ordinates Model)\n"
-       "                                  2: P-1\n"),
-     cs_glob_rad_transfer_params->iirayo);
+       "    type:                     %s\n"),
+     cs_rad_transfer_model_name[cs_glob_rad_transfer_params->type]);
 
   cs_log_printf
     (CS_LOG_SETUP,
      _("    restart                 %3d  (0: no restart; 1: restart)\n"
-       "    nfreqr:                 %3d  (Radiation pass frequency)\n"
-       "    i_quadrature:           %3d  (quadrature number (if DOM)\n"
-       "                                  1: S4 (24  directions)\n"
-       "                                  2: S6 (48  directions)\n"
-       "                                  3: S8 (80  directions)\n"
-       "                                  4: T2 (32  directions)\n"
-       "                                  5: T4 (128 directions)\n"
-       "                                  6: Tn (8*ndirec^2 directions))\n"),
+       "    nfreqr:                 %3d  (Radiation pass frequency)\n"),
      cs_glob_rad_transfer_params->restart,
-     cs_glob_rad_transfer_params->nfreqr,
-     cs_glob_rad_transfer_params->i_quadrature);
+     cs_glob_rad_transfer_params->nfreqr);
 
-  if (cs_glob_rad_transfer_params->i_quadrature == 6)
+  if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    ndirec:                 %3d\n"),
-       cs_glob_rad_transfer_params->ndirec);
+       _("    i_quadrature:             %s\n"),
+       _(cs_rad_transfer_quadrature_name
+           [cs_glob_rad_transfer_params->i_quadrature]));
+    if (cs_glob_rad_transfer_params->i_quadrature == 6)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    ndirec:                 %3d\n"),
+         cs_glob_rad_transfer_params->ndirec);
+  }
 
   cs_log_printf
     (CS_LOG_SETUP,

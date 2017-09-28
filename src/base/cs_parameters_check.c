@@ -2042,7 +2042,7 @@ cs_parameters_check(void)
                                   CS_RESTART_DISABLED,
                                   CS_RESTART_N_RESTART_FILES);
 
-    if (cs_glob_lagr_time_scheme->iilagr == 0) {
+    if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_NONE) {
       cs_parameters_is_not_equal_int(CS_ABORT_DELAYED,
                                    _("while reading input data,\n"
                                      "the lagrangian checkpoint cannot "
@@ -2063,17 +2063,6 @@ cs_parameters_check(void)
                                      r_id,
                                      CS_RESTART_LAGR);
     }
-
-    if (cs_glob_rad_transfer_params->iirayo == 0)
-      cs_parameters_is_not_equal_int(CS_ABORT_DELAYED,
-                                   _("while reading input data,\n"
-                                     "the radiative checkpoint cannot "
-                                     "be used\n"
-                                     "without having the radiative module "
-                                     "enabled."),
-                                     "restart_file",
-                                     r_id,
-                                     CS_RESTART_RAD_TRANSFER);
 
     if (cs_glob_1d_wall_thermal->nfpt1d == 0)
       cs_parameters_is_not_equal_int(CS_ABORT_DELAYED,

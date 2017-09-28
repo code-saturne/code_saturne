@@ -306,12 +306,12 @@ cs_rad_transfer_bcs(int         nvar,
     /* If not a restart and first time step. */
     ideb = 1;
 
-    cs_field_t *rad_st_impl = cs_field_by_name_try("rad_st_implicit");
-    cs_field_t *rad_st_expl = cs_field_by_name_try("rad_st");
+    cs_real_t *rad_st_impl = CS_FI_(rad_ist, 0)->val;
+    cs_real_t *rad_st_expl = CS_FI_(rad_est, 0)->val;
 
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells_with_ghosts; iel++) {
-      rad_st_impl->val[iel] = 0.0;
-      rad_st_expl->val[iel] = 0.0;
+      rad_st_impl[iel] = 0.0;
+      rad_st_expl[iel] = 0.0;
     }
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
@@ -1216,7 +1216,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
   cs_real_t qpatmp;
 
-  if (cs_glob_rad_transfer_params->iirayo == 1) {
+  if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM) {
 
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
 
@@ -1274,7 +1274,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
   /* Boundary conditions for P-1 model:
    * coefap and coefbp must be filled */
 
-  else if (cs_glob_rad_transfer_params->iirayo == 2) {
+  else if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_P1) {
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
       cs_lnum_t iel = cs_glob_mesh->b_face_cells[ifac];
 

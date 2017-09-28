@@ -134,7 +134,6 @@ cs_interpol_grid_init(cs_interpol_grid_t    *ig,
  * parameters:
  *   name        <-- measures set name
  *   type_flag   <-- mask of field property and category values (not used yet)
- *   location_id <-- id of associated location
  *   dim         <-- measure set dimension (number of components)
  *   interleaved <-- if dim > 1, indicate if field is interleaved
  *
@@ -200,7 +199,7 @@ cs_measures_set_add_values(cs_measures_set_t       *ms,
                            const int               *is_interpol,
                            const cs_real_t         *measures_coords,
                            const cs_real_t         *measures,
-                           const cs_real_t         *influence_raidus);
+                           const cs_real_t         *influence_radius);
 
 /*----------------------------------------------------------------------------
  * Compute a Cressman interpolation on the global mesh.

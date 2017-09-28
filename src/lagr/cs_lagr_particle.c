@@ -809,7 +809,7 @@ cs_lagr_particle_attr_initialize(void)
       attr_keys[CS_LAGR_FLUID_TEMPERATURE][0] = CS_LAGR_P_RVAR_TS;
       attr_keys[CS_LAGR_FLUID_TEMPERATURE][1] = ++loc_count;
 
-      if (extra->iirayo > 0)
+      if (extra->radiative_model > 0)
         attr_keys[CS_LAGR_EMISSIVITY][1] = ++loc_count;
 
     }

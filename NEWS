@@ -5,6 +5,8 @@ Trunk (unreleased)
 Numerics
 --------
 
+- Atmospheric model: added partial radiative transfer properties model.
+
 - Make supersonic outlet boundary condition implicit (compressible module).
 
 - Added fallback mechanism to allow less stable but faster Krylov solvers

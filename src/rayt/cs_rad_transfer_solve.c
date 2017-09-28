@@ -112,6 +112,22 @@ static cs_real_t *wq = NULL;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the 4th power of a real value.
+ *
+ * \param[in]  x  value
+ *
+ * \return the 4th power of the given value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_pow4(cs_real_t  x)
+{
+  return x*x*x*x;
+}
+
 /*----------------------------------------------------------------------------
  * Descend binary tree for the lexicographical ordering of axis coordinates.
  *
@@ -311,6 +327,7 @@ _order_by_direction(void)
  *       ->                            / S.N >0
  *       N fluid to wall normal
  *
+ * \param[in]       tempk     temperature in Kelvin
  * \param[in, out]  coefap    boundary condition work array for the luminance
  *                             (explicit part)
  * \param[in, out]  coefbp    boundary condition work array for the luminance
@@ -331,18 +348,19 @@ _order_by_direction(void)
 /*----------------------------------------------------------------------------*/
 
 static void
-_cs_rad_transfer_sol(cs_real_t    *restrict coefap,
-                     cs_real_t    *restrict coefbp,
-                     cs_real_t    *restrict cofafp,
-                     cs_real_t    *restrict cofbfp,
-                     cs_real_t    *restrict flurds,
-                     cs_real_t    *restrict flurdb,
-                     cs_real_t    *restrict viscf,
-                     cs_real_t    *restrict viscb,
-                     cs_real_t    *restrict smbrs,
-                     cs_real_t    *restrict rovsdt,
-                     cs_real_3_t  *restrict q,
-                     int           iband)
+_cs_rad_transfer_sol(const cs_real_t            tempk[restrict],
+                     cs_real_t        *restrict coefap,
+                     cs_real_t        *restrict coefbp,
+                     cs_real_t        *restrict cofafp,
+                     cs_real_t        *restrict cofbfp,
+                     cs_real_t        *restrict flurds,
+                     cs_real_t        *restrict flurdb,
+                     cs_real_t        *restrict viscf,
+                     cs_real_t        *restrict viscb,
+                     cs_real_t        *restrict smbrs,
+                     cs_real_t        *restrict rovsdt,
+                     cs_real_3_t      *restrict q,
+                     int               iband)
 {
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   cs_lnum_t n_i_faces  = cs_glob_mesh->n_i_faces;
@@ -353,9 +371,15 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
   cs_real_3_t *surfac = (cs_real_3_t *)cs_glob_mesh_quantities->i_face_normal;
   cs_real_t   *surfbn = cs_glob_mesh_quantities->b_face_surf;
 
+  const cs_real_t *cell_vol
+    = (const cs_real_t *)cs_glob_mesh_quantities->cell_vol;
+
+  const cs_real_t stephn = 5.6703e-8;
+  const cs_real_t unspi  = 1.0 / cs_math_pi;
+
   cs_field_t *f_qincid = cs_field_by_name("rad_incident_flux");
-  cs_field_t *f_sa = cs_field_by_name("rad_st");
   cs_field_t *f_snplus = cs_field_by_name("rad_net_flux");
+  cs_real_t  *rad_st_expl = CS_FI_(rad_est, 0)->val;
 
   /* Allocate work arrays */
 
@@ -444,7 +468,7 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
   }
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    f_sa->val[cell_id] = 0.0;
+    rad_st_expl[cell_id] = 0.0;
     q[cell_id][0] = 0.0;
     q[cell_id][1] = 0.0;
     q[cell_id][2] = 0.0;
@@ -459,6 +483,10 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
     rovsdt[cell_id] = CS_MAX(rovsdt[cell_id], 0.0);
+
+  /* Postprocessing atmospheric upwards and downwards flux */
+
+  cs_field_t  *f_up = NULL, *f_down = NULL;
 
   /* Angular discretization */
 
@@ -508,6 +536,33 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
                              + sxyzt[1] * surfbo[face_id][1]
                              + sxyzt[2] * surfbo[face_id][2];
 
+          /* Upwards/Downwards atmospheric integration */
+
+          if (cs_glob_rad_transfer_params->atmo_ir_absorption) {
+
+            cs_field_t *f_ck_u = cs_field_by_name("rad_absorption_coeff_up");
+            cs_field_t *f_ck_d = cs_field_by_name("rad_absorption_coeff_down");
+            const cs_real_t *ck_u = f_ck_u->val;
+            const cs_real_t *ck_d = f_ck_d->val;
+
+            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+              if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
+                                        sxyzt) < 0.0) {
+                rovsdt[cell_id] =  ck_u[cell_id] * 3./5. * cell_vol[cell_id];
+                smbrs[cell_id] =   ck_u[cell_id] * 3./5. * cell_vol[cell_id]
+                                 * stephn * _pow4(tempk[cell_id]) * unspi;
+              }
+              else {
+                rovsdt[cell_id] =  ck_d[cell_id] * 3./5. * cell_vol[cell_id];
+                smbrs[cell_id] =   ck_d[cell_id] * 3./5. * cell_vol[cell_id]
+                                 * stephn * _pow4(tempk[cell_id]) * unspi;
+              }
+
+            }
+
+          }
+
           /* Resolution
              ---------- */
 
@@ -550,12 +605,29 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
 
           /* Integration of fluxes and source terms */
 
-          for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-            aa = ru[cell_id] * domegat;
-            f_sa->val[cell_id]  += aa;
-            q[cell_id][0] += aa * sxyzt[0];
-            q[cell_id][1] += aa * sxyzt[1];
-            q[cell_id][2] += aa * sxyzt[2];
+          if (cs_glob_rad_transfer_params->atmo_ir_absorption) {
+
+            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+              aa = ru[cell_id] * domegat;
+              rad_st_expl[cell_id]
+                +=   -rovsdt[cell_id] / cell_vol[cell_id] * domegat
+                    * (ru[cell_id] - stephn * unspi * _pow4(tempk[cell_id]));
+              q[cell_id][0] += aa * sxyzt[0];
+              q[cell_id][1] += aa * sxyzt[1];
+              q[cell_id][2] += aa * sxyzt[2];
+            }
+
+          }
+          else {
+
+            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+              aa = ru[cell_id] * domegat;
+              rad_st_expl[cell_id]  += aa;
+              q[cell_id][0] += aa * sxyzt[0];
+              q[cell_id][1] += aa * sxyzt[1];
+              q[cell_id][2] += aa * sxyzt[2];
+            }
+
           }
 
           /* Flux incident to wall */
@@ -576,11 +648,32 @@ _cs_rad_transfer_sol(cs_real_t    *restrict coefap,
                 += aa * ru[cs_glob_mesh->b_face_cells[face_id]];
 
           }
+
+          if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
+                                    sxyzt) < 0.0 && f_up != NULL) {
+            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+              f_up->val[cell_id] += ru[cell_id] * domegat * sxyzt[2];
+          }
+          else if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
+                                         sxyzt) > 0.0 && f_down != NULL) {
+            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+              f_down->val[cell_id] += ru[cell_id] * domegat * sxyzt[2];
+          }
+
         }
 
       }
     }
   }
+
+#if 0
+  /* TODO add clean generation and log of "per day source terms"
+     for atmospheric radiative model */
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    bft_printf("srad K/j[%d] = %f\n",
+               cell_id, rad_st_expl[cell_id] *-86400.0 / rho / cp);
+  }
+#endif
 
   /* Free memory */
 
@@ -641,7 +734,7 @@ _compute_net_flux(const int        itypfb[],
     /* Wall faces */
     if (   itypfb[ifac] == CS_SMOOTHWALL
         || itypfb[ifac] == CS_ROUGHWALL)
-      net_flux[ifac] = eps[ifac] * (qincid[ifac] - stephn * pow(twall[ifac], 4));
+      net_flux[ifac] = eps[ifac] * (qincid[ifac] - stephn * _pow4(twall[ifac]));
 
     /* Symmetry   */
     else if (itypfb[ifac] == CS_SYMMETRY)
@@ -652,9 +745,9 @@ _compute_net_flux(const int        itypfb[],
              || itypfb[ifac] == CS_CONVECTIVE_INLET
              || itypfb[ifac] == CS_OUTLET
              || itypfb[ifac] == CS_FREE_INLET) {
-      if (cs_glob_rad_transfer_params->iirayo == 1)
+      if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM)
         net_flux[ifac] = qincid[ifac] - cs_math_pi * coefap[ifac];
-      else if (cs_glob_rad_transfer_params->iirayo == 2)
+      else if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_P1)
         net_flux[ifac] = 0.0;
     }
 
@@ -1030,7 +1123,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
       cs_gui_rad_transfer_absorption(cpro_cak0);
 
-      if (   rt_params->iirayo == 2
+      if (   rt_params->type == CS_RAD_TRANSFER_P1
           && cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] <= 1
           && ipadom <= 3)
 
@@ -1047,7 +1140,7 @@ cs_rad_transfer_solve(int               bc_type[],
                                       dt,
                                       cpro_cak0);
 
-      if (cs_glob_rad_transfer_params->iirayo == 2)
+      if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_P1)
         cs_rad_transfer_absorption_check_p1(cpro_cak0);
 
     }
@@ -1055,7 +1148,7 @@ cs_rad_transfer_solve(int               bc_type[],
   }
 
   /* -> Test if the radiation coeffcient has been assigned */
-  if (rt_params->iirayo >= 1) {
+  if (rt_params->type > CS_RAD_TRANSFER_NONE) {
 
     cs_real_t ckmin = 0.0;
 
@@ -1127,7 +1220,7 @@ cs_rad_transfer_solve(int               bc_type[],
     /* P-1 radiation model
        ------------------- */
 
-    if (rt_params->iirayo == 2) {
+    if (rt_params->type == CS_RAD_TRANSFER_P1) {
 
       /* Gas phase: Explicit source term in the transport of theta4 */
 
@@ -1291,7 +1384,7 @@ cs_rad_transfer_solve(int               bc_type[],
     /* Solving of the radiative transfer equation (DOM)
        ------------------------------------------------ */
 
-    else if (rt_params->iirayo == 1) {
+    else if (rt_params->type == CS_RAD_TRANSFER_DOM) {
 
       /* -> Gas phase: Explicit source term of the ETR */
 
@@ -1406,12 +1499,13 @@ cs_rad_transfer_solve(int               bc_type[],
                                 agbi  , ngg);
 
       /* Solving    */
-      _cs_rad_transfer_sol(coefap, coefbp,
+      _cs_rad_transfer_sol(tempk,
+                           coefap, coefbp,
                            cofafp, cofbfp,
                            flurds, flurdb,
-                           viscf , viscb,
-                           smbrs , rovsdt,
-                           iqpar , ngg);
+                           viscf, viscb,
+                           smbrs, rovsdt,
+                           iqpar, ngg);
 
     }
 
@@ -1854,7 +1948,7 @@ cs_rad_transfer_solve(int               bc_type[],
                        (const cs_real_33_t *)coefbq,
                        cpro_q,
                        NULL, /* weighted gradient */
-                       NULL, /* cpl */
+                       NULL, /* coupling */
                        grad);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {

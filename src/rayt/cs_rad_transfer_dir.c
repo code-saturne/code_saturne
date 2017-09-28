@@ -187,15 +187,15 @@ cs_rad_transfer_dir(void)
 
   switch(cs_rp->i_quadrature){
 
-  case 1: /* quadrature S4 : 24 directions  */
+  case CS_RAD_QUADRATURE_S4: /* quadrature S4 : 24 directions  */
     cs_rp->ndirs = 3;
     break;
 
-  case 2: /* quadrature S6 : 48 directions  */
+  case CS_RAD_QUADRATURE_S6: /* quadrature S6 : 48 directions  */
     cs_rp->ndirs = 6;
     break;
 
-  case 3: /* quadrature S8 : 80 directions  */
+  case CS_RAD_QUADRATURE_S8: /* quadrature S8 : 80 directions  */
     cs_rp->ndirs = 10;
     break;
 

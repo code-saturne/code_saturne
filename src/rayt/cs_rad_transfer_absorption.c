@@ -357,7 +357,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
      Do not use with ADF model !!! */
 
-  if (rt_params->iirayo == 2 && rt_params->imoadf == 0) {
+  if (rt_params->type == CS_RAD_TRANSFER_P1 && rt_params->imoadf == 0) {
 
     BFT_MALLOC(w3, n_cells_ext, cs_real_t);
 

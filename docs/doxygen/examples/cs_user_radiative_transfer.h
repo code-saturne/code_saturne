@@ -73,7 +73,7 @@ Therefore :
  \note In \c Code_Saturne the flux is positive when it is oriented from inside to outside.
 
 
-  |  Corps                       |     Emissivity    |
+  |  Body                        |     Emissivity    |
   |------------------------------|------------------:|
   |  polished steel              |       0.06        |
   |  oxidized steel              |       0.80        |

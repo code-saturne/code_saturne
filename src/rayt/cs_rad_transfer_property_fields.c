@@ -96,7 +96,7 @@ cs_rad_transfer_prp(void)
   const int keyvis = cs_field_key_id("post_vis");
   const int keylog = cs_field_key_id("log");
 
-  if (cs_glob_rad_transfer_params->iirayo > 0) {
+  if (cs_glob_rad_transfer_params->type > CS_RAD_TRANSFER_NONE) {
 
     cs_field_t *f = NULL;
 
@@ -243,6 +243,42 @@ cs_rad_transfer_prp(void)
         cs_field_set_key_str(f, keylbl, f_label);
 
         cs_field_pointer_map_indexed(CS_ENUMF_(rad_cak), irphas, f);
+      }
+
+      /* Fields for atmospheric infrared absorption model */
+
+      if (cs_glob_rad_transfer_params->atmo_ir_absorption) {
+
+        const char *name[4] = {"rad_flux_up",
+                               "rad_flux_down",
+                               "rad_absorption_coeff_up",
+                               "rad_absorption_coeff_down",};
+        const char *label[4] = {"Upwards radiative flux",
+                                "Downwards radiative flux",
+                                "",
+                                ""};
+        const bool hide[4] = {true, true, false, false};
+
+        for (int i = 0; i < 4; i++) {
+
+          f = cs_field_create(name[i],
+                              field_type,
+                              location_id,
+                              1,
+                              false);
+
+          /* show or hide property */
+          if (!hide[i]) {
+            cs_field_set_key_int(f, keyvis, 1);
+            cs_field_set_key_int(f, keylog, 1);
+          }
+
+          /* set label */
+          if (strlen(label[i]) > 0)
+            cs_field_set_key_str(f, keylbl, label[i]);
+
+        }
+
       }
 
     }

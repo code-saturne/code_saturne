@@ -427,13 +427,13 @@ cs_gui_radiative_transfer_parameters(void)
   int ac_type = 0;
 
   if (cs_gui_strcmp(model, "off"))
-    cs_glob_rad_transfer_params->iirayo = 0;
+    cs_glob_rad_transfer_params->type = CS_RAD_TRANSFER_NONE;
   else if (cs_gui_strcmp(model, "dom"))
-    cs_glob_rad_transfer_params->iirayo = 1;
+    cs_glob_rad_transfer_params->type = CS_RAD_TRANSFER_DOM;
   else if (cs_gui_strcmp(model, "p-1"))
-    cs_glob_rad_transfer_params->iirayo = 2;
+    cs_glob_rad_transfer_params->type = CS_RAD_TRANSFER_P1;
 
-  if (cs_glob_rad_transfer_params->iirayo) {
+  if (cs_glob_rad_transfer_params->type > CS_RAD_TRANSFER_NONE) {
     _radiative_transfer_char("restart", &isuird);
     if (isuird)
       cs_glob_rad_transfer_params->restart = true;
@@ -456,8 +456,9 @@ cs_gui_radiative_transfer_parameters(void)
   }
 #if _XML_DEBUG_
   bft_printf("==> cs_gui_radiative_transfer_parameters\n");
-  bft_printf("--rayonnement : %s  (iirayo = %i)\n", model, cs_glob_rad_transfer_params->iirayo);
-  if (cs_glob_rad_transfer_params->iirayo) {
+  bft_printf("--radiative model: %s  (type = %i)\n",
+             model, cs_glob_rad_transfer_params->type);
+  if (cs_glob_rad_transfer_params->type > 0) {
     bft_printf("--isuird = %d\n", isuird);
     bft_printf("--quadra = %d\n", cs_glob_rad_transfer_params->i_quadrature);
     bft_printf("--ndirec = %d\n", cs_glob_rad_transfer_params->ndirec);
@@ -539,7 +540,7 @@ cs_gui_radiative_transfer_postprocess(void)
   bft_printf("%s\n", __func__);
 #endif
 
-  if (cs_glob_rad_transfer_params->iirayo) {
+  if (cs_glob_rad_transfer_params->type > CS_RAD_TRANSFER_NONE) {
     int k_lbl = cs_field_key_id("label");
     int k_vis = cs_field_key_id("post_vis");
     int k_log = cs_field_key_id("log");

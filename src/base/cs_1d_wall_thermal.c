@@ -462,7 +462,7 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
   cs_real_t qinc, eps;
   cs_lnum_t ifac = _1d_wall_thermal.ifpt1d[ii] - 1;
 
-  if (cs_glob_lagr_extra_module->iirayo >= 1) {
+  if (cs_glob_lagr_extra_module->radiative_model >= 1) {
     /* coupling with radiative module, qinc and qeps != 0 */
     /* incident radiative flux at the boundary at the boundary */
     qinc = CS_F_(qinci)->val[ifac];

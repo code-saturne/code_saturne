@@ -49,6 +49,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_field_pointer.h"
 #include "cs_parameters.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
@@ -111,16 +112,16 @@ cs_rad_transfer_source_terms(cs_real_t  smbrs[],
       || cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
     /* Implicit part   */
-    cs_field_t *f_tsri = cs_field_by_name("rad_st_implicit");
+    cs_real_t *rad_st_impl = CS_FI_(rad_ist, 0)->val;
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
-      f_tsri->val[iel] = CS_MAX( -f_tsri->val[iel], 0.0);
-      rovsdt[iel] += f_tsri->val[iel] * cs_glob_mesh_quantities->cell_vol[iel];
+      rad_st_impl[iel] = CS_MAX(-rad_st_impl[iel], 0.0);
+      rovsdt[iel] += rad_st_impl[iel] * cs_glob_mesh_quantities->cell_vol[iel];
     }
 
     /* Explicit part   */
-    cs_field_t *f_tsre = cs_field_by_name("rad_st");
+    cs_real_t *rad_st_expl = CS_FI_(rad_est, 0)->val;
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
-      smbrs[iel] += f_tsre->val[iel] * cs_glob_mesh_quantities->cell_vol[iel];
+      smbrs[iel] += rad_st_expl[iel] * cs_glob_mesh_quantities->cell_vol[iel];
     }
   }
 

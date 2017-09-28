@@ -210,6 +210,12 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
                                 const cs_real_t   dt[],
                                 cs_real_t         ck[])
 {
+  /* Note: ck argument could be removed, access using field ids */
+  {
+    cs_real_t *cpro_cak0 = CS_FI_(rad_cak, 0)->val;
+    assert(cpro_cak0 == ck);
+  }
+
   /*< [abso_coeff] */
   /*
    * Absorption coefficient of the medium (m-1)
@@ -227,6 +233,60 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
   }
 
   /*< [abso_coeff]*/
+
+  /*< [abso_coeff_meteo] */
+
+  {
+    /* Read file the first time step */
+
+    if (cs_glob_time_step->nt_cur <= cs_glob_time_step->nt_prev + 1) {
+
+      /* Read from file */
+
+      int n_v_segs = 77;
+      cs_real_t zray2[78], k_up[77], k_down[77];
+
+      FILE *f;
+      float t;
+
+      f = fopen("zray.dat", "r");
+      for (int i = 0; i < n_v_segs+1; i++) {
+        fscanf(f, "%g", &t);
+        zray2[i] = t;
+      }
+      fclose(f);
+      f = fopen("kplus.dat", "r");
+      for (int i = 0; i < n_v_segs; i++) {
+        fscanf(f, "%g", &t);
+        k_up[i] = t;
+      }
+      fclose(f);
+      f = fopen("kmoins.dat", "r");
+      for (int i = 0; i < n_v_segs; i++) {
+        fscanf(f, "%g", &t);
+        k_down[i] = t;
+      }
+      fclose(f);
+
+      cs_field_t *f_ck_u = cs_field_by_name("rad_absorption_coeff_up");
+      cs_field_t *f_ck_d = cs_field_by_name("rad_absorption_coeff_down");
+
+      for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
+
+        cs_real_t z = cs_glob_mesh_quantities->cell_cen[cell_id*3 + 2];
+
+        /* Search for 1D cell */
+        int iz = 0;
+        for (; iz < n_v_segs && z > zray2[iz+1]; iz++);
+
+        f_ck_u->val[cell_id] = fabs(k_up[iz+1]);
+        f_ck_d->val[cell_id] = fabs(k_down[iz+1]);
+
+      }
+    }
+
+  }
+  /*< [abso_coeff_meteo] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -313,9 +373,9 @@ cs_user_rad_transfer_net_flux(const int        bc_type[],
              || bc_type[ifac] == CS_CONVECTIVE_INLET
              || bc_type[ifac] == CS_OUTLET
              || bc_type[ifac] == CS_FREE_INLET) {
-      if (cs_glob_rad_transfer_params->iirayo == 1)
+      if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM)
         net_flux[ifac] = qincid[ifac] - cs_math_pi * coefap[ifac];
-      else if (cs_glob_rad_transfer_params->iirayo == 2)
+      else if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_P1)
         net_flux[ifac] = 0.0;
     }
     /* Stop if there are forgotten faces   */

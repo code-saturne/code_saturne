@@ -27,6 +27,7 @@
 !>    from radiative forcing (UV and IR radiative fluxes)
 !>    computed with the 1D atmospheric radiative scheme.
 !-------------------------------------------------------------------------------
+
 subroutine atr1vf ()
 
 !===============================================================================
@@ -141,17 +142,12 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
   enddo
 
   if (ntcabs.eq.1) then
-    call grimap &
-    !===========
-         (igrid, nvert*kmx, coords)
+    call grimap(igrid, nvert*kmx, coords)
   endif
 
   call gripol(igrid, cpro_tempc, ttvert)
-  !===========
   call gripol(igrid, cvara_totwt, qvvert)
-  !===========
   call gripol(igrid, crom, romvert)
-  !===========
 
   ! --- Loop on the vertical array:
 
@@ -269,18 +265,18 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
     ! --- Long-wave: InfraRed
     call rayir ( k1,kmray,ico2,emis,                           &
-         tauzq, tauz, tausup, zq,                       &
-         acinfe, dacinfe, aco2, daco2, acsup, dacsup,   &
-         zray,temray,qvray,                             &
-         qlray,fneray,romray,preray,aeroso,             &
-         foir,rayi(:,ii) )
+                tauzq, tauz, tausup, zq,                       &
+                acinfe, dacinfe, aco2, daco2, acsup, dacsup,   &
+                zray,temray,qvray,                             &
+                qlray,fneray,romray,preray,aeroso,             &
+                foir,rayi(:,ii) )
 
     ! --- Short-wave: Sun
     call rayso ( k1,kmray,heuray,imer1,albedo,                  &
-         tauzq, tauz, tausup, zq,                       &
-         zray,                                          &
-         qvray,qlray,fneray,romray,aeroso,              &
-         fos,rayst(:,ii) )
+                 tauzq, tauz, tausup, zq,                       &
+                 zray,                                          &
+                 qvray,qlray,fneray,romray,aeroso,              &
+                 fos,rayst(:,ii) )
 
     soilvert(ii)%fos = fos
     soilvert(ii)%foir = foir
@@ -297,12 +293,11 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
   ! Map Infra Red 1D (rayi) on the structure idrayi
   call mesmap (idrayi, kmx*nvert, rayi, coords,            &
-       cressm, interp, infrad)
+               cressm, interp, infrad)
 
   ! Map Sun 1D (rayst) on the structure idrayst
   call mesmap (idrayst, kmx*nvert, rayst, coords,          &
-       cressm, interp, infrad)
-
+               cressm, interp, infrad)
 
   deallocate(temray, qvray, qlray)
   deallocate(fneray, romray, preray)

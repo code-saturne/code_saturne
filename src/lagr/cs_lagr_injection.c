@@ -436,7 +436,7 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   /* emissivity */
   if (   cs_glob_lagr_model->physical_model == 1
       && cs_glob_lagr_specific_physics->itpvar == 1
-      && extra->iirayo > 0) {
+      && extra->radiative_model > 0) {
 
     if (zis->emissivity < 0.0 || zis->emissivity > 1.0)
       bft_error(__FILE__, __LINE__, 0,
@@ -791,7 +791,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_CP,
                                     zis->cp);
-          if (extra->iirayo > 0)
+          if (extra->radiative_model > 0)
             cs_lagr_particle_set_real(particle, p_am, CS_LAGR_EMISSIVITY,
                                       zis->emissivity);
 

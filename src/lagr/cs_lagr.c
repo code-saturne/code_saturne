@@ -318,7 +318,7 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .itytur = 0,
      .ncharb = 0,
      .ncharm = 0,
-     .iirayo = 0,
+     .radiative_model = 0,
      .icp = -1,
      .diftl0 = 0,
      .cmu = 0,
@@ -586,7 +586,7 @@ cs_f_lagr_specific_physics(int        *iirayo,
   _lagr_extra_module.ncharm = *ncharm;
   _lagr_extra_module.icp    = cs_glob_fluid_properties->icp;
 
-  _lagr_extra_module.iirayo = *iirayo;
+  _lagr_extra_module.radiative_model = *iirayo;
   _lagr_extra_module.diftl0 = *diftl0;
   _lagr_extra_module.cmu    = cs_turb_cmu;
 }

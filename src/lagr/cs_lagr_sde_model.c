@@ -813,7 +813,7 @@ _lagitp(const cs_real_t  tempct[])
    * PRISE EN COMPTE DU RAYONNEMENT S'IL Y A LIEU
    * ============================================================================== */
 
-  if (extra->iirayo > 0) {
+  if (extra->radiative_model > 0) {
 
     for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
 

@@ -887,7 +887,7 @@ typedef struct {
   int ncharm;
 
   /* radiation */
-  int iirayo;
+  int radiative_model;
 
   /* icp */
   int icp;

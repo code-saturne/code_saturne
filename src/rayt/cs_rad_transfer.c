@@ -86,15 +86,6 @@ BEGIN_C_DECLS
 
   \brief Structure containing the radiation module parameters.
 
-  \var  cs_rad_transfer_params_t::iirayo
-        Activate (\f$>0\f$) or deactivate (=0) the radiation module.
-        The different values correspond to the following modelling methods:
-        - 1: discrete ordinates method
-        (DOM standard option for radiation in semi-transparent media)
-        - 2: "P-1" method\n
-        Warning: the P-1 method allows faster computations, but it
-        may only be applied to media with uniform large optical thickness,
-        such as some cases of pulverised coal combustion.
  \var  cs_rad_transfer_params_t::nrphas
         Phase which radiates (bulk by default, but may be coal class or fuel
         droplets phase).
@@ -149,7 +140,7 @@ BEGIN_C_DECLS
         - 6: Tn (8*ndirec^2 directions)
   \var  cs_rad_transfer_params_t::ndirec
         Number of directions for the angular discretisation of the radiation
-        propagation with the DOM model (\ref iirayo = 1)\n
+        propagation with the DOM model.\n
         No other possible value, because of the way the directions are calculated.\n
         The calculation with 32 directions may break the symmetry of physically
         axi-symmetric cases (but the cost in CPU time is much lower than with
@@ -211,7 +202,24 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
-cs_rad_transfer_params_t _rt_params = {.iirayo = 0,
+/*! Model name */
+const char *cs_rad_transfer_model_name[] = {
+  N_("<none>"),
+  N_("DOM (Discrete Ordinates Method)"),
+  N_("P-1")};
+
+/*! Quadrature name */
+const char *cs_rad_transfer_quadrature_name[] = {
+  "S4 (24 directions)",
+  "S6 (48 directions)",
+  "S8 (80 directions)",
+  "T2 (32 directions)",
+  "T4 (128 directions)",
+  "TN (8*ndirec^2 directions)",
+  "LC11",
+  "DCT020_2468"};
+
+cs_rad_transfer_params_t _rt_params = {.type = CS_RAD_TRANSFER_NONE,
                                        .nrphas = 0,
                                        .iimpar = 0,
                                        .iimlum = 0,
@@ -235,7 +243,8 @@ cs_rad_transfer_params_t _rt_params = {.iirayo = 0,
                                        .iprefl = 22,
                                        .ifgrno = 31,
                                        .ifrefl = 32,
-                                       .itpt1d = 4 };
+                                       .itpt1d = 4,
+                                       .atmo_ir_absorption = false};
 
 cs_rad_transfer_params_t *cs_glob_rad_transfer_params = &_rt_params;
 
@@ -256,7 +265,7 @@ void
 cs_rad_transfer_get_pointers(int  **p_iirayo,
                              int  **p_nfreqr)
 {
-  *p_iirayo = &_rt_params.iirayo;
+  *p_iirayo = &_rt_params.type;
   *p_nfreqr = &_rt_params.nfreqr;
 }
 

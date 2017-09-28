@@ -49,6 +49,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_field_pointer.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_parall.h"
@@ -156,11 +157,12 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
   if (cs_glob_rad_transfer_params->imoadf >= 1)
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
-  cs_field_t *f_qinci = cs_field_by_name_try("rad_incident_flux");
-  cs_field_t *f_theta4 = cs_field_by_name_try("rad_absorption");
-  cs_field_t *f_thetaa = cs_field_by_name_try("rad_emission");
-  cs_field_t *f_sa = cs_field_by_name_try("rad_st");
-  cs_field_t *f_eps = cs_field_by_name_try("emissivity");
+  cs_field_t *f_qinci = CS_F_(qinci);
+  cs_field_t *f_theta4 = CS_FI_(rad_abs, 0);
+  cs_field_t *f_thetaa = CS_FI_(rad_emi, 0);
+  cs_field_t *f_eps = CS_F_(emissivity);
+
+  cs_real_t *rad_st_expl = CS_FI_(rad_est, 0)->val;
 
   /* Allocate temporary array  */
   cs_real_t *dpvar;
@@ -303,7 +305,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
   /* Compute part of absorption or radiative source term */
   aa = 4.0 * stephn;
   for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
-    f_sa->val[iel] = aa * f_theta4->val[iel];
+    rad_st_expl[iel] = aa * f_theta4->val[iel];
 
   const cs_real_t *b_dist = cs_glob_mesh_quantities->b_dist;
 

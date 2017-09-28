@@ -422,7 +422,7 @@ cs_lagr_coupling(cs_real_t taup[],
         tslag[iel + (lag_st->itsti-1) * ncelet] += tempct[nbpart + npt] * p_stat_w;
 
       }
-      if (extra->iirayo > 0) {
+      if (extra->radiative_model > 0) {
 
         for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
