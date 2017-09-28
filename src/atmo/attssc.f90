@@ -85,7 +85,7 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_scapp3
 double precision, dimension(:), pointer :: cvar_pottemp
 double precision, dimension(:), pointer :: cpro_tempc
-double precision, dimension(:), pointer :: cpro_liqwt, cpro_tempc
+double precision, dimension(:), pointer :: cpro_liqwt
 double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
