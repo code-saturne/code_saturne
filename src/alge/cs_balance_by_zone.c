@@ -2104,7 +2104,7 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
   balance[CS_BALANCE_P_IN] = in_pressure;
   balance[CS_BALANCE_P_OUT] = out_pressure;
   balance[CS_BALANCE_P_U2_IN] = in_u2;
-  balance[CS_BALANCE_P_U2_IN] = out_u2;
+  balance[CS_BALANCE_P_U2_OUT] = out_u2;
   balance[CS_BALANCE_P_RHOGX_IN] = in_rhogx;
   balance[CS_BALANCE_P_RHOGX_OUT] = out_rhogx;
   balance[CS_BALANCE_P_U_IN] = in_debit;
