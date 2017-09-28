@@ -83,11 +83,13 @@ double precision, dimension(:), allocatable :: pphy
 double precision, dimension(:), allocatable :: refrad
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_scapp3
+double precision, dimension(:), pointer :: cvar_pottemp
+double precision, dimension(:), pointer :: cpro_tempc
 double precision, dimension(:), pointer :: cpro_liqwt, cpro_tempc
 double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 ! --- Numero du scalaire a traiter : ISCAL
@@ -109,6 +111,9 @@ call field_get_val_s(icrom, crom)
 
 if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
 
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_pottemp)
+  call field_get_val_s(itempc, cpro_tempc)
+
   !   2.1 Source terms in the equation of the liquid potential temperature :
   !  -----------------------------------------------------------------------
 
@@ -123,17 +128,20 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
     ! --- Cressman interpolation of the 1D radiative fluxes on the 3D mesh:
     call atr1vf()
 
-    call mscrss   &
-         (idrayi, 1, ray3Di)
+    ! Infra red
+    call mscrss(idrayi, 1, ray3Di)
 
-    call mscrss   &
-         (idrayst, 1, ray3Dst)
+    ! Sun
+    call mscrss(idrayst, 1, ray3Dst)
 
     ! --- Explicite source term for the thermal scalar equation:
 
     do iel = 1, ncel
       crvexp(iel) = crvexp(iel) +                                   &
-           cp0*cell_f_vol(iel)*crom(iel)*(-ray3Di(iel) + ray3Dst(iel))
+        cp0*cell_f_vol(iel)*crom(iel)*(-ray3Di(iel) + ray3Dst(iel)) &
+        ! Conversion Temperature -> Potential Temperature
+        * cvar_pottemp(iel) / (cpro_tempc(iel) + tkelvi)
+
     enddo
 
     deallocate(ray3Di)
