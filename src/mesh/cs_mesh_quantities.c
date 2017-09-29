@@ -961,39 +961,56 @@ _compute_face_quantities(const cs_lnum_t   dim,
       face_center[i] = 0.0;
     }
 
-    /* Loop on edges and use STokes theorem:
+    /* Loop on edges and use Stokes theorem:
      *   Int|_S rot(r).dS = Int|_dS r.dl
      *  with:
      *  r_x = 1/2 (0, -(z-zB), y-yB)
      *  r_y = 1/2 (z-zB, 0, -(x-xB))
      *  r_z = 1/2 (-(y-yB), x-xB, 0)
      *
+     * Note that:
+     *   rot(r_x) = (1, 0, 0)
+     *   rot(r_y) = (0, 1, 0)
+     *   rot(r_z) = (0, 0, 1)
+     * and
+     *   r_* are linear, so their integrals on an edge are equal to the value
+     *   of r_* at the barycenter times th edge length
      *   */
     /*========================================================================*/
 
     for (tri_id = 0 ; tri_id < n_face_vertices ; tri_id++) {
-
-      /*----------------------------------------------------------------------
-       * Computation of the normal of the triangle Ti :
-       *
-       *  ->            -->   -->
-       *  N(Ti) = 1/2 ( BPi X BPi+1 )
-       *----------------------------------------------------------------------*/
 
       for (i = 0; i < 3; i++) {
         vect1[i] = face_vtx_coord[tri_id    ][i] - face_barycenter[i];
         vect2[i] = face_vtx_coord[tri_id + 1][i] - face_barycenter[i];
       }
 
-      /* r_x . (v_(i+1) -v_i) */
-      face_normal[0] += 0.5*( 0.5*(vect1[1] + vect2[1])*(vect2[2] - vect1[2])
-                            - 0.5*(vect1[2] + vect2[2])*(vect2[1] - vect1[1]));
-      /* r_y . (v_(i+1) -v_i) */
-      face_normal[1] += 0.5*( 0.5*(vect1[2] + vect2[2])*(vect2[0] - vect1[0])
-                            - 0.5*(vect1[0] + vect2[0])*(vect2[2] - vect1[2]));
-      /* r_z . (v_(i+1) -v_i) */
-      face_normal[2] += 0.5*( 0.5*(vect1[0] + vect2[0])*(vect2[1] - vect1[1])
-                            - 0.5*(vect1[1] + vect2[1])*(vect2[0] - vect1[0]));
+      /* r_x . (v_(i+1) -v_i)  where r_x is taken in (v_(i+1) + v_i)/2
+       *
+       * face_normal[0] += 0.25*((vect1[1] + vect2[1])*(vect2[2] - vect1[2])
+       *                       - (vect1[2] + vect2[2])*(vect2[1] - vect1[1]));
+       *
+       * This can be simplified as
+       * */
+      face_normal[0] += 0.5*(vect1[1]*vect2[2] - vect1[2]*vect2[1]);
+
+      /* r_y . (v_(i+1) -v_i)
+       *
+       * face_normal[1] += 0.25*((vect1[2] + vect2[2])*(vect2[0] - vect1[0])
+       *                    - (vect1[0] + vect2[0])*(vect2[2] - vect1[2]));
+       *
+       * This can be simplified as
+       * */
+      face_normal[1] += 0.5*(vect1[2]*vect2[0] - vect1[0]*vect2[2]);
+
+      /* r_z . (v_(i+1) -v_i)
+       *
+       * face_normal[2] += 0.25*((vect1[0] + vect2[0])*(vect2[1] - vect1[1])
+       *                    - (vect1[1] + vect2[1])*(vect2[0] - vect1[0]));
+       *
+       * This can be simplified as
+       * */
+      face_normal[2] += 0.5*(vect1[0]*vect2[1] - vect1[1]*vect2[0]);
 
       cs_math_3_cross_product(vect1, vect2, triangle_norm[tri_id]);
 
@@ -1038,6 +1055,8 @@ _compute_face_quantities(const cs_lnum_t   dim,
        *  Surf(Ti) = | N(Ti) |
        *----------------------------------------------------------------------*/
 
+      //TODO define it as the dot product between the surface of the triangle
+      //and the unit notmal of the face...
       tri_surface = cs_math_3_norm(triangle_norm[tri_id]);
 
       if (cs_math_3_dot_product(triangle_norm[tri_id], face_normal) < 0.0)
