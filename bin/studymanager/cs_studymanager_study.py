@@ -540,6 +540,36 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
+    def run_ok(self, run_dir):
+        """
+        Check if a result directory contains an error file
+        or if it doesn't contain a summary file
+        """
+        if not os.path.isdir(run_dir):
+            print("Error: the result directory %s does not exist." % run_dir)
+            sys.exit(1)
+
+        msg = ""
+        ok = True
+
+        f_error = os.path.join(run_dir, 'error')
+        if os.path.isfile(f_error):
+            ok = False
+            msg += "the result directory %s in case %s " \
+                   "contains an error file." % (os.path.basename(run_dir),
+                                                self.label)
+
+        f_summary = os.path.join(run_dir, 'summary')
+        if not os.path.isfile(f_summary):
+            ok = False
+            msg += "the result directory %s in case %s " \
+                   "does not contain any summary file." \
+                   % (os.path.basename(run_dir), self.label)
+
+        return ok, msg
+
+    #---------------------------------------------------------------------------
+
     def check_dir(self, node, result, rep, attr):
         """
         Check coherency between xml file of parameters and repository or
@@ -552,24 +582,22 @@ class Case(object):
                    "does not exist." % (result)
             return None, msg
 
-        # 1. Check if the given result directory exists.
+        # 1. The result directory is given
         if rep != "":
+            # check if it exists
             rep_f = os.path.join(result, rep)
-            rep_e = os.path.join(result, rep, 'error')
-
             if not os.path.isdir(rep_f):
                 msg += "the result directory %s " \
                        "does not exist." % (rep_f)
                 return None, msg
 
-            if os.path.isfile(rep_e):
-                msg += "the result directory %s " \
-                       "contains an error file." % (rep_f)
-                return None, msg
+            run_ok = self.run_ok(rep_f)
+            if not run_ok[0]:
+                return None, msg+run_ok[1]
 
-        # 2. The result directory must be read automatically;
-        #    check if there is a single result directory.
+        # 2. The result directory must be found/read automatically;
         elif rep == "":
+            # check if there is at least one result directory.
             if len(list(filter(nodot, os.listdir(result)))) == 0:
                 msg += "there is no result directory in %s." % (result)
                 return None, msg
@@ -594,11 +622,9 @@ class Case(object):
                        "does not exist." % (rep_f)
                 return None, msg
 
-            rep_e = os.path.join(result, rep, 'error')
-            if os.path.isfile(rep_e):
-                msg += "the result directory %s " \
-                       "contains an error file." % (rep_f)
-                return None, msg
+            run_ok = self.run_ok(rep_f)
+            if not run_ok[0]:
+                return None, msg+run_ok[1]
 
             # 3. Update the file of parameters with the name of the result directory
             if node:
@@ -1338,7 +1364,6 @@ class Studies(object):
 
         case.diff_value += diff_value
 
-        print case.diff_value
         if args:
             s_args = 'with args: %s' % args
         else:
